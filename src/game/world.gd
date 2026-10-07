@@ -1,17 +1,24 @@
 extends Node2D
 ## Partita co-op a scorrimento laterale. L'host decide stanze, nemici, danni e raccolta;
 ## ogni client muove il proprio cavaliere e riceve il resto tramite MultiplayerSpawner.
+## La presentazione (sfondi, terreno, luci, decorazioni, effetti, post-processing) è locale.
 
 const PlayerScript := preload("res://game/player.gd")
 const EnemyScript := preload("res://game/enemy.gd")
 const ProjectileScript := preload("res://game/projectile.gd")
 const PickupScript := preload("res://game/pickup.gd")
 const HudScript := preload("res://game/hud.gd")
+const BackdropScript := preload("res://game/backdrop.gd")
+const TerrainScript := preload("res://game/terrain.gd")
+const DecorScript := preload("res://game/decor.gd")
+const POST_SHADER := preload("res://game/shaders/post_screen_grade.gdshader")
 
-const SCREEN := Vector2(1280, 720)
 const RESPAWN_DELAY := 2.5
+## Livello di collisione delle mensole attraversabili dal basso.
+const LEDGE_LAYER := 4
 
-var PLAYER_COLORS := [Color("#f2c46d"), Color("#7fd1c7"), Color("#e58f7a"), Color("#b7a6ff")]
+## Colore della sciarpa di ciascun giocatore, in ordine di ingresso.
+var PLAYER_COLORS := [Color("#e8483f"), Color("#3fc1d9"), Color("#f2c046"), Color("#a77bff")]
 
 var room: Dictionary = {}
 var room_index := 0
@@ -21,26 +28,44 @@ var coins := 0
 var cleared: Dictionary = {}   # indice stanza -> bool (verità dell'host)
 var game_over := false
 var victory := false
+var fx_root: Node2D
 
-var _entities: Node2D
+var _backdrop
+var _terrain
+var _decor: Node2D
 var _walls: Node2D
+var _entities: Node2D
 var _spawner: MultiplayerSpawner
 var _hud
 var _fade: ColorRect
+var _post_mat: ShaderMaterial
+var _solids: Array = []
 var _rng := RandomNumberGenerator.new()
-var _time := 0.0
 var _room_t := 0.0
 var _transitioning := false
 var _wipe_t := -1.0
+var _shown_room := -1
 
 
 func _ready() -> void:
 	_rng.randomize()
+	_backdrop = BackdropScript.new()
+	add_child(_backdrop)
+	_decor = Node2D.new()
+	_decor.z_index = 2
+	add_child(_decor)
+	_terrain = TerrainScript.new()
+	_terrain.z_index = 5
+	add_child(_terrain)
 	_walls = Node2D.new()
 	add_child(_walls)
 	_entities = Node2D.new()
 	_entities.name = "Entities"
+	_entities.z_index = 10
 	add_child(_entities)
+	fx_root = Node2D.new()
+	fx_root.z_index = 20
+	add_child(fx_root)
 
 	_spawner = MultiplayerSpawner.new()
 	_spawner.name = "Spawner"
@@ -50,7 +75,6 @@ func _ready() -> void:
 	multiplayer.peer_disconnected.connect(_on_peer_left)
 
 	_build_overlays()
-	_add_ambient()
 
 	if multiplayer.is_server():
 		_setup_roster()
@@ -64,12 +88,14 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
+		Engine.time_scale = 1.0
 		Net.leave()
 
 
-func _process(delta: float) -> void:
-	_time += delta
-	queue_redraw()
+func _process(_delta: float) -> void:
+	var cam := get_viewport().get_camera_2d()
+	var center: Vector2 = cam.get_screen_center_position() if cam else room.get("size", Vector2(1280, 720)) * 0.5
+	_backdrop.update_camera(center)
 
 
 func _physics_process(delta: float) -> void:
@@ -88,38 +114,19 @@ func _physics_process(delta: float) -> void:
 	_check_wipe(delta)
 
 
-func _draw() -> void:
-	if room.is_empty():
-		return
-	Art.draw_room_bg(self, room["theme"], _time)
-	for s in room["solids"]:
-		Art.draw_stone(self, s, room["theme"])
-	var right_open := room_cleared and room_index < Room.COUNT - 1
-	Art.draw_door(self, Rect2(1270, 280, 40, 160), right_open, _time)
-	Art.draw_door(self, Rect2(-10, 280, 40, 160), room_index > 0, _time)
-
-
 # ---------------------------------------------------------------- Costruzione
 
 func _build_overlays() -> void:
-	var vignette_layer := CanvasLayer.new()
-	vignette_layer.layer = 8
-	add_child(vignette_layer)
-	var vignette := ColorRect.new()
-	vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var shader := Shader.new()
-	shader.code = """
-shader_type canvas_item;
-void fragment() {
-	vec2 d = SCREEN_UV - vec2(0.5);
-	COLOR = vec4(0.02, 0.02, 0.04, clamp(dot(d, d) * 1.7 - 0.15, 0.0, 0.8));
-}
-"""
-	var mat := ShaderMaterial.new()
-	mat.shader = shader
-	vignette.material = mat
-	vignette_layer.add_child(vignette)
+	var post_layer := CanvasLayer.new()
+	post_layer.layer = 5
+	add_child(post_layer)
+	var post := ColorRect.new()
+	post.set_anchors_preset(Control.PRESET_FULL_RECT)
+	post.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_post_mat = ShaderMaterial.new()
+	_post_mat.shader = POST_SHADER
+	post.material = _post_mat
+	post_layer.add_child(post)
 
 	var ui := CanvasLayer.new()
 	ui.layer = 10
@@ -133,32 +140,23 @@ void fragment() {
 	add_child(fade_layer)
 	_fade = ColorRect.new()
 	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_fade.color = Color("#07080c")
+	_fade.color = Color("#050608")
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fade_layer.add_child(_fade)
 
 
-func _add_ambient() -> void:
-	# Polvere dorata nell'aria: solo estetica, non sincronizzata.
-	var motes := CPUParticles2D.new()
-	motes.position = SCREEN * 0.5
-	motes.z_index = 6
-	motes.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	motes.emission_rect_extents = SCREEN * 0.5
-	motes.amount = 60
-	motes.lifetime = 7.0
-	motes.gravity = Vector2(0, -3)
-	motes.spread = 180.0
-	motes.initial_velocity_min = 4.0
-	motes.initial_velocity_max = 12.0
-	motes.scale_amount_min = 1.0
-	motes.scale_amount_max = 2.2
-	motes.color = Color(1.0, 0.85, 0.5, 0.3)
-	add_child(motes)
+func _apply_grade(th: Dictionary) -> void:
+	var tint: Vector3 = th.tint
+	_post_mat.set_shader_parameter("tint", tint)
+	_post_mat.set_shader_parameter("contrast", th.contrast)
+	_post_mat.set_shader_parameter("saturation", th.saturation)
+	_post_mat.set_shader_parameter("bloom_strength", th.bloom)
+	_post_mat.set_shader_parameter("vignette", th.vignette)
 
 
 func _setup_roster() -> void:
-	var entries: Array = Room.entry_points(true)
+	var first := Room.build(0)
+	var entries: Array = Room.entry_points(first, true)
 	var ids := _player_order()
 	for i in ids.size():
 		var id: int = ids[i]
@@ -177,6 +175,7 @@ func _make_entity(d: Dictionary) -> Node:
 		"player":
 			var p = PlayerScript.new()
 			p.setup(d)
+			p.world = self
 			p.slash_requested.connect(_on_player_slash)
 			return p
 		"enemy":
@@ -202,17 +201,25 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	room = Room.build(idx)
 	room_cleared = cleared_now
 	_transitioning = false
+	var th := Themes.get_theme(room["theme"])
+	_backdrop.build(room["theme"], room["size"], room["floor"], Room.CAMERA_ZOOM)
+	_terrain.build(room, th)
+	_terrain.set_doors(_left_open(), _right_open())
 	_build_walls()
-	queue_redraw()
-	_hud.toast(room["name"])
+	_build_decor(th)
+	_apply_grade(th)
 	_fade_in()
+	if idx != _shown_room:
+		_shown_room = idx
+		_hud.area_title(room["name"], room["subtitle"])
 
 	var ids := _player_order()
-	var spawns: Array = Room.entry_points(from_left)
+	var spawns: Array = Room.entry_points(room, from_left)
 	for i in ids.size():
 		var p = _find_player(ids[i])
 		if p and p.is_multiplayer_authority():
 			p.teleport(spawns[i % spawns.size()])
+			p.apply_room(room["size"])
 
 	if multiplayer.is_server():
 		_room_t = 0.0
@@ -224,20 +231,48 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 				_spawn_enemy(e["type"], e["pos"])
 
 
+func _left_open() -> bool:
+	return room_index > 0
+
+
+func _right_open() -> bool:
+	return room_cleared and room_index < Room.COUNT - 1
+
+
 func _build_walls() -> void:
 	for c in _walls.get_children():
 		var old := c as StaticBody2D
 		old.collision_layer = 0
 		old.queue_free()
-	for r in room["solids"]:
-		var body := StaticBody2D.new()
-		var cs := CollisionShape2D.new()
-		var sh := RectangleShape2D.new()
-		sh.size = r.size
-		cs.shape = sh
-		cs.position = r.get_center()
-		body.add_child(cs)
-		_walls.add_child(body)
+	_solids = Room.solids(room, _left_open(), _right_open())
+	for r in _solids:
+		_add_body(r, false)
+	for l in room["ledges"]:
+		_add_body(l, true)
+
+
+func _add_body(r: Rect2, one_way: bool) -> void:
+	var body := StaticBody2D.new()
+	var cs := CollisionShape2D.new()
+	var sh := RectangleShape2D.new()
+	sh.size = r.size
+	cs.shape = sh
+	cs.position = r.get_center()
+	if one_way:
+		cs.one_way_collision = true
+		body.collision_layer = 0
+		body.set_collision_layer_value(LEDGE_LAYER, true)
+	body.add_child(cs)
+	_walls.add_child(body)
+
+
+func _build_decor(th: Dictionary) -> void:
+	for c in _decor.get_children():
+		c.queue_free()
+	for d in room["decor"]:
+		var node = DecorScript.new()
+		node.setup(d["kind"], th, d["pos"])
+		_decor.add_child(node)
 
 
 func _clear_hostile() -> void:
@@ -270,12 +305,16 @@ func _go_restart() -> void:
 func _check_doors() -> void:
 	if _transitioning:
 		return
+	var size: Vector2 = room["size"]
+	var door_top: float = float(room["floor"]) - Room.DOOR_H
 	for p in _alive_players():
 		var pos: Vector2 = p.global_position
-		if room_cleared and room_index < Room.COUNT - 1 and pos.x >= SCREEN.x - 30.0 and pos.y > 270.0 and pos.y < 450.0:
+		if pos.y < door_top:
+			continue
+		if _right_open() and pos.x >= size.x - Room.EDGE - 10.0:
 			_go(room_index + 1, true)
 			return
-		if room_index > 0 and pos.x <= 30.0 and pos.y > 270.0 and pos.y < 450.0:
+		if _left_open() and pos.x <= Room.EDGE + 10.0:
 			_go(room_index - 1, false)
 			return
 
@@ -290,7 +329,8 @@ func _check_cleared() -> void:
 	if room["boss"]:
 		_end_game.rpc(true)
 	else:
-		_spawn_pickup(Vector2(640, 560), "centesimi", int(Tuning.data.rewards.room_clear_coins))
+		var size: Vector2 = room["size"]
+		_spawn_pickup(Vector2(size.x * 0.5, float(room["floor"]) - 40.0), "centesimi", int(Tuning.data.rewards.room_clear_coins))
 
 
 func _check_wipe(delta: float) -> void:
@@ -311,7 +351,9 @@ func _check_wipe(delta: float) -> void:
 func _mark_cleared() -> void:
 	room_cleared = true
 	_build_walls()
-	_hud.toast("Stanza liberata! Raggiungi la porta.")
+	_terrain.set_doors(_left_open(), _right_open())
+	if not room["boss"]:
+		_hud.toast("Il passaggio si è aperto")
 
 
 @rpc("authority", "call_local", "reliable")
@@ -329,6 +371,38 @@ func _notify(text: String) -> void:
 @rpc("authority", "call_local", "reliable")
 func _sync_coins(value: int) -> void:
 	coins = value
+
+
+## Effetti visivi annunciati dall'host e riprodotti localmente da ogni PC.
+@rpc("authority", "call_local", "unreliable")
+func _fx(kind: String, pos: Vector2, col: Color, dir: float) -> void:
+	match kind:
+		"hit":
+			Fx.hit(fx_root, pos, col, dir)
+			Fx.hitstop(self, 0.045)
+			_shake_near(pos, 0.18)
+		"death":
+			Fx.death(fx_root, pos, col)
+			Fx.hitstop(self, 0.09)
+			_shake_near(pos, 0.4)
+		"hurt":
+			Fx.hit(fx_root, pos, Color(1.0, 0.35, 0.3), dir)
+			Fx.hitstop(self, 0.07)
+		"collect":
+			Fx.sparkle(fx_root, pos, col)
+		"shock":
+			Fx.ring(fx_root, pos, col, 150.0, 0.45)
+			Fx.dust(fx_root, pos, 26)
+			_shake_near(pos, 0.55)
+		"burst":
+			Fx.ring(fx_root, pos, col, 190.0, 0.5)
+			_shake_near(pos, 0.3)
+
+
+func _shake_near(pos: Vector2, amount: float) -> void:
+	var p = local_player()
+	if p and p.global_position.distance_to(pos) < 1100.0:
+		p.add_trauma(amount)
 
 
 # ---------------------------------------------------------------- Giocatori
@@ -350,24 +424,18 @@ func _request_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
 func _do_slash(peer: int, pos: Vector2, facing: float, down: bool, air: bool) -> void:
 	if game_over or not stats.has(peer) or stats[peer]["dead"]:
 		return
-	_show_slash.rpc(pos, facing, down)
-	var center := pos + Vector2(0, 40) if down else pos + Vector2(facing * 46.0, -4.0)
-	var half := Vector2(30, 30) if down else Vector2(38, 26)
+	var center := pos + Vector2(0, 42) if down else pos + Vector2(facing * 46.0, -6.0)
+	var half := Vector2(30, 32) if down else Vector2(40, 30)
 	var bounce := false
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if e.is_queued_for_deletion():
 			continue
 		if _overlap(center, half, e.global_position, e.half):
-			_hit_enemy(e, 1, Color("#f3e6c8"))
+			_hit_enemy(e, 1, Color(1.0, 0.95, 0.85), facing)
 			if down and air:
 				bounce = true
 	if bounce:
 		_bounce.rpc(peer)
-
-
-@rpc("authority", "call_local", "unreliable")
-func _show_slash(pos: Vector2, facing: float, down: bool) -> void:
-	Art.spawn_slash(self, pos, facing, down)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -392,11 +460,12 @@ func _hurt_player(p: Node, dmg: int, from_x: float) -> void:
 		return
 	s["hp"] = maxi(0, int(s["hp"]) - dmg)
 	s["iframes"] = 0.9
+	var dir := 1.0 if p.global_position.x >= from_x else -1.0
+	_fx.rpc("hurt", p.global_position, Color.WHITE, dir)
 	if s["hp"] <= 0:
 		s["dead"] = true
-		_notify.rpc("%s è caduto." % _name_of(p.peer_id))
+		_notify.rpc("%s è caduto" % _name_of(p.peer_id))
 	else:
-		var dir := 1.0 if p.global_position.x >= from_x else -1.0
 		_knock.rpc(p.peer_id, dir)
 	_push_stats(p.peer_id)
 
@@ -451,13 +520,21 @@ func local_player() -> Node:
 	return _find_player(multiplayer.get_unique_id())
 
 
+## Il boss della stanza, se presente (serve all'HUD per la barra della vita).
+func boss() -> Node:
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if e.kind == "custode" and not e.is_queued_for_deletion():
+			return e
+	return null
+
+
 # ---------------------------------------------------------------- Nemici, proiettili, raccolta
 
 func _spawn_enemy(kind: String, pos: Vector2) -> void:
 	var hp := 0
 	if kind == "custode":
-		var boss: Dictionary = Tuning.data.enemies.custode
-		hp = int(boss.hp) + int(boss.hp_per_player) * Net.players.size()
+		var b: Dictionary = Tuning.data.enemies.custode
+		hp = int(b.hp) + int(b.hp_per_player) * Net.players.size()
 	_spawner.spawn({"kind": "enemy", "type": kind, "pos": pos, "hp": hp})
 
 
@@ -465,12 +542,13 @@ func _spawn_pickup(pos: Vector2, item: String, value: int) -> void:
 	_spawner.spawn({"kind": "pickup", "pos": pos, "item": item, "value": value})
 
 
-func _hit_enemy(e: Node, dmg: int, col: Color) -> void:
+func _hit_enemy(e: Node, dmg: int, col: Color, dir: float) -> void:
 	var killed: bool = e.take_hit(dmg)
-	_burst.rpc(e.global_position, col, 8)
 	if killed:
-		_burst.rpc(e.global_position, Art.enemy_color(e.kind), 24)
+		_fx.rpc("death", e.global_position, Art.enemy_color(e.kind), dir)
 		_on_enemy_killed(e)
+	else:
+		_fx.rpc("hit", e.global_position, col, dir)
 
 
 func _on_enemy_killed(e: Node) -> void:
@@ -511,7 +589,7 @@ func _check_pickups() -> void:
 		if pk.is_queued_for_deletion():
 			continue
 		for p in _alive_players():
-			if _overlap(pk.global_position, Vector2(12, 12), p.global_position, PlayerScript.HALF):
+			if _overlap(pk.global_position, Vector2(14, 14), p.global_position, PlayerScript.HALF):
 				_collect(pk, p)
 				break
 
@@ -520,57 +598,51 @@ func _collect(pk: Node, p: Node) -> void:
 	if pk.item == "centesimi":
 		coins += int(pk.value)
 		_sync_coins.rpc(coins)
+		_fx.rpc("collect", pk.global_position, Color(1.0, 0.8, 0.35), 0.0)
 	elif pk.item == "mozzarella":
 		var s: Dictionary = stats[p.peer_id]
 		s["hp"] = mini(int(s["max_hp"]), int(s["hp"]) + 1)
 		_push_stats(p.peer_id)
+		_fx.rpc("collect", pk.global_position, Color(1.0, 0.97, 0.9), 0.0)
 	pk.queue_free()
 
 
-@rpc("authority", "call_local", "unreliable")
-func _burst(pos: Vector2, col: Color, amount: int) -> void:
-	var fx := CPUParticles2D.new()
-	fx.position = pos
-	fx.one_shot = true
-	fx.explosiveness = 1.0
-	fx.amount = amount
-	fx.lifetime = 0.5
-	fx.spread = 180.0
-	fx.initial_velocity_min = 90.0
-	fx.initial_velocity_max = 240.0
-	fx.scale_amount_min = 3.0
-	fx.scale_amount_max = 6.0
-	fx.color = col
-	fx.emitting = true
-	add_child(fx)
-	get_tree().create_timer(1.0).timeout.connect(fx.queue_free)
-
-
 ## Usato dai nemici (solo host): proiettile singolo.
-func enemy_fire(pos: Vector2, dir: Vector2, speed: float) -> void:
+func enemy_fire(pos: Vector2, dir: Vector2, speed: float, col: Color = Color(1.0, 0.68, 0.38)) -> void:
 	_spawner.spawn({
 		"kind": "bullet", "pos": pos, "vel": dir.normalized() * speed,
-		"dmg": 1, "color": Color("#ffb37a"), "life": 3.0, "radius": 6.0,
+		"dmg": 1, "color": col, "life": 3.0, "radius": 6.0,
 	})
 
 
-## Usato dal boss: otto proiettili radiali.
+## Usato dal boss: proiettili radiali.
 func enemy_burst(pos: Vector2, count: int) -> void:
+	_fx.rpc("burst", pos, Color(1.0, 0.7, 0.3), 0.0)
 	for i in count:
 		enemy_fire(pos, Vector2.RIGHT.rotated(TAU * float(i) / float(count)), 260.0)
 
 
 ## Usato dal boss all'atterraggio: onda d'urto a terra in entrambe le direzioni.
 func enemy_shockwave(pos: Vector2) -> void:
-	enemy_fire(pos, Vector2.LEFT, 380.0)
-	enemy_fire(pos, Vector2.RIGHT, 380.0)
+	_fx.rpc("shock", pos, Color(1.0, 0.8, 0.5), 0.0)
+	enemy_fire(pos + Vector2(0, -8), Vector2.LEFT, 400.0)
+	enemy_fire(pos + Vector2(0, -8), Vector2.RIGHT, 400.0)
 
 
+## Muri, blocchi e grate chiuse (i proiettili si fermano qui).
 func is_solid(p: Vector2) -> bool:
-	if room.is_empty():
-		return false
-	for s in room["solids"]:
+	for s in _solids:
 		if (s as Rect2).has_point(p):
+			return true
+	return false
+
+
+## Qualunque superficie su cui si può stare in piedi, mensole comprese.
+func is_ground(p: Vector2) -> bool:
+	if is_solid(p):
+		return true
+	for l in room.get("ledges", []):
+		if (l as Rect2).has_point(p):
 			return true
 	return false
 
@@ -593,7 +665,6 @@ static func _overlap(a: Vector2, a_half: Vector2, b: Vector2, b_half: Vector2) -
 
 
 func _fade_in() -> void:
-	_fade.color = Color("#07080c")
 	_fade.modulate = Color(1, 1, 1, 1)
 	var tw := create_tween()
-	tw.tween_property(_fade, "modulate:a", 0.0, 0.6)
+	tw.tween_property(_fade, "modulate:a", 0.0, 0.7).set_trans(Tween.TRANS_SINE)

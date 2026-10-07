@@ -1,70 +1,175 @@
 class_name Room
 extends RefCounted
-## Layout fisso delle stanze: pareti, piattaforme, nemici e punti d'ingresso.
-## I dati sono identici su tutti i PC, quindi nessun seed è necessario.
+## Layout delle stanze: dimensioni, pavimento, blocchi solidi, mensole attraversabili dal basso,
+## nemici e decorazioni. I dati sono identici su tutti i PC.
 
 const COUNT := 5
-const FLOOR_Y := 640.0
-
-const WALLS := [
-	Rect2(-40, -40, 1360, 40),
-	Rect2(-40, 640, 1360, 80),
-	Rect2(-40, 0, 40, 280),
-	Rect2(-40, 440, 40, 200),
-	Rect2(1280, 0, 40, 280),
-	Rect2(1280, 440, 40, 200),
-]
+## Altezza dei portali d'uscita, appoggiati al pavimento.
+const DOOR_H := 220.0
+## Spessore visibile dei pilastri ai lati della stanza.
+const EDGE := 36.0
+## Ingrandimento della camera di gioco: personaggi più grandi, mondo più raccolto.
+const CAMERA_ZOOM := 1.25
 
 const ROOMS := [
 	{
 		"name": "Piazza Dante",
+		"subtitle": "Il cuore della città",
 		"theme": "piazza",
-		"platforms": [Rect2(240, 520, 200, 24), Rect2(560, 420, 180, 24), Rect2(860, 520, 200, 24), Rect2(1010, 330, 180, 24)],
-		"enemies": [{"type": "gatto", "pos": Vector2(700, 618)}, {"type": "gatto", "pos": Vector2(1000, 618)}],
+		"size": Vector2(2560, 1080),
+		"floor": 980.0,
+		"blocks": [Rect2(1000, 900, 560, 80), Rect2(1100, 840, 360, 60)],
+		"ledges": [Rect2(320, 800, 220, 18), Rect2(640, 690, 200, 18), Rect2(1170, 640, 220, 18), Rect2(1700, 720, 220, 18), Rect2(2000, 820, 240, 18)],
+		"enemies": [
+			{"type": "gatto", "pos": Vector2(700, 960)},
+			{"type": "gatto", "pos": Vector2(1850, 960)},
+			{"type": "vespa", "pos": Vector2(2150, 600)},
+		],
+		"decor": [
+			{"kind": "lamp", "pos": Vector2(220, 980)},
+			{"kind": "bench", "pos": Vector2(500, 980)},
+			{"kind": "lamp", "pos": Vector2(880, 980)},
+			{"kind": "vase", "pos": Vector2(1060, 900)},
+			{"kind": "statue", "pos": Vector2(1280, 840)},
+			{"kind": "vase", "pos": Vector2(1500, 900)},
+			{"kind": "lamp", "pos": Vector2(1680, 980)},
+			{"kind": "bench", "pos": Vector2(2080, 980)},
+			{"kind": "lamp", "pos": Vector2(2400, 980)},
+		],
 	},
 	{
 		"name": "Corso Trieste",
+		"subtitle": "Sotto i portici, sotto la pioggia",
 		"theme": "strada",
-		"platforms": [Rect2(120, 540, 220, 24), Rect2(420, 440, 160, 24), Rect2(680, 340, 160, 24), Rect2(940, 440, 220, 24)],
-		"enemies": [{"type": "vespa", "pos": Vector2(500, 220)}, {"type": "vespa", "pos": Vector2(900, 200)}, {"type": "gatto", "pos": Vector2(300, 618)}],
+		"size": Vector2(2560, 1080),
+		"floor": 980.0,
+		"blocks": [Rect2(760, 890, 240, 90), Rect2(1700, 870, 300, 110)],
+		"ledges": [Rect2(260, 780, 200, 18), Rect2(520, 660, 180, 18), Rect2(860, 560, 220, 18), Rect2(1260, 700, 200, 18), Rect2(1500, 590, 180, 18), Rect2(2000, 740, 220, 18), Rect2(2240, 620, 200, 18)],
+		"enemies": [
+			{"type": "gatto", "pos": Vector2(450, 960)},
+			{"type": "vespa", "pos": Vector2(1000, 420)},
+			{"type": "vespa", "pos": Vector2(1800, 460)},
+			{"type": "gatto", "pos": Vector2(2250, 960)},
+		],
+		"decor": [
+			{"kind": "lamp", "pos": Vector2(150, 980)},
+			{"kind": "banner", "pos": Vector2(640, 300)},
+			{"kind": "lamp", "pos": Vector2(1200, 980)},
+			{"kind": "bench", "pos": Vector2(1450, 980)},
+			{"kind": "banner", "pos": Vector2(1580, 260)},
+			{"kind": "lamp", "pos": Vector2(2100, 980)},
+		],
 	},
 	{
 		"name": "Villa Comunale",
+		"subtitle": "Dove le statue non dormono",
 		"theme": "giardino",
-		"platforms": [Rect2(200, 520, 160, 24), Rect2(480, 400, 240, 24), Rect2(820, 520, 160, 24), Rect2(1000, 380, 200, 24)],
-		"enemies": [{"type": "gatto", "pos": Vector2(360, 618)}, {"type": "statua", "pos": Vector2(1080, 610)}],
+		"size": Vector2(2560, 1080),
+		"floor": 980.0,
+		"blocks": [Rect2(620, 910, 200, 70), Rect2(1140, 925, 320, 55), Rect2(1880, 910, 200, 70)],
+		"ledges": [Rect2(300, 760, 200, 18), Rect2(820, 650, 240, 18), Rect2(1190, 540, 220, 18), Rect2(1600, 650, 240, 18), Rect2(2080, 760, 200, 18)],
+		"enemies": [
+			{"type": "gatto", "pos": Vector2(450, 960)},
+			{"type": "statua", "pos": Vector2(930, 616)},
+			{"type": "vespa", "pos": Vector2(1500, 380)},
+			{"type": "statua", "pos": Vector2(2350, 946)},
+		],
+		"decor": [
+			{"kind": "tree", "pos": Vector2(180, 980)},
+			{"kind": "lamp", "pos": Vector2(560, 980)},
+			{"kind": "palm", "pos": Vector2(1000, 980)},
+			{"kind": "fountain", "pos": Vector2(1300, 925)},
+			{"kind": "tree", "pos": Vector2(1720, 980)},
+			{"kind": "lamp", "pos": Vector2(2200, 980)},
+			{"kind": "cypress", "pos": Vector2(2460, 980)},
+		],
 	},
 	{
 		"name": "Belvedere di San Leucio",
+		"subtitle": "La città della seta",
 		"theme": "belvedere",
-		"platforms": [Rect2(160, 500, 140, 24), Rect2(360, 380, 140, 24), Rect2(560, 260, 140, 24), Rect2(780, 380, 140, 24), Rect2(980, 500, 140, 24)],
-		"enemies": [{"type": "vespa", "pos": Vector2(650, 150)}, {"type": "statua", "pos": Vector2(900, 610)}, {"type": "gatto", "pos": Vector2(250, 618)}],
+		"size": Vector2(2560, 1080),
+		"floor": 980.0,
+		"blocks": [Rect2(520, 880, 480, 100), Rect2(1000, 780, 520, 200), Rect2(1520, 700, 360, 280)],
+		"ledges": [Rect2(220, 800, 180, 18), Rect2(1120, 560, 200, 18), Rect2(1640, 480, 200, 18), Rect2(2120, 720, 220, 18)],
+		"enemies": [
+			{"type": "gatto", "pos": Vector2(760, 860)},
+			{"type": "statua", "pos": Vector2(1700, 666)},
+			{"type": "vespa", "pos": Vector2(1250, 380)},
+			{"type": "vespa", "pos": Vector2(2250, 520)},
+			{"type": "gatto", "pos": Vector2(2200, 960)},
+		],
+		"decor": [
+			{"kind": "cypress", "pos": Vector2(150, 980)},
+			{"kind": "banner", "pos": Vector2(1260, 200)},
+			{"kind": "vase", "pos": Vector2(1580, 700)},
+			{"kind": "column", "pos": Vector2(1950, 980)},
+			{"kind": "lamp", "pos": Vector2(2050, 980)},
+			{"kind": "cypress", "pos": Vector2(2460, 980)},
+		],
 	},
 	{
 		"name": "Cortile d'Onore",
+		"subtitle": "Il Custode della Reggia",
 		"theme": "oro",
-		"platforms": [Rect2(200, 480, 180, 24), Rect2(900, 480, 180, 24), Rect2(550, 330, 180, 24)],
-		"enemies": [{"type": "custode", "pos": Vector2(960, 580)}],
+		"size": Vector2(1920, 1080),
+		"floor": 980.0,
+		"blocks": [],
+		"ledges": [Rect2(300, 770, 240, 18), Rect2(1380, 770, 240, 18), Rect2(840, 610, 240, 18)],
+		"enemies": [{"type": "custode", "pos": Vector2(1400, 900)}],
+		"decor": [
+			{"kind": "column", "pos": Vector2(170, 980)},
+			{"kind": "torch", "pos": Vector2(330, 700)},
+			{"kind": "banner", "pos": Vector2(620, 160)},
+			{"kind": "statue", "pos": Vector2(960, 980)},
+			{"kind": "banner", "pos": Vector2(1300, 160)},
+			{"kind": "torch", "pos": Vector2(1590, 700)},
+			{"kind": "column", "pos": Vector2(1750, 980)},
+		],
 	},
 ]
 
 
 static func build(idx: int) -> Dictionary:
 	var r: Dictionary = ROOMS[idx]
-	var solids: Array = WALLS.duplicate()
-	solids.append_array(r["platforms"])
 	return {
 		"name": r["name"],
+		"subtitle": r["subtitle"],
 		"theme": r["theme"],
-		"solids": solids,
+		"size": r["size"],
+		"floor": r["floor"],
+		"blocks": r["blocks"],
+		"ledges": r["ledges"],
 		"enemies": r["enemies"],
+		"decor": r["decor"],
 		"boss": idx == COUNT - 1,
 	}
 
 
+## Collisioni solide: soffitto, pavimento, pareti sopra i portali, blocchi e grate chiuse.
+static func solids(room: Dictionary, left_open: bool, right_open: bool) -> Array:
+	var size: Vector2 = room["size"]
+	var fy: float = room["floor"]
+	var door_top := fy - DOOR_H
+	var out: Array = [
+		Rect2(-200, -200, size.x + 400.0, 200),
+		Rect2(-200, fy, size.x + 400.0, size.y - fy + 200.0),
+		Rect2(-200, -200, 200.0 + EDGE, door_top + 200.0),
+		Rect2(size.x - EDGE, -200, 200.0 + EDGE, door_top + 200.0),
+	]
+	out.append_array(room["blocks"])
+	if not left_open:
+		out.append(Rect2(-200, door_top, 240, DOOR_H))
+	if not right_open:
+		out.append(Rect2(size.x - 40.0, door_top, 240, DOOR_H))
+	return out
+
+
 ## Punti in cui compaiono i giocatori entrando da sinistra (true) o da destra (false).
-static func entry_points(from_left: bool) -> Array:
+static func entry_points(room: Dictionary, from_left: bool) -> Array:
+	var size: Vector2 = room["size"]
+	var fy: float = room["floor"]
 	var out: Array = []
 	for i in 4:
-		out.append(Vector2(120 + i * 44, 610) if from_left else Vector2(1160 - i * 44, 610))
+		out.append(Vector2(110 + i * 44, fy - 30.0) if from_left else Vector2(size.x - 110.0 - i * 44, fy - 30.0))
 	return out
