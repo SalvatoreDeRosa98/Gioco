@@ -1,0 +1,81 @@
+{
+	"STYLE": "Illustrazione per videogioco 2D a scorrimento laterale, dipinta a mano in digitale. Stile fiabesco e malinconico: contorni d'inchiostro morbidi e leggermente irregolari, masse scure e poco sature, poche luci calde e brillanti che guidano lo sguardo, pennellate visibili ma pulite, atmosfera notturna con foschia e profondità atmosferica. Vista laterale ortogonale, orizzonte basso, nessuna prospettiva marcata. Nessun testo, nessuna scritta, nessun logo, nessun personaggio salvo dove richiesto.",
+	"assets": [
+		{
+			"out": "src/assets/art/characters/pulcinella.png",
+			"aspect": "1:1",
+			"chroma": true,
+			"prompt": "Personaggio protagonista, vista laterale verso destra, figura intera e centrata, in piedi: un piccolo cavaliere ispirato a Pulcinella, proporzioni infantili (testa grande, corpo piccolo). Camicione bianco largo e svasato fino alle ginocchia, cintura nera sottile, pantaloni bianchi, scarpette nere. Maschera nera sulla parte alta del viso con naso adunco, due occhi bianchi luminosi nella maschera. Alto cappello bianco a cono (coppolone) leggermente piegato all'indietro. Lunga sciarpa rossa che svolazza dietro. Tiene una piccola spada sottile abbassata. Silhouette chiarissima e leggibile."
+		},
+		{
+			"out": "src/assets/art/characters/gatto.png",
+			"aspect": "1:1",
+			"chroma": true,
+			"prompt": "Nemico, vista laterale verso destra, figura intera centrata: un gatto randagio fatto d'ombra, nero con riflessi viola, schiena inarcata, coda lunga e sottile, orecchie appuntite, due occhi viola luminosi. Minaccioso ma elegante."
+		},
+		{
+			"out": "src/assets/art/characters/vespa.png",
+			"aspect": "1:1",
+			"chroma": true,
+			"prompt": "Nemico volante, vista laterale verso destra, figura intera centrata: una grande vespa dorata con strisce nere, ali traslucide azzurrine, addome che brilla debolmente di luce arancione, occhi rossi luminosi, pungiglione nero."
+		},
+		{
+			"out": "src/assets/art/characters/statua.png",
+			"aspect": "1:1",
+			"chroma": true,
+			"prompt": "Nemico, vista laterale verso destra, figura intera centrata: statua classica di marmo bianco dei giardini della Reggia di Caserta, figura drappeggiata su un piccolo piedistallo, un braccio alzato, crepe sottili che emettono luce azzurra, occhi azzurri luminosi."
+		},
+		{
+			"out": "src/assets/art/characters/custode.png",
+			"aspect": "1:1",
+			"chroma": true,
+			"prompt": "Boss, vista laterale verso destra, figura intera centrata: Il Custode della Reggia, guardiano monumentale in armatura dorata borbonica, mantello rosso scuro, elmo con pennacchio rosso e visiera da cui escono occhi arancioni luminosi, giglio borbonico luminoso al centro del petto, grande alabarda. Imponente, verticale, simmetrico."
+		},
+		{
+			"out": "src/assets/art/piazza/far.png",
+			"aspect": "21:9",
+			"refs": ["src/assets/photos/piazza_dante.jpg"],
+			"prompt": "Strato di sfondo LONTANO per l'area 'Piazza Dante' di Caserta, di notte con luna: skyline basso di palazzi, campanili e cupole in silhouette blu scurissimo, poche finestre accese calde, foschia blu verso il basso. Il cielo in alto deve essere un colore piatto blu notte uniforme (verrà sostituito). Se è presente una foto, usala solo come riferimento per le architetture."
+		},
+		{
+			"out": "src/assets/art/piazza/mid.png",
+			"aspect": "21:9",
+			"chroma": true,
+			"refs": ["src/assets/photos/piazza_dante.jpg"],
+			"prompt": "Strato di sfondo MEDIO per l'area 'Piazza Dante' di Caserta, di notte: fila continua di palazzi neoclassici a tre piani con portici ad arco al piano terra illuminati di arancione caldo, finestre con persiane alcune accese, balconi in ferro, lampioni. Colori blu-ardesia scuri. La base dei palazzi tocca il bordo inferiore dell'immagine. Se è presente una foto, usala come riferimento per le facciate."
+		},
+		{
+			"out": "src/assets/art/strada/mid.png",
+			"aspect": "21:9",
+			"chroma": true,
+			"refs": ["src/assets/photos/corso_trieste.jpg"],
+			"prompt": "Strato di sfondo MEDIO per l'area 'Corso Trieste' di Caserta, al crepuscolo sotto la pioggia: lungo porticato commerciale con colonne e archi, vetrine illuminate di arancione e ambra, insegne senza testo, riflessi bagnati, palazzi sopra con finestre. Toni viola-bordeaux scuri. La base tocca il bordo inferiore."
+		},
+		{
+			"out": "src/assets/art/giardino/mid.png",
+			"aspect": "21:9",
+			"chroma": true,
+			"refs": ["src/assets/photos/villa_comunale.jpg"],
+			"prompt": "Strato di sfondo MEDIO per l'area 'Villa Comunale' di Caserta, di notte al chiaro di luna: grandi alberi con chiome tondeggianti, palme, siepi basse, statue classiche su piedistalli, qualche lampione caldo, lucciole. Verdi scuri e profondi con bordi illuminati dalla luna. La base tocca il bordo inferiore."
+		},
+		{
+			"out": "src/assets/art/belvedere/far.png",
+			"aspect": "21:9",
+			"refs": ["src/assets/photos/belvedere_san_leucio.jpg"],
+			"prompt": "Strato di sfondo LONTANO per l'area 'Belvedere di San Leucio', all'alba nella nebbia: colline morbide e sovrapposte, sulla collina il lungo edificio del Real Belvedere con file di finestre e torretta dell'orologio, cipressi, foschia rosata e azzurra. Cielo in alto colore piatto uniforme (verrà sostituito)."
+		},
+		{
+			"out": "src/assets/art/oro/far.png",
+			"aspect": "21:9",
+			"refs": ["src/assets/photos/reggia_facciata.jpg"],
+			"prompt": "Strato di sfondo LONTANO per l'area 'Cortile d'Onore' della Reggia di Caserta, di notte: la lunghissima facciata della Reggia con quattro ordini di finestre ad arco, alcune accese d'oro, corpo centrale con frontone, balaustra in cima, toni bruno-dorati scurissimi, foschia calda in basso. Cielo in alto colore piatto uniforme (verrà sostituito)."
+		},
+		{
+			"out": "src/assets/art/oro/mid.png",
+			"aspect": "21:9",
+			"chroma": true,
+			"refs": ["src/assets/photos/reggia_vestibolo.jpg"],
+			"prompt": "Strato di sfondo MEDIO per il Cortile d'Onore della Reggia di Caserta: colonnato monumentale con colonne scanalate e archi, nicchie con statue classiche, stendardi rossi con gigli dorati, torce accese, raggi di luce calda che scendono dall'alto. Toni oro e bruno scuri. La base tocca il bordo inferiore."
+		}
+	]
+}
