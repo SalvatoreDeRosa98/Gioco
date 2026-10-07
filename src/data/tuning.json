@@ -1,0 +1,31 @@
+{
+	"player": {
+		"speed": 270,
+		"accel_ground": 2600,
+		"accel_air": 1800,
+		"gravity": 1700,
+		"fall_gravity_mult": 1.5,
+		"max_fall": 950,
+		"jump_velocity": -560,
+		"jump_cut": 0.45,
+		"coyote": 0.1,
+		"jump_buffer": 0.12,
+		"dash_speed": 640,
+		"dash_time": 0.16,
+		"dash_cooldown": 0.55,
+		"attack_time": 0.2,
+		"attack_cooldown": 0.28,
+		"pogo_velocity": -430,
+		"max_hp": 5
+	},
+	"enemies": {
+		"gatto": {"hp": 3, "speed": 75, "damage": 1, "coins": 2},
+		"vespa": {"hp": 2, "speed": 130, "damage": 1, "coins": 2},
+		"statua": {"hp": 6, "speed": 0, "damage": 1, "coins": 4, "fire_every": 2.2, "bullet_speed": 330},
+		"custode": {"hp": 40, "hp_per_player": 15, "speed": 120, "damage": 2, "coins": 60}
+	},
+	"rewards": {
+		"heal_chance": 0.12,
+		"room_clear_coins": 10
+	}
+}
