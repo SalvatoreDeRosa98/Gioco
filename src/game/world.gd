@@ -54,7 +54,12 @@ func _ready() -> void:
 
 	if multiplayer.is_server():
 		_setup_roster()
-		_load_room.rpc(0, true, false)
+		# Solo per test visivi: godot --path src -- --host --autostart --room=3
+		var start_room := 0
+		for a in OS.get_cmdline_user_args():
+			if a.begins_with("--room="):
+				start_room = clampi(int(a.trim_prefix("--room=")), 0, Room.COUNT - 1)
+		_load_room.rpc(start_room, true, false)
 
 
 func _input(event: InputEvent) -> void:
