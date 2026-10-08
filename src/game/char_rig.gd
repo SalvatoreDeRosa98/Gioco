@@ -35,10 +35,10 @@ const WRIST := Vector2(366, 617)
 const CUFF_RECT := Rect2(333, 594, 64, 26)
 const CUFF_FADE := Vector2(0.7, 1.3)
 ## Perni delle gambe e punti del piede (tallone, punta, suola) usati per appoggiare a terra.
-const HIP_FRONT := Vector2(332, 792)
-const KNEE_FRONT := Vector2(336, 872)
-const HIP_BACK := Vector2(392, 792)
-const KNEE_BACK := Vector2(374, 866)
+const HIP_FRONT := Vector2(332, 550)
+const KNEE_FRONT := Vector2(336, 780)
+const HIP_BACK := Vector2(392, 550)
+const KNEE_BACK := Vector2(374, 780)
 ## Altri perni del corpo: spalla (manica), base del cappello, nodo della sciarpa, bacino (inclinazione).
 const SHOULDER := Vector2(350, 372)
 const HAT_PIVOT := Vector2(366, 158)
@@ -456,7 +456,7 @@ static func pose_slash(k: float, side: float) -> Dictionary:
 		var t = k / 0.25
 		p = {
 			"sword": -2.8 * dir * t,
-			"arm": -0.8 * dir * t,
+			"arm": -1.5 * dir * t,
 			"lean": -0.3 * t,
 			"squash": 0.15 * t,
 			"leg_front": Vector2(-0.4 * t, 0.5 * t),
@@ -468,7 +468,7 @@ static func pose_slash(k: float, side: float) -> Dictionary:
 		var t = (k - 0.25) / 0.15
 		p = {
 			"sword": lerpf(-2.8 * dir, 1.2 * dir, t),
-			"arm": lerpf(-0.8 * dir, 0.7 * dir, t),
+			"arm": lerpf(-1.5 * dir, 1.2 * dir, t),
 			"lean": lerpf(-0.3, 0.6, t),
 			"squash": lerpf(0.15, -0.1, t),
 			"leg_front": Vector2(lerpf(-0.4, -1.0, t), lerpf(0.5, 0.0, t)),
@@ -482,7 +482,7 @@ static func pose_slash(k: float, side: float) -> Dictionary:
 		var e = 1.0 - pow(1.0 - t, 3.0)
 		p = {
 			"sword": 1.2 * dir + 0.1 * dir * e,
-			"arm": 0.7 * dir - 0.1 * dir * e,
+			"arm": 1.2 * dir - 0.1 * dir * e,
 			"lean": 0.6 + 0.05 * e,
 			"squash": -0.1 + 0.05 * e,
 			"leg_front": Vector2(-1.0, 0.0),
@@ -496,7 +496,7 @@ static func pose_slash(k: float, side: float) -> Dictionary:
 		var e = t * t
 		p = {
 			"sword": lerpf(1.3 * dir, 0.0, e),
-			"arm": lerpf(0.6 * dir, 0.0, e),
+			"arm": lerpf(1.1 * dir, 0.0, e),
 			"lean": lerpf(0.65, 0.0, e),
 			"squash": lerpf(-0.05, 0.0, e),
 			"leg_front": Vector2(-1.0 * (1-e), 0.0),

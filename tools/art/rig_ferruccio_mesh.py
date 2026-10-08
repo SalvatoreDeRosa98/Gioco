@@ -37,7 +37,7 @@ OUT = ROOT / "src/assets/art/characters/ferruccio_rig"
 TILE_DIV = 4  # la mappa dei pesi è campionata solo ai vertici: 1/4 di risoluzione basta
 
 # --- Gambe (tagli in pixel dell'immagine 679x1024 prodotta da import_art.py) --------------------
-HEM_Y = 772  # sotto l'orlo del camicione iniziano le gambe
+HEM_Y = 550  # sotto l'orlo del camicione iniziano le gambe
 # Confine tra le due gambe: piega dei calzoni, poi calza vicina, poi bordo della scarpa vicina.
 _SPLIT = [(372, HEM_Y), (372, 868), (356, 880), (356, 955), (372, 958), (395, 966), (418, 976), (440, 992), (440, 1024)]
 LEG_FRONT = [(280, HEM_Y)] + _SPLIT + [(280, 1024)]
@@ -80,7 +80,7 @@ TAIL_MIN_Y = 330
 # --- Manica ---------------------------------------------------------------------------------------
 SLEEVE = [(298, 338), (392, 338), (408, 450), (414, 560), (402, 600), (398, 621), (332, 621),
           (300, 592), (288, 500), (290, 400)]
-SLEEVE_RAMP = (390.0, 575.0)  # dalla spalla (fermo) al polsino (segue del tutto il braccio)
+SLEEVE_RAMP = (350.0, 420.0)  # dalla spalla (fermo) al polsino (segue del tutto il braccio)
 
 # --- Orlo -----------------------------------------------------------------------------------------
 HEM_RAMP = (560.0, 765.0)

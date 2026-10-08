@@ -42,7 +42,7 @@ uniform float knee_soft = 30.0;
 // Tinta della gamba lontana (più scura: è in ombra, dietro); la coda della sciarpa non cambia.
 uniform vec4 back_shade : source_color = vec4(0.8, 0.8, 0.86, 1.0);
 // Da questa altezza (frazione della tela) lo strato di dietro è gamba.
-uniform float back_leg_from = 0.745;
+uniform float back_leg_from = 0.537;
 group_uniforms;
 
 group_uniforms body;
