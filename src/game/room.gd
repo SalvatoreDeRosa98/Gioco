@@ -145,6 +145,14 @@ const EXPLORATION_LEDGES := [
 ]
 const SECRETS := [Vector2(1150, 500), Vector2(1140, 500), Vector2(1200, 510), Vector2(1510, 400), Vector2(950, 610)]
 const BRANCHES := {0: 2, 2: 0, 1: 3, 3: 1}
+## Una sola statua per area sblocca il salvataggio; quella alta della Villa è esclusa.
+const SAVE_STATUES := [Vector2(2320, 946), Vector2(2320, 946), Vector2(2350, 946), Vector2(1700, 666)]
+
+static func save_station_id(idx: int) -> String:
+	if idx >= SAVE_STATUES.size():
+		return ""
+	var pos: Vector2 = SAVE_STATUES[idx]
+	return "%d:statua:%d:%d" % [idx, roundi(pos.x), roundi(pos.y)]
 
 static func build(idx: int) -> Dictionary:
 	var r: Dictionary = ROOMS[idx]

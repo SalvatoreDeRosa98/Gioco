@@ -505,7 +505,7 @@ func _hit_enemy(e: Node, dmg: int, col: Color, dir: float, down: bool = false) -
 
 func _on_enemy_killed(e: Node) -> void:
 	defeated[str(e.get_meta("save_id"))] = true
-	if e.kind == "statua":
+	if e.kind == "statua" and str(e.get_meta("save_id")) == Room.save_station_id(room_index):
 		var floor_y := float(room["floor"])
 		for surface in room["ledges"] + room["blocks"]:
 			var r: Rect2 = surface
@@ -630,6 +630,9 @@ func _build_stations() -> void:
 		n.queue_free()
 	for id in stations:
 		var data: Dictionary = stations[id]
+		# Anche i vecchi salvataggi non mostrano più incudini sulle statue escluse.
+		if str(id) != Room.save_station_id(int(data["room"])):
+			continue
 		if int(data["room"]) != room_index:
 			continue
 		var node := StationScript.new()

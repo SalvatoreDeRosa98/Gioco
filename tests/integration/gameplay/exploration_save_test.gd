@@ -33,6 +33,10 @@ func _run() -> void:
 	var statue: Node = null
 	for enemy in get_nodes_in_group("enemies"):
 		if not enemy.is_queued_for_deletion() and enemy.kind == "statua":
+			if str(enemy.get_meta("save_id")) != Room.save_station_id(2):
+				world._hit_enemy(enemy, 99, Color.WHITE, 1.0)
+				check(world.stations.is_empty(), "Statua sulla piattaforma della Villa non crea incudine")
+				continue
 			statue = enemy
 			break
 	check(statue != null, "Statua presente")

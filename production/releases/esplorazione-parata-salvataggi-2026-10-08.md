@@ -15,3 +15,5 @@ Il ritmo del combattimento e i percorsi richiedono ancora un playtest umano comp
 Aggiornamento playtest: rimossi tutti i portali visibili e il testo del passaggio segreto. Il collegamento si attiva solo da fermi sulla piattaforma più alta, premendo W/E; non appare alcun oggetto o suggerimento. Test automatici superati e nuova build Windows verificata.
 
 Aggiornamento grafico: le stazioni di salvataggio sono piccole incudini d'acciaio su ceppo di legno, coerenti con il mestiere di Ferruccio. Rimossi bagliore, sagoma e anello dell'altare. Salvataggio e riposo invariati; verifica visiva e test superati.
+
+Salvataggi più rari: soltanto una statua designata per area genera un'incudine. Rimossa quella sulla piattaforma alta della Villa Comunale, anche nei vecchi salvataggi. La statua rimane un nemico ordinario. Test della statua esclusa e nuova build verificati.
