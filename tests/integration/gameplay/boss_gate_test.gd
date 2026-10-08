@@ -26,10 +26,15 @@ func _run() -> void:
 	check(world.room_index == Room.ARCHIVES_ROOM, "Il confine non permette di saltare l'obiettivo")
 	for id in ["archive_1", "archive_2", "archive_3"]:
 		world.story.mark_seen(id)
+	world.story.set_var("father_registry", "conservato")
+	world._refresh_choice_effects()
+	check(not world._right_open(), "Senza i sigilli di tutti i quartieri il Cortile resta chiuso")
+	for id in Room.Expansion.DISTRICT_SEALS:
+		world.story.mark_seen(id)
 	for decision in ["conservato", "bruciato"]:
 		world.story.set_var("father_registry", decision)
 		world._refresh_choice_effects()
-		check(world._right_open(), "Entrambe le decisioni aprono il Cortile: " + decision)
+		check(world._right_open(), "Tutti i sigilli e le decisioni aprono il Cortile: " + decision)
 	world._go(4, true)
 	await process_frame
 	player.set_physics_process(false)

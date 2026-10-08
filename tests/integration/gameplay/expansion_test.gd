@@ -25,9 +25,13 @@ func _run() -> void:
 	check(not w._right_open(), "Registro da solo non apre più il Cortile")
 	for id in ["archive_1", "archive_2", "archive_3"]:
 		w.story.mark_seen(id)
-	check(w._right_open(), "Registro e tre frammenti aprono il boss")
+	check(not w._right_open(), "Frammenti senza sigilli di quartiere non aprono il boss")
+	for id in Expansion.DISTRICT_SEALS:
+		w.story.mark_seen(id)
+	check(w._right_open(), "Registro, frammenti e sigilli aprono il boss")
 	w.story.set_var("father_registry", "bruciato")
 	check(w._right_open(), "Bruciare il registro permette comunque il finale")
+	w.story.seen.erase("sluice")
 	w._go(9, true)
 	check(not w._right_open(), "Chiusa blocca il bordo delle Cisterne")
 	w.story.mark_seen("sluice")
@@ -36,10 +40,11 @@ func _run() -> void:
 	check(not w._right_open(), "Capitano sorveglia l'uscita della Caserma")
 	w.story.mark_seen("captain_defeated")
 	check(w._right_open(), "Capitano sconfitto apre percorso alternativo")
+	for id in Expansion.DISTRICT_SEALS: w.story.mark_seen(id)
 	w._save_at(Vector2(110, 980))
 	w.story.seen.clear()
 	w._restore_save()
-	check(w.story.times_seen("sluice") > 0 and Expansion.archive_ready(w.story), "Meccanismi e frammenti persistono nel salvataggio")
+	check(w.story.times_seen("sluice") > 0 and Expansion.archive_ready(w.story) and Expansion.all_seals_ready(w.story), "Meccanismi e frammenti persistono nel salvataggio")
 	DirAccess.remove_absolute(w.save_path)
 	main.queue_free()
 	await process_frame

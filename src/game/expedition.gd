@@ -66,7 +66,12 @@ func activate(m: Dictionary) -> void:
 		lines.append({"text": line})
 	world.hold(true)
 	world.narrate({"id": m.id + "_reading", "lines": lines})
-	world._hud.toast("Testimonianze %d / 3" % Data.fragment_count(world.story) if m.kind == "fragment" else "Meccanismo attivato")
+	if str(m.id).begins_with("archive_"):
+		world._hud.toast("Testimonianze %d / 3" % Data.fragment_count(world.story))
+	elif m.id in Data.DISTRICT_SEALS:
+		world._hud.toast("Sigillo quartiere risvegliato (%d/%d)" % [Data.seals_count(world.story), Data.seals_total()])
+	else:
+		world._hud.toast("Meccanismo attivato")
 
 func _draw() -> void:
 	for i in marks.size():

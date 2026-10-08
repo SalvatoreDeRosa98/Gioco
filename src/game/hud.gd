@@ -4,6 +4,7 @@ extends Control
 
 const MASK_TEX := preload("res://assets/art/items/maschera.png")
 const COIN_TEX := preload("res://assets/art/items/moneta.png")
+const DialogueBoxScript := preload("res://game/dialogue_box.gd")
 ## Altezza a schermo di una maschera-vita, in pixel.
 const MASK_H := 40.0
 const TITLE_TIME := 4.4
@@ -89,9 +90,17 @@ func _draw() -> void:
 		var forge_hint := "W / E  Esci · B  Apri la fucina" if world.player.position.x < 180 else "B  Apri la fucina · Uscita a sinistra"
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 58), forge_hint, 22, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	elif world.room_index == Room.ARCHIVES_ROOM and not world.is_talking():
-		var objective := "Testimonianze %d / 3 · " % Room.Expansion.fragment_count(world.story)
-		objective += "Ascolta il ricordo di Gaetano nella Villa" if world.story.get_var("father_registry") == "" else "Ricordo del padre ricostruito"
-		Art.text(self, Art.body_font(), Vector2(0, vp.y - 58), objective, 21, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+		var seals_done := Room.Expansion.seals_count(world.story)
+		var seals_tot := Room.Expansion.seals_total()
+		var fragments := Room.Expansion.fragment_count(world.story)
+		var objective := "Sigilli quartieri %d/%d · Testimonianze %d/3" % [seals_done, seals_tot, fragments]
+		if seals_done < seals_tot:
+			objective += " · Esplora tutti i quartieri per aprire il Cortile"
+		elif world.story.get_var("father_registry") == "":
+			objective += " · Ascolta il ricordo di Gaetano nella Villa"
+		else:
+			objective += " · Il portale del Custode è aperto!"
+		Art.text(self, Art.body_font(), Vector2(0, vp.y - 58), objective, 20, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	elif world.room_index in [8, 9, 10] and not world._right_open() and not world.is_talking():
 		var objective: String = {8: "Sconfiggi il capitano per raggiungere il Belvedere", 9: "Aziona la chiusa sul ballatoio più alto", 10: "Libera il telaio e sconfiggi la Madre di Marmo"}[world.room_index]
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 58), objective, 21, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
@@ -102,11 +111,14 @@ func _draw_vitals() -> void:
 	# Alone scuro dietro all'HUD per leggibilità su qualunque sfondo.
 	Art.shaded_ellipse(self, Vector2(130, 80), Vector2(230, 120), Color(0, 0, 0, 0.4), Color(0, 0, 0, 0.0), 24)
 	if me:
-		var parry_text: String = "F  Parata pronta" if me.parry_cooldown <= 0.0 else "Parata %.1f s" % me.parry_cooldown
+		var parry_key := "LB" if DialogueBoxScript.pad else "F"
+		var parry_text: String = "%s  Parata pronta" % parry_key if me.parry_cooldown <= 0.0 else "Parata %.1f s" % me.parry_cooldown
 		Art.text(self, Art.body_font(), Vector2(34, 158), parry_text, 18, Art.CREMA)
 		Art.text(self, Art.body_font(), Vector2(34, 182), me.dash_status(), 18, Art.CREMA)
 		Art.text(self, Art.body_font(), Vector2(34, 206), "Accessori %d/%d" % [world.equipped.size(), world.accessory_slots()], 16, Art.CREMA)
-		Art.text(self, Art.body_font(), Vector2(34, 230), "R  Braci %d/12  ·  M Mappa" % me.embers, 16, Art.OCRA)
+		var heal_key := "LT" if DialogueBoxScript.pad else "R"
+		var map_key := "Back" if DialogueBoxScript.pad else "M"
+		Art.text(self, Art.body_font(), Vector2(34, 230), "%s  Braci %d/12  ·  %s Mappa" % [heal_key, me.embers, map_key], 16, Art.OCRA)
 		var hp := int(me.hp)
 		for i in int(me.max_hp):
 			var pulse := 0.6 + 0.4 * sin(_t * 3.0 + i * 0.6) if hp <= 1 and i == 0 else 1.0

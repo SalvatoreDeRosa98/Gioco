@@ -147,11 +147,12 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if _map != null and _map.opened:
-		if event.is_action_pressed("ui_cancel") or (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M):
+		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("map") or (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M):
 			_map.toggle()
 		get_viewport().set_input_as_handled()
 		return
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M and not is_talking() and not in_cutscene() and not player.dead:
+	var map_pressed: bool = event.is_action_pressed("map") or (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M)
+	if map_pressed and not is_talking() and not in_cutscene() and not player.dead:
 		_map.toggle()
 		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F12 and event.ctrl_pressed and event.shift_pressed:
@@ -386,7 +387,7 @@ func _left_open() -> bool:
 
 func _right_open() -> bool:
 	if room_index == Room.ARCHIVES_ROOM:
-		return story.get_var("father_registry") in ["conservato", "bruciato"] and Room.Expansion.archive_ready(story)
+		return story.get_var("father_registry") in ["conservato", "bruciato"] and Room.Expansion.archive_ready(story) and Room.Expansion.all_seals_ready(story)
 	if room_index == 8:
 		return story.times_seen("captain_defeated") > 0
 	if room_index == 9:
@@ -632,7 +633,7 @@ func boss() -> Node:
 
 func _spawn_enemy(kind: String, pos: Vector2) -> void:
 	var e
-	if kind in ["capitano", "madre"]:
+	if kind in ["capitano", "madre", "guardia", "cavaliere", "spettro"]:
 		e = preload("res://game/elite.gd").new()
 	else:
 		e = preload("res://game/duelist.gd").new() if kind == "duellante" else EnemyScript.new()

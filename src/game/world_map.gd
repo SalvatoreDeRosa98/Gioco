@@ -1,4 +1,5 @@
 extends CanvasLayer
+const DialogueBoxScript := preload("res://game/dialogue_box.gd")
 ## Carta delle aree visitate: conserva l'esplorazione attraverso story.seen.
 const PLACES := {
 	0: Vector2(100, 320), 1: Vector2(310, 320), 2: Vector2(520, 320),
@@ -59,5 +60,7 @@ func _draw_map() -> void:
 		Art.text(canvas, Art.body_font(), p + Vector2(-90, 5), r.name, 14, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 180)
 		if idx == world.room_index:
 			canvas.draw_circle(p + Vector2(0, dims.y / 2 + 10), 4, Art.CREMA)
-	Art.text(canvas, Art.body_font(), Vector2(40, 670), "M / Esc  Chiudi   ·   Punto bianco: sei qui   ·   Esplora per completare la carta", 20, Art.CREMA)
-	Art.text(canvas, Art.body_font(), Vector2(40, 701), "Q  Catena   ·   V  Martello   ·   R  Cura con 4 braci   ·   S + attacco  Rimbalzo", 17, Art.OCRA)
+	var close_txt := "Select / B  Chiudi" if DialogueBoxScript.pad else "M / Esc  Chiudi"
+	var skills_txt := "RT  Catena   ·   B  Martello   ·   LT  Cura con 4 braci   ·   Giù + X  Rimbalzo" if DialogueBoxScript.pad else "Q  Catena   ·   V  Martello   ·   R  Cura con 4 braci   ·   S + attacco  Rimbalzo"
+	Art.text(canvas, Art.body_font(), Vector2(40, 670), "%s   ·   Punto bianco: sei qui   ·   Esplora per completare la carta" % close_txt, 20, Art.CREMA)
+	Art.text(canvas, Art.body_font(), Vector2(40, 701), skills_txt, 17, Art.OCRA)

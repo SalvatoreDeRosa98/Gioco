@@ -32,6 +32,12 @@ func setup(data: Dictionary, owner_world: Node) -> void:
 	coins = int(_cfg.coins)
 	if kind == "madre":
 		half = Vector2(40, 64)
+	elif kind == "cavaliere":
+		half = Vector2(28, 48)
+	elif kind == "guardia":
+		half = Vector2(20, 38)
+	elif kind == "spettro":
+		half = Vector2(22, 34)
 	collision_layer = 4
 	collision_mask = 1 | 4
 	var cs := CollisionShape2D.new()
@@ -42,6 +48,12 @@ func setup(data: Dictionary, owner_world: Node) -> void:
 	add_to_group("enemies")
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 
+	var sm := ShaderMaterial.new()
+
+	sm.shader = preload("res://game/shaders/canvas_char_volume.gdshader")
+
+	material = sm
+
 func _physics_process(delta: float) -> void:
 	if world.is_talking() or world.in_cutscene():
 		return
@@ -49,7 +61,10 @@ func _physics_process(delta: float) -> void:
 	_swing = maxf(0, _swing - delta)
 	_flash = maxf(0, _flash - delta)
 	touch_cd = maxf(0, touch_cd - delta)
-	velocity.y = minf(900, velocity.y + 1500 * delta)
+	if kind == "spettro":
+		velocity.y = sin(_timer * 3.5) * 45.0
+	else:
+		velocity.y = minf(900, velocity.y + 1500 * delta)
 	velocity.x = 0
 	var target = world.alive_player()
 	if target:
@@ -66,15 +81,31 @@ func _physics_process(delta: float) -> void:
 			_windup = false
 			_timer = float(_cfg.cooldown) * (0.8 if hp <= max_hp / 2 else 1.0)
 			_swing = 0.3
-			if kind == "madre":
-				var direction: Vector2 = _aim
-				for angle in ([-0.36, -0.18, 0.0, 0.18, 0.36] if _pattern % 2 else [-0.24, 0.0, 0.24]):
-					world.enemy_fire(position, direction.rotated(angle), 180, Color(0.6, 0.82, 1))
-			else:
-				if _pattern % 2:
-					world.enemy_shockwave(position + Vector2(0, half.y - 6))
-				else:
-					world.boss_sword_hit(position, position + Vector2(facing * float(_cfg.reach), 30), position.x)
+			match kind:
+				"madre":
+					var direction: Vector2 = _aim
+					for angle in ([-0.36, -0.18, 0.0, 0.18, 0.36] if _pattern % 2 else [-0.24, 0.0, 0.24]):
+						world.enemy_fire(position, direction.rotated(angle), 180, Color(0.6, 0.82, 1))
+				"guardia":
+					velocity.x = facing * 250.0
+					world.boss_sword_hit(position, position + Vector2(facing * float(_cfg.reach), 16), position.x)
+					Audio.sfx("fendente")
+				"cavaliere":
+					if _pattern % 2:
+						world.enemy_shockwave(position + Vector2(0, half.y - 6))
+						Audio.sfx("custode_urto")
+					else:
+						world.boss_sword_hit(position, position + Vector2(facing * float(_cfg.reach), 26), position.x)
+						Audio.sfx("fendente")
+				"spettro":
+					for angle in [-0.28, 0.0, 0.28]:
+						world.enemy_fire(position, _aim.rotated(angle), 170, Color(0.75, 0.45, 0.95))
+					Audio.sfx("custode_raffica")
+				_:
+					if _pattern % 2:
+						world.enemy_shockwave(position + Vector2(0, half.y - 6))
+					else:
+						world.boss_sword_hit(position, position + Vector2(facing * float(_cfg.reach), 30), position.x)
 			_pattern += 1
 	move_and_slide()
 	queue_redraw()
@@ -85,6 +116,8 @@ func take_hit(amount: int, push: Vector2 = Vector2.ZERO) -> bool:
 	_flash = 0.15
 	velocity += push * 80
 	if hp <= 0:
+		if _cfg.has("flag"):
+			world.story.seen[str(_cfg.flag)] = 1
 		queue_free()
 		return true
 	return false
@@ -95,7 +128,13 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0, Vector2(facing, 1))
 	draw_texture_rect(_tex, Rect2(Vector2(-size.x / 2, half.y - h), size), false, Color(1.4, 1.25, 1) if _flash > 0 else Color.WHITE)
 	if _windup:
-		var cue := "VENTAGLIO" if kind == "madre" else ("ONDA A TERRA" if _pattern % 2 else "FENDENTE")
+		var cue := "FENDENTE"
+		match kind:
+			"madre": cue = "VENTAGLIO"
+			"guardia": cue = "STOCCATA"
+			"cavaliere": cue = "URTO SISMICO" if _pattern % 2 else "FENDENTE PESANTE"
+			"spettro": cue = "RAFFICA SPETTRALE"
+			_: cue = "ONDA A TERRA" if _pattern % 2 else "FENDENTE"
 		Art.text(self, Art.body_font(), Vector2(-100, -h - 5), cue, 14, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, 200)
 	if _windup or _swing > 0:
 		draw_arc(Vector2(18, 0), float(_cfg.reach), -1.0, 0.65, 24, Color(Art.OCRA, 0.8), 3 if _swing > 0 else 1, true)

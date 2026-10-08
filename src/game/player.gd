@@ -571,7 +571,8 @@ func _update_tools(delta: float, axis: float, jump_pressed: bool) -> void:
 			_knock_t = 0.16
 			_air_jumps = int(_cfg.air_jumps)
 	grapple_anchor = Vector2.INF
-	if world.upgrades.has("grapple") and Input.is_physical_key_pressed(KEY_Q) and is_instance_valid(world.traversal):
+	var grapple_input := Input.is_action_pressed("grapple") or Input.is_physical_key_pressed(KEY_Q)
+	if world.upgrades.has("grapple") and grapple_input and is_instance_valid(world.traversal):
 		grapple_anchor = world.traversal.anchor(position, float(_cfg.grapple_range))
 		if grapple_anchor != Vector2.INF:
 			velocity = (grapple_anchor - position).normalized() * float(_cfg.grapple_speed)
@@ -580,7 +581,8 @@ func _update_tools(delta: float, axis: float, jump_pressed: bool) -> void:
 			if position.distance_to(grapple_anchor) < 35:
 				velocity *= 0.2
 	var cost := int(_cfg.ember_cost)
-	if Input.is_physical_key_pressed(KEY_R) and is_on_floor() and axis == 0 and attacking == 0 and _dash_t <= 0 and hp < max_hp and embers >= cost:
+	var heal_input := Input.is_action_pressed("heal") or Input.is_physical_key_pressed(KEY_R)
+	if heal_input and is_on_floor() and axis == 0 and attacking == 0 and _dash_t <= 0 and hp < max_hp and embers >= cost:
 		_heal_t += delta
 		velocity.x = 0
 		if _heal_t >= float(_cfg.heal_time):

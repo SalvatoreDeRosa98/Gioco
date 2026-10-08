@@ -185,7 +185,7 @@ func test_dialogues_json_is_consistent() -> void:
 			if marker.has("id"):
 				ids[marker.id] = true
 	for elite in expansion.elites.values():
-		ids[elite.flag] = true
+		if elite.has("flag"): ids[elite.flag] = true
 	for key in d.get("npcs", {}):
 		for e in (d["npcs"][key] as Dictionary).get("dialogue", []):
 			ids[str(e.get("id", ""))] = true

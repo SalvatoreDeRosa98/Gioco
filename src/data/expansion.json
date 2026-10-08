@@ -82,7 +82,14 @@
         {
           "type": "gatto",
           "pos": [
-            940,
+            750,
+            956
+          ]
+        },
+        {
+          "type": "guardia",
+          "pos": [
+            1280,
             956
           ]
         },
@@ -94,9 +101,16 @@
           ]
         },
         {
+          "type": "spettro",
+          "pos": [
+            2100,
+            750
+          ]
+        },
+        {
           "type": "gatto",
           "pos": [
-            1900,
+            2350,
             956
           ]
         }
@@ -175,9 +189,23 @@
       ],
       "enemies": [
         {
+          "type": "guardia",
+          "pos": [
+            550,
+            946
+          ]
+        },
+        {
           "type": "duellante",
           "pos": [
             900,
+            946
+          ]
+        },
+        {
+          "type": "guardia",
+          "pos": [
+            1350,
             946
           ]
         },
@@ -278,8 +306,29 @@
         {
           "type": "vespa",
           "pos": [
-            1060,
+            750,
             690
+          ]
+        },
+        {
+          "type": "spettro",
+          "pos": [
+            1150,
+            750
+          ]
+        },
+        {
+          "type": "spettro",
+          "pos": [
+            1650,
+            680
+          ]
+        },
+        {
+          "type": "statua",
+          "pos": [
+            2200,
+            946
           ]
         },
         {
@@ -358,10 +407,24 @@
       ],
       "enemies": [
         {
+          "type": "cavaliere",
+          "pos": [
+            750,
+            946
+          ]
+        },
+        {
           "type": "vespa",
           "pos": [
             1100,
             560
+          ]
+        },
+        {
+          "type": "vespa",
+          "pos": [
+            1520,
+            620
           ]
         },
         {
@@ -446,6 +509,13 @@
       ],
       "enemies": [
         {
+          "type": "guardia",
+          "pos": [
+            850,
+            946
+          ]
+        },
+        {
           "type": "gatto",
           "pos": [
             1050,
@@ -455,8 +525,15 @@
         {
           "type": "vespa",
           "pos": [
-            1650,
+            1450,
             590
+          ]
+        },
+        {
+          "type": "cavaliere",
+          "pos": [
+            1750,
+            946
           ]
         },
         {
@@ -599,6 +676,13 @@
           ]
         },
         {
+          "type": "spettro",
+          "pos": [
+            520,
+            1380
+          ]
+        },
+        {
           "type": "vespa",
           "pos": [
             280,
@@ -610,6 +694,20 @@
           "pos": [
             750,
             1040
+          ]
+        },
+        {
+          "type": "cavaliere",
+          "pos": [
+            640,
+            500
+          ]
+        },
+        {
+          "type": "statua",
+          "pos": [
+            320,
+            200
           ]
         }
       ],
@@ -728,10 +826,17 @@
           ]
         },
         {
-          "type": "gatto",
+          "type": "spettro",
           "pos": [
-            980,
-            1980
+            650,
+            1100
+          ]
+        },
+        {
+          "type": "spettro",
+          "pos": [
+            380,
+            1600
           ]
         },
         {
@@ -739,6 +844,13 @@
           "pos": [
             240,
             1966
+          ]
+        },
+        {
+          "type": "gatto",
+          "pos": [
+            980,
+            1980
           ]
         }
       ],
@@ -827,10 +939,24 @@
       ],
       "enemies": [
         {
+          "type": "guardia",
+          "pos": [
+            750,
+            940
+          ]
+        },
+        {
           "type": "duellante",
           "pos": [
             1500,
             940
+          ]
+        },
+        {
+          "type": "spettro",
+          "pos": [
+            1850,
+            610
           ]
         },
         {
@@ -841,9 +967,23 @@
           ]
         },
         {
+          "type": "guardia",
+          "pos": [
+            2400,
+            940
+          ]
+        },
+        {
+          "type": "cavaliere",
+          "pos": [
+            2700,
+            940
+          ]
+        },
+        {
           "type": "gatto",
           "pos": [
-            2800,
+            3150,
             960
           ]
         }
@@ -1104,6 +1244,36 @@
           "Dall'alto degli Archivi puoi tornare qui. Le strade degli artigiani si incrociano sopra quelle della corte."
         ]
       }
+    ],
+    "7": [
+      {
+        "kind": "fragment",
+        "id": "market_seal",
+        "label": "Esamina il registro daziario del Mercato",
+        "pos": [
+          1680,
+          956
+        ],
+        "text": [
+          "L'antico registro dei dazi del Mercato: Gaetano non pagava la gabella sulle parole libere.",
+          "Il sigillo del Mercato si ridesta nel palazzo: una via si rischiara."
+        ]
+      }
+    ],
+    "8": [
+      {
+        "kind": "fragment",
+        "id": "barracks_seal",
+        "label": "Esamina il registro d'armi della Caserma",
+        "pos": [
+          1780,
+          946
+        ],
+        "text": [
+          "Il registro della guarnigione reale: Ruggiero annotava le ronde per permettere a Ferruccio di passare.",
+          "Il sigillo della Caserma risponde: la Reggia avverte il richiamo."
+        ]
+      }
     ]
   },
   "interaction_radius": 66,
@@ -1156,6 +1326,48 @@
       "height": 185,
       "name": "La Madre di Marmo",
       "flag": "mother_defeated"
+    },
+    "guardia": {
+      "hp": 6,
+      "speed": 110,
+      "windup": 0.48,
+      "cooldown": 1.5,
+      "range": 130,
+      "reach": 95,
+      "damage": 1,
+      "coins": 6,
+      "image": "res://assets/art/characters/guardie/guardia_giovane.png",
+      "height": 130,
+      "name": "Guardia della Città",
+      "flag": "guardia_defeated"
+    },
+    "cavaliere": {
+      "hp": 10,
+      "speed": 55,
+      "windup": 0.72,
+      "cooldown": 2.0,
+      "range": 140,
+      "reach": 115,
+      "damage": 1,
+      "coins": 12,
+      "image": "res://assets/art/props/statua_cavaliere.png",
+      "height": 145,
+      "name": "Cavaliere di Pietra",
+      "flag": "cavaliere_defeated"
+    },
+    "spettro": {
+      "hp": 5,
+      "speed": 75,
+      "windup": 0.65,
+      "cooldown": 1.8,
+      "range": 280,
+      "reach": 80,
+      "damage": 1,
+      "coins": 8,
+      "image": "res://assets/art/bosses/regina_debiti.png",
+      "height": 135,
+      "name": "Spettro del Calcare",
+      "flag": "spettro_defeated"
     }
   },
   "vertical": {

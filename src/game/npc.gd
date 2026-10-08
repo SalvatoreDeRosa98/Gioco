@@ -95,7 +95,11 @@ func setup(k: String, pos: Vector2, w: Node) -> void:
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	var sm := ShaderMaterial.new()
+	sm.shader = preload("res://game/shaders/canvas_char_volume.gdshader")
+	material = sm
 	_overlay = Node2D.new()
+	_overlay.material = CanvasItemMaterial.new()
 	_overlay.z_as_relative = false
 	_overlay.z_index = OVERLAY_Z
 	_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR

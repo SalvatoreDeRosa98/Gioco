@@ -85,7 +85,9 @@ func _run() -> void:
 		for i in 20:
 			world._dialogue.debug_skip()
 		await create_timer(0.3).timeout
-	check(world._right_open(), "Tre frammenti e ricordo aprono fisicamente il Cortile")
+	check(not world._right_open(), "Senza sigilli dei quartieri il Cortile resta chiuso")
+	for id in preload("res://game/expansion_data.gd").DISTRICT_SEALS: world.story.mark_seen(id)
+	check(world._right_open(), "Tre frammenti, ricordo e sigilli aprono fisicamente il Cortile")
 	main.queue_free()
 	await process_frame
 	print("TRAVERSAL TEST: %d failure(s)" % failures)

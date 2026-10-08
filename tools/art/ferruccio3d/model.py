@@ -1,41 +1,27 @@
-"""Ferruccio in 3D: modello stilizzato e scheletro costruiti da codice (Blender 5.2 come libreria bpy).
+# Ferruccio 3D - Modello rifinito fedele all'illustrazione originale
+import math, sys
+from pathlib import Path
+import bpy, bmesh
+from mathutils import Vector, Quaternion, Matrix
 
-Il personaggio guarda verso +X, Z è l'alto, la telecamera del render sta in -Y (vista laterale).
-Ogni pezzo è un tubo o un ellissoide legato rigidamente a un osso, tranne la tunica, che si
-piega con le due ossa della gonna, e la sciarpa, che segue l'osso della coda.
-
-Proporzioni prese da assets/art/characters/ferruccio_rig/figura.png (1 px della tela ≈ 0.002 unità).
-
-Uso: python model.py OUT.blend
-"""
-import math
-import sys
-
-import bpy
-import bmesh
-from mathutils import Vector, Matrix
-
-# ---------------------------------------------------------------- Colori (sRGB)
 COL = {
-    "tunica": "#dcd8cf",
-    "cappello": "#e6e2da",
-    "calzoni": "#d6d2c9",
-    "calze": "#cfc9bb",
-    "scarpe": "#1b1a1c",
-    "testa": "#121114",
-    "maschera": "#1f1e24",
-    "occhio": "#a6e6ff",
-    "sciarpa": "#8e2f26",
-    "cintura": "#1c1b1d",
-    "fibbia": "#9a9590",
-    "bordo_maschera": "#554d41",
-    "lama": "#c9ced3",
-    "elsa": "#3a332c",
-    "mano": "#2a2523",
+    "tunica": "#e6e2da",
+    "cappello": "#ebe6dc",
+    "calzoni": "#e0dbd0",
+    "calze": "#cfcac0",
+    "scarpe": "#1c1b1f",
+    "testa": "#121115",
+    "maschera": "#1a1920",
+    "occhio": "#a8ecff",
+    "sciarpa": "#982e25",
+    "cintura": "#222026",
+    "fibbia": "#bfa058",
+    "bordo_maschera": "#4e4438",
+    "lama": "#e4eaf0",
+    "elsa": "#36322e",
+    "mano": "#1e1d22",
 }
 
-# ---------------------------------------------------------------- Scheletro
-# nome: (testa, coda, genitore). Coordinate nello spazio dell'armatura (X avanti, Z su).
 BONES = {
     "root": ((0, 0, 0), (0, 0, 0.25), None),
     "hips": ((0, 0, 0.56), (0, 0, 0.80), "root"),
@@ -45,7 +31,7 @@ BONES = {
     "head": ((0.03, 0, 1.50), (0.03, 0, 1.80), "neck"),
     "hat": ((-0.04, 0, 1.70), (-0.14, 0, 1.86), "head"),
     "hat_tip": ((-0.14, 0, 1.86), (-0.40, 0, 1.94), "hat"),
-    "scarf": ((0.02, 0, 1.38), (0.05, 0, 1.12), "chest"),
+    "scarf": ((-0.06, 0, 1.38), (-0.35, 0, 1.05), "chest"),
     "skirt_f": ((0.04, 0, 1.00), (0.20, 0, 0.50), "hips"),
     "skirt_b": ((-0.04, 0, 1.00), (-0.20, 0, 0.50), "hips"),
 }
@@ -57,30 +43,26 @@ for side, y in (("R", -0.17), ("L", 0.17)):
     BONES[f"thigh.{side}"] = ((0.0, ly, 0.56), (0.0, ly, 0.29), "hips")
     BONES[f"shin.{side}"] = ((0.0, ly, 0.29), (0.0, ly, 0.075), f"thigh.{side}")
     BONES[f"foot.{side}"] = ((0.0, ly, 0.075), (0.13, ly, 0.03), f"shin.{side}")
-for name in ("thigh.L","shin.L","foot.L"):
-    head,tail,parent=BONES[name]
-    BONES[name]=((head[0]+.13,head[1],head[2]),(tail[0]+.13,tail[1],tail[2]),parent)
+
+for name in ("thigh.L", "shin.L", "foot.L"):
+    head, tail, parent = BONES[name]
+    BONES[name] = ((head[0] + 0.13, head[1], head[2]), (tail[0] + 0.13, tail[1], tail[2]), parent)
+
 BONES["hammer"] = ((0.04, -0.19, 0.80), (0.60, -0.19, 0.80), "hand.R")
 BONES["sword"] = ((0.04, -0.19, 0.80), (0.60, -0.19, 0.80), "hand.R")
-
 
 def hex_rgb(h):
     h = h.lstrip("#")
     srgb = [int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
     return tuple(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in srgb)
 
-
-# ---------------------------------------------------------------- Geometria
 def _frame(t):
-    """Due assi perpendicolari alla direzione t, stabili per tubi quasi verticali o orizzontali."""
     ref = Vector((0, 1, 0)) if abs(t.y) < 0.9 else Vector((1, 0, 0))
     u = t.cross(ref).normalized()
     v = t.cross(u).normalized()
     return u, v
 
-
 def tube(name, pts, radii, seg=20, squash=(1.0, 1.0), wobble=0.0, wobble_n=7, cap_start=True, cap_end=True):
-    """Mesh a tubo lungo una polilinea; radii per punto, squash schiaccia la sezione (u, v)."""
     pts = [Vector(p) for p in pts]
     bm = bmesh.new()
     rings = []
@@ -117,9 +99,7 @@ def tube(name, pts, radii, seg=20, squash=(1.0, 1.0), wobble=0.0, wobble_n=7, ca
         poly.use_smooth = True
     return ob
 
-
 def blob(name, center, size, seg=24, rings=14):
-    """Ellissoide (testa, mani, fibbia...)."""
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=seg, v_segments=rings, radius=1.0)
     for vtx in bm.verts:
@@ -133,7 +113,6 @@ def blob(name, center, size, seg=24, rings=14):
         poly.use_smooth = True
     return ob
 
-
 def box(name, center, size):
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
@@ -146,21 +125,12 @@ def box(name, center, size):
     bpy.context.collection.objects.link(ob)
     return ob
 
-
-def lerp(a, b, t):
-    return a + (b - a) * t
-
-
-# ---------------------------------------------------------------- Pezzi
 def build_parts():
-    """Restituisce [(oggetto, colore, peso)] dove peso è un osso o una funzione(vertice)->{osso: w}."""
     parts = []
-
-    # Tunica: campana larga, pieghe leggere, orlo all'altezza del ginocchio.
-    zs = [1.40, 1.30, 1.15, 1.00, 0.95, 0.80, 0.65, 0.50]
-    rs = [0.10, 0.17, 0.18, 0.165, 0.17, 0.21, 0.245, 0.27]
-    tun = tube("tunica", [(0.01, 0, z) for z in zs], rs, seg=32, squash=(1.0, 0.82), wobble=0.11, wobble_n=9, cap_end=False)
-
+    # 1. TUNICA
+    zs = [1.40, 1.28, 1.15, 1.00, 0.95, 0.80, 0.65, 0.50]
+    rs = [0.10, 0.165, 0.175, 0.165, 0.175, 0.215, 0.25, 0.275]
+    tun = tube("tunica", [(0.01, 0, z) for z in zs], rs, seg=32, squash=(1.0, 0.84), wobble=0.08, wobble_n=8, cap_end=False)
     def tunic_w(co):
         drop = max(0.0, min(1.0, (0.98 - co.z) / 0.45))
         if drop <= 0:
@@ -170,68 +140,121 @@ def build_parts():
         return {"hips": 1.0 - drop * frac, side: drop * frac}
     parts.append((tun, "tunica", tunic_w))
 
-    # Cintura e fibbia.
-    parts.append((tube("cintura", [(0.01, 0, 0.94), (0.01, 0, 1.0)], [0.178, 0.178], seg=32, squash=(1.0, 0.84)), "cintura", "spine"))
-    parts.append((box("fibbia", (0.185, 0, 0.97), (0.03, 0.05, 0.05)), "fibbia", "spine"))
+    # Cintura e fibbia
+    parts.append((tube("cintura", [(0.01, 0, 0.94), (0.01, 0, 1.0)], [0.178, 0.178], seg=32, squash=(1.0, 0.85)), "cintura", "spine"))
+    parts.append((box("fibbia", (0.185, 0, 0.97), (0.025, 0.055, 0.05)), "fibbia", "spine"))
 
-    # Testa scura e collo.
-    parts.append((blob("testa", (0.04, 0, 1.60), (0.155, 0.14, 0.165)), "testa", "head"))
-    parts.append((tube("collo", [(0.02, 0, 1.38), (0.03, 0, 1.50)], [0.07, 0.07]), "testa", "neck"))
+    # 2. TESTA E COLLO
+    parts.append((blob("testa", (0.03, 0, 1.58), (0.135, 0.125, 0.145)), "testa", "head"))
+    parts.append((tube("collo", [(0.015, 0, 1.38), (0.025, 0, 1.48)], [0.065, 0.062], seg=16), "testa", "neck"))
 
-    # Maschera: mezza conchiglia sulla parte alta del viso, becco curvo in avanti.
-    mask = blob("maschera", (0.10, 0, 1.635), (0.115, 0.135, 0.07))
-    parts.append((mask, "maschera", "head"))
-    beak = tube("becco", [(0.19, 0, 1.63), (0.27, 0, 1.60), (0.33, 0, 1.555), (0.35, 0, 1.53)],
-                [0.045, 0.034, 0.02, 0.004], seg=14, squash=(1.0, 0.8))
-    parts.append((beak, "maschera", "head"))
-    for side, y in (("R", -0.085), ("L", 0.085)):
-        parts.append((blob(f"bordo_occhio.{side}", (.155, y*1.55, 1.645), (.058,.039,.075)), "maschera", "head"))
-        parts.append((blob(f"occhio.{side}", (0.16, y * 1.8, 1.645), (0.035, 0.035, 0.048)), "occhio", "head"))
+    # Maschera e becco
+    parts.append((blob("maschera", (0.095, 0, 1.61), (0.105, 0.13, 0.075)), "maschera", "head"))
+    beak_pts = [(0.17, 0, 1.62), (0.25, 0, 1.60), (0.32, 0, 1.55), (0.37, 0, 1.48), (0.39, 0, 1.42)]
+    beak_radii = [0.044, 0.034, 0.022, 0.011, 0.003]
+    parts.append((tube("becco", beak_pts, beak_radii, seg=16, squash=(1.0, 0.7)), "maschera", "head"))
 
-    eye_ring=[(.155+.057*math.cos(i*math.tau/32),-.151,1.645+.078*math.sin(i*math.tau/32)) for i in range(33)]
-    parts.append((tube("bordo_maschera",eye_ring,[.008]*33,seg=8),"bordo_maschera","head"))
+    # Occhiale
+    for side, y in (("R", -0.095), ("L", 0.095)):
+        parts.append((blob(f"bordo_occhio.{side}", (0.155, y * 1.35, 1.625), (0.052, 0.040, 0.065)), "bordo_maschera", "head"))
+        parts.append((blob(f"occhio.{side}", (0.160, y * 1.40, 1.625), (0.038, 0.035, 0.048)), "occhio", "head"))
 
-    # Cappello continuo: risvolto e piega hanno contatto, senza pezzi sospesi.
-    parts.append((tube("risvolto", [(0.05, 0, 1.69), (0.01, 0, 1.75)], [0.215, 0.212], seg=36, squash=(1.0, .88), wobble=.045), "cappello", "head"))
-    pts=[(.01,0,1.735),(-.035,0,1.84),(-.13,0,2.04),(-.24,0,2.20),(-.32,0,2.22),(-.45,0,2.12),(-.56,0,2.00)]
-    parts.append((tube("cappello_piegato",pts,[.23,.22,.18,.12,.085,.05,.006],seg=32,wobble=.08,wobble_n=6),"cappello","head"))
+    # Cinghia maschera
+    ring = [(-0.06, -0.11, 1.58), (0.04, -0.12, 1.60), (0.14, -0.12, 1.625)]
+    parts.append((tube("cinghia", ring, [0.008, 0.008, 0.008], seg=8), "cintura", "head"))
 
-    # Sciarpa: anello attorno al collo e due code annodate davanti.
-    parts.append((tube("sciarpa_collo", [(0.02, 0, 1.36), (0.02, 0, 1.44)], [0.12, 0.10], seg=24, wobble=0.08, wobble_n=5), "sciarpa", "chest"))
-    parts.append((blob("nodo", (0.12, -0.04, 1.37), (0.05, 0.05, 0.045)), "sciarpa", "chest"))
-    parts.append((tube("coda1", [(0.12, -0.05, 1.36), (0.10, -0.06, 1.02), (0.19, -0.06, 0.17)], [0.07, 0.11, 0.075], seg=12, squash=(1.0, 0.35)), "sciarpa", "scarf"))
-    parts.append((tube("coda2", [(0.11, -0.03, 1.36), (0.08, 0.05, 1.09), (0.02, 0.05, 0.73)], [0.06, 0.09, 0.04], seg=12, squash=(1.0, 0.35)), "sciarpa", "scarf"))
+    # 3. CAPPELLO
+    parts.append((tube("risvolto", [(0.05, 0, 1.68), (0.01, 0, 1.74)], [0.208, 0.205], seg=36, squash=(1.0, 0.86), wobble=0.03), "cappello", "head"))
+    hat_pts = [
+        (0.01, 0, 1.72),
+        (-0.035, 0, 1.83),
+        (-0.11, 0, 1.97),
+        (-0.21, 0, 2.11),
+        (-0.32, 0, 2.20),
+        (-0.43, 0, 2.16),
+        (-0.53, 0, 2.05),
+        (-0.58, 0, 1.95),
+    ]
+    hat_radii = [0.20, 0.18, 0.15, 0.12, 0.085, 0.055, 0.030, 0.008]
+    def hat_w(co):
+        k = max(0.0, min(1.0, (co.z - 1.85) / 0.35))
+        return {"head": 1.0 - k, "hat_tip": k}
+    parts.append((tube("cappello_piegato", hat_pts, hat_radii, seg=32, squash=(1.0, 0.85), wobble=0.06, wobble_n=6), "cappello", hat_w))
 
-    # Braccia: manica a sbuffo, polsino, pugno scuro.
+    # 4. SCIARPA (fluida, avvolgente, knot e code posteriori)
+    parts.append((tube("sciarpa_collo", [(0.02, 0, 1.34), (0.02, 0, 1.44)], [0.125, 0.11], seg=24, wobble=0.06, wobble_n=5), "sciarpa", "chest"))
+    parts.append((blob("nodo", (0.12, -0.03, 1.37), (0.055, 0.055, 0.05)), "sciarpa", "chest"))
+    parts.append((tube("piega_nodo", [(0.12, -0.03, 1.35), (0.13, -0.04, 1.25), (0.14, -0.04, 1.15)], [0.035, 0.045, 0.025], seg=10, squash=(1.0, 0.3)), "sciarpa", "chest"))
+
+    tail1_pts = [
+        (-0.05, -0.02, 1.38),
+        (-0.16, -0.02, 1.33),
+        (-0.28, -0.03, 1.20),
+        (-0.40, -0.03, 1.02),
+        (-0.52, -0.04, 0.80),
+        (-0.62, -0.04, 0.58),
+        (-0.70, -0.04, 0.38),
+    ]
+    tail1_radii = [0.06, 0.075, 0.09, 0.11, 0.125, 0.135, 0.14]
+    def scarf_w(co):
+        k = max(0.0, min(1.0, (-co.x - 0.05) / 0.25))
+        return {"chest": 1.0 - k, "scarf": k}
+    parts.append((tube("sciarpa_coda1", tail1_pts, tail1_radii, seg=16, squash=(1.0, 0.22), wobble=0.04), "sciarpa", scarf_w))
+
+    tail2_pts = [
+        (-0.04, 0.03, 1.35),
+        (-0.14, 0.03, 1.26),
+        (-0.24, 0.03, 1.10),
+        (-0.35, 0.03, 0.90),
+        (-0.46, 0.03, 0.68),
+        (-0.54, 0.03, 0.48),
+    ]
+    tail2_radii = [0.055, 0.07, 0.085, 0.10, 0.115, 0.12]
+    parts.append((tube("sciarpa_coda2", tail2_pts, tail2_radii, seg=16, squash=(1.0, 0.22), wobble=0.04), "sciarpa", scarf_w))
+
+    # 5. BRACCIA (continue e sovrapposte)
     for side, y in (("R", -0.17), ("L", 0.17)):
         yy = y * 1.12
-        parts.append((tube(f"manica.{side}", [(0.0, y, 1.36), (0.0, y * 1.05, 1.28), (0.015, y * 1.1, 1.18), (0.02, yy, 1.07)],
-                           [0.08, 0.105, 0.09, 0.065], seg=18, wobble=0.05), "tunica", f"upperarm.{side}"))
-        parts.append((tube(f"avambraccio.{side}", [(0.02, yy, 1.09), (0.025, yy, 0.98), (0.03, yy, 0.89), (0.03, yy, 0.86)],
-                           [0.062, 0.07, 0.06, 0.05], seg=18, wobble=0.04), "tunica", f"forearm.{side}"))
-        parts.append((blob(f"pugno.{side}", (0.04, yy, 0.81), (0.04, 0.038, 0.05)), "mano", f"hand.{side}"))
+        parts.append((tube(f"manica.{side}", [(0.0, y, 1.36), (0.0, y * 1.05, 1.28), (0.015, y * 1.1, 1.18), (0.02, yy, 1.04)],
+                           [0.085, 0.11, 0.095, 0.075], seg=18, wobble=0.04), "tunica", f"upperarm.{side}"))
+        parts.append((tube(f"avambraccio.{side}", [(0.02, yy, 1.12), (0.025, yy, 1.00), (0.03, yy, 0.90), (0.035, yy, 0.85)],
+                           [0.072, 0.082, 0.070, 0.052], seg=18, wobble=0.03), "tunica", f"forearm.{side}"))
+        parts.append((tube(f"polsino.{side}", [(0.035, yy, 0.86), (0.037, yy, 0.83)], [0.056, 0.054], seg=16), "tunica", f"forearm.{side}"))
+        parts.append((blob(f"pugno.{side}", (0.042, yy, 0.80), (0.042, 0.040, 0.052)), "mano", f"hand.{side}"))
+
+        # 6. GAMBE (senza fessure)
         ly = y * 0.6
-        # Calzoni a sbuffo fino al ginocchio, calza, scarpa.
-        parts.append((tube(f"calzone.{side}", [(0.0, ly, 0.58), (0.0, ly, 0.45), (0.0, ly, 0.33), (0.0, ly, 0.27)],
-                           [0.085, 0.095, 0.085, 0.06], seg=18, wobble=0.04), "calzoni", f"thigh.{side}"))
-        parts.append((tube(f"calza.{side}", [(0.0, ly, 0.30), (0.0, ly, 0.18), (0.0, ly, 0.08)], [0.052, 0.048, 0.043], seg=16), "calze", f"shin.{side}"))
-        parts.append((tube(f"scarpa.{side}", [(-0.05, ly, 0.045), (0.03, ly, 0.045), (0.11, ly, 0.035), (0.15, ly, 0.03)],
-                           [0.045, 0.05, 0.042, 0.022], seg=16, squash=(0.75, 1.0)), "scarpe", f"foot.{side}"))
+        parts.append((tube(f"calzone.{side}", [(0.0, ly, 0.58), (0.0, ly, 0.46), (0.0, ly, 0.34), (0.0, ly, 0.23)],
+                           [0.088, 0.102, 0.092, 0.068], seg=18, wobble=0.04), "calzoni", f"thigh.{side}"))
+        parts.append((tube(f"calza.{side}", [(0.0, ly, 0.32), (0.0, ly, 0.20), (0.0, ly, 0.07)],
+                           [0.054, 0.050, 0.044], seg=16), "calze", f"shin.{side}"))
+        shoe_pts = [(-0.06, ly, 0.05), (0.03, ly, 0.05), (0.11, ly, 0.04), (0.16, ly, 0.03)]
+        parts.append((tube(f"scarpa.{side}", shoe_pts, [0.046, 0.052, 0.044, 0.024], seg=16, squash=(0.75, 1.0)), "scarpe", f"foot.{side}"))
+        parts.append((box(f"fibbia_scarpa.{side}", (0.06, ly, 0.07), (0.02, 0.035, 0.015)), "fibbia", f"foot.{side}"))
 
-    # Spada del fabbro: lama dritta, guardia di ferro battuto, pomolo.
+    # 7. SPADA (Stocco italiano proporzionato, elegante e tagliente)
     y = -0.19
-    parts.append((tube("lama", [(0.10, y, 0.80), (0.65, y, 0.80), (0.85, y, 0.80)], [0.033, 0.025, 0.002], seg=4, squash=(1.0, 0.25)), "lama", "sword"))
-    parts.append((box("guardia", (0.085, y, 0.80), (0.022, 0.03, 0.14)), "elsa", "sword"))
-    parts.append((tube("impugnatura", [(-0.02, y, 0.80), (0.08, y, 0.80)], [0.016, 0.016], seg=8), "elsa", "sword"))
-    parts.append((blob("pomolo", (-0.03, y, 0.80), (0.022, 0.022, 0.022)), "elsa", "sword"))
-    parts.append((tube("manico_martello",[(.04,y,.8),(.53,y,.8)],[.024,.022],seg=12),"elsa","hammer"))
-    parts.append((box("testa_martello",(.54,y,.8),(.17,.12,.25)),"lama","hammer"))
-    # La gamba lontana è avanzata come nel disegno originale, visibile anche a riposo.
-    for ob,col,weight in parts:
-        if ob.name.endswith(".L") and any(ob.name.startswith(k) for k in ("calzone","calza","scarpa")):
-            for vertex in ob.data.vertices: vertex.co.x += .13
-    return parts
+    blade_pts = [(0.08, y, 0.80), (0.35, y, 0.80), (0.62, y, 0.80), (0.76, y, 0.80), (0.80, y, 0.80)]
+    blade_radii = [0.028, 0.024, 0.018, 0.009, 0.001]
+    parts.append((tube("lama", blade_pts, blade_radii, seg=4, squash=(1.0, 0.20)), "lama", "sword"))
 
+    parts.append((box("guardia_centro", (0.08, y, 0.80), (0.025, 0.032, 0.032)), "elsa", "sword"))
+    guard_pts = [(0.085, y, 0.72), (0.08, y, 0.76), (0.08, y, 0.84), (0.085, y, 0.88)]
+    parts.append((tube("guardia_bracci", guard_pts, [0.012, 0.014, 0.014, 0.012], seg=10), "elsa", "sword"))
+    parts.append((blob("guardia_pomello_sup", (0.087, y, 0.885), (0.014, 0.014, 0.014)), "elsa", "sword"))
+    parts.append((blob("guardia_pomello_inf", (0.087, y, 0.715), (0.014, 0.014, 0.014)), "elsa", "sword"))
+
+    parts.append((tube("impugnatura", [(-0.01, y, 0.80), (0.075, y, 0.80)], [0.016, 0.016], seg=10), "elsa", "sword"))
+    parts.append((blob("pomolo", (-0.025, y, 0.80), (0.025, 0.025, 0.025)), "elsa", "sword"))
+
+    parts.append((tube("manico_martello", [(0.04, y, 0.8), (0.53, y, 0.8)], [0.024, 0.022], seg=12), "elsa", "hammer"))
+    parts.append((box("testa_martello", (0.54, y, 0.8), (0.17, 0.12, 0.25)), "lama", "hammer"))
+
+    for ob, col, weight in parts:
+        if ob.name.endswith(".L") and any(ob.name.startswith(k) for k in ("calzone", "calza", "scarpa")):
+            for vertex in ob.data.vertices: vertex.co.x += 0.13
+
+    return parts
 
 def build_armature():
     arm_data = bpy.data.armatures.new("FerruccioRig")
@@ -252,7 +275,6 @@ def build_armature():
     bpy.ops.object.mode_set(mode="OBJECT")
     return arm
 
-
 def build(out_path):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     arm = build_armature()
@@ -266,22 +288,6 @@ def build(out_path):
     meshes = []
     for ob, col, weight in parts:
         ob.data.materials.append(mats[col])
-        # UV del dipinto originale: pieghe, pigmento e fibre restano riconoscibili
-        # sulla superficie 3D, senza ricreare il costume con colori piatti.
-        regions={"tunica":(311,375,353,572),"cappello":(200,35,380,180),
-                 "calzoni":(315,790,395,862),"calze":(328,900,368,941),
-                 "sciarpa":(95,490,240,650),"scarpe":(325,955,397,985)}
-        if col in regions:
-            x0,y0,x1,y1=regions[col]
-            coords=[v.co for v in ob.data.vertices]
-            lo_x,hi_x=min(v.x for v in coords),max(v.x for v in coords)
-            lo_z,hi_z=min(v.z for v in coords),max(v.z for v in coords)
-            uv=ob.data.uv_layers.new(name="Dipinto originale")
-            for loop in ob.data.loops:
-                co=ob.data.vertices[loop.vertex_index].co
-                u=(co.x-lo_x)/max(hi_x-lo_x,.001)
-                v=(co.z-lo_z)/max(hi_z-lo_z,.001)
-                uv.data[loop.index].uv=((x0+u*(x1-x0))/679,1-(y1-v*(y1-y0))/1024)
         if col in ("lama", "elsa", "fibbia"):
             crease = ob.data.attributes.new("crease_edge", "FLOAT", "EDGE")
             for edge in crease.data: edge.value = 0.85
@@ -289,16 +295,13 @@ def build(out_path):
         for vtx in ob.data.vertices:
             ws = weight(vtx.co) if callable(weight) else {weight: 1.0}
             for bone, w in ws.items():
-                if w <= 0:
-                    continue
+                if w <= 0: continue
                 if bone not in groups:
                     groups[bone] = ob.vertex_groups.new(name=bone)
                 groups[bone].add([vtx.index], w, "REPLACE")
         meshes.append(ob)
-    # Un solo oggetto per il render e per l'esportazione.
     bpy.ops.object.select_all(action="DESELECT")
-    for ob in meshes:
-        ob.select_set(True)
+    for ob in meshes: ob.select_set(True)
     bpy.context.view_layer.objects.active = meshes[0]
     bpy.ops.object.join()
     body = bpy.context.view_layer.objects.active
@@ -308,7 +311,6 @@ def build(out_path):
     mod.object = arm
     bpy.ops.wm.save_as_mainfile(filepath=out_path)
     return arm, body
-
 
 if __name__ == "__main__":
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]

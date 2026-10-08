@@ -83,6 +83,12 @@ func _ensure_inputs() -> void:
 		"shop": [KEY_B],
 		# Parlare con i personaggi: W e Freccia su come in Hollow Knight, E per chi preferisce.
 		"interact": [KEY_W, KEY_UP, KEY_E],
+		# Abilità metroidvania e strumenti:
+		"grapple": [KEY_Q],
+		"hammer": [KEY_V],
+		"heal": [KEY_R],
+		"map": [KEY_M, KEY_TAB],
+		"pause": [KEY_ESCAPE],
 	}
 	for action in binds:
 		if not InputMap.has_action(action):
@@ -91,17 +97,57 @@ func _ensure_inputs() -> void:
 			var ev := InputEventKey.new()
 			ev.physical_keycode = k
 			InputMap.action_add_event(action, ev)
-	var pad := {"jump": JOY_BUTTON_A, "attack": JOY_BUTTON_X, "dash": JOY_BUTTON_RIGHT_SHOULDER, "interact": JOY_BUTTON_Y, "parry": JOY_BUTTON_LEFT_SHOULDER, "shop": JOY_BUTTON_BACK}
+	# Mappatura Gamepad completa (schema Xbox / PlayStation):
+	# A / Croce: Salto
+	# X / Quadrato: Attacco spada
+	# B / Cerchio: Martello calcare
+	# Y / Triangolo: Interagisci / Parla
+	# RB / R1: Scatto (dash)
+	# LB / L1: Parata (parry)
+	# RT / R2: Catena / Rampino
+	# LT / L2: Cura con le braci (tenuto da fermo)
+	# Back / Select: Mappa del mondo
+	# Start: Menu / Pausa
+	# DPad Up: Negozio fucina
+	var pad := {
+		"jump": JOY_BUTTON_A,
+		"attack": JOY_BUTTON_X,
+		"hammer": JOY_BUTTON_B,
+		"interact": JOY_BUTTON_Y,
+		"dash": JOY_BUTTON_RIGHT_SHOULDER,
+		"parry": JOY_BUTTON_LEFT_SHOULDER,
+		"map": JOY_BUTTON_BACK,
+		"pause": JOY_BUTTON_START,
+		"shop": JOY_BUTTON_DPAD_UP,
+	}
 	for action in pad:
 		var jb := InputEventJoypadButton.new()
 		jb.button_index = pad[action]
 		InputMap.action_add_event(action, jb)
-	var axes := {"move_left": [JOY_AXIS_LEFT_X, -1.0], "move_right": [JOY_AXIS_LEFT_X, 1.0], "move_up": [JOY_AXIS_LEFT_Y, -1.0], "move_down": [JOY_AXIS_LEFT_Y, 1.0]}
+	var axes := {
+		"move_left": [JOY_AXIS_LEFT_X, -1.0],
+		"move_right": [JOY_AXIS_LEFT_X, 1.0],
+		"move_up": [JOY_AXIS_LEFT_Y, -1.0],
+		"move_down": [JOY_AXIS_LEFT_Y, 1.0],
+		"grapple": [JOY_AXIS_TRIGGER_RIGHT, 1.0],
+		"heal": [JOY_AXIS_TRIGGER_LEFT, 1.0],
+	}
 	for action in axes:
 		var jm := InputEventJoypadMotion.new()
 		jm.axis = axes[action][0]
 		jm.axis_value = axes[action][1]
 		InputMap.action_add_event(action, jm)
+	# Supporto DPad per il movimento:
+	var dpad := {
+		"move_left": JOY_BUTTON_DPAD_LEFT,
+		"move_right": JOY_BUTTON_DPAD_RIGHT,
+		"move_up": JOY_BUTTON_DPAD_UP,
+		"move_down": JOY_BUTTON_DPAD_DOWN,
+	}
+	for action in dpad:
+		var db := InputEventJoypadButton.new()
+		db.button_index = dpad[action]
+		InputMap.action_add_event(action, db)
 
 
 # ---------------------------------------------------------------- Scenario animato

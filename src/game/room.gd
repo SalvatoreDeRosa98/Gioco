@@ -33,6 +33,7 @@ const ROOMS := [
 		],
 		"enemies": [
 			{"type": "gatto", "pos": Vector2(700, 960)},
+			{"type": "guardia", "pos": Vector2(1450, 960)},
 			{"type": "gatto", "pos": Vector2(1850, 960)},
 			{"type": "vespa", "pos": Vector2(2150, 600)},
 		],
@@ -55,10 +56,11 @@ const ROOMS := [
 		"npcs": [
 			{"id": "guardia_corso", "pos": Vector2(620, 980)},
 			{"id": "taddeo_corso", "pos": Vector2(2150, 980)},
-			{"id": "mariella", "pos": Vector2(2320, 980)},
+			{"id": "mariella", "pos": Vector2(1860, 980)},
 		],
 		"enemies": [
 			{"type": "gatto", "pos": Vector2(450, 960)},
+			{"type": "guardia", "pos": Vector2(1200, 960)},
 			{"type": "vespa", "pos": Vector2(1000, 420)},
 			{"type": "vespa", "pos": Vector2(1800, 460)},
 			{"type": "gatto", "pos": Vector2(2250, 960)},
@@ -88,6 +90,7 @@ const ROOMS := [
 			{"type": "gatto", "pos": Vector2(450, 960)},
 			{"type": "statua", "pos": Vector2(930, 616)},
 			{"type": "vespa", "pos": Vector2(1500, 380)},
+			{"type": "cavaliere", "pos": Vector2(1650, 946)},
 			{"type": "statua", "pos": Vector2(2350, 946)},
 		],
 		"decor": [
@@ -105,13 +108,14 @@ const ROOMS := [
 		"ledges": [Rect2(220, 800, 180, 18), Rect2(1120, 560, 200, 18), Rect2(1640, 480, 200, 18), Rect2(2120, 720, 220, 18)],
 		"npcs": [
 			{"id": "carmela", "pos": Vector2(300, 980)},
-			{"id": "taddeo_sanleucio", "pos": Vector2(2130, 980)},
-			{"id": "agnese", "pos": Vector2(2330, 980)},
+			{"id": "taddeo_sanleucio", "pos": Vector2(1600, 980)},
+			{"id": "agnese", "pos": Vector2(1880, 980)},
 		],
 		"enemies": [
 			{"type": "gatto", "pos": Vector2(760, 860)},
 			{"type": "statua", "pos": Vector2(1700, 666)},
 			{"type": "vespa", "pos": Vector2(1250, 380)},
+			{"type": "cavaliere", "pos": Vector2(1300, 760)},
 			{"type": "vespa", "pos": Vector2(2250, 520)},
 			{"type": "gatto", "pos": Vector2(2200, 960)},
 		],

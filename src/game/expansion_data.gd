@@ -44,3 +44,32 @@ static func fragment_count(story: RefCounted) -> int:
 	for id in ["archive_1", "archive_2", "archive_3"]:
 		count += int(story.times_seen(id) > 0)
 	return count
+
+## Sigilli e meccanismi di tutte le aree di Caserta necessari per aprire il Cortile d'Onore.
+const DISTRICT_SEALS := [
+	"market_seal",
+	"barracks_seal",
+	"sluice",
+	"loom",
+	"bells",
+	"hammer_plan",
+	"clock_memory",
+]
+
+## Conteggio dei sigilli dei quartieri ottenuti.
+static func seals_count(story: RefCounted) -> int:
+	var count := 0
+	for id in DISTRICT_SEALS:
+		count += int(story.times_seen(id) > 0)
+	return count
+
+static func seals_total() -> int:
+	return DISTRICT_SEALS.size()
+
+## Ritorna true solo se tutti i sigilli dei quartieri sono stati attivati.
+static func all_seals_ready(story: RefCounted) -> bool:
+	for id in DISTRICT_SEALS:
+		if story.times_seen(id) == 0:
+			return false
+	return true
+

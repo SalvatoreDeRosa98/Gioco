@@ -17,25 +17,55 @@ Ferruccio deve recuperare il bellissimo disegno 2D originale anche nella resa 3D
 - Leggere src/CLAUDE.md e docs/engine-reference/ prima di modificare API Godot.
 
 ## Ultimo eseguibile verificato
-E:/gioco/Test-Ferruccio/Ferruccio-Metroidvania-Arena.exe
-SHA256: E9579202193521853111045AD7FB2C976979CDEF538F9D8F45541701FD0FB5AB
-Export riuscito, avvio reale dell'exe riuscito, screenshot dell'arena acquisito. I vecchi eseguibili restano nella stessa cartella e NON contengono le ultime modifiche.
+E:/gioco/Test-Ferruccio/Ferruccio-Metroidvania-Sigilli-3D.exe
+SHA256: 5B3B450859515A9B125EE27E523F4ACF774DFF3A93024E907F28EE8FC5FBFD45
+Dimensione: 210.243.280 byte.
+Export riuscito con template ufficiale Godot 4.6, smoke test reale di avvio su Windows eseguito con esito positivo (processo reattivo e stabile). I vecchi eseguibili restano intatti nella stessa cartella.
 
 ## Funzioni introdotte
-- 15 aree totali. Nuove: 12 Campanile delle Voci (1280x2400), 13 Cisterne Sepolte (1280x2100), 14 Galleria degli Orologi (3520x1080).
-- Aperture fisiche sopra/sotto, pavimenti e soffitti interrotti coerentemente; telecamera verticale già operativa.
-- Collegamenti: Belvedere 3 sopra -> Campanile 12 sotto; Campanile sopra -> Galleria 14 sotto; Galleria destra -> Archivi 11; Archivi sopra -> Galleria; Cisterne 9 sotto -> Cisterne Sepolte 13 sopra. Ritorni verticali reciproci dove configurati.
-- Configurazione in src/data/expansion.json: vertical, extra_ledges, rings, cracks, spikes, landmarks. Le aperture con need richiedono un attrezzo.
-- M apre/chiude la mappa e ferma il gioco. Visite memorizzate in story.seen (visited_ID), salvate alle incudini.
-- Fucina B: catena gratuita; guanti gratuiti dopo la chiusa (sluice); martello gratuito dopo il progetto nelle Cisterne Sepolte (hammer_plan). Non occupano spazi accessori.
-- Q aggancia gli anelli visibili entro portata. Presa al muro premendo verso la parete, Spazio per staccarsi. V usa il martello; muri rotti persistono nel salvataggio. S+attacco rimbalza anche sugli spuntoni.
-- Colpire nemici guadagna braci, massimo 12. R tenuto da fermo per 0,85 s consuma 4 braci e cura una maschera.
-- Due varianti di attacco per gatto, vespa, statua, duellante e incontri intermedi; fase aggiuntiva del Custode a metà vita.
-- Boss: velocità 210 (prima 85), 252 in seconda fase; balzo 370, proiettili 270; preparazione/recupero accorciati, HP ancora 36. Contatto causa danno.
-- boss_arena.gd: oltre x=290, chiusura, nuovi blocchi e 3 piattaforme da arena, illuminazione e camera fissa più larga; breve pausa iniziale prima dell'assalto.
-- Il boss resta chiuso finché non sono raccolti 3 frammenti e deciso il destino del registro del padre.
-- Conservate fucina segreta e incudini rare. Doppio salto sullo scalino invisibile sopra Piazza, poi W. Nessun portale visibile aggiunto al segreto.
-- Modalità sviluppatore: Ctrl+Shift+F12, invulnerabilità, non salvata.
+- Mappatura completa Gamepad (Xbox/PlayStation):
+  - RT / R2: Catena / Rampino (aggancio agli anelli)
+  - B / Cerchio: Martello da calcare (sfondamento pareti incrinate)
+  - LT / L2: Cura con le braci (tenuto da fermo)
+  - Back / Select: Mappa del mondo completa
+  - Start: Menu / Pausa
+  - DPad: Movimento direzionale completo e DPad Su per aprire la fucina
+  - A / X / RB / LB: Salto, Attacco, Scatto (dash), Parata (parry).
+  - Suggerimenti a video dinamici (HUD e mappa) che commutano tra icone gamepad (RT, B, LT, Back, LB) e tastiera (Q, V, R, M, F).
+- Correzione posizionamento NPC:
+  - Spostata Mariella in Corso Trieste (Stanza 1) a x=1860 (liberata la statua di salvataggio a x=2320).
+  - Spostato Taddeo a San Leucio (Stanza 3) a x=1600 (liberato il portale per il Setificio a x=2120).
+  - Spostata Agnese a San Leucio a x=1880 (liberata l'uscita a destra).
+- Nuovi archetipi nemici con attacchi telegrafati e comportamenti unici:
+  - Guardia della Città (`guardia`, HP 6, speed 110, affondo "STOCCATA" rapido con preavviso).
+  - Cavaliere di Pietra (`cavaliere`, HP 10, speed 55, alterna "FENDENTE PESANTE" a corto raggio e "URTO SISMICO" con onda d'urto a terra).
+  - Spettro del Calcare (`spettro`, HP 5, speed 75, levitazione sinusoidale e "RAFFICA SPETTRALE" a tre proiettili a ventaglio).
+  - Popolamento distribuito in tutte le aree (Stanze 0, 1, 2, 3, 7, 8, 9, 10, 11, 12, 13, 14).
+- Progressione Metroidvania per il Boss Finale:
+  - Per sbloccare il Cortile d'Onore (Stanza 4) è ora obbligatorio esplorare tutte le aree e attivare tutti i 7 sigilli/meccanismi dei quartieri di Caserta:
+    1. Mercato: sigillo del registro daziario (`market_seal`)
+    2. Caserma: registro d'armi (`barracks_seal`) e sconfitta del capitano
+    3. Cisterne: leva della chiusa reale (`sluice`)
+    4. Setificio: liberazione fili del telaio (`loom`) e sconfitta della madre
+    5. Campanile: suono del carillon delle campane (`bells`)
+    6. Cisterne Sepolte: recupero del progetto del maglio (`hammer_plan`)
+    7. Galleria Orologi: memoria dell'orologiaio (`clock_memory`)
+    + 3 frammenti degli Archivi (`archive_1`, `archive_2`, `archive_3`) e decisione sul registro del padre di Gaetano nella Villa.
+  - L'HUD degli Archivi mostra lo stato esatto dei sigilli (es. `Sigilli quartieri 0/7 · Testimonianze 0/3 · Esplora tutti i quartieri per aprire il Cortile`).
+  - L'interazione con i sigilli emette toast dedicati a schermo con conteggio aggiornato.
+- Revisione 3D di Ferruccio e Resa 3D per Personaggi:
+  - Rimodellazione 3D della mesh Blender (`model.py`):
+    - Cono del cappello allungato e ricurvo all'indietro con risvolto falda autentico di Pulcinella.
+    - Maschera a becco d'aquila ricurva con monocolo di bronzo e lente ciano luminescente.
+    - Volumi sovrapposti per maniche e calzoni a sbuffo (eliminati i tagli neri alle articolazioni).
+    - Sciarpa volumetrica con nodo frontale e due code animate indipendenti.
+    - Stocco affusolato con elsa a croce e lama romboidale a doppio filo.
+  - Rifacimento animazioni di scherma (`anims.py`):
+    - `slash_a`: caricamento ad arco alto, affondo rapido in avanti (+0.26), fendente discendente ad ampio raggio, mano secondaria di bilanciamento, sventolio sciarpa e recupero.
+    - `slash_b`: avvitamento basso, passo avanti, fendente diagonale ascendente.
+    - `pogo`: affondo perpendicolare sotto i piedi con gambe raccolte.
+  - Nuovi atlanti completi per tutte le 17 animazioni renderizzati in Cycles e importati nel gioco. Nessun frame tagliato (0 clipping).
+  - Nuovo shader `canvas_char_volume.gdshader` applicato a tutti gli NPC ed élite: conferisce illuminazione di taglio (rim lighting), profondità volumetrica pseudo-normale, ombreggiature da contatto al suolo e ambient lighting in tinta con l'area.
 
 ## Grafica e animazioni: distinguere gli asset
 - Originale vincolante: src/assets/art/characters/ferruccio.png.
