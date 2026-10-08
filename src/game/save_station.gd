@@ -14,5 +14,4 @@ func _draw() -> void:
 	draw_colored_polygon(PackedVector2Array([Vector2(-15, -12), Vector2(-10, -54), Vector2(0, -68), Vector2(10, -54), Vector2(15, -12)]), gold)
 	draw_arc(Vector2(0, -42), 28, 0, TAU, 40, Color(gold, 0.8), 2.0, true)
 	if focused:
-		var hint := "W / E  Passaggio segreto" if has_meta("branch") else "W / E  Salva e riposa"
-		Art.text(self, Art.body_font(), Vector2(-120, -86), hint, 20, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 240)
+		Art.text(self, Art.body_font(), Vector2(-120, -86), "W / E  Salva e riposa", 20, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 240)

@@ -636,20 +636,12 @@ func _build_stations() -> void:
 		node.position = Vector2(float(data["x"]), float(data["y"]))
 		node.set_meta("station_id", id)
 		_stations_root.add_child(node)
-	if int(room.get("branch", -1)) >= 0:
-		var gate := StationScript.new()
-		gate.position = room["branch_pos"]
-		gate.modulate = Color(0.5, 0.8, 1.0)
-		gate.set_meta("branch", true)
-		_stations_root.add_child(gate)
 
 
 func _update_stations() -> void:
 	var best: Node2D = null
 	var nearest := 80.0
 	for node in _stations_root.get_children():
-		if node.has_meta("branch"):
-			continue
 		node.focused = false
 		var distance: float = (player.global_position + Vector2(0, PlayerScript.HALF.y)).distance_to(node.position)
 		if distance < nearest:
@@ -665,13 +657,12 @@ func _update_stations() -> void:
 func _update_branch() -> void:
 	if player.dead or game_over or is_talking() or in_cutscene() or _talk_lock > 0.0:
 		return
-	for node in _stations_root.get_children():
-		if not node.has_meta("branch"):
-			continue
-		node.focused = (player.global_position + Vector2(0, PlayerScript.HALF.y)).distance_to(node.position) < 80.0
-		if node.focused and Input.is_action_just_pressed("interact"):
-			_go(int(room["branch"]), true)
-			return
+	if int(room.get("branch", -1)) < 0 or not player.is_on_floor():
+		return
+	var platform: Rect2 = room["branch_platform"]
+	var feet := player.global_position + Vector2(0, PlayerScript.HALF.y)
+	if feet.x >= platform.position.x and feet.x <= platform.end.x and absf(feet.y - platform.position.y) <= 6.0 and Input.is_action_just_pressed("interact"):
+		_go(int(room["branch"]), true)
 
 
 func _save_at(pos: Vector2) -> void:

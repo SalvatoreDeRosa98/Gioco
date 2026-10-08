@@ -159,10 +159,19 @@ static func build(idx: int) -> Dictionary:
 		"enemies": _enemies(idx),
 		"secrets": [SECRETS[idx]],
 		"branch": BRANCHES.get(idx, -1),
-		"branch_pos": Vector2(920, 640) if idx < 3 else Vector2(1230, 540),
+		"branch_platform": highest_platform(idx),
 		"decor": _decorations(idx),
 		"boss": idx == COUNT - 1,
 	}
+
+
+## Il passaggio nascosto occupa la piattaforma più alta, senza oggetti o indicazioni.
+static func highest_platform(idx: int) -> Rect2:
+	var highest: Rect2 = EXPLORATION_LEDGES[idx][0]
+	for ledge in EXPLORATION_LEDGES[idx]:
+		if ledge.position.y < highest.position.y:
+			highest = ledge
+	return highest
 
 
 static func _enemies(idx: int) -> Array:

@@ -11,3 +11,5 @@ Salvataggio: `user://ferruccio-save.json`, scritto prima in un file temporaneo. 
 Verifica su Godot 4.6: importazione e compilazione; test di parata, attivazione altare, scrittura e sostituzione del file, ripristino dopo morte e riapertura; 11 test narrativi; avvio grafico della Villa Comunale e screenshot in `production/qa/evidence/exploration-2026-10-08.png`.
 
 Il ritmo del combattimento e i percorsi richiedono ancora un playtest umano completo; questa modifica non include un nuovo eseguibile Windows.
+
+Aggiornamento playtest: rimossi tutti i portali visibili e il testo del passaggio segreto. Il collegamento si attiva solo da fermi sulla piattaforma più alta, premendo W/E; non appare alcun oggetto o suggerimento. Test automatici superati e nuova build Windows verificata.
