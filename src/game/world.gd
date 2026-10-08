@@ -36,6 +36,8 @@ var _forge_backdrop: Node2D
 var upgrades: Dictionary = {}
 var equipped: Array = []
 var choice_uses: Dictionary = {}
+var _map: CanvasLayer
+var traversal: Node2D
 var _shop: CanvasLayer
 var _parry_attack := false
 var _choice_signature := ""
@@ -43,6 +45,8 @@ var _choice_signature := ""
 var room: Dictionary = {}
 var room_index := 0
 var room_cleared := false
+var arena_active := false
+var _arena: Node2D
 var coins := 0
 var cleared: Dictionary = {}   # indice stanza -> bool
 var game_over := false
@@ -142,6 +146,14 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if _map != null and _map.opened:
+		if event.is_action_pressed("ui_cancel") or (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M):
+			_map.toggle()
+		get_viewport().set_input_as_handled()
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M and not is_talking() and not in_cutscene() and not player.dead:
+		_map.toggle()
+		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F12 and event.ctrl_pressed and event.shift_pressed:
 		_toggle_developer_mode()
 		get_viewport().set_input_as_handled()
@@ -174,6 +186,8 @@ func _toggle_developer_mode() -> void:
 
 
 func _process(delta: float) -> void:
+	if _map != null and _map.opened:
+		return
 	if _shop != null and _shop.opened:
 		return
 	if _demo:
@@ -275,8 +289,22 @@ func _apply_grade(th: Dictionary) -> void:
 # ---------------------------------------------------------------- Stanze
 
 func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
+	arena_active = false
+	_backdrop.modulate = Color.WHITE
+	if is_instance_valid(_arena):
+		remove_child(_arena)
+		_arena.queue_free()
+		_arena = null
+	player._cam.make_current()
+	story.seen["visited_%d" % idx] = 1
+	if _map == null:
+		_map = preload("res://game/world_map.gd").new()
+		_map.world = self
+		add_child(_map)
 	room_index = idx
 	room = Room.build(idx, story.vars)
+	for exit in room.get("vertical", []):
+		exit["open"] = not exit.has("need") or upgrades.has(exit.need)
 	_choice_signature = ""
 	room_cleared = cleared_now
 	var th := Themes.get_theme(room["theme"])
@@ -305,6 +333,17 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	_terrain.visible = idx != Room.SECRET_ROOM
 	_terrain.set_doors(_left_open(), _right_open())
 	_build_walls()
+	if is_instance_valid(traversal):
+		remove_child(traversal)
+		traversal.queue_free()
+	traversal = preload("res://game/traversal.gd").new()
+	traversal.setup(self)
+	add_child(traversal)
+	if idx == Room.BOSS_ROOM and not cleared_now:
+		_arena = preload("res://game/boss_arena.gd").new()
+		_arena.world = self
+		_arena.z_index = 8
+		add_child(_arena)
 	_build_decor(th)
 	_build_npcs()
 	_build_stations()
@@ -340,6 +379,8 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 
 
 func _left_open() -> bool:
+	if arena_active and not room_cleared:
+		return false
 	return Room.Expansion.edge(room_index, false) >= 0
 
 
@@ -420,6 +461,14 @@ func _go_restart() -> void:
 func _check_doors() -> void:
 	if player.dead:
 		return
+	for exit in room.get("vertical", []):
+		if not exit.get("open", true):
+			continue
+		if absf(player.position.x - float(exit.x)) < float(exit.width) / 2 + 14:
+			if (exit.side == "top" and player.position.y < 10) or (exit.side == "bottom" and player.position.y > float(room.floor) + 35):
+				_go(int(exit.target), true)
+				player.teleport(Vector2(exit.spawn[0], exit.spawn[1]))
+				return
 	var size: Vector2 = room["size"]
 	var door_top: float = float(room["floor"]) - Room.DOOR_H
 	var pos: Vector2 = player.global_position
@@ -603,6 +652,7 @@ func _spawn_pickup(pos: Vector2, item: String, value: int) -> void:
 func _hit_enemy(e: Node, dmg: int, col: Color, dir: float, down: bool = false) -> void:
 	var push := Vector2(dir * 0.35, 1.0).normalized() if down else Vector2(dir, -0.15).normalized()
 	var killed: bool = e.take_hit(dmg, push)
+	player.embers = mini(int(Tuning.data.player.ember_max), player.embers + 1)
 	if killed:
 		_fx("death", e.global_position, Art.enemy_color(e.kind), dir)
 		_on_enemy_killed(e)
@@ -650,8 +700,6 @@ func _check_contacts() -> void:
 		if player.dead:
 			return
 		if e.is_queued_for_deletion():
-			continue
-		if e.kind == "custode":
 			continue
 		if not _overlap(e.global_position, e.half, player.global_position, PlayerScript.HALF):
 			continue
@@ -897,6 +945,8 @@ func buy_item(key: String) -> String:
 		return "Acquisto non disponibile"
 	var item: Dictionary = Tuning.data.shop[key]
 	var price := int(item.price)
+	if item.has("need") and story.times_seen(item.need) == 0:
+		return "Manca il progetto: " + str(item.description)
 	if upgrades.has(key):
 		return "Possiedi già questa lavorazione"
 	if key == "heal" and player.hp >= player.max_hp:
@@ -1026,7 +1076,7 @@ func story_ctx() -> Dictionary:
 
 ## Vero mentre il riquadro dei dialoghi è aperto: giocatore e nemici restano fermi.
 func is_talking() -> bool:
-	return (_dialogue != null and _dialogue.is_open()) or (_shop != null and _shop.opened)
+	return (_dialogue != null and _dialogue.is_open()) or (_shop != null and _shop.opened) or (_map != null and _map.opened)
 
 
 ## Sceglie il personaggio più vicino con cui si può parlare (mostra il suo invito)

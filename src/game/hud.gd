@@ -106,6 +106,7 @@ func _draw_vitals() -> void:
 		Art.text(self, Art.body_font(), Vector2(34, 158), parry_text, 18, Art.CREMA)
 		Art.text(self, Art.body_font(), Vector2(34, 182), me.dash_status(), 18, Art.CREMA)
 		Art.text(self, Art.body_font(), Vector2(34, 206), "Accessori %d/%d" % [world.equipped.size(), world.accessory_slots()], 16, Art.CREMA)
+		Art.text(self, Art.body_font(), Vector2(34, 230), "R  Braci %d/12  ·  M Mappa" % me.embers, 16, Art.OCRA)
 		var hp := int(me.hp)
 		for i in int(me.max_hp):
 			var pulse := 0.6 + 0.4 * sin(_t * 3.0 + i * 0.6) if hp <= 1 and i == 0 else 1.0

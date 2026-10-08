@@ -86,6 +86,9 @@ func _refresh() -> void:
 		button.custom_minimum_size = Vector2(145, 46)
 		button.text = "Posseduto" if world.upgrades.has(key) else "Acquista"
 		button.disabled = world.upgrades.has(key) or world.coins < int(item.price) or (key == "heal" and world.player.hp >= world.player.max_hp)
+		if item.has("need") and world.story.times_seen(item.need) == 0:
+			button.disabled = true
+			button.text = "Progetto mancante"
 		button.pressed.connect(func() -> void:
 			_message.text = world.buy_item(str(key))
 			_refresh())

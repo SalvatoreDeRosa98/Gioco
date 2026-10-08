@@ -11,6 +11,7 @@ var touch_cd := 0.0
 var world: Node
 var facing := -1.0
 var _attack := 1.8
+var _pattern := 0
 var _windup := 0.0
 var _flash := 0.0
 
@@ -44,7 +45,11 @@ func _physics_process(delta: float) -> void:
 		if _windup > 0:
 			_windup -= delta
 			if _windup <= 0:
-				world.enemy_fire(position + Vector2(facing * 30, -12), Vector2(facing, 0), float(Tuning.data.progression.duelist_bullet_speed), Art.OCRA)
+				if _pattern % 2:
+					world.boss_sword_hit(position, position + Vector2(facing * 110, 15), position.x)
+				else:
+					world.enemy_fire(position + Vector2(facing * 30, -12), Vector2(facing, 0), float(Tuning.data.progression.duelist_bullet_speed), Art.OCRA)
+				_pattern += 1
 				_attack = float(Tuning.data.progression.duelist_attack_cooldown)
 		elif absf(target.position.x - position.x) > float(Tuning.data.progression.duelist_attack_range):
 			velocity.x = facing * float(Tuning.data.progression.duelist_speed)

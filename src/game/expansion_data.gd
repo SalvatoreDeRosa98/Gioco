@@ -24,7 +24,7 @@ static func room_data(idx: int) -> Dictionary:
 	for p in r.secrets:
 		secrets.append(Vector2(p[0], p[1]))
 	r.secrets = secrets
-	r.merge({"branch": -1, "branch_platform": Rect2(), "invisible_steps": [], "boss": false, "indoor": idx in [8, 10, 11]})
+	r.merge({"branch": -1, "branch_platform": Rect2(), "invisible_steps": [], "boss": false, "indoor": idx in [8, 10, 11, 12, 13, 14]})
 	return r
 
 ## Destinazione del bordo sinistro o destro; -1 indica un muro senza uscita.

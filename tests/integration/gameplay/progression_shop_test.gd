@@ -34,7 +34,7 @@ func _run() -> void:
 	world.buy_item("pocket")
 	world.buy_item("grip")
 	check(world.coins == 10 and world.accessory_slots() == 2 and world.equipped.size() == 2, "Tasca e secondo accessorio")
-	check(is_equal_approx(player._cfg.attack_cooldown, 0.28 * 0.85), "Impugnatura modifica il combattimento")
+	check(is_equal_approx(player._cfg.attack_cooldown, float(get_root().get_node("Tuning").data.player.attack_cooldown) * 0.85), "Impugnatura modifica il combattimento")
 	world.buy_item("mask")
 	check(world.coins == 10 and not world.upgrades.has("mask"), "Denaro insufficiente non speso")
 	player.hp = 3

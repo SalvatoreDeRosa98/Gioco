@@ -14,7 +14,7 @@ func _run() -> void:
 	p.set_physics_process(false)
 	main._world.set_physics_process(false)
 	var rig = p._rig
-	check(rig.sprite.sprite_frames.get_animation_names().size() == 13, "Tutte le tredici sequenze caricate")
+	check(rig.sprite.sprite_frames.get_animation_names().size() == 17, "Tutte le diciassette sequenze caricate")
 	p.grounded = true
 	p.move_vel = Vector2(250,0)
 	rig.select_state(p,true)

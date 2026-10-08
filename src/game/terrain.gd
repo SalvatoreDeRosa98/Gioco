@@ -161,9 +161,12 @@ func _draw_stone() -> void:
 
 	# Pavimento: fascia intera (lastra e mattoni), poi buio.
 	var full := Vector2(CAP_ROWS.x, BRICK_ROWS.y)
-	_band(c, -200.0, size.x + 200.0, fy - CAP_LIFT, full, STONE_SCALE)
+	var floor_parts: Array = Room.solids(room, true, true).filter(func(r: Rect2) -> bool: return r.position.y == fy)
+	for part: Rect2 in floor_parts:
+		_band(c, part.position.x, part.end.x, fy - CAP_LIFT, full, STONE_SCALE)
 	var below := fy - CAP_LIFT + (full.y - full.x) * STONE_SCALE
-	c.draw_rect(Rect2(-200, below - 1.0, size.x + 400.0, size.y - below + 400.0), shade)
+	for part: Rect2 in floor_parts:
+		c.draw_rect(Rect2(part.position.x, below - 1.0, part.size.x, size.y - below + 400.0), shade)
 
 	# Pilastri sopra i portali.
 	var door_top := fy - Room.DOOR_H

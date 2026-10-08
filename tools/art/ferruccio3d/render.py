@@ -14,7 +14,7 @@ def main():
     arm,body=model.build(str((args.out/'ferruccio.blend').resolve()))
     look.setup(body)
     scene=bpy.context.scene
-    metadata={'size':look.RES,'feet':look.feet_pixel(),'height_pixels':1.94/look.ORTHO*look.RES,'clips':{}}
+    metadata={'size':look.RES,'feet':look.feet_pixel(),'height_pixels':2.28/look.ORTHO*look.RES,'clips':{}}
     if (args.out/'animations.json').exists():
         metadata=json.loads((args.out/'animations.json').read_text(encoding='utf8'))
     for clip in args.clips:

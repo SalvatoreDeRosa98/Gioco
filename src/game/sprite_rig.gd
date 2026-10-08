@@ -48,6 +48,9 @@ func select_state(player: Node, running: bool) -> void:
 	var progress := -1.0
 	if player.dead:
 		clip = "death"
+	elif player.hammer_time > 0:
+		clip = "hammer"
+		progress = 1.0 - player.hammer_time / float(player._cfg.hammer_time)
 	elif player.attacking > 0:
 		clip = "pogo" if player.attack_down else ("slash_a" if player.slash_side > 0 else "slash_b")
 		progress = 1.0 - player.attacking / float(player._cfg.attack_time)
@@ -55,6 +58,12 @@ func select_state(player: Node, running: bool) -> void:
 		clip = "parry"
 	elif player._flash > 0.7:
 		clip = "hurt"
+	elif player.grapple_anchor != Vector2.INF:
+		clip = "grapple"
+	elif player.wall_gripping:
+		clip = "wall"
+	elif player._heal_t > 0:
+		clip = "heal"
 	elif player.dashing:
 		clip = "dash"
 	elif player._spin_t >= 0:

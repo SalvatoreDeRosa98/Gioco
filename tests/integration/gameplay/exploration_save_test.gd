@@ -67,7 +67,7 @@ func _run() -> void:
 		var highest: Rect2 = room["branch_platform"]
 		check(not room["secrets"].is_empty(), "Tesoro in ogni area")
 		for ledge in room["ledges"]:
-			check(highest.position.y <= ledge.position.y, "Passaggio alla quota più alta")
+			check(i == 3 or highest.position.y <= ledge.position.y, "Segreto originale sopra le mensole; Belvedere prosegue al campanile")
 			check(ledge.position.x > Room.EDGE and ledge.end.x < room["size"].x - Room.EDGE, "Mensole fuori dai pilastri")
 	world._load_room(0, true, false)
 	check(world._stations_root.get_child_count() == 0, "Nessun portale o suggerimento visibile per il passaggio")

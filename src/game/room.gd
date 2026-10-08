@@ -6,7 +6,7 @@ extends RefCounted
 const MAIN_COUNT := 5
 const SECRET_ROOM := 5
 const EPILOGUE_ROOM := 6
-const COUNT := 12
+const COUNT := 15
 const BOSS_ROOM := 4
 const ARCHIVES_ROOM := 11
 const Expansion := preload("res://game/expansion_data.gd")
@@ -174,7 +174,16 @@ static func save_station_id(idx: int) -> String:
 	var pos: Vector2 = SAVE_STATUES[idx]
 	return "%d:statua:%d:%d" % [idx, roundi(pos.x), roundi(pos.y)]
 
+## Aggiunge le aperture verticali senza cambiare gli ID delle aree salvate.
 static func build(idx: int, choices: Dictionary = {}) -> Dictionary:
+	var r := _base_build(idx, choices).duplicate(true)
+	r["vertical"] = Expansion.data().get("vertical", {}).get(str(idx), [])
+	for l in Expansion.data().get("extra_ledges", {}).get(str(idx), []):
+		r.ledges.append(Rect2(l[0], l[1], l[2], l[3]))
+	return r
+
+
+static func _base_build(idx: int, choices: Dictionary = {}) -> Dictionary:
 	if idx >= 7:
 		return Expansion.room_data(idx)
 	var r: Dictionary = ROOMS[idx]
@@ -253,12 +262,22 @@ static func solids(room: Dictionary, left_open: bool, right_open: bool) -> Array
 	var size: Vector2 = room["size"]
 	var fy: float = room["floor"]
 	var door_top := fy - DOOR_H
-	var out: Array = [
-		Rect2(-200, -200, size.x + 400.0, 200),
-		Rect2(-200, fy, size.x + 400.0, size.y - fy + 200.0),
-		Rect2(-200, -200, 200.0 + EDGE, door_top + 200.0),
-		Rect2(size.x - EDGE, -200, 200.0 + EDGE, door_top + 200.0),
-	]
+	var out: Array = []
+	for side in ["top", "bottom"]:
+		var holes: Array = []
+		for exit in room.get("vertical", []):
+			if exit.side == side and exit.get("open", true):
+				holes.append(Vector2(exit.x - exit.width / 2.0, exit.x + exit.width / 2.0))
+		holes.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+		var start := -200.0
+		var y := -200.0 if side == "top" else fy
+		var h := 200.0 if side == "top" else size.y - fy + 200.0
+		for hole in holes:
+			out.append(Rect2(start, y, hole.x - start, h))
+			start = hole.y
+		out.append(Rect2(start, y, size.x + 200.0 - start, h))
+	out.append(Rect2(-200, -200, 200.0 + EDGE, door_top + 200.0))
+	out.append(Rect2(size.x - EDGE, -200, 200.0 + EDGE, door_top + 200.0))
 	out.append_array(room["blocks"])
 	if not left_open:
 		out.append(Rect2(-200, door_top, 240, DOOR_H))

@@ -76,6 +76,8 @@ enum P { SX, SY, TILT, HEAD, TAIL, LIFT, STRIDE, FORE, HIND, GLOW, SHAKE, WING }
 const P_COUNT := 12
 const P_REST: Array[float] = [1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
+var _phase_two := false
+var _attack_variant := 0
 var kind := "gatto"
 var hp := 3
 var max_hp := 3
@@ -351,8 +353,13 @@ func _ai_gatto(delta: float) -> void:
 			if target:
 				_face_x(target.global_position.x)
 			if _state_t >= _state_len:
-				_launch_pounce(target)
-				ballistic = true
+				if _attack_variant % 2 and target and global_position.distance_to(target.global_position) < _f("swipe_reach"):
+					world.boss_sword_hit(global_position, global_position + Vector2(_dir * _f("swipe_reach"), 0), global_position.x)
+					_enter("land", _f("swipe_recovery"))
+				else:
+					_launch_pounce(target)
+					ballistic = true
+				_attack_variant += 1
 		"pounce", "jump":
 			# La velocità orizzontale del salto si riapplica a ogni frame: strisciando contro lo
 			# spigolo di un blocco move_and_slide la azzera, e il gatto ricadrebbe in verticale.
@@ -729,6 +736,11 @@ func _ai_vespa(delta: float) -> void:
 				velocity = _dive_dir * _f("dive_speed")
 				_kick(P.SX, 5.0)
 				_sfx("vespa_picchiata")
+				if _attack_variant % 2:
+					world.enemy_fire(global_position, _dive_dir, _f("stinger_speed"), Color(0.8, 0.9, 0.45))
+					velocity = Vector2.ZERO
+					_enter("retreat", _f("retreat_time"))
+				_attack_variant += 1
 		"dive":
 			# Linea retta, nessuna sterzata: leggibile e schivabile.
 			velocity = _dive_dir * _f("dive_speed")
@@ -819,11 +831,31 @@ func _ai_statua(delta: float) -> void:
 	if _shoot_cd <= 0.0:
 		_shoot_cd = _f("fire_every")
 		world.enemy_fire(global_position + Vector2(facing * 26.0, -40.0), Vector2(facing, 0.0), _f("bullet_speed"), Color(0.6, 0.85, 1.0))
+		if _attack_variant % 2:
+			world.enemy_fire(global_position + Vector2(facing * 26, -40), Vector2(facing, -0.35).normalized(), _f("bullet_speed"), Color(0.6, 0.85, 1))
+		_attack_variant += 1
 		_sfx("statua_sparo")
 
 
 ## Boss: cammina verso il giocatore, poi alterna balzo con onda d'urto e raffica radiale.
 func _ai_custode(delta: float) -> void:
+	if not world.arena_active:
+		velocity = Vector2(0, minf(velocity.y + GRAVITY * delta, MAX_FALL))
+		anim = "idle"
+		return
+	if _state == "arena_intro":
+		_state_t -= delta
+		velocity.x = 0
+		if _state_t <= 0:
+			_state = "walk"
+			_state_t = 0.5
+		return
+	if hp <= max_hp / 2 and not _phase_two:
+		_phase_two = true
+		_state = "walk"
+		_state_t = 2.0
+		world._hud.toast("Il Custode spezza il sigillo: seconda fase")
+		Fx.ring(world.fx_root, global_position, Art.OCRA, 130, 0.8)
 	velocity.y = minf(velocity.y + GRAVITY * delta, 1000.0)
 	var target: Node2D = world.alive_player()
 	if target and absf(target.global_position.x - global_position.x) > 4.0 and _state == "walk":
@@ -831,7 +863,7 @@ func _ai_custode(delta: float) -> void:
 	_state_t -= delta
 	match _state:
 		"walk":
-			velocity.x = facing * speed
+			velocity.x = facing * speed * (1.2 if _phase_two else 1.0)
 			anim = "walk"
 			# Passi a ritmo del sobbalzo disegnato (_draw_custode): uno a ogni appoggio.
 			var step := sin(_look_t * CUSTODE_STEP_RATE)
@@ -873,7 +905,7 @@ func _ai_custode(delta: float) -> void:
 			anim = "sword_recovery"
 			if _state_t <= 0:
 				_state = "walk"
-				_state_t = 1.2
+				_state_t = 0.65
 		"crouch":
 			velocity.x = 0.0
 			anim = "crouch"
@@ -889,16 +921,16 @@ func _ai_custode(delta: float) -> void:
 				world.enemy_shockwave(global_position + Vector2(0, half.y - 6.0))
 				_sfx("custode_urto")
 				_state = "walk"
-				_state_t = 1.6
+				_state_t = 0.75
 				velocity.x = 0.0
 		"burst":
 			velocity.x = 0.0
 			anim = "burst"
 			if _state_t <= 0.0:
-				world.enemy_burst(global_position + Vector2(0, -40.0), int(_f("burst_count")))
+				world.enemy_burst(global_position + Vector2(0, -40.0), int(_f("burst_count")) + (2 if _phase_two else 0))
 				_sfx("custode_raffica")
 				_state = "walk"
-				_state_t = 2.2
+				_state_t = 1.8 if _phase_two else 2.2
 
 
 # ---------------------------------------------------------------- Colpi ricevuti

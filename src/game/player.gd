@@ -20,6 +20,12 @@ const AMBIENT_AMOUNT := 0.3
 const GHOST_LIFE := 0.28
 const GHOST_EVERY := 0.03
 
+var hammer_time := 0.0
+var wall_gripping := false
+var embers := 0
+var grapple_anchor := Vector2.INF
+var _heal_t := 0.0
+var _slash_pending := false
 var hp := 5
 var max_hp := 5
 var dead := false
@@ -150,11 +156,16 @@ func add_trauma(amount: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	_prev_pos = global_position
+	hammer_time = maxf(0, hammer_time - delta)
 	iframes = maxf(0.0, iframes - delta)
 	parry_window = maxf(0.0, parry_window - delta)
 	parry_cooldown = maxf(0.0, parry_cooldown - delta)
 	if attacking > 0.0:
 		attacking = maxf(0.0, attacking - delta)
+	if _slash_pending and attacking <= float(_cfg.attack_time) * (1.0 - float(_cfg.get("attack_active", 0.32))):
+		_slash_pending = false
+		if not dead and attacking > 0:
+			slash_requested.emit(global_position, facing, attack_down, not is_on_floor())
 	if dead:
 		velocity = Vector2.ZERO
 		move_vel = velocity
@@ -197,12 +208,12 @@ func _physics_process(delta: float) -> void:
 		_dash_cd = float(_cfg.dash_cooldown)
 		_spin_t = -1.0
 		_sfx("scatto")
-	if Input.is_action_just_pressed("attack") and _attack_cd <= 0.0:
+	if Input.is_action_just_pressed("attack") and _attack_cd <= 0.0 and hammer_time <= 0.0:
 		_attack_cd = float(_cfg.attack_cooldown)
 		attacking = float(_cfg.attack_time)
 		attack_down = Input.is_action_pressed("move_down") and not is_on_floor()
 		slash_side = -slash_side
-		slash_requested.emit(global_position, facing, attack_down, not is_on_floor())
+		_slash_pending = true
 		_sfx("fendente")
 
 	var vy_before := velocity.y
@@ -222,6 +233,7 @@ func _physics_process(delta: float) -> void:
 			_double_jump()
 		if Input.is_action_just_released("jump") and velocity.y < 0.0:
 			velocity.y *= float(_cfg.jump_cut)
+	_update_tools(delta, axis, jump_pressed)
 	move_and_slide()
 	_cur_pos = global_position
 	grounded = is_on_floor()
@@ -445,6 +457,9 @@ func _draw_slash() -> void:
 	if attacking <= 0.0 or dead:
 		return
 	var atk := 1.0 - attacking / float(_cfg.attack_time)
+	if atk < 0.28 or atk > 0.65:
+		return
+	atk = (atk - 0.28) / 0.37
 	var k := 1.0 - atk
 	var inner := Color(1, 1, 1, 0.95 * k)
 	var outer := Color(SCARF_COLOR.lightened(0.4), 0.0)
@@ -464,6 +479,7 @@ func _draw_slash() -> void:
 func take_damage(dmg: int) -> void:
 	if invulnerable:
 		return
+	_heal_t = 0
 	hp = maxi(0, hp - dmg)
 	dead = hp <= 0
 	_flash = 1.0
@@ -511,6 +527,11 @@ func dash_status() -> String:
 
 
 func teleport(pos: Vector2) -> void:
+	hammer_time = 0
+	wall_gripping = false
+	grapple_anchor = Vector2.INF
+	_slash_pending = false
+	attacking = 0
 	global_position = pos
 	velocity = Vector2.ZERO
 	move_vel = Vector2.ZERO
@@ -536,3 +557,36 @@ func bounce() -> void:
 	_spin_t = -1.0
 	_squash = 0.2
 	_air_jumps = int(_cfg.air_jumps)
+
+
+## Cura canalizzata, presa al muro e catena: i valori provengono dal tuning.
+func _update_tools(delta: float, axis: float, jump_pressed: bool) -> void:
+	if world == null:
+		return
+	wall_gripping = world.upgrades.has("wall_grip") and is_on_wall() and not is_on_floor() and axis != 0
+	if wall_gripping:
+		velocity.y = minf(velocity.y, float(_cfg.wall_slide_speed))
+		if jump_pressed:
+			velocity = Vector2(get_wall_normal().x * float(_cfg.speed), float(_cfg.jump_velocity))
+			_knock_t = 0.16
+			_air_jumps = int(_cfg.air_jumps)
+	grapple_anchor = Vector2.INF
+	if world.upgrades.has("grapple") and Input.is_physical_key_pressed(KEY_Q) and is_instance_valid(world.traversal):
+		grapple_anchor = world.traversal.anchor(position, float(_cfg.grapple_range))
+		if grapple_anchor != Vector2.INF:
+			velocity = (grapple_anchor - position).normalized() * float(_cfg.grapple_speed)
+			_air_jumps = int(_cfg.air_jumps)
+			_air_dash_used = false
+			if position.distance_to(grapple_anchor) < 35:
+				velocity *= 0.2
+	var cost := int(_cfg.ember_cost)
+	if Input.is_physical_key_pressed(KEY_R) and is_on_floor() and axis == 0 and attacking == 0 and _dash_t <= 0 and hp < max_hp and embers >= cost:
+		_heal_t += delta
+		velocity.x = 0
+		if _heal_t >= float(_cfg.heal_time):
+			embers -= cost
+			heal(1)
+			_heal_t = 0
+			Fx.ring(_fx_root(), position, Art.OCRA, 34, 0.4)
+	else:
+		_heal_t = 0

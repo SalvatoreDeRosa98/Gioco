@@ -199,7 +199,7 @@
     },
     "9": {
       "name": "Cisterne Reali",
-      "subtitle": "L’acqua porta le voci",
+      "subtitle": "L'acqua porta le voci",
       "theme": "giardino",
       "art": "cisterne",
       "size": [
@@ -474,6 +474,388 @@
         ]
       ],
       "decor": []
+    },
+    "12": {
+      "name": "Campanile delle Voci",
+      "subtitle": "I ferri di Gaetano custodiscono altre strade",
+      "theme": "belvedere",
+      "art": "campanile",
+      "size": [
+        1280,
+        2400
+      ],
+      "floor": 2300,
+      "blocks": [],
+      "ledges": [
+        [
+          420,
+          2180,
+          230,
+          18
+        ],
+        [
+          670,
+          2040,
+          230,
+          18
+        ],
+        [
+          420,
+          1900,
+          230,
+          18
+        ],
+        [
+          670,
+          1760,
+          230,
+          18
+        ],
+        [
+          420,
+          1620,
+          230,
+          18
+        ],
+        [
+          670,
+          1480,
+          230,
+          18
+        ],
+        [
+          420,
+          1340,
+          230,
+          18
+        ],
+        [
+          670,
+          1200,
+          230,
+          18
+        ],
+        [
+          420,
+          1060,
+          230,
+          18
+        ],
+        [
+          670,
+          920,
+          230,
+          18
+        ],
+        [
+          420,
+          780,
+          230,
+          18
+        ],
+        [
+          670,
+          640,
+          230,
+          18
+        ],
+        [
+          420,
+          500,
+          230,
+          18
+        ],
+        [
+          670,
+          360,
+          230,
+          18
+        ],
+        [
+          420,
+          220,
+          230,
+          18
+        ],
+        [
+          520,
+          150,
+          240,
+          18
+        ],
+        [
+          130,
+          440,
+          220,
+          18
+        ]
+      ],
+      "enemies": [
+        {
+          "type": "vespa",
+          "pos": [
+            900,
+            1680
+          ]
+        },
+        {
+          "type": "vespa",
+          "pos": [
+            280,
+            1100
+          ]
+        },
+        {
+          "type": "gatto",
+          "pos": [
+            750,
+            1040
+          ]
+        }
+      ],
+      "npcs": [],
+      "decor": [],
+      "secrets": [
+        [
+          230,
+          400
+        ]
+      ]
+    },
+    "13": {
+      "name": "Cisterne Sepolte",
+      "subtitle": "I ferri di Gaetano custodiscono altre strade",
+      "theme": "belvedere",
+      "art": "cisterne_sepolte",
+      "size": [
+        1280,
+        2100
+      ],
+      "floor": 2000,
+      "blocks": [],
+      "ledges": [
+        [
+          410,
+          1900,
+          230,
+          18
+        ],
+        [
+          680,
+          1760,
+          230,
+          18
+        ],
+        [
+          410,
+          1620,
+          230,
+          18
+        ],
+        [
+          680,
+          1480,
+          230,
+          18
+        ],
+        [
+          410,
+          1340,
+          230,
+          18
+        ],
+        [
+          680,
+          1200,
+          230,
+          18
+        ],
+        [
+          410,
+          1060,
+          230,
+          18
+        ],
+        [
+          680,
+          920,
+          230,
+          18
+        ],
+        [
+          410,
+          780,
+          230,
+          18
+        ],
+        [
+          680,
+          640,
+          230,
+          18
+        ],
+        [
+          410,
+          500,
+          230,
+          18
+        ],
+        [
+          680,
+          360,
+          230,
+          18
+        ],
+        [
+          410,
+          220,
+          230,
+          18
+        ],
+        [
+          930,
+          1770,
+          230,
+          18
+        ]
+      ],
+      "enemies": [
+        {
+          "type": "vespa",
+          "pos": [
+            260,
+            600
+          ]
+        },
+        {
+          "type": "gatto",
+          "pos": [
+            980,
+            1980
+          ]
+        },
+        {
+          "type": "statua",
+          "pos": [
+            240,
+            1966
+          ]
+        }
+      ],
+      "npcs": [],
+      "decor": [],
+      "secrets": [
+        [
+          1010,
+          1730
+        ]
+      ]
+    },
+    "14": {
+      "name": "Galleria degli Orologi",
+      "subtitle": "I ferri di Gaetano custodiscono altre strade",
+      "theme": "belvedere",
+      "art": "galleria_orologi",
+      "size": [
+        3520,
+        1080
+      ],
+      "floor": 980,
+      "blocks": [
+        [
+          1650,
+          870,
+          150,
+          110
+        ],
+        [
+          2200,
+          870,
+          100,
+          110
+        ]
+      ],
+      "ledges": [
+        [
+          200,
+          850,
+          240,
+          18
+        ],
+        [
+          560,
+          710,
+          220,
+          18
+        ],
+        [
+          960,
+          580,
+          230,
+          18
+        ],
+        [
+          1370,
+          710,
+          260,
+          18
+        ],
+        [
+          1850,
+          830,
+          240,
+          18
+        ],
+        [
+          2320,
+          710,
+          220,
+          18
+        ],
+        [
+          2750,
+          580,
+          250,
+          18
+        ],
+        [
+          3150,
+          800,
+          240,
+          18
+        ]
+      ],
+      "enemies": [
+        {
+          "type": "duellante",
+          "pos": [
+            1500,
+            940
+          ]
+        },
+        {
+          "type": "vespa",
+          "pos": [
+            2100,
+            510
+          ]
+        },
+        {
+          "type": "gatto",
+          "pos": [
+            2800,
+            960
+          ]
+        }
+      ],
+      "npcs": [],
+      "decor": [],
+      "secrets": [
+        [
+          2890,
+          540
+        ]
+      ]
     }
   },
   "edges": {
@@ -524,6 +906,18 @@
     "11": [
       3,
       4
+    ],
+    "12": [
+      -1,
+      -1
+    ],
+    "13": [
+      -1,
+      -1
+    ],
+    "14": [
+      -1,
+      11
     ]
   },
   "landmarks": {
@@ -590,7 +984,7 @@
         "text": [
           "Cesare ha inciso un nome sulla ruota: Gaetano.",
           "Il fabbro costruì la chiusa per portare le voci fuori dalla Reggia.",
-          "L’acqua scende. Il percorso per il Belvedere è aperto."
+          "L'acqua scende. Il percorso per il Belvedere è aperto."
         ]
       }
     ],
@@ -633,7 +1027,7 @@
           530
         ],
         "text": [
-          "Secondo frammento: il capitano ricevette l’ordine di arrestare il fabbro.",
+          "Secondo frammento: il capitano ricevette l'ordine di arrestare il fabbro.",
           "Nella deposizione manca una riga: nessuno voleva scrivere il nome di Ferruccio."
         ]
       },
@@ -664,6 +1058,51 @@
         ],
         "need": "",
         "unlock": "textile_bridge"
+      }
+    ],
+    "12": [
+      {
+        "kind": "lever",
+        "id": "bells",
+        "label": "Ascolta le campane",
+        "pos": [
+          720,
+          150
+        ],
+        "text": [
+          "Le campane non chiamavano i nobili: avvertivano gli operai quando le guardie entravano nelle botteghe.",
+          "Gaetano le accordò sui nomi dei dispersi. Ogni rintocco è una voce che il Velo non ha cancellato."
+        ]
+      }
+    ],
+    "13": [
+      {
+        "kind": "fragment",
+        "id": "hammer_plan",
+        "label": "Recupera il disegno del martello",
+        "pos": [
+          170,
+          2000
+        ],
+        "text": [
+          "Sulla pietra Gaetano ha inciso la sezione di un martello: un colpo breve rompe il calcare senza far crollare la volta.",
+          "Porta il disegno alla fucina. Il martello aprirà i muri incrinati che hai incontrato."
+        ]
+      }
+    ],
+    "14": [
+      {
+        "kind": "lever",
+        "id": "clock_memory",
+        "label": "Leggi la dedica dell'orologiaio",
+        "pos": [
+          1450,
+          710
+        ],
+        "text": [
+          "Le lancette furono fermate all'ora dell'arresto di Gaetano. Il palazzo aveva paura perfino del tempo.",
+          "Dall'alto degli Archivi puoi tornare qui. Le strade degli artigiani si incrociano sopra quelle della corte."
+        ]
       }
     ]
   },
@@ -718,5 +1157,229 @@
       "name": "La Madre di Marmo",
       "flag": "mother_defeated"
     }
+  },
+  "vertical": {
+    "3": [
+      {
+        "side": "top",
+        "x": 1510,
+        "width": 220,
+        "target": 12,
+        "spawn": [
+          530,
+          2156
+        ],
+        "need": "grapple"
+      }
+    ],
+    "12": [
+      {
+        "side": "bottom",
+        "x": 530,
+        "width": 220,
+        "target": 3,
+        "spawn": [
+          1510,
+          170
+        ]
+      },
+      {
+        "side": "top",
+        "x": 630,
+        "width": 220,
+        "target": 14,
+        "spawn": [
+          420,
+          826
+        ],
+        "need": "wall_grip"
+      }
+    ],
+    "14": [
+      {
+        "side": "bottom",
+        "x": 420,
+        "width": 220,
+        "target": 12,
+        "spawn": [
+          630,
+          180
+        ]
+      }
+    ],
+    "9": [
+      {
+        "side": "bottom",
+        "x": 1840,
+        "width": 220,
+        "target": 13,
+        "spawn": [
+          570,
+          170
+        ]
+      }
+    ],
+    "13": [
+      {
+        "side": "top",
+        "x": 570,
+        "width": 220,
+        "target": 9,
+        "spawn": [
+          1650,
+          956
+        ]
+      }
+    ],
+    "11": [
+      {
+        "side": "top",
+        "x": 1700,
+        "width": 220,
+        "target": 14,
+        "spawn": [
+          3310,
+          930
+        ]
+      }
+    ]
+  },
+  "extra_ledges": {
+    "3": [
+      [
+        1420,
+        280,
+        220,
+        18
+      ],
+      [
+        1400,
+        150,
+        220,
+        18
+      ]
+    ],
+    "11": [
+      [
+        1650,
+        400,
+        220,
+        18
+      ],
+      [
+        1560,
+        270,
+        220,
+        18
+      ],
+      [
+        1610,
+        140,
+        220,
+        18
+      ]
+    ]
+  },
+  "rings": {
+    "3": [
+      [
+        1510,
+        180
+      ]
+    ],
+    "12": [
+      [
+        600,
+        1950
+      ],
+      [
+        660,
+        1530
+      ],
+      [
+        600,
+        1110
+      ],
+      [
+        650,
+        690
+      ],
+      [
+        630,
+        270
+      ]
+    ],
+    "13": [
+      [
+        590,
+        1560
+      ],
+      [
+        680,
+        1000
+      ],
+      [
+        570,
+        440
+      ]
+    ],
+    "14": [
+      [
+        880,
+        400
+      ],
+      [
+        1850,
+        610
+      ],
+      [
+        2570,
+        470
+      ]
+    ]
+  },
+  "cracks": {
+    "7": [
+      {
+        "id": "market_wall",
+        "rect": [
+          1720,
+          740,
+          50,
+          240
+        ],
+        "reward": 35
+      }
+    ],
+    "13": [
+      {
+        "id": "cistern_wall",
+        "rect": [
+          850,
+          1740,
+          50,
+          260
+        ],
+        "reward": 30
+      }
+    ]
+  },
+  "spikes": {
+    "13": [
+      [
+        300,
+        1980,
+        500,
+        20
+      ]
+    ],
+    "14": [
+      [
+        1850,
+        960,
+        280,
+        20
+      ]
+    ]
   }
 }

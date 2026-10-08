@@ -1,5 +1,5 @@
 extends SceneTree
-## Accesso al Cortile e danni del Custode: corpo innocuo, lama attiva una sola volta.
+## Accesso al Cortile e danni del Custode: danno da contatto, arena chiusa e lama attiva una sola volta.
 var failures := 0
 
 func _initialize() -> void:
@@ -39,10 +39,15 @@ func _run() -> void:
 		if enemy.kind == "custode":
 			boss = enemy
 	check(boss != null and boss.hp == 36, "Vita del Custode riequilibrata")
+	world._arena.activate()
+	check(world.arena_active and not world._left_open(), "L'arena chiude l'ingresso")
+	check(world.room.ledges.size() == 3 and world.is_solid(Vector2(200,900)), "Il Cortile cambia assetto fisico")
+	check(boss.speed >= 200, "Custode più che raddoppiato in velocità")
 	player.position = boss.position
 	var health: int = player.hp
 	world._check_contacts()
-	check(player.hp == health, "Toccare il Custode non ferisce")
+	check(player.hp == health - 1, "Toccare il Custode ferisce")
+	health = player.hp
 	boss.facing = 1
 	boss._state = "sword_windup"
 	boss._state_t = 0.3
@@ -64,7 +69,7 @@ func _run() -> void:
 	player.parry_window = 0.15
 	boss._ai_custode(0)
 	check(player.hp == health - 1 and boss._sword_hit, "La parata annulla e consuma il fendente")
-	check(int(boss._cfg.burst_count) == 6 and float(boss._cfg.burst_speed) == 210, "Raffica ridotta e rallentata")
+	check(int(boss._cfg.burst_count) == 6 and float(boss._cfg.burst_speed) == 270, "Raffica più veloce ma ancora leggibile")
 	var shortcut := InputEventKey.new()
 	shortcut.keycode = KEY_F12
 	shortcut.ctrl_pressed = true

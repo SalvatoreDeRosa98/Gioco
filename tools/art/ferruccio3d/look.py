@@ -5,17 +5,18 @@ Tutto è calcolato nello shader come emissione, così il render Cycles su CPU no
 o rimbalzi: la direzione della luce è [LIGHT] e resta fissa per ogni fotogramma.
 """
 import math
+from pathlib import Path
 
 import bpy
 from mathutils import Vector
 
 ## Luce dall'alto e da davanti-sinistra della telecamera (come DEFAULT_LIGHT_DIR del gioco).
-LIGHT = Vector((0.55, -0.35, 0.75)).normalized()
+LIGHT = Vector((-0.55, -0.45, 0.75)).normalized()
 ## Tinte delle ombre: fredde, come le notti dipinte del gioco.
-SHADOW_TINT = (0.46, 0.50, 0.66)
+SHADOW_TINT = (0.28, 0.32, 0.43)
 MID_TINT = (0.78, 0.79, 0.84)
 OUTLINE = (0.012, 0.011, 0.016)
-OUTLINE_WIDTH = 0.011
+OUTLINE_WIDTH = 0.0025
 ## Pixel della tela per unità di mondo (la figura alta ~1.95 unità occupa ~420 px).
 RES = 512
 ORTHO = 3.0
@@ -47,7 +48,7 @@ def toon_material(mat, emissive=False):
     nt.links.new(geo.outputs["Normal"], dot.inputs[0])
     coord = _node(nt, "ShaderNodeTexCoord", -1000, -200)
     brush = _node(nt, "ShaderNodeTexNoise", -800, -150)
-    brush.inputs["Scale"].default_value = 7.0
+    brush.inputs["Scale"].default_value = 15.0
     brush.inputs["Detail"].default_value = 8.0
     brush.inputs["Roughness"].default_value = 0.65
     nt.links.new(coord.outputs["Object"], brush.inputs["Vector"])
@@ -64,14 +65,14 @@ def toon_material(mat, emissive=False):
     nt.links.new(add.outputs[0], to01.inputs[0])
     ramp = _node(nt, "ShaderNodeValToRGB", -50, 50)
     cr = ramp.color_ramp
-    cr.interpolation = "CONSTANT"
+    cr.interpolation = "LINEAR"
     shadow = tuple(b * t for b, t in zip(base, SHADOW_TINT))
     mid = tuple(b * t for b, t in zip(base, MID_TINT))
     cr.elements[0].position = 0.0
     cr.elements[0].color = (*shadow, 1)
-    cr.elements[1].position = 0.47
+    cr.elements[1].position = 0.63
     cr.elements[1].color = (*mid, 1)
-    e = cr.elements.new(0.72)
+    e = cr.elements.new(0.9)
     e.color = (*base, 1)
     nt.links.new(to01.outputs[0], ramp.inputs[0])
     # Grana del colore: variazione leggera come pigmento steso a mano.
@@ -100,7 +101,21 @@ def toon_material(mat, emissive=False):
     rim_fac.inputs[1].default_value = 0.35
     nt.links.new(rim_mask.outputs[0], rim_fac.inputs[0])
     nt.links.new(rim_fac.outputs[0], rim_col.inputs["Factor"])
-    nt.links.new(rim_col.outputs["Result"], emit.inputs["Color"])
+    if mat.name in ("tunica","cappello","calzoni","calze","sciarpa","scarpe"):
+        image_node=_node(nt,"ShaderNodeTexImage",700,-400)
+        image_node.image=bpy.data.images.load(str(Path(__file__).resolve().parents[3]/"src/assets/art/characters/ferruccio.png"),check_existing=True)
+        # Materiale dipinto con una lieve modulazione volumetrica, senza doppie ombre pesanti.
+        mix=_node(nt,"ShaderNodeMixRGB",900,-200,blend_type="MULTIPLY")
+        mix.inputs[0].default_value=.32
+        nt.links.new(image_node.outputs["Color"],mix.inputs[1])
+        nt.links.new(rim_col.outputs["Result"],mix.inputs[2])
+        alpha=_node(nt,"ShaderNodeMixRGB",1100,0,blend_type="MIX")
+        nt.links.new(image_node.outputs["Alpha"],alpha.inputs[0])
+        nt.links.new(rim_col.outputs["Result"],alpha.inputs[1])
+        nt.links.new(mix.outputs[0],alpha.inputs[2])
+        nt.links.new(alpha.outputs[0],emit.inputs["Color"])
+    else:
+        nt.links.new(rim_col.outputs["Result"], emit.inputs["Color"])
 
 
 def outline_material():

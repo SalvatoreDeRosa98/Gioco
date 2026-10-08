@@ -14,6 +14,8 @@ var _cfg: Dictionary
 var _tex: Texture2D
 var _timer := 1.8
 var _windup := false
+var _pattern := 0
+var _aim := Vector2.RIGHT
 var _swing := 0.0
 var _flash := 0.0
 
@@ -59,16 +61,21 @@ func _physics_process(delta: float) -> void:
 			elif _timer <= 0:
 				_windup = true
 				_timer = float(_cfg.windup)
+				_aim = (target.position - position).normalized()
 		elif _timer <= 0:
 			_windup = false
-			_timer = float(_cfg.cooldown)
+			_timer = float(_cfg.cooldown) * (0.8 if hp <= max_hp / 2 else 1.0)
 			_swing = 0.3
 			if kind == "madre":
-				var direction: Vector2 = (target.position - position).normalized()
-				for angle in [-0.24, 0.0, 0.24]:
+				var direction: Vector2 = _aim
+				for angle in ([-0.36, -0.18, 0.0, 0.18, 0.36] if _pattern % 2 else [-0.24, 0.0, 0.24]):
 					world.enemy_fire(position, direction.rotated(angle), 180, Color(0.6, 0.82, 1))
 			else:
-				world.boss_sword_hit(position, position + Vector2(facing * float(_cfg.reach), 30), position.x)
+				if _pattern % 2:
+					world.enemy_shockwave(position + Vector2(0, half.y - 6))
+				else:
+					world.boss_sword_hit(position, position + Vector2(facing * float(_cfg.reach), 30), position.x)
+			_pattern += 1
 	move_and_slide()
 	queue_redraw()
 
@@ -87,6 +94,9 @@ func _draw() -> void:
 	var size := Vector2(h * _tex.get_width() / _tex.get_height(), h)
 	draw_set_transform(Vector2.ZERO, 0, Vector2(facing, 1))
 	draw_texture_rect(_tex, Rect2(Vector2(-size.x / 2, half.y - h), size), false, Color(1.4, 1.25, 1) if _flash > 0 else Color.WHITE)
+	if _windup:
+		var cue := "VENTAGLIO" if kind == "madre" else ("ONDA A TERRA" if _pattern % 2 else "FENDENTE")
+		Art.text(self, Art.body_font(), Vector2(-100, -h - 5), cue, 14, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, 200)
 	if _windup or _swing > 0:
 		draw_arc(Vector2(18, 0), float(_cfg.reach), -1.0, 0.65, 24, Color(Art.OCRA, 0.8), 3 if _swing > 0 else 1, true)
 	draw_set_transform(Vector2.ZERO)
