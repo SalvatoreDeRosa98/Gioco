@@ -12,7 +12,7 @@ dest_files=["res://.godot/imported/pioggia.ogg-e2be22407ec5225f0e0983cc5d6ca894.
 
 [params]
 
-loop=false
+loop=true
 loop_offset=0
 bpm=0
 beat_count=0

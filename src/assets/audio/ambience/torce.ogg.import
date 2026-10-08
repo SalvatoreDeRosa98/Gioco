@@ -12,7 +12,7 @@ dest_files=["res://.godot/imported/torce.ogg-3c3869a02f2bfea12fca244f64b0b25b.og
 
 [params]
 
-loop=false
+loop=true
 loop_offset=0
 bpm=0
 beat_count=0

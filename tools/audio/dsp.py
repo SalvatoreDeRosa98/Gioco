@@ -2,13 +2,13 @@
 
 Cosa contiene: conversione note/frequenze, inviluppi, oscillatori a tabella
 band-limited, filtri (causali e "periodici"), panning, riverbero a convoluzione
-con risposta all'impulso generata da noi, mastering (compressione, limiter,
-loudness) e scrittura WAV/OGG.
+con risposta all'impulso generata da noi, mastering (compressore e limiter
+vettoriali scritti qui, loudness) e scrittura WAV/OGG.
 
 Idea chiave per i loop senza scatti: ogni brano/ambiente è un buffer CIRCOLARE
 di lunghezza L. Le note che sforano la fine vengono avvolte all'inizio, il
-riverbero è una convoluzione circolare e i processori con memoria (filtri IIR,
-compressore, limiter) girano con un preriscaldamento preso dalla coda del loop.
+riverbero è una convoluzione circolare, i filtri IIR girano con un preriscaldamento
+preso dalla coda del loop e compressore/limiter usano finestre che si avvolgono.
 Il risultato è periodico per costruzione: l'ultimo campione si collega al primo.
 
 Non si lancia da solo: lo usano music.py, ambience.py, sfx.py (vedi build_all.py).
@@ -337,19 +337,6 @@ def reverb_lin(x: np.ndarray, ir: np.ndarray, cross: float = 0.25) -> np.ndarray
 
 
 # ----------------------------------------------------------------- dinamica e loudness
-
-def _pb_run(board, x: np.ndarray) -> np.ndarray:
-	y = board(x.astype(np.float32), SR, reset=True)
-	return y.astype(np.float64)
-
-
-def pb_periodic(board, x: np.ndarray, warm_s: float = 4.0) -> np.ndarray:
-	"""Processore pedalboard con memoria su segnale periodico (preriscaldato con la coda)."""
-	w = min(x.shape[-1], int(warm_s * SR))
-	xx = np.concatenate([x[..., -w:], x], axis=-1)
-	y = _pb_run(board, xx)
-	return y[..., w:w + x.shape[-1]]
-
 
 def lufs(x: np.ndarray) -> float:
 	import pyloudnorm as pyln

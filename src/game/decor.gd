@@ -31,6 +31,8 @@ const CONE_W := 340.0
 ## Diametro dell'alone largo attorno alla lanterna e della pozza di luce a terra.
 const HALO := 380.0
 const POOL := Vector2(300.0, 46.0)
+## z relativo della pozza di luce: deve stare sopra il terreno.
+const POOL_Z := 4
 ## Semi-ampiezza del cono di luce, in radianti.
 const CONE_ANGLE := 0.55
 
@@ -46,8 +48,11 @@ func setup(k: String, theme: Dictionary, pos: Vector2) -> void:
 			_light = Art.point_light(self, Vector2(0, LAMP_HEAD), lamp, LAMP_ENERGY, 760.0)
 			_cone(lamp)
 			_unlit(Art.glow(self, Vector2(0, LAMP_HEAD), Color(lamp, 0.09), HALO))
-			var pool := _unlit(Art.glow(self, Vector2(0, -3), Color(lamp, 0.16), 64.0))
+			# Pozza di luce sopra la pietra del pavimento (il terreno sta a z 5, le decorazioni a z 2).
+			var pool: Sprite2D = Art.glow(self, Vector2(0, 8), Color(lamp, 0.14), 64.0)
 			pool.scale = POOL / 64.0
+			pool.z_index = POOL_Z
+			_unlit(pool)
 			_glow = Art.glow(self, Vector2(0, LAMP_HEAD), Color(lamp, 0.35), 110.0)
 			var moth_count := int(th.get("moths", 0))
 			if moth_count > 0:

@@ -188,7 +188,7 @@ func setup(d: Dictionary, w: Node) -> void:
 			_enter("wander")
 		_:
 			# Occhi che si accendono quando il gatto si accorge del giocatore (telegrafo).
-			_aura = Art.glow(self, Vector2.ZERO, Color(0.72, 0.55, 1.0), 26.0)
+			_aura = Art.glow(self, Vector2.ZERO, Color(0.72, 0.55, 1.0), 15.0)
 			_aura.modulate.a = 0.0
 			_enter("walk", _rand("patrol_time_min", "patrol_time_max"))
 	if _aura:
@@ -403,7 +403,10 @@ func _chase(target: Node2D, on_floor: bool) -> float:
 		_tgt_floor_y = target.global_position.y + PLAYER_HALF_Y
 	elif _tgt_floor_y == INF:
 		_tgt_floor_y = target.global_position.y + PLAYER_HALF_Y
-	_face_x(target.global_position.x)
+	# Isteresi: arrivato addosso al giocatore lo oltrepassa di un poco prima di voltarsi, così
+	# la carica resta una carica (alla Husk) invece di fermarsi incollata a lui.
+	if absf(d.x) > _f("pounce_min_range") or absf(d.y) > 60.0:
+		_face_x(target.global_position.x)
 	var run := _f("chase_speed")
 	if not on_floor:
 		return _dir * run
@@ -449,7 +452,7 @@ func _chase(target: Node2D, on_floor: bool) -> float:
 			return velocity.x
 		return _wait_blocked()
 	_blocked_t = 0.0
-	if absf(aim_x - global_position.x) < 10.0:
+	if aim_x != target.global_position.x and absf(aim_x - global_position.x) < 10.0:
 		return 0.0
 	return _dir * run
 
@@ -935,10 +938,10 @@ func _goal_gatto() -> void:
 			_goal[P.SY] = 0.96
 		"notice":
 			# Telegrafo: schiena inarcata (alto e stretto), coda ritta, pelo che vibra, occhi accesi.
-			_goal[P.SX] = 0.9
-			_goal[P.SY] = 1.14
-			_goal[P.HEAD] = -0.22
-			_goal[P.TAIL] = 0.75
+			_goal[P.SX] = 0.86
+			_goal[P.SY] = 1.2
+			_goal[P.HEAD] = -0.3
+			_goal[P.TAIL] = 0.95
 			_goal[P.GLOW] = 1.0
 			_goal[P.SHAKE] = 0.8
 			_goal[P.FORE] = 0.08
@@ -1016,8 +1019,9 @@ func _goal_vespa() -> void:
 			_goal[P.SX] = 0.94
 			_goal[P.SY] = 1.06
 		"dive":
-			_goal[P.TILT] = pitch * 0.7 + 0.1
-			_goal[P.HEAD] = -0.45
+			# Picchiata col pungiglione davanti: il busto si piega poco, l'addome molto.
+			_goal[P.TILT] = pitch * 0.35
+			_goal[P.HEAD] = -0.6
 			_goal[P.WING] = 1.9
 			_goal[P.SX] = 1.08
 			_goal[P.SY] = 0.94
@@ -1035,9 +1039,10 @@ func _goal_vespa() -> void:
 
 func _draw() -> void:
 	if kind != "vespa":
-		# Ombra a terra: sbiadisce quando il gatto è in aria.
-		var a := 0.32 if kind != "gatto" or is_on_floor() else 0.12
-		draw_colored_polygon(Art.ellipse(Vector2(0, half.y + 1.0), Vector2(half.x * 0.9, 4.0), 16), Color(0, 0, 0, a))
+		# Ombra a terra: in salto resta sul pavimento e si stringe con la quota.
+		var drop := 0.0 if kind != "gatto" or is_on_floor() else _ground_below()
+		var k := clampf(1.0 - drop / 220.0, 0.25, 1.0)
+		draw_colored_polygon(Art.ellipse(Vector2(0, half.y + 1.0 + drop), Vector2(half.x * 0.9 * k, 4.0 * k), 16), Color(0, 0, 0, 0.32 * k))
 	match kind:
 		"vespa":
 			_draw_vespa()
@@ -1052,6 +1057,17 @@ func _draw() -> void:
 		var w := half.x * 2.0
 		draw_rect(Rect2(-w * 0.5, -half.y - 16.0, w, 3), Color(0, 0, 0, 0.6))
 		draw_rect(Rect2(-w * 0.5, -half.y - 16.0, w * float(hp) / float(max_hp), 3), Art.enemy_color(kind))
+
+
+## Distanza dai piedi alla prima superficie sotto (al massimo 240 px), per l'ombra in salto.
+func _ground_below() -> float:
+	if world == null or world.room.is_empty():
+		return 0.0
+	var feet := global_position + Vector2(0, half.y)
+	var h := 0.0
+	while h < 240.0 and not world.is_ground(feet + Vector2(0, h + 2.0)):
+		h += 8.0
+	return h
 
 
 ## Trasformazione dell'immagine: il punto "anchor" (pixel) va in "at", con specchiatura,
@@ -1158,5 +1174,5 @@ func _update_glows() -> void:
 		"gatto":
 			var g := clampf(_pose[P.GLOW], 0.0, 1.2)
 			_aura.position = _eye_at
-			_aura.modulate = Color(0.75, 0.58, 1.0, 0.7 * g)
-			_aura.scale = _aura_scale * (0.7 + 0.5 * g)
+			_aura.modulate = Color(0.75, 0.58, 1.0, 0.6 * g)
+			_aura.scale = _aura_scale * (0.75 + 0.4 * g)

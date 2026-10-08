@@ -29,6 +29,9 @@ def active_rms_db(x: np.ndarray, win_s: float = 0.4, floor_db: float = 30.0) -> 
 	return float(10 * np.log10(act.mean() + 1e-20))
 
 
+DRY_RUN = False  # True: le note vengono solo annotate in Song.events (verifica armonica), niente audio
+
+
 class Song:
 	def __init__(self, name: str, bpm: float, beats_per_bar: int, bars: int, salt: int = 0):
 		self.name = name
@@ -39,6 +42,7 @@ class Song:
 		self.rng = rng_for(name, salt)
 		self.stems: dict[str, np.ndarray] = {}
 		self.automation: dict[str, list[tuple[float, float]]] = {}
+		self.events: list[tuple[str, float, float, float, float]] = []  # stem, midi, inizio, durata (tempi), vel
 
 	# ------------------------------------------------------------ tempo
 	@property
@@ -71,6 +75,9 @@ class Song:
 			return
 		v = float(np.clip(vel + self.rng.normal(0, vel_jit), 0.05, 1.0))
 		start = self.at(bar, beat) + self.rng.normal(0, jitter) * SR
+		self.events.append((stem, midi(pitch), (bar - 1) * self.bpb + beat, beats, v))
+		if DRY_RUN:
+			return
 		audio = inst(hz(pitch), beats * self.beat_s, v, self.rng, **kw)
 		self.place(stem, audio, start, pan, gain_db)
 

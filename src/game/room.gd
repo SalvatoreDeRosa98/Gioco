@@ -59,7 +59,9 @@ const ROOMS := [
 		],
 		"decor": [
 			{"kind": "lamp", "pos": Vector2(150, 980)},
+			{"kind": "lamp", "pos": Vector2(640, 980)},
 			{"kind": "lamp", "pos": Vector2(1200, 980)},
+			{"kind": "lamp", "pos": Vector2(1640, 980)},
 			{"kind": "lamp", "pos": Vector2(2100, 980)},
 		],
 	},

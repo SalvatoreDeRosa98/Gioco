@@ -12,7 +12,7 @@ dest_files=["res://.godot/imported/vento.ogg-78f50a5070fe3b46c8b524d9465bc180.og
 
 [params]
 
-loop=false
+loop=true
 loop_offset=0
 bpm=0
 beat_count=0

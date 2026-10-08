@@ -16,7 +16,9 @@
 		"blip_every": 4,
 		"bark_hold": 2.4,
 		"bark_per_char": 0.05,
-		"bark_width": 300
+		"bark_width": 300,
+		"blip_db": -5.0,
+		"sfx": {"open": "dialogo", "line": "", "blip": "dialogo", "move": "menu_click", "choose": "scelta", "heal": "mozzarella"}
 	},
 	"characters": {
 		"ferruccio": {"name": "Ferruccio"},

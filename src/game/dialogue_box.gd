@@ -137,9 +137,10 @@ func _show_line(line: Dictionary) -> void:
 	_set_text(str(line.get("text", "")))
 	if line.has("do"):
 		effect.emit(str(line["do"]))
+		_sfx(str(line["do"]))
 	if _who != "":
 		voice.emit(_who, true)
-	_sfx("dialogue_open" if _k < 0.5 else "dialogue_line")
+	_sfx("open" if _k < 0.5 else "line")
 
 
 func _show_choice() -> void:
@@ -165,7 +166,7 @@ func _choose(i: int) -> void:
 	_queue = (opt.get("lines", []) as Array).duplicate()
 	_choice = {}
 	_options = []
-	_sfx("dialogue_choice")
+	_sfx("choose")
 	_advance()
 
 
@@ -178,7 +179,7 @@ func _close() -> void:
 
 func _set_text(text: String) -> void:
 	_text = text
-	_wrapped = _wrap(text, _font(), TEXT_SIZE, _text_width())
+	_wrapped = _wrap_balanced(text, _font(), TEXT_SIZE, _text_width())
 	_total = text.length()
 	_shown = 0.0
 	_last_char = 0
@@ -191,6 +192,24 @@ func _font() -> Font:
 
 func _text_width() -> float:
 	return BOX_W - 150.0 - (ITEM_SIZE + 18.0 if _item != null else 0.0)
+
+
+## A capo bilanciato: stesso numero di righe del limite massimo, ma con la larghezza più stretta
+## possibile, così l'ultima riga non resta con una parola sola.
+static func _wrap_balanced(text: String, font: Font, size: int, width: float) -> Array:
+	var best := _wrap(text, font, size, width)
+	if best.size() < 2:
+		return best
+	var lo := width * 0.4
+	var hi := width
+	for i in 8:
+		var mid := (lo + hi) * 0.5
+		var attempt := _wrap(text, font, size, mid)
+		if attempt.size() <= best.size():
+			hi = mid
+		else:
+			lo = mid
+	return _wrap(text, font, size, hi)
 
 
 ## Va a capo per parole. Ogni riga è [testo, indice del primo carattere].
@@ -250,7 +269,7 @@ func _type(delta: float) -> void:
 		var ch := _text[_last_char]
 		_last_char += 1
 		if _last_char % every == 0 and ch != " ":
-			_sfx("dialogue_blip")
+			_sfx("blip", float(_set.get("blip_db", 0.0)))
 		if _last_char < _total:
 			match ch:
 				",":
@@ -283,7 +302,7 @@ func _input(event: InputEvent) -> void:
 		for a in ["move_left", "move_right", "move_down", "move_up", "ui_left", "ui_right", "ui_down", "ui_up"]:
 			if InputMap.has_action(a) and event.is_action_pressed(a):
 				_sel = 1 - _sel
-				_sfx("dialogue_move")
+				_sfx("move")
 				get_viewport().set_input_as_handled()
 				return
 	if not advance:
@@ -322,11 +341,13 @@ func debug_skip() -> void:
 		_advance()
 
 
-## Suoni dell'autoload Audio (se c'è): il riquadro funziona anche senza.
-func _sfx(name: String) -> void:
+## Suoni dell'autoload Audio (se c'è; il riquadro funziona anche senza). I nomi degli effetti
+## stanno in dialogues.json ("settings" -> "sfx") e corrispondono a quelli di data/audio.json.
+func _sfx(kind: String, db: float = 0.0) -> void:
+	var id := str((_set.get("sfx", {}) as Dictionary).get(kind, ""))
 	var audio := get_node_or_null("/root/Audio")
-	if audio and audio.has_method("sfx"):
-		audio.sfx(name)
+	if id != "" and audio and audio.has_method("sfx"):
+		audio.sfx(id, db)
 
 
 # ---------------------------------------------------------------- Disegno

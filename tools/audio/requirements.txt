@@ -1,0 +1,6 @@
+# Generatori audio di Ferruccio (tools/audio). Serve anche ffmpeg con libvorbis nel PATH.
+numpy>=2.0
+scipy>=1.13
+pyloudnorm>=0.1.1
+soundfile>=0.12
+matplotlib>=3.8

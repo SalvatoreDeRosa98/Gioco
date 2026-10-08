@@ -140,11 +140,16 @@ func _physics_process(delta: float) -> void:
 func _demo_input(delta: float) -> void:
 	_demo_t += delta
 	Input.action_press("move_right")
-	for action in [["attack", 0.7, 0.0], ["jump", 1.9, 0.5]]:
-		if fmod(_demo_t + float(action[2]), float(action[1])) < 0.12:
-			Input.action_press(action[0])
+	# [azione, periodo, sfasamento]: il secondo "jump", 0.38 s dopo il primo, è il doppio salto.
+	var presses := {}
+	for action in [["attack", 0.7, 0.0], ["jump", 1.9, 0.5], ["jump", 1.9, 0.12]]:
+		var on: bool = fmod(_demo_t + float(action[2]), float(action[1])) < 0.12
+		presses[action[0]] = bool(presses.get(action[0], false)) or on
+	for a in presses:
+		if presses[a]:
+			Input.action_press(a)
 		else:
-			Input.action_release(action[0])
+			Input.action_release(a)
 
 
 # ---------------------------------------------------------------- Costruzione
@@ -213,6 +218,7 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 			spawn = Vector2(float(a.trim_prefix("--at=")), float(room["floor"]) - 30.0)
 	player.teleport(spawn)
 	player.apply_room(room["size"])
+	player.apply_theme(th)
 
 	_room_t = 0.0
 	_death_t = -1.0

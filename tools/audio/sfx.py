@@ -307,6 +307,33 @@ def gatto_miao():
 	return filt(lp(6000), y + breath)
 
 
+def gatto_balzo():
+	"""Il gatto si lancia: soffio d'aria rapido e un piccolo verso strozzato ("mrr")."""
+	rng = rng_for("gatto_balzo")
+	d = 0.24
+	w = sweep_noise(rng, d, 600, 2200, q=1.6) * env_ar(int(d * SR), 0.25, 1.5)
+	t = T(0.16)
+	f0 = 380 * (1 + 0.35 * np.sin(np.pi * t / 0.16))
+	ph = TWO_PI * np.cumsum(f0) / SR
+	mrr = sum(np.sin(k * ph) / k ** 1.3 / (1 + ((k * 380 - 900) / 500) ** 2) for k in range(1, 12))
+	mrr = mrr * env_ar(len(t), 0.2, 1.4) * (0.7 + 0.3 * np.sin(TWO_PI * 30 * t))
+	return filt(lp(5000), mix((w, 0, 0.5), (mrr, 0.02, 0.35)))
+
+
+def vespa_picchiata():
+	"""La vespa si tuffa: il ronzio sale di tono e di volume, con un soffio che passa."""
+	rng = rng_for("vespa_picchiata")
+	d = 0.6
+	t = T(d)
+	f0 = 180 * 2 ** (0.55 * (t / d) ** 1.5)
+	ph = TWO_PI * np.cumsum(f0) / SR
+	y = sum(np.sin(k * ph + 0.3 * k) / k ** 0.9 for k in range(1, 26))
+	y = y * (0.8 + 0.2 * np.sin(TWO_PI * 7 * t))
+	y = filt(bp(250, 3200), y) * env_ar(len(t), 0.75, 1.2)
+	w = sweep_noise(rng, d, 500, 1800, q=1.5) * env_ar(len(t), 0.8, 1.5)
+	return filt(lp(5000), mix((y, 0, 0.6), (w, 0, 0.25)))
+
+
 def vespa_ronzio():
 	"""Ronzio d'ala, loop esatto di 1 s: tutte le frequenze hanno cicli interi nel secondo."""
 	d = 1.0
@@ -432,6 +459,7 @@ SFX = {
 	"colpo": (colpo, -18, -55), "nemico_ucciso": (nemico_ucciso, -21, -55), "ferito": (ferito, -18, -55),
 	"moneta": (moneta, -24, -55), "mozzarella": (mozzarella, -22, -55), "portale": (portale, -21, -55),
 	"gatto_soffio": (gatto_soffio, -27, -50), "gatto_miao": (gatto_miao, -25, -50),
+	"gatto_balzo": (gatto_balzo, -27, -50), "vespa_picchiata": (vespa_picchiata, -26, -50),
 	"vespa_ronzio": (vespa_ronzio, -29, None),
 	"statua_carica": (statua_carica, -24, -50), "statua_sparo": (statua_sparo, -21, -55),
 	"custode_passo": (custode_passo, -21, -55), "custode_urto": (custode_urto, -17, -55),

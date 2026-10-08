@@ -12,7 +12,7 @@ dest_files=["res://.godot/imported/strada.ogg-8ee9bbb38481a4b3a7c22f236606041c.o
 
 [params]
 
-loop=false
+loop=true
 loop_offset=0
 bpm=0
 beat_count=0

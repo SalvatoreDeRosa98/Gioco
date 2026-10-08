@@ -49,7 +49,7 @@ HEAD_F = [("C5", 1), ("F5", 1), ("A5", 1), ("G5", 1.5), ("F5", 0.5), ("D5", 1),
 # accordi: (basso, voci del pad)
 CH = {
 	"Dm": ("D2", ["D3", "A3", "D4", "F4"]),
-	"Dm9": ("D2", ["D3", "A3", "E4", "F4"]),
+	"Dm9": ("D2", ["D3", "F3", "A3", "E4"]),
 	"Dm/C": ("C2", ["C3", "A3", "D4", "F4"]),
 	"Dm/F": ("F2", ["F3", "A3", "D4"]),
 	"N6": ("G2", ["G3", "Bb3", "Eb4", "G4"]),
@@ -183,7 +183,7 @@ def lh_bar(s: Song, stem: str, inst, name: str, bar: int, vel_b: float, vel_c: f
 def song_piazza() -> tuple[Song, dict, float]:
 	"""Notte in piazza: pianoforte col tema, mandolino lontano, archi in sordina."""
 	s = Song("piazza", bpm=60, beats_per_bar=3, bars=40)
-	TH = ["Dm", "N6", "A7", "Dm", "Bb", "Gm", "Eb>A7", "Dm"]
+	TH = ["Dm", "N6", "A7", "Dm", "Bbmaj7", "Gm", "Eb>A7", "Dm"]
 	DEV = ["F", "Gm7", "C7", "F", "Dm", "Bb", "Eb>A7", "A7"]
 	plan = ["Dm", "Dm9", "N6", "A7"] + TH + TH + DEV + ["Dm", "N6", "A7", "Dm"] * 2 + ["Dm9", "Bb", "N6", "A7"]
 	assert len(plan) == 40
@@ -195,7 +195,7 @@ def song_piazza() -> tuple[Song, dict, float]:
 				 brightness=0.35)
 
 	# intro: rintocchi di pianoforte acuti, come campane lontane
-	for bar, p in [(1, "A5"), (2, "F5"), (3, "G5"), (4, "E5")]:
+	for bar, p in [(1, "A5"), (2, "D5"), (3, "G5"), (4, "E5")]:
 		s.note("piano", I.piano, p, bar, 0, 2.5, 0.32, 0.15, pedal=2.0, bright=0.3)
 		s.note("piano", I.piano, up(p, -12), bar, 1.5, 1.5, 0.18, -0.1, pedal=1.5, bright=0.25)
 
@@ -213,8 +213,8 @@ def song_piazza() -> tuple[Song, dict, float]:
 
 	# sviluppo (bb. 21-28): il violoncello canta la testa in Fa maggiore, poi la coda
 	cello = [("C4", 1), ("F4", 1), ("A4", 1), ("G4", 1.5), ("F4", 0.5), ("D4", 1), ("C4", 1), ("Bb3", 1), ("E4", 1),
-			 ("F4", 3), ("A4", 1), ("G4", 0.5), ("F4", 0.5), ("E4", 1), ("F4", 1.5), ("E4", 0.5), ("D4", 1),
-			 ("Eb4", 1), ("D4", 1), ("C#4", 1), ("A3", 3)]
+			 ("F4", 3), ("A4", 1), ("G4", 0.5), ("F4", 0.5), ("D4", 1), ("F4", 1.5), ("E4", 0.5), ("D4", 1),
+			 ("Eb4", 1), ("Bb3", 1), ("C#4", 1), ("A3", 3)]
 	s.melody("cello", I.strings, cello, 21, vel=0.55, shape=_vel_arc(0.85, 1.1), voices=3, attack=0.18, release=0.7,
 			 vib=16, brightness=0.55, swell=0.35, detune=4)
 	for i, name in enumerate(DEV):
@@ -253,8 +253,8 @@ def song_piazza() -> tuple[Song, dict, float]:
 def song_menu() -> tuple[Song, dict, float]:
 	"""Reggia: sarabanda solenne e triste, coro, campane lontane."""
 	s = Song("menu", bpm=52, beats_per_bar=3, bars=32)
-	TH = ["Dm", "N6", "A7", "Dm", "Bb", "Gm", "Eb>A7", "Dm"]
-	SOLO = ["Gm", "Dm/F", "Eb", "A7", "Dm", "Bb", "N6", "A7"]
+	TH = ["Dm", "N6", "A7", "Dm", "Bbmaj7", "Gm", "Eb>A7", "Dm"]
+	SOLO = ["Gm", "Dm/F", "Eb", "Asus>A7", "Dm", "Bb", "N6", "Asus>A7"]
 	plan = ["Dm", "Bb", "Gm", "A"] + TH + TH + SOLO + ["Dm", "N6", "A7", "A7"]
 	assert len(plan) == 32
 	for i, name in enumerate(plan):
@@ -299,9 +299,9 @@ def song_menu() -> tuple[Song, dict, float]:
 			 vib=12, brightness=0.45)
 	# pianoforte solo, intimo (bb. 21-28)
 	piano_line = [("Bb4", 1), ("A4", 0.5), ("G4", 0.5), ("D4", 1), ("F4", 1.5), ("G4", 0.5), ("A4", 1),
-				  ("G4", 1), ("F4", 1), ("Eb4", 1), ("D4", 1), ("C#4", 1), ("E4", 1),
+				  ("G4", 1), ("F4", 1), ("Eb4", 1), ("D4", 2), ("C#4", 1),
 				  ("F4", 1), ("E4", 0.5), ("D4", 0.5), ("A4", 1), ("D5", 1.5), ("C5", 0.5), ("Bb4", 1),
-				  ("Bb4", 1), ("G4", 1), ("Eb5", 1), ("D5", 1), ("C#5", 2)]
+				  ("Bb4", 1), ("G4", 1), ("Eb5", 1), ("D5", 2), ("C#5", 1)]
 	s.melody("piano", I.piano, piano_line, 21, vel=0.48, shape=_vel_arc(0.85, 1.15), pedal=0.8, bright=0.38)
 	for i, name in enumerate(SOLO):
 		lh_bar(s, "piano", I.piano, name, 21 + i, 0.32, 0.2, pedal=0.5, bright=0.3)
@@ -363,13 +363,15 @@ def song_strada() -> tuple[Song, dict, float]:
 				for beat in (1.5, 3.5):
 					if b0 <= beat < b0 + nb:
 						s.note("pizz", I.pizz, v[-2] if beat == 1.5 else v[-1], bar, beat, 0.4, 0.3, 0.35, jitter=0.006)
-		# bordone grave
-		s.note("drone", I.sine_pad, CH[segs(name, 4)[0][0].rstrip("'")][0], bar, 0, 4, 0.35, 0, attack=0.8,
-			   release=1.5)
+		# bordone grave (segue anche i cambi a metà battuta)
+		for ch, b0, nb in segs(name, 4):
+			s.note("drone", I.sine_pad, CH[ch.rstrip("'")][0], bar, b0, nb, 0.35, 0, attack=0.8 if b0 == 0 else 0.3,
+				   release=1.5 if nb > 1 else 0.8)
 
 	# armonico acuto (bb. 1-8 e 33-40)
-	s.melody("high", I.strings_flautando, [("A5", 12), ("G5", 4), ("A5", 8), ("A5", 8)], 1, vel=0.26, vib=4)
-	s.melody("high", I.strings_flautando, [("A5", 8), ("Bb5", 8), ("A5", 16)], 33, vel=0.24, vib=4)
+	s.melody("high", I.strings_flautando, [("A5", 12), ("G5", 4), ("A5", 8), ("F5", 4), ("A5", 4)], 1, vel=0.26,
+			 vib=4)
+	s.melody("high", I.strings_flautando, [("A5", 16), ("Bb5", 8), ("A5", 8)], 33, vel=0.24, vib=4)
 	# viola: la testa in 4/4, poi la coda (bb. 9-16)
 	viola = [("A3", 2), ("D4", 1), ("F4", 1), ("Eb4", 3), ("D4", 0.5), ("Bb3", 0.5), ("A3", 2), ("G3", 1),
 			 ("C#4", 1), ("D4", 4),
@@ -426,7 +428,7 @@ def song_giardino() -> tuple[Song, dict, float]:
 	s = Song("giardino", bpm=72, beats_per_bar=3, bars=48)
 	TH = ["Dm9", "N6", "A7", "Dm", "Bbmaj7", "Gm6", "Eb#11>A7", "Dm9"]
 	intro = ["Dm9", "Bbmaj7", "Gm6", "Asus"]
-	mystery = ["Eb#11", "Dm9", "Eb#11", "A7", "Bbmaj7", "Gm6", "Eb#11", "A7"]
+	mystery = ["Eb#11", "Dm9", "Eb", "A7", "Bbmaj7", "Gm6", "Eb", "A7"]
 	plan = intro + TH + TH + mystery + TH + intro * 3
 	assert len(plan) == 48
 	for i, name in enumerate(plan):
@@ -435,12 +437,16 @@ def song_giardino() -> tuple[Song, dict, float]:
 		# arpa: arpeggio ascendente in crome
 		for ch, b0, nb in segs(name, 3):
 			b, v = CH[ch]
-			pat = [up(low(b)) if low(b) < midi("D2") else low(b)] + list(v) + [up(v[1]), up(v[2])]
+			bass = up(low(b)) if low(b) < midi("D2") else low(b)
+			# niente seconde minori tra note che risuonano insieme
+			pat = [bass] + list(v) + ([up(v[-2])] if len(v) >= 4 else [up(v[1]), up(v[2])])
 			for k in range(int(nb * 2)):
-				s.note("harp", I.harp, pat[k], bar, b0 + k * 0.5, 1.0, hv * (1.15 if k == 0 else 1), -0.35 + 0.12 * k,
-					   jitter=0.008)
-		# archi sul tasto, altissimi e lontani
-		pad_bar(s, "pad", name, bar, 0.26, inst=I.strings_flautando, octave=12, top=3, pan_spread=0.5)
+				# ogni nota suona fino al cambio d'accordo, poi l'arpista la ferma
+				s.note("harp", I.harp, pat[k], bar, b0 + k * 0.5, nb - k * 0.5 + 0.15, hv * (1.15 if k == 0 else 1),
+					   -0.35 + 0.12 * k, jitter=0.008, damp=0.18)
+		# archi sul tasto, altissimi e lontani (la nona resta all'arpa: niente seconde minori col tema)
+		pad_bar(s, "pad", name.replace("Dm9", "D5"), bar, 0.26, inst=I.strings_flautando, octave=12, top=3,
+				pan_spread=0.5)
 		if 21 <= bar <= 28 or bar >= 37:
 			s.note("pizz", I.pizz, low(CH[segs(name, 3)[0][0]][0]), bar, 0, 1, 0.45, 0)
 
@@ -457,7 +463,7 @@ def song_giardino() -> tuple[Song, dict, float]:
 	# carillon solo, misterioso (bb. 21-28): la testa a frammenti
 	box = [("A5", 1), ("D6", 1), ("F6", 1), (None, 1.5), ("E6", 0.5), ("D6", 1), ("Eb6", 1.5), ("D6", 0.5),
 		   ("Bb5", 1), ("A5", 1), ("G5", 1), ("C#6", 1), ("D6", 1.5), (None, 1.5), ("D6", 1), ("C6", 0.5),
-		   ("Bb5", 0.5), ("A5", 1), ("G5", 1.5), ("A5", 0.5), ("Bb5", 1), ("G5", 1), ("F5", 1), ("E5", 1)]
+		   ("Bb5", 0.5), ("A5", 1), ("G5", 1.5), ("A5", 0.5), ("Bb5", 1), ("G5", 1), ("E5", 1), ("C#6", 1)]
 	s.melody("box", I.music_box, box, 21, vel=0.55, jitter=0.02)
 	# il tema intero, celesta e arpa all'ottava (bb. 29-36), archi sotto
 	s.melody("celesta", I.celesta, THEME, 29, vel=0.5, transpose=12, shape=_vel_arc(0.9, 1.1))
@@ -489,7 +495,7 @@ def song_belvedere() -> tuple[Song, dict, float]:
 	"""San Leucio all'alba nella nebbia: archi ampi, fili di seta d'arpa, Re maggiore al culmine."""
 	s = Song("belvedere", bpm=46, beats_per_bar=3, bars=32)
 	plan = ["D5", "D5", "Eb/D", "D5",
-			"Dm", "Eb", "A", "Dm", "Bb", "Gm", "Eb>A", "Dm",
+			"Dm", "Eb", "A", "Dm", "Bbmaj7", "Gm", "Eb>A", "Dm",
 			"F", "Gm7", "C7", "F", "Dm", "Bb", "Gm", "A",
 			"Bb", "F/A", "Gm", "Eb", "Bb/D", "C", "Asus>A", "D",
 			"D5", "Eb/D", "D5", "D5"]
@@ -509,11 +515,15 @@ def song_belvedere() -> tuple[Song, dict, float]:
 			pad_bar(s, "choir", name, bar, 0.35, inst=I.choir, octave=12, top=2, pan_spread=0.6, vib=10)
 		# fili di seta: arpeggi rapidi dell'arpa che salgono e si perdono nella nebbia
 		if bar % 2 == 1 or climax:
-			v = CH[segs(name, 3)[0][0]][1]
+			ch0, b0, nb = segs(name, 3)[0]
+			v = CH[ch0][1]
 			for k in range(10):
+				st = 1.0 + k * 0.18
+				if st >= b0 + nb - 0.1:  # il filo si ferma al cambio d'accordo
+					break
 				p = up(v[k % len(v)], 12 * (k // len(v)))
-				s.note("harp", I.harp, p, bar, 1.0 + k * 0.18, 0.5, 0.16 + 0.02 * np.sin(k), -0.5 + 0.1 * k,
-					   jitter=0.004)
+				s.note("harp", I.harp, p, bar, st, b0 + nb - st + 0.1, 0.16 + 0.02 * np.sin(k), -0.5 + 0.1 * k,
+					   jitter=0.004, damp=0.3)
 	# armonici dei violini all'alba
 	s.melody("high", I.strings_flautando, [("A5", 6), ("Bb5", 3), ("A5", 3)], 1, vel=0.3)
 	s.melody("high", I.strings_flautando, [("A5", 3), ("Bb5", 3), ("A5", 3), ("D6", 3)], 29, vel=0.28)
@@ -521,8 +531,8 @@ def song_belvedere() -> tuple[Song, dict, float]:
 	s.melody("violins", I.strings, THEME, 5, vel=0.55, shape=_vel_arc(0.85, 1.12), voices=6, attack=0.35, release=1.2,
 			 vib=12, brightness=0.5, swell=0.4)
 	# in Fa maggiore: luce, il ricordo di Agnese (bb. 13-20)
-	f_tail = [("F5", 1), ("E5", 0.5), ("D5", 0.5), ("C5", 1), ("D5", 1.5), ("E5", 0.5), ("F5", 1), ("Bb4", 1),
-			  ("A4", 1), ("G4", 1), ("A4", 3)]
+	f_tail = [("F5", 1), ("E5", 0.5), ("D5", 0.5), ("C5", 1), ("D5", 1.5), ("E5", 0.5), ("F5", 1), ("Bb4", 1.5),
+			  ("A4", 0.5), ("G4", 1), ("A4", 3)]
 	s.melody("violins", I.strings, HEAD_F + f_tail, 13, vel=0.55, shape=_vel_arc(0.85, 1.12), voices=6, attack=0.35,
 			 release=1.2, vib=12, brightness=0.52, swell=0.4)
 	s.melody("cello", I.strings, [("F3", 3), ("Bb3", 3), ("Bb3", 1.5), ("C4", 1.5), ("A3", 3), ("A3", 3), ("D4", 3),

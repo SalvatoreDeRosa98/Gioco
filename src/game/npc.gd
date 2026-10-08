@@ -222,9 +222,11 @@ func _update_attention(delta: float) -> void:
 				_face_target = _home_face
 	var turn_time := maxf(0.05, float(_set.get("turn_time", 0.2)))
 	_face = move_toward(_face, _face_target, delta * 2.0 / turn_time)
-	# Molla del sobbalzo: un piccolo slancio verso l'alto che si smorza da solo.
-	_hop_v += (-_hop * 260.0 - _hop_v * 13.0) * delta
-	_hop += _hop_v * delta
+	# Molla del sobbalzo: un piccolo slancio verso l'alto che si smorza da solo. Il passo è limitato:
+	# con un frame lungo (caricamento) la molla esploderebbe.
+	var dt := minf(delta, 1.0 / 30.0)
+	_hop_v += (-_hop * 260.0 - _hop_v * 13.0) * dt
+	_hop = clampf(_hop + _hop_v * dt, -0.5, 0.5)
 
 	_prompt_a = move_toward(_prompt_a, 1.0 if focused and not _talking else 0.0, delta / 0.22)
 	_new_a = move_toward(_new_a, 1.0 if _has_new and not focused and not _talking else 0.0, delta / 0.6)
@@ -373,7 +375,12 @@ func _draw_overlay() -> void:
 			var line: Dictionary = lines[_bark_i]
 			var dur := _bark_duration(line)
 			var ba := minf(1.0, _bark_t / 0.5) * minf(1.0, (dur - _bark_t) / 0.7) * _alpha
-			_overlay.draw_set_transform(Vector2(0, top - 16.0 - (1.0 - minf(1.0, _bark_t / 0.5)) * 4.0), 0.0, Vector2(ink, ink))
+			# Il testo resta dentro lo schermo anche se il personaggio è vicino al bordo.
+			var sx := get_global_transform_with_canvas().origin.x
+			var half := float(_set.get("bark_width", 300.0)) * 0.62
+			var vw := get_viewport_rect().size.x
+			var shift := clampf(sx, half + 12.0, vw - half - 12.0) - sx
+			_overlay.draw_set_transform(Vector2(shift * ink, top - 16.0 - (1.0 - minf(1.0, _bark_t / 0.5)) * 4.0), 0.0, Vector2(ink, ink))
 			_draw_bark(str(line.get("text", "")), ba)
 	_overlay.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 

@@ -16,7 +16,8 @@ extends Node2D
 ## Uso: [method set_pose] imposta subito; [method set_target] + [method advance] ogni frame
 ## sfumano verso la posa e aggiungono il moto secondario (cappello, sciarpa, orlo) dalla velocità.
 ## Le pose pronte sono [method pose_idle], [method pose_run], [method pose_air], [method pose_slash],
-## [method pose_dash], [method pose_dead].
+## [method pose_dash], [method pose_dead], [method pose_double_jump], [method pose_slash_down],
+## [method pose_skid]; [method run_rate] e [method run_steps] tengono la corsa al passo coi piedi.
 
 const FIGURE_TEX := preload("res://assets/art/characters/ferruccio_rig/figura.png")
 const BACK_TEX := preload("res://assets/art/characters/ferruccio_rig/dietro.png")
@@ -65,16 +66,23 @@ const GRID_ROWS_LEGS := 22
 const LEGS_FROM_Y := 740.0
 
 ## Corsa: ampiezza dell'anca (rad) e anticipo di fase di anca e ginocchio rispetto al passo.
-const RUN_SWING := 0.55
+const RUN_SWING := 0.7
 const RUN_HIP_LEAD := 0.7
 const RUN_KNEE_LEAD := 0.45
 ## Piega massima del ginocchio a metà del ritorno: oltre 1.3 rad anche la punta del piede si alza.
 const RUN_KNEE_MAX := 1.45
+## Sobbalzo della corsa (px della tela: giù a metà appoggio, su nel volo) e quanto il piede più
+## basso viene riportato a terra (1 = sempre: passo da camminata; meno = un po' di volo).
+const RUN_BOB := 9.0
+const RUN_PLANT := 0.55
+## Centro della capriola, in frazione d'altezza dai piedi.
+const SPIN_CENTER := 0.45
 
 ## Velocità (1/s) con cui [method advance] porta ogni parametro verso la posa obiettivo.
 const BLEND_RATES := {
 	"sword": 38.0, "arm": 26.0, "squash": 22.0, "leg_front": 18.0, "leg_back": 18.0,
 	"lean": 10.0, "tilt": 12.0, "hem_open": 8.0, "hem_drag": 8.0, "scarf_lift": 6.0, "hat": 8.0,
+	"plant": 10.0, "bob": 20.0,
 }
 const DEFAULT_BLEND := 14.0
 ## Nomi dei parametri di posa accettati da set_pose / set_target / get_pose.
@@ -121,8 +129,12 @@ const POSE_KEYS: Array[StringName] = [
 @export var hem_drag := 0.0
 ## Spostamento verticale extra (px della tela, negativo = su).
 @export var bob := 0.0
-## true: il piede più basso resta a terra quando le gambe si aprono o si piegano.
-@export var plant := true
+## 0..1: quanto il piede più basso viene riportato a terra quando le gambe si aprono o si piegano
+## (1 a terra, 0 in aria; i valori intermedi sfumano il passaggio).
+@export_range(0.0, 1.0) var plant := 1.0
+## Capriola (rad, positivo = in avanti) attorno al centro del corpo. Non fa parte delle pose:
+## si imposta direttamente, così sfumare non la fa girare all'indietro.
+@export var spin := 0.0
 
 @export_group("Moto secondario")
 ## advance() aggiunge cappello, sciarpa e orlo che seguono il movimento con una molla.
@@ -271,6 +283,7 @@ func make_ghost(color: Color) -> CharRig:
 	g.scarf_lift = scarf_lift + _scarf_dyn
 	g.hem_drag = hem_drag + _hem_dyn
 	g.hem_open = hem_open + _open_dyn
+	g.spin = spin
 	g.flash = 1.0
 	g.flash_color = color
 	g.global_position = global_position
@@ -315,12 +328,13 @@ func apply() -> void:
 	_mat.set_shader_parameter("hem_open", open_t)
 	_mat.set_shader_parameter("hem_drag", drag_t)
 
-	var drop := bob
-	if plant:
-		drop += _foot_lift()
+	var drop := bob + _foot_lift() * clampf(plant, 0.0, 1.0)
 	_root.scale = Vector2(f * s, s)
-	_root.rotation = tilt * f
-	_root.position = Vector2(0.0, drop * s).rotated(tilt * f)
+	# Prima l'inclinazione attorno ai piedi, poi la capriola attorno al centro del corpo.
+	var p0 := Vector2(0.0, drop * s).rotated(tilt * f)
+	var c := Vector2(0.0, -height * SPIN_CENTER)
+	_root.position = c + (p0 - c).rotated(spin * f)
+	_root.rotation = (tilt + spin) * f
 	# La mano segue il polso deformato e ruota con avambraccio e busto.
 	var w := deform_point(WRIST)
 	_hand.position = w - FEET
@@ -354,24 +368,41 @@ static func pose_idle(t: float) -> Dictionary:
 	return {
 		"leg_front": Vector2.ZERO, "leg_back": Vector2.ZERO, "lean": 0.02, "tilt": 0.0, "squash": 0.0,
 		"breath": b, "arm": 0.03 * b, "sword": 0.04 * sin(t * 2.6 - 0.6), "hat": 0.0, "scarf_lift": 0.0,
-		"hem_open": 0.0, "hem_drag": 0.0, "bob": 0.0, "plant": true,
+		"hem_open": 0.0, "hem_drag": 0.0, "bob": 0.0, "plant": 1.0,
 	}
 
 
-## Corsa. [param phase] in radianti (un passo completo ogni 2π; poco prima di π/2 le gambe sono
-## più aperte, la vicina avanti). L'anca anticipa il ginocchio: la gamba che torna avanti porta
-## il ginocchio in alto e il piede sotto il bacino, poi si distende prima dell'appoggio. Il braccio
-## va in controfase, il busto pende avanti e sobbalza (schiacciamento all'appoggio, su in volo).
-static func pose_run(phase: float) -> Dictionary:
+## Corsa. [param phase] in radianti (un passo completo ogni 2π): a π/2 - RUN_HIP_LEAD la gamba
+## vicina tocca terra davanti, a 3π/2 - RUN_HIP_LEAD la lontana (vedi [method run_steps]).
+## [param amount] 0..1 riduce l'ampiezza quando si va piano. L'anca anticipa il ginocchio: la
+## gamba che torna avanti porta il ginocchio in alto e il piede sotto il bacino, poi si distende
+## prima dell'appoggio. Il corpo è più basso a metà appoggio e sale nel volo tra un passo e l'altro;
+## il braccio va in controfase, il busto pende avanti.
+static func pose_run(phase: float, amount := 1.0) -> Dictionary:
+	var a := clampf(amount, 0.0, 1.0)
+	var g := phase + RUN_HIP_LEAD
+	var hip := RUN_SWING * a * sin(g)
 	var s := sin(phase)
-	var hip := RUN_SWING * sin(phase + RUN_HIP_LEAD)
 	return {
-		"leg_front": Vector2(-hip, _run_knee(phase + RUN_KNEE_LEAD)),
-		"leg_back": Vector2(hip, _run_knee(phase + RUN_KNEE_LEAD + PI)),
-		"lean": 0.14 + 0.03 * cos(2.0 * phase), "tilt": 0.0, "squash": 0.03 * cos(2.0 * phase),
-		"breath": 0.0, "arm": 0.12 * s, "sword": 0.12 * sin(phase - 0.8), "bob": -14.0 * s * s,
-		"hem_open": 0.3 + 0.3 * absf(s), "hem_drag": 0.3, "scarf_lift": 0.15, "plant": true,
+		"leg_front": Vector2(-hip, _run_knee(phase + RUN_KNEE_LEAD) * a),
+		"leg_back": Vector2(hip, _run_knee(phase + RUN_KNEE_LEAD + PI) * a),
+		"lean": (0.1 + 0.05 * a) + 0.03 * cos(2.0 * g), "tilt": 0.0, "squash": 0.03 * a * cos(2.0 * g),
+		"breath": 0.0, "arm": 0.12 * a * s, "sword": 0.12 * a * sin(phase - 0.8),
+		"bob": RUN_BOB * a * cos(2.0 * g), "hem_open": (0.2 + 0.3 * absf(sin(g))) * a, "hem_drag": 0.3 * a,
+		"scarf_lift": 0.15 * a, "plant": RUN_PLANT,
 	}
+
+
+## Velocità di fase della corsa (rad/s) perché il piede in appoggio scorra all'indietro alla
+## stessa velocità del corpo: niente pattinaggio. [param speed] e [param height] in unità di mondo.
+static func run_rate(speed: float, amount: float, height: float) -> float:
+	var leg := (FOOT_FRONT[2].y - HIP_FRONT.y) * height / FIGURE_SPAN
+	return absf(speed) / maxf(leg * RUN_SWING * clampf(amount, 0.2, 1.0), 0.001)
+
+
+## Numero di passi compiuti fino a [param phase]: cambia di 1 a ogni appoggio (suoni e polvere).
+static func run_steps(phase: float) -> int:
+	return floori((phase + RUN_HIP_LEAD - PI * 0.5) / PI)
 
 
 ## Piega del ginocchio nella corsa: forte nel ritorno della gamba (fase con cos > 0), lieve in appoggio.
@@ -393,8 +424,17 @@ static func pose_air(vy: float) -> Dictionary:
 		"arm": -0.2, "sword": 0.25, "hem_open": 0.75,
 	}
 	var out := blend(rise, fall, k)
-	out.merge({"tilt": 0.0, "breath": 0.0, "hem_drag": 0.0, "bob": 0.0, "plant": false})
+	out.merge({"tilt": 0.0, "breath": 0.0, "hem_drag": 0.0, "bob": 0.0, "plant": 0.0})
 	return out
+
+
+## Doppio salto: ginocchia raccolte al petto (la capriola la dà [member spin]).
+static func pose_double_jump() -> Dictionary:
+	return {
+		"leg_front": Vector2(-1.0, 1.5), "leg_back": Vector2(-0.45, 1.35), "lean": 0.12, "tilt": 0.0,
+		"squash": 0.04, "breath": 0.0, "arm": -0.15, "sword": 0.35, "hem_open": 0.7, "hem_drag": 0.0,
+		"bob": 0.0, "plant": 0.0,
+	}
 
 
 ## Fendente orizzontale: [param k] avanzamento 0..1, [param side] verso del colpo (+1 / -1).
@@ -419,12 +459,31 @@ static func pose_slash(k: float, side: float) -> Dictionary:
 	}
 
 
+## Fendente verso il basso in aria: spada puntata giù, gambe raccolte per il rimbalzo.
+static func pose_slash_down(k: float) -> Dictionary:
+	var e := 1.0 - pow(1.0 - clampf(k, 0.0, 1.0), 3.0)
+	return {
+		"sword": lerpf(0.2, 1.05, e), "arm": 0.1, "lean": 0.08,
+		"leg_front": Vector2(-0.8, 1.1), "leg_back": Vector2(-0.35, 0.95), "plant": 0.0,
+	}
+
+
+## Frenata sul posto quando si inverte la corsa: già girato, il corpo scivola all'indietro
+## puntando la gamba lontana, il busto spinge nel nuovo verso.
+static func pose_skid() -> Dictionary:
+	return {
+		"leg_front": Vector2(-0.15, 0.6), "leg_back": Vector2(0.6, 0.05), "lean": 0.22, "tilt": 0.0,
+		"squash": -0.06, "breath": 0.0, "arm": -0.1, "sword": 0.25, "hem_open": 0.3, "bob": 0.0,
+		"plant": 1.0,
+	}
+
+
 ## Scatto: tutto proteso in avanti, stoffe tirate indietro.
 static func pose_dash() -> Dictionary:
 	return {
 		"leg_front": Vector2(-0.75, 0.55), "leg_back": Vector2(0.8, 0.35), "lean": 0.28, "tilt": 0.0,
 		"squash": -0.05, "breath": 0.0, "arm": 0.2, "sword": 0.5, "hem_open": 0.4, "hem_drag": 1.0,
-		"scarf_lift": 0.7, "hat": -0.25, "bob": 0.0, "plant": true,
+		"scarf_lift": 0.7, "hat": -0.25, "bob": 0.0, "plant": 1.0,
 	}
 
 
@@ -433,7 +492,7 @@ static func pose_dead() -> Dictionary:
 	return {
 		"leg_front": Vector2(-0.3, 0.2), "leg_back": Vector2(-0.1, 0.4), "lean": -0.1, "tilt": -1.45,
 		"squash": 0.0, "breath": 0.0, "arm": -0.2, "sword": 0.6, "hem_open": 0.2, "hem_drag": -0.3,
-		"scarf_lift": -0.2, "hat": 0.3, "bob": 0.0, "plant": false,
+		"scarf_lift": -0.2, "hat": 0.3, "bob": 0.0, "plant": 0.0,
 	}
 
 
@@ -443,7 +502,7 @@ static func blend(a: Dictionary, b: Dictionary, k: float) -> Dictionary:
 	for key in a:
 		if not b.has(key):
 			out[key] = a[key]
-		elif a[key] is bool:
+		elif a[key] is bool or b[key] is bool:
 			out[key] = b[key] if k >= 0.5 else a[key]
 		else:
 			out[key] = lerp(a[key], b[key], k)
@@ -459,7 +518,7 @@ static func blend(a: Dictionary, b: Dictionary, k: float) -> Dictionary:
 ## dall'accelerazione (la stoffa resta indietro quando il corpo parte, prosegue quando si ferma).
 func _simulate(delta: float, vel: Vector2) -> void:
 	# Anche il sobbalzo dei passi (piede appoggiato, bob) muove il corpo: le stoffe lo sentono.
-	var drop := bob + (_foot_lift() if plant else 0.0)
+	var drop := bob + _foot_lift() * clampf(plant, 0.0, 1.0)
 	if _has_prev:
 		vel.y += (drop - _drop_prev) / delta * height / FIGURE_SPAN
 	_drop_prev = drop
@@ -544,9 +603,9 @@ func _body_fields(p: Vector2, q: Vector2) -> Vector2:
 ## Peso bilineare dal riquadro [param tile] della mappa (come textureLod nello shader), uv della tela.
 static func _weights_at(uv: Vector2, tile: int) -> Color:
 	if _weights_img == null:
-		_weights_img = WEIGHTS_TEX.get_image()
-		if _weights_img.is_compressed():
-			_weights_img.decompress()
+		_weights_img = _image_of(WEIGHTS_TEX)
+		if _weights_img == null:
+			return Color(0, 0, 0, 1)
 	var sz := _weights_img.get_size()
 	var half := sz.x >> 1
 	var x := clampf(uv.x * half - 0.5, 0.0, half - 1.0) + tile * half
@@ -600,8 +659,12 @@ static func _cuff_mesh() -> ArrayMesh:
 	return _cuff_cache
 
 
+## L'immagine di una texture per leggerne i pixel; null se il renderer non la conserva
+## (avvio --headless): allora la griglia resta intera e i pesi sul processore valgono zero.
 static func _image_of(tex: Texture2D) -> Image:
 	var img := tex.get_image()
+	if img == null or img.is_empty():
+		return null
 	if img.is_compressed():
 		img.decompress()
 	return img

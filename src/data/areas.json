@@ -1,5 +1,5 @@
 {
-	"_doc": "Strati dipinti e vita di ogni area (immagini in src/assets/art/areas/). scroll: velocità di parallasse (1 = piano di gioco, <1 lontano, >1 primo piano). LAYERS — scale: pixel dell'immagine -> unità di mondo. anchor 'ground': la riga 'ground' dell'immagine poggia sulla linea di terra dello strato (coincide col pavimento quando la camera è in basso), 'lift' la alza; sotto viene steso 'fill'; 'rows' ritaglia le righe dell'immagine e 'fade' = [riga, riga] le dissolve in alto. anchor 'top': la fascia 'rows' resta agganciata al bordo alto dello schermo (cornice), spostata di 'offset_y'. center: colonna dell'immagine allineata al centro della stanza; flip: usa la copia specchiata. tint/haze/blur: vedi shaders/canvas_env_layer.gdshader. Le immagini si ripetono a specchio in orizzontale. threads (dentro uno strato o in figures): fili d'oro del Velo. anchors: punti d'origine in pixel dell'immagine (finestre accese); rise: fili che salgono verso la Reggia ('to' = [x del mondo, y sopra la linea di terra], pull = quanto piegano verso 'to', len = lunghezza, curl = curva laterale, wave = S, chance, per, bright); converge: fili tesi da ogni aggancio allo stesso punto 'to' (sag, chance, bright); garland: fili tesi tra agganci vicini (max_gap e max_dy in unità di strato, sag, chance); aspetto: color, alpha, width, sway, sway_speed, spark, spark_speed, spark_spacing, glow, core, rise_len = distanza dopo cui i fili verso la Reggia svaniscono (shaders/canvas_env_thread.gdshader). FOGS: banchi di nebbia (y e h relativi alla linea di terra dello strato, density, speed, scale, color facoltativo). RAYS: luce volumetrica (top/h relativi alla linea di terra, x = intervallo del mondo facoltativo, origin in UV del rettangolo, axis = direzione dei fasci in radianti, screen = agganciato allo schermo, dust = densità della polvere luminosa; altri parametri in shaders/canvas_env_rays.gdshader). FIGURES: cittadini addormentati in controluce (tex relativo a assets/art/, x del mondo, h in unità, flip). FIELDS: particelle per strato (kind: motes, fireflies, embers, rain_far, bokeh, dust; density = particelle per schermata; y = [alto, basso] relativi alla linea di terra; size/alpha/speed moltiplicatori; color). FLOCK: stormi nel cielo (kind bats|birds, every = secondi tra due stormi, count, y = fascia dello schermo 0-1, size, speed, color). GRASS (terrain.gd): ciuffi d'erba che ondeggiano su pavimento, blocchi e mensole (density 0-1, h, color, tip, sway). CHAINS: catene appese sotto le mensole (chance, len). FLOOR: pavimento bagnato (reflect, wet, depth, tint, rings = cerchi delle gocce nelle pozzanghere; shaders/canvas_env_reflect.gdshader) e schizzi di pioggia (splashes = gocce per 100 unità).",
+	"_doc": "Strati dipinti e vita di ogni area (immagini in src/assets/art/areas/). scroll: velocità di parallasse (1 = piano di gioco, <1 lontano, >1 primo piano). LAYERS — scale: pixel dell'immagine -> unità di mondo. anchor 'ground': la riga 'ground' dell'immagine poggia sulla linea di terra dello strato (coincide col pavimento quando la camera è in basso), 'lift' la alza; sotto viene steso 'fill'; 'rows' ritaglia le righe dell'immagine e 'fade' = [riga, riga] le dissolve in alto. anchor 'top': la fascia 'rows' resta agganciata al bordo alto dello schermo (cornice), spostata di 'offset_y'. center: colonna dell'immagine allineata al centro della stanza; flip: usa la copia specchiata. tint/haze/blur: vedi shaders/canvas_env_layer.gdshader. Le immagini si ripetono a specchio in orizzontale. threads (dentro uno strato o in figures): fili d'oro del Velo. anchors: punti d'origine in pixel dell'immagine (finestre accese); rise: fili che salgono verso la Reggia ('to' = [x del mondo, y sopra la linea di terra], pull = quanto piegano verso 'to', len = lunghezza, curl = curva laterale, wave = S, chance, per, bright); converge: fili tesi da ogni aggancio allo stesso punto 'to' (sag, chance, bright); garland: fili tesi tra agganci vicini (max_gap e max_dy in unità di strato, sag, chance); aspetto: color, alpha, width, sway, sway_speed, spark, spark_speed, spark_spacing, glow, core, rise_len = distanza dopo cui i fili verso la Reggia svaniscono (shaders/canvas_env_thread.gdshader). FOGS: banchi di nebbia (y e h relativi alla linea di terra dello strato, density, speed, scale, color facoltativo). RAYS: luce volumetrica (top/h relativi alla linea di terra, x = intervallo del mondo facoltativo, origin in UV del rettangolo, axis = direzione dei fasci in radianti, screen = agganciato allo schermo, dust = densità della polvere luminosa; altri parametri in shaders/canvas_env_rays.gdshader). FIGURES: cittadini addormentati in controluce (tex relativo a assets/art/, x del mondo, h in unità, flip). FIELDS: particelle per strato (kind: motes, fireflies, embers, rain_far, bokeh, dust; density = particelle per schermata; y = [alto, basso] relativi alla linea di terra; size/alpha/speed moltiplicatori; color). FLOCK: stormi nel cielo (kind bats|birds, every = secondi tra due stormi, count, y = fascia dello schermo 0-1, size, speed, color). GRASS (terrain.gd): ciuffi d'erba che ondeggiano su pavimento, blocchi e mensole (density 0-1, h, color, tip, sway, vines = quantità di rampicanti sui blocchi). CHAINS: catene appese sotto le mensole (chance, len). FLOOR: pavimento bagnato (reflect, wet, depth, tint, rings = cerchi delle gocce nelle pozzanghere; shaders/canvas_env_reflect.gdshader) e schizzi di pioggia (splashes = gocce per 100 unità).",
 	"piazza": {
 		"terrain_tint": "#c9d0e2",
 		"layers": [
@@ -16,7 +16,7 @@
 				"fill": "#191b22",
 				"threads": {
 					"anchors": [[1342, 320], [1532, 302], [158, 486], [266, 498], [467, 478], [769, 510], [1227, 478], [1342, 484]],
-					"rise": {"to": [1280, -2600], "pull": 0.6, "len": [260, 420], "curl": [20, 60], "wave": [6, 16], "chance": 0.5, "bright": [0.5, 0.9], "per": 1},
+					"rise": {"to": [1280, -2600], "pull": 0.6, "len": [260, 420], "curl": [20, 60], "wave": [6, 16], "chance": 0.3, "bright": [0.5, 0.9], "per": 1},
 					"garland": {"max_gap": 320, "max_dy": 120, "sag": [30, 70], "chance": 0.6, "bright": [0.7, 1.0]},
 					"width": 10,
 					"alpha": 0.65,
@@ -28,6 +28,7 @@
 					"core": 0.13
 				}
 			},
+			{"tex": "comune/foglie.png", "scroll": 0.82, "scale": 0.3, "ground": 940, "rows": [640, 1008], "z": -18, "tint": "#121827", "haze": 0.2, "blur": 1.4, "flip": true},
 			{"tex": "comune/foglie.png", "scroll": 1.3, "scale": 0.5, "anchor": "top", "rows": [0, 260], "offset_y": -24, "z": 40, "tint": "#2a3040", "blur": 0.6},
 			{"tex": "comune/foglie.png", "scroll": 1.3, "scale": 0.36, "ground": 800, "rows": [700, 1008], "z": 40, "tint": "#1c2030", "blur": 0.8}
 		],
@@ -46,9 +47,9 @@
 			"h": 104,
 			"head": 0.92,
 			"threads": {
-				"rise": {"to": [1280, -2600], "pull": 0.6, "len": [380, 520], "curl": [20, 50], "wave": [6, 16], "chance": 1.0, "bright": [0.8, 1.0]},
+				"rise": {"to": [1280, -2600], "pull": 0.6, "len": [380, 520], "curl": [40, 90], "wave": [8, 18], "chance": 1.0, "bright": [0.8, 1.0]},
 				"width": 10,
-				"alpha": 0.75,
+				"alpha": 0.65,
 				"color": "#ffd27e",
 				"sway": 10,
 				"spark_speed": 90,
@@ -86,14 +87,15 @@
 				"fill": "#111623",
 				"threads": {
 					"anchors": [[153, 520], [312, 528], [709, 568], [1313, 582], [1180, 606], [1531, 618], [1634, 610]],
-					"rise": {"to": [1280, -1200], "pull": 0.6, "len": [260, 420], "curl": [20, 60], "wave": [6, 16], "chance": 0.9, "bright": [0.5, 0.8], "per": 1},
+					"rise": {"to": [1280, -1200], "pull": 0.6, "len": [260, 420], "curl": [20, 60], "wave": [6, 16], "chance": 0.6, "bright": [0.5, 0.8], "per": 1},
 					"width": 7,
 					"alpha": 0.7,
 					"color": "#ffc070",
 					"sway": 10,
 					"spark_speed": 50,
 					"rise_len": 380
-				}
+				},
+				"lift": 160
 			},
 			{
 				"tex": "strada/mid.png",
@@ -107,7 +109,7 @@
 				"fill": "#1e1a18",
 				"threads": {
 					"anchors": [[71, 460], [301, 460], [339, 460], [690, 452], [841, 455], [1044, 452], [1231, 450]],
-					"rise": {"to": [1280, -1500], "pull": 0.6, "len": [260, 420], "curl": [20, 60], "wave": [6, 16], "chance": 0.8, "bright": [0.6, 1.0], "per": 1},
+					"rise": {"to": [1280, -1500], "pull": 0.6, "len": [260, 420], "curl": [40, 90], "wave": [10, 20], "chance": 0.35, "bright": [0.6, 1.0], "per": 1},
 					"width": 9,
 					"alpha": 0.85,
 					"color": "#ffc070",
@@ -116,6 +118,7 @@
 					"rise_len": 380
 				}
 			},
+			{"tex": "strada/fg.png", "scroll": 0.82, "scale": 0.3, "ground": 960, "rows": [600, 1008], "z": -18, "tint": "#1a1418", "haze": 0.2, "blur": 1.4, "flip": true},
 			{"tex": "strada/fg.png", "scroll": 1.3, "scale": 0.5, "anchor": "top", "rows": [0, 330], "offset_y": -40, "z": 40, "tint": "#8a8090", "blur": 0.4},
 			{"tex": "strada/fg.png", "scroll": 1.3, "scale": 0.36, "ground": 690, "rows": [620, 1008], "z": 40, "tint": "#3a3440", "blur": 0.8}
 		],
@@ -133,9 +136,9 @@
 			"h": 104,
 			"head": 0.92,
 			"threads": {
-				"rise": {"to": [1280, -1800], "pull": 0.6, "len": [380, 520], "curl": [20, 50], "wave": [6, 16], "chance": 1.0, "bright": [0.8, 1.0]},
+				"rise": {"to": [1280, -1800], "pull": 0.6, "len": [380, 520], "curl": [40, 90], "wave": [8, 18], "chance": 1.0, "bright": [0.8, 1.0]},
 				"width": 8,
-				"alpha": 1.0,
+				"alpha": 0.65,
 				"color": "#ffc678",
 				"sway": 10,
 				"spark_speed": 90,
@@ -179,6 +182,7 @@
 				}
 			},
 			{"tex": "giardino/mid.png", "scroll": 0.5, "scale": 0.52, "ground": 820, "z": -30, "tint": "#7c8a98", "haze": 0.1, "blur": 0.3, "fill": "#151a1e"},
+			{"tex": "giardino/fg.png", "scroll": 0.82, "scale": 0.34, "ground": 960, "rows": [640, 1008], "z": -18, "tint": "#0d1612", "haze": 0.2, "blur": 1.4, "flip": true},
 			{"tex": "giardino/fg.png", "scroll": 1.3, "scale": 0.5, "anchor": "top", "rows": [0, 280], "offset_y": -30, "z": 40, "tint": "#40504a", "blur": 0.6},
 			{"tex": "giardino/fg.png", "scroll": 1.3, "scale": 0.36, "ground": 750, "rows": [680, 1008], "z": 40, "tint": "#202a26", "blur": 0.8}
 		],
@@ -214,9 +218,9 @@
 			"h": 104,
 			"head": 0.92,
 			"threads": {
-				"rise": {"to": [1280, -1800], "pull": 0.6, "len": [380, 520], "curl": [20, 50], "wave": [6, 16], "chance": 1.0, "bright": [0.8, 1.0]},
+				"rise": {"to": [1280, -1800], "pull": 0.6, "len": [380, 520], "curl": [40, 90], "wave": [8, 18], "chance": 1.0, "bright": [0.8, 1.0]},
 				"width": 8,
-				"alpha": 1.0,
+				"alpha": 0.65,
 				"color": "#ffe08a",
 				"sway": 10,
 				"spark_speed": 90,
@@ -230,7 +234,7 @@
 			{"kind": "bokeh", "scroll": 1.35, "z": 46, "density": 7, "color": "#c8ff9a"}
 		],
 		"flock": {"kind": "bats", "every": [8, 16], "count": [2, 5], "y": [0.08, 0.3], "size": [5, 8], "speed": [90, 140], "color": "#060c0a"},
-		"grass": {"density": 0.85, "h": [8, 22], "color": "#0c1610", "tip": "#2c4a2c", "sway": 4},
+		"grass": {"density": 0.85, "h": [8, 22], "color": "#0c1610", "tip": "#2c4a2c", "sway": 4, "vines": 1.5},
 		"chains": {"chance": 0.0}
 	},
 	"belvedere": {
@@ -259,6 +263,7 @@
 					"rise_len": 380
 				}
 			},
+			{"tex": "belvedere/fg.png", "scroll": 0.82, "scale": 0.34, "ground": 980, "rows": [700, 1008], "z": -18, "tint": "#1a2226", "haze": 0.2, "blur": 1.4, "flip": true},
 			{"tex": "belvedere/fg.png", "scroll": 1.3, "scale": 0.5, "anchor": "top", "rows": [0, 420], "offset_y": -70, "z": 40, "tint": "#3c4848", "blur": 0.6},
 			{"tex": "belvedere/fg.png", "scroll": 1.3, "scale": 0.36, "ground": 850, "rows": [720, 1008], "z": 40, "tint": "#202828", "blur": 0.8}
 		],
@@ -279,7 +284,7 @@
 				"reach": 0.4,
 				"falloff": 0.9,
 				"color": "#ffcfa0",
-				"intensity": 0.3,
+				"intensity": 0.24,
 				"density": 7,
 				"sharpness": 1.5,
 				"floor_light": 0.35,
@@ -297,9 +302,9 @@
 			"h": 104,
 			"head": 0.92,
 			"threads": {
-				"rise": {"to": [600, -1800], "pull": 0.6, "len": [380, 520], "curl": [20, 50], "wave": [6, 16], "chance": 1.0, "bright": [0.8, 1.0]},
+				"rise": {"to": [600, -1800], "pull": 0.6, "len": [380, 520], "curl": [40, 90], "wave": [8, 18], "chance": 1.0, "bright": [0.8, 1.0]},
 				"width": 8,
-				"alpha": 1.0,
+				"alpha": 0.65,
 				"color": "#ffd59a",
 				"sway": 10,
 				"spark_speed": 90,
@@ -317,7 +322,7 @@
 			{"kind": "bokeh", "scroll": 1.35, "z": 46, "density": 7, "color": "#ffd2b0"}
 		],
 		"flock": {"kind": "birds", "every": [6, 12], "count": [4, 9], "y": [0.1, 0.35], "size": [5, 8], "speed": [60, 100], "color": "#2a3038"},
-		"grass": {"density": 0.7, "h": [8, 20], "color": "#131a1c", "tip": "#3d4a46", "sway": 4}
+		"grass": {"density": 0.7, "h": [8, 20], "color": "#131a1c", "tip": "#3d4a46", "sway": 4, "vines": 3.0}
 	},
 	"oro": {
 		"terrain_tint": "#e6d2b4",
@@ -355,7 +360,7 @@
 				"threads": {
 					"anchors": [[83, 555], [285, 559], [573, 558], [768, 550], [1065, 558], [1252, 555], [1540, 559], [1718, 561]],
 					"garland": {"max_gap": 200, "max_dy": 40, "sag": [40, 80], "chance": 0.9, "bright": [0.7, 1.0]},
-					"rise": {"to": [960, -2600], "pull": 0.4, "len": [260, 400], "curl": [20, 50], "wave": [6, 14], "chance": 0.5, "bright": [0.6, 0.9]},
+					"rise": {"to": [960, -2600], "pull": 0.4, "len": [260, 400], "curl": [20, 50], "wave": [6, 14], "chance": 0.25, "bright": [0.6, 0.9]},
 					"width": 9,
 					"alpha": 0.75,
 					"color": "#ffc860",
@@ -399,9 +404,9 @@
 			"h": 112,
 			"head": 0.94,
 			"threads": {
-				"rise": {"to": [960, -1800], "pull": 0.6, "len": [380, 520], "curl": [20, 50], "wave": [6, 16], "chance": 1.0, "bright": [0.8, 1.0]},
+				"rise": {"to": [960, -1800], "pull": 0.6, "len": [380, 520], "curl": [40, 90], "wave": [8, 18], "chance": 1.0, "bright": [0.8, 1.0]},
 				"width": 8,
-				"alpha": 1.0,
+				"alpha": 0.65,
 				"color": "#ffc860",
 				"sway": 10,
 				"spark_speed": 90,

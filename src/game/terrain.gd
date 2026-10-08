@@ -184,9 +184,17 @@ func _draw_detail() -> void:
 	# Il pavimento sfuma nel buio verso il basso.
 	Art.grad_rect(c, Rect2(-200, fy + 30.0, size.x + 400.0, 80), Color(0, 0, 0, 0.0), Color(0, 0, 0, 0.75))
 
-	# Blocchi: ombre ai lati e contatto con il pavimento.
+	# Blocchi: colature d'umidità dal bordo alto, ombre ai lati e contatto con il pavimento.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(room["name"]) + 3
 	for b in room["blocks"]:
 		var r: Rect2 = b
+		var sx := r.position.x + rng.randf_range(10.0, 40.0)
+		while sx < r.end.x - 16.0:
+			var w := rng.randf_range(5.0, 16.0)
+			var h := minf(rng.randf_range(24.0, 110.0), r.size.y - 10.0)
+			Art.grad_rect(c, Rect2(sx, r.position.y + 6.0, w, h), Color(0, 0, 0, rng.randf_range(0.12, 0.3)), Color(0, 0, 0, 0))
+			sx += rng.randf_range(26.0, 90.0)
 		Art.grad_rect_h(c, Rect2(r.position.x, r.position.y, 14, r.size.y), Color(0, 0, 0, 0.55), Color(0, 0, 0, 0))
 		Art.grad_rect_h(c, Rect2(r.end.x - 14, r.position.y, 14, r.size.y), Color(0, 0, 0, 0), Color(0, 0, 0, 0.55))
 		c.draw_rect(Rect2(r.position.x - 1.0, r.position.y - CAP_LIFT, 2, r.size.y + CAP_LIFT), Color(0, 0, 0, 0.6))
@@ -229,7 +237,7 @@ func _draw_sway() -> void:
 		for b in room["blocks"]:
 			var r: Rect2 = b
 			_grass_edge(rng, r.position.x + 4.0, r.end.x - 4.0, r.position.y - CAP_LIFT + 2.0, grass, density)
-			_vines(rng, r.position.x, r.end.x, r.position.y - CAP_LIFT + 30.0, grass, density, 0.5)
+			_vines(rng, r.position.x, r.end.x, r.position.y - CAP_LIFT + 30.0, grass, density, float(grass.get("vines", 0.5)))
 		for l in room["ledges"]:
 			var r: Rect2 = l
 			_grass_edge(rng, r.position.x + 4.0, r.end.x - 4.0, r.position.y - CAP_LIFT + 2.0, grass, density * 0.7)
@@ -268,29 +276,46 @@ func _grass_edge(rng: RandomNumberGenerator, x0: float, x1: float, y: float, gra
 		x += GRASS_STEP
 
 
-## Rampicanti che pendono dal bordo di blocchi e mensole (pesati verso il basso).
+## Rampicanti che pendono dal bordo di blocchi e mensole (pesati verso il basso): stelo sottile
+## e foglioline alternate, più chiare verso la punta.
 func _vines(rng: RandomNumberGenerator, x0: float, x1: float, y: float, grass: Dictionary, density: float, amount: float) -> void:
 	var base := Color(grass.get("color", "#101510"))
 	var tip := Color(grass.get("tip", "#2a3a2a"))
 	var x := x0
 	while x < x1:
 		if rng.randf() < density * amount * 0.12:
-			var length := rng.randf_range(12.0, 46.0)
+			var length := rng.randf_range(12.0, 46.0) * (1.0 + amount * 0.5)
 			var pts := PackedVector2Array()
 			var cols := PackedColorArray()
 			var steps := 6
 			for i in steps + 1:
 				var t := float(i) / float(steps)
 				var wob := sin(t * 5.0 + x) * 2.0
-				pts.append(Vector2(x - 1.4 * (1.0 - t) + wob, y + length * t))
+				pts.append(Vector2(x - 1.2 * (1.0 - t) + wob, y + length * t))
 				cols.append(Color(base.lerp(tip, t * 0.5), t))
 			for i in range(steps, -1, -1):
 				var t := float(i) / float(steps)
 				var wob := sin(t * 5.0 + x) * 2.0
-				pts.append(Vector2(x + 1.4 * (1.0 - t) + 0.4 + wob, y + length * t))
+				pts.append(Vector2(x + 1.2 * (1.0 - t) + 0.4 + wob, y + length * t))
 				cols.append(Color(base.lerp(tip, t * 0.5), t))
 			_sway.draw_polygon(pts, cols)
+			# Foglie irregolari: fitte in alto (dove l'edera si aggrappa), rade verso la punta.
+			var leaf_y := -2.0
+			while leaf_y < length:
+				var t := maxf(leaf_y, 0.0) / length
+				if rng.randf() > t * 0.7:
+					var c := Vector2(x + sin(t * 5.0 + x) * 2.0 + rng.randf_range(-5.0, 5.0) * (1.0 - t * 0.5), y + leaf_y)
+					_leaf(c, Vector2(rng.randf_range(2.6, 4.4), rng.randf_range(1.8, 3.0)), Color(base.lerp(tip, rng.randf_range(0.0, 0.45)), t))
+				leaf_y += rng.randf_range(2.5, 6.0)
 		x += GRASS_STEP
+
+
+func _leaf(c: Vector2, radius: Vector2, color: Color) -> void:
+	var pts := Art.ellipse(c, radius, 6)
+	var cols := PackedColorArray()
+	cols.resize(pts.size())
+	cols.fill(color)
+	_sway.draw_polygon(pts, cols)
 
 
 ## Catena di ferro appesa: maglie alternate di fronte (ovale col foro) e di taglio.

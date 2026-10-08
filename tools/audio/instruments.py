@@ -94,7 +94,8 @@ def ensemble(freq: float, dur: float, vel: float, rng, voices: int = 4, attack: 
 			r = trem_rate * rng.uniform(0.92, 1.08) * (1 + 0.05 * smooth_noise(m, 1.0, rng))
 			am = 0.5 + 0.5 * np.sin(TWO_PI * np.cumsum(r) / SR + rng.uniform(0, TWO_PI))
 			sig = sig * (1 - tremolo * am)
-		sig = sig * e * rng.uniform(0.85, 1.1)
+		# l'arco non è mai perfettamente uniforme: un respiro lento d'ampiezza per voce
+		sig = sig * e * rng.uniform(0.85, 1.1) * (1 + 0.05 * smooth_noise(m, 3.0, rng))
 		pan = (v / max(1, voices - 1) * 2 - 1) * spread if voices > 1 else 0.0
 		out[:, off:] += pan_mono(sig, pan + rng.normal(0, 0.05))
 	return out * (vel ** 1.2) / np.sqrt(voices) * 0.35
@@ -230,10 +231,14 @@ def bell(freq, dur, vel, rng, ring: float = 7.0) -> np.ndarray:
 	return out * vel * 0.25
 
 
-def harp(freq, dur, vel, rng, p: float = 0.27, ring: float | None = None) -> np.ndarray:
-	"""Arpa: pizzico additivo, armoniche alte che si spengono prima."""
+def harp(freq, dur, vel, rng, p: float = 0.27, ring: float | None = None, damp: float = 0.0) -> np.ndarray:
+	"""Arpa: pizzico additivo, armoniche alte che si spengono prima.
+	damp > 0: dopo `dur` la corda viene smorzata con questa costante di tempo (secondi),
+	come l'arpista che ferma le corde al cambio d'accordo."""
 	m = 69 + 12 * np.log2(freq / 440)
 	t60 = ring or float(np.clip(9.0 * 2 ** (-(m - 43) / 12 * 0.55), 1.4, 9.0))
+	if damp > 0:
+		t60 = min(t60, dur + 7 * damp)
 	n = _n(t60)
 	t = np.arange(n) / SR
 	out = np.zeros(n)
@@ -247,6 +252,10 @@ def harp(freq, dur, vel, rng, p: float = 0.27, ring: float | None = None) -> np.
 	out[:a] *= ramp_cos(a)
 	k = _n(0.012)
 	out[:k] += filt(lp(1200), rng.standard_normal(k)) * env_perc(k, 0.0005, 0.01) * 0.04
+	if damp > 0:
+		d0 = _n(dur)
+		if d0 < n:
+			out[d0:] *= np.exp(-np.arange(n - d0) / (damp * SR))
 	return out * (0.2 + 0.8 * vel) * 0.4
 
 
