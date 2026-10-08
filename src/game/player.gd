@@ -25,6 +25,8 @@ var max_hp := 5
 var dead := false
 ## Secondi di invulnerabilità rimasti dopo un colpo subito.
 var iframes := 0.0
+var parry_window := 0.0
+var parry_cooldown := 0.0
 var world: Node
 
 # Stato di movimento e animazione (il mondo li legge e, nei dialoghi, li azzera).
@@ -146,6 +148,8 @@ func add_trauma(amount: float) -> void:
 func _physics_process(delta: float) -> void:
 	_prev_pos = global_position
 	iframes = maxf(0.0, iframes - delta)
+	parry_window = maxf(0.0, parry_window - delta)
+	parry_cooldown = maxf(0.0, parry_cooldown - delta)
 	if attacking > 0.0:
 		attacking = maxf(0.0, attacking - delta)
 	if dead:
@@ -156,6 +160,9 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_attack_cd = maxf(0.0, _attack_cd - delta)
+	if Input.is_action_just_pressed("parry") and parry_cooldown <= 0.0 and _dash_t <= 0.0:
+		parry_window = float(_cfg.get("parry_window", 0.18))
+		parry_cooldown = float(_cfg.get("parry_cooldown", 1.0))
 	_dash_cd = maxf(0.0, _dash_cd - delta)
 	_knock_t = maxf(0.0, _knock_t - delta)
 	if _drop_t > 0.0:
@@ -427,6 +434,8 @@ func _draw() -> void:
 
 ## Fendente: mezzaluna luminosa che svanisce, davanti al personaggio.
 func _draw_slash() -> void:
+	if parry_window > 0.0 and not dead:
+		_front.draw_arc(_shown, 38.0, -1.4 if facing > 0.0 else 1.74, 1.4 if facing > 0.0 else 4.54, 24, Color(0.65, 0.9, 1.0), 4.0, true)
 	if attacking <= 0.0 or dead:
 		return
 	var atk := 1.0 - attacking / float(_cfg.attack_time)
@@ -464,6 +473,22 @@ func revive() -> void:
 	dead = false
 	hp = max_hp
 	iframes = 0.0
+	parry_window = 0.0
+	parry_cooldown = 0.0
+	_knock_t = 0.0
+	_drop_t = 0.0
+	set_collision_mask_value(LEDGE_LAYER, true)
+
+
+func try_parry(from_x: float) -> bool:
+	if dead or parry_window <= 0.0 or (from_x - global_position.x) * facing < 0.0:
+		return false
+	parry_window = 0.0
+	# Solo una parata riuscita ricarica subito lo scatto e il fendente.
+	_dash_cd = 0.0
+	_attack_cd = 0.0
+	iframes = 0.25
+	return true
 
 
 func teleport(pos: Vector2) -> void:

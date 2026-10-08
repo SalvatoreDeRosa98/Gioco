@@ -21,6 +21,15 @@ const POST_SHADER := preload("res://game/shaders/post_screen_grade.gdshader")
 
 ## Livello di collisione delle mensole attraversabili dal basso.
 const LEDGE_LAYER := 4
+const StationScript := preload("res://game/save_station.gd")
+const SAVE_PATH := "user://ferruccio-save.json"
+var save_path := SAVE_PATH
+var stations: Dictionary = {}
+var defeated: Dictionary = {}
+var checkpoint: Dictionary = {}
+var _stations_root: Node2D
+var _saved_state: Dictionary = {}
+var resume_save := true
 
 var room: Dictionary = {}
 var room_index := 0
@@ -67,6 +76,9 @@ func _ready() -> void:
 	_decor = Node2D.new()
 	_decor.z_index = 2
 	add_child(_decor)
+	_stations_root = Node2D.new()
+	_stations_root.z_index = 11
+	add_child(_stations_root)
 	_terrain = TerrainScript.new()
 	_terrain.z_index = 5
 	add_child(_terrain)
@@ -106,6 +118,11 @@ func _ready() -> void:
 	# Solo per test: --story=variabile:valore,... --cleared (stanza già liberata) --talk (vedi _test_talk).
 	_apply_test_story()
 	_load_room(start_room, true, "--cleared" in OS.get_cmdline_user_args())
+	var explicit_room := false
+	for arg in OS.get_cmdline_user_args():
+		explicit_room = explicit_room or arg.begins_with("--room=")
+	if resume_save and not explicit_room:
+		_restore_save()
 	if "--boss-defeated" in OS.get_cmdline_user_args():
 		get_tree().create_timer(1.5).timeout.connect(_test_defeat_boss)
 	if "--talk" in OS.get_cmdline_user_args():
@@ -122,6 +139,8 @@ func _process(delta: float) -> void:
 	if _demo:
 		_demo_input(delta)
 	_update_talk(delta)
+	_update_stations()
+	_update_branch()
 	var cam := get_viewport().get_camera_2d()
 	var center: Vector2 = cam.get_screen_center_position() if cam else room.get("size", Vector2(1280, 720)) * 0.5
 	_backdrop.update_camera(center)
@@ -219,6 +238,7 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	_build_walls()
 	_build_decor(th)
 	_build_npcs()
+	_build_stations()
 	_apply_grade(th)
 	Audio.stop_loops()
 	Audio.play_area(room["theme"])
@@ -242,7 +262,11 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	_revive_player()
 	if not cleared_now:
 		for e in room["enemies"]:
-			_spawn_enemy(e["type"], e["pos"])
+			if not defeated.has(_enemy_id(e["type"], e["pos"])):
+				_spawn_enemy(e["type"], e["pos"])
+	for p in room.get("secrets", []):
+		if not defeated.has(_enemy_id("secret", p)):
+			_spawn_pickup(p, "secret", 15)
 
 
 func _left_open() -> bool:
@@ -250,7 +274,8 @@ func _left_open() -> bool:
 
 
 func _right_open() -> bool:
-	return room_cleared and room_index < Room.COUNT - 1
+	# Le aree ordinarie si esplorano liberamente; il Custode resta l'ultimo incontro.
+	return room_index < Room.COUNT - 1
 
 
 func _build_walls() -> void:
@@ -306,6 +331,9 @@ func _go(idx: int, from_left: bool) -> void:
 
 
 func _go_restart() -> void:
+	if not checkpoint.is_empty():
+		_restore_state(_saved_state)
+		return
 	# Ferruccio è caduto: si torna all'ingresso della stanza corrente e si riparte da zero.
 	_load_room(room_index, true, bool(cleared.get(room_index, false)))
 
@@ -421,6 +449,10 @@ func _do_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
 func _hurt_player(dmg: int, from_x: float) -> void:
 	if game_over or player.dead or player.iframes > 0.0:
 		return
+	if player.try_parry(from_x):
+		_fx("shock", player.global_position, Color(0.65, 0.9, 1.0), player.facing)
+		_hud.toast("Parata perfetta! Scatto e fendente ricaricati")
+		return
 	player.iframes = float(Tuning.data.player.hurt_iframes)
 	player.take_damage(dmg)
 	var dir := 1.0 if player.global_position.x >= from_x else -1.0
@@ -448,6 +480,7 @@ func boss() -> Node:
 
 func _spawn_enemy(kind: String, pos: Vector2) -> void:
 	var e = EnemyScript.new()
+	e.set_meta("save_id", _enemy_id(kind, pos))
 	e.setup({"type": kind, "pos": pos}, self)
 	_entities.add_child(e)
 
@@ -471,6 +504,16 @@ func _hit_enemy(e: Node, dmg: int, col: Color, dir: float, down: bool = false) -
 
 
 func _on_enemy_killed(e: Node) -> void:
+	defeated[str(e.get_meta("save_id"))] = true
+	if e.kind == "statua":
+		var floor_y := float(room["floor"])
+		for surface in room["ledges"] + room["blocks"]:
+			var r: Rect2 = surface
+			if e.global_position.x >= r.position.x and e.global_position.x <= r.end.x and r.position.y >= e.global_position.y:
+				floor_y = minf(floor_y, r.position.y)
+		stations[str(e.get_meta("save_id"))] = {"room": room_index, "x": e.global_position.x, "y": floor_y}
+		_build_stations()
+		_hud.toast("La statua si illumina: avvicinati e premi W per salvare")
 	if e.kind == "custode":
 		_boss_fall = e.global_position
 	_spawn_pickup(e.global_position, "centesimi", int(e.coins))
@@ -518,7 +561,13 @@ func _check_pickups() -> void:
 
 
 func _collect(pk: Node) -> void:
-	if pk.item == "centesimi":
+	if pk.item == "secret":
+		defeated[_enemy_id("secret", pk.global_position)] = true
+		coins += int(pk.value)
+		player.heal(1)
+		_hud.toast("Tesoro trovato: +15 centesimi e una maschera")
+		_fx("collect", pk.global_position, Color(1.0, 0.8, 0.35), 0.0)
+	elif pk.item == "centesimi":
 		coins += int(pk.value)
 		Audio.sfx("moneta")
 		_fx("collect", pk.global_position, Color(1.0, 0.8, 0.35), 0.0)
@@ -569,6 +618,121 @@ func is_ground(p: Vector2) -> bool:
 		if (l as Rect2).has_point(p):
 			return true
 	return false
+
+
+func _enemy_id(kind: String, pos: Vector2) -> String:
+	return "%d:%s:%d:%d" % [room_index, kind, roundi(pos.x), roundi(pos.y)]
+
+
+func _build_stations() -> void:
+	for n in _stations_root.get_children():
+		_stations_root.remove_child(n)
+		n.queue_free()
+	for id in stations:
+		var data: Dictionary = stations[id]
+		if int(data["room"]) != room_index:
+			continue
+		var node := StationScript.new()
+		node.position = Vector2(float(data["x"]), float(data["y"]))
+		node.set_meta("station_id", id)
+		_stations_root.add_child(node)
+	if int(room.get("branch", -1)) >= 0:
+		var gate := StationScript.new()
+		gate.position = room["branch_pos"]
+		gate.modulate = Color(0.5, 0.8, 1.0)
+		gate.set_meta("branch", true)
+		_stations_root.add_child(gate)
+
+
+func _update_stations() -> void:
+	var best: Node2D = null
+	var nearest := 80.0
+	for node in _stations_root.get_children():
+		if node.has_meta("branch"):
+			continue
+		node.focused = false
+		var distance: float = (player.global_position + Vector2(0, PlayerScript.HALF.y)).distance_to(node.position)
+		if distance < nearest:
+			nearest = distance
+			best = node
+	if best == null or player.dead or is_talking() or in_cutscene() or game_over or _talk_lock > 0.0:
+		return
+	best.focused = true
+	if Input.is_action_just_pressed("interact") and player.is_on_floor():
+		_save_at(best.position)
+
+
+func _update_branch() -> void:
+	if player.dead or game_over or is_talking() or in_cutscene() or _talk_lock > 0.0:
+		return
+	for node in _stations_root.get_children():
+		if not node.has_meta("branch"):
+			continue
+		node.focused = (player.global_position + Vector2(0, PlayerScript.HALF.y)).distance_to(node.position) < 80.0
+		if node.focused and Input.is_action_just_pressed("interact"):
+			_go(int(room["branch"]), true)
+			return
+
+
+func _save_at(pos: Vector2) -> void:
+	var new_checkpoint := {"room": room_index, "x": pos.x, "y": pos.y - PlayerScript.HALF.y}
+	var state := {"version": 1, "checkpoint": new_checkpoint, "coins": coins, "cleared": cleared, "defeated": defeated, "stations": stations, "vars": story.vars, "seen": story.seen}
+	var file := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
+	if file == null:
+		_hud.toast("Salvataggio non riuscito")
+		return
+	file.store_string(JSON.stringify(state))
+	file.flush()
+	var error := file.get_error()
+	file.close()
+	if error != OK or DirAccess.rename_absolute(save_path + ".tmp", save_path) != OK:
+		_hud.toast("Salvataggio non riuscito")
+		return
+	checkpoint = new_checkpoint
+	_saved_state = state.duplicate(true)
+	player.heal(player.max_hp)
+	_hud.toast("Partita salvata · Vita ripristinata")
+
+
+func _restore_save() -> void:
+	if not FileAccess.file_exists(save_path):
+		return
+	var parsed = JSON.parse_string(FileAccess.get_file_as_string(save_path))
+	if not parsed is Dictionary or int(parsed.get("version", 0)) != 1:
+		_hud.toast("Salvataggio non valido")
+		return
+	var point = parsed.get("checkpoint", {})
+	if not point is Dictionary or not point.has_all(["room", "x", "y"]) or int(point["room"]) < 0 or int(point["room"]) >= Room.COUNT:
+		return
+	for key in ["cleared", "defeated", "stations", "vars", "seen"]:
+		if not parsed.get(key) is Dictionary:
+			return
+	if not parsed.has("coins"):
+		return
+	for station in parsed["stations"].values():
+		if not station is Dictionary or not station.has_all(["room", "x", "y"]):
+			return
+	var saved_room := Room.build(int(point["room"]))
+	if float(point["x"]) < Room.EDGE or float(point["x"]) > saved_room["size"].x - Room.EDGE or float(point["y"]) < 0 or float(point["y"]) > float(saved_room["floor"]):
+		return
+	_saved_state = parsed.duplicate(true)
+	_restore_state(_saved_state)
+
+
+func _restore_state(state: Dictionary) -> void:
+	checkpoint = state["checkpoint"].duplicate(true)
+	coins = int(state["coins"])
+	cleared.clear()
+	for key in state["cleared"]:
+		cleared[int(key)] = bool(state["cleared"][key])
+	defeated = state["defeated"].duplicate(true)
+	stations = state["stations"].duplicate(true)
+	story.vars = state["vars"].duplicate(true)
+	story.seen = state["seen"].duplicate(true)
+	var idx := int(checkpoint["room"])
+	player.revive()
+	_load_room(idx, true, bool(cleared.get(idx, false)))
+	player.teleport(Vector2(float(checkpoint["x"]), float(checkpoint["y"])))
 
 
 # ---------------------------------------------------------------- Utilità

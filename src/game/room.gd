@@ -135,6 +135,17 @@ const ROOMS := [
 ]
 
 
+## Percorsi superiori a gradini: dislivelli di 110-120 raggiungibili con il doppio salto.
+const EXPLORATION_LEDGES := [
+	[Rect2(280, 860, 220, 18), Rect2(540, 750, 220, 18), Rect2(800, 640, 220, 18), Rect2(1050, 530, 220, 18), Rect2(1320, 640, 240, 18), Rect2(1590, 750, 220, 18), Rect2(1880, 860, 220, 18)],
+	[Rect2(240, 860, 220, 18), Rect2(500, 750, 220, 18), Rect2(760, 640, 240, 18), Rect2(1040, 530, 220, 18), Rect2(1310, 640, 220, 18), Rect2(1580, 750, 220, 18), Rect2(1920, 750, 220, 18), Rect2(2180, 640, 220, 18)],
+	[Rect2(280, 860, 220, 18), Rect2(540, 750, 220, 18), Rect2(820, 650, 240, 18), Rect2(1100, 540, 220, 18), Rect2(1370, 650, 220, 18), Rect2(1640, 760, 220, 18), Rect2(2050, 800, 240, 18)],
+	[Rect2(220, 860, 220, 18), Rect2(580, 760, 220, 18), Rect2(860, 650, 220, 18), Rect2(1130, 540, 220, 18), Rect2(1410, 430, 220, 18), Rect2(1690, 540, 220, 18), Rect2(1970, 660, 220, 18), Rect2(2240, 780, 200, 18)],
+	[Rect2(280, 860, 240, 18), Rect2(560, 750, 220, 18), Rect2(830, 640, 240, 18), Rect2(1100, 750, 220, 18), Rect2(1380, 770, 240, 18)],
+]
+const SECRETS := [Vector2(1150, 500), Vector2(1140, 500), Vector2(1200, 510), Vector2(1510, 400), Vector2(950, 610)]
+const BRANCHES := {0: 2, 2: 0, 1: 3, 3: 1}
+
 static func build(idx: int) -> Dictionary:
 	var r: Dictionary = ROOMS[idx]
 	return {
@@ -144,11 +155,33 @@ static func build(idx: int) -> Dictionary:
 		"size": r["size"],
 		"floor": r["floor"],
 		"blocks": r["blocks"],
-		"ledges": r["ledges"],
-		"enemies": r["enemies"],
-		"decor": r["decor"],
+		"ledges": EXPLORATION_LEDGES[idx],
+		"enemies": _enemies(idx),
+		"secrets": [SECRETS[idx]],
+		"branch": BRANCHES.get(idx, -1),
+		"branch_pos": Vector2(920, 640) if idx < 3 else Vector2(1230, 540),
+		"decor": _decorations(idx),
 		"boss": idx == COUNT - 1,
 	}
+
+
+static func _enemies(idx: int) -> Array:
+	var enemies: Array = ROOMS[idx]["enemies"].duplicate(true)
+	if idx < 2:
+		enemies.append({"type": "statua", "pos": Vector2(2320, 946)})
+	return enemies
+
+
+static func _decorations(idx: int) -> Array:
+	var result: Array = []
+	for decoration in ROOMS[idx]["decor"]:
+		if decoration["kind"] != "lamp" and decoration["kind"] != "torch":
+			result.append(decoration.duplicate(true))
+	# Lampioni a terra fuori dai percorsi: niente mensole dentro i pali.
+	var width: float = ROOMS[idx]["size"].x
+	result.append({"kind": "lamp", "pos": Vector2(140, 980)})
+	result.append({"kind": "lamp", "pos": Vector2(width - 140, 980)})
+	return result
 
 
 ## Collisioni solide: soffitto, pavimento, pareti sopra i portali, blocchi e grate chiuse.

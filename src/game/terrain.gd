@@ -172,6 +172,9 @@ func _draw_stone() -> void:
 
 	for l in room["ledges"]:
 		var r: Rect2 = l
+		# Tiranti laterali dal soffitto: le mensole non attraversano i pali dei lampioni.
+		for x in [r.position.x + 16.0, r.end.x - 16.0]:
+			c.draw_line(Vector2(x, 0), Vector2(x, r.position.y), Color(0.22, 0.2, 0.18, 0.65), 2.0)
 		_band(c, r.position.x, r.end.x, r.position.y - CAP_LIFT, CAP_ROWS, LEDGE_SCALE)
 
 

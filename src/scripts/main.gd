@@ -79,6 +79,7 @@ func _ensure_inputs() -> void:
 		"jump": [KEY_SPACE, KEY_Z],
 		"attack": [KEY_X, KEY_J],
 		"dash": [KEY_C, KEY_SHIFT],
+		"parry": [KEY_F, KEY_K],
 		# Parlare con i personaggi: W e Freccia su come in Hollow Knight, E per chi preferisce.
 		"interact": [KEY_W, KEY_UP, KEY_E],
 	}
@@ -89,7 +90,7 @@ func _ensure_inputs() -> void:
 			var ev := InputEventKey.new()
 			ev.physical_keycode = k
 			InputMap.action_add_event(action, ev)
-	var pad := {"jump": JOY_BUTTON_A, "attack": JOY_BUTTON_X, "dash": JOY_BUTTON_RIGHT_SHOULDER, "interact": JOY_BUTTON_Y}
+	var pad := {"jump": JOY_BUTTON_A, "attack": JOY_BUTTON_X, "dash": JOY_BUTTON_RIGHT_SHOULDER, "interact": JOY_BUTTON_Y, "parry": JOY_BUTTON_LEFT_SHOULDER}
 	for action in pad:
 		var jb := InputEventJoypadButton.new()
 		jb.button_index = pad[action]
@@ -164,7 +165,8 @@ func _build_ui() -> void:
 	_menu_box = _screen(root)
 	_add_title(_menu_box)
 	_spacer(_menu_box, 8)
-	_play_button = _button(_menu_box, "Nuova partita", _on_play_pressed)
+	_play_button = _button(_menu_box, "Gioca", _on_play_pressed)
+	_button(_menu_box, "Nuova partita", func() -> void: _on_play_pressed(false))
 	_button(_menu_box, "Esci dal gioco", func() -> void: get_tree().quit())
 
 	var footer := _label(root, "Beta  ·  Caserta, 1845", 18, Art.body_font())
@@ -194,6 +196,7 @@ func _screen(root: Control) -> VBoxContainer:
 
 func _show_menu() -> void:
 	_ui.visible = true
+	_play_button.text = "CONTINUA" if FileAccess.file_exists(WORLD_SCRIPT.SAVE_PATH) else "GIOCA"
 	Audio.play_area("menu")
 	_play_button.call_deferred("grab_focus")
 
@@ -299,12 +302,13 @@ func _underline(color: Color) -> StyleBoxFlat:
 
 # ---------------------------------------------------------------- Partita
 
-func _on_play_pressed() -> void:
+func _on_play_pressed(resume: bool = true) -> void:
 	if _world:
 		return
 	_ui.visible = false
 	_free_scene()
 	_world = WORLD_SCRIPT.new()
+	_world.resume_save = resume
 	_world.name = "World"
 	_world.exit_requested.connect(_return_to_menu)
 	add_child(_world)

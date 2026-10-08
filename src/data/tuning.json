@@ -29,6 +29,8 @@
 		"dash_cooldown": 0.55,
 		"attack_time": 0.2,
 		"attack_cooldown": 0.28,
+		"parry_window": 0.18,
+		"parry_cooldown": 1.0,
 		"pogo_velocity": -430,
 		"max_hp": 5,
 		"hurt_iframes": 1.3,

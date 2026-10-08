@@ -79,7 +79,7 @@ func _draw() -> void:
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 118.0), _toast_text, 28, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if _hint_t > 0.0:
 		var a := minf(1.0, _hint_t / 3.0) * 0.6
-		var hint := "A/D muovi  ·  Spazio salta  ·  X colpisci  ·  S+X in aria rimbalza  ·  C scatta  ·  S+Spazio scendi  ·  W parla  ·  Esc menu"
+		var hint := "A/D muovi · Spazio salta · X colpisci · C scatta · F para · S+Spazio scendi · W parla/salva · Esc menu"
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 26.0), hint, 19, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if _end_t >= 0.0:
 		_draw_end(vp)
@@ -90,6 +90,8 @@ func _draw_vitals() -> void:
 	# Alone scuro dietro all'HUD per leggibilità su qualunque sfondo.
 	Art.shaded_ellipse(self, Vector2(130, 80), Vector2(230, 120), Color(0, 0, 0, 0.4), Color(0, 0, 0, 0.0), 24)
 	if me:
+		var parry_text: String = "F  Parata pronta" if me.parry_cooldown <= 0.0 else "Parata %.1f s" % me.parry_cooldown
+		Art.text(self, Art.body_font(), Vector2(34, 158), parry_text, 18, Art.CREMA)
 		var hp := int(me.hp)
 		for i in int(me.max_hp):
 			var pulse := 0.6 + 0.4 * sin(_t * 3.0 + i * 0.6) if hp <= 1 and i == 0 else 1.0
