@@ -5,7 +5,7 @@ extends SceneTree
 ## Esce con codice 0 se tutto passa, 1 altrimenti.
 
 const MAX_LINE := 120
-const SPECIAL_KEYS := ["cleared", "seen", "unseen"]
+const SPECIAL_KEYS := ["cleared", "seen", "unseen", "any"]
 
 var _failures := 0
 var _current := ""
@@ -94,6 +94,16 @@ func test_check_cleared_and_seen() -> void:
 	s.mark_seen("x")
 	_check(s.check({"seen": "x"}, {}), "seen dopo")
 	_check(not s.check({"unseen": ["x", "y"]}, {}), "unseen con elenco")
+
+
+func test_check_any_needs_one_group() -> void:
+	var s := Story.new()
+	var proof := {"any": [{"father_registry": "conservato"}, {"taddeo_trust": "perdonato"}]}
+	_check(not s.check(proof, {}), "senza registro né Taddeo non c'è prova")
+	s.apply({"taddeo_trust": "perdonato"})
+	_check(s.check(proof, {}), "basta la testimonianza di Taddeo")
+	s.apply({"taddeo_trust": "accusato", "father_registry": "conservato"})
+	_check(s.check(proof, {}), "basta il registro")
 
 
 func test_pick_follows_story_progression() -> void:
@@ -202,6 +212,13 @@ func test_dialogues_json_is_consistent() -> void:
 		var bark: Dictionary = n.get("bark", {})
 		if not bark.is_empty():
 			_check_lines(bark.get("lines", []), chars, ids, key)
+	# Finale: un epilogo, un titolo e un grading per ciascuno dei due destini di Violante.
+	var endings: Dictionary = (d.get("finale", {}) as Dictionary).get("endings", {})
+	for fate in Story.VARS["violante_fate"]:
+		_check(endings.has(fate), "finale: manca l'epilogo '%s'" % fate)
+		var e: Dictionary = endings.get(fate, {})
+		_check(str(e.get("title", "")) != "" and not (e.get("grade", {}) as Dictionary).is_empty(), "finale %s: titolo e grading" % fate)
+		_check_lines((e.get("dialogue", {}) as Dictionary).get("lines", []), chars, ids, "finale_" + fate)
 
 
 func _check_lines(lines: Array, chars: Dictionary, ids: Dictionary, where: String) -> void:
@@ -220,6 +237,10 @@ func _check_lines(lines: Array, chars: Dictionary, ids: Dictionary, where: Strin
 func _check_cond(cond: Dictionary, ids: Dictionary, where: String) -> void:
 	for k in cond:
 		var v = cond[k]
+		if k == "any":
+			for sub in (v as Array):
+				_check_cond(sub, ids, where)
+			continue
 		if SPECIAL_KEYS.has(k):
 			if k != "cleared":
 				for id in (v if v is Array else [v]):

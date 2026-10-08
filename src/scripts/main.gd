@@ -43,6 +43,9 @@ func _run_auto_args() -> void:
 			_capture_later(a.trim_prefix("--shot="), delay)
 	if "--perf" in args:
 		_print_perf()
+	for a in args:
+		if a.begins_with("--quit-at="):
+			get_tree().create_timer(float(a.trim_prefix("--quit-at="))).timeout.connect(get_tree().quit)
 	if "--play" in args:
 		get_tree().create_timer(1.0).timeout.connect(_on_play_pressed)
 
