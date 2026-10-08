@@ -135,6 +135,16 @@ func _physics_process(delta: float) -> void:
 	_check_cleared()
 	_check_doors()
 	_check_death(delta)
+	Audio.set_loop_sfx("vespa_ronzio", _wasps_alive() > 0)
+
+
+## Vespe ancora in volo nella stanza (per il ronzio continuo).
+func _wasps_alive() -> int:
+	var n := 0
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if e.kind == "vespa":
+			n += 1
+	return n
 
 
 func _demo_input(delta: float) -> void:
@@ -190,6 +200,8 @@ func _apply_grade(th: Dictionary) -> void:
 	_post_mat.set_shader_parameter("saturation", th.saturation)
 	_post_mat.set_shader_parameter("bloom_strength", th.bloom)
 	_post_mat.set_shader_parameter("vignette", th.vignette)
+	# Viraggio e velo di luce per area (vedi Themes.apply_grade).
+	Themes.apply_grade(_post_mat, th)
 
 
 # ---------------------------------------------------------------- Stanze
@@ -206,6 +218,8 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	_build_decor(th)
 	_build_npcs()
 	_apply_grade(th)
+	Audio.stop_loops()
+	Audio.play_area(room["theme"])
 	_fade_in()
 	if idx != _shown_room:
 		_shown_room = idx
@@ -339,6 +353,7 @@ func _mark_cleared() -> void:
 	room_cleared = true
 	_build_walls()
 	_terrain.open_doors(_left_open(), _right_open())
+	Audio.sfx("portale")
 	if not room["boss"]:
 		_hud.toast("Il passaggio si è aperto")
 
@@ -347,6 +362,8 @@ func _end_game(won: bool) -> void:
 	game_over = true
 	victory = won
 	_hud.show_end(won)
+	Audio.stop_loops()
+	Audio.stop_music(2.5)
 
 
 ## Effetti visivi (particelle, hitstop, scossa di camera) in un punto del mondo.
@@ -499,9 +516,11 @@ func _check_pickups() -> void:
 func _collect(pk: Node) -> void:
 	if pk.item == "centesimi":
 		coins += int(pk.value)
+		Audio.sfx("moneta")
 		_fx("collect", pk.global_position, Color(1.0, 0.8, 0.35), 0.0)
 	elif pk.item == "mozzarella":
 		player.heal(1)
+		Audio.sfx("mozzarella")
 		_fx("collect", pk.global_position, Color(1.0, 0.97, 0.9), 0.0)
 	pk.queue_free()
 

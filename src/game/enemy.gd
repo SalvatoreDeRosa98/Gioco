@@ -50,6 +50,8 @@ const LEDGE_LAYER := 4
 const ROOM_MARGIN := 60.0
 ## Mezza altezza del giocatore (player.gd HALF.y): serve a sapere dove poggia i piedi.
 const PLAYER_HALF_Y := 24.0
+## Spinta laterale (px/s) che fa scendere il gatto rimasto in bilico su uno spigolo.
+const PERCH_NUDGE := 120.0
 ## Probabilità che il gatto miagoli quando si ferma (solo atmosfera).
 const MEOW_CHANCE := 0.3
 ## Oltre questa distanza dal giocatore (circa mezzo schermo) i versi dei nemici non si sentono.
@@ -111,6 +113,10 @@ var _blocked_t := 0.0
 var _stuck_t := 0.0
 var _stuck_x := 0.0
 var _gait := 0.0
+## Velocità orizzontale voluta durante salti e agguati.
+var _air_vx := 0.0
+## Secondi passati in aria senza scendere né salire (appollaiato su uno spigolo).
+var _perch_t := 0.0
 ## Quota dei piedi del giocatore sull'ultima superficie toccata (INF = non ancora vista).
 var _tgt_floor_y := INF
 # Vespa
@@ -193,11 +199,14 @@ func setup(d: Dictionary, w: Node) -> void:
 		"vespa":
 			Art.point_light(self, Vector2(-6, 6), Color(1.0, 0.75, 0.35), 0.35, 200.0)
 			_enter("wander")
+			_notice_cd = _f("spawn_grace")
 		_:
 			# Occhi che si accendono quando il gatto si accorge del giocatore (telegrafo).
 			_aura = Art.glow(self, Vector2.ZERO, Color(0.72, 0.55, 1.0), 15.0)
 			_aura.modulate.a = 0.0
 			_enter("walk", _rand("patrol_time_min", "patrol_time_max"))
+			# Appena entrati nella stanza il giocatore ha un attimo per orientarsi.
+			_notice_cd = _f("spawn_grace")
 	if _aura:
 		_aura_scale = _aura.scale
 
@@ -329,6 +338,9 @@ func _ai_gatto(delta: float) -> void:
 				_launch_pounce(target)
 				ballistic = true
 		"pounce", "jump":
+			# La velocità orizzontale del salto si riapplica a ogni frame: strisciando contro lo
+			# spigolo di un blocco move_and_slide la azzera, e il gatto ricadrebbe in verticale.
+			velocity.x = _air_vx
 			ballistic = true
 		"land":
 			if _state_t >= _state_len:
@@ -442,6 +454,12 @@ func _chase(target: Node2D, on_floor: bool) -> float:
 			_face_x(aim_x)
 		elif absf(d.x) < 40.0:
 			return _wait_blocked()
+	# Il giocatore è da questa parte dell'ostacolo o del bordo (carica che lo ha oltrepassato):
+	# niente salti, si torna verso di lui.
+	var beyond := signf(aim_x - global_position.x) == _dir and absf(aim_x - global_position.x) > half.x + 8.0
+	if not beyond and dy > -30.0 and _blocked_ahead(_dir):
+		_dir = signf(d.x) if signf(d.x) != _dir and absf(d.x) > 2.0 else -_dir
+		return 0.0 if _blocked_ahead(_dir) else _dir * run
 	# 3) Ostacolo davanti: un blocco basso si scavalca, un muro alto no.
 	if _wall_ahead(_dir):
 		var h := _obstacle_height(_dir)
@@ -525,6 +543,7 @@ func _jump_to(goal: Vector2, arc: float, max_vx: float) -> void:
 	var vy := -sqrt(2.0 * GRAVITY * (feet.y - apex_y))
 	var t := -vy / GRAVITY + sqrt(2.0 * maxf(goal.y - apex_y, 0.0) / GRAVITY)
 	velocity = Vector2(clampf((goal.x - feet.x) / maxf(t, 0.05), -max_vx, max_vx), vy)
+	_air_vx = velocity.x
 	if absf(velocity.x) > 1.0:
 		_dir = signf(velocity.x)
 	_kick(P.SY, 4.0)
@@ -590,6 +609,16 @@ func _obstacle_height(dir: float) -> float:
 ## Dopo lo spostamento: atterraggi e muri. La normale del muro dice da che parte girarsi: il verso
 ## viene assegnato, mai invertito alla cieca, così due letture di fila danno la stessa risposta.
 func _after_move_gatto() -> void:
+	# Appollaiato su uno spigolo (in aria ma fermo): una spinta di lato lo fa scendere.
+	if not is_on_floor() and absf(get_position_delta().y) < 0.5:
+		_perch_t += _dt
+		if _perch_t > 0.2:
+			_perch_t = 0.0
+			var side := _dir if not _wall_ahead(_dir) else -_dir
+			velocity.x = side * PERCH_NUDGE
+			_air_vx = velocity.x
+	else:
+		_perch_t = 0.0
 	if _state == "pounce" or _state == "jump":
 		if is_on_floor() and _state_t > 0.08:
 			_land()

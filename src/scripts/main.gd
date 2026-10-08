@@ -177,6 +177,7 @@ func _screen(root: Control) -> VBoxContainer:
 
 func _show_menu() -> void:
 	_ui.visible = true
+	Audio.play_area("menu")
 	_play_button.call_deferred("grab_focus")
 
 
@@ -228,6 +229,7 @@ func _button(parent: Node, text: String, on_press: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.custom_minimum_size = Vector2(0, 50)
+	b.pressed.connect(func() -> void: Audio.sfx("menu_click"))
 	b.pressed.connect(on_press)
 	parent.add_child(b)
 	return b

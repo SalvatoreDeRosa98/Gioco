@@ -23,6 +23,9 @@ const MARGIN := 800.0
 const FILL_DEPTH := 1400.0
 ## Tetto alle particelle di un singolo campo (gli strati lenti coprono aree molto larghe).
 const MAX_FIELD := 260
+## Sotto questa velocità di parallasse uno strato è troppo lontano per ricevere le luci 2D dei
+## lampioni (altrimenti colline e cielo dipinti si bruciano attorno a ogni lanterna).
+const UNLIT_BELOW := 0.45
 
 static var _areas: Dictionary = {}
 
@@ -91,7 +94,6 @@ func build(theme_name: String, room_size: Vector2, floor_y: float, zoom: float =
 		leaves.z_index = 34
 		add_child(leaves)
 		_layers.append({"node": leaves, "s": 0.0, "follow": true})
-	_link_grade()
 
 
 ## Sposta gli strati in base al centro della camera (parallasse) e fa seguire il meteo.
@@ -118,18 +120,6 @@ func _clear() -> void:
 	if _weather:
 		_weather.queue_free()
 		_weather = null
-
-
-## Aggancio provvisorio al post-processing: world.gd tiene il materiale in _post_mat e imposta
-## solo tinta, contrasto, saturazione, bloom e vignetta; qui si aggiungono viraggio e velo di luce.
-## Quando world.gd chiamerà Themes.apply_grade() da sé, questa funzione diventa superflua.
-func _link_grade() -> void:
-	var host := get_parent()
-	if host == null:
-		return
-	var mat = host.get("_post_mat")
-	if mat is ShaderMaterial:
-		Themes.apply_grade(mat, _th)
 
 
 func _build_sky(th: Dictionary) -> void:
@@ -245,6 +235,8 @@ func _painted(parent: Node2D, cfg: Dictionary) -> void:
 		var h := float(tex.get_height())
 		(sprite.material as ShaderMaterial).set_shader_parameter("fade_rows", Vector2(float(cfg["fade"][0]) / h, float(cfg["fade"][1]) / h))
 
+	if scroll < UNLIT_BELOW:
+		sprite.light_mask = 0
 	if top:
 		# Cornice agganciata al bordo alto dello schermo (lo strato segue la camera in verticale).
 		sprite.position = Vector2(left, -VIEW.y * 0.5 / _zoom + float(cfg.get("offset_y", 0.0)))
@@ -260,6 +252,7 @@ func _painted(parent: Node2D, cfg: Dictionary) -> void:
 		fill.position = Vector2(left, base - 2.0)
 		fill.size = Vector2(right - left, FILL_DEPTH)
 		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fill.light_mask = sprite.light_mask
 		parent.add_child(fill)
 	parent.add_child(sprite)
 
@@ -362,6 +355,8 @@ func _fog_band(cfg: Dictionary) -> void:
 	mat.set_shader_parameter("scale", float(cfg.get("scale", 0.004)))
 	mat.set_shader_parameter("speed", float(cfg.get("speed", 0.02)))
 	rect.material = mat
+	if s < UNLIT_BELOW:
+		rect.light_mask = 0
 	node.add_child(rect)
 
 

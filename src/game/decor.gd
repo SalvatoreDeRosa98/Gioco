@@ -4,7 +4,7 @@ extends Node2D
 ## (PointLight2D), bagliori additivi e particelle; solo quelli animati si ridisegnano ogni frame.
 ## Il lampione ha anche un cono di luce volumetrica (shaders/canvas_env_rays, con la pioggia che
 ## lo attraversa sul Corso), un alone largo, una pozza di luce a terra e le falene: forza del cono,
-## pioggia e numero di falene vengono dal tema (lamp_cone, lamp_rain, moths in themes.gd).
+## pioggia, alone e numero di falene vengono dal tema (lamp_cone, lamp_rain, lamp_halo, moths in themes.gd).
 
 var kind := "lamp"
 var th: Dictionary = {}
@@ -47,7 +47,9 @@ func setup(k: String, theme: Dictionary, pos: Vector2) -> void:
 		"lamp":
 			_light = Art.point_light(self, Vector2(0, LAMP_HEAD), lamp, LAMP_ENERGY, 760.0)
 			_cone(lamp)
-			_unlit(Art.glow(self, Vector2(0, LAMP_HEAD), Color(lamp, 0.09), HALO))
+			var halo := float(th.get("lamp_halo", 0.09))
+			if halo > 0.0:
+				_unlit(Art.glow(self, Vector2(0, LAMP_HEAD), Color(lamp, halo), HALO))
 			# Pozza di luce sopra la pietra del pavimento (il terreno sta a z 5, le decorazioni a z 2).
 			var pool: Sprite2D = Art.glow(self, Vector2(0, 8), Color(lamp, 0.14), 64.0)
 			pool.scale = POOL / 64.0

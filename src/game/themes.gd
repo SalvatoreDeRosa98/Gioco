@@ -3,7 +3,8 @@ extends RefCounted
 ## Atmosfera di ogni area di Caserta: cielo, luce, nebbia, colori degli strati, meteo e color grading.
 ## Chiavi del grading (vedi shaders/post_screen_grade.gdshader): tint, contrast, saturation, bloom,
 ## vignette, shadows/highlights (viraggio separato), wash_top/wash_bottom (velo di luce).
-## Lampioni: lamp_cone (forza del cono volumetrico), lamp_rain (pioggia nella luce), moths (falene).
+## Lampioni: lamp_cone (forza del cono volumetrico), lamp_rain (pioggia nella luce), lamp_halo
+## (opacità dell'alone largo), moths (falene).
 ## Disposizione e densità di strati, fili, raggi e particelle stanno in data/areas.json.
 
 ## Parametri del post-processing presi dal tema (nome uniform -> chiave del tema).
@@ -39,7 +40,7 @@ static func get_theme(theme_name: String) -> Dictionary:
 				"tint": Vector3(1.06, 0.96, 0.96), "contrast": 1.1, "saturation": 1.0, "bloom": 0.75, "vignette": 0.55,
 				"shadows": Vector3(0.98, 0.9, 1.08), "highlights": Vector3(1.12, 0.98, 0.84),
 				"wash_top": Vector3(0.012, 0.0, 0.02), "wash_bottom": Vector3(0.05, 0.022, 0.0),
-				"lamp_cone": 0.26, "lamp_rain": 1.0, "moths": 0,
+				"lamp_cone": 0.26, "lamp_rain": 1.0, "lamp_halo": 0.09, "moths": 0,
 			}
 		"giardino":
 			return {
@@ -54,7 +55,7 @@ static func get_theme(theme_name: String) -> Dictionary:
 				"tint": Vector3(0.95, 1.04, 0.98), "contrast": 1.08, "saturation": 1.05, "bloom": 0.8, "vignette": 0.55,
 				"shadows": Vector3(0.9, 1.04, 1.04), "highlights": Vector3(1.04, 1.06, 0.88),
 				"wash_top": Vector3(0.0, 0.025, 0.02), "wash_bottom": Vector3(0.0, 0.012, 0.008),
-				"lamp_cone": 0.2, "lamp_rain": 0.0, "moths": 7,
+				"lamp_cone": 0.2, "lamp_rain": 0.0, "lamp_halo": 0.09, "moths": 7,
 			}
 		"belvedere":
 			return {
@@ -69,7 +70,7 @@ static func get_theme(theme_name: String) -> Dictionary:
 				"tint": Vector3(1.0, 1.01, 1.04), "contrast": 1.06, "saturation": 0.95, "bloom": 0.7, "vignette": 0.45,
 				"shadows": Vector3(0.9, 0.97, 1.1), "highlights": Vector3(1.14, 0.98, 0.9),
 				"wash_top": Vector3(0.05, 0.028, 0.03), "wash_bottom": Vector3(0.02, 0.03, 0.035),
-				"lamp_cone": 0.14, "lamp_rain": 0.0, "moths": 3,
+				"lamp_cone": 0.08, "lamp_rain": 0.0, "lamp_halo": 0.0, "moths": 3,
 			}
 		"oro":
 			return {
@@ -84,7 +85,7 @@ static func get_theme(theme_name: String) -> Dictionary:
 				"tint": Vector3(1.08, 1.0, 0.9), "contrast": 1.12, "saturation": 1.05, "bloom": 0.9, "vignette": 0.6,
 				"shadows": Vector3(0.92, 0.96, 1.1), "highlights": Vector3(1.14, 0.98, 0.78),
 				"wash_top": Vector3(0.05, 0.03, 0.0), "wash_bottom": Vector3(0.015, 0.008, 0.0),
-				"lamp_cone": 0.24, "lamp_rain": 0.0, "moths": 0,
+				"lamp_cone": 0.24, "lamp_rain": 0.0, "lamp_halo": 0.09, "moths": 0,
 			}
 		_:
 			return {
@@ -99,5 +100,5 @@ static func get_theme(theme_name: String) -> Dictionary:
 				"tint": Vector3(0.96, 1.0, 1.08), "contrast": 1.1, "saturation": 1.0, "bloom": 0.75, "vignette": 0.5,
 				"shadows": Vector3(0.9, 0.96, 1.12), "highlights": Vector3(1.1, 1.0, 0.86),
 				"wash_top": Vector3(0.0, 0.012, 0.035), "wash_bottom": Vector3(0.025, 0.016, 0.0),
-				"lamp_cone": 0.4, "lamp_rain": 0.0, "moths": 6,
+				"lamp_cone": 0.4, "lamp_rain": 0.0, "lamp_halo": 0.09, "moths": 6,
 			}
