@@ -39,6 +39,7 @@ const STATUA_TEX := preload("res://assets/art/enemies/statua.png")
 const STATUA_FEET := Vector2(165, 1010)
 const STATUA_SCALE := 0.103
 const CUSTODE_TEX := preload("res://assets/art/bosses/custode_corpo.png")
+const CUSTODE_ANIM := preload("res://assets/art/bosses/custode_anim.png")
 const CUSTODE_SWORD := preload("res://assets/art/bosses/custode_spada.png")
 const CUSTODE_FEET := Vector2(610, 1530)
 const CUSTODE_LILY := Vector2(680, 520)
@@ -1281,7 +1282,7 @@ func _draw_statua() -> void:
 func _draw_custode() -> void:
 	var t := _look_t
 	var frame = int((t * 24.0) / 3.0) % 49
-	var r = frame // 7
+	var r = frame / 7
 	var c = frame % 7
 	var rect = Rect2(c * 432, r * 688, 432, 688)
 	var tilt := sin(t * CUSTODE_STEP_RATE) * 0.03 if absf(velocity.x) > 10.0 else 0.0
