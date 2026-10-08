@@ -33,10 +33,10 @@ group_uniforms legs;
 uniform vec2 leg_front = vec2(0.0);
 uniform vec2 leg_back = vec2(0.0);
 // Perni in pixel della tela.
-uniform vec2 hip_front = vec2(332.0, 792.0);
-uniform vec2 knee_front = vec2(336.0, 872.0);
-uniform vec2 hip_back = vec2(392.0, 792.0);
-uniform vec2 knee_back = vec2(374.0, 866.0);
+uniform vec2 hip_front = vec2(332.0, 550.0);
+uniform vec2 knee_front = vec2(336.0, 780.0);
+uniform vec2 hip_back = vec2(392.0, 550.0);
+uniform vec2 knee_back = vec2(374.0, 780.0);
 // Mezza altezza (px) della zona in cui il ginocchio si piega: più larga = piega più tonda.
 uniform float knee_soft = 30.0;
 // Tinta della gamba lontana (più scura: è in ombra, dietro); la coda della sciarpa non cambia.
