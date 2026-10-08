@@ -74,8 +74,10 @@ fi
 echo "::group::Test automatici"
 while IFS= read -r test_file; do
 	name="$(basename "$test_file" .gd)"
-	if timeout --kill-after=5 180 "$GODOT_BIN" --headless --path "$PROJECT_DIR" -s "$(realpath "$test_file")" \
-		> "$LOG_DIR/test-$name.log" 2>&1; then
+	# Gli argomenti del gioco (stanza, posizione...) sono quelli dopo " -- " nella riga "## Uso:" del test.
+	read -r -a test_args <<< "$(grep -m1 '^## Uso:' "$test_file" | sed -n 's/.* -- //p')"
+	if timeout --kill-after=5 240 "$GODOT_BIN" --headless --path "$PROJECT_DIR" -s "$(realpath "$test_file")" \
+		-- "${test_args[@]}" > "$LOG_DIR/test-$name.log" 2>&1; then
 		echo "superato: $test_file"
 	else
 		echo "::error::Test fallito: $test_file (vedi test-$name.log)"
