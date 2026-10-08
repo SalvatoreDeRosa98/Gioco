@@ -33,7 +33,8 @@
 		"max_hp": 5,
 		"hurt_iframes": 1.3,
 		"respawn_delay": 2.5,
-		"hurt_blink_period": 0.12
+		"hurt_blink_period": 0.12,
+		"camera_smoothing": 6.5
 	},
 	"enemies": {
 		"gatto": {

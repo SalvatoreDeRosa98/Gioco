@@ -107,7 +107,7 @@ func _ready() -> void:
 	_cam = Camera2D.new()
 	_cam.zoom = Vector2.ONE * Room.CAMERA_ZOOM
 	_cam.position_smoothing_enabled = true
-	_cam.position_smoothing_speed = 6.5
+	_cam.position_smoothing_speed = float(_cfg.get("camera_smoothing", 6.5))
 	add_child(_cam)
 	_cam.make_current()
 	if world and not world.room.is_empty():
