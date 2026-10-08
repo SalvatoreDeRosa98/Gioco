@@ -513,7 +513,7 @@ func _on_enemy_killed(e: Node) -> void:
 				floor_y = minf(floor_y, r.position.y)
 		stations[str(e.get_meta("save_id"))] = {"room": room_index, "x": e.global_position.x, "y": floor_y}
 		_build_stations()
-		_hud.toast("La statua si illumina: avvicinati e premi W per salvare")
+		_hud.toast("Un'incudine è apparsa: avvicinati e premi W per salvare")
 	if e.kind == "custode":
 		_boss_fall = e.global_position
 	_spawn_pickup(e.global_position, "centesimi", int(e.coins))
