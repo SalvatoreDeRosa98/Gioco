@@ -116,7 +116,7 @@ EQ = {
 	"harp": curve([(45, -12), (120, 0), (1500, 0), (4000, -3), (8000, -12)]),
 	"celesta": curve([(150, -18), (400, -3), (900, 0), (3500, -1), (6500, -7), (11000, -18)]),
 	"brass": curve([(35, -14), (70, 0), (250, 1), (700, 0), (1500, -3), (3000, -9), (6000, -22)]),
-	"perc": curve([(22, -14), (40, 0), (150, 0), (800, -3), (3000, -8), (8000, -16)]),
+	"perc": curve([(25, -20), (45, -4), (70, 0), (150, 0), (800, -3), (3000, -8), (8000, -16)]),
 	"pizz": curve([(40, -14), (90, 0), (300, 2), (1000, 0), (2500, -3), (5000, -10), (9000, -22)]),
 	"bell_far": curve([(120, -20), (250, -4), (600, 0), (1500, -3), (3000, -10), (6000, -22)]),
 }
@@ -654,8 +654,8 @@ def song_oro() -> tuple[Song, dict, float]:
 	s.automate("ost", [(1, 0), (41, -3), (56, -3), (57, -2), (72, 1), (73, 1), (96, 1)])
 	settings = {
 		"ost": dict(level=-22, eq=EQ["strings"], send=0.22, rev="hall"),
-		"drums": dict(level=-20, eq=EQ["perc"], send=0.3, rev="hall"),
-		"timp": dict(level=-25, eq=EQ["perc"], send=0.35, rev="hall"),
+		"drums": dict(level=-23, eq=EQ["perc"], send=0.3, rev="hall"),
+		"timp": dict(level=-27, eq=EQ["perc"], send=0.35, rev="hall"),
 		"tamb": dict(level=-31, eq=curve([(80, -10), (150, 0), (1500, -2), (4000, -6), (8000, -14)]), send=0.25,
 					 rev="room", width=1.2),
 		"brass": dict(level=-21, eq=EQ["brass"], send=0.4, rev="hall"),
