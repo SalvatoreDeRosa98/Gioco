@@ -1280,25 +1280,16 @@ func _draw_statua() -> void:
 
 func _draw_custode() -> void:
 	var t := _look_t
-	var walk := absf(velocity.x) > 10.0
-	var bob := -absf(sin(t * CUSTODE_STEP_RATE)) * 4.0 if walk else sin(t * 1.6) * 1.0
-	var tilt := sin(t * CUSTODE_STEP_RATE) * 0.03 if walk else 0.0
-	var sq := Vector2.ONE
-	match anim:
-		"crouch":
-			sq = Vector2(1.08, 0.88)
-		"leap":
-			sq = Vector2(0.94, 1.08)
-		"burst":
-			tilt = -0.07 * _anim_progress(0.4)
-	sq *= Vector2(_pose[P.SX], _pose[P.SY])
-	var base := _sprite_xf(Vector2(0, half.y + bob), CUSTODE_FEET, CUSTODE_SCALE, tilt + _pose[P.TILT] * 0.3, sq)
-	_piece(base, CUSTODE_TEX, Vector2.ZERO)
-	var sword_size := CUSTODE_SWORD.get_size() * (float(_cfg.sword_reach) / (CUSTODE_SWORD.get_width() * 0.84))
-	draw_set_transform(Vector2(facing * CUSTODE_HAND.x, CUSTODE_HAND.y), facing * sword_angle(), Vector2(facing, 1))
-	draw_texture_rect(CUSTODE_SWORD, Rect2(Vector2(-sword_size.x * 0.16, -sword_size.y * 0.5), sword_size), false)
+	var frame = int((t * 24.0) / 3.0) % 49
+	var r = frame // 7
+	var c = frame % 7
+	var rect = Rect2(c * 432, r * 688, 432, 688)
+	var tilt := sin(t * CUSTODE_STEP_RATE) * 0.03 if absf(velocity.x) > 10.0 else 0.0
+	var sq = Vector2(_pose[P.SX], _pose[P.SY])
+	var base := _sprite_xf(Vector2(0, half.y), CUSTODE_FEET, CUSTODE_SCALE, tilt + _pose[P.TILT] * 0.3, sq)
+	draw_set_transform_matrix(base)
+	draw_texture_rect_region(CUSTODE_ANIM, Rect2(-216, -688, 432, 688), rect)
 	draw_set_transform(Vector2.ZERO)
-
 
 ## Aloni e luci che seguono l'immagine (aggiornati ogni frame).
 func _update_glows() -> void:
