@@ -17,13 +17,15 @@ func _run() -> void:
 	var world = main._world
 	world.set_process(false)
 	world.set_physics_process(false)
-	world._go(3, true)
+	world._go(Room.ARCHIVES_ROOM, true)
 	check(not world._right_open(), "Cortile chiuso prima del ricordo")
 	var player = world.player
 	player.set_physics_process(false)
 	player.position = Vector2(world.room.size.x - 55, world.room.floor - 24)
 	world._check_doors()
-	check(world.room_index == 3, "Il confine non permette di saltare l'obiettivo")
+	check(world.room_index == Room.ARCHIVES_ROOM, "Il confine non permette di saltare l'obiettivo")
+	for id in ["archive_1", "archive_2", "archive_3"]:
+		world.story.mark_seen(id)
 	for decision in ["conservato", "bruciato"]:
 		world.story.set_var("father_registry", decision)
 		world._refresh_choice_effects()

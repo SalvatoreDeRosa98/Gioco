@@ -88,8 +88,13 @@ func _draw() -> void:
 	elif world.room_index == Room.SECRET_ROOM and not world.is_talking():
 		var forge_hint := "W / E  Esci · B  Apri la fucina" if world.player.position.x < 180 else "B  Apri la fucina · Uscita a sinistra"
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 58), forge_hint, 22, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
-	elif world.room_index == Room.MAIN_COUNT - 2 and not world._right_open() and not world.is_talking():
-		Art.text(self, Art.body_font(), Vector2(0, vp.y - 58), "Cortile sigillato: libera la Villa Comunale e ascolta il ricordo di tuo padre", 22, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+	elif world.room_index == Room.ARCHIVES_ROOM and not world.is_talking():
+		var objective := "Testimonianze %d / 3 · " % Room.Expansion.fragment_count(world.story)
+		objective += "Ascolta il ricordo di Gaetano nella Villa" if world.story.get_var("father_registry") == "" else "Ricordo del padre ricostruito"
+		Art.text(self, Art.body_font(), Vector2(0, vp.y - 58), objective, 21, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+	elif world.room_index in [8, 9, 10] and not world._right_open() and not world.is_talking():
+		var objective: String = {8: "Sconfiggi il capitano per raggiungere il Belvedere", 9: "Aziona la chiusa sul ballatoio più alto", 10: "Libera il telaio e sconfiggi la Madre di Marmo"}[world.room_index]
+		Art.text(self, Art.body_font(), Vector2(0, vp.y - 58), objective, 21, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 
 
 func _draw_vitals() -> void:

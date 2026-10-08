@@ -1,0 +1,266 @@
+{
+  "characters": {
+    "elsa": {
+      "name": "Elsa, archivista reale",
+      "image": "res://assets/art/characters/elsa.png",
+      "height": 116
+    },
+    "cesare": {
+      "name": "Cesare, custode delle acque",
+      "image": "res://assets/art/characters/cesare.png",
+      "height": 120
+    },
+    "lia": {
+      "name": "Lia, tessitrice",
+      "image": "res://assets/art/characters/lia.png",
+      "height": 114
+    },
+    "rosa": {
+      "name": "Grazia dei Vicoli",
+      "image": "res://assets/art/characters/cittadini/lavandaia.png",
+      "height": 112
+    }
+  },
+  "npcs": {
+    "rosa_mercato": {
+      "character": "rosa",
+      "face": -1,
+      "turn": "near",
+      "dialogue": [
+        {
+          "id": "rosa_vicoli",
+          "lines": [
+            {
+              "who": "rosa",
+              "text": "Da queste botteghe passavano le commissioni della Reggia. Poi abbiamo smesso di ricordare chi comprava."
+            },
+            {
+              "who": "rosa",
+              "text": "Gaetano lasciava un piccolo taglio su ogni ferro. Diceva: una mano deve riconoscere il proprio lavoro."
+            },
+            {
+              "who": "rosa",
+              "text": "Sui tetti c’è una passerella per il Corso. In fondo ai vicoli si arriva alla Villa."
+            }
+          ]
+        }
+      ]
+    },
+    "elsa_mercato": {
+      "character": "elsa",
+      "face": -1,
+      "turn": "near",
+      "dialogue": [
+        {
+          "id": "elsa_vicoli",
+          "lines": [
+            {
+              "who": "elsa",
+              "text": "Cerco una firma che la corte ha cancellato. Tuo padre sapeva leggere anche le righe vuote."
+            },
+            {
+              "who": "elsa",
+              "text": "Negli Archivi ho nascosto tre prove: fra le acque, una deposizione e i nomi sulla seta."
+            },
+            {
+              "who": "elsa",
+              "text": "Passa dalla Villa. Senza il ricordo di Gaetano, quelle carte non ti diranno tutta la verità."
+            }
+          ]
+        }
+      ]
+    },
+    "capuano_caserma": {
+      "character": "capuano",
+      "face": -1,
+      "turn": "near",
+      "dialogue": [
+        {
+          "id": "capuano_dopo",
+          "lines": [
+            {
+              "who": "capuano",
+              "text": "Ruggiero è caduto. La strada per il Belvedere è libera."
+            },
+            {
+              "who": "capuano",
+              "text": "Non tutti quelli che obbedirono hanno dimenticato. Alcuni avrebbero voluto farlo."
+            }
+          ],
+          "when": {
+            "seen": "captain_defeated"
+          }
+        },
+        {
+          "id": "capuano_prima",
+          "lines": [
+            {
+              "who": "capuano",
+              "text": "Il capitano Ruggiero custodisce l’uscita. Osserva quando solleva la lama: è allora che puoi preparare la parata."
+            },
+            {
+              "who": "capuano",
+              "text": "Fu lui a portare via Gaetano. Nella mia copia dell’ordine, la firma del sovrano non c’era."
+            },
+            {
+              "who": "capuano",
+              "text": "Se non vuoi affrontarlo, torna alla Villa: le Cisterne portano allo stesso Belvedere."
+            }
+          ]
+        }
+      ]
+    },
+    "cesare_cisterne": {
+      "character": "cesare",
+      "face": -1,
+      "turn": "near",
+      "dialogue": [
+        {
+          "id": "cesare_dopo",
+          "lines": [
+            {
+              "who": "cesare",
+              "text": "Senti? L’acqua ha cambiato voce. Ora puoi raggiungere il Belvedere."
+            },
+            {
+              "who": "cesare",
+              "text": "La ruota in alto comanda anche l’ascensore per la Villa. Gaetano pensava sempre a una via di ritorno."
+            }
+          ],
+          "when": {
+            "seen": "sluice"
+          }
+        },
+        {
+          "id": "cesare_prima",
+          "lines": [
+            {
+              "who": "cesare",
+              "text": "Le fontane della Reggia cantavano anche quando nessuno le ascoltava. Ora ripetono soltanto ordini."
+            },
+            {
+              "who": "cesare",
+              "text": "Gaetano costruì una chiusa che il Velo non poteva serrare. La ruota è sul ballatoio più alto."
+            },
+            {
+              "who": "cesare",
+              "text": "Sali lungo i sostegni e azionala. Aprirai la strada al Belvedere e l’ascensore per la Villa."
+            }
+          ]
+        }
+      ]
+    },
+    "lia_telai": {
+      "character": "lia",
+      "face": -1,
+      "turn": "near",
+      "dialogue": [
+        {
+          "id": "lia_dopo",
+          "lines": [
+            {
+              "who": "lia",
+              "text": "La Madre tace e il telaio è libero. Prendi il filo che proteggeva: è una fibbia per la parata."
+            },
+            {
+              "who": "lia",
+              "text": "La passerella alta porta agli Archivi. Elsa saprà leggere ciò che noi abbiamo cucito."
+            }
+          ],
+          "when": {
+            "seen": [
+              "mother_defeated",
+              "loom"
+            ]
+          }
+        },
+        {
+          "id": "lia_prima",
+          "lines": [
+            {
+              "who": "lia",
+              "text": "Le tessitrici cucivano i nomi proibiti sul rovescio della seta. La corte vedeva soltanto i gigli."
+            },
+            {
+              "who": "lia",
+              "text": "Gaetano ci portava aghi che non spezzavano il filo. Bianca ci insegnò a nascondere le iniziali."
+            },
+            {
+              "who": "lia",
+              "text": "Libera il telaio sul ponte mobile e affronta la Madre di Marmo. Sorveglia il ballatoio degli Archivi."
+            },
+            {
+              "who": "lia",
+              "text": "Puoi anche tornare al Belvedere: la strada principale per gli Archivi è ancora aperta."
+            }
+          ]
+        }
+      ]
+    },
+    "elsa_archivi": {
+      "character": "elsa",
+      "face": -1,
+      "turn": "near",
+      "dialogue": [
+        {
+          "id": "elsa_prove",
+          "lines": [
+            {
+              "who": "elsa",
+              "text": "Tre frammenti, una sola storia. Gaetano teneva aperte le vie fra l’acqua, la seta e la città."
+            },
+            {
+              "who": "elsa",
+              "text": "Il Cortile riconosce una memoria ricostruita, non un foglio intatto. Anche il registro bruciato ha detto la verità."
+            }
+          ],
+          "when": {
+            "seen": [
+              "archive_1",
+              "archive_2",
+              "archive_3"
+            ],
+            "father_registry": "*"
+          }
+        },
+        {
+          "id": "elsa_manca_padre",
+          "lines": [
+            {
+              "who": "elsa",
+              "text": "Le prove sono complete, ma manca la voce di tuo padre. Torna alla Villa e libera il suo ricordo."
+            },
+            {
+              "who": "elsa",
+              "text": "Il montacarichi al piano terra ti riporta direttamente ai giardini."
+            }
+          ],
+          "when": {
+            "seen": [
+              "archive_1",
+              "archive_2",
+              "archive_3"
+            ]
+          }
+        },
+        {
+          "id": "elsa_cerca",
+          "lines": [
+            {
+              "who": "elsa",
+              "text": "Il Cortile è sigillato. Cerca tre frammenti sui ballatoi: registro delle acque, deposizione e tessuto dei nomi."
+            },
+            {
+              "who": "elsa",
+              "text": "Non devi scegliere quale prova salvare: insieme raccontano ciò che il Velo ha diviso."
+            },
+            {
+              "who": "elsa",
+              "text": "Il montacarichi in basso torna alla Villa. Il ballatoio centrale apre un passaggio alle Tessiture."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

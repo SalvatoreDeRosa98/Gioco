@@ -1,5 +1,15 @@
 # Espansione del percorso verso la Reggia
 
+## Implementata — 8 ottobre 2026
+
+Le cinque aree aggiuntive sono giocabili: Mercato (ID 7), Caserma (8), Cisterne (9), Tessiture (10), Archivi (11). Gli ID 0–6 restano compatibili con i salvataggi precedenti. Le sezioni sotto conservano il progetto iniziale; questo riepilogo descrive la versione effettiva.
+
+Piazza → Corso → Villa → Cisterne → Belvedere → Archivi → Cortile è il percorso principale. I varchi W aggiungono Piazza → Mercato → Villa, Corso/Villa → Caserma → Belvedere, Belvedere → Tessiture → Archivi. Ritorni: passerella Mercato–Corso, ascensore Cisterne–Villa, montacarichi Archivi–Villa e ballatoio Archivi–Tessiture. Il segreto di Taddeo resta una ricompensa alternativa per chi lo perdona.
+
+La Caserma richiede il capitano; le Cisterne la chiusa alta; le Tessiture il telaio mobile e la Madre di Marmo (oppure il ballatoio aperto dagli Archivi). Il Cortile richiede il ricordo del padre e tutti e tre i frammenti degli Archivi. Conservare o bruciare il registro resta equivalente per l'accesso. La Madre premia con la Fibbia della guardia. Incudini limitate alle quattro aree originarie previste.
+
+NPC: Grazia ai Vicoli, Cesare nelle Cisterne, Lia alle Tessiture, Elsa ai Vicoli e negli Archivi; Capuano ha nuovi dialoghi nella Caserma. Le letture raccontano le chiuse costruite da Gaetano, l'ordine d'arresto e i nomi salvati dalle tessitrici.
+
 Proposta da sviluppare: circa dieci aree principali collegate, con bivi e scorciatoie. Ogni area deve aggiungere una situazione riconoscibile, un incontro narrativo o una prova di movimento; aumentare soltanto i nemici allungherebbe il gioco senza renderlo più interessante.
 
 La struttura proposta ha due snodi, Villa e Belvedere. Il giocatore sceglie un ramo, apre collegamenti di ritorno e può esplorare l'altro ramo più tardi. La fucina resta opzionale e il suo ingresso non viene indicato sulla mappa.

@@ -6,7 +6,10 @@ extends RefCounted
 const MAIN_COUNT := 5
 const SECRET_ROOM := 5
 const EPILOGUE_ROOM := 6
-const COUNT := 7
+const COUNT := 12
+const BOSS_ROOM := 4
+const ARCHIVES_ROOM := 11
+const Expansion := preload("res://game/expansion_data.gd")
 ## Altezza dei portali d'uscita, appoggiati al pavimento.
 const DOOR_H := 220.0
 ## Spessore visibile dei pilastri ai lati della stanza.
@@ -172,6 +175,8 @@ static func save_station_id(idx: int) -> String:
 	return "%d:statua:%d:%d" % [idx, roundi(pos.x), roundi(pos.y)]
 
 static func build(idx: int, choices: Dictionary = {}) -> Dictionary:
+	if idx >= 7:
+		return Expansion.room_data(idx)
 	var r: Dictionary = ROOMS[idx]
 	if idx == EPILOGUE_ROOM:
 		return _epilogue(choices)

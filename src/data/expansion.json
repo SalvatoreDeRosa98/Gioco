@@ -1,0 +1,878 @@
+{
+  "rooms": {
+    "7": {
+      "name": "Vicoli del Mercato",
+      "subtitle": "Le botteghe ricordano i nomi",
+      "theme": "strada",
+      "art": "mercato",
+      "size": [
+        2560,
+        1080
+      ],
+      "floor": 980,
+      "blocks": [
+        [
+          700,
+          900,
+          180,
+          80
+        ]
+      ],
+      "ledges": [
+        [
+          260,
+          860,
+          220,
+          18
+        ],
+        [
+          520,
+          750,
+          240,
+          18
+        ],
+        [
+          790,
+          640,
+          240,
+          18
+        ],
+        [
+          1080,
+          530,
+          240,
+          18
+        ],
+        [
+          1370,
+          640,
+          240,
+          18
+        ],
+        [
+          1650,
+          750,
+          240,
+          18
+        ],
+        [
+          1980,
+          850,
+          260,
+          18
+        ]
+      ],
+      "npcs": [
+        {
+          "id": "rosa_mercato",
+          "pos": [
+            410,
+            980
+          ]
+        },
+        {
+          "id": "elsa_mercato",
+          "pos": [
+            2250,
+            980
+          ]
+        }
+      ],
+      "enemies": [
+        {
+          "type": "gatto",
+          "pos": [
+            940,
+            956
+          ]
+        },
+        {
+          "type": "vespa",
+          "pos": [
+            1540,
+            570
+          ]
+        },
+        {
+          "type": "gatto",
+          "pos": [
+            1900,
+            956
+          ]
+        }
+      ],
+      "secrets": [
+        [
+          1180,
+          500
+        ]
+      ],
+      "decor": []
+    },
+    "8": {
+      "name": "Portici della Caserma",
+      "subtitle": "Il giuramento del capitano",
+      "theme": "oro",
+      "art": "caserma",
+      "size": [
+        2560,
+        1080
+      ],
+      "floor": 980,
+      "blocks": [],
+      "ledges": [
+        [
+          260,
+          860,
+          240,
+          18
+        ],
+        [
+          550,
+          750,
+          220,
+          18
+        ],
+        [
+          810,
+          640,
+          220,
+          18
+        ],
+        [
+          1080,
+          530,
+          260,
+          18
+        ],
+        [
+          1400,
+          640,
+          220,
+          18
+        ],
+        [
+          1700,
+          750,
+          220,
+          18
+        ],
+        [
+          2070,
+          850,
+          260,
+          18
+        ]
+      ],
+      "npcs": [
+        {
+          "id": "capuano_caserma",
+          "pos": [
+            390,
+            980
+          ]
+        }
+      ],
+      "enemies": [
+        {
+          "type": "duellante",
+          "pos": [
+            900,
+            946
+          ]
+        },
+        {
+          "type": "capitano",
+          "pos": [
+            1830,
+            946
+          ]
+        }
+      ],
+      "secrets": [
+        [
+          1200,
+          500
+        ]
+      ],
+      "decor": []
+    },
+    "9": {
+      "name": "Cisterne Reali",
+      "subtitle": "L’acqua porta le voci",
+      "theme": "giardino",
+      "art": "cisterne",
+      "size": [
+        2560,
+        1080
+      ],
+      "floor": 980,
+      "blocks": [
+        [
+          690,
+          900,
+          150,
+          80
+        ]
+      ],
+      "ledges": [
+        [
+          220,
+          860,
+          220,
+          18
+        ],
+        [
+          480,
+          750,
+          220,
+          18
+        ],
+        [
+          740,
+          640,
+          220,
+          18
+        ],
+        [
+          1000,
+          530,
+          220,
+          18
+        ],
+        [
+          1260,
+          420,
+          260,
+          18
+        ],
+        [
+          1570,
+          530,
+          240,
+          18
+        ],
+        [
+          1850,
+          650,
+          240,
+          18
+        ],
+        [
+          2140,
+          790,
+          240,
+          18
+        ]
+      ],
+      "npcs": [
+        {
+          "id": "cesare_cisterne",
+          "pos": [
+            340,
+            980
+          ]
+        }
+      ],
+      "enemies": [
+        {
+          "type": "vespa",
+          "pos": [
+            1060,
+            690
+          ]
+        },
+        {
+          "type": "vespa",
+          "pos": [
+            1860,
+            510
+          ]
+        }
+      ],
+      "secrets": [
+        [
+          1680,
+          500
+        ]
+      ],
+      "decor": []
+    },
+    "10": {
+      "name": "Tessiture di San Leucio",
+      "subtitle": "I nomi cuciti nella seta",
+      "theme": "belvedere",
+      "art": "tessiture",
+      "size": [
+        2560,
+        1080
+      ],
+      "floor": 980,
+      "blocks": [],
+      "ledges": [
+        [
+          240,
+          860,
+          230,
+          18
+        ],
+        [
+          510,
+          750,
+          230,
+          18
+        ],
+        [
+          800,
+          640,
+          230,
+          18
+        ],
+        [
+          1380,
+          640,
+          230,
+          18
+        ],
+        [
+          1660,
+          750,
+          230,
+          18
+        ],
+        [
+          2020,
+          850,
+          260,
+          18
+        ]
+      ],
+      "npcs": [
+        {
+          "id": "lia_telai",
+          "pos": [
+            390,
+            980
+          ]
+        }
+      ],
+      "enemies": [
+        {
+          "type": "vespa",
+          "pos": [
+            1100,
+            560
+          ]
+        },
+        {
+          "type": "madre",
+          "pos": [
+            1960,
+            916
+          ]
+        }
+      ],
+      "secrets": [
+        [
+          1450,
+          600
+        ]
+      ],
+      "decor": []
+    },
+    "11": {
+      "name": "Archivi della Reggia",
+      "subtitle": "Tre voci contro il silenzio",
+      "theme": "oro",
+      "art": "archivi",
+      "size": [
+        2560,
+        1080
+      ],
+      "floor": 980,
+      "blocks": [],
+      "ledges": [
+        [
+          240,
+          860,
+          230,
+          18
+        ],
+        [
+          510,
+          750,
+          230,
+          18
+        ],
+        [
+          800,
+          640,
+          250,
+          18
+        ],
+        [
+          1080,
+          530,
+          260,
+          18
+        ],
+        [
+          1390,
+          640,
+          230,
+          18
+        ],
+        [
+          1670,
+          750,
+          230,
+          18
+        ],
+        [
+          1990,
+          850,
+          250,
+          18
+        ]
+      ],
+      "npcs": [
+        {
+          "id": "elsa_archivi",
+          "pos": [
+            350,
+            980
+          ]
+        }
+      ],
+      "enemies": [
+        {
+          "type": "gatto",
+          "pos": [
+            1050,
+            956
+          ]
+        },
+        {
+          "type": "vespa",
+          "pos": [
+            1650,
+            590
+          ]
+        },
+        {
+          "type": "duellante",
+          "pos": [
+            2060,
+            946
+          ]
+        }
+      ],
+      "secrets": [
+        [
+          1220,
+          500
+        ]
+      ],
+      "decor": []
+    }
+  },
+  "edges": {
+    "0": [
+      -1,
+      1
+    ],
+    "1": [
+      0,
+      2
+    ],
+    "2": [
+      1,
+      9
+    ],
+    "3": [
+      9,
+      11
+    ],
+    "4": [
+      11,
+      -1
+    ],
+    "5": [
+      0,
+      -1
+    ],
+    "6": [
+      0,
+      -1
+    ],
+    "7": [
+      0,
+      2
+    ],
+    "8": [
+      1,
+      3
+    ],
+    "9": [
+      2,
+      3
+    ],
+    "10": [
+      3,
+      11
+    ],
+    "11": [
+      3,
+      4
+    ]
+  },
+  "landmarks": {
+    "0": [
+      {
+        "kind": "route",
+        "label": "Vicoli del Mercato",
+        "pos": [
+          1820,
+          980
+        ],
+        "target": 7,
+        "spawn": [
+          150,
+          956
+        ],
+        "need": "",
+        "unlock": ""
+      }
+    ],
+    "1": [
+      {
+        "kind": "route",
+        "label": "Portici della Caserma",
+        "pos": [
+          1430,
+          980
+        ],
+        "target": 8,
+        "spawn": [
+          150,
+          956
+        ],
+        "need": "",
+        "unlock": ""
+      },
+      {
+        "kind": "route",
+        "label": "Passerella del Mercato",
+        "pos": [
+          1150,
+          530
+        ],
+        "target": 7,
+        "spawn": [
+          1190,
+          506
+        ],
+        "need": "market_bridge",
+        "unlock": ""
+      }
+    ],
+    "2": [
+      {
+        "kind": "route",
+        "label": "Portici della Caserma",
+        "pos": [
+          1580,
+          980
+        ],
+        "target": 8,
+        "spawn": [
+          430,
+          956
+        ],
+        "need": "",
+        "unlock": ""
+      },
+      {
+        "kind": "route",
+        "label": "Vicoli del Mercato",
+        "pos": [
+          380,
+          980
+        ],
+        "target": 7,
+        "spawn": [
+          2400,
+          956
+        ],
+        "need": "",
+        "unlock": ""
+      },
+      {
+        "kind": "route",
+        "label": "Ascensore delle Cisterne",
+        "pos": [
+          2240,
+          800
+        ],
+        "target": 9,
+        "spawn": [
+          1400,
+          396
+        ],
+        "need": "sluice",
+        "unlock": ""
+      },
+      {
+        "kind": "route",
+        "label": "Montacarichi degli Archivi",
+        "pos": [
+          1930,
+          980
+        ],
+        "target": 11,
+        "spawn": [
+          1800,
+          956
+        ],
+        "need": "archive_lift",
+        "unlock": ""
+      }
+    ],
+    "3": [
+      {
+        "kind": "route",
+        "label": "Tessiture di San Leucio",
+        "pos": [
+          2120,
+          980
+        ],
+        "target": 10,
+        "spawn": [
+          150,
+          956
+        ],
+        "need": "",
+        "unlock": ""
+      },
+      {
+        "kind": "route",
+        "label": "Portici della Caserma",
+        "pos": [
+          400,
+          980
+        ],
+        "target": 8,
+        "spawn": [
+          2400,
+          956
+        ],
+        "need": "",
+        "unlock": ""
+      }
+    ],
+    "7": [
+      {
+        "kind": "route",
+        "label": "Passerella verso il Corso",
+        "pos": [
+          1190,
+          530
+        ],
+        "target": 1,
+        "spawn": [
+          1150,
+          506
+        ],
+        "need": "",
+        "unlock": "market_bridge"
+      }
+    ],
+    "8": [
+      {
+        "kind": "route",
+        "label": "Villa Comunale",
+        "pos": [
+          540,
+          980
+        ],
+        "target": 2,
+        "spawn": [
+          1580,
+          956
+        ],
+        "need": "",
+        "unlock": ""
+      }
+    ],
+    "9": [
+      {
+        "kind": "lever",
+        "id": "sluice",
+        "label": "Aziona la chiusa",
+        "pos": [
+          1400,
+          420
+        ],
+        "text": [
+          "Cesare ha inciso un nome sulla ruota: Gaetano.",
+          "Il fabbro costruì la chiusa per portare le voci fuori dalla Reggia.",
+          "L’acqua scende. Il percorso per il Belvedere e l’ascensore per la Villa sono aperti."
+        ]
+      },
+      {
+        "kind": "route",
+        "label": "Ascensore verso la Villa",
+        "pos": [
+          1400,
+          420
+        ],
+        "target": 2,
+        "spawn": [
+          2240,
+          776
+        ],
+        "need": "sluice",
+        "unlock": ""
+      }
+    ],
+    "10": [
+      {
+        "kind": "lever",
+        "id": "loom",
+        "label": "Libera i fili del telaio",
+        "pos": [
+          1140,
+          570
+        ],
+        "text": [
+          "Nodi diversi imprigionano lo stesso filo. Ferruccio li scioglie uno alla volta.",
+          "Fra i nomi cuciti nella seta compare quello di Bianca.",
+          "Una passerella si ferma sotto il ballatoio degli Archivi."
+        ]
+      }
+    ],
+    "11": [
+      {
+        "kind": "fragment",
+        "id": "archive_1",
+        "label": "Leggi il registro delle acque",
+        "pos": [
+          620,
+          750
+        ],
+        "text": [
+          "Primo frammento: le chiuse della Reggia furono modificate su ordine della corte.",
+          "Gaetano nascose nei ferri una via per sottrarre le voci al Velo."
+        ]
+      },
+      {
+        "kind": "fragment",
+        "id": "archive_2",
+        "label": "Leggi la deposizione",
+        "pos": [
+          1200,
+          530
+        ],
+        "text": [
+          "Secondo frammento: il capitano ricevette l’ordine di arrestare il fabbro.",
+          "Nella deposizione manca una riga: nessuno voleva scrivere il nome di Ferruccio."
+        ]
+      },
+      {
+        "kind": "fragment",
+        "id": "archive_3",
+        "label": "Leggi il tessuto dei nomi",
+        "pos": [
+          2120,
+          850
+        ],
+        "text": [
+          "Terzo frammento: le tessitrici copiarono sulla seta i nomi cancellati dai registri.",
+          "Gaetano non lavorava da solo. Una città intera imparò a ricordare in segreto."
+        ]
+      },
+      {
+        "kind": "route",
+        "label": "Montacarichi verso la Villa",
+        "pos": [
+          1800,
+          980
+        ],
+        "target": 2,
+        "spawn": [
+          1930,
+          956
+        ],
+        "need": "",
+        "unlock": "archive_lift"
+      },
+      {
+        "kind": "route",
+        "label": "Ballatoio delle Tessiture",
+        "pos": [
+          1510,
+          640
+        ],
+        "target": 10,
+        "spawn": [
+          2320,
+          956
+        ],
+        "need": "",
+        "unlock": "textile_bridge"
+      }
+    ]
+  },
+  "interaction_radius": 66,
+  "interaction_height": 65,
+  "moving": {
+    "10": [
+      {
+        "pos": [
+          1140,
+          570
+        ],
+        "size": [
+          200,
+          18
+        ],
+        "travel": [
+          130,
+          0
+        ],
+        "period": 5,
+        "stop": "loom"
+      }
+    ]
+  },
+  "elites": {
+    "capitano": {
+      "hp": 14,
+      "speed": 65,
+      "windup": 0.8,
+      "cooldown": 1.8,
+      "range": 115,
+      "reach": 110,
+      "damage": 1,
+      "coins": 22,
+      "image": "res://assets/art/characters/guardie/guardia_anziana.png",
+      "height": 142,
+      "name": "Capitano Ruggiero",
+      "flag": "captain_defeated"
+    },
+    "madre": {
+      "hp": 20,
+      "speed": 0,
+      "windup": 1.1,
+      "cooldown": 2.1,
+      "range": 800,
+      "reach": 110,
+      "damage": 1,
+      "coins": 30,
+      "image": "res://assets/art/bosses/madre_marmo.png",
+      "height": 185,
+      "name": "La Madre di Marmo",
+      "flag": "mother_defeated"
+    }
+  }
+}

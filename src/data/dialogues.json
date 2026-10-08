@@ -47,14 +47,14 @@
 		},
 		"gaetano_umano": {
 			"name": "Gaetano",
-			"image": "res://assets/art/characters/gaetano_anziano.png",
+			"image": "res://assets/art/characters/gaetano_v2.png",
 			"height": 122,
-			"art_face": -1,
+			"art_face": 1,
 			"memory": false
 		},
 		"gaetano": {
 			"name": "Gaetano",
-			"image": "res://assets/art/characters/gaetano.png",
+			"image": "res://assets/art/characters/gaetano_v2.png",
 			"height": 134,
 			"memory": true,
 			"glow": [1.0, 0.76, 0.36]

@@ -42,6 +42,9 @@ static func data() -> Dictionary:
 		else:
 			var parsed = JSON.parse_string(file.get_as_text())
 			_data = parsed if parsed is Dictionary else {"settings": {}, "characters": {}, "npcs": {}}
+			var expansion: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/expansion_dialogues.json"))
+			_data.characters.merge(expansion.characters, true)
+			_data.npcs.merge(expansion.npcs, true)
 	return _data
 
 

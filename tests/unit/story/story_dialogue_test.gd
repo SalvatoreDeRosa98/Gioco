@@ -179,6 +179,13 @@ func test_dialogues_json_is_consistent() -> void:
 	_check(d.has("npcs") and d.has("characters") and d.has("settings"), "sezioni principali")
 	var chars: Dictionary = d.get("characters", {})
 	var ids := {}
+	var expansion: Dictionary = preload("res://game/expansion_data.gd").data()
+	for markers in expansion.landmarks.values():
+		for marker in markers:
+			if marker.has("id"):
+				ids[marker.id] = true
+	for elite in expansion.elites.values():
+		ids[elite.flag] = true
 	for key in d.get("npcs", {}):
 		for e in (d["npcs"][key] as Dictionary).get("dialogue", []):
 			ids[str(e.get("id", ""))] = true

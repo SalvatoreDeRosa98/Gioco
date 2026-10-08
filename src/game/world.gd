@@ -31,6 +31,7 @@ var _stations_root: Node2D
 var _saved_state: Dictionary = {}
 var resume_save := true
 var _secret_return := Vector2.ZERO
+var _expedition: Node2D
 var _forge_backdrop: Node2D
 var upgrades: Dictionary = {}
 var equipped: Array = []
@@ -184,6 +185,8 @@ func _process(delta: float) -> void:
 	# La pressione che entra nella fucina non deve attivare anche la sua uscita.
 	if room_index == previous_room:
 		_update_forge_exit()
+	if room_index == previous_room and _expedition != null:
+		_expedition.interact()
 	var cam := get_viewport().get_camera_2d()
 	var center: Vector2 = cam.get_screen_center_position() if cam else room.get("size", Vector2(1280, 720)) * 0.5
 	_backdrop.update_camera(center)
@@ -279,7 +282,7 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	var th := Themes.get_theme(room["theme"])
 	_backdrop.build(room["theme"], room["size"], room["floor"], Room.CAMERA_ZOOM)
 	_backdrop.set_veil_visible(story.get_var("violante_fate") != "uccisa")
-	_backdrop.visible = idx != Room.SECRET_ROOM
+	_backdrop.visible = idx != Room.SECRET_ROOM and idx < 7
 	if is_instance_valid(_forge_backdrop):
 		remove_child(_forge_backdrop)
 		_forge_backdrop.queue_free()
@@ -288,6 +291,16 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 		_forge_backdrop = preload("res://game/forge_backdrop.gd").new()
 		_forge_backdrop.z_index = 1
 		add_child(_forge_backdrop)
+	elif idx >= 7:
+		_forge_backdrop = preload("res://game/painted_interior.gd").new()
+		_forge_backdrop.setup(room)
+		add_child(_forge_backdrop)
+	if is_instance_valid(_expedition):
+		remove_child(_expedition)
+		_expedition.queue_free()
+	_expedition = preload("res://game/expedition.gd").new()
+	_expedition.setup(self)
+	add_child(_expedition)
 	_terrain.build(room, th)
 	_terrain.visible = idx != Room.SECRET_ROOM
 	_terrain.set_doors(_left_open(), _right_open())
@@ -327,14 +340,19 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 
 
 func _left_open() -> bool:
-	return room_index > 0
+	return Room.Expansion.edge(room_index, false) >= 0
 
 
 func _right_open() -> bool:
-	# Entrambe le decisioni sul registro completano il ricordo del padre.
-	if room_index == Room.MAIN_COUNT - 2:
-		return story.get_var("father_registry") in ["conservato", "bruciato"]
-	return room_index < Room.MAIN_COUNT - 1
+	if room_index == Room.ARCHIVES_ROOM:
+		return story.get_var("father_registry") in ["conservato", "bruciato"] and Room.Expansion.archive_ready(story)
+	if room_index == 8:
+		return story.times_seen("captain_defeated") > 0
+	if room_index == 9:
+		return story.times_seen("sluice") > 0
+	if room_index == 10:
+		return story.times_seen("textile_bridge") > 0 or (story.times_seen("mother_defeated") > 0 and story.times_seen("loom") > 0)
+	return Room.Expansion.edge(room_index, true) >= 0
 
 
 func _build_walls() -> void:
@@ -408,14 +426,14 @@ func _check_doors() -> void:
 	if pos.y < door_top:
 		return
 	if _right_open() and pos.x >= size.x - Room.EDGE - 10.0:
-		_go(room_index + 1, true)
+		_go(Room.Expansion.edge(room_index, true), true)
 	elif _left_open() and pos.x <= Room.EDGE + 10.0:
 		if room_index == Room.EPILOGUE_ROOM:
 			_go(0, true)
 		elif room_index == Room.SECRET_ROOM:
 			_leave_forge()
 		else:
-			_go(room_index - 1, false)
+			_go(Room.Expansion.edge(room_index, false), false)
 
 
 ## L'uscita dipinta è a sinistra: W/E vicino alla porta, oppure attraversa il bordo.
@@ -564,7 +582,11 @@ func boss() -> Node:
 # ---------------------------------------------------------------- Nemici, proiettili, raccolta
 
 func _spawn_enemy(kind: String, pos: Vector2) -> void:
-	var e = preload("res://game/duelist.gd").new() if kind == "duellante" else EnemyScript.new()
+	var e
+	if kind in ["capitano", "madre"]:
+		e = preload("res://game/elite.gd").new()
+	else:
+		e = preload("res://game/duelist.gd").new() if kind == "duellante" else EnemyScript.new()
 	e.set_meta("save_id", _enemy_id(kind, pos))
 	e.setup({"type": kind, "pos": pos}, self)
 	_entities.add_child(e)
@@ -590,6 +612,14 @@ func _hit_enemy(e: Node, dmg: int, col: Color, dir: float, down: bool = false) -
 
 func _on_enemy_killed(e: Node) -> void:
 	defeated[str(e.get_meta("save_id"))] = true
+	if e.kind in ["capitano", "madre"]:
+		story.mark_seen(str(Room.Expansion.data().elites[e.kind].flag))
+		if e.kind == "madre":
+			upgrades["guard"] = true
+			_hud.toast("Madre sconfitta: Fibbia della guardia ottenuta")
+		else:
+			_hud.toast("Il capitano è sconfitto. Il Belvedere è raggiungibile.")
+		refresh_routes()
 	if e.has_meta("taddeo_duel"):
 		upgrades["guard"] = true
 		story.seen["taddeo_duel_won"] = 1
@@ -982,7 +1012,8 @@ func _build_npcs() -> void:
 	for c in _npcs.get_children():
 		_npcs.remove_child(c)
 		c.queue_free()
-	for d in room.get("npcs", (Room.ROOMS[room_index] as Dictionary).get("npcs", [])):
+	var entries: Array = room.get("npcs", []) if room_index >= 7 else room.get("npcs", Room.ROOMS[room_index].get("npcs", []))
+	for d in entries:
 		var n = NpcScript.new()
 		n.setup(str(d["id"]), d["pos"], self)
 		_npcs.add_child(n)
@@ -1070,6 +1101,8 @@ func _on_dialogue_closed() -> void:
 	apply_upgrades()
 	if is_instance_valid(_talk_npc):
 		_talk_npc.end_talk()
+	elif not in_cutscene():
+		_freeze_for_talk(false)
 	_talk_lock = 0.2
 
 
@@ -1201,14 +1234,12 @@ func detection_multiplier() -> float:
 
 
 func _refresh_choice_effects() -> void:
-	var signature := JSON.stringify(story.vars)
+	var signature := JSON.stringify(story.vars) + JSON.stringify(story.seen)
 	if signature == _choice_signature:
 		return
 	_choice_signature = signature
 	apply_upgrades()
-	if room_index == Room.MAIN_COUNT - 2:
-		_build_walls()
-		_terrain.set_doors(_left_open(), _right_open())
+	refresh_routes()
 	if room_index == 0 and story.get_var("tonino_memory") == "negato":
 		var treasure := Vector2(1790, 720)
 		var present := get_tree().get_nodes_in_group("pickups").any(func(p: Node) -> bool: return not p.is_queued_for_deletion() and p.item == "tonino_treasure")
@@ -1227,6 +1258,12 @@ func _spawn_unique_enemy(kind: String, pos: Vector2) -> void:
 		if not enemy.is_queued_for_deletion() and str(enemy.get_meta("save_id", "")) == id:
 			return
 	_spawn_enemy(kind, pos)
+
+
+## Aggiorna collisioni e grate dopo obiettivi, meccanismi o incontri intermedi.
+func refresh_routes() -> void:
+	_build_walls()
+	_terrain.set_doors(_left_open(), _right_open())
 
 
 func _start_taddeo_duel() -> void:
