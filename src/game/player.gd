@@ -1,6 +1,6 @@
 extends CharacterBody2D
 ## Cavaliere-Pulcinella giocabile: movimento, vita, camera e aspetto.
-## L'aspetto è un CharRig (mesh deformabile, char_rig.gd): qui si scelgono pose, effetti e suoni.
+## L'aspetto usa sprite renderizzati dal modello 3D: qui si scelgono stati, effetti e suoni.
 ## Danni, raccolta e stanze li decide il mondo (world.gd), che lo chiama per colpi e ripartenze.
 
 signal slash_requested(pos: Vector2, facing: float, down: bool, air: bool)
@@ -58,7 +58,7 @@ var _was_grounded := true
 
 var _cam: Camera2D
 var _light: PointLight2D
-var _rig: CharRig
+var _rig: Node2D
 ## Disegna il fendente davanti al personaggio (i figli si disegnano dopo il padre).
 var _front: Node2D
 var _trauma := 0.0
@@ -101,7 +101,7 @@ func setup(pos: Vector2) -> void:
 func _ready() -> void:
 	_light = Art.point_light(self, Vector2(0, -10), Color(1.0, 0.93, 0.82), 0.55, 460.0)
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	_rig = CharRig.new()
+	_rig = preload("res://game/sprite_rig.gd").new()
 	_rig.height = FIGURE_HEIGHT
 	_rig.position = Vector2(0, HALF.y)
 	_rig.light_dir = DEFAULT_LIGHT_DIR
@@ -342,7 +342,7 @@ func _process(delta: float) -> void:
 			_sfx("passo", lerpf(-6.0, 0.0, _run_amount))
 
 	_update_spin(delta)
-	_rig.set_target(_pose(running))
+	_rig.select_state(self, running)
 	_rig.facing = facing
 	_rig.flash = _flash
 	# Lampeggia mentre è invulnerabile dopo un colpo, come in Hollow Knight.
@@ -411,7 +411,7 @@ func _update_spin(delta: float) -> void:
 
 
 func _spawn_ghost(parent: Node) -> void:
-	var g := _rig.make_ghost(SCARF_COLOR)
+	var g: Node2D = _rig.make_ghost(SCARF_COLOR)
 	g.position = _rig.global_position  # fx_root sta all'origine del mondo
 	g.modulate.a = 0.55
 	parent.add_child(g)
