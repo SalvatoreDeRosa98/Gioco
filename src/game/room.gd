@@ -3,7 +3,9 @@ extends RefCounted
 ## Layout delle stanze: dimensioni, pavimento, blocchi solidi, mensole attraversabili dal basso,
 ## nemici e decorazioni. I dati sono identici su tutti i PC.
 
-const COUNT := 5
+const MAIN_COUNT := 5
+const SECRET_ROOM := 5
+const COUNT := 6
 ## Altezza dei portali d'uscita, appoggiati al pavimento.
 const DOOR_H := 220.0
 ## Spessore visibile dei pilastri ai lati della stanza.
@@ -132,6 +134,13 @@ const ROOMS := [
 			{"kind": "torch", "pos": Vector2(1590, 700)},
 		],
 	},
+	{
+		"name": "La fucina del ricordo", "subtitle": "Una voce oltre il Velo",
+		"theme": "belvedere", "size": Vector2(1280, 1080), "floor": 980.0,
+		"blocks": [], "ledges": [], "enemies": [],
+		"npcs": [{"id": "fantasma_umano", "pos": Vector2(790, 980)}],
+		"decor": [{"kind": "torch", "pos": Vector2(1060, 980)}],
+	},
 ]
 
 
@@ -144,7 +153,9 @@ const EXPLORATION_LEDGES := [
 	[Rect2(280, 860, 240, 18), Rect2(560, 750, 220, 18), Rect2(830, 640, 240, 18), Rect2(1100, 750, 220, 18), Rect2(1380, 770, 240, 18)],
 ]
 const SECRETS := [Vector2(1150, 500), Vector2(1140, 500), Vector2(1200, 510), Vector2(1510, 400), Vector2(950, 610)]
-const BRANCHES := {0: 2, 2: 0, 1: 3, 3: 1}
+const BRANCHES := {0: SECRET_ROOM, 2: 0, 1: 3, 3: 1}
+## Scalino senza disegno, 140 unità sopra la piattaforma più alta: richiede il doppio salto.
+const FIRST_SECRET_STEP := Rect2(1110, 390, 120, 14)
 ## Una sola statua per area sblocca il salvataggio; quella alta della Villa è esclusa.
 const SAVE_STATUES := [Vector2(2320, 946), Vector2(2320, 946), Vector2(2350, 946), Vector2(1700, 666)]
 
@@ -156,6 +167,10 @@ static func save_station_id(idx: int) -> String:
 
 static func build(idx: int) -> Dictionary:
 	var r: Dictionary = ROOMS[idx]
+	if idx == SECRET_ROOM:
+		var extra := r.duplicate(true)
+		extra.merge({"secrets": [], "branch": -1, "branch_platform": Rect2(), "invisible_steps": [], "boss": false, "indoor": true})
+		return extra
 	return {
 		"name": r["name"],
 		"subtitle": r["subtitle"],
@@ -167,9 +182,10 @@ static func build(idx: int) -> Dictionary:
 		"enemies": _enemies(idx),
 		"secrets": [SECRETS[idx]],
 		"branch": BRANCHES.get(idx, -1),
-		"branch_platform": highest_platform(idx),
+		"branch_platform": FIRST_SECRET_STEP if idx == 0 else highest_platform(idx),
+		"invisible_steps": [FIRST_SECRET_STEP] if idx == 0 else [],
 		"decor": _decorations(idx),
-		"boss": idx == COUNT - 1,
+		"boss": idx == MAIN_COUNT - 1,
 	}
 
 

@@ -45,6 +45,13 @@
 			"image": "res://assets/art/characters/agnese.png",
 			"height": 112
 		},
+		"gaetano_umano": {
+			"name": "Gaetano",
+			"image": "res://assets/art/characters/gaetano_umano.png",
+			"height": 122,
+			"art_face": -1,
+			"memory": false
+		},
 		"gaetano": {
 			"name": "Gaetano",
 			"image": "res://assets/art/characters/gaetano.png",
@@ -323,6 +330,71 @@
 					{"text": "L'uomo si inchina, goffo. La bambina ride e sbaglia apposta."},
 					{"text": "Lui le tende la mano. Il ricordo si sfalda prima che lei possa prenderla."}
 				]}
+			]
+		},
+		"fantasma_umano": {
+			"character": "gaetano_umano",
+			"speakers": [
+				"gaetano"
+			],
+			"face": -1,
+			"turn": "near",
+			"dialogue": [
+				{
+					"id": "gaetano_fucina_lore",
+					"once": true,
+					"lines": [
+						{
+							"text": "Nella vecchia fucina il fantasma ha di nuovo un volto umano. Le mani portano ancora i segni del lavoro."
+						},
+						{
+							"who": "gaetano",
+							"text": "Ferruccio... qui il Velo non riesce a cancellare tutto. Qui posso ancora ricordare chi ero."
+						},
+						{
+							"text": "Ferruccio sfiora il banco. Il legno conserva i piccoli tagli della sua prima lima."
+						},
+						{
+							"who": "gaetano",
+							"text": "Ti insegnai a sentire il ferro prima di colpirlo. Avevi fretta. Volevi finire ogni lavoro prima di sera."
+						},
+						{
+							"who": "gaetano",
+							"text": "Io restavo qui quando tutti tornavano a casa. Credevo che fare bene il proprio mestiere bastasse."
+						},
+						{
+							"who": "gaetano",
+							"text": "Poi vennero i lavori alla Reggia. Ci chiesero di usare il materiale che avevamo, anche quando non bastava."
+						},
+						{
+							"who": "gaetano",
+							"text": "Ricordo il legno che cedeva. E i ragazzi sotto la trave. Non potevo lasciarli lì."
+						},
+						{
+							"text": "Gaetano abbassa lo sguardo sulle proprie mani. Per un istante, tremano."
+						},
+						{
+							"who": "gaetano",
+							"text": "Dopo, qualcuno ha scritto la mia storia al posto mio. Ma una firma non è tutta la verità."
+						},
+						{
+							"who": "gaetano",
+							"text": "Non portarti via soltanto il mio ultimo giorno, figliolo. Ricorda anche quando ti insegnavo a forgiare."
+						},
+						{
+							"text": "Ferruccio posa la mano sul banco, accanto a quella del padre. La fucina tace."
+						}
+					]
+				},
+				{
+					"id": "gaetano_fucina_ritorno",
+					"lines": [
+						{
+							"who": "gaetano",
+							"text": "La memoria ha bisogno di un posto dove tornare. Per me, era questa fucina."
+						}
+					]
+				}
 			]
 		},
 		"gaetano_ricordo": {

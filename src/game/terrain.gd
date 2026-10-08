@@ -71,6 +71,9 @@ func build(r: Dictionary, theme: Dictionary) -> void:
 	room = r
 	th = theme
 	_cfg = Backdrop.area(r["theme"])
+	if bool(r.get("indoor", false)):
+		_cfg = _cfg.duplicate(true)
+		_cfg["grass"] = {}
 	_tint = Color(_cfg.get("terrain_tint", "#ffffff"))
 	var grass: Dictionary = _cfg.get("grass", {})
 	var mat := _sway.material as ShaderMaterial

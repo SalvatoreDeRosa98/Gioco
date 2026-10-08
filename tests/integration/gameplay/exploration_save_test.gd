@@ -62,15 +62,43 @@ func _run() -> void:
 	world._save_at(pos)
 	check(world.coins == 37, "Secondo salvataggio sostituisce file esistente")
 	check(world._right_open(), "Esplorazione aperta senza pulire stanza")
-	for i in Room.COUNT:
+	for i in Room.MAIN_COUNT:
 		var room := Room.build(i)
 		var highest: Rect2 = room["branch_platform"]
 		check(not room["secrets"].is_empty(), "Tesoro in ogni area")
 		for ledge in room["ledges"]:
-			check(highest.position.y <= ledge.position.y, "Passaggio sulla piattaforma più alta")
+			check(highest.position.y <= ledge.position.y, "Passaggio alla quota più alta")
 			check(ledge.position.x > Room.EDGE and ledge.end.x < room["size"].x - Room.EDGE, "Mensole fuori dai pilastri")
 	world._load_room(0, true, false)
 	check(world._stations_root.get_child_count() == 0, "Nessun portale o suggerimento visibile per il passaggio")
+	check(world.room["invisible_steps"] == [Room.FIRST_SECRET_STEP], "Scalino segreto collidibile separato dal disegno")
+	check(not world.room["ledges"].has(Room.FIRST_SECRET_STEP), "Scalino non visibile nel terreno")
+	await physics_frame
+	player.teleport(Vector2(1160, Room.highest_platform(0).position.y - player.HALF.y - 1))
+	player.velocity = Vector2(0, 120)
+	player.set_physics_process(true)
+	await create_timer(0.15).timeout
+	Input.action_press("jump")
+	await create_timer(0.26).timeout
+	Input.action_release("jump")
+	await physics_frame
+	await physics_frame
+	Input.action_press("jump")
+	await create_timer(0.36).timeout
+	Input.action_release("jump")
+	await create_timer(0.4).timeout
+	player.set_physics_process(false)
+	check(player.is_on_floor(), "Il giocatore può atterrare sullo scalino invisibile")
+	check(absf(player.position.y - 366) < 3, "Il doppio salto raggiunge lo scalino invisibile")
+	Input.action_press("interact")
+	world._update_branch()
+	Input.action_release("interact")
+	check(world.room_index == Room.SECRET_ROOM, "W sullo scalino entra nella stanza extra")
+	check(not world.room["boss"] and not world._right_open(), "La stanza extra non cambia il boss finale")
+	check(world._npcs.get_children().any(func(n: Node) -> bool: return n.key == "fantasma_umano"), "Fantasma umano nella stanza extra")
+	player.teleport(Vector2(Room.EDGE, float(world.room["floor"]) - player.HALF.y))
+	world._check_doors()
+	check(world.room_index == 0 and absf(player.position.y - 366) < 3, "Uscita ritorna allo scalino senza perdere progresso")
 	DirAccess.remove_absolute(world.save_path)
 	main.queue_free()
 	await process_frame

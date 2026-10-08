@@ -361,7 +361,7 @@ func _draw_body(a: float) -> void:
 		l.y *= 1.0 + breath * 0.009 + talk + _hop * 0.22
 		# Dondolio: cresce col quadrato dell'altezza, i piedi non scivolano.
 		l.x += sway * hn * hn
-		l.x *= _face
+		l.x *= _face * float(_look.get("art_face", 1.0))
 		l.y += lift
 		pts[i] = l
 		var col := Color(_tint, a)

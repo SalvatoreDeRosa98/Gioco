@@ -30,6 +30,8 @@ var checkpoint: Dictionary = {}
 var _stations_root: Node2D
 var _saved_state: Dictionary = {}
 var resume_save := true
+var _secret_return := Vector2.ZERO
+var _forge_backdrop: Node2D
 
 var room: Dictionary = {}
 var room_index := 0
@@ -233,6 +235,14 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	room_cleared = cleared_now
 	var th := Themes.get_theme(room["theme"])
 	_backdrop.build(room["theme"], room["size"], room["floor"], Room.CAMERA_ZOOM)
+	_backdrop.visible = idx != Room.SECRET_ROOM
+	if is_instance_valid(_forge_backdrop):
+		remove_child(_forge_backdrop)
+		_forge_backdrop.queue_free()
+	if idx == Room.SECRET_ROOM:
+		_forge_backdrop = preload("res://game/forge_backdrop.gd").new()
+		_forge_backdrop.z_index = 1
+		add_child(_forge_backdrop)
 	_terrain.build(room, th)
 	_terrain.set_doors(_left_open(), _right_open())
 	_build_walls()
@@ -275,7 +285,7 @@ func _left_open() -> bool:
 
 func _right_open() -> bool:
 	# Le aree ordinarie si esplorano liberamente; il Custode resta l'ultimo incontro.
-	return room_index < Room.COUNT - 1
+	return room_index < Room.MAIN_COUNT - 1
 
 
 func _build_walls() -> void:
@@ -288,6 +298,8 @@ func _build_walls() -> void:
 		_add_body(r, false)
 	for l in room["ledges"]:
 		_add_body(l, true)
+	for step in room.get("invisible_steps", []):
+		_add_body(step, true)
 
 
 func _add_body(r: Rect2, one_way: bool) -> void:
@@ -349,10 +361,17 @@ func _check_doors() -> void:
 	if _right_open() and pos.x >= size.x - Room.EDGE - 10.0:
 		_go(room_index + 1, true)
 	elif _left_open() and pos.x <= Room.EDGE + 10.0:
-		_go(room_index - 1, false)
+		if room_index == Room.SECRET_ROOM:
+			_go(0, true)
+			var point := _secret_return if _secret_return != Vector2.ZERO else Room.FIRST_SECRET_STEP.get_center() - Vector2(0, PlayerScript.HALF.y + 7)
+			player.teleport(point)
+		else:
+			_go(room_index - 1, false)
 
 
 func _check_cleared() -> void:
+	if room_index == Room.SECRET_ROOM:
+		return
 	if room_cleared or _room_t < 0.8:
 		return
 	if not get_tree().get_nodes_in_group("enemies").is_empty():
@@ -617,6 +636,9 @@ func is_ground(p: Vector2) -> bool:
 	for l in room.get("ledges", []):
 		if (l as Rect2).has_point(p):
 			return true
+	for step in room.get("invisible_steps", []):
+		if (step as Rect2).has_point(p):
+			return true
 	return false
 
 
@@ -665,6 +687,8 @@ func _update_branch() -> void:
 	var platform: Rect2 = room["branch_platform"]
 	var feet := player.global_position + Vector2(0, PlayerScript.HALF.y)
 	if feet.x >= platform.position.x and feet.x <= platform.end.x and absf(feet.y - platform.position.y) <= 6.0 and Input.is_action_just_pressed("interact"):
+		if room_index == 0:
+			_secret_return = player.global_position
 		_go(int(room["branch"]), true)
 
 
