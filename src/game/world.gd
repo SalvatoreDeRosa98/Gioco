@@ -19,10 +19,6 @@ const DialogueBoxScript := preload("res://game/dialogue_box.gd")
 const FinaleScript := preload("res://game/finale.gd")
 const POST_SHADER := preload("res://game/shaders/post_screen_grade.gdshader")
 
-## Secondi tra la morte e la ripartenza della stanza.
-const RESPAWN_DELAY := 2.5
-## Secondi di invulnerabilità dopo un colpo subito.
-const HURT_IFRAMES := 0.9
 ## Livello di collisione delle mensole attraversabili dal basso.
 const LEDGE_LAYER := 4
 
@@ -348,7 +344,7 @@ func _check_death(delta: float) -> void:
 		_death_t = -1.0
 		return
 	if _death_t < 0.0:
-		_death_t = RESPAWN_DELAY
+		_death_t = float(Tuning.data.player.respawn_delay)
 	_death_t -= delta
 	if _death_t <= 0.0:
 		_death_t = -1.0
@@ -425,7 +421,7 @@ func _do_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
 func _hurt_player(dmg: int, from_x: float) -> void:
 	if game_over or player.dead or player.iframes > 0.0:
 		return
-	player.iframes = HURT_IFRAMES
+	player.iframes = float(Tuning.data.player.hurt_iframes)
 	player.take_damage(dmg)
 	var dir := 1.0 if player.global_position.x >= from_x else -1.0
 	_fx("hurt", player.global_position, Color.WHITE, dir)

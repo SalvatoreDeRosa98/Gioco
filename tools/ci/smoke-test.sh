@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Importa il progetto e lo avvia headless per ~20 s in modalità demo (il giocatore
-# corre, salta e colpisce da solo). Fallisce se nel log compare un errore di script.
+# Importa il progetto, lo avvia headless per ~20 s in modalità demo (il giocatore
+# corre, salta e colpisce da solo) ed esegue i test in tests/. Fallisce se nel log
+# compare un errore di script o se un test non passa.
 #
 # Variabili:
 #   GODOT_BIN     eseguibile di Godot            (default: ~/godot/godot)
@@ -68,7 +69,23 @@ if grep -E -q '^(ERROR|WARNING):' "$LOG_DIR/smoke.log"; then
 	grep -E '^(ERROR|WARNING):' "$LOG_DIR/smoke.log" | sort | uniq -c | sort -rn | head -n 10 || true
 fi
 
+# Test automatici: ogni tests/**/*_test.gd è un piccolo esecutore (extends SceneTree)
+# che esce con 0 se passa. Il progetto non usa ancora gdUnit4.
+echo "::group::Test automatici"
+while IFS= read -r test_file; do
+	name="$(basename "$test_file" .gd)"
+	if timeout --kill-after=5 180 "$GODOT_BIN" --headless --path "$PROJECT_DIR" -s "$(realpath "$test_file")" \
+		> "$LOG_DIR/test-$name.log" 2>&1; then
+		echo "superato: $test_file"
+	else
+		echo "::error::Test fallito: $test_file (vedi test-$name.log)"
+		tail -n 30 "$LOG_DIR/test-$name.log"
+		failed=1
+	fi
+done < <(find tests -name '*_test.gd' 2>/dev/null | sort)
+echo "::endgroup::"
+
 if [[ $failed -ne 0 ]]; then
 	exit 1
 fi
-echo "Prova di avvio superata."
+echo "Prova di avvio e test superati."

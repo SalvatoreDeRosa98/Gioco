@@ -332,7 +332,10 @@ func _process(delta: float) -> void:
 	_rig.set_target(_pose(running))
 	_rig.facing = facing
 	_rig.flash = _flash
-	_rig.modulate.a = 0.35 if dead else 1.0
+	# Lampeggia mentre è invulnerabile dopo un colpo, come in Hollow Knight.
+	var blink := float(_cfg.get("hurt_blink_period", 0.12))
+	var blinking := iframes > 0.0 and not dead and fmod(iframes, blink) < blink * 0.5
+	_rig.modulate.a = 0.35 if dead else (0.45 if blinking else 1.0)
 	_rig.advance(delta, v)
 
 	if dashing and not dead:

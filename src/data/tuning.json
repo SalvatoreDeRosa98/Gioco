@@ -30,7 +30,10 @@
 		"attack_time": 0.2,
 		"attack_cooldown": 0.28,
 		"pogo_velocity": -430,
-		"max_hp": 5
+		"max_hp": 5,
+		"hurt_iframes": 1.3,
+		"respawn_delay": 2.5,
+		"hurt_blink_period": 0.12
 	},
 	"enemies": {
 		"gatto": {
@@ -42,10 +45,10 @@
 			"spawn_grace": 1.5,
 			"sight_range": 380, "sight_height": 230, "sight_behind": 110,
 			"lose_range": 640,
-			"notice_time": 0.5, "notice_hop": 220, "notice_cooldown": 2.5,
-			"chase_speed": 185,
+			"notice_time": 0.6, "notice_hop": 220, "notice_cooldown": 2.5,
+			"chase_speed": 165,
 			"pounce_range": 220, "pounce_min_range": 40, "pounce_reach_up": 120,
-			"pounce_windup": 0.34, "pounce_arc": 46, "pounce_max_speed": 470, "pounce_cooldown": 1.3,
+			"pounce_windup": 0.34, "pounce_arc": 46, "pounce_max_speed": 470, "pounce_cooldown": 2.0,
 			"land_recover": 0.45,
 			"jump_height_max": 200, "jump_reach": 280, "jump_arc": 28,
 			"give_up_time": 1.8,
