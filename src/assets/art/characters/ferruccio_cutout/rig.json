@@ -1,0 +1,354 @@
+{
+  "_doc": "Pupazzo a ritaglio di Ferruccio: generato da tools/art/cutout_ferruccio.py. Pixel della tela 679x1024.",
+  "canvas": [
+    679,
+    1024
+  ],
+  "feet": [
+    365,
+    1012
+  ],
+  "far_tint": [
+    0.8,
+    0.8,
+    0.87
+  ],
+  "bones": {
+    "root": {
+      "pivot": [
+        365,
+        1012
+      ],
+      "parent": null
+    },
+    "hips": {
+      "pivot": [
+        358,
+        768
+      ],
+      "parent": "root"
+    },
+    "torso": {
+      "pivot": [
+        360,
+        742
+      ],
+      "parent": "hips"
+    },
+    "neck": {
+      "pivot": [
+        385,
+        306
+      ],
+      "parent": "torso"
+    },
+    "shoulder": {
+      "pivot": [
+        352,
+        352
+      ],
+      "parent": "torso"
+    },
+    "elbow": {
+      "pivot": [
+        353,
+        486
+      ],
+      "parent": "shoulder"
+    },
+    "wrist": {
+      "pivot": [
+        368,
+        628
+      ],
+      "parent": "elbow"
+    },
+    "thigh": {
+      "pivot": [
+        355,
+        778
+      ],
+      "parent": "hips"
+    },
+    "knee": {
+      "pivot": [
+        337,
+        862
+      ],
+      "parent": "thigh"
+    },
+    "ankle": {
+      "pivot": [
+        334,
+        955
+      ],
+      "parent": "knee"
+    },
+    "scarf1": {
+      "pivot": [
+        300,
+        338
+      ],
+      "parent": "torso"
+    },
+    "scarf2": {
+      "pivot": [
+        214,
+        476
+      ],
+      "parent": "scarf1"
+    },
+    "scarf3": {
+      "pivot": [
+        122,
+        566
+      ],
+      "parent": "scarf2"
+    },
+    "shoulder_f": {
+      "pivot": [
+        340,
+        354
+      ],
+      "parent": "torso"
+    },
+    "elbow_f": {
+      "pivot": [
+        341,
+        488
+      ],
+      "parent": "shoulder_f"
+    },
+    "wrist_f": {
+      "pivot": [
+        356,
+        630
+      ],
+      "parent": "elbow_f"
+    },
+    "thigh_f": {
+      "pivot": [
+        369,
+        774
+      ],
+      "parent": "hips"
+    },
+    "knee_f": {
+      "pivot": [
+        351,
+        858
+      ],
+      "parent": "thigh_f"
+    },
+    "ankle_f": {
+      "pivot": [
+        348,
+        951
+      ],
+      "parent": "knee_f"
+    }
+  },
+  "pieces": {
+    "testa": {
+      "file": "testa.png",
+      "pos": [
+        142,
+        1
+      ]
+    },
+    "nodo": {
+      "file": "nodo.png",
+      "pos": [
+        292,
+        136
+      ]
+    },
+    "sciarpa1": {
+      "file": "sciarpa1.png",
+      "pos": [
+        210,
+        287
+      ]
+    },
+    "sciarpa2": {
+      "file": "sciarpa2.png",
+      "pos": [
+        118,
+        447
+      ]
+    },
+    "sciarpa3": {
+      "file": "sciarpa3.png",
+      "pos": [
+        1,
+        497
+      ]
+    },
+    "busto": {
+      "file": "busto.png",
+      "pos": [
+        232,
+        310
+      ]
+    },
+    "manica_su": {
+      "file": "manica_su.png",
+      "pos": [
+        295,
+        318
+      ]
+    },
+    "manica_giu": {
+      "file": "manica_giu.png",
+      "pos": [
+        295,
+        468
+      ]
+    },
+    "mano": {
+      "file": "mano.png",
+      "pos": [
+        285,
+        594
+      ]
+    },
+    "pugno": {
+      "file": "pugno.png",
+      "pos": [
+        329,
+        594
+      ]
+    },
+    "coscia": {
+      "file": "coscia.png",
+      "pos": [
+        286,
+        716
+      ]
+    },
+    "stinco": {
+      "file": "stinco.png",
+      "pos": [
+        307,
+        852
+      ]
+    },
+    "piede": {
+      "file": "piede.png",
+      "pos": [
+        294,
+        941
+      ]
+    }
+  },
+  "sprites": [
+    {
+      "piece": "sciarpa3",
+      "bone": "scarf3",
+      "z": 0,
+      "far": false
+    },
+    {
+      "piece": "sciarpa2",
+      "bone": "scarf2",
+      "z": 1,
+      "far": false
+    },
+    {
+      "piece": "sciarpa1",
+      "bone": "scarf1",
+      "z": 2,
+      "far": false
+    },
+    {
+      "piece": "manica_su",
+      "bone": "shoulder_f",
+      "z": 3,
+      "far": true
+    },
+    {
+      "piece": "pugno",
+      "bone": "wrist_f",
+      "z": 4,
+      "far": true
+    },
+    {
+      "piece": "manica_giu",
+      "bone": "elbow_f",
+      "z": 4,
+      "far": true
+    },
+    {
+      "piece": "coscia",
+      "bone": "thigh_f",
+      "z": 5,
+      "far": true
+    },
+    {
+      "piece": "stinco",
+      "bone": "knee_f",
+      "z": 6,
+      "far": true
+    },
+    {
+      "piece": "piede",
+      "bone": "ankle_f",
+      "z": 7,
+      "far": true
+    },
+    {
+      "piece": "stinco",
+      "bone": "knee",
+      "z": 8,
+      "far": false
+    },
+    {
+      "piece": "piede",
+      "bone": "ankle",
+      "z": 9,
+      "far": false
+    },
+    {
+      "piece": "coscia",
+      "bone": "thigh",
+      "z": 10,
+      "far": false
+    },
+    {
+      "piece": "busto",
+      "bone": "torso",
+      "z": 11,
+      "far": false
+    },
+    {
+      "piece": "testa",
+      "bone": "neck",
+      "z": 12,
+      "far": false
+    },
+    {
+      "piece": "nodo",
+      "bone": "torso",
+      "z": 13,
+      "far": false
+    },
+    {
+      "piece": "manica_su",
+      "bone": "shoulder",
+      "z": 14,
+      "far": false
+    },
+    {
+      "piece": "mano",
+      "bone": "wrist",
+      "z": 15,
+      "far": false
+    },
+    {
+      "piece": "manica_giu",
+      "bone": "elbow",
+      "z": 16,
+      "far": false
+    }
+  ]
+}

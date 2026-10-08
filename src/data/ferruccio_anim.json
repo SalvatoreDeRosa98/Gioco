@@ -1,0 +1,1343 @@
+{
+ "_doc": "Generato da tools/art/cutout_anims.py: modificare lì e rigenerare. Angoli in gradi, positivo = orario.",
+ "clips": {
+  "idle": {
+   "fps": 12,
+   "loop": true,
+   "progress": false,
+   "length": 1.8,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "inout",
+     "pose": {
+      "shoulder": -12,
+      "elbow": -38,
+      "wrist": -18,
+      "shoulder_f": 14,
+      "elbow_f": -6,
+      "torso": 2,
+      "neck": 0,
+      "hips_y": 0
+     }
+    },
+    {
+     "t": 0.9,
+     "ease": "inout",
+     "pose": {
+      "shoulder": -9,
+      "elbow": -36,
+      "wrist": -14,
+      "shoulder_f": 14,
+      "elbow_f": -6,
+      "torso": 4,
+      "neck": 2,
+      "hips_y": 4
+     }
+    },
+    {
+     "t": 1.8,
+     "ease": "inout",
+     "pose": {
+      "shoulder": -12,
+      "elbow": -38,
+      "wrist": -18,
+      "shoulder_f": 14,
+      "elbow_f": -6,
+      "torso": 2,
+      "neck": 0,
+      "hips_y": 0
+     }
+    }
+   ]
+  },
+  "run": {
+   "fps": 12,
+   "loop": true,
+   "progress": false,
+   "length": 0.6667,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "step",
+     "pose": {
+      "hips_y": 2,
+      "torso": 13,
+      "neck": -6,
+      "thigh": -40,
+      "knee": 8,
+      "ankle": -16,
+      "thigh_f": 34,
+      "knee_f": 28,
+      "ankle_f": 18,
+      "shoulder": 34,
+      "elbow": -50,
+      "wrist": -26,
+      "shoulder_f": -36,
+      "elbow_f": -48
+     }
+    },
+    {
+     "t": 0.0833,
+     "ease": "step",
+     "pose": {
+      "hips_y": 16,
+      "torso": 15,
+      "neck": -5,
+      "thigh": -22,
+      "knee": 26,
+      "ankle": 2,
+      "thigh_f": 42,
+      "knee_f": 78,
+      "ankle_f": 26,
+      "shoulder": 26,
+      "elbow": -46,
+      "wrist": -22,
+      "shoulder_f": -28,
+      "elbow_f": -46
+     }
+    },
+    {
+     "t": 0.1667,
+     "ease": "step",
+     "pose": {
+      "hips_y": 4,
+      "torso": 13,
+      "neck": -6,
+      "thigh": 2,
+      "knee": 10,
+      "ankle": 2,
+      "thigh_f": -12,
+      "knee_f": 96,
+      "ankle_f": 18,
+      "shoulder": 4,
+      "elbow": -40,
+      "wrist": -18,
+      "shoulder_f": -4,
+      "elbow_f": -40
+     }
+    },
+    {
+     "t": 0.25,
+     "ease": "step",
+     "pose": {
+      "hips_y": -12,
+      "torso": 12,
+      "neck": -7,
+      "thigh": 28,
+      "knee": 18,
+      "ankle": 24,
+      "thigh_f": -46,
+      "knee_f": 50,
+      "ankle_f": -12,
+      "shoulder": -22,
+      "elbow": -38,
+      "wrist": -14,
+      "shoulder_f": 24,
+      "elbow_f": -34
+     }
+    },
+    {
+     "t": 0.3333,
+     "ease": "step",
+     "pose": {
+      "hips_y": 2,
+      "torso": 13,
+      "neck": -6,
+      "thigh": 34,
+      "knee": 28,
+      "ankle": 18,
+      "thigh_f": -40,
+      "knee_f": 8,
+      "ankle_f": -16,
+      "shoulder": -36,
+      "elbow": -48,
+      "wrist": -20,
+      "shoulder_f": 34,
+      "elbow_f": -50
+     }
+    },
+    {
+     "t": 0.4167,
+     "ease": "step",
+     "pose": {
+      "hips_y": 16,
+      "torso": 15,
+      "neck": -5,
+      "thigh": 42,
+      "knee": 78,
+      "ankle": 26,
+      "thigh_f": -22,
+      "knee_f": 26,
+      "ankle_f": 2,
+      "shoulder": -28,
+      "elbow": -46,
+      "wrist": -20,
+      "shoulder_f": 26,
+      "elbow_f": -46
+     }
+    },
+    {
+     "t": 0.5,
+     "ease": "step",
+     "pose": {
+      "hips_y": 4,
+      "torso": 13,
+      "neck": -6,
+      "thigh": -12,
+      "knee": 96,
+      "ankle": 18,
+      "thigh_f": 2,
+      "knee_f": 10,
+      "ankle_f": 2,
+      "shoulder": -4,
+      "elbow": -40,
+      "wrist": -20,
+      "shoulder_f": 4,
+      "elbow_f": -40
+     }
+    },
+    {
+     "t": 0.5833,
+     "ease": "step",
+     "pose": {
+      "hips_y": -12,
+      "torso": 12,
+      "neck": -7,
+      "thigh": -46,
+      "knee": 50,
+      "ankle": -12,
+      "thigh_f": 28,
+      "knee_f": 18,
+      "ankle_f": 24,
+      "shoulder": 24,
+      "elbow": -34,
+      "wrist": -20,
+      "shoulder_f": -22,
+      "elbow_f": -38
+     }
+    },
+    {
+     "t": 0.6667,
+     "ease": "step",
+     "pose": {
+      "hips_y": 2,
+      "torso": 13,
+      "neck": -6,
+      "thigh": -40,
+      "knee": 8,
+      "ankle": -16,
+      "thigh_f": 34,
+      "knee_f": 28,
+      "ankle_f": 18,
+      "shoulder": 34,
+      "elbow": -50,
+      "wrist": -26,
+      "shoulder_f": -36,
+      "elbow_f": -48
+     }
+    }
+   ]
+  },
+  "rise": {
+   "fps": 12,
+   "loop": true,
+   "progress": false,
+   "length": 0.5,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 0,
+      "torso": 6,
+      "neck": -8,
+      "thigh": -46,
+      "knee": 72,
+      "ankle": 10,
+      "thigh_f": 14,
+      "knee_f": 42,
+      "ankle_f": 22,
+      "shoulder": -30,
+      "elbow": -50,
+      "wrist": -26,
+      "shoulder_f": 30,
+      "elbow_f": -26
+     }
+    },
+    {
+     "t": 0.5,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 0,
+      "torso": 6,
+      "neck": -8,
+      "thigh": -46,
+      "knee": 72,
+      "ankle": 10,
+      "thigh_f": 14,
+      "knee_f": 42,
+      "ankle_f": 22,
+      "shoulder": -30,
+      "elbow": -50,
+      "wrist": -26,
+      "shoulder_f": 30,
+      "elbow_f": -26
+     }
+    }
+   ]
+  },
+  "fall": {
+   "fps": 12,
+   "loop": false,
+   "progress": false,
+   "length": 0.6,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 0,
+      "torso": 6,
+      "neck": -8,
+      "thigh": -46,
+      "knee": 72,
+      "ankle": 10,
+      "thigh_f": 14,
+      "knee_f": 42,
+      "ankle_f": 22,
+      "shoulder": -30,
+      "elbow": -50,
+      "wrist": -26,
+      "shoulder_f": 30,
+      "elbow_f": -26
+     }
+    },
+    {
+     "t": 0.18,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 0,
+      "torso": -2,
+      "neck": 4,
+      "thigh": -14,
+      "knee": 26,
+      "ankle": -6,
+      "thigh_f": 18,
+      "knee_f": 34,
+      "ankle_f": 6,
+      "shoulder": -68,
+      "elbow": -30,
+      "wrist": -6,
+      "shoulder_f": -84,
+      "elbow_f": -22
+     }
+    },
+    {
+     "t": 0.6,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 0,
+      "torso": -2,
+      "neck": 4,
+      "thigh": -14,
+      "knee": 26,
+      "ankle": -6,
+      "thigh_f": 18,
+      "knee_f": 34,
+      "ankle_f": 6,
+      "shoulder": -68,
+      "elbow": -30,
+      "wrist": -6,
+      "shoulder_f": -84,
+      "elbow_f": -22
+     }
+    }
+   ]
+  },
+  "double_jump": {
+   "fps": 12,
+   "loop": false,
+   "progress": true,
+   "length": 1.0,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "out",
+     "pose": {
+      "hips_y": -40,
+      "torso": 26,
+      "neck": 10,
+      "thigh": -86,
+      "knee": 128,
+      "ankle": 20,
+      "thigh_f": -74,
+      "knee_f": 122,
+      "ankle_f": 20,
+      "shoulder": -46,
+      "elbow": -70,
+      "wrist": -40,
+      "shoulder_f": -40,
+      "elbow_f": -80
+     }
+    },
+    {
+     "t": 0.7,
+     "ease": "inout",
+     "pose": {
+      "hips_y": -40,
+      "torso": 26,
+      "neck": 10,
+      "thigh": -86,
+      "knee": 128,
+      "ankle": 20,
+      "thigh_f": -74,
+      "knee_f": 122,
+      "ankle_f": 20,
+      "shoulder": -46,
+      "elbow": -70,
+      "wrist": -40,
+      "shoulder_f": -40,
+      "elbow_f": -80
+     }
+    },
+    {
+     "t": 1.0,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 0,
+      "torso": -2,
+      "neck": 4,
+      "thigh": -14,
+      "knee": 26,
+      "ankle": -6,
+      "thigh_f": 18,
+      "knee_f": 34,
+      "ankle_f": 6,
+      "shoulder": -68,
+      "elbow": -30,
+      "wrist": -6,
+      "shoulder_f": -84,
+      "elbow_f": -22
+     }
+    }
+   ]
+  },
+  "skid": {
+   "fps": 12,
+   "loop": true,
+   "progress": false,
+   "length": 0.5,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 14,
+      "hips_x": -8,
+      "torso": -18,
+      "neck": -6,
+      "thigh": -48,
+      "knee": 8,
+      "ankle": -26,
+      "thigh_f": 22,
+      "knee_f": 34,
+      "ankle_f": 10,
+      "shoulder": -44,
+      "elbow": -30,
+      "wrist": -24,
+      "shoulder_f": -52,
+      "elbow_f": -30
+     }
+    },
+    {
+     "t": 0.5,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 14,
+      "hips_x": -8,
+      "torso": -18,
+      "neck": -6,
+      "thigh": -48,
+      "knee": 8,
+      "ankle": -26,
+      "thigh_f": 22,
+      "knee_f": 34,
+      "ankle_f": 10,
+      "shoulder": -44,
+      "elbow": -30,
+      "wrist": -24,
+      "shoulder_f": -52,
+      "elbow_f": -30
+     }
+    }
+   ]
+  },
+  "dash": {
+   "fps": 12,
+   "loop": true,
+   "progress": false,
+   "length": 0.5,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "inout",
+     "pose": {
+      "hips_y": -6,
+      "torso": 38,
+      "neck": -14,
+      "thigh": 34,
+      "knee": 46,
+      "ankle": 30,
+      "thigh_f": -26,
+      "knee_f": 64,
+      "ankle_f": 8,
+      "shoulder": 78,
+      "elbow": -6,
+      "wrist": -34,
+      "shoulder_f": 70,
+      "elbow_f": -8
+     }
+    },
+    {
+     "t": 0.5,
+     "ease": "inout",
+     "pose": {
+      "hips_y": -6,
+      "torso": 38,
+      "neck": -14,
+      "thigh": 34,
+      "knee": 46,
+      "ankle": 30,
+      "thigh_f": -26,
+      "knee_f": 64,
+      "ankle_f": 8,
+      "shoulder": 78,
+      "elbow": -6,
+      "wrist": -34,
+      "shoulder_f": 70,
+      "elbow_f": -8
+     }
+    }
+   ]
+  },
+  "slash_a": {
+   "fps": 12,
+   "loop": false,
+   "progress": true,
+   "length": 1.0,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "out",
+     "pose": {
+      "shoulder": -12,
+      "elbow": -38,
+      "wrist": -18,
+      "shoulder_f": 14,
+      "elbow_f": -6,
+      "torso": -6
+     }
+    },
+    {
+     "t": 0.2,
+     "ease": "step",
+     "pose": {
+      "hips_y": 10,
+      "torso": -16,
+      "neck": -6,
+      "thigh": -10,
+      "knee": 20,
+      "thigh_f": 18,
+      "knee_f": 22,
+      "shoulder": 158,
+      "elbow": -34,
+      "wrist": -70,
+      "shoulder_f": -40,
+      "elbow_f": -40
+     }
+    },
+    {
+     "t": 0.28,
+     "ease": "in",
+     "pose": {
+      "hips_y": 10,
+      "torso": -16,
+      "neck": -6,
+      "thigh": -10,
+      "knee": 20,
+      "thigh_f": 18,
+      "knee_f": 22,
+      "shoulder": 158,
+      "elbow": -34,
+      "wrist": -70,
+      "shoulder_f": -40,
+      "elbow_f": -40
+     }
+    },
+    {
+     "t": 0.4,
+     "ease": "out",
+     "pose": {
+      "hips_y": 14,
+      "hips_x": 26,
+      "torso": 24,
+      "neck": 6,
+      "thigh": -42,
+      "knee": 22,
+      "ankle": -10,
+      "thigh_f": 30,
+      "knee_f": 26,
+      "ankle_f": 16,
+      "shoulder": -82,
+      "elbow": -4,
+      "wrist": -24,
+      "shoulder_f": 46,
+      "elbow_f": -16
+     }
+    },
+    {
+     "t": 0.62,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 16,
+      "hips_x": 30,
+      "torso": 28,
+      "neck": 8,
+      "thigh": -44,
+      "knee": 24,
+      "ankle": -10,
+      "thigh_f": 32,
+      "knee_f": 28,
+      "ankle_f": 16,
+      "shoulder": -26,
+      "elbow": 2,
+      "wrist": 34,
+      "shoulder_f": 50,
+      "elbow_f": -12
+     }
+    },
+    {
+     "t": 1.0,
+     "ease": "inout",
+     "pose": {
+      "shoulder": -12,
+      "elbow": -38,
+      "wrist": -18,
+      "shoulder_f": 14,
+      "elbow_f": -6,
+      "hips_y": 6,
+      "hips_x": 10,
+      "torso": 10,
+      "thigh": -18,
+      "knee": 14,
+      "thigh_f": 16,
+      "knee_f": 16
+     }
+    }
+   ]
+  },
+  "slash_b": {
+   "fps": 12,
+   "loop": false,
+   "progress": true,
+   "length": 1.0,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "out",
+     "pose": {
+      "shoulder": -12,
+      "elbow": -38,
+      "wrist": -18,
+      "shoulder_f": 14,
+      "elbow_f": -6,
+      "torso": 4
+     }
+    },
+    {
+     "t": 0.2,
+     "ease": "step",
+     "pose": {
+      "hips_y": 18,
+      "torso": 20,
+      "neck": 6,
+      "thigh": -26,
+      "knee": 40,
+      "thigh_f": 22,
+      "knee_f": 40,
+      "shoulder": 52,
+      "elbow": -10,
+      "wrist": 52,
+      "shoulder_f": -30,
+      "elbow_f": -40
+     }
+    },
+    {
+     "t": 0.28,
+     "ease": "in",
+     "pose": {
+      "hips_y": 18,
+      "torso": 20,
+      "neck": 6,
+      "thigh": -26,
+      "knee": 40,
+      "thigh_f": 22,
+      "knee_f": 40,
+      "shoulder": 52,
+      "elbow": -10,
+      "wrist": 52,
+      "shoulder_f": -30,
+      "elbow_f": -40
+     }
+    },
+    {
+     "t": 0.4,
+     "ease": "out",
+     "pose": {
+      "hips_y": 2,
+      "hips_x": 20,
+      "torso": -8,
+      "neck": -10,
+      "thigh": -38,
+      "knee": 14,
+      "thigh_f": 26,
+      "knee_f": 20,
+      "ankle_f": 20,
+      "shoulder": -128,
+      "elbow": -16,
+      "wrist": -66,
+      "shoulder_f": 40,
+      "elbow_f": -20
+     }
+    },
+    {
+     "t": 0.62,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 0,
+      "hips_x": 24,
+      "torso": -12,
+      "neck": -12,
+      "thigh": -40,
+      "knee": 14,
+      "thigh_f": 28,
+      "knee_f": 20,
+      "ankle_f": 20,
+      "shoulder": -168,
+      "elbow": -10,
+      "wrist": -88,
+      "shoulder_f": 44,
+      "elbow_f": -16
+     }
+    },
+    {
+     "t": 1.0,
+     "ease": "inout",
+     "pose": {
+      "shoulder": -12,
+      "elbow": -38,
+      "wrist": -18,
+      "shoulder_f": 14,
+      "elbow_f": -6,
+      "hips_y": 4,
+      "hips_x": 8,
+      "torso": 4,
+      "thigh": -16,
+      "knee": 12,
+      "thigh_f": 14,
+      "knee_f": 14
+     }
+    }
+   ]
+  },
+  "pogo": {
+   "fps": 12,
+   "loop": false,
+   "progress": true,
+   "length": 1.0,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "out",
+     "pose": {
+      "hips_y": -40,
+      "torso": 26,
+      "neck": 10,
+      "thigh": -86,
+      "knee": 128,
+      "ankle": 20,
+      "thigh_f": -74,
+      "knee_f": 122,
+      "ankle_f": 20,
+      "shoulder": -70,
+      "elbow": -70,
+      "wrist": -50,
+      "shoulder_f": -40,
+      "elbow_f": -80
+     }
+    },
+    {
+     "t": 0.22,
+     "ease": "step",
+     "pose": {
+      "hips_y": -40,
+      "torso": 26,
+      "neck": 10,
+      "thigh": -86,
+      "knee": 128,
+      "ankle": 20,
+      "thigh_f": -74,
+      "knee_f": 122,
+      "ankle_f": 20,
+      "shoulder": -100,
+      "elbow": -40,
+      "wrist": -70,
+      "shoulder_f": -40,
+      "elbow_f": -80
+     }
+    },
+    {
+     "t": 0.28,
+     "ease": "in",
+     "pose": {
+      "hips_y": -40,
+      "torso": 26,
+      "neck": 10,
+      "thigh": -86,
+      "knee": 128,
+      "ankle": 20,
+      "thigh_f": -74,
+      "knee_f": 122,
+      "ankle_f": 20,
+      "shoulder": -100,
+      "elbow": -40,
+      "wrist": -70,
+      "shoulder_f": -40,
+      "elbow_f": -80
+     }
+    },
+    {
+     "t": 0.4,
+     "ease": "out",
+     "pose": {
+      "hips_y": -40,
+      "torso": 30,
+      "neck": 10,
+      "thigh": -96,
+      "knee": 128,
+      "ankle": 20,
+      "thigh_f": -84,
+      "knee_f": 122,
+      "ankle_f": 20,
+      "shoulder": -6,
+      "elbow": 0,
+      "wrist": 58,
+      "shoulder_f": -40,
+      "elbow_f": -80
+     }
+    },
+    {
+     "t": 0.7,
+     "ease": "inout",
+     "pose": {
+      "hips_y": -40,
+      "torso": 30,
+      "neck": 10,
+      "thigh": -96,
+      "knee": 128,
+      "ankle": 20,
+      "thigh_f": -84,
+      "knee_f": 122,
+      "ankle_f": 20,
+      "shoulder": -2,
+      "elbow": 0,
+      "wrist": 60,
+      "shoulder_f": -40,
+      "elbow_f": -80
+     }
+    },
+    {
+     "t": 1.0,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 0,
+      "torso": -2,
+      "neck": 4,
+      "thigh": -14,
+      "knee": 26,
+      "ankle": -6,
+      "thigh_f": 18,
+      "knee_f": 34,
+      "ankle_f": 6,
+      "shoulder": -68,
+      "elbow": -30,
+      "wrist": -6,
+      "shoulder_f": -84,
+      "elbow_f": -22
+     }
+    }
+   ]
+  },
+  "hammer": {
+   "fps": 12,
+   "loop": false,
+   "progress": true,
+   "length": 1.0,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "out",
+     "pose": {
+      "shoulder": -12,
+      "elbow": -38,
+      "wrist": -18,
+      "shoulder_f": 14,
+      "elbow_f": -6
+     }
+    },
+    {
+     "t": 0.45,
+     "ease": "out",
+     "pose": {
+      "hips_y": 6,
+      "torso": -22,
+      "neck": -12,
+      "thigh": -14,
+      "knee": 16,
+      "thigh_f": 22,
+      "knee_f": 20,
+      "shoulder": 176,
+      "elbow": -20,
+      "wrist": -50,
+      "shoulder_f": 168,
+      "elbow_f": -24
+     }
+    },
+    {
+     "t": 0.58,
+     "ease": "in",
+     "pose": {
+      "hips_y": 40,
+      "hips_x": 18,
+      "torso": 38,
+      "neck": 14,
+      "thigh": -50,
+      "knee": 70,
+      "ankle": -12,
+      "thigh_f": 34,
+      "knee_f": 60,
+      "ankle_f": 22,
+      "shoulder": -40,
+      "elbow": 0,
+      "wrist": 40,
+      "shoulder_f": -36,
+      "elbow_f": -4
+     }
+    },
+    {
+     "t": 0.8,
+     "ease": "step",
+     "pose": {
+      "hips_y": 40,
+      "hips_x": 18,
+      "torso": 38,
+      "neck": 14,
+      "thigh": -50,
+      "knee": 70,
+      "ankle": -12,
+      "thigh_f": 34,
+      "knee_f": 60,
+      "ankle_f": 22,
+      "shoulder": -40,
+      "elbow": 0,
+      "wrist": 40,
+      "shoulder_f": -36,
+      "elbow_f": -4
+     }
+    },
+    {
+     "t": 1.0,
+     "ease": "inout",
+     "pose": {
+      "shoulder": -12,
+      "elbow": -38,
+      "wrist": -18,
+      "shoulder_f": 14,
+      "elbow_f": -6,
+      "hips_y": 10
+     }
+    }
+   ]
+  },
+  "parry": {
+   "fps": 12,
+   "loop": false,
+   "progress": false,
+   "length": 0.5,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "out",
+     "pose": {
+      "shoulder": -12,
+      "elbow": -38,
+      "wrist": -18,
+      "shoulder_f": 14,
+      "elbow_f": -6
+     }
+    },
+    {
+     "t": 0.08,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 14,
+      "torso": -6,
+      "neck": -4,
+      "thigh": -20,
+      "knee": 22,
+      "thigh_f": 24,
+      "knee_f": 22,
+      "shoulder": -56,
+      "elbow": -66,
+      "wrist": -84,
+      "shoulder_f": -30,
+      "elbow_f": -60
+     }
+    },
+    {
+     "t": 0.5,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 14,
+      "torso": -6,
+      "neck": -4,
+      "thigh": -20,
+      "knee": 22,
+      "thigh_f": 24,
+      "knee_f": 22,
+      "shoulder": -56,
+      "elbow": -66,
+      "wrist": -84,
+      "shoulder_f": -30,
+      "elbow_f": -60
+     }
+    }
+   ]
+  },
+  "hurt": {
+   "fps": 12,
+   "loop": false,
+   "progress": false,
+   "length": 0.3,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "step",
+     "pose": {
+      "hips_y": 6,
+      "hips_x": -12,
+      "torso": -22,
+      "neck": -14,
+      "thigh": -14,
+      "knee": 18,
+      "thigh_f": 10,
+      "knee_f": 22,
+      "shoulder": 44,
+      "elbow": -20,
+      "wrist": 10,
+      "shoulder_f": 52,
+      "elbow_f": -24
+     }
+    },
+    {
+     "t": 0.3,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 6,
+      "hips_x": -12,
+      "torso": -22,
+      "neck": -14,
+      "thigh": -14,
+      "knee": 18,
+      "thigh_f": 10,
+      "knee_f": 22,
+      "shoulder": 44,
+      "elbow": -20,
+      "wrist": 10,
+      "shoulder_f": 52,
+      "elbow_f": -24
+     }
+    }
+   ]
+  },
+  "grapple": {
+   "fps": 12,
+   "loop": true,
+   "progress": false,
+   "length": 0.5,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 0,
+      "torso": -4,
+      "neck": -12,
+      "thigh": -18,
+      "knee": 34,
+      "ankle": 14,
+      "thigh_f": 12,
+      "knee_f": 44,
+      "ankle_f": 24,
+      "shoulder": 34,
+      "elbow": -22,
+      "wrist": -10,
+      "shoulder_f": -150,
+      "elbow_f": -6
+     }
+    },
+    {
+     "t": 0.5,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 0,
+      "torso": -4,
+      "neck": -12,
+      "thigh": -18,
+      "knee": 34,
+      "ankle": 14,
+      "thigh_f": 12,
+      "knee_f": 44,
+      "ankle_f": 24,
+      "shoulder": 34,
+      "elbow": -22,
+      "wrist": -10,
+      "shoulder_f": -150,
+      "elbow_f": -6
+     }
+    }
+   ]
+  },
+  "wall": {
+   "fps": 12,
+   "loop": true,
+   "progress": false,
+   "length": 0.5,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 10,
+      "torso": -8,
+      "neck": 6,
+      "thigh": -54,
+      "knee": 74,
+      "ankle": -20,
+      "thigh_f": 6,
+      "knee_f": 40,
+      "ankle_f": 10,
+      "shoulder": 24,
+      "elbow": -30,
+      "wrist": 20,
+      "shoulder_f": -116,
+      "elbow_f": -24
+     }
+    },
+    {
+     "t": 0.5,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 10,
+      "torso": -8,
+      "neck": 6,
+      "thigh": -54,
+      "knee": 74,
+      "ankle": -20,
+      "thigh_f": 6,
+      "knee_f": 40,
+      "ankle_f": 10,
+      "shoulder": 24,
+      "elbow": -30,
+      "wrist": 20,
+      "shoulder_f": -116,
+      "elbow_f": -24
+     }
+    }
+   ]
+  },
+  "heal": {
+   "fps": 12,
+   "loop": true,
+   "progress": false,
+   "length": 1.0,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 46,
+      "torso": 16,
+      "neck": 18,
+      "thigh": -72,
+      "knee": 112,
+      "ankle": 10,
+      "thigh_f": 18,
+      "knee_f": 104,
+      "ankle_f": 36,
+      "shoulder": 10,
+      "elbow": -20,
+      "wrist": 40,
+      "shoulder_f": -64,
+      "elbow_f": -96
+     }
+    },
+    {
+     "t": 0.5,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 42,
+      "torso": 12,
+      "neck": 12,
+      "thigh": -72,
+      "knee": 112,
+      "ankle": 10,
+      "thigh_f": 18,
+      "knee_f": 104,
+      "ankle_f": 36,
+      "shoulder": 10,
+      "elbow": -20,
+      "wrist": 40,
+      "shoulder_f": -64,
+      "elbow_f": -96
+     }
+    },
+    {
+     "t": 1.0,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 46,
+      "torso": 16,
+      "neck": 18,
+      "thigh": -72,
+      "knee": 112,
+      "ankle": 10,
+      "thigh_f": 18,
+      "knee_f": 104,
+      "ankle_f": 36,
+      "shoulder": 10,
+      "elbow": -20,
+      "wrist": 40,
+      "shoulder_f": -64,
+      "elbow_f": -96
+     }
+    }
+   ]
+  },
+  "death": {
+   "fps": 12,
+   "loop": false,
+   "progress": false,
+   "length": 1.1,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "out",
+     "pose": {
+      "hips_y": 6,
+      "hips_x": -12,
+      "torso": -22,
+      "neck": -14,
+      "thigh": -14,
+      "knee": 18,
+      "thigh_f": 10,
+      "knee_f": 22,
+      "shoulder": 44,
+      "elbow": -20,
+      "wrist": 10,
+      "shoulder_f": 52,
+      "elbow_f": -24
+     }
+    },
+    {
+     "t": 0.25,
+     "ease": "in",
+     "pose": {
+      "hips_y": 30,
+      "hips_x": -12,
+      "torso": -30,
+      "neck": -24,
+      "thigh": -14,
+      "knee": 40,
+      "thigh_f": 10,
+      "knee_f": 40,
+      "shoulder": 44,
+      "elbow": -20,
+      "wrist": 10,
+      "shoulder_f": 52,
+      "elbow_f": -24
+     }
+    },
+    {
+     "t": 0.55,
+     "ease": "out",
+     "pose": {
+      "hips_y": 150,
+      "torso": 30,
+      "neck": 26,
+      "thigh": -86,
+      "knee": 150,
+      "thigh_f": -70,
+      "knee_f": 146,
+      "ankle_f": 30,
+      "shoulder": 30,
+      "elbow": -10,
+      "wrist": 30,
+      "shoulder_f": 20,
+      "elbow_f": -10
+     }
+    },
+    {
+     "t": 0.75,
+     "ease": "step",
+     "pose": {
+      "hips_y": 150,
+      "torso": 30,
+      "neck": 26,
+      "thigh": -86,
+      "knee": 150,
+      "thigh_f": -70,
+      "knee_f": 146,
+      "ankle_f": 30,
+      "shoulder": 30,
+      "elbow": -10,
+      "wrist": 30,
+      "shoulder_f": 20,
+      "elbow_f": -10
+     }
+    },
+    {
+     "t": 1.1,
+     "ease": "in",
+     "pose": {
+      "root_rot": -84,
+      "root_y": -40,
+      "hips_y": 30,
+      "torso": -6,
+      "neck": -10,
+      "thigh": -10,
+      "knee": 20,
+      "thigh_f": 6,
+      "knee_f": 30,
+      "shoulder": -20,
+      "elbow": 0,
+      "wrist": 0,
+      "shoulder_f": -30,
+      "elbow_f": 0
+     }
+    }
+   ]
+  }
+ }
+}

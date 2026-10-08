@@ -107,7 +107,7 @@ func setup(pos: Vector2) -> void:
 func _ready() -> void:
 	_light = Art.point_light(self, Vector2(0, -10), Color(1.0, 0.93, 0.82), 0.55, 460.0)
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	_rig = CharRig.new()
+	_rig = CutoutRig.new()
 	_rig.height = FIGURE_HEIGHT
 	_rig.position = Vector2(0, HALF.y)
 	_rig.light_dir = DEFAULT_LIGHT_DIR
@@ -360,7 +360,7 @@ func _process(delta: float) -> void:
 			_sfx("passo", lerpf(-6.0, 0.0, _run_amount))
 
 	_update_spin(delta)
-	_rig.set_target(_pose(running))
+	_rig.select_state(self, running)
 	_rig.facing = facing
 	_rig.flash = _flash
 	# Lampeggia mentre è invulnerabile dopo un colpo, come in Hollow Knight.
@@ -387,30 +387,6 @@ func _process(delta: float) -> void:
 		_trauma = maxf(0.0, _trauma - 1.7 * delta)
 	queue_redraw()
 	_front.queue_redraw()
-
-
-## La posa obiettivo del momento; il rig la raggiunge sfumando (mai salti da una posa all'altra).
-func _pose(running: bool) -> Dictionary:
-	var pose: Dictionary
-	if dead:
-		pose = CharRig.pose_dead()
-	elif dashing:
-		pose = CharRig.pose_dash()
-	elif _spin_t >= 0.0:
-		pose = CharRig.pose_double_jump()
-	elif not grounded:
-		pose = CharRig.pose_air(move_vel.y)
-	elif _skid_t > 0.0:
-		pose = CharRig.pose_skid()
-	elif running:
-		pose = CharRig.pose_run(_run, _run_amount)
-	else:
-		pose = CharRig.pose_idle(_t)
-	if attacking > 0.0 and not dead:
-		var k := 1.0 - attacking / float(_cfg.attack_time)
-		pose.merge(CharRig.pose_slash_down(k) if attack_down else CharRig.pose_slash(k, slash_side), true)
-	pose["squash"] = float(pose.get("squash", 0.0)) + _squash
-	return pose
 
 
 ## Capriola del doppio salto: un giro (o quanti ne dice il tuning) con partenza e arrivo dolci;
