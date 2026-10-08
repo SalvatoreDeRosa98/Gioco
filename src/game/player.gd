@@ -12,6 +12,15 @@ const FIGURE_HEIGHT := 84.0
 const LEDGE_LAYER := 4
 ## Colore della sciarpa (rosso dipinto): serve alle scie dello scatto e al fendente.
 const SCARF_COLOR := Color("#e8483f")
+## Scia dell'affondo (assets/art/fx/affondo, disegnata a mano): punta davanti al petto, lunghezza in unità.
+const THRUST_TRAIL: Array[Texture2D] = [
+	preload("res://assets/art/fx/affondo/scia_1.png"), preload("res://assets/art/fx/affondo/scia_2.png"),
+	preload("res://assets/art/fx/affondo/scia_3.png"), preload("res://assets/art/fx/affondo/scia_4.png"),
+	preload("res://assets/art/fx/affondo/scia_5.png"), preload("res://assets/art/fx/affondo/scia_6.png")]
+const THRUST_TIP := Vector2(84.0, -43.0)
+## Parte della finestra del colpo in cui la lama è ancora in carica: lì la scia non c'è.
+const THRUST_TRAIL_START := 0.14
+const THRUST_TRAIL_LENGTH := 74.0
 ## Da dove arriva la luce se il tema dell'area non lo dice (in alto a sinistra, come nei dipinti).
 const DEFAULT_LIGHT_DIR := Vector2(-0.55, -0.83)
 ## Quanto la tinta dell'area colora Ferruccio.
@@ -448,6 +457,14 @@ func _draw_slash() -> void:
 	_front.draw_set_transform(Vector2(0, HALF.y), 0.0, Vector2(facing, 1.0))
 	if attack_down:
 		Art.crescent(_front, Vector2(0, -6), 38.0, 20.0, 0.18 * PI, 0.82 * PI, inner, outer)
+	elif slash_side > 0.0:
+		# Affondo: scia disegnata a mano (6 fotogrammi), solo a lama tesa; la punta segue la lama.
+		if atk < THRUST_TRAIL_START:
+			return
+		var u := (atk - THRUST_TRAIL_START) / (1.0 - THRUST_TRAIL_START)
+		var tex: Texture2D = THRUST_TRAIL[mini(int(u * THRUST_TRAIL.size()), THRUST_TRAIL.size() - 1)]
+		var size := tex.get_size() * (THRUST_TRAIL_LENGTH / tex.get_size().x)
+		_front.draw_texture_rect(tex, Rect2(Vector2(THRUST_TIP.x - size.x, THRUST_TIP.y - size.y * 0.5), size), false, Color(1, 1, 1, clampf(k * 1.6, 0.0, 1.0)))
 	else:
 		var from := -1.35 * slash_side
 		var to := lerpf(from, 1.15 * slash_side, ease(atk, 0.35))

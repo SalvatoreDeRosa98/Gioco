@@ -67,17 +67,27 @@ TUCK = {"hips_y": -40, "torso": 26, "neck": 10, "thigh": -86, "knee": 128, "ankl
         "ankle_f": 20, "shoulder": -46, "elbow": -70, "wrist": -40, "shoulder_f": -40, "elbow_f": -80}
 
 # ---------------------------------------------------------------- Fendenti (guidati dall'avanzamento)
-SLASH_A = [  # dall'alto in basso, con passo d'affondo
-    (0.00, {**GUARD, "torso": -6}, "out"),
-    (0.20, {"hips_y": 10, "torso": -16, "neck": -6, "thigh": -10, "knee": 20, "thigh_f": 18, "knee_f": 22,
-            "shoulder": 158, "elbow": -34, "wrist": -70, "shoulder_f": -40, "elbow_f": -40}, "step"),
-    (0.28, {"hips_y": 10, "torso": -16, "neck": -6, "thigh": -10, "knee": 20, "thigh_f": 18, "knee_f": 22,
-            "shoulder": 158, "elbow": -34, "wrist": -70, "shoulder_f": -40, "elbow_f": -40}, "in"),
-    (0.40, {"hips_y": 14, "hips_x": 26, "torso": 24, "neck": 6, "thigh": -42, "knee": 22, "ankle": -10, "thigh_f": 30,
-            "knee_f": 26, "ankle_f": 16, "shoulder": -82, "elbow": -4, "wrist": -24, "shoulder_f": 46, "elbow_f": -16}, "out"),
-    (0.62, {"hips_y": 16, "hips_x": 30, "torso": 28, "neck": 8, "thigh": -44, "knee": 24, "ankle": -10, "thigh_f": 32,
-            "knee_f": 28, "ankle_f": 16, "shoulder": -26, "elbow": 2, "wrist": 34, "shoulder_f": 50, "elbow_f": -12}, "inout"),
-    (1.00, {**GUARD, "hips_y": 6, "hips_x": 10, "torso": 10, "thigh": -18, "knee": 14, "thigh_f": 16, "knee_f": 16}, "inout"),
+# Affondo: ricalcato sul foglio di animazione disegnato (production/art/materiale-utente/).
+# Angolo della lama nel mondo = 33.6 (riposo) + torso + spalla + gomito + polso: 0 = orizzontale.
+LUNGE_LEGS = {"hips_y": 70, "hips_x": 40, "thigh": -75, "knee": 80, "ankle": -5,
+              "thigh_f": 40, "knee_f": 5, "ankle_f": -30}
+SLASH_A = [
+    (0.00, {**GUARD, "torso": 6}, "out"),
+    (0.12, {"hips_y": 30, "hips_x": 10, "torso": 10, "neck": -4, "thigh": -40, "knee": 62, "ankle": -12,
+            "thigh_f": 26, "knee_f": 40, "ankle_f": 4, "shoulder": -40, "elbow": -60, "wrist": 16,
+            "shoulder_f": 40, "elbow_f": -30}, "out"),
+    (0.24, {"hips_y": 44, "hips_x": 16, "torso": 18, "neck": -8, "thigh": -52, "knee": 78, "ankle": -16,
+            "thigh_f": 32, "knee_f": 36, "ankle_f": -6, "shoulder": 10, "elbow": -95, "wrist": 25,
+            "shoulder_f": 34, "elbow_f": -30}, "step"),
+    (0.28, {"hips_y": 44, "hips_x": 16, "torso": 18, "neck": -8, "thigh": -52, "knee": 78, "ankle": -16,
+            "thigh_f": 32, "knee_f": 36, "ankle_f": -6, "shoulder": 10, "elbow": -95, "wrist": 25,
+            "shoulder_f": 34, "elbow_f": -30}, "in"),
+    (0.36, {**LUNGE_LEGS, "torso": 22, "neck": -10, "shoulder": -108, "elbow": 0, "wrist": 52,
+            "shoulder_f": 38, "elbow_f": -24}, "out"),
+    (0.62, {**LUNGE_LEGS, "hips_x": 46, "torso": 24, "neck": -10, "shoulder": -112, "elbow": 4, "wrist": 52,
+            "shoulder_f": 40, "elbow_f": -22}, "inout"),
+    (1.00, {**GUARD, "hips_y": 10, "hips_x": 12, "torso": 10, "thigh": -20, "knee": 18, "thigh_f": 16,
+            "knee_f": 16}, "inout"),
 ]
 SLASH_B = [  # dal basso in alto, avvitato
     (0.00, {**GUARD, "torso": 4}, "out"),
