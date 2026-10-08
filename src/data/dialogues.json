@@ -47,7 +47,7 @@
 		},
 		"gaetano_umano": {
 			"name": "Gaetano",
-			"image": "res://assets/art/characters/gaetano_umano.png",
+			"image": "res://assets/art/characters/gaetano_anziano.png",
 			"height": 122,
 			"art_face": -1,
 			"memory": false
@@ -157,7 +157,9 @@
 					{"who": "tonino", "text": "Uagliò, ma che è 'sta faccia?"},
 					{"text": "Ferruccio indica la propria maschera."},
 					{"who": "tonino", "text": "Ah, è proprio la tua. E che ne sapevo io?"},
-					{"who": "tonino", "text": "Mangia. Magari sotto 'sta maschera ce sta ancora qualcuno.", "item": "mozzarella", "do": "heal"}
+					{"who": "tonino", "text": "Mangia. Magari sotto 'sta maschera ce sta ancora qualcuno.", "item": "mozzarella", "do": "heal"},
+					{"who": "tonino", "text": "La vecchia fucina di tuo padre? Cercala sopra i tetti della piazza, sul cornicione più alto."},
+					{"who": "tonino", "text": "Da lì serve un altro salto. Gaetano diceva che certe strade si sentono coi piedi, mica con gli occhi."}
 				]},
 				{"id": "tonino_rosa", "once": true, "when": {"cleared": true, "tonino_memory": ""}, "lines": [
 					{"text": "Dall'ultimo gatto d'ombra è salita un'anima. Tra le dita di Ferruccio è ancora tiepida."},
@@ -256,6 +258,11 @@
 				{"who": "nunziatina", "text": "Quando il giglio si addormenta, la luna ascolta e non si lamenta."}
 			]},
 			"dialogue": [
+				{"id": "assunta_fucina", "once": true, "lines": [
+					{"who": "assunta", "text": "Sopra l'ultimo cornicione della piazza c'è un gradino che non si vede. Nunziatina giura di averlo toccato."},
+					{"who": "nunziatina", "text": "Due salti! Poi i piedi si fermano nell'aria. Da lì devi cercare il passaggio verso l'alto."},
+					{"who": "assunta", "text": "Se senti odore di carbone, sei vicino alla fucina. Non aver paura del silenzio."}
+				]},
 				{"id": "assunta_luna", "cycle": [
 					[
 						{"who": "assunta", "text": "Canta, Nunziatì. Quella della luna."},

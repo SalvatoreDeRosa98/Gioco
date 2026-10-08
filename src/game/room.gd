@@ -140,7 +140,7 @@ const ROOMS := [
 		"theme": "belvedere", "size": Vector2(1280, 1080), "floor": 980.0,
 		"blocks": [], "ledges": [], "enemies": [],
 		"npcs": [{"id": "fantasma_umano", "pos": Vector2(790, 980)}],
-		"decor": [{"kind": "torch", "pos": Vector2(1060, 980)}],
+		"decor": [],
 	},
 	{
 		"name": "Caserta dopo il Velo", "subtitle": "Le conseguenze restano",

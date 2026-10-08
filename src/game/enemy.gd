@@ -38,10 +38,12 @@ const VESPA_SCALE := 0.0755
 const STATUA_TEX := preload("res://assets/art/enemies/statua.png")
 const STATUA_FEET := Vector2(165, 1010)
 const STATUA_SCALE := 0.103
-const CUSTODE_TEX := preload("res://assets/art/bosses/custode.png")
-const CUSTODE_FEET := Vector2(360, 1010)
-const CUSTODE_LILY := Vector2(420, 340)
-const CUSTODE_SCALE := 0.176
+const CUSTODE_TEX := preload("res://assets/art/bosses/custode_corpo.png")
+const CUSTODE_SWORD := preload("res://assets/art/bosses/custode_spada.png")
+const CUSTODE_FEET := Vector2(610, 1530)
+const CUSTODE_LILY := Vector2(680, 520)
+const CUSTODE_SCALE := 0.116
+const CUSTODE_HAND := Vector2(22, -8)
 ## Ritmo del passo del Custode (radianti/s): ogni mezzo periodo un piede tocca terra.
 const CUSTODE_STEP_RATE := 3.5
 ## Mensole attraversabili (vedi player.gd): i gatti ci camminano sopra, le vespe le attraversano.
@@ -101,6 +103,8 @@ var _state_t := 1.5
 var _state_len := 0.0
 var _airborne := false
 var _step_s := 0.0
+var _sword_hit := false
+var _boss_combo := 0
 ## Spinta dei colpi per chi non ha uno stato di stordimento (statua, Custode).
 var _knock_v := Vector2.ZERO
 # Gatto
@@ -835,19 +839,48 @@ func _ai_custode(delta: float) -> void:
 				_sfx("custode_passo")
 			_step_s = step
 			if _state_t <= 0.0:
-				if randf() < 0.5:
+				if target and absf(target.position.x - position.x) < _f("sword_trigger_range") and _boss_combo % 3 != 2:
+					_state = "sword_windup"
+					_state_t = _f("sword_windup")
+				elif randf() < 0.5:
 					_state = "crouch"
-					_state_t = 0.35
+					_state_t = _f("leap_windup")
 				else:
 					_state = "burst"
-					_state_t = 1.0
+					_state_t = _f("burst_windup")
+				_boss_combo += 1
+		"sword_windup":
+			velocity.x = 0
+			anim = "sword_windup"
+			if _state_t <= 0:
+				_state = "sword_swing"
+				_state_t = _f("sword_swing")
+				_sword_hit = false
+				_sfx("fendente")
+		"sword_swing":
+			velocity.x = 0
+			anim = "sword_swing"
+			var origin := global_position + Vector2(facing * CUSTODE_HAND.x, CUSTODE_HAND.y)
+			var angle := sword_angle()
+			var tip := origin + Vector2(facing * cos(angle), sin(angle)) * _f("sword_reach")
+			if not _sword_hit:
+				_sword_hit = world.boss_sword_hit(origin, tip, global_position.x)
+			if _state_t <= 0:
+				_state = "sword_recovery"
+				_state_t = _f("sword_recovery")
+		"sword_recovery":
+			velocity.x = 0
+			anim = "sword_recovery"
+			if _state_t <= 0:
+				_state = "walk"
+				_state_t = 1.2
 		"crouch":
 			velocity.x = 0.0
 			anim = "crouch"
 			if _state_t <= 0.0:
 				_state = "leap"
 				_airborne = false
-				velocity = Vector2(facing * 260.0, -680.0)
+				velocity = Vector2(facing * _f("leap_speed"), _f("leap_velocity"))
 		"leap":
 			anim = "leap"
 			if not is_on_floor():
@@ -862,13 +895,24 @@ func _ai_custode(delta: float) -> void:
 			velocity.x = 0.0
 			anim = "burst"
 			if _state_t <= 0.0:
-				world.enemy_burst(global_position + Vector2(0, -40.0), 10)
+				world.enemy_burst(global_position + Vector2(0, -40.0), int(_f("burst_count")))
 				_sfx("custode_raffica")
 				_state = "walk"
 				_state_t = 2.2
 
 
 # ---------------------------------------------------------------- Colpi ricevuti
+
+## L'angolo visivo coincide con quello usato dalla collisione del fendente.
+func sword_angle() -> float:
+	match _state:
+		"sword_windup":
+			return lerpf(0.65, -1.3, clampf(1 - _state_t / _f("sword_windup"), 0, 1))
+		"sword_swing":
+			return lerpf(-1.3, 1.15, clampf(1 - _state_t / _f("sword_swing"), 0, 1))
+		"sword_recovery":
+			return lerpf(1.15, 0.65, clampf(1 - _state_t / _f("sword_recovery"), 0, 1))
+	return 0.65
 
 ## Colpo ricevuto. "push" è la direzione del colpo (dal giocatore verso il nemico): i nemici
 ## leggeri vengono spinti e storditi un attimo, statua e Custode quasi non si muovono.
@@ -1218,6 +1262,10 @@ func _draw_custode() -> void:
 	sq *= Vector2(_pose[P.SX], _pose[P.SY])
 	var base := _sprite_xf(Vector2(0, half.y + bob), CUSTODE_FEET, CUSTODE_SCALE, tilt + _pose[P.TILT] * 0.3, sq)
 	_piece(base, CUSTODE_TEX, Vector2.ZERO)
+	var sword_size := CUSTODE_SWORD.get_size() * (float(_cfg.sword_reach) / (CUSTODE_SWORD.get_width() * 0.84))
+	draw_set_transform(Vector2(facing * CUSTODE_HAND.x, CUSTODE_HAND.y), facing * sword_angle(), Vector2(facing, 1))
+	draw_texture_rect(CUSTODE_SWORD, Rect2(Vector2(-sword_size.x * 0.16, -sword_size.y * 0.5), sword_size), false)
+	draw_set_transform(Vector2.ZERO)
 
 
 ## Aloni e luci che seguono l'immagine (aggiornati ogni frame).

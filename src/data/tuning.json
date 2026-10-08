@@ -73,7 +73,7 @@
 			"knockback": 340, "hitstun": 0.32
 		},
 		"statua": {"hp": 6, "speed": 0, "damage": 1, "coins": 4, "fire_every": 2.2, "bullet_speed": 330, "knockback": 0, "hitstun": 0},
-		"custode": {"hp": 55, "speed": 120, "damage": 2, "coins": 60, "knockback": 40, "hitstun": 0}
+		"custode": {"hp": 36, "speed": 85, "damage": 1, "coins": 60, "knockback": 40, "hitstun": 0, "sword_trigger_range": 180, "sword_reach": 110, "sword_windup": 0.65, "sword_swing": 0.34, "sword_recovery": 1.0, "burst_count": 6, "burst_speed": 210, "burst_windup": 1.25, "leap_windup": 0.6, "leap_speed": 200, "leap_velocity": -540, "shockwave_speed": 300}
 	},
 	"shop": {
 		"heal": {"name": "Mozzarella", "price": 8, "description": "Recupera una maschera. Solo se sei ferito."},

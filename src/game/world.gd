@@ -165,6 +165,7 @@ func _process(delta: float) -> void:
 	_update_talk(delta)
 	_update_stations()
 	_update_branch()
+	_update_forge_exit()
 	var cam := get_viewport().get_camera_2d()
 	var center: Vector2 = cam.get_screen_center_position() if cam else room.get("size", Vector2(1280, 720)) * 0.5
 	_backdrop.update_camera(center)
@@ -270,6 +271,7 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 		_forge_backdrop.z_index = 1
 		add_child(_forge_backdrop)
 	_terrain.build(room, th)
+	_terrain.visible = idx != Room.SECRET_ROOM
 	_terrain.set_doors(_left_open(), _right_open())
 	_build_walls()
 	_build_decor(th)
@@ -311,7 +313,9 @@ func _left_open() -> bool:
 
 
 func _right_open() -> bool:
-	# Le aree ordinarie si esplorano liberamente; il Custode resta l'ultimo incontro.
+	# Entrambe le decisioni sul registro completano il ricordo del padre.
+	if room_index == Room.MAIN_COUNT - 2:
+		return story.get_var("father_registry") in ["conservato", "bruciato"]
 	return room_index < Room.MAIN_COUNT - 1
 
 
@@ -391,11 +395,21 @@ func _check_doors() -> void:
 		if room_index == Room.EPILOGUE_ROOM:
 			_go(0, true)
 		elif room_index == Room.SECRET_ROOM:
-			_go(0, true)
-			var point := _secret_return if _secret_return != Vector2.ZERO else Room.FIRST_SECRET_STEP.get_center() - Vector2(0, PlayerScript.HALF.y + 7)
-			player.teleport(point)
+			_leave_forge()
 		else:
 			_go(room_index - 1, false)
+
+
+## L'uscita dipinta è a sinistra: W/E vicino alla porta, oppure attraversa il bordo.
+func _update_forge_exit() -> void:
+	if room_index == Room.SECRET_ROOM and player.position.x < 180 and player.is_on_floor() and not player.dead and not is_talking() and _talk_lock <= 0 and Input.is_action_just_pressed("interact"):
+		_leave_forge()
+
+
+func _leave_forge() -> void:
+	_go(0, true)
+	var point := _secret_return if _secret_return != Vector2.ZERO else Room.FIRST_SECRET_STEP.get_center() - Vector2(0, PlayerScript.HALF.y + 7)
+	player.teleport(point)
 
 
 func _check_cleared() -> void:
@@ -589,6 +603,8 @@ func _check_contacts() -> void:
 			return
 		if e.is_queued_for_deletion():
 			continue
+		if e.kind == "custode":
+			continue
 		if not _overlap(e.global_position, e.half, player.global_position, PlayerScript.HALF):
 			continue
 		if e.touch_cd > 0.0:
@@ -658,14 +674,27 @@ func enemy_fire(pos: Vector2, dir: Vector2, speed: float, col: Color = Color(1.0
 func enemy_burst(pos: Vector2, count: int) -> void:
 	_fx("burst", pos, Color(1.0, 0.7, 0.3), 0.0)
 	for i in count:
-		enemy_fire(pos, Vector2.RIGHT.rotated(TAU * float(i) / float(count)), 260.0)
+		enemy_fire(pos, Vector2.RIGHT.rotated(TAU * float(i) / float(count)), float(Tuning.data.enemies.custode.burst_speed))
 
 
 ## Usato dal boss all'atterraggio: onda d'urto a terra in entrambe le direzioni.
 func enemy_shockwave(pos: Vector2) -> void:
 	_fx("shock", pos, Color(1.0, 0.8, 0.5), 0.0)
-	enemy_fire(pos + Vector2(0, -8), Vector2.LEFT, 400.0)
-	enemy_fire(pos + Vector2(0, -8), Vector2.RIGHT, 400.0)
+	enemy_fire(pos + Vector2(0, -8), Vector2.LEFT, float(Tuning.data.enemies.custode.shockwave_speed))
+	enemy_fire(pos + Vector2(0, -8), Vector2.RIGHT, float(Tuning.data.enemies.custode.shockwave_speed))
+
+
+## Il fendente ferisce soltanto dove passa la lama, una volta per attacco.
+func boss_sword_hit(origin: Vector2, tip: Vector2, from_x: float) -> bool:
+	if player.dead or game_over or is_talking():
+		return false
+	var blade := tip - origin
+	var along := clampf((player.global_position - origin).dot(blade) / maxf(1, blade.length_squared()), 0, 1)
+	var closest := origin + blade * along
+	if closest.distance_to(player.global_position) > PlayerScript.HALF.y + 8:
+		return false
+	_hurt_player(1, from_x)
+	return true
 
 
 ## Muri, blocchi e grate chiuse (i proiettili si fermano qui).
@@ -1159,6 +1188,9 @@ func _refresh_choice_effects() -> void:
 		return
 	_choice_signature = signature
 	apply_upgrades()
+	if room_index == Room.MAIN_COUNT - 2:
+		_build_walls()
+		_terrain.set_doors(_left_open(), _right_open())
 	if room_index == 0 and story.get_var("tonino_memory") == "negato":
 		var treasure := Vector2(1790, 720)
 		var present := get_tree().get_nodes_in_group("pickups").any(func(p: Node) -> bool: return not p.is_queued_for_deletion() and p.item == "tonino_treasure")
