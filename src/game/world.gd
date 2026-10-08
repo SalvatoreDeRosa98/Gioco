@@ -32,6 +32,12 @@ var _saved_state: Dictionary = {}
 var resume_save := true
 var _secret_return := Vector2.ZERO
 var _forge_backdrop: Node2D
+var upgrades: Dictionary = {}
+var equipped: Array = []
+var choice_uses: Dictionary = {}
+var _shop: CanvasLayer
+var _parry_attack := false
+var _choice_signature := ""
 
 var room: Dictionary = {}
 var room_index := 0
@@ -100,6 +106,9 @@ func _ready() -> void:
 	add_child(fx_root)
 
 	_build_overlays()
+	_shop = preload("res://game/shop.gd").new()
+	_shop.world = self
+	add_child(_shop)
 	_dialogue = DialogueBoxScript.new()
 	add_child(_dialogue)
 	_dialogue.closed.connect(_on_dialogue_closed)
@@ -132,12 +141,25 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if _shop != null and _shop.opened:
+		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("shop"):
+			_shop.hide_shop()
+			get_viewport().set_input_as_handled()
+		return
+	if game_over and victory and event.is_action_pressed("interact"):
+		_begin_epilogue()
+		return
+	if room_index == Room.SECRET_ROOM and not is_talking() and not player.dead and _talk_lock <= 0.0 and event.is_action_pressed("shop"):
+		_shop.show_shop()
+		return
 	if event.is_action_pressed("ui_cancel"):
 		Engine.time_scale = 1.0
 		exit_requested.emit()
 
 
 func _process(delta: float) -> void:
+	if _shop != null and _shop.opened:
+		return
 	if _demo:
 		_demo_input(delta)
 	_update_talk(delta)
@@ -149,8 +171,9 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if game_over or room.is_empty() or is_talking():
+	if game_over or room.is_empty() or is_talking() or (_shop != null and _shop.opened):
 		return
+	_refresh_choice_effects()
 	_room_t += delta
 	_check_contacts()
 	_check_bullets()
@@ -231,14 +254,17 @@ func _apply_grade(th: Dictionary) -> void:
 
 func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	room_index = idx
-	room = Room.build(idx)
+	room = Room.build(idx, story.vars)
+	_choice_signature = ""
 	room_cleared = cleared_now
 	var th := Themes.get_theme(room["theme"])
 	_backdrop.build(room["theme"], room["size"], room["floor"], Room.CAMERA_ZOOM)
+	_backdrop.set_veil_visible(story.get_var("violante_fate") != "uccisa")
 	_backdrop.visible = idx != Room.SECRET_ROOM
 	if is_instance_valid(_forge_backdrop):
 		remove_child(_forge_backdrop)
 		_forge_backdrop.queue_free()
+		_forge_backdrop = null
 	if idx == Room.SECRET_ROOM:
 		_forge_backdrop = preload("res://game/forge_backdrop.gd").new()
 		_forge_backdrop.z_index = 1
@@ -265,6 +291,7 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	player.teleport(spawn)
 	player.apply_room(room["size"])
 	player.apply_theme(th)
+	apply_upgrades()
 
 	_room_t = 0.0
 	_death_t = -1.0
@@ -361,7 +388,9 @@ func _check_doors() -> void:
 	if _right_open() and pos.x >= size.x - Room.EDGE - 10.0:
 		_go(room_index + 1, true)
 	elif _left_open() and pos.x <= Room.EDGE + 10.0:
-		if room_index == Room.SECRET_ROOM:
+		if room_index == Room.EPILOGUE_ROOM:
+			_go(0, true)
+		elif room_index == Room.SECRET_ROOM:
 			_go(0, true)
 			var point := _secret_return if _secret_return != Vector2.ZERO else Room.FIRST_SECRET_STEP.get_center() - Vector2(0, PlayerScript.HALF.y + 7)
 			player.teleport(point)
@@ -454,11 +483,15 @@ func _do_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
 	var center := pos + Vector2(0, 42) if down else pos + Vector2(facing * 46.0, -6.0)
 	var half := Vector2(30, 32) if down else Vector2(40, 30)
 	var bounce := false
+	var damage := 2 if _parry_attack else 1
+	_parry_attack = false
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if e.is_queued_for_deletion():
 			continue
 		if _overlap(center, half, e.global_position, e.half):
-			_hit_enemy(e, 1, Color(1.0, 0.95, 0.85), facing, down)
+			if story.get_var("father_registry") == "conservato" and e.kind == "statua" and e.interrupt_charge():
+				_hud.toast("La carica della statua è stata interrotta")
+			_hit_enemy(e, damage, Color(1.0, 0.95, 0.85), facing, down)
 			if down and air:
 				bounce = true
 	if bounce:
@@ -469,6 +502,7 @@ func _hurt_player(dmg: int, from_x: float) -> void:
 	if game_over or player.dead or player.iframes > 0.0:
 		return
 	if player.try_parry(from_x):
+		_parry_attack = story.get_var("father_registry") == "bruciato"
 		_fx("shock", player.global_position, Color(0.65, 0.9, 1.0), player.facing)
 		_hud.toast("Parata perfetta! Scatto e fendente ricaricati")
 		return
@@ -498,7 +532,7 @@ func boss() -> Node:
 # ---------------------------------------------------------------- Nemici, proiettili, raccolta
 
 func _spawn_enemy(kind: String, pos: Vector2) -> void:
-	var e = EnemyScript.new()
+	var e = preload("res://game/duelist.gd").new() if kind == "duellante" else EnemyScript.new()
 	e.set_meta("save_id", _enemy_id(kind, pos))
 	e.setup({"type": kind, "pos": pos}, self)
 	_entities.add_child(e)
@@ -524,6 +558,14 @@ func _hit_enemy(e: Node, dmg: int, col: Color, dir: float, down: bool = false) -
 
 func _on_enemy_killed(e: Node) -> void:
 	defeated[str(e.get_meta("save_id"))] = true
+	if e.has_meta("taddeo_duel"):
+		upgrades["guard"] = true
+		story.seen["taddeo_duel_won"] = 1
+		_hud.toast("Duello vinto: Fibbia della guardia ottenuta. Equipaggiala nella fucina.")
+		for npc in _npcs.get_children():
+			if npc.key == "taddeo_corso":
+				npc.visible = true
+				npc._cfg["talk"] = true
 	if e.kind == "statua" and str(e.get_meta("save_id")) == Room.save_station_id(room_index):
 		var floor_y := float(room["floor"])
 		for surface in room["ledges"] + room["blocks"]:
@@ -535,7 +577,8 @@ func _on_enemy_killed(e: Node) -> void:
 		_hud.toast("Un'incudine è apparsa: avvicinati e premi W per salvare")
 	if e.kind == "custode":
 		_boss_fall = e.global_position
-	_spawn_pickup(e.global_position, "centesimi", int(e.coins))
+	if int(e.coins) > 0:
+		_spawn_pickup(e.global_position, "centesimi", int(e.coins))
 	if e.kind != "custode" and _rng.randf() < float(Tuning.data.rewards.heal_chance):
 		_spawn_pickup(e.global_position + Vector2(0, -30), "mozzarella", 1)
 
@@ -580,7 +623,11 @@ func _check_pickups() -> void:
 
 
 func _collect(pk: Node) -> void:
-	if pk.item == "secret":
+	if pk.item == "tonino_treasure":
+		defeated[_enemy_id("tonino_treasure", pk.global_position)] = true
+		coins += int(pk.value)
+		_hud.toast("Il tesoro indicato da Tonino: +%d centesimi" % pk.value)
+	elif pk.item == "secret":
 		defeated[_enemy_id("secret", pk.global_position)] = true
 		coins += int(pk.value)
 		player.heal(1)
@@ -684,6 +731,8 @@ func _update_branch() -> void:
 		return
 	if int(room.get("branch", -1)) < 0 or not player.is_on_floor():
 		return
+	if room_index in [1, 3] and story.get_var("taddeo_trust") != "perdonato":
+		return
 	var platform: Rect2 = room["branch_platform"]
 	var feet := player.global_position + Vector2(0, PlayerScript.HALF.y)
 	if feet.x >= platform.position.x and feet.x <= platform.end.x and absf(feet.y - platform.position.y) <= 6.0 and Input.is_action_just_pressed("interact"):
@@ -694,22 +743,126 @@ func _update_branch() -> void:
 
 func _save_at(pos: Vector2) -> void:
 	var new_checkpoint := {"room": room_index, "x": pos.x, "y": pos.y - PlayerScript.HALF.y}
-	var state := {"version": 1, "checkpoint": new_checkpoint, "coins": coins, "cleared": cleared, "defeated": defeated, "stations": stations, "vars": story.vars, "seen": story.seen}
-	var file := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
-	if file == null:
+	var state := {"version": 1, "checkpoint": new_checkpoint, "coins": coins, "cleared": cleared, "defeated": defeated, "stations": stations, "vars": story.vars, "seen": story.seen, "upgrades": upgrades, "equipped": equipped, "choice_uses": {}}
+	if not _write_state(state):
 		_hud.toast("Salvataggio non riuscito")
 		return
+	checkpoint = new_checkpoint
+	_saved_state = state.duplicate(true)
+	choice_uses.clear()
+	player.heal(player.max_hp)
+	_hud.toast("Partita salvata · Vita ripristinata")
+
+
+## Scrittura atomica condivisa: un acquisto fallito non consuma denaro o materiali.
+func _write_state(state: Dictionary) -> bool:
+	var file := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
+	if file == null:
+		return false
 	file.store_string(JSON.stringify(state))
 	file.flush()
 	var error := file.get_error()
 	file.close()
 	if error != OK or DirAccess.rename_absolute(save_path + ".tmp", save_path) != OK:
-		_hud.toast("Salvataggio non riuscito")
-		return
-	checkpoint = new_checkpoint
+		return false
+	return true
+
+
+## Lo shop registra spesa e proprietà, mantenendo l'ultimo punto di ripartenza.
+func _commit_purchase(price: int, campaign_end: bool = false) -> bool:
+	var state := _saved_state.duplicate(true)
+	if state.is_empty():
+		var initial_story := Story.new()
+		state = {"version": 1, "checkpoint": {"room": 0, "x": 110, "y": 950}, "coins": 0, "cleared": {}, "defeated": {}, "stations": {}, "vars": initial_story.vars, "seen": {}}
+	state["coins"] = maxi(0, int(state["coins"]) - price)
+	state["upgrades"] = upgrades.duplicate(true)
+	state["equipped"] = equipped.duplicate()
+	if campaign_end:
+		state["vars"] = story.vars.duplicate(true)
+		state["seen"] = story.seen.duplicate(true)
+		state["cleared"] = cleared.duplicate(true)
+		state["cleared"][4] = true
+		state["defeated"] = defeated.duplicate(true)
+		state["stations"] = stations.duplicate(true)
+		state["coins"] = coins
+	if not _write_state(state):
+		return false
 	_saved_state = state.duplicate(true)
-	player.heal(player.max_hp)
-	_hud.toast("Partita salvata · Vita ripristinata")
+	checkpoint = state["checkpoint"].duplicate(true)
+	return true
+
+
+## Spazi di base, tasca acquistata e cucitura di Agnese.
+func accessory_slots() -> int:
+	return 1 + int(upgrades.has("pocket")) + int(story.get_var("agnese_memory") == "risvegliata")
+
+
+## Ricostruisce i valori dalla configurazione, evitando bonus cumulativi fra stanze.
+func apply_upgrades() -> void:
+	if player == null:
+		return
+	player._cfg = Tuning.data.player.duplicate(true)
+	player.max_hp = int(player._cfg.max_hp) + int(upgrades.has("mask"))
+	player.hp = mini(player.hp, player.max_hp)
+	while equipped.size() > accessory_slots():
+		equipped.pop_back()
+	if equipped.has("boots"):
+		player._cfg.dash_cooldown = float(Tuning.data.progression.boots_dash_cooldown)
+	if equipped.has("grip"):
+		player._cfg.attack_cooldown *= float(Tuning.data.progression.grip_attack_multiplier)
+	if equipped.has("guard"):
+		player._cfg.parry_window += float(Tuning.data.progression.guard_parry_bonus)
+
+
+## Acquista solo nella fucina; annulla gli effetti se la registrazione su disco fallisce.
+func buy_item(key: String) -> String:
+	if room_index != Room.SECRET_ROOM or player.dead or not Tuning.data.shop.has(key):
+		return "Acquisto non disponibile"
+	var item: Dictionary = Tuning.data.shop[key]
+	var price := int(item.price)
+	if upgrades.has(key):
+		return "Possiedi già questa lavorazione"
+	if key == "heal" and player.hp >= player.max_hp:
+		return "Hai già tutte le maschere"
+	if coins < price:
+		return "Centesimi insufficienti"
+	var old_hp := player.hp
+	coins -= price
+	if key == "heal":
+		player.heal(1)
+	else:
+		upgrades[key] = true
+		if key in ["boots", "grip"] and equipped.size() < accessory_slots():
+			equipped.append(key)
+		apply_upgrades()
+	if not _commit_purchase(price):
+		coins += price
+		upgrades.erase(key)
+		equipped.erase(key)
+		apply_upgrades()
+		player.hp = old_hp
+		return "Acquisto non riuscito: riprova"
+	if key in ["boots", "grip"] and not equipped.has(key):
+		return "Acquisto completato. Spazi pieni: scegli cosa equipaggiare."
+	return "Acquisto completato: " + str(item.name)
+
+
+## Cambia gli accessori attivi entro il numero di spazi disponibili.
+func toggle_accessory(key: String) -> String:
+	if not upgrades.has(key) or not key in ["boots", "grip", "guard"]:
+		return "Accessorio non disponibile"
+	var previous := equipped.duplicate()
+	if equipped.has(key):
+		equipped.erase(key)
+	elif equipped.size() < accessory_slots():
+		equipped.append(key)
+	else:
+		return "Spazi pieni: rimuovi un accessorio"
+	if not _commit_purchase(0):
+		equipped = previous
+		return "Modifica non riuscita"
+	apply_upgrades()
+	return "Equipaggiamento aggiornato"
 
 
 func _restore_save() -> void:
@@ -726,6 +879,8 @@ func _restore_save() -> void:
 		if not parsed.get(key) is Dictionary:
 			return
 	if not parsed.has("coins"):
+		return
+	if not parsed.get("upgrades", {}) is Dictionary or not parsed.get("equipped", []) is Array or not parsed.get("choice_uses", {}) is Dictionary:
 		return
 	for station in parsed["stations"].values():
 		if not station is Dictionary or not station.has_all(["room", "x", "y"]):
@@ -747,10 +902,17 @@ func _restore_state(state: Dictionary) -> void:
 	stations = state["stations"].duplicate(true)
 	story.vars = state["vars"].duplicate(true)
 	story.seen = state["seen"].duplicate(true)
+	upgrades = state.get("upgrades", {}).duplicate(true)
+	equipped = state.get("equipped", []).duplicate()
+	choice_uses = state.get("choice_uses", {}).duplicate(true)
+	apply_upgrades()
 	var idx := int(checkpoint["room"])
 	player.revive()
 	_load_room(idx, true, bool(cleared.get(idx, false)))
 	player.teleport(Vector2(float(checkpoint["x"]), float(checkpoint["y"])))
+	_parry_attack = false
+	if story.times_seen("campaign_finished") > 0:
+		_begin_epilogue()
 
 
 # ---------------------------------------------------------------- Utilità
@@ -771,8 +933,9 @@ func _fade_in() -> void:
 ## aspetto, comportamento e testi in data/dialogues.json.
 func _build_npcs() -> void:
 	for c in _npcs.get_children():
+		_npcs.remove_child(c)
 		c.queue_free()
-	for d in (Room.ROOMS[room_index] as Dictionary).get("npcs", []):
+	for d in room.get("npcs", (Room.ROOMS[room_index] as Dictionary).get("npcs", [])):
 		var n = NpcScript.new()
 		n.setup(str(d["id"]), d["pos"], self)
 		_npcs.add_child(n)
@@ -785,7 +948,7 @@ func story_ctx() -> Dictionary:
 
 ## Vero mentre il riquadro dei dialoghi è aperto: giocatore e nemici restano fermi.
 func is_talking() -> bool:
-	return _dialogue != null and _dialogue.is_open()
+	return (_dialogue != null and _dialogue.is_open()) or (_shop != null and _shop.opened)
 
 
 ## Sceglie il personaggio più vicino con cui si può parlare (mostra il suo invito)
@@ -850,6 +1013,14 @@ func _freeze_for_talk(on: bool) -> void:
 
 
 func _on_dialogue_closed() -> void:
+	if is_instance_valid(_talk_npc) and _talk_npc.key == "tonino" and story.get_var("tonino_memory") == "restituito" and not choice_uses.has("tonino_heal") and player.hp < player.max_hp:
+		player.heal(1)
+		choice_uses["tonino_heal"] = true
+		if not _saved_state.is_empty():
+			_saved_state["choice_uses"] = choice_uses.duplicate(true)
+			_write_state(_saved_state)
+		_hud.toast("Tonino ti ha preparato una cura. Torna dopo il prossimo salvataggio.")
+	apply_upgrades()
 	if is_instance_valid(_talk_npc):
 		_talk_npc.end_talk()
 	_talk_lock = 0.2
@@ -858,6 +1029,8 @@ func _on_dialogue_closed() -> void:
 ## Effetti chiesti dalle battute (dialogues.json, chiave "do").
 func _on_dialogue_effect(what: String) -> void:
 	match what:
+		"start_duel":
+			_start_taddeo_duel()
 		"heal":
 			player.heal(1)
 			_fx("collect", player.global_position + Vector2(0, -20), Color(1.0, 0.97, 0.9), 0.0)
@@ -955,6 +1128,71 @@ func finish_story(title: String, subtitle: String, quote: String) -> void:
 	victory = true
 	_hud.show_end(true, title, subtitle, quote)
 	Audio.stop_loops()
+	story.seen["campaign_finished"] = 1
+	if not _commit_purchase(0, true):
+		_hud.toast("Non è stato possibile salvare l'epilogo")
+
+
+## Dopo il finale, W apre una città giocabile determinata dalle ultime due scelte.
+func _begin_epilogue() -> void:
+	game_over = false
+	victory = true
+	_hud._end_t = -1.0
+	_talk_npc = null
+	_talk_lock = 0.0
+	if _finale != null:
+		_finale.queue_free()
+		_finale = null
+	_freeze_for_talk(false)
+	_go(Room.EPILOGUE_ROOM, true)
+	_hud.toast("Esplora la città. L'uscita a sinistra torna a Piazza Dante.")
+
+
+## Il velo di Agnese riduce la distanza dalla quale i nemici notano Ferruccio.
+func detection_multiplier() -> float:
+	return float(Tuning.data.progression.veil_detection_multiplier) if story.get_var("agnese_memory") == "sopita" else 1.0
+
+
+func _refresh_choice_effects() -> void:
+	var signature := JSON.stringify(story.vars)
+	if signature == _choice_signature:
+		return
+	_choice_signature = signature
+	apply_upgrades()
+	if room_index == 0 and story.get_var("tonino_memory") == "negato":
+		var treasure := Vector2(1790, 720)
+		var present := get_tree().get_nodes_in_group("pickups").any(func(p: Node) -> bool: return not p.is_queued_for_deletion() and p.item == "tonino_treasure")
+		if not present and not defeated.has(_enemy_id("tonino_treasure", treasure)):
+			_spawn_pickup(treasure, "tonino_treasure", int(Tuning.data.progression.tonino_treasure))
+			for point in [Vector2(1730, 726), Vector2(1790, 650)]:
+				var kind := "gatto" if point.y > 700 else "vespa"
+				_spawn_unique_enemy(kind, point)
+
+
+func _spawn_unique_enemy(kind: String, pos: Vector2) -> void:
+	var id := _enemy_id(kind, pos)
+	if defeated.has(id):
+		return
+	for enemy in get_tree().get_nodes_in_group("enemies"):
+		if not enemy.is_queued_for_deletion() and str(enemy.get_meta("save_id", "")) == id:
+			return
+	_spawn_enemy(kind, pos)
+
+
+func _start_taddeo_duel() -> void:
+	if room_index != 1 or story.get_var("taddeo_trust") != "accusato" or story.times_seen("taddeo_duel_won") > 0:
+		return
+	var point := Vector2(2130, 946)
+	_spawn_unique_enemy("duellante", point)
+	for enemy in get_tree().get_nodes_in_group("enemies"):
+		if not enemy.is_queued_for_deletion() and enemy.kind == "duellante" and str(enemy.get_meta("save_id")) == _enemy_id("duellante", point):
+			enemy.set_meta("taddeo_duel", true)
+			enemy.touch_cd = 1.0
+	for npc in _npcs.get_children():
+		if npc.key == "taddeo_corso":
+			npc.visible = false
+			npc._cfg = npc._cfg.duplicate(true)
+			npc._cfg["talk"] = false
 
 
 ## Solo per test (--boss-defeated, con --room=4): il Custode cade subito e parte il finale.

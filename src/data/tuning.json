@@ -26,7 +26,7 @@
 		"jump_buffer": 0.12,
 		"dash_speed": 640,
 		"dash_time": 0.16,
-		"dash_cooldown": 0.55,
+		"dash_cooldown": 1.0,
 		"attack_time": 0.2,
 		"attack_cooldown": 0.28,
 		"parry_window": 0.18,
@@ -74,6 +74,27 @@
 		},
 		"statua": {"hp": 6, "speed": 0, "damage": 1, "coins": 4, "fire_every": 2.2, "bullet_speed": 330, "knockback": 0, "hitstun": 0},
 		"custode": {"hp": 55, "speed": 120, "damage": 2, "coins": 60, "knockback": 40, "hitstun": 0}
+	},
+	"shop": {
+		"heal": {"name": "Mozzarella", "price": 8, "description": "Recupera una maschera. Solo se sei ferito."},
+		"boots": {"name": "Tempra degli stivali", "price": 25, "description": "Accessorio: ricarica scatto a 0,85 s."},
+		"grip": {"name": "Impugnatura rinforzata", "price": 30, "description": "Accessorio: pausa tra attacchi ridotta del 15%."},
+		"pocket": {"name": "Tasca della sciarpa", "price": 35, "description": "Uno spazio accessori aggiuntivo."},
+		"mask": {"name": "Maschera rinforzata", "price": 50, "description": "Vita massima aumentata di una maschera."}
+	},
+	"progression": {
+		"boots_dash_cooldown": 0.85,
+		"grip_attack_multiplier": 0.85,
+		"veil_detection_multiplier": 0.7,
+		"guard_parry_bonus": 0.04,
+		"statue_interrupt_time": 2.2,
+		"tonino_treasure": 15,
+		"duelist_hp": 8,
+		"duelist_speed": 95,
+		"duelist_attack_cooldown": 1.8,
+		"duelist_windup": 0.55,
+		"duelist_attack_range": 130,
+		"duelist_bullet_speed": 280
 	},
 	"rewards": {
 		"heal_chance": 0.12,

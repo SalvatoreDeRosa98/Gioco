@@ -27,6 +27,7 @@ var dead := false
 var iframes := 0.0
 var parry_window := 0.0
 var parry_cooldown := 0.0
+var _air_dash_used := false
 var world: Node
 
 # Stato di movimento e animazione (il mondo li legge e, nei dialoghi, li azzera).
@@ -80,7 +81,7 @@ func setup(pos: Vector2) -> void:
 	position = pos
 	_prev_pos = pos
 	_cur_pos = pos
-	_cfg = Tuning.data.player
+	_cfg = Tuning.data.player.duplicate(true)
 	max_hp = int(_cfg.max_hp)
 	hp = max_hp
 	_air_jumps = int(_cfg.get("air_jumps", 1))
@@ -186,7 +187,10 @@ func _physics_process(delta: float) -> void:
 	else:
 		_jump_buf = maxf(0.0, _jump_buf - delta)
 
-	if Input.is_action_just_pressed("dash") and _dash_cd <= 0.0 and _dash_t <= 0.0:
+	if is_on_floor():
+		_air_dash_used = false
+	if Input.is_action_just_pressed("dash") and _dash_cd <= 0.0 and _dash_t <= 0.0 and (is_on_floor() or not _air_dash_used):
+		_air_dash_used = true
 		_dash_t = float(_cfg.dash_time)
 		_dash_cd = float(_cfg.dash_cooldown)
 		_spin_t = -1.0
@@ -475,6 +479,7 @@ func revive() -> void:
 	iframes = 0.0
 	parry_window = 0.0
 	parry_cooldown = 0.0
+	_air_dash_used = false
 	_knock_t = 0.0
 	_drop_t = 0.0
 	set_collision_mask_value(LEDGE_LAYER, true)
@@ -486,9 +491,19 @@ func try_parry(from_x: float) -> bool:
 	parry_window = 0.0
 	# Solo una parata riuscita ricarica subito lo scatto e il fendente.
 	_dash_cd = 0.0
+	_air_dash_used = false
 	_attack_cd = 0.0
 	iframes = 0.25
 	return true
+
+
+## Disponibilità reale dello scatto per l'HUD, compreso il limite in aria.
+func dash_status() -> String:
+	if _dash_cd > 0.0:
+		return "C  Scatto %.1f s" % _dash_cd
+	if _air_dash_used and not is_on_floor():
+		return "C  Atterra per scattare"
+	return "C  Scatto pronto"
 
 
 func teleport(pos: Vector2) -> void:

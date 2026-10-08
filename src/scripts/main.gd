@@ -80,6 +80,7 @@ func _ensure_inputs() -> void:
 		"attack": [KEY_X, KEY_J],
 		"dash": [KEY_C, KEY_SHIFT],
 		"parry": [KEY_F, KEY_K],
+		"shop": [KEY_B],
 		# Parlare con i personaggi: W e Freccia su come in Hollow Knight, E per chi preferisce.
 		"interact": [KEY_W, KEY_UP, KEY_E],
 	}
@@ -90,7 +91,7 @@ func _ensure_inputs() -> void:
 			var ev := InputEventKey.new()
 			ev.physical_keycode = k
 			InputMap.action_add_event(action, ev)
-	var pad := {"jump": JOY_BUTTON_A, "attack": JOY_BUTTON_X, "dash": JOY_BUTTON_RIGHT_SHOULDER, "interact": JOY_BUTTON_Y, "parry": JOY_BUTTON_LEFT_SHOULDER}
+	var pad := {"jump": JOY_BUTTON_A, "attack": JOY_BUTTON_X, "dash": JOY_BUTTON_RIGHT_SHOULDER, "interact": JOY_BUTTON_Y, "parry": JOY_BUTTON_LEFT_SHOULDER, "shop": JOY_BUTTON_BACK}
 	for action in pad:
 		var jb := InputEventJoypadButton.new()
 		jb.button_index = pad[action]

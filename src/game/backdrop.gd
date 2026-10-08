@@ -113,6 +113,16 @@ func update_camera(center: Vector2) -> void:
 		_sky_mat.set_shader_parameter("scroll", center / VIEW)
 
 
+## Dopo la caduta del Velo spariscono i fili d'oro, anche tornando nelle aree precedenti.
+func set_veil_visible(enabled: bool) -> void:
+	var pending: Array = get_children()
+	while not pending.is_empty():
+		var node: Node = pending.pop_back()
+		if node.get_script() == ThreadsScript:
+			node.visible = enabled
+		pending.append_array(node.get_children())
+
+
 func _clear() -> void:
 	for l in _layers:
 		(l["node"] as Node).queue_free()

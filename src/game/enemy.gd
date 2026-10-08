@@ -252,7 +252,19 @@ func _physics_process(delta: float) -> void:
 
 
 func _f(key: String) -> float:
-	return float(_cfg[key])
+	var value := float(_cfg[key])
+	if key in ["sight_range", "sight_behind", "notice_radius"] and world:
+		value *= world.detection_multiplier()
+	return value
+
+
+## Il registro conservato rivela come interrompere la carica della statua.
+func interrupt_charge() -> bool:
+	if kind != "statua" or anim != "charge":
+		return false
+	_shoot_cd = float(Tuning.data.progression.statue_interrupt_time)
+	anim = "idle"
+	return true
 
 
 func _rand(key_min: String, key_max: String) -> float:

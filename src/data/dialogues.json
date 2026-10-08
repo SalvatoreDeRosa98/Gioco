@@ -108,6 +108,46 @@
 		"cittadino": {"name": "Un cittadino"}
 	},
 	"npcs": {
+		"cittadino_libero": {
+			"character": "tonino",
+			"face": -1,
+			"turn": "near",
+			"dialogue": [
+				{
+					"id": "caserta_libera",
+					"lines": [
+						{
+							"who": "tonino",
+							"text": "Ricordo Rosa. Ricordo il dolore. E finalmente le strade portano di nuovo da qualche parte."
+						},
+						{
+							"who": "tonino",
+							"text": "Le ombre sono ancora qui. Ma stavolta sappiamo chi siamo."
+						}
+					]
+				}
+			]
+		},
+		"cittadino_velato": {
+			"character": "tonino",
+			"face": -1,
+			"turn": "near",
+			"dialogue": [
+				{
+					"id": "caserta_velata",
+					"lines": [
+						{
+							"who": "tonino",
+							"text": "Che bella giornata, uagliò. Mi pare di averti già visto... o forse no."
+						},
+						{
+							"text": "Sorride. La città è quieta, ma i suoi occhi non ricordano Ferruccio."
+						}
+					]
+				}
+			]
+		},
+
 		"tonino": {
 			"character": "tonino",
 			"face": -1,
@@ -126,16 +166,50 @@
 				], "choice": {
 					"prompt": "Restituirgli il ricordo significa restituirgli anche il lutto.",
 					"options": [
-						{"label": "Restituisci il ricordo", "set": {"tonino_memory": "restituito"}, "lines": [
-							{"who": "tonino", "text": "Rosa..."},
-							{"who": "tonino", "text": "Maronna mia. Erano anni che non dicevo il suo nome."},
-							{"text": "Tonino piange. Ferruccio fa un passo verso di lui."},
-							{"who": "tonino", "text": "Nun fa niente, guagliò. Mi mancava pure questo."}
-						]},
-						{"label": "Lascialo dimenticare", "set": {"tonino_memory": "negato"}, "lines": [
-							{"text": "Ferruccio chiude la mano. La luce si spegne tra le dita."},
-							{"who": "tonino", "text": "Uh, sparito! E bravo: pure il prestigiatore sapete fare."}
-						]}
+						{
+							"label": "Restituisci il ricordo",
+							"set": {
+								"tonino_memory": "restituito"
+							},
+							"lines": [
+								{
+									"who": "tonino",
+									"text": "Rosa..."
+								},
+								{
+									"who": "tonino",
+									"text": "Maronna mia. Erano anni che non dicevo il suo nome."
+								},
+								{
+									"text": "Tonino piange. Ferruccio fa un passo verso di lui."
+								},
+								{
+									"who": "tonino",
+									"text": "Nun fa niente, guagliò. Mi mancava pure questo."
+								},
+								{
+									"text": "Tonino ti preparerà una cura gratuita, una volta tra due salvataggi."
+								}
+							]
+						},
+						{
+							"label": "Lascialo dimenticare",
+							"set": {
+								"tonino_memory": "negato"
+							},
+							"lines": [
+								{
+									"text": "Ferruccio chiude la mano. La luce si spegne tra le dita."
+								},
+								{
+									"who": "tonino",
+									"text": "Uh, sparito! E bravo: pure il prestigiatore sapete fare."
+								},
+								{
+									"text": "Tonino indica un luccichio sopra i portici a destra. Intorno, le ombre si muovono."
+								}
+							]
+						}
 					]
 				}},
 				{"id": "tonino_lettera", "once": true, "when": {"tonino_memory": "restituito"}, "lines": [
@@ -221,6 +295,54 @@
 			"leave": "walk",
 			"when": {"taddeo_trust": "!accusato"},
 			"dialogue": [
+				{
+					"id": "taddeo_duel_won",
+					"when": {
+						"seen": "taddeo_duel_won"
+					},
+					"lines": [
+						{
+							"who": "taddeo",
+							"text": "Hai vinto. Prendi la fibbia. Mi ricorderà che la paura non è una giustificazione."
+						}
+					]
+				},
+				{
+					"id": "taddeo_duel_offer",
+					"when": {
+						"taddeo_trust": "accusato",
+						"unseen": "taddeo_duel_won"
+					},
+					"lines": [
+						{
+							"who": "taddeo",
+							"text": "Vuoi ancora puntarmi la spada? Affrontami senza nasconderti dietro quella maschera."
+						}
+					],
+					"choice": {
+						"prompt": "Un duello facoltativo. Vincendo ottieni un accessorio per la parata.",
+						"options": [
+							{
+								"label": "Accetta il duello",
+								"lines": [
+									{
+										"who": "taddeo",
+										"text": "Allora preparati.",
+										"do": "start_duel"
+									}
+								]
+							},
+							{
+								"label": "Allontanati",
+								"lines": [
+									{
+										"text": "Ferruccio abbassa la lama. Il duello può attendere."
+									}
+								]
+							}
+						]
+					}
+				},
 				{"id": "taddeo_lettera", "once": true, "when": {"taddeo_trust": "perdonato", "seen": "mariella_lettera"}, "lines": [
 					{"text": "Ferruccio gli porge la lettera di Mariella."},
 					{"who": "taddeo", "text": "«Non devi aggiustarmi.»"},
@@ -234,17 +356,53 @@
 				], "choice": {
 					"prompt": "Taddeo trema. La spada aspetta una risposta.",
 					"options": [
-						{"label": "Abbassa la spada", "set": {"taddeo_trust": "perdonato"}, "lines": [
-							{"who": "taddeo", "text": "Ti ho consegnato io. Per Mariella."},
-							{"who": "taddeo", "text": "Mi aveva promesso che mia sorella sarebbe stata bene."},
-							{"who": "taddeo", "text": "E io le ho creduto. Che Dio mi perdoni."},
-							{"text": "Ferruccio rinfodera la spada."}
-						]},
-						{"label": "Puntagli la spada alla gola", "set": {"taddeo_trust": "accusato"}, "lines": [
-							{"text": "Taddeo arretra fino alla vetrina."},
-							{"who": "taddeo", "text": "Se mi uccidi, lei resterà comunque là dentro!"},
-							{"text": "Ferruccio non affonda. Ma non abbassa la spada finché Taddeo non scappa via."}
-						]}
+						{
+							"label": "Abbassa la spada",
+							"set": {
+								"taddeo_trust": "perdonato"
+							},
+							"lines": [
+								{
+									"who": "taddeo",
+									"text": "Ti ho consegnato io. Per Mariella."
+								},
+								{
+									"who": "taddeo",
+									"text": "Mi aveva promesso che mia sorella sarebbe stata bene."
+								},
+								{
+									"who": "taddeo",
+									"text": "E io le ho creduto. Che Dio mi perdoni."
+								},
+								{
+									"text": "Ferruccio rinfodera la spada."
+								},
+								{
+									"text": "Taddeo apre il passaggio alto fra Corso Trieste e San Leucio. Ti avverte delle ombre oltre i portici."
+								}
+							]
+						},
+						{
+							"label": "Puntagli la spada alla gola",
+							"set": {
+								"taddeo_trust": "accusato"
+							},
+							"lines": [
+								{
+									"text": "Taddeo arretra fino alla vetrina."
+								},
+								{
+									"who": "taddeo",
+									"text": "Se mi uccidi, lei resterà comunque là dentro!"
+								},
+								{
+									"text": "Ferruccio non affonda. Ma non abbassa la spada finché Taddeo non scappa via."
+								},
+								{
+									"text": "Il passaggio delle guardie resta chiuso. Taddeo ti offrirà un duello, se torni a parlargli."
+								}
+							]
+						}
 					]
 				}},
 				{"id": "taddeo_ronda", "turn": false, "when": {"taddeo_trust": ""}, "cycle": [
@@ -413,12 +571,34 @@
 				], "choice": {
 					"prompt": "Il registro prova la falsificazione. Ma finché esiste, quel nome resta accanto a quella parola.",
 					"options": [
-						{"label": "Conserva il registro", "set": {"father_registry": "conservato"}, "lines": [
-							{"text": "Ferruccio lo avvolge nella sciarpa. Ci vorranno anni prima che qualcuno lo legga. Ma esiste."}
-						]},
-						{"label": "Brucia il registro", "set": {"father_registry": "bruciato"}, "lines": [
-							{"text": "La carta si accartoccia nella fiamma di un lampione. Il nome sparisce, e con lui la prova."}
-						]}
+						{
+							"label": "Conserva il registro",
+							"set": {
+								"father_registry": "conservato"
+							},
+							"lines": [
+								{
+									"text": "Ferruccio lo avvolge nella sciarpa. Ci vorranno anni prima che qualcuno lo legga. Ma esiste."
+								},
+								{
+									"text": "Il registro descrive il difetto delle statue: un colpo durante la carica interrompe il lancio."
+								}
+							]
+						},
+						{
+							"label": "Brucia il registro",
+							"set": {
+								"father_registry": "bruciato"
+							},
+							"lines": [
+								{
+									"text": "La carta si accartoccia nella fiamma di un lampione. Il nome sparisce, e con lui la prova."
+								},
+								{
+									"text": "Ferruccio impara una tecnica aggressiva: il primo fendente dopo una parata perfetta infligge due danni."
+								}
+							]
+						}
 					]
 				}}
 			]
@@ -478,23 +658,112 @@
 				], "choice": {
 					"prompt": "Se le porge la sciarpa, Agnese ricorderà. Tutto, anche il dolore.",
 					"options": [
-						{"label": "Porgile la sciarpa", "set": {"agnese_memory": "risvegliata"}, "lines": [
-							{"text": "Agnese tocca la lana. Le mani le tremano.", "if": {"taddeo_trust": "!accusato"}},
-							{"who": "agnese", "text": "Non sapevo più il tuo nome.", "if": {"taddeo_trust": "!accusato"}},
-							{"who": "agnese", "text": "Ma ricordavo come mi guardavi.", "if": {"taddeo_trust": "!accusato"}},
-							{"text": "Gli toglie la polvere dalla maschera, piano.", "if": {"taddeo_trust": "!accusato"}},
-							{"who": "agnese", "text": "Torna da me. Anche se non puoi più essere quello di prima.", "if": {"taddeo_trust": "!accusato"}},
-							{"who": "agnese", "text": "Ferruccio... Mi hanno detto di Taddeo. Della tua spada alla sua gola.", "if": {"taddeo_trust": "accusato"}},
-							{"who": "agnese", "text": "Ho aspettato un uomo per anni.", "if": {"taddeo_trust": "accusato"}},
-							{"who": "agnese", "text": "Adesso ho paura che sia tornata soltanto la sua rabbia.", "if": {"taddeo_trust": "accusato"}},
-							{"text": "Lui le tende la mano. Lei la stringe, ma non gli promette di aspettarlo.", "if": {"taddeo_trust": "accusato"}}
-						]},
-						{"label": "Inchinati e lasciala sognare", "set": {"agnese_memory": "sopita"}, "lines": [
-							{"who": "agnese", "text": "Prendila. Non so perché, ma credo che debba averla tu.", "item": "sciarpa", "if": {"taddeo_trust": "!perdonato"}},
-							{"text": "Ferruccio prende la sciarpa, la piega con cura e le fa un inchino.", "if": {"taddeo_trust": "!perdonato"}},
-							{"text": "Ferruccio abbassa la mano e si inchina.", "if": {"taddeo_trust": "perdonato"}},
-							{"who": "agnese", "text": "Che tipo buffo."}
-						]}
+						{
+							"label": "Porgile la sciarpa",
+							"set": {
+								"agnese_memory": "risvegliata"
+							},
+							"lines": [
+								{
+									"text": "Agnese tocca la lana. Le mani le tremano.",
+									"if": {
+										"taddeo_trust": "!accusato"
+									}
+								},
+								{
+									"who": "agnese",
+									"text": "Non sapevo più il tuo nome.",
+									"if": {
+										"taddeo_trust": "!accusato"
+									}
+								},
+								{
+									"who": "agnese",
+									"text": "Ma ricordavo come mi guardavi.",
+									"if": {
+										"taddeo_trust": "!accusato"
+									}
+								},
+								{
+									"text": "Gli toglie la polvere dalla maschera, piano.",
+									"if": {
+										"taddeo_trust": "!accusato"
+									}
+								},
+								{
+									"who": "agnese",
+									"text": "Torna da me. Anche se non puoi più essere quello di prima.",
+									"if": {
+										"taddeo_trust": "!accusato"
+									}
+								},
+								{
+									"who": "agnese",
+									"text": "Ferruccio... Mi hanno detto di Taddeo. Della tua spada alla sua gola.",
+									"if": {
+										"taddeo_trust": "accusato"
+									}
+								},
+								{
+									"who": "agnese",
+									"text": "Ho aspettato un uomo per anni.",
+									"if": {
+										"taddeo_trust": "accusato"
+									}
+								},
+								{
+									"who": "agnese",
+									"text": "Adesso ho paura che sia tornata soltanto la sua rabbia.",
+									"if": {
+										"taddeo_trust": "accusato"
+									}
+								},
+								{
+									"text": "Lui le tende la mano. Lei la stringe, ma non gli promette di aspettarlo.",
+									"if": {
+										"taddeo_trust": "accusato"
+									}
+								},
+								{
+									"text": "Agnese ricuce la sciarpa: puoi portare un accessorio in più."
+								}
+							]
+						},
+						{
+							"label": "Inchinati e lasciala sognare",
+							"set": {
+								"agnese_memory": "sopita"
+							},
+							"lines": [
+								{
+									"who": "agnese",
+									"text": "Prendila. Non so perché, ma credo che debba averla tu.",
+									"item": "sciarpa",
+									"if": {
+										"taddeo_trust": "!perdonato"
+									}
+								},
+								{
+									"text": "Ferruccio prende la sciarpa, la piega con cura e le fa un inchino.",
+									"if": {
+										"taddeo_trust": "!perdonato"
+									}
+								},
+								{
+									"text": "Ferruccio abbassa la mano e si inchina.",
+									"if": {
+										"taddeo_trust": "perdonato"
+									}
+								},
+								{
+									"who": "agnese",
+									"text": "Che tipo buffo."
+								},
+								{
+									"text": "Agnese ti affida un velo. I nemici ti notano da una distanza inferiore."
+								}
+							]
+						}
 					]
 				}},
 				{"id": "agnese_giglio", "once": true, "when": {"agnese_memory": "*"}, "lines": [
@@ -544,21 +813,104 @@
 				], "choice": {
 					"prompt": "Il Custode respira ancora. Ferruccio può provare a parlargli, o restare con la spada alzata.",
 					"options": [
-						{"label": "Cerca di farlo ragionare", "set": {"gregorio_mercy": "dialogo"}, "lines": [
-							{"text": "Ferruccio gli mostra il registro, con il nome del padre cancellato e riscritto.", "if": {"father_registry": "conservato"}},
-							{"text": "Ferruccio gli mostra le carte che Taddeo ha lasciato lungo la strada.", "if": {"father_registry": "!conservato", "taddeo_trust": "perdonato"}},
-							{"who": "gregorio", "text": "Gaetano... Gli abbiamo fatto un torto terribile.", "if": {"any": [{"father_registry": "conservato"}, {"taddeo_trust": "perdonato"}]}},
-							{"who": "gregorio", "text": "Tuo padre era innocente.", "if": {"any": [{"father_registry": "conservato"}, {"taddeo_trust": "perdonato"}]}},
-							{"text": "Ferruccio non ha prove da mostrargli. Abbassa soltanto la spada.", "if": {"father_registry": "!conservato", "taddeo_trust": "!perdonato"}},
-							{"who": "gregorio", "text": "Non era un ordine del Re... Era una promessa fatta a mia moglie.", "if": {"father_registry": "!conservato", "taddeo_trust": "!perdonato"}},
-							{"who": "gregorio", "text": "Lei... crede ancora di poterla salvare."}
-						]},
-						{"label": "Tieni la spada alzata", "set": {"gregorio_mercy": "attacco"}, "lines": [
-							{"who": "gregorio", "text": "Un altro figlio viene a chiedermi conto dei padri."},
-							{"who": "gregorio", "text": "Non era un ordine del Re... Era una promessa fatta a mia moglie."},
-							{"who": "gregorio", "text": "Anche io avevo paura di perderla."},
-							{"who": "gregorio", "text": "Lei... crede ancora di poterla salvare."}
-						]}
+						{
+							"label": "Cerca di farlo ragionare",
+							"set": {
+								"gregorio_mercy": "dialogo"
+							},
+							"lines": [
+								{
+									"text": "Ferruccio gli mostra il registro, con il nome del padre cancellato e riscritto.",
+									"if": {
+										"father_registry": "conservato"
+									}
+								},
+								{
+									"text": "Ferruccio gli mostra le carte che Taddeo ha lasciato lungo la strada.",
+									"if": {
+										"father_registry": "!conservato",
+										"taddeo_trust": "perdonato"
+									}
+								},
+								{
+									"who": "gregorio",
+									"text": "Gaetano... Gli abbiamo fatto un torto terribile.",
+									"if": {
+										"any": [
+											{
+												"father_registry": "conservato"
+											},
+											{
+												"taddeo_trust": "perdonato"
+											}
+										]
+									}
+								},
+								{
+									"who": "gregorio",
+									"text": "Tuo padre era innocente.",
+									"if": {
+										"any": [
+											{
+												"father_registry": "conservato"
+											},
+											{
+												"taddeo_trust": "perdonato"
+											}
+										]
+									}
+								},
+								{
+									"text": "Ferruccio non ha prove da mostrargli. Abbassa soltanto la spada.",
+									"if": {
+										"father_registry": "!conservato",
+										"taddeo_trust": "!perdonato"
+									}
+								},
+								{
+									"who": "gregorio",
+									"text": "Non era un ordine del Re... Era una promessa fatta a mia moglie.",
+									"if": {
+										"father_registry": "!conservato",
+										"taddeo_trust": "!perdonato"
+									}
+								},
+								{
+									"who": "gregorio",
+									"text": "Lei... crede ancora di poterla salvare."
+								},
+								{
+									"text": "Le guardie ascoltano la testimonianza di Gregorio. Dopo il finale, il loro passaggio sarà aperto."
+								}
+							]
+						},
+						{
+							"label": "Tieni la spada alzata",
+							"set": {
+								"gregorio_mercy": "attacco"
+							},
+							"lines": [
+								{
+									"who": "gregorio",
+									"text": "Un altro figlio viene a chiedermi conto dei padri."
+								},
+								{
+									"who": "gregorio",
+									"text": "Non era un ordine del Re... Era una promessa fatta a mia moglie."
+								},
+								{
+									"who": "gregorio",
+									"text": "Anche io avevo paura di perderla."
+								},
+								{
+									"who": "gregorio",
+									"text": "Lei... crede ancora di poterla salvare."
+								},
+								{
+									"text": "Le guardie non ascoltano Ferruccio. Dopo il finale, bloccheranno il passaggio e lo affronteranno."
+								}
+							]
+						}
 					]
 				}}
 			]
@@ -582,17 +934,52 @@
 				], "choice": {
 					"prompt": "Quanto vale la felicità? Spezza il Velo, e tornerà anche il dolore. Risparmiala, e nessuno potrà più scegliere.",
 					"options": [
-						{"label": "Spezza il Velo", "set": {"violante_fate": "uccisa"}, "lines": [
-							{"text": "Ferruccio avanza. Violante non tenta di difendersi."},
-							{"who": "violante", "text": "Allora non hai imparato niente."},
-							{"text": "Il giglio ricamato si spegne. I fili che attraversano la città si spezzano."}
-						]},
-						{"label": "Risparmia Violante", "set": {"violante_fate": "risparmiata"}, "lines": [
-							{"text": "Ferruccio abbassa la spada."},
-							{"who": "violante", "text": "Lo sapevo. In fondo, anche tu desideri soltanto che il dolore finisca."},
-							{"text": "Violante raccoglie il giglio d'oro dal mantello del marito, e ricuce il Velo."},
-							{"who": "violante", "text": "Non sarai ricordato come un eroe. Ma potrai vivere in pace."}
-						]}
+						{
+							"label": "Spezza il Velo",
+							"set": {
+								"violante_fate": "uccisa"
+							},
+							"lines": [
+								{
+									"text": "Ferruccio avanza. Violante non tenta di difendersi."
+								},
+								{
+									"who": "violante",
+									"text": "Allora non hai imparato niente."
+								},
+								{
+									"text": "Il giglio ricamato si spegne. I fili che attraversano la città si spezzano."
+								},
+								{
+									"text": "La città torna a ricordare. Dopo il finale, le ombre liberate si aggireranno ancora fra le strade."
+								}
+							]
+						},
+						{
+							"label": "Risparmia Violante",
+							"set": {
+								"violante_fate": "risparmiata"
+							},
+							"lines": [
+								{
+									"text": "Ferruccio abbassa la spada."
+								},
+								{
+									"who": "violante",
+									"text": "Lo sapevo. In fondo, anche tu desideri soltanto che il dolore finisca."
+								},
+								{
+									"text": "Violante raccoglie il giglio d'oro dal mantello del marito, e ricuce il Velo."
+								},
+								{
+									"who": "violante",
+									"text": "Non sarai ricordato come un eroe. Ma potrai vivere in pace."
+								},
+								{
+									"text": "La città resta nel sogno. Dopo il finale, le strade saranno tranquille e i cittadini dimenticheranno."
+								}
+							]
+						}
 					]
 				}}
 			]

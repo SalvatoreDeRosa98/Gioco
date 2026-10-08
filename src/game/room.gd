@@ -5,7 +5,8 @@ extends RefCounted
 
 const MAIN_COUNT := 5
 const SECRET_ROOM := 5
-const COUNT := 6
+const EPILOGUE_ROOM := 6
+const COUNT := 7
 ## Altezza dei portali d'uscita, appoggiati al pavimento.
 const DOOR_H := 220.0
 ## Spessore visibile dei pilastri ai lati della stanza.
@@ -141,6 +142,11 @@ const ROOMS := [
 		"npcs": [{"id": "fantasma_umano", "pos": Vector2(790, 980)}],
 		"decor": [{"kind": "torch", "pos": Vector2(1060, 980)}],
 	},
+	{
+		"name": "Caserta dopo il Velo", "subtitle": "Le conseguenze restano",
+		"theme": "piazza", "size": Vector2(2560, 1080), "floor": 980.0,
+		"blocks": [], "ledges": [], "enemies": [], "decor": [], "npcs": [],
+	},
 ]
 
 
@@ -165,8 +171,10 @@ static func save_station_id(idx: int) -> String:
 	var pos: Vector2 = SAVE_STATUES[idx]
 	return "%d:statua:%d:%d" % [idx, roundi(pos.x), roundi(pos.y)]
 
-static func build(idx: int) -> Dictionary:
+static func build(idx: int, choices: Dictionary = {}) -> Dictionary:
 	var r: Dictionary = ROOMS[idx]
+	if idx == EPILOGUE_ROOM:
+		return _epilogue(choices)
 	if idx == SECRET_ROOM:
 		var extra := r.duplicate(true)
 		extra.merge({"secrets": [], "branch": -1, "branch_platform": Rect2(), "invisible_steps": [], "boss": false, "indoor": true})
@@ -187,6 +195,24 @@ static func build(idx: int) -> Dictionary:
 		"decor": _decorations(idx),
 		"boss": idx == MAIN_COUNT - 1,
 	}
+
+
+## Il Velo cambia la città; la scelta di Gregorio decide il passaggio delle guardie.
+static func _epilogue(choices: Dictionary) -> Dictionary:
+	var free := str(choices.get("violante_fate", "")) == "uccisa"
+	var peaceful := str(choices.get("gregorio_mercy", "")) == "dialogo"
+	var r: Dictionary = ROOMS[EPILOGUE_ROOM].duplicate(true)
+	r["name"] = "Caserta libera" if free else "Caserta sotto il Velo"
+	r["subtitle"] = "Le anime ricordano, le ombre resistono" if free else "La città sogna ancora"
+	r["theme"] = "piazza" if free else "oro"
+	r["blocks"] = [Rect2(1080, 740, 180, 240)] if not peaceful else []
+	r["ledges"] = [Rect2(800, 860, 220, 18), Rect2(1060, 750, 220, 18), Rect2(1340, 860, 220, 18)] if not peaceful else [Rect2(900, 900, 500, 18)]
+	r["enemies"] = [{"type": "gatto", "pos": Vector2(720, 960)}, {"type": "vespa", "pos": Vector2(1800, 760)}] if free else []
+	if not peaceful:
+		r["enemies"].append({"type": "duellante", "pos": Vector2(1510, 946)})
+	r["npcs"] = [{"id": "cittadino_libero" if free else "cittadino_velato", "pos": Vector2(2020, 980)}]
+	r.merge({"secrets": [Vector2(2200, 940)], "branch": -1, "branch_platform": Rect2(), "invisible_steps": [], "boss": false})
+	return r
 
 
 ## Il passaggio nascosto occupa la piattaforma più alta, senza oggetti o indicazioni.

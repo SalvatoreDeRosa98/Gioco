@@ -83,6 +83,8 @@ func _draw() -> void:
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 26.0), hint, 19, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if _end_t >= 0.0:
 		_draw_end(vp)
+	elif world.room_index == Room.SECRET_ROOM and not world.is_talking():
+		Art.text(self, Art.body_font(), Vector2(0, vp.y - 58), "B  Apri la fucina · Acquisti e accessori", 22, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 
 
 func _draw_vitals() -> void:
@@ -92,6 +94,8 @@ func _draw_vitals() -> void:
 	if me:
 		var parry_text: String = "F  Parata pronta" if me.parry_cooldown <= 0.0 else "Parata %.1f s" % me.parry_cooldown
 		Art.text(self, Art.body_font(), Vector2(34, 158), parry_text, 18, Art.CREMA)
+		Art.text(self, Art.body_font(), Vector2(34, 182), me.dash_status(), 18, Art.CREMA)
+		Art.text(self, Art.body_font(), Vector2(34, 206), "Accessori %d/%d" % [world.equipped.size(), world.accessory_slots()], 16, Art.CREMA)
 		var hp := int(me.hp)
 		for i in int(me.max_hp):
 			var pulse := 0.6 + 0.4 * sin(_t * 3.0 + i * 0.6) if hp <= 1 and i == 0 else 1.0
@@ -168,4 +172,4 @@ func _draw_end(vp: Vector2) -> void:
 		var qa := clampf((_end_t - 1.8) / 1.5, 0.0, 1.0)
 		Art.text(self, Art.body_font(), Vector2(0, ly + 104.0), _end_quote, 23, Color(Art.OCRA.lightened(0.3), 0.85 * qa), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 		esc_y = ly + 158.0
-	Art.text(self, Art.body_font(), Vector2(0, esc_y), "Premi Esc per tornare al menu", 22, Color(Art.CREMA, 0.6 * a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+	Art.text(self, Art.body_font(), Vector2(0, esc_y), "W esplora Caserta  ·  Esc menu", 22, Color(Art.CREMA, 0.6 * a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
