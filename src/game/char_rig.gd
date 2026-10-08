@@ -441,22 +441,76 @@ static func pose_double_jump() -> Dictionary:
 ## Anticipo (la spada arretra ancora un poco), colpo con easing e una punta oltre il fine corsa
 ## che rientra (follow-through); il braccio accompagna la spada, il busto si sbilancia avanti.
 static func pose_slash(k: float, side: float) -> Dictionary:
-	var from := -2.3 if side > 0.0 else 0.9
-	var to := 0.7 if side > 0.0 else -2.0
+	# Stile animazione "Frame by Frame" (Salt and Sanctuary / Metroidvania)
+	# Il tempo viene discretizzato per dare il senso di 'pose' mantenute.
+	# Anticipazione (0-0.25), Colpo violento (0.25-0.35), Follow-through (0.35-0.6), Recupero (0.6-1.0)
+	
+	var from := -2.4 if side > 0.0 else 0.8
+	var to := 0.8 if side > 0.0 else -2.2
 	var dir := signf(to - from)
-	var a: float
-	if k < 0.15:
-		a = from - 0.3 * dir * sin(k / 0.15 * PI * 0.5)
+	
+	var p := {}
+	
+	if k < 0.25:
+		# Anticipazione: si tira indietro, accumula potenza
+		var t = k / 0.25
+		p = {
+			"sword": from - 0.4 * dir * t,
+			"arm": -0.3 * dir * t,
+			"lean": -0.15 * t,
+			"squash": 0.05 * t,
+			"hat": 0.1 * t,
+			"scarf_lift": 0.3 * t,
+			"leg_front": Vector2(-0.1, 0.4) * t,
+			"leg_back": Vector2(0.2, 0.6) * t,
+		}
+	elif k < 0.35:
+		# L'ATTACCO: smear frame rapidissimo! Scatta in avanti
+		var t = (k - 0.25) / 0.1
+		p = {
+			"sword": lerpf(from, to, t),
+			"arm": lerpf(-0.3 * dir, 0.4 * dir, t),
+			"lean": lerpf(-0.15, 0.3, t),
+			"squash": lerpf(0.05, -0.1, t),
+			"hat": lerpf(0.1, -0.3, t),
+			"scarf_lift": lerpf(0.3, -0.5, t),
+			"hem_open": lerpf(0.0, 0.5, t),
+			"leg_front": Vector2(lerpf(-0.1, -0.4, t), lerpf(0.4, 0.8, t)),
+			"leg_back": Vector2(lerpf(0.2, 0.4, t), lerpf(0.6, 0.2, t)),
+		}
+	elif k < 0.6:
+		# Follow-through (hold frame d'impatto prolungato)
+		var t = (k - 0.35) / 0.25
+		# Curva ease-out per assorbire l'impatto
+		var e = 1.0 - pow(1.0 - t, 3.0)
+		p = {
+			"sword": to + 0.1 * dir * e,
+			"arm": 0.4 * dir - 0.1 * dir * e,
+			"lean": 0.3 + 0.05 * e,
+			"squash": -0.1 + 0.05 * e,
+			"hat": -0.3 + 0.1 * e,
+			"scarf_lift": -0.5 + 0.2 * e,
+			"hem_open": 0.5 - 0.2 * e,
+			"leg_front": Vector2(-0.4, 0.8),
+			"leg_back": Vector2(0.4, 0.2),
+		}
 	else:
-		var t := (k - 0.15) / 0.85
-		# easeOutBack: arriva oltre il bersaglio e torna indietro.
-		var c1 := 1.7
-		var e := 1.0 + (c1 + 1.0) * pow(t - 1.0, 3.0) + c1 * pow(t - 1.0, 2.0)
-		a = lerpf(from - 0.3 * dir, to, e)
-	return {
-		"sword": a, "arm": clampf(a * 0.1, -0.22, 0.12), "lean": 0.05 + 0.14 * sin(k * PI),
-		"squash": -0.04 * sin(k * PI),
-	}
+		# Recupero
+		var t = (k - 0.6) / 0.4
+		var e = t * t # ease in
+		p = {
+			"sword": lerpf(to + 0.1 * dir, 0.0, e),
+			"arm": lerpf(0.3 * dir, 0.0, e),
+			"lean": lerpf(0.35, 0.0, e),
+			"squash": lerpf(-0.05, 0.0, e),
+			"hat": lerpf(-0.2, 0.0, e),
+			"scarf_lift": lerpf(-0.3, 0.0, e),
+			"hem_open": lerpf(0.3, 0.0, e),
+			"leg_front": Vector2(-0.4 * (1-e), 0.8 * (1-e)),
+			"leg_back": Vector2(0.4 * (1-e), 0.2 * (1-e)),
+		}
+	
+	return p
 
 
 ## Fendente verso il basso in aria: spada puntata giù, gambe raccolte per il rimbalzo.

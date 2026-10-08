@@ -63,53 +63,58 @@ def pose(arm, clip, t):
     elif clip == 'heal':
         angles.update({'upperarm.R': -50, 'forearm.R': -90, 'upperarm.L': -45, 'forearm.L': -90, 'head': 15, 'chest': 10, 'scarf': 38})
     elif clip == 'slash_a':
-        # 9 frame totali: anticipo (0..0.25), fendente dinamico in avanti (0.25..0.50), recupero fluido (0.50..1.0)
+        # Animazione drammatica stile Salt and Sanctuary (smear e holds)
+        # Anticipazione estrema (0..0.25)
         if t <= 0.25:
             k = t / 0.25
-            lift = -0.04 * k
-            fwd = -0.02 * k
+            lift = -0.1 * k
+            fwd = -0.1 * k
             angles.update({
-                'chest': -12 * k, 'head': -6 * k,
-                'upperarm.R': -15 + (-75) * k, 'forearm.R': -25 + (-30) * k, 'sword': 65 + (-90) * k,
-                'upperarm.L': 15 + 20 * k, 'forearm.L': -20 + (-25) * k,
-                'thigh.R': -10 + (-6) * k, 'thigh.L': 10 + 4 * k,
-                'scarf': 45 + (-15) * k
+                'chest': -20 * k, 'head': -15 * k,
+                'upperarm.R': -15 + (-120) * k, 'forearm.R': -25 + (-50) * k, 'sword': 65 + (-130) * k,
+                'upperarm.L': 15 + 40 * k, 'forearm.L': -20 + (-40) * k,
+                'thigh.R': -10 + (-25) * k, 'thigh.L': 10 + 20 * k,
+                'scarf': 45 + (-30) * k
             })
-        elif t <= 0.50:
-            k = (t - 0.25) / 0.25
-            k_ease = k * k * (3 - 2 * k)
-            lift = -0.04 + (-0.02) * k_ease
-            fwd = -0.02 + 0.26 * k_ease
+        elif t <= 0.40:
+            # IMPATTO rapidissimo (1-2 frames di transizione)
+            k_ease = (t - 0.25) / 0.15
+            lift = -0.1 + 0.15 * k_ease
+            fwd = -0.1 + 0.3 * k_ease
             angles.update({
-                'chest': -12 + 32 * k_ease, 'head': -6 + 12 * k_ease,
-                'upperarm.R': -90 + 25 * k_ease, 'forearm.R': -55 + 40 * k_ease, 'sword': -25 + 55 * k_ease,
-                'upperarm.L': 35 + (-80) * k_ease, 'forearm.L': -45 + 30 * k_ease,
-                'thigh.R': -16 + 48 * k_ease, 'shin.R': -35 * k_ease,
-                'thigh.L': 14 + (-50) * k_ease, 'shin.L': -15 * k_ease,
-                'scarf': 30 + 25 * k_ease, 'hat_tip': 12 * k_ease
+                'chest': -20 + 60 * k_ease, 'head': -15 + 30 * k_ease,
+                'upperarm.R': -135 + 175 * k_ease, 'forearm.R': -75 + 75 * k_ease, 'sword': -65 + 165 * k_ease,
+                'upperarm.L': 55 + (-135) * k_ease, 'forearm.L': -60 + 50 * k_ease,
+                'thigh.R': -35 + 85 * k_ease, 'shin.R': -60 * k_ease,
+                'thigh.L': 30 + (-90) * k_ease, 'shin.L': -25 * k_ease,
+                'scarf': 15 + 65 * k_ease, 'hat_tip': 25 * k_ease
             })
         elif t <= 0.75:
-            k = (t - 0.50) / 0.25
-            lift = -0.06 + 0.04 * k
-            fwd = 0.24 + (-0.14) * k
+            # HOLD FRAME e follow through
+            k = (t - 0.40) / 0.35
+            e = 1.0 - (1.0 - k)**3 # ease out
+            lift = 0.05 - 0.05 * e
+            fwd = 0.2 - 0.1 * e
             angles.update({
-                'chest': 20 + (-12) * k, 'head': 6 + (-4) * k,
-                'upperarm.R': -65 + 45 * k, 'forearm.R': -15 + (-10) * k, 'sword': 30 + 35 * k,
-                'upperarm.L': -45 + 35 * k, 'forearm.L': -15 + (-10) * k,
-                'thigh.R': 32 + (-22) * k, 'shin.R': -35 * (1 - k),
-                'thigh.L': -36 + 46 * k, 'shin.L': -15 * (1 - k),
-                'scarf': 55 + (-10) * k, 'hat_tip': 12 * (1 - k)
+                'chest': 40 + (-15) * e, 'head': 15 + (-5) * e,
+                'upperarm.R': 40 + 20 * e, 'forearm.R': 0, 'sword': 100 + 10 * e,
+                'upperarm.L': -80 + 20 * e, 'forearm.L': -10,
+                'thigh.R': 50 + (-20) * e, 'shin.R': -60 * (1 - e),
+                'thigh.L': -60 + 30 * e, 'shin.L': -25 * (1 - e),
+                'scarf': 80 + (-15) * e, 'hat_tip': 25 * (1 - e)
             })
         else:
+            # Recupero
             k = (t - 0.75) / 0.25
-            lift = -0.02 * (1 - k)
-            fwd = 0.10 * (1 - k)
+            e = k * k # ease in
+            fwd = 0.1 * (1 - e)
             angles.update({
-                'chest': 8 * (1 - k), 'head': 2 * (1 - k),
-                'upperarm.R': -20 + 5 * k, 'forearm.R': -25, 'sword': 65,
-                'upperarm.L': -10 + 25 * k, 'forearm.L': -25 + 5 * k,
-                'thigh.R': 10 * (1 - k), 'thigh.L': 10 * k,
-                'scarf': 45
+                'chest': 25 * (1 - e), 'head': 10 * (1 - e),
+                'upperarm.R': 60 + (-75) * e, 'forearm.R': -25 * e, 'sword': 110 + (-45) * e,
+                'upperarm.L': -60 + 45 * e, 'forearm.L': -10 + (-10) * e,
+                'thigh.R': 30 * (1 - e), 'shin.R': 0,
+                'thigh.L': -30 * (1 - e), 'shin.L': 0,
+                'scarf': 65 + (-20) * e
             })
     elif clip == 'slash_b':
         # Secondo colpo: taglio ascendente in diagonale con passo avanti

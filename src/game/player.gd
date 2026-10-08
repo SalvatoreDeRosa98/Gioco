@@ -107,7 +107,7 @@ func setup(pos: Vector2) -> void:
 func _ready() -> void:
 	_light = Art.point_light(self, Vector2(0, -10), Color(1.0, 0.93, 0.82), 0.55, 460.0)
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	_rig = CharRig.new()
+	_rig = preload("res://game/sprite_rig.gd").new()
 	_rig.height = FIGURE_HEIGHT
 	_rig.position = Vector2(0, HALF.y)
 	_rig.light_dir = DEFAULT_LIGHT_DIR
@@ -329,10 +329,8 @@ func _skid_fx() -> void:
 # ---------------------------------------------------------------- Aspetto
 
 func _process(delta: float) -> void:
-
-	if Input.is_physical_key_pressed(KEY_F8) and Input.is_physical_key_pressed(KEY_SHIFT):
+	if Input.is_key_pressed(KEY_SHIFT) and Input.is_key_pressed(KEY_F8):
 		hp = max_hp
-		print("DEV MODE: Full health restored")
 	_t += delta
 	var v := move_vel
 	var fx_root := _fx_root()
@@ -358,7 +356,7 @@ func _process(delta: float) -> void:
 			_sfx("passo", lerpf(-6.0, 0.0, _run_amount))
 
 	_update_spin(delta)
-	_rig.set_target(_pose(running))
+	_rig.select_state(self, running)
 	_rig.facing = facing
 	_rig.flash = _flash
 	# Lampeggia mentre è invulnerabile dopo un colpo, come in Hollow Knight.

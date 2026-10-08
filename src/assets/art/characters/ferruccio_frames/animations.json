@@ -6,12 +6,6 @@
   ],
   "height_pixels": 389.11999999999995,
   "clips": {
-    "idle": {
-      "frames": 16,
-      "fps": 12,
-      "loop": true,
-      "columns": 4
-    },
     "grapple": {
       "frames": 8,
       "fps": 16,
@@ -34,6 +28,12 @@
       "frames": 10,
       "fps": 24,
       "loop": false,
+      "columns": 4
+    },
+    "idle": {
+      "frames": 16,
+      "fps": 12,
+      "loop": true,
       "columns": 4
     },
     "run": {

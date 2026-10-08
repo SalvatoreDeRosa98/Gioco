@@ -288,6 +288,14 @@ def build(out_path):
     meshes = []
     for ob, col, weight in parts:
         ob.data.materials.append(mats[col])
+        uv_layer = ob.data.uv_layers.new(name="Projected")
+        for poly in ob.data.polygons:
+            for loop_index in poly.loop_indices:
+                v_idx = ob.data.loops[loop_index].vertex_index
+                co = ob.data.vertices[v_idx].co
+                u = (co.x - (-0.4)) / 1.1
+                v = (co.z - 0.0) / 2.0
+                uv_layer.data[loop_index].uv = (u, v)
         if col in ("lama", "elsa", "fibbia"):
             crease = ob.data.attributes.new("crease_edge", "FLOAT", "EDGE")
             for edge in crease.data: edge.value = 0.85
