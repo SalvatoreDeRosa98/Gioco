@@ -1,6 +1,27 @@
 class_name Themes
 extends RefCounted
 ## Atmosfera di ogni area di Caserta: cielo, luce, nebbia, colori degli strati, meteo e color grading.
+## Chiavi del grading (vedi shaders/post_screen_grade.gdshader): tint, contrast, saturation, bloom,
+## vignette, shadows/highlights (viraggio separato), wash_top/wash_bottom (velo di luce).
+## Lampioni: lamp_cone (forza del cono volumetrico), lamp_rain (pioggia nella luce), moths (falene).
+## Disposizione e densità di strati, fili, raggi e particelle stanno in data/areas.json.
+
+## Parametri del post-processing presi dal tema (nome uniform -> chiave del tema).
+const GRADE_KEYS := {
+	"tint": "tint", "contrast": "contrast", "saturation": "saturation", "bloom_strength": "bloom",
+	"vignette": "vignette", "shadow_tint": "shadows", "highlight_tint": "highlights",
+	"wash_top": "wash_top", "wash_bottom": "wash_bottom",
+}
+
+
+## Applica il color grading del tema al materiale del post-processing (post_screen_grade).
+static func apply_grade(mat: ShaderMaterial, th: Dictionary) -> void:
+	if mat == null:
+		return
+	for uniform_name in GRADE_KEYS:
+		var key: String = GRADE_KEYS[uniform_name]
+		if th.has(key):
+			mat.set_shader_parameter(uniform_name, th[key])
 
 
 static func get_theme(theme_name: String) -> Dictionary:
@@ -16,6 +37,9 @@ static func get_theme(theme_name: String) -> Dictionary:
 				"stone": Color("#5a4c55"), "mortar": Color("#130c12"), "stone_light": Color("#8d7682"), "moss": 0.0,
 				"weather": "rain", "far_kind": "rooftops", "mid_kind": "arcade", "fg_kind": "awnings",
 				"tint": Vector3(1.06, 0.96, 0.96), "contrast": 1.1, "saturation": 1.0, "bloom": 0.75, "vignette": 0.55,
+				"shadows": Vector3(0.98, 0.9, 1.08), "highlights": Vector3(1.12, 0.98, 0.84),
+				"wash_top": Vector3(0.012, 0.0, 0.02), "wash_bottom": Vector3(0.05, 0.022, 0.0),
+				"lamp_cone": 0.26, "lamp_rain": 1.0, "moths": 0,
 			}
 		"giardino":
 			return {
@@ -28,6 +52,9 @@ static func get_theme(theme_name: String) -> Dictionary:
 				"stone": Color("#4d5947"), "mortar": Color("#0b120d"), "stone_light": Color("#7d9270"), "moss": 0.8,
 				"weather": "fireflies", "far_kind": "canopy", "mid_kind": "garden", "fg_kind": "foliage",
 				"tint": Vector3(0.95, 1.04, 0.98), "contrast": 1.08, "saturation": 1.05, "bloom": 0.8, "vignette": 0.55,
+				"shadows": Vector3(0.9, 1.04, 1.04), "highlights": Vector3(1.04, 1.06, 0.88),
+				"wash_top": Vector3(0.0, 0.025, 0.02), "wash_bottom": Vector3(0.0, 0.012, 0.008),
+				"lamp_cone": 0.2, "lamp_rain": 0.0, "moths": 7,
 			}
 		"belvedere":
 			return {
@@ -40,6 +67,9 @@ static func get_theme(theme_name: String) -> Dictionary:
 				"stone": Color("#5d6670"), "mortar": Color("#11161b"), "stone_light": Color("#9aa6ae"), "moss": 0.35,
 				"weather": "motes", "far_kind": "hills", "mid_kind": "factory", "fg_kind": "grass",
 				"tint": Vector3(1.0, 1.01, 1.04), "contrast": 1.06, "saturation": 0.95, "bloom": 0.7, "vignette": 0.45,
+				"shadows": Vector3(0.9, 0.97, 1.1), "highlights": Vector3(1.14, 0.98, 0.9),
+				"wash_top": Vector3(0.05, 0.028, 0.03), "wash_bottom": Vector3(0.02, 0.03, 0.035),
+				"lamp_cone": 0.14, "lamp_rain": 0.0, "moths": 3,
 			}
 		"oro":
 			return {
@@ -52,6 +82,9 @@ static func get_theme(theme_name: String) -> Dictionary:
 				"stone": Color("#6e5c44"), "mortar": Color("#160e07"), "stone_light": Color("#b69a6c"), "moss": 0.0,
 				"weather": "embers", "far_kind": "reggia", "mid_kind": "colonnade", "fg_kind": "columns",
 				"tint": Vector3(1.08, 1.0, 0.9), "contrast": 1.12, "saturation": 1.05, "bloom": 0.9, "vignette": 0.6,
+				"shadows": Vector3(0.92, 0.96, 1.1), "highlights": Vector3(1.14, 0.98, 0.78),
+				"wash_top": Vector3(0.05, 0.03, 0.0), "wash_bottom": Vector3(0.015, 0.008, 0.0),
+				"lamp_cone": 0.24, "lamp_rain": 0.0, "moths": 0,
 			}
 		_:
 			return {
@@ -64,4 +97,7 @@ static func get_theme(theme_name: String) -> Dictionary:
 				"stone": Color("#535a70"), "mortar": Color("#0c0e15"), "stone_light": Color("#8a91aa"), "moss": 0.0,
 				"weather": "motes", "far_kind": "city", "mid_kind": "facades", "fg_kind": "railing",
 				"tint": Vector3(0.96, 1.0, 1.08), "contrast": 1.1, "saturation": 1.0, "bloom": 0.75, "vignette": 0.5,
+				"shadows": Vector3(0.9, 0.96, 1.12), "highlights": Vector3(1.1, 1.0, 0.86),
+				"wash_top": Vector3(0.0, 0.012, 0.035), "wash_bottom": Vector3(0.025, 0.016, 0.0),
+				"lamp_cone": 0.24, "lamp_rain": 0.0, "moths": 6,
 			}

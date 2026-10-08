@@ -1,7 +1,10 @@
 class_name Fx
 extends RefCounted
-## Effetti visivi locali: particelle, onde d'urto, anime, meteo e hit-stop.
+## Effetti visivi locali: particelle, onde d'urto, anime, meteo, vita ambientale e hit-stop.
 ## Non sono sincronizzati: ogni PC li crea da sé (l'host li annuncia con una RPC leggera).
+
+static var _ripple_tex: Texture2D
+static var _bokeh_tex: Texture2D
 
 
 ## Particelle "one shot" configurabili. Si eliminano da sole a fine vita.
@@ -165,6 +168,53 @@ static func weather(kind: String, th: Dictionary) -> CPUParticles2D:
 			ramp.set_color(0, Color(col, 0.0))
 			ramp.set_color(1, Color(1.0, 0.3, 0.1, 0.0))
 			ramp.add_point(0.15, col)
+		"rain_far":
+			# Pioggia lontana dietro il piano di gioco: più fine, più lenta, più tenue.
+			p.texture = Art.streak_texture()
+			p.amount = 160
+			p.lifetime = 1.1
+			p.direction = Vector2(0.18, 1.0)
+			p.spread = 2.0
+			p.initial_velocity_min = 520.0
+			p.initial_velocity_max = 640.0
+			p.particle_flag_align_y = true
+			p.scale_amount_min = 0.3
+			p.scale_amount_max = 0.5
+			col = Color(0.7, 0.72, 0.9, 0.16)
+			ramp.set_color(0, col)
+			ramp.set_color(1, Color(col, 0.05))
+		"bokeh":
+			# Pulviscolo fuori fuoco davanti alla camera: dischi grandi, tenui, lentissimi.
+			p.texture = bokeh_texture()
+			p.amount = 14
+			p.lifetime = 10.0
+			p.gravity = Vector2(0, -3)
+			p.initial_velocity_min = 3.0
+			p.initial_velocity_max = 12.0
+			p.scale_amount_min = 1.2
+			p.scale_amount_max = 2.6
+			p.material = Art.add_material()
+			col = Color(col, 0.07)
+			ramp.set_color(0, Color(col, 0.0))
+			ramp.set_color(1, Color(col, 0.0))
+			ramp.add_point(0.35, col)
+			ramp.add_point(0.7, col)
+		"dust":
+			# Polvere che brilla nei raggi di luce.
+			p.amount = 40
+			p.lifetime = 9.0
+			p.gravity = Vector2(2, 3)
+			p.initial_velocity_min = 2.0
+			p.initial_velocity_max = 9.0
+			p.scale_amount_min = 0.025
+			p.scale_amount_max = 0.06
+			p.material = Art.add_material()
+			col = Color(col.lightened(0.3), 0.8)
+			ramp.set_color(0, Color(col, 0.0))
+			ramp.set_color(1, Color(col, 0.0))
+			ramp.add_point(0.25, col)
+			ramp.add_point(0.5, Color(col, 0.2))
+			ramp.add_point(0.75, col)
 		"leaves":
 			p.texture = Art.leaf_texture()
 			p.amount = 16
@@ -197,3 +247,152 @@ static func weather(kind: String, th: Dictionary) -> CPUParticles2D:
 	p.color_ramp = ramp
 	p.preprocess = p.lifetime
 	return p
+
+
+## Campo di particelle ambientali appoggiato a uno strato di parallasse: le particelle vivono in
+## coordinate locali dello strato, quindi scorrono con la sua parallasse. area: rettangolo coperto.
+## cfg (da data/areas.json): color, size (moltiplica la scala), alpha (moltiplica l'opacità),
+## speed (moltiplica le velocità).
+static func field(kind: String, area: Rect2, amount: int, th: Dictionary, cfg: Dictionary) -> CPUParticles2D:
+	var look := th.duplicate()
+	if cfg.has("color"):
+		look["lamp"] = Color(cfg["color"])
+	var p := weather(kind, look)
+	p.local_coords = true
+	p.position = area.get_center()
+	p.emission_rect_extents = area.size * 0.5
+	p.amount = maxi(1, amount)
+	var k := float(cfg.get("size", 1.0))
+	p.scale_amount_min *= k
+	p.scale_amount_max *= k
+	var v := float(cfg.get("speed", 1.0))
+	p.initial_velocity_min *= v
+	p.initial_velocity_max *= v
+	p.gravity *= v
+	var a := float(cfg.get("alpha", 1.0))
+	if a != 1.0:
+		var ramp := p.color_ramp.duplicate() as Gradient
+		for i in ramp.get_point_count():
+			var c := ramp.get_color(i)
+			ramp.set_color(i, Color(c, c.a * a))
+		p.color_ramp = ramp
+	p.preprocess = p.lifetime
+	return p
+
+
+## Falene attorno alla testa di un lampione: puntini caldi che girano e sfarfallano.
+static func moths(color: Color, amount: int) -> CPUParticles2D:
+	var p := CPUParticles2D.new()
+	p.texture = Art.soft_texture()
+	p.material = Art.add_material()
+	p.amount = amount
+	p.lifetime = 4.0
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 30.0
+	p.direction = Vector2.UP
+	p.spread = 180.0
+	p.initial_velocity_min = 25.0
+	p.initial_velocity_max = 55.0
+	p.orbit_velocity_min = 0.35
+	p.orbit_velocity_max = 0.8
+	p.radial_accel_min = -55.0
+	p.radial_accel_max = -30.0
+	p.scale_amount_min = 0.05
+	p.scale_amount_max = 0.09
+	var ramp := Gradient.new()
+	var col := Color(color.lightened(0.5), 0.9)
+	ramp.set_color(0, Color(col, 0.0))
+	ramp.set_color(1, Color(col, 0.0))
+	ramp.add_point(0.15, col)
+	ramp.add_point(0.4, Color(col, 0.35))
+	ramp.add_point(0.6, col)
+	ramp.add_point(0.85, Color(col, 0.4))
+	p.color_ramp = ramp
+	p.preprocess = p.lifetime
+	return p
+
+
+## Schizzi delle gocce su una superficie larga width (il nodo sta al centro della superficie).
+static func splashes(width: float, amount: int, color: Color) -> CPUParticles2D:
+	var p := CPUParticles2D.new()
+	p.texture = Art.soft_texture()
+	p.amount = maxi(1, amount)
+	p.lifetime = 0.32
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	p.emission_rect_extents = Vector2(width * 0.5, 1.0)
+	p.direction = Vector2(0.15, -1.0)
+	p.spread = 38.0
+	p.initial_velocity_min = 45.0
+	p.initial_velocity_max = 120.0
+	p.gravity = Vector2(0, 620)
+	p.scale_amount_min = 0.03
+	p.scale_amount_max = 0.06
+	var ramp := Gradient.new()
+	ramp.set_color(0, color)
+	ramp.set_color(1, Color(color, 0.0))
+	p.color_ramp = ramp
+	p.preprocess = p.lifetime
+	return p
+
+
+## Increspature ellittiche dove cadono le gocce.
+static func ripples(width: float, amount: int, color: Color) -> CPUParticles2D:
+	var p := CPUParticles2D.new()
+	p.texture = ripple_texture()
+	p.amount = maxi(1, amount)
+	p.lifetime = 0.55
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	p.emission_rect_extents = Vector2(width * 0.5, 1.5)
+	p.initial_velocity_min = 0.0
+	p.initial_velocity_max = 0.0
+	p.gravity = Vector2.ZERO
+	p.scale_amount_min = 0.35
+	p.scale_amount_max = 0.7
+	var curve := Curve.new()
+	curve.add_point(Vector2(0.0, 0.25))
+	curve.add_point(Vector2(1.0, 1.0))
+	p.scale_amount_curve = curve
+	var ramp := Gradient.new()
+	ramp.set_color(0, color)
+	ramp.set_color(1, Color(color, 0.0))
+	p.color_ramp = ramp
+	p.preprocess = p.lifetime
+	return p
+
+
+## Anello ellittico 48x12 per le increspature.
+static func ripple_texture() -> Texture2D:
+	if _ripple_tex == null:
+		var w := 48
+		var h := 12
+		var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+		for y in h:
+			for x in w:
+				var dx := (float(x) + 0.5 - w * 0.5) / (w * 0.5)
+				var dy := (float(y) + 0.5 - h * 0.5) / (h * 0.5)
+				var r := sqrt(dx * dx + dy * dy)
+				var a := clampf(1.0 - absf(r - 0.8) * 6.0, 0.0, 1.0)
+				img.set_pixel(x, y, Color(1, 1, 1, a))
+		_ripple_tex = ImageTexture.create_from_image(img)
+	return _ripple_tex
+
+
+## Disco da obiettivo fuori fuoco: pieno e tenue, con il bordo appena più chiaro.
+static func bokeh_texture() -> Texture2D:
+	if _bokeh_tex == null:
+		var g := Gradient.new()
+		g.set_offset(0, 0.0)
+		g.set_color(0, Color(1, 1, 1, 0.55))
+		g.set_offset(1, 1.0)
+		g.set_color(1, Color(1, 1, 1, 0.0))
+		g.add_point(0.72, Color(1, 1, 1, 0.75))
+		g.add_point(0.86, Color(1, 1, 1, 0.3))
+		var t := GradientTexture2D.new()
+		t.gradient = g
+		t.fill = GradientTexture2D.FILL_RADIAL
+		t.fill_from = Vector2(0.5, 0.5)
+		t.fill_to = Vector2(1.0, 0.5)
+		t.width = 64
+		t.height = 64
+		_bokeh_tex = t
+	return _bokeh_tex
