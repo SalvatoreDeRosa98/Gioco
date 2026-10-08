@@ -532,7 +532,7 @@
         "kind": "route",
         "label": "Vicoli del Mercato",
         "pos": [
-          1820,
+          2195,
           980
         ],
         "target": 7,
@@ -559,83 +559,6 @@
         ],
         "need": "",
         "unlock": ""
-      },
-      {
-        "kind": "route",
-        "label": "Passerella del Mercato",
-        "pos": [
-          1150,
-          530
-        ],
-        "target": 7,
-        "spawn": [
-          1190,
-          506
-        ],
-        "need": "market_bridge",
-        "unlock": ""
-      }
-    ],
-    "2": [
-      {
-        "kind": "route",
-        "label": "Portici della Caserma",
-        "pos": [
-          1580,
-          980
-        ],
-        "target": 8,
-        "spawn": [
-          430,
-          956
-        ],
-        "need": "",
-        "unlock": ""
-      },
-      {
-        "kind": "route",
-        "label": "Vicoli del Mercato",
-        "pos": [
-          380,
-          980
-        ],
-        "target": 7,
-        "spawn": [
-          2400,
-          956
-        ],
-        "need": "",
-        "unlock": ""
-      },
-      {
-        "kind": "route",
-        "label": "Ascensore delle Cisterne",
-        "pos": [
-          2240,
-          800
-        ],
-        "target": 9,
-        "spawn": [
-          1400,
-          396
-        ],
-        "need": "sluice",
-        "unlock": ""
-      },
-      {
-        "kind": "route",
-        "label": "Montacarichi degli Archivi",
-        "pos": [
-          1930,
-          980
-        ],
-        "target": 11,
-        "spawn": [
-          1800,
-          956
-        ],
-        "need": "archive_lift",
-        "unlock": ""
       }
     ],
     "3": [
@@ -649,55 +572,6 @@
         "target": 10,
         "spawn": [
           150,
-          956
-        ],
-        "need": "",
-        "unlock": ""
-      },
-      {
-        "kind": "route",
-        "label": "Portici della Caserma",
-        "pos": [
-          400,
-          980
-        ],
-        "target": 8,
-        "spawn": [
-          2400,
-          956
-        ],
-        "need": "",
-        "unlock": ""
-      }
-    ],
-    "7": [
-      {
-        "kind": "route",
-        "label": "Passerella verso il Corso",
-        "pos": [
-          1190,
-          530
-        ],
-        "target": 1,
-        "spawn": [
-          1150,
-          506
-        ],
-        "need": "",
-        "unlock": "market_bridge"
-      }
-    ],
-    "8": [
-      {
-        "kind": "route",
-        "label": "Villa Comunale",
-        "pos": [
-          540,
-          980
-        ],
-        "target": 2,
-        "spawn": [
-          1580,
           956
         ],
         "need": "",
@@ -716,23 +590,8 @@
         "text": [
           "Cesare ha inciso un nome sulla ruota: Gaetano.",
           "Il fabbro costruì la chiusa per portare le voci fuori dalla Reggia.",
-          "L’acqua scende. Il percorso per il Belvedere e l’ascensore per la Villa sono aperti."
+          "L’acqua scende. Il percorso per il Belvedere è aperto."
         ]
-      },
-      {
-        "kind": "route",
-        "label": "Ascensore verso la Villa",
-        "pos": [
-          1400,
-          420
-        ],
-        "target": 2,
-        "spawn": [
-          2240,
-          776
-        ],
-        "need": "sluice",
-        "unlock": ""
       }
     ],
     "10": [
@@ -790,21 +649,6 @@
           "Terzo frammento: le tessitrici copiarono sulla seta i nomi cancellati dai registri.",
           "Gaetano non lavorava da solo. Una città intera imparò a ricordare in segreto."
         ]
-      },
-      {
-        "kind": "route",
-        "label": "Montacarichi verso la Villa",
-        "pos": [
-          1800,
-          980
-        ],
-        "target": 2,
-        "spawn": [
-          1930,
-          956
-        ],
-        "need": "",
-        "unlock": "archive_lift"
       },
       {
         "kind": "route",

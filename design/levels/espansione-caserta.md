@@ -4,7 +4,7 @@
 
 Le cinque aree aggiuntive sono giocabili: Mercato (ID 7), Caserma (8), Cisterne (9), Tessiture (10), Archivi (11). Gli ID 0–6 restano compatibili con i salvataggi precedenti. Le sezioni sotto conservano il progetto iniziale; questo riepilogo descrive la versione effettiva.
 
-Piazza → Corso → Villa → Cisterne → Belvedere → Archivi → Cortile è il percorso principale. I varchi W aggiungono Piazza → Mercato → Villa, Corso/Villa → Caserma → Belvedere, Belvedere → Tessiture → Archivi. Ritorni: passerella Mercato–Corso, ascensore Cisterne–Villa, montacarichi Archivi–Villa e ballatoio Archivi–Tessiture. Il segreto di Taddeo resta una ricompensa alternativa per chi lo perdona.
+Piazza → Corso → Villa → Cisterne → Belvedere → Archivi → Cortile è il percorso principale. Ogni area ha al massimo un varco laterale, disegnato come un portale in pietra appoggiato al suolo (stessa pietra del terreno, saracinesca alzata e luce calda; il nome compare solo da vicino): Piazza → Mercato (che sbocca nella Villa), Corso → Caserma (che sbocca nel Belvedere), Belvedere → Tessiture, e il ballatoio Archivi → Tessiture. Ascensori, montacarichi, passerella e varchi doppi della Villa sono stati rimossi dopo il playtest dell'8 ottobre: i ritorni passano dai bordi delle stanze. Il segreto di Taddeo resta una ricompensa alternativa per chi lo perdona.
 
 La Caserma richiede il capitano; le Cisterne la chiusa alta; le Tessiture il telaio mobile e la Madre di Marmo (oppure il ballatoio aperto dagli Archivi). Il Cortile richiede il ricordo del padre e tutti e tre i frammenti degli Archivi. Conservare o bruciare il registro resta equivalente per l'accesso. La Madre premia con la Fibbia della guardia. Incudini limitate alle quattro aree originarie previste.
 

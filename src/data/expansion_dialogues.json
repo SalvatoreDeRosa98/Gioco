@@ -40,7 +40,7 @@
             },
             {
               "who": "rosa",
-              "text": "Sui tetti c’è una passerella per il Corso. In fondo ai vicoli si arriva alla Villa."
+              "text": "In fondo ai vicoli si arriva alla Villa. Tornando indietro ritrovi la Piazza."
             }
           ]
         }
@@ -124,7 +124,7 @@
             },
             {
               "who": "cesare",
-              "text": "La ruota in alto comanda anche l’ascensore per la Villa. Gaetano pensava sempre a una via di ritorno."
+              "text": "La ruota in alto comanda le paratie verso il Belvedere. Gaetano pensava sempre a una via d’uscita."
             }
           ],
           "when": {
@@ -144,7 +144,7 @@
             },
             {
               "who": "cesare",
-              "text": "Sali lungo i sostegni e azionala. Aprirai la strada al Belvedere e l’ascensore per la Villa."
+              "text": "Sali lungo i sostegni e azionala. Aprirai la strada al Belvedere."
             }
           ]
         }
@@ -232,7 +232,7 @@
             },
             {
               "who": "elsa",
-              "text": "Il montacarichi al piano terra ti riporta direttamente ai giardini."
+              "text": "Dal Belvedere le Cisterne ti riportano ai giardini della Villa."
             }
           ],
           "when": {
@@ -256,7 +256,7 @@
             },
             {
               "who": "elsa",
-              "text": "Il montacarichi in basso torna alla Villa. Il ballatoio centrale apre un passaggio alle Tessiture."
+              "text": "Il ballatoio centrale apre un passaggio alle Tessiture."
             }
           ]
         }
