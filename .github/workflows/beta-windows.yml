@@ -1,0 +1,102 @@
+# Beta Windows di Ferruccio: a ogni push sul ramo di lavoro (e su main) e a mano
+# importa il progetto, lo prova headless, esporta l'exe Windows, lo zippa e lo
+# pubblica come pre-release "beta" (tag mobile) nella pagina Releases.
+#
+# La logica sta negli script di tools/ci/, così si può rieseguire in locale:
+#   setup-godot.sh     scarica Godot 4.6-stable e i template Windows (con cache)
+#   smoke-test.sh      importazione + prova di avvio di ~20 s
+#   package-windows.sh esportazione, LEGGIMI.txt e zip
+#   publish-beta.sh    sposta il tag "beta" e aggiorna la release
+name: Beta Windows
+
+on:
+  push:
+    branches:
+      - main
+      - claude/optimistic-wozniak-9l570p
+  workflow_dispatch:
+
+# Un solo giro alla volta: la release "beta" è unica, quindi due build in parallelo
+# si pesterebbero i piedi. Una build già partita non viene interrotta; se ne arrivano
+# altre, GitHub tiene in coda solo l'ultima.
+concurrency:
+  group: beta-windows
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  beta:
+    name: Esporta e pubblica la beta
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write   # serve a spostare il tag "beta" e a modificare la release
+    steps:
+      - name: Scarica il repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 30            # per le note della release (ultimi commit)
+          persist-credentials: false # il token serve solo al passo di pubblicazione
+
+      # Editor Godot (~140 MB) e template Windows (~100 MB) restano in cache: senza,
+      # ogni build riscaricherebbe 1,2 GB di .tpz. La cache si salva subito dopo
+      # l'installazione, non a fine job, così sopravvive anche se la prova di avvio fallisce.
+      # Per forzare un nuovo download cambia il suffisso "-v1" della chiave.
+      - name: Cache di Godot e dei template
+        id: godot-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates/4.6.stable
+          key: godot-4.6-stable-${{ runner.os }}-win-templates-v1
+
+      - name: Installa Godot 4.6-stable e i template Windows
+        run: bash tools/ci/setup-godot.sh
+
+      - name: Salva la cache di Godot
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates/4.6.stable
+          key: godot-4.6-stable-${{ runner.os }}-win-templates-v1
+
+      - name: Importa il progetto e prova l'avvio (headless, ~20 s)
+        run: bash tools/ci/smoke-test.sh
+
+      - name: Esporta la build Windows e crea lo zip
+        run: bash tools/ci/package-windows.sh
+
+      # Retention breve e continue-on-error: in un repo privato le quote di spazio per gli
+      # artifact (500 MB nel piano Free) si riempiono in fretta con zip da ~70 MB a ogni push,
+      # e un'artifact piena non deve impedire la pubblicazione della release (che non conta
+      # nella quota e resta il canale principale per scaricare la beta).
+      - name: Carica lo zip come artifact
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: Ferruccio-beta-windows
+          path: build/Ferruccio-beta-windows.zip
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 0   # è già uno zip
+
+      - name: Pubblica la release "beta"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash tools/ci/publish-beta.sh
+
+      # In fondo e con always(): se la prova di avvio o l'esportazione falliscono,
+      # i log (import.log, smoke.log, export.log, errori.txt) servono proprio allora.
+      - name: Carica i log
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ci-logs
+          path: build/ci-logs/
+          if-no-files-found: ignore
+          retention-days: 7

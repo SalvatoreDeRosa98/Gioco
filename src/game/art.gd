@@ -208,10 +208,14 @@ static func crescent(c: CanvasItem, center: Vector2, radius: float, width: float
 		var dir := Vector2(cos(a), sin(a))
 		outer_pts.append(center + dir * (radius + w * 0.5))
 		inner_pts.append(center + dir * (radius - w * 0.5))
+	# Triangoli singoli: alle estremità lo spessore è zero e un quadrilatero degenere
+	# non si triangolerebbe (errore "Invalid polygon data").
+	if absf(to - from) < 0.001:
+		return
+	var none := PackedVector2Array()
 	for i in n:
-		c.draw_polygon(
-			PackedVector2Array([outer_pts[i], outer_pts[i + 1], inner_pts[i + 1], inner_pts[i]]),
-			PackedColorArray([outer, outer, inner, inner]))
+		c.draw_primitive(PackedVector2Array([outer_pts[i], outer_pts[i + 1], inner_pts[i + 1]]), PackedColorArray([outer, outer, inner]), none)
+		c.draw_primitive(PackedVector2Array([outer_pts[i], inner_pts[i + 1], inner_pts[i]]), PackedColorArray([outer, inner, inner]), none)
 
 
 ## Testo con ombra morbida (due passate): leggibile su qualunque sfondo.
