@@ -1,6 +1,6 @@
 extends CharacterBody2D
-## Cavaliere-Pulcinella giocabile. Il peer proprietario muove il personaggio e ne replica
-## posizione e stato; ogni PC ricostruisce localmente pose, sciarpa, polvere e scie.
+## Cavaliere-Pulcinella giocabile: movimento, vita, camera e aspetto (pose, polvere, scie).
+## Danni, raccolta e stanze li decide il mondo (world.gd), che lo chiama per colpi e ripartenze.
 
 signal slash_requested(pos: Vector2, facing: float, down: bool, air: bool)
 
@@ -28,15 +28,17 @@ const RUN_SWING := 0.55
 ## Maschera di collisione: 1 = muri e blocchi, 4 = mensole attraversabili.
 const LEDGE_LAYER := 4
 
-var peer_id := 1
-var player_name := ""
-var tint := Color.WHITE
+## Colore della sciarpa (rosso dipinto): serve alle sagome dello scatto e al fendente.
+const SCARF_COLOR := Color("#e8483f")
+
 var hp := 5
 var max_hp := 5
 var dead := false
+## Secondi di invulnerabilità rimasti dopo un colpo subito.
+var iframes := 0.0
 var world: Node
 
-# Replicati dal proprietario.
+# Stato di movimento e animazione.
 var facing := 1.0
 var attacking := 0.0
 var attack_down := false
@@ -71,15 +73,11 @@ var _flash := 0.0
 var _mat: ShaderMaterial
 
 
-func setup(d: Dictionary) -> void:
-	peer_id = int(d["peer"])
-	player_name = str(d["name"])
-	tint = d["tint"]
-	position = d["pos"]
+func setup(pos: Vector2) -> void:
+	position = pos
 	_cfg = Tuning.data.player
 	max_hp = int(_cfg.max_hp)
 	hp = max_hp
-	set_multiplayer_authority(peer_id)
 	collision_layer = 2
 	collision_mask = 1
 	set_collision_mask_value(LEDGE_LAYER, true)
@@ -90,39 +88,25 @@ func setup(d: Dictionary) -> void:
 	cs.shape = sh
 	add_child(cs)
 
-	var sync := MultiplayerSynchronizer.new()
-	# Nome fisso: il percorso del nodo deve essere identico su tutti i PC.
-	sync.name = "Sync"
-	sync.set_multiplayer_authority(peer_id)
-	var cfg := SceneReplicationConfig.new()
-	for prop in [":position", ":facing", ":attacking", ":attack_down", ":grounded", ":dashing", ":move_vel", ":slash_side"]:
-		cfg.add_property(NodePath(prop))
-	sync.replication_config = cfg
-	add_child(sync)
-	add_to_group("players")
-
 
 func _ready() -> void:
 	_light = Art.point_light(self, Vector2(0, -10), Color(1.0, 0.93, 0.82), 0.55, 460.0)
-	# La sciarpa dipinta prende il colore del giocatore; il lampo bianco segnala i colpi subiti.
+	# La sciarpa resta quella dipinta (scarf_amount 0); il lampo bianco segnala i colpi subiti.
 	_mat = ShaderMaterial.new()
 	_mat.shader = SPRITE_SHADER
-	_mat.set_shader_parameter("scarf_color", tint)
-	_mat.set_shader_parameter("scarf_amount", 1.0)
 	material = _mat
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	if is_multiplayer_authority():
-		_cam = Camera2D.new()
-		_cam.zoom = Vector2.ONE * Room.CAMERA_ZOOM
-		_cam.position_smoothing_enabled = true
-		_cam.position_smoothing_speed = 6.5
-		add_child(_cam)
-		_cam.make_current()
-		if world and not world.room.is_empty():
-			apply_room(world.room["size"])
+	_cam = Camera2D.new()
+	_cam.zoom = Vector2.ONE * Room.CAMERA_ZOOM
+	_cam.position_smoothing_enabled = true
+	_cam.position_smoothing_speed = 6.5
+	add_child(_cam)
+	_cam.make_current()
+	if world and not world.room.is_empty():
+		apply_room(world.room["size"])
 
 
-## Limiti della camera alla stanza corrente (solo per il proprio personaggio).
+## Limiti della camera alla stanza corrente.
 func apply_room(size: Vector2) -> void:
 	if _cam == null:
 		return
@@ -137,11 +121,10 @@ func add_trauma(amount: float) -> void:
 	_trauma = minf(1.0, _trauma + amount)
 
 
-# ---------------------------------------------------------------- Movimento (solo proprietario)
+# ---------------------------------------------------------------- Movimento
 
 func _physics_process(delta: float) -> void:
-	if not is_multiplayer_authority():
-		return
+	iframes = maxf(0.0, iframes - delta)
 	if attacking > 0.0:
 		attacking = maxf(0.0, attacking - delta)
 	if dead:
@@ -205,7 +188,7 @@ func _physics_process(delta: float) -> void:
 	move_vel = velocity
 
 
-# ---------------------------------------------------------------- Aspetto (tutti i PC)
+# ---------------------------------------------------------------- Aspetto
 
 func _process(delta: float) -> void:
 	_t += delta
@@ -273,7 +256,7 @@ func _pose(alpha: float, silhouette: bool) -> Dictionary:
 	return {
 		"facing": facing, "squash": _squash, "run": _run, "grounded": grounded, "vy": move_vel.y,
 		"moving": absf(move_vel.x) > 30.0, "dashing": dashing, "hat": _hat, "breathe": sin(_t * 2.6),
-		"tint": tint, "alpha": alpha, "silhouette": silhouette, "dead": dead,
+		"tint": SCARF_COLOR, "alpha": alpha, "silhouette": silhouette, "dead": dead,
 		"attack": atk, "attack_down": attack_down, "slash_side": slash_side,
 	}
 
@@ -283,9 +266,6 @@ func _draw() -> void:
 	var air := 0.0 if grounded else 1.0
 	draw_colored_polygon(Art.ellipse(Vector2(0, HALF.y + 1.0), Vector2(15.0 - air * 5.0, 3.5), 16), Color(0, 0, 0, 0.35 * a * (1.0 - air * 0.6)))
 	draw_figure(self, _pose(a, false))
-	# Il nome serve solo a distinguere i giocatori quando sono più di uno.
-	if Net.players.size() > 1:
-		Art.text(self, Art.body_font(), Vector2(-70, -HALF.y - RIG_HEIGHT * 0.5 - 22.0), player_name, 17, Color(tint.lightened(0.2), 0.9 * a), HORIZONTAL_ALIGNMENT_CENTER, 140)
 
 
 ## Disegna Ferruccio con i pezzi dipinti (corpo, spada, due gambe) ruotati e spostati in base
@@ -377,17 +357,26 @@ static func _part(c: CanvasItem, base: Transform2D, tex: Texture2D, pivot: Vecto
 	c.draw_texture(tex, Vector2.ZERO, mod)
 
 
-# ---------------------------------------------------------------- Comandi dal server
+# ---------------------------------------------------------------- Comandi dal mondo
 
-## Dal server: punti vita e stato di morte. Al proprietario fa anche tremare lo schermo.
-func apply_stats(s: Dictionary) -> void:
-	var new_hp := int(s["hp"])
-	if new_hp < hp:
-		_flash = 1.0
-		add_trauma(0.55)
-	hp = new_hp
-	max_hp = int(s["max_hp"])
-	dead = bool(s["dead"])
+## Toglie punti vita; a zero Ferruccio cade. Lampo bianco e scossa di camera.
+func take_damage(dmg: int) -> void:
+	hp = maxi(0, hp - dmg)
+	dead = hp <= 0
+	_flash = 1.0
+	add_trauma(0.55)
+
+
+## Restituisce punti vita (mozzarella), senza superare il massimo.
+func heal(amount: int) -> void:
+	hp = mini(max_hp, hp + amount)
+
+
+## Dopo la caduta: vita piena e nessuna invulnerabilità residua.
+func revive() -> void:
+	dead = false
+	hp = max_hp
+	iframes = 0.0
 
 
 func teleport(pos: Vector2) -> void:

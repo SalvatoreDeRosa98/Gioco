@@ -22,7 +22,7 @@
 		"gatto": {"hp": 3, "speed": 75, "damage": 1, "coins": 2},
 		"vespa": {"hp": 2, "speed": 130, "damage": 1, "coins": 2},
 		"statua": {"hp": 6, "speed": 0, "damage": 1, "coins": 4, "fire_every": 2.2, "bullet_speed": 330},
-		"custode": {"hp": 40, "hp_per_player": 15, "speed": 120, "damage": 2, "coins": 60}
+		"custode": {"hp": 55, "speed": 120, "damage": 2, "coins": 60}
 	},
 	"rewards": {
 		"heal_chance": 0.12,

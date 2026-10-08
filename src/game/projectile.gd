@@ -1,6 +1,6 @@
 extends Node2D
-## Proiettile nemico. Solo l'host lo muove e ne controlla le collisioni; i client vedono la
-## posizione replicata. Ogni PC disegna da sé alone, nucleo e scia.
+## Proiettile nemico: si muove in linea retta e svanisce a fine vita. Le collisioni con muri
+## e giocatore le controlla il mondo (world.gd). Disegna alone, nucleo e scia.
 
 const TRAIL := 8
 
@@ -19,15 +19,6 @@ func setup(d: Dictionary) -> void:
 	color = d["color"]
 	life = float(d["life"])
 	radius = float(d["radius"])
-	set_multiplayer_authority(1)
-	var sync := MultiplayerSynchronizer.new()
-	# Nome fisso: il percorso del nodo deve essere identico su tutti i PC.
-	sync.name = "Sync"
-	sync.set_multiplayer_authority(1)
-	var cfg := SceneReplicationConfig.new()
-	cfg.add_property(NodePath(":position"))
-	sync.replication_config = cfg
-	add_child(sync)
 	add_to_group("bullets")
 
 
@@ -36,8 +27,6 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if not multiplayer.is_server():
-		return
 	position += vel * delta
 	life -= delta
 	if life <= 0.0:

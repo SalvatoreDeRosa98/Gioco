@@ -13,7 +13,6 @@ config/features=PackedStringArray("4.6", "GL Compatibility")
 
 [autoload]
 
-Net="*res://autoload/net.gd"
 Tuning="*res://autoload/tuning.gd"
 
 [display]

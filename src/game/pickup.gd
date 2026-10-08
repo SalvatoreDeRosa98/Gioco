@@ -1,5 +1,5 @@
 extends Node2D
-## Oggetto raccoglibile (centesimi o mozzarella). Lo crea l'host; la posizione iniziale basta a tutti.
+## Oggetto raccoglibile (centesimi o mozzarella). Lo crea il mondo; la raccolta la decide world.gd.
 
 const MOZZARELLA_TEX := preload("res://assets/art/items/mozzarella.png")
 const COIN_TEX := preload("res://assets/art/items/moneta.png")

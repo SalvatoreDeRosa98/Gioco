@@ -1,5 +1,5 @@
 extends Control
-## HUD: maschere di Pulcinella come punti vita, centesimi, compagni, titolo d'area all'ingresso,
+## HUD: maschere di Pulcinella come punti vita, centesimi, titolo d'area all'ingresso,
 ## barra del boss, messaggi e schermata finale. Solo visualizzazione: legge lo stato dal mondo.
 
 const MASK_TEX := preload("res://assets/art/items/maschera.png")
@@ -68,7 +68,6 @@ func _draw() -> void:
 		return
 	var vp := get_viewport_rect().size
 	_draw_vitals()
-	_draw_party()
 	_draw_area_title(vp)
 	_draw_boss(vp)
 	if _toast_t > 0.0:
@@ -83,7 +82,7 @@ func _draw() -> void:
 
 
 func _draw_vitals() -> void:
-	var me = world.local_player()
+	var me = world.player
 	# Alone scuro dietro all'HUD per leggibilità su qualunque sfondo.
 	Art.shaded_ellipse(self, Vector2(130, 80), Vector2(230, 120), Color(0, 0, 0, 0.4), Color(0, 0, 0, 0.0), 24)
 	if me:
@@ -107,27 +106,6 @@ func _draw_mask(center: Vector2, filled: bool, glow_amount: float) -> void:
 		draw_texture_rect(MASK_TEX, r, false, Color(1, 1, 1, glow_amount))
 	else:
 		draw_texture_rect(MASK_TEX, r, false, Color(0.12, 0.12, 0.16, 0.55))
-
-
-func _draw_party() -> void:
-	var y := 168.0
-	var me_id: int = world.multiplayer.get_unique_id()
-	var ids: Array = Net.players.keys()
-	ids.sort()
-	for id in ids:
-		if id == me_id:
-			continue
-		var s: Dictionary = world.stats.get(id, {"hp": 0, "max_hp": 0, "dead": false})
-		var p = world._find_player(id)
-		var col: Color = p.tint if p else Art.CREMA
-		var dead: bool = s["dead"]
-		Art.text(self, Art.body_font(), Vector2(36, y), str(Net.players[id]), 20, Color(col.lightened(0.2), 0.5 if dead else 0.95))
-		for k in int(s["max_hp"]):
-			var on: bool = k < int(s["hp"])
-			draw_circle(Vector2(160 + k * 13, y - 6), 4.0, Color(Art.AVORIO, 0.9) if on else Color(1, 1, 1, 0.15))
-		if dead:
-			Art.text(self, Art.body_font(), Vector2(160 + int(s["max_hp"]) * 13 + 8, y), "caduto", 18, Color(1, 0.5, 0.45, 0.8))
-		y += 28.0
 
 
 func _draw_area_title(vp: Vector2) -> void:

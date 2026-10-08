@@ -1,7 +1,10 @@
 extends Node2D
-## Partita co-op a scorrimento laterale. L'host decide stanze, nemici, danni e raccolta;
-## ogni client muove il proprio cavaliere e riceve il resto tramite MultiplayerSpawner.
-## La presentazione (sfondi, terreno, luci, decorazioni, effetti, post-processing) è locale.
+## Mondo di gioco a scorrimento laterale per un solo giocatore: stanze, porte, nemici, colpi,
+## danni, raccolta, morte e ripartenza, boss e schermata finale.
+## La presentazione (sfondi, terreno, luci, decorazioni, effetti, post-processing) sta in nodi a parte.
+
+## Esc: chiede al menu di riprendere il controllo.
+signal exit_requested
 
 const PlayerScript := preload("res://game/player.gd")
 const EnemyScript := preload("res://game/enemy.gd")
@@ -13,39 +16,37 @@ const TerrainScript := preload("res://game/terrain.gd")
 const DecorScript := preload("res://game/decor.gd")
 const POST_SHADER := preload("res://game/shaders/post_screen_grade.gdshader")
 
+## Secondi tra la morte e la ripartenza della stanza.
 const RESPAWN_DELAY := 2.5
+## Secondi di invulnerabilità dopo un colpo subito.
+const HURT_IFRAMES := 0.9
 ## Livello di collisione delle mensole attraversabili dal basso.
 const LEDGE_LAYER := 4
-
-## Colore della sciarpa di ciascun giocatore, in ordine di ingresso.
-var PLAYER_COLORS := [Color("#e8483f"), Color("#3fc1d9"), Color("#f2c046"), Color("#a77bff")]
 
 var room: Dictionary = {}
 var room_index := 0
 var room_cleared := false
-var stats: Dictionary = {}     # peer_id -> {hp, max_hp, dead, iframes}
 var coins := 0
-var cleared: Dictionary = {}   # indice stanza -> bool (verità dell'host)
+var cleared: Dictionary = {}   # indice stanza -> bool
 var game_over := false
 var victory := false
 var fx_root: Node2D
+var player: PlayerScript
 
 var _backdrop
 var _terrain
 var _decor: Node2D
 var _walls: Node2D
 var _entities: Node2D
-var _spawner: MultiplayerSpawner
 var _hud
 var _fade: ColorRect
 var _post_mat: ShaderMaterial
 var _solids: Array = []
 var _rng := RandomNumberGenerator.new()
 var _room_t := 0.0
-var _transitioning := false
-var _wipe_t := -1.0
+var _death_t := -1.0
 var _shown_room := -1
-## Solo per test visivi (--demo): il giocatore locale corre, salta e colpisce da solo.
+## Solo per test visivi (--demo): il giocatore corre, salta e colpisce da solo.
 var _demo := "--demo" in OS.get_cmdline_user_args()
 var _demo_t := 0.0
 
@@ -70,29 +71,26 @@ func _ready() -> void:
 	fx_root.z_index = 20
 	add_child(fx_root)
 
-	_spawner = MultiplayerSpawner.new()
-	_spawner.name = "Spawner"
-	add_child(_spawner)
-	_spawner.spawn_path = NodePath("../Entities")
-	_spawner.spawn_function = _make_entity
-	multiplayer.peer_disconnected.connect(_on_peer_left)
-
 	_build_overlays()
 
-	if multiplayer.is_server():
-		_setup_roster()
-		# Solo per test visivi: godot --path src -- --host --autostart --room=3
-		var start_room := 0
-		for a in OS.get_cmdline_user_args():
-			if a.begins_with("--room="):
-				start_room = clampi(int(a.trim_prefix("--room=")), 0, Room.COUNT - 1)
-		_load_room.rpc(start_room, true, false)
+	player = PlayerScript.new()
+	player.setup(Vector2.ZERO)
+	player.world = self
+	player.slash_requested.connect(_do_slash)
+	_entities.add_child(player)
+
+	# Solo per test visivi: godot --path src -- --play --room=3
+	var start_room := 0
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--room="):
+			start_room = clampi(int(a.trim_prefix("--room=")), 0, Room.COUNT - 1)
+	_load_room(start_room, true, false)
 
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		Engine.time_scale = 1.0
-		Net.leave()
+		exit_requested.emit()
 
 
 func _process(delta: float) -> void:
@@ -104,19 +102,15 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# Logica di gioco solo sull'host.
-	if not multiplayer.is_server() or game_over or room.is_empty():
+	if game_over or room.is_empty():
 		return
 	_room_t += delta
-	for id in stats:
-		var s: Dictionary = stats[id]
-		s["iframes"] = maxf(0.0, float(s["iframes"]) - delta)
 	_check_contacts()
 	_check_bullets()
 	_check_pickups()
 	_check_cleared()
 	_check_doors()
-	_check_wipe(delta)
+	_check_death(delta)
 
 
 func _demo_input(delta: float) -> void:
@@ -169,53 +163,12 @@ func _apply_grade(th: Dictionary) -> void:
 	_post_mat.set_shader_parameter("vignette", th.vignette)
 
 
-func _setup_roster() -> void:
-	var first := Room.build(0)
-	var entries: Array = Room.entry_points(first, true)
-	var ids := _player_order()
-	for i in ids.size():
-		var id: int = ids[i]
-		stats[id] = {"hp": int(Tuning.data.player.max_hp), "max_hp": int(Tuning.data.player.max_hp), "dead": false, "iframes": 0.0}
-		_spawner.spawn({
-			"kind": "player",
-			"peer": id,
-			"name": Net.players[id],
-			"tint": PLAYER_COLORS[i % PLAYER_COLORS.size()],
-			"pos": entries[i % entries.size()],
-		})
-
-
-func _make_entity(d: Dictionary) -> Node:
-	match d["kind"]:
-		"player":
-			var p = PlayerScript.new()
-			p.setup(d)
-			p.world = self
-			p.slash_requested.connect(_on_player_slash)
-			return p
-		"enemy":
-			var e = EnemyScript.new()
-			e.setup(d, self)
-			return e
-		"bullet":
-			var b = ProjectileScript.new()
-			b.setup(d)
-			return b
-		"pickup":
-			var pk = PickupScript.new()
-			pk.setup(d)
-			return pk
-	return Node.new()
-
-
 # ---------------------------------------------------------------- Stanze
 
-@rpc("authority", "call_local", "reliable")
 func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	room_index = idx
 	room = Room.build(idx)
 	room_cleared = cleared_now
-	_transitioning = false
 	var th := Themes.get_theme(room["theme"])
 	_backdrop.build(room["theme"], room["size"], room["floor"], Room.CAMERA_ZOOM)
 	_terrain.build(room, th)
@@ -228,27 +181,21 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 		_shown_room = idx
 		_hud.area_title(room["name"], room["subtitle"])
 
-	var ids := _player_order()
-	var spawns: Array = Room.entry_points(room, from_left)
-	# Solo per test visivi: --at=X fa comparire i giocatori in quel punto del pavimento.
+	var spawn: Vector2 = Room.entry_points(room, from_left)[0]
+	# Solo per test visivi: --at=X fa comparire il giocatore in quel punto del pavimento.
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--at="):
-			for i in spawns.size():
-				spawns[i] = Vector2(float(a.trim_prefix("--at=")) + i * 44.0, float(room["floor"]) - 30.0)
-	for i in ids.size():
-		var p = _find_player(ids[i])
-		if p and p.is_multiplayer_authority():
-			p.teleport(spawns[i % spawns.size()])
-			p.apply_room(room["size"])
+			spawn = Vector2(float(a.trim_prefix("--at=")), float(room["floor"]) - 30.0)
+	player.teleport(spawn)
+	player.apply_room(room["size"])
 
-	if multiplayer.is_server():
-		_room_t = 0.0
-		_wipe_t = -1.0
-		_clear_hostile()
-		_revive_dead()
-		if not cleared_now:
-			for e in room["enemies"]:
-				_spawn_enemy(e["type"], e["pos"])
+	_room_t = 0.0
+	_death_t = -1.0
+	_clear_hostile()
+	_revive_player()
+	if not cleared_now:
+		for e in room["enemies"]:
+			_spawn_enemy(e["type"], e["pos"])
 
 
 func _left_open() -> bool:
@@ -301,42 +248,33 @@ func _clear_hostile() -> void:
 			n.queue_free()
 
 
-func _revive_dead() -> void:
-	for id in stats:
-		var s: Dictionary = stats[id]
-		if s["dead"]:
-			s["dead"] = false
-			s["hp"] = int(s["max_hp"])
-			s["iframes"] = 0.0
-			_push_stats(id)
+## Dopo la morte il giocatore riparte con tutta la vita.
+func _revive_player() -> void:
+	if player.dead:
+		player.revive()
 
 
 func _go(idx: int, from_left: bool) -> void:
-	_transitioning = true
-	_load_room.rpc(idx, from_left, bool(cleared.get(idx, false)))
+	_load_room(idx, from_left, bool(cleared.get(idx, false)))
 
 
 func _go_restart() -> void:
-	# Tutti caduti: si torna all'ingresso della stanza corrente e si riparte da zero.
-	_transitioning = true
-	_load_room.rpc(room_index, true, bool(cleared.get(room_index, false)))
+	# Ferruccio è caduto: si torna all'ingresso della stanza corrente e si riparte da zero.
+	_load_room(room_index, true, bool(cleared.get(room_index, false)))
 
 
 func _check_doors() -> void:
-	if _transitioning:
+	if player.dead:
 		return
 	var size: Vector2 = room["size"]
 	var door_top: float = float(room["floor"]) - Room.DOOR_H
-	for p in _alive_players():
-		var pos: Vector2 = p.global_position
-		if pos.y < door_top:
-			continue
-		if _right_open() and pos.x >= size.x - Room.EDGE - 10.0:
-			_go(room_index + 1, true)
-			return
-		if _left_open() and pos.x <= Room.EDGE + 10.0:
-			_go(room_index - 1, false)
-			return
+	var pos: Vector2 = player.global_position
+	if pos.y < door_top:
+		return
+	if _right_open() and pos.x >= size.x - Room.EDGE - 10.0:
+		_go(room_index + 1, true)
+	elif _left_open() and pos.x <= Room.EDGE + 10.0:
+		_go(room_index - 1, false)
 
 
 func _check_cleared() -> void:
@@ -345,29 +283,27 @@ func _check_cleared() -> void:
 	if not get_tree().get_nodes_in_group("enemies").is_empty():
 		return
 	cleared[room_index] = true
-	_mark_cleared.rpc()
+	_mark_cleared()
 	if room["boss"]:
-		_end_game.rpc(true)
+		_end_game(true)
 	else:
 		var size: Vector2 = room["size"]
 		_spawn_pickup(Vector2(size.x * 0.5, float(room["floor"]) - 40.0), "centesimi", int(Tuning.data.rewards.room_clear_coins))
 
 
-func _check_wipe(delta: float) -> void:
-	if stats.is_empty() or not _alive_players().is_empty():
-		_wipe_t = -1.0
+## Se il giocatore è caduto, dopo una breve pausa la stanza riparte dall'ingresso.
+func _check_death(delta: float) -> void:
+	if not player.dead:
+		_death_t = -1.0
 		return
-	if _transitioning:
-		return
-	if _wipe_t < 0.0:
-		_wipe_t = RESPAWN_DELAY
-	_wipe_t -= delta
-	if _wipe_t <= 0.0:
-		_wipe_t = -1.0
+	if _death_t < 0.0:
+		_death_t = RESPAWN_DELAY
+	_death_t -= delta
+	if _death_t <= 0.0:
+		_death_t = -1.0
 		_go_restart()
 
 
-@rpc("authority", "call_local", "reliable")
 func _mark_cleared() -> void:
 	room_cleared = true
 	_build_walls()
@@ -376,25 +312,13 @@ func _mark_cleared() -> void:
 		_hud.toast("Il passaggio si è aperto")
 
 
-@rpc("authority", "call_local", "reliable")
 func _end_game(won: bool) -> void:
 	game_over = true
 	victory = won
 	_hud.show_end(won)
 
 
-@rpc("authority", "call_local", "reliable")
-func _notify(text: String) -> void:
-	_hud.toast(text)
-
-
-@rpc("authority", "call_local", "reliable")
-func _sync_coins(value: int) -> void:
-	coins = value
-
-
-## Effetti visivi annunciati dall'host e riprodotti localmente da ogni PC.
-@rpc("authority", "call_local", "unreliable")
+## Effetti visivi (particelle, hitstop, scossa di camera) in un punto del mondo.
 func _fx(kind: String, pos: Vector2, col: Color, dir: float) -> void:
 	match kind:
 		"hit":
@@ -420,29 +344,15 @@ func _fx(kind: String, pos: Vector2, col: Color, dir: float) -> void:
 
 
 func _shake_near(pos: Vector2, amount: float) -> void:
-	var p = local_player()
-	if p and p.global_position.distance_to(pos) < 1100.0:
-		p.add_trauma(amount)
+	if player.global_position.distance_to(pos) < 1100.0:
+		player.add_trauma(amount)
 
 
-# ---------------------------------------------------------------- Giocatori
+# ---------------------------------------------------------------- Giocatore
 
-func _on_player_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
-	if multiplayer.is_server():
-		_do_slash(multiplayer.get_unique_id(), pos, facing, down, air)
-	else:
-		_request_slash.rpc_id(1, pos, facing, down, air)
-
-
-@rpc("any_peer", "call_remote", "reliable")
-func _request_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
-	if not multiplayer.is_server():
-		return
-	_do_slash(multiplayer.get_remote_sender_id(), pos, facing, down, air)
-
-
-func _do_slash(peer: int, pos: Vector2, facing: float, down: bool, air: bool) -> void:
-	if game_over or not stats.has(peer) or stats[peer]["dead"]:
+## Il giocatore ha colpito: cerca i nemici nell'area del fendente.
+func _do_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
+	if game_over or player.dead:
 		return
 	var center := pos + Vector2(0, 42) if down else pos + Vector2(facing * 46.0, -6.0)
 	var half := Vector2(30, 32) if down else Vector2(40, 30)
@@ -455,89 +365,25 @@ func _do_slash(peer: int, pos: Vector2, facing: float, down: bool, air: bool) ->
 			if down and air:
 				bounce = true
 	if bounce:
-		_bounce.rpc(peer)
+		player.bounce()
 
 
-@rpc("authority", "call_local", "reliable")
-func _bounce(peer: int) -> void:
-	var p = _find_player(peer)
-	if p and p.is_multiplayer_authority():
-		p.bounce()
-
-
-@rpc("authority", "call_local", "reliable")
-func _knock(peer: int, dir: float) -> void:
-	var p = _find_player(peer)
-	if p and p.is_multiplayer_authority():
-		p.knock(dir)
-
-
-func _hurt_player(p: Node, dmg: int, from_x: float) -> void:
-	if game_over or not stats.has(p.peer_id):
+func _hurt_player(dmg: int, from_x: float) -> void:
+	if game_over or player.dead or player.iframes > 0.0:
 		return
-	var s: Dictionary = stats[p.peer_id]
-	if s["dead"] or float(s["iframes"]) > 0.0:
-		return
-	s["hp"] = maxi(0, int(s["hp"]) - dmg)
-	s["iframes"] = 0.9
-	var dir := 1.0 if p.global_position.x >= from_x else -1.0
-	_fx.rpc("hurt", p.global_position, Color.WHITE, dir)
-	if s["hp"] <= 0:
-		s["dead"] = true
-		_notify.rpc("%s è caduto" % _name_of(p.peer_id))
+	player.iframes = HURT_IFRAMES
+	player.take_damage(dmg)
+	var dir := 1.0 if player.global_position.x >= from_x else -1.0
+	_fx("hurt", player.global_position, Color.WHITE, dir)
+	if player.dead:
+		_hud.toast("Ferruccio è caduto")
 	else:
-		_knock.rpc(p.peer_id, dir)
-	_push_stats(p.peer_id)
+		player.knock(dir)
 
 
-func _push_stats(id: int) -> void:
-	_sync_stats.rpc(id, stats[id])
-
-
-@rpc("authority", "call_local", "reliable")
-func _sync_stats(id: int, s: Dictionary) -> void:
-	stats[id] = s
-	var p = _find_player(id)
-	if p:
-		p.apply_stats(s)
-
-
-func _on_peer_left(id: int) -> void:
-	if not multiplayer.is_server():
-		return
-	var p = _find_player(id)
-	if p:
-		p.queue_free()
-	stats.erase(id)
-
-
-func _find_player(id: int) -> Node:
-	for p in get_tree().get_nodes_in_group("players"):
-		if p.peer_id == id:
-			return p
-	return null
-
-
-func _alive_players() -> Array:
-	var out: Array = []
-	for p in get_tree().get_nodes_in_group("players"):
-		if not p.dead:
-			out.append(p)
-	return out
-
-
-func _player_order() -> Array:
-	var ids: Array = Net.players.keys()
-	ids.sort()
-	return ids
-
-
-func _name_of(peer: int) -> String:
-	return str(Net.players.get(peer, "Ospite"))
-
-
-func local_player() -> Node:
-	return _find_player(multiplayer.get_unique_id())
+## Il giocatore se è in vita (serve all'IA dei nemici), altrimenti null.
+func alive_player() -> Node2D:
+	return null if player.dead else player
 
 
 ## Il boss della stanza, se presente (serve all'HUD per la barra della vita).
@@ -551,24 +397,24 @@ func boss() -> Node:
 # ---------------------------------------------------------------- Nemici, proiettili, raccolta
 
 func _spawn_enemy(kind: String, pos: Vector2) -> void:
-	var hp := 0
-	if kind == "custode":
-		var b: Dictionary = Tuning.data.enemies.custode
-		hp = int(b.hp) + int(b.hp_per_player) * Net.players.size()
-	_spawner.spawn({"kind": "enemy", "type": kind, "pos": pos, "hp": hp})
+	var e = EnemyScript.new()
+	e.setup({"type": kind, "pos": pos}, self)
+	_entities.add_child(e)
 
 
 func _spawn_pickup(pos: Vector2, item: String, value: int) -> void:
-	_spawner.spawn({"kind": "pickup", "pos": pos, "item": item, "value": value})
+	var pk = PickupScript.new()
+	pk.setup({"pos": pos, "item": item, "value": value})
+	_entities.add_child(pk)
 
 
 func _hit_enemy(e: Node, dmg: int, col: Color, dir: float) -> void:
 	var killed: bool = e.take_hit(dmg)
 	if killed:
-		_fx.rpc("death", e.global_position, Art.enemy_color(e.kind), dir)
+		_fx("death", e.global_position, Art.enemy_color(e.kind), dir)
 		_on_enemy_killed(e)
 	else:
-		_fx.rpc("hit", e.global_position, col, dir)
+		_fx("hit", e.global_position, col, dir)
 
 
 func _on_enemy_killed(e: Node) -> void:
@@ -579,15 +425,16 @@ func _on_enemy_killed(e: Node) -> void:
 
 func _check_contacts() -> void:
 	for e in get_tree().get_nodes_in_group("enemies"):
+		if player.dead:
+			return
 		if e.is_queued_for_deletion():
 			continue
-		for p in _alive_players():
-			if not _overlap(e.global_position, e.half, p.global_position, PlayerScript.HALF):
-				continue
-			if float(e.touch_cd.get(p.peer_id, 0.0)) > 0.0:
-				continue
-			e.touch_cd[p.peer_id] = 0.8
-			_hurt_player(p, int(e.damage), e.global_position.x)
+		if not _overlap(e.global_position, e.half, player.global_position, PlayerScript.HALF):
+			continue
+		if e.touch_cd > 0.0:
+			continue
+		e.touch_cd = 0.8
+		_hurt_player(int(e.damage), e.global_position.x)
 
 
 func _check_bullets() -> void:
@@ -597,54 +444,54 @@ func _check_bullets() -> void:
 		if is_solid(b.global_position):
 			b.queue_free()
 			continue
-		for p in _alive_players():
-			if _overlap(b.global_position, Vector2(b.radius, b.radius), p.global_position, PlayerScript.HALF):
-				_hurt_player(p, int(b.damage), b.global_position.x)
-				b.queue_free()
-				break
+		if player.dead:
+			continue
+		if _overlap(b.global_position, Vector2(b.radius, b.radius), player.global_position, PlayerScript.HALF):
+			_hurt_player(int(b.damage), b.global_position.x)
+			b.queue_free()
 
 
 func _check_pickups() -> void:
+	if player.dead:
+		return
 	for pk in get_tree().get_nodes_in_group("pickups"):
 		if pk.is_queued_for_deletion():
 			continue
-		for p in _alive_players():
-			if _overlap(pk.global_position, Vector2(14, 14), p.global_position, PlayerScript.HALF):
-				_collect(pk, p)
-				break
+		if _overlap(pk.global_position, Vector2(14, 14), player.global_position, PlayerScript.HALF):
+			_collect(pk)
+			return
 
 
-func _collect(pk: Node, p: Node) -> void:
+func _collect(pk: Node) -> void:
 	if pk.item == "centesimi":
 		coins += int(pk.value)
-		_sync_coins.rpc(coins)
-		_fx.rpc("collect", pk.global_position, Color(1.0, 0.8, 0.35), 0.0)
+		_fx("collect", pk.global_position, Color(1.0, 0.8, 0.35), 0.0)
 	elif pk.item == "mozzarella":
-		var s: Dictionary = stats[p.peer_id]
-		s["hp"] = mini(int(s["max_hp"]), int(s["hp"]) + 1)
-		_push_stats(p.peer_id)
-		_fx.rpc("collect", pk.global_position, Color(1.0, 0.97, 0.9), 0.0)
+		player.heal(1)
+		_fx("collect", pk.global_position, Color(1.0, 0.97, 0.9), 0.0)
 	pk.queue_free()
 
 
-## Usato dai nemici (solo host): proiettile singolo.
+## Usato dai nemici: proiettile singolo.
 func enemy_fire(pos: Vector2, dir: Vector2, speed: float, col: Color = Color(1.0, 0.68, 0.38)) -> void:
-	_spawner.spawn({
-		"kind": "bullet", "pos": pos, "vel": dir.normalized() * speed,
+	var b = ProjectileScript.new()
+	b.setup({
+		"pos": pos, "vel": dir.normalized() * speed,
 		"dmg": 1, "color": col, "life": 3.0, "radius": 6.0,
 	})
+	_entities.add_child(b)
 
 
 ## Usato dal boss: proiettili radiali.
 func enemy_burst(pos: Vector2, count: int) -> void:
-	_fx.rpc("burst", pos, Color(1.0, 0.7, 0.3), 0.0)
+	_fx("burst", pos, Color(1.0, 0.7, 0.3), 0.0)
 	for i in count:
 		enemy_fire(pos, Vector2.RIGHT.rotated(TAU * float(i) / float(count)), 260.0)
 
 
 ## Usato dal boss all'atterraggio: onda d'urto a terra in entrambe le direzioni.
 func enemy_shockwave(pos: Vector2) -> void:
-	_fx.rpc("shock", pos, Color(1.0, 0.8, 0.5), 0.0)
+	_fx("shock", pos, Color(1.0, 0.8, 0.5), 0.0)
 	enemy_fire(pos + Vector2(0, -8), Vector2.LEFT, 400.0)
 	enemy_fire(pos + Vector2(0, -8), Vector2.RIGHT, 400.0)
 
@@ -665,17 +512,6 @@ func is_ground(p: Vector2) -> bool:
 		if (l as Rect2).has_point(p):
 			return true
 	return false
-
-
-func nearest_alive_player(pos: Vector2) -> Node2D:
-	var best: Node2D = null
-	var best_d := INF
-	for p in _alive_players():
-		var d := pos.distance_squared_to(p.global_position)
-		if d < best_d:
-			best_d = d
-			best = p
-	return best
 
 
 # ---------------------------------------------------------------- Utilità

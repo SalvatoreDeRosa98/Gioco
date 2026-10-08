@@ -1,6 +1,6 @@
 extends CharacterBody2D
-## Nemico. Solo l'host esegue l'IA e applica i danni; posizione, velocità, vita e stato di
-## animazione sono replicati ai client, che ricostruiscono l'aspetto localmente.
+## Nemico: IA, vita e aspetto (gatto, vespa, statua, Custode). I danni al giocatore e i colpi
+## ricevuti li decide il mondo (world.gd); qui c'è solo ciò che il nemico fa da sé.
 
 const GRAVITY := 1500.0
 const SPRITE_SHADER := preload("res://game/shaders/canvas_char_sprite.gdshader")
@@ -28,16 +28,17 @@ const CUSTODE_SCALE := 0.176
 const LEDGE_LAYER := 4
 
 var kind := "gatto"
-var hp := 3           # replicato
+var hp := 3
 var max_hp := 3
 var half := Vector2(20, 14)
 var speed := 70.0
 var damage := 1
 var coins := 2
-var flash := 0.0      # replicato
-var facing := 1.0     # replicato
-var anim := "idle"    # replicato
-var touch_cd: Dictionary = {}
+var flash := 0.0
+var facing := 1.0
+var anim := "idle"
+## Secondi prima che il contatto possa ferire di nuovo il giocatore.
+var touch_cd := 0.0
 var world: Node
 
 var _t := 0.0
@@ -57,8 +58,7 @@ var _aura_scale := Vector2.ONE
 func setup(d: Dictionary, w: Node) -> void:
 	kind = str(d["type"])
 	var cfg: Dictionary = Tuning.data.enemies[kind]
-	var override_hp := int(d["hp"])
-	hp = override_hp if override_hp > 0 else int(cfg["hp"])
+	hp = int(cfg["hp"])
 	max_hp = hp
 	speed = float(cfg["speed"])
 	damage = int(cfg["damage"])
@@ -71,7 +71,6 @@ func setup(d: Dictionary, w: Node) -> void:
 	collision_layer = 0
 	collision_mask = 1
 	set_collision_mask_value(LEDGE_LAYER, true)
-	set_multiplayer_authority(1)
 
 	var sh := RectangleShape2D.new()
 	sh.size = half * 2.0
@@ -79,15 +78,6 @@ func setup(d: Dictionary, w: Node) -> void:
 	cs.shape = sh
 	add_child(cs)
 
-	var sync := MultiplayerSynchronizer.new()
-	# Nome fisso: il percorso del nodo deve essere identico su tutti i PC.
-	sync.name = "Sync"
-	sync.set_multiplayer_authority(1)
-	var rep := SceneReplicationConfig.new()
-	for prop in [":position", ":velocity", ":flash", ":facing", ":hp", ":anim"]:
-		rep.add_property(NodePath(prop))
-	sync.replication_config = rep
-	add_child(sync)
 	add_to_group("enemies")
 	_mat = ShaderMaterial.new()
 	_mat.shader = SPRITE_SHADER
@@ -121,14 +111,11 @@ static func _half_for(k: String) -> Vector2:
 			return Vector2(20, 14)
 
 
-# ---------------------------------------------------------------- IA (solo host)
+# ---------------------------------------------------------------- IA
 
 func _physics_process(delta: float) -> void:
 	flash = maxf(0.0, flash - delta * 5.0)
-	if not multiplayer.is_server():
-		return
-	for k in touch_cd.keys():
-		touch_cd[k] = maxf(0.0, float(touch_cd[k]) - delta)
+	touch_cd = maxf(0.0, touch_cd - delta)
 	match kind:
 		"vespa":
 			_ai_vespa(delta)
@@ -154,7 +141,7 @@ func _ai_gatto(delta: float) -> void:
 
 ## Volatile: insegue quando è vicino, altrimenti pattuglia in orizzontale.
 func _ai_vespa(delta: float) -> void:
-	var target: Node2D = world.nearest_alive_player(global_position)
+	var target: Node2D = world.alive_player()
 	var w := 1.0 - exp(-3.0 * delta)
 	if target and global_position.distance_to(target.global_position) < 460.0:
 		var to: Vector2 = target.global_position + Vector2(0, -20) - global_position
@@ -175,7 +162,7 @@ func _ai_vespa(delta: float) -> void:
 func _ai_statua(delta: float) -> void:
 	velocity.y = minf(velocity.y + GRAVITY * delta, 900.0)
 	velocity.x = 0.0
-	var target: Node2D = world.nearest_alive_player(global_position)
+	var target: Node2D = world.alive_player()
 	if target and absf(target.global_position.x - global_position.x) > 4.0:
 		facing = signf(target.global_position.x - global_position.x)
 	_shoot_cd -= delta
@@ -189,7 +176,7 @@ func _ai_statua(delta: float) -> void:
 ## Boss: cammina verso il giocatore, poi alterna balzo con onda d'urto e raffica radiale.
 func _ai_custode(delta: float) -> void:
 	velocity.y = minf(velocity.y + GRAVITY * delta, 1000.0)
-	var target: Node2D = world.nearest_alive_player(global_position)
+	var target: Node2D = world.alive_player()
 	if target and absf(target.global_position.x - global_position.x) > 4.0 and _state == "walk":
 		facing = signf(target.global_position.x - global_position.x)
 	_state_t -= delta
@@ -238,7 +225,7 @@ func take_hit(dmg: int) -> bool:
 	return false
 
 
-# ---------------------------------------------------------------- Aspetto (tutti i PC)
+# ---------------------------------------------------------------- Aspetto
 
 func _process(delta: float) -> void:
 	_look_t += delta
@@ -250,7 +237,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
-## Avanzamento 0..1 dell'animazione corrente (calcolato localmente: funziona anche sui client).
+## Avanzamento 0..1 dell'animazione corrente (calcolato dal tempo di vista).
 func _anim_progress(duration: float) -> float:
 	return clampf((_look_t - _anim_start) / duration, 0.0, 1.0)
 
@@ -334,7 +321,7 @@ func _draw_custode() -> void:
 	_piece(base, CUSTODE_TEX, Vector2.ZERO)
 
 
-## Aloni e luci che seguono l'immagine (aggiornati ogni frame, anche sui client).
+## Aloni e luci che seguono l'immagine (aggiornati ogni frame).
 func _update_glows() -> void:
 	if _aura == null:
 		return

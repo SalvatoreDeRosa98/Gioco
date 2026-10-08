@@ -12,7 +12,6 @@ var _cam: Camera2D
 var _post_layer: CanvasLayer
 var _ui: CanvasLayer
 var _menu_box: VBoxContainer
-var _status: Label
 var _play_button: Button
 var _world: Node2D
 var _t := 0.0
@@ -22,8 +21,6 @@ func _ready() -> void:
 	_ensure_inputs()
 	_build_scene()
 	_build_ui()
-	Net.game_started.connect(_enter_world)
-	Net.session_ended.connect(_return_to_menu)
 	_run_auto_args()
 
 
@@ -150,7 +147,6 @@ func _build_ui() -> void:
 	_spacer(_menu_box, 8)
 	_play_button = _button(_menu_box, "Nuova partita", _on_play_pressed)
 	_button(_menu_box, "Esci dal gioco", func() -> void: get_tree().quit())
-	_status = _label(_menu_box, "", 20, Art.body_font())
 
 	var footer := _label(root, "Beta  ·  Caserta, 1845", 18, Art.body_font())
 	footer.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -226,16 +222,6 @@ func _label(parent: Node, text: String, font_size: int, font: Font) -> Label:
 	return l
 
 
-func _line_edit(parent: Node, placeholder: String, value: String) -> LineEdit:
-	var e := LineEdit.new()
-	e.placeholder_text = placeholder
-	e.text = value
-	e.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	e.custom_minimum_size = Vector2(0, 46)
-	parent.add_child(e)
-	return e
-
-
 func _button(parent: Node, text: String, on_press: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
@@ -295,19 +281,16 @@ func _underline(color: Color) -> StyleBoxFlat:
 func _on_play_pressed() -> void:
 	if _world:
 		return
-	_status.text = ""
-	Net.start_solo("Ferruccio")
-
-
-func _enter_world() -> void:
 	_ui.visible = false
 	_free_scene()
 	_world = WORLD_SCRIPT.new()
 	_world.name = "World"
+	_world.exit_requested.connect(_return_to_menu)
 	add_child(_world)
 
 
-func _return_to_menu(reason: String) -> void:
+## Esc in partita: il mondo viene scartato e torna lo scenario del menu.
+func _return_to_menu() -> void:
 	if _world:
 		remove_child(_world)
 		_world.queue_free()
@@ -316,4 +299,3 @@ func _return_to_menu(reason: String) -> void:
 		_build_scene()
 	_ui.visible = true
 	_show_menu()
-	_status.text = reason
