@@ -27,13 +27,9 @@ const ROOMS := [
 		],
 		"decor": [
 			{"kind": "lamp", "pos": Vector2(220, 980)},
-			{"kind": "bench", "pos": Vector2(500, 980)},
 			{"kind": "lamp", "pos": Vector2(880, 980)},
-			{"kind": "vase", "pos": Vector2(1060, 900)},
 			{"kind": "statue", "pos": Vector2(1280, 840)},
-			{"kind": "vase", "pos": Vector2(1500, 900)},
 			{"kind": "lamp", "pos": Vector2(1680, 980)},
-			{"kind": "bench", "pos": Vector2(2080, 980)},
 			{"kind": "lamp", "pos": Vector2(2400, 980)},
 		],
 	},
@@ -53,10 +49,7 @@ const ROOMS := [
 		],
 		"decor": [
 			{"kind": "lamp", "pos": Vector2(150, 980)},
-			{"kind": "banner", "pos": Vector2(640, 300)},
 			{"kind": "lamp", "pos": Vector2(1200, 980)},
-			{"kind": "bench", "pos": Vector2(1450, 980)},
-			{"kind": "banner", "pos": Vector2(1580, 260)},
 			{"kind": "lamp", "pos": Vector2(2100, 980)},
 		],
 	},
@@ -75,13 +68,8 @@ const ROOMS := [
 			{"type": "statua", "pos": Vector2(2350, 946)},
 		],
 		"decor": [
-			{"kind": "tree", "pos": Vector2(180, 980)},
 			{"kind": "lamp", "pos": Vector2(560, 980)},
-			{"kind": "palm", "pos": Vector2(1000, 980)},
-			{"kind": "fountain", "pos": Vector2(1300, 925)},
-			{"kind": "tree", "pos": Vector2(1720, 980)},
 			{"kind": "lamp", "pos": Vector2(2200, 980)},
-			{"kind": "cypress", "pos": Vector2(2460, 980)},
 		],
 	},
 	{
@@ -100,12 +88,7 @@ const ROOMS := [
 			{"type": "gatto", "pos": Vector2(2200, 960)},
 		],
 		"decor": [
-			{"kind": "cypress", "pos": Vector2(150, 980)},
-			{"kind": "banner", "pos": Vector2(1260, 200)},
-			{"kind": "vase", "pos": Vector2(1580, 700)},
-			{"kind": "column", "pos": Vector2(1950, 980)},
 			{"kind": "lamp", "pos": Vector2(2050, 980)},
-			{"kind": "cypress", "pos": Vector2(2460, 980)},
 		],
 	},
 	{
@@ -118,13 +101,9 @@ const ROOMS := [
 		"ledges": [Rect2(300, 770, 240, 18), Rect2(1380, 770, 240, 18), Rect2(840, 610, 240, 18)],
 		"enemies": [{"type": "custode", "pos": Vector2(1400, 900)}],
 		"decor": [
-			{"kind": "column", "pos": Vector2(170, 980)},
 			{"kind": "torch", "pos": Vector2(330, 700)},
-			{"kind": "banner", "pos": Vector2(620, 160)},
 			{"kind": "statue", "pos": Vector2(960, 980)},
-			{"kind": "banner", "pos": Vector2(1300, 160)},
 			{"kind": "torch", "pos": Vector2(1590, 700)},
-			{"kind": "column", "pos": Vector2(1750, 980)},
 		],
 	},
 ]

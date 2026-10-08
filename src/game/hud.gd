@@ -2,6 +2,10 @@ extends Control
 ## HUD: maschere di Pulcinella come punti vita, centesimi, compagni, titolo d'area all'ingresso,
 ## barra del boss, messaggi e schermata finale. Solo visualizzazione: legge lo stato dal mondo.
 
+const MASK_TEX := preload("res://assets/art/items/maschera.png")
+const COIN_TEX := preload("res://assets/art/items/moneta.png")
+## Altezza a schermo di una maschera-vita, in pixel.
+const MASK_H := 40.0
 const TITLE_TIME := 4.4
 const TOAST_TIME := 2.8
 const HINT_TIME := 16.0
@@ -23,6 +27,7 @@ var _boss_name_t := -1.0
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
@@ -85,14 +90,23 @@ func _draw_vitals() -> void:
 		var hp := int(me.hp)
 		for i in int(me.max_hp):
 			var pulse := 0.6 + 0.4 * sin(_t * 3.0 + i * 0.6) if hp <= 1 and i == 0 else 1.0
-			Art.draw_mask(self, Vector2(54 + i * 44, 56), 16.0, i < hp, pulse)
+			_draw_mask(Vector2(54 + i * 44, 56), i < hp, pulse)
 	draw_line(Vector2(34, 92), Vector2(260, 92), Color(Art.CREMA, 0.25), 1.0)
 	draw_colored_polygon(PackedVector2Array([Vector2(30, 92), Vector2(34, 88), Vector2(38, 92), Vector2(34, 96)]), Color(Art.CREMA, 0.5))
 	var coin := Vector2(48, 118)
-	draw_circle(coin, 14.0, Color(1.0, 0.75, 0.3, 0.15))
-	Art.shaded_ellipse(self, coin, Vector2(9, 9), Color(1.0, 0.86, 0.45), Color(0.7, 0.46, 0.14), 16)
-	draw_arc(coin, 5.5, 0.0, TAU, 12, Color(0.55, 0.35, 0.1, 0.8), 1.2)
+	draw_texture_rect(COIN_TEX, Rect2(coin - Vector2(13, 13), Vector2(26, 26)), false)
 	Art.text(self, Art.title_font(), Vector2(66, 128), str(int(round(_coins_shown))), 26, Art.CREMA)
+
+
+## Maschera di Pulcinella dipinta: piena se il punto vita c'è, sagoma scura se perso.
+func _draw_mask(center: Vector2, filled: bool, glow_amount: float) -> void:
+	var sz := Vector2(MASK_H * MASK_TEX.get_width() / MASK_TEX.get_height(), MASK_H)
+	var r := Rect2(center - sz * 0.5, sz)
+	if filled:
+		draw_texture_rect(MASK_TEX, Rect2(r.position + Vector2(0, 2), sz), false, Color(0, 0, 0, 0.5))
+		draw_texture_rect(MASK_TEX, r, false, Color(1, 1, 1, glow_amount))
+	else:
+		draw_texture_rect(MASK_TEX, r, false, Color(0.12, 0.12, 0.16, 0.55))
 
 
 func _draw_party() -> void:

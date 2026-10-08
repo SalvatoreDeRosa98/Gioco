@@ -1,0 +1,48 @@
+{
+	"_doc": "Strati dipinti di ogni area (src/assets/art/areas/). scroll: velocità di parallasse (1 = piano di gioco). scale: pixel dell'immagine -> unità di mondo. anchor 'ground': la riga 'ground' dell'immagine poggia sul pavimento quando la camera è in basso; sotto viene steso il colore 'fill'. anchor 'top': la fascia 'rows' resta agganciata al bordo alto dello schermo (cornice), spostata di 'offset_y'. center: colonna dell'immagine allineata al centro della stanza. tint/haze/blur: vedi shaders/canvas_env_layer.gdshader. Le immagini si ripetono a specchio in orizzontale.",
+	"piazza": {
+		"terrain_tint": "#c9d0e2",
+		"layers": [
+			{"tex": "piazza/far.png", "scroll": 0.18, "scale": 0.78, "ground": 990, "z": -40, "tint": "#a3acc6", "haze": 0.18, "blur": 0.8, "fill": "#09101a"},
+			{"tex": "piazza/mid.png", "scroll": 0.5, "scale": 0.5, "ground": 830, "z": -30, "tint": "#78819c", "haze": 0.12, "blur": 0.3, "fill": "#191b22"},
+			{"tex": "comune/foglie.png", "scroll": 1.3, "scale": 0.5, "anchor": "top", "rows": [0, 260], "offset_y": -24, "z": 40, "tint": "#2a3040", "blur": 0.6},
+			{"tex": "comune/foglie.png", "scroll": 1.3, "scale": 0.36, "ground": 800, "rows": [700, 1008], "z": 40, "tint": "#1c2030", "blur": 0.8}
+		]
+	},
+	"strada": {
+		"terrain_tint": "#d2c3cf",
+		"layers": [
+			{"tex": "strada/far.png", "scroll": 0.18, "scale": 0.8, "ground": 730, "z": -40, "tint": "#a497b4", "haze": 0.18, "blur": 0.8, "fill": "#111623"},
+			{"tex": "strada/mid.png", "scroll": 0.5, "scale": 0.52, "ground": 780, "z": -30, "tint": "#8a7e8a", "haze": 0.1, "blur": 0.3, "fill": "#1e1a18"},
+			{"tex": "strada/fg.png", "scroll": 1.3, "scale": 0.5, "anchor": "top", "rows": [0, 330], "offset_y": -40, "z": 40, "tint": "#8a8090", "blur": 0.4},
+			{"tex": "strada/fg.png", "scroll": 1.3, "scale": 0.36, "ground": 690, "rows": [620, 1008], "z": 40, "tint": "#3a3440", "blur": 0.8}
+		]
+	},
+	"giardino": {
+		"terrain_tint": "#c2d0c4",
+		"layers": [
+			{"tex": "giardino/far.png", "scroll": 0.18, "scale": 0.72, "ground": 930, "z": -40, "tint": "#97a8a6", "haze": 0.15, "blur": 0.8, "fill": "#10171d"},
+			{"tex": "giardino/mid.png", "scroll": 0.5, "scale": 0.52, "ground": 820, "z": -30, "tint": "#7c8a98", "haze": 0.1, "blur": 0.3, "fill": "#151a1e"},
+			{"tex": "giardino/fg.png", "scroll": 1.3, "scale": 0.5, "anchor": "top", "rows": [0, 280], "offset_y": -30, "z": 40, "tint": "#40504a", "blur": 0.6},
+			{"tex": "giardino/fg.png", "scroll": 1.3, "scale": 0.36, "ground": 750, "rows": [680, 1008], "z": 40, "tint": "#202a26", "blur": 0.8}
+		]
+	},
+	"belvedere": {
+		"terrain_tint": "#cfd4d8",
+		"layers": [
+			{"tex": "belvedere/far.png", "scroll": 0.18, "scale": 0.78, "ground": 700, "z": -40, "tint": "#8c979e", "haze": 0.22, "blur": 0.8, "fill": "#335856"},
+			{"tex": "belvedere/mid.png", "scroll": 0.5, "scale": 0.62, "ground": 900, "z": -30, "tint": "#848c94", "haze": 0.1, "blur": 0.3, "fill": "#1c2228"},
+			{"tex": "belvedere/fg.png", "scroll": 1.3, "scale": 0.5, "anchor": "top", "rows": [0, 420], "offset_y": -70, "z": 40, "tint": "#3c4848", "blur": 0.6},
+			{"tex": "belvedere/fg.png", "scroll": 1.3, "scale": 0.36, "ground": 850, "rows": [720, 1008], "z": 40, "tint": "#202828", "blur": 0.8}
+		]
+	},
+	"oro": {
+		"terrain_tint": "#e6d2b4",
+		"layers": [
+			{"tex": "oro/far.png", "scroll": 0.18, "scale": 0.7, "ground": 960, "z": -40, "tint": "#b8aa98", "haze": 0.15, "blur": 0.8, "fill": "#1d2f41"},
+			{"tex": "oro/mid.png", "scroll": 0.5, "scale": 0.58, "ground": 780, "z": -30, "tint": "#8e8679", "haze": 0.08, "blur": 0.3, "fill": "#1a1c20"},
+			{"tex": "comune/foglie.png", "scroll": 1.3, "scale": 0.5, "anchor": "top", "rows": [0, 260], "offset_y": -24, "z": 40, "tint": "#2a2420", "blur": 0.6},
+			{"tex": "comune/foglie.png", "scroll": 1.3, "scale": 0.36, "ground": 800, "rows": [700, 1008], "z": 40, "tint": "#1c1814", "blur": 0.8}
+		]
+	}
+}

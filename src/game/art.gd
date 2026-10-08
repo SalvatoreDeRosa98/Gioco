@@ -1,7 +1,8 @@
 class_name Art
 extends RefCounted
 ## Palette, font, texture generate e funzioni di disegno condivise.
-## Tutta la grafica è procedurale: forme vettoriali, gradienti per vertice, shader e luci 2D.
+## Personaggi, sfondi e oggetti sono immagini dipinte (assets/art); qui restano gli effetti
+## disegnati dal motore: gradienti, bagliori, mezzelune dei fendenti e luci 2D.
 
 const OCRA := Color("#d9a441")
 const OCRA_DARK := Color("#7a5520")
@@ -211,31 +212,6 @@ static func crescent(c: CanvasItem, center: Vector2, radius: float, width: float
 		c.draw_polygon(
 			PackedVector2Array([outer_pts[i], outer_pts[i + 1], inner_pts[i + 1], inner_pts[i]]),
 			PackedColorArray([outer, outer, inner, inner]))
-
-
-## Maschera di Pulcinella usata come "punto vita" nell'HUD.
-static func draw_mask(c: CanvasItem, center: Vector2, size: float, filled: bool, glow_amount: float) -> void:
-	var s := size
-	var pts := PackedVector2Array([
-		Vector2(-1.0, -0.2), Vector2(-0.88, -0.72), Vector2(-0.35, -1.0), Vector2(0.35, -1.0),
-		Vector2(0.88, -0.72), Vector2(1.0, -0.2), Vector2(0.72, 0.28), Vector2(0.24, 0.34),
-		Vector2(0.1, 1.0), Vector2(-0.12, 0.62), Vector2(-0.24, 0.34), Vector2(-0.72, 0.28),
-	])
-	for i in pts.size():
-		pts[i] = center + pts[i] * s
-	if filled:
-		var cols := PackedColorArray()
-		for p in pts:
-			var k := clampf((p.y - (center.y - s)) / (2.0 * s), 0.0, 1.0)
-			cols.append(Color(0.98, 0.96, 0.92, glow_amount).lerp(Color(0.72, 0.7, 0.72, glow_amount), k))
-		c.draw_polygon(pts, cols)
-		c.draw_circle(center + Vector2(-0.42, -0.32) * s, s * 0.19, INCHIOSTRO)
-		c.draw_circle(center + Vector2(0.42, -0.32) * s, s * 0.19, INCHIOSTRO)
-	else:
-		c.draw_colored_polygon(pts, Color(0.05, 0.05, 0.08, 0.6))
-	var outline := pts.duplicate()
-	outline.append(pts[0])
-	c.draw_polyline(outline, Color(0.02, 0.02, 0.03, 0.9) if filled else Color(0.85, 0.82, 0.75, 0.35), 1.6, true)
 
 
 ## Testo con ombra morbida (due passate): leggibile su qualunque sfondo.

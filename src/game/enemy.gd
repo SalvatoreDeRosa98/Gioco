@@ -3,6 +3,27 @@ extends CharacterBody2D
 ## animazione sono replicati ai client, che ricostruiscono l'aspetto localmente.
 
 const GRAVITY := 1500.0
+const SPRITE_SHADER := preload("res://game/shaders/canvas_char_sprite.gdshader")
+
+## Immagini dipinte (assets/art/enemies, bosses). Perni e ancore in pixel della tela;
+## le parti mobili vengono da tools/art/rig_nemici.py.
+const GATTO_BODY := preload("res://assets/art/enemies/gatto_rig/corpo.png")
+const GATTO_TAIL := preload("res://assets/art/enemies/gatto_rig/coda.png")
+const GATTO_FEET := Vector2(400, 592)
+const GATTO_TAIL_ROOT := Vector2(190, 290)
+const GATTO_SCALE := 0.078
+const VESPA_BODY := preload("res://assets/art/enemies/vespa_rig/corpo.png")
+const VESPA_WINGS := preload("res://assets/art/enemies/vespa_rig/ali.png")
+const VESPA_CENTER := Vector2(330, 420)
+const VESPA_WING_ROOT := Vector2(338, 226)
+const VESPA_SCALE := 0.0755
+const STATUA_TEX := preload("res://assets/art/enemies/statua.png")
+const STATUA_FEET := Vector2(165, 1010)
+const STATUA_SCALE := 0.103
+const CUSTODE_TEX := preload("res://assets/art/bosses/custode.png")
+const CUSTODE_FEET := Vector2(360, 1010)
+const CUSTODE_LILY := Vector2(420, 340)
+const CUSTODE_SCALE := 0.176
 ## Mensole attraversabili (vedi player.gd): anche i nemici ci camminano sopra.
 const LEDGE_LAYER := 4
 
@@ -28,6 +49,9 @@ var _airborne := false
 var _look_t := 0.0
 var _last_anim := ""
 var _anim_start := 0.0
+var _mat: ShaderMaterial
+var _aura: Sprite2D
+var _aura_scale := Vector2.ONE
 
 
 func setup(d: Dictionary, w: Node) -> void:
@@ -65,8 +89,24 @@ func setup(d: Dictionary, w: Node) -> void:
 	sync.replication_config = rep
 	add_child(sync)
 	add_to_group("enemies")
-	if kind == "custode":
-		Art.point_light(self, Vector2(0, -20), Color(1.0, 0.7, 0.35), 0.7, 520.0)
+	_mat = ShaderMaterial.new()
+	_mat.shader = SPRITE_SHADER
+	material = _mat
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	match kind:
+		"custode":
+			Art.point_light(self, Vector2(0, -20), Color(1.0, 0.7, 0.35), 0.7, 520.0)
+			_aura = Art.glow(self, Vector2.ZERO, Color(1.0, 0.72, 0.32), 90.0)
+		"statua":
+			# Alone azzurro: distingue la statua nemica da quelle decorative.
+			_aura = Art.glow(self, Vector2(0, -24), Color(0.55, 0.8, 1.0), 120.0)
+			_aura.show_behind_parent = true
+			# Marmo bianco: le luci 2D lo brucerebbero, basta l'alone.
+			light_mask = 0
+		"vespa":
+			Art.point_light(self, Vector2(-6, 6), Color(1.0, 0.75, 0.35), 0.35, 200.0)
+	if _aura:
+		_aura_scale = _aura.scale
 
 
 static func _half_for(k: String) -> Vector2:
@@ -205,6 +245,8 @@ func _process(delta: float) -> void:
 	if anim != _last_anim:
 		_last_anim = anim
 		_anim_start = _look_t
+	_mat.set_shader_parameter("flash", flash)
+	_update_glows()
 	queue_redraw()
 
 
@@ -214,17 +256,16 @@ func _anim_progress(duration: float) -> float:
 
 
 func _draw() -> void:
-	var white := Color(1, 1, 1)
 	draw_colored_polygon(Art.ellipse(Vector2(0, half.y + 1.0), Vector2(half.x * 0.9, 4.0), 16), Color(0, 0, 0, 0.32))
 	match kind:
 		"vespa":
-			_draw_vespa(white)
+			_draw_vespa()
 		"statua":
-			_draw_statua(white)
+			_draw_statua()
 		"custode":
-			_draw_custode(white)
+			_draw_custode()
 		_:
-			_draw_gatto(white)
+			_draw_gatto()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if kind != "custode" and hp < max_hp and hp > 0:
 		var w := half.x * 2.0
@@ -232,150 +273,80 @@ func _draw() -> void:
 		draw_rect(Rect2(-w * 0.5, -half.y - 16.0, w * float(hp) / float(max_hp), 3), Art.enemy_color(kind))
 
 
-func _eyes(at: Vector2, gap: float, r: float, glow: Color) -> void:
-	for dx in [-gap, gap]:
-		draw_circle(at + Vector2(dx, 0), r * 2.6, Color(glow, 0.22))
-		draw_circle(at + Vector2(dx, 0), r, glow.lightened(0.3))
+## Trasformazione dell'immagine: il punto "anchor" (pixel) va in "at", con specchiatura,
+## inclinazione e schiacciamento attorno a quel punto.
+func _sprite_xf(at: Vector2, anchor: Vector2, k: float, tilt: float, sq: Vector2) -> Transform2D:
+	return Transform2D(tilt * facing, Vector2(facing * sq.x, sq.y) * k, 0.0, at) * Transform2D(0.0, Vector2.ONE, 0.0, -anchor)
 
 
-func _draw_gatto(white: Color) -> void:
+## Disegna un pezzo (stessa tela dell'immagine intera) ruotato/scalato attorno al suo perno.
+func _piece(base: Transform2D, tex: Texture2D, pivot: Vector2, angle: float = 0.0, scale_v: Vector2 = Vector2.ONE) -> void:
+	var local := Transform2D(angle, scale_v, 0.0, pivot) * Transform2D(0.0, Vector2.ONE, 0.0, -pivot)
+	draw_set_transform_matrix(base * local)
+	draw_texture(tex, Vector2.ZERO)
+
+
+func _draw_gatto() -> void:
 	var t := _look_t
 	var moving := absf(velocity.x) > 10.0
-	var ph := t * 15.0
-	var body := Color(0.08, 0.06, 0.11).lerp(white, flash)
-	var rim := Color(0.62, 0.48, 0.95, 0.75)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2(facing, 1.0))
-	var tail := PackedVector2Array()
-	for k in 9:
-		var u := float(k) / 8.0
-		tail.append(Vector2(-17.0 - u * 16.0, -4.0 - u * 20.0 + sin(t * 4.0 + u * 3.0) * 5.0 * u))
-	draw_polyline(tail, body, 4.0, true)
-	for i in 4:
-		var lx: float = [-13.0, -7.0, 7.0, 13.0][i]
-		var swing := sin(ph + i * PI * 0.5) * 4.5 if moving else 0.0
-		draw_line(Vector2(lx, 2), Vector2(lx + swing, 14), body, 3.6, true)
-	var arch := sin(ph) * 1.0 if moving else sin(t * 2.0) * 0.6
-	var back := PackedVector2Array([
-		Vector2(-19, 3), Vector2(-17, -8), Vector2(-7, -14 + arch), Vector2(7, -12), Vector2(16, -6), Vector2(16, 4), Vector2(-15, 6),
-	])
-	draw_colored_polygon(back, body)
-	draw_polyline(PackedVector2Array([Vector2(-17, -8), Vector2(-7, -14 + arch), Vector2(7, -12)]), rim, 1.8, true)
-	var head := Vector2(19, -10)
-	draw_circle(head, 8.5, body)
-	draw_colored_polygon(PackedVector2Array([head + Vector2(-7, -4), head + Vector2(-4, -15), head + Vector2(0, -6)]), body)
-	draw_colored_polygon(PackedVector2Array([head + Vector2(1, -6), head + Vector2(5, -15), head + Vector2(8, -3)]), body)
-	draw_arc(head, 8.5, PI * 1.1, PI * 1.6, 8, rim, 1.6)
-	_eyes(head + Vector2(4, -1), 2.6, 1.8, Color(0.85, 0.7, 1.0))
+	var ph := t * 9.0
+	var bob := -absf(sin(ph)) * 1.6 if moving else 0.0
+	var tilt := sin(ph) * 0.035 if moving else 0.0
+	var sq := Vector2(1.0, 1.0 + (0.025 * sin(ph * 2.0) if moving else 0.012 * sin(t * 2.2)))
+	var base := _sprite_xf(Vector2(0, half.y + bob), GATTO_FEET, GATTO_SCALE, tilt, sq)
+	_piece(base, GATTO_TAIL, GATTO_TAIL_ROOT, sin(t * 3.2) * 0.12 + (0.05 if moving else 0.0))
+	_piece(base, GATTO_BODY, Vector2.ZERO)
 
 
-func _draw_vespa(white: Color) -> void:
+func _draw_vespa() -> void:
 	var t := _look_t
-	var gold := Color(0.95, 0.7, 0.18).lerp(white, flash)
-	var ink := Color(0.1, 0.07, 0.04)
-	draw_set_transform(Vector2(0, sin(t * 3.0) * 3.0), 0.0, Vector2(facing, 1.0))
-	var flap := sin(t * 70.0)
-	var wing := Color(0.85, 0.92, 1.0, 0.32)
-	draw_colored_polygon(Art.ellipse(Vector2(-2, -14 - flap * 3.0), Vector2(13, 5.0 + flap * 2.5), 14), wing)
-	draw_colored_polygon(Art.ellipse(Vector2(5, -13 + flap * 3.0), Vector2(11, 4.0 - flap * 2.0), 14), Color(wing, 0.22))
-	for k in 3:
-		draw_line(Vector2(2 + k * 4, 4), Vector2(-2 + k * 5, 14 + sin(t * 9.0 + k) * 2.0), ink, 1.5)
-	draw_circle(Vector2(-14, 4), 10.0, Color(1.0, 0.75, 0.3, 0.18))
-	Art.shaded_ellipse(self, Vector2(-7, 2), Vector2(12, 8.5), gold.lightened(0.15), gold.darkened(0.3), 16)
-	for x in [-11.0, -5.0, 1.0]:
-		draw_line(Vector2(x, -6), Vector2(x - 2.0, 9), ink, 3.0, true)
-	draw_colored_polygon(PackedVector2Array([Vector2(-18, 2), Vector2(-27, 7), Vector2(-17, 7)]), ink)
-	draw_circle(Vector2(6, -1), 7.0, Color(0.25, 0.16, 0.06).lerp(white, flash))
-	draw_circle(Vector2(13, -2), 5.0, ink.lerp(white, flash))
-	_eyes(Vector2(15, -3), 1.6, 1.5, Color(1.0, 0.35, 0.25))
+	var bob := sin(t * 3.0) * 3.0
+	var lean := clampf(absf(velocity.x) / maxf(speed, 1.0), 0.0, 1.0) * 0.18
+	var base := _sprite_xf(Vector2(0, bob), VESPA_CENTER, VESPA_SCALE, lean, Vector2.ONE)
+	# Ali: battito rapidissimo, schiacciate verso la radice.
+	var flap := absf(sin(t * 38.0))
+	_piece(base, VESPA_BODY, Vector2.ZERO)
+	_piece(base, VESPA_WINGS, VESPA_WING_ROOT, -0.12 * flap, Vector2(1.0, 0.45 + 0.55 * flap))
 
 
-func _draw_statua(white: Color) -> void:
+func _draw_statua() -> void:
 	var charge := _anim_progress(0.6) if anim == "charge" else 0.0
-	var marble := Color(0.78, 0.77, 0.74).lerp(white, flash)
-	var shade := Color(0.42, 0.43, 0.48).lerp(white, flash)
-	var glow := Color(0.6, 0.85, 1.0)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2(facing, 1.0))
-	Art.grad_rect_h(self, Rect2(-22, 8, 44, 26), marble.darkened(0.15), shade.darkened(0.2))
-	draw_rect(Rect2(-25, 4, 50, 7), marble)
-	draw_polygon(PackedVector2Array([Vector2(-13, 4), Vector2(15, 4), Vector2(11, -26), Vector2(-9, -26)]), PackedColorArray([shade, marble, marble, shade]))
-	draw_polygon(PackedVector2Array([Vector2(-10, -26), Vector2(12, -26), Vector2(13, -48), Vector2(-9, -48)]), PackedColorArray([shade, marble, marble, shade]))
-	var raise := -18.0 if anim == "charge" else 0.0
-	draw_line(Vector2(9, -44), Vector2(24, -36 + raise), marble, 6.0, true)
-	draw_circle(Vector2(26, -37 + raise), 4.0, marble)
-	draw_line(Vector2(-8, -44), Vector2(-14, -24), shade, 6.0, true)
-	draw_circle(Vector2(2, -58), 10.0, marble)
-	draw_arc(Vector2(2, -58), 10.0, PI * 0.9, PI * 1.9, 10, shade, 2.5)
-	var crack := Color(glow, 0.25 + 0.75 * charge)
-	draw_polyline(PackedVector2Array([Vector2(-4, -46), Vector2(1, -36), Vector2(-3, -24), Vector2(3, -12), Vector2(0, 2)]), crack, 1.6 + charge, true)
-	draw_polyline(PackedVector2Array([Vector2(6, -60), Vector2(3, -54), Vector2(7, -50)]), crack, 1.4, true)
-	if charge > 0.0:
-		draw_circle(Vector2(26, -37 + raise), 14.0, Color(glow, 0.3))
-	_eyes(Vector2(5, -59), 2.4, 1.4, glow if charge > 0.0 else Color(0.85, 0.9, 1.0))
+	# Tremito mentre si carica: la pietra vibra prima di sparare.
+	var shake := Vector2(sin(_look_t * 60.0), 0.0) * 1.2 * charge
+	var base := _sprite_xf(Vector2(0, half.y) + shake, STATUA_FEET, STATUA_SCALE, 0.0, Vector2.ONE)
+	_piece(base, STATUA_TEX, Vector2.ZERO)
 
 
-func _draw_custode(white: Color) -> void:
+func _draw_custode() -> void:
 	var t := _look_t
-	var gold := Color(0.86, 0.66, 0.3).lerp(white, flash)
-	var gold_dark := Color(0.4, 0.27, 0.1).lerp(white, flash * 0.6)
-	var steel := Color(0.18, 0.16, 0.18).lerp(white, flash)
-	var cape := Color(0.42, 0.06, 0.07)
-	var core := Color(1.0, 0.7, 0.3)
 	var walk := absf(velocity.x) > 10.0
-	var step := sin(t * 7.0) * 6.0 if walk else 0.0
-	var crouch := 10.0 if anim == "crouch" else 0.0
-	var burst := anim == "burst"
-	draw_set_transform(Vector2(0, crouch), 0.0, Vector2(facing, 1.0))
+	var bob := -absf(sin(t * 3.5)) * 4.0 if walk else sin(t * 1.6) * 1.0
+	var tilt := sin(t * 3.5) * 0.03 if walk else 0.0
+	var sq := Vector2.ONE
+	match anim:
+		"crouch":
+			sq = Vector2(1.08, 0.88)
+		"leap":
+			sq = Vector2(0.94, 1.08)
+		"burst":
+			tilt = -0.07 * _anim_progress(0.4)
+	var base := _sprite_xf(Vector2(0, half.y + bob), CUSTODE_FEET, CUSTODE_SCALE, tilt, sq)
+	_piece(base, CUSTODE_TEX, Vector2.ZERO)
 
-	# Mantello che ondeggia dietro.
-	var cape_pts := PackedVector2Array([Vector2(-26, -40), Vector2(10, -42), Vector2(-14 + sin(t * 2.0) * 6.0, 58), Vector2(-52 + sin(t * 2.4) * 8.0, 50)])
-	draw_polygon(cape_pts, PackedColorArray([cape, cape, cape.darkened(0.5), cape.darkened(0.5)]))
 
-	# Gambe corazzate.
-	for s in [-1.0, 1.0]:
-		var lx: float = s * 14.0
-		var off: float = step * s
-		draw_polygon(PackedVector2Array([Vector2(lx - 10, 8), Vector2(lx + 10, 8), Vector2(lx + 9 + off, 58), Vector2(lx - 11 + off, 58)]),
-			PackedColorArray([steel.lightened(0.15), steel, steel.darkened(0.3), steel.darkened(0.3)]))
-		draw_rect(Rect2(lx - 13 + off, 52, 26, 10), gold_dark)
-		draw_rect(Rect2(lx - 11, 24, 22, 5), gold)
-
-	# Torso e corazza dorata.
-	var torso := PackedVector2Array([Vector2(-34, -44), Vector2(34, -44), Vector2(28, 12), Vector2(-28, 12)])
-	draw_polygon(torso, PackedColorArray([gold.lightened(0.15), gold, gold_dark, gold_dark]))
-	draw_polyline(PackedVector2Array([Vector2(-34, -44), Vector2(34, -44), Vector2(28, 12), Vector2(-28, 12), Vector2(-34, -44)]), gold_dark.darkened(0.4), 2.5, true)
-	draw_line(Vector2(0, -42), Vector2(0, 10), gold_dark, 2.0)
-
-	# Nucleo: giglio borbonico che si accende prima della raffica.
-	var charge := _anim_progress(1.0) if burst else 0.0
-	var pulse := 0.5 + 0.5 * sin(t * 4.0)
-	var ccol := Color(core, 0.35 + 0.25 * pulse + charge * 0.6)
-	draw_circle(Vector2(0, -16), 26.0 + charge * 18.0, Color(core, 0.08 + charge * 0.2))
-	draw_circle(Vector2(0, -10), 5.0, ccol)
-	draw_circle(Vector2(-7, -20), 4.5, ccol)
-	draw_circle(Vector2(7, -20), 4.5, ccol)
-	draw_circle(Vector2(0, -24), 5.5, ccol)
-	draw_line(Vector2(-10, -14), Vector2(10, -14), ccol, 3.0)
-
-	# Spallacci.
-	for s in [-1.0, 1.0]:
-		Art.shaded_ellipse(self, Vector2(s * 36.0, -42), Vector2(16, 12), gold.lightened(0.2), gold_dark, 14)
-
-	# Braccio e alabarda (alzati durante la carica).
-	var raise := -34.0 if burst else 0.0
-	var hand := Vector2(44, -20 + raise)
-	draw_line(Vector2(34, -40), hand, steel, 12.0, true)
-	draw_line(hand + Vector2(0, -110), hand + Vector2(0, 66), Color(0.3, 0.2, 0.12), 5.0, true)
-	draw_colored_polygon(PackedVector2Array([hand + Vector2(0, -110), hand + Vector2(22, -88), hand + Vector2(22, -70), hand + Vector2(0, -78)]), Color(0.75, 0.78, 0.85))
-	draw_colored_polygon(PackedVector2Array([hand + Vector2(-3, -110), hand + Vector2(3, -110), hand + Vector2(0, -132)]), Color(0.75, 0.78, 0.85))
-	draw_line(Vector2(-34, -40), Vector2(-40, -6 + raise * 0.6), steel, 12.0, true)
-
-	# Elmo con cimiero e visiera luminosa.
-	var head := Vector2(0, -62)
-	Art.shaded_ellipse(self, head, Vector2(20, 22), gold.lightened(0.1), gold_dark, 16)
-	draw_rect(Rect2(head.x - 14, head.y - 2, 30, 7), Color(0.05, 0.03, 0.02))
-	var plume := PackedVector2Array()
-	for k in 9:
-		var u := float(k) / 8.0
-		plume.append(head + Vector2(-u * 34.0, -20.0 - sin(u * PI) * 16.0 + sin(t * 3.0 + u * 2.0) * 3.0))
-	draw_polyline(plume, Color(0.65, 0.08, 0.1), 9.0, true)
-	_eyes(head + Vector2(6, 1), 5.0, 2.2, Color(1.0, 0.75, 0.3))
+## Aloni e luci che seguono l'immagine (aggiornati ogni frame, anche sui client).
+func _update_glows() -> void:
+	if _aura == null:
+		return
+	match kind:
+		"statua":
+			var charge := _anim_progress(0.6) if anim == "charge" else 0.0
+			_aura.modulate = Color(0.55, 0.8, 1.0, 0.16 + 0.5 * charge)
+			_aura.scale = _aura_scale * (1.0 + 0.35 * charge)
+		"custode":
+			var charge := _anim_progress(1.0) if anim == "burst" else 0.0
+			var pulse := 0.5 + 0.5 * sin(_look_t * 4.0)
+			var at := (CUSTODE_LILY - CUSTODE_FEET) * CUSTODE_SCALE
+			_aura.position = Vector2(at.x * facing, half.y + at.y)
+			_aura.modulate = Color(1.0, 0.72, 0.32, 0.25 + 0.15 * pulse + 0.6 * charge)
+			_aura.scale = _aura_scale * (1.0 + 0.8 * charge)

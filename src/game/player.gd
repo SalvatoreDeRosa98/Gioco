@@ -6,8 +6,25 @@ signal slash_requested(pos: Vector2, facing: float, down: bool, air: bool)
 
 const HALF := Vector2(13, 24)
 const GhostScript := preload("res://game/ghost.gd")
-const SCARF_POINTS := 9
-const SCARF_SEG := 6.5
+const SPRITE_SHADER := preload("res://game/shaders/canvas_char_sprite.gdshader")
+
+## Pupazzo dipinto: pezzi prodotti da tools/art/rig_ferruccio.py, tutti sulla stessa tela 679x1024.
+const RIG_BODY := preload("res://assets/art/characters/ferruccio_rig/corpo.png")
+const RIG_SWORD := preload("res://assets/art/characters/ferruccio_rig/spada.png")
+const RIG_LEG_FRONT := preload("res://assets/art/characters/ferruccio_rig/gamba_avanti.png")
+const RIG_LEG_BACK := preload("res://assets/art/characters/ferruccio_rig/gamba_dietro.png")
+## Altezza a schermo dalla punta del cappello ai piedi, in unità di mondo.
+const RIG_HEIGHT := 84.0
+## Perni in pixel della tela: punto tra i piedi, anche delle due gambe, polso della spada.
+const RIG_FEET := Vector2(368, 1012)
+const RIG_HIP_FRONT := Vector2(330, 790)
+const RIG_HIP_BACK := Vector2(388, 790)
+const RIG_WRIST := Vector2(368, 648)
+## Distanza anca-piede in pixel: serve ad abbassare il corpo quando le gambe si aprono.
+const RIG_LEG_LEN := 225.0
+const RIG_SCALE := RIG_HEIGHT / 1004.0
+## Ampiezza dell'oscillazione delle gambe nella corsa (radianti).
+const RUN_SWING := 0.55
 ## Maschera di collisione: 1 = muri e blocchi, 4 = mensole attraversabili.
 const LEDGE_LAYER := 4
 
@@ -51,8 +68,7 @@ var _ghost_t := 0.0
 var _hat := 0.0
 var _hat_v := 0.0
 var _flash := 0.0
-var _scarf := PackedVector2Array()
-var _scarf_prev := PackedVector2Array()
+var _mat: ShaderMaterial
 
 
 func setup(d: Dictionary) -> void:
@@ -88,6 +104,13 @@ func setup(d: Dictionary) -> void:
 
 func _ready() -> void:
 	_light = Art.point_light(self, Vector2(0, -10), Color(1.0, 0.93, 0.82), 0.55, 460.0)
+	# La sciarpa dipinta prende il colore del giocatore; il lampo bianco segnala i colpi subiti.
+	_mat = ShaderMaterial.new()
+	_mat.shader = SPRITE_SHADER
+	_mat.set_shader_parameter("scarf_color", tint)
+	_mat.set_shader_parameter("scarf_amount", 1.0)
+	material = _mat
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	if is_multiplayer_authority():
 		_cam = Camera2D.new()
 		_cam.zoom = Vector2.ONE * Room.CAMERA_ZOOM
@@ -219,8 +242,8 @@ func _process(delta: float) -> void:
 			_ghost_t = 0.03
 			_spawn_ghost(fx_root)
 
-	_update_scarf(delta, v)
 	_flash = maxf(0.0, _flash - delta * 4.0)
+	_mat.set_shader_parameter("flash", _flash)
 	_light.energy = 0.0 if dead else 0.55
 
 	if _cam:
@@ -233,33 +256,10 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
-func _update_scarf(delta: float, v: Vector2) -> void:
-	var anchor := global_position + Vector2(-facing * 3.0, -2.0 * _squash.y)
-	if _scarf.size() != SCARF_POINTS:
-		_scarf.resize(SCARF_POINTS)
-		_scarf_prev.resize(SCARF_POINTS)
-		for i in SCARF_POINTS:
-			_scarf[i] = anchor + Vector2(-facing * i * SCARF_SEG, 0)
-			_scarf_prev[i] = _scarf[i]
-	_scarf[0] = anchor
-	var dt2 := delta * delta
-	for i in range(1, SCARF_POINTS):
-		var cur := _scarf[i]
-		var vel := (cur - _scarf_prev[i]) * 0.9
-		_scarf_prev[i] = cur
-		var flutter := Vector2(sin(_t * 7.0 + i * 0.9) * 40.0, cos(_t * 5.0 + i) * 20.0)
-		_scarf[i] = cur + vel + (Vector2(-v.x * 0.6, 300.0) + flutter) * dt2
-	for _iter in 3:
-		for i in range(1, SCARF_POINTS):
-			var d := _scarf[i] - _scarf[i - 1]
-			var l := d.length()
-			if l > SCARF_SEG:
-				_scarf[i] = _scarf[i - 1] + d / l * SCARF_SEG
-
-
 func _spawn_ghost(parent: Node) -> void:
 	var g = GhostScript.new()
 	g.position = global_position  # fx_root sta all'origine del mondo
+	g.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	var pose := _pose(0.55, true)
 	g.painter = func(c: CanvasItem) -> void: draw_figure(c, pose)
 	parent.add_child(g)
@@ -272,8 +272,8 @@ func _pose(alpha: float, silhouette: bool) -> Dictionary:
 		atk = 1.0 - attacking / atk_time
 	return {
 		"facing": facing, "squash": _squash, "run": _run, "grounded": grounded, "vy": move_vel.y,
-		"moving": absf(move_vel.x) > 30.0, "hat": _hat, "breathe": sin(_t * 2.6) * 0.8,
-		"tint": tint, "alpha": alpha, "flash": _flash, "silhouette": silhouette, "dead": dead,
+		"moving": absf(move_vel.x) > 30.0, "dashing": dashing, "hat": _hat, "breathe": sin(_t * 2.6),
+		"tint": tint, "alpha": alpha, "silhouette": silhouette, "dead": dead,
 		"attack": atk, "attack_down": attack_down, "slash_side": slash_side,
 	}
 
@@ -282,165 +282,97 @@ func _draw() -> void:
 	var a := 0.35 if dead else 1.0
 	var air := 0.0 if grounded else 1.0
 	draw_colored_polygon(Art.ellipse(Vector2(0, HALF.y + 1.0), Vector2(15.0 - air * 5.0, 3.5), 16), Color(0, 0, 0, 0.35 * a * (1.0 - air * 0.6)))
-	_draw_scarf(a)
 	draw_figure(self, _pose(a, false))
-	Art.text(self, Art.body_font(), Vector2(-70, -76), player_name, 17, Color(tint.lightened(0.2), 0.9 * a), HORIZONTAL_ALIGNMENT_CENTER, 140)
+	Art.text(self, Art.body_font(), Vector2(-70, -HALF.y - RIG_HEIGHT * 0.5 - 22.0), player_name, 17, Color(tint.lightened(0.2), 0.9 * a), HORIZONTAL_ALIGNMENT_CENTER, 140)
 
 
-func _draw_scarf(alpha: float) -> void:
-	if _scarf.size() != SCARF_POINTS:
-		return
-	var left := PackedVector2Array()
-	var right := PackedVector2Array()
-	var cols := PackedColorArray()
-	for i in SCARF_POINTS:
-		var p := to_local(_scarf[i])
-		var nxt := to_local(_scarf[mini(i + 1, SCARF_POINTS - 1)])
-		var prv := to_local(_scarf[maxi(i - 1, 0)])
-		var dir := (nxt - prv).normalized()
-		var n := Vector2(-dir.y, dir.x)
-		var k := float(i) / float(SCARF_POINTS - 1)
-		var w := lerpf(4.5, 1.2, k)
-		left.append(p + n * w)
-		right.append(p - n * w)
-		cols.append(Color(tint.lerp(tint.darkened(0.55), k), alpha))
-	# Triangoli singoli: la sciarpa può ripiegarsi su sé stessa e un poligono unico non si triangolerebbe.
-	for i in SCARF_POINTS - 1:
-		draw_primitive(PackedVector2Array([left[i], left[i + 1], right[i + 1]]), PackedColorArray([cols[i], cols[i + 1], cols[i + 1]]), PackedVector2Array())
-		draw_primitive(PackedVector2Array([left[i], right[i + 1], right[i]]), PackedColorArray([cols[i], cols[i + 1], cols[i]]), PackedVector2Array())
-
-
-## Disegna il cavaliere. È statica perché la usano anche le immagini residue dello scatto.
+## Disegna Ferruccio con i pezzi dipinti (corpo, spada, due gambe) ruotati e spostati in base
+## alla posa. È statica perché la usano anche le immagini residue dello scatto (silhouette).
 static func draw_figure(c: CanvasItem, p: Dictionary) -> void:
 	var f: float = p["facing"]
 	var sq: Vector2 = p["squash"]
 	var alpha: float = p["alpha"]
-	var flash: float = p["flash"]
-	var tint: Color = p["tint"]
 	var sil: bool = p["silhouette"]
-	var grounded: bool = p["grounded"]
-	var moving: bool = p["moving"]
+	var mod := Color(p["tint"], alpha) if sil else Color(1, 1, 1, alpha)
 	var run: float = p["run"]
 	var vy: float = p["vy"]
-	var hat: float = p["hat"]
+	var atk: float = p["attack"]
 	var breathe: float = p["breathe"]
 
-	var ink := Color(0.06, 0.05, 0.08, alpha)
-	var hi := Color(0.97, 0.95, 0.9, alpha)
-	var lo := Color(0.6, 0.62, 0.74, alpha)
-	var skin := Color(0.93, 0.8, 0.68, alpha)
-	var steel := Color(0.86, 0.9, 0.98, alpha)
-	if sil:
-		ink = Color(tint, alpha)
-		hi = ink
-		lo = ink
-		skin = ink
-		steel = ink
-	elif flash > 0.0:
-		hi = hi.lerp(Color(1, 1, 1, alpha), flash)
-		lo = lo.lerp(Color(1, 0.9, 0.9, alpha), flash)
-		skin = skin.lerp(Color(1, 1, 1, alpha), flash)
+	# Angoli in radianti nello spazio dell'immagine (rivolta a destra): negativo = in avanti/in alto.
+	var lean := 0.0
+	var bob := 0.0
+	var leg_front := 0.0
+	var leg_back := 0.0
+	var sword := breathe * 0.03
+	var stretch := 1.0 + breathe * 0.008
+	if p["dead"]:
+		lean = -1.45
+	elif p["dashing"]:
+		lean = 0.3
+		leg_front = -0.7
+		leg_back = 0.75
+		sword = 0.55
+	elif not p["grounded"]:
+		leg_front = -0.55 if vy < 0.0 else -0.25
+		leg_back = 0.35 if vy < 0.0 else 0.18
+		lean = 0.05 if vy < 0.0 else -0.04
+		sword = -0.18 if vy < 0.0 else 0.12
+	elif p["moving"]:
+		var s := sin(run)
+		leg_front = -s * RUN_SWING
+		leg_back = s * RUN_SWING
+		# Il corpo scende quando le gambe sono aperte, così il piede d'appoggio tocca terra.
+		bob = RIG_LEG_LEN * (1.0 - cos(RUN_SWING * s))
+		lean = 0.16
+		sword = 0.14 * s
+		stretch = 1.0
+	# Ritardo elastico (molla calcolata in _process): il corpo oscilla quando parte o si ferma.
+	lean += float(p["hat"]) * 0.22 * f
 
-	c.draw_set_transform(Vector2(0, HALF.y), 0.0, Vector2(f * sq.x, sq.y))
-
-	# Gambe: ciclo di corsa, raccolte in aria, appoggiate da fermo.
-	var l1: Vector2
-	var l2: Vector2
-	if not grounded:
-		l1 = Vector2(-5, -4 if vy < 0.0 else -1)
-		l2 = Vector2(6, -8 if vy < 0.0 else -3)
-	elif moving:
-		l1 = Vector2(sin(run) * 8.0, -maxf(0.0, cos(run)) * 5.0)
-		l2 = Vector2(sin(run + PI) * 8.0, -maxf(0.0, cos(run + PI)) * 5.0)
-	else:
-		l1 = Vector2(-4, 0)
-		l2 = Vector2(5, 0)
-	var hip := Vector2(0, -12.0 + breathe * 0.3)
-	for leg in [l2, l1]:
-		var foot: Vector2 = leg
-		c.draw_line(hip + Vector2(foot.x * 0.2, 0), foot + Vector2(0, -3), ink, 7.0, true)
-		c.draw_line(hip + Vector2(foot.x * 0.2, 0), foot + Vector2(0, -3), lo, 4.5, true)
-		c.draw_colored_polygon(Art.ellipse(foot + Vector2(1.5, -1.8), Vector2(4.2, 2.6), 10), ink)
-
-	# Camicione bianco svasato, con orlo mosso dalla corsa.
-	var sway := sin(run) * 1.5 if moving else 0.0
-	var top_y := -31.0 + breathe
-	var tunic := PackedVector2Array([
-		Vector2(-7, top_y), Vector2(8, top_y), Vector2(12.5 + sway, -9), Vector2(6, -6.5),
-		Vector2(0, -8.5), Vector2(-6, -6.5), Vector2(-12.5 + sway, -8.5),
-	])
-	var outline := tunic.duplicate()
-	outline.append(tunic[0])
-	c.draw_polyline(outline, ink, 3.2, true)
-	c.draw_polygon(tunic, PackedColorArray([hi, hi, lo, lo, lo, lo, lo]))
-	c.draw_line(Vector2(-9.5, -18.0 + breathe * 0.5), Vector2(10, -18.0 + breathe * 0.5), ink, 2.2, true)
-	c.draw_circle(Vector2(4.5, -25.0 + breathe), 1.2, ink)
-	c.draw_circle(Vector2(5.0, -21.5 + breathe), 1.2, ink)
-
-	# Braccio e spada; durante l'attacco il braccio compie l'arco.
-	var shoulder := Vector2(2.5, -27.0 + breathe)
-	var atk: float = p["attack"]
-	var hand: Vector2
-	var blade_dir: Vector2
 	if atk >= 0.0:
 		if p["attack_down"]:
-			hand = Vector2(4, -10)
-			blade_dir = Vector2(0.15, 1.0).normalized()
+			sword = 0.95
+			leg_front = -0.8
+			leg_back = -0.35
 		else:
 			var side: float = p["slash_side"]
-			var a := lerpf(-1.5 * side, 1.1 * side, ease(atk, 0.35))
-			blade_dir = Vector2(cos(a), sin(a))
-			hand = shoulder + blade_dir * 11.0
-	else:
-		hand = Vector2(8, -16.0 + breathe)
-		blade_dir = Vector2(0.4, 0.92).normalized()
-	c.draw_line(shoulder, hand, ink, 7.0, true)
-	c.draw_line(shoulder, hand, lo, 4.5, true)
-	var tip := hand + blade_dir * 25.0
-	c.draw_line(hand, tip, ink, 4.2, true)
-	c.draw_line(hand, tip, steel, 2.2, true)
-	var guard := Vector2(-blade_dir.y, blade_dir.x) * 4.5
-	c.draw_line(hand + guard, hand - guard, Color(Art.OCRA, alpha) if not sil else ink, 2.4, true)
+			var from := -2.3 if side > 0.0 else 0.9
+			var to := 0.7 if side > 0.0 else -2.0
+			sword = lerpf(from, to, ease(atk, 0.35))
+			lean += 0.12 * (1.0 - atk)
 
-	# Testa, maschera nera dal naso adunco e occhi luminosi.
-	var head := Vector2(1.5, -38.0 + breathe)
-	c.draw_circle(head, 9.8, ink)
-	c.draw_circle(head, 8.5, skin)
-	c.draw_colored_polygon(PackedVector2Array([
-		head + Vector2(-9, -2.5), head + Vector2(-6.5, -8), head + Vector2(5, -8.5), head + Vector2(9.5, -4),
-		head + Vector2(14, 1.5), head + Vector2(10.5, 3.5), head + Vector2(8, 1), head + Vector2(3, 1.5), head + Vector2(-8.5, 0.5),
-	]), ink)
-	if not p["dead"] and not sil:
-		var eye := Color(1.0, 0.98, 0.92, alpha).lerp(Color(tint, alpha), 0.25)
-		c.draw_circle(head + Vector2(5.2, -3.5), 3.4, Color(eye, 0.25 * alpha))
-		c.draw_circle(head + Vector2(5.2, -3.5), 1.7, eye)
-		c.draw_circle(head + Vector2(0.8, -3.5), 1.4, eye)
-
-	# Coppolone: cono alto che si piega con il movimento (molla).
-	var hb := head + Vector2(-1, -6.5)
-	var htip := hb + Vector2(-4.0 + hat * 20.0, -25.0 + absf(hat) * 7.0)
-	var hmid := hb.lerp(htip, 0.5) + Vector2(hat * 7.0, 0)
-	var hat_pts := PackedVector2Array([hb + Vector2(-9.5, 1.5), hmid + Vector2(-5.5, 0), htip, hmid + Vector2(5.5, 0), hb + Vector2(9.5, 1.5)])
-	var hat_line := hat_pts.duplicate()
-	hat_line.append(hat_pts[0])
-	c.draw_polyline(hat_line, ink, 3.0, true)
-	c.draw_polygon(hat_pts, PackedColorArray([hi, hi, lo, lo, hi]))
-	c.draw_line(hb + Vector2(-9.5, 1.5), hb + Vector2(9.5, 1.5), ink, 2.2, true)
+	var base := Transform2D(lean * f, Vector2(f * sq.x, sq.y * stretch) * RIG_SCALE, 0.0, Vector2(0, HALF.y)) \
+		* Transform2D(0.0, Vector2.ONE, 0.0, -RIG_FEET + Vector2(0, bob))
+	var dim := Color(0.78, 0.78, 0.84, 1.0) if not sil else Color(1, 1, 1, 1)
+	_part(c, base, RIG_LEG_BACK, RIG_HIP_BACK, leg_back, mod * dim)
+	_part(c, base, RIG_LEG_FRONT, RIG_HIP_FRONT, leg_front, mod)
+	_part(c, base, RIG_BODY, Vector2.ZERO, 0.0, mod)
+	_part(c, base, RIG_SWORD, RIG_WRIST, sword, mod)
+	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# Fendente: mezzaluna luminosa che svanisce.
 	if atk >= 0.0 and not sil:
+		var tint: Color = p["tint"]
 		var k := 1.0 - atk
 		var inner := Color(1, 1, 1, 0.95 * k * alpha)
 		var outer := Color(tint.lightened(0.4), 0.0)
+		c.draw_set_transform(Vector2(0, HALF.y), 0.0, Vector2(f * sq.x, sq.y))
 		if p["attack_down"]:
-			Art.crescent(c, Vector2(0, -6), 34.0, 18.0, 0.18 * PI, 0.82 * PI, inner, outer)
+			Art.crescent(c, Vector2(0, -6), 38.0, 20.0, 0.18 * PI, 0.82 * PI, inner, outer)
 		else:
 			var side2: float = p["slash_side"]
-			var from := -1.35 * side2
-			var to := lerpf(from, 1.15 * side2, ease(atk, 0.35))
-			Art.crescent(c, Vector2(4, -24), 40.0, 20.0, minf(from, to), maxf(from, to), inner, outer)
+			var from2 := -1.35 * side2
+			var to2 := lerpf(from2, 1.15 * side2, ease(atk, 0.35))
+			Art.crescent(c, Vector2(6, -36), 46.0, 22.0, minf(from2, to2), maxf(from2, to2), inner, outer)
+		c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+## Un pezzo del pupazzo ruotato attorno al suo perno (coordinate in pixel dell'immagine).
+static func _part(c: CanvasItem, base: Transform2D, tex: Texture2D, pivot: Vector2, angle: float, mod: Color) -> void:
+	var local := Transform2D(angle, Vector2.ONE, 0.0, pivot) * Transform2D(0.0, Vector2.ONE, 0.0, -pivot)
+	c.draw_set_transform_matrix(base * local)
+	c.draw_texture(tex, Vector2.ZERO, mod)
 
 
 # ---------------------------------------------------------------- Comandi dal server
@@ -461,7 +393,6 @@ func teleport(pos: Vector2) -> void:
 	velocity = Vector2.ZERO
 	move_vel = Vector2.ZERO
 	_dash_t = 0.0
-	_scarf.clear()
 	if _cam:
 		_cam.reset_smoothing()
 

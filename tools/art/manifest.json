@@ -1,0 +1,48 @@
+{
+	"note": "Sorgenti in assets/art-source/ (JPG originali generati con Grok Imagine dai prompt di design/art-prompts.md). Uscite in src/assets/art/. Rigenera con: python3 tools/art/import_art.py",
+	"assets": [
+		{"src": "personaggi/ferruccio.jpg", "out": "characters/ferruccio.png", "mode": "sprite", "max": 1024},
+		{"src": "personaggi/agnese.jpg", "out": "characters/agnese.png", "mode": "sprite", "max": 1024},
+		{"src": "personaggi/taddeo.jpg", "out": "characters/taddeo.png", "mode": "sprite", "max": 1024},
+		{"src": "personaggi/tonino.jpg", "out": "characters/tonino.png", "mode": "sprite", "max": 1024},
+		{"src": "personaggi/violante.jpg", "out": "characters/violante.png", "mode": "sprite", "max": 1024},
+		{"src": "personaggi/gregorio.jpg", "out": "characters/gregorio.png", "mode": "sprite", "max": 1024},
+		{"src": "personaggi/mariella.jpg", "out": "characters/mariella.png", "mode": "sprite", "max": 1024},
+		{"src": "personaggi/bianca.jpg", "out": "characters/bianca.png", "mode": "sprite", "max": 1024, "erode": 1},
+		{"src": "personaggi/gaetano.jpg", "out": "characters/gaetano.png", "mode": "sprite", "max": 1024, "erode": 1},
+		{"src": "personaggi/guardie.jpg", "out": "characters/guardie", "mode": "sheet", "max": 1024, "gap": 12, "names": ["guardia_giovane", "guardia_baffi", "guardia_anziana"]},
+		{"src": "personaggi/cittadini.jpg", "out": "characters/cittadini", "mode": "sheet", "max": 1024, "gap": 6, "names": ["lavandaia", "anziano", "uomo", "madre_e_figlia", "ragazzo"]},
+
+		{"src": "nemici/gatto.jpg", "out": "enemies/gatto.png", "mode": "sprite", "max": 768},
+		{"src": "nemici/vespa.jpg", "out": "enemies/vespa.png", "mode": "sprite", "max": 768, "erode": 1},
+		{"src": "nemici/statua.jpg", "out": "enemies/statua.png", "mode": "sprite", "max": 1024},
+
+		{"src": "boss/gatto_quattro_canti.jpg", "out": "bosses/gatto_quattro_canti.png", "mode": "sprite", "max": 1024},
+		{"src": "boss/regina_debiti.jpg", "out": "bosses/regina_debiti.png", "mode": "sprite", "max": 1024, "erode": 1},
+		{"src": "boss/madre_marmo.jpg", "out": "bosses/madre_marmo.png", "mode": "sprite", "max": 1024, "erode": 1},
+		{"src": "boss/tessitrice_pietra.jpg", "out": "bosses/tessitrice_pietra.png", "mode": "sprite", "max": 1024, "erode": 1},
+		{"src": "boss/custode.jpg", "out": "bosses/custode.png", "mode": "sprite", "max": 1024},
+
+		{"src": "aree/piazza_lontano.jpg", "out": "areas/piazza/far.png", "mode": "layer"},
+		{"src": "aree/piazza_medio.jpg", "out": "areas/piazza/mid.png", "mode": "layer"},
+		{"src": "aree/corso_lontano.jpg", "out": "areas/strada/far.png", "mode": "layer"},
+		{"src": "aree/corso_medio.jpg", "out": "areas/strada/mid.png", "mode": "layer"},
+		{"src": "aree/corso_primo_piano.jpg", "out": "areas/strada/fg.png", "mode": "layer"},
+		{"src": "aree/villa_lontano.jpg", "out": "areas/giardino/far.png", "mode": "layer"},
+		{"src": "aree/villa_medio.jpg", "out": "areas/giardino/mid.png", "mode": "layer"},
+		{"src": "aree/villa_primo_piano.jpg", "out": "areas/giardino/fg.png", "mode": "layer"},
+		{"src": "aree/belvedere_lontano.jpg", "out": "areas/belvedere/far.png", "mode": "layer", "erode": 1},
+		{"src": "aree/belvedere_medio.jpg", "out": "areas/belvedere/mid.png", "mode": "layer"},
+		{"src": "aree/belvedere_primo_piano.jpg", "out": "areas/belvedere/fg.png", "mode": "layer"},
+		{"src": "aree/reggia_lontano.jpg", "out": "areas/oro/far.png", "mode": "layer"},
+		{"src": "aree/reggia_medio.jpg", "out": "areas/oro/mid.png", "mode": "layer"},
+		{"src": "aree/foglie_primo_piano.jpg", "out": "areas/comune/foglie.png", "mode": "layer"},
+
+		{"src": "oggetti/statua_cavaliere.jpg", "out": "props/statua_cavaliere.png", "mode": "sprite", "max": 1024},
+		{"src": "oggetti/terreno.jpg", "out": "props/terreno.png", "mode": "sprite", "pad": 0},
+		{"src": "oggetti/cancello.jpg", "out": "props/cancello.png", "mode": "sprite", "max": 1024},
+		{"src": "oggetti/foglio_oggetti_1.jpg", "out": "items", "mode": "sheet", "max": 256, "gap": 30, "names": ["moneta", "mozzarella", "maschera", "sciarpa_annodata", "libro", "fazzoletto_giglio"]},
+		{"src": "oggetti/foglio_oggetti_2.jpg", "out": "items", "mode": "sheet", "max": 256, "gap": 30, "names": ["reggia_miniatura", "disegno_reggia", "pietra_gf", "lettera_sigillo", "targa", "pugnale"]},
+		{"src": "oggetti/foglio_oggetti_3.jpg", "out": "items", "mode": "sheet", "max": 256, "gap": 30, "names": ["medaglione_ritratti", "lettera_spago", "fazzoletto_blu", "lettera", "giglio_spezzato", "sciarpa"]}
+	]
+}

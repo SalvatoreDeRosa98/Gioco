@@ -1,15 +1,17 @@
-# Art Bible: Caserta — Il Custode della Reggia
+# Art Bible: Ferruccio — La Menzogna dei Borbone
 
-Bozza 1 · ottobre 2026 · obiettivo: qualità visiva da indie di alto livello (arte dipinta a mano,
+Bozza 2 · 8 ottobre 2026 · obiettivo: qualità visiva da indie di alto livello (arte dipinta a mano,
 luci morbide, profondità a strati), con un'identità propria e non una copia di altri giochi.
+Storia e personaggi: `design/narrative/ferruccio-bibbia.md`. Prompt di generazione: `design/art-prompts.md`.
 
 ## 1. Visual Identity Statement
 
 **Una fiaba notturna dipinta a mano, ambientata in una Caserta reale ma sognata.**
-Architetture borboniche riconoscibili (Reggia, piazze, portici, giardini, San Leucio),
-ridisegnate con contorni d'inchiostro morbidi, masse scure e poche luci calde che guidano
-lo sguardo. Il protagonista è un piccolo cavaliere-Pulcinella: bianco, leggibile, sempre il
-punto più chiaro della scena.
+Caserta, 1845. Architetture borboniche riconoscibili (Reggia, piazze, portici, giardini,
+San Leucio), ridisegnate con contorni d'inchiostro morbidi, masse scure e poche luci calde
+che guidano lo sguardo. Il protagonista è Ferruccio, fabbro imprigionato in un costume da
+Pulcinella: bianco, leggibile, sempre il punto più chiaro della scena. I fili d'oro del Velo
+della Concordia sono il motivo visivo ricorrente.
 
 Regola d'oro: **silhouette prima dei dettagli**. Ogni personaggio e ogni piattaforma si deve
 leggere anche in bianco e nero.
@@ -39,51 +41,65 @@ leggere anche in bianco e nero.
   contrastato → primo piano quasi nero.
 - Saturazione alta solo nelle luci (finestre, lampioni, torce, occhi, anime dei nemici).
 - Palette per area: vedi `src/game/themes.gd` (fonte unica dei colori usati dal motore).
-- Colori di squadra (sciarpa): rosso `#e8483f`, ciano `#3fc1d9`, oro `#f2c046`, viola `#a77bff`.
+- Sciarpa di Ferruccio: rosso `#e8483f`. Il motore può ricolorarla
+  (`shaders/canvas_char_sprite.gdshader`), quindi non servono immagini in più per le varianti.
 
 ## 5. Character Design Direction
 
-| Personaggio | Descrizione per la generazione |
-|-------------|--------------------------------|
-| Cavaliere-Pulcinella | piccolo, camicione bianco largo, maschera nera con naso adunco, coppolone bianco alto e un po' piegato, sciarpa rossa lunga, piccola spada; occhi luminosi nella maschera |
-| Gatto randagio | gatto d'ombra nero-violaceo, schiena inarcata, coda lunga, occhi viola luminosi |
-| Vespa | vespa dorata grande come un gatto, ali traslucide, addome luminoso |
-| Statua di marmo | statua classica dei giardini della Reggia, crepe che si illuminano di azzurro |
-| Il Custode della Reggia | guardiano corazzato d'oro alto il triplo del protagonista, mantello rosso borbonico, elmo con pennacchio, alabarda, giglio luminoso sul petto |
+Le descrizioni complete sono nei prompt (`design/art-prompts.md`, fasi 1–4). In gioco oggi:
 
-Ogni personaggio nasce da **un'unica immagine approvata** (vista laterale, sfondo neutro). Le
-animazioni si ottengono scomponendola in parti (testa, busto, braccia, gambe, mantello) e
-animandole in Godot con uno scheletro 2D: è più coerente che generare ogni fotogramma.
+| Personaggio | Immagine | Come si anima |
+|-------------|----------|---------------|
+| Ferruccio | `characters/ferruccio.png`: volto nero senza lineamenti, occhi luminosi, coppolone, sciarpa rossa, spada forgiata | pupazzo a 4 pezzi (corpo, spada, due gambe) tagliati da `tools/art/rig_ferruccio.py`; pose in `player.gd` |
+| Gatto d'ombra | `enemies/gatto.png` | coda separata (`tools/art/rig_nemici.py`), passo trotterellato |
+| Vespa dorata | `enemies/vespa.png` | ali separate che battono, volo ondeggiante |
+| Statua animata | `enemies/statua.png` | ferma; alone azzurro che la distingue dalle statue decorative, tremito prima del colpo |
+| Il Custode | `bosses/custode.png` | passo pesante, accovacciata e balzo; il giglio sul petto si accende prima della raffica |
+
+Gli altri personaggi (Agnese, Taddeo, Tonino, Violante, Gregorio, Mariella, Bianca, Gaetano,
+guardie, cittadini) e i quattro boss intermedi sono pronti in `src/assets/art/` per i capitoli
+della storia.
+
+Ogni personaggio nasce da **un'unica immagine approvata** (vista laterale verso destra, sfondo
+verde). Le animazioni si ottengono tagliandola in pezzi e muovendoli nel motore: è più
+coerente che generare ogni fotogramma. Il prossimo passo di qualità è un foglio di pose
+chiave di Ferruccio con il volto nuovo (prompt 1.5).
 
 ## 6. Environment Design Language
 
-Ogni area è composta da strati PNG separati, montati dal motore in parallasse
-(`src/game/backdrop.gd`):
+Ogni area è composta da strati dipinti montati dal motore in parallasse (`src/game/backdrop.gd`).
+Posizione, scala, tinta, foschia e sfocatura di ogni strato sono dati in `src/data/areas.json`.
 
-| Strato | Velocità | Contenuto | Dimensione consigliata |
-|--------|----------|-----------|------------------------|
-| Cielo | fisso | gradiente, luna, nuvole (shader) | generato dal motore |
-| Lontano | 0.18 | skyline, colline, facciata della Reggia | 2560 × 1080 |
-| Medio | 0.5 | palazzi, portici, alberi, colonne | 3200 × 1080 |
-| Gioco | 1.0 | piattaforme e oggetti (texture dipinte) | elementi singoli |
-| Primo piano | 1.3 | silhouette quasi nere (foglie, ringhiere, catene) | 3840 × 1080 |
+| Strato | Parallasse | Contenuto | Note |
+|--------|-----------|-----------|------|
+| Cielo | fisso | gradiente, luna, stelle, nuvole | shader `canvas_env_sky` |
+| Lontano | 0.18 | skyline, colline, facciata della Reggia | foschia e sfocatura più forti |
+| Medio | 0.5 | palazzi, portici, giardini, colonnati | scurito: non deve competere con il piano di gioco |
+| Gioco | 1.0 | pavimento, blocchi, mensole (`props/terreno.png`), grate (`props/cancello.png`) | tinta per area (`terrain_tint`) |
+| Primo piano | 1.3 | cornice in alto agganciata allo schermo + sagome in basso appena sopra il pavimento | quasi nero, sfocato; non deve coprire i personaggi |
 
-Gli strati non di fondo si generano su **sfondo verde croma piatto (#00ff00)** e vengono
-scontornati dallo script (`tools/art/gemini_image.py --key-green`).
+Le immagini sono 1792×1008 e si ripetono a specchio in orizzontale. Gli strati non di fondo
+si generano su **sfondo verde croma piatto (#00ff00)**.
 
 ## 7. UI/HUD Visual Direction
 
 - Font: Cinzel (titoli, capitale romana come le iscrizioni della Reggia) e Cormorant Garamond
   (testi). Entrambi OFL, in `src/assets/fonts/`.
-- Vita: maschere di Pulcinella. Valuta: centesimi. Ornamenti: linee sottili ocra con rombo
+- Vita: maschere di Pulcinella (`items/maschera.png`). Valuta: monete di luce (`items/moneta.png`). Ornamenti: linee sottili ocra con rombo
   centrale. Nessun riquadro pesante: l'HUD galleggia sulla scena.
 
 ## 8. Asset Standards
 
-- Formato: PNG 8 bit con trasparenza; niente testo dentro le immagini.
-- Cartelle: `src/assets/art/<area>/<strato>.png`, `src/assets/art/characters/<nome>.png`.
-- Ogni asset generato ha accanto un file `.json` con prompt, modello e data (tracciabilità).
-- Le foto sorgente vanno in `src/assets/photos/` con licenza e autore in `SOURCES.md`.
+- **Sorgenti:** i JPG originali di Grok stanno in `assets/art-source/` (fuori dal progetto Godot),
+  divisi in `personaggi/`, `nemici/`, `boss/`, `aree/`, `oggetti/`, `riferimenti/`.
+- **Conversione:** `python3 tools/art/import_art.py` scontorna il verde, toglie l'alone,
+  ritaglia e scrive i PNG in `src/assets/art/` seguendo `tools/art/manifest.json`. I fogli di
+  oggetti vengono separati in icone singole.
+- **Pezzi animabili:** `tools/art/rig_ferruccio.py` e `tools/art/rig_nemici.py`.
+- **Uscite:** `src/assets/art/characters/`, `enemies/`, `bosses/`, `areas/<area>/{far,mid,fg}.png`,
+  `props/`, `items/`. PNG con trasparenza, niente testo dentro le immagini.
+- **Import in Godot:** mipmap attive (impostazione predefinita del progetto); i nodi usano il
+  filtro lineare con mipmap, perché le immagini sono mostrate molto ridotte.
 
 ## 9. Reference Direction
 

@@ -45,6 +45,9 @@ var _room_t := 0.0
 var _transitioning := false
 var _wipe_t := -1.0
 var _shown_room := -1
+## Solo per test visivi (--demo): il giocatore locale corre, salta e colpisce da solo.
+var _demo := "--demo" in OS.get_cmdline_user_args()
+var _demo_t := 0.0
 
 
 func _ready() -> void:
@@ -92,7 +95,9 @@ func _input(event: InputEvent) -> void:
 		Net.leave()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if _demo:
+		_demo_input(delta)
 	var cam := get_viewport().get_camera_2d()
 	var center: Vector2 = cam.get_screen_center_position() if cam else room.get("size", Vector2(1280, 720)) * 0.5
 	_backdrop.update_camera(center)
@@ -112,6 +117,16 @@ func _physics_process(delta: float) -> void:
 	_check_cleared()
 	_check_doors()
 	_check_wipe(delta)
+
+
+func _demo_input(delta: float) -> void:
+	_demo_t += delta
+	Input.action_press("move_right")
+	for action in [["attack", 0.7, 0.0], ["jump", 1.9, 0.5]]:
+		if fmod(_demo_t + float(action[2]), float(action[1])) < 0.12:
+			Input.action_press(action[0])
+		else:
+			Input.action_release(action[0])
 
 
 # ---------------------------------------------------------------- Costruzione
@@ -215,6 +230,11 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 
 	var ids := _player_order()
 	var spawns: Array = Room.entry_points(room, from_left)
+	# Solo per test visivi: --at=X fa comparire i giocatori in quel punto del pavimento.
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--at="):
+			for i in spawns.size():
+				spawns[i] = Vector2(float(a.trim_prefix("--at=")) + i * 44.0, float(room["floor"]) - 30.0)
 	for i in ids.size():
 		var p = _find_player(ids[i])
 		if p and p.is_multiplayer_authority():
@@ -351,7 +371,7 @@ func _check_wipe(delta: float) -> void:
 func _mark_cleared() -> void:
 	room_cleared = true
 	_build_walls()
-	_terrain.set_doors(_left_open(), _right_open())
+	_terrain.open_doors(_left_open(), _right_open())
 	if not room["boss"]:
 		_hud.toast("Il passaggio si è aperto")
 

@@ -59,7 +59,11 @@ func _run_auto_args() -> void:
 			_ip_edit.text = a.trim_prefix("--join=")
 			_on_join_pressed()
 		elif a.begins_with("--shot="):
-			_capture_later(a.trim_prefix("--shot="), 6.0)
+			var delay := 6.0
+			for b in args:
+				if b.begins_with("--shot-at="):
+					delay = float(b.trim_prefix("--shot-at="))
+			_capture_later(a.trim_prefix("--shot="), delay)
 
 
 ## Salva uno screenshot dopo qualche secondo (verifica visiva in locale).
