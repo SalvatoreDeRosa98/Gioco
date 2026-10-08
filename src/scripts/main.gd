@@ -1,5 +1,5 @@
 extends Node
-## Menu iniziale e lobby, su uno scenario animato della Reggia di notte.
+## Menu iniziale su uno scenario animato della Reggia di notte (gioco per un solo giocatore).
 ## Quando la partita parte, lo scenario del menu viene rimosso e si crea il mondo di gioco.
 
 const WORLD_SCRIPT := preload("res://game/world.gd")
@@ -12,15 +12,8 @@ var _cam: Camera2D
 var _post_layer: CanvasLayer
 var _ui: CanvasLayer
 var _menu_box: VBoxContainer
-var _lobby_box: VBoxContainer
-var _name_edit: LineEdit
-var _ip_edit: LineEdit
-var _port_edit: LineEdit
 var _status: Label
-var _players_label: Label
-var _hint_label: Label
-var _start_button: Button
-var _host_button: Button
+var _play_button: Button
 var _world: Node2D
 var _t := 0.0
 
@@ -29,7 +22,6 @@ func _ready() -> void:
 	_ensure_inputs()
 	_build_scene()
 	_build_ui()
-	Net.lobby_changed.connect(_refresh_lobby)
 	Net.game_started.connect(_enter_world)
 	Net.session_ended.connect(_return_to_menu)
 	_run_auto_args()
@@ -43,27 +35,17 @@ func _process(delta: float) -> void:
 
 
 func _run_auto_args() -> void:
-	# Test in locale: godot --path src -- --host --autostart --name=A
+	# Test in locale: godot --path src -- --play --room=3 --at=900 --demo --shot=/tmp/x.png
 	var args := OS.get_cmdline_user_args()
 	for a in args:
-		if a.begins_with("--name="):
-			_name_edit.text = a.trim_prefix("--name=")
-		elif a.begins_with("--port="):
-			_port_edit.text = a.trim_prefix("--port=")
-	if "--host" in args:
-		_on_host_pressed()
-		if "--autostart" in args:
-			get_tree().create_timer(3.0).timeout.connect(Net.start_game)
-	for a in args:
-		if a.begins_with("--join="):
-			_ip_edit.text = a.trim_prefix("--join=")
-			_on_join_pressed()
-		elif a.begins_with("--shot="):
+		if a.begins_with("--shot="):
 			var delay := 6.0
 			for b in args:
 				if b.begins_with("--shot-at="):
 					delay = float(b.trim_prefix("--shot-at="))
 			_capture_later(a.trim_prefix("--shot="), delay)
+	if "--play" in args:
+		get_tree().create_timer(1.0).timeout.connect(_on_play_pressed)
 
 
 ## Salva uno screenshot dopo qualche secondo (verifica visiva in locale).
@@ -165,29 +147,17 @@ func _build_ui() -> void:
 
 	_menu_box = _screen(root)
 	_add_title(_menu_box)
-	_name_edit = _line_edit(_menu_box, "Il tuo nome", "Cavaliere")
-	_ip_edit = _line_edit(_menu_box, "Indirizzo IP dell'host", "127.0.0.1")
-	_port_edit = _line_edit(_menu_box, "Porta", str(Net.DEFAULT_PORT))
 	_spacer(_menu_box, 8)
-	_host_button = _button(_menu_box, "Ospita partita", _on_host_pressed)
-	_button(_menu_box, "Unisciti", _on_join_pressed)
+	_play_button = _button(_menu_box, "Nuova partita", _on_play_pressed)
 	_button(_menu_box, "Esci dal gioco", func() -> void: get_tree().quit())
 	_status = _label(_menu_box, "", 20, Art.body_font())
 
-	_lobby_box = _screen(root)
-	_add_title(_lobby_box)
-	_players_label = _label(_lobby_box, "", 26, Art.body_font())
-	_hint_label = _label(_lobby_box, "", 20, Art.body_font())
-	_spacer(_lobby_box, 8)
-	_start_button = _button(_lobby_box, "Inizia la partita", _on_start_pressed)
-	_button(_lobby_box, "Torna indietro", _on_leave_pressed)
-
-	var footer := _label(root, "Demo co-op  ·  2–4 giocatori  ·  Caserta, MMXXVI", 18, Art.body_font())
+	var footer := _label(root, "Beta  ·  Caserta, 1845", 18, Art.body_font())
 	footer.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	footer.position = Vector2(-300, -44)
 	footer.size = Vector2(600, 30)
 	footer.add_theme_color_override("font_color", Color(Art.CREMA, 0.45))
-	_show(_menu_box)
+	_show_menu()
 
 
 func _draw_shade(c: Control) -> void:
@@ -207,16 +177,14 @@ func _screen(root: Control) -> VBoxContainer:
 	return box
 
 
-func _show(box: VBoxContainer) -> void:
-	_menu_box.get_parent().visible = box == _menu_box
-	_lobby_box.get_parent().visible = box == _lobby_box
-	var first := _host_button if box == _menu_box else _start_button
-	if first and first.is_inside_tree() and first.visible:
-		first.call_deferred("grab_focus")
+func _show_menu() -> void:
+	_ui.visible = true
+	_play_button.call_deferred("grab_focus")
 
 
 func _add_title(box: VBoxContainer) -> void:
-	var t := _label(box, "CASERTA", 112, Art.title_font())
+	var t := _label(box, "FERRUCCIO", 96, Art.title_font())
+	t.autowrap_mode = TextServer.AUTOWRAP_OFF
 	t.add_theme_color_override("font_color", Color("#f4d9a0"))
 	t.add_theme_color_override("font_shadow_color", Color(1.0, 0.62, 0.25, 0.4))
 	t.add_theme_constant_override("shadow_outline_size", 22)
@@ -226,7 +194,7 @@ func _add_title(box: VBoxContainer) -> void:
 	orn.custom_minimum_size = Vector2(0, 18)
 	orn.draw.connect(_draw_ornament.bind(orn))
 	box.add_child(orn)
-	var sub := _label(box, "IL CUSTODE DELLA REGGIA", 24, Art.title_wide())
+	var sub := _label(box, "LA MENZOGNA DEI BORBONE", 24, Art.title_wide())
 	sub.add_theme_color_override("font_color", Art.CREMA)
 	_spacer(box, 22)
 
@@ -322,53 +290,13 @@ func _underline(color: Color) -> StyleBoxFlat:
 	return sb
 
 
-# ---------------------------------------------------------------- Rete
+# ---------------------------------------------------------------- Partita
 
-func _player_name() -> String:
-	var t := _name_edit.text.strip_edges()
-	return t.left(16) if t != "" else "Cavaliere"
-
-
-func _on_host_pressed() -> void:
-	var port := int(_port_edit.text)
-	if Net.host(port, _player_name()) != OK:
-		_status.text = "Impossibile aprire la porta %d." % port
+func _on_play_pressed() -> void:
+	if _world:
 		return
 	_status.text = ""
-	_show(_lobby_box)
-	_refresh_lobby()
-
-
-func _on_join_pressed() -> void:
-	var err := Net.join(_ip_edit.text.strip_edges(), int(_port_edit.text), _player_name())
-	if err != OK:
-		_status.text = "Indirizzo o porta non validi."
-		return
-	_status.text = ""
-	_show(_lobby_box)
-	_refresh_lobby()
-
-
-func _on_start_pressed() -> void:
-	Net.start_game()
-
-
-func _on_leave_pressed() -> void:
-	Net.leave()
-
-
-func _refresh_lobby() -> void:
-	if not _lobby_box.get_parent().visible:
-		return
-	var ids: Array = Net.players.keys()
-	ids.sort()
-	var lines: PackedStringArray = []
-	for id in ids:
-		lines.append("%s%s" % [Net.players[id], "  ·  ospita" if id == 1 else ""])
-	_players_label.text = "\n".join(lines) if not lines.is_empty() else "Connessione in corso..."
-	_start_button.visible = Net.is_host()
-	_start_button.disabled = ids.is_empty()
-	_hint_label.text = "Gli amici si collegano al tuo IP sulla porta %s." % _port_edit.text if Net.is_host() else "In attesa che l'host avvii la partita."
+	Net.start_solo("Ferruccio")
 
 
 func _enter_world() -> void:
@@ -387,5 +315,5 @@ func _return_to_menu(reason: String) -> void:
 	if _scene == null:
 		_build_scene()
 	_ui.visible = true
-	_show(_menu_box)
+	_show_menu()
 	_status.text = reason

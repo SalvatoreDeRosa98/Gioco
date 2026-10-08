@@ -1,5 +1,7 @@
 extends Node
-## Rete co-op (ENet). Il PC che ospita è il server autorevole (peer 1).
+## Sessione di gioco. Il gioco è per un solo giocatore: start_solo() usa un peer "offline",
+## così il mondo resta autorevole (peer 1) senza aprire porte di rete.
+## host()/join() restano solo finché non viene tolto il codice co-op dal mondo.
 
 signal lobby_changed
 signal game_started
@@ -35,6 +37,15 @@ func host(port: int, player_name: String) -> Error:
 	players = {1: player_name}
 	lobby_changed.emit()
 	return OK
+
+
+## Avvia una partita per un solo giocatore, senza rete.
+func start_solo(player_name: String) -> void:
+	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	players = {1: player_name}
+	world_seed = randi()
+	_running = true
+	game_started.emit()
 
 
 func join(ip: String, port: int, player_name: String) -> Error:

@@ -283,7 +283,9 @@ func _draw() -> void:
 	var air := 0.0 if grounded else 1.0
 	draw_colored_polygon(Art.ellipse(Vector2(0, HALF.y + 1.0), Vector2(15.0 - air * 5.0, 3.5), 16), Color(0, 0, 0, 0.35 * a * (1.0 - air * 0.6)))
 	draw_figure(self, _pose(a, false))
-	Art.text(self, Art.body_font(), Vector2(-70, -HALF.y - RIG_HEIGHT * 0.5 - 22.0), player_name, 17, Color(tint.lightened(0.2), 0.9 * a), HORIZONTAL_ALIGNMENT_CENTER, 140)
+	# Il nome serve solo a distinguere i giocatori quando sono più di uno.
+	if Net.players.size() > 1:
+		Art.text(self, Art.body_font(), Vector2(-70, -HALF.y - RIG_HEIGHT * 0.5 - 22.0), player_name, 17, Color(tint.lightened(0.2), 0.9 * a), HORIZONTAL_ALIGNMENT_CENTER, 140)
 
 
 ## Disegna Ferruccio con i pezzi dipinti (corpo, spada, due gambe) ruotati e spostati in base
