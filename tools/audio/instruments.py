@@ -198,14 +198,14 @@ def _partials(freq, n, rng, parts, attack=0.0015):
 
 def celesta(freq, dur, vel, rng, ring: float = 2.6, damp: bool = True) -> np.ndarray:
 	"""Celesta: barra metallica con risuonatore, fondamentale dolce."""
-	n = _n(min(ring * 1.3, dur + 1.2) if damp else ring * 1.3)
+	n = _n(min(ring * 1.3, dur + 0.25 + 1.6) if damp else ring * 1.3)
 	parts = [(1.0, 1.0, ring), (1.0006, 0.35, ring * 0.8), (2.0, 0.05, ring * 0.35), (2.756, 0.10 * vel, 0.35),
 			 (5.404, 0.035 * vel, 0.12)]
-	out = _partials(freq, n, rng, parts)
+	out = _partials(freq, n, rng, parts, attack=0.002)
 	if damp:
 		d0 = _n(dur + 0.25)
 		if d0 < n:
-			out[d0:] *= np.exp(-np.arange(n - d0) / (0.25 * SR))
+			out[d0:] *= np.exp(-np.arange(n - d0) / (0.22 * SR))  # 1.6 s dopo: -63 dB
 	return out * (0.25 + 0.75 * vel) * 0.3
 
 
@@ -214,7 +214,7 @@ def music_box(freq, dur, vel, rng, ring: float = 3.2) -> np.ndarray:
 	n = _n(ring * 1.2)
 	parts = [(1.0, 1.0, ring), (1.002, 0.25, ring * 0.7), (2.0, 0.03, ring * 0.3), (5.93, 0.09 * vel, 0.18),
 			 (3.0, 0.02, 0.4)]
-	out = _partials(freq, n, rng, parts, attack=0.0008)
+	out = _partials(freq, n, rng, parts, attack=0.002)
 	return out * (0.25 + 0.75 * vel) * 0.3
 
 
@@ -289,7 +289,7 @@ def pluck(freq, dur, vel, rng, t60: float = 1.2, bright: float = 0.6, pick_lp: f
 		  course: int = 1, detune_c: float = 2.5, tremolo: float = 0.0, damp: float = 0.08,
 		  pos: float = 0.13) -> np.ndarray:
 	"""Corda pizzicata generica. tremolo>0: plettrate al secondo (mandolino napoletano)."""
-	n = _n(dur + max(damp * 4, 0.05) + 0.02)
+	n = _n(dur + max(damp * 7, 0.05) + 0.02)  # dopo lo smorzamento: circa -60 dB
 	times = [0.0]
 	amps = [1.0]
 	if tremolo > 0:

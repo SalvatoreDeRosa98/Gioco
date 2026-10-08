@@ -17,6 +17,18 @@ import numpy as np
 from dsp import (SR, add_circ, as_stereo, db, eq_curve_fft, hz, midi, reverb_circ, rng_for, smooth_len)
 
 
+def active_rms_db(x: np.ndarray, win_s: float = 0.4, floor_db: float = 30.0) -> float:
+	"""RMS (dB) calcolato solo sulle finestre in cui lo stem suona davvero."""
+	m = np.mean(x ** 2, axis=0)
+	w = int(win_s * SR)
+	k = len(m) // w
+	e = m[:k * w].reshape(k, w).mean(axis=1)
+	if e.max() <= 0:
+		return -120.0
+	act = e[e > e.max() * 10 ** (-floor_db / 10)]
+	return float(10 * np.log10(act.mean() + 1e-20))
+
+
 class Song:
 	def __init__(self, name: str, bpm: float, beats_per_bar: int, bars: int, salt: int = 0):
 		self.name = name
@@ -48,7 +60,10 @@ class Song:
 		return self.stems[name]
 
 	def place(self, stem: str, audio: np.ndarray, start: float, pan: float = 0.0, gain_db: float = 0.0) -> None:
-		add_circ(self.stem(stem), as_stereo(audio, pan) * db(gain_db), int(round(start)))
+		y = as_stereo(audio, pan) * db(gain_db)
+		f = min(y.shape[-1], 256)  # sicurezza: nessuna nota finisce con uno scalino
+		y[:, -f:] *= np.cos(np.linspace(0, np.pi / 2, f)) ** 2
+		add_circ(self.stem(stem), y, int(round(start)))
 
 	def note(self, stem: str, inst, pitch, bar: float, beat: float, beats: float, vel: float = 0.7,
 			 pan: float = 0.0, gain_db: float = 0.0, jitter: float = 0.008, vel_jit: float = 0.05, **kw) -> None:
@@ -123,10 +138,11 @@ class Song:
 			if w != 1.0:
 				m = 0.5 * (y[0] + y[1])
 				y = np.vstack([m + w * (y[0] - m), m + w * (y[1] - m)])
+			if "level" in st:  # livello "attivo" desiderato (dB RMS dove lo stem suona)
+				y = y * db(st["level"] - active_rms_db(y))
 			y = y * db(st.get("gain", 0.0))
 			if verbose:
-				r = np.sqrt(np.mean(y ** 2))
-				print(f"    stem {name:12s} rms {20 * np.log10(r + 1e-12):6.1f} dB")
+				print(f"    stem {name:12s} attivo {active_rms_db(y):6.1f} dB")
 			dry += y * st.get("dry", 1.0)
 			s = st.get("send", 0.25)
 			if s > 0:

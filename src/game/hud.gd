@@ -75,7 +75,7 @@ func _draw() -> void:
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 118.0), _toast_text, 28, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if _hint_t > 0.0:
 		var a := minf(1.0, _hint_t / 3.0) * 0.6
-		var hint := "A/D muovi  ·  Spazio salta  ·  X colpisci  ·  S+X in aria rimbalza  ·  C scatta  ·  S+Spazio scendi  ·  Esc menu"
+		var hint := "A/D muovi  ·  Spazio salta  ·  X colpisci  ·  S+X in aria rimbalza  ·  C scatta  ·  S+Spazio scendi  ·  W parla  ·  Esc menu"
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 26.0), hint, 19, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if _end_t >= 0.0:
 		_draw_end(vp)

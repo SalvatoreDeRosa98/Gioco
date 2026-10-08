@@ -14,6 +14,8 @@ const HudScript := preload("res://game/hud.gd")
 const BackdropScript := preload("res://game/backdrop.gd")
 const TerrainScript := preload("res://game/terrain.gd")
 const DecorScript := preload("res://game/decor.gd")
+const NpcScript := preload("res://game/npc.gd")
+const DialogueBoxScript := preload("res://game/dialogue_box.gd")
 const POST_SHADER := preload("res://game/shaders/post_screen_grade.gdshader")
 
 ## Secondi tra la morte e la ripartenza della stanza.
@@ -32,6 +34,8 @@ var game_over := false
 var victory := false
 var fx_root: Node2D
 var player: PlayerScript
+## Stato narrativo (variabili della bibbia, dialoghi ascoltati): sopravvive a cadute e ripartenze.
+var story := Story.new()
 
 var _backdrop
 var _terrain
@@ -49,6 +53,11 @@ var _shown_room := -1
 ## Solo per test visivi (--demo): il giocatore corre, salta e colpisce da solo.
 var _demo := "--demo" in OS.get_cmdline_user_args()
 var _demo_t := 0.0
+var _npcs: Node2D
+var _dialogue
+var _talk_npc: Node
+## Secondi prima di ridare il controllo dopo un dialogo: il tasto che lo chiude non deve far saltare.
+var _talk_lock := 0.0
 
 
 func _ready() -> void:
@@ -63,6 +72,11 @@ func _ready() -> void:
 	add_child(_terrain)
 	_walls = Node2D.new()
 	add_child(_walls)
+	# Personaggi non giocanti: dietro a Ferruccio e ai nemici, davanti al terreno.
+	_npcs = Node2D.new()
+	_npcs.name = "Npcs"
+	_npcs.z_index = 9
+	add_child(_npcs)
 	_entities = Node2D.new()
 	_entities.name = "Entities"
 	_entities.z_index = 10
@@ -72,6 +86,11 @@ func _ready() -> void:
 	add_child(fx_root)
 
 	_build_overlays()
+	_dialogue = DialogueBoxScript.new()
+	add_child(_dialogue)
+	_dialogue.closed.connect(_on_dialogue_closed)
+	_dialogue.effect.connect(_on_dialogue_effect)
+	_dialogue.voice.connect(_on_dialogue_voice)
 
 	player = PlayerScript.new()
 	player.setup(Vector2.ZERO)
@@ -84,7 +103,11 @@ func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--room="):
 			start_room = clampi(int(a.trim_prefix("--room=")), 0, Room.COUNT - 1)
-	_load_room(start_room, true, false)
+	# Solo per test: --story=variabile:valore,... --cleared (stanza già liberata) --talk (vedi _test_talk).
+	_apply_test_story()
+	_load_room(start_room, true, "--cleared" in OS.get_cmdline_user_args())
+	if "--talk" in OS.get_cmdline_user_args():
+		get_tree().create_timer(5.0).timeout.connect(_test_talk)
 
 
 func _input(event: InputEvent) -> void:
@@ -96,13 +119,14 @@ func _input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	if _demo:
 		_demo_input(delta)
+	_update_talk(delta)
 	var cam := get_viewport().get_camera_2d()
 	var center: Vector2 = cam.get_screen_center_position() if cam else room.get("size", Vector2(1280, 720)) * 0.5
 	_backdrop.update_camera(center)
 
 
 func _physics_process(delta: float) -> void:
-	if game_over or room.is_empty():
+	if game_over or room.is_empty() or is_talking():
 		return
 	_room_t += delta
 	_check_contacts()
@@ -175,6 +199,7 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	_terrain.set_doors(_left_open(), _right_open())
 	_build_walls()
 	_build_decor(th)
+	_build_npcs()
 	_apply_grade(th)
 	_fade_in()
 	if idx != _shown_room:
@@ -361,7 +386,7 @@ func _do_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
 		if e.is_queued_for_deletion():
 			continue
 		if _overlap(center, half, e.global_position, e.half):
-			_hit_enemy(e, 1, Color(1.0, 0.95, 0.85), facing)
+			_hit_enemy(e, 1, Color(1.0, 0.95, 0.85), facing, down)
 			if down and air:
 				bounce = true
 	if bounce:
@@ -408,8 +433,11 @@ func _spawn_pickup(pos: Vector2, item: String, value: int) -> void:
 	_entities.add_child(pk)
 
 
-func _hit_enemy(e: Node, dmg: int, col: Color, dir: float) -> void:
-	var killed: bool = e.take_hit(dmg)
+## Colpo a un nemico: la spinta va nel verso del fendente (in basso per il colpo in picchiata);
+## quanto lo sposta e lo stordisce lo decide il nemico (enemy.gd, take_hit).
+func _hit_enemy(e: Node, dmg: int, col: Color, dir: float, down: bool = false) -> void:
+	var push := Vector2(dir * 0.35, 1.0).normalized() if down else Vector2(dir, -0.15).normalized()
+	var killed: bool = e.take_hit(dmg, push)
 	if killed:
 		_fx("death", e.global_position, Art.enemy_color(e.kind), dir)
 		_on_enemy_killed(e)
@@ -524,3 +552,141 @@ func _fade_in() -> void:
 	_fade.modulate = Color(1, 1, 1, 1)
 	var tw := create_tween()
 	tw.tween_property(_fade, "modulate:a", 0.0, 0.7).set_trans(Tween.TRANS_SINE)
+
+
+# ---------------------------------------------------------------- Personaggi e dialoghi
+
+## Crea i personaggi della stanza: collocazioni in Room.ROOMS (chiave "npcs"),
+## aspetto, comportamento e testi in data/dialogues.json.
+func _build_npcs() -> void:
+	for c in _npcs.get_children():
+		c.queue_free()
+	for d in (Room.ROOMS[room_index] as Dictionary).get("npcs", []):
+		var n = NpcScript.new()
+		n.setup(str(d["id"]), d["pos"], self)
+		_npcs.add_child(n)
+
+
+## Stato della stanza per le condizioni dei dialoghi (vedi Story.check).
+func story_ctx() -> Dictionary:
+	return {"cleared": room_cleared}
+
+
+## Vero mentre il riquadro dei dialoghi è aperto: giocatore e nemici restano fermi.
+func is_talking() -> bool:
+	return _dialogue != null and _dialogue.is_open()
+
+
+## Sceglie il personaggio più vicino con cui si può parlare (mostra il suo invito)
+## e apre il dialogo col tasto "parla". Dopo il dialogo ridà il controllo con un attimo di ritardo.
+func _update_talk(delta: float) -> void:
+	_talk_lock = maxf(0.0, _talk_lock - delta)
+	if is_talking():
+		return
+	if _talk_npc != null and _talk_lock <= 0.0:
+		_talk_npc = null
+		_freeze_for_talk(false)
+	var best: Node = null
+	if _talk_npc == null and not game_over and not player.dead and player.is_on_floor():
+		var st := Story.settings()
+		var rx := float(st.get("talk_radius_x", 78.0))
+		var ry := float(st.get("talk_radius_y", 90.0))
+		var feet: Vector2 = player.global_position + Vector2(0, PlayerScript.HALF.y)
+		var best_d := INF
+		for n in _npcs.get_children():
+			if n.is_queued_for_deletion() or not n.can_talk():
+				continue
+			var d: Vector2 = n.global_position - feet
+			if absf(d.x) < rx and absf(d.y) < ry and absf(d.x) < best_d:
+				best = n
+				best_d = absf(d.x)
+	for n in _npcs.get_children():
+		n.focused = n == best
+	if best and InputMap.has_action("interact") and Input.is_action_just_pressed("interact"):
+		_start_talk(best)
+
+
+func _start_talk(n: Node) -> void:
+	var entry := story.pick(n.key, story_ctx())
+	if entry.is_empty():
+		return
+	_talk_npc = n
+	_freeze_for_talk(true)
+	n.focused = false
+	var dx: float = n.global_position.x - player.global_position.x
+	if absf(dx) > 2.0:
+		player.facing = signf(dx)
+	n.begin_talk(entry, player.global_position.x)
+	_dialogue.open(entry, story)
+
+
+## Durante il dialogo Ferruccio sta fermo e i nemici sospendono movimenti e attacchi.
+## L'aspetto continua ad animarsi (respiro, sguardo): si ferma solo la fisica.
+func _freeze_for_talk(on: bool) -> void:
+	player.set_physics_process(not on)
+	if on:
+		player.velocity = Vector2.ZERO
+		player.set("move_vel", Vector2.ZERO)
+		player.set("attacking", 0.0)
+		player.set("dashing", false)
+	for group in ["enemies", "bullets"]:
+		for e in get_tree().get_nodes_in_group(group):
+			e.set_physics_process(not on)
+			if on and e is CharacterBody2D:
+				(e as CharacterBody2D).velocity = Vector2.ZERO
+
+
+func _on_dialogue_closed() -> void:
+	if is_instance_valid(_talk_npc):
+		_talk_npc.end_talk()
+	_talk_lock = 0.2
+
+
+## Effetti chiesti dalle battute (dialogues.json, chiave "do").
+func _on_dialogue_effect(what: String) -> void:
+	match what:
+		"heal":
+			player.heal(1)
+			_fx("collect", player.global_position + Vector2(0, -20), Color(1.0, 0.97, 0.9), 0.0)
+
+
+func _on_dialogue_voice(who: String, on: bool) -> void:
+	for n in _npcs.get_children():
+		n.set_voice(on and who in n.speakers)
+
+
+## Solo per test: --story=taddeo_trust:perdonato,agnese_memory:sopita imposta le variabili.
+func _apply_test_story() -> void:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--story="):
+			for pair in a.trim_prefix("--story=").split(","):
+				var kv := pair.split(":")
+				if kv.size() == 2:
+					story.set_var(kv[0], kv[1])
+
+
+## Solo per test visivi (--talk): apre il dialogo del personaggio --talk-npc=chiave (o del più
+## vicino) e salta --talk-skip=N battute, per fotografare riquadro e scelte.
+func _test_talk() -> void:
+	var want := ""
+	var skip := 0
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--talk-npc="):
+			want = a.trim_prefix("--talk-npc=")
+		elif a.begins_with("--talk-skip="):
+			skip = int(a.trim_prefix("--talk-skip="))
+	var target: Node = null
+	var best := INF
+	for n in _npcs.get_children():
+		if not n.can_talk() or (want != "" and n.key != want):
+			continue
+		var d := absf(n.global_position.x - player.global_position.x)
+		if d < best:
+			best = d
+			target = n
+	if target == null:
+		push_warning("--talk: nessun personaggio con cui parlare")
+		return
+	_start_talk(target)
+	for i in skip:
+		_dialogue.debug_skip()

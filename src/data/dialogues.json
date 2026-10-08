@@ -1,0 +1,448 @@
+{
+	"_doc": "Personaggi e dialoghi. Fonte: design/narrative/ferruccio-bibbia.md. Ferruccio e' muto: le righe senza 'who' sono i suoi gesti (corsivo ocra). Condizioni 'when'/'if': variabile della bibbia ('' non decisa, '*' decisa, '!x' diversa da x), 'cleared' (stanza liberata), 'seen'/'unseen' (id di dialogo). Un dialogo 'once' si ascolta una volta; 'cycle' ruota tra varianti. Righe max 120 caratteri.",
+	"settings": {
+		"talk_radius_x": 78,
+		"talk_radius_y": 90,
+		"notice_radius": 240,
+		"turn_time": 0.2,
+		"breath_period": 3.4,
+		"sway_period": 5.6,
+		"sway_amount": 1.6,
+		"memory_float": 4.0,
+		"chars_per_second": 48,
+		"pause_comma": 0.07,
+		"pause_colon": 0.12,
+		"pause_stop": 0.22,
+		"blip_every": 4,
+		"bark_hold": 2.4,
+		"bark_per_char": 0.05,
+		"bark_width": 300
+	},
+	"characters": {
+		"ferruccio": {"name": "Ferruccio"},
+		"tonino": {
+			"name": "Tonino",
+			"image": "res://assets/art/characters/tonino.png",
+			"height": 118,
+			"light": [1.0, 0.78, 0.46, 0.5, 360, 34, -78]
+		},
+		"taddeo": {
+			"name": "Taddeo",
+			"image": "res://assets/art/characters/taddeo.png",
+			"height": 124
+		},
+		"mariella": {
+			"name": "Mariella",
+			"image": "res://assets/art/characters/mariella.png",
+			"height": 100,
+			"shadow": 30,
+			"breath": 0.6
+		},
+		"agnese": {
+			"name": "Agnese",
+			"image": "res://assets/art/characters/agnese.png",
+			"height": 112
+		},
+		"gaetano": {
+			"name": "Gaetano",
+			"image": "res://assets/art/characters/gaetano.png",
+			"height": 134,
+			"memory": true,
+			"glow": [1.0, 0.76, 0.36]
+		},
+		"bianca": {
+			"name": "Bianca",
+			"image": "res://assets/art/characters/bianca.png",
+			"height": 108,
+			"memory": true,
+			"glow": [0.56, 0.8, 1.0]
+		},
+		"violante": {
+			"name": "Violante",
+			"image": "res://assets/art/characters/violante.png",
+			"height": 118,
+			"tint": [0.62, 0.66, 0.84]
+		},
+		"assunta": {
+			"name": "Assunta",
+			"image": "res://assets/art/characters/cittadini/madre_e_figlia.png",
+			"height": 116
+		},
+		"nunziatina": {"name": "Nunziatina"},
+		"don_ciccio": {
+			"name": "Don Ciccio",
+			"image": "res://assets/art/characters/cittadini/anziano.png",
+			"height": 112
+		},
+		"carmela": {
+			"name": "Carmela",
+			"image": "res://assets/art/characters/cittadini/lavandaia.png",
+			"height": 112
+		},
+		"capuano": {
+			"name": "Brigadiere Capuano",
+			"image": "res://assets/art/characters/guardie/guardia_baffi.png",
+			"height": 126
+		}
+	},
+	"npcs": {
+		"tonino": {
+			"character": "tonino",
+			"face": -1,
+			"turn": "near",
+			"dialogue": [
+				{"id": "tonino_primo", "once": true, "lines": [
+					{"who": "tonino", "text": "Uagliò, ma che è 'sta faccia?"},
+					{"text": "Ferruccio indica la propria maschera."},
+					{"who": "tonino", "text": "Ah, è proprio la tua. E che ne sapevo io?"},
+					{"who": "tonino", "text": "Mangia. Magari sotto 'sta maschera ce sta ancora qualcuno.", "item": "mozzarella", "do": "heal"}
+				]},
+				{"id": "tonino_rosa", "once": true, "when": {"cleared": true, "tonino_memory": ""}, "lines": [
+					{"text": "Dall'ultimo gatto d'ombra è salita un'anima. Tra le dita di Ferruccio è ancora tiepida."},
+					{"who": "tonino", "text": "Uè, che tieni lì? Brilla come una lampara."},
+					{"text": "Nella luce c'è un medaglione con il ritratto di una donna. Tonino la guarda e non la riconosce.", "item": "medaglione_ritratti"}
+				], "choice": {
+					"prompt": "Restituirgli il ricordo significa restituirgli anche il lutto.",
+					"options": [
+						{"label": "Restituisci il ricordo", "set": {"tonino_memory": "restituito"}, "lines": [
+							{"who": "tonino", "text": "Rosa..."},
+							{"who": "tonino", "text": "Maronna mia. Erano anni che non dicevo il suo nome."},
+							{"text": "Tonino piange. Ferruccio fa un passo verso di lui."},
+							{"who": "tonino", "text": "Nun fa niente, guagliò. Mi mancava pure questo."}
+						]},
+						{"label": "Lascialo dimenticare", "set": {"tonino_memory": "negato"}, "lines": [
+							{"text": "Ferruccio chiude la mano. La luce si spegne tra le dita."},
+							{"who": "tonino", "text": "Uh, sparito! E bravo: pure il prestigiatore sapete fare."}
+						]}
+					]
+				}},
+				{"id": "tonino_lettera", "once": true, "when": {"tonino_memory": "restituito"}, "lines": [
+					{"who": "tonino", "text": "Mo' che mi è tornata Rosa, mi torna pure una lettera. La teneva lei, nel cassetto del banco."},
+					{"who": "tonino", "text": "L'aveva lasciata una tessitrice di San Leucio, per un fabbro.", "item": "lettera_sigillo"},
+					{"text": "Ferruccio la stringe al petto. Non la apre."},
+					{"who": "tonino", "text": "Tienila tu. Quel fabbro, mi pare, portava una sciarpa rossa come la tua."}
+				]},
+				{"id": "tonino_ricorda", "when": {"tonino_memory": "restituito"}, "cycle": [
+					[
+						{"who": "tonino", "text": "Rosa diceva che parlo troppo. Teneva ragione."},
+						{"who": "tonino", "text": "Mo' però parlo pure di lei. È diverso."}
+					],
+					[
+						{"who": "tonino", "text": "Fa male, eh. Ma è un male mio. Nessuno me lo tocca più."}
+					]
+				]},
+				{"id": "tonino_dimentica", "when": {"tonino_memory": "negato"}, "cycle": [
+					[
+						{"who": "tonino", "text": "Moglie? Io? E chi se la ricorda!"},
+						{"text": "Ride da solo. Poi torna a fissare una sedia vuota accanto al banco."}
+					],
+					[
+						{"who": "tonino", "text": "Sempre una bella giornata! Pure quando piove!"}
+					]
+				]},
+				{"id": "tonino_attesa", "cycle": [
+					[
+						{"who": "tonino", "text": "'Sti gatti stanotte so' nervosi. Secondo me pure loro hanno perso qualcosa."}
+					],
+					[
+						{"who": "tonino", "text": "La gente sorride tutta, stanotte. Pure chi non compra niente. Che pace, eh?"},
+						{"text": "Sorride anche lui. Gli occhi no."}
+					]
+				]}
+			]
+		},
+		"assunta": {
+			"character": "assunta",
+			"speakers": ["assunta", "nunziatina"],
+			"face": -1,
+			"turn": "near",
+			"bark": {"id": "nunziatina_canta", "radius": 330, "delay": 1.0, "lines": [
+				{"who": "nunziatina", "text": "Quando il giglio si addormenta, la luna ascolta e non si lamenta."}
+			]},
+			"dialogue": [
+				{"id": "assunta_luna", "cycle": [
+					[
+						{"who": "assunta", "text": "Canta, Nunziatì. Quella della luna."},
+						{"who": "nunziatina", "text": "Quando il giglio si addormenta, la luna ascolta e non si lamenta."},
+						{"who": "assunta", "text": "Brava. Non so chi ce l'ha insegnata. Ma è bella, no?"}
+					],
+					[
+						{"who": "assunta", "text": "Non fate caso a noi. Stiamo bene. Stiamo tutti tanto bene."},
+						{"text": "La bambina fissa la maschera di Ferruccio. Poi sorride anche lei, piano."}
+					]
+				]}
+			]
+		},
+		"guardia_corso": {
+			"character": "capuano",
+			"face": -1,
+			"turn": "near",
+			"dialogue": [
+				{"id": "capuano_ronda", "cycle": [
+					[
+						{"who": "capuano", "text": "Circolare, circolare. Con calma, eh: stanotte nessuno tiene fretta."}
+					],
+					[
+						{"who": "capuano", "text": "Bella maschera. La Signora ci vuole tutti contenti, e voi mi parete contento."},
+						{"text": "Ferruccio resta immobile. La guardia sorride lo stesso."}
+					],
+					[
+						{"who": "capuano", "text": "Ladri? Da mesi, niente. Nessuno vuole più niente: che c'è da rubare?"}
+					]
+				]}
+			]
+		},
+		"taddeo_corso": {
+			"character": "taddeo",
+			"face": 1,
+			"turn": "talk",
+			"leave": "walk",
+			"when": {"taddeo_trust": "!accusato"},
+			"dialogue": [
+				{"id": "taddeo_lettera", "once": true, "when": {"taddeo_trust": "perdonato", "seen": "mariella_lettera"}, "lines": [
+					{"text": "Ferruccio gli porge la lettera di Mariella."},
+					{"who": "taddeo", "text": "«Non devi aggiustarmi.»"},
+					{"who": "taddeo", "text": "Non me l'aveva mai chiesto. E io, per darglielo, ho venduto un fratello."},
+					{"text": "Taddeo piega la lettera e la tiene stretta, come una cosa viva."}
+				]},
+				{"id": "taddeo_spada", "once": true, "when": {"cleared": true, "taddeo_trust": ""}, "lines": [
+					{"text": "Taddeo si volta. Vede la spada, e il colore gli scivola via dal viso."},
+					{"who": "taddeo", "text": "No... Quella l'abbiamo forgiata insieme."},
+					{"who": "taddeo", "text": "Ti prego, lascia che ti spieghi."}
+				], "choice": {
+					"prompt": "Taddeo trema. La spada aspetta una risposta.",
+					"options": [
+						{"label": "Abbassa la spada", "set": {"taddeo_trust": "perdonato"}, "lines": [
+							{"who": "taddeo", "text": "Ti ho consegnato io. Per Mariella."},
+							{"who": "taddeo", "text": "Mi aveva promesso che mia sorella sarebbe stata bene."},
+							{"who": "taddeo", "text": "E io le ho creduto. Che Dio mi perdoni."},
+							{"text": "Ferruccio rinfodera la spada."}
+						]},
+						{"label": "Puntagli la spada alla gola", "set": {"taddeo_trust": "accusato"}, "lines": [
+							{"text": "Taddeo arretra fino alla vetrina."},
+							{"who": "taddeo", "text": "Se mi uccidi, lei resterà comunque là dentro!"},
+							{"text": "Ferruccio non affonda. Ma non abbassa la spada finché Taddeo non scappa via."}
+						]}
+					]
+				}},
+				{"id": "taddeo_ronda", "turn": false, "when": {"taddeo_trust": ""}, "cycle": [
+					[
+						{"who": "taddeo", "text": "Circolate. La Signora vuole le strade tranquille, stanotte."},
+						{"text": "Risponde senza voltarsi. Ha gli occhi sulla ragazza seduta accanto alla vetrina."}
+					],
+					[
+						{"who": "taddeo", "text": "Ancora voi? Non ho tempo per le maschere. Ho una sorella da guardare."}
+					]
+				]},
+				{"id": "taddeo_aiuto", "when": {"taddeo_trust": "perdonato"}, "cycle": [
+					[
+						{"who": "taddeo", "text": "Vai avanti. Ti lascerò quello che trovo: carte, nomi, testimoni."},
+						{"who": "taddeo", "text": "È poco. Lo so che è poco."}
+					],
+					[
+						{"who": "taddeo", "text": "Mariella sorride sempre, adesso. Io la guardo e non so più se è lei."}
+					]
+				]}
+			]
+		},
+		"mariella": {
+			"character": "mariella",
+			"face": -1,
+			"turn": "never",
+			"dialogue": [
+				{"id": "mariella_lettera", "once": true, "when": {"taddeo_trust": "perdonato"}, "lines": [
+					{"who": "mariella", "text": "Siete l'amico di mio fratello? Allora questa forse è per lui."},
+					{"who": "mariella", "text": "Stava nel mio grembiule. È la mia scrittura, ma non ricordo di averla scritta.", "item": "lettera_spago"},
+					{"text": "«Caro Taddeo, non devi aggiustarmi.»"},
+					{"text": "«Voglio soltanto che, quando ho paura, tu rimanga con me. Tua sorella.»"}
+				]},
+				{"id": "mariella_fratello", "when": {"taddeo_trust": "accusato"}, "cycle": [
+					[
+						{"who": "mariella", "text": "Taddeo è corso via. Corre sempre, mio fratello. Chissà che cerca."},
+						{"who": "mariella", "text": "Io no. Io sto bene qua."}
+					]
+				]},
+				{"id": "mariella_sorriso", "cycle": [
+					[
+						{"who": "mariella", "text": "Buonasera! Una maschera, che bello. Io non ho più paura del buio, sapete?"},
+						{"who": "mariella", "text": "Non ho più paura di niente."}
+					],
+					[
+						{"who": "mariella", "text": "Mio fratello mi porta qua tutte le sere. Guardiamo la strada. È bella, la strada."},
+						{"text": "La strada è vuota. Mariella sorride lo stesso."}
+					]
+				]}
+			]
+		},
+		"don_ciccio": {
+			"character": "don_ciccio",
+			"face": -1,
+			"turn": "near",
+			"dialogue": [
+				{"id": "ciccio_statue", "cycle": [
+					[
+						{"who": "don_ciccio", "text": "Venite per le statue? Brave persone. Non dicono mai niente."}
+					],
+					[
+						{"who": "don_ciccio", "text": "Qua ci venivo con qualcuno, una volta. Chi fosse, non me lo ricordo."},
+						{"who": "don_ciccio", "text": "Però ci veniva volentieri. Questo sì, me lo ricordo."}
+					],
+					[
+						{"who": "don_ciccio", "text": "Sotto il cavaliere col giglio c'è scritto: «Non tutte le catene fanno rumore.»"},
+						{"who": "don_ciccio", "text": "Bella frase. Non so che vuol dire, ma è bella."}
+					]
+				]}
+			]
+		},
+		"bianca_ricordo": {
+			"character": "bianca",
+			"face": -1,
+			"turn": "never",
+			"verb": "Osserva",
+			"leave": "rise",
+			"when": {"unseen": "bianca_inchino"},
+			"dialogue": [
+				{"id": "bianca_inchino", "once": true, "lines": [
+					{"text": "Nel marmo è rimasto un ricordo: un uomo in divisa insegna un inchino a una bambina."},
+					{"who": "bianca", "text": "Ancora! Ma stavolta fallo tu!"},
+					{"text": "L'uomo si inchina, goffo. La bambina ride e sbaglia apposta."},
+					{"text": "Lui le tende la mano. Il ricordo si sfalda prima che lei possa prenderla."}
+				]}
+			]
+		},
+		"gaetano_ricordo": {
+			"character": "gaetano",
+			"face": 1,
+			"turn": "never",
+			"verb": "Osserva",
+			"leave": "rise",
+			"when": {"cleared": true, "father_registry": ""},
+			"dialogue": [
+				{"id": "gaetano_trave", "once": true, "lines": [
+					{"text": "Dalla pietra sale una luce calda. Dentro c'è un uomo che regge una trave sopra la testa."},
+					{"who": "gaetano", "text": "Prima fate uscire i ragazzi!"},
+					{"text": "L'immagine si spegne. Sulla pietra della fontana resta il segno del punzone del padre: G. F.", "item": "pietra_gf"},
+					{"text": "E un registro. Il nome di Gaetano è cancellato e riscritto accanto a una parola: colpevole.", "item": "libro"}
+				], "choice": {
+					"prompt": "Il registro prova la falsificazione. Ma finché esiste, quel nome resta accanto a quella parola.",
+					"options": [
+						{"label": "Conserva il registro", "set": {"father_registry": "conservato"}, "lines": [
+							{"text": "Ferruccio lo avvolge nella sciarpa. Ci vorranno anni prima che qualcuno lo legga. Ma esiste."}
+						]},
+						{"label": "Brucia il registro", "set": {"father_registry": "bruciato"}, "lines": [
+							{"text": "La carta si accartoccia nella fiamma di un lampione. Il nome sparisce, e con lui la prova."}
+						]}
+					]
+				}}
+			]
+		},
+		"carmela": {
+			"character": "carmela",
+			"face": -1,
+			"turn": "near",
+			"dialogue": [
+				{"id": "carmela_telai", "cycle": [
+					[
+						{"who": "carmela", "text": "I telai lavorano pure di notte, mo'. Nessuno li tocca, e la seta viene bella lo stesso."}
+					],
+					[
+						{"who": "carmela", "text": "Lamentele? Nessuna. Qua a San Leucio nessuno si lamenta più."},
+						{"text": "Nel cesto, i fili della stoffa si muovono da soli."}
+					]
+				]}
+			]
+		},
+		"taddeo_sanleucio": {
+			"character": "taddeo",
+			"face": 1,
+			"turn": "near",
+			"when": {"taddeo_trust": "perdonato"},
+			"dialogue": [
+				{"id": "taddeo_detto", "once": true, "when": {"agnese_memory": ""}, "lines": [
+					{"who": "taddeo", "text": "Sono arrivato prima di te. Le ho detto chi eri. Anche quello che ho fatto io."},
+					{"who": "taddeo", "text": "Non ti riconosce. Ma tesse ancora la tua sciarpa."},
+					{"who": "taddeo", "text": "Il resto tocca a te."}
+				]},
+				{"id": "taddeo_scegli", "once": true, "when": {"agnese_memory": "sopita"}, "lines": [
+					{"who": "taddeo", "text": "Stai facendo esattamente quello che ha fatto Violante."},
+					{"who": "taddeo", "text": "Stai scegliendo al posto suo."},
+					{"text": "Ferruccio abbassa lo sguardo."}
+				]},
+				{"id": "taddeo_vero", "once": true, "when": {"agnese_memory": "risvegliata"}, "lines": [
+					{"who": "taddeo", "text": "L'hai vista sorridere? Quello era vero. Me lo ricordavo, com'era."}
+				]},
+				{"id": "taddeo_resto", "cycle": [
+					[
+						{"who": "taddeo", "text": "Vai. Io resto con lei, finché non torni."}
+					]
+				]}
+			]
+		},
+		"agnese": {
+			"character": "agnese",
+			"face": -1,
+			"turn": "near",
+			"dialogue": [
+				{"id": "agnese_sciarpa", "once": true, "when": {"agnese_memory": ""}, "lines": [
+					{"who": "agnese", "text": "Attento ai fili, signore. Stanotte si muovono da soli."},
+					{"who": "agnese", "text": "Questa sciarpa? La tesso da mesi. La disfo e la ricomincio, e non so per chi."},
+					{"text": "In tasca, la lettera che Tonino gli ha reso pesa più del ferro.", "if": {"tonino_memory": "restituito"}},
+					{"text": "Ferruccio porta una mano alla sciarpa che ha al collo. È la stessa trama, lo stesso rosso."}
+				], "choice": {
+					"prompt": "Se le porge la sciarpa, Agnese ricorderà. Tutto, anche il dolore.",
+					"options": [
+						{"label": "Porgile la sciarpa", "set": {"agnese_memory": "risvegliata"}, "lines": [
+							{"text": "Agnese tocca la lana. Le mani le tremano.", "if": {"taddeo_trust": "!accusato"}},
+							{"who": "agnese", "text": "Non sapevo più il tuo nome.", "if": {"taddeo_trust": "!accusato"}},
+							{"who": "agnese", "text": "Ma ricordavo come mi guardavi.", "if": {"taddeo_trust": "!accusato"}},
+							{"text": "Gli toglie la polvere dalla maschera, piano.", "if": {"taddeo_trust": "!accusato"}},
+							{"who": "agnese", "text": "Torna da me. Anche se non puoi più essere quello di prima.", "if": {"taddeo_trust": "!accusato"}},
+							{"who": "agnese", "text": "Ferruccio... Mi hanno detto di Taddeo. Della tua spada alla sua gola.", "if": {"taddeo_trust": "accusato"}},
+							{"who": "agnese", "text": "Ho aspettato un uomo per anni.", "if": {"taddeo_trust": "accusato"}},
+							{"who": "agnese", "text": "Adesso ho paura che sia tornata soltanto la sua rabbia.", "if": {"taddeo_trust": "accusato"}},
+							{"text": "Lui le tende la mano. Lei la stringe, ma non gli promette di aspettarlo.", "if": {"taddeo_trust": "accusato"}}
+						]},
+						{"label": "Inchinati e lasciala sognare", "set": {"agnese_memory": "sopita"}, "lines": [
+							{"who": "agnese", "text": "Prendila. Non so perché, ma credo che debba averla tu.", "item": "sciarpa", "if": {"taddeo_trust": "!perdonato"}},
+							{"text": "Ferruccio prende la sciarpa, la piega con cura e le fa un inchino.", "if": {"taddeo_trust": "!perdonato"}},
+							{"text": "Ferruccio abbassa la mano e si inchina.", "if": {"taddeo_trust": "perdonato"}},
+							{"who": "agnese", "text": "Che tipo buffo."}
+						]}
+					]
+				}},
+				{"id": "agnese_giglio", "once": true, "when": {"agnese_memory": "*"}, "lines": [
+					{"who": "agnese", "text": "Guarda. La Signora ce lo faceva ricamare sempre, questo giglio.", "item": "fazzoletto_giglio"},
+					{"who": "agnese", "text": "Nessuno riusciva a farlo uguale."},
+					{"who": "agnese", "text": "Forse perché era stato fatto da una bambina."}
+				]},
+				{"id": "agnese_sveglia", "when": {"agnese_memory": "risvegliata"}, "cycle": [
+					[
+						{"who": "agnese", "text": "Vai. Prima che cambi idea e ti tenga qua."}
+					],
+					[
+						{"who": "agnese", "text": "Mi ricordo pure la ruota del telaio che mi hai rotto. Non l'hai mai ripagata, sai?"}
+					]
+				]},
+				{"id": "agnese_sogno", "when": {"agnese_memory": "sopita"}, "cycle": [
+					[
+						{"who": "agnese", "text": "Devo finire una sciarpa. Sento che qualcuno verrà a prenderla."}
+					],
+					[
+						{"who": "agnese", "text": "Strano. Mi bruciano gli occhi. Sarà la polvere dei telai."}
+					]
+				]}
+			]
+		},
+		"violante_balcone": {
+			"character": "violante",
+			"face": -1,
+			"turn": "never",
+			"talk": false,
+			"leave": "fade",
+			"when": {"unseen": "violante_ninna"},
+			"bark": {"id": "violante_ninna", "once": true, "radius": 1000, "delay": 2.5, "lines": [
+				{"who": "violante", "text": "Quando il giglio si addormenta, la luna ascolta e non si lamenta."}
+			]}
+		}
+	}
+}

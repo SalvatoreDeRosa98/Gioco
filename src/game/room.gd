@@ -20,6 +20,11 @@ const ROOMS := [
 		"floor": 980.0,
 		"blocks": [Rect2(1000, 900, 560, 80), Rect2(1100, 840, 360, 60)],
 		"ledges": [Rect2(320, 800, 220, 18), Rect2(640, 690, 200, 18), Rect2(1170, 640, 220, 18), Rect2(1700, 720, 220, 18), Rect2(2000, 820, 240, 18)],
+		# Personaggi (punto dei piedi): chiavi di "npcs" in data/dialogues.json.
+		"npcs": [
+			{"id": "tonino", "pos": Vector2(430, 980)},
+			{"id": "assunta", "pos": Vector2(905, 980)},
+		],
 		"enemies": [
 			{"type": "gatto", "pos": Vector2(700, 960)},
 			{"type": "gatto", "pos": Vector2(1850, 960)},
@@ -41,6 +46,11 @@ const ROOMS := [
 		"floor": 980.0,
 		"blocks": [Rect2(760, 890, 240, 90), Rect2(1700, 870, 300, 110)],
 		"ledges": [Rect2(260, 780, 200, 18), Rect2(520, 660, 180, 18), Rect2(860, 560, 220, 18), Rect2(1260, 700, 200, 18), Rect2(1500, 590, 180, 18), Rect2(2000, 740, 220, 18), Rect2(2240, 620, 200, 18)],
+		"npcs": [
+			{"id": "guardia_corso", "pos": Vector2(620, 980)},
+			{"id": "taddeo_corso", "pos": Vector2(2150, 980)},
+			{"id": "mariella", "pos": Vector2(2320, 980)},
+		],
 		"enemies": [
 			{"type": "gatto", "pos": Vector2(450, 960)},
 			{"type": "vespa", "pos": Vector2(1000, 420)},
@@ -61,6 +71,11 @@ const ROOMS := [
 		"floor": 980.0,
 		"blocks": [Rect2(620, 910, 200, 70), Rect2(1140, 925, 320, 55), Rect2(1880, 910, 200, 70)],
 		"ledges": [Rect2(300, 760, 200, 18), Rect2(820, 650, 240, 18), Rect2(1190, 540, 220, 18), Rect2(1600, 650, 240, 18), Rect2(2080, 760, 200, 18)],
+		"npcs": [
+			{"id": "don_ciccio", "pos": Vector2(270, 980)},
+			{"id": "gaetano_ricordo", "pos": Vector2(1300, 925)},
+			{"id": "bianca_ricordo", "pos": Vector2(1720, 980)},
+		],
 		"enemies": [
 			{"type": "gatto", "pos": Vector2(450, 960)},
 			{"type": "statua", "pos": Vector2(930, 616)},
@@ -80,6 +95,11 @@ const ROOMS := [
 		"floor": 980.0,
 		"blocks": [Rect2(520, 880, 480, 100), Rect2(1000, 780, 520, 200), Rect2(1520, 700, 360, 280)],
 		"ledges": [Rect2(220, 800, 180, 18), Rect2(1120, 560, 200, 18), Rect2(1640, 480, 200, 18), Rect2(2120, 720, 220, 18)],
+		"npcs": [
+			{"id": "carmela", "pos": Vector2(300, 980)},
+			{"id": "taddeo_sanleucio", "pos": Vector2(2130, 980)},
+			{"id": "agnese", "pos": Vector2(2330, 980)},
+		],
 		"enemies": [
 			{"type": "gatto", "pos": Vector2(760, 860)},
 			{"type": "statua", "pos": Vector2(1700, 666)},
@@ -99,6 +119,10 @@ const ROOMS := [
 		"floor": 980.0,
 		"blocks": [],
 		"ledges": [Rect2(300, 770, 240, 18), Rect2(1380, 770, 240, 18), Rect2(840, 610, 240, 18)],
+		# Violante osserva dall'alto e canta la filastrocca, poi sparisce: nessun dialogo prima del boss.
+		"npcs": [
+			{"id": "violante_balcone", "pos": Vector2(1560, 770)},
+		],
 		"enemies": [{"type": "custode", "pos": Vector2(1400, 900)}],
 		"decor": [
 			{"kind": "torch", "pos": Vector2(330, 700)},

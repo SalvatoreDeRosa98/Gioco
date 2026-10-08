@@ -10,6 +10,8 @@ const SKY_SHADER := preload("res://game/shaders/canvas_env_sky.gdshader")
 const FOG_SHADER := preload("res://game/shaders/canvas_env_fog.gdshader")
 const LAYER_SHADER := preload("res://game/shaders/canvas_env_layer.gdshader")
 const RAYS_SHADER := preload("res://game/shaders/canvas_env_rays.gdshader")
+const ThreadsScript := preload("res://game/env_threads.gd")
+const FlockScript := preload("res://game/env_flock.gd")
 const AREAS_PATH := "res://data/areas.json"
 const ART_DIR := "res://assets/art/areas/"
 const ASSET_DIR := "res://assets/art/"
@@ -26,7 +28,7 @@ static var _areas: Dictionary = {}
 
 var _sky_layer: CanvasLayer
 var _sky_mat: ShaderMaterial
-var _layers: Array = []   # elementi: {"node": Node2D, "s": float, "lock_y": bool, "follow": bool, "flock": EnvFlock}
+var _layers: Array = []   # elementi: {"node": Node2D, "s": float, "lock_y": bool, "follow": bool, "flock": stormo}
 var _weather: CPUParticles2D
 var _weather_top := false
 var _zoom := 1.0
@@ -102,7 +104,7 @@ func update_camera(center: Vector2) -> void:
 		var s := float(l["s"])
 		node.position = Vector2(center.x * (1.0 - s), center.y if l.get("lock_y", false) else center.y * (1.0 - s))
 		if l.has("flock"):
-			(l["flock"] as EnvFlock).view_center = center - node.position
+			l["flock"].view_center = center - node.position
 	if _weather:
 		_weather.position = center + (Vector2(0, -VIEW.y * 0.5 - 60.0) if _weather_top else Vector2.ZERO)
 	if _sky_mat:
@@ -213,7 +215,7 @@ func _painted(parent: Node2D, cfg: Dictionary) -> void:
 	var rows: Array = cfg.get("rows", [0, tex.get_height()])
 	var row0 := float(rows[0])
 	var row1 := float(rows[1])
-	var top := cfg.get("anchor", "ground") == "top"
+	var top: bool = cfg.get("anchor", "ground") == "top"
 
 	# Tratto orizzontale da coprire, in unità dello strato.
 	var left := -MARGIN
@@ -238,6 +240,10 @@ func _painted(parent: Node2D, cfg: Dictionary) -> void:
 	sprite.scale = Vector2(k, k)
 	var tint := Color(cfg.get("tint", "#ffffff"))
 	sprite.material = _layer_material(tint, float(cfg.get("haze", 0.0)), float(cfg.get("blur", 0.0)))
+	if cfg.has("fade"):
+		# Dissolvenza in alto tra due righe dell'immagine (es. per togliere il cielo dipinto).
+		var h := float(tex.get_height())
+		(sprite.material as ShaderMaterial).set_shader_parameter("fade_rows", Vector2(float(cfg["fade"][0]) / h, float(cfg["fade"][1]) / h))
 
 	if top:
 		# Cornice agganciata al bordo alto dello schermo (lo strato segue la camera in verticale).
@@ -292,7 +298,7 @@ static func _mirror_copies(x: float, w: float, u0: float, u1: float) -> Array:
 
 ## Fili che salgono verso la Reggia (rise) e ghirlande tra agganci vicini (garland).
 func _threads(parent: Node2D, cfg: Dictionary, anchors: Array, scroll: float, base: float) -> void:
-	var t := EnvThreads.new()
+	var t := ThreadsScript.new()
 	t.z_index = int(cfg.get("z", 1))
 	t.setup(cfg, _th.lamp)
 	parent.add_child(t)
@@ -300,15 +306,30 @@ func _threads(parent: Node2D, cfg: Dictionary, anchors: Array, scroll: float, ba
 	var width := float(cfg.get("width", 8.0))
 	var rise: Dictionary = cfg.get("rise", {})
 	if not rise.is_empty():
+		# I fili salgono per un tratto (len) piegando verso la Reggia (to, pull) e si arricciano (curl).
 		var to: Array = rise.get("to", [_room.x * 0.5, -1600.0])
 		var target := Vector2(float(to[0]) * scroll, base + float(to[1]))
-		var spread := float(rise.get("spread", 200.0))
-		for a in anchors:
+		var pull := float(rise.get("pull", 0.3))
+		for a: Vector2 in anchors:
 			for i in int(rise.get("per", 1)):
 				if _rng.randf() > float(rise.get("chance", 1.0)):
 					continue
-				var end := target + Vector2(_rng.randf_range(-spread, spread), _rng.randf_range(-spread, spread) * 0.3)
-				t.add_thread(a, end, _pick(_rng, rise.get("sag"), 40.0), width, _pick(_rng, rise.get("bright"), 1.0), _rng.randf(), false)
+				var length := _pick(_rng, rise.get("len"), 360.0)
+				var dir := Vector2((target.x - a.x) * pull / maxf(absf(target.y - a.y), 1.0), -1.0)
+				dir = (dir + Vector2(_rng.randf_range(-0.25, 0.25), 0.0)).normalized()
+				var end := a + dir * length
+				var side := -1.0 if _rng.randf() < 0.5 else 1.0
+				var bend := dir.orthogonal() * side * _pick(_rng, rise.get("curl"), 40.0)
+				t.add_thread(a, end, bend, _pick(_rng, rise.get("wave"), 10.0) * -side, width, _pick(_rng, rise.get("bright"), 1.0), _rng.randf(), false)
+	var converge: Dictionary = cfg.get("converge", {})
+	if not converge.is_empty():
+		# Ragnatela: ogni aggancio tende un filo verso lo stesso punto (il balcone della Reggia).
+		var to: Array = converge.get("to", [_room.x * 0.5, -300.0])
+		var point := Vector2(float(to[0]) * scroll, base + float(to[1]))
+		for a: Vector2 in anchors:
+			if _rng.randf() <= float(converge.get("chance", 1.0)) and a.distance_to(point) > 20.0:
+				var sag := _pick(_rng, converge.get("sag"), 30.0)
+				t.add_thread(a, point, Vector2(0.0, sag), 0.0, width, _pick(_rng, converge.get("bright"), 0.8), _rng.randf(), true)
 	var garland: Dictionary = cfg.get("garland", {})
 	if not garland.is_empty():
 		var max_gap := float(garland.get("max_gap", 400.0))
@@ -319,7 +340,8 @@ func _threads(parent: Node2D, cfg: Dictionary, anchors: Array, scroll: float, ba
 			var gap := b.x - a.x
 			if gap < 8.0 or gap > max_gap or absf(b.y - a.y) > max_dy or _rng.randf() > float(garland.get("chance", 0.7)):
 				continue
-			t.add_thread(a, b, _pick(_rng, garland.get("sag"), 40.0) * gap / max_gap + 6.0, width * 0.8, _pick(_rng, garland.get("bright"), 0.8), _rng.randf(), true)
+			var sag := _pick(_rng, garland.get("sag"), 40.0) * gap / max_gap + 6.0
+			t.add_thread(a, b, Vector2(0.0, sag), 0.0, width * 0.8, _pick(_rng, garland.get("bright"), 0.8), _rng.randf(), true)
 
 
 # ---------------------------------------------------------------- Nebbie, luce, figure
@@ -344,11 +366,17 @@ func _fog_band(cfg: Dictionary) -> void:
 
 
 ## Fasci di luce volumetrica (shader canvas_env_rays) con polvere luminosa dentro.
+## screen: true aggancia il rettangolo allo schermo (sole basso, sorgente all'infinito).
 func _rays(cfg: Dictionary) -> void:
-	var s := float(cfg["scroll"])
+	var screen: bool = cfg.get("screen", false)
+	var s := 0.0 if screen else float(cfg["scroll"])
 	var node := _layer(s, int(cfg.get("z", -20)))
-	var span := _span(cfg, s)
-	var r := Rect2(span.x, _base(s) + float(cfg.get("top", -800.0)), span.y - span.x, float(cfg.get("h", 800.0)))
+	var r: Rect2
+	if screen:
+		r = Rect2(-_half_view(), _half_view() * 2.0)
+	else:
+		var span := _span(cfg, s)
+		r = Rect2(span.x, _base(s) + float(cfg.get("top", -800.0)), span.y - span.x, float(cfg.get("h", 800.0)))
 	var rect := ColorRect.new()
 	rect.position = r.position
 	rect.size = r.size
@@ -360,13 +388,13 @@ func _rays(cfg: Dictionary) -> void:
 	mat.set_shader_parameter("size", r.size)
 	var o: Array = cfg.get("origin", [0.5, -1.0])
 	mat.set_shader_parameter("origin", Vector2(float(o[0]), float(o[1])))
-	for key in ["intensity", "density", "sharpness", "speed", "falloff", "floor_light", "fade_top", "fade_side", "cone"]:
+	for key in ["intensity", "density", "sharpness", "speed", "falloff", "floor_light", "fade_top", "fade_side", "cone", "seed", "axis", "radial", "reach"]:
 		if cfg.has(key):
 			mat.set_shader_parameter(key, float(cfg[key]))
 	rect.material = mat
 	node.add_child(rect)
-	if cfg.has("dust"):
-		var amount := _field_amount(float(cfg["dust"]), r, s)
+	if cfg.has("dust") and not screen:
+		var amount := _field_amount(float(cfg["dust"]), r)
 		var dust := Fx.field("dust", r.grow_individual(0, -r.size.y * 0.1, 0, -r.size.y * 0.15), amount, _th, {"color": color.to_html()})
 		node.add_child(dust)
 
@@ -404,7 +432,8 @@ func _figures(cfg: Dictionary) -> void:
 		_threads(node, cfg["threads"], heads, s, base)
 
 
-func _field_amount(density: float, r: Rect2, s: float) -> int:
+## Particelle per un rettangolo, date quelle per schermata.
+func _field_amount(density: float, r: Rect2) -> int:
 	var view := _half_view() * 2.0
 	return clampi(int(density * r.get_area() / (view.x * view.y)), 1, MAX_FIELD)
 
@@ -421,13 +450,13 @@ func _field(cfg: Dictionary) -> void:
 		var base := _base(s)
 		r.position.y = base + float(cfg["y"][0])
 		r.size.y = float(cfg["y"][1]) - float(cfg["y"][0])
-	node.add_child(Fx.field(str(cfg["kind"]), r, _field_amount(float(cfg.get("density", 30.0)), r, s), _th, cfg))
+	node.add_child(Fx.field(str(cfg["kind"]), r, _field_amount(float(cfg.get("density", 30.0)), r), _th, cfg))
 
 
 func _flock(cfg: Dictionary) -> void:
 	var s := float(cfg.get("scroll", 0.06))
 	var node := _layer(s, int(cfg.get("z", -44)))
-	var flock := EnvFlock.new()
+	var flock := FlockScript.new()
 	flock.setup(cfg, _half_view(), _rng.randi())
 	node.add_child(flock)
 	_layers[_layers.size() - 1]["flock"] = flock

@@ -3,7 +3,6 @@ extends RefCounted
 ## Effetti visivi locali: particelle, onde d'urto, anime, meteo, vita ambientale e hit-stop.
 ## Non sono sincronizzati: ogni PC li crea da sé (l'host li annuncia con una RPC leggera).
 
-static var _ripple_tex: Texture2D
 static var _bokeh_tex: Texture2D
 
 
@@ -322,59 +321,17 @@ static func splashes(width: float, amount: int, color: Color) -> CPUParticles2D:
 	p.emission_rect_extents = Vector2(width * 0.5, 1.0)
 	p.direction = Vector2(0.15, -1.0)
 	p.spread = 38.0
-	p.initial_velocity_min = 45.0
-	p.initial_velocity_max = 120.0
-	p.gravity = Vector2(0, 620)
-	p.scale_amount_min = 0.03
-	p.scale_amount_max = 0.06
+	p.initial_velocity_min = 60.0
+	p.initial_velocity_max = 150.0
+	p.gravity = Vector2(0, 700)
+	p.scale_amount_min = 0.06
+	p.scale_amount_max = 0.11
 	var ramp := Gradient.new()
 	ramp.set_color(0, color)
 	ramp.set_color(1, Color(color, 0.0))
 	p.color_ramp = ramp
 	p.preprocess = p.lifetime
 	return p
-
-
-## Increspature ellittiche dove cadono le gocce.
-static func ripples(width: float, amount: int, color: Color) -> CPUParticles2D:
-	var p := CPUParticles2D.new()
-	p.texture = ripple_texture()
-	p.amount = maxi(1, amount)
-	p.lifetime = 0.55
-	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	p.emission_rect_extents = Vector2(width * 0.5, 1.5)
-	p.initial_velocity_min = 0.0
-	p.initial_velocity_max = 0.0
-	p.gravity = Vector2.ZERO
-	p.scale_amount_min = 0.35
-	p.scale_amount_max = 0.7
-	var curve := Curve.new()
-	curve.add_point(Vector2(0.0, 0.25))
-	curve.add_point(Vector2(1.0, 1.0))
-	p.scale_amount_curve = curve
-	var ramp := Gradient.new()
-	ramp.set_color(0, color)
-	ramp.set_color(1, Color(color, 0.0))
-	p.color_ramp = ramp
-	p.preprocess = p.lifetime
-	return p
-
-
-## Anello ellittico 48x12 per le increspature.
-static func ripple_texture() -> Texture2D:
-	if _ripple_tex == null:
-		var w := 48
-		var h := 12
-		var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
-		for y in h:
-			for x in w:
-				var dx := (float(x) + 0.5 - w * 0.5) / (w * 0.5)
-				var dy := (float(y) + 0.5 - h * 0.5) / (h * 0.5)
-				var r := sqrt(dx * dx + dy * dy)
-				var a := clampf(1.0 - absf(r - 0.8) * 6.0, 0.0, 1.0)
-				img.set_pixel(x, y, Color(1, 1, 1, a))
-		_ripple_tex = ImageTexture.create_from_image(img)
-	return _ripple_tex
 
 
 ## Disco da obiettivo fuori fuoco: pieno e tenue, con il bordo appena più chiaro.

@@ -1,4 +1,3 @@
-class_name EnvFlock
 extends Node2D
 ## Stormi lontani che attraversano il cielo ogni tanto: pipistrelli di notte (volo a zig-zag,
 ## battito rapido) o rondini all'alba (battito lento e planate). Sagome disegnate dal motore su

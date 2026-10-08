@@ -2,6 +2,9 @@ extends Node2D
 ## Elemento decorativo del piano di gioco: lampione, torcia, statua dipinta. Alberi, fontane,
 ## colonne e stendardi stanno negli sfondi dipinti. Lampioni e torce aggiungono luci reali
 ## (PointLight2D), bagliori additivi e particelle; solo quelli animati si ridisegnano ogni frame.
+## Il lampione ha anche un cono di luce volumetrica (shaders/canvas_env_rays, con la pioggia che
+## lo attraversa sul Corso), un alone largo, una pozza di luce a terra e le falene: forza del cono,
+## pioggia e numero di falene vengono dal tema (lamp_cone, lamp_rain, moths in themes.gd).
 
 var kind := "lamp"
 var th: Dictionary = {}
@@ -20,6 +23,16 @@ const STATUE_TEX := preload("res://assets/art/props/statua_cavaliere.png")
 const STATUE_H := 230.0
 const IRON := Color(0.07, 0.07, 0.09)
 const IRON_HI := Color(0.28, 0.28, 0.33)
+const RAYS_SHADER := preload("res://game/shaders/canvas_env_rays.gdshader")
+## Quota della lanterna del lampione rispetto al punto di posa.
+const LAMP_HEAD := -232.0
+## Larghezza del cono di luce e del suo rettangolo, in unità di mondo.
+const CONE_W := 340.0
+## Diametro dell'alone largo attorno alla lanterna e della pozza di luce a terra.
+const HALO := 380.0
+const POOL := Vector2(300.0, 46.0)
+## Semi-ampiezza del cono di luce, in radianti.
+const CONE_ANGLE := 0.55
 
 
 func setup(k: String, theme: Dictionary, pos: Vector2) -> void:
@@ -30,10 +43,21 @@ func setup(k: String, theme: Dictionary, pos: Vector2) -> void:
 	var lamp: Color = th.lamp
 	match kind:
 		"lamp":
-			_light = Art.point_light(self, Vector2(0, -232), lamp, LAMP_ENERGY, 760.0)
-			_glow = Art.glow(self, Vector2(0, -232), Color(lamp, 0.35), 110.0)
+			_light = Art.point_light(self, Vector2(0, LAMP_HEAD), lamp, LAMP_ENERGY, 760.0)
+			_cone(lamp)
+			_unlit(Art.glow(self, Vector2(0, LAMP_HEAD), Color(lamp, 0.09), HALO))
+			var pool := _unlit(Art.glow(self, Vector2(0, -3), Color(lamp, 0.16), 64.0))
+			pool.scale = POOL / 64.0
+			_glow = Art.glow(self, Vector2(0, LAMP_HEAD), Color(lamp, 0.35), 110.0)
+			var moth_count := int(th.get("moths", 0))
+			if moth_count > 0:
+				var m := Fx.moths(lamp, moth_count)
+				m.position = Vector2(0, LAMP_HEAD - 6.0)
+				_unlit(m)
+				add_child(m)
 		"torch":
 			_light = Art.point_light(self, Vector2(0, -14), lamp, TORCH_ENERGY, 640.0)
+			_unlit(Art.glow(self, Vector2(0, -20), Color(lamp, 0.12), HALO * 0.85))
 			_glow = Art.glow(self, Vector2(0, -16), Color(lamp, 0.55), 100.0)
 			_embers(lamp)
 			_redraw = true
@@ -94,6 +118,42 @@ func _draw_torch() -> void:
 	var f2 := sin(_t * 11.0 + _seed * 1.7) * 2.0
 	draw_colored_polygon(PackedVector2Array([Vector2(-10, -2), Vector2(10, -2), Vector2(6 + f2, -22), Vector2(f1, -42), Vector2(-6 + f2, -22)]), Color(lamp, 0.95))
 	draw_colored_polygon(PackedVector2Array([Vector2(-5, -2), Vector2(5, -2), Vector2(3, -14), Vector2(f1 * 0.5, -26), Vector2(-3, -14)]), Color(1, 0.95, 0.75))
+
+
+## Cono di luce sotto la lanterna: fasci tenui che si allargano fino a terra.
+func _cone(color: Color) -> void:
+	var strength := float(th.get("lamp_cone", 0.0))
+	if strength <= 0.0:
+		return
+	var rect := ColorRect.new()
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.position = Vector2(-CONE_W * 0.5, LAMP_HEAD + 10.0)
+	rect.size = Vector2(CONE_W, -LAMP_HEAD + 4.0)
+	var mat := ShaderMaterial.new()
+	mat.shader = RAYS_SHADER
+	mat.set_shader_parameter("color", color)
+	mat.set_shader_parameter("intensity", strength)
+	mat.set_shader_parameter("size", rect.size)
+	mat.set_shader_parameter("origin", Vector2(0.5, -0.04))
+	mat.set_shader_parameter("cone", CONE_ANGLE)
+	mat.set_shader_parameter("density", 9.0)
+	mat.set_shader_parameter("sharpness", 1.4)
+	mat.set_shader_parameter("floor_light", 0.45)
+	mat.set_shader_parameter("falloff", 0.9)
+	mat.set_shader_parameter("fade_top", 0.02)
+	mat.set_shader_parameter("fade_side", 0.0)
+	mat.set_shader_parameter("speed", 0.08)
+	mat.set_shader_parameter("seed", _seed)
+	mat.set_shader_parameter("streaks", float(th.get("lamp_rain", 0.0)))
+	rect.material = mat
+	_unlit(rect)
+	add_child(rect)
+
+
+## I bagliori additivi non devono ricevere le luci 2D (si brucerebbero).
+func _unlit(item: CanvasItem) -> CanvasItem:
+	item.light_mask = 0
+	return item
 
 
 func _embers(color: Color) -> void:

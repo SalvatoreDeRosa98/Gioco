@@ -24,6 +24,8 @@ uniform float sway_speed = 0.55;
 uniform float spark_spacing = 260.0;
 uniform float spark_speed = 70.0;
 uniform float spark : hint_range(0.0, 6.0) = 2.2;
+// I fili verso la Reggia svaniscono dopo questa distanza dall'origine (unità di mondo).
+uniform float rise_len = 450.0;
 group_uniforms;
 
 const float TAU_F = 6.28318;
@@ -41,8 +43,9 @@ void vertex() {
 	v_bright = COLOR.b;
 	v_garland = COLOR.a;
 	v_t = UV.x;
-	// Fermo agli estremi, libero al centro; due onde sovrapposte evitano il moto da pendolo.
-	float hang = sin(UV.x * PI_F);
+	// Ghirlande: ferme agli estremi, libere al centro. Fili che salgono: liberi verso la punta.
+	// Due onde sovrapposte evitano il moto da pendolo.
+	float hang = mix(UV.x * UV.x * 1.6, sin(UV.x * PI_F), v_garland);
 	float ph = v_phase * TAU_F;
 	float w = sin(TIME * sway_speed + ph) + 0.35 * sin(TIME * sway_speed * 2.3 + ph * 1.7 + UV.x * 5.0);
 	VERTEX += vec2(0.25, 1.0) * w * sway * hang;
@@ -56,7 +59,8 @@ void fragment() {
 	float s = fract((v_t * v_len - TIME * spark_speed) / spark_spacing + v_phase);
 	float pulse = smoothstep(0.0, 0.025, s) * smoothstep(0.1, 0.025, s);
 	// I fili verso la Reggia svaniscono nel cielo; le ghirlande restano piene fino all'aggancio.
-	float tail = mix(smoothstep(1.0, 0.45, v_t), smoothstep(1.0, 0.97, v_t), v_garland);
+	float rise_tail = 1.0 - smoothstep(rise_len * 0.25, rise_len, v_t * v_len);
+	float tail = mix(rise_tail, smoothstep(1.0, 0.97, v_t), v_garland);
 	float ends = smoothstep(0.0, 0.03, v_t) * tail;
 	float shimmer = 0.7 + 0.3 * sin(TIME * 1.3 + v_phase * 19.0 + v_t * 11.0);
 	float k = (c + g) * (shimmer + pulse * spark) * ends * v_bright * intensity;

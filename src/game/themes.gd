@@ -58,9 +58,9 @@ static func get_theme(theme_name: String) -> Dictionary:
 			}
 		"belvedere":
 			return {
-				"sky_top": Color("#0b1726"), "sky_bottom": Color("#45616c"), "horizon": Color("#d29b6c"),
-				"cloud": Color("#5c7280"), "moon_color": Color("#ffe6c0"), "moon": 0.0, "moon_pos": Vector2(0.3, 0.2),
-				"stars": 0.15, "clouds": 0.55,
+				"sky_top": Color("#17243b"), "sky_bottom": Color("#6f7286"), "horizon": Color("#e09a70"),
+				"cloud": Color("#7f8196"), "moon_color": Color("#ffe2b8"), "moon": 1.0, "moon_pos": Vector2(0.08, 0.4),
+				"stars": 0.04, "clouds": 0.6,
 				"far": Color("#1d2c38"), "far_glow": Color("#ffd8a0"), "mid": Color("#16222d"), "mid_glow": Color("#ffcf96"),
 				"fg": Color("#060a0e"), "fog": Color("#93b2ba"), "fog_density": 0.5,
 				"ambient": Color(0.7, 0.77, 0.84), "lamp": Color("#ffe0a8"),
@@ -89,7 +89,7 @@ static func get_theme(theme_name: String) -> Dictionary:
 		_:
 			return {
 				"sky_top": Color("#060a16"), "sky_bottom": Color("#1a2541"), "horizon": Color("#3b4168"),
-				"cloud": Color("#121a30"), "moon_color": Color("#f4ecd8"), "moon": 1.0, "moon_pos": Vector2(0.78, 0.18),
+				"cloud": Color("#121a30"), "moon_color": Color("#f4ecd8"), "moon": 0.0, "moon_pos": Vector2(0.78, 0.18),
 				"stars": 0.85, "clouds": 0.35,
 				"far": Color("#0c1222"), "far_glow": Color("#ffcf7a"), "mid": Color("#111a2c"), "mid_glow": Color("#ffc46e"),
 				"fg": Color("#04060b"), "fog": Color("#29355a"), "fog_density": 0.38,
@@ -99,5 +99,5 @@ static func get_theme(theme_name: String) -> Dictionary:
 				"tint": Vector3(0.96, 1.0, 1.08), "contrast": 1.1, "saturation": 1.0, "bloom": 0.75, "vignette": 0.5,
 				"shadows": Vector3(0.9, 0.96, 1.12), "highlights": Vector3(1.1, 1.0, 0.86),
 				"wash_top": Vector3(0.0, 0.012, 0.035), "wash_bottom": Vector3(0.025, 0.016, 0.0),
-				"lamp_cone": 0.24, "lamp_rain": 0.0, "moths": 6,
+				"lamp_cone": 0.4, "lamp_rain": 0.0, "moths": 6,
 			}

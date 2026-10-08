@@ -7,14 +7,16 @@ pesate di Spine/DragonBones: ogni vertice segue le "ossa" in proporzione al suo 
 sfuma la pittura si piega invece di spezzarsi.
 
 Uscite in src/assets/art/characters/ferruccio_rig/ (stessa tela 679x1024 dell'originale):
-  figura.png      corpo + gamba vicina, senza spada né mano; il camicione dietro la mano è ricostruito
+  figura.png      corpo + gamba vicina, senza spada, mano e coda della sciarpa; il camicione dietro la
+                  mano è ricostruito
   mano_spada.png  guanto, impugnatura e lama, ripuliti dal camicione; il polso continua sotto il polsino
                   così, quando la mano ruota, non si apre un vuoto tra guanto e manica
   pesi.png        mappa dei pesi: due riquadri affiancati (a 1/4 di risoluzione), alfa sempre 255
                   riquadro sinistro  R gamba vicina   G gamba lontana   B cappello
                   riquadro destro    R sciarpa        G manica          B orlo del camicione
                   (alfa piena: l'import di Godot non tocca i colori, nessun .import speciale serve)
-La gamba lontana resta gamba_dietro.png di rig_ferruccio.py: lo shader la disegna in uno strato a parte.
+  dietro.png      ciò che sta dietro il corpo: gamba lontana e coda lunga della sciarpa. Lo shader lo
+                  disegna in uno strato a parte, sotto la figura: muovendosi scopre il vuoto, non stira.
 
 Se cambiano l'immagine o i punti qui sotto, vanno ricontrollate le costanti in src/game/char_rig.gd
 (perni) e i default dello shader.
@@ -37,14 +39,17 @@ OUT = rf.OUT
 TILE_DIV = 4  # la mappa dei pesi è campionata solo ai vertici: 1/4 di risoluzione basta
 
 # --- Spada e mano ---------------------------------------------------------------------------------
-# Sopra il camicione la spada è più scura del tessuto in ombra (luma ~95-135): sotto questa soglia
-# un pixel delle forme qui sotto è spada; sopra, solo se sta in lama o elsa (sottili e precise).
-SWORD_DARK = 86.0
-GLOVE = [(334, 610), (402, 610), (408, 660), (400, 702), (350, 702), (332, 668)]
+# Sopra il camicione guanto e contorni del metallo sono più scuri del tessuto in ombra (luma ~80-135).
+SWORD_DARK = 62.0
+GLOVE = [(340, 618), (402, 615), (408, 660), (400, 702), (350, 702), (336, 668)]
 POMMEL = ((300, 628), 14)
-GRIP = ([(308, 630), (350, 652)], 18)
+GRIP = ([(306, 628), (352, 652)], 24)
 CROSSGUARD = ([(432, 636), (380, 724)], 18)
-BLADE = [(398, 668), (426, 672), (684, 874), (684, 886), (666, 886), (396, 698)]
+# Lama: rette dei due fili misurate sull'alfa fuori dal camicione (y = 0.789x + 340.7, y = 0.700x + 405.6).
+BLADE = [(404, 658), (690, 884), (690, 892), (404, 691)]
+# Bordo destro del camicione dove lo attraversa la lama (misurato a occhio sull'immagine): la striscia
+# di tessuto oltre rf.TUNIC_RIGHT va ricostruita, non tolta, altrimenti resta una tacca nella sagoma.
+TUNIC_EDGE = ((472.0, 650.0), (483.0, 765.0))
 # Polsino della manica: la mano continua sotto di esso fino a WRIST_TOP (resta coperta).
 CUFF = (333, 594, 397, 619)
 WRIST_TOP = 600
@@ -61,6 +66,9 @@ SCARF_KNOT = (345.0, 318.0)
 SCARF_RANGE_BACK = (70.0, 430.0)   # coda lunga dietro: peso 0 al nodo, 1 alle frange
 SCARF_RANGE_FRONT = (50.0, 190.0)  # coda corta davanti
 SCARF_FRONT_X = 375.0
+# La coda dietro la schiena: a sinistra del bordo del corpo e sotto il nodo.
+TAIL_MAX_X = 312
+TAIL_MIN_Y = 330
 
 # --- Manica ---------------------------------------------------------------------------------------
 SLEEVE = [(298, 338), (392, 338), (408, 450), (414, 560), (402, 600), (398, 621), (332, 621),
@@ -124,18 +132,23 @@ def hsv(px: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
 
 def sword_mask(px: np.ndarray, size: tuple[int, int]) -> np.ndarray:
-    """Guanto, pomolo, impugnatura, elsa e lama, senza le toppe di camicione intorno alla mano."""
+    """Guanto, pomolo, impugnatura, elsa e lama, senza le toppe di camicione intorno alla mano.
+    Il metallo e il guanto hanno un contorno scuro tutto intorno: si prendono i pixel scuri, si
+    chiudono i contorni e si riempie l'interno (i riflessi chiari restano dentro)."""
     luma = px[..., :3] @ np.array([0.299, 0.587, 0.114], np.float32)
     opaque = px[..., 3] > 8
     rows, cols = np.mgrid[0:size[1], 0:size[0]]
-    outside = (cols >= rf.TUNIC_RIGHT) | (rows >= rf.HEM_Y)
-    soft = shape(size, poly=GLOVE) | shape(size, line=GRIP) | shape(size, disk=POMMEL)
-    thin = shape(size, poly=BLADE) | shape(size, line=CROSSGUARD)
-    m = (soft & (luma < SWORD_DARK)) | (thin & (luma < 200.0)) | ((soft | thin) & outside)
-    m &= opaque
-    # Chiude i riflessi chiari dentro pomolo, guanto e impugnatura, senza uscire dalle forme.
-    m = ndimage.binary_closing(m, iterations=3) & (soft | thin) & opaque
-    m = ndimage.binary_fill_holes(m)
+    outside = beyond_tunic(rows, cols)
+    area = shape(size, poly=GLOVE) | shape(size, line=GRIP) | shape(size, disk=POMMEL)
+    area |= shape(size, poly=BLADE) | shape(size, line=CROSSGUARD)
+    brown = shape(size, line=GRIP) & (px[..., 0] - px[..., 2] > 10.0) & (luma < 120.0)
+    # La lama è sottile e il poligono la segue da vicino: dentro, anche il filo chiaro è lama.
+    blade = shape(size, poly=BLADE) & (luma < 168.0)
+    core = opaque & area & ((luma < SWORD_DARK) | brown | blade | (outside & (luma < 150.0)) | (cols > 490))
+    core = ndimage.binary_closing(core, iterations=3) & area & opaque
+    core = ndimage.binary_fill_holes(core)
+    # Il bordo sfumato del disegno: un pixel in più dove il colore è ancora scuro.
+    m = core | (ndimage.binary_dilation(core) & area & opaque & (luma < 120.0))
     # Via le briciole staccate (pixel scuri isolati del tessuto).
     lab, n = ndimage.label(m)
     if n > 1:
@@ -144,51 +157,79 @@ def sword_mask(px: np.ndarray, size: tuple[int, int]) -> np.ndarray:
     return m
 
 
+def beyond_tunic(rows: np.ndarray, cols: np.ndarray) -> np.ndarray:
+    """Fuori dal camicione: sotto l'orlo o oltre il suo bordo destro (dove la lama esce)."""
+    edge = TUNIC_EDGE[0][0] + (rows - TUNIC_EDGE[0][1]) * (TUNIC_EDGE[1][0] - TUNIC_EDGE[0][0]) / (TUNIC_EDGE[1][1] - TUNIC_EDGE[0][1])
+    return (cols >= np.maximum(edge, rf.TUNIC_RIGHT)) | (rows >= rf.HEM_Y)
+
+
 def fill_columns(rgba: np.ndarray, hole: np.ndarray, no_top: np.ndarray) -> np.ndarray:
     """Richiude il camicione dietro la mano colonna per colonna: le pieghe sono verticali, quindi
-    sfumare tra il tessuto sopra e quello sotto il buco ne continua il disegno. Dove sopra c'è il
-    polsino (no_top) si usa solo il tessuto sotto, scurito un poco: è l'ombra della manica."""
-    out = rgba.copy()
+    sfumare tra il tessuto sopra e quello sotto il buco ne continua il disegno. Il tono viene dalle
+    parti chiare vicine (non dall'ombra che la mano proiettava), la trama dalle stesse colonne poco
+    più sotto. Dove sopra c'è il polsino (no_top) si usa il tessuto sotto, scurito: l'ombra della manica."""
     h = rgba.shape[0]
+    known = (rgba[..., 3] > 200) & ~hole
+    base = rgba.copy()
     for x in np.flatnonzero(hole.any(axis=0)):
-        col = hole[:, x]
-        ys = np.flatnonzero(col)
-        # Spezza la colonna in tratti contigui.
+        ys = np.flatnonzero(hole[:, x])
         breaks = np.flatnonzero(np.diff(ys) > 1)
         starts = np.concatenate([[ys[0]], ys[breaks + 1]])
         ends = np.concatenate([ys[breaks], [ys[-1]]])
         for y0, y1 in zip(starts, ends):
-            above = rgba[max(0, y0 - 5):max(0, y0 - 1), x]
-            below = rgba[min(h, y1 + 2):min(h, y1 + 6), x]
-            ok_a = len(above) > 0 and above[:, 3].min() > 200 and not no_top[max(0, y0 - 3), x]
-            ok_b = len(below) > 0 and below[:, 3].min() > 200
-            c_top = np.median(above, axis=0) if ok_a else None
-            c_bot = np.median(below, axis=0) if ok_b else None
+            a_rows = np.arange(max(0, y0 - 16), max(0, y0 - 2))
+            b_rows = np.arange(min(h, y1 + 3), min(h, y1 + 28))
+            a_rows = a_rows[known[a_rows, x]]
+            b_rows = b_rows[known[b_rows, x]]
+            c_top = np.percentile(rgba[a_rows, x], 65, axis=0) if len(a_rows) > 3 and not no_top[max(0, y0 - 3), x] else None
+            c_bot = np.percentile(rgba[b_rows, x], 65, axis=0) if len(b_rows) > 3 else None
             if c_top is None and c_bot is None:
                 continue
             if c_top is None:
-                c_top = c_bot * np.array([0.86, 0.86, 0.88, 1.0])
+                c_top = c_bot * np.array([0.84, 0.84, 0.86, 1.0])
             if c_bot is None:
                 c_bot = c_top
             t = np.linspace(0.0, 1.0, y1 - y0 + 1)[:, None]
-            out[y0:y1 + 1, x] = c_top * (1.0 - t) + c_bot * t
-    # Una leggera media orizzontale toglie le righe dove le colonne vicine differiscono.
-    sm = ndimage.uniform_filter1d(out, 5, axis=1)
-    out[hole] = sm[hole]
+            base[y0:y1 + 1, x] = c_top * (1.0 - t) + c_bot * t
+    # Il tono si rilassa in 2D (media dei quattro vicini, bordi fermi): niente righe tra colonne
+    # e nessuno scalino col tessuto ai lati. Il polsino non fa da bordo (è bianco e ha il contorno).
+    dom = hole | no_top
+    ys, xs = np.nonzero(dom)
+    y0, y1, x0, x1 = max(ys.min() - 2, 1), min(ys.max() + 3, h - 1), max(xs.min() - 2, 1), xs.max() + 3
+    sub = base[y0 - 1:y1 + 1, x0 - 1:x1 + 1].copy()
+    m = dom[y0 - 1:y1 + 1, x0 - 1:x1 + 1]
+    for _ in range(700):
+        avg = 0.25 * (np.roll(sub, 1, 0) + np.roll(sub, -1, 0) + np.roll(sub, 1, 1) + np.roll(sub, -1, 1))
+        sub[m] = avg[m]
+    base[y0 - 1:y1 + 1, x0 - 1:x1 + 1] = sub
+    # Ombra morbida sotto il polsino.
+    rows = np.arange(h)[:, None]
+    under = np.zeros(hole.shape, bool)
+    under[:, no_top.any(axis=0)] = True
+    ao = 1.0 - 0.16 * np.exp(-np.clip(rows - 618, 0, None) / 16.0) * under
+    # Trama: il dettaglio fine (rispetto a una media dei soli pixel noti) delle stesse colonne,
+    # qualche decina di righe più sotto (o sopra), dove le pieghe verticali continuano.
+    k = known.astype(np.float32)
+    lo = np.stack([ndimage.gaussian_filter(rgba[..., c] * k, 3.0) for c in range(3)], -1)
+    lo /= np.maximum(ndimage.gaussian_filter(k, 3.0), 1e-3)[..., None]
+    detail = np.where(known[..., None], rgba[..., :3] - lo, 0.0)
+    tex = np.zeros_like(detail)
+    have = np.zeros(hole.shape, bool)
+    for shift in (40, 75, 110, -45):
+        ok = np.roll(known, -shift, axis=0) & ~have
+        tex[ok] = np.roll(detail, -shift, axis=0)[ok]
+        have |= ok
+    out = rgba.copy()
+    out[hole, :3] = base[hole, :3] * ao[hole][:, None] + 0.75 * tex[hole]
     out[hole, 3] = 255.0
     return out
 
 
 def tile(w: np.ndarray, size: tuple[int, int]) -> np.ndarray:
-    """Riduce un peso a 1/TILE_DIV (media d'area) e azzera il bordo, così i due riquadri affiancati
-    non si contaminano col filtro lineare."""
+    """Riduce un peso a 1/TILE_DIV (media d'area). Il bordo resta com'è (i piedi toccano il fondo
+    della tela): è lo shader a non leggere oltre il centro dell'ultimo texel di ogni riquadro."""
     img = Image.fromarray((np.clip(w, 0.0, 1.0) * 255.0).astype(np.uint8), "L")
-    small = np.asarray(img.resize(size, Image.BOX)).astype(np.uint8).copy()
-    small[:2, :] = 0
-    small[-2:, :] = 0
-    small[:, :2] = 0
-    small[:, -2:] = 0
-    return small
+    return np.asarray(img.resize(size, Image.BOX)).astype(np.uint8)
 
 
 def save(arr: np.ndarray, name: str) -> None:
@@ -212,7 +253,7 @@ def main() -> None:
     front = rf.poly_mask(size, rf.LEG_FRONT) & opaque
     back = rf.poly_mask(size, rf.LEG_BACK) & opaque
     sword = sword_mask(px, size)
-    outside = (cols >= rf.TUNIC_RIGHT) | (rows >= rf.HEM_Y)
+    outside = beyond_tunic(rows, cols)
 
     # ---- mano_spada: la mano e la lama, col polso allungato sotto il polsino.
     hand = px.copy()
@@ -222,20 +263,23 @@ def main() -> None:
     cx0, cy0, cx1, cy1 = CUFF
     top_row = np.flatnonzero(sword[cy1 + 2, cx0:cx1 + 1])
     if len(top_row):
-        wx0, wx1 = cx0 + top_row.min() + 2, cx0 + top_row.max() - 2
-        wrist = (rows >= WRIST_TOP) & (rows <= cy1 + 3) & (cols >= wx0) & (cols <= wx1) & ~sword
+        # Tronco di cono: largo quanto il guanto in basso, si stringe verso l'alto (resta sotto il polsino).
+        wx0, wx1 = cx0 + top_row.min() + 3, cx0 + top_row.max() - 3
+        inset = np.clip(cy1 + 3 - rows, 0, None) * 0.45
+        wrist = (rows >= WRIST_TOP) & (rows <= cy1 + 3) & (cols >= wx0 + inset) & (cols <= wx1 - inset) & ~sword
         hand[wrist, :3] = glove_rgb
         hand[wrist, 3] = 255.0
     save(hand, "mano_spada")
 
     # ---- figura: corpo + gamba vicina, camicione ricostruito dietro la mano.
     body = px.copy()
-    hole = ndimage.binary_dilation(sword, iterations=2) & ~outside & opaque & ~front & ~back
+    # Margine di 4 px: via anche il contorno scuro sfumato della spada, che scurirebbe il riempimento.
+    hole = ndimage.binary_dilation(sword, iterations=4) & ~outside & opaque & ~front & ~back
     cuff = (cols >= cx0) & (cols <= cx1) & (rows >= cy0) & (rows <= cy1 + 2)
+    hole &= ~(cuff & (rows <= cy1 - 2))  # il polsino dipinto resta intero
     body = fill_columns(body, hole, cuff)
     body[back, 3] = 0.0
     body[sword & outside, 3] = 0.0
-    save(body, "figura")
 
     # ---- pesi
     fig_opaque = body[..., 3] > 8
@@ -263,17 +307,34 @@ def main() -> None:
     hue_d = np.minimum(h, 1.0 - h)
     scarf = fig_opaque & (hue_d < 0.09) & (s > 0.25) & (v > 0.08) & (rows < 770) & (rows > 240)
     scarf = ndimage.binary_opening(scarf, iterations=1)
-    scarf = ndimage.binary_closing(scarf, iterations=4) & fig_opaque
+    # Le frange hanno fili scuri e poco saturi: la chiusura larga li riporta dentro la sciarpa,
+    # altrimenti resterebbero fermi mentre il resto ondeggia (strappo).
+    scarf = ndimage.binary_fill_holes(ndimage.binary_closing(scarf, iterations=8)) & fig_opaque
     dist = np.hypot(cols - SCARF_KNOT[0], rows - SCARF_KNOT[1])
     front_side = smoothstep(SCARF_FRONT_X - 15.0, SCARF_FRONT_X + 15.0, cols)
     r0 = SCARF_RANGE_BACK[0] + (SCARF_RANGE_FRONT[0] - SCARF_RANGE_BACK[0]) * front_side
     r1 = SCARF_RANGE_BACK[1] + (SCARF_RANGE_FRONT[1] - SCARF_RANGE_BACK[1]) * front_side
     w_scarf_raw = np.clip((dist - r0) / (r1 - r0), 0.0, 1.0)
     w_scarf_raw = w_scarf_raw * w_scarf_raw * (3.0 - 2.0 * w_scarf_raw)
-    other = fig_opaque & ~scarf
+    # Il resto della figura (camicione, testa, cappello), senza i fili sciolti delle frange.
+    other = ndimage.binary_opening(fig_opaque & ~scarf, iterations=3)
     scarf_zone = ndimage.binary_dilation(scarf, iterations=24) & ~ndimage.binary_dilation(other, iterations=2)
     scarf_zone |= scarf
     w_scarf = blur(w_scarf_raw * scarf_zone, 5.0) * np.clip(1.0 - 1.4 * blur(other, 3.0), 0.0, 1.0)
+
+    # La coda lunga della sciarpa passa dietro la schiena: va nello strato di dietro con la gamba
+    # lontana, così sollevandosi scopre il vuoto invece di stirare il bordo del camicione.
+    # Tutto ciò che in quella zona non è il corpo (anche i fili e il bordo sfumato delle frange).
+    lab, n = ndimage.label(other)
+    core = np.isin(lab, 1 + np.flatnonzero(ndimage.sum(other, lab, range(1, n + 1)) > 5000))
+    tail = fig_opaque & (cols < TAIL_MAX_X) & (rows > TAIL_MIN_Y) & ~ndimage.binary_dilation(core, iterations=2)
+    behind = np.zeros_like(px)
+    behind[back] = px[back]
+    behind[tail] = body[tail]
+    save(behind, "dietro")
+    figure = body.copy()
+    figure[tail, 3] = 0.0
+    save(figure, "figura")
 
     # Manica: segue il braccio dal gomito in giù.
     sleeve = shape(size, poly=SLEEVE) & fig_opaque & ~scarf
@@ -281,9 +342,14 @@ def main() -> None:
     w_arm = blur(w_arm, 7.0)
 
     # Orlo: il camicione sotto la cintura, più libero verso il fondo; non manica, non sciarpa.
-    skirt = tunic & ~scarf & ~ndimage.binary_dilation(sleeve, iterations=6)
+    skirt = ndimage.binary_opening(tunic & ~scarf & ~ndimage.binary_dilation(sleeve, iterations=6), iterations=3)
+    lab, n = ndimage.label(skirt)
+    if n > 1:  # solo il camicione: il pezzo più grande sotto la cintura
+        low = skirt & (rows > HEM_RAMP[0])
+        skirt = np.isin(lab, 1 + np.flatnonzero(ndimage.sum(low, lab, range(1, n + 1)) > 2000))
     w_hem = smoothstep(*HEM_RAMP, rows) * skirt
     hem_zone = ndimage.binary_dilation(skirt, iterations=20) & (rows < rf.HEM_Y + 14) & ~front & ~back
+    hem_zone &= ~ndimage.binary_dilation(scarf, iterations=12)
     w_hem = np.maximum(w_hem, blur(w_hem, 8.0) * hem_zone * ~fig_opaque)
     w_hem = blur(w_hem, 4.0)
 

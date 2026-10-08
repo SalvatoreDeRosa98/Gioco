@@ -13,10 +13,14 @@ uniform vec4 haze_color : source_color = vec4(0.1, 0.12, 0.2, 1.0);
 uniform float haze : hint_range(0.0, 1.0) = 0.0;
 // Bias di mipmap: 0 = nitido, 1-2 = morbido. Serve la texture importata con mipmap.
 uniform float blur : hint_range(0.0, 4.0) = 0.0;
+// Dissolvenza del bordo alto (UV.y da cui parte e a cui finisce): serve a ritagliare la parte
+// dipinta di cielo di uno strato senza lasciare un taglio netto. (0,0) = nessuna dissolvenza.
+uniform vec2 fade_rows = vec2(0.0);
 group_uniforms;
 
 void fragment() {
 	vec4 c = texture(TEXTURE, UV, blur);
 	vec3 rgb = mix(c.rgb * tint.rgb, haze_color.rgb, haze);
-	COLOR = vec4(rgb, c.a * tint.a);
+	float fade = mix(1.0, smoothstep(fade_rows.x, fade_rows.y, UV.y), step(0.0001, fade_rows.y));
+	COLOR = vec4(rgb, c.a * tint.a * fade);
 }

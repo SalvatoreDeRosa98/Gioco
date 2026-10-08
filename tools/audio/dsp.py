@@ -365,19 +365,50 @@ def true_peak_db(x: np.ndarray) -> float:
 	return 20 * np.log10(np.max(np.abs(up)) + 1e-12)
 
 
+def limiter(x: np.ndarray, ceiling_db: float = -1.5, look_ms: float = 6.0, rel_ms: float = 60.0,
+			wrap: bool = True) -> np.ndarray:
+	"""Limiter a guadagno anticipato, tutto vettoriale. Il guadagno non supera mai quello
+	richiesto (filtro di minimo su 2 finestre, poi media mobile su una finestra).
+	wrap=True: il segnale è un loop e la finestra si avvolge (resta periodico)."""
+	from scipy.ndimage import minimum_filter1d, uniform_filter1d
+	mode = "wrap" if wrap else "nearest"
+	ceil = db(ceiling_db)
+	a = np.max(np.abs(x), axis=0) + 1e-12
+	g = np.minimum(1.0, ceil / a)
+	w = max(3, int(look_ms * SR / 1000))
+	g = minimum_filter1d(g, 2 * w + 1, mode=mode)
+	g = uniform_filter1d(g, w, mode=mode)
+	r = max(3, int(rel_ms * SR / 1000))
+	g2 = minimum_filter1d(g, r, mode=mode, origin=(r - 1) // 2)  # minimo sul passato: rilascio
+	g = np.minimum(g, uniform_filter1d(g2, r, mode=mode))
+	return x * g
+
+
+def compressor(x: np.ndarray, thresh_db: float, ratio: float = 1.6, win_ms: float = 250.0,
+			   wrap: bool = True) -> np.ndarray:
+	"""Compressore RMS morbido (colla), vettoriale e periodico se wrap=True."""
+	from scipy.ndimage import uniform_filter1d
+	mode = "wrap" if wrap else "nearest"
+	w = max(3, int(win_ms * SR / 1000))
+	env = np.sqrt(uniform_filter1d(np.mean(x ** 2, axis=0), w, mode=mode) + 1e-14)
+	lvl = 20 * np.log10(env)
+	over = np.maximum(0.0, lvl - thresh_db)
+	gdb = -over * (1 - 1 / ratio)
+	gdb = uniform_filter1d(gdb, w, mode=mode)
+	return x * 10 ** (gdb / 20)
+
+
 def master_loop(x: np.ndarray, target_lufs: float, ceiling_db: float = -1.2, comp: bool = True,
 				hp_hz: float = 28.0) -> np.ndarray:
 	"""Mastering di un loop: passa-alto, colla leggera, loudness, limiter, tetto true-peak."""
-	from pedalboard import Compressor, Limiter, Pedalboard
 	x = filt_periodic(hp(hp_hz, 2), x)
 	x = x - x.mean(axis=-1, keepdims=True)
+	x *= db(target_lufs - lufs(x))
 	if comp:
-		x *= db(-18.0) / (np.sqrt(np.mean(x ** 2)) + 1e-12)
-		x = pb_periodic(Pedalboard([Compressor(threshold_db=-20, ratio=1.8, attack_ms=40, release_ms=300)]), x)
-	for _ in range(3):
-		g = target_lufs - lufs(x)
-		x *= db(g)
-		x = pb_periodic(Pedalboard([Limiter(threshold_db=ceiling_db - 0.6, release_ms=120)]), x)
+		x = compressor(x, target_lufs + 4.0, 1.6)
+	for _ in range(4):
+		x *= db(target_lufs - lufs(x))
+		x = limiter(x, ceiling_db - 0.5)
 	tp = true_peak_db(x)
 	if tp > ceiling_db:
 		x *= db(ceiling_db - tp)

@@ -19,10 +19,39 @@
 		"max_hp": 5
 	},
 	"enemies": {
-		"gatto": {"hp": 3, "speed": 75, "damage": 1, "coins": 2},
-		"vespa": {"hp": 2, "speed": 130, "damage": 1, "coins": 2},
-		"statua": {"hp": 6, "speed": 0, "damage": 1, "coins": 4, "fire_every": 2.2, "bullet_speed": 330},
-		"custode": {"hp": 55, "speed": 120, "damage": 2, "coins": 60}
+		"gatto": {
+			"hp": 3, "speed": 75, "damage": 1, "coins": 2,
+			"accel": 900,
+			"patrol_time_min": 2.2, "patrol_time_max": 4.8,
+			"rest_time_min": 1.6, "rest_time_max": 3.2,
+			"turn_time": 0.32,
+			"sight_range": 380, "sight_height": 150, "sight_behind": 110,
+			"lose_range": 640,
+			"notice_time": 0.5, "notice_hop": 220, "notice_cooldown": 2.5,
+			"chase_speed": 185,
+			"pounce_range": 220, "pounce_min_range": 40, "pounce_reach_up": 120,
+			"pounce_windup": 0.34, "pounce_arc": 46, "pounce_max_speed": 470, "pounce_cooldown": 1.3,
+			"land_recover": 0.45,
+			"jump_height_max": 200, "jump_reach": 280, "jump_arc": 28,
+			"give_up_time": 1.8,
+			"knockback": 300, "knock_lift": 180, "hitstun": 0.3
+		},
+		"vespa": {
+			"hp": 2, "speed": 130, "damage": 1, "coins": 2,
+			"steer": 3.0,
+			"wander_radius": 120,
+			"sight_range": 440, "lose_range": 720, "notice_cooldown": 2.0,
+			"notice_time": 0.35,
+			"orbit_radius": 150, "orbit_height": 80, "orbit_speed": 1.3,
+			"attack_range": 260, "attack_cooldown_min": 1.2, "attack_cooldown_max": 2.4,
+			"windup_time": 0.55,
+			"dive_speed": 560, "dive_overshoot": 90, "dive_time_max": 0.75,
+			"retreat_time": 0.6, "retreat_speed": 240,
+			"wall_margin": 46,
+			"knockback": 340, "hitstun": 0.32
+		},
+		"statua": {"hp": 6, "speed": 0, "damage": 1, "coins": 4, "fire_every": 2.2, "bullet_speed": 330, "knockback": 0, "hitstun": 0},
+		"custode": {"hp": 55, "speed": 120, "damage": 2, "coins": 60, "knockback": 40, "hitstun": 0}
 	},
 	"rewards": {
 		"heal_chance": 0.12,

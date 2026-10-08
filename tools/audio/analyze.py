@@ -7,7 +7,9 @@ Lancio:
 Per ogni file stampa: durata, peso, picco campione e true peak (dBFS), LUFS
 integrati, quota di energia sopra 4 kHz e 8 kHz, centroide spettrale e, per i
 loop, il "salto" al punto di giunzione confrontato con i salti tipici del brano
-(rapporto ~1 = giunzione invisibile). Con --png salva uno spettrogramma per file.
+(rapporto ~1 = giunzione invisibile), la quota sotto 100 Hz e il numero di picchi
+isolati sopra 7 kHz (possibili click). Con --png salva uno spettrogramma per file.
+Sono osservazioni, non verdetti: il giudizio resta a chi ascolta.
 """
 from __future__ import annotations
 
@@ -53,7 +55,27 @@ def spectrum_stats(x: np.ndarray) -> dict:
 		"above8k": 10 * np.log10(acc[f > 8000].sum() / tot + 1e-12),
 		"band2_5k": 10 * np.log10(acc[(f > 2000) & (f < 5000)].sum() / tot + 1e-12),
 		"centroid": float((f * acc).sum() / tot),
+		"below100": 10 * np.log10(acc[f < 100].sum() / tot + 1e-12),
 	}
+
+
+def click_count(x: np.ndarray, ratio: float = 12.0, floor_db: float = -55.0, loop: bool = False) -> int:
+	"""Conta i picchi isolati sopra 7 kHz (scalini/click): campioni molto più forti
+	della loro media locale di 50 ms. I transitori naturali (pizzichi) restano sotto."""
+	from scipy.ndimage import maximum_filter1d, uniform_filter1d
+	from scipy.signal import butter, sosfilt
+	m = x.mean(axis=0)
+	w = int(0.2 * SR)
+	# il filtro parte "a regime": per i loop con la coda del brano, altrimenti col silenzio
+	pre = m[-w:] if loop else np.zeros(w)
+	h = sosfilt(butter(4, 7000, "high", fs=SR, output="sos"), np.concatenate([pre, m]))[w:]
+	env = np.sqrt(uniform_filter1d(h ** 2, int(0.05 * SR)) + 1e-14)
+	spike = (np.abs(h) > ratio * env) & (np.abs(h) > 10 ** (floor_db / 20))
+	if not spike.any():
+		return 0
+	# un click = un gruppo di campioni entro 10 ms
+	idx = np.where(spike)[0]
+	return int(1 + np.sum(np.diff(idx) > int(0.01 * SR)))
 
 
 def spectrogram_png(x: np.ndarray, path: str, title: str) -> None:
@@ -100,6 +122,7 @@ def analyze(path: str, png_dir: str | None = None, loop: bool | None = None) -> 
 	}
 	r.update(spectrum_stats(x))
 	r["seam"] = seam_ratio(x) if loop else float("nan")
+	r["clicks"] = click_count(x, loop=loop)
 	if png_dir:
 		spectrogram_png(x, os.path.join(png_dir, os.path.splitext(r["file"])[0] + ".png"), r["file"])
 	return r
@@ -108,7 +131,7 @@ def analyze(path: str, png_dir: str | None = None, loop: bool | None = None) -> 
 def fmt(r: dict) -> str:
 	return (f"{r['file']:28s} {r['dur']:7.2f}s {r['kb']:7.0f}KB peak {r['peak']:6.1f} tp {r['tp']:6.1f} "
 			f"LUFS {r['lufs']:6.1f} >4k {r['above4k']:6.1f} >8k {r['above8k']:6.1f} 2-5k {r['band2_5k']:6.1f} "
-			f"cent {r['centroid']:6.0f}Hz seam {r['seam']:5.2f}")
+			f"<100 {r['below100']:6.1f} cent {r['centroid']:5.0f}Hz seam {r['seam']:5.2f} click {r['clicks']}")
 
 
 def main() -> None:

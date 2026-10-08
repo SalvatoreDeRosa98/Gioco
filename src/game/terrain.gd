@@ -1,10 +1,21 @@
 extends Node2D
 ## Terreno della stanza dipinto: pavimento, blocchi, mensole e pilastri usano la pietra di
 ## assets/art/props/terreno.png (ripetuta a specchio), i portali la grata di cancello.png.
-## Ombre di contatto, muschio e bagliore dei portali aperti sono disegnati dal motore.
+## Ombre di contatto e bagliore dei portali aperti sono disegnati dal motore; erba, rampicanti e
+## catene sono sagome disegnate una volta sola che ondeggiano sulla GPU (canvas_env_sway).
+## Il Corso ha il pavimento bagnato (canvas_env_reflect) e gli schizzi della pioggia.
+## Densità e colori di erba, catene e pavimento bagnato: data/areas.json (grass, chains, floor).
 
 const STONE_TEX := preload("res://assets/art/props/terreno.png")
 const GATE_TEX := preload("res://assets/art/props/cancello.png")
+const SWAY_SHADER := preload("res://game/shaders/canvas_env_sway.gdshader")
+const REFLECT_SHADER := preload("res://game/shaders/canvas_env_reflect.gdshader")
+## Altezza della vista di base: serve a convertire unità di mondo in UV di schermo.
+const VIEW_H := 720.0
+## Passo con cui si cercano i punti in cui far nascere un ciuffo d'erba, in unità.
+const GRASS_STEP := 7.0
+const IRON := Color(0.06, 0.055, 0.06)
+const IRON_HI := Color(0.3, 0.27, 0.24)
 
 ## Unità di mondo per pixel della pietra dipinta (pavimento e blocchi).
 const STONE_SCALE := 0.28
@@ -29,7 +40,10 @@ var right_open := false
 var _tint := Color.WHITE
 var _stone: Node2D
 var _detail: Node2D
+var _sway: Node2D
 var _doors: Node2D
+var _wet: Node2D
+var _cfg: Dictionary = {}
 var _t := 0.0
 var _gate_left := 1.0   # 1 = grata chiusa visibile, 0 = sparita
 var _gate_right := 1.0
@@ -38,15 +52,28 @@ var _gate_right := 1.0
 func _ready() -> void:
 	_stone = _sublayer(_draw_stone)
 	_detail = _sublayer(_draw_detail)
+	_sway = _sublayer(_draw_sway)
+	var mat := ShaderMaterial.new()
+	mat.shader = SWAY_SHADER
+	_sway.material = mat
 	_doors = _sublayer(_draw_doors)
+	_wet = Node2D.new()
+	# Sopra la pietra, sotto i personaggi (entità a z 10).
+	_wet.z_index = 1
+	add_child(_wet)
 
 
 func build(r: Dictionary, theme: Dictionary) -> void:
 	room = r
 	th = theme
-	_tint = Color(Backdrop.area(r["theme"]).get("terrain_tint", "#ffffff"))
-	for n in [_stone, _detail, _doors]:
+	_cfg = Backdrop.area(r["theme"])
+	_tint = Color(_cfg.get("terrain_tint", "#ffffff"))
+	var grass: Dictionary = _cfg.get("grass", {})
+	var mat := _sway.material as ShaderMaterial
+	mat.set_shader_parameter("amplitude", float(grass.get("sway", 3.0)))
+	for n in [_stone, _detail, _sway, _doors]:
 		n.queue_redraw()
+	_build_wet()
 
 
 func set_doors(left: bool, right: bool) -> void:
@@ -149,8 +176,6 @@ func _draw_stone() -> void:
 func _draw_detail() -> void:
 	if room.is_empty():
 		return
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(room["name"])
 	var size := _size()
 	var fy := _floor()
 	var c := _detail
@@ -158,7 +183,6 @@ func _draw_detail() -> void:
 
 	# Il pavimento sfuma nel buio verso il basso.
 	Art.grad_rect(c, Rect2(-200, fy + 30.0, size.x + 400.0, 80), Color(0, 0, 0, 0.0), Color(0, 0, 0, 0.75))
-	_moss(c, rng, Rect2(-200, fy - CAP_LIFT, size.x + 400.0, 4))
 
 	# Blocchi: ombre ai lati e contatto con il pavimento.
 	for b in room["blocks"]:
@@ -167,7 +191,6 @@ func _draw_detail() -> void:
 		Art.grad_rect_h(c, Rect2(r.end.x - 14, r.position.y, 14, r.size.y), Color(0, 0, 0, 0), Color(0, 0, 0, 0.55))
 		c.draw_rect(Rect2(r.position.x - 1.0, r.position.y - CAP_LIFT, 2, r.size.y + CAP_LIFT), Color(0, 0, 0, 0.6))
 		c.draw_rect(Rect2(r.end.x - 1.0, r.position.y - CAP_LIFT, 2, r.size.y + CAP_LIFT), Color(0, 0, 0, 0.6))
-		_moss(c, rng, Rect2(r.position.x, r.position.y - CAP_LIFT, r.size.x, 4))
 
 	# Mensole: ombra sotto e beccatelli scuri.
 	for l in room["ledges"]:
@@ -182,7 +205,6 @@ func _draw_detail() -> void:
 			bx += 72.0
 		for x in [r.position.x, r.end.x - 2.0]:
 			c.draw_rect(Rect2(x, r.position.y - CAP_LIFT, 2, bottom - r.position.y + CAP_LIFT), Color(0, 0, 0, 0.5))
-		_moss(c, rng, Rect2(r.position.x, r.position.y - CAP_LIFT, r.size.x, 3))
 
 	# Pilastri: ombra verso l'interno della stanza.
 	var door_top := fy - Room.DOOR_H
@@ -190,18 +212,158 @@ func _draw_detail() -> void:
 	Art.grad_rect_h(c, Rect2(size.x - Room.EDGE, -200, 16, door_top + 200.0), Color(0, 0, 0, 0.6), Color(0, 0, 0, 0))
 
 
-func _moss(c: CanvasItem, rng: RandomNumberGenerator, edge: Rect2) -> void:
-	var amount: float = th.get("moss", 0.0)
-	if amount <= 0.0:
+# ---------------------------------------------------------------- Erba, rampicanti e catene
+
+## Tutto ciò che ondeggia: nell'alpha del colore di vertice va il peso dell'oscillazione.
+func _draw_sway() -> void:
+	if room.is_empty():
 		return
-	var moss := Color(0.28, 0.42, 0.22)
-	var x := edge.position.x
-	while x < edge.end.x:
-		if rng.randf() < amount * 0.55:
-			c.draw_line(Vector2(x, edge.position.y), Vector2(x + rng.randf_range(-3, 3), edge.position.y - rng.randf_range(3, 11)), moss.lightened(rng.randf_range(0.0, 0.2)), 2.0)
-		if rng.randf() < amount * 0.06:
-			c.draw_line(Vector2(x, edge.position.y + 4.0), Vector2(x, edge.position.y + rng.randf_range(10, 34)), moss.darkened(0.2), 2.0)
-		x += 5.0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(room["name"]) + 7
+	var size := _size()
+	var fy := _floor()
+	var grass: Dictionary = _cfg.get("grass", {})
+	var density := float(grass.get("density", 0.0))
+	if density > 0.0:
+		_grass_edge(rng, -200.0, size.x + 200.0, fy - CAP_LIFT + 2.0, grass, density)
+		for b in room["blocks"]:
+			var r: Rect2 = b
+			_grass_edge(rng, r.position.x + 4.0, r.end.x - 4.0, r.position.y - CAP_LIFT + 2.0, grass, density)
+			_vines(rng, r.position.x, r.end.x, r.position.y - CAP_LIFT + 30.0, grass, density, 0.5)
+		for l in room["ledges"]:
+			var r: Rect2 = l
+			_grass_edge(rng, r.position.x + 4.0, r.end.x - 4.0, r.position.y - CAP_LIFT + 2.0, grass, density * 0.7)
+			_vines(rng, r.position.x + 6.0, r.end.x - 6.0, r.position.y - CAP_LIFT + (CAP_ROWS.y - CAP_ROWS.x) * LEDGE_SCALE, grass, density, 1.0)
+	var chains: Dictionary = _cfg.get("chains", {})
+	if float(chains.get("chance", 0.0)) > 0.0:
+		for l in room["ledges"]:
+			var r: Rect2 = l
+			var bottom := r.position.y - CAP_LIFT + (CAP_ROWS.y - CAP_ROWS.x) * LEDGE_SCALE
+			for x in [r.position.x + 24.0, r.end.x - 24.0]:
+				if rng.randf() < float(chains["chance"]):
+					var len_range: Array = chains.get("len", [40, 100])
+					_chain(Vector2(x, bottom), rng.randf_range(float(len_range[0]), float(len_range[1])))
+
+
+## Ciuffi d'erba lungo un bordo: 3-6 fili a ventaglio, radice scura e punta più chiara.
+func _grass_edge(rng: RandomNumberGenerator, x0: float, x1: float, y: float, grass: Dictionary, density: float) -> void:
+	var base := Color(grass.get("color", "#101510"))
+	var tip := Color(grass.get("tip", "#2a3a2a"))
+	var h_range: Array = grass.get("h", [6, 16])
+	var x := x0
+	while x < x1:
+		# Ciuffi a gruppi: il rumore lento lascia tratti spogli e tratti folti.
+		var patch := 0.5 + 0.5 * sin(x * 0.013 + rng.randf() * 0.3) * sin(x * 0.0041 + 1.7)
+		if rng.randf() < density * (0.25 + patch):
+			var h := rng.randf_range(float(h_range[0]), float(h_range[1])) * (0.6 + patch * 0.6)
+			for i in rng.randi_range(3, 6):
+				var bx := x + rng.randf_range(-4.0, 4.0)
+				var bh := h * rng.randf_range(0.55, 1.0)
+				var lean := rng.randf_range(-0.45, 0.45) * bh
+				var w := rng.randf_range(1.6, 2.8)
+				var shade := tip.lerp(base, rng.randf_range(0.0, 0.6))
+				_sway.draw_polygon(
+					PackedVector2Array([Vector2(bx - w, y), Vector2(bx + w, y), Vector2(bx + lean, y - bh)]),
+					PackedColorArray([Color(base, 0.0), Color(base, 0.0), Color(shade, 1.0)]))
+		x += GRASS_STEP
+
+
+## Rampicanti che pendono dal bordo di blocchi e mensole (pesati verso il basso).
+func _vines(rng: RandomNumberGenerator, x0: float, x1: float, y: float, grass: Dictionary, density: float, amount: float) -> void:
+	var base := Color(grass.get("color", "#101510"))
+	var tip := Color(grass.get("tip", "#2a3a2a"))
+	var x := x0
+	while x < x1:
+		if rng.randf() < density * amount * 0.12:
+			var length := rng.randf_range(12.0, 46.0)
+			var pts := PackedVector2Array()
+			var cols := PackedColorArray()
+			var steps := 6
+			for i in steps + 1:
+				var t := float(i) / float(steps)
+				var wob := sin(t * 5.0 + x) * 2.0
+				pts.append(Vector2(x - 1.4 * (1.0 - t) + wob, y + length * t))
+				cols.append(Color(base.lerp(tip, t * 0.5), t))
+			for i in range(steps, -1, -1):
+				var t := float(i) / float(steps)
+				var wob := sin(t * 5.0 + x) * 2.0
+				pts.append(Vector2(x + 1.4 * (1.0 - t) + 0.4 + wob, y + length * t))
+				cols.append(Color(base.lerp(tip, t * 0.5), t))
+			_sway.draw_polygon(pts, cols)
+		x += GRASS_STEP
+
+
+## Catena di ferro appesa: maglie alternate di fronte (ovale col foro) e di taglio.
+func _chain(top: Vector2, length: float) -> void:
+	var link := 9.0
+	var n := int(length / link)
+	for i in n:
+		var y := top.y + i * link
+		var k := float(i) / float(maxi(n, 1))
+		var p := Vector2(top.x, y + link * 0.5)
+		if i % 2 == 0:
+			_flat_poly(Art.ellipse(p, Vector2(3.4, 5.6), 10), IRON_HI, k)
+			_flat_poly(Art.ellipse(p, Vector2(1.6, 3.4), 8), IRON, k)
+		else:
+			_flat_poly(PackedVector2Array([p + Vector2(-1.1, -5.6), p + Vector2(1.1, -5.6), p + Vector2(1.1, 5.6), p + Vector2(-1.1, 5.6)]), IRON, k)
+	# Gancio finale.
+	var end := Vector2(top.x, top.y + n * link + 2.0)
+	_flat_poly(PackedVector2Array([end + Vector2(-1.5, -2), end + Vector2(1.5, -2), end + Vector2(1.5, 8), end + Vector2(-5, 12), end + Vector2(-5, 9), end + Vector2(-1.5, 7)]), IRON, 1.0)
+
+
+## Poligono di un solo colore con lo stesso peso d'oscillazione su tutti i vertici.
+func _flat_poly(pts: PackedVector2Array, color: Color, weight: float) -> void:
+	var cols := PackedColorArray()
+	cols.resize(pts.size())
+	cols.fill(Color(color, weight))
+	_sway.draw_polygon(pts, cols)
+
+
+# ---------------------------------------------------------------- Pavimento bagnato
+
+## Riflessi sul pavimento e schizzi di pioggia su pavimento, blocchi e mensole (solo se l'area
+## ha "floor" in data/areas.json).
+func _build_wet() -> void:
+	for c in _wet.get_children():
+		c.queue_free()
+	var floor_cfg: Dictionary = _cfg.get("floor", {})
+	if floor_cfg.is_empty():
+		return
+	var size := _size()
+	var fy := _floor()
+	var depth := float(floor_cfg.get("depth", 70.0))
+	var rect := ColorRect.new()
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.position = Vector2(-200.0, fy - CAP_LIFT)
+	rect.size = Vector2(size.x + 400.0, depth)
+	var mat := ShaderMaterial.new()
+	mat.shader = REFLECT_SHADER
+	mat.set_shader_parameter("tint", Color(floor_cfg.get("tint", "#ffffff")))
+	mat.set_shader_parameter("strength", float(floor_cfg.get("reflect", 0.6)))
+	mat.set_shader_parameter("wet", float(floor_cfg.get("wet", 0.3)))
+	mat.set_shader_parameter("height_uv", depth * Room.CAMERA_ZOOM / VIEW_H)
+	rect.material = mat
+	_wet.add_child(rect)
+
+	mat.set_shader_parameter("depth_units", depth)
+	mat.set_shader_parameter("rings", float(floor_cfg.get("rings", 0.0)))
+
+	var drops := float(floor_cfg.get("splashes", 0.0))
+	if drops <= 0.0:
+		return
+	var color := Color(0.85, 0.88, 1.0, 0.75)
+	var surfaces: Array = [Rect2(-100.0, fy - CAP_LIFT + 3.0, size.x + 200.0, 0)]
+	for b in room["blocks"]:
+		var r: Rect2 = b
+		surfaces.append(Rect2(r.position.x, r.position.y - CAP_LIFT + 3.0, r.size.x, 0))
+	for l in room["ledges"]:
+		var r: Rect2 = l
+		surfaces.append(Rect2(r.position.x, r.position.y - CAP_LIFT + 2.0, r.size.x, 0))
+	for r in surfaces:
+		var w: float = r.size.x
+		var sp := Fx.splashes(w, int(drops * w / 100.0), color)
+		sp.position = Vector2(r.position.x + w * 0.5, r.position.y)
+		_wet.add_child(sp)
 
 
 # ---------------------------------------------------------------- Portali
