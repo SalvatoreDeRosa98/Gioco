@@ -79,6 +79,19 @@ Posizione, scala, tinta, foschia e sfocatura di ogni strato sono dati in `src/da
 | Gioco | 1.0 | pavimento, blocchi, mensole (`props/terreno.png`), grate (`props/cancello.png`) | tinta per area (`terrain_tint`) |
 | Primo piano | 1.3 | cornice in alto agganciata allo schermo + sagome in basso appena sopra il pavimento | quasi nero, sfocato; non deve coprire i personaggi |
 
+Oltre agli strati dipinti, ogni area ha elementi del motore che riempiono la scena (tutti regolabili
+in `areas.json`, descritti nella chiave `_doc`):
+
+- **Fili d'oro del Velo** (`env_threads.gd`, shader `canvas_env_thread`): tesi tra le finestre e verso
+  la Reggia, oscillano e brillano; sono il motivo visivo del gioco.
+- **Luce volumetrica** (shader `canvas_env_rays`): raggi di luna nella Villa, alba dietro le colline del
+  Belvedere, raggi dall'alto con polvere nel Cortile d'Onore; coni di luce dei lampioni.
+- **Vita** (`env_flock.gd` e particelle in `fx.gd`): falene, lucciole, pipistrelli, rondini, foglie, braci,
+  pulviscolo fuori fuoco davanti alla camera.
+- **Pavimento bagnato** nel Corso (shader `canvas_env_reflect`): riflessi, pozzanghere, cerchi e schizzi.
+- **Sagome** tra sfondo e piano di gioco: cittadini addormentati in controluce, guardie, catene, edera.
+- **Nebbie** a 3–4 profondità e color grading per area (`Themes.apply_grade`).
+
 Le immagini sono 1792×1008 e si ripetono a specchio in orizzontale. Gli strati non di fondo
 si generano su **sfondo verde croma piatto (#00ff00)**.
 

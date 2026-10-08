@@ -72,7 +72,8 @@ func setup(k: String, theme: Dictionary, pos: Vector2) -> void:
 		_base_energy = _light.energy
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	# Lampioni e torce non si illuminano da soli: la loro luce brucerebbe il vetro e il ferro.
-	if _light:
+	# Anche il marmo chiaro della statua sotto le torce si brucerebbe: prende solo la tinta d'ambiente.
+	if _light or kind == "statue":
 		light_mask = 0
 	set_process(_light != null or _redraw)
 
