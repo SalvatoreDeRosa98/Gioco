@@ -66,14 +66,14 @@ const GRID_ROWS_LEGS := 22
 const LEGS_FROM_Y := 740.0
 
 ## Corsa: ampiezza dell'anca (rad) e anticipo di fase di anca e ginocchio rispetto al passo.
-const RUN_SWING := 0.7
+const RUN_SWING := 1.2
 const RUN_HIP_LEAD := 0.7
 const RUN_KNEE_LEAD := 0.45
 ## Piega massima del ginocchio a metà del ritorno: oltre 1.3 rad anche la punta del piede si alza.
-const RUN_KNEE_MAX := 1.45
+const RUN_KNEE_MAX := 2.0
 ## Sobbalzo della corsa (px della tela: giù a metà appoggio, su nel volo) e quanto il piede più
 ## basso viene riportato a terra (1 = sempre: passo da camminata; meno = un po' di volo).
-const RUN_BOB := 9.0
+const RUN_BOB := 15.0
 const RUN_PLANT := 0.55
 ## Centro della capriola, in frazione d'altezza dai piedi.
 const SPIN_CENTER := 0.45
@@ -382,14 +382,23 @@ static func pose_run(phase: float, amount := 1.0) -> Dictionary:
 	var a := clampf(amount, 0.0, 1.0)
 	var g := phase + RUN_HIP_LEAD
 	var hip := RUN_SWING * a * sin(g)
+	var knee_f := _run_knee(phase + RUN_KNEE_LEAD) * a
+	var knee_b := _run_knee(phase + RUN_KNEE_LEAD + PI) * a
 	var s := sin(phase)
 	return {
-		"leg_front": Vector2(-hip, _run_knee(phase + RUN_KNEE_LEAD) * a),
-		"leg_back": Vector2(hip, _run_knee(phase + RUN_KNEE_LEAD + PI) * a),
-		"lean": (0.1 + 0.05 * a) + 0.03 * cos(2.0 * g), "tilt": 0.0, "squash": 0.03 * a * cos(2.0 * g),
-		"breath": 0.0, "arm": 0.12 * a * s, "sword": 0.12 * a * sin(phase - 0.8),
-		"bob": RUN_BOB * a * cos(2.0 * g), "hem_open": (0.2 + 0.3 * absf(sin(g))) * a, "hem_drag": 0.3 * a,
-		"scarf_lift": 0.15 * a, "plant": RUN_PLANT,
+		"leg_front": Vector2(-hip, knee_f),
+		"leg_back": Vector2(hip, knee_b),
+		"lean": 0.45 * a + 0.05 * cos(2.0 * g), 
+		"tilt": 0.0, 
+		"squash": 0.08 * a * cos(2.0 * g),
+		"arm": -0.6 * a * s, 
+		"sword": -0.8 * a * s,
+		"bob": RUN_BOB * a * cos(2.0 * g), 
+		"hem_open": (0.3 + 0.5 * absf(sin(g))) * a, 
+		"hem_drag": 0.6 * a,
+		"scarf_lift": 0.5 * a, 
+		"hat": -0.15 * a,
+		"plant": RUN_PLANT,
 	}
 
 
@@ -441,75 +450,61 @@ static func pose_double_jump() -> Dictionary:
 ## Anticipo (la spada arretra ancora un poco), colpo con easing e una punta oltre il fine corsa
 ## che rientra (follow-through); il braccio accompagna la spada, il busto si sbilancia avanti.
 static func pose_slash(k: float, side: float) -> Dictionary:
-	# Stile animazione "Frame by Frame" (Salt and Sanctuary / Metroidvania)
-	# Il tempo viene discretizzato per dare il senso di 'pose' mantenute.
-	# Anticipazione (0-0.25), Colpo violento (0.25-0.35), Follow-through (0.35-0.6), Recupero (0.6-1.0)
-	
-	var from := -2.4 if side > 0.0 else 0.8
-	var to := 0.8 if side > 0.0 else -2.2
-	var dir := signf(to - from)
-	
+	var dir := signf(side)
 	var p := {}
-	
 	if k < 0.25:
-		# Anticipazione: si tira indietro, accumula potenza
 		var t = k / 0.25
 		p = {
-			"sword": from - 0.4 * dir * t,
-			"arm": -0.3 * dir * t,
-			"lean": -0.15 * t,
-			"squash": 0.05 * t,
-			"hat": 0.1 * t,
-			"scarf_lift": 0.3 * t,
-			"leg_front": Vector2(-0.1, 0.4) * t,
-			"leg_back": Vector2(0.2, 0.6) * t,
+			"sword": -2.8 * dir * t,
+			"arm": -0.8 * dir * t,
+			"lean": -0.3 * t,
+			"squash": 0.15 * t,
+			"leg_front": Vector2(-0.4 * t, 0.5 * t),
+			"leg_back": Vector2(0.5 * t, 0.8 * t),
+			"hat": 0.3 * t,
+			"scarf_lift": -0.2 * t,
 		}
-	elif k < 0.35:
-		# L'ATTACCO: smear frame rapidissimo! Scatta in avanti
-		var t = (k - 0.25) / 0.1
+	elif k < 0.4:
+		var t = (k - 0.25) / 0.15
 		p = {
-			"sword": lerpf(from, to, t),
-			"arm": lerpf(-0.3 * dir, 0.4 * dir, t),
-			"lean": lerpf(-0.15, 0.3, t),
-			"squash": lerpf(0.05, -0.1, t),
-			"hat": lerpf(0.1, -0.3, t),
-			"scarf_lift": lerpf(0.3, -0.5, t),
-			"hem_open": lerpf(0.0, 0.5, t),
-			"leg_front": Vector2(lerpf(-0.1, -0.4, t), lerpf(0.4, 0.8, t)),
-			"leg_back": Vector2(lerpf(0.2, 0.4, t), lerpf(0.6, 0.2, t)),
+			"sword": lerpf(-2.8 * dir, 1.2 * dir, t),
+			"arm": lerpf(-0.8 * dir, 0.7 * dir, t),
+			"lean": lerpf(-0.3, 0.6, t),
+			"squash": lerpf(0.15, -0.1, t),
+			"leg_front": Vector2(lerpf(-0.4, -1.0, t), lerpf(0.5, 0.0, t)),
+			"leg_back": Vector2(lerpf(0.5, 0.8, t), lerpf(0.8, 0.1, t)),
+			"hat": lerpf(0.3, -0.6, t),
+			"scarf_lift": lerpf(-0.2, 0.8, t),
+			"hem_open": 0.8 * t,
 		}
-	elif k < 0.6:
-		# Follow-through (hold frame d'impatto prolungato)
-		var t = (k - 0.35) / 0.25
-		# Curva ease-out per assorbire l'impatto
+	elif k < 0.7:
+		var t = (k - 0.4) / 0.3
 		var e = 1.0 - pow(1.0 - t, 3.0)
 		p = {
-			"sword": to + 0.1 * dir * e,
-			"arm": 0.4 * dir - 0.1 * dir * e,
-			"lean": 0.3 + 0.05 * e,
+			"sword": 1.2 * dir + 0.1 * dir * e,
+			"arm": 0.7 * dir - 0.1 * dir * e,
+			"lean": 0.6 + 0.05 * e,
 			"squash": -0.1 + 0.05 * e,
-			"hat": -0.3 + 0.1 * e,
-			"scarf_lift": -0.5 + 0.2 * e,
-			"hem_open": 0.5 - 0.2 * e,
-			"leg_front": Vector2(-0.4, 0.8),
-			"leg_back": Vector2(0.4, 0.2),
+			"leg_front": Vector2(-1.0, 0.0),
+			"leg_back": Vector2(0.8, 0.1),
+			"hat": -0.6 + 0.2 * e,
+			"scarf_lift": 0.8 - 0.2 * e,
+			"hem_open": 0.8 - 0.1 * e,
 		}
 	else:
-		# Recupero
-		var t = (k - 0.6) / 0.4
-		var e = t * t # ease in
+		var t = (k - 0.7) / 0.3
+		var e = t * t
 		p = {
-			"sword": lerpf(to + 0.1 * dir, 0.0, e),
-			"arm": lerpf(0.3 * dir, 0.0, e),
-			"lean": lerpf(0.35, 0.0, e),
+			"sword": lerpf(1.3 * dir, 0.0, e),
+			"arm": lerpf(0.6 * dir, 0.0, e),
+			"lean": lerpf(0.65, 0.0, e),
 			"squash": lerpf(-0.05, 0.0, e),
-			"hat": lerpf(-0.2, 0.0, e),
-			"scarf_lift": lerpf(-0.3, 0.0, e),
-			"hem_open": lerpf(0.3, 0.0, e),
-			"leg_front": Vector2(-0.4 * (1-e), 0.8 * (1-e)),
-			"leg_back": Vector2(0.4 * (1-e), 0.2 * (1-e)),
+			"leg_front": Vector2(-1.0 * (1-e), 0.0),
+			"leg_back": Vector2(0.8 * (1-e), 0.1 * (1-e)),
+			"hat": lerpf(-0.4, 0.0, e),
+			"scarf_lift": lerpf(0.6, 0.0, e),
+			"hem_open": lerpf(0.7, 0.0, e),
 		}
-	
 	return p
 
 
