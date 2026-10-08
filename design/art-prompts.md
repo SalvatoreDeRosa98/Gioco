@@ -8,7 +8,7 @@ I prompt usati per generare l'arte del gioco con **Grok Imagine** (69 richieste 
 2. Incolla il prompt e scegli la variante migliore tra quelle proposte.
 3. Salva l'immagine in `assets/art-source/` con il nome indicato in **Salva come** (stessa sottocartella degli altri file del suo tipo).
 4. Aggiungi la voce in `tools/art/manifest.json` e lancia `python3 tools/art/import_art.py`: scontorna il verde e scrive il PNG pronto in `src/assets/art/`.
-5. Se la nuova immagine sostituisce Ferruccio, il gatto o la vespa, rilancia anche `tools/art/rig_ferruccio.py` o `tools/art/rig_nemici.py` e ricontrolla i punti di taglio.
+5. Se la nuova immagine sostituisce Ferruccio, rilancia `tools/art/rig_ferruccio_mesh.py` (con `--debug CARTELLA` per vedere le mappe dei pesi), ricontrolla tagli e perni (anche le costanti in `src/game/char_rig.gd`) e guarda il risultato con `src/scripts/dev_rig_preview.gd`. Per il gatto o la vespa rilancia `tools/art/rig_nemici.py` e ricontrolla i punti di taglio.
 
 ## Stato al 2026-10-08
 

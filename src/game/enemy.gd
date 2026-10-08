@@ -42,12 +42,18 @@ const CUSTODE_TEX := preload("res://assets/art/bosses/custode.png")
 const CUSTODE_FEET := Vector2(360, 1010)
 const CUSTODE_LILY := Vector2(420, 340)
 const CUSTODE_SCALE := 0.176
+## Ritmo del passo del Custode (radianti/s): ogni mezzo periodo un piede tocca terra.
+const CUSTODE_STEP_RATE := 3.5
 ## Mensole attraversabili (vedi player.gd): i gatti ci camminano sopra, le vespe le attraversano.
 const LEDGE_LAYER := 4
 ## Distanza minima dai bordi della stanza: i nemici non escono dai portali aperti.
 const ROOM_MARGIN := 60.0
 ## Mezza altezza del giocatore (player.gd HALF.y): serve a sapere dove poggia i piedi.
 const PLAYER_HALF_Y := 24.0
+## Probabilità che il gatto miagoli quando si ferma (solo atmosfera).
+const MEOW_CHANCE := 0.3
+## Oltre questa distanza dal giocatore (circa mezzo schermo) i versi dei nemici non si sentono.
+const HEAR_RANGE := 700.0
 
 # Solo aspetto: ampiezze e ritmi delle pose (il gameplay è tutto in tuning.json).
 ## Radianti di fase del passo per pixel percorso: le zampe seguono lo spostamento, niente pattinate.
@@ -92,6 +98,7 @@ var _state := "walk"
 var _state_t := 1.5
 var _state_len := 0.0
 var _airborne := false
+var _step_s := 0.0
 ## Spinta dei colpi per chi non ha uno stato di stordimento (statua, Custode).
 var _knock_v := Vector2.ZERO
 # Gatto
@@ -358,6 +365,9 @@ func _start_rest() -> void:
 	var r := _rng.randf()
 	_rest_kind = "siede" if r < 0.4 else ("guarda" if r < 0.75 else "stira")
 	_rest_flipped = false
+	# Ogni tanto, fermandosi, miagola: il gatto si fa sentire prima di farsi vedere.
+	if _rng.randf() < MEOW_CHANCE:
+		_sfx("gatto_miao")
 
 
 ## Dopo l'atterraggio o lo stordimento: riprende la caccia se il giocatore è ancora lì.
@@ -756,10 +766,14 @@ func _ai_statua(delta: float) -> void:
 	if target and absf(target.global_position.x - global_position.x) > 4.0:
 		facing = signf(target.global_position.x - global_position.x)
 	_shoot_cd -= delta
+	var was := anim
 	anim = "charge" if _shoot_cd < 0.6 else "idle"
+	if anim == "charge" and was != "charge":
+		_sfx("statua_carica")
 	if _shoot_cd <= 0.0:
 		_shoot_cd = _f("fire_every")
 		world.enemy_fire(global_position + Vector2(facing * 26.0, -40.0), Vector2(facing, 0.0), _f("bullet_speed"), Color(0.6, 0.85, 1.0))
+		_sfx("statua_sparo")
 
 
 ## Boss: cammina verso il giocatore, poi alterna balzo con onda d'urto e raffica radiale.
@@ -773,6 +787,11 @@ func _ai_custode(delta: float) -> void:
 		"walk":
 			velocity.x = facing * speed
 			anim = "walk"
+			# Passi a ritmo del sobbalzo disegnato (_draw_custode): uno a ogni appoggio.
+			var step := sin(_look_t * CUSTODE_STEP_RATE)
+			if signf(step) != signf(_step_s):
+				_sfx("custode_passo")
+			_step_s = step
 			if _state_t <= 0.0:
 				if randf() < 0.5:
 					_state = "crouch"
@@ -793,6 +812,7 @@ func _ai_custode(delta: float) -> void:
 				_airborne = true
 			elif _airborne:
 				world.enemy_shockwave(global_position + Vector2(0, half.y - 6.0))
+				_sfx("custode_urto")
 				_state = "walk"
 				_state_t = 1.6
 				velocity.x = 0.0
@@ -801,6 +821,7 @@ func _ai_custode(delta: float) -> void:
 			anim = "burst"
 			if _state_t <= 0.0:
 				world.enemy_burst(global_position + Vector2(0, -40.0), 10)
+				_sfx("custode_raffica")
 				_state = "walk"
 				_state_t = 2.2
 
@@ -846,11 +867,13 @@ func _react(push: Vector2) -> void:
 			_knock_v = Vector2(dir.x * k, 0.0)
 
 
-## Effetto sonoro tramite l'autoload Audio, se presente (senza, il nemico resta muto).
+## Effetto sonoro (nomi in data/audio.json). Gli effetti non sono posizionali: un nemico
+## lontano dal giocatore, fuori dallo schermo, resta muto.
 func _sfx(sfx_name: String) -> void:
-	var audio := get_node_or_null("/root/Audio")
-	if audio and audio.has_method("sfx"):
-		audio.call("sfx", sfx_name)
+	var p: Node2D = world.alive_player() if world else null
+	if p and p.global_position.distance_to(global_position) > HEAR_RANGE:
+		return
+	Audio.sfx(sfx_name)
 
 
 # ---------------------------------------------------------------- Aspetto
@@ -1140,8 +1163,8 @@ func _draw_statua() -> void:
 func _draw_custode() -> void:
 	var t := _look_t
 	var walk := absf(velocity.x) > 10.0
-	var bob := -absf(sin(t * 3.5)) * 4.0 if walk else sin(t * 1.6) * 1.0
-	var tilt := sin(t * 3.5) * 0.03 if walk else 0.0
+	var bob := -absf(sin(t * CUSTODE_STEP_RATE)) * 4.0 if walk else sin(t * 1.6) * 1.0
+	var tilt := sin(t * CUSTODE_STEP_RATE) * 0.03 if walk else 0.0
 	var sq := Vector2.ONE
 	match anim:
 		"crouch":

@@ -42,7 +42,8 @@ leggere anche in bianco e nero.
 - Saturazione alta solo nelle luci (finestre, lampioni, torce, occhi, anime dei nemici).
 - Palette per area: vedi `src/game/themes.gd` (fonte unica dei colori usati dal motore).
 - Sciarpa di Ferruccio: rosso `#e8483f`. Il motore può ricolorarla
-  (`shaders/canvas_char_sprite.gdshader`), quindi non servono immagini in più per le varianti.
+  (`shaders/canvas_char_mesh.gdshader`, per i nemici `canvas_char_sprite.gdshader`), quindi non
+  servono immagini in più per le varianti.
 
 ## 5. Character Design Direction
 
@@ -50,7 +51,7 @@ Le descrizioni complete sono nei prompt (`design/art-prompts.md`, fasi 1–4). I
 
 | Personaggio | Immagine | Come si anima |
 |-------------|----------|---------------|
-| Ferruccio | `characters/ferruccio.png`: volto nero senza lineamenti, occhi luminosi, coppolone, sciarpa rossa, spada forgiata | pupazzo a 4 pezzi (corpo, spada, due gambe) tagliati da `tools/art/rig_ferruccio.py`; pose in `player.gd` |
+| Ferruccio | `characters/ferruccio.png`: volto nero senza lineamenti, occhi luminosi, coppolone, sciarpa rossa, spada forgiata | mesh deformabile senza giunture (`game/char_rig.gd` + `shaders/canvas_char_mesh.gdshader`): l'immagine intera piegata secondo una mappa dei pesi, come le mesh pesate di Spine. Gambe con anca e ginocchio morbidi, busto che respira e si schiaccia, cappello a molla, sciarpa che ondeggia, orlo che si apre; la mano con la spada è l'unico pezzo rigido e ruota al polso sotto il polsino. Gamba lontana e coda della sciarpa stanno in uno strato dietro il corpo. Luce di taglio e tinta dell'area danno volume. Pezzi da `tools/art/rig_ferruccio_mesh.py`; pose in `player.gd` |
 | Gatto d'ombra | `enemies/gatto.png` | coda separata (`tools/art/rig_nemici.py`), passo trotterellato |
 | Vespa dorata | `enemies/vespa.png` | ali separate che battono, volo ondeggiante |
 | Statua animata | `enemies/statua.png` | ferma; alone azzurro che la distingue dalle statue decorative, tremito prima del colpo |
@@ -95,7 +96,8 @@ si generano su **sfondo verde croma piatto (#00ff00)**.
 - **Conversione:** `python3 tools/art/import_art.py` scontorna il verde, toglie l'alone,
   ritaglia e scrive i PNG in `src/assets/art/` seguendo `tools/art/manifest.json`. I fogli di
   oggetti vengono separati in icone singole.
-- **Pezzi animabili:** `tools/art/rig_ferruccio.py` e `tools/art/rig_nemici.py`.
+- **Pezzi animabili:** `tools/art/rig_ferruccio_mesh.py` (figura, strato di dietro, mano con spada e
+  mappa dei pesi di Ferruccio; anteprima con `src/scripts/dev_rig_preview.gd`) e `tools/art/rig_nemici.py`.
 - **Uscite:** `src/assets/art/characters/`, `enemies/`, `bosses/`, `areas/<area>/{far,mid,fg}.png`,
   `props/`, `items/`. PNG con trasparenza, niente testo dentro le immagini.
 - **Import in Godot:** mipmap attive (impostazione predefinita del progetto); i nodi usano il

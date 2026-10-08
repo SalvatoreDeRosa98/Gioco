@@ -44,6 +44,10 @@ var _sway: Node2D
 var _doors: Node2D
 var _wet: Node2D
 var _cfg: Dictionary = {}
+# Triangoli dello strato che ondeggia (ricostruiti a ogni stanza).
+var _sw_pts := PackedVector2Array()
+var _sw_cols := PackedColorArray()
+var _sw_idx := PackedInt32Array()
 var _t := 0.0
 var _gate_left := 1.0   # 1 = grata chiusa visibile, 0 = sparita
 var _gate_right := 1.0
@@ -223,9 +227,14 @@ func _draw_detail() -> void:
 # ---------------------------------------------------------------- Erba, rampicanti e catene
 
 ## Tutto ciò che ondeggia: nell'alpha del colore di vertice va il peso dell'oscillazione.
+## Fili d'erba, foglie e maglie finiscono in un'unica lista di triangoli (un solo comando di
+## disegno per stanza, anche con migliaia di fili).
 func _draw_sway() -> void:
 	if room.is_empty():
 		return
+	_sw_pts = PackedVector2Array()
+	_sw_cols = PackedColorArray()
+	_sw_idx = PackedInt32Array()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(room["name"]) + 7
 	var size := _size()
@@ -251,6 +260,8 @@ func _draw_sway() -> void:
 				if rng.randf() < float(chains["chance"]):
 					var len_range: Array = chains.get("len", [40, 100])
 					_chain(Vector2(x, bottom), rng.randf_range(float(len_range[0]), float(len_range[1])))
+	if not _sw_idx.is_empty():
+		RenderingServer.canvas_item_add_triangle_array(_sway.get_canvas_item(), _sw_idx, _sw_pts, _sw_cols)
 
 
 ## Ciuffi d'erba lungo un bordo: 3-6 fili a ventaglio, radice scura e punta più chiara.
@@ -270,14 +281,13 @@ func _grass_edge(rng: RandomNumberGenerator, x0: float, x1: float, y: float, gra
 				var lean := rng.randf_range(-0.45, 0.45) * bh
 				var w := rng.randf_range(1.6, 2.8)
 				var shade := tip.lerp(base, rng.randf_range(0.0, 0.6))
-				_sway.draw_polygon(
-					PackedVector2Array([Vector2(bx - w, y), Vector2(bx + w, y), Vector2(bx + lean, y - bh)]),
-					PackedColorArray([Color(base, 0.0), Color(base, 0.0), Color(shade, 1.0)]))
+				_sw_tri(Vector2(bx - w, y), Vector2(bx + w, y), Vector2(bx + lean, y - bh),
+					Color(base, 0.0), Color(base, 0.0), Color(shade, 1.0))
 		x += GRASS_STEP
 
 
 ## Rampicanti che pendono dal bordo di blocchi e mensole (pesati verso il basso): stelo sottile
-## e foglioline alternate, più chiare verso la punta.
+## e foglie irregolari, fitte in alto (dove l'edera si aggrappa) e rade verso la punta.
 func _vines(rng: RandomNumberGenerator, x0: float, x1: float, y: float, grass: Dictionary, density: float, amount: float) -> void:
 	var base := Color(grass.get("color", "#101510"))
 	var tip := Color(grass.get("tip", "#2a3a2a"))
@@ -285,37 +295,28 @@ func _vines(rng: RandomNumberGenerator, x0: float, x1: float, y: float, grass: D
 	while x < x1:
 		if rng.randf() < density * amount * 0.12:
 			var length := rng.randf_range(12.0, 46.0) * (1.0 + amount * 0.5)
-			var pts := PackedVector2Array()
-			var cols := PackedColorArray()
 			var steps := 6
+			var first := _sw_pts.size()
 			for i in steps + 1:
 				var t := float(i) / float(steps)
 				var wob := sin(t * 5.0 + x) * 2.0
-				pts.append(Vector2(x - 1.2 * (1.0 - t) + wob, y + length * t))
-				cols.append(Color(base.lerp(tip, t * 0.5), t))
-			for i in range(steps, -1, -1):
-				var t := float(i) / float(steps)
-				var wob := sin(t * 5.0 + x) * 2.0
-				pts.append(Vector2(x + 1.2 * (1.0 - t) + 0.4 + wob, y + length * t))
-				cols.append(Color(base.lerp(tip, t * 0.5), t))
-			_sway.draw_polygon(pts, cols)
-			# Foglie irregolari: fitte in alto (dove l'edera si aggrappa), rade verso la punta.
+				var col := Color(base.lerp(tip, t * 0.5), t)
+				_sw_pts.append(Vector2(x - 1.2 * (1.0 - t) + wob, y + length * t))
+				_sw_pts.append(Vector2(x + 1.2 * (1.0 - t) + 0.4 + wob, y + length * t))
+				_sw_cols.append(col)
+				_sw_cols.append(col)
+			for i in steps:
+				var a := first + i * 2
+				_sw_idx.append_array(PackedInt32Array([a, a + 1, a + 2, a + 1, a + 3, a + 2]))
 			var leaf_y := -2.0
 			while leaf_y < length:
 				var t := maxf(leaf_y, 0.0) / length
 				if rng.randf() > t * 0.7:
 					var c := Vector2(x + sin(t * 5.0 + x) * 2.0 + rng.randf_range(-5.0, 5.0) * (1.0 - t * 0.5), y + leaf_y)
-					_leaf(c, Vector2(rng.randf_range(2.6, 4.4), rng.randf_range(1.8, 3.0)), Color(base.lerp(tip, rng.randf_range(0.0, 0.45)), t))
+					var radius := Vector2(rng.randf_range(2.6, 4.4), rng.randf_range(1.8, 3.0))
+					_sw_fan(Art.ellipse(c, radius, 6), Color(base.lerp(tip, rng.randf_range(0.0, 0.45)), t))
 				leaf_y += rng.randf_range(2.5, 6.0)
 		x += GRASS_STEP
-
-
-func _leaf(c: Vector2, radius: Vector2, color: Color) -> void:
-	var pts := Art.ellipse(c, radius, 6)
-	var cols := PackedColorArray()
-	cols.resize(pts.size())
-	cols.fill(color)
-	_sway.draw_polygon(pts, cols)
 
 
 ## Catena di ferro appesa: maglie alternate di fronte (ovale col foro) e di taglio.
@@ -327,21 +328,32 @@ func _chain(top: Vector2, length: float) -> void:
 		var k := float(i) / float(maxi(n, 1))
 		var p := Vector2(top.x, y + link * 0.5)
 		if i % 2 == 0:
-			_flat_poly(Art.ellipse(p, Vector2(3.4, 5.6), 10), IRON_HI, k)
-			_flat_poly(Art.ellipse(p, Vector2(1.6, 3.4), 8), IRON, k)
+			_sw_fan(Art.ellipse(p, Vector2(3.4, 5.6), 10), Color(IRON_HI, k))
+			_sw_fan(Art.ellipse(p, Vector2(1.6, 3.4), 8), Color(IRON, k))
 		else:
-			_flat_poly(PackedVector2Array([p + Vector2(-1.1, -5.6), p + Vector2(1.1, -5.6), p + Vector2(1.1, 5.6), p + Vector2(-1.1, 5.6)]), IRON, k)
-	# Gancio finale.
+			_sw_fan(PackedVector2Array([p + Vector2(-1.1, -5.6), p + Vector2(1.1, -5.6), p + Vector2(1.1, 5.6), p + Vector2(-1.1, 5.6)]), Color(IRON, k))
+	# Gancio finale: gambo dritto e punta piegata.
 	var end := Vector2(top.x, top.y + n * link + 2.0)
-	_flat_poly(PackedVector2Array([end + Vector2(-1.5, -2), end + Vector2(1.5, -2), end + Vector2(1.5, 8), end + Vector2(-5, 12), end + Vector2(-5, 9), end + Vector2(-1.5, 7)]), IRON, 1.0)
+	_sw_fan(PackedVector2Array([end + Vector2(-1.5, -2), end + Vector2(1.5, -2), end + Vector2(1.5, 8), end + Vector2(-1.5, 8)]), Color(IRON, 1.0))
+	_sw_fan(PackedVector2Array([end + Vector2(1.5, 7), end + Vector2(-5, 11), end + Vector2(-5, 8.5), end + Vector2(-1.5, 6.5)]), Color(IRON, 1.0))
 
 
-## Poligono di un solo colore con lo stesso peso d'oscillazione su tutti i vertici.
-func _flat_poly(pts: PackedVector2Array, color: Color, weight: float) -> void:
-	var cols := PackedColorArray()
-	cols.resize(pts.size())
-	cols.fill(Color(color, weight))
-	_sway.draw_polygon(pts, cols)
+## Un triangolo con tre colori (rgb = colore, alpha = peso dell'oscillazione).
+func _sw_tri(a: Vector2, b: Vector2, c: Vector2, ca: Color, cb: Color, cc: Color) -> void:
+	var first := _sw_pts.size()
+	_sw_pts.append_array(PackedVector2Array([a, b, c]))
+	_sw_cols.append_array(PackedColorArray([ca, cb, cc]))
+	_sw_idx.append_array(PackedInt32Array([first, first + 1, first + 2]))
+
+
+## Poligono convesso di un solo colore, triangolato a ventaglio dal primo vertice.
+func _sw_fan(pts: PackedVector2Array, color: Color) -> void:
+	var first := _sw_pts.size()
+	_sw_pts.append_array(pts)
+	for i in pts.size():
+		_sw_cols.append(color)
+	for i in range(1, pts.size() - 1):
+		_sw_idx.append_array(PackedInt32Array([first, first + i, first + i + 1]))
 
 
 # ---------------------------------------------------------------- Pavimento bagnato

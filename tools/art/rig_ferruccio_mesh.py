@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepara Ferruccio per il rig a mesh deformabile (src/game/char_rig.gd + canvas_char_mesh.gdshader).
 
-Il vecchio pupazzo (rig_ferruccio.py) ruota quattro immagini rigide: si vedono i tagli. Qui l'immagine
+Un pupazzo di immagini rigide ruotate attorno a perni mostra i tagli. Qui l'immagine
 diventa una griglia di triangoli piegata nel vertex shader secondo una mappa dei pesi, come le mesh
 pesate di Spine/DragonBones: ogni vertice segue le "ossa" in proporzione al suo peso, e dove il peso
 sfuma la pittura si piega invece di spezzarsi.
@@ -25,18 +25,25 @@ Uso: python3 tools/art/rig_ferruccio_mesh.py [--debug CARTELLA]
 """
 
 import argparse
-import sys
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import rig_ferruccio as rf  # noqa: E402  (stessi tagli delle gambe e stessa tela)
-
-OUT = rf.OUT
+ROOT = Path(__file__).resolve().parents[2]
+SRC = ROOT / "src/assets/art/characters/ferruccio.png"
+OUT = ROOT / "src/assets/art/characters/ferruccio_rig"
 TILE_DIV = 4  # la mappa dei pesi è campionata solo ai vertici: 1/4 di risoluzione basta
+
+# --- Gambe (tagli in pixel dell'immagine 679x1024 prodotta da import_art.py) --------------------
+HEM_Y = 772  # sotto l'orlo del camicione iniziano le gambe
+# Confine tra le due gambe: piega dei calzoni, poi calza vicina, poi bordo della scarpa vicina.
+_SPLIT = [(372, HEM_Y), (372, 868), (356, 880), (356, 955), (372, 958), (395, 966), (418, 976), (440, 992), (440, 1024)]
+LEG_FRONT = [(280, HEM_Y)] + _SPLIT + [(280, 1024)]
+LEG_BACK = _SPLIT + [(470, 1024), (470, HEM_Y)]
+# Il camicione finisce a destra di questa colonna (più in basso lo dice TUNIC_EDGE) e sotto HEM_Y.
+TUNIC_RIGHT = 466
 
 # --- Spada e mano ---------------------------------------------------------------------------------
 # Sopra il camicione guanto e contorni del metallo sono più scuri del tessuto in ombra (luma ~80-135).
@@ -48,7 +55,7 @@ CROSSGUARD = ([(432, 636), (380, 724)], 18)
 # Lama: rette dei due fili misurate sull'alfa fuori dal camicione (y = 0.789x + 340.7, y = 0.700x + 405.6).
 BLADE = [(404, 658), (690, 884), (690, 892), (404, 691)]
 # Bordo destro del camicione dove lo attraversa la lama (misurato a occhio sull'immagine): la striscia
-# di tessuto oltre rf.TUNIC_RIGHT va ricostruita, non tolta, altrimenti resta una tacca nella sagoma.
+# di tessuto oltre TUNIC_RIGHT va ricostruita, non tolta, altrimenti resta una tacca nella sagoma.
 TUNIC_EDGE = ((472.0, 650.0), (483.0, 765.0))
 # Polsino della manica: la mano continua sotto di esso fino a WRIST_TOP (resta coperta).
 CUFF = (333, 594, 397, 619)
@@ -80,8 +87,14 @@ HEM_RAMP = (560.0, 765.0)
 
 # --- Gambe ----------------------------------------------------------------------------------------
 # Rampa dell'anca: sotto l'orlo il peso sale piano, così i calzoni si piegano invece di tagliarsi.
-LEG_RAMP_FRONT = (rf.HEM_Y + 4.0, rf.HEM_Y + 58.0)
-LEG_RAMP_BACK = (rf.HEM_Y - 6.0, rf.HEM_Y + 48.0)
+LEG_RAMP_FRONT = (HEM_Y + 4.0, HEM_Y + 58.0)
+LEG_RAMP_BACK = (HEM_Y - 6.0, HEM_Y + 48.0)
+
+
+def poly_mask(size: tuple[int, int], pts: list[tuple[int, int]]) -> np.ndarray:
+    m = Image.new("L", size, 0)
+    ImageDraw.Draw(m).polygon(pts, fill=255)
+    return np.asarray(m) > 0
 
 
 def smoothstep(e0: float, e1: float, x: np.ndarray) -> np.ndarray:
@@ -160,7 +173,7 @@ def sword_mask(px: np.ndarray, size: tuple[int, int]) -> np.ndarray:
 def beyond_tunic(rows: np.ndarray, cols: np.ndarray) -> np.ndarray:
     """Fuori dal camicione: sotto l'orlo o oltre il suo bordo destro (dove la lama esce)."""
     edge = TUNIC_EDGE[0][0] + (rows - TUNIC_EDGE[0][1]) * (TUNIC_EDGE[1][0] - TUNIC_EDGE[0][0]) / (TUNIC_EDGE[1][1] - TUNIC_EDGE[0][1])
-    return (cols >= np.maximum(edge, rf.TUNIC_RIGHT)) | (rows >= rf.HEM_Y)
+    return (cols >= np.maximum(edge, TUNIC_RIGHT)) | (rows >= HEM_Y)
 
 
 def fill_columns(rgba: np.ndarray, hole: np.ndarray, no_top: np.ndarray) -> np.ndarray:
@@ -243,15 +256,15 @@ def main() -> None:
     ap.add_argument("--debug", type=Path, help="salva qui le mappe dei pesi sovrapposte al personaggio")
     args = ap.parse_args()
 
-    img = Image.open(rf.SRC).convert("RGBA")
+    img = Image.open(SRC).convert("RGBA")
     size = img.size
     px = np.asarray(img).astype(np.float32)
     opaque = px[..., 3] > 8
     rows, cols = np.mgrid[0:size[1], 0:size[0]].astype(np.float32)
     luma = px[..., :3] @ np.array([0.299, 0.587, 0.114], np.float32)
 
-    front = rf.poly_mask(size, rf.LEG_FRONT) & opaque
-    back = rf.poly_mask(size, rf.LEG_BACK) & opaque
+    front = poly_mask(size, LEG_FRONT) & opaque
+    back = poly_mask(size, LEG_BACK) & opaque
     sword = sword_mask(px, size)
     outside = beyond_tunic(rows, cols)
 
@@ -284,10 +297,10 @@ def main() -> None:
     # ---- pesi
     fig_opaque = body[..., 3] > 8
     tunic = fig_opaque & ~front & ~back  # tutto ciò che non è gamba
-    tunic_soft = blur(tunic & (rows > rf.HEM_Y - 60), 4.0)
+    tunic_soft = blur(tunic & (rows > HEM_Y - 60), 4.0)
 
-    w_front = smoothstep(*LEG_RAMP_FRONT, rows) * (rows > rf.HEM_Y - 20) * np.clip(1.0 - 1.6 * tunic_soft, 0, 1)
-    w_back = smoothstep(*LEG_RAMP_BACK, rows) * (rows > rf.HEM_Y - 20) * np.clip(1.0 - 1.6 * tunic_soft, 0, 1)
+    w_front = smoothstep(*LEG_RAMP_FRONT, rows) * (rows > HEM_Y - 20) * np.clip(1.0 - 1.6 * tunic_soft, 0, 1)
+    w_back = smoothstep(*LEG_RAMP_BACK, rows) * (rows > HEM_Y - 20) * np.clip(1.0 - 1.6 * tunic_soft, 0, 1)
     w_front = blur(w_front, 6.0)
     w_back = blur(w_back, 6.0)
 
@@ -348,7 +361,7 @@ def main() -> None:
         low = skirt & (rows > HEM_RAMP[0])
         skirt = np.isin(lab, 1 + np.flatnonzero(ndimage.sum(low, lab, range(1, n + 1)) > 2000))
     w_hem = smoothstep(*HEM_RAMP, rows) * skirt
-    hem_zone = ndimage.binary_dilation(skirt, iterations=20) & (rows < rf.HEM_Y + 14) & ~front & ~back
+    hem_zone = ndimage.binary_dilation(skirt, iterations=20) & (rows < HEM_Y + 14) & ~front & ~back
     hem_zone &= ~ndimage.binary_dilation(scarf, iterations=12)
     w_hem = np.maximum(w_hem, blur(w_hem, 8.0) * hem_zone * ~fig_opaque)
     w_hem = blur(w_hem, 4.0)

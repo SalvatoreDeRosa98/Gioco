@@ -128,7 +128,9 @@ func can_talk() -> bool:
 ## Il dialogo comincia: si volta verso Ferruccio (salvo i dialoghi in cui non deve guardarlo).
 func begin_talk(entry: Dictionary, player_x: float) -> void:
 	_talking = true
-	_bark_i = -1 if not _bark_done else _bark_i
+	if not _bark_done:
+		# Una battuta di passaggio interrotta dal dialogo ricomincia dopo.
+		_bark_i = -1
 	if _turn_mode != "never" and bool(entry.get("turn", true)) and absf(player_x - global_position.x) > 4.0:
 		_face_target = signf(player_x - global_position.x)
 
@@ -169,7 +171,8 @@ func _process(delta: float) -> void:
 	if _poll <= 0.0:
 		_poll = 0.25
 		var p := _check_present()
-		if p != _present:
+		# Chi sta parlando se ne va (o svanisce) solo a dialogo finito, mai a metà battuta.
+		if p != _present and not _talking:
 			_present = p
 			if p:
 				position = _home

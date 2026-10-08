@@ -6,7 +6,8 @@ extends SceneTree
 ##     --rendering-driver opengl3 --resolution 1280x720 -s res://scripts/dev_play_frames.gd \
 ##     -- --play --room=0 --at=400 --demo --from=9.5 --every=4 --count=16 --out=/tmp/striscia.png
 ## Avvia il menu come main.tscn (che legge gli stessi argomenti --play/--room/--at/--demo), poi da
-## --from secondi salva --count ritagli 300x300 centrati sul giocatore, uno ogni --every frame.
+## --from secondi salva --count ritagli 300x300 centrati sul giocatore, uno ogni --every frame,
+## in una griglia di 6 colonne.
 
 ## Caricata a tempo d'esecuzione (non preload): gli autoload (Tuning, Audio) devono esistere già.
 const MAIN_SCENE := "res://scenes/main.tscn"
@@ -34,7 +35,9 @@ func _initialize() -> void:
 func _run() -> void:
 	root.add_child((load(MAIN_SCENE) as PackedScene).instantiate())
 	await create_timer(_from).timeout
-	var strip := Image.create(CROP.x * _count, CROP.y, false, Image.FORMAT_RGBA8)
+	var cols := mini(_count, 6)
+	var rows := ceili(_count / float(cols))
+	var strip := Image.create(CROP.x * cols, CROP.y * rows, false, Image.FORMAT_RGBA8)
 	for i in _count:
 		for f in _every:
 			await process_frame
@@ -49,7 +52,7 @@ func _run() -> void:
 			center = p.get_global_transform_with_canvas().origin + Vector2(0, -20)
 		var r := Rect2i(Vector2i(center) - CROP / 2, CROP)
 		r.position = r.position.clamp(Vector2i.ZERO, shot.get_size() - CROP)
-		strip.blit_rect(shot, r, Vector2i(i * CROP.x, 0))
+		strip.blit_rect(shot, r, Vector2i((i % cols) * CROP.x, (i / cols) * CROP.y))
 	strip.save_png(_out)
 	print("striscia salvata: ", _out)
 	quit()

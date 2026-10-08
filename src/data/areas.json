@@ -1,5 +1,5 @@
 {
-	"_doc": "Strati dipinti e vita di ogni area (immagini in src/assets/art/areas/). scroll: velocità di parallasse (1 = piano di gioco, <1 lontano, >1 primo piano). LAYERS — scale: pixel dell'immagine -> unità di mondo. anchor 'ground': la riga 'ground' dell'immagine poggia sulla linea di terra dello strato (coincide col pavimento quando la camera è in basso), 'lift' la alza; sotto viene steso 'fill'; 'rows' ritaglia le righe dell'immagine e 'fade' = [riga, riga] le dissolve in alto. anchor 'top': la fascia 'rows' resta agganciata al bordo alto dello schermo (cornice), spostata di 'offset_y'. center: colonna dell'immagine allineata al centro della stanza; flip: usa la copia specchiata. tint/haze/blur: vedi shaders/canvas_env_layer.gdshader. Le immagini si ripetono a specchio in orizzontale. threads (dentro uno strato o in figures): fili d'oro del Velo. anchors: punti d'origine in pixel dell'immagine (finestre accese); rise: fili che salgono verso la Reggia ('to' = [x del mondo, y sopra la linea di terra], pull = quanto piegano verso 'to', len = lunghezza, curl = curva laterale, wave = S, chance, per, bright); converge: fili tesi da ogni aggancio allo stesso punto 'to' (sag, chance, bright); garland: fili tesi tra agganci vicini (max_gap e max_dy in unità di strato, sag, chance); aspetto: color, alpha, width, sway, sway_speed, spark, spark_speed, spark_spacing, glow, core, rise_len = distanza dopo cui i fili verso la Reggia svaniscono (shaders/canvas_env_thread.gdshader). FOGS: banchi di nebbia (y e h relativi alla linea di terra dello strato, density, speed, scale, color facoltativo). RAYS: luce volumetrica (top/h relativi alla linea di terra, x = intervallo del mondo facoltativo, origin in UV del rettangolo, axis = direzione dei fasci in radianti, screen = agganciato allo schermo, dust = densità della polvere luminosa; altri parametri in shaders/canvas_env_rays.gdshader). FIGURES: cittadini addormentati in controluce (tex relativo a assets/art/, x del mondo, h in unità, flip). FIELDS: particelle per strato (kind: motes, fireflies, embers, rain_far, bokeh, dust; density = particelle per schermata; y = [alto, basso] relativi alla linea di terra; size/alpha/speed moltiplicatori; color). FLOCK: stormi nel cielo (kind bats|birds, every = secondi tra due stormi, count, y = fascia dello schermo 0-1, size, speed, color). GRASS (terrain.gd): ciuffi d'erba che ondeggiano su pavimento, blocchi e mensole (density 0-1, h, color, tip, sway, vines = quantità di rampicanti sui blocchi). CHAINS: catene appese sotto le mensole (chance, len). FLOOR: pavimento bagnato (reflect, wet, depth, tint, rings = cerchi delle gocce nelle pozzanghere; shaders/canvas_env_reflect.gdshader) e schizzi di pioggia (splashes = gocce per 100 unità).",
+	"_doc": "Strati dipinti e vita di ogni area (immagini in src/assets/art/areas/). scroll: velocità di parallasse (1 = piano di gioco, <1 lontano, >1 primo piano). LAYERS — scale: pixel dell'immagine -> unità di mondo. anchor 'ground': la riga 'ground' dell'immagine poggia sulla linea di terra dello strato (coincide col pavimento quando la camera è in basso), 'lift' la alza; sotto viene steso 'fill'; 'rows' ritaglia le righe dell'immagine e 'fade' = [riga, riga] le dissolve in alto. anchor 'top': la fascia 'rows' resta agganciata al bordo alto dello schermo (cornice), spostata di 'offset_y'. center: colonna dell'immagine allineata al centro della stanza; flip: usa la copia specchiata. tint/haze/blur: vedi shaders/canvas_env_layer.gdshader. Le immagini si ripetono a specchio in orizzontale. threads (dentro uno strato o in figures): fili d'oro del Velo. anchors: punti d'origine in pixel dell'immagine (finestre accese); rise: fili che salgono verso la Reggia ('to' = [x del mondo, y sopra la linea di terra], pull = quanto piegano verso 'to', len = lunghezza, curl = curva laterale, wave = S, chance, per, bright); converge: fili tesi da ogni aggancio allo stesso punto 'to' (sag, chance, bright); garland: fili tesi tra agganci vicini (max_gap e max_dy in unità di strato, sag, chance); aspetto: color, alpha, width, sway, sway_speed, spark, spark_speed, spark_spacing, glow, core, rise_len = distanza dopo cui i fili verso la Reggia svaniscono (shaders/canvas_env_thread.gdshader). FOGS: banchi di nebbia (y e h relativi alla linea di terra dello strato, density, speed, scale, color facoltativo). RAYS: luce volumetrica (top/h relativi alla linea di terra, x = intervallo del mondo facoltativo, origin in UV del rettangolo, axis = direzione dei fasci in radianti, screen = agganciato allo schermo, dust = densità della polvere luminosa; altri parametri in shaders/canvas_env_rays.gdshader). FIGURES: cittadini addormentati in controluce (tex relativo a assets/art/, x del mondo, h in unità, flip). Tenerli ad almeno 180 unità dalla x dei personaggi con cui si parla (npcs in room.gd), altrimenti la parallasse li sovrappone, e non usare la stessa immagine di un personaggio presente nell'area. FIELDS: particelle per strato (kind: motes, fireflies, embers, rain_far, bokeh, dust; density = particelle per schermata; y = [alto, basso] relativi alla linea di terra; size/alpha/speed moltiplicatori; color). FLOCK: stormi nel cielo (kind bats|birds, every = secondi tra due stormi, count, y = fascia dello schermo 0-1, size, speed, color). GRASS (terrain.gd): ciuffi d'erba che ondeggiano su pavimento, blocchi e mensole (density 0-1, h, color, tip, sway, vines = quantità di rampicanti sui blocchi). CHAINS: catene appese sotto le mensole (chance, len). FLOOR: pavimento bagnato (reflect, wet, depth, tint, rings = cerchi delle gocce nelle pozzanghere; shaders/canvas_env_reflect.gdshader) e schizzi di pioggia (splashes = gocce per 100 unità).",
 	"piazza": {
 		"terrain_tint": "#c9d0e2",
 		"layers": [
@@ -58,9 +58,9 @@
 				"core": 0.13
 			},
 			"list": [
-				{"tex": "characters/cittadini/uomo.png", "x": 420, "h": 108},
+				{"tex": "characters/cittadini/uomo.png", "x": 650, "h": 108},
 				{"tex": "characters/cittadini/anziano.png", "x": 1180, "flip": true, "h": 100},
-				{"tex": "characters/cittadini/madre_e_figlia.png", "x": 1560, "h": 104},
+				{"tex": "characters/cittadini/ragazzo.png", "x": 1560, "h": 92},
 				{"tex": "characters/cittadini/lavandaia.png", "x": 2120, "flip": true, "h": 102}
 			]
 		},
@@ -145,7 +145,7 @@
 				"rise_len": 480
 			},
 			"list": [
-				{"tex": "characters/cittadini/anziano.png", "x": 560, "h": 100},
+				{"tex": "characters/cittadini/anziano.png", "x": 300, "h": 100},
 				{"tex": "characters/cittadini/ragazzo.png", "x": 1350, "flip": true, "h": 92},
 				{"tex": "characters/cittadini/uomo.png", "x": 1960, "flip": true, "h": 108}
 			]
@@ -226,7 +226,7 @@
 				"spark_speed": 90,
 				"rise_len": 480
 			},
-			"list": [{"tex": "characters/cittadini/madre_e_figlia.png", "x": 760, "h": 104}, {"tex": "characters/cittadini/anziano.png", "x": 1980, "flip": true, "h": 100}]
+			"list": [{"tex": "characters/cittadini/madre_e_figlia.png", "x": 760, "h": 104}, {"tex": "characters/cittadini/uomo.png", "x": 1980, "flip": true, "h": 108}]
 		},
 		"fields": [
 			{"kind": "fireflies", "scroll": 0.5, "z": -27, "density": 40, "size": 0.55, "alpha": 0.6},
@@ -311,9 +311,9 @@
 				"rise_len": 480
 			},
 			"list": [
-				{"tex": "characters/cittadini/lavandaia.png", "x": 380, "h": 102},
+				{"tex": "characters/cittadini/anziano.png", "x": 80, "h": 100},
 				{"tex": "characters/cittadini/ragazzo.png", "x": 1420, "flip": true, "h": 92},
-				{"tex": "characters/cittadini/madre_e_figlia.png", "x": 2280, "flip": true, "h": 104}
+				{"tex": "characters/cittadini/madre_e_figlia.png", "x": 1900, "flip": true, "h": 104}
 			]
 		},
 		"fields": [

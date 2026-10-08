@@ -12,7 +12,7 @@ extends SceneTree
 ##   fendente.png    8 istanti del fendente (anticipo, colpo, oltre, rientro)
 ##   gioco_ambiente.png  come gioco.png con la tinta di tre aree; le ultime 4 rivolte a sinistra, luce da destra
 ##   dettaglio.png   figura grande senza/con chiaroscuro, e una posa di corsa
-##   salto.png       14 istanti di un salto con atterraggio: transizioni e moto secondario
+##   salto.png       16 istanti di un salto con doppio salto e capriola, atterraggio e ripresa
 ## e stampa "RIG OK" alla fine. Non tocca il gioco: è uno strumento di sviluppo.
 
 const CharRigScript := preload("res://game/char_rig.gd")
@@ -155,17 +155,19 @@ func _run_sequence() -> void:
 	var speed := 270.0
 	var phase := 0.0
 	var frames: Array[Dictionary] = []
+	# Fase al passo coi piedi, come nel giocatore (altezza di gioco 84 per la velocità 270).
+	var rate := CharRigScript.run_rate(speed, 1.0, 84.0)
 	for f in 240:
-		phase += dt * speed * 0.048
+		phase += dt * rate
 		r.set_target(CharRigScript.pose_run(phase))
 		r.advance(dt, Vector2(speed, 0.0))
 	# Un passo intero (2π) diviso in 12 istanti, fotografando la posa con le molle vere.
-	var per_frame := TAU / 12.0 / (speed * 0.048)
+	var per_frame := TAU / 12.0 / rate
 	var copies: Array[Node2D] = []
 	for i in 12:
 		var t := 0.0
 		while t < per_frame:
-			phase += dt * speed * 0.048
+			phase += dt * rate
 			r.set_target(CharRigScript.pose_run(phase))
 			r.advance(dt, Vector2(speed, 0.0))
 			t += dt
@@ -183,7 +185,7 @@ func _run_sequence() -> void:
 ## Un salto con atterraggio e ripresa, a 60 fps simulati: 14 istanti per vedere le transizioni
 ## morbide (set_target/advance) e il moto secondario di cappello, sciarpa e orlo.
 func _jump_sequence() -> void:
-	var size := Vector2i(2600, 520)
+	var size := Vector2i(3000, 620)
 	var vp := _viewport(size)
 	var scale := 0.3
 	var r: Node2D = CharRigScript.new()
@@ -195,15 +197,27 @@ func _jump_sequence() -> void:
 	var y := 0.0
 	var air := false
 	var copies: Array[Node2D] = []
-	var shots := [0.05, 0.12, 0.2, 0.3, 0.4, 0.5, 0.58, 0.64, 0.7, 0.76, 0.84, 0.95, 1.1, 1.3]
+	var shots := [0.05, 0.15, 0.25, 0.32, 0.38, 0.44, 0.5, 0.56, 0.62, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.35]
+	var spin_t := -1.0
 	var next := 0
 	# Fermo per mezzo secondo, poi stacco a 0.5 s, atterraggio, ripresa.
-	for f in 120:
+	for f in 140:
 		t = f * dt - 0.5
 		if t >= 0.0 and t < dt:
 			vy = -560.0
 			air = true
 			r.squash = 0.12
+		# Doppio salto 0.28 s dopo lo stacco, con la capriola come nel giocatore.
+		if t >= 0.28 and t < 0.28 + dt:
+			vy = -500.0
+			spin_t = 0.0
+		if spin_t >= 0.0:
+			spin_t += dt
+			var k := clampf(spin_t / 0.34, 0.0, 1.0)
+			r.spin = TAU * k * k * (3.0 - 2.0 * k)
+			if k >= 1.0:
+				spin_t = -1.0
+				r.spin = 0.0
 		if air:
 			vy += 1700.0 * (1.5 if vy > 0.0 else 1.0) * dt
 			y += vy * dt
@@ -212,7 +226,12 @@ func _jump_sequence() -> void:
 				air = false
 				vy = 0.0
 				r.squash = -0.22
-		r.set_target(CharRigScript.pose_air(vy) if air else CharRigScript.pose_idle(t))
+		var target: Dictionary = CharRigScript.pose_idle(t)
+		if spin_t >= 0.0:
+			target = CharRigScript.pose_double_jump()
+		elif air:
+			target = CharRigScript.pose_air(vy)
+		r.set_target(target)
 		r.advance(dt, Vector2(60.0, vy))
 		if next < shots.size() and t >= shots[next]:
 			var c: Node2D = r.make_ghost(Color.WHITE)

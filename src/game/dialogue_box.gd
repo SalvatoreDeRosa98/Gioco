@@ -151,8 +151,8 @@ func _show_choice() -> void:
 		_who = ""
 		_name = ""
 		_gesture = true
-		_set_text(prompt)
 		_item = null
+		_set_text(prompt)
 	_options = _choice.get("options", [])
 	_sel = 0
 	_opt_k = 0.0
