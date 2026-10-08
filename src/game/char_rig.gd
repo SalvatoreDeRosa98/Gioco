@@ -496,6 +496,46 @@ static func pose_dead() -> Dictionary:
 	}
 
 
+static func pose_parry() -> Dictionary:
+	return {
+		"leg_front": Vector2(-0.2, 0.1), "leg_back": Vector2(0.3, -0.1), "lean": -0.1, "tilt": 0.0,
+		"squash": -0.05, "breath": 0.0, "arm": 0.3, "sword": -1.2, "hem_open": 0.1, "hem_drag": 0.0,
+		"plant": 1.0,
+	}
+
+
+static func pose_wall() -> Dictionary:
+	return {
+		"leg_front": Vector2(-0.3, 0.4), "leg_back": Vector2(0.2, 0.8), "lean": 0.1, "tilt": 0.0,
+		"squash": 0.0, "breath": 0.0, "arm": -0.4, "sword": -0.5, "hem_open": 0.2, "hem_drag": -0.1,
+		"plant": 0.0,
+	}
+
+
+static func pose_grapple() -> Dictionary:
+	return {
+		"leg_front": Vector2(-0.2, 0.2), "leg_back": Vector2(0.1, 0.5), "lean": 0.3, "tilt": 0.0,
+		"squash": -0.1, "breath": 0.0, "arm": 0.6, "sword": -0.2, "hem_open": 0.4, "hem_drag": 0.5,
+		"plant": 0.0,
+	}
+
+
+static func pose_heal() -> Dictionary:
+	return {
+		"leg_front": Vector2(-0.1, 0.0), "leg_back": Vector2(0.1, 0.0), "lean": 0.15, "tilt": 0.0,
+		"squash": 0.05, "breath": 1.0, "arm": -0.1, "sword": 0.4, "hem_open": 0.0, "hem_drag": 0.0,
+		"plant": 1.0,
+	}
+
+
+static func pose_hammer(k: float) -> Dictionary:
+	return {
+		"leg_front": Vector2(-0.5, 0.2), "leg_back": Vector2(0.5, -0.2), "lean": 0.2 + 0.2 * k, "tilt": 0.0,
+		"squash": 0.0, "breath": 0.0, "arm": -0.2 + k, "sword": 0.5 - k, "hem_open": 0.2, "hem_drag": 0.1,
+		"plant": 1.0,
+	}
+
+
 ## Mescola due pose (stesse chiavi) con [param k] 0..1; i booleani passano a metà.
 static func blend(a: Dictionary, b: Dictionary, k: float) -> Dictionary:
 	var out := {}
@@ -718,3 +758,5 @@ static func _make_mesh(verts: PackedVector2Array, uvs: PackedVector2Array, idx: 
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return mesh
+
+
