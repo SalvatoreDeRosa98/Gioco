@@ -74,6 +74,8 @@ func _draw() -> void:
 	_draw_vitals()
 	_draw_area_title(vp)
 	_draw_boss(vp)
+	if world.player.invulnerable:
+		Art.text(self, Art.body_font(), Vector2(0, 28), "SVILUPPATORE · NESSUN DANNO", 18, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if _toast_t > 0.0:
 		var a := minf(1.0, _toast_t * 2.0)
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 118.0), _toast_text, 28, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)

@@ -141,6 +141,10 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F12 and event.ctrl_pressed and event.shift_pressed:
+		_toggle_developer_mode()
+		get_viewport().set_input_as_handled()
+		return
 	if _shop != null and _shop.opened:
 		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("shop"):
 			_shop.hide_shop()
@@ -157,6 +161,17 @@ func _input(event: InputEvent) -> void:
 		exit_requested.emit()
 
 
+## Comando locale di test: non viene registrato nel salvataggio.
+func _toggle_developer_mode() -> void:
+	if player.dead:
+		_hud.toast("Riprendi la partita prima di attivare la modalità sviluppatore")
+		return
+	player.invulnerable = not player.invulnerable
+	if player.invulnerable:
+		player.hp = player.max_hp
+	_hud.toast("Sviluppatore: nessun danno" if player.invulnerable else "Sviluppatore disattivato")
+
+
 func _process(delta: float) -> void:
 	if _shop != null and _shop.opened:
 		return
@@ -164,8 +179,11 @@ func _process(delta: float) -> void:
 		_demo_input(delta)
 	_update_talk(delta)
 	_update_stations()
+	var previous_room := room_index
 	_update_branch()
-	_update_forge_exit()
+	# La pressione che entra nella fucina non deve attivare anche la sua uscita.
+	if room_index == previous_room:
+		_update_forge_exit()
 	var cam := get_viewport().get_camera_2d()
 	var center: Vector2 = cam.get_screen_center_position() if cam else room.get("size", Vector2(1280, 720)) * 0.5
 	_backdrop.update_camera(center)
@@ -513,7 +531,7 @@ func _do_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
 
 
 func _hurt_player(dmg: int, from_x: float) -> void:
-	if game_over or player.dead or player.iframes > 0.0:
+	if game_over or player.dead or player.iframes > 0.0 or player.invulnerable:
 		return
 	if player.try_parry(from_x):
 		_parry_attack = story.get_var("father_registry") == "bruciato"

@@ -63,6 +63,26 @@ func _run() -> void:
 	boss._ai_custode(0)
 	check(player.hp == health - 1 and boss._sword_hit, "La parata annulla e consuma il fendente")
 	check(int(boss._cfg.burst_count) == 6 and float(boss._cfg.burst_speed) == 210, "Raffica ridotta e rallentata")
+	var shortcut := InputEventKey.new()
+	shortcut.keycode = KEY_F12
+	shortcut.ctrl_pressed = true
+	shortcut.shift_pressed = true
+	shortcut.pressed = true
+	world._input(shortcut)
+	player.iframes = 0
+	player.parry_window = 0
+	world._hurt_player(99, player.position.x - 30)
+	player.take_damage(99)
+	check(player.invulnerable and player.hp == player.max_hp and not player.dead, "Comando nascosto protegge da ogni danno")
+	world._go(0, true)
+	check(player.invulnerable, "Modalità sviluppatore mantiene la protezione cambiando stanza")
+	shortcut.echo = true
+	world._input(shortcut)
+	check(player.invulnerable, "La ripetizione del tasto non disattiva la modalità")
+	shortcut.echo = false
+	world._input(shortcut)
+	player.take_damage(1)
+	check(not player.invulnerable and player.hp == player.max_hp - 1, "Stesso comando ripristina i danni normali")
 	main.queue_free()
 	await process_frame
 	print("BOSS GATE TEST: %d failure(s)" % failures)

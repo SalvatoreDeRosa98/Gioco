@@ -23,6 +23,8 @@ const GHOST_EVERY := 0.03
 var hp := 5
 var max_hp := 5
 var dead := false
+## Attivata soltanto dal comando nascosto per le prove di sviluppo.
+var invulnerable := false
 ## Secondi di invulnerabilità rimasti dopo un colpo subito.
 var iframes := 0.0
 var parry_window := 0.0
@@ -460,6 +462,8 @@ func _draw_slash() -> void:
 
 ## Toglie punti vita; a zero Ferruccio cade. Lampo bianco e scossa di camera.
 func take_damage(dmg: int) -> void:
+	if invulnerable:
+		return
 	hp = maxi(0, hp - dmg)
 	dead = hp <= 0
 	_flash = 1.0
