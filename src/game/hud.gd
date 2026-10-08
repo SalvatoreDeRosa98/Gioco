@@ -19,6 +19,7 @@ var _subtitle := ""
 var _title_t := -1.0
 var _end_title := ""
 var _end_sub := ""
+var _end_quote := ""
 var _end_t := -1.0
 var _hint_t := HINT_TIME
 var _coins_shown := 0.0
@@ -42,9 +43,12 @@ func toast(text: String) -> void:
 	_toast_t = TOAST_TIME
 
 
-func show_end(won: bool) -> void:
-	_end_title = "CASERTA È SALVA" if won else "LA REGGIA TI HA VINTO"
-	_end_sub = "Il Custode è caduto. La città respira di nuovo." if won else "Il Custode veglia ancora sul Cortile d'Onore."
+## Schermata finale. Senza testi usa quelli generici di vittoria o sconfitta; il finale della storia
+## passa titolo, sottotitolo e una citazione conclusiva (vedi data/dialogues.json, "finale").
+func show_end(won: bool, title: String = "", subtitle: String = "", quote: String = "") -> void:
+	_end_title = title if title != "" else ("CASERTA È SALVA" if won else "LA REGGIA TI HA VINTO")
+	_end_sub = subtitle if subtitle != "" else ("Il Custode è caduto. La città respira di nuovo." if won else "Il Custode veglia ancora sul Cortile d'Onore.")
+	_end_quote = quote
 	_end_t = 0.0
 
 
@@ -156,4 +160,10 @@ func _draw_end(vp: Vector2) -> void:
 	draw_line(Vector2(cx + 20, ly), Vector2(cx + 280, ly), Color(Art.OCRA, 0.7 * a), 1.5)
 	draw_colored_polygon(PackedVector2Array([Vector2(cx - 10, ly), Vector2(cx, ly - 7), Vector2(cx + 10, ly), Vector2(cx, ly + 7)]), Color(Art.OCRA, a))
 	Art.text(self, Art.body_font(), Vector2(0, ly + 46.0), _end_sub, 28, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
-	Art.text(self, Art.body_font(), Vector2(0, ly + 96.0), "Premi Esc per tornare al menu", 22, Color(Art.CREMA, 0.6 * a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+	var esc_y := ly + 96.0
+	if _end_quote != "":
+		# La citazione arriva dopo, più piano: è la frase che il giocatore si porta via.
+		var qa := clampf((_end_t - 1.8) / 1.5, 0.0, 1.0)
+		Art.text(self, Art.body_font(), Vector2(0, ly + 104.0), _end_quote, 23, Color(Art.OCRA.lightened(0.3), 0.85 * qa), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+		esc_y = ly + 158.0
+	Art.text(self, Art.body_font(), Vector2(0, esc_y), "Premi Esc per tornare al menu", 22, Color(Art.CREMA, 0.6 * a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)

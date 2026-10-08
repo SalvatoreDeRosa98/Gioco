@@ -41,8 +41,22 @@ func _run_auto_args() -> void:
 				if b.begins_with("--shot-at="):
 					delay = float(b.trim_prefix("--shot-at="))
 			_capture_later(a.trim_prefix("--shot="), delay)
+	if "--perf" in args:
+		_print_perf()
 	if "--play" in args:
 		get_tree().create_timer(1.0).timeout.connect(_on_play_pressed)
+
+
+## Solo per test: ogni 2 s stampa FPS, chiamate di disegno, oggetti e primitive del fotogramma.
+func _print_perf() -> void:
+	while true:
+		await get_tree().create_timer(2.0).timeout
+		print("perf fps=%d draw=%d obj=%d prim=%d nodi=%d" % [
+			Performance.get_monitor(Performance.TIME_FPS),
+			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+			Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
+			Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
+			Performance.get_monitor(Performance.OBJECT_NODE_COUNT)])
 
 
 ## Salva uno screenshot dopo qualche secondo (verifica visiva in locale).

@@ -403,6 +403,7 @@ func _look_for(target: Node2D) -> void:
 	if not _clear_line(global_position + Vector2(0, -half.y * 0.5), target.global_position):
 		return
 	_face_x(target.global_position.x)
+	_tgt_floor_y = INF
 	_enter("notice", _f("notice_time"))
 	if is_on_floor():
 		velocity.y = -_f("notice_hop")

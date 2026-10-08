@@ -135,6 +135,14 @@ func begin_talk(entry: Dictionary, player_x: float) -> void:
 		_face_target = signf(player_x - global_position.x)
 
 
+## Comparsa in scena (finale): parte trasparente e sfuma; con "arrive": "descend" scende dall'alto.
+func appear() -> void:
+	_alpha = 0.0
+	visible = true
+	if str(_cfg.get("arrive", "")) == "descend":
+		position = _home + Vector2(0, -40.0)
+
+
 func end_talk() -> void:
 	_talking = false
 	_voice = false
@@ -186,6 +194,9 @@ func _process(delta: float) -> void:
 	_alpha = move_toward(_alpha, 1.0 if _present else 0.0, delta / fade_time)
 	if not _present:
 		position += _drift * delta
+	elif position != _home:
+		# Arrivo dall'alto (vedi appear): scivola dolcemente al suo posto.
+		position = position.lerp(_home, 1.0 - exp(-3.0 * delta))
 	visible = _alpha > 0.002
 	if not visible:
 		return
@@ -225,11 +236,9 @@ func _update_attention(delta: float) -> void:
 				_face_target = _home_face
 	var turn_time := maxf(0.05, float(_set.get("turn_time", 0.2)))
 	_face = move_toward(_face, _face_target, delta * 2.0 / turn_time)
-	# Molla del sobbalzo: un piccolo slancio verso l'alto che si smorza da solo. Il passo è limitato:
-	# con un frame lungo (caricamento) la molla esploderebbe.
-	var dt := minf(delta, 1.0 / 30.0)
-	_hop_v += (-_hop * 260.0 - _hop_v * 13.0) * dt
-	_hop = clampf(_hop + _hop_v * dt, -0.5, 0.5)
+	var hop := spring_step(_hop, _hop_v, delta)
+	_hop = hop.x
+	_hop_v = hop.y
 
 	_prompt_a = move_toward(_prompt_a, 1.0 if focused and not _talking else 0.0, delta / 0.22)
 	_new_a = move_toward(_new_a, 1.0 if _has_new and not focused and not _talking else 0.0, delta / 0.6)
@@ -257,6 +266,15 @@ func _update_bark(delta: float) -> void:
 		if bool(_bark.get("once", false)):
 			world.story.mark_seen(str(_bark.get("id", key)))
 			_poll = 0.0
+
+
+## Molla del sobbalzo (posizione, velocità): un piccolo slancio che si smorza da solo.
+## Il passo è limitato e lo stiramento ha un tetto: con un frame lungo (caricamento della stanza)
+## la molla esplodeva e l'immagine diventava una colonna scura alta e stretta.
+static func spring_step(x: float, v: float, delta: float) -> Vector2:
+	var dt := minf(delta, 1.0 / 30.0)
+	v += (-x * 260.0 - v * 13.0) * dt
+	return Vector2(clampf(x + v * dt, -0.5, 0.5), v)
 
 
 func _bark_duration(line: Dictionary) -> float:

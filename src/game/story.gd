@@ -99,7 +99,8 @@ func times_seen(id: String) -> int:
 
 ## Vero se tutte le condizioni valgono. Chiavi: una variabile della bibbia (valore esatto,
 ## "" = non decisa, "*" = decisa, "!x" = diversa da x), "cleared" (stanza liberata, bool),
-## "seen" / "unseen" (id di dialogo o elenco di id). ctx porta lo stato della stanza.
+## "seen" / "unseen" (id di dialogo o elenco di id), "any" (elenco di condizioni: ne basta una).
+## ctx porta lo stato della stanza.
 func check(cond: Dictionary, ctx: Dictionary) -> bool:
 	for k in cond:
 		var want = cond[k]
@@ -115,6 +116,15 @@ func check(cond: Dictionary, ctx: Dictionary) -> bool:
 				for id in _as_list(want):
 					if times_seen(id) > 0:
 						return false
+			"any":
+				# Almeno uno dei gruppi di condizioni deve valere (es. "ha una prova": registro o Taddeo).
+				var ok := false
+				for sub in (want as Array):
+					if check(sub, ctx):
+						ok = true
+						break
+				if not ok:
+					return false
 			_:
 				if not match_value(get_var(str(k)), str(want)):
 					return false

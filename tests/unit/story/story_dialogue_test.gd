@@ -136,6 +136,32 @@ func test_begin_returns_copy_not_data() -> void:
 	_check((entry["lines"] as Array).size() == 1, "consumare le battute non deve toccare i dati")
 
 
+# ---------------------------------------------------------------- Personaggi (npc.gd)
+
+## Regressione: con un frame lungo (caricamento) la molla del sobbalzo esplodeva e l'immagine
+## del personaggio diventava una colonna scura alta e stretta.
+func test_npc_spring_long_frames_stays_bounded() -> void:
+	var npc_script = load("res://game/npc.gd")
+	var x := 0.0
+	var v := 2.4
+	for i in 20:
+		var r: Vector2 = npc_script.spring_step(x, v, 0.5)
+		x = r.x
+		v = r.y
+	_check(absf(x) <= 0.5, "lo stiramento resta piccolo anche con frame da mezzo secondo (x=%f)" % x)
+
+
+func test_npc_spring_settles_to_rest() -> void:
+	var npc_script = load("res://game/npc.gd")
+	var x := 0.0
+	var v := 2.4
+	for i in 180:
+		var r: Vector2 = npc_script.spring_step(x, v, 1.0 / 60.0)
+		x = r.x
+		v = r.y
+	_check(absf(x) < 0.01, "dopo tre secondi il sobbalzo è finito (x=%f)" % x)
+
+
 # ---------------------------------------------------------------- Dati veri (dialogues.json)
 
 func test_dialogues_json_is_consistent() -> void:

@@ -40,7 +40,7 @@
 			"rest_time_min": 1.2, "rest_time_max": 2.6,
 			"turn_time": 0.32,
 			"spawn_grace": 1.5,
-			"sight_range": 380, "sight_height": 150, "sight_behind": 110,
+			"sight_range": 380, "sight_height": 230, "sight_behind": 110,
 			"lose_range": 640,
 			"notice_time": 0.5, "notice_hop": 220, "notice_cooldown": 2.5,
 			"chase_speed": 185,

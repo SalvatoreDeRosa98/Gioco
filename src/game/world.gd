@@ -16,6 +16,7 @@ const TerrainScript := preload("res://game/terrain.gd")
 const DecorScript := preload("res://game/decor.gd")
 const NpcScript := preload("res://game/npc.gd")
 const DialogueBoxScript := preload("res://game/dialogue_box.gd")
+const FinaleScript := preload("res://game/finale.gd")
 const POST_SHADER := preload("res://game/shaders/post_screen_grade.gdshader")
 
 ## Secondi tra la morte e la ripartenza della stanza.
@@ -58,6 +59,9 @@ var _dialogue
 var _talk_npc: Node
 ## Secondi prima di ridare il controllo dopo un dialogo: il tasto che lo chiude non deve far saltare.
 var _talk_lock := 0.0
+## Finale della storia (game/finale.gd) e punto in cui è caduto il Custode.
+var _finale
+var _boss_fall := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -106,6 +110,8 @@ func _ready() -> void:
 	# Solo per test: --story=variabile:valore,... --cleared (stanza già liberata) --talk (vedi _test_talk).
 	_apply_test_story()
 	_load_room(start_room, true, "--cleared" in OS.get_cmdline_user_args())
+	if "--boss-defeated" in OS.get_cmdline_user_args():
+		get_tree().create_timer(1.5).timeout.connect(_test_defeat_boss)
 	if "--talk" in OS.get_cmdline_user_args():
 		get_tree().create_timer(5.0).timeout.connect(_test_talk)
 
@@ -330,7 +336,7 @@ func _check_cleared() -> void:
 	cleared[room_index] = true
 	_mark_cleared()
 	if room["boss"]:
-		_end_game(true)
+		_start_finale()
 	else:
 		var size: Vector2 = room["size"]
 		_spawn_pickup(Vector2(size.x * 0.5, float(room["floor"]) - 40.0), "centesimi", int(Tuning.data.rewards.room_clear_coins))
@@ -469,6 +475,8 @@ func _hit_enemy(e: Node, dmg: int, col: Color, dir: float, down: bool = false) -
 
 
 func _on_enemy_killed(e: Node) -> void:
+	if e.kind == "custode":
+		_boss_fall = e.global_position
 	_spawn_pickup(e.global_position, "centesimi", int(e.coins))
 	if e.kind != "custode" and _rng.randf() < float(Tuning.data.rewards.heal_chance):
 		_spawn_pickup(e.global_position + Vector2(0, -30), "mozzarella", 1)
@@ -610,9 +618,10 @@ func _update_talk(delta: float) -> void:
 		return
 	if _talk_npc != null and _talk_lock <= 0.0:
 		_talk_npc = null
-		_freeze_for_talk(false)
+		if not in_cutscene():
+			_freeze_for_talk(false)
 	var best: Node = null
-	if _talk_npc == null and not game_over and not player.dead and player.is_on_floor():
+	if _talk_npc == null and not game_over and not in_cutscene() and not player.dead and player.is_on_floor():
 		var st := Story.settings()
 		var rx := float(st.get("talk_radius_x", 78.0))
 		var ry := float(st.get("talk_radius_y", 90.0))
@@ -628,10 +637,11 @@ func _update_talk(delta: float) -> void:
 	for n in _npcs.get_children():
 		n.focused = n == best
 	if best and InputMap.has_action("interact") and Input.is_action_just_pressed("interact"):
-		_start_talk(best)
+		start_talk(best)
 
 
-func _start_talk(n: Node) -> void:
+## Apre il dialogo del personaggio (dal tasto "parla", dai test o dal finale).
+func start_talk(n: Node) -> void:
 	var entry := story.pick(n.key, story_ctx())
 	if entry.is_empty():
 		return
@@ -712,6 +722,66 @@ func _test_talk() -> void:
 	if target == null:
 		push_warning("--talk: nessun personaggio con cui parlare")
 		return
-	_start_talk(target)
+	start_talk(target)
 	for i in skip:
 		_dialogue.debug_skip()
+
+
+# ---------------------------------------------------------------- Finale
+
+## Il Custode è caduto: invece della schermata finale parte la sequenza di Gregorio e Violante.
+func _start_finale() -> void:
+	if _finale != null:
+		return
+	# Se Ferruccio è caduto nello stesso istante del Custode, si rialza: la storia continua.
+	_revive_player()
+	_finale = FinaleScript.new()
+	add_child(_finale)
+	var at := _boss_fall if _boss_fall != Vector2.ZERO else player.global_position + Vector2(player.facing * 160.0, 0)
+	_finale.start(self, at)
+
+
+## Vero mentre il finale è in corso: Ferruccio resta fermo anche tra un dialogo e l'altro.
+func in_cutscene() -> bool:
+	return _finale != null and _finale.running
+
+
+## Ferma (o libera) Ferruccio e i nemici durante una sequenza, come nei dialoghi.
+func hold(on: bool) -> void:
+	_freeze_for_talk(on)
+
+
+## Crea un personaggio fuori dalle liste della stanza (finale).
+func spawn_npc(key: String, pos: Vector2) -> Node2D:
+	var n = NpcScript.new()
+	n.setup(key, pos, self)
+	_npcs.add_child(n)
+	return n
+
+
+## Apre il riquadro con un dialogo senza personaggio in scena (epilogo del finale).
+func narrate(entry: Dictionary) -> void:
+	if entry.is_empty():
+		return
+	_dialogue.open(entry, story)
+
+
+## Materiale del post-processing: il finale lo vira verso la Libertà o la Concordia.
+func post_material() -> ShaderMaterial:
+	return _post_mat
+
+
+## Fine della storia: schermata finale con i testi del finale scelto.
+func finish_story(title: String, subtitle: String, quote: String) -> void:
+	game_over = true
+	victory = true
+	_hud.show_end(true, title, subtitle, quote)
+	Audio.stop_loops()
+
+
+## Solo per test (--boss-defeated, con --room=4): il Custode cade subito e parte il finale.
+func _test_defeat_boss() -> void:
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if e.kind == "custode":
+			_boss_fall = e.global_position
+			e.queue_free()

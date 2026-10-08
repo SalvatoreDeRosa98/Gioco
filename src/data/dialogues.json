@@ -85,7 +85,20 @@
 			"name": "Brigadiere Capuano",
 			"image": "res://assets/art/characters/guardie/guardia_baffi.png",
 			"height": 126
-		}
+		},
+		"gregorio": {
+			"name": "Gregorio",
+			"image": "res://assets/art/characters/gregorio.png",
+			"height": 134,
+			"shadow": 34
+		},
+		"violante_scesa": {
+			"name": "Violante",
+			"image": "res://assets/art/characters/violante.png",
+			"height": 118
+		},
+		"guardia": {"name": "Una guardia"},
+		"cittadino": {"name": "Un cittadino"}
 	},
 	"npcs": {
 		"tonino": {
@@ -445,6 +458,127 @@
 			"bark": {"id": "violante_ninna", "once": true, "radius": 1000, "delay": 2.5, "lines": [
 				{"who": "violante", "text": "Quando il giglio si addormenta, la luna ascolta e non si lamenta."}
 			]}
+		},
+		"gregorio_caduto": {
+			"character": "gregorio",
+			"face": -1,
+			"turn": "talk",
+			"verb": "Ascolta",
+			"dialogue": [
+				{"id": "gregorio_resa", "once": true, "lines": [
+					{"text": "Il Custode cade in ginocchio. Il giglio sul petto si incrina, poi si spezza: sotto l'elmo c'è un uomo."},
+					{"who": "gregorio", "text": "Ho protetto la porta per tutta la vita..."},
+					{"who": "gregorio", "text": "E non ho visto cosa entrava."}
+				], "choice": {
+					"prompt": "Il Custode respira ancora. Ferruccio può provare a parlargli, o restare con la spada alzata.",
+					"options": [
+						{"label": "Cerca di farlo ragionare", "set": {"gregorio_mercy": "dialogo"}, "lines": [
+							{"text": "Ferruccio gli mostra il registro, con il nome del padre cancellato e riscritto.", "if": {"father_registry": "conservato"}},
+							{"text": "Ferruccio gli mostra le carte che Taddeo ha lasciato lungo la strada.", "if": {"father_registry": "!conservato", "taddeo_trust": "perdonato"}},
+							{"who": "gregorio", "text": "Gaetano... Gli abbiamo fatto un torto terribile.", "if": {"any": [{"father_registry": "conservato"}, {"taddeo_trust": "perdonato"}]}},
+							{"who": "gregorio", "text": "Tuo padre era innocente.", "if": {"any": [{"father_registry": "conservato"}, {"taddeo_trust": "perdonato"}]}},
+							{"text": "Ferruccio non ha prove da mostrargli. Abbassa soltanto la spada.", "if": {"father_registry": "!conservato", "taddeo_trust": "!perdonato"}},
+							{"who": "gregorio", "text": "Non era un ordine del Re... Era una promessa fatta a mia moglie.", "if": {"father_registry": "!conservato", "taddeo_trust": "!perdonato"}},
+							{"who": "gregorio", "text": "Lei... crede ancora di poterla salvare."}
+						]},
+						{"label": "Tieni la spada alzata", "set": {"gregorio_mercy": "attacco"}, "lines": [
+							{"who": "gregorio", "text": "Un altro figlio viene a chiedermi conto dei padri."},
+							{"who": "gregorio", "text": "Non era un ordine del Re... Era una promessa fatta a mia moglie."},
+							{"who": "gregorio", "text": "Anche io avevo paura di perderla."},
+							{"who": "gregorio", "text": "Lei... crede ancora di poterla salvare."}
+						]}
+					]
+				}}
+			]
+		},
+		"violante_finale": {
+			"character": "violante_scesa",
+			"speakers": ["violante"],
+			"face": -1,
+			"turn": "talk",
+			"leave": "fade",
+			"when": {"violante_fate": "!uccisa"},
+			"dialogue": [
+				{"id": "violante_velo", "once": true, "lines": [
+					{"text": "Dal balcone scende una donna vestita di blu. Le torce del cortile si spengono una dopo l'altra."},
+					{"who": "violante", "text": "Gregorio? Avevi promesso che saremmo rimasti insieme."},
+					{"who": "violante", "text": "E tu devi essere Ferruccio. Pensavo di averti tolto abbastanza ricordi da farti riposare."},
+					{"who": "violante", "text": "Non ho mai odiato questa città. L'ho amata più di quanto meritasse.", "item": "fazzoletto_giglio"},
+					{"text": "Dalle sue dita partono fili d'oro. Attraversano il cortile e scendono su tutte le strade di Caserta."},
+					{"who": "violante", "text": "Se mi uccidi, torneranno la fame, l'odio e la paura. Se mi risparmi, continueranno a sorridere."},
+					{"who": "violante", "text": "Dimmi, Ferruccio. Chi di noi due è davvero un mostro?"}
+				], "choice": {
+					"prompt": "Quanto vale la felicità? Spezza il Velo, e tornerà anche il dolore. Risparmiala, e nessuno potrà più scegliere.",
+					"options": [
+						{"label": "Spezza il Velo", "set": {"violante_fate": "uccisa"}, "lines": [
+							{"text": "Ferruccio avanza. Violante non tenta di difendersi."},
+							{"who": "violante", "text": "Allora non hai imparato niente."},
+							{"text": "Il giglio ricamato si spegne. I fili che attraversano la città si spezzano."}
+						]},
+						{"label": "Risparmia Violante", "set": {"violante_fate": "risparmiata"}, "lines": [
+							{"text": "Ferruccio abbassa la spada."},
+							{"who": "violante", "text": "Lo sapevo. In fondo, anche tu desideri soltanto che il dolore finisca."},
+							{"text": "Violante raccoglie il giglio d'oro dal mantello del marito, e ricuce il Velo."},
+							{"who": "violante", "text": "Non sarai ricordato come un eroe. Ma potrai vivere in pace."}
+						]}
+					]
+				}}
+			]
+		}
+	},
+	"finale": {
+		"_doc": "Sequenza dopo la sconfitta del Custode (game/finale.gd). Tempi in secondi. Grading: nomi degli uniform di post_screen_grade.gdshader; i vettori sono [r, g, b].",
+		"times": {"gregorio_appears": 1.2, "gregorio_talk": 1.8, "soul": 2.6, "violante_talk": 2.6, "grade": 3.5, "epilogue": 0.8},
+		"violante_distance": 190,
+		"quote": "La libertà non promette la felicità. Promette soltanto che sarà tua la scelta.",
+		"endings": {
+			"uccisa": {
+				"title": "IL VELO È SPEZZATO",
+				"subtitle": "Il primo dono della libertà fu il diritto di odiarlo.",
+				"music": "piazza",
+				"grade": {
+					"tint": [1.1, 1.05, 0.97], "contrast": 1.1, "saturation": 1.6, "lift": 0.055,
+					"bloom_strength": 1.2, "vignette": 0.22,
+					"shadow_tint": [0.98, 1.0, 1.06], "highlight_tint": [1.14, 1.06, 0.9],
+					"wash_top": [0.05, 0.1, 0.18], "wash_bottom": [0.08, 0.05, 0.0]
+				},
+				"dialogue": {"id": "finale_liberta", "lines": [
+					{"text": "Per un istante non si sente nulla. Poi una donna comincia a piangere. Un bambino chiama sua madre."},
+					{"text": "Un uomo ride davvero, sorpreso dalla propria risata. Sopra Caserta il cielo torna azzurro."},
+					{"who": "guardia", "text": "La Signora! L'ha ammazzata! Ha ucciso anche il Custode!"},
+					{"who": "cittadino", "text": "Era lei che dava da mangiare ai nostri figli! Assassino!"},
+					{"who": "agnese", "text": "Ferruccio... ti prego. Non scappare. Posso ancora aiutarti!", "if": {"agnese_memory": "risvegliata"}},
+					{"who": "agnese", "text": "Sei tu... Sei davvero tu? Perché hai fatto questo?", "if": {"agnese_memory": "!risvegliata"}},
+					{"who": "tonino", "text": "Mi hai ridato mia moglie nei ricordi. Ma questo non ti dava diritto di togliere una vita!", "if": {"tonino_memory": "restituito"}},
+					{"who": "tonino", "text": "E tu saresti quello che ci ha salvati?", "if": {"tonino_memory": "!restituito"}},
+					{"who": "taddeo", "text": "Una volta ti ho consegnato per paura. Stavolta vieni con me di tua volontà!", "if": {"taddeo_trust": "perdonato"}},
+					{"text": "Ferruccio fugge nella notte, il registro sotto la sciarpa. Un giorno potrà riabilitare suo padre.", "if": {"father_registry": "conservato"}},
+					{"text": "Ferruccio fugge nella notte, con il solo ricordo di ciò che ha visto.", "if": {"father_registry": "!conservato"}}
+				]}
+			},
+			"risparmiata": {
+				"title": "LA CONCORDIA",
+				"subtitle": "Nessuno aveva più bisogno di essere salvato. Nessuno poteva più chiedere aiuto.",
+				"music": "menu",
+				"grade": {
+					"tint": [0.9, 0.96, 1.07], "contrast": 0.88, "saturation": 0.38, "lift": 0.025,
+					"bloom_strength": 0.35, "vignette": 0.62,
+					"shadow_tint": [0.94, 0.98, 1.06], "highlight_tint": [0.96, 0.99, 1.04],
+					"wash_top": [0.09, 0.1, 0.12], "wash_bottom": [0.05, 0.055, 0.065]
+				},
+				"dialogue": {"id": "finale_concordia", "lines": [
+					{"text": "I fili d'oro tornano a stendersi sulle case. Le finestre si illuminano, la gente riprende a sorridere."},
+					{"who": "tonino", "text": "Buongiorno, guagliò! Che bella giornata!"},
+					{"text": "Ferruccio guarda il cielo coperto."},
+					{"who": "tonino", "text": "Eh, bellissima. Proprio bellissima.", "if": {"tonino_memory": "!restituito"}},
+					{"text": "Tonino canticchia mentre sistema due piatti sul banco.", "if": {"tonino_memory": "restituito"}},
+					{"who": "tonino", "text": "Uno per me e uno per... boh. Sarà l'abitudine.", "if": {"tonino_memory": "restituito"}},
+					{"who": "agnese", "text": "Scusate... cercate qualcuno?"},
+					{"text": "Quando lui le passa davanti, Agnese si tocca il polso, proprio come faceva lui.", "if": {"agnese_memory": "risvegliata"}},
+					{"text": "Ferruccio stringe la sciarpa e passa oltre."},
+					{"text": "Il registro dice ancora la verità. Nessuno vuole più leggerlo.", "if": {"father_registry": "conservato"}}
+				]}
+			}
 		}
 	}
 }
