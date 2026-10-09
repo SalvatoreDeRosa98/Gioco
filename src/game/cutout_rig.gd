@@ -48,6 +48,9 @@ var _vel := Vector2.ZERO
 var _time := 0.0
 var _scarf := [0.0, 0.0, 0.0]
 var _scarf_v := [0.0, 0.0, 0.0]
+var _weapon_sprite: Sprite2D
+var _sword_texture: Texture2D
+var _hammer_texture: Texture2D
 
 
 func _ready() -> void:
@@ -82,6 +85,14 @@ func _ready() -> void:
 		if spr.far:
 			s.self_modulate = Color(far_tint[0], far_tint[1], far_tint[2])
 		_bones[spr.bone].add_child(s)
+		if spr.piece == "mano" and spr.bone == "wrist":
+			_weapon_sprite = s
+			_sword_texture = s.texture
+	if ResourceLoader.exists(RIG_PATH + "mano_martello.png"):
+		_hammer_texture = load(RIG_PATH + "mano_martello.png")
+	elif ResourceLoader.exists(RIG_PATH + "martello.png"):
+		_hammer_texture = load(RIG_PATH + "martello.png")
+	_update_weapon()
 	_apply(_sample("idle", 0.0))
 
 
@@ -147,6 +158,7 @@ func select_state(player: Node, running: bool) -> void:
 	if clip != _clip:
 		_clip = clip
 		_clip_t = 0.0
+		_update_weapon()
 	_progress = progress
 	_action_len = length
 	_squash = float(player._squash)
@@ -158,8 +170,20 @@ func current_clip() -> String:
 	return _clip
 
 
+func _update_weapon() -> void:
+	if _weapon_sprite == null or _hammer_texture == null or _sword_texture == null:
+		return
+	if _clip == "hammer":
+		if _weapon_sprite.texture != _hammer_texture:
+			_weapon_sprite.texture = _hammer_texture
+	else:
+		if _weapon_sprite.texture != _sword_texture:
+			_weapon_sprite.texture = _sword_texture
+
+
 ## Avanza la clip, applica la posa e il moto secondario della sciarpa.
 func advance(delta: float, velocity: Vector2) -> void:
+	_update_weapon()
 	_time += delta
 	_clip_t += delta * _speed_scale
 	_vel = velocity

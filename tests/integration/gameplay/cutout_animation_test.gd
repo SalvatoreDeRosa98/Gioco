@@ -45,8 +45,14 @@ func _run() -> void:
 	p.attack_down = false
 	p.parry_window = 0.1
 	rig.select_state(p, false)
-	check(rig.current_clip() == "parry", "Parata visibile")
 	p.parry_window = 0
+	p.hammer_time = p._cfg.hammer_time * 0.5
+	rig.select_state(p, false)
+	check(rig.current_clip() == "hammer", "Martello selezionato")
+	check(rig._weapon_sprite != null and rig._weapon_sprite.texture == rig._hammer_texture, "Sprite martello attiva durante l'azione martello")
+	p.hammer_time = 0
+	rig.select_state(p, false)
+	check(rig._weapon_sprite != null and rig._weapon_sprite.texture == rig._sword_texture, "Spada ripristinata dopo il martello")
 	p.dashing = true
 	rig.select_state(p, false)
 	rig.facing = -1

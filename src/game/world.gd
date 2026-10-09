@@ -80,6 +80,7 @@ var _talk_lock := 0.0
 ## Finale della storia (game/finale.gd) e punto in cui è caduto il Custode.
 var _finale
 var _boss_fall := Vector2.ZERO
+var _hitstop_id := 0
 
 
 func _ready() -> void:
@@ -290,6 +291,7 @@ func _apply_grade(th: Dictionary) -> void:
 # ---------------------------------------------------------------- Stanze
 
 func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
+	Engine.time_scale = 1.0
 	arena_active = false
 	_backdrop.modulate = Color.WHITE
 	if is_instance_valid(_arena):
@@ -549,8 +551,8 @@ func _fx(kind: String, pos: Vector2, col: Color, dir: float) -> void:
 	match kind:
 		"hit":
 			Fx.hit(fx_root, pos, col, dir)
-			Fx.hitstop(self, 0.045)
-			_shake_near(pos, 0.18)
+			Fx.hitstop(self, 0.06)
+			_shake_near(pos, 0.35)
 		"death":
 			Fx.death(fx_root, pos, col)
 			Fx.hitstop(self, 0.09)
@@ -574,14 +576,38 @@ func _shake_near(pos: Vector2, amount: float) -> void:
 		player.add_trauma(amount)
 
 
+## Micro-freeze hit-stop: rallenta brevemente il tempo per dare impatto e peso viscerale ai colpi.
+func _apply_hit_stop(duration: float = 0.06) -> void:
+	if not is_inside_tree():
+		return
+	_hitstop_id += 1
+	var current_id := _hitstop_id
+	Engine.time_scale = 0.05
+	await get_tree().create_timer(duration, true, false, true).timeout
+	if is_inside_tree() and _hitstop_id == current_id:
+		Engine.time_scale = 1.0
+
+
 # ---------------------------------------------------------------- Giocatore
 
-## Il giocatore ha colpito: cerca i nemici nell'area del fendente.
+## Il giocatore ha colpito: cerca i nemici nell'area del fendente o affondo.
 func _do_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
 	if game_over or player.dead:
 		return
-	var center := pos + Vector2(0, 42) if down else pos + Vector2(facing * 46.0, -6.0)
-	var half := Vector2(30, 32) if down else Vector2(40, 30)
+	var center: Vector2
+	var half: Vector2
+	if down:
+		# Colpo verso il basso (pogo): portata sotto i piedi
+		center = pos + Vector2(0.0, 42.0)
+		half = Vector2(30.0, 32.0)
+	elif player != null and player.slash_side > 0.0:
+		# Affondo ('slash_a'): allungo orizzontale in avanti con la lama
+		center = pos + Vector2(facing * 64.0, -12.0)
+		half = Vector2(48.0, 22.0)
+	else:
+		# Fendente ('slash_b'): arco verticale più ampio
+		center = pos + Vector2(facing * 46.0, -16.0)
+		half = Vector2(38.0, 36.0)
 	var bounce := false
 	var damage := 2 if _parry_attack else 1
 	_parry_attack = false
@@ -591,7 +617,12 @@ func _do_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
 		if _overlap(center, half, e.global_position, e.half):
 			if story.get_var("father_registry") == "conservato" and e.kind == "statua" and e.interrupt_charge():
 				_hud.toast("La carica della statua è stata interrotta")
-			_hit_enemy(e, damage, Color(1.0, 0.95, 0.85), facing, down)
+			var e_half: Vector2 = e.half if "half" in e else Vector2(20.0, 20.0)
+			var contact_pos := Vector2(
+				clampf(center.x, e.global_position.x - e_half.x, e.global_position.x + e_half.x),
+				clampf(center.y, e.global_position.y - e_half.y, e.global_position.y + e_half.y)
+			)
+			_hit_enemy(e, damage, Color(1.0, 0.95, 0.85), facing, down, contact_pos)
 			if down and air:
 				bounce = true
 	if bounce:
@@ -650,15 +681,30 @@ func _spawn_pickup(pos: Vector2, item: String, value: int) -> void:
 
 ## Colpo a un nemico: la spinta va nel verso del fendente (in basso per il colpo in picchiata);
 ## quanto lo sposta e lo stordisce lo decide il nemico (enemy.gd, take_hit).
-func _hit_enemy(e: Node, dmg: int, col: Color, dir: float, down: bool = false) -> void:
+func _hit_enemy(e: Node, dmg: int, col: Color, dir: float, down: bool = false, contact_pos: Vector2 = Vector2.ZERO) -> void:
+	if contact_pos == Vector2.ZERO:
+		contact_pos = e.global_position
 	var push := Vector2(dir * 0.35, 1.0).normalized() if down else Vector2(dir, -0.15).normalized()
 	var killed: bool = e.take_hit(dmg, push)
 	player.embers = mini(int(Tuning.data.player.ember_max), player.embers + 1)
+
+	# Feedback d'impatto viscerale (screen shake / trauma e hit-stop micro-freeze)
+	if player != null and player.has_method("add_trauma"):
+		player.add_trauma(0.35)
+	_apply_hit_stop(0.06)
+
+	# Scintille e impatto brillante nel punto esatto di contatto della lama
+	Fx.hit(fx_root, contact_pos, col, dir)
+	Fx.particles(fx_root, contact_pos, Color(1.0, 0.96, 0.75, 0.95), {
+		"texture": Art.streak_texture(), "amount": 8, "life": 0.18,
+		"dir": Vector2(0.0, 1.0) if down else Vector2(dir, -0.15),
+		"spread": 45.0, "vmin": 320.0, "vmax": 720.0, "damping": 1300.0,
+		"smin": 0.35, "smax": 0.75, "align": true,
+	})
+
 	if killed:
 		_fx("death", e.global_position, Art.enemy_color(e.kind), dir)
 		_on_enemy_killed(e)
-	else:
-		_fx("hit", e.global_position, col, dir)
 
 
 func _on_enemy_killed(e: Node) -> void:
