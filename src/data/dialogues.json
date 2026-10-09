@@ -815,11 +815,11 @@
 			"verb": "Ascolta",
 			"dialogue": [
 				{"id": "gregorio_resa", "once": true, "lines": [
-					{"text": "Il Custode cade in ginocchio. Il giglio sul petto si incrina, poi si spezza: sotto l'elmo c'è un uomo."},
+					{"text": "Donna Luciana cade in ginocchio. Il giglio sul petto si incrina, poi si spezza: sotto l'elmo c'è una donna."},
 					{"who": "gregorio", "text": "Ho protetto la porta per tutta la vita..."},
 					{"who": "gregorio", "text": "E non ho visto cosa entrava."}
 				], "choice": {
-					"prompt": "Il Custode respira ancora. Ferruccio può provare a parlargli, o restare con la spada alzata.",
+					"prompt": "Donna Luciana respira ancora. Ferruccio può provare a parlarle, o restare con la spada alzata.",
 					"options": [
 						{
 							"label": "Cerca di farlo ragionare",
@@ -1012,7 +1012,7 @@
 				"dialogue": {"id": "finale_liberta", "lines": [
 					{"text": "Per un istante non si sente nulla. Poi una donna comincia a piangere. Un bambino chiama sua madre."},
 					{"text": "Un uomo ride davvero, sorpreso dalla propria risata. Sopra Caserta il cielo torna azzurro."},
-					{"who": "guardia", "text": "La Signora! L'ha ammazzata! Ha ucciso anche il Custode!"},
+					{"who": "guardia", "text": "La Signora! L'ha ammazzata! Ha ucciso anche Donna Luciana!"},
 					{"who": "cittadino", "text": "Era lei che dava da mangiare ai nostri figli! Assassino!"},
 					{"who": "agnese", "text": "Ferruccio... ti prego. Non scappare. Posso ancora aiutarti!", "if": {"agnese_memory": "risvegliata"}},
 					{"who": "agnese", "text": "Sei tu... Sei davvero tu? Perché hai fatto questo?", "if": {"agnese_memory": "!risvegliata"}},

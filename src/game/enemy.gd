@@ -854,7 +854,7 @@ func _ai_custode(delta: float) -> void:
 		_phase_two = true
 		_state = "walk"
 		_state_t = 2.0
-		world._hud.toast("Il Custode spezza il sigillo: seconda fase")
+		world._hud.toast("Donna Luciana spezza il sigillo: seconda fase")
 		Fx.ring(world.fx_root, global_position, Art.OCRA, 130, 0.8)
 	velocity.y = minf(velocity.y + GRAVITY * delta, 1000.0)
 	var target: Node2D = world.alive_player()

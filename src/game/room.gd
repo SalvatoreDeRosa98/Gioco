@@ -125,7 +125,7 @@ const ROOMS := [
 	},
 	{
 		"name": "Cortile d'Onore",
-		"subtitle": "Il Custode della Reggia",
+		"subtitle": "Donna Luciana",
 		"theme": "oro",
 		"size": Vector2(1920, 1080),
 		"floor": 980.0,

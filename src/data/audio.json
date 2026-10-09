@@ -16,7 +16,7 @@
 	"sfx": {
 		"passo": {"files": ["sfx/passo_1.wav", "sfx/passo_2.wav", "sfx/passo_3.wav"], "db": 0.0, "pitch": 0.07},
 		"salto": {"files": ["sfx/salto.wav"], "db": 0.0, "pitch": 0.05},
-		"doppio_salto": {"files": ["sfx/doppio_salto.wav"], "db": 0.0, "pitch": 0.03},
+		"doppio_salto": {"files": ["sfx/doppio_salto.wav"], "db": 2.0, "pitch": 0.0},
 		"atterraggio": {"files": ["sfx/atterraggio.wav"], "db": 0.0, "pitch": 0.06},
 		"scatto": {"files": ["sfx/scatto.wav"], "db": 0.0, "pitch": 0.04},
 		"fendente": {"files": ["sfx/fendente_1.wav", "sfx/fendente_2.wav", "sfx/fendente_3.wav"], "db": 0.0, "pitch": 0.05},

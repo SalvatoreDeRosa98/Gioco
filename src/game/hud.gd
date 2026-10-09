@@ -48,7 +48,7 @@ func toast(text: String) -> void:
 ## passa titolo, sottotitolo e una citazione conclusiva (vedi data/dialogues.json, "finale").
 func show_end(won: bool, title: String = "", subtitle: String = "", quote: String = "") -> void:
 	_end_title = title if title != "" else ("CASERTA È SALVA" if won else "LA REGGIA TI HA VINTO")
-	_end_sub = subtitle if subtitle != "" else ("Il Custode è caduto. La città respira di nuovo." if won else "Il Custode veglia ancora sul Cortile d'Onore.")
+	_end_sub = subtitle if subtitle != "" else ("Donna Luciana è caduta. La città respira di nuovo." if won else "Donna Luciana veglia ancora sul Cortile d'Onore.")
 	_end_quote = quote
 	_end_t = 0.0
 
@@ -170,7 +170,7 @@ func _draw_boss(vp: Vector2) -> void:
 	var w := 620.0
 	var x := (vp.x - w) * 0.5
 	var y := vp.y - 70.0
-	Art.text(self, Art.title_wide(), Vector2(0, y - 16.0), "IL CUSTODE DELLA REGGIA", 22, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+	Art.text(self, Art.title_wide(), Vector2(0, y - 16.0), "DONNA LUCIANA", 22, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	var frac := clampf(float(boss.hp) / maxf(1.0, float(boss.max_hp)), 0.0, 1.0)
 	draw_rect(Rect2(x - 2, y - 2, w + 4, 12), Color(0, 0, 0, 0.7 * a))
 	Art.grad_rect(self, Rect2(x, y, w * frac, 8), Color(1.0, 0.72, 0.3, a), Color(0.6, 0.15, 0.08, a))
