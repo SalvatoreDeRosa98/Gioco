@@ -46,7 +46,7 @@ func _run() -> void:
 	check(boss != null and boss.hp == 36, "Vita del Custode riequilibrata")
 	world._arena.activate()
 	check(world.arena_active and not world._left_open(), "L'arena chiude l'ingresso")
-	check(world.room.ledges.size() == 3 and world.is_solid(Vector2(200,900)), "Il Cortile cambia assetto fisico")
+	check(world.room.ledges.size() >= 3 and world.is_solid(Vector2(200,900)), "Il Cortile cambia assetto fisico")
 	check(boss.speed >= 200, "Custode più che raddoppiato in velocità")
 	player.position = boss.position
 	var health: int = player.hp

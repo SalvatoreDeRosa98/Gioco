@@ -317,6 +317,8 @@ func _double_jump() -> void:
 		"damping": 60.0, "gravity": Vector2(0, 40), "smin": 0.08, "smax": 0.16, "radius": 10.0,
 	})
 	_sfx("doppio_salto")
+	if world and world.has_method("on_player_double_jump"):
+		world.on_player_double_jump()
 
 
 ## Atterraggio: schiacciamento e polvere in proporzione alla velocità di caduta.
@@ -556,6 +558,7 @@ func bounce() -> void:
 	_spin_t = -1.0
 	_squash = 0.2
 	_air_jumps = int(_cfg.air_jumps)
+	_sfx("salto")
 
 
 ## Cura canalizzata, presa al muro e catena: i valori provengono dal tuning.

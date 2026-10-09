@@ -136,8 +136,17 @@ func _draw() -> void:
 			"spettro": cue = "RAFFICA SPETTRALE"
 			_: cue = "ONDA A TERRA" if _pattern % 2 else "FENDENTE"
 		Art.text(self, Art.body_font(), Vector2(-100, -h - 5), cue, 14, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, 200)
+		var w_total := float(_cfg.windup)
+		var w_prog := clampf(1.0 - _timer / maxf(0.01, w_total), 0.0, 1.0)
+		if w_prog > 0.4:
+			var gleam_pos := Vector2(16.0, half.y - h * 0.6)
+			var g_alpha := clampf((w_prog - 0.4) / 0.6, 0.0, 1.0)
+			var g_len := 8.0 * g_alpha + (5.0 if w_prog > 0.8 else 0.0)
+			draw_line(gleam_pos - Vector2(g_len, 0), gleam_pos + Vector2(g_len, 0), Color(1.0, 0.9, 0.4, g_alpha), 2.0)
+			draw_line(gleam_pos - Vector2(0, g_len), gleam_pos + Vector2(0, g_len), Color(1.0, 0.9, 0.4, g_alpha), 2.0)
+			draw_circle(gleam_pos, 3.0 * g_alpha, Color(1.0, 1.0, 0.8, g_alpha))
 	if _windup or _swing > 0:
-		draw_arc(Vector2(18, 0), float(_cfg.reach), -1.0, 0.65, 24, Color(Art.OCRA, 0.8), 3 if _swing > 0 else 1, true)
+		draw_arc(Vector2(18, 0), float(_cfg.reach), -1.0, 0.65, 24, Color(Art.OCRA, 0.9 if _swing > 0 else 0.6), 3 if _swing > 0 else 1, true)
 	draw_set_transform(Vector2.ZERO)
 	Art.text(self, Art.body_font(), Vector2(-150, -h + half.y - 28), _cfg.name, 17, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 300)
 	draw_rect(Rect2(-45, -h + half.y - 16, 90, 4), Color(0, 0, 0, 0.7))

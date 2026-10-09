@@ -81,6 +81,7 @@ var _talk_lock := 0.0
 var _finale
 var _boss_fall := Vector2.ZERO
 var _hitstop_id := 0
+var _luciana_shout_cd := 0.0
 
 
 func _ready() -> void:
@@ -219,6 +220,7 @@ func _physics_process(delta: float) -> void:
 	_check_cleared()
 	_check_doors()
 	_check_death(delta)
+	_luciana_shout_cd = maxf(0.0, _luciana_shout_cd - delta)
 	Audio.set_loop_sfx("vespa_ronzio", _wasps_alive() > 0)
 
 
@@ -627,6 +629,19 @@ func _do_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
 				bounce = true
 	if bounce:
 		player.bounce()
+		_fx("shock", player.global_position + Vector2(0, PlayerScript.HALF.y), Color(1.0, 0.95, 0.7), player.facing)
+		player.add_trauma(0.2)
+
+
+## Reazione del boss quando Ferruccio urla "Luciana!" durante il doppio salto.
+func on_player_double_jump() -> void:
+	if _luciana_shout_cd > 0.0 or room_index != Room.BOSS_ROOM:
+		return
+	var b = boss()
+	if b and not b.is_queued_for_deletion() and b.hp > 0:
+		_luciana_shout_cd = 8.0
+		_hud.toast("Donna Luciana: «Come osi pronunciare il mio nome?!»")
+		_fx("shock", b.global_position, Art.OCRA, b.facing)
 
 
 func _hurt_player(dmg: int, from_x: float) -> void:

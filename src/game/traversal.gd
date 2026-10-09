@@ -72,6 +72,8 @@ func _physics_process(delta: float) -> void:
 		if rect.grow(12).has_point(player.position + Vector2(0, 24)):
 			if player.attacking > 0 and player.attack_down:
 				player.bounce()
+				Fx.dust(world.fx_root, player.position + Vector2(0, 24), 10)
+				player.add_trauma(0.18)
 			else:
 				world._hurt_player(1, player.position.x - player.facing)
 	queue_redraw()

@@ -33,6 +33,24 @@ func _draw_map() -> void:
 	var scale := minf(viewport.x / 1320.0, viewport.y / 720.0)
 	canvas.draw_set_transform((viewport - Vector2(1320,720) * scale) / 2, 0, Vector2.ONE * scale)
 	Art.text(canvas, Art.title_font(), Vector2(40, 45), "LE STRADE DELLA REGGIA", 25, Art.OCRA)
+	var seal_names := {
+		"market_seal": "Mercato",
+		"barracks_seal": "Caserma",
+		"sluice": "Cisterne",
+		"loom": "Telaio",
+		"bells": "Campanile",
+		"hammer_plan": "Martello",
+		"clock_memory": "Orologiaio",
+	}
+	var seal_count := Room.Expansion.seals_count(world.story)
+	Art.text(canvas, Art.title_font(), Vector2(40, 78), "SIGILLI: %d / 7" % seal_count, 16, Art.CREMA)
+	var sy := 100.0
+	for k in Room.Expansion.DISTRICT_SEALS:
+		var has_it: bool = world.story.times_seen(k) > 0
+		var col := Art.OCRA if has_it else Color(0.42, 0.44, 0.48)
+		var mark := "✔ " if has_it else "○ "
+		Art.text(canvas, Art.body_font(), Vector2(40, sy), mark + seal_names.get(k, k), 13, col)
+		sy += 18.0
 	var links: Array = []
 	for idx in PLACES:
 		for right in [false, true]:

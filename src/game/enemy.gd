@@ -224,7 +224,7 @@ static func _half_for(k: String) -> Vector2:
 		"statua":
 			return Vector2(20, 34)
 		"custode":
-			return Vector2(48, 64)
+			return Vector2(38, 64)
 		_:
 			return Vector2(20, 14)
 
@@ -1294,10 +1294,42 @@ func _draw_custode() -> void:
 	sq *= Vector2(_pose[P.SX], _pose[P.SY])
 	var base := _sprite_xf(Vector2(0, half.y + bob), CUSTODE_FEET, CUSTODE_SCALE, tilt + _pose[P.TILT] * 0.3, sq)
 	_piece(base, CUSTODE_TEX, Vector2.ZERO)
-	var sword_size := CUSTODE_SWORD.get_size() * (float(_cfg.sword_reach) / (CUSTODE_SWORD.get_width() * 0.84))
+	var sword_reach_f := float(_cfg.get("sword_reach", 120.0))
+	var sword_size := CUSTODE_SWORD.get_size() * (sword_reach_f / (CUSTODE_SWORD.get_width() * 0.84))
 	draw_set_transform(Vector2(facing * CUSTODE_HAND.x, CUSTODE_HAND.y), facing * sword_angle(), Vector2(facing, 1))
 	draw_texture_rect(CUSTODE_SWORD, Rect2(Vector2(-sword_size.x * 0.16, -sword_size.y * 0.5), sword_size), false)
+	if anim == "sword_windup":
+		var w_total := float(_cfg.get("sword_windup", 0.7))
+		var w_prog := clampf(1.0 - _state_t / maxf(0.001, w_total), 0.0, 1.0)
+		if w_prog > 0.35:
+			var tip_pos := Vector2(sword_size.x * 0.82, 0.0)
+			var glint_alpha := clampf((w_prog - 0.35) / 0.65, 0.0, 1.0)
+			var glint_len := 10.0 * glint_alpha + (6.0 if w_prog > 0.82 else 0.0)
+			draw_line(tip_pos - Vector2(glint_len, 0), tip_pos + Vector2(glint_len, 0), Color(1.0, 0.9, 0.45, glint_alpha), 2.0)
+			draw_line(tip_pos - Vector2(0, glint_len), tip_pos + Vector2(0, glint_len), Color(1.0, 0.9, 0.45, glint_alpha), 2.0)
+			draw_circle(tip_pos, 3.5 * glint_alpha, Color(1.0, 1.0, 0.85, glint_alpha))
+			if w_prog > 0.82:
+				var ring_r := 16.0 * (w_prog - 0.82) / 0.18
+				draw_arc(tip_pos, ring_r, 0, TAU, 16, Color(1.0, 0.45, 0.2, 0.9), 2.0)
 	draw_set_transform(Vector2.ZERO)
+	if anim == "sword_swing":
+		var s_total := float(_cfg.get("sword_swing", 0.4))
+		var s_prog := clampf(1.0 - _state_t / maxf(0.001, s_total), 0.0, 1.0)
+		var hand_pos := Vector2(facing * CUSTODE_HAND.x, CUSTODE_HAND.y)
+		var reach := sword_reach_f * 0.95
+		var a_start := -1.3 if facing > 0 else PI - 1.15
+		var a_end := 1.15 if facing > 0 else PI + 1.3
+		var a_cur := lerpf(a_start, a_end, s_prog)
+		var arc_alpha := clampf((1.0 - s_prog) * 0.85, 0.0, 1.0)
+		draw_arc(hand_pos, reach, minf(a_start, a_cur), maxf(a_start, a_cur), 16, Color(1.0, 0.78, 0.35, arc_alpha), 4.0, true)
+		draw_arc(hand_pos, reach * 0.94, minf(a_start, a_cur), maxf(a_start, a_cur), 16, Color(1.0, 0.35, 0.15, arc_alpha * 0.7), 2.0, true)
+	elif anim == "crouch":
+		var l_total := float(_cfg.get("leap_windup", 0.5))
+		var l_prog := clampf(1.0 - _state_t / maxf(0.001, l_total), 0.0, 1.0)
+		var feet_pos := Vector2(0, half.y)
+		var ring_r := 34.0 * (1.0 - l_prog * 0.5)
+		draw_arc(feet_pos, ring_r, 0, TAU, 20, Color(1.0, 0.65, 0.25, l_prog * 0.8), 2.5, true)
+		draw_arc(feet_pos, ring_r * 0.65, 0, TAU, 16, Color(1.0, 0.88, 0.4, l_prog * 0.9), 1.5, true)
 
 
 ## Aloni e luci che seguono l'immagine (aggiornati ogni frame).
@@ -1314,7 +1346,8 @@ func _update_glows() -> void:
 			var pulse := 0.5 + 0.5 * sin(_look_t * 4.0)
 			var at := (CUSTODE_LILY - CUSTODE_FEET) * CUSTODE_SCALE
 			_aura.position = Vector2(at.x * facing, half.y + at.y)
-			_aura.modulate = Color(1.0, 0.72, 0.32, 0.25 + 0.15 * pulse + 0.6 * charge)
+			var base_col := Color(1.0, 0.42, 0.22) if _phase_two else Color(1.0, 0.72, 0.32)
+			_aura.modulate = Color(base_col.r, base_col.g, base_col.b, (0.35 if _phase_two else 0.25) + 0.15 * pulse + 0.6 * charge)
 			_aura.scale = _aura_scale * (1.0 + 0.8 * charge)
 		"gatto":
 			var g := clampf(_pose[P.GLOW], 0.0, 1.2)

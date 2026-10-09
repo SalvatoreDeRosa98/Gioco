@@ -74,7 +74,16 @@ func _draw() -> void:
 	draw_texture_rect(IMAGE, Rect2(Vector2(-size.x / 2, half.y - size.y), size), false, Color.WHITE if _flash > 0 else Color(0.9, 0.8, 0.75))
 	draw_set_transform(Vector2.ZERO)
 	if _windup > 0:
+		var w_total := float(Tuning.data.progression.duelist_windup)
+		var w_prog := clampf(1.0 - _windup / maxf(0.01, w_total), 0.0, 1.0)
 		draw_arc(Vector2(facing * 22, -10), 30, -1.1, 1.1, 12, Art.OCRA, 3, true)
+		if w_prog > 0.4:
+			var gleam_pos := Vector2(facing * 32, -15)
+			var g_alpha := clampf((w_prog - 0.4) / 0.6, 0.0, 1.0)
+			var g_len := 7.0 * g_alpha + (4.0 if w_prog > 0.8 else 0.0)
+			draw_line(gleam_pos - Vector2(g_len, 0), gleam_pos + Vector2(g_len, 0), Color(1.0, 0.9, 0.45, g_alpha), 2.0)
+			draw_line(gleam_pos - Vector2(0, g_len), gleam_pos + Vector2(0, g_len), Color(1.0, 0.9, 0.45, g_alpha), 2.0)
+			draw_circle(gleam_pos, 2.5 * g_alpha, Color(1.0, 1.0, 0.8, g_alpha))
 	Art.text(self, Art.body_font(), Vector2(-100, -100), "Taddeo" if has_meta("taddeo_duel") else "Guardia della Reggia", 16, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 200)
 	draw_rect(Rect2(-30, -92, 60, 3), Color(0, 0, 0, 0.7))
 	draw_rect(Rect2(-30, -92, 60.0 * hp / max_hp, 3), Art.OCRA)
