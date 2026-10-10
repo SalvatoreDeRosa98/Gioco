@@ -262,6 +262,14 @@ func _physics_process(delta: float) -> void:
 			_ai_custode(delta)
 		_:
 			_ai_gatto(delta)
+	# Repulsione orizzontale morbida: evita l'accavallamento caotico tra nemici
+	if kind in ["gatto", "statua"]:
+		for other in get_tree().get_nodes_in_group("enemies"):
+			if other != self and is_instance_valid(other) and other is CharacterBody2D and other.kind in ["gatto", "statua", "guardia", "cavaliere"]:
+				var dx: float = global_position.x - other.global_position.x
+				if absf(dx) < 38.0 and absf(global_position.y - other.global_position.y) < 30.0:
+					var push_sign: float = signf(dx) if dx != 0.0 else (1.0 if get_instance_id() > other.get_instance_id() else -1.0)
+					velocity.x += push_sign * (38.0 - absf(dx)) * 4.0
 	if _knock_v != Vector2.ZERO:
 		velocity += _knock_v
 		_knock_v = _knock_v.move_toward(Vector2.ZERO, 1400.0 * delta)
@@ -408,9 +416,11 @@ func _ai_gatto(delta: float) -> void:
 			velocity.x = _air_vx
 			ballistic = true
 		"land":
+			_release_attack_token()
 			if _state_t >= _state_len:
 				_after_recover(target)
 		"hurt":
+			_release_attack_token()
 			# Spinta del colpo che si smorza: attrito pieno a terra, poco in aria.
 			accel = _f("accel") * 1.4 if on_floor else 250.0
 			ballistic = not on_floor and _state_t < 0.12
@@ -506,6 +516,8 @@ func _chase(target: Node2D, on_floor: bool) -> float:
 	if _pounce_cd <= 0.0 and absf(d.x) <= _f("pounce_range") and absf(d.x) >= _f("pounce_min_range") \
 			and ady > -_f("pounce_reach_up") and ady < 80.0 \
 			and _clear_line(global_position + Vector2(0, -half.y), target.global_position):
+		if world != null and world.has_method("request_attack_token") and not world.request_attack_token(self):
+			return _dir * run * 0.4
 		_enter("crouch", _f("pounce_windup"))
 		return 0.0
 	# 2) Il giocatore è più in alto: cerca una mensola o un blocco raggiungibile con un salto.
@@ -760,7 +772,10 @@ func _ai_vespa(delta: float) -> void:
 				_attack_cd -= delta
 				if _attack_cd <= 0.0 and global_position.distance_to(target.global_position) < _f("attack_range") \
 						and _clear_line(global_position, target.global_position):
-					_enter("windup", _f("windup_time"))
+					if world != null and world.has_method("request_attack_token") and not world.request_attack_token(self):
+						_attack_cd = 0.4
+					else:
+						_enter("windup", _f("windup_time"))
 		"windup":
 			# Telegrafo: frena, arretra un poco, vibra e si piega indietro (vibrazione e posa nel disegno).
 			steer = 7.0
@@ -795,6 +810,7 @@ func _ai_vespa(delta: float) -> void:
 			anim = _state
 			return
 		"retreat":
+			_release_attack_token()
 			var k := 1.0 - clampf(_state_t / maxf(_state_len, 0.01), 0.0, 1.0)
 			want = -_dive_dir * _f("retreat_speed") * k + Vector2(0, -60.0)
 			steer = 5.0
@@ -802,6 +818,7 @@ func _ai_vespa(delta: float) -> void:
 			if _state_t >= _state_len:
 				_start_orbit(target, 1.0)
 		"hurt":
+			_release_attack_token()
 			steer = 2.5
 			wobble = 0.0
 			if _state_t >= _state_len:
@@ -990,10 +1007,20 @@ func sword_angle() -> float:
 
 ## Colpo ricevuto. "push" è la direzione del colpo (dal giocatore verso il nemico): i nemici
 ## leggeri vengono spinti e storditi un attimo, statua e Custode quasi non si muovono.
+func _exit_tree() -> void:
+	_release_attack_token()
+
+
+func _release_attack_token() -> void:
+	if world != null and world.has_method("release_attack_token"):
+		world.release_attack_token(self)
+
+
 ## Ritorna true se il nemico è morto.
 func take_hit(dmg: int, push: Vector2 = Vector2.ZERO) -> bool:
 	hp -= dmg
 	flash = 1.0
+	_release_attack_token()
 	if hp <= 0:
 		_sfx("nemico_ucciso")
 		queue_free()

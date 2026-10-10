@@ -86,6 +86,9 @@ var _finale
 var _boss_fall := Vector2.ZERO
 var _hitstop_id := 0
 var _luciana_shout_cd := 0.0
+var _current_attacker: Node = null
+var _attack_token_timer := 0.0
+var _gate_hint_cd := 0.0
 
 
 func _ready() -> void:
@@ -247,6 +250,8 @@ func _physics_process(delta: float) -> void:
 	_check_doors()
 	_check_death(delta)
 	_luciana_shout_cd = maxf(0.0, _luciana_shout_cd - delta)
+	_attack_token_timer += delta
+	_gate_hint_cd = maxf(0.0, _gate_hint_cd - delta)
 	Audio.set_loop_sfx("vespa_ronzio", _wasps_alive() > 0)
 
 
@@ -426,6 +431,8 @@ func _left_open() -> bool:
 func _right_open() -> bool:
 	if room_index == 0:
 		return story.times_seen("lesson_menu") > 0
+	if room_index == 1:
+		return story.times_seen("ferruccio_identity") > 0
 	if room_index == Room.ARCHIVES_ROOM:
 		return story.get_var("father_registry") in ["conservato", "bruciato"] and Room.Expansion.archive_ready(story) and Room.Expansion.all_seals_ready(story)
 	if room_index == 8:
@@ -476,6 +483,8 @@ func _build_decor(th: Dictionary) -> void:
 
 
 func _clear_hostile() -> void:
+	_current_attacker = null
+	_attack_token_timer = 0.0
 	for group in ["enemies", "bullets", "pickups"]:
 		for n in get_tree().get_nodes_in_group(group):
 			n.queue_free()
@@ -517,6 +526,10 @@ func _check_doors() -> void:
 		return
 	if _right_open() and pos.x >= size.x - Room.EDGE - 10.0:
 		_go(Room.Expansion.edge(room_index, true), true)
+	elif not _right_open() and room_index == 1 and pos.x >= size.x - Room.EDGE - 50.0:
+		if _gate_hint_cd <= 0.0:
+			_gate_hint_cd = 4.0
+			_hud.toast("Il cancello della Villa è sbarrato: entra nella Fucina di Gaetano per sbloccare la via.")
 	elif _left_open() and pos.x <= Room.EDGE + 10.0:
 		if room_index == Room.EPILOGUE_ROOM:
 			_go(0, true)
@@ -732,6 +745,24 @@ func boss() -> Node:
 		if e.kind == "custode" and not e.is_queued_for_deletion():
 			return e
 	return null
+
+
+## Sistema a token di attacco: evita che più nemici si accaniscano contemporaneamente su Ferruccio.
+func request_attack_token(enemy: Node) -> bool:
+	if _current_attacker == enemy:
+		return true
+	if is_instance_valid(_current_attacker) and not _current_attacker.is_queued_for_deletion():
+		if _attack_token_timer < 2.5:
+			return false
+	_current_attacker = enemy
+	_attack_token_timer = 0.0
+	return true
+
+
+func release_attack_token(enemy: Node) -> void:
+	if _current_attacker == enemy:
+		_current_attacker = null
+		_attack_token_timer = 0.0
 
 
 # ---------------------------------------------------------------- Nemici, proiettili, raccolta
@@ -1307,7 +1338,8 @@ func _on_dialogue_effect(what: String) -> void:
 			stations[Room.save_station_id(Room.SECRET_ROOM)] = {"room": Room.SECRET_ROOM, "x": point[0], "y": point[1]}
 			apply_upgrades()
 			_build_stations()
-			_hud.toast("Hai ritrovato il tuo volto. Ora puoi custodire i ricordi alle incudini.")
+			refresh_routes()
+			_hud.toast("Hai ritrovato il tuo volto. Il cancello della Villa è sbloccato.")
 		"give_scarf":
 			upgrades["scarf"] = true
 			apply_upgrades()

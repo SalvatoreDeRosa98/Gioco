@@ -84,7 +84,8 @@ func _draw() -> void:
 		var color := Color(0.5, 0.75, 0.8) if done else Art.OCRA
 		if m.kind == "route":
 			var locked: bool = str(m.get("need", "")) != "" and world.story.times_seen(m.need) == 0
-			_archway(p, locked, i == selected)
+			var is_forge: bool = str(m.get("id", "")) == "forge_door" or int(m.get("target", -1)) == Room.SECRET_ROOM
+			_archway(p, locked, i == selected, is_forge)
 		elif m.kind == "fragment":
 			draw_texture_rect(LETTER, Rect2(p - Vector2(18, 46), Vector2(36, 40)), false, Color(1, 1, 1, 0.4 if done else 1))
 		else:
@@ -100,7 +101,7 @@ func _draw() -> void:
 
 ## Portale in pietra appoggiato al suolo, con la stessa pietra dipinta del terreno:
 ## saracinesca alzata e luce calda se il passaggio è aperto, grata abbassata se è chiuso.
-func _archway(base: Vector2, locked: bool, near: bool) -> void:
+func _archway(base: Vector2, locked: bool, near: bool, is_forge: bool = false) -> void:
 	var tint := _stone_tint()
 	var half := ARCH_OPEN * 0.5
 	var spring := base.y - ARCH_SPRING
@@ -174,6 +175,20 @@ func _archway(base: Vector2, locked: bool, near: bool) -> void:
 		var cr := Rect2(cx - ARCH_PILLAR * 0.5 - 5, spring - 7, ARCH_PILLAR + 10, 11)
 		draw_texture_rect_region(tex, cr, Rect2(900 + side * 300, cap.x, cr.size.x / 0.2, cr.size.y / 0.2), shade.lightened(0.06))
 		draw_rect(cr, Color(0, 0, 0, 0.55), false, 1.5)
+	if is_forge:
+		var plaque_y := spring - half - ARCH_PILLAR - 36.0
+		var plaque := Rect2(base.x - 120.0, plaque_y, 240.0, 28.0)
+		draw_rect(plaque, Color(0.06, 0.05, 0.04, 0.88))
+		draw_rect(plaque, Color(Art.OCRA, 0.9), false, 2.0)
+		Art.text(self, Art.body_font(), Vector2(base.x - 120.0, plaque_y + 19.0), "⚒ FUCINA DI GAETANO ⚒", 15, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, 240.0)
+		for k in 6:
+			var seed_k: float = float(k) * 1.37
+			var life_prog := fmod(_time * 0.45 + seed_k * 0.2, 1.0)
+			var ember_x := base.x + sin(_time * 1.8 + seed_k * 2.5) * 35.0 + (float(k) - 2.5) * 12.0
+			var ember_y := base.y - 40.0 - life_prog * 220.0
+			var ember_a := (1.0 - life_prog) * (0.8 + 0.2 * sin(_time * 5.0 + seed_k))
+			var ember_col := Color(1.0, 0.65 + 0.25 * sin(seed_k), 0.2, ember_a)
+			draw_circle(Vector2(ember_x, ember_y), 2.2 * (1.0 - life_prog * 0.4), ember_col)
 
 
 ## Colonna in conci, presa dalla stessa texture della pietra del pavimento.

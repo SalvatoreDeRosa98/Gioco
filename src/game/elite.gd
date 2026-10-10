@@ -104,10 +104,14 @@ func _physics_process(delta: float) -> void:
 			if distance > float(_cfg.range):
 				velocity.x = facing * float(_cfg.speed)
 			elif _timer <= 0:
-				_windup = true
-				_timer = float(_cfg.windup)
-				_aim = (target.position - position).normalized()
+				if world != null and world.has_method("request_attack_token") and not world.request_attack_token(self):
+					pass
+				else:
+					_windup = true
+					_timer = float(_cfg.windup)
+					_aim = (target.position - position).normalized()
 		elif _timer <= 0:
+			_release_attack_token()
 			_windup = false
 			_timer = float(_cfg.cooldown) * (0.8 if hp <= max_hp / 2 else 1.0)
 			_swing = 0.3
@@ -137,6 +141,14 @@ func _physics_process(delta: float) -> void:
 					else:
 						world.boss_sword_hit(position, position + Vector2(facing * float(_cfg.reach), 30), position.x)
 			_pattern += 1
+	# Repulsione orizzontale morbida: evita la sovrapposizione tra nemici
+	if kind != "spettro":
+		for other in get_tree().get_nodes_in_group("enemies"):
+			if other != self and is_instance_valid(other) and other is CharacterBody2D:
+				var dx: float = position.x - other.position.x
+				if absf(dx) < 38.0 and absf(position.y - other.position.y) < 35.0:
+					var push_sign: float = signf(dx) if dx != 0.0 else (1.0 if get_instance_id() > other.get_instance_id() else -1.0)
+					velocity.x += push_sign * (38.0 - absf(dx)) * 3.5
 	move_and_slide()
 	if _flash > 0:
 		_rig.set_action("hurt", 1.0 - _flash / .15)
@@ -149,8 +161,19 @@ func _physics_process(delta: float) -> void:
 	_rig.pose(_clock, facing, Color(1.4,1.25,1) if _flash > 0 else Color.WHITE, 0, _windup or _swing > 0, absf(velocity.x) > 1)
 	queue_redraw()
 
+
+func _exit_tree() -> void:
+	_release_attack_token()
+
+
+func _release_attack_token() -> void:
+	if world != null and world.has_method("release_attack_token"):
+		world.release_attack_token(self)
+
+
 ## Riceve colpi e restituisce true una volta sconfitto, lasciando al mondo ricompense e obiettivi.
 func take_hit(amount: int, push: Vector2 = Vector2.ZERO) -> bool:
+	_release_attack_token()
 	hp -= amount
 	_flash = 0.15
 	velocity += push * 80

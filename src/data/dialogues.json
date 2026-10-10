@@ -439,6 +439,9 @@
 			"turn": "never",
 			"dialogue": [
 				{"id": "forge_second_clue", "once": true, "lines": [{"who": "mariella", "text": "Dalla vecchia bottega sento ancora qualcuno battere il ferro. Cerca la porta oltre la mia vetrina."}]},
+				{"id": "mariella_forge_reminder", "when": {"unseen": "gaetano_fucina_lore"}, "cycle": [
+					[{"who": "mariella", "text": "La porta della fucina è proprio qui accanto. Entra: Mastro Gaetano aspetta te."}]
+				]},
 				{"id": "mariella_lettera", "once": true, "when": {"taddeo_trust": "perdonato"}, "lines": [
 					{"who": "mariella", "text": "Siete l'amico di mio fratello? Allora questa forse è per lui."},
 					{"who": "mariella", "text": "Stava nel mio grembiule. È la mia scrittura, ma non ricordo di averla scritta.", "item": "lettera_spago"},
