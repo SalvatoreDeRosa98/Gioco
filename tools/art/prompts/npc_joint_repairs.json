@@ -1,0 +1,98 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Edit target: the supplied transparent character cutout atlas. Keep EXACT same layout, separate parts, positions, sizes, silhouettes, face, costume, accessories, colors and hand-painted style. Only repair the artificial mannequin joints: replace ALL exposed tan/grey/brown oval end caps, hollow sockets, cut cross-sections or flat circular disks on torso shoulder, upper arms, elbows, wrists, thighs, knees and boots with continuous matching surrounding painted material (cloth, armor, skin or stone as appropriate). A sleeve top becomes a softly rounded cloth overlap end, no ellipse outline or contrasting disk. Torso shoulder sockets become uninterrupted matching sleeve fabric. Skin ends rounded softly, no dark seam across the cut. Armor overlap ends remain armor. Retain transparency and every separate part in precisely its original atlas cell. Do NOT assemble into a person, add parts, change poses or move/resize any piece. This is a 2D animation atlas with overlapping body parts, NOT a wooden doll. Preserve all texture away from those joint caps.",
+  "entries": [
+    {
+      "name": "lia",
+      "path": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-fa09152f-c571-4e91-aa22-ceb7be2288d6.png"
+    },
+    {
+      "name": "agnese",
+      "path": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-7a2e5b93-2e9b-4abf-996f-dd5bc74f1bb4.png"
+    },
+    {
+      "name": "assunta",
+      "path": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-0235e0f8-ac09-4e90-a4a7-bfc56dc5c3c1.png"
+    },
+    {
+      "name": "capitano",
+      "path": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-e64b45b7-6dad-472b-8193-74117821ddc9.png"
+    },
+    {
+      "name": "capuano",
+      "path": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-82d6b614-240a-49f0-b148-bcc4078e6071.png"
+    },
+    {
+      "name": "carmela",
+      "path": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-2a9130d7-0bfb-4b15-b9bc-ccf92e0d37f6.png"
+    },
+    {
+      "name": "gaetano",
+      "path": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-713e6e4a-d0d9-42ae-9442-de43aa09e1f0.png"
+    },
+    {
+      "name": "cesare",
+      "path": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-71e188ca-2a24-44b9-9ab6-c593c268c2ba.png"
+    },
+    {
+      "name": "custode",
+      "path": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-13eaa959-4f42-4ee7-980a-b5739b37e9fd.png"
+    },
+    {
+      "name": "don_ciccio",
+      "path": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-1de38e0e-ac3e-4fb4-9d3f-f23e16b1f361.png"
+    },
+    {
+      "name": "elsa",
+      "path": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-cab5ea7f-64fa-46cb-bae2-f4723c786e91.png"
+    },
+    {
+      "name": "gregorio",
+      "path": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-d0d739ec-d9b3-4ac3-b885-0aa4b6aacf99.png"
+    },
+    {
+      "name": "cavaliere",
+      "path": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-95258dc9-0700-4d37-8612-d034a40fb7d0.png"
+    },
+    {
+      "name": "bianca",
+      "path": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-aac6c7a9-954b-46a2-a88a-6dceef6ae9b3.png"
+    },
+    {
+      "name": "guardia",
+      "path": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-046af02b-5177-4b78-bdd9-ccf5f62ab88d.png"
+    },
+    {
+      "name": "madre",
+      "path": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-3c9664d2-be46-432c-8ddb-ce779f9091f4.png"
+    },
+    {
+      "name": "mariella",
+      "path": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-b948ae7d-ebb5-4848-8ffc-9254e2780ca7.png"
+    },
+    {
+      "name": "nunziatina",
+      "path": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-f3c397ff-f377-402e-aed3-e80af124144f.png"
+    },
+    {
+      "name": "statua",
+      "path": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-b88e2620-7782-46ac-8dac-79ee8b569c05.png"
+    },
+    {
+      "name": "taddeo",
+      "path": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-670cf56a-82cf-490c-a1ca-ae27532d3c44.png"
+    },
+    {
+      "name": "tonino",
+      "path": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-a35edaeb-bca0-4ace-b101-29587a1bb296.png"
+    },
+    {
+      "name": "violante",
+      "path": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-ba6d1e8f-8a61-403c-879e-fc33da6abab2.png"
+    },
+    {
+      "name": "spettro",
+      "path": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-c247fe85-5e08-4fde-99d7-22f66808b921.png"
+    }
+  ]
+}

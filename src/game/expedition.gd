@@ -49,6 +49,9 @@ func interact() -> void:
 ## Applica un varco, una leva o un frammento usando lo stesso stato persistente dei dialoghi.
 func activate(m: Dictionary) -> void:
 	if m.kind == "route":
+		if int(m.target) == Room.SECRET_ROOM:
+			world.enter_forge()
+			return
 		if str(m.get("need", "")) != "" and world.story.times_seen(m.need) == 0:
 			world._hud.toast("Passaggio chiuso: apri il meccanismo dall'altro lato")
 			return
@@ -92,7 +95,7 @@ func _draw() -> void:
 				var angle: float = a * TAU / 6 + (_time * 0.5 if done else 0)
 				draw_line(wheel, wheel + Vector2.from_angle(angle) * 22, color, 2, true)
 		if i == selected:
-			Art.text(self, Art.body_font(), p - Vector2(180, ARCH_SPRING + ARCH_R + 60 if m.kind == "route" else 86), "W / E  " + str(m.label), 19, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, 360)
+			Art.text(self, Art.body_font(), p - Vector2(180, ARCH_SPRING + ARCH_R + 60 if m.kind == "route" else 86), Controls.label("interact") + "  " + str(m.label), 19, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, 360)
 
 
 ## Portale in pietra appoggiato al suolo, con la stessa pietra dipinta del terreno:

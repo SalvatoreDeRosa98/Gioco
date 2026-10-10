@@ -1,0 +1,145 @@
+{
+  "tool": "Built-in image_gen.imagegen",
+  "prompt_base": "npc_puppet_atlas.txt",
+  "style_reference": "src/assets/art/characters/ferruccio.png",
+  "assets": [
+    {
+      "character": "agnese",
+      "identity_reference": "src/assets/art/characters/agnese.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-1d7c7194-b1d8-4e8b-8f1b-21955b01e6c1.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/agnese.png"
+    },
+    {
+      "character": "assunta",
+      "identity_reference": "src/assets/art/characters/cittadini/madre_e_figlia.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-ea9d5a80-6372-4752-82c1-0507bf4ef448.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/assunta.png"
+    },
+    {
+      "character": "bianca",
+      "identity_reference": "src/assets/art/characters/bianca.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-6f945e17-44ce-4f9b-9631-dabcbee616f7.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/bianca.png"
+    },
+    {
+      "character": "capitano",
+      "identity_reference": "src/assets/art/characters/guardie/guardia_anziana.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-bc5f4cd2-7b8d-41b9-85b9-0e4a3364610f.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/capitano.png"
+    },
+    {
+      "character": "capuano",
+      "identity_reference": "src/assets/art/characters/guardie/guardia_baffi.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-f4e20f3a-02df-4b99-9cda-0502aa94c71f.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/capuano.png"
+    },
+    {
+      "character": "carmela",
+      "identity_reference": "src/assets/art/characters/cittadini/lavandaia.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-ce052789-2fca-470b-9d80-fbf9c569434f.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/carmela.png"
+    },
+    {
+      "character": "cavaliere",
+      "identity_reference": "src/assets/art/props/statua_cavaliere.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-0bb30470-0dfa-424b-9fe2-e17ccfb4c8f7.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/cavaliere.png"
+    },
+    {
+      "character": "cesare",
+      "identity_reference": "src/assets/art/characters/cesare.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-d8fc53aa-000c-4c53-91bd-86783fd252ec.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/cesare.png"
+    },
+    {
+      "character": "custode",
+      "identity_reference": "src/assets/art/bosses/custode_corpo.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-a27a763b-8713-4f92-91cf-3cd532ed2c26.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/custode.png"
+    },
+    {
+      "character": "don_ciccio",
+      "identity_reference": "src/assets/art/characters/cittadini/anziano.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-b1f19f80-2ccb-4401-af90-dc6bfb057b82.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/don_ciccio.png"
+    },
+    {
+      "character": "elsa",
+      "identity_reference": "src/assets/art/characters/elsa.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-68a48622-5705-48d2-8e28-013323d692e3.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/elsa.png"
+    },
+    {
+      "character": "gaetano",
+      "identity_reference": "src/assets/art/characters/gaetano_v2.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-269b8c60-31fc-4e60-b369-609b92adac58.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/gaetano.png"
+    },
+    {
+      "character": "gregorio",
+      "identity_reference": "src/assets/art/characters/gregorio.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-f936d28c-8530-4315-a31f-d3692a21c4ee.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/gregorio.png"
+    },
+    {
+      "character": "guardia",
+      "identity_reference": "src/assets/art/characters/guardie/guardia_giovane.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-72badfce-b013-4633-b979-1906f312cd49.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/guardia.png"
+    },
+    {
+      "character": "lia",
+      "identity_reference": "src/assets/art/characters/lia.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-8f236329-78ff-475d-b6b8-561c3b68abea.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/lia.png"
+    },
+    {
+      "character": "madre",
+      "identity_reference": "src/assets/art/bosses/madre_marmo.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-4ae54c91-575b-4140-8e53-9e2459c5529c.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/madre.png"
+    },
+    {
+      "character": "mariella",
+      "identity_reference": "src/assets/art/characters/mariella.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-a4dce4b0-7b66-4d31-b51b-0a5ea73a0327.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/mariella.png"
+    },
+    {
+      "character": "nunziatina",
+      "identity_reference": "src/assets/art/characters/cittadini/madre_e_figlia.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-2f5e9ea8-0703-44c6-b073-979a701a2a3d.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/nunziatina.png"
+    },
+    {
+      "character": "spettro",
+      "identity_reference": "src/assets/art/bosses/regina_debiti.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-e18a70f4-0bc2-43d1-8f66-39eafd5f2475.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/spettro.png"
+    },
+    {
+      "character": "statua",
+      "identity_reference": "src/assets/art/enemies/statua.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-4b7cbfe2-7769-468f-8566-2dad76d620f7.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/statua.png"
+    },
+    {
+      "character": "taddeo",
+      "identity_reference": "src/assets/art/characters/taddeo.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-8a6a4800-79c8-4596-a01c-2c9f069cc575.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/taddeo.png"
+    },
+    {
+      "character": "tonino",
+      "identity_reference": "src/assets/art/characters/tonino.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-0e80f288-c1a4-4c30-b595-340a7a80b48e.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/tonino.png"
+    },
+    {
+      "character": "violante",
+      "identity_reference": "src/assets/art/characters/violante.png",
+      "selected_generation": "C:\\Users\\salva\\.codex\\generated_images\\01a12355-e16c-7612-ae97-d0c02cea1f1b\\exec-28738d9a-3f66-458d-8d2f-0b6d12ac0efc.png",
+      "project_asset": "src/assets/art/characters/npc_puppets/violante.png"
+    }
+  ]
+}

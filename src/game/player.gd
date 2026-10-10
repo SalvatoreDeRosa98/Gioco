@@ -46,6 +46,9 @@ var parry_window := 0.0
 var parry_cooldown := 0.0
 var _air_dash_used := false
 var world: Node
+## Doni narrativi: la sciarpa abilita lo scatto, Gaetano restituisce il volto.
+var scarf_unlocked := false
+var identity_restored := false
 
 # Stato di movimento e animazione (il mondo li legge e, nei dialoghi, li azzera).
 var facing := 1.0
@@ -211,7 +214,7 @@ func _physics_process(delta: float) -> void:
 
 	if is_on_floor():
 		_air_dash_used = false
-	if Input.is_action_just_pressed("dash") and _dash_cd <= 0.0 and _dash_t <= 0.0 and (is_on_floor() or not _air_dash_used):
+	if scarf_unlocked and Input.is_action_just_pressed("dash") and _dash_cd <= 0.0 and _dash_t <= 0.0 and (is_on_floor() or not _air_dash_used):
 		_air_dash_used = true
 		_dash_t = float(_cfg.dash_time)
 		_dash_cd = float(_cfg.dash_cooldown)
@@ -520,11 +523,13 @@ func try_parry(from_x: float) -> bool:
 
 ## Disponibilità reale dello scatto per l'HUD, compreso il limite in aria.
 func dash_status() -> String:
+	if not scarf_unlocked:
+		return "Scatto · Serve la sciarpa di Agnese"
 	if _dash_cd > 0.0:
-		return "C  Scatto %.1f s" % _dash_cd
+		return Controls.label("dash") + "  Scatto %.1f s" % _dash_cd
 	if _air_dash_used and not is_on_floor():
-		return "C  Atterra per scattare"
-	return "C  Scatto pronto"
+		return Controls.label("dash") + "  Atterra per scattare"
+	return Controls.label("dash") + "  Scatto pronto"
 
 
 func teleport(pos: Vector2) -> void:
@@ -573,7 +578,7 @@ func _update_tools(delta: float, axis: float, jump_pressed: bool) -> void:
 			_knock_t = 0.16
 			_air_jumps = int(_cfg.air_jumps)
 	grapple_anchor = Vector2.INF
-	var grapple_input := Input.is_action_pressed("grapple") or Input.is_physical_key_pressed(KEY_Q)
+	var grapple_input := Input.is_action_pressed("grapple") or Input.is_physical_key_pressed(KEY_Q) or Input.is_key_pressed(KEY_Q)
 	if world.upgrades.has("grapple") and grapple_input and is_instance_valid(world.traversal):
 		grapple_anchor = world.traversal.anchor(position, float(_cfg.grapple_range))
 		if grapple_anchor != Vector2.INF:
@@ -583,7 +588,7 @@ func _update_tools(delta: float, axis: float, jump_pressed: bool) -> void:
 			if position.distance_to(grapple_anchor) < 35:
 				velocity *= 0.2
 	var cost := int(_cfg.ember_cost)
-	var heal_input := Input.is_action_pressed("heal") or Input.is_physical_key_pressed(KEY_R)
+	var heal_input := Input.is_action_pressed("heal") or Input.is_physical_key_pressed(KEY_R) or Input.is_key_pressed(KEY_R)
 	if heal_input and is_on_floor() and axis == 0 and attacking == 0 and _dash_t <= 0 and hp < max_hp and embers >= cost:
 		_heal_t += delta
 		velocity.x = 0

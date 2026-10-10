@@ -19,6 +19,7 @@ func _run() -> void:
 	world.set_physics_process(false)
 	world.set_process(false)
 	world.player.set_physics_process(false)
+	world.story.seen["ferruccio_identity"] = 1
 	var player = world.player
 	player.facing = 1.0
 	player.parry_window = 0.18
@@ -65,48 +66,22 @@ func _run() -> void:
 	for i in Room.MAIN_COUNT:
 		var room := Room.build(i)
 		var highest: Rect2 = room["branch_platform"]
-		check(not room["secrets"].is_empty(), "Tesoro in ogni area")
+		check(i == 0 or not room["secrets"].is_empty(), "Tesori dopo la zona introduttiva")
 		for ledge in room["ledges"]:
-			check(i == 3 or highest.position.y <= ledge.position.y, "Segreto originale sopra le mensole; Belvedere prosegue al campanile")
+			check(i in [0,3] or highest.position.y <= ledge.position.y, "Segreti dopo la zona introduttiva; Belvedere prosegue al campanile")
 			check(ledge.position.x > Room.EDGE and ledge.end.x < room["size"].x - Room.EDGE, "Mensole fuori dai pilastri")
 	world._load_room(0, true, false)
 	check(world._stations_root.get_child_count() == 0, "Nessun portale o suggerimento visibile per il passaggio")
-	check(world.room["invisible_steps"] == [Room.FIRST_SECRET_STEP], "Scalino segreto collidibile separato dal disegno")
+	check(world.room["invisible_steps"].is_empty(), "L'introduzione non usa più scalini invisibili")
 	check(not world.room["ledges"].has(Room.FIRST_SECRET_STEP), "Scalino non visibile nel terreno")
-	await physics_frame
-	player.teleport(Vector2(1160, Room.highest_platform(0).position.y - player.HALF.y - 1))
-	player.velocity = Vector2(0, 120)
-	player.set_physics_process(true)
-	await create_timer(0.15).timeout
-	Input.action_press("jump")
-	await create_timer(0.26).timeout
-	Input.action_release("jump")
-	await physics_frame
-	await physics_frame
-	Input.action_press("jump")
-	await create_timer(0.36).timeout
-	Input.action_release("jump")
-	await create_timer(0.4).timeout
-	player.set_physics_process(false)
-	check(player.is_on_floor(), "Il giocatore può atterrare sullo scalino invisibile")
-	check(absf(player.position.y - 366) < 3, "Il doppio salto raggiunge lo scalino invisibile")
-	Input.action_press("interact")
-	world._process(0.016)
-	Input.action_release("interact")
-	check(world.room_index == Room.SECRET_ROOM, "W sullo scalino entra nella stanza extra")
-	check(not world.room["boss"] and not world._right_open(), "La stanza extra non cambia il boss finale")
-	check(world._npcs.get_children().any(func(n: Node) -> bool: return n.key == "fantasma_umano"), "Fantasma umano nella stanza extra")
-	player.set_physics_process(true)
-	await create_timer(0.15).timeout
-	check(world.room_index == Room.SECRET_ROOM, "L'ingresso resta nella fucina dopo il fotogramma dell'interazione")
-	Input.action_press("interact")
-	world._process(0.016)
-	Input.action_release("interact")
-	check(world.room_index == 0, "Una nuova pressione W vicino all'uscita lascia la fucina")
-	world._go(Room.SECRET_ROOM, true)
-	player.teleport(Vector2(Room.EDGE, float(world.room["floor"]) - player.HALF.y))
-	world._check_doors()
-	check(world.room_index == 0 and absf(player.position.y - 366) < 3, "Uscita ritorna allo scalino senza perdere progresso")
+	check(world.room.branch == -1, "Nessun ingresso della fucina nascosto nella piazza")
+	world._go(1, true)
+	player.teleport(Vector2(2060,956))
+	world.enter_forge()
+	check(world.room_index == Room.SECRET_ROOM, "La porta di Corso Trieste conduce alla fucina")
+	check(world._npcs.get_children().any(func(n: Node) -> bool: return n.key == "fantasma_umano"), "Padre nella fucina")
+	world._leave_forge()
+	check(world.room_index == 1 and absf(player.position.x - 2060) < 3, "Ritorno alla porta di Corso Trieste")
 	DirAccess.remove_absolute(world.save_path)
 	main.queue_free()
 	await process_frame

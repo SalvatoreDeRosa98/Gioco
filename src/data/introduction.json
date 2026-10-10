@@ -1,0 +1,17 @@
+{
+  "ledges": [[320,860,240,18],[620,770,220,18],[1500,850,240,18]],
+  "forge": {"entry_room":1,"return":[2060,950],"station":[460,980],"required_rooms":[0,1]},
+  "steps": [
+    {"id":"move","action":"move","text":"Muoviti verso la bottega di Tonino.","condition":"move","distance":140},
+    {"id":"jump","action":"jump","text":"Salta sulla mensola bassa.","condition":"jump"},
+    {"id":"double_jump","action":"jump","text":"Premi ancora in aria: puoi fare un doppio salto.","condition":"double_jump"},
+    {"id":"drop","action":"drop","text":"Dalla mensola, tieni giù e salta per scendere.","condition":"drop"},
+    {"id":"talk","action":"interact","text":"Avvicinati a Tonino e ascolta cosa ricorda della fucina.","condition":"talk"},
+    {"id":"cat","action":"attack","text":"Un gatto alla volta: osserva il balzo e colpisci dopo l'atterraggio.","condition":"enemy","enemy":"gatto","pos":[880,966]},
+    {"id":"guard","action":"parry","text":"La guardia prepara la stoccata. Para al lampo, poi rispondi con un colpo.","condition":"enemy","enemy":"guardia","pos":[1260,942]},
+    {"id":"wasp","action":"attack","text":"Salta verso la vespa. In aria, giù + attacco colpisce sotto di te.","condition":"enemy","enemy":"vespa","pos":[1800,840]},
+    {"id":"map","action":"map","text":"Apri la mappa per ritrovare il cammino. Ripremi per chiuderla.","condition":"action"},
+    {"id":"tools","action":"interact","text":"Sciarpa: scatto {dash}. Fucina: catena {grapple}, martello {hammer}, cura {heal}.","condition":"wait","seconds":9},
+    {"id":"menu","action":"pause","text":"Il menu resta sempre disponibile. Ora segui Corso Trieste: là troverai il secondo indizio.","condition":"wait","seconds":5}
+  ]
+}

@@ -3,7 +3,7 @@ const DialogueBoxScript := preload("res://game/dialogue_box.gd")
 ## Carta delle aree visitate: conserva l'esplorazione attraverso story.seen.
 const PLACES := {
 	0: Vector2(100, 320), 1: Vector2(310, 320), 2: Vector2(520, 320),
-	3: Vector2(740, 320), 4: Vector2(1160, 320), 5: Vector2(100, 210),
+	3: Vector2(740, 320), 4: Vector2(1160, 320), 5: Vector2(310, 210),
 	6: Vector2(100, 530), 7: Vector2(310, 450), 8: Vector2(520, 210),
 	9: Vector2(740, 450), 10: Vector2(950, 210), 11: Vector2(950, 320),
 	12: Vector2(740, 150), 13: Vector2(740, 580), 14: Vector2(950, 75)
@@ -60,7 +60,6 @@ func _draw_map() -> void:
 			links.append([idx, int(exit.target)])
 		for mark in Room.Expansion.data().landmarks.get(str(idx), []):
 			if mark.kind == "route": links.append([idx, int(mark.target)])
-	links.append([0, 5])
 	for pair in links:
 		if world.story.times_seen("visited_%d" % pair[0]) > 0 and world.story.times_seen("visited_%d" % pair[1]) > 0:
 			if (pair[0] == 14 and pair[1] == 11) or (pair[0] == 11 and pair[1] == 14):
@@ -78,7 +77,7 @@ func _draw_map() -> void:
 		Art.text(canvas, Art.body_font(), p + Vector2(-90, 5), r.name, 14, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 180)
 		if idx == world.room_index:
 			canvas.draw_circle(p + Vector2(0, dims.y / 2 + 10), 4, Art.CREMA)
-	var close_txt := "Select / B  Chiudi" if DialogueBoxScript.pad else "M / Esc  Chiudi"
-	var skills_txt := "RT  Catena   ·   B  Martello   ·   LT  Cura con 4 braci   ·   Giù + X  Rimbalzo" if DialogueBoxScript.pad else "Q  Catena   ·   V  Martello   ·   R  Cura con 4 braci   ·   S + attacco  Rimbalzo"
+	var close_txt := Controls.label("map") + " / " + Controls.label("pause") + "  Chiudi"
+	var skills_txt := Controls.label("grapple") + " Catena · " + Controls.label("hammer") + " Martello · " + Controls.label("heal") + " Cura con 4 braci · Giù + " + Controls.label("attack") + " Rimbalzo"
 	Art.text(canvas, Art.body_font(), Vector2(40, 670), "%s   ·   Punto bianco: sei qui   ·   Esplora per completare la carta" % close_txt, 20, Art.CREMA)
 	Art.text(canvas, Art.body_font(), Vector2(40, 701), skills_txt, 17, Art.OCRA)

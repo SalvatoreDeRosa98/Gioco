@@ -82,8 +82,8 @@
         {
           "type": "gatto",
           "pos": [
-            750,
-            956
+            940,
+            966
           ]
         },
         {
@@ -98,13 +98,6 @@
           "pos": [
             1540,
             570
-          ]
-        },
-        {
-          "type": "spettro",
-          "pos": [
-            2100,
-            750
           ]
         },
         {
@@ -1020,7 +1013,7 @@
       -1
     ],
     "5": [
-      0,
+      1,
       -1
     ],
     "6": [
@@ -1093,6 +1086,20 @@
         ],
         "need": "",
         "unlock": ""
+      },
+      {
+        "kind": "route",
+        "id": "forge_door",
+        "label": "Bottega di Gaetano",
+        "pos": [
+          2060,
+          980
+        ],
+        "target": 5,
+        "spawn": [
+          110,
+          950
+        ]
       }
     ],
     "3": [
@@ -1311,7 +1318,8 @@
       "image": "res://assets/art/characters/guardie/guardia_anziana.png",
       "height": 142,
       "name": "Capitano Ruggiero",
-      "flag": "captain_defeated"
+      "flag": "captain_defeated",
+      "rig": "combat_capitano"
     },
     "madre": {
       "hp": 20,
@@ -1325,7 +1333,8 @@
       "image": "res://assets/art/bosses/madre_marmo.png",
       "height": 185,
       "name": "La Madre di Marmo",
-      "flag": "mother_defeated"
+      "flag": "mother_defeated",
+      "rig": "combat_madre"
     },
     "guardia": {
       "hp": 6,
@@ -1339,7 +1348,8 @@
       "image": "res://assets/art/characters/guardie/guardia_giovane.png",
       "height": 130,
       "name": "Guardia della Città",
-      "flag": "guardia_defeated"
+      "flag": "guardia_defeated",
+      "rig": "combat_guardia"
     },
     "cavaliere": {
       "hp": 10,
@@ -1353,7 +1363,8 @@
       "image": "res://assets/art/props/statua_cavaliere.png",
       "height": 145,
       "name": "Cavaliere di Pietra",
-      "flag": "cavaliere_defeated"
+      "flag": "cavaliere_defeated",
+      "rig": "combat_cavaliere"
     },
     "spettro": {
       "hp": 5,
@@ -1367,7 +1378,8 @@
       "image": "res://assets/art/bosses/regina_debiti.png",
       "height": 135,
       "name": "Spettro del Calcare",
-      "flag": "spettro_defeated"
+      "flag": "spettro_defeated",
+      "rig": "combat_spettro"
     }
   },
   "vertical": {

@@ -1,15 +1,13 @@
 extends Node2D
-## Personaggio non giocante. L'immagine dipinta è disegnata su una griglia morbida che si deforma:
-## respiro nel petto, dondolio che cresce verso la testa, sobbalzo quando nota Ferruccio, giro verso
-## di lui e piccolo ritmo mentre parla. I ricordi (Gaetano, Bianca) galleggiano in un alone di luce.
+## Personaggio non giocante. Ritagli dipinti articolati su perni gerarchici:
+## respiro, testa e braccia reagiscono a Ferruccio e alle battute del dialogo.
+## I ricordi (Gaetano, Bianca) galleggiano in un alone di luce.
 ## Sopra la testa compaiono l'invito a parlare e le battute di passaggio.
 ## Non ha collisioni e non è nel gruppo dei nemici: non blocca il passaggio e non prende colpi.
 ## Dati in data/dialogues.json: "npcs" per il comportamento, "characters" per l'aspetto.
 
 const DialogueBoxScript := preload("res://game/dialogue_box.gd")
-## Griglia della deformazione: colonne e righe di quadrilateri sull'immagine.
-const COLS := 3
-const ROWS := 12
+const RigScript := preload("res://game/npc_cutout_rig.gd")
 ## Disegni sopra a tutto (pioggia e foglie comprese): invito e battute devono restare leggibili.
 const OVERLAY_Z := 60
 const MOTES := 14
@@ -37,6 +35,7 @@ var _home := Vector2.ZERO
 var _home_face := 1.0
 var _face := 1.0
 var _face_target := 1.0
+var _turn_elapsed := 0.0
 var _t := 0.0
 var _age := 0.0
 var _present := true
@@ -60,8 +59,7 @@ var _overlay: Node2D
 var _glow: Sprite2D
 var _light: PointLight2D
 var _motes: Array = []
-var _idx := PackedInt32Array()
-var _uvs := PackedVector2Array()
+var _rig: Node2D
 
 
 ## Prepara il personaggio "k" di dialogues.json nel punto dei piedi "pos".
@@ -69,7 +67,12 @@ func setup(k: String, pos: Vector2, w: Node) -> void:
 	key = k
 	world = w
 	position = pos
-	_home = pos
+	# I punti dei piedi non possono finire dentro i basamenti del livello.
+	for pass_index in range(w.room.get("blocks", []).size() + 1):
+		for block: Rect2 in w.room.get("blocks", []):
+			if block.has_point(position - Vector2(0, 1)):
+				position.y = block.position.y
+	_home = position
 	_cfg = Story.npc(k)
 	_look = Story.character(str(_cfg.get("character", k)))
 	_set = Story.settings()
@@ -116,7 +119,15 @@ func _ready() -> void:
 	elif _look.has("light"):
 		var l: Array = _look["light"]
 		_light = Art.point_light(self, Vector2(float(l[5]), float(l[6])), Color(float(l[0]), float(l[1]), float(l[2])), float(l[3]), float(l[4]))
-	_build_grid()
+	if _tex:
+		var configs: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/npc_cutouts.json"))
+		var character := str(_cfg.get("character", key))
+		if configs.has(character):
+			_rig = RigScript.new()
+			_rig.setup(_tex, configs[character], _feet, _scale)
+			add_child(_rig)
+		else:
+			push_error("Manca il rig dipinto di " + character)
 	_present = _check_present()
 	_alpha = 1.0 if _present else 0.0
 	visible = _present
@@ -215,6 +226,10 @@ func _process(delta: float) -> void:
 		_light.energy = 0.55 * _alpha * pulse
 	elif _light:
 		_light.energy = float((_look.get("light", [0, 0, 0, 0.5]) as Array)[3]) * _alpha * (1.0 + 0.04 * sin(_t * 9.0))
+	if _rig:
+		var walking := not _present and _drift.x != 0.0
+		var lift := _float_y() - (absf(sin(_t * 9.0)) * 2.0 if walking else 0.0) - _hop
+		_rig.pose(_t, _face * float(_look.get("art_face", 1.0)), Color(_tint, _alpha), lift, _voice, walking)
 	queue_redraw()
 	_overlay.queue_redraw()
 
@@ -239,7 +254,14 @@ func _update_attention(delta: float) -> void:
 			if _away_t > 1.5:
 				_face_target = _home_face
 	var turn_time := maxf(0.05, float(_set.get("turn_time", 0.2)))
-	_face = move_toward(_face, _face_target, delta * 2.0 / turn_time)
+	# Breve attesa prima del cambio di posa: la sagoma non attraversa mai scala zero.
+	if _face_target != _face:
+		_turn_elapsed += delta
+		if _turn_elapsed >= turn_time:
+			_face = _face_target
+			_turn_elapsed = 0.0
+	else:
+		_turn_elapsed = 0.0
 	var hop := spring_step(_hop, _hop_v, delta)
 	_hop = hop.x
 	_hop_v = hop.y
@@ -310,21 +332,6 @@ func _update_motes(delta: float) -> void:
 
 # ---------------------------------------------------------------- Disegno
 
-func _build_grid() -> void:
-	_idx.clear()
-	_uvs.clear()
-	for r in ROWS + 1:
-		for c in COLS + 1:
-			_uvs.append(Vector2(float(c) / COLS, float(r) / ROWS))
-	for r in ROWS:
-		for c in COLS:
-			var i0 := r * (COLS + 1) + c
-			var i1 := i0 + 1
-			var i2 := i0 + COLS + 1
-			var i3 := i2 + 1
-			_idx.append_array([i0, i1, i3, i0, i3, i2])
-
-
 func _draw() -> void:
 	if _tex == null:
 		return
@@ -339,41 +346,6 @@ func _draw() -> void:
 			var s := float(m["s"])
 			var mp: Vector2 = m["p"]
 			draw_texture_rect(Art.soft_texture(), Rect2(mp - Vector2(s, s), Vector2(s, s) * 2.0), false, Color(_glow_col.lightened(0.4), ma))
-	_draw_body(a)
-
-
-## L'immagine come griglia deformata: i piedi restano fermi, il resto respira e ondeggia.
-func _draw_body(a: float) -> void:
-	var breath := sin(_t * TAU / float(_set.get("breath_period", 3.4))) * float(_look.get("breath", 1.0))
-	var sway := sin(_t * TAU / float(_set.get("sway_period", 5.6)) + _home.x * 0.01) * float(_set.get("sway_amount", 1.6))
-	var talk := absf(sin(_t * 12.5)) * 0.016 if _voice else 0.0
-	var walk_bob := -absf(sin(_t * 9.0)) * 2.0 if (not _present and _drift.x != 0.0) else 0.0
-	var lift := _float_y() + walk_bob
-	var w := float(_tex.get_width())
-	var h := float(_tex.get_height())
-	var pts := PackedVector2Array()
-	var cols := PackedColorArray()
-	pts.resize(_uvs.size())
-	cols.resize(_uvs.size())
-	for i in _uvs.size():
-		var uv := _uvs[i]
-		var l := (Vector2(uv.x * w, uv.y * h) - _feet) * _scale
-		var hn := clampf(-l.y / _height, 0.0, 1.1)
-		# Il petto si gonfia (campana attorno a 0.62 dell'altezza), tutta la figura si allunga un poco.
-		var chest := exp(-pow((hn - 0.62) / 0.2, 2.0))
-		l.x *= 1.0 + (breath * 0.022 + talk * 0.6) * chest
-		l.y *= 1.0 + breath * 0.009 + talk + _hop * 0.22
-		# Dondolio: cresce col quadrato dell'altezza, i piedi non scivolano.
-		l.x += sway * hn * hn
-		l.x *= _face * float(_look.get("art_face", 1.0))
-		l.y += lift
-		pts[i] = l
-		var col := Color(_tint, a)
-		if _memory:
-			# I ricordi svaniscono verso i piedi e tremolano appena.
-			col.a = a * (0.25 + 0.75 * smoothstep(0.0, 0.4, hn)) * (0.9 + 0.1 * sin(_t * 7.0 + hn * 6.0))
-		cols[i] = col
-	RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), _idx, pts, cols, _uvs, PackedInt32Array(), PackedFloat32Array(), _tex.get_rid())
 
 
 ## Invito a parlare, segnale di un incontro nuovo e battute di passaggio. Disegnati alla scala
@@ -413,7 +385,7 @@ func _draw_overlay() -> void:
 ## Tasto in un cerchio ocra e il verbo in maiuscoletto, come gli inviti di Hollow Knight.
 func _draw_prompt(a: float) -> void:
 	var c := _overlay
-	var key_label := "Y" if DialogueBoxScript.pad else "W"
+	var key_label := "Y / △" if Controls.label("interact") == "Y / △" else "W"
 	var r := 12.0
 	c.draw_texture_rect(Art.soft_texture(), Rect2(-30, -30, 60, 60), false, Color(0, 0, 0, 0.55 * a))
 	c.draw_circle(Vector2.ZERO, r, Color(0.03, 0.03, 0.05, 0.7 * a))

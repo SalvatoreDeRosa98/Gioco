@@ -21,7 +21,9 @@ func _run() -> void:
 	world.set_physics_process(false)
 	player.set_physics_process(false)
 	world.coins = 100
-	world._save_at(Vector2(310, 980))
+	world.story.seen["ferruccio_identity"] = 1
+	world._go(Room.SECRET_ROOM, true)
+	world._save_at(Vector2(460, 980))
 	world._go(Room.SECRET_ROOM, true)
 	world._shop.show_shop()
 	world._shop._rows.get_child(1).get_child(1).pressed.emit()
@@ -41,7 +43,7 @@ func _run() -> void:
 	world.buy_item("heal")
 	check(world.coins == 2 and player.hp == 4, "Cura acquista una sola maschera")
 	world._go_restart()
-	check(world.room_index == 0 and world.coins == 2 and world.upgrades.has("boots"), "Morte mantiene acquisti e spesa senza spostare checkpoint")
+	check(world.room_index == Room.SECRET_ROOM and world.coins == 2 and world.upgrades.has("boots"), "Morte mantiene acquisti e spesa senza spostare checkpoint")
 	world.coins = 999
 	world.upgrades.clear()
 	world._restore_save()
@@ -117,7 +119,10 @@ func _run() -> void:
 	world._on_dialogue_closed()
 	world._on_dialogue_closed()
 	check(player.hp == 3, "Tonino cura una volta tra due salvataggi")
-	world._save_at(Vector2(310, 980))
+	world._go(Room.SECRET_ROOM, true)
+	world._save_at(Vector2(460, 980))
+	world._go(0, true)
+	world._talk_npc = world._npcs.get_children().filter(func(n: Node) -> bool: return n.key == "tonino")[0]
 	player.hp = 2
 	world._on_dialogue_closed()
 	check(player.hp == 3, "Salvataggio ripristina la cura di Tonino")
@@ -128,6 +133,7 @@ func _run() -> void:
 	player.teleport(Vector2(1000, 100))
 	player._dash_cd = 0
 	player._air_dash_used = false
+	world._on_dialogue_effect("give_scarf")
 	player.set_physics_process(true)
 	Input.action_press("dash")
 	await create_timer(0.05).timeout

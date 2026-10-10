@@ -117,6 +117,7 @@
       "stinger_speed": 230
     },
     "statua": {
+      "painted_height": 104,
       "hp": 6,
       "speed": 0,
       "damage": 1,
@@ -127,6 +128,7 @@
       "hitstun": 0
     },
     "custode": {
+      "painted_height": 179,
       "hp": 36,
       "speed": 210,
       "damage": 1,
@@ -203,7 +205,8 @@
     "duelist_attack_cooldown": 1.8,
     "duelist_windup": 0.55,
     "duelist_attack_range": 130,
-    "duelist_bullet_speed": 280
+    "duelist_bullet_speed": 280,
+    "duelist_height": 110
   },
   "rewards": {
     "heal_chance": 0.12,
@@ -214,11 +217,36 @@
     "transition_time": 1.6,
     "camera_zoom": 0.76,
     "ledges": [
-      [300, 860, 240, 18],
-      [1380, 860, 240, 18],
-      [540, 740, 220, 18],
-      [1160, 740, 220, 18],
-      [820, 620, 280, 18]
+      [
+        300,
+        860,
+        240,
+        18
+      ],
+      [
+        1380,
+        860,
+        240,
+        18
+      ],
+      [
+        540,
+        740,
+        220,
+        18
+      ],
+      [
+        1160,
+        740,
+        220,
+        18
+      ],
+      [
+        820,
+        620,
+        280,
+        18
+      ]
     ]
   }
 }

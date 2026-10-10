@@ -14,11 +14,29 @@ var _attack := 1.8
 var _pattern := 0
 var _windup := 0.0
 var _flash := 0.0
+var _rig: Node2D
+var _clock := 0.0
+var _swing := 0.0
+
+func _ready() -> void:
+	var rigs: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/npc_cutouts.json"))
+	_rig = preload("res://game/npc_cutout_rig.gd").new()
+	_rig.setup(IMAGE, rigs.combat_duellante, Vector2(IMAGE.get_width() * .5, IMAGE.get_height()), float(Tuning.data.progression.duelist_height) / IMAGE.get_height())
+	var feet := Node2D.new()
+	feet.position.y = half.y
+	feet.show_behind_parent = true
+	add_child(feet)
+	feet.add_child(_rig)
 
 ## Prepara collisioni, valori di combattimento e posizione dell'incontro.
 func setup(data: Dictionary, owner_world: Node) -> void:
 	world = owner_world
 	position = data["pos"]
+	position.y = minf(position.y, float(world.room.floor) - half.y)
+	for pass_index in range(world.room.get("blocks", []).size() + 1):
+		for block: Rect2 in world.room.get("blocks", []):
+			if Rect2(position - half, half * 2).intersects(block):
+				position.y = block.position.y - half.y
 	hp = int(Tuning.data.progression.duelist_hp)
 	max_hp = hp
 	_attack = float(Tuning.data.progression.duelist_attack_cooldown)
@@ -35,7 +53,9 @@ func _physics_process(delta: float) -> void:
 	if world.is_talking() or world.in_cutscene():
 		return
 	touch_cd = maxf(0, touch_cd - delta)
+	_clock += delta
 	_flash = maxf(0, _flash - delta)
+	_swing = maxf(0, _swing - delta)
 	velocity.y = minf(900, velocity.y + 1500 * delta)
 	var target: Node2D = world.alive_player()
 	velocity.x = 0
@@ -45,6 +65,7 @@ func _physics_process(delta: float) -> void:
 		if _windup > 0:
 			_windup -= delta
 			if _windup <= 0:
+				_swing = .3
 				if _pattern % 2:
 					world.boss_sword_hit(position, position + Vector2(facing * 110, 15), position.x)
 				else:
@@ -56,6 +77,15 @@ func _physics_process(delta: float) -> void:
 		elif _attack <= 0:
 			_windup = float(Tuning.data.progression.duelist_windup)
 	move_and_slide()
+	if _flash > 0:
+		_rig.set_action("hurt", 1.0 - _flash / .15)
+	elif _windup > 0:
+		_rig.set_action("windup", 1.0 - _windup / float(Tuning.data.progression.duelist_windup))
+	elif _swing > 0:
+		_rig.set_action("strike", 1.0 - _swing / .3)
+	else:
+		_rig.set_action("")
+	_rig.pose(_clock, facing, Color.WHITE if _flash > 0 else Color(.9,.8,.75), 0, _windup > 0, absf(velocity.x) > 1)
 	queue_redraw()
 
 ## Il duello finisce a zero vita; Taddeo resta vivo come personaggio della storia.
@@ -69,10 +99,6 @@ func take_hit(amount: int, push: Vector2 = Vector2.ZERO) -> bool:
 	return false
 
 func _draw() -> void:
-	var size := Vector2(110.0 * IMAGE.get_width() / IMAGE.get_height(), 110)
-	draw_set_transform(Vector2.ZERO, 0, Vector2(facing, 1))
-	draw_texture_rect(IMAGE, Rect2(Vector2(-size.x / 2, half.y - size.y), size), false, Color.WHITE if _flash > 0 else Color(0.9, 0.8, 0.75))
-	draw_set_transform(Vector2.ZERO)
 	if _windup > 0:
 		var w_total := float(Tuning.data.progression.duelist_windup)
 		var w_prog := clampf(1.0 - _windup / maxf(0.01, w_total), 0.0, 1.0)

@@ -153,13 +153,14 @@
 			"face": -1,
 			"turn": "near",
 			"dialogue": [
+				{"id": "forge_first_clue", "once": true, "lines": [{"who": "tonino", "text": "Quella spada porta il segno di Gaetano. Su Corso Trieste c’è la sua bottega: ascolta il suono del ferro."}]},
 				{"id": "tonino_primo", "once": true, "lines": [
 					{"who": "tonino", "text": "Uagliò, ma che è 'sta faccia?"},
 					{"text": "Ferruccio indica la propria maschera."},
 					{"who": "tonino", "text": "Ah, è proprio la tua. E che ne sapevo io?"},
 					{"who": "tonino", "text": "Mangia. Magari sotto 'sta maschera ce sta ancora qualcuno.", "item": "mozzarella", "do": "heal"},
-					{"who": "tonino", "text": "La vecchia fucina di tuo padre? Cercala sopra i tetti della piazza, sul cornicione più alto."},
-					{"who": "tonino", "text": "Da lì serve un altro salto. Gaetano diceva che certe strade si sentono coi piedi, mica con gli occhi."}
+					{"who": "tonino", "text": "La vecchia fucina di tuo padre è su Corso Trieste. Mariella sa quale porta cercare."},
+					{"who": "tonino", "text": "Gaetano diceva che certe strade si riconoscono dal suono. Ascolta il ferro, figliolo."}
 				]},
 				{"id": "tonino_rosa", "once": true, "when": {"cleared": true, "tonino_memory": ""}, "lines": [
 					{"text": "Dall'ultimo gatto d'ombra è salita un'anima. Tra le dita di Ferruccio è ancora tiepida."},
@@ -218,7 +219,7 @@
 					{"who": "tonino", "text": "Mo' che mi è tornata Rosa, mi torna pure una lettera. La teneva lei, nel cassetto del banco."},
 					{"who": "tonino", "text": "L'aveva lasciata una tessitrice di San Leucio, per un fabbro.", "item": "lettera_sigillo"},
 					{"text": "Ferruccio la stringe al petto. Non la apre."},
-					{"who": "tonino", "text": "Tienila tu. Quel fabbro, mi pare, portava una sciarpa rossa come la tua."}
+					{"who": "tonino", "text": "Tienila tu. Quel fabbro, mi pare, portava una sciarpa rossa."}
 				]},
 				{"id": "tonino_ricorda", "when": {"tonino_memory": "restituito"}, "cycle": [
 					[
@@ -259,8 +260,8 @@
 			]},
 			"dialogue": [
 				{"id": "assunta_fucina", "once": true, "lines": [
-					{"who": "assunta", "text": "Sopra l'ultimo cornicione della piazza c'è un gradino che non si vede. Nunziatina giura di averlo toccato."},
-					{"who": "nunziatina", "text": "Due salti! Poi i piedi si fermano nell'aria. Da lì devi cercare il passaggio verso l'alto."},
+					{"who": "assunta", "text": "Da Corso Trieste si sente il ferro della vecchia bottega. Nunziatina dice che quel suono aspetta qualcuno."},
+					{"who": "nunziatina", "text": "Una porta bassa, oltre la vetrina! Il ferro canta anche quando le botteghe sono chiuse."},
 					{"who": "assunta", "text": "Se senti odore di carbone, sei vicino alla fucina. Non aver paura del silenzio."}
 				]},
 				{"id": "assunta_luna", "cycle": [
@@ -437,6 +438,7 @@
 			"face": -1,
 			"turn": "never",
 			"dialogue": [
+				{"id": "forge_second_clue", "once": true, "lines": [{"who": "mariella", "text": "Dalla vecchia bottega sento ancora qualcuno battere il ferro. Cerca la porta oltre la mia vetrina."}]},
 				{"id": "mariella_lettera", "once": true, "when": {"taddeo_trust": "perdonato"}, "lines": [
 					{"who": "mariella", "text": "Siete l'amico di mio fratello? Allora questa forse è per lui."},
 					{"who": "mariella", "text": "Stava nel mio grembiule. È la mia scrittura, ma non ricordo di averla scritta.", "item": "lettera_spago"},
@@ -544,10 +546,10 @@
 						},
 						{
 							"who": "gaetano",
-							"text": "Non portarti via soltanto il mio ultimo giorno, figliolo. Ricorda anche quando ti insegnavo a forgiare."
+							"text": "Tu sei Ferruccio, mio figlio. Il Velo può nascondere il tuo volto, ma qui il ferro ricorda ancora le tue mani."
 						},
 						{
-							"text": "Ferruccio posa la mano sul banco, accanto a quella del padre. La fucina tace."
+							"text": "Il nero si ritira dal viso di Ferruccio. Riconosce il proprio volto e può custodire i ricordi alle incudini.", "do": "restore_identity"
 						}
 					]
 				},
@@ -586,7 +588,7 @@
 							},
 							"lines": [
 								{
-									"text": "Ferruccio lo avvolge nella sciarpa. Ci vorranno anni prima che qualcuno lo legga. Ma esiste."
+									"text": "Ferruccio lo avvolge in un panno della fucina. Ci vorranno anni prima che qualcuno lo legga. Ma esiste."
 								},
 								{
 									"text": "Il registro descrive il difetto delle statue: un colpo durante la carica interrompe il lancio."
@@ -662,12 +664,12 @@
 					{"who": "agnese", "text": "Attento ai fili, signore. Stanotte si muovono da soli."},
 					{"who": "agnese", "text": "Questa sciarpa? La tesso da mesi. La disfo e la ricomincio, e non so per chi."},
 					{"text": "In tasca, la lettera che Tonino gli ha reso pesa più del ferro.", "if": {"tonino_memory": "restituito"}},
-					{"text": "Ferruccio porta una mano alla sciarpa che ha al collo. È la stessa trama, lo stesso rosso."}
+					{"text": "Ferruccio sfiora la lana sul telaio. Ricorda il calore delle mani di Agnese."}
 				], "choice": {
-					"prompt": "Se le porge la sciarpa, Agnese ricorderà. Tutto, anche il dolore.",
+					"prompt": "Vuoi aiutarla a ricordare, anche il dolore, oppure lasciarla sognare?",
 					"options": [
 						{
-							"label": "Porgile la sciarpa",
+							"label": "Aiutala a ricordare",
 							"set": {
 								"agnese_memory": "risvegliata"
 							},
@@ -733,7 +735,7 @@
 									}
 								},
 								{
-									"text": "Agnese ricuce la sciarpa: puoi portare un accessorio in più."
+									"who": "agnese", "text": "Era per te, Ferruccio. Gli annoda la sciarpa: lo scatto si risveglia, e può portare un accessorio in più.", "do": "give_scarf", "item": "sciarpa"
 								}
 							]
 						},
@@ -745,14 +747,13 @@
 							"lines": [
 								{
 									"who": "agnese",
-									"text": "Prendila. Non so perché, ma credo che debba averla tu.",
-									"item": "sciarpa",
+									"text": "Non riesco ancora a finirla. Forse un giorno ricorderò per chi era.",
 									"if": {
 										"taddeo_trust": "!perdonato"
 									}
 								},
 								{
-									"text": "Ferruccio prende la sciarpa, la piega con cura e le fa un inchino.",
+									"text": "Ferruccio lascia la lana sul telaio e le fa un inchino.",
 									"if": {
 										"taddeo_trust": "!perdonato"
 									}
@@ -1019,7 +1020,7 @@
 					{"who": "tonino", "text": "Mi hai ridato mia moglie nei ricordi. Ma questo non ti dava diritto di togliere una vita!", "if": {"tonino_memory": "restituito"}},
 					{"who": "tonino", "text": "E tu saresti quello che ci ha salvati?", "if": {"tonino_memory": "!restituito"}},
 					{"who": "taddeo", "text": "Una volta ti ho consegnato per paura. Stavolta vieni con me di tua volontà!", "if": {"taddeo_trust": "perdonato"}},
-					{"text": "Ferruccio fugge nella notte, il registro sotto la sciarpa. Un giorno potrà riabilitare suo padre.", "if": {"father_registry": "conservato"}},
+					{"text": "Ferruccio fugge nella notte, il registro sotto la tunica. Un giorno potrà riabilitare suo padre.", "if": {"father_registry": "conservato"}},
 					{"text": "Ferruccio fugge nella notte, con il solo ricordo di ciò che ha visto.", "if": {"father_registry": "!conservato"}}
 				]}
 			},
@@ -1042,7 +1043,8 @@
 					{"who": "tonino", "text": "Uno per me e uno per... boh. Sarà l'abitudine.", "if": {"tonino_memory": "restituito"}},
 					{"who": "agnese", "text": "Scusate... cercate qualcuno?"},
 					{"text": "Quando lui le passa davanti, Agnese si tocca il polso, proprio come faceva lui.", "if": {"agnese_memory": "risvegliata"}},
-					{"text": "Ferruccio stringe la sciarpa e passa oltre."},
+					{"text": "Ferruccio stringe la sciarpa e passa oltre.", "if": {"agnese_memory": "risvegliata"}},
+					{"text": "Ferruccio saluta la bottega e passa oltre.", "if": {"agnese_memory": "!risvegliata"}},
 					{"text": "Il registro dice ancora la verità. Nessuno vuole più leggerlo.", "if": {"father_registry": "conservato"}}
 				]}
 			}

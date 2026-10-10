@@ -145,6 +145,7 @@ var _eye_at := Vector2.ZERO
 var _mat: ShaderMaterial
 var _aura: Sprite2D
 var _aura_scale := Vector2.ONE
+var _painted_puppet: Node2D
 
 
 func setup(d: Dictionary, w: Node) -> void:
@@ -166,6 +167,14 @@ func setup(d: Dictionary, w: Node) -> void:
 	facing = _dir
 	_last_facing = facing
 	half = _half_for(kind)
+	if kind == "gatto":
+		position.y = minf(position.y, float(world.room.floor) - half.y)
+		var blocks: Array = world.room.get("blocks", [])
+		for pass_index in range(blocks.size() + 1):
+			for block: Rect2 in blocks:
+				if Rect2(position - half, half * 2).intersects(block):
+					position.y = block.position.y - half.y
+		_home = position
 	collision_layer = 0
 	collision_mask = 1
 	# Le vespe volano attraverso le mensole: posarcisi sopra le farebbe incagliare in picchiata.
@@ -215,6 +224,15 @@ func setup(d: Dictionary, w: Node) -> void:
 			_notice_cd = _f("spawn_grace")
 	if _aura:
 		_aura_scale = _aura.scale
+	if kind in ["custode","statua"]:
+		var puppets: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/npc_puppets.json"))
+		_painted_puppet = preload("res://game/npc_painted_puppet.gd").new()
+		_painted_puppet.setup(puppets[kind],float(Tuning.data.enemies[kind].painted_height))
+		var feet := Node2D.new()
+		feet.position.y = half.y
+		feet.show_behind_parent = true
+		add_child(feet)
+		feet.add_child(_painted_puppet)
 
 
 static func _half_for(k: String) -> Vector2:
@@ -255,6 +273,30 @@ func _physics_process(delta: float) -> void:
 			pass
 		_:
 			_after_move_gatto()
+	if _painted_puppet:
+		_update_painted_puppet()
+
+func _update_painted_puppet() -> void:
+	_painted_puppet.set_action("")
+	if kind == "custode":
+		match _state:
+			"sword_windup":
+				_painted_puppet.set_action("windup",1-_state_t/_f("sword_windup"))
+			"sword_swing":
+				_painted_puppet.set_action("strike",1-_state_t/_f("sword_swing"))
+			"sword_recovery":
+				_painted_puppet.set_action("slash_a",1)
+			"crouch":
+				_painted_puppet.set_action("crouch",1-_state_t/_f("leap_windup"))
+			"leap":
+				_painted_puppet.set_action("rise" if velocity.y<0 else "fall",.5)
+			"burst":
+				_painted_puppet.set_action("cast_windup",1-_state_t/_f("burst_windup"))
+	elif anim == "charge":
+		_painted_puppet.set_action("cast_windup",_anim_progress(.6))
+	_painted_puppet.pose(_look_t,facing,Color(1.5,1.3,1) if flash>0 else Color.WHITE,0,false,absf(velocity.x)>10)
+	if kind == "custode":
+		_painted_puppet.aim_weapon(sword_angle())
 
 
 func _f(key: String) -> float:
@@ -1188,9 +1230,11 @@ func _draw() -> void:
 		"vespa":
 			_draw_vespa()
 		"statua":
-			_draw_statua()
+			if _painted_puppet == null:
+				_draw_statua()
 		"custode":
-			_draw_custode()
+			if _painted_puppet == null:
+				_draw_custode()
 		_:
 			_draw_gatto()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

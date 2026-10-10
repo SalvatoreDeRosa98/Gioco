@@ -25,12 +25,26 @@ var _end_t := -1.0
 var _hint_t := HINT_TIME
 var _coins_shown := 0.0
 var _boss_name_t := -1.0
+var _lesson_label: Label
 
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_lesson_label = Label.new()
+	_lesson_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_lesson_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_lesson_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lesson_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_lesson_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_lesson_label.add_theme_font_override("font", Art.body_font())
+	_lesson_label.add_theme_font_size_override("font_size", 19)
+	_lesson_label.add_theme_color_override("font_color", Art.CREMA)
+	_lesson_label.add_theme_color_override("font_shadow_color", Color.BLACK)
+	_lesson_label.add_theme_constant_override("shadow_offset_x", 1)
+	_lesson_label.add_theme_constant_override("shadow_offset_y", 1)
+	add_child(_lesson_label)
 
 
 func area_title(title: String, subtitle: String) -> void:
@@ -65,6 +79,12 @@ func _process(delta: float) -> void:
 		_end_t += delta
 	if world:
 		_coins_shown = move_toward(_coins_shown, float(world.coins), maxf(1.0, absf(float(world.coins) - _coins_shown) * 6.0) * delta)
+		_lesson_label.visible = world.room_index == 0 and is_instance_valid(world.introduction) and not world.is_talking()
+		if _lesson_label.visible:
+			var viewport := get_viewport_rect().size
+			_lesson_label.position = Vector2(40,viewport.y - 88)
+			_lesson_label.size = Vector2(viewport.x - 80,76)
+			_lesson_label.text = world.introduction.hint()
 	queue_redraw()
 
 
@@ -80,14 +100,16 @@ func _draw() -> void:
 	if _toast_t > 0.0:
 		var a := minf(1.0, _toast_t * 2.0)
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 118.0), _toast_text, 28, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
-	if _hint_t > 0.0:
+	if world.room_index != 0 and _hint_t > 0.0:
 		var a := minf(1.0, _hint_t / 3.0) * 0.6
-		var hint := "A/D muovi · Spazio salta · X colpisci · C scatta · F para · S+Spazio scendi · W parla/salva · Esc menu"
+		var hint := Controls.label("move") + " muovi · " + Controls.label("jump") + " salta · " + Controls.label("attack") + " colpisci · " + Controls.label("interact") + " interagisci"
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 26.0), hint, 19, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if _end_t >= 0.0:
 		_draw_end(vp)
 	elif world.room_index == Room.SECRET_ROOM and not world.is_talking():
-		var forge_hint := "W / E  Esci · B  Apri la fucina" if world.player.position.x < 180 else "B  Apri la fucina · Uscita a sinistra"
+		var forge_hint := "Avvicinati a Gaetano: qui può restituirti il tuo nome"
+		if world.can_save_memories():
+			forge_hint = Controls.label("interact") + "  Esci · " + Controls.label("shop") + "  Lavorazioni" if world.player.position.x < 180 else Controls.label("shop") + "  Lavorazioni · Incudine per custodire i ricordi · Uscita a sinistra"
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 58), forge_hint, 22, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	elif world.room_index == Room.ARCHIVES_ROOM and not world.is_talking():
 		var seals_done := Room.Expansion.seals_count(world.story)
@@ -111,14 +133,13 @@ func _draw_vitals() -> void:
 	# Alone scuro dietro all'HUD per leggibilità su qualunque sfondo.
 	Art.shaded_ellipse(self, Vector2(130, 80), Vector2(230, 120), Color(0, 0, 0, 0.4), Color(0, 0, 0, 0.0), 24)
 	if me:
-		var parry_key := "LB" if DialogueBoxScript.pad else "F"
+		var parry_key := Controls.label("parry")
 		var parry_text: String = "%s  Parata pronta" % parry_key if me.parry_cooldown <= 0.0 else "Parata %.1f s" % me.parry_cooldown
 		Art.text(self, Art.body_font(), Vector2(34, 158), parry_text, 18, Art.CREMA)
 		Art.text(self, Art.body_font(), Vector2(34, 182), me.dash_status(), 18, Art.CREMA)
 		Art.text(self, Art.body_font(), Vector2(34, 206), "Accessori %d/%d" % [world.equipped.size(), world.accessory_slots()], 16, Art.CREMA)
-		var heal_key := "LT" if DialogueBoxScript.pad else "R"
-		var map_key := "Back" if DialogueBoxScript.pad else "M"
-		Art.text(self, Art.body_font(), Vector2(34, 230), "%s  Braci %d/12  ·  %s Mappa" % [heal_key, me.embers, map_key], 16, Art.OCRA)
+		Art.text(self, Art.body_font(), Vector2(34, 230), "%s  Braci %d/12" % [Controls.label("heal"), me.embers], 16, Art.OCRA)
+		Art.text(self, Art.body_font(), Vector2(34, 254), Controls.label("map") + "  Mappa", 16, Art.OCRA)
 		var hp := int(me.hp)
 		for i in int(me.max_hp):
 			var pulse := 0.6 + 0.4 * sin(_t * 3.0 + i * 0.6) if hp <= 1 and i == 0 else 1.0

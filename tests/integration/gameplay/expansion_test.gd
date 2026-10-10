@@ -15,6 +15,7 @@ func _run() -> void:
 	w.set_process(false)
 	w.set_physics_process(false)
 	w.save_path = "user://expansion-test.json"
+	w.story.seen["ferruccio_identity"] = 1
 	for idx in range(7, 12):
 		w._go(idx, true)
 		check(w.room.name != "" and w._npcs.get_child_count() > 0, "Area e NPC caricati: %d" % idx)

@@ -51,6 +51,11 @@ var _scarf_v := [0.0, 0.0, 0.0]
 var _weapon_sprite: Sprite2D
 var _sword_texture: Texture2D
 var _hammer_texture: Texture2D
+var _head_sprite: Sprite2D
+var _masked_head: Texture2D
+var _bare_head: Texture2D
+var _human_head: Texture2D
+var _scarf_sprites: Array[Sprite2D] = []
 
 
 func _ready() -> void:
@@ -85,6 +90,11 @@ func _ready() -> void:
 		if spr.far:
 			s.self_modulate = Color(far_tint[0], far_tint[1], far_tint[2])
 		_bones[spr.bone].add_child(s)
+		if spr.piece == "testa":
+			_head_sprite = s
+			_masked_head = s.texture
+		if str(spr.piece).begins_with("sciarpa") or spr.piece == "nodo":
+			_scarf_sprites.append(s)
 		if spr.piece == "mano" and spr.bone == "wrist":
 			_weapon_sprite = s
 			_sword_texture = s.texture
@@ -93,7 +103,22 @@ func _ready() -> void:
 	elif ResourceLoader.exists(RIG_PATH + "martello.png"):
 		_hammer_texture = load(RIG_PATH + "martello.png")
 	_update_weapon()
+	if ResourceLoader.exists(RIG_PATH + "testa_umana.png"):
+		_human_head = load(RIG_PATH + "testa_umana.png")
+	if ResourceLoader.exists(RIG_PATH + "testa_senza_sciarpa.png"):
+		_bare_head = load(RIG_PATH + "testa_senza_sciarpa.png")
+	set_story_appearance(false, false)
 	_apply(_sample("idle", 0.0))
+
+## La sciarpa compare solo col dono di Agnese; Gaetano restituisce il volto umano.
+func set_story_appearance(scarf: bool, identity: bool) -> void:
+	for sprite in _scarf_sprites:
+		sprite.visible = scarf
+	if _head_sprite == null:
+		return
+	var texture := _human_head if identity and _human_head != null else (_bare_head if not scarf and _bare_head != null else _masked_head)
+	_head_sprite.texture = texture
+	_head_sprite.scale = _masked_head.get_size() / texture.get_size()
 
 
 func _make_bone(name: String) -> Node2D:
@@ -120,6 +145,7 @@ func _make_bone(name: String) -> Node2D:
 ## Sceglie la clip dallo stato del giocatore; colpi, martello e capriola seguono il tempo
 ## effettivo delle hitbox invece di un orologio proprio.
 func select_state(player: Node, running: bool) -> void:
+	set_story_appearance(player.scarf_unlocked, player.identity_restored)
 	var clip := "idle"
 	var progress := -1.0
 	var length := 0.3

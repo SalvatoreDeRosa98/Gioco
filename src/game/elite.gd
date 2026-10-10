@@ -18,6 +18,18 @@ var _pattern := 0
 var _aim := Vector2.RIGHT
 var _swing := 0.0
 var _flash := 0.0
+var _rig: Node2D
+var _clock := 0.0
+
+func _ready() -> void:
+	var rigs: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/npc_cutouts.json"))
+	_rig = preload("res://game/npc_cutout_rig.gd").new()
+	_rig.setup(_tex, rigs[_cfg.rig], Vector2(_tex.get_width() * .5, _tex.get_height()), float(_cfg.height) / _tex.get_height())
+	var feet := Node2D.new()
+	feet.position.y = half.y
+	feet.show_behind_parent = true
+	add_child(feet)
+	feet.add_child(_rig)
 
 ## Prepara l'incontro e l'aspetto dal tipo presente nei dati della stanza.
 func setup(data: Dictionary, owner_world: Node) -> void:
@@ -38,6 +50,7 @@ func setup(data: Dictionary, owner_world: Node) -> void:
 		half = Vector2(20, 38)
 	elif kind == "spettro":
 		half = Vector2(22, 34)
+	_resolve_spawn()
 	collision_layer = 4
 	collision_mask = 1 | 4
 	var cs := CollisionShape2D.new()
@@ -54,10 +67,27 @@ func setup(data: Dictionary, owner_world: Node) -> void:
 
 	material = sm
 
+## Appoggia i nemici terrestri sopra il suolo e i blocchi, mai dentro la muratura.
+## Ripete il controllo per i basamenti composti da più blocchi sovrapposti.
+func _resolve_spawn() -> void:
+	if kind == "spettro":
+		return
+	position.y = minf(position.y, float(world.room.floor) - half.y)
+	var blocks: Array = world.room.get("blocks", [])
+	for pass_index in range(blocks.size() + 1):
+		var moved := false
+		for block: Rect2 in blocks:
+			if Rect2(position - half, half * 2).intersects(block):
+				position.y = block.position.y - half.y
+				moved = true
+		if not moved:
+			break
+
 func _physics_process(delta: float) -> void:
 	if world.is_talking() or world.in_cutscene():
 		return
 	_timer -= delta
+	_clock += delta
 	_swing = maxf(0, _swing - delta)
 	_flash = maxf(0, _flash - delta)
 	touch_cd = maxf(0, touch_cd - delta)
@@ -108,6 +138,15 @@ func _physics_process(delta: float) -> void:
 						world.boss_sword_hit(position, position + Vector2(facing * float(_cfg.reach), 30), position.x)
 			_pattern += 1
 	move_and_slide()
+	if _flash > 0:
+		_rig.set_action("hurt", 1.0 - _flash / .15)
+	elif _windup:
+		_rig.set_action("cast_windup" if kind in ["madre","spettro"] else "windup", 1.0 - _timer / float(_cfg.windup))
+	elif _swing > 0:
+		_rig.set_action("cast_strike" if kind in ["madre","spettro"] else "strike", 1.0 - _swing / .3)
+	else:
+		_rig.set_action("")
+	_rig.pose(_clock, facing, Color(1.4,1.25,1) if _flash > 0 else Color.WHITE, 0, _windup or _swing > 0, absf(velocity.x) > 1)
 	queue_redraw()
 
 ## Riceve colpi e restituisce true una volta sconfitto, lasciando al mondo ricompense e obiettivi.
@@ -124,9 +163,7 @@ func take_hit(amount: int, push: Vector2 = Vector2.ZERO) -> bool:
 
 func _draw() -> void:
 	var h := float(_cfg.height)
-	var size := Vector2(h * _tex.get_width() / _tex.get_height(), h)
 	draw_set_transform(Vector2.ZERO, 0, Vector2(facing, 1))
-	draw_texture_rect(_tex, Rect2(Vector2(-size.x / 2, half.y - h), size), false, Color(1.4, 1.25, 1) if _flash > 0 else Color.WHITE)
 	if _windup:
 		var cue := "FENDENTE"
 		match kind:

@@ -1,0 +1,2216 @@
+{
+  "profiles": {
+    "standing": {
+      "bones": {
+        "root": {
+          "parent": "",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "hips": {
+          "parent": "root",
+          "offset": [
+            0,
+            -480
+          ]
+        },
+        "torso": {
+          "parent": "hips",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "head": {
+          "parent": "torso",
+          "offset": [
+            0,
+            -310
+          ]
+        },
+        "shoulder_f": {
+          "parent": "torso",
+          "offset": [
+            35,
+            -320
+          ]
+        },
+        "elbow_f": {
+          "parent": "shoulder_f",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "wrist_f": {
+          "parent": "elbow_f",
+          "offset": [
+            0,
+            140
+          ]
+        },
+        "shoulder": {
+          "parent": "torso",
+          "offset": [
+            -25,
+            -320
+          ]
+        },
+        "elbow": {
+          "parent": "shoulder",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "wrist": {
+          "parent": "elbow",
+          "offset": [
+            0,
+            140
+          ]
+        },
+        "thigh_f": {
+          "parent": "hips",
+          "offset": [
+            27,
+            0
+          ]
+        },
+        "knee_f": {
+          "parent": "thigh_f",
+          "offset": [
+            0,
+            225
+          ]
+        },
+        "ankle_f": {
+          "parent": "knee_f",
+          "offset": [
+            0,
+            210
+          ]
+        },
+        "thigh": {
+          "parent": "hips",
+          "offset": [
+            -22,
+            0
+          ]
+        },
+        "knee": {
+          "parent": "thigh",
+          "offset": [
+            0,
+            225
+          ]
+        },
+        "ankle": {
+          "parent": "knee",
+          "offset": [
+            0,
+            210
+          ]
+        }
+      },
+      "pieces": {
+        "head": {
+          "bone": "head",
+          "span": 160,
+          "anchor": [
+            0.45,
+            0.94
+          ],
+          "z": 3
+        },
+        "torso": {
+          "bone": "torso",
+          "span": 350,
+          "anchor": [
+            0.52,
+            0.78
+          ],
+          "z": 0
+        },
+        "shoulder": {
+          "bone": "shoulder",
+          "span": 210,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": 4
+        },
+        "shoulder_f": {
+          "bone": "shoulder_f",
+          "span": 210,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -3
+        },
+        "elbow": {
+          "bone": "elbow",
+          "span": 205,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": 5
+        },
+        "elbow_f": {
+          "bone": "elbow_f",
+          "span": 205,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -2
+        },
+        "wrist": {
+          "bone": "wrist",
+          "span": 75,
+          "anchor": [
+            0.5,
+            0.12
+          ],
+          "z": 6
+        },
+        "wrist_f": {
+          "bone": "wrist_f",
+          "span": 75,
+          "anchor": [
+            0.5,
+            0.12
+          ],
+          "z": -1
+        },
+        "thigh": {
+          "bone": "thigh",
+          "span": 195,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -1
+        },
+        "thigh_f": {
+          "bone": "thigh_f",
+          "span": 195,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -3
+        },
+        "knee": {
+          "bone": "knee",
+          "span": 195,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -1
+        },
+        "knee_f": {
+          "bone": "knee_f",
+          "span": 195,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -3
+        },
+        "ankle": {
+          "bone": "ankle",
+          "span": 85,
+          "anchor": [
+            0.32,
+            0.35
+          ],
+          "z": -1
+        },
+        "ankle_f": {
+          "bone": "ankle_f",
+          "span": 85,
+          "anchor": [
+            0.32,
+            0.35
+          ],
+          "z": -3
+        }
+      },
+      "shoulder_x_fraction": -0.32
+    },
+    "dress": {
+      "bones": {
+        "root": {
+          "parent": "",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "hips": {
+          "parent": "root",
+          "offset": [
+            0,
+            -480
+          ]
+        },
+        "torso": {
+          "parent": "hips",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "head": {
+          "parent": "torso",
+          "offset": [
+            0,
+            -310
+          ]
+        },
+        "shoulder_f": {
+          "parent": "torso",
+          "offset": [
+            35,
+            -320
+          ]
+        },
+        "elbow_f": {
+          "parent": "shoulder_f",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "wrist_f": {
+          "parent": "elbow_f",
+          "offset": [
+            0,
+            140
+          ]
+        },
+        "shoulder": {
+          "parent": "torso",
+          "offset": [
+            -25,
+            -320
+          ]
+        },
+        "elbow": {
+          "parent": "shoulder",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "wrist": {
+          "parent": "elbow",
+          "offset": [
+            0,
+            140
+          ]
+        },
+        "thigh_f": {
+          "parent": "hips",
+          "offset": [
+            27,
+            0
+          ]
+        },
+        "knee_f": {
+          "parent": "thigh_f",
+          "offset": [
+            0,
+            225
+          ]
+        },
+        "ankle_f": {
+          "parent": "knee_f",
+          "offset": [
+            0,
+            210
+          ]
+        },
+        "thigh": {
+          "parent": "hips",
+          "offset": [
+            -22,
+            0
+          ]
+        },
+        "knee": {
+          "parent": "thigh",
+          "offset": [
+            0,
+            225
+          ]
+        },
+        "ankle": {
+          "parent": "knee",
+          "offset": [
+            0,
+            210
+          ]
+        }
+      },
+      "pieces": {
+        "head": {
+          "bone": "head",
+          "span": 160,
+          "anchor": [
+            0.45,
+            0.94
+          ],
+          "z": 3
+        },
+        "torso": {
+          "bone": "torso",
+          "span": 350,
+          "anchor": [
+            0.52,
+            0.78
+          ],
+          "z": 0
+        },
+        "shoulder": {
+          "bone": "shoulder",
+          "span": 210,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": 4
+        },
+        "shoulder_f": {
+          "bone": "shoulder_f",
+          "span": 210,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -3
+        },
+        "elbow": {
+          "bone": "elbow",
+          "span": 205,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": 5
+        },
+        "elbow_f": {
+          "bone": "elbow_f",
+          "span": 205,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -2
+        },
+        "wrist": {
+          "bone": "wrist",
+          "span": 75,
+          "anchor": [
+            0.5,
+            0.12
+          ],
+          "z": 6
+        },
+        "wrist_f": {
+          "bone": "wrist_f",
+          "span": 75,
+          "anchor": [
+            0.5,
+            0.12
+          ],
+          "z": -1
+        },
+        "thigh": {
+          "bone": "thigh",
+          "span": 485,
+          "anchor": [
+            0.5,
+            0.14
+          ],
+          "z": -1
+        },
+        "thigh_f": {
+          "bone": "thigh_f",
+          "span": 480,
+          "anchor": [
+            0.5,
+            0.14
+          ],
+          "z": -3
+        },
+        "knee": {
+          "bone": "knee",
+          "span": 235,
+          "anchor": [
+            0.5,
+            0.14
+          ],
+          "z": -1
+        },
+        "knee_f": {
+          "bone": "knee_f",
+          "span": 235,
+          "anchor": [
+            0.5,
+            0.14
+          ],
+          "z": -3
+        },
+        "ankle": {
+          "bone": "ankle",
+          "span": 85,
+          "anchor": [
+            0.32,
+            0.35
+          ],
+          "z": -1
+        },
+        "ankle_f": {
+          "bone": "ankle_f",
+          "span": 85,
+          "anchor": [
+            0.32,
+            0.35
+          ],
+          "z": -3
+        }
+      },
+      "motion_scale": {
+        "thigh": 0.28,
+        "thigh_f": 0.28,
+        "knee": 0.5,
+        "knee_f": 0.5
+      },
+      "shoulder_x_fraction": -0.32
+    },
+    "seated": {
+      "bones": {
+        "root": {
+          "parent": "",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "hips": {
+          "parent": "root",
+          "offset": [
+            0,
+            -480
+          ]
+        },
+        "torso": {
+          "parent": "hips",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "head": {
+          "parent": "torso",
+          "offset": [
+            0,
+            -310
+          ]
+        },
+        "shoulder_f": {
+          "parent": "torso",
+          "offset": [
+            35,
+            -320
+          ]
+        },
+        "elbow_f": {
+          "parent": "shoulder_f",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "wrist_f": {
+          "parent": "elbow_f",
+          "offset": [
+            0,
+            140
+          ]
+        },
+        "shoulder": {
+          "parent": "torso",
+          "offset": [
+            -25,
+            -320
+          ]
+        },
+        "elbow": {
+          "parent": "shoulder",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "wrist": {
+          "parent": "elbow",
+          "offset": [
+            0,
+            140
+          ]
+        },
+        "thigh_f": {
+          "parent": "hips",
+          "offset": [
+            27,
+            0
+          ]
+        },
+        "knee_f": {
+          "parent": "thigh_f",
+          "offset": [
+            0,
+            225
+          ]
+        },
+        "ankle_f": {
+          "parent": "knee_f",
+          "offset": [
+            0,
+            210
+          ]
+        },
+        "thigh": {
+          "parent": "hips",
+          "offset": [
+            -22,
+            0
+          ]
+        },
+        "knee": {
+          "parent": "thigh",
+          "offset": [
+            0,
+            225
+          ]
+        },
+        "ankle": {
+          "parent": "knee",
+          "offset": [
+            0,
+            210
+          ]
+        }
+      },
+      "pieces": {
+        "head": {
+          "bone": "head",
+          "span": 160,
+          "anchor": [
+            0.45,
+            0.94
+          ],
+          "z": 3
+        },
+        "torso": {
+          "bone": "torso",
+          "span": 350,
+          "anchor": [
+            0.52,
+            0.78
+          ],
+          "z": 0
+        },
+        "shoulder": {
+          "bone": "shoulder",
+          "span": 210,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": 4
+        },
+        "shoulder_f": {
+          "bone": "shoulder_f",
+          "span": 210,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -3
+        },
+        "elbow": {
+          "bone": "elbow",
+          "span": 205,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": 5
+        },
+        "elbow_f": {
+          "bone": "elbow_f",
+          "span": 205,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -2
+        },
+        "wrist": {
+          "bone": "wrist",
+          "span": 75,
+          "anchor": [
+            0.5,
+            0.12
+          ],
+          "z": 6
+        },
+        "wrist_f": {
+          "bone": "wrist_f",
+          "span": 75,
+          "anchor": [
+            0.5,
+            0.12
+          ],
+          "z": -1
+        },
+        "thigh": {
+          "bone": "thigh",
+          "span": 230,
+          "anchor": [
+            0.5,
+            0.14
+          ],
+          "z": -1
+        },
+        "thigh_f": {
+          "bone": "thigh_f",
+          "span": 230,
+          "anchor": [
+            0.5,
+            0.14
+          ],
+          "z": -3
+        },
+        "knee": {
+          "bone": "knee",
+          "span": 330,
+          "anchor": [
+            0.5,
+            0.14
+          ],
+          "z": -1
+        },
+        "knee_f": {
+          "bone": "knee_f",
+          "span": 330,
+          "anchor": [
+            0.5,
+            0.14
+          ],
+          "z": -3
+        },
+        "ankle": {
+          "bone": "ankle",
+          "span": 85,
+          "anchor": [
+            0.32,
+            0.35
+          ],
+          "z": -1
+        },
+        "ankle_f": {
+          "bone": "ankle_f",
+          "span": 85,
+          "anchor": [
+            0.32,
+            0.35
+          ],
+          "z": -3
+        }
+      },
+      "motion_scale": {},
+      "shoulder_x_fraction": -0.32
+    },
+    "kneeling": {
+      "bones": {
+        "root": {
+          "parent": "",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "hips": {
+          "parent": "root",
+          "offset": [
+            0,
+            -200
+          ]
+        },
+        "torso": {
+          "parent": "hips",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "head": {
+          "parent": "torso",
+          "offset": [
+            0,
+            -310
+          ]
+        },
+        "shoulder_f": {
+          "parent": "torso",
+          "offset": [
+            35,
+            -320
+          ]
+        },
+        "elbow_f": {
+          "parent": "shoulder_f",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "wrist_f": {
+          "parent": "elbow_f",
+          "offset": [
+            0,
+            140
+          ]
+        },
+        "shoulder": {
+          "parent": "torso",
+          "offset": [
+            -25,
+            -320
+          ]
+        },
+        "elbow": {
+          "parent": "shoulder",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "wrist": {
+          "parent": "elbow",
+          "offset": [
+            0,
+            140
+          ]
+        },
+        "thigh_f": {
+          "parent": "hips",
+          "offset": [
+            27,
+            0
+          ]
+        },
+        "knee_f": {
+          "parent": "thigh_f",
+          "offset": [
+            0,
+            225
+          ]
+        },
+        "ankle_f": {
+          "parent": "knee_f",
+          "offset": [
+            0,
+            210
+          ]
+        },
+        "thigh": {
+          "parent": "hips",
+          "offset": [
+            -22,
+            0
+          ]
+        },
+        "knee": {
+          "parent": "thigh",
+          "offset": [
+            0,
+            225
+          ]
+        },
+        "ankle": {
+          "parent": "knee",
+          "offset": [
+            0,
+            210
+          ]
+        }
+      },
+      "pieces": {
+        "head": {
+          "bone": "head",
+          "span": 160,
+          "anchor": [
+            0.45,
+            0.94
+          ],
+          "z": 3
+        },
+        "torso": {
+          "bone": "torso",
+          "span": 350,
+          "anchor": [
+            0.52,
+            0.78
+          ],
+          "z": 0
+        },
+        "shoulder": {
+          "bone": "shoulder",
+          "span": 210,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": 4
+        },
+        "shoulder_f": {
+          "bone": "shoulder_f",
+          "span": 210,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -3
+        },
+        "elbow": {
+          "bone": "elbow",
+          "span": 205,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": 5
+        },
+        "elbow_f": {
+          "bone": "elbow_f",
+          "span": 205,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -2
+        },
+        "wrist": {
+          "bone": "wrist",
+          "span": 75,
+          "anchor": [
+            0.5,
+            0.12
+          ],
+          "z": 6
+        },
+        "wrist_f": {
+          "bone": "wrist_f",
+          "span": 75,
+          "anchor": [
+            0.5,
+            0.12
+          ],
+          "z": -1
+        },
+        "thigh": {
+          "bone": "thigh",
+          "span": 195,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -1
+        },
+        "thigh_f": {
+          "bone": "thigh_f",
+          "span": 195,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -3
+        },
+        "knee": {
+          "bone": "knee",
+          "span": 195,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -1
+        },
+        "knee_f": {
+          "bone": "knee_f",
+          "span": 195,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -3
+        },
+        "ankle": {
+          "bone": "ankle",
+          "span": 85,
+          "anchor": [
+            0.32,
+            0.35
+          ],
+          "z": -1
+        },
+        "ankle_f": {
+          "bone": "ankle_f",
+          "span": 85,
+          "anchor": [
+            0.32,
+            0.35
+          ],
+          "z": -3
+        }
+      },
+      "shoulder_x_fraction": -0.32
+    },
+    "insect": {
+      "bones": {
+        "root": {
+          "parent": "",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "hips": {
+          "parent": "root",
+          "offset": [
+            0,
+            -350
+          ]
+        },
+        "torso": {
+          "parent": "hips",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "head": {
+          "parent": "torso",
+          "offset": [
+            20,
+            -355
+          ]
+        },
+        "shoulder_f": {
+          "parent": "torso",
+          "offset": [
+            -15,
+            -290
+          ]
+        },
+        "elbow_f": {
+          "parent": "torso",
+          "offset": [
+            35,
+            -260
+          ]
+        },
+        "wrist_f": {
+          "parent": "elbow_f",
+          "offset": [
+            0,
+            165
+          ]
+        },
+        "shoulder": {
+          "parent": "torso",
+          "offset": [
+            -25,
+            -270
+          ]
+        },
+        "elbow": {
+          "parent": "torso",
+          "offset": [
+            -30,
+            -270
+          ]
+        },
+        "wrist": {
+          "parent": "elbow",
+          "offset": [
+            0,
+            165
+          ]
+        },
+        "thigh_f": {
+          "parent": "hips",
+          "offset": [
+            27,
+            0
+          ]
+        },
+        "knee_f": {
+          "parent": "thigh_f",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "ankle_f": {
+          "parent": "knee_f",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "thigh": {
+          "parent": "hips",
+          "offset": [
+            -22,
+            0
+          ]
+        },
+        "knee": {
+          "parent": "thigh",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "ankle": {
+          "parent": "knee",
+          "offset": [
+            0,
+            155
+          ]
+        }
+      },
+      "pieces": {
+        "head": {
+          "bone": "head",
+          "span": 290,
+          "anchor": [
+            0.45,
+            0.94
+          ],
+          "z": 3
+        },
+        "torso": {
+          "bone": "torso",
+          "span": 420,
+          "anchor": [
+            0.52,
+            0.93
+          ],
+          "z": 0
+        },
+        "shoulder": {
+          "bone": "shoulder",
+          "span": 420,
+          "anchor": [
+            0.8,
+            0.85
+          ],
+          "z": 4
+        },
+        "shoulder_f": {
+          "bone": "shoulder_f",
+          "span": 420,
+          "anchor": [
+            0.8,
+            0.85
+          ],
+          "z": -3
+        },
+        "elbow": {
+          "bone": "elbow",
+          "span": 205,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": 5
+        },
+        "elbow_f": {
+          "bone": "elbow_f",
+          "span": 205,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -2
+        },
+        "wrist": {
+          "bone": "wrist",
+          "span": 75,
+          "anchor": [
+            0.5,
+            0.12
+          ],
+          "z": 6
+        },
+        "wrist_f": {
+          "bone": "wrist_f",
+          "span": 75,
+          "anchor": [
+            0.5,
+            0.12
+          ],
+          "z": -1
+        },
+        "thigh": {
+          "bone": "thigh",
+          "span": 195,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -1
+        },
+        "thigh_f": {
+          "bone": "thigh_f",
+          "span": 195,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -3
+        },
+        "knee": {
+          "bone": "knee",
+          "span": 195,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -1
+        },
+        "knee_f": {
+          "bone": "knee_f",
+          "span": 195,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -3
+        },
+        "ankle": {
+          "bone": "ankle",
+          "span": 85,
+          "anchor": [
+            0.32,
+            0.35
+          ],
+          "z": -1
+        },
+        "ankle_f": {
+          "bone": "ankle_f",
+          "span": 85,
+          "anchor": [
+            0.32,
+            0.35
+          ],
+          "z": -3
+        }
+      },
+      "shoulder_x_fraction": -0.32
+    },
+    "statue": {
+      "bones": {
+        "root": {
+          "parent": "",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "hips": {
+          "parent": "root",
+          "offset": [
+            0,
+            -480
+          ]
+        },
+        "torso": {
+          "parent": "hips",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "head": {
+          "parent": "torso",
+          "offset": [
+            0,
+            -310
+          ]
+        },
+        "shoulder_f": {
+          "parent": "torso",
+          "offset": [
+            35,
+            -320
+          ]
+        },
+        "elbow_f": {
+          "parent": "shoulder_f",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "wrist_f": {
+          "parent": "elbow_f",
+          "offset": [
+            0,
+            140
+          ]
+        },
+        "shoulder": {
+          "parent": "torso",
+          "offset": [
+            -25,
+            -320
+          ]
+        },
+        "elbow": {
+          "parent": "shoulder",
+          "offset": [
+            0,
+            155
+          ]
+        },
+        "wrist": {
+          "parent": "elbow",
+          "offset": [
+            0,
+            140
+          ]
+        },
+        "thigh_f": {
+          "parent": "hips",
+          "offset": [
+            27,
+            0
+          ]
+        },
+        "knee_f": {
+          "parent": "thigh_f",
+          "offset": [
+            0,
+            225
+          ]
+        },
+        "ankle_f": {
+          "parent": "knee_f",
+          "offset": [
+            0,
+            210
+          ]
+        },
+        "thigh": {
+          "parent": "hips",
+          "offset": [
+            -22,
+            0
+          ]
+        },
+        "knee": {
+          "parent": "thigh",
+          "offset": [
+            0,
+            225
+          ]
+        },
+        "ankle": {
+          "parent": "knee",
+          "offset": [
+            0,
+            210
+          ]
+        }
+      },
+      "pieces": {
+        "head": {
+          "bone": "head",
+          "span": 160,
+          "anchor": [
+            0.45,
+            0.94
+          ],
+          "z": 3
+        },
+        "torso": {
+          "bone": "torso",
+          "span": 350,
+          "anchor": [
+            0.52,
+            0.78
+          ],
+          "z": 0
+        },
+        "shoulder": {
+          "bone": "shoulder",
+          "span": 210,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": 4
+        },
+        "shoulder_f": {
+          "bone": "shoulder_f",
+          "span": 210,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -3
+        },
+        "elbow": {
+          "bone": "elbow",
+          "span": 205,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": 5
+        },
+        "elbow_f": {
+          "bone": "elbow_f",
+          "span": 205,
+          "anchor": [
+            0.5,
+            0.13
+          ],
+          "z": -2
+        },
+        "wrist": {
+          "bone": "wrist",
+          "span": 75,
+          "anchor": [
+            0.5,
+            0.12
+          ],
+          "z": 6
+        },
+        "wrist_f": {
+          "bone": "wrist_f",
+          "span": 75,
+          "anchor": [
+            0.5,
+            0.12
+          ],
+          "z": -1
+        },
+        "thigh": {
+          "bone": "thigh",
+          "span": 485,
+          "anchor": [
+            0.5,
+            0.14
+          ],
+          "z": -1
+        },
+        "thigh_f": {
+          "bone": "thigh_f",
+          "span": 480,
+          "anchor": [
+            0.5,
+            0.14
+          ],
+          "z": -3
+        },
+        "knee": {
+          "bone": "knee",
+          "span": 235,
+          "anchor": [
+            0.5,
+            0.14
+          ],
+          "z": -1
+        },
+        "knee_f": {
+          "bone": "knee_f",
+          "span": 235,
+          "anchor": [
+            0.5,
+            0.14
+          ],
+          "z": -3
+        },
+        "ankle": {
+          "bone": "ankle",
+          "span": 85,
+          "anchor": [
+            0.32,
+            0.35
+          ],
+          "z": -1
+        },
+        "ankle_f": {
+          "bone": "ankle_f",
+          "span": 85,
+          "anchor": [
+            0.32,
+            0.35
+          ],
+          "z": -3
+        }
+      },
+      "motion_scale": {
+        "thigh": 0.28,
+        "thigh_f": 0.28,
+        "knee": 0.5,
+        "knee_f": 0.5
+      },
+      "shoulder_x_fraction": -0.32
+    }
+  },
+  "accessories": {
+    "sword": {
+      "span": 430,
+      "anchor": [
+        0.5,
+        0.12
+      ],
+      "bone": "wrist",
+      "z": 7,
+      "angle": -35
+    },
+    "hammer": {
+      "span": 210,
+      "anchor": [
+        0.5,
+        0.82
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "cheese": {
+      "span": 100,
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "scarf": {
+      "span": 240,
+      "anchor": [
+        0.5,
+        0.05
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "handkerchief": {
+      "span": 140,
+      "anchor": [
+        0.5,
+        0.05
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "basket": {
+      "span": 190,
+      "anchor": [
+        0.5,
+        0.12
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "book": {
+      "span": 160,
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "keys": {
+      "span": 160,
+      "anchor": [
+        0.5,
+        0.05
+      ],
+      "bone": "hips",
+      "z": 7,
+      "position": [
+        50,
+        0
+      ]
+    },
+    "shuttle": {
+      "span": 120,
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "cane": {
+      "span": 410,
+      "anchor": [
+        0.5,
+        0.04
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "halberd": {
+      "span": 600,
+      "anchor": [
+        0.5,
+        0.52
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "orb": {
+      "span": 140,
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "chair": {
+      "span": 600,
+      "anchor": [
+        0.5,
+        1.0
+      ],
+      "bone": "",
+      "z": -8,
+      "position": [
+        -35,
+        47
+      ]
+    },
+    "lily": {
+      "span": 460,
+      "anchor": [
+        0.5,
+        0.75
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "books": {
+      "span": 230,
+      "anchor": [
+        0.5,
+        0.4
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "pedestal": {
+      "span": 240,
+      "anchor": [
+        0.5,
+        1.0
+      ],
+      "bone": "",
+      "z": -6
+    },
+    "cloak": {
+      "span": 550,
+      "anchor": [
+        0.5,
+        0.05
+      ],
+      "bone": "torso",
+      "z": -6,
+      "position": [
+        -25,
+        -265
+      ]
+    }
+  },
+  "clips": {
+    "npc_idle": {
+      "fps": 12,
+      "loop": true,
+      "progress": false,
+      "length": 3.0,
+      "keys": [
+        {
+          "t": 0,
+          "ease": "inout",
+          "pose": {
+            "shoulder": 0,
+            "elbow": -6,
+            "wrist": 0,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 0,
+            "neck": 0,
+            "thigh": -1,
+            "thigh_f": 1
+          }
+        },
+        {
+          "t": 1.5,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -2,
+            "elbow": -8,
+            "wrist": 0,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 0.6,
+            "neck": 1.5,
+            "thigh": -1,
+            "thigh_f": 1,
+            "hips_y": -2
+          }
+        },
+        {
+          "t": 3,
+          "ease": "inout",
+          "pose": {
+            "shoulder": 0,
+            "elbow": -6,
+            "wrist": 0,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 0,
+            "neck": 0,
+            "thigh": -1,
+            "thigh_f": 1
+          }
+        }
+      ]
+    },
+    "talk": {
+      "fps": 12,
+      "loop": true,
+      "progress": false,
+      "length": 2.4,
+      "keys": [
+        {
+          "t": 0,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -18,
+            "elbow": -65,
+            "wrist": -10,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": -2,
+            "neck": -2,
+            "thigh": -1,
+            "thigh_f": 1
+          }
+        },
+        {
+          "t": 0.7,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -42,
+            "elbow": -42,
+            "wrist": -22,
+            "shoulder_f": 12,
+            "elbow_f": -18,
+            "torso": 3,
+            "neck": 5,
+            "thigh": -1,
+            "thigh_f": 1
+          }
+        },
+        {
+          "t": 1.4,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -8,
+            "elbow": -72,
+            "wrist": 12,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 1,
+            "neck": 0,
+            "thigh": -1,
+            "thigh_f": 1
+          }
+        },
+        {
+          "t": 2.4,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -18,
+            "elbow": -65,
+            "wrist": -10,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": -2,
+            "neck": -2,
+            "thigh": -1,
+            "thigh_f": 1
+          }
+        }
+      ]
+    },
+    "seated_idle": {
+      "fps": 12,
+      "loop": true,
+      "progress": false,
+      "length": 3,
+      "keys": [
+        {
+          "t": 0,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -23,
+            "elbow": -70,
+            "wrist": 2,
+            "shoulder_f": -18,
+            "elbow_f": -78,
+            "torso": 0,
+            "neck": 0,
+            "thigh": -87,
+            "thigh_f": -84,
+            "knee": 86,
+            "knee_f": 85
+          }
+        },
+        {
+          "t": 1.5,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -23,
+            "elbow": -70,
+            "wrist": 2,
+            "shoulder_f": -18,
+            "elbow_f": -78,
+            "torso": 2,
+            "neck": 3,
+            "thigh": -87,
+            "thigh_f": -84,
+            "knee": 86,
+            "knee_f": 85
+          }
+        },
+        {
+          "t": 3,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -23,
+            "elbow": -70,
+            "wrist": 2,
+            "shoulder_f": -18,
+            "elbow_f": -78,
+            "torso": 0,
+            "neck": 0,
+            "thigh": -87,
+            "thigh_f": -84,
+            "knee": 86,
+            "knee_f": 85
+          }
+        }
+      ]
+    },
+    "seated_talk": {
+      "fps": 12,
+      "loop": true,
+      "progress": false,
+      "length": 2.4,
+      "keys": [
+        {
+          "t": 0,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -23,
+            "elbow": -70,
+            "wrist": 2,
+            "shoulder_f": -18,
+            "elbow_f": -78,
+            "torso": 0,
+            "neck": 0,
+            "thigh": -87,
+            "thigh_f": -84,
+            "knee": 86,
+            "knee_f": 85
+          }
+        },
+        {
+          "t": 0.8,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -42,
+            "elbow": -42,
+            "wrist": 2,
+            "shoulder_f": -18,
+            "elbow_f": -78,
+            "torso": 0,
+            "neck": 4,
+            "thigh": -87,
+            "thigh_f": -84,
+            "knee": 86,
+            "knee_f": 85
+          }
+        },
+        {
+          "t": 1.6,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -23,
+            "elbow": -70,
+            "wrist": -18,
+            "shoulder_f": -18,
+            "elbow_f": -78,
+            "torso": 0,
+            "neck": -3,
+            "thigh": -87,
+            "thigh_f": -84,
+            "knee": 86,
+            "knee_f": 85
+          }
+        },
+        {
+          "t": 2.4,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -23,
+            "elbow": -70,
+            "wrist": 2,
+            "shoulder_f": -18,
+            "elbow_f": -78,
+            "torso": 0,
+            "neck": 0,
+            "thigh": -87,
+            "thigh_f": -84,
+            "knee": 86,
+            "knee_f": 85
+          }
+        }
+      ]
+    },
+    "kneeling_idle": {
+      "fps": 12,
+      "loop": true,
+      "progress": false,
+      "length": 3,
+      "keys": [
+        {
+          "t": 0,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -20,
+            "elbow": -42,
+            "wrist": -8,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 0,
+            "neck": 6,
+            "thigh": 72,
+            "thigh_f": 68,
+            "knee": -132,
+            "knee_f": -128
+          }
+        },
+        {
+          "t": 1.5,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -20,
+            "elbow": -42,
+            "wrist": -8,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 4,
+            "neck": 9,
+            "thigh": 72,
+            "thigh_f": 68,
+            "knee": -132,
+            "knee_f": -128
+          }
+        },
+        {
+          "t": 3,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -20,
+            "elbow": -42,
+            "wrist": -8,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 0,
+            "neck": 6,
+            "thigh": 72,
+            "thigh_f": 68,
+            "knee": -132,
+            "knee_f": -128
+          }
+        }
+      ]
+    },
+    "kneeling_talk": {
+      "fps": 12,
+      "loop": true,
+      "progress": false,
+      "length": 2.4,
+      "keys": [
+        {
+          "t": 0,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -20,
+            "elbow": -42,
+            "wrist": -8,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 0,
+            "neck": 6,
+            "thigh": 72,
+            "thigh_f": 68,
+            "knee": -132,
+            "knee_f": -128
+          }
+        },
+        {
+          "t": 1.2,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -38,
+            "elbow": -52,
+            "wrist": -8,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 0,
+            "neck": -3,
+            "thigh": 72,
+            "thigh_f": 68,
+            "knee": -132,
+            "knee_f": -128
+          }
+        },
+        {
+          "t": 2.4,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -20,
+            "elbow": -42,
+            "wrist": -8,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 0,
+            "neck": 6,
+            "thigh": 72,
+            "thigh_f": 68,
+            "knee": -132,
+            "knee_f": -128
+          }
+        }
+      ]
+    },
+    "insect_idle": {
+      "fps": 12,
+      "loop": true,
+      "progress": false,
+      "length": 0.6,
+      "keys": [
+        {
+          "t": 0,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -10,
+            "elbow": 4,
+            "wrist": 0,
+            "shoulder_f": 10,
+            "elbow_f": -4,
+            "torso": 0,
+            "neck": -2,
+            "thigh": 5,
+            "thigh_f": -5,
+            "knee": 3,
+            "knee_f": -3
+          }
+        },
+        {
+          "t": 0.3,
+          "ease": "inout",
+          "pose": {
+            "shoulder": 18,
+            "elbow": 4,
+            "wrist": 0,
+            "shoulder_f": -18,
+            "elbow_f": -4,
+            "torso": 0,
+            "neck": 3,
+            "thigh": 5,
+            "thigh_f": -5,
+            "knee": 3,
+            "knee_f": -3
+          }
+        },
+        {
+          "t": 0.6,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -10,
+            "elbow": 4,
+            "wrist": 0,
+            "shoulder_f": 10,
+            "elbow_f": -4,
+            "torso": 0,
+            "neck": -2,
+            "thigh": 5,
+            "thigh_f": -5,
+            "knee": 3,
+            "knee_f": -3
+          }
+        }
+      ]
+    },
+    "cast": {
+      "fps": 12,
+      "loop": false,
+      "progress": false,
+      "length": 1,
+      "keys": [
+        {
+          "t": 0,
+          "ease": "inout",
+          "pose": {
+            "shoulder": 0,
+            "elbow": -6,
+            "wrist": 0,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 0,
+            "neck": 0,
+            "thigh": -1,
+            "thigh_f": 1
+          }
+        },
+        {
+          "t": 0.32,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -42,
+            "elbow": -50,
+            "wrist": -12,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": -4,
+            "neck": -4,
+            "thigh": -1,
+            "thigh_f": 1
+          }
+        },
+        {
+          "t": 0.5,
+          "ease": "inout",
+          "pose": {
+            "shoulder": -82,
+            "elbow": -12,
+            "wrist": -12,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 8,
+            "neck": -4,
+            "thigh": -1,
+            "thigh_f": 1
+          }
+        },
+        {
+          "t": 1,
+          "ease": "inout",
+          "pose": {
+            "shoulder": 0,
+            "elbow": -6,
+            "wrist": 0,
+            "shoulder_f": 4,
+            "elbow_f": -6,
+            "torso": 0,
+            "neck": 0,
+            "thigh": -1,
+            "thigh_f": 1
+          }
+        }
+      ]
+    }
+  },
+  "transition_speed": 14,
+  "hand_grip": 35,
+  "combat": {
+    "windup": {
+      "clip": "slash_a",
+      "start": 0,
+      "end": 0.32
+    },
+    "strike": {
+      "clip": "slash_a",
+      "start": 0.36,
+      "end": 1
+    },
+    "cast_windup": {
+      "clip": "cast",
+      "start": 0,
+      "end": 0.32
+    },
+    "cast_strike": {
+      "clip": "cast",
+      "start": 0.36,
+      "end": 1
+    },
+    "crouch": {
+      "clip": "parry",
+      "start": 0,
+      "end": 1
+    }
+  },
+  "secondary": {
+    "cloak_angle": 4,
+    "cloak_period": 2.0
+  },
+  "animated": [
+    "root",
+    "hips",
+    "torso",
+    "head",
+    "shoulder_f",
+    "elbow_f",
+    "wrist_f",
+    "shoulder",
+    "elbow",
+    "wrist",
+    "thigh_f",
+    "knee_f",
+    "ankle_f",
+    "thigh",
+    "knee",
+    "ankle",
+    "neck",
+    "hips_x",
+    "hips_y",
+    "root_x",
+    "root_y",
+    "root_rot"
+  ]
+}

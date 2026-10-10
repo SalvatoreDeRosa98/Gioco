@@ -31,6 +31,9 @@ var _stations_root: Node2D
 var _saved_state: Dictionary = {}
 var resume_save := true
 var _secret_return := Vector2.ZERO
+var _forge_return_room := 1
+var introduction: Node
+var _intro_config: Dictionary
 var _expedition: Node2D
 var _forge_backdrop: Node2D
 var upgrades: Dictionary = {}
@@ -39,6 +42,7 @@ var choice_uses: Dictionary = {}
 var _map: CanvasLayer
 var traversal: Node2D
 var _shop: CanvasLayer
+var _pause: CanvasLayer
 var _parry_attack := false
 var _choice_signature := ""
 
@@ -85,6 +89,8 @@ var _luciana_shout_cd := 0.0
 
 
 func _ready() -> void:
+	_intro_config = JSON.parse_string(FileAccess.get_file_as_string("res://data/introduction.json"))
+	_forge_return_room = int(_intro_config.forge.entry_room)
 	_rng.randomize()
 	_backdrop = BackdropScript.new()
 	add_child(_backdrop)
@@ -116,6 +122,9 @@ func _ready() -> void:
 	_shop = preload("res://game/shop.gd").new()
 	_shop.world = self
 	add_child(_shop)
+	_pause = preload("res://game/pause_menu.gd").new()
+	_pause.world = self
+	add_child(_pause)
 	_dialogue = DialogueBoxScript.new()
 	add_child(_dialogue)
 	_dialogue.closed.connect(_on_dialogue_closed)
@@ -148,6 +157,21 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	Controls.observe(event)
+	if event.is_action_pressed("pause") and (_dialogue == null or not _dialogue.is_open()) and not in_cutscene():
+		if _map.opened:
+			_map.toggle()
+		elif _shop.opened:
+			_shop.hide_shop()
+		else:
+			_pause.toggle()
+		get_viewport().set_input_as_handled()
+		return
+	if _pause != null and _pause.opened:
+		if event.is_action_pressed("ui_cancel"):
+			_pause.toggle()
+			get_viewport().set_input_as_handled()
+		return
 	if _map != null and _map.opened:
 		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("map") or (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M):
 			_map.toggle()
@@ -169,7 +193,7 @@ func _input(event: InputEvent) -> void:
 	if game_over and victory and event.is_action_pressed("interact"):
 		_begin_epilogue()
 		return
-	if room_index == Room.SECRET_ROOM and not is_talking() and not player.dead and _talk_lock <= 0.0 and event.is_action_pressed("shop"):
+	if room_index == Room.SECRET_ROOM and can_save_memories() and not is_talking() and not player.dead and _talk_lock <= 0.0 and event.is_action_pressed("shop"):
 		_shop.show_shop()
 		return
 	if event.is_action_pressed("ui_cancel"):
@@ -189,6 +213,8 @@ func _toggle_developer_mode() -> void:
 
 
 func _process(delta: float) -> void:
+	if _pause != null and _pause.opened:
+		return
 	if _map != null and _map.opened:
 		return
 	if _shop != null and _shop.opened:
@@ -293,6 +319,10 @@ func _apply_grade(th: Dictionary) -> void:
 # ---------------------------------------------------------------- Stanze
 
 func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
+	if is_instance_valid(introduction):
+		remove_child(introduction)
+		introduction.queue_free()
+		introduction = null
 	Engine.time_scale = 1.0
 	arena_active = false
 	_backdrop.modulate = Color.WHITE
@@ -374,6 +404,10 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	_death_t = -1.0
 	_clear_hostile()
 	_revive_player()
+	if idx == 0:
+		introduction = preload("res://game/introduction.gd").new()
+		introduction.setup(self)
+		add_child(introduction)
 	if not cleared_now:
 		for e in room["enemies"]:
 			if not defeated.has(_enemy_id(e["type"], e["pos"])):
@@ -390,6 +424,8 @@ func _left_open() -> bool:
 
 
 func _right_open() -> bool:
+	if room_index == 0:
+		return story.times_seen("lesson_menu") > 0
 	if room_index == Room.ARCHIVES_ROOM:
 		return story.get_var("father_registry") in ["conservato", "bruciato"] and Room.Expansion.archive_ready(story) and Room.Expansion.all_seals_ready(story)
 	if room_index == 8:
@@ -497,12 +533,35 @@ func _update_forge_exit() -> void:
 
 
 func _leave_forge() -> void:
-	_go(0, true)
-	var point := _secret_return if _secret_return != Vector2.ZERO else Room.FIRST_SECRET_STEP.get_center() - Vector2(0, PlayerScript.HALF.y + 7)
+	var fallback: Array = _intro_config.forge["return"]
+	var point := _secret_return if _secret_return != Vector2.ZERO else Vector2(fallback[0],fallback[1])
+	_go(_forge_return_room, true)
 	player.teleport(point)
+
+## La bottega si riconosce dopo gli indizi delle prime due stanze.
+func forge_ready() -> bool:
+	for idx in _intro_config.forge.required_rooms:
+		if story.times_seen("visited_%d" % idx) == 0:
+			return false
+	return true
+
+## Entra dalla porta di Corso Trieste e conserva il punto esatto del ritorno.
+func enter_forge() -> void:
+	if not forge_ready():
+		_hud.toast("Mancano ancora gli indizi della bottega di Gaetano")
+		return
+	_secret_return = player.position
+	_forge_return_room = room_index
+	_go(Room.SECRET_ROOM, true)
+
+## Solo Ferruccio che ha ritrovato la propria identità può custodire i ricordi.
+func can_save_memories() -> bool:
+	return story.times_seen("ferruccio_identity") > 0
 
 
 func _check_cleared() -> void:
+	if room_index == 0 and is_instance_valid(introduction) and not introduction.complete():
+		return
 	if room_index == Room.SECRET_ROOM:
 		return
 	if room_cleared or _room_t < 0.8:
@@ -748,7 +807,7 @@ func _on_enemy_killed(e: Node) -> void:
 				floor_y = minf(floor_y, r.position.y)
 		stations[str(e.get_meta("save_id"))] = {"room": room_index, "x": e.global_position.x, "y": floor_y}
 		_build_stations()
-		_hud.toast("Un'incudine è apparsa: avvicinati e premi W per salvare")
+		_hud.toast(Controls.label("interact") + "  Custodisci i ricordi all'incudine" if can_save_memories() else "L'incudine tace: devi prima ricordare chi sei")
 	if e.kind == "custode":
 		_boss_fall = e.global_position
 	if int(e.coins) > 0:
@@ -884,6 +943,8 @@ func _build_stations() -> void:
 	for n in _stations_root.get_children():
 		_stations_root.remove_child(n)
 		n.queue_free()
+	if not can_save_memories():
+		return
 	for id in stations:
 		var data: Dictionary = stations[id]
 		# Anche i vecchi salvataggi non mostrano più incudini sulle statue escluse.
@@ -898,6 +959,8 @@ func _build_stations() -> void:
 
 
 func _update_stations() -> void:
+	if not can_save_memories():
+		return
 	var best: Node2D = null
 	var nearest := 80.0
 	for node in _stations_root.get_children():
@@ -929,6 +992,9 @@ func _update_branch() -> void:
 
 
 func _save_at(pos: Vector2) -> void:
+	if not can_save_memories() or room_index == 0:
+		_hud.toast("Non puoi custodire ricordi finché non ritrovi te stesso")
+		return
 	var new_checkpoint := {"room": room_index, "x": pos.x, "y": pos.y - PlayerScript.HALF.y}
 	var state := {"version": 1, "checkpoint": new_checkpoint, "coins": coins, "cleared": cleared, "defeated": defeated, "stations": stations, "vars": story.vars, "seen": story.seen, "upgrades": upgrades, "equipped": equipped, "choice_uses": {}}
 	if not _write_state(state):
@@ -957,10 +1023,12 @@ func _write_state(state: Dictionary) -> bool:
 
 ## Lo shop registra spesa e proprietà, mantenendo l'ultimo punto di ripartenza.
 func _commit_purchase(price: int, campaign_end: bool = false) -> bool:
+	if not can_save_memories():
+		return false
 	var state := _saved_state.duplicate(true)
 	if state.is_empty():
-		var initial_story := Story.new()
-		state = {"version": 1, "checkpoint": {"room": 0, "x": 110, "y": 950}, "coins": 0, "cleared": {}, "defeated": {}, "stations": {}, "vars": initial_story.vars, "seen": {}}
+		var forge: Array = _intro_config.forge.station
+		state = {"version": 1, "checkpoint": {"room": Room.SECRET_ROOM, "x": forge[0], "y": float(forge[1]) - PlayerScript.HALF.y}, "coins": coins + price, "cleared": cleared.duplicate(true), "defeated": defeated.duplicate(true), "stations": stations.duplicate(true), "vars": story.vars.duplicate(true), "seen": story.seen.duplicate(true)}
 	state["coins"] = maxi(0, int(state["coins"]) - price)
 	state["upgrades"] = upgrades.duplicate(true)
 	state["equipped"] = equipped.duplicate()
@@ -989,6 +1057,10 @@ func apply_upgrades() -> void:
 	if player == null:
 		return
 	player._cfg = Tuning.data.player.duplicate(true)
+	player.scarf_unlocked = upgrades.has("scarf")
+	player.identity_restored = can_save_memories()
+	if player._rig != null:
+		player._rig.set_story_appearance(player.scarf_unlocked, player.identity_restored)
 	player.max_hp = int(player._cfg.max_hp) + int(upgrades.has("mask"))
 	player.hp = mini(player.hp, player.max_hp)
 	while equipped.size() > accessory_slots():
@@ -1003,7 +1075,7 @@ func apply_upgrades() -> void:
 
 ## Acquista solo nella fucina; annulla gli effetti se la registrazione su disco fallisce.
 func buy_item(key: String) -> String:
-	if room_index != Room.SECRET_ROOM or player.dead or not Tuning.data.shop.has(key):
+	if room_index != Room.SECRET_ROOM or not can_save_memories() or player.dead or not Tuning.data.shop.has(key):
 		return "Acquisto non disponibile"
 	var item: Dictionary = Tuning.data.shop[key]
 	var price := int(item.price)
@@ -1092,6 +1164,14 @@ func _restore_state(state: Dictionary) -> void:
 	story.vars = state["vars"].duplicate(true)
 	story.seen = state["seen"].duplicate(true)
 	upgrades = state.get("upgrades", {}).duplicate(true)
+	# Compatibilità: i vecchi salvataggi non avevano i due doni narrativi espliciti.
+	if story.times_seen("gaetano_fucina_lore") > 0:
+		story.seen["ferruccio_identity"] = 1
+	if story.get_var("agnese_memory") == "risvegliata":
+		upgrades["scarf"] = true
+	if bool(cleared.get(0, false)):
+		for step in JSON.parse_string(FileAccess.get_file_as_string("res://data/introduction.json")).steps:
+			story.seen["lesson_" + step.id] = 1
 	equipped = state.get("equipped", []).duplicate()
 	choice_uses = state.get("choice_uses", {}).duplicate(true)
 	apply_upgrades()
@@ -1138,7 +1218,7 @@ func story_ctx() -> Dictionary:
 
 ## Vero mentre il riquadro dei dialoghi è aperto: giocatore e nemici restano fermi.
 func is_talking() -> bool:
-	return (_dialogue != null and _dialogue.is_open()) or (_shop != null and _shop.opened) or (_map != null and _map.opened)
+	return (_dialogue != null and _dialogue.is_open()) or (_shop != null and _shop.opened) or (_map != null and _map.opened) or (_pause != null and _pause.opened)
 
 
 ## Sceglie il personaggio più vicino con cui si può parlare (mostra il suo invito)
@@ -1221,6 +1301,17 @@ func _on_dialogue_closed() -> void:
 ## Effetti chiesti dalle battute (dialogues.json, chiave "do").
 func _on_dialogue_effect(what: String) -> void:
 	match what:
+		"restore_identity":
+			story.seen["ferruccio_identity"] = 1
+			var point: Array = _intro_config.forge.station
+			stations[Room.save_station_id(Room.SECRET_ROOM)] = {"room": Room.SECRET_ROOM, "x": point[0], "y": point[1]}
+			apply_upgrades()
+			_build_stations()
+			_hud.toast("Hai ritrovato il tuo volto. Ora puoi custodire i ricordi alle incudini.")
+		"give_scarf":
+			upgrades["scarf"] = true
+			apply_upgrades()
+			_hud.toast("La sciarpa di Agnese · " + Controls.label("dash") + "  Scatto sbloccato")
 		"start_duel":
 			_start_taddeo_duel()
 		"heal":

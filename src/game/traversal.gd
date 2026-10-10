@@ -48,7 +48,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_hammer_cd = maxf(0, _hammer_cd - delta)
 	var player = world.player
-	var hammer_input := Input.is_action_just_pressed("hammer") or Input.is_physical_key_pressed(KEY_V)
+	var hammer_input := Input.is_action_just_pressed("hammer") or Input.is_physical_key_pressed(KEY_V) or Input.is_key_pressed(KEY_V)
 	if hammer_input and _hammer_cd == 0 and world.upgrades.has("hammer") and player.attacking <= 0:
 		_hammer_cd = float(Tuning.data.player.hammer_cooldown)
 		player.hammer_time = float(Tuning.data.player.hammer_time)

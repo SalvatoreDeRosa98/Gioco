@@ -24,7 +24,7 @@ const ROOMS := [
 		"theme": "piazza",
 		"size": Vector2(2560, 1080),
 		"floor": 980.0,
-		"blocks": [Rect2(1000, 900, 560, 80), Rect2(1100, 840, 360, 60)],
+		"blocks": [],
 		"ledges": [Rect2(320, 800, 220, 18), Rect2(640, 690, 200, 18), Rect2(1170, 640, 220, 18), Rect2(1700, 720, 220, 18), Rect2(2000, 820, 240, 18)],
 		# Personaggi (punto dei piedi): chiavi di "npcs" in data/dialogues.json.
 		"npcs": [
@@ -32,15 +32,10 @@ const ROOMS := [
 			{"id": "assunta", "pos": Vector2(905, 980)},
 		],
 		"enemies": [
-			{"type": "gatto", "pos": Vector2(700, 960)},
-			{"type": "guardia", "pos": Vector2(1450, 960)},
-			{"type": "gatto", "pos": Vector2(1850, 960)},
-			{"type": "vespa", "pos": Vector2(2150, 600)},
 		],
 		"decor": [
 			{"kind": "lamp", "pos": Vector2(220, 980)},
 			{"kind": "lamp", "pos": Vector2(880, 980)},
-			{"kind": "statue", "pos": Vector2(1280, 840)},
 			{"kind": "lamp", "pos": Vector2(1680, 980)},
 			{"kind": "lamp", "pos": Vector2(2400, 980)},
 		],
@@ -173,7 +168,9 @@ const FIRST_SECRET_STEP := Rect2(1110, 390, 120, 14)
 const SAVE_STATUES := [Vector2(2320, 946), Vector2(2320, 946), Vector2(2350, 946), Vector2(1700, 666)]
 
 static func save_station_id(idx: int) -> String:
-	if idx >= SAVE_STATUES.size():
+	if idx == SECRET_ROOM:
+		return "forge-memory"
+	if idx == 0 or idx >= SAVE_STATUES.size():
 		return ""
 	var pos: Vector2 = SAVE_STATUES[idx]
 	return "%d:statua:%d:%d" % [idx, roundi(pos.x), roundi(pos.y)]
@@ -181,6 +178,15 @@ static func save_station_id(idx: int) -> String:
 ## Aggiunge le aperture verticali senza cambiare gli ID delle aree salvate.
 static func build(idx: int, choices: Dictionary = {}) -> Dictionary:
 	var r := _base_build(idx, choices).duplicate(true)
+	if idx == 0:
+		r.ledges = []
+		var intro: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/introduction.json"))
+		for ledge in intro.ledges:
+			r.ledges.append(Rect2(ledge[0],ledge[1],ledge[2],ledge[3]))
+		r.branch = -1
+		r.branch_platform = Rect2()
+		r.invisible_steps = []
+		r.secrets = []
 	r["vertical"] = Expansion.data().get("vertical", {}).get(str(idx), [])
 	for l in Expansion.data().get("extra_ledges", {}).get(str(idx), []):
 		r.ledges.append(Rect2(l[0], l[1], l[2], l[3]))
@@ -244,7 +250,7 @@ static func highest_platform(idx: int) -> Rect2:
 
 static func _enemies(idx: int) -> Array:
 	var enemies: Array = ROOMS[idx]["enemies"].duplicate(true)
-	if idx < 2:
+	if idx == 1:
 		enemies.append({"type": "statua", "pos": Vector2(2320, 946)})
 	return enemies
 

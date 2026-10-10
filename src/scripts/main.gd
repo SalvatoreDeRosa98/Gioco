@@ -96,6 +96,7 @@ func _ensure_inputs() -> void:
 		for k in binds[action]:
 			var ev := InputEventKey.new()
 			ev.physical_keycode = k
+			ev.keycode = k
 			InputMap.action_add_event(action, ev)
 	# Mappatura Gamepad completa (schema Xbox / PlayStation):
 	# A / Croce: Salto

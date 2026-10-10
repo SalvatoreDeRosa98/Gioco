@@ -16,6 +16,12 @@ func key(code: Key, pressed: bool) -> void:
 	event.physical_keycode = code
 	event.pressed = pressed
 	Input.parse_input_event(event)
+	var action_map := {KEY_Q: "grapple", KEY_V: "hammer", KEY_R: "heal"}
+	if action_map.has(code):
+		if pressed:
+			Input.action_press(action_map[code])
+		else:
+			Input.action_release(action_map[code])
 func jump_to(point: Vector2) -> bool:
 	Input.action_press("jump")
 	await create_timer(0.20).timeout
@@ -54,6 +60,8 @@ func _run() -> void:
 	world.set_process(false)
 	player.invulnerable = true
 	world._go(5, true)
+	world.story.seen["ferruccio_identity"] = 1
+	world.apply_upgrades()
 	world._save_at(Vector2(110,980))
 	check(world.buy_item("grapple").begins_with("Acquisto completato"), "Catena ottenibile gratuitamente nella fucina")
 	check(not world.buy_item("hammer").begins_with("Acquisto completato"), "Martello richiede il progetto")
@@ -142,7 +150,8 @@ func _run() -> void:
 	check(world.is_talking() and not player.is_physics_processing(),"Mappa ferma il mondo")
 	world._map.toggle()
 	check(player.is_physics_processing(),"Chiudere la mappa restituisce il controllo")
-	world._save_at(Vector2(160,980))
+	world._go(Room.SECRET_ROOM,true)
+	world._save_at(Vector2(460,980))
 	world.story.seen.clear()
 	world._restore_save()
 	check(world.story.times_seen("market_wall") == 1 and world.story.times_seen("visited_12") == 1,"Muri e mappa persistono al caricamento")

@@ -67,13 +67,16 @@ func _run() -> void:
 	_main = load(MAIN_SCENE).instantiate()
 	root.add_child(_main)
 	await process_frame
-	_main.call("_on_play_pressed")
+	_main.call("_on_play_pressed", false)
 	await create_timer(0.5).timeout
 	var world: Node = _main.get_node_or_null("World")
 	_check(world != null, "il mondo esiste")
 	if world == null:
 		quit(1)
 		return
+	world.save_path = "user://finale-flow-regression.json"
+	world.story.seen["ferruccio_identity"] = 1
+	world.apply_upgrades()
 	var box = world._dialogue
 
 	# Act 1: Gregorio.
@@ -100,7 +103,10 @@ func _run() -> void:
 	_check(world._hud._end_quote != "", "citazione conclusiva presente")
 
 	# Cleanup
+	var test_save: String = world.save_path
 	_main.queue_free()
 	await process_frame
+	if FileAccess.file_exists(test_save):
+		DirAccess.remove_absolute(test_save)
 	print("%d errori" % _failures)
 	quit(1 if _failures > 0 else 0)
