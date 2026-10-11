@@ -104,7 +104,7 @@ func _draw() -> void:
 			for a in range(6):
 				var angle: float = a * TAU / 6 + (_time * 0.5 if done else 0)
 				draw_line(wheel, wheel + Vector2.from_angle(angle) * 22, color, 2, true)
-		if i == selected:
+		if i == selected and draws_mark(i):  # se sostituito, il cartello è quello del cancello (slice_props.gd)
 			var text := Controls.label("interact") + "  " + str(m.label)
 			var lr := label_rect(p, str(m.kind), text)
 			Art.text(self, Art.body_font(), lr.position + Vector2(0, LABEL_BASE), text, 19, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, lr.size.x)
@@ -213,8 +213,18 @@ func _archway(base: Vector2, locked: bool, near: bool, is_forge: bool = false) -
 
 
 ## Falso se il landmark è sostituito da un oggetto dipinto della scena (room.hidden_marks).
+## Falso anche se il punto sta sotto un cancello dipinto: l'arco sbarrato (assi incrociate) non va
+## mai disegnato sopra la grata nuova, anche se hidden_marks mancasse.
 func draws_mark(i: int) -> bool:
-	return not str(marks[i].get("id", "")) in world.room.get("hidden_marks", [])
+	if str(marks[i].get("id", "")) in world.room.get("hidden_marks", []):
+		return false
+	var sp = world.get("_slice_props")
+	if is_instance_valid(sp):
+		var at := Vector2(marks[i].pos[0], marks[i].pos[1]) - Vector2(0, 40)
+		for r: Rect2 in sp.gate_rects():
+			if r.grow(24.0).has_point(at):
+				return false
+	return true
 
 
 ## Colonna in conci, presa dalla stessa texture della pietra del pavimento.

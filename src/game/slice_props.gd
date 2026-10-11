@@ -114,6 +114,31 @@ func visible_rect() -> Rect2:
 	var view := get_viewport_rect().size / cam.zoom
 	return Rect2(cam.get_screen_center_position() - view / 2.0, view)
 
+## Unico cartello del cancello, secondo lo stato: chiuso -> "hint" (es. "Sbarrato dalla Tana: prima
+## Ratking"); aperto -> l'invito del passaggio che il cancello sostituisce (landmark "route" in
+## "replaces", es. "Passaggio per Piazza Dante"), così arco e cancello non hanno due cartelli.
+func gate_label(p: Dictionary, s: Dictionary) -> String:
+	if float(s.open) < 0.05:
+		return str(p.get("hint", "Chiuso"))
+	var ex = world.get("_expedition")
+	if is_instance_valid(ex):
+		for m in ex.marks:
+			if str(m.kind) == "route" and str(m.get("id", "")) in p.get("replaces", []):
+				return Controls.label("interact") + "  " + str(m.label)
+	return ""
+
+
+## Riquadri (mondo) dei soli sprite dei cancelli.
+func gate_rects() -> Array:
+	var out := []
+	for p: Dictionary in props:
+		if p.kind == "gate":
+			var h := float(p.get("height", 200.0))
+			var size := Vector2(GATE_SHUT.get_size()) * (h / GATE_SHUT.get_height())
+			out.append(Rect2(Vector2(p.pos.x - size.x / 2.0, p.pos.y - size.y), size))
+	return out
+
+
 ## Riquadri (mondo) dei cancelli disegnati e dei loro cartelli: i cartelli degli altri oggetti non
 ## ci finiscono sotto né sopra.
 func sprite_rects() -> Array:
@@ -148,6 +173,7 @@ func _draw() -> void:
 			"gate":
 				_sprite(GATE_SHUT, p.pos, h, 1.0 - float(s.open))
 				_sprite(GATE_OPEN, p.pos, h, float(s.open))
-				if float(s.open) < 0.05 and world.player and absf(world.player.position.x - p.pos.x) < 200.0 and absf(world.player.position.y - p.pos.y) < 260.0:
+				var label := gate_label(p, s)
+				if label != "" and world.player and absf(world.player.position.x - p.pos.x) < 200.0 and absf(world.player.position.y - p.pos.y) < 260.0:
 					var hr := hint_rect(p)
-					Art.text(self, Art.body_font(), hr.position + Vector2(0, 20), str(p.get("hint", "Chiuso")), 18, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, hr.size.x)
+					Art.text(self, Art.body_font(), hr.position + Vector2(0, 20), label, 18, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, hr.size.x)
