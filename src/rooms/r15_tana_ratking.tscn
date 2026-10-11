@@ -2,58 +2,55 @@
 
 [ext_resource type="TileSet" path="res://rooms/blockout/blockout_tileset.tres" id="1_q2t1j"]
 
-[node name="R15TanaRatking" type="Node2D" unique_id=1266105502]
+[node name="R15TanaRatking" type="Node2D" unique_id=955870247]
 metadata/room_id = 15
 metadata/room_name = "Tana di Ratking"
 metadata/floor = 980.0
 metadata/size = Vector2(1600, 1080)
 metadata/grid_offset_y = 20.0
-metadata/generated_by = "tools/levels/json_to_scenes.gd"
+metadata/generated_by = "tools/levels/slice_design.gd"
 
-[node name="Bounds" type="ReferenceRect" parent="." unique_id=265510532]
+[node name="Bounds" type="ReferenceRect" parent="." unique_id=678392462]
 offset_right = 1600.0
 offset_bottom = 1080.0
 border_color = Color(0.3, 0.8, 1, 1)
 border_width = 4.0
 editor_only = false
 
-[node name="Terrain" type="TileMapLayer" parent="." unique_id=579455344]
+[node name="Terrain" type="TileMapLayer" parent="." unique_id=1416268421]
 position = Vector2(0, 20)
 tile_map_data = PackedByteArray("AAAAAA8AAAAAAAAAAAAAABAAAAAAAAAAAAABAA8AAAAAAAAAAAABABAAAAAAAAAAAAACAA8AAAAAAAAAAAACABAAAAAAAAAAAAADAA8AAAAAAAAAAAADABAAAAAAAAAAAAAEAA8AAAAAAAAAAAAEABAAAAAAAAAAAAAFAA8AAAAAAAAAAAAFABAAAAAAAAAAAAAGAA8AAAAAAAAAAAAGABAAAAAAAAAAAAAHAA8AAAAAAAAAAAAHABAAAAAAAAAAAAAIAA8AAAAAAAAAAAAIABAAAAAAAAAAAAAJAA8AAAAAAAAAAAAJABAAAAAAAAAAAAAKAA8AAAAAAAAAAAAKABAAAAAAAAAAAAALAA8AAAAAAAAAAAALABAAAAAAAAAAAAAMAA8AAAAAAAAAAAAMABAAAAAAAAAAAAANAA8AAAAAAAAAAAANABAAAAAAAAAAAAAOAA8AAAAAAAAAAAAOABAAAAAAAAAAAAAPAA8AAAAAAAAAAAAPABAAAAAAAAAAAAAQAA8AAAAAAAAAAAAQABAAAAAAAAAAAAARAA8AAAAAAAAAAAARABAAAAAAAAAAAAASAA8AAAAAAAAAAAASABAAAAAAAAAAAAATAA8AAAAAAAAAAAATABAAAAAAAAAAAAAUAA8AAAAAAAAAAAAUABAAAAAAAAAAAAAVAA8AAAAAAAAAAAAVABAAAAAAAAAAAAAWAA8AAAAAAAAAAAAWABAAAAAAAAAAAAAXAA8AAAAAAAAAAAAXABAAAAAAAAAAAAAYAA8AAAAAAAAAAAAYABAAAAAAAAAAAAA=")
 tile_set = ExtResource("1_q2t1j")
 
-[node name="OneWay" type="TileMapLayer" parent="." unique_id=918102165]
+[node name="OneWay" type="TileMapLayer" parent="." unique_id=1539336990]
 position = Vector2(0, 20)
-tile_map_data = PackedByteArray("AAAFAAwAAAAEAAAAAAAGAAwAAAAEAAAAAAAHAAwAAAAEAAAAAAAIAAwAAAAEAAAAAAAJAAwAAAAEAAAAAAAPAAwAAAAEAAAAAAAQAAwAAAAEAAAAAAARAAwAAAAEAAAAAAASAAwAAAAEAAAAAAATAAwAAAAEAAAAAAA=")
+tile_map_data = PackedByteArray("AAAFAA0AAAABAAAAAAAGAA0AAAABAAAAAAAHAA0AAAABAAAAAAAIAA0AAAABAAAAAAAQAA0AAAABAAAAAAARAA0AAAABAAAAAAASAA0AAAABAAAAAAATAA0AAAABAAAAAAAKAAoAAAAEAAAAAAALAAoAAAAEAAAAAAAMAAoAAAAEAAAAAAANAAoAAAAEAAAAAAAOAAoAAAAEAAAAAAA=")
 tile_set = ExtResource("1_q2t1j")
 
-[node name="Hazards" type="TileMapLayer" parent="." unique_id=786498915]
-position = Vector2(0, 20)
-tile_set = ExtResource("1_q2t1j")
-
-[node name="Reference" type="TileMapLayer" parent="." unique_id=2004241317]
-modulate = Color(1, 1, 1, 0.6)
+[node name="Hazards" type="TileMapLayer" parent="." unique_id=1253323150]
 position = Vector2(0, 20)
 tile_set = ExtResource("1_q2t1j")
 
-[node name="Markers" type="Node2D" parent="." unique_id=177037538]
+[node name="Cracks" type="Node2D" parent="." unique_id=1233088324]
 
-[node name="Enemies" type="Node2D" parent="Markers" unique_id=1386100165]
+[node name="Markers" type="Node2D" parent="." unique_id=1303339535]
 
-[node name="E0_ratking" type="Marker2D" parent="Markers/Enemies" unique_id=435361850]
+[node name="Enemies" type="Node2D" parent="Markers" unique_id=1651350843]
+
+[node name="E0_ratking" type="Marker2D" parent="Markers/Enemies" unique_id=1070474068]
 position = Vector2(1100, 935)
 gizmo_extents = 24.0
 metadata/order = 0
 metadata/type = "ratking"
 
-[node name="Dot" type="ColorRect" parent="Markers/Enemies/E0_ratking" unique_id=337511241]
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E0_ratking" unique_id=1389744291]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(1, 0.45, 0.4, 1)
 
-[node name="Label" type="Label" parent="Markers/Enemies/E0_ratking" unique_id=303153330]
+[node name="Label" type="Label" parent="Markers/Enemies/E0_ratking" unique_id=88754534]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -62,29 +59,77 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
 text = "ratking"
 
-[node name="Npcs" type="Node2D" parent="Markers" unique_id=59244045]
+[node name="Npcs" type="Node2D" parent="Markers" unique_id=1241849329]
 
-[node name="Secrets" type="Node2D" parent="Markers" unique_id=587254587]
+[node name="Secrets" type="Node2D" parent="Markers" unique_id=1795940552]
 
-[node name="Landmarks" type="Node2D" parent="Markers" unique_id=512711935]
+[node name="Landmarks" type="Node2D" parent="Markers" unique_id=1514443724]
 
-[node name="Reference" type="Node2D" parent="Markers" unique_id=482293943]
+[node name="Rings" type="Node2D" parent="Markers" unique_id=982007516]
 
-[node name="Save" type="Marker2D" parent="Markers/Reference" unique_id=2075261708]
+[node name="Exits" type="Node2D" parent="Markers" unique_id=842080460]
+
+[node name="Saves" type="Node2D" parent="Markers" unique_id=1050588300]
+
+[node name="Save0" type="Marker2D" parent="Markers/Saves" unique_id=2048917920]
 position = Vector2(800, 980)
 gizmo_extents = 24.0
+metadata/order = 0
+metadata/need_clear = true
 
-[node name="Dot" type="ColorRect" parent="Markers/Reference/Save" unique_id=1007802405]
+[node name="Dot" type="ColorRect" parent="Markers/Saves/Save0" unique_id=476201242]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 
-[node name="Label" type="Label" parent="Markers/Reference/Save" unique_id=1951741517]
+[node name="Label" type="Label" parent="Markers/Saves/Save0" unique_id=1634693286]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
 offset_bottom = -44.0
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-text = "incudine"
+text = "incudine (a stanza liberata)"
+
+[node name="Notes" type="Node2D" parent="Markers" unique_id=640128747]
+
+[node name="Note0" type="Marker2D" parent="Markers/Notes" unique_id=89973240]
+position = Vector2(800, 420)
+gizmo_extents = 24.0
+
+[node name="Dot" type="ColorRect" parent="Markers/Notes/Note0" unique_id=1572691919]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(0.75, 0.75, 0.75, 1)
+
+[node name="Label" type="Label" parent="Markers/Notes/Note0" unique_id=1006974280]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
+text = "o anello dipinto (presagio)"
+
+[node name="Note1" type="Marker2D" parent="Markers/Notes" unique_id=1775724032]
+position = Vector2(330, 940)
+gizmo_extents = 24.0
+
+[node name="Dot" type="ColorRect" parent="Markers/Notes/Note1" unique_id=572539301]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(0.75, 0.75, 0.75, 1)
+
+[node name="Label" type="Label" parent="Markers/Notes/Note1" unique_id=426859137]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
+text = "ingaggio"

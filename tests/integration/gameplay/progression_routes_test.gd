@@ -31,11 +31,10 @@ func _run() -> void:
 	w.player.invulnerable = true
 	check(not w._left_open(), "Piazza: cancello sinistro inizialmente chiuso")
 	w.story.seen["visited_1"] = 1
-	# feat/levels: edges["0"] = [-1, 1]. Corso si raggiunge solo dal bordo destro; il sinistro resta un muro.
-	check(not w._left_open(), "Corso scoperto: il bordo sinistro di Piazza resta chiuso")
+	check(w._left_open(), "Corso scoperto: cancello sinistro di Piazza aperto")
 	w.player.position = Vector2(40,956)
 	w._check_doors()
-	check(w.room_index == 0, "Il bordo sinistro di Piazza non porta più a Corso Trieste")
+	check(w.room_index == 1, "Cancello sinistro conduce a Corso Trieste")
 	check(w.buy_item("grapple") != "Acquisto completato", "Rampino non acquistabile")
 	for idx in range(Room.COUNT):
 		for enemy: Dictionary in Room.build(idx).enemies:

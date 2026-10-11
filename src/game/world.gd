@@ -444,6 +444,9 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 func _left_open() -> bool:
 	if arena_active and not room_cleared:
 		return false
+	# Scorciatoia voluta: il cancello sinistro di Piazza porta a Corso dopo averlo visitato.
+	if room_index == 0:
+		return story.times_seen("lesson_menu") > 0 or story.times_seen("visited_1") > 0
 	if Room.Expansion.edge(room_index, false) < 0:
 		return false
 	# Uscite condizionate nei dati (expansion.json -> "edge_need"), es. Cisterne Sepolte -> Piazza dopo Ratking.
@@ -473,14 +476,22 @@ func _right_open() -> bool:
 
 func _build_walls() -> void:
 	for c in _walls.get_children():
-		var old := c as StaticBody2D
-		old.collision_layer = 0
-		old.queue_free()
+		if c is StaticBody2D:
+			c.collision_layer = 0
+		elif c is TileMapLayer:
+			c.collision_enabled = false
+		c.queue_free()
 	_solids = Room.solids(room, _left_open(), _right_open())
 	for r in _solids:
 		_add_body(r, false)
-	for l in room["ledges"]:
-		_add_body(l, true)
+	# Stanze in scena: pavimento, blocchi e mensole hanno la collisione nei tile (invisibili, il disegno resta di terrain.gd).
+	var tile_layers: Array = Room.LevelScenes.physics_layers(room_index) if room.has("scene") else []
+	for layer in tile_layers:
+		layer.modulate = Color(1, 1, 1, 0)
+		_walls.add_child(layer)
+	if tile_layers.is_empty():
+		for l in room["ledges"]:
+			_add_body(l, true)
 	for step in room.get("invisible_steps", []):
 		_add_body(step, true)
 
@@ -562,6 +573,8 @@ func _check_doors() -> void:
 			_go(0, true)
 		elif room_index == Room.SECRET_ROOM:
 			_leave_forge()
+		elif room_index == 0:
+			_go(1, true)
 		else:
 			_go(Room.Expansion.edge(room_index, false), false)
 
@@ -1031,7 +1044,7 @@ func is_ground(p: Vector2) -> bool:
 ## Incudini dei dati: compaiono all'ingresso o, con need_clear, a stanza liberata. True se ne è nata una.
 func _register_data_saves() -> bool:
 	var added := false
-	for s in Room.Expansion.data().get("saves", {}).get(str(room_index), []):
+	for s in Room.LevelScenes.saves_for(room_index):
 		if bool(s.get("need_clear", false)) and not room_cleared:
 			continue
 		var id := Room.save_station_id(room_index)

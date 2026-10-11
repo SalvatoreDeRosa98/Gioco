@@ -97,7 +97,7 @@ func _draw_map() -> void:
 		for right in [false, true]:
 			var target := Room.Expansion.edge(idx, right)
 			if PLACES.has(target): links.append([idx, target])
-		for exit in Room.Expansion.data().get("vertical", {}).get(str(idx), []):
+		for exit in Room.build(idx).vertical:
 			links.append([idx, int(exit.target)])
 		for mark in Room.Expansion.data().landmarks.get(str(idx), []):
 			if mark.kind == "route": links.append([idx, int(mark.target)])
@@ -115,6 +115,8 @@ func _draw_map() -> void:
 		var dims := Vector2(146, 48) if r.size.y < 1500 else Vector2(115, 80)
 		canvas.draw_rect(Rect2(p - dims / 2, dims), Color("#263741"))
 		canvas.draw_rect(Rect2(p - dims / 2, dims), Art.CREMA if idx == world.room_index else Art.OCRA, false, 2)
+		for pin in pins(r, p, dims):
+			canvas.draw_circle(pin, 2.5, Color(Art.OCRA, 0.8))
 		Art.text(canvas, Art.body_font(), p + Vector2(-90, 5), r.name, 14, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 180)
 		if idx == world.room_index:
 			canvas.draw_circle(p + Vector2(0, dims.y / 2 + 10), 4, Art.CREMA)
@@ -122,6 +124,16 @@ func _draw_map() -> void:
 	var skills_txt := Controls.label("grapple") + " Catena · " + Controls.label("hammer") + " Martello · " + Controls.label("heal") + " Cura con 4 braci · Giù + " + Controls.label("attack") + " Rimbalzo"
 	Art.text(canvas, Art.body_font(), Vector2(40, 670), "%s   ·   Punto bianco: sei qui   ·   Esplora per completare la carta" % close_txt, 20, Art.CREMA)
 	Art.text(canvas, Art.body_font(), Vector2(40, 701), skills_txt, 17, Art.OCRA)
+
+## Punti d'interesse della stanza in coordinate della carta: posizioni lette dalla scena (le stanze solo JSON non hanno segnaposti).
+static func pins(r: Dictionary, center: Vector2, dims: Vector2) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	var size: Vector2 = r.size
+	var points: Array = r.get("landmark_pos", {}).values()
+	for q in points:
+		out.append(center - dims / 2 + Vector2(q.x / size.x * dims.x, clampf(q.y / size.y, 0.0, 1.0) * dims.y))
+	return out
+
 
 func _draw_journal() -> void:
 	var entries := quest_entries()

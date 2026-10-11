@@ -1,7 +1,8 @@
 extends SceneTree
-## Parità JSON -> scena (griglia 64 px): stesse entità, geometria entro mezza cella, stessa raggiungibilità.
+## Parità JSON -> scena (griglia 64 px) per le stanze convertite dai JSON (oggi la fucina, 5): stesse entità,
+## geometria entro mezza cella, stessa raggiungibilità. Le stanze 9, 13 e 15 sono ridisegnate: vedi level_slice_test.
 const LevelScenes := preload("res://game/level_scenes.gd")
-const ROOMS := [5, 9, 13, 15]
+const ROOMS := [5]
 const TOL := 32.0
 ## Salto verticale massimo usato per la raggiungibilità (tuning.json -> player.jump_height_max).
 const JUMP_UP := 200.0

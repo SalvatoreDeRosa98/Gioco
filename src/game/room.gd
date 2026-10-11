@@ -170,7 +170,7 @@ static func save_station_id(idx: int) -> String:
 	if idx == SECRET_ROOM:
 		return "forge-memory"
 	# Incudini definite nei dati (expansion.json -> "saves"), una per stanza.
-	var data_saves: Array = Expansion.data().get("saves", {}).get(str(idx), [])
+	var data_saves: Array = LevelScenes.saves_for(idx)
 	if not data_saves.is_empty():
 		return "%d:incudine:%d:%d" % [idx, roundi(float(data_saves[0].pos[0])), roundi(float(data_saves[0].pos[1]))]
 	if idx == 0 or idx >= SAVE_STATUES.size():
@@ -191,7 +191,7 @@ static func build(idx: int, choices: Dictionary = {}) -> Dictionary:
 		r.invisible_steps = []
 		r.secrets = []
 	r = LevelScenes.apply(idx, r)
-	r["vertical"] = Expansion.data().get("vertical", {}).get(str(idx), [])
+	r["vertical"] = r.get("scene_vertical", Expansion.data().get("vertical", {}).get(str(idx), []))
 	for l in Expansion.data().get("extra_ledges", {}).get(str(idx), []):
 		r.ledges.append(Rect2(l[0], l[1], l[2], l[3]))
 	return r
@@ -277,7 +277,14 @@ static func solids(room: Dictionary, left_open: bool, right_open: bool) -> Array
 	var fy: float = room["floor"]
 	var door_top := fy - DOOR_H
 	var out: Array = []
+	# Stanze in scena: pavimento e blocchi vengono dai tile; qui restano bordi, porte e tappi delle uscite chiuse.
+	var scene_room: bool = room.has("scene")
 	for side in ["top", "bottom"]:
+		if side == "bottom" and scene_room:
+			for exit in room.get("vertical", []):
+				if exit.side == "bottom" and not exit.get("open", true):
+					out.append(Rect2(exit.x - exit.width / 2.0, fy, exit.width, size.y - fy + 200.0))
+			continue
 		var holes: Array = []
 		for exit in room.get("vertical", []):
 			if exit.side == side and exit.get("open", true):
@@ -292,7 +299,8 @@ static func solids(room: Dictionary, left_open: bool, right_open: bool) -> Array
 		out.append(Rect2(start, y, size.x + 200.0 - start, h))
 	out.append(Rect2(-200, -200, 200.0 + EDGE, door_top + 200.0))
 	out.append(Rect2(size.x - EDGE, -200, 200.0 + EDGE, door_top + 200.0))
-	out.append_array(room["blocks"])
+	if not scene_room:
+		out.append_array(room["blocks"])
 	if not left_open:
 		out.append(Rect2(-200, door_top, 240, DOOR_H))
 	if not right_open:

@@ -2,7 +2,7 @@
 
 [ext_resource type="TileSet" path="res://rooms/blockout/blockout_tileset.tres" id="1_2gwor"]
 
-[node name="R05Fucina" type="Node2D" unique_id=200172593]
+[node name="R05Fucina" type="Node2D" unique_id=1970485677]
 metadata/room_id = 5
 metadata/room_name = "La fucina del ricordo"
 metadata/floor = 980.0
@@ -10,51 +10,49 @@ metadata/size = Vector2(1280, 1080)
 metadata/grid_offset_y = 20.0
 metadata/generated_by = "tools/levels/json_to_scenes.gd"
 
-[node name="Bounds" type="ReferenceRect" parent="." unique_id=1010837389]
+[node name="Bounds" type="ReferenceRect" parent="." unique_id=1468151219]
 offset_right = 1280.0
 offset_bottom = 1080.0
 border_color = Color(0.3, 0.8, 1, 1)
 border_width = 4.0
 editor_only = false
 
-[node name="Terrain" type="TileMapLayer" parent="." unique_id=1685356177]
+[node name="Terrain" type="TileMapLayer" parent="." unique_id=871471139]
 position = Vector2(0, 20)
 tile_map_data = PackedByteArray("AAAAAA8AAAAAAAAAAAAAABAAAAAAAAAAAAABAA8AAAAAAAAAAAABABAAAAAAAAAAAAACAA8AAAAAAAAAAAACABAAAAAAAAAAAAADAA8AAAAAAAAAAAADABAAAAAAAAAAAAAEAA8AAAAAAAAAAAAEABAAAAAAAAAAAAAFAA8AAAAAAAAAAAAFABAAAAAAAAAAAAAGAA8AAAAAAAAAAAAGABAAAAAAAAAAAAAHAA8AAAAAAAAAAAAHABAAAAAAAAAAAAAIAA8AAAAAAAAAAAAIABAAAAAAAAAAAAAJAA8AAAAAAAAAAAAJABAAAAAAAAAAAAAKAA8AAAAAAAAAAAAKABAAAAAAAAAAAAALAA8AAAAAAAAAAAALABAAAAAAAAAAAAAMAA8AAAAAAAAAAAAMABAAAAAAAAAAAAANAA8AAAAAAAAAAAANABAAAAAAAAAAAAAOAA8AAAAAAAAAAAAOABAAAAAAAAAAAAAPAA8AAAAAAAAAAAAPABAAAAAAAAAAAAAQAA8AAAAAAAAAAAAQABAAAAAAAAAAAAARAA8AAAAAAAAAAAARABAAAAAAAAAAAAASAA8AAAAAAAAAAAASABAAAAAAAAAAAAATAA8AAAAAAAAAAAATABAAAAAAAAAAAAA=")
 tile_set = ExtResource("1_2gwor")
 
-[node name="OneWay" type="TileMapLayer" parent="." unique_id=984994328]
+[node name="OneWay" type="TileMapLayer" parent="." unique_id=1269722160]
 position = Vector2(0, 20)
 tile_set = ExtResource("1_2gwor")
 
-[node name="Hazards" type="TileMapLayer" parent="." unique_id=467053032]
+[node name="Hazards" type="TileMapLayer" parent="." unique_id=1639310265]
 position = Vector2(0, 20)
 tile_set = ExtResource("1_2gwor")
 
-[node name="Reference" type="TileMapLayer" parent="." unique_id=1447706047]
-modulate = Color(1, 1, 1, 0.6)
-position = Vector2(0, 20)
-tile_set = ExtResource("1_2gwor")
+[node name="Cracks" type="Node2D" parent="." unique_id=92508361]
 
-[node name="Markers" type="Node2D" parent="." unique_id=727845128]
+[node name="Markers" type="Node2D" parent="." unique_id=1263062773]
 
-[node name="Enemies" type="Node2D" parent="Markers" unique_id=1596447656]
+[node name="Enemies" type="Node2D" parent="Markers" unique_id=239174423]
 
-[node name="Npcs" type="Node2D" parent="Markers" unique_id=1452802214]
+[node name="Npcs" type="Node2D" parent="Markers" unique_id=1308536690]
 
-[node name="N0_fantasma_umano" type="Marker2D" parent="Markers/Npcs" unique_id=233494067]
+[node name="N0_fantasma_umano" type="Marker2D" parent="Markers/Npcs" unique_id=42487871]
 position = Vector2(790, 980)
 gizmo_extents = 24.0
 metadata/order = 0
 metadata/id = "fantasma_umano"
+metadata/save_pos = Vector2(790, 980)
 
-[node name="Dot" type="ColorRect" parent="Markers/Npcs/N0_fantasma_umano" unique_id=1271188388]
+[node name="Dot" type="ColorRect" parent="Markers/Npcs/N0_fantasma_umano" unique_id=1542009237]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.5, 1, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Npcs/N0_fantasma_umano" unique_id=1830476260]
+[node name="Label" type="Label" parent="Markers/Npcs/N0_fantasma_umano" unique_id=1977567869]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -63,8 +61,14 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.5, 1, 0.6, 1)
 text = "fantasma_umano"
 
-[node name="Secrets" type="Node2D" parent="Markers" unique_id=1758900509]
+[node name="Secrets" type="Node2D" parent="Markers" unique_id=733096823]
 
-[node name="Landmarks" type="Node2D" parent="Markers" unique_id=1193357928]
+[node name="Landmarks" type="Node2D" parent="Markers" unique_id=1884497170]
 
-[node name="Reference" type="Node2D" parent="Markers" unique_id=707411637]
+[node name="Rings" type="Node2D" parent="Markers" unique_id=153055754]
+
+[node name="Exits" type="Node2D" parent="Markers" unique_id=1515500216]
+
+[node name="Saves" type="Node2D" parent="Markers" unique_id=859065987]
+
+[node name="Notes" type="Node2D" parent="Markers" unique_id=1126661684]

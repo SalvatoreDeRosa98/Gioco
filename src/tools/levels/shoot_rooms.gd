@@ -3,7 +3,7 @@ extends SceneTree
 ## Uso (dalla cartella src, NON headless):
 ##   Godot_v4.6-stable_win64_console.exe --path . --resolution 1600x900 --script res://tools/levels/shoot_rooms.gd -- --out=C:/percorso
 const LevelScenes := preload("res://game/level_scenes.gd")
-const ROOMS := [5, 9, 13, 15]
+const ROOMS := [9, 13, 15]
 var out_dir := "user://shots"
 
 func _initialize() -> void:
@@ -38,9 +38,9 @@ func _run() -> void:
 		scene.add_child(cam)
 		cam.make_current()
 		var title := Label.new()
-		title.text = "Stanza %d - %s (blockout, griglia 64 px)" % [idx, scene.get_meta("room_name")]
+		title.text = "Stanza %d - %s (blockout ridisegnato, griglia 64 px)" % [idx, scene.get_meta("room_name")]
 		title.add_theme_font_size_override("font_size", int(28 / z))
-		title.position = Vector2(20, -int(60 / z) + 10)
+		title.position = Vector2(20, 10)
 		scene.add_child(title)
 		await _frames(4)
 		_save("blockout_r%02d.png" % idx)

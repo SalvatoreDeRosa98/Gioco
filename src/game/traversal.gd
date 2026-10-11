@@ -14,9 +14,10 @@ var _crack_hint_cd := 0.0
 func setup(w: Node) -> void:
 	world = w
 	var key := str(w.room_index)
-	rings = Data.data().get("rings", {}).get(key, [])
-	cracks = Data.data().get("cracks", {}).get(key, [])
-	spikes = Data.data().get("spikes", {}).get(key, [])
+	# Stanze in scena: anelli, muri incrinati e punte vengono dalla scena (Room.build), altrimenti dai JSON.
+	rings = w.room.get("rings", Data.data().get("rings", {}).get(key, []))
+	cracks = w.room.get("cracks", Data.data().get("cracks", {}).get(key, []))
+	spikes = w.room.get("spikes", Data.data().get("spikes", {}).get(key, []))
 	z_index = 7
 	for c in cracks:
 		if w.story.times_seen(c.id) > 0:
