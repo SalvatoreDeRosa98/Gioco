@@ -25,15 +25,25 @@ def cut_sheet(fname,n,out,ref_height=1004*0.95,mult=0.5):
         c=int(k*W/n); cuts.append(c-90+int(np.argmin(col[c-90:c+90])))
     cuts.append(W)
     rows=np.where(fg.any(axis=1))[0]; ground=rows.max()
+    # Assegnazione per crescita geodetica dentro la sagoma: ogni figura parte dal suo busto
+    # (colonna centrale fra i tagli, fascia 35-55% dell'altezza) e si prende i pixel connessi
+    # più vicini; così braccia e lame che sconfinano oltre il taglio di colonna restano alla
+    # figura giusta invece di finire, staccate, nel fotogramma accanto.
+    top=np.where(fg.any(axis=1))[0].min(); hh=ground-top
+    seeds=np.zeros(fg.shape,np.int32)
+    for i in range(n):
+        band=fg[int(top+hh*0.35):int(top+hh*0.55),cuts[i]:cuts[i+1]]
+        xs=np.where(band.any(axis=0))[0]; cx=cuts[i]+int(np.median(np.where(band)[1]))
+        sl=np.zeros_like(fg); sl[int(top+hh*0.35):int(top+hh*0.55),cx-25:cx+25]=True
+        seeds[sl&fg]=i+1
+    lab=seeds.copy()
+    while True:
+        dil=nd.grey_dilation(lab,size=(3,3)); new=(lab==0)&fg&(dil>0)
+        if not new.any(): break
+        lab[new]=dil[new]
     tops=[];frames=[]
     for i in range(n):
-        m=fg.copy(); m[:,:cuts[i]]=False; m[:,cuts[i+1]:]=False
-        l,k=nd.label(m); s=nd.sum(m,l,range(1,k+1)); big=np.argmax(s)+1
-        ob=nd.find_objects(l)[big-1]
-        keep=np.zeros_like(m)
-        for j,ss in enumerate(s):
-            o=nd.find_objects(l)[j]
-            if j+1==big or ss>s.max()*0.004: keep|=l==j+1
+        keep=lab==i+1
         ys=np.where(keep.any(axis=1))[0]; tops.append(ys.min())
         frames.append(keep)
     ref=np.median([ground-t for t in tops]); S=ref_height/ref*mult

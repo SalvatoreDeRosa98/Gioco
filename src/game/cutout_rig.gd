@@ -66,6 +66,11 @@ var _frame_textures := {}
 var _layer: CanvasLayer
 var _proxy: Node2D
 var _outline: CanvasGroup
+## Con il contorno (CanvasGroup) i pezzi non possono usare z_index: un elemento con z_index
+## esce dal buffer del gruppo e resta senza contorno (era il caso dell'idle). Allora i pezzi
+## vivono in un contenitore piatto, in ordine di z, e copiano ogni fotogramma la posa dell'osso.
+var _flat: Node2D
+var _links: Array = []
 
 
 func _ready() -> void:
@@ -124,11 +129,14 @@ func _ready() -> void:
 		s.texture = load(rig_path + piece.file)
 		s.centered = false
 		s.position = Vector2(piece.pos[0], piece.pos[1]) - Vector2(bone.pivot[0], bone.pivot[1])
-		s.z_index = int(spr.z)
 		s.use_parent_material = true
 		if spr.far:
 			s.self_modulate = Color(far_tint[0], far_tint[1], far_tint[2])
-		_bones[spr.bone].add_child(s)
+		if _outline:
+			_links.append([int(spr.z), _links.size(), s, _bones[spr.bone], s.position])
+		else:
+			s.z_index = int(spr.z)
+			_bones[spr.bone].add_child(s)
 		if spr.piece == "testa":
 			_head_sprite = s
 			_masked_head = s.texture
@@ -137,6 +145,14 @@ func _ready() -> void:
 		if spr.piece == "mano" and spr.bone == "wrist":
 			_weapon_sprite = s
 			_sword_texture = s.texture
+	if _outline:
+		_flat = Node2D.new()
+		_flat.name = "Pieces"
+		_flat.use_parent_material = true
+		_body.add_child(_flat)
+		_links.sort_custom(func(a, b): return a[0] < b[0] or (a[0] == b[0] and a[1] < b[1]))
+		for l in _links:
+			_flat.add_child(l[2])
 	if ResourceLoader.exists(rig_path + "mano_martello.png"):
 		_hammer_texture = load(rig_path + "mano_martello.png")
 	elif ResourceLoader.exists(rig_path + "martello.png"):
@@ -288,8 +304,8 @@ func advance(delta: float, velocity: Vector2) -> void:
 	var lift := float(_rig.get("brightness", 1.0))
 	var base := (Color.WHITE * Color(lift, lift, lift)).lerp(ambient, ambient_amount * 0.5)
 	if _layer:
-		# Fuori dal grading e senza tinta d'area: bianco pulito con un filo di calore (§3.1).
-		base = Color(1.06, 1.05, 1.02)
+		# Fuori dal grading e senza tinta d'area: solo il lift uniforme del rig (le tinte restano quelle dello 02).
+		base = Color(lift, lift, lift)
 	_body.modulate = base.lerp(Color(1.8, 1.8, 1.8), flash)
 	if _frame_sprite and _frame_sprite.visible:
 		_frame_sprite.modulate = _body.modulate
@@ -312,6 +328,9 @@ func _update_frames(t: float, length: float) -> void:
 	var u: float
 	if bool(fc.get("progress", false)) and _progress >= 0.0:
 		u = clampf(_progress, 0.0, 0.999)
+	elif bool(fc.get("hold", false)):
+		# Sequenza che si ferma sull'ultimo fotogramma (salto, scatto, colpito, parata, rampino).
+		u = minf(_clip_t * float(fc.get("fps", 12)) / frames.size(), 0.999)
 	else:
 		u = fmod(_clip_t * float(fc.get("fps", 12)) / frames.size(), 1.0)
 	var f: Array = frames[mini(int(u * frames.size()), frames.size() - 1)]
@@ -319,6 +338,14 @@ func _update_frames(t: float, length: float) -> void:
 	_frame_sprite.region_rect = Rect2(f[0], f[1], f[2], f[3])
 	_frame_sprite.offset = Vector2(-float(f[4]), -float(f[5]))
 	_frame_sprite.position = _body.position
+	_frame_sprite.rotation = 0.0
+	if fc.has("recoil"):
+		# Colpito: rinculo all'indietro (x locale negativa, il flip lo gira) e lieve inclinazione,
+		# che si smorzano in 0,25 s; flash e knockback vengono già da player.gd.
+		var k := 1.0 - clampf(_clip_t / 0.25, 0.0, 1.0)
+		var rc: Array = fc.recoil
+		_frame_sprite.position += Vector2(float(rc[0]), 0.0) * k
+		_frame_sprite.rotation = deg_to_rad(-float(rc[1])) * k
 
 
 ## Il proxy nel CanvasLayer riproduce posizione, flip, visibilità e trasparenza del rig;
@@ -389,6 +416,20 @@ func _apply(pose: Dictionary) -> void:
 	_bones["hips"].position = _rest["hips"] + Vector2(float(pose.get("hips_x", 0.0)), float(pose.get("hips_y", 0.0)))
 	_bones["root"].position = Vector2(float(pose.get("root_x", 0.0)), float(pose.get("root_y", 0.0)))
 	_bones["root"].rotation = deg_to_rad(float(pose.get("root_rot", 0.0)))
+	_sync_pieces()
+
+
+func _sync_pieces() -> void:
+	if _flat == null:
+		return
+	for l in _links:
+		var bone: Node2D = l[3]
+		var xf := Transform2D.IDENTITY
+		var n: Node = bone
+		while n != _body:
+			xf = (n as Node2D).transform * xf
+			n = n.get_parent()
+		(l[2] as Sprite2D).transform = xf * Transform2D(0.0, l[4])
 
 
 ## Sciarpa: tre molle in catena. Correndo e cadendo si solleva all'indietro, saltando ricade;

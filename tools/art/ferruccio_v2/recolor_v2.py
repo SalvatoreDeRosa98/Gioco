@@ -1,3 +1,4 @@
+## NON PIÙ USATO: per decisione di Salvatore Ferruccio resta con le tinte originali dello 02 (vedi rig.json _doc).
 ## Ricolora pezzi e fotogrammi del Ferruccio v2 secondo CORREZIONI-FERRUCCIO-INGAME.md (§2):
 ## casacca/calzoni/cappello bianco con ombre grigio-fredde, neri #16171B/#0D0E11, sciarpa #74302A
 ## (luce #A8402F, ombra #49241D), lama acciaio, occhio bianco con alone #8FD3FF.

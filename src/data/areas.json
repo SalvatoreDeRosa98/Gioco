@@ -325,7 +325,7 @@
 		"grass": {"density": 0.7, "h": [8, 20], "color": "#131a1c", "tip": "#3d4a46", "sway": 4, "vines": 3.0}
 	},
 	"oro": {
-		"terrain_tint": "#e6d2b4",
+		"terrain_tint": "#9c8e7a",
 		"layers": [
 			{
 				"tex": "oro/far.png",
