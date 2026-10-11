@@ -1,6 +1,6 @@
 # Ferruccio v2 (02 finale): cosa resta provvisorio
 
-- Fotogramma 2 dell'attacco (dalla 07): la lama è ancora leggermente curva; solo il fotogramma 1 ha lo stocco ridisegnato (stocco_dritto.py).
+- Stocco dritto nei fotogrammi 1 e 2 dell'attacco (stocco_dritto.py, ONLY=2 per il secondo sull'atlante già uniformato); gli altri fotogrammi avevano già la lama dritta. Il tono_02.py resta (confermato da Salvatore).
 - Scie e effetti dipinti (scia dell'attacco, strisce dello scatto, scintilla della parata, detriti del martello, fiamma della cura) fanno parte dei fotogrammi: prendono contorno e rim light come la figura.
 - Scala: le pose dei fogli 15/16 sono normalizzate sull'altezza delle figure in piedi del foglio; da verificare a occhio che tutte le clip stiano a ~150 px a 1080p (zoom 1.6).
 - Idle, crouch, skid, pogo, wall, death restano sul pupazzo a ritaglio (nessuna arte 02 dedicata).
