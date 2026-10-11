@@ -151,3 +151,20 @@ Ogni tema d'area cita almeno un leitmotiv.
 4. Set SFX nuovi (parata, rampino, martello, UI).
 
 **Durata stimata.** Circa 35–45 minuti di musica, più circa 120 SFX/varianti e 11 ambienti.
+
+## Stato (11 ottobre 2026)
+
+Sostituiti tutti i segnaposto `todo` con versioni definitive sintetizzate da
+`tools/audio/gen_audio.py` (originali, nessun campione di terzi; crediti in `CREDITS.md`):
+
+- **Musiche (loop, .ogg):** tema di Ratking (`music/boss_ratking.ogg`, tarantella in Re minore
+  armonica, 6/8, mandolino a tremolo, pizzicati, tamburello, controcanto d'ancia), tema del
+  Cavaliere (`music/boss_cavaliere.ogg`, marcia in Do minore, corni/trombe naturali, archi in
+  ostinato, timpani, tamburo militare; parte quando si chiude l'arena), Cisterne Reali e
+  Cisterne Sepolte (archi tenuti, clarinetto, mandolino rado, gocce, riverbero di volta).
+- **Ambienti (loop):** acqua delle Cisterne, Cisterne Sepolte, Tana di Ratking.
+- **Effetti:** passi su pietra (3 varianti), colpo, parata (nuovo, suona sulla parata riuscita),
+  ratti (nuovo, al richiamo dei ratti di Ratking), incudine, preavvisi di Cavaliere e Ratking.
+- Livelli normalizzati (musica RMS -16..-20 dBFS, ambienti -24..-26, effetti -16..-24, picchi ≤ -2 dBFS).
+- Restano da migliorare con un compositore/registrazioni vere: i timbri sono sintetici (additivi),
+  credibili in gioco ma non paragonabili a strumenti registrati.

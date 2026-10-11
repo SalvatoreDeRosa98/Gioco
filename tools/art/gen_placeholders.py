@@ -107,9 +107,10 @@ def martello(d, S):
     d.polygon([(S*.36,S*.76),(S*.42,S*.8),(S*.62,S*.44),(S*.56,S*.4)], fill=OCRA+(255,))
     d.polygon([(S*.42,S*.32),(S*.62,S*.2),(S*.76,S*.42),(S*.56,S*.54)], fill=CREMA+(255,))
 
-items = {"mappa_crepa": (48, crepa, True), "mappa_anello": (48, anello, False), "mappa_incudine": (48, incudine, True), "mappa_saracinesca": (48, saracinesca, True),
-         "abilita_guanti": (96, guanti, False), "abilita_rampino": (96, rampino, False), "abilita_martello": (96, martello, False)}
-manifest = {"_doc": "Icone SEGNAPOSTO generate da tools/art/gen_placeholders.py: sostituire con le icone definitive (stesso nome e dimensione). Vedi VERTICAL-SLICE.md, sezione 5.", "placeholder": True, "icons": {}}
+items = {"mappa_crepa": (48, crepa, True), "mappa_anello": (48, anello, False), "mappa_incudine": (48, incudine, True), "mappa_saracinesca": (48, saracinesca, True)}
+# Le icone abilita_* sono definitive (tools/art/gen_icons.py): qui non si rigenerano.
+_mp = os.path.join(out, "manifest.json")
+manifest = json.load(open(_mp, encoding="utf-8")) if os.path.exists(_mp) else {"_doc": "", "placeholder": True, "icons": {}}
 for name, (size, g, sq) in items.items():
     medal(size, g, sq).save(os.path.join(out, name + ".png"))
     manifest["icons"][name] = {"size": [size, size], "placeholder": True}

@@ -541,6 +541,7 @@ func try_parry(from_x: float) -> bool:
 	if dead or parry_window <= 0.0 or (from_x - global_position.x) * facing < 0.0:
 		return false
 	parry_window = 0.0
+	_sfx("parata")
 	# Solo una parata riuscita ricarica subito lo scatto e il fendente.
 	_dash_cd = 0.0
 	_air_dash_used = false

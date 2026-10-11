@@ -124,6 +124,7 @@ func _enter(state: String, seconds: float) -> void:
 
 func _call_rats() -> void:
 	var count := 5 if hp <= max_hp / 2 else 3
+	Audio.sfx("ratti")
 	for i in count:
 		var rat := preload("res://game/rat_swarm.gd").new()
 		rat.setup(Vector2(position.x - facing * i * 58, float(world.room.floor) - 13), facing, float(_cfg.rat_speed), float(i) * .16, world)
