@@ -30,7 +30,7 @@ func _run() -> void:
 	check(world._shop._message.text.begins_with("Acquisto completato"), "Il pulsante acquista gli stivali indicati")
 	world._shop.hide_shop()
 	player.set_physics_process(false)
-	check(world.coins == 75 and is_equal_approx(player._cfg.dash_cooldown, 0.85), "Prezzo e scatto migliorato")
+	check(world.coins == 75 and is_equal_approx(player._cfg.dash_cooldown, float(root.get_node("Tuning").data.progression.boots_dash_cooldown)), "Prezzo e scatto migliorato")
 	world.buy_item("boots")
 	check(world.coins == 75, "Acquisto duplicato rifiutato")
 	world.buy_item("pocket")
@@ -131,7 +131,7 @@ func _run() -> void:
 	world._talk_npc = null
 	world._talk_lock = 0
 	world.toggle_accessory("boots")
-	check(is_equal_approx(player._cfg.dash_cooldown, 1.0), "Ricarica base dello scatto: un secondo")
+	check(is_equal_approx(player._cfg.dash_cooldown, float(root.get_node("Tuning").data.player.dash_cooldown)), "Ricarica base dello scatto dal tuning")
 	player.teleport(Vector2(1000, 100))
 	player._dash_cd = 0
 	player._air_dash_used = false
@@ -140,7 +140,7 @@ func _run() -> void:
 	Input.action_press("dash")
 	await create_timer(0.05).timeout
 	Input.action_release("dash")
-	check(player._dash_cd > 0.6 and player._air_dash_used, "Scatto in aria avvia ricarica")
+	check(player._dash_cd > float(root.get_node("Tuning").data.player.dash_cooldown) - 0.2 and player._air_dash_used, "Scatto in aria avvia ricarica")
 	await create_timer(0.2).timeout
 	player._dash_cd = 0
 	Input.action_press("dash")

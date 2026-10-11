@@ -75,8 +75,10 @@ func _run() -> void:
 	boss._call_rats()
 	check(get_nodes_in_group("rat_swarm").size() == 3, "Prima fase: tre ratti")
 	boss.hp = boss.max_hp / 2
+	boss.phase = 2
 	boss._call_rats()
-	check(get_nodes_in_group("rat_swarm").size() == 8, "Seconda fase: cinque ratti")
+	var cap := int(root.get_node("Tuning").data.ratking.phase2.max_rats_alive)
+	check(get_nodes_in_group("rat_swarm").size() == cap, "Seconda fase: ratti fino al tetto di %d" % cap)
 	check(boss.take_hit(100), "Ratking sconfitto")
 	world._on_enemy_killed(boss)
 	await process_frame
