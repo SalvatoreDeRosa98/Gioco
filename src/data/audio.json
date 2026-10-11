@@ -1,7 +1,7 @@
 {
 	"_doc": "Audio del gioco (autoload Audio, src/autoload/audio.gd). base: cartella dei file. buses: volume iniziale (dB) dei bus creati da codice. crossfade: secondi di dissolvenza incrociata tra due musiche. areas: tema -> musica e ambiente con volumi in dB. sfx: nome -> varianti (una scelta a caso, mai la stessa due volte di fila), db = volume, pitch = variazione casuale massima del pitch (0.05 = +-5%), loop = effetto continuo da usare con Audio.set_loop_sfx. Tutti i file sono generati da tools/audio/ (vedi design/audio-direction.md).",
 	"base": "res://assets/audio/",
-	"buses": {"Music": 0.0, "Ambience": -2.0, "SFX": 0.0},
+	"buses": {"Music": 0.0, "Ambience": -2.0, "SFX": 0.0, "Voice": 0.0},
 	"crossfade": 1.5,
 	"ambience_fade": 1.2,
 	"pool_size": 12,
@@ -11,7 +11,16 @@
 		"strada": {"music": "music/strada.ogg", "music_db": 0.0, "ambience": "ambience/pioggia.ogg", "ambience_db": -1.0},
 		"giardino": {"music": "music/giardino.ogg", "music_db": 0.0, "ambience": "ambience/notte.ogg", "ambience_db": 0.0},
 		"belvedere": {"music": "music/belvedere.ogg", "music_db": 0.0, "ambience": "ambience/vento.ogg", "ambience_db": -1.0},
-		"oro": {"music": "music/oro.ogg", "music_db": 0.0, "ambience": "ambience/torce.ogg", "ambience_db": -3.0}
+		"oro": {"music": "music/oro.ogg", "music_db": 0.0, "ambience": "ambience/torce.ogg", "ambience_db": -3.0},
+		"cisterne_reali": {"todo": true, "placeholder": "TODO audio: musica e ambiente da produrre (vedi design/AUDIO-BRIEF.md)", "music": "music/TODO_cisterne_reali.ogg", "music_db": 0.0, "ambience": "ambience/TODO_acqua_cisterne.ogg", "ambience_db": -2.0, "fallback": "giardino"},
+		"cisterne_sepolte": {"todo": true, "placeholder": "TODO audio: musica e ambiente da produrre (vedi design/AUDIO-BRIEF.md)", "music": "music/TODO_cisterne_sepolte.ogg", "music_db": 0.0, "ambience": "ambience/TODO_cisterne_sepolte.ogg", "ambience_db": -2.0, "fallback": "belvedere"},
+		"tana_ratking": {"todo": true, "placeholder": "TODO audio: tema boss Ratking e ambiente tana da produrre (vedi design/AUDIO-BRIEF.md)", "music": "music/TODO_boss_ratking_loop.ogg", "music_db": 0.0, "ambience": "ambience/TODO_tana_ratking.ogg", "ambience_db": -3.0, "fallback": "belvedere"}
+	},
+	"rooms": {
+		"_doc": "Nome stanza -> area audio, quando la stanza non deve usare l'audio del suo tema visivo.",
+		"Cisterne Reali": "cisterne_reali",
+		"Cisterne Sepolte": "cisterne_sepolte",
+		"Tana di Ratking": "tana_ratking"
 	},
 	"sfx": {
 		"passo": {"files": ["sfx/passo_1.wav", "sfx/passo_2.wav", "sfx/passo_3.wav"], "db": 0.0, "pitch": 0.07},
@@ -38,7 +47,7 @@
 		"custode_urto": {"files": ["sfx/custode_urto.wav"], "db": 0.0, "pitch": 0.03},
 		"custode_raffica": {"files": ["sfx/custode_raffica.wav"], "db": 0.0, "pitch": 0.03},
 		"menu_click": {"files": ["sfx/menu_click.wav"], "db": 0.0, "pitch": 0.02},
-		"dialogo": {"files": ["sfx/dialogo_1.wav", "sfx/dialogo_2.wav"], "db": 0.0, "pitch": 0.06},
+		"dialogo": {"files": ["sfx/dialogo_1.wav", "sfx/dialogo_2.wav"], "db": 0.0, "pitch": 0.06, "bus": "Voice"},
 		"scelta": {"files": ["sfx/scelta.wav"], "db": 0.0, "pitch": 0.0}
 	}
 }

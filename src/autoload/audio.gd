@@ -68,6 +68,15 @@ func _ready() -> void:
 ## Fa partire musica e ambiente dell'area `theme` ("menu", "piazza", "strada",
 ## "giardino", "belvedere", "oro") con dissolvenza incrociata. Se l'area è già
 ## quella che suona non fa nulla: si può chiamare a ogni cambio di stanza.
+## Area audio della stanza: la voce "rooms" di audio.json (per nome) vince sul tema visivo.
+func area_for_room(room: Dictionary) -> String:
+	var rooms: Dictionary = config.get("rooms", {})
+	var key := str(room.get("name", ""))
+	if rooms.has(key) and config.get("areas", {}).has(rooms[key]):
+		return str(rooms[key])
+	return str(room.get("theme", ""))
+
+
 func play_area(theme: String) -> void:
 	if theme == current_area:
 		return
@@ -77,6 +86,9 @@ func play_area(theme: String) -> void:
 		return
 	current_area = theme
 	var a: Dictionary = areas[theme]
+	# Aree con musica ancora da produrre ("todo": true): se i file mancano si usa il fallback.
+	if a.has("fallback") and not ResourceLoader.exists(String(config.get("base", "res://assets/audio/")) + String(a.get("music", ""))):
+		a = areas.get(String(a.fallback), a)
 	_crossfade_music(_stream(String(a.get("music", ""))), float(a.get("music_db", 0.0)))
 	_switch_ambience(_stream(String(a.get("ambience", ""))), float(a.get("ambience_db", 0.0)))
 
@@ -92,6 +104,7 @@ func sfx(id: String, volume_db: float = 0.0) -> AudioStreamPlayer:
 		return null
 	var p := _free_player()
 	p.stream = stream
+	p.bus = StringName(str(e.get("bus", "SFX")))
 	p.volume_db = float(e.get("db", 0.0)) + volume_db
 	var pv := float(e.get("pitch", 0.03))
 	p.pitch_scale = 1.0 + _rng.randf_range(-pv, pv)
@@ -310,7 +323,7 @@ func _load_config() -> void:
 
 func _ensure_buses() -> void:
 	var vols: Dictionary = config.get("buses", {})
-	for bus_name in ["Music", "Ambience", "SFX"]:
+	for bus_name in ["Music", "Ambience", "SFX", "Voice"]:
 		if AudioServer.get_bus_index(bus_name) != -1:
 			continue
 		AudioServer.add_bus()

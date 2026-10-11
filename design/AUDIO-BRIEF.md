@@ -18,7 +18,8 @@ Legenda stato: **E** = esiste già (placeholder generato da `tools/audio/`, da s
 | `music/giardino.ogg` | Villa Comunale | E | Notturno, arpa e flauto, sospeso | 2:00–2:30 |
 | `music/belvedere.ogg` | Belvedere e Tessiture di San Leucio | E | Vento, seta, meccanica di telai (ostinato) | 2:00–2:30 |
 | `music/oro.ogg` | Cortile d'Onore, Reggia | E | Solenne, barocco, minaccioso | 2:00 |
-| `music/cisterne.ogg` | Cisterne Reali, Cisterne Sepolte | N | Acqua, eco, basso profondo, gocce | 2:00–3:00 |
+| `music/cisterne_reali.ogg` | Cisterne Reali | N (segnaposto `TODO_cisterne_reali.ogg`) | Acqua, eco, basso profondo, gocce; meraviglia sotterranea | 2:00–3:00 |
+| `music/cisterne_sepolte.ogg` | Cisterne Sepolte | N (segnaposto `TODO_cisterne_sepolte.ogg`) | Variante più cupa e lenta delle Cisterne Reali, stesso tema in minore | 2:00–3:00 |
 | `music/archivi.ogg` | Archivi della Reggia | N | Polvere, carta, clavicembalo lento, mistero | 2:00 |
 | `music/campanile.ogg` | Campanile delle Voci | N | Campane, coro sussurrato, verticalità crescente | 2:00 |
 | `music/orologi.ogg` | Galleria degli Orologi | N | Ticchettii in poliritmia, celesta, tensione | 2:00 |
@@ -47,7 +48,9 @@ Legenda stato: **E** = esiste già (placeholder generato da `tools/audio/`, da s
 | `ambience/notte.ogg` | E | Villa: grilli, fontane |
 | `ambience/vento.ogg` | E | Belvedere |
 | `ambience/torce.ogg` | E | Cortile: crepitio torce |
-| `ambience/acqua_cisterne.ogg` | N | Gocce, riverbero, flusso sotterraneo |
+| `ambience/acqua_cisterne.ogg` | N (segnaposto `TODO_acqua_cisterne.ogg`) | Cisterne Reali: gocce, riverbero, flusso sotterraneo |
+| `ambience/cisterne_sepolte.ogg` | N (segnaposto `TODO_cisterne_sepolte.ogg`) | Acqua stagnante, crolli lontani, sussurri |
+| `ambience/tana_ratking.ogg` | N (segnaposto `TODO_tana_ratking.ogg`) | Squittii in massa, rivoli, ossa che rotolano |
 | `ambience/archivio.ogg` | N | Silenzio "pieno", fruscio carte, orologio lontano |
 | `ambience/telai.ogg` | N | San Leucio: telai meccanici ritmici |
 | `ambience/orologi.ogg` | N | Galleria: centinaia di ticchettii |
@@ -104,6 +107,10 @@ Legenda stato: **E** = esiste già (placeholder generato da `tools/audio/`, da s
 ---
 
 ## 4. Brief per il compositore
+
+**Segnaposto già cablati nel gioco (ottobre 2026).** In `src/data/audio.json` ci sono le aree `cisterne_reali`, `cisterne_sepolte` e `tana_ratking` con `"todo": true`, un campo `placeholder` e i percorsi `music/TODO_*.ogg` / `ambience/TODO_*.ogg`. La sezione `"rooms"` le collega per nome alle stanze Cisterne Reali, Cisterne Sepolte e Tana di Ratking. Finché i file mancano il gioco usa l'area `fallback` (giardino / belvedere). Per consegnare basta salvare i file definitivi con il nome finale, aggiornare il percorso e togliere `todo`. La Tana di Ratking usa per ora come musica d'area il loop del boss (`TODO_boss_ratking_loop.ogg`).
+
+**Bus e volumi.** Il gioco ha 4 bus regolabili dal menu Opzioni: Musica (`Music`), Effetti (`SFX`), Voci (`Voice`, per bisbigli e versi dei dialoghi, quindi `dialogo_*.wav` e le future voci) e Ambiente (`Ambience`). Consegnare voci e versi separati dagli SFX.
 
 **Il gioco in una frase.** Un piccolo Pulcinella attraversa una Caserta del Settecento coperta da un "Velo" che ruba i ricordi; deve ritrovare il proprio nome e affrontare il Cavaliere Borbonico nel Cortile d'Onore della Reggia.
 
