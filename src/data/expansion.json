@@ -985,10 +985,7 @@
     }
   },
   "edges": {
-    "0": [
-      1,
-      1
-    ],
+    "0": [-1, 1],
     "1": [
       0,
       2
@@ -1766,5 +1763,19 @@
         }
       ]
     }
+  },
+  "edge_need": {
+    "13": {"left": "ratking_defeated"}
+  },
+  "saves": {
+    "9": [{"pos": [520, 980]}],
+    "13": [{"pos": [860, 2000], "need_clear": true}],
+    "15": [{"pos": [800, 980], "need_clear": true}]
+  },
+  "scene_rooms": {
+    "5": "res://rooms/r05_fucina.tscn",
+    "9": "res://rooms/r09_cisterne_reali.tscn",
+    "13": "res://rooms/r13_cisterne_sepolte.tscn",
+    "15": "res://rooms/r15_tana_ratking.tscn"
   }
 }

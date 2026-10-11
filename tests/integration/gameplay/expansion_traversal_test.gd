@@ -9,6 +9,13 @@ func check(ok: bool, message: String) -> void:
 	if not ok:
 		failures += 1
 		push_error(message)
+## Le stanze in scena (griglia 64 px) spostano le mensole di al massimo mezza cella: il bersaglio segue la mensola reale.
+func _on_ledge(point: Vector2) -> Vector2:
+	for l in world.room.ledges + world.room.blocks:
+		if point.x >= l.position.x and point.x <= l.end.x and absf(l.position.y - point.y) <= 32:
+			return Vector2(point.x, l.position.y)
+	return point
+
 func jump_to(point: Vector2) -> bool:
 	Input.action_press("jump")
 	await create_timer(0.20).timeout
@@ -52,7 +59,7 @@ func _run() -> void:
 	player.set_physics_process(true)
 	await create_timer(0.15).timeout
 	for point in [Vector2(330,860),Vector2(590,750),Vector2(850,640),Vector2(1110,530),Vector2(1400,420)]:
-		var reached := await jump_to(point)
+		var reached := await jump_to(_on_ledge(point))
 		check(reached, "Salto reale verso la chiusa: " + str(point))
 		if not reached:
 			break

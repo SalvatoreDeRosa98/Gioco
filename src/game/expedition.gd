@@ -17,6 +17,10 @@ var _time := 0.0
 func setup(owner_world: Node) -> void:
 	world = owner_world
 	marks = Data.data().landmarks.get(str(world.room_index), []).duplicate(true)
+	var scene_pos: Dictionary = world.room.get("landmark_pos", {})
+	for i in marks.size():
+		if scene_pos.has(i):
+			marks[i].pos = [scene_pos[i].x, scene_pos[i].y]
 	z_index = 6
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	for cfg in Data.data().moving.get(str(world.room_index), []):

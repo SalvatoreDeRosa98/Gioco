@@ -404,6 +404,7 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 		add_child(_arena)
 	_build_decor(th)
 	_build_npcs()
+	_register_data_saves()
 	_build_stations()
 	_apply_grade(th)
 	Audio.stop_loops()
@@ -443,11 +444,13 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 func _left_open() -> bool:
 	if arena_active and not room_cleared:
 		return false
-	if room_index == 13:
-		return story.times_seen("ratking_defeated") > 0
-	if room_index == 0:
-		return story.times_seen("lesson_menu") > 0 or story.times_seen("visited_1") > 0
-	return Room.Expansion.edge(room_index, false) >= 0
+	if Room.Expansion.edge(room_index, false) < 0:
+		return false
+	# Uscite condizionate nei dati (expansion.json -> "edge_need"), es. Cisterne Sepolte -> Piazza dopo Ratking.
+	var need := str(Room.Expansion.data().get("edge_need", {}).get(str(room_index), {}).get("left", ""))
+	if need != "":
+		return story.times_seen(need) > 0
+	return true
 
 
 func _right_open() -> bool:
@@ -559,10 +562,6 @@ func _check_doors() -> void:
 			_go(0, true)
 		elif room_index == Room.SECRET_ROOM:
 			_leave_forge()
-		elif room_index == 13:
-			_go(0, false)
-		elif room_index == 0:
-			_go(1, true)
 		else:
 			_go(Room.Expansion.edge(room_index, false), false)
 
@@ -611,6 +610,8 @@ func _check_cleared() -> void:
 		return
 	cleared[room_index] = true
 	_mark_cleared()
+	if _register_data_saves():
+		_build_stations()
 	if room_index == Room.BOSS_ROOM:
 		_start_finale()
 	elif room_index == Room.RATKING_ROOM:
@@ -1027,7 +1028,25 @@ func is_ground(p: Vector2) -> bool:
 	return false
 
 
+## Incudini dei dati: compaiono all'ingresso o, con need_clear, a stanza liberata. True se ne è nata una.
+func _register_data_saves() -> bool:
+	var added := false
+	for s in Room.Expansion.data().get("saves", {}).get(str(room_index), []):
+		if bool(s.get("need_clear", false)) and not room_cleared:
+			continue
+		var id := Room.save_station_id(room_index)
+		if not stations.has(id):
+			stations[id] = {"room": room_index, "x": float(s.pos[0]), "y": float(s.pos[1])}
+			added = true
+	return added
+
+
 func _enemy_id(kind: String, pos: Vector2) -> String:
+	# Le stanze costruite in scena spostano i marcatori sulla griglia: l'id resta quello del JSON (salvataggi compatibili).
+	if room is Dictionary and room.has("pos_alias"):
+		var key := "%d:%d" % [roundi(pos.x), roundi(pos.y)]
+		if room.pos_alias.has(key):
+			pos = room.pos_alias[key]
 	return "%d:%s:%d:%d" % [room_index, kind, roundi(pos.x), roundi(pos.y)]
 
 
