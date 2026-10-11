@@ -1,6 +1,9 @@
 extends CanvasLayer
 const DialogueBoxScript := preload("res://game/dialogue_box.gd")
-const TraversalScript := preload("res://game/traversal.gd")
+## Caricato a tempo d'esecuzione (non preload): traversal.gd usa l'autoload Tuning, che negli
+## script -s dei test non esiste ancora quando world_map.gd viene compilato.
+static func _crack_seen_key(crack_id: String) -> String:
+	return load("res://game/traversal.gd").seen_key(crack_id)
 const MAP_BG := preload("res://assets/art/ui/carta/carta_reale.png")
 const SEALS := {
 	"market_seal": preload("res://assets/art/ui/carta/sigillo_mercato.png"),
@@ -99,7 +102,7 @@ func room_marks(idx: int) -> Array:
 	var marks := []
 	var key := str(idx)
 	for c in Room.Expansion.data().get("cracks", {}).get(key, []):
-		if world.story.times_seen(TraversalScript.seen_key(str(c.id))) > 0:
+		if world.story.times_seen(_crack_seen_key(str(c.id))) > 0:
 			marks.append({"kind": "crepa", "done": world.story.times_seen(str(c.id)) > 0})
 	for id in world.stations:
 		if int(world.stations[id].get("room", -1)) == idx:
