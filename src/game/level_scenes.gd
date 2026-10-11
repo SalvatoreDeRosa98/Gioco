@@ -65,6 +65,7 @@ static func apply(idx: int, r: Dictionary) -> Dictionary:
 		r["tile_art"] = true
 	if data.mid_art != "":
 		r["mid_art"] = data.mid_art
+		r["mid_opts"] = data.mid_opts
 	return r
 
 ## Incudini della stanza: dalla scena se esiste, altrimenti da expansion.json -> "saves".
@@ -111,7 +112,8 @@ static func read_root(root: Node) -> Dictionary:
 	var floor_row := roundi((floor_y - oy) / TILE)
 	var out := {"blocks": [], "ledges": [], "enemies": [], "npcs": [], "secrets": [], "landmarks": {}, "spikes": [],
 		"cracks": [], "rings": [], "vertical": [], "saves": [], "alias": {}, "floor_cells": [], "props": [],
-		"art_tiles": bool(root.get_meta("art_tiles", false)), "mid_art": str(root.get_meta("mid_art", ""))}
+		"art_tiles": bool(root.get_meta("art_tiles", false)), "mid_art": str(root.get_meta("mid_art", "")),
+		"mid_opts": root.get_meta("mid_opts", {})}
 	var terrain: TileMapLayer = root.get_node_or_null("Terrain")
 	if terrain:
 		for rect in merge_cells(terrain.get_used_cells(), floor_row):

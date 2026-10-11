@@ -44,17 +44,17 @@ static func get_theme(theme_name: String) -> Dictionary:
 			}
 		"giardino":
 			return {
-				"sky_top": Color("#040b09"), "sky_bottom": Color("#10261d"), "horizon": Color("#244636"),
+				"sky_top": Color("#070d12"), "sky_bottom": Color("#142330"), "horizon": Color("#354557"),
 				"cloud": Color("#0d1c16"), "moon_color": Color("#e4f2dc"), "moon": 1.0, "moon_pos": Vector2(0.72, 0.16),
 				"stars": 0.55, "clouds": 0.25,
 				"far": Color("#06110c"), "far_glow": Color("#d8f2a0"), "mid": Color("#0a1a12"), "mid_glow": Color("#ffd28a"),
-				"fg": Color("#020604"), "fog": Color("#1f3d30"), "fog_density": 0.5,
-				"ambient": Color(0.5, 0.64, 0.56), "lamp": Color("#ffd690"),
+				"fg": Color("#020604"), "fog": Color("#26384a"), "fog_density": 0.5,
+				"ambient": Color(0.52, 0.58, 0.64), "lamp": Color("#ffd690"),
 				"stone": Color("#4d5947"), "mortar": Color("#0b120d"), "stone_light": Color("#7d9270"),
 				"weather": "fireflies", "far_kind": "canopy", "mid_kind": "garden", "fg_kind": "foliage",
-				"tint": Vector3(0.95, 1.04, 0.98), "contrast": 1.08, "saturation": 1.05, "bloom": 0.8, "vignette": 0.55,
-				"shadows": Vector3(0.9, 1.04, 1.04), "highlights": Vector3(1.04, 1.06, 0.88),
-				"wash_top": Vector3(0.0, 0.025, 0.02), "wash_bottom": Vector3(0.0, 0.012, 0.008),
+				"tint": Vector3(0.95, 0.98, 1.03), "contrast": 1.08, "saturation": 1.0, "bloom": 0.8, "vignette": 0.55,
+				"shadows": Vector3(0.92, 0.96, 1.08), "highlights": Vector3(1.02, 1.0, 0.94),
+				"wash_top": Vector3(0.0, 0.01, 0.025), "wash_bottom": Vector3(0.0, 0.006, 0.014),
 				"lamp_cone": 0.2, "lamp_rain": 0.0, "lamp_halo": 0.09, "moths": 7,
 			}
 		"belvedere":

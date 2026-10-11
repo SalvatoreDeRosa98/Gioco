@@ -43,6 +43,29 @@ func _process(delta: float) -> void:
 		s.open = move_toward(s.open, 1.0 if now else 0.0, delta / OPEN_TIME)
 	queue_redraw()
 
+## Riquadro del suggerimento del cancello (mondo): verso l'interno della stanza rispetto al cancello
+## e sempre dentro la vista della camera, così non esce dallo schermo.
+const HINT_W := 340.0
+const HINT_H := 28.0
+func hint_rect(p: Dictionary) -> Rect2:
+	var h := float(p.get("height", 200.0))
+	var inward := 1.0 if str(p.get("side", "right")) == "left" else -1.0
+	var x := float(p.pos.x) + inward * 60.0 - HINT_W / 2.0 + inward * HINT_W / 2.0
+	var r := Rect2(x, float(p.pos.y) - h - 40.0, HINT_W, HINT_H)
+	var view := visible_rect()
+	if view.size.x > HINT_W + 32.0:
+		r.position.x = clampf(r.position.x, view.position.x + 16.0, view.end.x - 16.0 - HINT_W)
+	r.position.y = clampf(r.position.y, view.position.y + 16.0, view.end.y - 16.0 - HINT_H)
+	return r
+
+## Area di mondo inquadrata dalla camera.
+func visible_rect() -> Rect2:
+	var cam := get_viewport().get_camera_2d()
+	if cam == null:
+		return Rect2(Vector2(-1e6, -1e6), Vector2(2e6, 2e6))
+	var view := get_viewport_rect().size / cam.zoom
+	return Rect2(cam.get_screen_center_position() - view / 2.0, view)
+
 func _sprite(tex: Texture2D, base: Vector2, height: float, alpha := 1.0, offset := Vector2.ZERO, angle := 0.0) -> void:
 	var size := Vector2(tex.get_size()) * (height / tex.get_height())
 	draw_set_transform(base + offset, angle, Vector2.ONE)
@@ -66,4 +89,5 @@ func _draw() -> void:
 				_sprite(GATE_SHUT, p.pos, h, 1.0 - float(s.open))
 				_sprite(GATE_OPEN, p.pos, h, float(s.open))
 				if float(s.open) < 0.05 and world.player and absf(world.player.position.x - p.pos.x) < 200.0 and absf(world.player.position.y - p.pos.y) < 260.0:
-					Art.text(self, Art.body_font(), p.pos + Vector2(-170, -h - 30), str(p.get("hint", "Chiuso")), 18, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 340)
+					var hr := hint_rect(p)
+					Art.text(self, Art.body_font(), hr.position + Vector2(0, 20), str(p.get("hint", "Chiuso")), 18, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, hr.size.x)

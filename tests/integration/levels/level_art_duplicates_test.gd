@@ -64,6 +64,28 @@ func _run() -> void:
 			if body:
 				var shape: CollisionShape2D = body.get_child(0)
 				check(Rect2(shape.position - shape.shape.size / 2.0, shape.shape.size).is_equal_approx(rect), "Stanza %d: collisione del muro %s = disegno" % [idx, c.id])
+	# Tana di Ratking: trono del fondale centrato dietro l'arena, raggio di luna come luce additiva.
+	world._go(15, true)
+	await process_frame
+	var bd = world._forge_backdrop
+	var view := Vector2(1024, 576)
+	var ir: Rect2 = bd.image_rect(Vector2(800, 700) - view / 2.0, view)
+	var throne_x := ir.position.x + ir.size.x * 0.51
+	check(absf(throne_x - 800.0) < 40.0, "Tana: trono dietro al centro dell'arena (x=%.0f)" % throne_x)
+	check(absf(ir.position.y + ir.size.y * 0.74 - float(world.room.floor)) < 1.0, "Tana: pavimento del dipinto sul pavimento della stanza")
+	check(bd.beam != null and (bd.beam.material as CanvasItemMaterial).blend_mode == CanvasItemMaterial.BLEND_MODE_ADD, "Tana: raggio di luna additivo")
+	check(bd.beam.z_index < 4, "Tana: la luce resta sotto i tile delle piattaforme")
+	# Suggerimento del cancello sinistro della 13 dentro la vista, a destra del cancello.
+	world._go(13, true)
+	await process_frame
+	world.player.teleport(Vector2(200, 1970))
+	world.player._cam.reset_smoothing()
+	await process_frame
+	var sp = world._slice_props
+	var gate: Dictionary = sp.props.filter(func(p): return p.kind == "gate")[0]
+	var hr: Rect2 = sp.hint_rect(gate)
+	check(sp.visible_rect().encloses(hr), "Stanza 13: suggerimento del cancello dentro lo schermo (%s in %s)" % [hr, sp.visible_rect()])
+	check(hr.position.x > float(gate.pos.x), "Stanza 13: suggerimento a destra del cancello")
 	main.queue_free()
 	await process_frame
 	print("level_art_duplicates_test: %d fallimenti" % failures)

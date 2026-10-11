@@ -116,6 +116,10 @@ static func r15() -> Dictionary:
 	return {
 		"idx": 15, "name": "Tana di Ratking", "size": Vector2(1600, 1080), "floor": 980.0, "scene_name": "R15TanaRatking",
 		"art": true, "mid_art": "res://assets/art/slice/tana_ratking_mid.png",
+		# Trono d'argenteria dietro al centro dell'arena (x 800 con la camera centrata) e appoggiato al pavimento;
+		# il raggio di luna del dipinto è ripreso da una luce additiva sopra la pedana centrale.
+		"mid_opts": {"floor_v": 0.74, "scale": 1.0, "dim": 0.85,
+			"light": {"x": 810.0, "top_w": 150.0, "bottom_w": 440.0, "color": "#a9c2e6"}},
 		"generated_by": "tools/levels/slice_design.gd",
 		"ledges": [
 			Rect2(320, 852, 256, 18),    # pedana sinistra +128

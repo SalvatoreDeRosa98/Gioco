@@ -18,6 +18,7 @@ extends RefCounted
 ##   notes:   [{pos, text}] etichette di progetto (solo editor)
 ##   art:     true = TileSet dipinto (tufo bagnato) visibile in gioco al posto del disegno di terrain.gd
 ##   mid_art: percorso del fondale del piano medio (parallasse 0.5, game/scene_backdrop.gd)
+##   mid_opts: allineamento e luce del fondale (floor_v, scale, dim, light: vedi scene_backdrop.gd)
 ##   props:   [{kind: wheel|gate, pos, side?, height?, hint?, replaces?}]  oggetti interattivi (game/slice_props.gd);
 ##            replaces = id dei landmark disegnati dal codice che l'oggetto sostituisce (non vengono più disegnati)
 ##   cracks[].hits: colpi di martello per romperlo (2 = intatto -> danneggiato -> rotto)
@@ -173,6 +174,8 @@ static func build(spec: Dictionary, ts: TileSet) -> Node2D:
 		root.set_meta("art_tiles", true)
 	if spec.has("mid_art"):
 		root.set_meta("mid_art", str(spec.mid_art))
+	if spec.has("mid_opts"):
+		root.set_meta("mid_opts", spec.mid_opts)
 	var bounds := ReferenceRect.new()
 	bounds.name = "Bounds"
 	bounds.size = size
