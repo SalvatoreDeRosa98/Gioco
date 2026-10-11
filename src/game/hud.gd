@@ -67,6 +67,7 @@ func toast(text: String) -> void:
 	_toast_text = text
 	_toast_t = TOAST_TIME
 	notices.life = TOAST_TIME
+	notices.max_visible = 1
 	notices.push(text)
 
 
@@ -254,6 +255,12 @@ func _draw_area_title(vp: Vector2) -> void:
 	draw_line(Vector2(cx + 18.0, ly), Vector2(cx + spread + 20.0, ly), Color(Art.OCRA, 0.8 * a), 1.5)
 	draw_colored_polygon(PackedVector2Array([Vector2(cx - 9, ly), Vector2(cx, ly - 6), Vector2(cx + 9, ly), Vector2(cx, ly + 6)]), Color(Art.OCRA, a))
 	Art.text(self, Art.body_font(), Vector2(0, ly + 38.0), _subtitle, 26, Color(Art.OCRA.lightened(0.3), 0.9 * a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+
+
+## Riquadro (schermo) occupato da titolo, ornamento e sottotitolo d'area.
+func title_rect(vp: Vector2) -> Rect2:
+	var cy := vp.y * 0.40
+	return Rect2(TITLE_SIDE * 0.5, cy - 62.0, vp.x - TITLE_SIDE, 62.0 + 26.0 + 38.0 + 14.0)
 
 
 ## Corpo del titolo d'area: 54 px, ridotto finche' il testo non sta fra i due margini laterali.
