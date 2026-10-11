@@ -23,7 +23,10 @@ const POST_SHADER := preload("res://game/shaders/post_screen_grade.gdshader")
 const LEDGE_LAYER := 4
 const StationScript := preload("res://game/save_station.gd")
 const SAVE_PATH := "user://ferruccio-save.json"
-var save_path := SAVE_PATH
+var save_path := SaveSlots.path(SaveSlots.current)
+## Tempo di gioco accumulato nei salvataggi precedenti e inizio della sessione (ms).
+var _play_base := 0.0
+var _session_ms := Time.get_ticks_msec()
 var stations: Dictionary = {}
 var defeated: Dictionary = {}
 var checkpoint: Dictionary = {}
@@ -170,13 +173,15 @@ func _input(event: InputEvent) -> void:
 			_map.toggle()
 		elif _shop.opened:
 			_shop.hide_shop()
+		elif _pause.opened:
+			_pause.back()
 		else:
 			_pause.toggle()
 		get_viewport().set_input_as_handled()
 		return
 	if _pause != null and _pause.opened:
 		if event.is_action_pressed("ui_cancel"):
-			_pause.toggle()
+			_pause.back()
 			get_viewport().set_input_as_handled()
 		return
 	if _map != null and _map.opened:
@@ -407,7 +412,7 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	_build_stations()
 	_apply_grade(th)
 	Audio.stop_loops()
-	Audio.play_area(room["theme"])
+	Audio.play_area(Audio.area_for_room(room))
 	_fade_in()
 	if idx != _shown_room:
 		_shown_room = idx
@@ -1094,7 +1099,7 @@ func _save_at(pos: Vector2) -> void:
 		_hud.toast("Non puoi custodire ricordi finché non ritrovi te stesso")
 		return
 	var new_checkpoint := {"room": room_index, "x": pos.x, "y": pos.y - PlayerScript.HALF.y}
-	var state := {"version": 1, "checkpoint": new_checkpoint, "coins": coins, "cleared": cleared, "defeated": defeated, "stations": stations, "vars": story.vars, "seen": story.seen, "upgrades": upgrades, "equipped": equipped, "choice_uses": {}}
+	var state := {"version": 1, "checkpoint": new_checkpoint, "coins": coins, "cleared": cleared, "defeated": defeated, "stations": stations, "vars": story.vars, "seen": story.seen, "upgrades": upgrades, "equipped": equipped, "choice_uses": {}, "play_time": play_time(), "area": str(room.get("name", "")), "saved_at": int(Time.get_unix_time_from_system())}
 	if not _write_state(state):
 		_hud.toast("Salvataggio non riuscito")
 		return
@@ -1226,6 +1231,11 @@ func toggle_accessory(key: String) -> String:
 	return "Equipaggiamento aggiornato"
 
 
+## Secondi di gioco totali dello slot (salvataggi precedenti + sessione corrente).
+func play_time() -> float:
+	return _play_base + float(Time.get_ticks_msec() - _session_ms) / 1000.0
+
+
 func _restore_save() -> void:
 	if not FileAccess.file_exists(save_path):
 		return
@@ -1250,6 +1260,8 @@ func _restore_save() -> void:
 	if float(point["x"]) < Room.EDGE or float(point["x"]) > saved_room["size"].x - Room.EDGE or float(point["y"]) < 0 or float(point["y"]) > float(saved_room["floor"]):
 		return
 	_saved_state = parsed.duplicate(true)
+	_play_base = maxf(0.0, float(parsed.get("play_time", 0.0)))
+	_session_ms = Time.get_ticks_msec()
 	_restore_state(_saved_state)
 
 

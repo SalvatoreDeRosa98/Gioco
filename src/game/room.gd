@@ -16,7 +16,7 @@ const DOOR_H := 220.0
 ## Spessore visibile dei pilastri ai lati della stanza.
 const EDGE := 36.0
 ## Ingrandimento della camera di gioco: personaggi più grandi, mondo più raccolto.
-const CAMERA_ZOOM := 1.25
+const CAMERA_ZOOM := 1.6
 
 const ROOMS := [
 	{

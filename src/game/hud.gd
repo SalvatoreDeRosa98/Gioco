@@ -15,6 +15,16 @@ var world
 var _t := 0.0
 var _toast_text := ""
 var _toast_t := 0.0
+## Coda delle notifiche: impilate in basso al centro, mai sovrapposte (vedi hud_queue.gd).
+var notices := HudQueue.new()
+## Spazio verticale fra due notifiche in coda.
+const NOTICE_STEP := 44.0
+## Fondo dell'area notifiche, misurato dal basso dello schermo.
+const NOTICE_BOTTOM := 104.0
+## Bordo destro del pannello vita in alto a sinistra.
+const VITALS_RIGHT := 290.0
+## Margine laterale libero lasciato al titolo d'area (pannello vita a sinistra).
+const TITLE_SIDE := 60.0
 var _title := ""
 var _subtitle := ""
 var _title_t := -1.0
@@ -56,6 +66,8 @@ func area_title(title: String, subtitle: String) -> void:
 func toast(text: String) -> void:
 	_toast_text = text
 	_toast_t = TOAST_TIME
+	notices.life = TOAST_TIME
+	notices.push(text)
 
 
 ## Schermata finale. Senza testi usa quelli generici di vittoria o sconfitta; il finale della storia
@@ -70,6 +82,7 @@ func show_end(won: bool, title: String = "", subtitle: String = "", quote: Strin
 func _process(delta: float) -> void:
 	_t += delta
 	_toast_t = maxf(0.0, _toast_t - delta)
+	notices.update(delta)
 	_hint_t = maxf(0.0, _hint_t - delta)
 	if _title_t >= 0.0:
 		_title_t += delta
@@ -82,8 +95,9 @@ func _process(delta: float) -> void:
 		_lesson_label.visible = world.room_index == 0 and is_instance_valid(world.introduction) and not world.is_talking()
 		if _lesson_label.visible:
 			var viewport := get_viewport_rect().size
-			var card_w := minf(760.0, viewport.x - 80.0)
-			_lesson_label.position = Vector2((viewport.x - card_w) * 0.5, 22.0)
+			var card := _lesson_card(viewport)
+			var card_w := card.size.x - 24.0
+			_lesson_label.position = Vector2(card.position.x + 12.0, 22.0)
 			_lesson_label.size = Vector2(card_w, 48.0)
 			_lesson_label.text = world.introduction.hint()
 	queue_redraw()
@@ -94,17 +108,15 @@ func _draw() -> void:
 		return
 	var vp := get_viewport_rect().size
 	if _lesson_label.visible:
-		var card_w := minf(760.0, vp.x - 80.0)
-		var card := Rect2((vp.x - card_w) * 0.5 - 12.0, 16.0, card_w + 24.0, 56.0)
+		var card := _lesson_card(vp)
+
 		draw_rect(card, Color(0.04, 0.04, 0.07, 0.88), true)
 		draw_rect(card, Color(Art.OCRA, 0.8), false, 1.5)
 	_draw_vitals()
 	_draw_area_title(vp)
 	if world.player.invulnerable:
-		Art.text(self, Art.body_font(), Vector2(0, 28), "SVILUPPATORE · NESSUN DANNO", 18, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
-	if _toast_t > 0.0:
-		var a := minf(1.0, _toast_t * 2.0)
-		Art.text(self, Art.body_font(), Vector2(0, vp.y - 118.0), _toast_text, 28, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+		Art.text(self, Art.body_font(), Vector2(34, vp.y - 20), "SVILUPPATORE · NESSUN DANNO", 15, Color(Art.OCRA, 0.8))
+	_draw_notices(vp)
 	if world.room_index != 0 and _hint_t > 0.0:
 		var a := minf(1.0, _hint_t / 3.0) * 0.6
 		var hint := Controls.label("move") + " muovi · " + Controls.label("jump") + " salta · " + Controls.label("attack") + " colpisci · " + Controls.label("interact") + " interagisci"
@@ -133,28 +145,57 @@ func _draw() -> void:
 		Art.text(self, Art.body_font(), Vector2(0, vp.y - 58), objective, 21, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 
 
+## Riquadro della lezione (stanza iniziale): centrato, ma mai sopra al pannello vita.
+func _lesson_card(vp: Vector2) -> Rect2:
+	var left := VITALS_RIGHT + 18.0
+	var w := minf(784.0, vp.x - left - 24.0)
+	var x := maxf(left, (vp.x - w) * 0.5)
+	return Rect2(x, 16.0, w, 56.0)
+
+
 func _draw_vitals() -> void:
 	var me = world.player
-	# Alone scuro dietro all'HUD per leggibilità su qualunque sfondo.
-	Art.shaded_ellipse(self, Vector2(130, 80), Vector2(230, 120), Color(0, 0, 0, 0.4), Color(0, 0, 0, 0.0), 24)
+	# Pannello unico in alto a sinistra: vita e monete in primo piano, stato abilita' sotto,
+	# in piccolo e attenuato. Lastra scura per staccarsi da qualunque fondale.
+	var rows := 0
 	if me:
-		var parry_key := Controls.label("parry")
-		var parry_text: String = "%s  Parata pronta" % parry_key if me.parry_cooldown <= 0.0 else "Parata %.1f s" % me.parry_cooldown
-		Art.text(self, Art.body_font(), Vector2(34, 158), parry_text, 18, Art.CREMA)
-		Art.text(self, Art.body_font(), Vector2(34, 182), me.dash_status(), 18, Art.CREMA)
-		Art.text(self, Art.body_font(), Vector2(34, 206), "Accessori %d/%d" % [world.equipped.size(), world.accessory_slots()], 16, Art.CREMA)
-		Art.text(self, Art.body_font(), Vector2(34, 230), "%s  Braci %d/12" % [Controls.label("heal"), me.embers], 16, Art.OCRA)
-		Art.text(self, Art.body_font(), Vector2(34, 254), Controls.label("map") + "  Mappa", 16, Art.OCRA)
+		rows = 4
+	var panel := Rect2(18, 18, VITALS_RIGHT - 18.0, 128 + rows * 21)
+	draw_rect(panel, Color(0.03, 0.03, 0.05, 0.55), true)
+	draw_rect(panel, Color(Art.OCRA, 0.35), false, 1.0)
+	if me:
 		var hp := int(me.hp)
 		for i in int(me.max_hp):
 			var pulse := 0.6 + 0.4 * sin(_t * 3.0 + i * 0.6) if hp <= 1 and i == 0 else 1.0
-			_draw_mask(Vector2(54 + i * 44, 56), i < hp, pulse)
-	draw_line(Vector2(34, 92), Vector2(260, 92), Color(Art.CREMA, 0.25), 1.0)
-	draw_colored_polygon(PackedVector2Array([Vector2(30, 92), Vector2(34, 88), Vector2(38, 92), Vector2(34, 96)]), Color(Art.CREMA, 0.5))
-	var coin := Vector2(48, 118)
+			_draw_mask(Vector2(54 + i * 44, 52), i < hp, pulse)
+	draw_line(Vector2(34, 84), Vector2(274, 84), Color(Art.OCRA, 0.4), 1.0)
+	var coin := Vector2(48, 108)
 	draw_texture_rect(COIN_TEX, Rect2(coin - Vector2(13, 13), Vector2(26, 26)), false)
-	Art.text(self, Art.title_font(), Vector2(66, 128), str(int(round(_coins_shown))), 26, Art.CREMA)
+	Art.text(self, Art.title_font(), Vector2(68, 118), str(int(round(_coins_shown))), 26, Art.CREMA)
+	if me:
+		var ready: bool = me.parry_cooldown <= 0.0
+		var parry_text: String = "%s  Parata" % Controls.label("parry") if ready else "Parata  %.1f s" % me.parry_cooldown
+		var dim := Color(Art.CREMA, 0.72)
+		var y := 150.0
+		Art.text(self, Art.body_font(), Vector2(34, y), parry_text, 15, Art.CREMA if ready else dim)
+		Art.text(self, Art.body_font(), Vector2(34, y + 21), me.dash_status(), 15, dim)
+		Art.text(self, Art.body_font(), Vector2(34, y + 42), "%s  Braci %d/12   \u00b7   Accessori %d/%d" % [Controls.label("heal"), me.embers, world.equipped.size(), world.accessory_slots()], 15, Color(Art.OCRA, 0.9))
+		Art.text(self, Art.body_font(), Vector2(34, y + 63), Controls.label("map") + "  Mappa", 15, Color(Art.OCRA, 0.65))
 
+
+## Notifiche in coda: dal basso verso l'alto, la piu' recente in fondo, ognuna sulla sua lastra.
+func _draw_notices(vp: Vector2) -> void:
+	var items := notices.visible()
+	var n := items.size()
+	for k in n:
+		var e: Dictionary = items[k]
+		var y := vp.y - NOTICE_BOTTOM - float(n - 1 - k) * NOTICE_STEP
+		var a: float = e.alpha
+		var w := minf(vp.x - 120.0, 22.0 + 12.5 * float(str(e.text).length()))
+		var plate := Rect2((vp.x - w) * 0.5, y - 26.0, w, 36.0)
+		draw_rect(plate, Color(0.03, 0.03, 0.05, 0.7 * a), true)
+		draw_line(plate.position + Vector2(0, plate.size.y), plate.end, Color(Art.OCRA, 0.6 * a), 1.0)
+		Art.text(self, Art.body_font(), Vector2(0, y), e.text, 22, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 
 ## Maschera di Pulcinella dipinta: piena se il punto vita c'è, sagoma scura se perso.
 func _draw_mask(center: Vector2, filled: bool, glow_amount: float) -> void:
@@ -171,17 +212,28 @@ func _draw_area_title(vp: Vector2) -> void:
 	if _title_t < 0.0:
 		return
 	var a := minf(1.0, _title_t / 0.9) * minf(1.0, (TITLE_TIME - _title_t) / 1.2)
-	var cy := vp.y * 0.28
+	# Sotto il pannello vita e la barra del boss, cosi' nulla si sovrappone in alto.
+	var cy := vp.y * 0.40
 	var cx := vp.x * 0.5
 	Art.grad_rect(self, Rect2(0, cy - 90.0, vp.x, 90), Color(0, 0, 0, 0), Color(0, 0, 0, 0.35 * a))
 	Art.grad_rect(self, Rect2(0, cy, vp.x, 90), Color(0, 0, 0, 0.35 * a), Color(0, 0, 0, 0))
-	Art.text(self, Art.title_wide(), Vector2(0, cy), _title, 54, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+	var size := title_size(_title, vp.x)
+	Art.text(self, Art.title_wide(), Vector2(0, cy), _title, size, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	var spread := 60.0 + 200.0 * ease(minf(1.0, _title_t / 1.4), 0.3)
 	var ly := cy + 26.0
 	draw_line(Vector2(cx - spread - 20.0, ly), Vector2(cx - 18.0, ly), Color(Art.OCRA, 0.8 * a), 1.5)
 	draw_line(Vector2(cx + 18.0, ly), Vector2(cx + spread + 20.0, ly), Color(Art.OCRA, 0.8 * a), 1.5)
 	draw_colored_polygon(PackedVector2Array([Vector2(cx - 9, ly), Vector2(cx, ly - 6), Vector2(cx + 9, ly), Vector2(cx, ly + 6)]), Color(Art.OCRA, a))
 	Art.text(self, Art.body_font(), Vector2(0, ly + 38.0), _subtitle, 26, Color(Art.OCRA.lightened(0.3), 0.9 * a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+
+
+## Corpo del titolo d'area: 54 px, ridotto finche' il testo non sta fra i due margini laterali.
+func title_size(text: String, vp_w: float) -> int:
+	var font: Font = Art.title_wide()
+	var size := 54
+	while size > 28 and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > vp_w - 2.0 * TITLE_SIDE:
+		size -= 2
+	return size
 
 
 func _draw_end(vp: Vector2) -> void:

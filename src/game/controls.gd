@@ -8,7 +8,27 @@ const PAD := {"move": "Stick / croce", "jump": "A / ×", "attack": "X / □", "p
 ## Il controller collegato è il dispositivo iniziale, poi prevale l'ultimo input.
 static func label(action: String) -> String:
 	var pad := device_override == 1 or (device_override < 0 and not Input.get_connected_joypads().is_empty())
+	var custom := _custom_label(action, pad)
+	if custom != "":
+		return custom
 	return str((PAD if pad else KEYS).get(action, action))
+
+
+## Testo dai binding reali se il giocatore ha rimappato l'azione, altrimenti "".
+static func _custom_label(action: String, pad: bool) -> String:
+	if not InputRemap.has_defaults():
+		return ""
+	if action == "move":
+		if InputRemap.is_customized("move_left", pad) or InputRemap.is_customized("move_right", pad):
+			return InputRemap.label("move_left", pad) + " / " + InputRemap.label("move_right", pad)
+		return ""
+	if action == "drop":
+		if InputRemap.is_customized("move_down", pad) or InputRemap.is_customized("jump", pad):
+			return InputRemap.label("move_down", pad) + " + " + InputRemap.label("jump", pad)
+		return ""
+	if InputRemap.ACTIONS.has(action) and InputRemap.is_customized(action, pad):
+		return InputRemap.label(action, pad)
+	return ""
 
 ## Ignora i piccoli movimenti involontari degli stick.
 static func observe(event: InputEvent) -> void:

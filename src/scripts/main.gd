@@ -15,10 +15,30 @@ var _menu_box: VBoxContainer
 var _play_button: Button
 var _world: Node2D
 var _menu_axis := 0
+const OptionsPanel := preload("res://game/options_panel.gd")
+const RemapPanel := preload("res://game/remap_panel.gd")
+## Pannelli del menu principale.
+var _menu_center: Control
+var _slots_center: Control
+var _slots_box: VBoxContainer
+var _slots_title: Label
+var _slot_buttons: Array[Button] = []
+## "continue" o "new": cosa fa la scelta di uno slot.
+var _slots_mode := "new"
+## Slot in attesa di conferma di sovrascrittura (0 = nessuno).
+var _confirm_slot := 0
+var _options: Control
+var _remap: Control
 
 ## Il menu accetta direttamente croce, stick e A/Croce anche dopo un clic fuori dai pulsanti.
 func _input(event: InputEvent) -> void:
 	if is_instance_valid(_world) or not is_instance_valid(_ui) or not _ui.visible:
+		return
+	if (_options and _options.visible) or (_remap and _remap.visible):
+		return
+	if _slots_center and _slots_center.visible and event.is_action_pressed("ui_cancel"):
+		_show_main_box()
+		get_viewport().set_input_as_handled()
 		return
 	Controls.observe(event)
 	if event is InputEventJoypadMotion and event.axis == JOY_AXIS_LEFT_Y:
@@ -51,7 +71,7 @@ func _input(event: InputEvent) -> void:
 
 func _move_menu_focus(direction: int) -> void:
 	var buttons: Array[Button] = []
-	for child in _menu_box.get_children():
+	for child in _active_box().get_children():
 		if child is Button and not child.disabled and child.visible:
 			buttons.append(child)
 	if buttons.is_empty():
@@ -66,6 +86,11 @@ var _t := 0.0
 
 func _ready() -> void:
 	_ensure_inputs()
+	InputRemap.capture_defaults()
+	InputRemap.load_bindings()
+	GameSettings.load_settings()
+	GameSettings.apply()
+	SaveSlots.migrate_legacy()
 	_build_scene()
 	_build_ui()
 	_run_auto_args()
@@ -260,9 +285,33 @@ func _build_ui() -> void:
 	_menu_box = _screen(root)
 	_add_title(_menu_box)
 	_spacer(_menu_box, 8)
-	_play_button = _button(_menu_box, "Gioca", _on_play_pressed)
-	_button(_menu_box, "Nuova partita", func() -> void: _on_play_pressed(false))
+	_play_button = _button(_menu_box, "Gioca", func() -> void: _open_slots("continue" if SaveSlots.any_exists() else "new"))
+	_button(_menu_box, "Nuova partita", func() -> void: _open_slots("new"))
+	_button(_menu_box, "Opzioni", func() -> void: _open_panel(_options))
+	_button(_menu_box, "Comandi", func() -> void: _open_panel(_remap))
 	_button(_menu_box, "Esci dal gioco", func() -> void: get_tree().quit())
+	_menu_center = _menu_box.get_parent()
+	_slots_box = _screen(root)
+	_slots_box.custom_minimum_size = Vector2(820, 0)
+	_slots_center = _slots_box.get_parent()
+	_slots_title = _label(_slots_box, "", 34, Art.title_font())
+	_spacer(_slots_box, 10)
+	for s in range(1, SaveSlots.COUNT + 1):
+		var b := _button(_slots_box, "", _on_slot_pressed.bind(s))
+		b.add_theme_font_override("font", Art.body_font())
+		b.add_theme_font_size_override("font_size", 22)
+		_slot_buttons.append(b)
+	_spacer(_slots_box, 6)
+	_button(_slots_box, "Indietro", _show_main_box)
+	_slots_center.hide()
+	_options = OptionsPanel.new()
+	root.add_child(_options)
+	_options.hide()
+	_options.closed.connect(_show_main_box)
+	_remap = RemapPanel.new()
+	root.add_child(_remap)
+	_remap.hide()
+	_remap.closed.connect(_show_main_box)
 
 	var footer := _label(root, "Beta  ·  Caserta, 1845", 18, Art.body_font())
 	footer.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -291,7 +340,8 @@ func _screen(root: Control) -> VBoxContainer:
 
 func _show_menu() -> void:
 	_ui.visible = true
-	_play_button.text = "CONTINUA" if FileAccess.file_exists(WORLD_SCRIPT.SAVE_PATH) else "GIOCA"
+	_show_main_box()
+	_play_button.text = "CONTINUA" if SaveSlots.any_exists() else "GIOCA"
 	Audio.play_area("menu")
 	_play_button.call_deferred("grab_focus")
 
@@ -395,11 +445,78 @@ func _underline(color: Color) -> StyleBoxFlat:
 	return sb
 
 
+# ---------------------------------------------------------------- Slot e pannelli
+
+func _active_box() -> VBoxContainer:
+	return _slots_box if _slots_center and _slots_center.visible else _menu_box
+
+
+func _show_main_box() -> void:
+	if _slots_center:
+		_slots_center.hide()
+	if _options:
+		_options.hide()
+	if _remap:
+		_remap.hide()
+	_menu_center.show()
+	_play_button.call_deferred("grab_focus")
+
+
+func _open_panel(panel: Control) -> void:
+	_menu_center.hide()
+	panel.open()
+
+
+## Mostra i 3 slot: "continue" carica (solo slot pieni), "new" inizia (chiede conferma se pieno).
+func _open_slots(mode: String) -> void:
+	_slots_mode = mode
+	_confirm_slot = 0
+	_slots_title.text = "CONTINUA" if mode == "continue" else "NUOVA PARTITA"
+	_refresh_slots()
+	_menu_center.hide()
+	_slots_center.show()
+	var target := SaveSlots.latest() if mode == "continue" else _first_free_slot()
+	_slot_buttons[maxi(1, target) - 1].call_deferred("grab_focus")
+
+
+func _first_free_slot() -> int:
+	for s in range(1, SaveSlots.COUNT + 1):
+		if not SaveSlots.exists(s):
+			return s
+	return 1
+
+
+func _refresh_slots() -> void:
+	for i in _slot_buttons.size():
+		var s := i + 1
+		var b := _slot_buttons[i]
+		b.text = SaveSlots.describe(s)
+		b.disabled = _slots_mode == "continue" and not SaveSlots.info(s).valid
+		if _confirm_slot == s:
+			b.text = "Slot %d  \u00b7  Sovrascrivere? Premi ancora per confermare" % s
+
+
+func _on_slot_pressed(slot: int) -> void:
+	if _slots_mode == "continue":
+		_on_play_pressed(true, slot)
+		return
+	if SaveSlots.exists(slot) and _confirm_slot != slot:
+		_confirm_slot = slot
+		_refresh_slots()
+		return
+	SaveSlots.delete(slot)
+	_on_play_pressed(false, slot)
+
+
 # ---------------------------------------------------------------- Partita
 
-func _on_play_pressed(resume: bool = true) -> void:
+func _on_play_pressed(resume: bool = true, slot: int = 0) -> void:
 	if _world:
 		return
+	if slot > 0:
+		SaveSlots.current = slot
+	elif resume and SaveSlots.latest() > 0:
+		SaveSlots.current = SaveSlots.latest()
 	_ui.visible = false
 	_free_scene()
 	_world = WORLD_SCRIPT.new()

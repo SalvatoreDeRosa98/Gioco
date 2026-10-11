@@ -11,6 +11,9 @@ func check(ok: bool, message: String) -> void:
 		push_error(message)
 
 func _run() -> void:
+	SaveSlots.dir = "user://test-slots-routes/"
+	for s in range(1, SaveSlots.COUNT + 1):
+		SaveSlots.delete(s)
 	var main = load("res://scripts/main.gd").new()
 	root.add_child(main)
 	await process_frame
@@ -24,7 +27,10 @@ func _run() -> void:
 	accept.button_index = JOY_BUTTON_A
 	accept.pressed = true
 	main._input(accept)
-	check(main._world != null, "A/Croce avvia la nuova partita")
+	check(main._slots_center.visible, "Nuova partita apre la scelta dello slot")
+	await process_frame
+	main._input(accept)
+	check(main._world != null, "A/Croce sullo slot libero avvia la nuova partita")
 	var w = main._world
 	w.set_process(false)
 	w.set_physics_process(false)

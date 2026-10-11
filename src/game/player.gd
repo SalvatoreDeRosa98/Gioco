@@ -79,6 +79,9 @@ var _was_grounded := true
 var _cam: Camera2D
 var _light: PointLight2D
 var _rig: Node2D
+## Gruppo con lo shader di contorno che avvolge il rig.
+var _silhouette: CanvasGroup
+const OUTLINE_SHADER := preload("res://game/shaders/canvas_char_outline.gdshader")
 ## Disegna il fendente davanti al personaggio (i figli si disegnano dopo il padre).
 var _front: Node2D
 var _trauma := 0.0
@@ -119,13 +122,25 @@ func setup(pos: Vector2) -> void:
 
 
 func _ready() -> void:
-	_light = Art.point_light(self, Vector2(0, -10), Color(1.0, 0.93, 0.82), 0.55, 460.0)
+	_light = Art.point_light(self, Vector2(0, -10), Color(1.0, 0.93, 0.82), float(_cfg.get("light_energy", 0.55)), 460.0)
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_rig = CutoutRig.new()
 	_rig.height = FIGURE_HEIGHT
 	_rig.position = Vector2(0, HALF.y)
 	_rig.light_dir = DEFAULT_LIGHT_DIR
-	add_child(_rig)
+	# Leggibilita': la sagoma intera passa da un CanvasGroup con contorno e rim light,
+	# cosi' Ferruccio si stacca anche dai fondali scuri (parametri in tuning.json, "player").
+	_silhouette = CanvasGroup.new()
+	_silhouette.fit_margin = 16.0
+	var mat := ShaderMaterial.new()
+	mat.shader = OUTLINE_SHADER
+	mat.set_shader_parameter("outline_width", float(_cfg.get("outline_width", 2.0)))
+	mat.set_shader_parameter("outline_color", Color(_cfg.get("outline_color", "f5e6c4e0")))
+	mat.set_shader_parameter("rim_strength", float(_cfg.get("rim_strength", 0.55)))
+	mat.set_shader_parameter("lift", float(_cfg.get("silhouette_lift", 0.06)))
+	_silhouette.material = mat
+	add_child(_silhouette)
+	_silhouette.add_child(_rig)
 	_front = Node2D.new()
 	_front.draw.connect(_draw_slash)
 	add_child(_front)
