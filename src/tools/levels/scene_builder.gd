@@ -16,6 +16,7 @@ extends RefCounted
 ##   enemies: [{type, pos, placeholder?, swap_to?, note?, save_pos?}]
 ##   npcs:    [{id, pos}]   secrets: [Vector2]   landmarks: [{index, id, pos}]
 ##   notes:   [{pos, text}] etichette di progetto (solo editor)
+##   route:   [Vector2] percorso a salti di riferimento (centro mensola, y del piano), usato dai test fisici
 ##   art:     true = TileSet dipinto (tufo bagnato) visibile in gioco al posto del disegno di terrain.gd
 ##   mid_art: percorso del fondale del piano medio (parallasse 0.5, game/scene_backdrop.gd)
 ##   mid_opts: allineamento e luce del fondale (floor_v, scale, dim, light: vedi scene_backdrop.gd)
@@ -244,7 +245,7 @@ static func build(spec: Dictionary, ts: TileSet) -> Node2D:
 	var markers := Node2D.new()
 	markers.name = "Markers"
 	root.add_child(markers)
-	for g in ["Enemies", "Npcs", "Secrets", "Landmarks", "Rings", "Exits", "Saves", "Props", "Notes"]:
+	for g in ["Enemies", "Npcs", "Secrets", "Landmarks", "Rings", "Exits", "Saves", "Props", "Route", "Notes"]:
 		var n := Node2D.new()
 		n.name = g
 		markers.add_child(n)
@@ -303,6 +304,10 @@ static func build(spec: Dictionary, ts: TileSet) -> Node2D:
 			if p.has(k):
 				meta[k] = p[k]
 		_marker(markers.get_node("Props"), "P%d_%s" % [i, p.kind], p.pos, "%s %s" % [p.kind, p.get("side", "")], Color(0.9, 0.75, 0.5), meta)
+		i += 1
+	i = 0
+	for pt in spec.get("route", []):
+		_marker(markers.get_node("Route"), "Step%d" % i, pt, "passo %d" % i, Color(0.6, 0.6, 0.6), {"order": i})
 		i += 1
 	i = 0
 	for n in spec.get("notes", []):
