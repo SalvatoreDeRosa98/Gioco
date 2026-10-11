@@ -10,22 +10,33 @@ def shade_border(tile, k=0.55, w=2):
     return Image.fromarray(a.clip(0,255).astype('uint8'), tile.mode)
 
 src=Image.open(f'{SRC}/03-tufo-tileset.jpg').convert('RGBA')
-atlas=Image.new('RGBA',(6*T,3*T),(0,0,0,0))
-walls=[src.crop((x,y,x+128,y+128)).resize((T,T),Image.LANCZOS) for x,y in [(40,380),(300,470),(620,600),(980,400)]]
-tops=[src.crop((x,226,x+128,354)).resize((T,T),Image.LANCZOS) for x in [60,360,700,1060]]
-walls=[shade_border(t) for t in walls]; tops=[shade_border(t,0.7,1) for t in tops]
-plate=src.crop((200,221,328,300)).resize((T,30),Image.LANCZOS)
-plate=shade_border(plate,0.6,2)
+def seamless(img, axes=(0, 1)):
+    # Rende ripetibile un'immagine: miscela con la copia spostata di mezza misura, pesata verso i bordi.
+    a=np.asarray(img).astype(float); h,w=a.shape[:2]
+    r=a.copy()
+    if 0 in axes: r=np.roll(r,h//2,0)
+    if 1 in axes: r=np.roll(r,w//2,1)
+    wy=1-np.abs(np.linspace(-1,1,h))[:,None] if 0 in axes else np.ones((h,1))
+    wx=1-np.abs(np.linspace(-1,1,w))[None,:] if 1 in axes else np.ones((1,w))
+    m=np.clip(np.minimum(wy,wx)*2.2,0,1)[:,:,None]
+    return Image.fromarray((a*m+r*(1-m)).clip(0,255).astype('uint8'),img.mode)
+# Muro: un blocco 4x4 celle continuo (256 px) ripetibile; le celle sono tagli sfalsati dello stesso blocco,
+# quindi celle vicine combaciano e la ripetizione cade ogni 4 celle.
+wall=seamless(src.crop((60,356,572,740)).resize((4*T,4*T),Image.LANCZOS))
+# Cresta: fascia superiore ripetibile solo in orizzontale (4 celle).
+crest=seamless(src.crop((40,226,552,354)).resize((4*T,T),Image.LANCZOS),axes=(1,))
+plate=seamless(src.crop((200,221,712,300)).resize((4*T,30),Image.LANCZOS),axes=(1,)).crop((0,0,T,30))
+atlas=Image.new('RGBA',(6*T,6*T),(0,0,0,0))
 # riga 0: 0 muro, 1 mensola alta, 2 spuntoni, 3 riferimento, 4 mensola bassa, 5 cresta
-atlas.paste(walls[0],(0,0)); atlas.paste(plate,(T,0)); atlas.paste(plate,(4*T,32)); atlas.paste(tops[0],(5*T,0))
+atlas.paste(wall.crop((0,0,T,T)),(0,0)); atlas.paste(plate,(T,0)); atlas.paste(plate,(4*T,32)); atlas.paste(crest.crop((0,0,T,T)),(5*T,0))
 d=ImageDraw.Draw(atlas)
 for i in range(4):  # spuntoni di ferro sul bordo inferiore
     x=2*T+i*16
     d.polygon([(x,T),(x+8,T-22),(x+16,T)],fill=(120,118,124,255),outline=(40,38,42,255))
     d.line([(x+8,T-22),(x+8,T-2)],fill=(170,168,176,255))
 d.rectangle((3*T,0,4*T-1,T-1),fill=(230,140,40,90))
-for i in range(4):
-    atlas.paste(walls[i],(i*T,T)); atlas.paste(tops[i],(i*T,2*T))
+atlas.paste(wall,(0,T))          # righe 1-4: blocco di muro 4x4
+atlas.paste(crest,(0,5*T))       # riga 5: cresta 4x1
 atlas.save(f'{OUT}/tufo_tiles.png')
 
 def mid(img, name, crop=None):
@@ -61,7 +72,7 @@ sx=m.width/1024
 for name,(x0,x1) in zip(['intatto','danneggiato','rotto'],[(8,336),(347,675),(685,1015)]):
     p=m.crop((int(x0*sx),int(124*sx),int(x1*sx),int(470*sx)))
     # striscia centrale: è lì la crepa; il muro della stanza è largo 64 px
-    cx=p.width//2; strip=p.crop((cx-int(p.width*0.3),0,cx+int(p.width*0.3),p.height))
+    strip=p  # pannello intero: il gioco ne ritaglia il centro con le proporzioni del muro (niente schiacciamento)
     if name=='intatto':  # niente segno di gesso col martello disegnato (testo/simbolo): striscia centrale lo esclude
         pass
     strip.convert('RGBA').save(f'{OUT}/muro_incrinato_{name}.png')

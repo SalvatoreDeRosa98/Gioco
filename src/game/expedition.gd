@@ -89,7 +89,9 @@ func _draw() -> void:
 		var p := Vector2(m.pos[0], m.pos[1])
 		var done: bool = m.kind != "route" and world.story.times_seen(m.id) > 0
 		var color := Color(0.5, 0.75, 0.8) if done else Art.OCRA
-		if m.kind == "route":
+		if not draws_mark(i):
+			pass  # sostituito da un oggetto dipinto (slice_props.gd): resta solo l'invito a interagire
+		elif m.kind == "route":
 			var locked: bool = (bool(m.get("need_clear", false)) and not world.room_cleared) or (str(m.get("need", "")) != "" and world.story.times_seen(m.need) == 0)
 			var is_forge: bool = str(m.get("id", "")) == "forge_door" or int(m.get("target", -1)) == Room.SECRET_ROOM
 			_archway(p, locked, i == selected, is_forge)
@@ -196,6 +198,11 @@ func _archway(base: Vector2, locked: bool, near: bool, is_forge: bool = false) -
 			var ember_a := (1.0 - life_prog) * (0.8 + 0.2 * sin(_time * 5.0 + seed_k))
 			var ember_col := Color(1.0, 0.65 + 0.25 * sin(seed_k), 0.2, ember_a)
 			draw_circle(Vector2(ember_x, ember_y), 2.2 * (1.0 - life_prog * 0.4), ember_col)
+
+
+## Falso se il landmark è sostituito da un oggetto dipinto della scena (room.hidden_marks).
+func draws_mark(i: int) -> bool:
+	return not str(marks[i].get("id", "")) in world.room.get("hidden_marks", [])
 
 
 ## Colonna in conci, presa dalla stessa texture della pietra del pavimento.
