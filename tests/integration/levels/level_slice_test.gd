@@ -44,7 +44,7 @@ func _run() -> void:
 	for coords in [Vector2i(0, 0), Vector2i(5, 0), Vector2i(0, 1), Vector2i(3, 1), Vector2i(0, 2), Vector2i(3, 2)]:
 		check(art_src.get_tile_data(coords, 0).get_collision_polygons_count(0) == 1, "Tufo: collisione piena sul tile %s" % coords)
 	check(art_src.get_tile_data(Vector2i(4, 0), 0).get_collision_polygons_count(1) == 1, "Tufo: mensola bassa one-way")
-	check(r9.props.size() == 2 and r9.cracks[0].hits == 2, "Stanza 9: ruota, cancello e muro da due colpi")
+	check(r9.props.size() == 3 and r9.cracks[0].hits == 2, "Stanza 9: ruota, due cancelli (chiusa e ingresso) e muro da due colpi")
 	check(r9.vertical.size() == 1 and r9.vertical[0].side == "bottom" and int(r9.vertical[0].target) == 13, "Stanza 9: caduta verso le Cisterne Sepolte dalla scena")
 	check(r9.cracks.size() == 1 and r9.secrets.size() == 3 and r9.landmark_pos.has(0) and r9.landmark_pos.has(1), "Stanza 9: muro incrinato, 3 segreti, chiusa e incisione")
 	check(_reachable(r9, r9.landmark_pos[0]), "Stanza 9: la chiusa si raggiunge saltando")
@@ -90,7 +90,7 @@ func _run() -> void:
 	check(visible_tiles == 2 and world._forge_backdrop.get_script().resource_path.ends_with("scene_backdrop.gd"), "In gioco: tile dipinti visibili e fondale in parallasse")
 	# Cancello a destra chiuso finché non si gira la ruota della chiusa.
 	var props = world._slice_props
-	check(props != null and props.state.size() == 2, "In gioco: oggetti interattivi della stanza 9")
+	check(props != null and props.state.size() == 3, "In gioco: oggetti interattivi della stanza 9")
 	if props:
 		var was_open: bool = world._right_open()
 		check(props.is_open(props.props[1]) == was_open, "Cancello legato alla porta destra")

@@ -7,6 +7,7 @@ const LevelScenes := preload("res://game/level_scenes.gd")
 const JUMP_UP := 200.0
 const JUMP_REACH := 280.0
 const GRAPPLE := 420.0
+const ENTRIES := {9: [Vector2(330, 980)], 12: [Vector2(300, 2300), Vector2(480, 2204)], 14: [Vector2(3310, 980), Vector2(440, 852)]}
 const KNOWN_ENEMIES := ["vespa", "gatto", "statua", "spettro", "lanterniere", "guardia", "duellante", "cavaliere", "ratking"]
 var failures := 0
 
@@ -38,7 +39,7 @@ func _run() -> void:
 	var bottom: Dictionary = r12.vertical.filter(func(x): return x.side == "bottom")[0]
 	check(top.get("need", "") == "wall_grip" and int(top.target) == 14 and int(bottom.target) == 3, "Campanile: giù al Belvedere, su alla Galleria coi guanti")
 	check(_reach(r12, r12.landmark_pos[0], {}), "Campanile: le campane si raggiungono saltando")
-	check(_reach(r12, Vector2(672, 284), {}), "Campanile: pianerottolo sotto l'uscita raggiungibile")
+	check(_reach(r12, Vector2(672, 412), {}), "Campanile: pianerottolo sotto l'uscita raggiungibile")
 	check(not _reach(r12, r12.secrets[0], {"grapple": true, "wall_grip": true}), "Campanile: nicchia murata chiusa senza martello (anche con rampino e guanti)")
 	check(_reach(r12, r12.secrets[0], {"hammer": true}), "Campanile: nicchia aperta col martello")
 	check(not _reach(r12, r12.secrets[1], {}), "Campanile: nido irraggiungibile senza abilità")
@@ -58,6 +59,18 @@ func _run() -> void:
 	check(_standing(r14, Vector2(top.spawn[0], top.spawn[1])), "Galleria: arrivo dal Campanile su una mensola")
 	var from11: Dictionary = Room.build(11).vertical.filter(func(x): return int(x.target) == 14)[0]
 	check(_standing(r14, Vector2(from11.spawn[0], from11.spawn[1])), "Galleria: arrivo dagli Archivi sul pavimento")
+	# Guanti solo sulle superfici marcate.
+	check(not r12.climb.is_empty() and r14.climb.is_empty(), "Campanile: camino d'uscita marcato scalabile; Galleria: nessun muro scalabile")
+	check(not _reach(r12, Vector2(544, 60), {"grapple": true}), "Campanile: senza guanti non si sale sopra il camino d'uscita")
+	check(_reach(r12, Vector2(544, 60), {"wall_grip": true}), "Campanile: coi guanti si sale il camino fino all'uscita")
+	check(not _reach(r14, r14.secrets[0], {"wall_grip": true}), "Galleria: i guanti non scalano i bordi della stanza (segreto ovest solo col rampino)")
+	var r9 := Room.build(9)
+	r9["idx_hint"] = 9
+	check(r9.climb.size() == 2, "Cisterne Reali: le due pareti del camino sono scalabili")
+	check(not _reach(r9, r9.landmark_pos[1], {"grapple": true}), "Cisterne Reali: cima del camino chiusa senza guanti")
+	check(_reach(r9, r9.landmark_pos[1], {"wall_grip": true}), "Cisterne Reali: cima del camino raggiungibile coi guanti")
+	var r13 := Room.build(13)
+	check(r13.climb.is_empty() and r13.enemies.filter(func(e): return int(e.get("wave", 1)) == 2).size() == 3, "Cisterne Sepolte: niente muri scalabili, tre nemici nella seconda ondata")
 	# In gioco: un solo disegno per elemento.
 	var main = load("res://scripts/main.gd").new()
 	root.add_child(main)
@@ -122,7 +135,7 @@ func _surfaces(r: Dictionary) -> Array:
 	return out
 
 func _idx(r: Dictionary) -> int:
-	return 12 if r.size.y > 2000 else 14
+	return int(r.get("idx_hint", 12 if r.size.y > 2000 else 14))
 
 ## Muri pieni: blocchi, muri incrinati intatti (senza martello), bordi della stanza.
 func _walls(r: Dictionary, tools: Dictionary) -> Array:
@@ -181,7 +194,7 @@ func _reach(r: Dictionary, target: Vector2, tools: Dictionary) -> bool:
 	var starts: Array = []
 	for i in surf.size():
 		# Partenze: i punti d'arrivo nella stanza (non i tratti chiusi, come la camera della memoria).
-		for p: Vector2 in ([Vector2(300, r.floor), Vector2(480, 2204)] if _idx(r) == 12 else [Vector2(3310, r.floor), Vector2(440, 852)]):
+		for p: Vector2 in ENTRIES[_idx(r)]:
 			if p.x >= surf[i].position.x and p.x <= surf[i].end.x and absf(p.y - surf[i].position.y) < 2.0:
 				starts.append(i)
 	var seen := {}
@@ -208,17 +221,18 @@ func _reach(r: Dictionary, target: Vector2, tools: Dictionary) -> bool:
 			else:
 				ok = rise <= JUMP_UP and gap <= JUMP_REACH
 				if not ok and tools.get("wall_grip", false):
-					ok = _grip(cur, nxt, walls)
+					ok = _grip(r, cur, nxt, walls)
 			if ok and not _blocked(cur, nxt, walls):
 				seen[j] = true
 				queue.append(j)
 	return false
 
-## Guanti: si risale un muro vicino a entrambe le superfici, se nessun blocco attaccato al muro sbarra la salita.
-func _grip(a: Rect2, b: Rect2, walls: Array) -> bool:
+## Guanti: si risale solo una superficie marcata (room.climb) vicina a entrambe le superfici, se nessun muro
+## attaccato sbarra la salita. Bordi della stanza e muri non marcati non si scalano.
+func _grip(r: Dictionary, a: Rect2, b: Rect2, walls: Array) -> bool:
 	if b.position.y >= a.position.y:
 		return false
-	for w: Rect2 in walls:
+	for w: Rect2 in r.get("climb", []):
 		for face in [w.position.x, w.end.x]:
 			var da := minf(absf(a.position.x - face), absf(a.end.x - face))
 			var db := minf(absf(b.position.x - face), absf(b.end.x - face))

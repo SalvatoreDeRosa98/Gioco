@@ -2,7 +2,7 @@
 
 [ext_resource type="TileSet" path="res://rooms/blockout/blockout_tileset.tres" id="1_0vux1"]
 
-[node name="R12Campanile" type="Node2D" unique_id=1385024587]
+[node name="R12Campanile" type="Node2D" unique_id=251612140]
 metadata/room_id = 12
 metadata/room_name = "Campanile delle Voci"
 metadata/floor = 2300.0
@@ -11,33 +11,33 @@ metadata/grid_offset_y = 60.0
 metadata/generated_by = "tools/levels/zone2_design.gd"
 metadata/mid_art = "res://assets/art/areas/espansione/campanile.png"
 metadata/mid_opts = {
-"dim": 0.7
+"dim": 0.5
 }
 
-[node name="Bounds" type="ReferenceRect" parent="." unique_id=1940870879]
+[node name="Bounds" type="ReferenceRect" parent="." unique_id=1002988607]
 offset_right = 1280.0
 offset_bottom = 2400.0
 border_color = Color(0.3, 0.8, 1, 1)
 border_width = 4.0
 editor_only = false
 
-[node name="Terrain" type="TileMapLayer" parent="." unique_id=874083915]
+[node name="Terrain" type="TileMapLayer" parent="." unique_id=1336451732]
 position = Vector2(0, 60)
-tile_map_data = PackedByteArray("AAAAACMAAAAAAAAAAAAAACQAAAAAAAAAAAABACMAAAAAAAAAAAABACQAAAAAAAAAAAACACMAAAAAAAAAAAACACQAAAAAAAAAAAADACMAAAAAAAAAAAADACQAAAAAAAAAAAAEACMAAAAAAAAAAAAEACQAAAAAAAAAAAAKACMAAAAAAAAAAAAKACQAAAAAAAAAAAALACMAAAAAAAAAAAALACQAAAAAAAAAAAAMACMAAAAAAAAAAAAMACQAAAAAAAAAAAANACMAAAAAAAAAAAANACQAAAAAAAAAAAAOACMAAAAAAAAAAAAOACQAAAAAAAAAAAAPACMAAAAAAAAAAAAPACQAAAAAAAAAAAAQACMAAAAAAAAAAAAQACQAAAAAAAAAAAARACMAAAAAAAAAAAARACQAAAAAAAAAAAASACMAAAAAAAAAAAASACQAAAAAAAAAAAATACMAAAAAAAAAAAATACQAAAAAAAAAAAAAABEAAAAAAAAAAAABABEAAAAAAAAAAAACABEAAAAAAAAAAAADABEAAAAAAAAAAAAEABEAAAAAAAAAAAAAAA0AAAAAAAAAAAABAA0AAAAAAAAAAAACAA0AAAAAAAAAAAADAA0AAAAAAAAAAAAEAA0AAAAAAAAAAAA=")
+tile_map_data = PackedByteArray("AAAAACMAAAAAAAAAAAAAACQAAAAAAAAAAAABACMAAAAAAAAAAAABACQAAAAAAAAAAAACACMAAAAAAAAAAAACACQAAAAAAAAAAAADACMAAAAAAAAAAAADACQAAAAAAAAAAAAEACMAAAAAAAAAAAAEACQAAAAAAAAAAAAKACMAAAAAAAAAAAAKACQAAAAAAAAAAAALACMAAAAAAAAAAAALACQAAAAAAAAAAAAMACMAAAAAAAAAAAAMACQAAAAAAAAAAAANACMAAAAAAAAAAAANACQAAAAAAAAAAAAOACMAAAAAAAAAAAAOACQAAAAAAAAAAAAPACMAAAAAAAAAAAAPACQAAAAAAAAAAAAQACMAAAAAAAAAAAAQACQAAAAAAAAAAAARACMAAAAAAAAAAAARACQAAAAAAAAAAAASACMAAAAAAAAAAAASACQAAAAAAAAAAAATACMAAAAAAAAAAAATACQAAAAAAAAAAAAAABEAAAAAAAAAAAABABEAAAAAAAAAAAACABEAAAAAAAAAAAADABEAAAAAAAAAAAAEABEAAAAAAAAAAAAAAA0AAAAAAAAAAAABAA0AAAAAAAAAAAACAA0AAAAAAAAAAAADAA0AAAAAAAAAAAAEAA0AAAAAAAAAAAAIAAAAAAAAAAAAAAAIAAEAAAAAAAAAAAAIAAIAAAAAAAAAAAAIAAMAAAAAAAAAAAAMAAAAAAAAAAAAAAAMAAEAAAAAAAAAAAAMAAIAAAAAAAAAAAAMAAMAAAAAAAAAAAA=")
 tile_set = ExtResource("1_0vux1")
 
-[node name="OneWay" type="TileMapLayer" parent="." unique_id=1350284963]
+[node name="OneWay" type="TileMapLayer" parent="." unique_id=2041688964]
 position = Vector2(0, 60)
-tile_map_data = PackedByteArray("AAAGACEAAAAEAAAAAAAHACEAAAAEAAAAAAAIACEAAAAEAAAAAAAFAB0AAAAEAAAAAAAGAB0AAAAEAAAAAAAHAB0AAAAEAAAAAAAIAB0AAAAEAAAAAAAFABkAAAAEAAAAAAAGABkAAAAEAAAAAAAHABkAAAAEAAAAAAAIABkAAAAEAAAAAAAFABUAAAAEAAAAAAAGABUAAAAEAAAAAAAHABUAAAAEAAAAAAAIABUAAAAEAAAAAAAFABEAAAAEAAAAAAAGABEAAAAEAAAAAAAHABEAAAAEAAAAAAAIABEAAAAEAAAAAAAFAA0AAAAEAAAAAAAGAA0AAAAEAAAAAAAHAA0AAAAEAAAAAAAIAA0AAAAEAAAAAAAFAAkAAAAEAAAAAAAGAAkAAAAEAAAAAAAHAAkAAAAEAAAAAAAIAAkAAAAEAAAAAAAFAAUAAAAEAAAAAAAGAAUAAAAEAAAAAAAHAAUAAAAEAAAAAAAIAAUAAAAEAAAAAAAJAB8AAAAEAAAAAAAKAB8AAAAEAAAAAAALAB8AAAAEAAAAAAAMAB8AAAAEAAAAAAAJABsAAAAEAAAAAAAKABsAAAAEAAAAAAALABsAAAAEAAAAAAAMABsAAAAEAAAAAAAJABcAAAAEAAAAAAAKABcAAAAEAAAAAAALABcAAAAEAAAAAAAMABcAAAAEAAAAAAAJABMAAAAEAAAAAAAKABMAAAAEAAAAAAALABMAAAAEAAAAAAAMABMAAAAEAAAAAAAJAA8AAAAEAAAAAAAKAA8AAAAEAAAAAAALAA8AAAAEAAAAAAAMAA8AAAAEAAAAAAAJAAsAAAAEAAAAAAAKAAsAAAAEAAAAAAALAAsAAAAEAAAAAAAMAAsAAAAEAAAAAAAJAAcAAAAEAAAAAAAKAAcAAAAEAAAAAAALAAcAAAAEAAAAAAAMAAcAAAAEAAAAAAAJAAMAAAAEAAAAAAAKAAMAAAAEAAAAAAALAAMAAAAEAAAAAAARAAMAAAAEAAAAAAASAAMAAAAEAAAAAAATAAMAAAAEAAAAAAA=")
+tile_map_data = PackedByteArray("AAAGACEAAAAEAAAAAAAHACEAAAAEAAAAAAAIACEAAAAEAAAAAAAFAB0AAAAEAAAAAAAGAB0AAAAEAAAAAAAHAB0AAAAEAAAAAAAIAB0AAAAEAAAAAAAFABkAAAAEAAAAAAAGABkAAAAEAAAAAAAHABkAAAAEAAAAAAAIABkAAAAEAAAAAAAFABUAAAAEAAAAAAAGABUAAAAEAAAAAAAHABUAAAAEAAAAAAAIABUAAAAEAAAAAAAFABEAAAAEAAAAAAAGABEAAAAEAAAAAAAHABEAAAAEAAAAAAAIABEAAAAEAAAAAAAFAA0AAAAEAAAAAAAGAA0AAAAEAAAAAAAHAA0AAAAEAAAAAAAIAA0AAAAEAAAAAAAFAAkAAAAEAAAAAAAGAAkAAAAEAAAAAAAHAAkAAAAEAAAAAAAIAAkAAAAEAAAAAAAJAB8AAAAEAAAAAAAKAB8AAAAEAAAAAAALAB8AAAAEAAAAAAAMAB8AAAAEAAAAAAAJABsAAAAEAAAAAAAKABsAAAAEAAAAAAALABsAAAAEAAAAAAAMABsAAAAEAAAAAAAJABcAAAAEAAAAAAAKABcAAAAEAAAAAAALABcAAAAEAAAAAAAMABcAAAAEAAAAAAAJABMAAAAEAAAAAAAKABMAAAAEAAAAAAALABMAAAAEAAAAAAAMABMAAAAEAAAAAAAJAA8AAAAEAAAAAAAKAA8AAAAEAAAAAAALAA8AAAAEAAAAAAAMAA8AAAAEAAAAAAAJAAsAAAAEAAAAAAAKAAsAAAAEAAAAAAALAAsAAAAEAAAAAAAMAAsAAAAEAAAAAAAJAAcAAAAEAAAAAAAKAAcAAAAEAAAAAAALAAcAAAAEAAAAAAAMAAcAAAAEAAAAAAAJAAUAAAAEAAAAAAAKAAUAAAAEAAAAAAALAAUAAAAEAAAAAAARAAMAAAAEAAAAAAASAAMAAAAEAAAAAAATAAMAAAAEAAAAAAA=")
 tile_set = ExtResource("1_0vux1")
 
-[node name="Hazards" type="TileMapLayer" parent="." unique_id=323344103]
+[node name="Hazards" type="TileMapLayer" parent="." unique_id=1945992850]
 position = Vector2(0, 60)
 tile_set = ExtResource("1_0vux1")
 
-[node name="Cracks" type="Node2D" parent="." unique_id=317912055]
+[node name="Cracks" type="Node2D" parent="." unique_id=1946321]
 
-[node name="bell_niche_wall" type="ReferenceRect" parent="Cracks" unique_id=1905631224]
+[node name="bell_niche_wall" type="ReferenceRect" parent="Cracks" unique_id=1466771517]
 offset_left = 256.0
 offset_top = 956.0
 offset_right = 320.0
@@ -49,14 +49,14 @@ metadata/id = "bell_niche_wall"
 metadata/reward = 30
 metadata/gate = false
 
-[node name="Fill" type="ColorRect" parent="Cracks/bell_niche_wall" unique_id=1194607990]
+[node name="Fill" type="ColorRect" parent="Cracks/bell_niche_wall" unique_id=728196451]
 layout_mode = 0
 offset_right = 64.0
 offset_bottom = 192.0
 mouse_filter = 2
 color = Color(0.93, 0.6, 0.2, 0.45)
 
-[node name="Label" type="Label" parent="Cracks/bell_niche_wall" unique_id=256928499]
+[node name="Label" type="Label" parent="Cracks/bell_niche_wall" unique_id=1284145901]
 layout_mode = 0
 offset_left = -40.0
 offset_top = -30.0
@@ -66,24 +66,24 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.7, 0.3, 1)
 text = "muro incrinato (martello)"
 
-[node name="Markers" type="Node2D" parent="." unique_id=2143930645]
+[node name="Markers" type="Node2D" parent="." unique_id=1123700355]
 
-[node name="Enemies" type="Node2D" parent="Markers" unique_id=164352644]
+[node name="Enemies" type="Node2D" parent="Markers" unique_id=205575462]
 
-[node name="E0_cavaliere" type="Marker2D" parent="Markers/Enemies" unique_id=1789779581]
+[node name="E0_cavaliere" type="Marker2D" parent="Markers/Enemies" unique_id=2658616]
 position = Vector2(1000, 2266)
 gizmo_extents = 24.0
 metadata/order = 0
 metadata/type = "cavaliere"
 
-[node name="Dot" type="ColorRect" parent="Markers/Enemies/E0_cavaliere" unique_id=2085568116]
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E0_cavaliere" unique_id=343466442]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(1, 0.45, 0.4, 1)
 
-[node name="Label" type="Label" parent="Markers/Enemies/E0_cavaliere" unique_id=1265715725]
+[node name="Label" type="Label" parent="Markers/Enemies/E0_cavaliere" unique_id=666403720]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -92,20 +92,20 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
 text = "cavaliere"
 
-[node name="E1_gatto" type="Marker2D" parent="Markers/Enemies" unique_id=1014056250]
+[node name="E1_gatto" type="Marker2D" parent="Markers/Enemies" unique_id=1385371910]
 position = Vector2(448, 1928)
 gizmo_extents = 24.0
 metadata/order = 1
 metadata/type = "gatto"
 
-[node name="Dot" type="ColorRect" parent="Markers/Enemies/E1_gatto" unique_id=1448309036]
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E1_gatto" unique_id=1982418406]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(1, 0.45, 0.4, 1)
 
-[node name="Label" type="Label" parent="Markers/Enemies/E1_gatto" unique_id=1801701606]
+[node name="Label" type="Label" parent="Markers/Enemies/E1_gatto" unique_id=1523591784]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -114,20 +114,20 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
 text = "gatto"
 
-[node name="E2_vespa" type="Marker2D" parent="Markers/Enemies" unique_id=38451363]
+[node name="E2_vespa" type="Marker2D" parent="Markers/Enemies" unique_id=1534819961]
 position = Vector2(1000, 1700)
 gizmo_extents = 24.0
 metadata/order = 2
 metadata/type = "vespa"
 
-[node name="Dot" type="ColorRect" parent="Markers/Enemies/E2_vespa" unique_id=1272824493]
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E2_vespa" unique_id=809546512]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(1, 0.45, 0.4, 1)
 
-[node name="Label" type="Label" parent="Markers/Enemies/E2_vespa" unique_id=1084429736]
+[node name="Label" type="Label" parent="Markers/Enemies/E2_vespa" unique_id=2057171938]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -136,20 +136,20 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
 text = "vespa"
 
-[node name="E3_spettro" type="Marker2D" parent="Markers/Enemies" unique_id=168583078]
+[node name="E3_spettro" type="Marker2D" parent="Markers/Enemies" unique_id=285383438]
 position = Vector2(600, 1350)
 gizmo_extents = 24.0
 metadata/order = 3
 metadata/type = "spettro"
 
-[node name="Dot" type="ColorRect" parent="Markers/Enemies/E3_spettro" unique_id=344778592]
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E3_spettro" unique_id=927736044]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(1, 0.45, 0.4, 1)
 
-[node name="Label" type="Label" parent="Markers/Enemies/E3_spettro" unique_id=1732295481]
+[node name="Label" type="Label" parent="Markers/Enemies/E3_spettro" unique_id=50059075]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -158,20 +158,20 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
 text = "spettro"
 
-[node name="E4_statua" type="Marker2D" parent="Markers/Enemies" unique_id=784908956]
+[node name="E4_statua" type="Marker2D" parent="Markers/Enemies" unique_id=870977669]
 position = Vector2(448, 890)
 gizmo_extents = 24.0
 metadata/order = 4
 metadata/type = "statua"
 
-[node name="Dot" type="ColorRect" parent="Markers/Enemies/E4_statua" unique_id=815696187]
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E4_statua" unique_id=58990277]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(1, 0.45, 0.4, 1)
 
-[node name="Label" type="Label" parent="Markers/Enemies/E4_statua" unique_id=258090936]
+[node name="Label" type="Label" parent="Markers/Enemies/E4_statua" unique_id=1669751620]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -180,20 +180,20 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
 text = "statua"
 
-[node name="E5_vespa" type="Marker2D" parent="Markers/Enemies" unique_id=2041869626]
+[node name="E5_vespa" type="Marker2D" parent="Markers/Enemies" unique_id=2077323992]
 position = Vector2(980, 700)
 gizmo_extents = 24.0
 metadata/order = 5
 metadata/type = "vespa"
 
-[node name="Dot" type="ColorRect" parent="Markers/Enemies/E5_vespa" unique_id=65852998]
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E5_vespa" unique_id=1849402133]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(1, 0.45, 0.4, 1)
 
-[node name="Label" type="Label" parent="Markers/Enemies/E5_vespa" unique_id=607246795]
+[node name="Label" type="Label" parent="Markers/Enemies/E5_vespa" unique_id=1243282014]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -202,23 +202,23 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
 text = "vespa"
 
-[node name="Npcs" type="Node2D" parent="Markers" unique_id=1521987260]
+[node name="Npcs" type="Node2D" parent="Markers" unique_id=2062968299]
 
-[node name="Secrets" type="Node2D" parent="Markers" unique_id=1969322331]
+[node name="Secrets" type="Node2D" parent="Markers" unique_id=1986002338]
 
-[node name="S0" type="Marker2D" parent="Markers/Secrets" unique_id=330293718]
+[node name="S0" type="Marker2D" parent="Markers/Secrets" unique_id=1406601647]
 position = Vector2(128, 1120)
 gizmo_extents = 24.0
 metadata/order = 0
 
-[node name="Dot" type="ColorRect" parent="Markers/Secrets/S0" unique_id=969817255]
+[node name="Dot" type="ColorRect" parent="Markers/Secrets/S0" unique_id=265287063]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(1, 0.9, 0.3, 1)
 
-[node name="Label" type="Label" parent="Markers/Secrets/S0" unique_id=1889291011]
+[node name="Label" type="Label" parent="Markers/Secrets/S0" unique_id=1216467963]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -227,19 +227,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
 text = "segreto"
 
-[node name="S1" type="Marker2D" parent="Markers/Secrets" unique_id=2025892798]
+[node name="S1" type="Marker2D" parent="Markers/Secrets" unique_id=1301292272]
 position = Vector2(1184, 256)
 gizmo_extents = 24.0
 metadata/order = 1
 
-[node name="Dot" type="ColorRect" parent="Markers/Secrets/S1" unique_id=1604749348]
+[node name="Dot" type="ColorRect" parent="Markers/Secrets/S1" unique_id=770834038]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(1, 0.9, 0.3, 1)
 
-[node name="Label" type="Label" parent="Markers/Secrets/S1" unique_id=202598564]
+[node name="Label" type="Label" parent="Markers/Secrets/S1" unique_id=38870359]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -248,22 +248,22 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
 text = "segreto"
 
-[node name="Landmarks" type="Node2D" parent="Markers" unique_id=207782823]
+[node name="Landmarks" type="Node2D" parent="Markers" unique_id=2041383094]
 
-[node name="L0_bells" type="Marker2D" parent="Markers/Landmarks" unique_id=104269470]
-position = Vector2(700, 284)
+[node name="L0_bells" type="Marker2D" parent="Markers/Landmarks" unique_id=1949617389]
+position = Vector2(700, 412)
 gizmo_extents = 24.0
 metadata/index = 0
 metadata/id = "bells"
 
-[node name="Dot" type="ColorRect" parent="Markers/Landmarks/L0_bells" unique_id=879722281]
+[node name="Dot" type="ColorRect" parent="Markers/Landmarks/L0_bells" unique_id=1966297449]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.8, 1, 1)
 
-[node name="Label" type="Label" parent="Markers/Landmarks/L0_bells" unique_id=1034593097]
+[node name="Label" type="Label" parent="Markers/Landmarks/L0_bells" unique_id=1624155188]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -272,21 +272,21 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
 text = "campane (sigillo)"
 
-[node name="Rings" type="Node2D" parent="Markers" unique_id=131858560]
+[node name="Rings" type="Node2D" parent="Markers" unique_id=1391871146]
 
-[node name="R0" type="Marker2D" parent="Markers/Rings" unique_id=400296053]
-position = Vector2(1060, 362)
+[node name="R0" type="Marker2D" parent="Markers/Rings" unique_id=183621677]
+position = Vector2(1080, 420)
 gizmo_extents = 24.0
 metadata/order = 0
 
-[node name="Dot" type="ColorRect" parent="Markers/Rings/R0" unique_id=2103277856]
+[node name="Dot" type="ColorRect" parent="Markers/Rings/R0" unique_id=202992680]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.4, 0.8, 1, 1)
 
-[node name="Label" type="Label" parent="Markers/Rings/R0" unique_id=773503578]
+[node name="Label" type="Label" parent="Markers/Rings/R0" unique_id=1536782950]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -295,9 +295,9 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
 text = "o anello"
 
-[node name="Exits" type="Node2D" parent="Markers" unique_id=1849513962]
+[node name="Exits" type="Node2D" parent="Markers" unique_id=993490406]
 
-[node name="X0_bottom_3" type="Marker2D" parent="Markers/Exits" unique_id=340051967]
+[node name="X0_bottom_3" type="Marker2D" parent="Markers/Exits" unique_id=385913767]
 position = Vector2(530, 2260)
 gizmo_extents = 24.0
 metadata/order = 0
@@ -306,14 +306,14 @@ metadata/width = 220.0
 metadata/target = 3
 metadata/spawn = Vector2(1510, 170)
 
-[node name="Dot" type="ColorRect" parent="Markers/Exits/X0_bottom_3" unique_id=2024461652]
+[node name="Dot" type="ColorRect" parent="Markers/Exits/X0_bottom_3" unique_id=1251546120]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.7, 0.7, 1, 1)
 
-[node name="Label" type="Label" parent="Markers/Exits/X0_bottom_3" unique_id=862934876]
+[node name="Label" type="Label" parent="Markers/Exits/X0_bottom_3" unique_id=1053232558]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -322,7 +322,7 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.7, 0.7, 1, 1)
 text = "giu -> 3 "
 
-[node name="X1_top_14" type="Marker2D" parent="Markers/Exits" unique_id=1944999526]
+[node name="X1_top_14" type="Marker2D" parent="Markers/Exits" unique_id=1771650322]
 position = Vector2(630, 40)
 gizmo_extents = 24.0
 metadata/order = 1
@@ -332,14 +332,14 @@ metadata/target = 14
 metadata/spawn = Vector2(420, 826)
 metadata/need = "wall_grip"
 
-[node name="Dot" type="ColorRect" parent="Markers/Exits/X1_top_14" unique_id=1127795961]
+[node name="Dot" type="ColorRect" parent="Markers/Exits/X1_top_14" unique_id=1543605042]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.7, 0.7, 1, 1)
 
-[node name="Label" type="Label" parent="Markers/Exits/X1_top_14" unique_id=1826406426]
+[node name="Label" type="Label" parent="Markers/Exits/X1_top_14" unique_id=594263632]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -348,21 +348,21 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.7, 0.7, 1, 1)
 text = "su -> 14 wall_grip"
 
-[node name="Saves" type="Node2D" parent="Markers" unique_id=353494690]
+[node name="Saves" type="Node2D" parent="Markers" unique_id=1489673467]
 
-[node name="Save0" type="Marker2D" parent="Markers/Saves" unique_id=1231937572]
+[node name="Save0" type="Marker2D" parent="Markers/Saves" unique_id=362537857]
 position = Vector2(1100, 2300)
 gizmo_extents = 24.0
 metadata/order = 0
 metadata/need_clear = false
 
-[node name="Dot" type="ColorRect" parent="Markers/Saves/Save0" unique_id=989704576]
+[node name="Dot" type="ColorRect" parent="Markers/Saves/Save0" unique_id=728362843]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 
-[node name="Label" type="Label" parent="Markers/Saves/Save0" unique_id=1952217333]
+[node name="Label" type="Label" parent="Markers/Saves/Save0" unique_id=1931898131]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -371,23 +371,23 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "incudine"
 
-[node name="Props" type="Node2D" parent="Markers" unique_id=1404624362]
+[node name="Props" type="Node2D" parent="Markers" unique_id=933208246]
 
-[node name="Route" type="Node2D" parent="Markers" unique_id=1633013963]
+[node name="Route" type="Node2D" parent="Markers" unique_id=1762311868]
 
-[node name="Step0" type="Marker2D" parent="Markers/Route" unique_id=829620461]
+[node name="Step0" type="Marker2D" parent="Markers/Route" unique_id=2086331990]
 position = Vector2(480, 2204)
 gizmo_extents = 24.0
 metadata/order = 0
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step0" unique_id=475166146]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step0" unique_id=408199503]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step0" unique_id=1893543687]
+[node name="Label" type="Label" parent="Markers/Route/Step0" unique_id=1874875310]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -396,19 +396,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 0"
 
-[node name="Step1" type="Marker2D" parent="Markers/Route" unique_id=602220237]
+[node name="Step1" type="Marker2D" parent="Markers/Route" unique_id=949393879]
 position = Vector2(704, 2076)
 gizmo_extents = 24.0
 metadata/order = 1
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step1" unique_id=340689268]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step1" unique_id=1294789178]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step1" unique_id=245934340]
+[node name="Label" type="Label" parent="Markers/Route/Step1" unique_id=1173066917]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -417,19 +417,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 1"
 
-[node name="Step2" type="Marker2D" parent="Markers/Route" unique_id=2010697888]
+[node name="Step2" type="Marker2D" parent="Markers/Route" unique_id=1528445882]
 position = Vector2(448, 1948)
 gizmo_extents = 24.0
 metadata/order = 2
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step2" unique_id=1917629816]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step2" unique_id=1311177429]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step2" unique_id=973826338]
+[node name="Label" type="Label" parent="Markers/Route/Step2" unique_id=40919702]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -438,19 +438,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 2"
 
-[node name="Step3" type="Marker2D" parent="Markers/Route" unique_id=746022817]
+[node name="Step3" type="Marker2D" parent="Markers/Route" unique_id=2065415491]
 position = Vector2(704, 1820)
 gizmo_extents = 24.0
 metadata/order = 3
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step3" unique_id=358729000]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step3" unique_id=1805768292]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step3" unique_id=670810528]
+[node name="Label" type="Label" parent="Markers/Route/Step3" unique_id=134150696]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -459,19 +459,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 3"
 
-[node name="Step4" type="Marker2D" parent="Markers/Route" unique_id=1915432880]
+[node name="Step4" type="Marker2D" parent="Markers/Route" unique_id=1664674607]
 position = Vector2(448, 1692)
 gizmo_extents = 24.0
 metadata/order = 4
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step4" unique_id=1381290365]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step4" unique_id=2043685276]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step4" unique_id=1961558064]
+[node name="Label" type="Label" parent="Markers/Route/Step4" unique_id=1350145759]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -480,19 +480,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 4"
 
-[node name="Step5" type="Marker2D" parent="Markers/Route" unique_id=225830022]
+[node name="Step5" type="Marker2D" parent="Markers/Route" unique_id=390574674]
 position = Vector2(704, 1564)
 gizmo_extents = 24.0
 metadata/order = 5
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step5" unique_id=969733341]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step5" unique_id=2100943888]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step5" unique_id=1941702788]
+[node name="Label" type="Label" parent="Markers/Route/Step5" unique_id=1007713686]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -501,19 +501,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 5"
 
-[node name="Step6" type="Marker2D" parent="Markers/Route" unique_id=1437912558]
+[node name="Step6" type="Marker2D" parent="Markers/Route" unique_id=252882801]
 position = Vector2(448, 1436)
 gizmo_extents = 24.0
 metadata/order = 6
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step6" unique_id=1828632869]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step6" unique_id=631555795]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step6" unique_id=1105945139]
+[node name="Label" type="Label" parent="Markers/Route/Step6" unique_id=1520022889]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -522,19 +522,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 6"
 
-[node name="Step7" type="Marker2D" parent="Markers/Route" unique_id=887563893]
+[node name="Step7" type="Marker2D" parent="Markers/Route" unique_id=352483672]
 position = Vector2(704, 1308)
 gizmo_extents = 24.0
 metadata/order = 7
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step7" unique_id=1010048391]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step7" unique_id=1677138827]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step7" unique_id=1687520398]
+[node name="Label" type="Label" parent="Markers/Route/Step7" unique_id=1550920342]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -543,19 +543,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 7"
 
-[node name="Step8" type="Marker2D" parent="Markers/Route" unique_id=1017622415]
+[node name="Step8" type="Marker2D" parent="Markers/Route" unique_id=805956284]
 position = Vector2(448, 1180)
 gizmo_extents = 24.0
 metadata/order = 8
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step8" unique_id=1679851832]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step8" unique_id=24595631]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step8" unique_id=739205920]
+[node name="Label" type="Label" parent="Markers/Route/Step8" unique_id=1348729184]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -564,19 +564,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 8"
 
-[node name="Step9" type="Marker2D" parent="Markers/Route" unique_id=736055783]
+[node name="Step9" type="Marker2D" parent="Markers/Route" unique_id=1315047613]
 position = Vector2(704, 1052)
 gizmo_extents = 24.0
 metadata/order = 9
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step9" unique_id=1773679819]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step9" unique_id=2001821624]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step9" unique_id=1612855182]
+[node name="Label" type="Label" parent="Markers/Route/Step9" unique_id=19462486]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -585,19 +585,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 9"
 
-[node name="Step10" type="Marker2D" parent="Markers/Route" unique_id=31693860]
+[node name="Step10" type="Marker2D" parent="Markers/Route" unique_id=962226938]
 position = Vector2(448, 924)
 gizmo_extents = 24.0
 metadata/order = 10
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step10" unique_id=24808734]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step10" unique_id=2026627538]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step10" unique_id=679584124]
+[node name="Label" type="Label" parent="Markers/Route/Step10" unique_id=1706835799]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -606,19 +606,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 10"
 
-[node name="Step11" type="Marker2D" parent="Markers/Route" unique_id=1969152546]
+[node name="Step11" type="Marker2D" parent="Markers/Route" unique_id=144390527]
 position = Vector2(704, 796)
 gizmo_extents = 24.0
 metadata/order = 11
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step11" unique_id=423144236]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step11" unique_id=798044259]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step11" unique_id=269693031]
+[node name="Label" type="Label" parent="Markers/Route/Step11" unique_id=2081794906]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -627,19 +627,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 11"
 
-[node name="Step12" type="Marker2D" parent="Markers/Route" unique_id=860346461]
+[node name="Step12" type="Marker2D" parent="Markers/Route" unique_id=2142445423]
 position = Vector2(448, 668)
 gizmo_extents = 24.0
 metadata/order = 12
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step12" unique_id=1962502993]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step12" unique_id=1682441864]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step12" unique_id=2141822794]
+[node name="Label" type="Label" parent="Markers/Route/Step12" unique_id=1467237598]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -648,19 +648,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 12"
 
-[node name="Step13" type="Marker2D" parent="Markers/Route" unique_id=255019791]
+[node name="Step13" type="Marker2D" parent="Markers/Route" unique_id=33696358]
 position = Vector2(704, 540)
 gizmo_extents = 24.0
 metadata/order = 13
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step13" unique_id=2138297195]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step13" unique_id=816820111]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step13" unique_id=1848239784]
+[node name="Label" type="Label" parent="Markers/Route/Step13" unique_id=1730134591]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -669,19 +669,19 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 13"
 
-[node name="Step14" type="Marker2D" parent="Markers/Route" unique_id=2109996375]
-position = Vector2(448, 412)
+[node name="Step14" type="Marker2D" parent="Markers/Route" unique_id=133291883]
+position = Vector2(672, 412)
 gizmo_extents = 24.0
 metadata/order = 14
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step14" unique_id=1372029926]
+[node name="Dot" type="ColorRect" parent="Markers/Route/Step14" unique_id=196748118]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step14" unique_id=814042048]
+[node name="Label" type="Label" parent="Markers/Route/Step14" unique_id=1504101199]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -690,41 +690,66 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "passo 14"
 
-[node name="Step15" type="Marker2D" parent="Markers/Route" unique_id=1462014943]
-position = Vector2(672, 284)
-gizmo_extents = 24.0
-metadata/order = 15
+[node name="Climb" type="Node2D" parent="Markers" unique_id=2061307506]
 
-[node name="Dot" type="ColorRect" parent="Markers/Route/Step15" unique_id=2073727858]
+[node name="Climb0" type="Marker2D" parent="Markers/Climb" unique_id=1935574717]
+position = Vector2(544, 188)
+gizmo_extents = 24.0
+metadata/order = 0
+metadata/rect = Rect2(512, 60, 64, 256)
+
+[node name="Dot" type="ColorRect" parent="Markers/Climb/Climb0" unique_id=347790493]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
-color = Color(0.6, 0.6, 0.6, 1)
+color = Color(0.3, 0.9, 0.5, 1)
 
-[node name="Label" type="Label" parent="Markers/Route/Step15" unique_id=570151394]
+[node name="Label" type="Label" parent="Markers/Climb/Climb0" unique_id=430512972]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
 offset_bottom = -44.0
 theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
-text = "passo 15"
+theme_override_colors/font_color = Color(0.3, 0.9, 0.5, 1)
+text = "scalabile"
 
-[node name="Notes" type="Node2D" parent="Markers" unique_id=1289794824]
+[node name="Climb1" type="Marker2D" parent="Markers/Climb" unique_id=1309326031]
+position = Vector2(800, 188)
+gizmo_extents = 24.0
+metadata/order = 1
+metadata/rect = Rect2(768, 60, 64, 256)
 
-[node name="Note0" type="Marker2D" parent="Markers/Notes" unique_id=1876691592]
+[node name="Dot" type="ColorRect" parent="Markers/Climb/Climb1" unique_id=2072775453]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(0.3, 0.9, 0.5, 1)
+
+[node name="Label" type="Label" parent="Markers/Climb/Climb1" unique_id=949414074]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.3, 0.9, 0.5, 1)
+text = "scalabile"
+
+[node name="Notes" type="Node2D" parent="Markers" unique_id=1633134721]
+
+[node name="Note0" type="Marker2D" parent="Markers/Notes" unique_id=63190159]
 position = Vector2(330, 2260)
 gizmo_extents = 24.0
 
-[node name="Dot" type="ColorRect" parent="Markers/Notes/Note0" unique_id=815196042]
+[node name="Dot" type="ColorRect" parent="Markers/Notes/Note0" unique_id=786385081]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.75, 0.75, 0.75, 1)
 
-[node name="Label" type="Label" parent="Markers/Notes/Note0" unique_id=765041779]
+[node name="Label" type="Label" parent="Markers/Notes/Note0" unique_id=159396636]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -733,18 +758,18 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
 text = "Dal Belvedere (rampino)"
 
-[node name="Note1" type="Marker2D" parent="Markers/Notes" unique_id=88437027]
+[node name="Note1" type="Marker2D" parent="Markers/Notes" unique_id=1455214799]
 position = Vector2(40, 1110)
 gizmo_extents = 24.0
 
-[node name="Dot" type="ColorRect" parent="Markers/Notes/Note1" unique_id=1093103075]
+[node name="Dot" type="ColorRect" parent="Markers/Notes/Note1" unique_id=71293800]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.75, 0.75, 0.75, 1)
 
-[node name="Label" type="Label" parent="Markers/Notes/Note1" unique_id=155705244]
+[node name="Label" type="Label" parent="Markers/Notes/Note1" unique_id=985408223]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -753,18 +778,18 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
 text = "Nicchia: martello"
 
-[node name="Note2" type="Marker2D" parent="Markers/Notes" unique_id=354476958]
+[node name="Note2" type="Marker2D" parent="Markers/Notes" unique_id=1795561331]
 position = Vector2(1000, 230)
 gizmo_extents = 24.0
 
-[node name="Dot" type="ColorRect" parent="Markers/Notes/Note2" unique_id=116542072]
+[node name="Dot" type="ColorRect" parent="Markers/Notes/Note2" unique_id=1741135318]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.75, 0.75, 0.75, 1)
 
-[node name="Label" type="Label" parent="Markers/Notes/Note2" unique_id=1797504581]
+[node name="Label" type="Label" parent="Markers/Notes/Note2" unique_id=999552537]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -773,18 +798,18 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
 text = "Nido: anello"
 
-[node name="Note3" type="Marker2D" parent="Markers/Notes" unique_id=1193208828]
+[node name="Note3" type="Marker2D" parent="Markers/Notes" unique_id=1896158297]
 position = Vector2(560, 120)
 gizmo_extents = 24.0
 
-[node name="Dot" type="ColorRect" parent="Markers/Notes/Note3" unique_id=1955053739]
+[node name="Dot" type="ColorRect" parent="Markers/Notes/Note3" unique_id=697256585]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.75, 0.75, 0.75, 1)
 
-[node name="Label" type="Label" parent="Markers/Notes/Note3" unique_id=1639148965]
+[node name="Label" type="Label" parent="Markers/Notes/Note3" unique_id=535214202]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0

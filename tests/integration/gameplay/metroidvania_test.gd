@@ -105,7 +105,8 @@ func _run() -> void:
 			world._check_doors()
 			check(world.room_index == int(exit.target), "Arrivo stabile dopo il cambio area")
 	world._go(12,true)
-	player.teleport(Vector2(50,1800))
+	# I guanti fanno presa solo sulle superfici marcate: la parete sinistra del camino d'uscita (512-576).
+	player.teleport(Vector2(600,150))
 	Input.action_press("move_left")
 	await create_timer(0.25).timeout
 	check(player.wall_gripping and player.velocity.y <= 66,"Guanti rallentano la discesa contro il muro")

@@ -19,6 +19,7 @@ static func r9() -> Dictionary:
 		"props": [
 			{"kind": "wheel", "pos": Vector2(1400, 404), "height": 170.0, "replaces": ["sluice"]},
 			{"kind": "gate", "pos": Vector2(2492, 980), "side": "right", "height": 250.0, "hint": "Saracinesca chiusa: gira la ruota della chiusa"},
+			{"kind": "gate", "pos": Vector2(68, 980), "side": "left", "height": 250.0, "hint": ""},
 		],
 		"generated_by": "tools/levels/slice_design.gd",
 		"blocks": [
@@ -26,6 +27,8 @@ static func r9() -> Dictionary:
 			Rect2(2176, 84, 64, 704),    # camino: parete sinistra (sospesa, si passa sotto)
 			Rect2(2368, 84, 64, 704),    # camino: parete destra
 		],
+		# Solo le pareti interne del camino si scalano coi guanti.
+		"climb": [Rect2(2176, 84, 64, 704), Rect2(2368, 84, 64, 704)],
 		"ledges": [
 			Rect2(192, 852, 256, 18),    # L1  +128
 			Rect2(448, 756, 256, 18),    # L2  +96
@@ -70,7 +73,8 @@ static func r13() -> Dictionary:
 	return {
 		"idx": 13, "name": "Cisterne Sepolte", "size": Vector2(1280, 2100), "floor": 2000.0, "scene_name": "R13CisterneSepolte",
 		"art": true, "mid_art": "res://assets/art/slice/cisterne_sepolte_mid.png",
-		"props": [{"kind": "gate", "pos": Vector2(68, 2000), "side": "left", "height": 250.0, "hint": "Sbarrato dalla Tana: prima Ratking", "replaces": ["cistern_return_0"]}],
+		"props": [{"kind": "gate", "pos": Vector2(68, 2000), "side": "left", "height": 250.0, "hint": "Sbarrato dalla Tana: prima Ratking", "replaces": ["cistern_return_0"]},
+			{"kind": "gate", "pos": Vector2(1160, 2000), "side": "right", "height": 250.0, "hint": "Sbarrato: ripulisci la stanza", "replaces": ["cistern_ratking"]}],
 		"generated_by": "tools/levels/slice_design.gd",
 		"blocks": [
 			Rect2(0, 1168, 448, 128),    # volta della nicchia (spessa: dalla mensola G2 non ci si sale sopra)
@@ -92,10 +96,10 @@ static func r13() -> Dictionary:
 		"saves": [{"pos": Vector2(860, 2000), "need_clear": true}],
 		"enemies": [
 			{"type": "statua", "pos": Vector2(560, 1966)},
-			{"type": "vespa", "pos": Vector2(500, 1840)},
+			{"type": "vespa", "pos": Vector2(500, 1840), "wave": 2},
 			{"type": "lanterniere", "pos": Vector2(820, 1966)},
-			{"type": "gatto", "pos": Vector2(980, 1980)},
-			{"type": "lanterniere", "pos": Vector2(1120, 1966)},
+			{"type": "gatto", "pos": Vector2(980, 1980), "wave": 2},
+			{"type": "lanterniere", "pos": Vector2(1120, 1966), "wave": 2},
 		],
 		"secrets": [Vector2(1010, 1680), Vector2(110, 1480)],
 		"landmarks": [

@@ -456,6 +456,17 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 			_spawn_pickup(p, "secret", 15)
 
 
+## Guanti (wall_grip): si fa presa solo sulle superfici marcate come scalabili (room.climb, Rect2 di mondo,
+## dai marcatori Markers/Climb delle scene). Mai sui bordi della stanza né su muri non marcati.
+func can_grip(pos: Vector2, wall_normal: Vector2) -> bool:
+	var probe := pos - Vector2(signf(wall_normal.x), 0.0) * 34.0
+	for c in room.get("climb", []):
+		var r: Rect2 = c if c is Rect2 else Rect2(c[0], c[1], c[2], c[3])
+		if r.grow_individual(24.0, 8.0, 24.0, 8.0).has_point(probe):
+			return true
+	return false
+
+
 func _left_open() -> bool:
 	if arena_active and not room_cleared:
 		return false

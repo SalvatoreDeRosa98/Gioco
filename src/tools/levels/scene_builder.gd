@@ -16,6 +16,7 @@ extends RefCounted
 ##   enemies: [{type, pos, placeholder?, swap_to?, note?, save_pos?}]
 ##   npcs:    [{id, pos}]   secrets: [Vector2]   landmarks: [{index, id, pos}]
 ##   notes:   [{pos, text}] etichette di progetto (solo editor)
+##   climb:   [Rect2] superfici scalabili coi guanti (wall_grip); nessun altro muro si scala, nemmeno i bordi
 ##   route:   [Vector2] percorso a salti di riferimento (centro mensola, y del piano), usato dai test fisici
 ##   art:     true = TileSet dipinto (tufo bagnato) visibile in gioco al posto del disegno di terrain.gd
 ##   mid_art: percorso del fondale del piano medio (parallasse 0.5, game/scene_backdrop.gd)
@@ -245,7 +246,7 @@ static func build(spec: Dictionary, ts: TileSet) -> Node2D:
 	var markers := Node2D.new()
 	markers.name = "Markers"
 	root.add_child(markers)
-	for g in ["Enemies", "Npcs", "Secrets", "Landmarks", "Rings", "Exits", "Saves", "Props", "Route", "Notes"]:
+	for g in ["Enemies", "Npcs", "Secrets", "Landmarks", "Rings", "Exits", "Saves", "Props", "Route", "Climb", "Notes"]:
 		var n := Node2D.new()
 		n.name = g
 		markers.add_child(n)
@@ -253,6 +254,8 @@ static func build(spec: Dictionary, ts: TileSet) -> Node2D:
 	for e in spec.get("enemies", []):
 		var meta := {"order": i, "type": e.type}
 		var text: String = e.type
+		if e.has("wave"):
+			meta.wave = int(e.wave)
 		if e.get("placeholder", false):
 			meta.placeholder = true
 			meta.swap_to = str(e.get("swap_to", ""))
@@ -304,6 +307,10 @@ static func build(spec: Dictionary, ts: TileSet) -> Node2D:
 			if p.has(k):
 				meta[k] = p[k]
 		_marker(markers.get_node("Props"), "P%d_%s" % [i, p.kind], p.pos, "%s %s" % [p.kind, p.get("side", "")], Color(0.9, 0.75, 0.5), meta)
+		i += 1
+	i = 0
+	for c: Rect2 in spec.get("climb", []):
+		_marker(markers.get_node("Climb"), "Climb%d" % i, c.get_center(), "scalabile", Color(0.3, 0.9, 0.5), {"order": i, "rect": c})
 		i += 1
 	i = 0
 	for pt in spec.get("route", []):
