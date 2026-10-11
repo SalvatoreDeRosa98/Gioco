@@ -125,7 +125,10 @@ func _ready() -> void:
 	_light = Art.point_light(self, Vector2(0, -10), Color(1.0, 0.93, 0.82), float(_cfg.get("light_energy", 0.55)), 460.0)
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_rig = CutoutRig.new()
-	_rig.height = FIGURE_HEIGHT
+	_rig.height = float(_cfg.get("figure_height", FIGURE_HEIGHT))
+	var rig_dir := str(_cfg.get("rig_dir", ""))
+	if rig_dir != "" and FileAccess.file_exists(rig_dir + "rig.json"):
+		_rig.rig_path = rig_dir
 	_rig.position = Vector2(0, HALF.y)
 	_rig.light_dir = DEFAULT_LIGHT_DIR
 	# Leggibilita': la sagoma intera passa da un CanvasGroup con contorno e rim light,

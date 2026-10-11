@@ -23,6 +23,9 @@ const POSE_BONES := ["torso", "neck", "shoulder", "elbow", "wrist", "thigh", "kn
 	"shoulder_f", "elbow_f", "wrist_f", "thigh_f", "knee_f", "ankle_f", "scarf1", "scarf2", "scarf3"]
 
 var height := 84.0
+## Cartella del pupazzo: v1 (dipinto originale) o v2 (arte approvata 02/07/08), scelta da tuning.json
+## ("player.rig_dir"); le texture v1 restano come ripiego.
+var rig_path := RIG_PATH
 var facing := 1.0
 var flash := 0.0
 var spin := 0.0
@@ -56,10 +59,14 @@ var _masked_head: Texture2D
 var _bare_head: Texture2D
 var _human_head: Texture2D
 var _scarf_sprites: Array[Sprite2D] = []
+## Clip a fotogrammi interi (rig v2: corsa e attacco disegnati), al posto dei pezzi.
+var _frame_clips: Dictionary = {}
+var _frame_sprite: Sprite2D
+var _frame_textures := {}
 
 
 func _ready() -> void:
-	_rig = JSON.parse_string(FileAccess.get_file_as_string(RIG_PATH + "rig.json"))
+	_rig = JSON.parse_string(FileAccess.get_file_as_string(rig_path + "rig.json"))
 	_clips = JSON.parse_string(FileAccess.get_file_as_string(ANIM_PATH)).clips
 	_factor = height / CANVAS_HEIGHT
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
@@ -82,7 +89,7 @@ func _ready() -> void:
 		var piece: Dictionary = _rig.pieces[spr.piece]
 		var bone: Dictionary = _rig.bones[spr.bone]
 		var s := Sprite2D.new()
-		s.texture = load(RIG_PATH + piece.file)
+		s.texture = load(rig_path + piece.file)
 		s.centered = false
 		s.position = Vector2(piece.pos[0], piece.pos[1]) - Vector2(bone.pivot[0], bone.pivot[1])
 		s.z_index = int(spr.z)
@@ -98,15 +105,27 @@ func _ready() -> void:
 		if spr.piece == "mano" and spr.bone == "wrist":
 			_weapon_sprite = s
 			_sword_texture = s.texture
-	if ResourceLoader.exists(RIG_PATH + "mano_martello.png"):
-		_hammer_texture = load(RIG_PATH + "mano_martello.png")
-	elif ResourceLoader.exists(RIG_PATH + "martello.png"):
-		_hammer_texture = load(RIG_PATH + "martello.png")
+	if ResourceLoader.exists(rig_path + "mano_martello.png"):
+		_hammer_texture = load(rig_path + "mano_martello.png")
+	elif ResourceLoader.exists(rig_path + "martello.png"):
+		_hammer_texture = load(rig_path + "martello.png")
 	_update_weapon()
-	if ResourceLoader.exists(RIG_PATH + "testa_umana.png"):
-		_human_head = load(RIG_PATH + "testa_umana.png")
-	if ResourceLoader.exists(RIG_PATH + "testa_senza_sciarpa.png"):
-		_bare_head = load(RIG_PATH + "testa_senza_sciarpa.png")
+	if ResourceLoader.exists(rig_path + "testa_umana.png"):
+		_human_head = load(rig_path + "testa_umana.png")
+	if ResourceLoader.exists(rig_path + "testa_senza_sciarpa.png"):
+		_bare_head = load(rig_path + "testa_senza_sciarpa.png")
+	_frame_clips = _rig.get("frame_clips", {})
+	if not _frame_clips.is_empty():
+		_frame_sprite = Sprite2D.new()
+		_frame_sprite.centered = false
+		_frame_sprite.region_enabled = true
+		_frame_sprite.visible = false
+		_frame_sprite.material = painted
+		_spin_node.add_child(_frame_sprite)
+		for clip in _frame_clips:
+			var atlas := str(_frame_clips[clip].atlas)
+			if not _frame_textures.has(atlas):
+				_frame_textures[atlas] = load(rig_path + atlas)
 	set_story_appearance(false, false)
 	_apply(_sample("idle", 0.0))
 
@@ -229,10 +248,45 @@ func advance(delta: float, velocity: Vector2) -> void:
 	var pose := _sample(_clip, t)
 	_update_scarf(delta)
 	_apply(pose)
+	_update_frames(t, float(cfg.length))
 	scale.x = facing
 	_spin_node.rotation = spin
 	_body.scale = Vector2(_factor * (1.0 - _squash * 0.6), _factor * (1.0 + _squash))
-	_body.modulate = Color.WHITE.lerp(ambient, ambient_amount * 0.5).lerp(Color(1.8, 1.8, 1.8), flash)
+	var lift := float(_rig.get("brightness", 1.0))
+	_body.modulate = (Color.WHITE * Color(lift, lift, lift)).lerp(ambient, ambient_amount * 0.5).lerp(Color(1.8, 1.8, 1.8), flash)
+	if _frame_sprite and _frame_sprite.visible:
+		_frame_sprite.modulate = _body.modulate
+		var k: float = _factor * float(_frame_clips[_clip].canvas_per_px)
+		_frame_sprite.scale = Vector2(k * (1.0 - _squash * 0.6), k * (1.0 + _squash))
+
+
+## Rig v2: corsa e colpi usano i fotogrammi interi disegnati; la sciarpa e il resto del pupazzo
+## restano per le altre 15 clip. Ancora del fotogramma = piedi, come la radice del pupazzo.
+func _update_frames(t: float, length: float) -> void:
+	if _frame_sprite == null:
+		return
+	var use := _frame_clips.has(_clip)
+	_frame_sprite.visible = use
+	_body.visible = not use
+	if not use:
+		return
+	var fc: Dictionary = _frame_clips[_clip]
+	var frames: Array = fc.frames
+	var u: float
+	if bool(fc.get("progress", false)) and _progress >= 0.0:
+		u = clampf(_progress, 0.0, 0.999)
+	else:
+		u = fmod(_clip_t * float(fc.get("fps", 12)) / frames.size(), 1.0)
+	var f: Array = frames[mini(int(u * frames.size()), frames.size() - 1)]
+	_frame_sprite.texture = _frame_textures[str(fc.atlas)]
+	_frame_sprite.region_rect = Rect2(f[0], f[1], f[2], f[3])
+	_frame_sprite.offset = Vector2(-float(f[4]), -float(f[5]))
+	_frame_sprite.position = _body.position
+
+
+## Clip mostrata a fotogrammi interi (per test e strumenti).
+func uses_frames() -> bool:
+	return _frame_sprite != null and _frame_sprite.visible
 
 
 ## Posa della clip all'istante t (secondi della clip): interpolazione tra le chiavi vicine.
