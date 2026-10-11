@@ -51,7 +51,9 @@
     "parry_success_iframes": 0.3,
     "hurt_knockback_x": 280,
     "hurt_knockback_y": -240,
-    "hurt_knock_time": 0.18
+    "hurt_knock_time": 0.18,
+    "rig_dir": "res://assets/art/characters/ferruccio_cutout_v2/",
+    "figure_height": 80
   },
   "enemies": {
     "gatto": {

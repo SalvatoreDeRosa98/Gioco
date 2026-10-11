@@ -1,0 +1,524 @@
+{
+ "_doc": "Ferruccio v2 a ritaglio dal model sheet 02 (arte approvata in ferruccio-art/grok): stessi pezzi, ossa e animazioni del rig v1. Generato da tools/art/ferruccio_v2/cutout_v2.py. frame_clips: fotogrammi interi da 07 (attacco) e 08 (corsa), tools/art/ferruccio_v2/frames_v2.py.",
+ "canvas": [
+  633,
+  1024
+ ],
+ "feet": [
+  227,
+  1010
+ ],
+ "far_tint": [
+  0.8,
+  0.8,
+  0.87
+ ],
+ "bones": {
+  "root": {
+   "pivot": [
+    227,
+    1010
+   ],
+   "parent": null
+  },
+  "hips": {
+   "pivot": [
+    241,
+    477
+   ],
+   "parent": "root"
+  },
+  "torso": {
+   "pivot": [
+    241,
+    457
+   ],
+   "parent": "hips"
+  },
+  "neck": {
+   "pivot": [
+    243,
+    205
+   ],
+   "parent": "torso"
+  },
+  "shoulder": {
+   "pivot": [
+    230,
+    263
+   ],
+   "parent": "torso"
+  },
+  "elbow": {
+   "pivot": [
+    227,
+    426
+   ],
+   "parent": "shoulder"
+  },
+  "wrist": {
+   "pivot": [
+    261,
+    549
+   ],
+   "parent": "elbow"
+  },
+  "thigh": {
+   "pivot": [
+    218,
+    523
+   ],
+   "parent": "hips"
+  },
+  "knee": {
+   "pivot": [
+    218,
+    808
+   ],
+   "parent": "thigh"
+  },
+  "ankle": {
+   "pivot": [
+    223,
+    974
+   ],
+   "parent": "knee"
+  },
+  "scarf1": {
+   "pivot": [
+    206,
+    223
+   ],
+   "parent": "torso"
+  },
+  "scarf2": {
+   "pivot": [
+    144,
+    323
+   ],
+   "parent": "scarf1"
+  },
+  "scarf3": {
+   "pivot": [
+    104,
+    451
+   ],
+   "parent": "scarf2"
+  },
+  "shoulder_f": {
+   "pivot": [
+    280,
+    269
+   ],
+   "parent": "torso"
+  },
+  "elbow_f": {
+   "pivot": [
+    289,
+    432
+   ],
+   "parent": "shoulder_f"
+  },
+  "wrist_f": {
+   "pivot": [
+    313,
+    549
+   ],
+   "parent": "elbow_f"
+  },
+  "thigh_f": {
+   "pivot": [
+    264,
+    523
+   ],
+   "parent": "hips"
+  },
+  "knee_f": {
+   "pivot": [
+    272,
+    808
+   ],
+   "parent": "thigh_f"
+  },
+  "ankle_f": {
+   "pivot": [
+    280,
+    955
+   ],
+   "parent": "knee_f"
+  }
+ },
+ "pieces": {
+  "testa": {
+   "file": "testa.png",
+   "pos": [
+    123,
+    8
+   ]
+  },
+  "nodo": {
+   "file": "nodo.png",
+   "pos": [
+    215,
+    171
+   ]
+  },
+  "busto": {
+   "file": "busto.png",
+   "pos": [
+    135,
+    177
+   ]
+  },
+  "manica_su": {
+   "file": "manica_su.png",
+   "pos": [
+    170,
+    229
+   ]
+  },
+  "manica_giu": {
+   "file": "manica_giu.png",
+   "pos": [
+    169,
+    414
+   ]
+  },
+  "mano": {
+   "file": "mano.png",
+   "pos": [
+    186,
+    532
+   ]
+  },
+  "pugno": {
+   "file": "pugno.png",
+   "pos": [
+    212,
+    532
+   ]
+  },
+  "coscia": {
+   "file": "coscia.png",
+   "pos": [
+    163,
+    681
+   ]
+  },
+  "stinco": {
+   "file": "stinco.png",
+   "pos": [
+    187,
+    801
+   ]
+  },
+  "piede": {
+   "file": "piede.png",
+   "pos": [
+    163,
+    967
+   ]
+  },
+  "sciarpa1": {
+   "file": "sciarpa1.png",
+   "pos": [
+    143,
+    193
+   ]
+  },
+  "sciarpa2": {
+   "file": "sciarpa2.png",
+   "pos": [
+    49,
+    312
+   ]
+  },
+  "sciarpa3": {
+   "file": "sciarpa3.png",
+   "pos": [
+    38,
+    443
+   ]
+  }
+ },
+ "sprites": [
+  {
+   "piece": "sciarpa3",
+   "bone": "scarf3",
+   "z": 0,
+   "far": false
+  },
+  {
+   "piece": "sciarpa2",
+   "bone": "scarf2",
+   "z": 1,
+   "far": false
+  },
+  {
+   "piece": "sciarpa1",
+   "bone": "scarf1",
+   "z": 2,
+   "far": false
+  },
+  {
+   "piece": "manica_su",
+   "bone": "shoulder_f",
+   "z": 3,
+   "far": true
+  },
+  {
+   "piece": "pugno",
+   "bone": "wrist_f",
+   "z": 4,
+   "far": true
+  },
+  {
+   "piece": "manica_giu",
+   "bone": "elbow_f",
+   "z": 4,
+   "far": true
+  },
+  {
+   "piece": "coscia",
+   "bone": "thigh_f",
+   "z": 5,
+   "far": true
+  },
+  {
+   "piece": "stinco",
+   "bone": "knee_f",
+   "z": 6,
+   "far": true
+  },
+  {
+   "piece": "piede",
+   "bone": "ankle_f",
+   "z": 7,
+   "far": true
+  },
+  {
+   "piece": "stinco",
+   "bone": "knee",
+   "z": 8,
+   "far": false
+  },
+  {
+   "piece": "piede",
+   "bone": "ankle",
+   "z": 9,
+   "far": false
+  },
+  {
+   "piece": "coscia",
+   "bone": "thigh",
+   "z": 10,
+   "far": false
+  },
+  {
+   "piece": "busto",
+   "bone": "torso",
+   "z": 11,
+   "far": false
+  },
+  {
+   "piece": "testa",
+   "bone": "neck",
+   "z": 12,
+   "far": false
+  },
+  {
+   "piece": "nodo",
+   "bone": "torso",
+   "z": 13,
+   "far": false
+  },
+  {
+   "piece": "manica_su",
+   "bone": "shoulder",
+   "z": 14,
+   "far": false
+  },
+  {
+   "piece": "mano",
+   "bone": "wrist",
+   "z": 15,
+   "far": false
+  },
+  {
+   "piece": "manica_giu",
+   "bone": "elbow",
+   "z": 16,
+   "far": false
+  }
+ ],
+ "frame_clips": {
+  "run": {
+   "atlas": "frames_corsa.png",
+   "canvas_per_px": 2.0,
+   "frames": [
+    [
+     0,
+     78,
+     347,
+     474,
+     180.1,
+     474
+    ],
+    [
+     351,
+     118,
+     289,
+     434,
+     144.7,
+     434
+    ],
+    [
+     644,
+     71,
+     284,
+     481,
+     138.8,
+     481
+    ],
+    [
+     932,
+     0,
+     324,
+     552,
+     169.1,
+     552
+    ],
+    [
+     1260,
+     77,
+     349,
+     475,
+     153.8,
+     475
+    ],
+    [
+     1613,
+     59,
+     265,
+     493,
+     138.2,
+     493
+    ]
+   ],
+   "fps": 12,
+   "progress": false,
+   "loop": true
+  },
+  "slash_a": {
+   "atlas": "frames_attacco.png",
+   "canvas_per_px": 2.0,
+   "frames": [
+    [
+     0,
+     0,
+     274,
+     548,
+     140.4,
+     548
+    ],
+    [
+     278,
+     0,
+     310,
+     548,
+     166.7,
+     548
+    ],
+    [
+     592,
+     58,
+     393,
+     490,
+     206.8,
+     490
+    ],
+    [
+     989,
+     148,
+     326,
+     400,
+     161.5,
+     400
+    ],
+    [
+     1319,
+     83,
+     284,
+     465,
+     115.0,
+     465
+    ],
+    [
+     1607,
+     87,
+     291,
+     461,
+     130.0,
+     461
+    ]
+   ],
+   "progress": true
+  },
+  "slash_b": {
+   "atlas": "frames_attacco.png",
+   "canvas_per_px": 2.0,
+   "frames": [
+    [
+     0,
+     0,
+     274,
+     548,
+     140.4,
+     548
+    ],
+    [
+     278,
+     0,
+     310,
+     548,
+     166.7,
+     548
+    ],
+    [
+     592,
+     58,
+     393,
+     490,
+     206.8,
+     490
+    ],
+    [
+     989,
+     148,
+     326,
+     400,
+     161.5,
+     400
+    ],
+    [
+     1319,
+     83,
+     284,
+     465,
+     115.0,
+     465
+    ],
+    [
+     1607,
+     87,
+     291,
+     461,
+     130.0,
+     461
+    ]
+   ],
+   "progress": true
+  }
+ },
+ "brightness": 1.18
+}
