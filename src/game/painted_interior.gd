@@ -13,6 +13,14 @@ func setup(room: Dictionary) -> void:
 	art_floor = float(room.get("art_floor", 0.9))
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	z_index = -15
+	if room.art in ["cisterne", "cisterne_sepolte"]:
+		var mat := ShaderMaterial.new()
+		mat.shader = preload("res://game/shaders/canvas_env_caustics.gdshader")
+		material = mat
+	elif room.art == "campanile":
+		var mat := ShaderMaterial.new()
+		mat.shader = preload("res://game/shaders/canvas_env_dust.gdshader")
+		material = mat
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#101921"))

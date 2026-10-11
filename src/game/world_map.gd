@@ -1,5 +1,22 @@
 extends CanvasLayer
 const DialogueBoxScript := preload("res://game/dialogue_box.gd")
+const MAP_BG := preload("res://assets/art/ui/carta/carta_reale.png")
+const SEALS := {
+	"market_seal": preload("res://assets/art/ui/carta/sigillo_mercato.png"),
+	"barracks_seal": preload("res://assets/art/ui/carta/sigillo_caserma.png"),
+	"sluice": preload("res://assets/art/ui/carta/sigillo_chiusa.png"),
+	"loom": preload("res://assets/art/ui/carta/sigillo_telaio.png"),
+	"bells": preload("res://assets/art/ui/carta/sigillo_campane.png"),
+	"hammer_plan": preload("res://assets/art/ui/carta/sigillo_disegno.png"),
+	"clock_memory": preload("res://assets/art/ui/carta/sigillo_orologio.png"),
+}
+const SKILL_ICONS := {
+	"grapple": preload("res://assets/art/ui/carta/icona_catena.png"),
+	"hammer": preload("res://assets/art/ui/carta/icona_martello.png"),
+	"guard": preload("res://assets/art/ui/carta/icona_parata.png"),
+	"scarf": preload("res://assets/art/ui/carta/icona_sciarpa.png"),
+	"heal": preload("res://assets/art/ui/carta/icona_cura.png"),
+}
 ## Carta delle aree visitate: conserva l'esplorazione attraverso story.seen.
 const PLACES := {
 	0: Vector2(100, 320), 1: Vector2(310, 320), 2: Vector2(520, 320),
@@ -66,11 +83,15 @@ func toggle() -> void:
 
 func _draw_map() -> void:
 	var viewport := canvas.get_viewport_rect().size
-	canvas.draw_rect(Rect2(Vector2.ZERO, viewport), Color(0.02, 0.025, 0.04, 0.97))
+	canvas.draw_rect(Rect2(Vector2.ZERO, viewport), Color(0.02, 0.025, 0.04, 0.98))
 	var scale := minf(viewport.x / 1320.0, viewport.y / 720.0)
 	canvas.draw_set_transform((viewport - Vector2(1320,720) * scale) / 2, 0, Vector2.ONE * scale)
-	Art.text(canvas, Art.title_font(), Vector2(40, 45), "LE STRADE DELLA REGGIA", 25, Art.OCRA)
-	Art.text(canvas, Art.body_font(), Vector2(800,45), "Tab / "+Controls.label("interact")+" · "+("Mappa" if journal else "Registro missioni"),20,Art.CREMA)
+	
+	# Carta Reale ad hoc: pergamena borbonica 1845 con cornice barocca
+	canvas.draw_texture_rect(MAP_BG, Rect2(0, 0, 1320, 720), false, Color(1, 1, 1, 0.36))
+	
+	Art.text(canvas, Art.title_font(), Vector2(40, 36), "CARTA REALE DELLE TERRE DI CASERTA", 23, Art.OCRA)
+	Art.text(canvas, Art.body_font(), Vector2(800, 38), "Tab / " + Controls.label("interact") + " · " + ("Mappa" if journal else "Registro missioni"), 19, Art.CREMA)
 	if journal:
 		_draw_journal()
 		return
@@ -84,14 +105,19 @@ func _draw_map() -> void:
 		"clock_memory": "Orologiaio",
 	}
 	var seal_count := Room.Expansion.seals_count(world.story)
-	Art.text(canvas, Art.title_font(), Vector2(40, 78), "SIGILLI: %d / 7" % seal_count, 16, Art.CREMA)
-	var sy := 100.0
+	Art.text(canvas, Art.title_font(), Vector2(40, 68), "I SETTE SIGILLI REALI: %d / 7" % seal_count, 15, Art.CREMA)
+	var sy := 95.0
 	for k in Room.Expansion.DISTRICT_SEALS:
 		var has_it: bool = world.story.times_seen(k) > 0
-		var col := Art.OCRA if has_it else Color(0.42, 0.44, 0.48)
+		var tex: Texture2D = SEALS.get(k)
+		if tex != null:
+			var mod := Color(1.0, 1.0, 1.0, 0.95) if has_it else Color(0.25, 0.22, 0.2, 0.4)
+			canvas.draw_texture_rect(tex, Rect2(40, sy - 2, 28, 28), false, mod)
+		var col := Art.OCRA if has_it else Color(0.48, 0.46, 0.44)
 		var mark := "✔ " if has_it else "○ "
-		Art.text(canvas, Art.body_font(), Vector2(40, sy), mark + seal_names.get(k, k), 13, col)
-		sy += 18.0
+		Art.text(canvas, Art.body_font(), Vector2(76, sy + 3), mark + seal_names.get(k, k), 13, col)
+		sy += 30.0
+
 	var links: Array = []
 	for idx in PLACES:
 		for right in [false, true]:
@@ -104,33 +130,54 @@ func _draw_map() -> void:
 	for pair in links:
 		if world.story.times_seen("visited_%d" % pair[0]) > 0 and world.story.times_seen("visited_%d" % pair[1]) > 0:
 			if (pair[0] == 14 and pair[1] == 11) or (pair[0] == 11 and pair[1] == 14):
-				canvas.draw_polyline(PackedVector2Array([PLACES[14], Vector2(1050,75), Vector2(1050,320), PLACES[11]]), Color(Art.OCRA,0.45),2,true)
+				canvas.draw_polyline(PackedVector2Array([PLACES[14], Vector2(1050,75), Vector2(1050,320), PLACES[11]]), Color(Art.OCRA,0.65),2,true)
 			else:
-				canvas.draw_line(PLACES[pair[0]], PLACES[pair[1]], Color(Art.OCRA, 0.45), 2, true)
+				canvas.draw_line(PLACES[pair[0]], PLACES[pair[1]], Color(Art.OCRA, 0.65), 2, true)
 	for idx in PLACES:
 		if world.story.times_seen("visited_%d" % idx) == 0:
 			continue
 		var p: Vector2 = PLACES[idx]
 		var r := Room.build(idx)
 		var dims := Vector2(146, 48) if r.size.y < 1500 else Vector2(115, 80)
-		canvas.draw_rect(Rect2(p - dims / 2, dims), Color("#263741"))
+		canvas.draw_rect(Rect2(p - dims / 2, dims), Color("#1b252e", 0.9))
 		canvas.draw_rect(Rect2(p - dims / 2, dims), Art.CREMA if idx == world.room_index else Art.OCRA, false, 2)
 		Art.text(canvas, Art.body_font(), p + Vector2(-90, 5), r.name, 14, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 180)
 		if idx == world.room_index:
 			canvas.draw_circle(p + Vector2(0, dims.y / 2 + 10), 4, Art.CREMA)
+
+	# Medaglioni abilità artigiane di Ferruccio in basso a destra
+	var skill_defs := [
+		{"id": "grapple", "label": "Catena"},
+		{"id": "hammer", "label": "Martello"},
+		{"id": "guard", "label": "Fibbia"},
+		{"id": "scarf", "label": "Sciarpa"},
+		{"id": "heal", "label": "Cura"},
+	]
+	var sx := 840.0
+	for sk in skill_defs:
+		var unlocked: bool = sk.id == "heal" or world.upgrades.has(sk.id)
+		var icon_tex: Texture2D = SKILL_ICONS.get(sk.id)
+		if icon_tex != null:
+			var mod := Color(1.0, 1.0, 1.0, 0.95) if unlocked else Color(0.25, 0.22, 0.2, 0.35)
+			canvas.draw_texture_rect(icon_tex, Rect2(sx, 642, 38, 38), false, mod)
+		Art.text(canvas, Art.body_font(), Vector2(sx + 19, 686), sk.label, 12, Art.OCRA if unlocked else Color(0.45, 0.42, 0.4), HORIZONTAL_ALIGNMENT_CENTER, 70)
+		sx += 88.0
+
 	var close_txt := Controls.label("map") + " / " + Controls.label("pause") + "  Chiudi"
-	var skills_txt := Controls.label("grapple") + " Catena · " + Controls.label("hammer") + " Martello · " + Controls.label("heal") + " Cura con 4 braci · Giù + " + Controls.label("attack") + " Rimbalzo"
-	Art.text(canvas, Art.body_font(), Vector2(40, 670), "%s   ·   Punto bianco: sei qui   ·   Esplora per completare la carta" % close_txt, 20, Art.CREMA)
-	Art.text(canvas, Art.body_font(), Vector2(40, 701), skills_txt, 17, Art.OCRA)
+	var skills_txt := Controls.label("grapple") + " Catena · " + Controls.label("hammer") + " Martello · " + Controls.label("heal") + " Cura · " + Controls.label("dash") + " Scatto"
+	Art.text(canvas, Art.body_font(), Vector2(40, 665), "%s   ·   Punto bianco: sei qui   ·   Esplora per completare la carta" % close_txt, 19, Art.CREMA)
+	Art.text(canvas, Art.body_font(), Vector2(40, 693), skills_txt, 16, Art.OCRA)
 
 func _draw_journal() -> void:
 	var entries := quest_entries()
-	Art.text(canvas,Art.title_font(),Vector2(40,94),"REGISTRO MISSIONI",24,Art.CREMA)
-	var first := journal_page*6
-	for i in range(first,mini(first+6,entries.size())):
+	canvas.draw_texture_rect(MAP_BG, Rect2(0, 0, 1320, 720), false, Color(1, 1, 1, 0.22))
+	Art.text(canvas, Art.title_font(), Vector2(40, 84), "REGISTRO DELLE MEMORIE E DEGLI INCARICHI", 23, Art.CREMA)
+	var first := journal_page * 6
+	for i in range(first, mini(first + 6, entries.size())):
 		var quest: Dictionary = entries[i]
-		var y := 145.0+float(i-first)*80
-		var color := Color(.5,.65,.58) if quest.done else Art.OCRA
-		Art.text(canvas,Art.title_font(),Vector2(40,y),("COMPLETATA · " if quest.done else "DA FARE · ")+str(quest.title),20,color)
-		Art.text(canvas,Art.body_font(),Vector2(40,y+29),quest.text,20,Art.CREMA)
-	Art.text(canvas,Art.body_font(),Vector2(40,670),"← / → · Pagina %d/%d     %s · Chiudi" % [journal_page+1,maxi(1, ceili(entries.size()/6.0)),Controls.label("map")],20,Art.CREMA)
+		var y := 138.0 + float(i - first) * 82
+		var color := Color(0.5, 0.75, 0.6) if quest.done else Art.OCRA
+		var stamp := "★ COMPLETATA · " if quest.done else "○ DA FARE · "
+		Art.text(canvas, Art.title_font(), Vector2(40, y), stamp + str(quest.title), 20, color)
+		Art.text(canvas, Art.body_font(), Vector2(40, y + 29), quest.text, 20, Art.CREMA)
+	Art.text(canvas, Art.body_font(), Vector2(40, 670), "← / → · Pagina %d/%d     %s · Chiudi" % [journal_page + 1, maxi(1, ceili(entries.size() / 6.0)), Controls.label("map")], 20, Art.CREMA)
