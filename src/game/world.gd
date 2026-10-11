@@ -219,6 +219,8 @@ func _input(event: InputEvent) -> void:
 
 ## Comando locale di test: non viene registrato nel salvataggio.
 func _toggle_developer_mode() -> void:
+	if not DevFlags.enabled():
+		return
 	if player.dead:
 		_hud.toast("Riprendi la partita prima di attivare la modalità sviluppatore")
 		return

@@ -64,15 +64,10 @@ func _draw() -> void:
 	for corner in [paper.grow(-34.0).position, Vector2(paper.grow(-34.0).end.x, paper.grow(-34.0).position.y), paper.grow(-34.0).end, Vector2(paper.grow(-34.0).position.x, paper.grow(-34.0).end.y)]:
 		_fleuron(corner)
 	var cx := vp.x * 0.5
-	# Cartiglio centrale: pergamena chiara sopra la carta, perche' il titolo si legga.
-	var cart := Rect2(vp.x * 0.17, vp.y * 0.15, vp.x * 0.66, vp.y * 0.7)
-	draw_rect(cart.grow(10.0), Color(0.16, 0.09, 0.04, 0.35), true)
-	draw_rect(cart, Color("#e9d8b0"), true)
-	for i in 5:
-		draw_rect(cart.grow(-i * 4.0), Color(0.5, 0.33, 0.15, 0.08), false, 8.0)
-	_frame(cart.grow(-12.0), 2.0, INK)
-	_frame(cart.grow(-18.0), 1.0, INK_SOFT)
-	Art.text(self, Art.title_wide(), Vector2(0, vp.y * 0.2), "REGNO DELLE DUE SICILIE  \u00b7  CASERTA, MDCCCXLV", 18, INK_SOFT, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+	# Velature leggere e sfumate dietro alle scritte: cornice dorata, putti e mappa restano visibili.
+	_veil(cart_rect(vp), CART_ALPHA)
+	_veil(Rect2(cx - 190, vp.y * 0.76 - 30, 380, 44), 0.45)
+	Art.text(self, Art.title_wide(), Vector2(0, vp.y * 0.575), "REGNO DELLE DUE SICILIE  \u00b7  CASERTA, MDCCCXLV", 14, INK, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if _logo:
 		var h := vp.y * 0.36
 		var w := h * _logo.get_width() / float(_logo.get_height())
@@ -97,10 +92,25 @@ func _placeholder_logo(vp: Vector2) -> void:
 	Art.text(self, font, Vector2(0, y), "FERRUCCIO", 112, Color("#c9973f"), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	Art.text(self, font, Vector2(0, y - 3), "FERRUCCIO", 112, Color(1.0, 0.86, 0.55, 0.35), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	Art.text(self, Art.title_wide(), Vector2(0, y + 52), "LA MENZOGNA DEI BORBONE", 28, RED, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
-	var tag := Rect2(vp.x * 0.5 - 120, y - 150, 240, 26)
+	var tag := Rect2(vp.x * 0.5 - 100, y - 96, 200, 22)
 	draw_rect(tag, Color(0.48, 0.11, 0.08, 0.12), true)
 	draw_rect(tag, Color(RED, 0.6), false, 1.0)
-	Art.text(self, Art.body_font(), Vector2(tag.position.x, tag.position.y + 19), "LOGO SEGNAPOSTO", 15, Color(RED, 0.85), HORIZONTAL_ALIGNMENT_CENTER, tag.size.x)
+	Art.text(self, Art.body_font(), Vector2(tag.position.x, tag.position.y + 19), "LOGO SEGNAPOSTO", 13, Color(RED, 0.85), HORIZONTAL_ALIGNMENT_CENTER, tag.size.x)
+
+
+## Opacita' della velatura dietro al titolo (la pergamena sotto resta leggibile).
+const CART_ALPHA := 0.6
+
+
+## Zona velata dietro al logo: piu' piccola della pergamena, lascia libere cornice e putti.
+func cart_rect(vp: Vector2) -> Rect2:
+	return Rect2(vp.x * 0.5 - vp.x * 0.25, vp.y * 0.29, vp.x * 0.5, vp.y * 0.34)
+
+
+## Velo color pergamena con bordi sfumati.
+func _veil(r: Rect2, alpha: float) -> void:
+	for i in 6:
+		draw_rect(r.grow(-i * 5.0 + 15.0), Color(0.93, 0.86, 0.7, alpha / 4.0), true)
 
 
 func _frame(r: Rect2, width: float, col: Color) -> void:

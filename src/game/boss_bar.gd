@@ -6,9 +6,16 @@ extends Control
 const NAMES := {"custode": "CAVALIERE BORBONICO", "ratking": "RATKING \u00b7 IL FIGLIO DELLE CISTERNE"}
 const WIDTH := 620.0
 const TOP := 62.0
+## Spazio riservato in alto per i dialoghi quando la barra e' visibile (bordo inferiore + margine).
+const RESERVE := 76.0
+const DialogueBoxScript := preload("res://game/dialogue_box.gd")
 
 var world
 var _t := -1.0
+
+
+func _exit_tree() -> void:
+	DialogueBoxScript.reserve_top = 0.0
 
 
 func _ready() -> void:
@@ -29,7 +36,13 @@ func _process(delta: float) -> void:
 		_t = -1.0
 	else:
 		_t = maxf(_t, 0.0) + delta
+	DialogueBoxScript.reserve_top = RESERVE if _t >= 0.0 else 0.0
 	queue_redraw()
+
+
+## Riquadro occupato dal nome e dalla barra (per i test di sovrapposizione).
+func bar_rect(vp_w: float) -> Rect2:
+	return Rect2((vp_w - WIDTH) * 0.5 - 24.0, TOP - 38.0, WIDTH + 48.0, 52.0)
 
 
 func _draw() -> void:

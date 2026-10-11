@@ -1,4 +1,5 @@
 extends CanvasLayer
+const WorldMapScript := preload("res://game/world_map.gd")
 ## Fucina: prezzi, acquisti ed equipaggiamento leggibili con mouse, tastiera e controller.
 var world: Node
 var opened := false
@@ -79,6 +80,16 @@ func _refresh() -> void:
 			continue
 		var row := HBoxContainer.new()
 		_rows.add_child(row)
+		# Medaglione dell'abilita' (stesse icone della carta; Guanti = segnaposto 96x96).
+		var icon_tex: Texture2D = WorldMapScript.SKILL_ICONS.get(key)
+		if icon_tex:
+			var icon := TextureRect.new()
+			icon.texture = icon_tex
+			icon.custom_minimum_size = Vector2(56, 56)
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.name = "Icona_" + str(key)
+			row.add_child(icon)
 		var info := VBoxContainer.new()
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(info)
@@ -104,6 +115,16 @@ func _refresh() -> void:
 			continue
 		var row := HBoxContainer.new()
 		_rows.add_child(row)
+		# Medaglione dell'abilita' (stesse icone della carta; Guanti = segnaposto 96x96).
+		var icon_tex: Texture2D = WorldMapScript.SKILL_ICONS.get(key)
+		if icon_tex:
+			var icon := TextureRect.new()
+			icon.texture = icon_tex
+			icon.custom_minimum_size = Vector2(56, 56)
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.name = "Icona_" + str(key)
+			row.add_child(icon)
 		var label := _label(row, names[key], 20, Art.CREMA)
 		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var button := Button.new()

@@ -3,11 +3,14 @@ extends SceneTree
 ## Uso: Godot --path src -s res://scripts/dev_slice_shot.gd -- --out=E:/gioco/shots-ui
 ## Usa slot/opzioni/comandi di prova in user:// (shot-*), non tocca quelli reali.
 var _out := "user://"
+var _suffix := ""
 
 func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--out="):
 			_out = a.substr(6)
+		if a.begins_with("--suffix="):
+			_suffix = a.substr(9)
 	SaveSlots.dir = "user://shot-slots/"
 	GameSettings.path = "user://shot-settings.cfg"
 	InputRemap.path = "user://shot-input.cfg"
@@ -19,7 +22,7 @@ func _shot(name: String) -> void:
 	await RenderingServer.frame_post_draw
 	var img := root.get_viewport().get_texture().get_image()
 	img.resize(1280, 720, Image.INTERPOLATE_LANCZOS)
-	img.save_jpg(_out.path_join(name + ".jpg"), 0.88)
+	img.save_jpg(_out.path_join(name + _suffix + ".jpg"), 0.88)
 	print("shot: ", name)
 
 func _run() -> void:
@@ -35,7 +38,7 @@ func _run() -> void:
 	main._on_play_pressed(false, 3)
 	await create_timer(1.0).timeout
 	var w = main._world
-	w.player.invulnerable = true
+	w.player.hp = w.player.max_hp
 	w._go(Room.BOSS_ROOM, true)
 	await create_timer(0.8).timeout
 	w.player.position.x = 600
@@ -61,4 +64,16 @@ func _run() -> void:
 	await create_timer(0.5).timeout
 	w._map.toggle()
 	await _shot("mappa_crepe")
+	w._map.toggle()
+	for up in ["grapple", "wall_grip", "hammer"]:
+		w.upgrades[up] = true
+	w._map.toggle()
+	await _shot("abilita_guanti")
+	w._map.toggle()
+	w.coins = 200
+	w.story.seen["sluice"] = 1
+	w._shop.show_shop()
+	await _shot("fucina_guanti")
+	quit()
+	return
 	quit()

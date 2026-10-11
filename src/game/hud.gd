@@ -114,7 +114,7 @@ func _draw() -> void:
 		draw_rect(card, Color(Art.OCRA, 0.8), false, 1.5)
 	_draw_vitals()
 	_draw_area_title(vp)
-	if world.player.invulnerable:
+	if dev_overlay_visible():
 		Art.text(self, Art.body_font(), Vector2(34, vp.y - 20), "SVILUPPATORE · NESSUN DANNO", 15, Color(Art.OCRA, 0.8))
 	_draw_notices(vp)
 	if world.room_index != 0 and _hint_t > 0.0:
@@ -208,8 +208,19 @@ func _draw_mask(center: Vector2, filled: bool, glow_amount: float) -> void:
 		draw_texture_rect(MASK_TEX, r, false, Color(0.12, 0.12, 0.16, 0.55))
 
 
+## La scritta da sviluppatore compare solo con i DevFlags attivi.
+func dev_overlay_visible() -> bool:
+	return world != null and world.player != null and world.player.invulnerable and DevFlags.enabled()
+
+
+## Il titolo d'area e' a schermo (non durante dialoghi e narrazioni).
+func area_title_visible() -> bool:
+	return _title_t >= 0.0 and world != null and not world.is_talking()
+
+
 func _draw_area_title(vp: Vector2) -> void:
-	if _title_t < 0.0:
+	# Durante dialoghi e narrazioni il titolo d'area si fa da parte (niente sovrapposizioni).
+	if _title_t < 0.0 or world.is_talking():
 		return
 	var a := minf(1.0, _title_t / 0.9) * minf(1.0, (TITLE_TIME - _title_t) / 1.2)
 	# Sotto il pannello vita e la barra del boss, cosi' nulla si sovrappone in alto.
