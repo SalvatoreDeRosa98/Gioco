@@ -54,6 +54,7 @@ var identity_restored := false
 var facing := 1.0
 var attacking := 0.0
 var attack_down := false
+var crouching := false
 var grounded := true
 var dashing := false
 var move_vel := Vector2.ZERO
@@ -202,15 +203,19 @@ func _physics_process(delta: float) -> void:
 
 	var jump_pressed := Input.is_action_just_pressed("jump")
 	_jump_held = Input.is_action_pressed("jump")
-	var want_drop := Input.is_action_pressed("move_down") and jump_pressed and is_on_floor()
+	var want_down := Input.is_action_pressed("move_down") and is_on_floor()
+	var want_drop := want_down and jump_pressed
 	if want_drop:
 		_drop_t = 0.25
 		set_collision_mask_value(LEDGE_LAYER, false)
 		jump_pressed = false
+		crouching = false
 	elif jump_pressed:
 		_jump_buf = float(_cfg.jump_buffer)
+		crouching = false
 	else:
 		_jump_buf = maxf(0.0, _jump_buf - delta)
+		crouching = want_down and _dash_t <= 0.0 and hammer_time <= 0.0
 
 	if is_on_floor():
 		_air_dash_used = false
@@ -256,9 +261,18 @@ func _physics_process(delta: float) -> void:
 	_was_grounded = grounded
 
 
+func hurtbox_half() -> Vector2:
+	return Vector2(HALF.x, 14.0) if crouching else HALF
+
+func hurtbox_center() -> Vector2:
+	return global_position + Vector2(0, 10.0) if crouching else global_position
+
+
 ## Corsa con una curva: da fermo spinge forte, vicino alla velocità piena addolcisce; a terra
 ## frena deciso e inverte ancora più deciso, con una breve scivolata e un po' di polvere.
 func _move_horizontal(axis: float, on_floor: bool, delta: float) -> void:
+	if crouching:
+		axis = 0.0
 	var speed := float(_cfg.speed)
 	var target := axis * speed
 	var turning := axis != 0.0 and absf(velocity.x) > 1.0 and signf(axis) != signf(velocity.x)

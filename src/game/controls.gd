@@ -2,7 +2,7 @@ class_name Controls
 extends RefCounted
 ## Suggerimenti coerenti con l'ultimo dispositivo usato e con i binding reali.
 static var device_override := -1
-const KEYS := {"move": "A / D", "jump": "Spazio", "attack": "X", "parry": "F", "interact": "W / E", "dash": "C", "shop": "B", "map": "M", "pause": "Esc", "grapple": "Q", "hammer": "V", "heal": "R", "drop": "S + Spazio"}
+const KEYS := {"move": "A / D", "jump": "Spazio", "attack": "X", "parry": "F", "interact": "E", "dash": "C", "shop": "B", "map": "M", "pause": "Esc", "grapple": "Q", "hammer": "V", "heal": "R", "drop": "S + Spazio"}
 const PAD := {"move": "Stick / croce", "jump": "A / ×", "attack": "X / □", "parry": "LB / L1", "interact": "Y / △", "dash": "RB / R1", "shop": "↑ croce", "map": "Back / Select", "pause": "Start / Options", "grapple": "RT / R2", "hammer": "B / ○", "heal": "LT / L2", "drop": "↓ + A / ×"}
 
 ## Il controller collegato è il dispositivo iniziale, poi prevale l'ultimo input.

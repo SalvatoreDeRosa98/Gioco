@@ -425,6 +425,8 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 func _left_open() -> bool:
 	if arena_active and not room_cleared:
 		return false
+	if room_index == 13:
+		return room_cleared
 	return Room.Expansion.edge(room_index, false) >= 0
 
 
@@ -535,6 +537,8 @@ func _check_doors() -> void:
 			_go(0, true)
 		elif room_index == Room.SECRET_ROOM:
 			_leave_forge()
+		elif room_index == 13:
+			_go(0, false)
 		else:
 			_go(Room.Expansion.edge(room_index, false), false)
 
@@ -670,18 +674,23 @@ func _do_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
 		return
 	var center: Vector2
 	var half: Vector2
+	var is_crouch: bool = player != null and bool(player.get("crouching"))
 	if down:
 		# Colpo verso il basso (pogo): portata sotto i piedi
 		center = pos + Vector2(0.0, 42.0)
 		half = Vector2(30.0, 32.0)
+	elif is_crouch:
+		# Colpo da accovacciato: fendente radente a terra (ideale per gatti e bersagli bassi)
+		center = pos + Vector2(facing * 56.0, 8.0)
+		half = Vector2(48.0, 22.0)
 	elif player != null and player.slash_side > 0.0:
 		# Affondo ('slash_a'): allungo orizzontale in avanti con la lama
-		center = pos + Vector2(facing * 64.0, -12.0)
-		half = Vector2(48.0, 22.0)
+		center = pos + Vector2(facing * 64.0, -4.0)
+		half = Vector2(48.0, 26.0)
 	else:
-		# Fendente ('slash_b'): arco verticale più ampio
-		center = pos + Vector2(facing * 46.0, -16.0)
-		half = Vector2(38.0, 36.0)
+		# Fendente ('slash_b'): arco verticale più ampio (colpisce in alto le vespe e fino a terra)
+		center = pos + Vector2(facing * 46.0, -12.0)
+		half = Vector2(38.0, 38.0)
 	var bounce := false
 	var damage := 2 if _parry_attack else 1
 	_parry_attack = false
@@ -848,12 +857,14 @@ func _on_enemy_killed(e: Node) -> void:
 
 
 func _check_contacts() -> void:
+	var p_center: Vector2 = player.hurtbox_center() if player.has_method("hurtbox_center") else player.global_position
+	var p_half: Vector2 = player.hurtbox_half() if player.has_method("hurtbox_half") else PlayerScript.HALF
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if player.dead:
 			return
 		if e.is_queued_for_deletion():
 			continue
-		if not _overlap(e.global_position, e.half, player.global_position, PlayerScript.HALF):
+		if not _overlap(e.global_position, e.half, p_center, p_half):
 			continue
 		if e.touch_cd > 0.0:
 			continue
@@ -862,6 +873,8 @@ func _check_contacts() -> void:
 
 
 func _check_bullets() -> void:
+	var p_center: Vector2 = player.hurtbox_center() if player.has_method("hurtbox_center") else player.global_position
+	var p_half: Vector2 = player.hurtbox_half() if player.has_method("hurtbox_half") else PlayerScript.HALF
 	for b in get_tree().get_nodes_in_group("bullets"):
 		if b.is_queued_for_deletion():
 			continue
@@ -870,7 +883,7 @@ func _check_bullets() -> void:
 			continue
 		if player.dead:
 			continue
-		if _overlap(b.global_position, Vector2(b.radius, b.radius), player.global_position, PlayerScript.HALF):
+		if _overlap(b.global_position, Vector2(b.radius, b.radius), p_center, p_half):
 			_hurt_player(int(b.damage), b.global_position.x)
 			b.queue_free()
 

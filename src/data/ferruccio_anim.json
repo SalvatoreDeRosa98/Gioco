@@ -239,6 +239,56 @@
     }
    ]
   },
+  "crouch": {
+   "fps": 12,
+   "loop": true,
+   "progress": false,
+   "length": 0.5,
+   "keys": [
+    {
+     "t": 0.0,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 64,
+      "hips_x": 6,
+      "torso": 20,
+      "neck": 6,
+      "thigh": -70,
+      "knee": 110,
+      "ankle": 26,
+      "thigh_f": -60,
+      "knee_f": 114,
+      "ankle_f": 26,
+      "shoulder": -18,
+      "elbow": -42,
+      "wrist": -10,
+      "shoulder_f": 14,
+      "elbow_f": -18
+     }
+    },
+    {
+     "t": 0.5,
+     "ease": "inout",
+     "pose": {
+      "hips_y": 64,
+      "hips_x": 6,
+      "torso": 20,
+      "neck": 6,
+      "thigh": -70,
+      "knee": 110,
+      "ankle": 26,
+      "thigh_f": -60,
+      "knee_f": 114,
+      "ankle_f": 26,
+      "shoulder": -18,
+      "elbow": -42,
+      "wrist": -10,
+      "shoulder_f": 14,
+      "elbow_f": -18
+     }
+    }
+   ]
+  },
   "rise": {
    "fps": 12,
    "loop": true,

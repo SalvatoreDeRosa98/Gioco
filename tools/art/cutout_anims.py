@@ -161,9 +161,13 @@ def hold(pose):
     return clip([(0.0, pose), (0.5, pose)], loop=True)
 
 
+CROUCH = {"hips_y": 64, "hips_x": 6, "torso": 20, "neck": 6,
+          "thigh": -70, "knee": 110, "ankle": 26, "thigh_f": -60, "knee_f": 114, "ankle_f": 26,
+          "shoulder": -18, "elbow": -42, "wrist": -10, "shoulder_f": 14, "elbow_f": -18}
 CLIPS = {
     "idle": clip(IDLE, loop=True),
     "run": clip(RUN_KEYS, loop=True, default_ease="step"),
+    "crouch": hold(CROUCH),
     "rise": hold(RISE),
     "fall": clip([(0.0, RISE), (0.18, FALL), (0.6, FALL)]),
     "double_jump": clip([(0.0, TUCK, "out"), (0.7, TUCK), (1.0, FALL)], progress=True),

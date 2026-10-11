@@ -355,6 +355,15 @@ func _draw_overlay() -> void:
 	if zoom <= 0.0:
 		return
 	var top := -_height - 10.0 + _float_y()
+	if world and world.room:
+		var gx: float = global_position.x
+		var gy: float = global_position.y
+		for ledge: Rect2 in world.room.get("ledges", []):
+			if gx >= ledge.position.x - 30.0 and gx <= ledge.end.x + 30.0:
+				var dist_overhead: float = gy + top - ledge.end.y
+				if dist_overhead < 32.0 and dist_overhead > -60.0:
+					top = -_height * 0.45
+					break
 	var ink := 1.0 / zoom
 	if _prompt_a > 0.0:
 		var y := top - 22.0 + (1.0 - ease(_prompt_a, 0.5)) * 8.0 + sin(_t * 2.4) * 1.5
@@ -385,7 +394,7 @@ func _draw_overlay() -> void:
 ## Tasto in un cerchio ocra e il verbo in maiuscoletto, come gli inviti di Hollow Knight.
 func _draw_prompt(a: float) -> void:
 	var c := _overlay
-	var key_label := "Y / △" if Controls.label("interact") == "Y / △" else "W"
+	var key_label := "Y / △" if Controls.label("interact") == "Y / △" else "E"
 	var r := 12.0
 	c.draw_texture_rect(Art.soft_texture(), Rect2(-30, -30, 60, 60), false, Color(0, 0, 0, 0.55 * a))
 	c.draw_circle(Vector2.ZERO, r, Color(0.03, 0.03, 0.05, 0.7 * a))

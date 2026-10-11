@@ -238,13 +238,13 @@ func setup(d: Dictionary, w: Node) -> void:
 static func _half_for(k: String) -> Vector2:
 	match k:
 		"vespa":
-			return Vector2(16, 12)
+			return Vector2(22, 18)
 		"statua":
 			return Vector2(20, 34)
 		"custode":
 			return Vector2(38, 64)
 		_:
-			return Vector2(20, 14)
+			return Vector2(22, 16)
 
 
 # ---------------------------------------------------------------- IA
@@ -875,20 +875,29 @@ func _after_move_vespa() -> void:
 
 # ---------------------------------------------------------------- Statua e Custode
 
-## Statua: ferma, guarda il giocatore più vicino, si carica e spara in orizzontale.
+## Statua: ferma, osserva il raggio d'azione; quando il giocatore entra, carica e spara.
 func _ai_statua(delta: float) -> void:
 	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL)
 	velocity.x = 0.0
 	var target: Node2D = world.alive_player()
-	if target and absf(target.global_position.x - global_position.x) > 4.0:
+	if not target:
+		anim = "idle"
+		return
+	var dist: float = global_position.distance_to(target.global_position)
+	var in_range := dist <= 460.0 and absf(target.global_position.y - global_position.y) < 160.0
+	if in_range and absf(target.global_position.x - global_position.x) > 4.0:
 		facing = signf(target.global_position.x - global_position.x)
+	if not in_range:
+		anim = "idle"
+		_shoot_cd = minf(_shoot_cd, 0.8)
+		return
 	_shoot_cd -= delta
 	var was := anim
 	anim = "charge" if _shoot_cd < 0.6 else "idle"
 	if anim == "charge" and was != "charge":
 		_sfx("statua_carica")
 	if _shoot_cd <= 0.0:
-		_shoot_cd = _f("fire_every")
+		_shoot_cd = _f("fire_every") * 1.5
 		world.enemy_fire(global_position + Vector2(facing * 26.0, -40.0), Vector2(facing, 0.0), _f("bullet_speed"), Color(0.6, 0.85, 1.0))
 		if _attack_variant % 2:
 			world.enemy_fire(global_position + Vector2(facing * 26, -40), Vector2(facing, -0.35).normalized(), _f("bullet_speed"), Color(0.6, 0.85, 1))

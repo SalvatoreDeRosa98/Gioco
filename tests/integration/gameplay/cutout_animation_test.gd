@@ -16,7 +16,12 @@ func _run() -> void:
 	main._world.set_physics_process(false)
 	var rig = p._rig
 	check(rig is CutoutRig, "Ferruccio usa il pupazzo a ritaglio")
-	check(rig._clips.size() == 17, "Tutte le diciassette clip caricate")
+	check(rig._clips.size() == 18, "Tutte le diciotto clip caricate (incluso accovacciamento)")
+	check(rig._clips.has("crouch"), "Clip di accovacciamento presente")
+	p.crouching = true
+	rig.select_state(p, false)
+	check(rig.current_clip() == "crouch", "Accovacciamento selezionato")
+	p.crouching = false
 	var textured := 0
 	for s in rig.find_children("*", "Sprite2D", true, false):
 		textured += int(s.texture != null)

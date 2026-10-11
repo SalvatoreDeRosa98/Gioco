@@ -574,7 +574,7 @@
 			"turn": "never",
 			"verb": "Osserva",
 			"leave": "rise",
-			"when": {"cleared": true, "father_registry": ""},
+			"when": {"father_registry": ""},
 			"dialogue": [
 				{"id": "gaetano_trave", "once": true, "lines": [
 					{"text": "Dalla pietra sale una luce calda. Dentro c'è un uomo che regge una trave sopra la testa."},

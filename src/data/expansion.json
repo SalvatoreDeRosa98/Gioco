@@ -1045,7 +1045,7 @@
       -1
     ],
     "13": [
-      -1,
+      0,
       -1
     ],
     "14": [
@@ -1234,6 +1234,20 @@
         "text": [
           "Sulla pietra Gaetano ha inciso la sezione di un martello: un colpo breve rompe il calcare senza far crollare la volta.",
           "Porta il disegno alla fucina. Il martello aprirà i muri incrinati che hai incontrato."
+        ]
+      },
+      {
+        "kind": "route",
+        "id": "cistern_return_0",
+        "label": "Passaggio per Piazza Dante",
+        "pos": [
+          120,
+          2000
+        ],
+        "target": 0,
+        "spawn": [
+          2200,
+          950
         ]
       }
     ],

@@ -83,7 +83,7 @@ const ROOMS := [
 			{"type": "gatto", "pos": Vector2(880, 960)},
 			{"type": "statua", "pos": Vector2(930, 616)},
 			{"type": "vespa", "pos": Vector2(1480, 380)},
-			{"type": "cavaliere", "pos": Vector2(2150, 946)},
+			{"type": "cavaliere", "pos": Vector2(1450, 946)},
 			{"type": "statua", "pos": Vector2(2350, 946)},
 		],
 		"decor": [
@@ -100,7 +100,7 @@ const ROOMS := [
 		"blocks": [Rect2(520, 880, 480, 100), Rect2(1000, 780, 520, 200), Rect2(1520, 700, 360, 280)],
 		"ledges": [Rect2(220, 800, 180, 18), Rect2(1120, 560, 200, 18), Rect2(1640, 480, 200, 18), Rect2(2120, 720, 220, 18)],
 		"npcs": [
-			{"id": "carmela", "pos": Vector2(260, 980)},
+			{"id": "carmela", "pos": Vector2(450, 980)},
 			{"id": "taddeo_sanleucio", "pos": Vector2(1820, 700)},
 			{"id": "agnese", "pos": Vector2(2280, 980)},
 		],

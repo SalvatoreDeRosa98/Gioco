@@ -177,6 +177,8 @@ func select_state(player: Node, running: bool) -> void:
 		progress = player._spin_t / length
 	elif not player.grounded:
 		clip = "rise" if player.move_vel.y < 0 else "fall"
+	elif bool(player.get("crouching")):
+		clip = "crouch"
 	elif player._skid_t > 0:
 		clip = "skid"
 	elif running:

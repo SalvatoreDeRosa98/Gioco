@@ -82,8 +82,9 @@ func _process(delta: float) -> void:
 		_lesson_label.visible = world.room_index == 0 and is_instance_valid(world.introduction) and not world.is_talking()
 		if _lesson_label.visible:
 			var viewport := get_viewport_rect().size
-			_lesson_label.position = Vector2(40,viewport.y - 88)
-			_lesson_label.size = Vector2(viewport.x - 80,76)
+			var card_w := minf(760.0, viewport.x - 80.0)
+			_lesson_label.position = Vector2((viewport.x - card_w) * 0.5, 22.0)
+			_lesson_label.size = Vector2(card_w, 48.0)
 			_lesson_label.text = world.introduction.hint()
 	queue_redraw()
 
@@ -92,6 +93,11 @@ func _draw() -> void:
 	if world == null or world.room.is_empty():
 		return
 	var vp := get_viewport_rect().size
+	if _lesson_label.visible:
+		var card_w := minf(760.0, vp.x - 80.0)
+		var card := Rect2((vp.x - card_w) * 0.5 - 12.0, 16.0, card_w + 24.0, 56.0)
+		draw_rect(card, Color(0.04, 0.04, 0.07, 0.88), true)
+		draw_rect(card, Color(Art.OCRA, 0.8), false, 1.5)
 	_draw_vitals()
 	_draw_area_title(vp)
 	_draw_boss(vp)
