@@ -35,6 +35,8 @@ func _run() -> void:
 	var max_seen := 0
 	var title_seen := false
 	var name_after := false
+	var ex = world._expedition
+	var labels_after := false
 	var t0 := Time.get_ticks_msec()
 	var i := 0
 	while Time.get_ticks_msec() - t0 < 6500:  # tempo reale: tutto il titolo (4,4 s) e la dissolvenza del nome
@@ -52,9 +54,32 @@ func _run() -> void:
 				check(e.name_deferred(), "Frame %d: nome rimandato mentre c'e' il titolo" % i)
 			elif e.name_visible():
 				name_after = true
+		if showing:
+			check(not ex.labels_visible(), "Frame %d: scritte dei passaggi nascoste mentre c'e' il titolo" % i)
+		elif ex.labels_visible():
+			labels_after = true
 	check(max_seen <= 1, "Stanza 13: mai piu' di un avviso in basso (visti %d)" % max_seen)
 	check(title_seen, "Il titolo d'area e' comparso")
 	check(name_after, "Sparito il titolo, il nome del nemico compare")
+	check(labels_after, "Sparito il titolo, le scritte dei passaggi compaiono")
+	# Sfalsamento delle etichette (label_rank): name_rect_screen() segue lo stesso offset del disegno.
+	var a = elites[0]
+	var b = a.duplicate()
+	b.world = a.world
+	b._cfg = a._cfg
+	b.kind = a.kind
+	b._tex = a._tex
+	b.process_mode = Node.PROCESS_MODE_DISABLED
+	a.get_parent().add_child(b)
+	b.global_position = a.global_position + Vector2(40, 0)
+	await process_frame
+	var lower = a if a.get_instance_id() > b.get_instance_id() else b
+	check(lower.label_rank() >= 1, "Due nemici con nome vicini: uno ha rango >= 1")
+	check(is_equal_approx(lower.label_dy(), -lower.LABEL_STEP * lower.label_rank()), "label_dy() = -LABEL_STEP * label_rank()")
+	var base_y: float = (lower.get_global_transform_with_canvas() * Vector2(0, -float(lower._cfg.height) + lower.half.y - 45)).y
+	var scale_y: float = lower.get_global_transform_with_canvas().get_scale().y
+	check(is_equal_approx(lower.name_rect_screen().position.y, base_y + lower.label_dy() * scale_y), "name_rect_screen() include lo sfalsamento (%.1f vs %.1f)" % [lower.name_rect_screen().position.y, base_y + lower.label_dy() * scale_y])
+	b.queue_free()
 	DirAccess.remove_absolute("user://test-r13-save.json")
 	print("room13_text_test: ", "OK" if failures == 0 else "%d fallimenti" % failures)
 	quit(failures)

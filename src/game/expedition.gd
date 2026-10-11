@@ -26,6 +26,7 @@ func setup(owner_world: Node) -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
+	_label_a = TextDefer.step(_label_a, world, delta)
 	selected = -1
 	var nearest := float(Data.data().interaction_radius)
 	if not world.player.dead and not world.is_talking() and world.player.is_on_floor():
@@ -101,10 +102,18 @@ func _draw() -> void:
 		if i == selected:
 			var txt: String = Controls.label("interact") + "  " + str(m.label)
 			var r := label_rect(p - Vector2(0, ARCH_SPRING + ARCH_R + 60 if m.kind == "route" else 86), txt)
-			Art.text(self, Art.body_font(), r.position + Vector2(0, LABEL_SIZE), txt, LABEL_SIZE, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
+			if _label_a > 0.01:
+				Art.text(self, Art.body_font(), r.position + Vector2(0, LABEL_SIZE), txt, LABEL_SIZE, Color(Art.OCRA, _label_a), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
 
 
 const LABEL_SIZE := 19
+## Alpha delle scritte dei passaggi: nascoste col titolo d'area, poi in dissolvenza (TextDefer).
+var _label_a := 0.0
+
+
+## True se le scritte dei passaggi sono a schermo (anche solo in parte).
+func labels_visible() -> bool:
+	return _label_a > 0.01
 ## Margine dai bordi dello schermo per le scritte dei passaggi.
 const LABEL_MARGIN := 16.0
 
