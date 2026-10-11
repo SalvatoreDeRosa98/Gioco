@@ -53,6 +53,7 @@ static func apply(idx: int, r: Dictionary) -> Dictionary:
 	r["pos_alias"] = data.alias
 	r["scene"] = scene_path(idx)
 	r["props"] = data.props
+	r["route"] = data.route
 	# Ciò che un oggetto dipinto sostituisce non va più disegnato dal codice (terrain.gd, expedition.gd).
 	r["hide_doors"] = []
 	r["hidden_marks"] = []
@@ -111,7 +112,7 @@ static func read_root(root: Node) -> Dictionary:
 	var floor_y := float(root.get_meta("floor", 980.0))
 	var floor_row := roundi((floor_y - oy) / TILE)
 	var out := {"blocks": [], "ledges": [], "enemies": [], "npcs": [], "secrets": [], "landmarks": {}, "spikes": [],
-		"cracks": [], "rings": [], "vertical": [], "saves": [], "alias": {}, "floor_cells": [], "props": [],
+		"cracks": [], "rings": [], "vertical": [], "saves": [], "alias": {}, "floor_cells": [], "props": [], "route": [],
 		"art_tiles": bool(root.get_meta("art_tiles", false)), "mid_art": str(root.get_meta("mid_art", "")),
 		"mid_opts": root.get_meta("mid_opts", {})}
 	var terrain: TileMapLayer = root.get_node_or_null("Terrain")
@@ -160,6 +161,8 @@ static func read_root(root: Node) -> Dictionary:
 		if m.has_meta("need"):
 			x.need = str(m.get_meta("need"))
 		out.vertical.append(x)
+	for m in _sorted(root, "Markers/Route"):
+		out.route.append(m.position)
 	for m in _sorted(root, "Markers/Props"):
 		var p := {"kind": str(m.get_meta("kind")), "pos": m.position}
 		for k in ["side", "height", "hint", "replaces"]:

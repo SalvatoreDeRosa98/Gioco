@@ -1456,41 +1456,6 @@
         "need": "grapple"
       }
     ],
-    "12": [
-      {
-        "side": "bottom",
-        "x": 530,
-        "width": 220,
-        "target": 3,
-        "spawn": [
-          1510,
-          170
-        ]
-      },
-      {
-        "side": "top",
-        "x": 630,
-        "width": 220,
-        "target": 14,
-        "spawn": [
-          420,
-          826
-        ],
-        "need": "wall_grip"
-      }
-    ],
-    "14": [
-      {
-        "side": "bottom",
-        "x": 420,
-        "width": 220,
-        "target": 12,
-        "spawn": [
-          630,
-          180
-        ]
-      }
-    ],
     "11": [
       {
         "side": "top",
@@ -1560,42 +1525,6 @@
         -25
       ]
     ],
-    "12": [
-      [
-        600,
-        1950
-      ],
-      [
-        660,
-        1530
-      ],
-      [
-        600,
-        1110
-      ],
-      [
-        650,
-        690
-      ],
-      [
-        630,
-        270
-      ]
-    ],
-    "14": [
-      [
-        880,
-        400
-      ],
-      [
-        1850,
-        610
-      ],
-      [
-        2570,
-        470
-      ]
-    ],
     "11": [
       [
         1720,
@@ -1623,42 +1552,9 @@
         ],
         "reward": 35
       }
-    ],
-    "14": [
-      {
-        "id": "clock_wall_west",
-        "rect": [
-          1260,
-          -400,
-          60,
-          1380
-        ],
-        "reward": 10,
-        "gate": true
-      },
-      {
-        "id": "clock_wall_east",
-        "rect": [
-          1660,
-          -400,
-          60,
-          1270
-        ],
-        "reward": 10,
-        "gate": true
-      }
     ]
   },
-  "spikes": {
-    "14": [
-      [
-        1850,
-        960,
-        280,
-        20
-      ]
-    ]
-  },
+  "spikes": {},
   "ratking": {
     "hp": 32,
     "damage": 1,
@@ -1719,7 +1615,9 @@
     "5": "res://rooms/r05_fucina.tscn",
     "9": "res://rooms/r09_cisterne_reali.tscn",
     "13": "res://rooms/r13_cisterne_sepolte.tscn",
-    "15": "res://rooms/r15_tana_ratking.tscn"
+    "15": "res://rooms/r15_tana_ratking.tscn",
+    "12": "res://rooms/r12_campanile.tscn",
+    "14": "res://rooms/r14_galleria_orologi.tscn"
   },
-  "_scene_rooms_doc": "Le stanze in scene_rooms prendono geometria, nemici, segreti, punte, muri incrinati, anelli, uscite verticali e incudini dalla scena .tscn; in rooms restano nome, tema, dimensioni e pavimento (la geometria JSON di 9, 13 e 15 non è più usata)."
+  "_scene_rooms_doc": "Le stanze in scene_rooms prendono geometria, nemici, segreti, punte, muri incrinati, anelli, uscite verticali e incudini dalla scena .tscn; in rooms restano nome, tema, dimensioni e pavimento (la geometria JSON di 9, 12, 13, 14 e 15 non è più usata)."
 }

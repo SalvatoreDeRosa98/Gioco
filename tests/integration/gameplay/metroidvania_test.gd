@@ -80,14 +80,18 @@ func _run() -> void:
 	player.set_physics_process(true)
 	await create_timer(0.2).timeout
 	# Salita completa usando la fisica del giocatore, senza teletrasporto tra mensole.
-	for i in range(15):
+	# Stanza in scena: percorso a salti dai marcatori Route (tools/levels/zone2_design.gd); altrimenti JSON.
+	var route: Array = Room.build(12).get("route", [])
+	var steps: Array = route.slice(0, route.size() - 1) if not route.is_empty() else range(15).map(func(i): return Vector2(535 if i % 2 == 0 else 785, 2180 - i * 140))
+	var top: Vector2 = route[-1] if not route.is_empty() else Vector2(640, 150)
+	for i in steps.size():
 		Input.action_release("jump")
 		await create_timer(0.12).timeout
-		var point := Vector2(535 if i % 2 == 0 else 785,2180-i*140)
+		var point: Vector2 = steps[i]
 		var reached := await jump_to(point)
 		check(reached, "Campanile, mensola %d" % i)
 		if not reached: break
-	var reached_top := await jump_to(Vector2(640,150))
+	var reached_top := await jump_to(top)
 	check(reached_top, "Pianerottolo superiore del campanile raggiungibile")
 	# Tutte le aperture conducono a un punto stabile e non respingono nella stanza precedente.
 	for idx in [3,9,11,12,13,14]:
