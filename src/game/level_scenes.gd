@@ -53,6 +53,14 @@ static func apply(idx: int, r: Dictionary) -> Dictionary:
 	r["pos_alias"] = data.alias
 	r["scene"] = scene_path(idx)
 	r["props"] = data.props
+	# Ciò che un oggetto dipinto sostituisce non va più disegnato dal codice (terrain.gd, expedition.gd).
+	r["hide_doors"] = []
+	r["hidden_marks"] = []
+	for p in data.props:
+		if p.kind == "gate":
+			r.hide_doors.append(str(p.get("side", "right")))
+		for id in p.get("replaces", []):
+			r.hidden_marks.append(str(id))
 	if data.art_tiles:
 		r["tile_art"] = true
 	if data.mid_art != "":
@@ -152,7 +160,7 @@ static func read_root(root: Node) -> Dictionary:
 		out.vertical.append(x)
 	for m in _sorted(root, "Markers/Props"):
 		var p := {"kind": str(m.get_meta("kind")), "pos": m.position}
-		for k in ["side", "height", "hint"]:
+		for k in ["side", "height", "hint", "replaces"]:
 			if m.has_meta(k):
 				p[k] = m.get_meta(k)
 		out.props.append(p)

@@ -17,7 +17,7 @@ static func r9() -> Dictionary:
 		"idx": 9, "name": "Cisterne Reali", "size": Vector2(2560, 1080), "floor": 980.0, "scene_name": "R09CisterneReali",
 		"art": true, "mid_art": "res://assets/art/slice/cisterne_reali_mid.png",
 		"props": [
-			{"kind": "wheel", "pos": Vector2(1440, 404), "height": 170.0},
+			{"kind": "wheel", "pos": Vector2(1400, 404), "height": 170.0, "replaces": ["sluice"]},
 			{"kind": "gate", "pos": Vector2(2492, 980), "side": "right", "height": 250.0, "hint": "Saracinesca chiusa: gira la ruota della chiusa"},
 		],
 		"generated_by": "tools/levels/slice_design.gd",
@@ -38,7 +38,7 @@ static func r9() -> Dictionary:
 			Rect2(2240, 276, 128, 18),   # cima del camino (serve la presa dei guanti)
 		],
 		"floor_holes": [Vector2(1730, 1950)],
-		"cracks": [{"id": "cistern_entry_wall", "rect": Rect2(128, 404, 64, 192), "reward": 40, "gate": false, "hits": 2}],
+		"cracks": [{"id": "cistern_entry_wall", "rect": Rect2(128, 404, 128, 192), "reward": 40, "gate": false, "hits": 2}],
 		"exits": [{"side": "bottom", "x": 1840.0, "width": 220.0, "target": 13, "spawn": Vector2(570, 170), "need": ""}],
 		"saves": [{"pos": Vector2(260, 980), "need_clear": false}],
 		"npcs": [{"id": "cesare_cisterne", "pos": Vector2(470, 980)}],
@@ -70,7 +70,7 @@ static func r13() -> Dictionary:
 	return {
 		"idx": 13, "name": "Cisterne Sepolte", "size": Vector2(1280, 2100), "floor": 2000.0, "scene_name": "R13CisterneSepolte",
 		"art": true, "mid_art": "res://assets/art/slice/cisterne_sepolte_mid.png",
-		"props": [{"kind": "gate", "pos": Vector2(68, 2000), "side": "left", "height": 250.0, "hint": "Sbarrato dalla Tana: prima Ratking"}],
+		"props": [{"kind": "gate", "pos": Vector2(68, 2000), "side": "left", "height": 250.0, "hint": "Sbarrato dalla Tana: prima Ratking", "replaces": ["cistern_return_0"]}],
 		"generated_by": "tools/levels/slice_design.gd",
 		"blocks": [
 			Rect2(0, 1168, 448, 128),    # volta della nicchia (spessa: dalla mensola G2 non ci si sale sopra)
@@ -86,7 +86,7 @@ static func r13() -> Dictionary:
 			Rect2(896, 1712, 256, 18),   # mensola del segreto, dal muretto (+160)
 		],
 		"spikes": [Rect2(320, 1980, 128, 20)],
-		"cracks": [{"id": "cistern_wall", "rect": Rect2(192, 1296, 64, 224), "reward": 30, "gate": false, "hits": 2}],
+		"cracks": [{"id": "cistern_wall", "rect": Rect2(192, 1296, 128, 224), "reward": 30, "gate": false, "hits": 2}],
 		"rings": [Vector2(570, 1660), Vector2(670, 1320), Vector2(570, 980), Vector2(670, 640), Vector2(570, 300), Vector2(570, -25)],
 		"exits": [{"side": "top", "x": 570.0, "width": 220.0, "target": 9, "spawn": Vector2(1650, 956), "need": "grapple"}],
 		"saves": [{"pos": Vector2(860, 2000), "need_clear": true}],

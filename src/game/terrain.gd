@@ -418,10 +418,17 @@ func _draw_doors() -> void:
 	if room.is_empty():
 		return
 	var size := _size()
-	_portal(_doors, left_open, _gate_left)
-	_doors.draw_set_transform(Vector2(size.x, 0), 0.0, Vector2(-1, 1))
-	_portal(_doors, right_open, _gate_right)
-	_doors.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if draws_portal("left"):
+		_portal(_doors, left_open, _gate_left)
+	if draws_portal("right"):
+		_doors.draw_set_transform(Vector2(size.x, 0), 0.0, Vector2(-1, 1))
+		_portal(_doors, right_open, _gate_right)
+		_doors.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Falso se su quel lato c'è un cancello dipinto (room.hide_doors, da Markers/Props della scena).
+func draws_portal(side: String) -> bool:
+	return not side in room.get("hide_doors", [])
 
 
 ## Portale sul lato sinistro (il destro è disegnato specchiato): bagliore se aperto,

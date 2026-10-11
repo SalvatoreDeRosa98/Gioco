@@ -34,6 +34,14 @@ func setup(w: Node) -> void:
 		body.add_child(shape)
 		add_child(body)
 
+## Ritaglio centrale del pannello con le stesse proporzioni del rettangolo del muro.
+static func crack_region(tex: Texture2D, r: Rect2) -> Rect2:
+	var ts := Vector2(tex.get_size())
+	var aspect := r.size.x / r.size.y
+	var src := Vector2(minf(ts.x, ts.y * aspect), 0)
+	src.y = src.x / aspect
+	return Rect2((ts - src) / 2.0, src)
+
 ## 0 intatto, 1 danneggiato, 2 rotto.
 func crack_state(c: Dictionary) -> int:
 	if world.story.times_seen(c.id) > 0:
@@ -44,8 +52,8 @@ func _draw_crack_art(c: Dictionary) -> void:
 	var r := Rect2(c.rect[0], c.rect[1], c.rect[2], c.rect[3])
 	var state := crack_state(c)
 	var tex: Texture2D = CRACK_ART[state]
-	var w := r.size.y * tex.get_width() / tex.get_height()
-	draw_texture_rect(tex, Rect2(r.get_center().x - w / 2.0, r.position.y, w, r.size.y), false)
+	# Disegno = collisione: si ritaglia il centro del pannello con le proporzioni del muro, senza deformarlo.
+	draw_texture_rect_region(tex, r, crack_region(tex, r))
 	if state < 2:
 		# Leggibilità: alone ocra che pulsa finché il muro non cede.
 		var pulse := 0.25 + 0.2 * sin(Time.get_ticks_msec() * 0.004)

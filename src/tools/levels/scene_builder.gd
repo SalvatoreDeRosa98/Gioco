@@ -18,7 +18,8 @@ extends RefCounted
 ##   notes:   [{pos, text}] etichette di progetto (solo editor)
 ##   art:     true = TileSet dipinto (tufo bagnato) visibile in gioco al posto del disegno di terrain.gd
 ##   mid_art: percorso del fondale del piano medio (parallasse 0.5, game/scene_backdrop.gd)
-##   props:   [{kind: wheel|gate, pos, side?, height?, hint?}]  oggetti interattivi (game/slice_props.gd)
+##   props:   [{kind: wheel|gate, pos, side?, height?, hint?, replaces?}]  oggetti interattivi (game/slice_props.gd);
+##            replaces = id dei landmark disegnati dal codice che l'oggetto sostituisce (non vengono più disegnati)
 ##   cracks[].hits: colpi di martello per romperlo (2 = intatto -> danneggiato -> rotto)
 
 const TILE := 64
@@ -37,11 +38,14 @@ const PHYS_LEDGE := 1
 const LEDGE_THICK := 18.0
 ## TileSet dipinto (prototipo Cisterne): stessi id della riga 0 e stessi strati fisici del blockout.
 ## Riga 0: 0 muro, 1 mensola, 2 punte, 3 riferimento, 4 mensola bassa, 5 cresta (muro con la superficie).
-## Riga 1: 4 varianti di muro. Riga 2: 4 varianti di cresta. Tutte le varianti hanno collisione piena.
+## Righe 1-4: blocco di muro 4x4 continuo e ripetibile (ogni cella prende il pezzo (x%4, y%4): niente giunte).
+## Riga 5: cresta ripetibile 4x1. Tutti i pezzi hanno collisione piena.
 const ART_PNG := "res://assets/art/slice/tufo_tiles.png"
 const ART_TILESET := "res://rooms/art/tufo_tileset.tres"
 const T_CREST := 5
 const ART_VARIANTS := 4
+const ART_WALL_ROW := 1
+const ART_CREST_ROW := 5
 
 static func make_tiles_png() -> void:
 	var img := Image.create(TILE * TILE_COUNT, TILE, false, Image.FORMAT_RGBA8)
@@ -103,14 +107,14 @@ static func art_tileset() -> TileSet:
 	ts.add_source(src, 0)
 	for i in 6:
 		src.create_tile(Vector2i(i, 0))
-	for row in [1, 2]:
+	for row in range(ART_WALL_ROW, ART_CREST_ROW + 1):
 		for i in ART_VARIANTS:
 			src.create_tile(Vector2i(i, row))
 	var h := TILE / 2.0
 	var full := Rect2(-h, -h, TILE, TILE)
 	for t in [Vector2i(T_SOLID, 0), Vector2i(T_CREST, 0)]:
 		_poly_at(src, t, PHYS_SOLID, full, false)
-	for row in [1, 2]:
+	for row in range(ART_WALL_ROW, ART_CREST_ROW + 1):
 		for i in ART_VARIANTS:
 			_poly_at(src, Vector2i(i, row), PHYS_SOLID, full, false)
 	_poly(src, T_LEDGE, PHYS_LEDGE, Rect2(-h, -h, TILE, LEDGE_THICK), true)
@@ -119,15 +123,17 @@ static func art_tileset() -> TileSet:
 	ResourceSaver.save(ts, ART_TILESET)
 	return load(ART_TILESET)
 
-## Sceglie la variante dipinta di ogni cella solida: cresta se sopra è vuoto, muro altrimenti.
+## Pezzo dipinto di ogni cella solida: cresta se sopra è vuoto, altrimenti il pezzo del blocco 4x4 di muro.
 static func paint_variants(terrain: TileMapLayer) -> void:
 	var used := {}
 	for c in terrain.get_used_cells():
 		used[c] = true
 	for c in used:
-		var v := absi(c.x * 7 + c.y * 13) % ART_VARIANTS
-		var row := 1 if used.has(c + Vector2i(0, -1)) else 2
-		terrain.set_cell(c, 0, Vector2i(v, row))
+		var v := posmod(c.x, ART_VARIANTS)
+		if used.has(c + Vector2i(0, -1)):
+			terrain.set_cell(c, 0, Vector2i(v, ART_WALL_ROW + posmod(c.y, ART_VARIANTS)))
+		else:
+			terrain.set_cell(c, 0, Vector2i(v, ART_CREST_ROW))
 
 static func _poly(src: TileSetAtlasSource, tile: int, layer: int, r: Rect2, one_way: bool) -> void:
 	_poly_at(src, Vector2i(tile, 0), layer, r, one_way)
@@ -290,7 +296,7 @@ static func build(spec: Dictionary, ts: TileSet) -> Node2D:
 	i = 0
 	for p in spec.get("props", []):
 		var meta := {"order": i, "kind": str(p.kind)}
-		for k in ["side", "height", "hint"]:
+		for k in ["side", "height", "hint", "replaces"]:
 			if p.has(k):
 				meta[k] = p[k]
 		_marker(markers.get_node("Props"), "P%d_%s" % [i, p.kind], p.pos, "%s %s" % [p.kind, p.get("side", "")], Color(0.9, 0.75, 0.5), meta)
