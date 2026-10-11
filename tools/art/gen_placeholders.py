@@ -107,7 +107,7 @@ def martello(d, S):
     d.polygon([(S*.36,S*.76),(S*.42,S*.8),(S*.62,S*.44),(S*.56,S*.4)], fill=OCRA+(255,))
     d.polygon([(S*.42,S*.32),(S*.62,S*.2),(S*.76,S*.42),(S*.56,S*.54)], fill=CREMA+(255,))
 
-items = {"mappa_crepa": (48, crepa, True), "mappa_anello": (48, anello, False), "mappa_incudine": (48, incudine, True), "mappa_saracinesca": (48, saracinesca, True)}
+items = {}  # tutte le icone sono ora definitive (tools/art/gen_icons.py): qui non se ne rigenera nessuna
 # Le icone abilita_* sono definitive (tools/art/gen_icons.py): qui non si rigenerano.
 _mp = os.path.join(out, "manifest.json")
 manifest = json.load(open(_mp, encoding="utf-8")) if os.path.exists(_mp) else {"_doc": "", "placeholder": True, "icons": {}}

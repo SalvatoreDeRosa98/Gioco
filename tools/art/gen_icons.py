@@ -22,7 +22,7 @@ def noise(sigma=2.0, amt=18):
 def disc_mask(r):
     m = Image.new("L", (S, S), 0); ImageDraw.Draw(m).ellipse([C - r, C - r, C + r, C + r], fill=255); return m
 
-def medallion():
+def medallion(beads=48):
     base = radial((214, 168, 92), (92, 56, 24)) + noise(1.5, 14)[..., None]
     img = Image.fromarray(base.clip(0, 255).astype("uint8"), "RGB").convert("RGBA")
     out = Image.new("RGBA", (S, S), (0, 0, 0, 0))
@@ -32,11 +32,11 @@ def medallion():
     rim = Image.new("RGBA", (S, S)); rim.paste(img, (0, 0), disc_mask(178)); out = Image.alpha_composite(out, rim)
     d = ImageDraw.Draw(out)
     # perlinatura sul bordo
-    for i in range(48):
-        a = i / 48 * math.tau; x, y = C + 160 * math.cos(a), C + 160 * math.sin(a)
+    for i in range(beads):
+        a = i / beads * math.tau; x, y = C + 160 * math.cos(a), C + 160 * math.sin(a)
         lit = 0.5 + 0.5 * math.cos(a - math.radians(225))
         col = tuple(int(v) for v in np.array((120, 78, 34)) * (1 - lit) + np.array((250, 214, 140)) * lit)
-        d.ellipse([x - 7, y - 7, x + 7, y + 7], fill=col + (255,), outline=(70, 40, 15, 255), width=2)
+        r_ = 7 if beads >= 40 else 11; d.ellipse([x - r_, y - r_, x + r_, y + r_], fill=col + (255,), outline=(70, 40, 15, 255), width=2)
     d.ellipse([C - 147, C - 147, C + 147, C + 147], outline=(62, 36, 14, 255), width=6)
     d.ellipse([C - 141, C - 141, C + 141, C + 141], outline=(236, 196, 120, 255), width=3)
     # campo centrale patinato scuro (bronzo brunito con verderame)
@@ -92,20 +92,79 @@ def glove():
     return layers + [st]
 
 def hook():
+    """Rampino: uncino a tre punte (centrale dritta, laterali ricurve) con catena all'occhiello."""
     m = Image.new("L", (S, S), 0); d = ImageDraw.Draw(m)
-    d.rounded_rectangle([182, 118, 202, 250], 8, fill=255)  # fusto
-    d.ellipse([174, 92, 210, 128], fill=255); d.ellipse([184, 102, 200, 118], fill=0)  # occhiello
-    for sx in (-1, 1):  # punte ricurve che salgono dal piede del fusto
-        pts = [(192 + sx * 110 * math.sin(u) * 0.9, 282 - 70 * (1 - math.cos(u)) - 10 * math.sin(u)) for u in np.linspace(0, 1.45, 14)]
-        d.line(pts, fill=255, width=17, joint="curve")
-        tip = pts[-1]; d.polygon([(tip[0] - 9, tip[1] + 6), (tip[0] + 9, tip[1] + 6), (tip[0] + sx * 10, tip[1] - 26)], fill=255)
-    d.polygon([(184, 248), (200, 248), (192, 300)], fill=255)
-    d.ellipse([178, 268, 206, 296], fill=255)
+    cx, top, base = 200, 150, 268
+    d.rounded_rectangle([cx - 10, top, cx + 10, base], 6, fill=255)  # fusto
+    d.ellipse([cx - 20, top - 34, cx + 20, top + 6], fill=255); d.ellipse([cx - 9, top - 23, cx + 9, top - 5], fill=0)  # occhiello
+    d.ellipse([cx - 16, base - 14, cx + 16, base + 14], fill=255)  # nodo alla base
+    # terza punta, di scorcio verso chi guarda: corta, sale davanti al fusto (niente punta in giu' da ancora)
+    tri = [(cx + 4 * math.sin(u) * 6, base + 10 + 26 * math.sin(u) - 70 * (1 - math.cos(u))) for u in np.linspace(0, 1.6, 12)]
+    d.line(tri, fill=255, width=13, joint="curve")
+    tx, ty = tri[-1]; d.polygon([(tx - 7, ty + 6), (tx + 9, ty + 6), (tx + 3, ty - 22)], fill=255)
+    for sx in (-1, 1):  # due punte laterali che escono dalla base e si piegano in su
+        pts = [(cx + sx * (12 + 62 * math.sin(u)), base + 4 + 40 * math.sin(u) - 92 * (1 - math.cos(u)) * 0.55) for u in np.linspace(0, 1.75, 16)]
+        d.line(pts, fill=255, width=15, joint="curve")
+        tx, ty = pts[-1]; d.polygon([(tx - 8, ty + 8), (tx + 8, ty + 8), (tx + sx * 6, ty - 26)], fill=255)
     ch = Image.new("L", (S, S), 0); dc = ImageDraw.Draw(ch)
-    for i in range(5):  # catena
-        x, y = 168 - i * 14, 104 + i * 18
-        dc.ellipse([x - 9, y - 13, x + 9, y + 13] if i % 2 else [x - 13, y - 9, x + 13, y + 9], outline=255, width=6)
-    return gilded(ch, (200, 200, 196), (90, 88, 84)) + gilded(m)
+    for i in range(6):  # catena che scende a sinistra dall'occhiello, maglie alternate
+        x, y = cx - 22 - i * 17, top - 22 + i * 15
+        if i % 2: dc.ellipse([x - 7, y - 12, x + 7, y + 12], outline=255, width=5)
+        else: dc.ellipse([x - 12, y - 7, x + 12, y + 7], outline=255, width=5)
+    return gilded(ch, (206, 204, 198), (86, 84, 80)) + gilded(m, (196, 192, 184), (72, 68, 62))
+
+def crack():
+    """Muro incrinato: conci di pietra con fenditura dorata."""
+    stones = Image.new("L", (S, S), 0); d = ImageDraw.Draw(stones)
+    for row in range(4):
+        y = 104 + row * 46; off = 0 if row % 2 == 0 else 34
+        for col in range(-1, 4):
+            x = 104 + off + col * 68
+            x0_, x1_ = max(x, 96), min(x + 62, 288)
+            if x1_ > x0_: d.rectangle([x0_, y, x1_, y + 40], fill=255)
+    stones = ImageChops.multiply(stones, disc_mask(120))
+    cr = Image.new("L", (S, S), 0); dc = ImageDraw.Draw(cr)
+    pts = [(196, 92), (186, 140), (206, 176), (184, 214), (200, 252), (190, 296)]
+    dc.line(pts, fill=255, width=14, joint="curve"); dc.line([(206, 176), (240, 196), (262, 190)], fill=255, width=9); dc.line([(184, 214), (150, 232)], fill=255, width=8)
+    st = gilded(stones, (150, 132, 108), (70, 58, 44))
+    dark = Image.new("RGBA", (S, S), (20, 10, 4, 0)); dark.putalpha(cr)
+    glow = Image.new("RGBA", (S, S), (250, 200, 110, 0)); glow.putalpha(cr.filter(ImageFilter.GaussianBlur(5)).point(lambda v: v * 0.8))
+    return st + [glow, dark]
+
+def ring():
+    """Anello del rampino: grosso anello di ferro con staffa a muro."""
+    r = Image.new("L", (S, S), 0); d = ImageDraw.Draw(r)
+    d.ellipse([122, 132, 262, 272], fill=255); d.ellipse([150, 160, 234, 244], fill=0)
+    st = Image.new("L", (S, S), 0); ds = ImageDraw.Draw(st)
+    ds.rounded_rectangle([168, 92, 216, 140], 8, fill=255); ds.ellipse([184, 104, 200, 120], fill=0)
+    return gilded(st, (170, 160, 146), (70, 64, 56)) + gilded(r)
+
+def anvil():
+    """Incudine (punto di salvataggio)."""
+    m = Image.new("L", (S, S), 0); d = ImageDraw.Draw(m)
+    d.polygon([(96, 150), (150, 150), (160, 140), (286, 140), (286, 186), (250, 196), (232, 214), (152, 214), (138, 196), (112, 178)], fill=255)  # tavola con corno
+    d.polygon([(166, 214), (222, 214), (230, 256), (158, 256)], fill=255)  # collo
+    d.rounded_rectangle([128, 256, 262, 286], 6, fill=255)  # base
+    layers = gilded(m, (190, 184, 174), (64, 60, 54))
+    sp = Image.new("RGBA", (S, S), (0, 0, 0, 0)); dsp = ImageDraw.Draw(sp)
+    for a, l in ((-1.2, 40), (-0.7, 54), (-0.25, 44)):  # scintille
+        x0, y0 = 232, 128; dsp.line([x0, y0, x0 + l * math.cos(a), y0 + l * math.sin(a)], fill=(255, 214, 120, 230), width=5)
+    return layers + [sp]
+
+def portcullis():
+    """Saracinesca: grata di ferro con punte, dentro un arco di pietra."""
+    arch = Image.new("L", (S, S), 0); d = ImageDraw.Draw(arch)
+    d.rectangle([108, 160, 276, 292], fill=255); d.ellipse([108, 76, 276, 244], fill=255)
+    inner = Image.new("L", (S, S), 0); di = ImageDraw.Draw(inner)
+    di.rectangle([128, 170, 256, 292], fill=255); di.ellipse([128, 96, 256, 224], fill=255)
+    stone = ImageChops.subtract(arch, inner)
+    g = Image.new("L", (S, S), 0); dg = ImageDraw.Draw(g)
+    for x in range(140, 256, 26):
+        dg.rectangle([x, 112, x + 9, 276], fill=255); dg.polygon([(x - 3, 276), (x + 12, 276), (x + 4, 298)], fill=255)
+    for y in (150, 200, 250): dg.rectangle([132, y, 252, y + 9], fill=255)
+    g = ImageChops.multiply(g, inner.filter(ImageFilter.MaxFilter(5)))
+    hole = Image.new("RGBA", (S, S), (12, 8, 6, 0)); hole.putalpha(inner.point(lambda v: v * 0.75))
+    return [hole] + gilded(stone, (160, 142, 118), (74, 60, 46)) + gilded(g, (176, 170, 160), (60, 56, 50))
 
 def hammer():
     m = Image.new("L", (S, S), 0); d = ImageDraw.Draw(m)
@@ -118,16 +177,20 @@ def hammer():
     handle = gilded(m, (168, 110, 60), (78, 44, 18))
     return handle + gilded(hd, (176, 168, 150), (64, 58, 50))
 
-def save(name, layers):
-    img = compose(medallion(), layers).resize((96, 96), Image.LANCZOS)
+def save(name, layers, size=96):
+    img = compose(medallion(48 if size >= 96 else 28), layers).resize((size, size), Image.LANCZOS)
     os.makedirs(OUT, exist_ok=True); img.save(os.path.join(OUT, name + ".png"))
 
 save("abilita_guanti", glove())
 save("abilita_rampino", hook())
 save("abilita_martello", hammer())
-# tavola di controllo ingrandita
-sheet = Image.new("RGB", (3 * 220 + 40, 300), (222, 200, 160)); d = ImageDraw.Draw(sheet)
-for i, n in enumerate(["abilita_guanti", "abilita_rampino", "abilita_martello"]):
-    ic = Image.open(os.path.join(OUT, n + ".png")); sheet.paste(ic.resize((192, 192), Image.NEAREST), (20 + i * 220, 20), ic.resize((192, 192), Image.NEAREST))
-    sheet.paste(ic, (68 + i * 220, 200), ic)
+save("mappa_crepa", crack(), 48)
+save("mappa_anello", ring(), 48)
+save("mappa_incudine", anvil(), 48)
+save("mappa_saracinesca", portcullis(), 48)
+ALL = ["abilita_guanti", "abilita_rampino", "abilita_martello", "mappa_crepa", "mappa_anello", "mappa_incudine", "mappa_saracinesca"]
+sheet = Image.new("RGB", (7 * 170 + 20, 260), (222, 200, 160))
+for i, n in enumerate(ALL):
+    ic = Image.open(os.path.join(OUT, n + ".png")); big = ic.resize((150, 150), Image.LANCZOS)
+    sheet.paste(big, (20 + i * 170, 10), big); sheet.paste(ic, (20 + i * 170 + 75 - ic.width // 2, 170), ic)
 sheet.save(os.path.join(OUT, "_sheet.png"))

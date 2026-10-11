@@ -1,34 +1,50 @@
 {
-    "_doc":  "Icone della UI. mappa_*: SEGNAPOSTO da tools/art/gen_placeholders.py (da sostituire, stesso nome e dimensione). abilita_*: definitive 96x96 in stile carta borbonica da tools/art/gen_icons.py (non rigenerarle con gen_placeholders.py).",
-    "placeholder":  true,
+    "_doc":  "Icone della UI in stile carta borbonica (medaglione di bronzo patinato, oggetto inciso/dorato), tutte definitive e generate da tools/art/gen_icons.py: abilita_* 96x96, mappa_* 48x48. La cartella si chiama ancora \u0027segnaposto\u0027 per non rompere i percorsi.",
+    "placeholder":  false,
     "icons":  {
                   "mappa_crepa":  {
                                       "size":  [
                                                    48,
                                                    48
                                                ],
-                                      "placeholder":  true
+                                      "placeholder":  false,
+                                      "subject":  "muro incrinato con fenditura dorata",
+                                      "generator":  "tools/art/gen_icons.py",
+                                      "style":  "medaglione di bronzo patinato (carta borbonica)",
+                                      "license":  "Originale del progetto Ferruccio"
                                   },
                   "mappa_anello":  {
                                        "size":  [
                                                     48,
                                                     48
                                                 ],
-                                       "placeholder":  true
+                                       "placeholder":  false,
+                                       "subject":  "anello del rampino con staffa",
+                                       "generator":  "tools/art/gen_icons.py",
+                                       "style":  "medaglione di bronzo patinato (carta borbonica)",
+                                       "license":  "Originale del progetto Ferruccio"
                                    },
                   "mappa_incudine":  {
                                          "size":  [
                                                       48,
                                                       48
                                                   ],
-                                         "placeholder":  true
+                                         "placeholder":  false,
+                                         "subject":  "incudine con scintille",
+                                         "generator":  "tools/art/gen_icons.py",
+                                         "style":  "medaglione di bronzo patinato (carta borbonica)",
+                                         "license":  "Originale del progetto Ferruccio"
                                      },
                   "mappa_saracinesca":  {
                                             "size":  [
                                                          48,
                                                          48
                                                      ],
-                                            "placeholder":  true
+                                            "placeholder":  false,
+                                            "subject":  "saracinesca in un arco di pietra",
+                                            "generator":  "tools/art/gen_icons.py",
+                                            "style":  "medaglione di bronzo patinato (carta borbonica)",
+                                            "license":  "Originale del progetto Ferruccio"
                                         },
                   "abilita_guanti":  {
                                          "size":  [
@@ -36,8 +52,9 @@
                                                       96
                                                   ],
                                          "placeholder":  false,
+                                         "subject":  "guanti da muratore in cuoio",
                                          "generator":  "tools/art/gen_icons.py",
-                                         "style":  "medaglione di bronzo patinato, oggetto dorato inciso (carta borbonica)",
+                                         "style":  "medaglione di bronzo patinato (carta borbonica)",
                                          "license":  "Originale del progetto Ferruccio"
                                      },
                   "abilita_rampino":  {
@@ -46,8 +63,9 @@
                                                        96
                                                    ],
                                           "placeholder":  false,
+                                          "subject":  "uncino a tre punte con catena",
                                           "generator":  "tools/art/gen_icons.py",
-                                          "style":  "medaglione di bronzo patinato, oggetto dorato inciso (carta borbonica)",
+                                          "style":  "medaglione di bronzo patinato (carta borbonica)",
                                           "license":  "Originale del progetto Ferruccio"
                                       },
                   "abilita_martello":  {
@@ -56,8 +74,9 @@
                                                         96
                                                     ],
                                            "placeholder":  false,
+                                           "subject":  "martello del calcare",
                                            "generator":  "tools/art/gen_icons.py",
-                                           "style":  "medaglione di bronzo patinato, oggetto dorato inciso (carta borbonica)",
+                                           "style":  "medaglione di bronzo patinato (carta borbonica)",
                                            "license":  "Originale del progetto Ferruccio"
                                        }
               }
