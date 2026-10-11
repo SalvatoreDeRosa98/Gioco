@@ -1,6 +1,6 @@
 extends SceneTree
 ## Test d'integrazione del finale: il Custode cade subito (--boss-defeated), Gregorio parla e si
-## sceglie "Tieni la spada alzata", Violante rivela il Velo e si sceglie "Spezza il Velo"; poi si
+## sceglie "Tieni la spada alzata", Donna Luciana rivela il Velo e si sceglie "Spezza il Velo"; poi si
 ## controllano le variabili della bibbia, il viraggio verso la Libertà e la schermata finale.
 ## Uso: godot --headless --path src -s <percorso assoluto di questo file> -- --room=4 --at=900 --boss-defeated
 ## Esce con codice 0 se tutto passa, 1 altrimenti.
@@ -87,8 +87,8 @@ func _run() -> void:
 	await _close_dialogue(world)
 	_check(not world.player.is_physics_processing(), "tra un dialogo e l'altro Ferruccio resta fermo")
 
-	# Act 2: Violante.
-	_check(await _wait_until(func() -> bool: return world.is_talking(), 20000), "poi parla Violante")
+	# Act 2: Donna Luciana.
+	_check(await _wait_until(func() -> bool: return world.is_talking(), 20000), "poi parla Donna Luciana")
 	_check(world.boss() == null, "il Cavaliere Borbonico non c'è più")
 	while box._name == "" and world.is_talking():
 		await _tap("jump")

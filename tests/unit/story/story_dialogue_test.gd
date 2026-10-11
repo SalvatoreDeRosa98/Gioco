@@ -219,7 +219,7 @@ func test_dialogues_json_is_consistent() -> void:
 		var bark: Dictionary = n.get("bark", {})
 		if not bark.is_empty():
 			_check_lines(bark.get("lines", []), chars, ids, key)
-	# Finale: un epilogo, un titolo e un grading per ciascuno dei due destini di Violante.
+	# Finale: un epilogo, un titolo e un grading per ciascuno dei due destini di Donna Luciana.
 	var endings: Dictionary = (d.get("finale", {}) as Dictionary).get("endings", {})
 	for fate in Story.VARS["violante_fate"]:
 		_check(endings.has(fate), "finale: manca l'epilogo '%s'" % fate)

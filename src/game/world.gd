@@ -1464,7 +1464,7 @@ func _test_talk() -> void:
 
 # ---------------------------------------------------------------- Finale
 
-## Il Custode è caduto: invece della schermata finale parte la sequenza di Gregorio e Violante.
+## Il Custode è caduto: invece della schermata finale parte la sequenza di Gregorio e Donna Luciana.
 func _start_finale() -> void:
 	if _finale != null:
 		return

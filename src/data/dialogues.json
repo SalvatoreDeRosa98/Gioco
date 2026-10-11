@@ -67,7 +67,7 @@
 			"glow": [0.56, 0.8, 1.0]
 		},
 		"violante": {
-			"name": "Violante",
+			"name": "Donna Luciana",
 			"image": "res://assets/art/characters/violante.png",
 			"height": 118,
 			"tint": [0.62, 0.66, 0.84]
@@ -649,7 +649,7 @@
 					{"who": "taddeo", "text": "Il resto tocca a te."}
 				]},
 				{"id": "taddeo_scegli", "once": true, "when": {"agnese_memory": "sopita"}, "lines": [
-					{"who": "taddeo", "text": "Stai facendo esattamente quello che ha fatto Violante."},
+					{"who": "taddeo", "text": "Stai facendo esattamente quello che ha fatto Donna Luciana."},
 					{"who": "taddeo", "text": "Stai scegliendo al posto suo."},
 					{"text": "Ferruccio abbassa lo sguardo."}
 				]},

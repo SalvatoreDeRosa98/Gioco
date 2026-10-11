@@ -123,7 +123,7 @@ const ROOMS := [
 		"floor": 980.0,
 		"blocks": [],
 		"ledges": [Rect2(300, 860, 240, 18), Rect2(1380, 860, 240, 18), Rect2(540, 740, 220, 18), Rect2(1160, 740, 220, 18), Rect2(820, 620, 280, 18)],
-		# Violante osserva dall'alto e canta la filastrocca, poi sparisce: nessun dialogo prima del boss.
+		# Donna Luciana osserva dall'alto e canta la filastrocca, poi sparisce: nessun dialogo prima del boss.
 		"npcs": [
 			{"id": "violante_balcone", "pos": Vector2(1560, 770)},
 		],

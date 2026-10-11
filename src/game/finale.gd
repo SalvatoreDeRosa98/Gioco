@@ -1,7 +1,7 @@
 extends Node2D
-## Finale della campagna (bibbia §VII Gregorio, §VIII Violante, §XVI conclusione, §XVII stato del mondo).
+## Finale della campagna (bibbia §VII Gregorio, §VIII Donna Luciana, §XVI conclusione, §XVII stato del mondo).
 ## Dopo la sconfitta del Custode: Gregorio cade in ginocchio e parla (scelta gregorio_mercy), la sua
-## anima sale; Violante scende con i fili d'oro e rivela il Velo (scelta violante_fate); il colore del
+## anima sale; Donna Luciana scende con i fili d'oro e rivela il Velo (scelta violante_fate); il colore del
 ## mondo cambia secondo la scelta, breve epilogo con le voci della città, poi la schermata finale.
 ## È una sequenza a passi aggiornata in _process (niente await): uscire al menu a metà non lascia
 ## nulla in sospeso. Testi, tempi e grading in data/dialogues.json ("finale" e "npcs").
@@ -133,7 +133,7 @@ func _next(wait: float) -> void:
 	_t = wait
 
 
-## Violante scende oltre Gregorio (Ferruccio, Gregorio, Violante); se non c'è spazio, dall'altra parte.
+## Donna Luciana scende oltre Gregorio (Ferruccio, Gregorio, Donna Luciana); se non c'è spazio, dall'altra parte.
 func _violante_spot() -> Vector2:
 	var size: Vector2 = world.room["size"]
 	var d := float(_cfg.get("violante_distance", 190.0))
@@ -199,7 +199,7 @@ func _update_grade(delta: float) -> void:
 		_grade_t = -1.0
 
 
-## Fili d'oro dalle mani di Violante verso le strade (additivi). Spezzati se il Velo cade,
+## Fili d'oro dalle mani di Donna Luciana verso le strade (additivi). Spezzati se il Velo cade,
 ## più fitti e luminosi se viene ricucito.
 func _draw() -> void:
 	if _threads_mode == "" or _violante == null:
@@ -210,7 +210,7 @@ func _draw() -> void:
 	for i in _threads.size():
 		var th: Dictionary = _threads[i]
 		if not snap and _threads_mode != "bind" and i % 3 == 2:
-			continue  # i fili in più compaiono solo quando Violante ricuce il Velo
+			continue  # i fili in più compaiono solo quando Donna Luciana ricuce il Velo
 		var dir := Vector2.from_angle(float(th["a"]))
 		var target: Vector2 = _hand + dir * float(th["len"])
 		var grow := clampf(_threads_k * 1.4 - float(th["delay"]), 0.0, 1.0)
