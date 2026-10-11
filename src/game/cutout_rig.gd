@@ -63,6 +63,9 @@ var _scarf_sprites: Array[Sprite2D] = []
 var _frame_clips: Dictionary = {}
 var _frame_sprite: Sprite2D
 var _frame_textures := {}
+var _layer: CanvasLayer
+var _proxy: Node2D
+var _outline: CanvasGroup
 
 
 func _ready() -> void:
@@ -73,7 +76,36 @@ func _ready() -> void:
 	_spin_node = Node2D.new()
 	_spin_node.position = Vector2(0, -SPIN_CENTER * _factor)
 	_spin_node.use_parent_material = true
-	add_child(_spin_node)
+	var holder: Node = self
+	# Rig v2: la figura vive in un CanvasLayer sopra il color grading a schermo intero (layer 5
+	# di world.gd), così non prende la dominante d'area; il layer segue la camera e un nodo
+	# "proxy" copia trasformazione, visibilità e trasparenza del rig ogni fotogramma.
+	if int(_rig.get("own_layer", 0)) > 0:
+		_layer = CanvasLayer.new()
+		_layer.layer = int(_rig.own_layer)
+		_layer.follow_viewport_enabled = true
+		add_child(_layer)
+		_proxy = Node2D.new()
+		_proxy.name = "Proxy"
+		_proxy.texture_filter = texture_filter
+		_layer.add_child(_proxy)
+		holder = _proxy
+	# Contorno, livelli e rim light (CanvasGroup con canvas_rig_outline_v2.gdshader). Il contorno
+	# di player.gd (feat/ui-audio) avvolge il rig, ma con own_layer resta vuoto: nessun doppione.
+	if _rig.has("outline"):
+		var cfg: Dictionary = _rig.outline
+		_outline = CanvasGroup.new()
+		_outline.name = "Outline"
+		_outline.fit_margin = 12.0
+		var mat := ShaderMaterial.new()
+		mat.shader = preload("res://game/shaders/canvas_rig_outline_v2.gdshader")
+		for key in cfg:
+			var v = cfg[key]
+			mat.set_shader_parameter(key, Color(str(v)) if v is String else (Vector2(v[0], v[1]) if v is Array else float(v)))
+		_outline.material = mat
+		holder.add_child(_outline)
+		holder = _outline
+	holder.add_child(_spin_node)
 	_body = Node2D.new()
 	_body.position = Vector2(0, SPIN_CENTER * _factor)
 	_body.scale = Vector2.ONE * _factor
@@ -249,11 +281,16 @@ func advance(delta: float, velocity: Vector2) -> void:
 	_update_scarf(delta)
 	_apply(pose)
 	_update_frames(t, float(cfg.length))
+	_sync_proxy()
 	scale.x = facing
 	_spin_node.rotation = spin
 	_body.scale = Vector2(_factor * (1.0 - _squash * 0.6), _factor * (1.0 + _squash))
 	var lift := float(_rig.get("brightness", 1.0))
-	_body.modulate = (Color.WHITE * Color(lift, lift, lift)).lerp(ambient, ambient_amount * 0.5).lerp(Color(1.8, 1.8, 1.8), flash)
+	var base := (Color.WHITE * Color(lift, lift, lift)).lerp(ambient, ambient_amount * 0.5)
+	if _layer:
+		# Fuori dal grading e senza tinta d'area: bianco pulito con un filo di calore (§3.1).
+		base = Color(1.06, 1.05, 1.02)
+	_body.modulate = base.lerp(Color(1.8, 1.8, 1.8), flash)
 	if _frame_sprite and _frame_sprite.visible:
 		_frame_sprite.modulate = _body.modulate
 		var k: float = _factor * float(_frame_clips[_clip].canvas_per_px)
@@ -282,6 +319,23 @@ func _update_frames(t: float, length: float) -> void:
 	_frame_sprite.region_rect = Rect2(f[0], f[1], f[2], f[3])
 	_frame_sprite.offset = Vector2(-float(f[4]), -float(f[5]))
 	_frame_sprite.position = _body.position
+
+
+## Il proxy nel CanvasLayer riproduce posizione, flip, visibilità e trasparenza del rig;
+## il rim light segue il lato di spalle (si inverte col flip).
+func _sync_proxy() -> void:
+	if _outline and _outline.material:
+		_outline.material.set_shader_parameter("rim_dir", Vector2(-facing, -0.4))
+	if _proxy == null:
+		return
+	_proxy.global_transform = global_transform
+	_proxy.visible = is_visible_in_tree()
+	var m := Color.WHITE
+	var n: Node = self
+	while n is CanvasItem:
+		m *= (n as CanvasItem).modulate * ((n as CanvasItem).self_modulate if n == self else Color.WHITE)
+		n = n.get_parent()
+	_proxy.modulate = m
 
 
 ## Clip mostrata a fotogrammi interi (per test e strumenti).

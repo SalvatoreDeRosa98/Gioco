@@ -24,8 +24,14 @@ func _run() -> void:
 	var rig = p._rig
 	check(rig.rig_path == str(T.player.rig_dir), "Il rig v2 viene dal tuning (%s)" % rig.rig_path)
 	# Altezza a schermo: unità del mondo x zoom della camera x (1080 / altezza della finestra)
-	var px: float = rig.height * Room.CAMERA_ZOOM * 1080.0 / float(ProjectSettings.get_setting("display/window/size/viewport_height"))
-	check(px >= 140.0 and px <= 160.0, "Ferruccio alto %.0f px a 1080p (140-160)" % px)
+	# Misura con lo zoom 1.6 della camera di feat/ui-audio (lo zoom di riferimento del gioco).
+	const UI_ZOOM := 1.6
+	var px: float = rig.height * UI_ZOOM * 1080.0 / float(ProjectSettings.get_setting("display/window/size/viewport_height"))
+	check(px >= 140.0 and px <= 160.0, "Ferruccio alto %.0f px a 1080p con zoom 1.6 (140-160)" % px)
+	check(rig._outline != null and rig._outline.material != null, "Contorno v2 (shader §3.4) attivo")
+	check(rig._layer != null and rig._layer.layer > 5 and rig._layer.follow_viewport_enabled, "Ferruccio sopra il color grading (layer %d), segue la camera" % (rig._layer.layer if rig._layer else -1))
+	rig.advance(0.016, Vector2.ZERO)
+	check(rig._proxy.global_position.is_equal_approx(rig.global_position), "Il proxy segue il rig")
 	# Tutte le clip si applicano senza errori; corsa e colpi usano i fotogrammi disegnati.
 	var clips: Dictionary = rig._clips
 	check(clips.size() >= 17, "Almeno 17 clip (%d)" % clips.size())

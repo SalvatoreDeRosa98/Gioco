@@ -158,7 +158,7 @@
 		"floor": {"reflect": 1.1, "wet": 0.4, "depth": 90, "tint": "#ffe6d6", "splashes": 2.4, "rings": 1.3}
 	},
 	"giardino": {
-		"terrain_tint": "#c2d0c4",
+		"terrain_tint": "#8e9a92",
 		"layers": [
 			{
 				"tex": "giardino/far.png",
@@ -181,7 +181,7 @@
 					"rise_len": 380
 				}
 			},
-			{"tex": "giardino/mid.png", "scroll": 0.5, "scale": 0.52, "ground": 820, "z": -30, "tint": "#7c8a98", "haze": 0.1, "blur": 0.3, "fill": "#151a1e"},
+			{"tex": "giardino/mid.png", "scroll": 0.5, "scale": 0.52, "ground": 820, "z": -30, "tint": "#5e6a72", "haze": 0.22, "blur": 0.3, "fill": "#151a1e"},
 			{"tex": "giardino/fg.png", "scroll": 0.82, "scale": 0.34, "ground": 960, "rows": [640, 1008], "z": -18, "tint": "#0d1612", "haze": 0.2, "blur": 1.4, "flip": true},
 			{"tex": "giardino/fg.png", "scroll": 1.3, "scale": 0.5, "anchor": "top", "rows": [0, 280], "offset_y": -30, "z": 40, "tint": "#40504a", "blur": 0.6},
 			{"tex": "giardino/fg.png", "scroll": 1.3, "scale": 0.36, "ground": 750, "rows": [680, 1008], "z": 40, "tint": "#202a26", "blur": 0.8}

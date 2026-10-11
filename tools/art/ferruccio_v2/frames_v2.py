@@ -50,12 +50,14 @@ def cut_sheet(fname,n,out,ref_height=1004*0.95,mult=0.5):
         img=img.crop((x0,y0,x1,y1)).resize((round((x1-x0)*S),round((y1-y0)*S)),Image.LANCZOS)
         imgs.append(img); meta.append((ax-x0)*S)
     # atlante in fila
-    Wt=sum(i.width for i in imgs)+4*len(imgs); Ht=max(i.height for i in imgs)
+    # 4 px di margine trasparente attorno a ogni fotogramma (il contorno dello shader non si taglia)
+    M=4
+    Wt=sum(i.width+2*M for i in imgs); Ht=max(i.height for i in imgs)+2*M
     sheet=Image.new('RGBA',(Wt,Ht),(0,0,0,0)); x=0; rects=[]
     for img,ax in zip(imgs,meta):
-        sheet.alpha_composite(img,(x,Ht-img.height))
-        rects.append([x,Ht-img.height,img.width,img.height,round(ax,1),img.height])
-        x+=img.width+4
+        sheet.alpha_composite(img,(x+M,Ht-M-img.height))
+        rects.append([x,Ht-2*M-img.height,img.width+2*M,img.height+2*M,round(ax+M,1),img.height+M])
+        x+=img.width+2*M
     sheet.save(OUT+out+'.png')
     print(out,sheet.size,'scala tela/atlante',round(1/mult,3))
     return {"atlas":out+".png","canvas_per_px":1/mult,"frames":rects}
