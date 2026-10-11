@@ -18,32 +18,36 @@ static func r12() -> Dictionary:
 	# Due segreti: nicchia murata a sinistra (martello) e nido in alto a destra (rampino o guanti).
 	var left := 320.0
 	var right := 576.0
-	var lys := [1948.0, 1692.0, 1436.0, 1180.0, 924.0, 668.0, 412.0]
+	var lys := [1948.0, 1692.0, 1436.0, 1180.0, 924.0, 668.0]
 	var rys := [2076.0, 1820.0, 1564.0, 1308.0, 1052.0, 796.0, 540.0]
 	var ledges: Array = [Rect2(384, 2204, 192, 18)]   # L0: sopra il varco, qui si arriva dal Belvedere
 	for y in lys:
 		ledges.append(Rect2(left, y, 256, 18))
 	for y in rys:
 		ledges.append(Rect2(right, y, 256, 18))
-	ledges.append(Rect2(576, 284, 192, 18))           # pianerottolo delle campane (sotto l'uscita in alto)
+	ledges.append(Rect2(576, 412, 192, 18))           # pianerottolo delle campane, fondo del camino d'uscita
 	ledges.append(Rect2(1088, 284, 192, 18))          # nido segreto (anello o guanti)
 	# Percorso a salti usato dai test fisici (centro della mensola, y del piano).
 	var route: Array = [Vector2(480, 2204)]
-	for i in 14:
+	for i in 13:
 		route.append(Vector2(704, rys[i / 2]) if i % 2 == 0 else Vector2(448, lys[i / 2]))
-	route.append(Vector2(672, 284))
+	route.append(Vector2(672, 412))
 	return {
 		"idx": 12, "name": "Campanile delle Voci", "size": Vector2(1280, 2400), "floor": 2300.0, "scene_name": "R12Campanile",
 		"generated_by": "tools/levels/zone2_design.gd",
-		"mid_art": "res://assets/art/areas/espansione/campanile.png", "mid_opts": {"dim": 0.7},
+		"mid_art": "res://assets/art/areas/espansione/campanile.png", "mid_opts": {"dim": 0.5},
 		"blocks": [
 			Rect2(0, 1148, 320, 64),     # pavimento della nicchia murata
 			Rect2(0, 892, 320, 64),      # volta della nicchia
+			Rect2(512, 60, 64, 256),     # camino dell'uscita: parete sinistra
+			Rect2(768, 60, 64, 256),     # camino dell'uscita: parete destra
 		],
+		# Coi guanti si sale solo il camino dell'uscita: dal pianerottolo (412) col salto non si esce.
+		"climb": [Rect2(512, 60, 64, 256), Rect2(768, 60, 64, 256)],
 		"ledges": ledges,
 		"floor_holes": [Vector2(320, 640)],
 		"cracks": [{"id": "bell_niche_wall", "rect": Rect2(256, 956, 64, 192), "reward": 30, "gate": false}],
-		"rings": [Vector2(1060, 362)],
+		"rings": [Vector2(1080, 420)],
 		"exits": [
 			{"side": "bottom", "x": 530.0, "width": 220.0, "target": 3, "spawn": Vector2(1510, 170), "need": ""},
 			{"side": "top", "x": 630.0, "width": 220.0, "target": 14, "spawn": Vector2(420, 826), "need": "wall_grip"},
@@ -58,7 +62,7 @@ static func r12() -> Dictionary:
 			{"type": "vespa", "pos": Vector2(980, 700)},
 		],
 		"secrets": [Vector2(128, 1120), Vector2(1184, 256)],
-		"landmarks": [{"index": 0, "id": "bells", "label": "campane (sigillo)", "pos": Vector2(700, 284)}],
+		"landmarks": [{"index": 0, "id": "bells", "label": "campane (sigillo)", "pos": Vector2(700, 412)}],
 		"route": route,
 		"notes": [
 			{"pos": Vector2(330, 2260), "text": "Dal Belvedere (rampino)"},
@@ -97,7 +101,7 @@ static func r14() -> Dictionary:
 			{"id": "clock_wall_east", "rect": Rect2(1660, -400, 60, 1270), "reward": 10, "gate": true},
 		],
 		"rings": [Vector2(1024, 520), Vector2(2640, 560)],
-		"exits": [{"side": "bottom", "x": 420.0, "width": 220.0, "target": 12, "spawn": Vector2(640, 250), "need": ""}],
+		"exits": [{"side": "bottom", "x": 420.0, "width": 220.0, "target": 12, "spawn": Vector2(672, 380), "need": ""}],
 		"saves": [{"pos": Vector2(3000, 980), "need_clear": false}],
 		"enemies": [
 			{"type": "guardia", "pos": Vector2(800, 946)},

@@ -16,6 +16,14 @@ var room_size := Vector2(1280, 720)
 var floor_y := 980.0
 var opts: Dictionary = {}
 var beam: Node2D
+## Alone dietro al Lanterniere: banda di luce fredda sul fondale lungo la sua zona (spawn ± HALO_W),
+## così la sagoma scura si stacca dal fondo scuro. Non tocca il nemico né la lanterna.
+const HALO_TYPES := ["lanterniere"]
+const HALO_W := 300.0
+const HALO_H := 190.0
+const HALO_COLOR := Color("#8fa6c4")
+var halos: Array = []
+var halo: Node2D
 
 func setup(room: Dictionary) -> void:
 	texture = load(str(room.mid_art))
@@ -24,6 +32,17 @@ func setup(room: Dictionary) -> void:
 	opts = room.get("mid_opts", {})
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	z_index = -15
+	for e in room.get("enemies", []):
+		if str(e.type) in HALO_TYPES:
+			halos.append(Vector2(e.pos[0], e.pos[1]))
+	if not halos.is_empty():
+		halo = Node2D.new()
+		halo.name = "LanternHalo"
+		var hm := CanvasItemMaterial.new()
+		hm.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		halo.material = hm
+		halo.draw.connect(_draw_halos)
+		add_child(halo)
 	if opts.has("light"):
 		beam = Node2D.new()
 		beam.name = "Moonbeam"
@@ -59,6 +78,8 @@ func _process(_delta: float) -> void:
 	queue_redraw()
 	if beam:
 		beam.queue_redraw()
+	if halo:
+		halo.queue_redraw()
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2(-400, -400), room_size + Vector2(800, 800)), SHADE)
@@ -68,6 +89,17 @@ func _draw() -> void:
 	var view := get_viewport_rect().size / cam.zoom
 	var dim := float(opts.get("dim", 1.0))
 	draw_texture_rect(texture, image_rect(cam.get_screen_center_position() - view / 2.0, view), false, Color(dim, dim, dim))
+
+## Ellissi concentriche a bassa opacità (additive): più chiaro al centro, sfuma ai bordi.
+## Centro 40 px sopra i piedi (busto); la parte bassa resta sul pavimento.
+func _draw_halos() -> void:
+	for p: Vector2 in halos:
+		var c := p + Vector2(0, -40)
+		for i in 10:
+			var k := 1.0 - float(i) / 10.0
+			halo.draw_set_transform(c, 0.0, Vector2(1.0, HALO_H / HALO_W))
+			halo.draw_circle(Vector2.ZERO, HALO_W * k, Color(HALO_COLOR, 0.035))
+		halo.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_beam() -> void:
 	var l: Dictionary = opts.light

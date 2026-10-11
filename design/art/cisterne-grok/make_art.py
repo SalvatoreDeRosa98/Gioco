@@ -39,14 +39,20 @@ atlas.paste(wall,(0,T))          # righe 1-4: blocco di muro 4x4
 atlas.paste(crest,(0,5*T))       # riga 5: cresta 4x1
 atlas.save(f'{OUT}/tufo_tiles.png')
 
-def mid(img, name, crop=None):
+def mid(img, name, crop=None, cover=None):
     im=Image.open(f'{SRC}/{img}').convert('RGB')
     if crop: im=im.crop(crop)
+    if cover:
+        # Copre una parte dipinta con la porzione alla sua sinistra (bordi sfumati): es. ruota e chiusa del
+        # fondale 04, che in scena sono già oggetti interattivi (sarebbero doppioni).
+        x0,y0,x1,y1=cover; w=x1-x0; h=y1-y0
+        m=Image.new('L',(w,h),0); m.paste(255,(40,40,w-40,h-40)); m=m.filter(ImageFilter.GaussianBlur(28))
+        im.paste(im.crop((x0-w,y0,x0,y1)),(x0,y0),m)
     im=ImageEnhance.Color(im).enhance(0.55)   # desaturato
     im=ImageEnhance.Brightness(im).enhance(0.6)  # scurito: piano medio dietro al gioco
     im=ImageEnhance.Contrast(im).enhance(0.85)
     im.save(f'{OUT}/{name}.png')
-mid('04-cisterne-reali-mid.jpg','cisterne_reali_mid',(0,0,2128,660))  # via la fascia grigia
+mid('04-cisterne-reali-mid.jpg','cisterne_reali_mid',(0,0,2128,660),cover=(1060,170,1580,560))  # via la fascia grigia, la ruota e la chiusa dipinte
 mid('09-cisterne-sepolte-mid.jpg','cisterne_sepolte_mid')
 mid('10-tana-ratking-mid.jpg','tana_ratking_mid')
 

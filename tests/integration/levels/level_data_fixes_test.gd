@@ -44,7 +44,9 @@ func _run() -> void:
 	for e in get_nodes_in_group("enemies"):
 		e.queue_free()
 	# Stanza 13 a due ondate (feat/gameplay): si scarta anche la seconda ondata in attesa.
-	world.pending_wave.clear()
+	# Su feat/levels le ondate non ci sono ancora (world.gd di feat/gameplay): solo se presenti.
+	if "pending_wave" in world:
+		world.pending_wave.clear()
 	await process_frame
 	world._room_t = 1
 	world._check_cleared()

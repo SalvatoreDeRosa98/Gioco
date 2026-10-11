@@ -610,7 +610,7 @@ func bounce() -> void:
 func _update_tools(delta: float, axis: float, jump_pressed: bool) -> void:
 	if world == null:
 		return
-	wall_gripping = world.upgrades.has("wall_grip") and is_on_wall() and not is_on_floor() and axis != 0
+	wall_gripping = world.upgrades.has("wall_grip") and is_on_wall() and not is_on_floor() and axis != 0 and world.can_grip(position, get_wall_normal())
 	if wall_gripping:
 		velocity.y = minf(velocity.y, float(_cfg.wall_slide_speed))
 		if jump_pressed:
