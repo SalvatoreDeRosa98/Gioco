@@ -89,12 +89,12 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	world._map.toggle()
-	# --- 5. Suoni segnaposto
+	# --- 5. Suoni (ex segnaposto, ora definitivi con licenza)
 	var audio = root.get_node("Audio")
 	for id in ["incudine_salva", "boss_preavviso", "ratking_preavviso"]:
 		var e: Dictionary = audio.config.sfx.get(id, {})
-		check(bool(e.get("todo", false)), id + " registrato con flag todo")
-		check(not e.is_empty() and ResourceLoader.exists("res://assets/audio/" + str(e.files[0])), id + " ha il file segnaposto")
+		check(not bool(e.get("todo", false)) and str(e.get("license", "")) != "", id + " definitivo e con licenza")
+		check(not e.is_empty() and ResourceLoader.exists("res://assets/audio/" + str(e.files[0])), id + " ha il suo file")
 	# --- 3. Titolo
 	main._return_to_menu()
 	main.show_title()

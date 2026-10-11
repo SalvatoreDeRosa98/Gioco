@@ -186,6 +186,7 @@ func _enter(state: String, seconds: float) -> void:
 func _call_rats() -> void:
 	# Tetto ai ratti vivi: ne evoca solo quanti mancano al massimo della fase.
 	var count := mini(int(v("rats_per_call")), int(v("max_rats_alive")) - rats_alive())
+	Audio.sfx("ratti")
 	for i in maxi(0, count):
 		var rat := preload("res://game/rat_swarm.gd").new()
 		rat.setup(Vector2(position.x - facing * i * float(_cfg.rat_spacing), float(world.room.floor) - 13), facing, float(_cfg.rat_speed), float(i) * float(_cfg.rat_stagger), world)

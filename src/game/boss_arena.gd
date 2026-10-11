@@ -32,6 +32,8 @@ func activate() -> void:
 	# Inquadratura di tutta l'arena con Ferruccio il piu' grande possibile (tuning.json, "arena").
 	_camera = ArenaCamera.enter(self, world.player._cam, Tuning.data.arena)
 	world.player.add_trauma(0.6)
+	# Tema del Cavaliere quando l'arena si chiude (audio.json, area "boss_cavaliere").
+	Audio.play_area("boss_cavaliere")
 	world._hud.area_title("L'arena del Cavaliere Borbonico", "Il Cortile chiude le sue porte")
 	var tween := create_tween()
 	tween.tween_property(world._backdrop, "modulate", Color(0.6,0.48,0.7), float(Tuning.data.arena.transition_time))
