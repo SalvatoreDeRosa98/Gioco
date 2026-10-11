@@ -23,7 +23,12 @@ var _clock := 0.0
 
 func _ready() -> void:
 	var rigs: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/npc_cutouts.json"))
-	if kind == "lanterniere":
+	var lv2: Dictionary = Tuning.data.get("lanterniere", {})
+	if kind == "lanterniere" and bool(lv2.get("art_v2", false)):
+		# Prototipo a fotogrammi (enemies_v2); il pupazzo dipinto resta come ripiego.
+		_rig = preload("res://game/frame_puppet.gd").new()
+		_rig.setup(str(lv2.art_v2_sheet), float(lv2.art_v2_height))
+	elif kind == "lanterniere":
 		var puppets: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/npc_puppets.json"))
 		_rig = preload("res://game/npc_painted_puppet.gd").new()
 		_rig.setup(puppets.lanterniere,float(_cfg.height))

@@ -524,8 +524,8 @@
   "outline_color": "0d0e11",
   "outline_px": 3.0,
   "rim_color": "ffe6b0",
-  "rim_px": 2.0,
-  "rim_strength": 0.7,
+  "rim_px": 3.0,
+  "rim_strength": 0.85,
   "white_point": 0.82,
   "highlight_desat": 0.65
  },
