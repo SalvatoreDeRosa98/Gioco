@@ -90,6 +90,9 @@ var _run_amount := 0.0
 var _last_step := 0
 ## Schiacciamento extra (frazione d'altezza, < 0 schiaccia) che torna a zero da sé.
 var _squash := 0.0
+## Secondi dalla morte: per il primo secondo Ferruccio a terra resta pieno (contorno e rim
+## leggibili sui fondi scuri), poi scende piano fino a 0,6 di alfa, mai sotto.
+var _dead_t := 0.0
 var _ghost_t := 0.0
 var _flash := 0.0
 # Il corpo si muove a passi di fisica; il disegno sta tra l'ultimo passo e il precedente, così
@@ -123,6 +126,11 @@ func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_rig = CutoutRig.new()
 	_rig.height = float(_cfg.get("figure_height", FIGURE_HEIGHT))
+	# Altezza a schermo fissa (px a 1080p) qualunque sia lo zoom della camera della stanza:
+	# la scala non dipende più dal merge con ui-audio (zoom 1.25 -> 1.6).
+	if _cfg.has("figure_screen_px"):
+		var vh := float(ProjectSettings.get_setting("display/window/size/viewport_height", 720))
+		_rig.height = float(_cfg.figure_screen_px) / (Room.CAMERA_ZOOM * 1080.0 / vh)
 	var rig_dir := str(_cfg.get("rig_dir", ""))
 	if rig_dir != "" and FileAccess.file_exists(rig_dir + "rig.json"):
 		_rig.rig_path = rig_dir
@@ -403,7 +411,9 @@ func _process(delta: float) -> void:
 	# Lampeggia mentre è invulnerabile dopo un colpo, come in Hollow Knight.
 	var blink := float(_cfg.get("hurt_blink_period", 0.12))
 	var blinking := iframes > 0.0 and not dead and fmod(iframes, blink) < blink * 0.5
-	_rig.modulate.a = 0.35 if dead else (0.45 if blinking else 1.0)
+	_dead_t = _dead_t + delta if dead else 0.0
+	var dead_a := 1.0 - 0.4 * clampf((_dead_t - 1.0) / 0.5, 0.0, 1.0)
+	_rig.modulate.a = dead_a if dead else (0.45 if blinking else 1.0)
 	_rig.advance(delta, v)
 
 	if dashing and not dead:
