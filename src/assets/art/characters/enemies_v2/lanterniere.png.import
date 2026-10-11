@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://5qw1kkc0b7wj"
-path="res://.godot/imported/ratking.png-bac05bd8584ecf5b38724522330995e8.ctex"
+uid="uid://c133ix4c736rg"
+path="res://.godot/imported/lanterniere.png-37446d91c42cdc0be55f7b9e7824c56e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/npc_puppets/ratking.png"
-dest_files=["res://.godot/imported/ratking.png-bac05bd8584ecf5b38724522330995e8.ctex"]
+source_file="res://assets/art/characters/enemies_v2/lanterniere.png"
+dest_files=["res://.godot/imported/lanterniere.png-37446d91c42cdc0be55f7b9e7824c56e.ctex"]
 
 [params]
 

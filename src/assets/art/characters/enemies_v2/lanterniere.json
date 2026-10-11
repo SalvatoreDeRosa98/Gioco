@@ -1,0 +1,69 @@
+{
+ "_doc": "Prototipo a fotogrammi interi (tools/art/enemies_v2/pack_proto.py). height_px = altezza a schermo della posa idle a 1080p; margin = pixel trasparenti attorno a ogni fotogramma; faces = verso in cui guarda il disegno (1 destra, -1 sinistra).",
+ "height_px": 140,
+ "idle_px": 280,
+ "margin": 4,
+ "faces": -1,
+ "frames": {
+  "idle": [
+   0,
+   27,
+   120,
+   288
+  ],
+  "walk1": [
+   120,
+   27,
+   120,
+   288
+  ],
+  "walk2": [
+   240,
+   28,
+   125,
+   287
+  ],
+  "walk3": [
+   365,
+   27,
+   107,
+   288
+  ],
+  "walk4": [
+   472,
+   26,
+   121,
+   289
+  ],
+  "walk5": [
+   593,
+   27,
+   118,
+   288
+  ],
+  "windup": [
+   711,
+   61,
+   131,
+   254
+  ],
+  "strike": [
+   842,
+   0,
+   134,
+   315
+  ],
+  "hit": [
+   976,
+   111,
+   171,
+   204
+  ],
+  "death": [
+   1147,
+   220,
+   122,
+   95
+  ]
+ }
+}

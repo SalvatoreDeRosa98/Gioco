@@ -778,6 +778,7 @@
           ]
         },
         {
+          "wave": 2,
           "type": "lanterniere",
           "pos": [
             1060,
@@ -785,6 +786,7 @@
           ]
         },
         {
+          "wave": 2,
           "type": "gatto",
           "pos": [
             940,
@@ -792,6 +794,7 @@
           ]
         },
         {
+          "wave": 2,
           "type": "vespa",
           "pos": [
             560,
@@ -1423,7 +1426,7 @@
       "reach": 110,
       "damage": 1,
       "coins": 8,
-      "image": "res://assets/art/characters/npc_puppets/lanterniere.png",
+      "image": "res://assets/art/characters/npc_puppets/legacy/lanterniere.png",
       "height": 125,
       "name": "Lanterniere del Velo",
       "rig": "lanterniere"

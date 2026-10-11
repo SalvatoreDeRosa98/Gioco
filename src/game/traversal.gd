@@ -5,6 +5,8 @@ var world: Node
 var rings: Array = []
 var cracks: Array = []
 var spikes: Array = []
+## Anelli-presagio (tuning ratking.omen_ring): solo disegnati, mai in `rings`, quindi non agganciabili.
+var omen_rings: Array = []
 var _hammer_cd := 0.0
 var _hammer_pending := false
 ## Pausa tra due avvisi "Serve il martello" quando Ferruccio tocca un muro incrinato senza martello.
@@ -17,6 +19,8 @@ func setup(w: Node) -> void:
 	rings = Data.data().get("rings", {}).get(key, [])
 	cracks = Data.data().get("cracks", {}).get(key, [])
 	spikes = Data.data().get("spikes", {}).get(key, [])
+	var omen: Dictionary = Tuning.data.ratking.get("omen_ring", {})
+	omen_rings = [omen.pos] if str(int(omen.get("room", -1))) == key else []
 	z_index = 7
 	for c in cracks:
 		if w.story.times_seen(c.id) > 0:
@@ -105,6 +109,14 @@ func _draw() -> void:
 		draw_arc(p, 12, 0, PI, 16, Color("#78654b"), 2, true)
 		if world.upgrades.has("grapple") and p.distance_to(world.player.position) < float(Tuning.data.player.grapple_range):
 			draw_arc(p, 17, 0, TAU, 24, Color(Art.CREMA, 0.25), 1, true)
+	for a in omen_rings:
+		# Presagio del rampino: anello di ferro arrugginito e spezzato, catena rotta, nessun alone.
+		var p := Vector2(a[0], a[1])
+		draw_line(p - Vector2(0, 70), p - Vector2(4, 20), Color("#4a4038"), 3, true)
+		draw_arc(p, 13, 0, TAU, 28, Color("#1b1a1e"), 7, true)
+		draw_arc(p, 13, -PI * 0.95, -PI * 0.1, 16, Color("#8a6a48"), 2, true)
+		draw_arc(p, 13, PI * 0.25, PI * 0.8, 12, Color("#5a4632"), 2, true)
+		draw_line(p + Vector2(11, 6), p + Vector2(15, 12), Color("#1b1a1e"), 3, true)
 	for c in cracks:
 		if world.story.times_seen(c.id) > 0:
 			continue

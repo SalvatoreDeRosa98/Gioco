@@ -3611,7 +3611,7 @@
     "weapon": true
   },
   "lanterniere": {
-    "atlas": "res://assets/art/characters/npc_puppets/lanterniere.png",
+    "atlas": "res://assets/art/characters/npc_puppets/legacy/lanterniere.png",
     "regions": {
       "torso": [
         376,
@@ -4911,7 +4911,7 @@
     "head_span": 195
   },
   "ratking": {
-    "atlas": "res://assets/art/characters/npc_puppets/ratking.png",
+    "atlas": "res://assets/art/characters/npc_puppets/legacy/ratking.png",
     "regions": {
       "torso": [
         390,

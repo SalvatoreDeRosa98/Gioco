@@ -49,6 +49,9 @@ var _choice_signature := ""
 var room: Dictionary = {}
 var room_index := 0
 var room_cleared := false
+## Nemici della seconda ondata non ancora entrati (vedi _next_wave).
+var pending_wave: Array = []
+var _wave_t := -1.0
 var arena_active := false
 var _arena: Node2D
 var coins := 0
@@ -431,10 +434,16 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 		introduction = preload("res://game/introduction.gd").new()
 		introduction.setup(self)
 		add_child(introduction)
+	pending_wave.clear()
+	_wave_t = -1.0
 	if not cleared_now:
 		for e in room["enemies"]:
 			if not defeated.has(_enemy_id(e["type"], e["pos"])):
-				_spawn_enemy(e["type"], e["pos"])
+				# "wave": 2 = seconda ondata, entra quando la prima è sconfitta (stanza 13).
+				if int(e.get("wave", 1)) > 1:
+					pending_wave.append(e)
+				else:
+					_spawn_enemy(e["type"], e["pos"])
 	for p in room.get("secrets", []):
 		if not defeated.has(_enemy_id("secret", p)):
 			_spawn_pickup(p, "secret", 15)
@@ -608,6 +617,9 @@ func _check_cleared() -> void:
 	if room_cleared or _room_t < 0.8:
 		return
 	if not get_tree().get_nodes_in_group("enemies").is_empty():
+		return
+	if not pending_wave.is_empty():
+		_next_wave()
 		return
 	cleared[room_index] = true
 	_mark_cleared()
@@ -827,6 +839,21 @@ func release_attack_token(enemy: Node) -> void:
 
 
 # ---------------------------------------------------------------- Nemici, proiettili, raccolta
+
+## Seconda ondata: breve pausa (tuning waves.delay), poi entrano tutti insieme con una scossa.
+func _next_wave() -> void:
+	if _wave_t < 0.0:
+		_wave_t = float(Tuning.data.waves.delay)
+		return
+	_wave_t -= get_physics_process_delta_time()
+	if _wave_t > 0.0:
+		return
+	_wave_t = -1.0
+	for e in pending_wave:
+		_spawn_enemy(e["type"], e["pos"])
+		_shake_near(Vector2(e["pos"][0], e["pos"][1]), float(Tuning.data.waves.shake))
+	pending_wave.clear()
+
 
 func _spawn_enemy(kind: String, pos: Vector2) -> void:
 	var e

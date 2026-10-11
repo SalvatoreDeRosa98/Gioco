@@ -43,8 +43,13 @@ func setup(data: Dictionary, owner_world: Node) -> void:
 	add_child(collision)
 	add_to_group("enemies")
 	var configs: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/npc_puppets.json"))
-	_rig = preload("res://game/npc_painted_puppet.gd").new()
-	_rig.setup(configs.ratking, float(_cfg.height))
+	if bool(_cfg.get("art_v2", false)):
+		# Prototipo a fotogrammi (enemies_v2); il pupazzo dipinto resta come ripiego.
+		_rig = preload("res://game/frame_puppet.gd").new()
+		_rig.setup(str(_cfg.art_v2_sheet), float(_cfg.art_v2_height))
+	else:
+		_rig = preload("res://game/npc_painted_puppet.gd").new()
+		_rig.setup(configs.ratking, float(_cfg.height))
 	var feet := Node2D.new()
 	feet.position.y = half.y
 	add_child(feet)
@@ -84,6 +89,8 @@ func _process(delta: float) -> void:
 		action = "cast_windup" if _attack == "rats" else "windup"
 	elif _state == "strike":
 		action = "cast_strike" if _attack == "rats" else "strike"
+	if _rig.has_method("set_attack"):
+		_rig.set_attack(_attack)
 	_rig.set_action("hurt" if _flash > 0 else action, 1.0 - _timer / _duration)
 	var tint := Color.WHITE
 	if _flash > 0:

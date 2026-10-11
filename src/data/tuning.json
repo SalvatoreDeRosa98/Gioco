@@ -348,6 +348,25 @@
         "charge",
         "claw"
       ]
+    },
+    "art_v2": true,
+    "art_v2_sheet": "res://assets/art/characters/enemies_v2/ratking.json",
+    "art_v2_height": 112.5,
+    "omen_ring": {
+      "room": 15,
+      "pos": [
+        800,
+        560
+      ]
     }
+  },
+  "lanterniere": {
+    "art_v2": true,
+    "art_v2_sheet": "res://assets/art/characters/enemies_v2/lanterniere.json",
+    "art_v2_height": 87.5
+  },
+  "waves": {
+    "delay": 0.9,
+    "shake": 0.35
   }
 }

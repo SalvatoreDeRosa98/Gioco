@@ -33,6 +33,7 @@ func _run() -> void:
 	world._check_cleared()
 	check(not world.room_cleared, "Un solo nemico superstite mantiene chiuse le uscite")
 	enemies[-1].queue_free()
+	world.pending_wave.clear()  # stanza 13 a due ondate: la seconda è coperta da combat_art_waves_test
 	await process_frame
 	world._check_cleared()
 	check(not world._left_open() and world._right_open(), "Ultimo nemico: si apre solo la via di Ratking")
