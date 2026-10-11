@@ -6,7 +6,7 @@ extends Control
 signal dismissed
 
 ## UNICO PUNTO DEL LOGO: quando esistera' l'immagine definitiva basta salvarla in questo
-## percorso (PNG con trasparenza) e verra' usata al posto del logo segnaposto in testo dipinto.
+## percorso (PNG con trasparenza) e verra' usata al posto del logo in testo dipinto.
 const LOGO_IMAGE := "res://assets/art/ui/logo_titolo.png"
 const PAPER := preload("res://assets/art/ui/carta/carta_reale.png")
 const INK := Color("#3b2414")
@@ -27,7 +27,7 @@ func _ready() -> void:
 		_logo = load(LOGO_IMAGE)
 
 
-## True finche' il logo e' il segnaposto in testo dipinto.
+## True finche' il logo e' quello in testo dipinto (manca LOGO_IMAGE).
 func uses_placeholder_logo() -> bool:
 	return _logo == null
 
@@ -67,7 +67,10 @@ func _draw() -> void:
 	# Velature leggere e sfumate dietro alle scritte: cornice dorata, putti e mappa restano visibili.
 	_veil(cart_rect(vp), CART_ALPHA)
 	_veil(Rect2(cx - 190, vp.y * 0.76 - 30, 380, 44), 0.45)
-	Art.text(self, Art.title_wide(), Vector2(0, vp.y * 0.575), "REGNO DELLE DUE SICILIE  \u00b7  CASERTA, MDCCCXLV", 14, INK, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+	var mr := motto_rect(vp)
+	var ms := motto_size(vp)
+	_veil(mr.grow(4.0), 0.5)
+	Art.text(self, Art.title_wide(), Vector2(mr.position.x, mr.position.y + ms), MOTTO, ms, INK, HORIZONTAL_ALIGNMENT_CENTER, mr.size.x)
 	if _logo:
 		var h := vp.y * 0.36
 		var w := h * _logo.get_width() / float(_logo.get_height())
@@ -80,8 +83,8 @@ func _draw() -> void:
 	Art.text(self, Art.body_font(), Vector2(0, vp.y - 62), "Beta  \u00b7  per Real Concessione", 16, INK_SOFT, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 
 
-## Logo SEGNAPOSTO: titolo in lettere "dipinte" (ombra, contorno a inchiostro, oro), con la
-## dicitura che e' provvisorio. Sostituire salvando l'immagine in LOGO_IMAGE.
+## Logo dipinto: titolo in lettere "dipinte" (ombra, contorno a inchiostro, oro), senza diciture.
+## Si sostituisce salvando l'immagine in LOGO_IMAGE.
 func _placeholder_logo(vp: Vector2) -> void:
 	var y := vp.y * 0.44
 	var font := Art.title_font()
@@ -92,10 +95,29 @@ func _placeholder_logo(vp: Vector2) -> void:
 	Art.text(self, font, Vector2(0, y), "FERRUCCIO", 112, Color("#c9973f"), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	Art.text(self, font, Vector2(0, y - 3), "FERRUCCIO", 112, Color(1.0, 0.86, 0.55, 0.35), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	Art.text(self, Art.title_wide(), Vector2(0, y + 52), "LA MENZOGNA DEI BORBONE", 28, RED, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
-	var tag := Rect2(vp.x * 0.5 - 100, y - 96, 200, 22)
-	draw_rect(tag, Color(0.48, 0.11, 0.08, 0.12), true)
-	draw_rect(tag, Color(RED, 0.6), false, 1.0)
-	Art.text(self, Art.body_font(), Vector2(tag.position.x, tag.position.y + 19), "LOGO SEGNAPOSTO", 13, Color(RED, 0.85), HORIZONTAL_ALIGNMENT_CENTER, tag.size.x)
+
+
+## Riga del motto sotto il titolo (anno 1845 in numeri romani, sempre intero).
+const MOTTO := "REGNO DELLE DUE SICILIE  \u00b7  CASERTA, MDCCCXLV"
+const MOTTO_MAX := 16
+const MOTTO_MIN := 9
+
+
+## Corpo del motto: il piu' grande (<= MOTTO_MAX) con cui la riga sta intera nella velatura.
+func motto_size(vp: Vector2) -> int:
+	var avail := cart_rect(vp).size.x - 24.0
+	var font: Font = Art.title_wide()
+	for s in range(MOTTO_MAX, MOTTO_MIN - 1, -1):
+		if font.get_string_size(MOTTO, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x <= avail:
+			return s
+	return MOTTO_MIN
+
+
+## Riquadro (schermo) occupato dal motto, centrato e dentro la velatura.
+func motto_rect(vp: Vector2) -> Rect2:
+	var s := motto_size(vp)
+	var w: float = Art.title_wide().get_string_size(MOTTO, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x + 8.0
+	return Rect2(vp.x * 0.5 - w * 0.5, vp.y * 0.575 - s, w, s + 6.0)
 
 
 ## Opacita' della velatura dietro al titolo (la pergamena sotto resta leggibile).

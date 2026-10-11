@@ -157,6 +157,14 @@ func _lesson_card(vp: Vector2) -> Rect2:
 	return Rect2(x, 16.0, w, 56.0)
 
 
+## Riquadro del pannello vitali in alto a sinistra (coordinate schermo).
+func vitals_rect() -> Rect2:
+	return _vitals_rect
+
+
+var _vitals_rect := Rect2(18, 18, VITALS_RIGHT - 18.0, 190)
+
+
 func _draw_vitals() -> void:
 	var me = world.player
 	# Pannello unico in alto a sinistra: vita e monete in primo piano, stato abilita' sotto,
@@ -165,6 +173,7 @@ func _draw_vitals() -> void:
 	if me:
 		rows = 4
 	var panel := Rect2(18, 18, VITALS_RIGHT - 18.0, 128 + rows * 21)
+	_vitals_rect = panel
 	draw_rect(panel, Color(0.03, 0.03, 0.05, 0.55), true)
 	draw_rect(panel, Color(Art.OCRA, 0.35), false, 1.0)
 	if me:

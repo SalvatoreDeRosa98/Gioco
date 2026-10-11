@@ -99,7 +99,38 @@ func _draw() -> void:
 				var angle: float = a * TAU / 6 + (_time * 0.5 if done else 0)
 				draw_line(wheel, wheel + Vector2.from_angle(angle) * 22, color, 2, true)
 		if i == selected:
-			Art.text(self, Art.body_font(), p - Vector2(180, ARCH_SPRING + ARCH_R + 60 if m.kind == "route" else 86), Controls.label("interact") + "  " + str(m.label), 19, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, 360)
+			var txt: String = Controls.label("interact") + "  " + str(m.label)
+			var r := label_rect(p - Vector2(0, ARCH_SPRING + ARCH_R + 60 if m.kind == "route" else 86), txt)
+			Art.text(self, Art.body_font(), r.position + Vector2(0, LABEL_SIZE), txt, LABEL_SIZE, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
+
+
+const LABEL_SIZE := 19
+## Margine dai bordi dello schermo per le scritte dei passaggi.
+const LABEL_MARGIN := 16.0
+
+
+## Riquadro (coordinate locali) della scritta di un passaggio centrata su anchor (base del testo):
+## spostato in orizzontale perche' resti tutto dentro lo schermo e non finisca sotto il pannello
+## dell'HUD in alto a sinistra (stanza 13: "Passaggio per Piazza Dante" usciva a sinistra).
+func label_rect(anchor: Vector2, txt: String) -> Rect2:
+	var w := Art.body_font().get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_SIZE).x + 12.0
+	var local := Rect2(anchor + Vector2(-w * 0.5, -LABEL_SIZE), Vector2(w, LABEL_SIZE + 6.0))
+	if not is_inside_tree():
+		return local
+	var xf := get_global_transform_with_canvas()
+	var vp := get_viewport_rect().size
+	var scr := xf * local
+	var hud_panel := Rect2()
+	if world and world.get("_hud") and world._hud.has_method("vitals_rect"):
+		hud_panel = world._hud.vitals_rect()
+	var min_x := LABEL_MARGIN
+	if hud_panel.size.x > 0.0 and scr.position.y < hud_panel.end.y + 4.0 and scr.end.y > hud_panel.position.y:
+		min_x = hud_panel.end.x + 12.0
+	var max_x := vp.x - LABEL_MARGIN - scr.size.x
+	scr.position.x = clampf(scr.position.x, min_x, maxf(min_x, max_x))
+	scr.position.y = clampf(scr.position.y, LABEL_MARGIN, vp.y - LABEL_MARGIN - scr.size.y)
+	var back := xf.affine_inverse() * scr
+	return Rect2(back.position, local.size)
 
 
 ## Portale in pietra appoggiato al suolo, con la stessa pietra dipinta del terreno:
