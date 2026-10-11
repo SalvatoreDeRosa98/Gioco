@@ -62,13 +62,15 @@ func _run() -> void:
 	world._go(5, true)
 	world.story.seen["ferruccio_identity"] = 1
 	world.apply_upgrades()
-	world._save_at(Vector2(110,980))
-	check(world.buy_item("grapple").begins_with("Acquisto completato"), "Catena ottenibile gratuitamente nella fucina")
+	check(world.buy_item("grapple").contains("Ratking"), "Rampino riservato alla vittoria su Ratking")
 	check(not world.buy_item("hammer").begins_with("Acquisto completato"), "Martello richiede il progetto")
+	world.story.seen["ratking_defeated"] = 1
+	world.upgrades["grapple"] = true
 	world.story.seen.hammer_plan = 1
 	world.story.seen.sluice = 1
 	world.buy_item("hammer")
 	world.buy_item("wall_grip")
+	world._save_at(Vector2(110,980))
 	world._restore_save()
 	check(world.upgrades.has_all(["grapple", "hammer", "wall_grip"]), "Attrezzi persistono senza occupare accessori")
 	world._go(12, true)
@@ -109,13 +111,13 @@ func _run() -> void:
 	Input.action_release("move_left")
 	check(player.velocity.x > 0 and player.velocity.y < 0,"Salto dal muro spinge lontano dalla parete")
 	world._go(13,true)
-	player.teleport(Vector2(550,1955))
+	player.teleport(Vector2(390,1955))
 	player.attacking=0.2
 	player.attack_down=true
 	world.traversal._physics_process(0.016)
 	check(player.velocity.y < 0 and player._air_jumps > 0,"Pogo sugli spuntoni restituisce il salto")
 	world._go(3,true)
-	player.teleport(Vector2(1510,450))
+	player.teleport(Vector2(2130,800))
 	await physics_frame
 	check(world.traversal.anchor(player.position,420) != Vector2.INF,"Anello raggiungibile dal ballatoio")
 	key(KEY_Q,true)

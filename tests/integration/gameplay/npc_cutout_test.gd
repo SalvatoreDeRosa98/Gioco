@@ -17,11 +17,11 @@ func _run() -> void:
 	var elites: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/expansion.json")).elites
 	for cfg in elites.values():
 		looks[cfg.rig] = {"image": cfg.image}
-	looks.combat_duellante = Story.character("taddeo")
+	var puppets: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/npc_puppets.json"))
 	var checked := 0
 	for key in looks:
 		var look: Dictionary = looks[key]
-		if not look.has("image"):
+		if not look.has("image") or (puppets.has(key) and not configs.has(key)):
 			continue
 		check(configs.has(key), "Configurazione del personaggio " + key)
 		if not configs.has(key):

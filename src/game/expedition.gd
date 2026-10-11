@@ -49,11 +49,14 @@ func interact() -> void:
 ## Applica un varco, una leva o un frammento usando lo stesso stato persistente dei dialoghi.
 func activate(m: Dictionary) -> void:
 	if m.kind == "route":
+		if bool(m.get("need_clear", false)) and not world.room_cleared:
+			world._hud.toast("Sconfiggi tutti i nemici delle Cisterne per raggiungere Ratking")
+			return
 		if int(m.target) == Room.SECRET_ROOM:
 			world.enter_forge()
 			return
 		if str(m.get("need", "")) != "" and world.story.times_seen(m.need) == 0:
-			world._hud.toast("Passaggio chiuso: apri il meccanismo dall'altro lato")
+			world._hud.toast(str(m.get("locked_hint","Passaggio chiuso: apri il meccanismo dall'altro lato")))
 			return
 		if str(m.get("unlock", "")) != "":
 			world.story.seen[m.unlock] = 1
@@ -83,7 +86,7 @@ func _draw() -> void:
 		var done: bool = m.kind != "route" and world.story.times_seen(m.id) > 0
 		var color := Color(0.5, 0.75, 0.8) if done else Art.OCRA
 		if m.kind == "route":
-			var locked: bool = str(m.get("need", "")) != "" and world.story.times_seen(m.need) == 0
+			var locked: bool = (bool(m.get("need_clear", false)) and not world.room_cleared) or (str(m.get("need", "")) != "" and world.story.times_seen(m.need) == 0)
 			var is_forge: bool = str(m.get("id", "")) == "forge_door" or int(m.get("target", -1)) == Room.SECRET_ROOM
 			_archway(p, locked, i == selected, is_forge)
 		elif m.kind == "fragment":

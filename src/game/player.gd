@@ -333,7 +333,6 @@ func _double_jump() -> void:
 		"amount": 6, "life": 0.9, "dir": Vector2.DOWN, "spread": 110.0, "vmin": 30.0, "vmax": 90.0,
 		"damping": 60.0, "gravity": Vector2(0, 40), "smin": 0.08, "smax": 0.16, "radius": 10.0,
 	})
-	_sfx("doppio_salto")
 	if world and world.has_method("on_player_double_jump"):
 		world.on_player_double_jump()
 

@@ -304,17 +304,17 @@
           ]
         },
         {
-          "type": "spettro",
+          "type": "lanterniere",
           "pos": [
             1150,
-            750
+            946
           ]
         },
         {
-          "type": "spettro",
+          "type": "lanterniere",
           "pos": [
             1650,
-            680
+            946
           ]
         },
         {
@@ -386,6 +386,12 @@
           2020,
           850,
           260,
+          18
+        ],
+        [
+          1100,
+          570,
+          200,
           18
         ]
       ],
@@ -685,8 +691,8 @@
         {
           "type": "gatto",
           "pos": [
-            750,
-            1040
+            520,
+            1044
           ]
         },
         {
@@ -699,8 +705,8 @@
         {
           "type": "statua",
           "pos": [
-            320,
-            200
+            520,
+            186
           ]
         }
       ],
@@ -726,112 +732,37 @@
       "blocks": [],
       "ledges": [
         [
-          410,
-          1900,
-          230,
-          18
-        ],
-        [
-          680,
-          1760,
-          230,
-          18
-        ],
-        [
-          410,
-          1620,
-          230,
-          18
-        ],
-        [
-          680,
-          1480,
-          230,
-          18
-        ],
-        [
-          410,
-          1340,
-          230,
-          18
-        ],
-        [
-          680,
-          1200,
-          230,
-          18
-        ],
-        [
-          410,
-          1060,
-          230,
-          18
-        ],
-        [
-          680,
-          920,
-          230,
-          18
-        ],
-        [
-          410,
-          780,
-          230,
-          18
-        ],
-        [
-          680,
-          640,
-          230,
-          18
-        ],
-        [
-          410,
-          500,
-          230,
-          18
-        ],
-        [
-          680,
-          360,
-          230,
-          18
-        ],
-        [
-          410,
+          470,
+          1710,
           220,
-          230,
           18
         ],
         [
-          930,
-          1770,
-          230,
+          570,
+          1370,
+          220,
+          18
+        ],
+        [
+          470,
+          1030,
+          220,
+          18
+        ],
+        [
+          570,
+          690,
+          220,
+          18
+        ],
+        [
+          470,
+          350,
+          220,
           18
         ]
       ],
       "enemies": [
-        {
-          "type": "vespa",
-          "pos": [
-            260,
-            600
-          ]
-        },
-        {
-          "type": "spettro",
-          "pos": [
-            650,
-            1100
-          ]
-        },
-        {
-          "type": "spettro",
-          "pos": [
-            380,
-            1600
-          ]
-        },
         {
           "type": "statua",
           "pos": [
@@ -840,10 +771,31 @@
           ]
         },
         {
+          "type": "lanterniere",
+          "pos": [
+            650,
+            1966
+          ]
+        },
+        {
+          "type": "lanterniere",
+          "pos": [
+            1060,
+            1966
+          ]
+        },
+        {
           "type": "gatto",
           "pos": [
-            980,
+            940,
             1980
+          ]
+        },
+        {
+          "type": "vespa",
+          "pos": [
+            560,
+            1840
           ]
         }
       ],
@@ -946,10 +898,10 @@
           ]
         },
         {
-          "type": "spettro",
+          "type": "lanterniere",
           "pos": [
             1850,
-            610
+            946
           ]
         },
         {
@@ -989,11 +941,52 @@
           540
         ]
       ]
+    },
+    "15": {
+      "name": "Tana di Ratking",
+      "subtitle": "Il figlio delle Cisterne",
+      "theme": "belvedere",
+      "art": "ratking_arena",
+      "size": [
+        1600,
+        1080
+      ],
+      "floor": 980,
+      "blocks": [],
+      "ledges": [
+        [
+          360,
+          810,
+          220,
+          18
+        ],
+        [
+          1010,
+          810,
+          220,
+          18
+        ]
+      ],
+      "enemies": [
+        {
+          "type": "ratking",
+          "pos": [
+            1100,
+            935
+          ]
+        }
+      ],
+      "npcs": [],
+      "decor": [],
+      "secrets": [],
+      "boss": true,
+      "indoor": true,
+      "art_floor": 0.74
     }
   },
   "edges": {
     "0": [
-      -1,
+      1,
       1
     ],
     "1": [
@@ -1046,11 +1039,15 @@
     ],
     "13": [
       0,
-      -1
+      15
     ],
     "14": [
       -1,
       11
+    ],
+    "15": [
+      13,
+      -1
     ]
   },
   "landmarks": {
@@ -1141,7 +1138,7 @@
         "id": "loom",
         "label": "Libera i fili del telaio",
         "pos": [
-          1140,
+          1200,
           570
         ],
         "text": [
@@ -1228,7 +1225,7 @@
         "id": "hammer_plan",
         "label": "Recupera il disegno del martello",
         "pos": [
-          170,
+          230,
           2000
         ],
         "text": [
@@ -1248,7 +1245,25 @@
         "spawn": [
           2200,
           950
-        ]
+        ],
+        "need_clear": true,
+        "need": "ratking_defeated",
+        "locked_hint": "Ratking custodisce il passaggio: sconfiggilo nella tana a destra."
+      },
+      {
+        "id": "cistern_ratking",
+        "kind": "route",
+        "label": "Entra nella Tana di Ratking",
+        "pos": [
+          1160,
+          2000
+        ],
+        "target": 15,
+        "spawn": [
+          160,
+          956
+        ],
+        "need_clear": true
       }
     ],
     "14": [
@@ -1303,19 +1318,23 @@
     "10": [
       {
         "pos": [
-          1140,
-          570
+          930,
+          640
         ],
         "size": [
-          200,
+          180,
           18
         ],
         "travel": [
-          130,
-          0
+          200,
+          -70
         ],
-        "period": 5,
-        "stop": "loom"
+        "period": 6,
+        "stop": "loom",
+        "dock": [
+          1320,
+          640
+        ]
       }
     ]
   },
@@ -1394,6 +1413,20 @@
       "name": "Spettro del Calcare",
       "flag": "spettro_defeated",
       "rig": "combat_spettro"
+    },
+    "lanterniere": {
+      "hp": 5,
+      "speed": 80,
+      "windup": 0.95,
+      "cooldown": 2.1,
+      "range": 175,
+      "reach": 110,
+      "damage": 1,
+      "coins": 8,
+      "image": "res://assets/art/characters/npc_puppets/lanterniere.png",
+      "height": 125,
+      "name": "Lanterniere del Velo",
+      "rig": "lanterniere"
     }
   },
   "vertical": {
@@ -1466,7 +1499,8 @@
         "spawn": [
           1650,
           956
-        ]
+        ],
+        "need": "grapple"
       }
     ],
     "11": [
@@ -1478,41 +1512,42 @@
         "spawn": [
           3310,
           930
-        ]
+        ],
+        "need": "grapple"
       }
     ]
   },
   "extra_ledges": {
     "3": [
       [
-        1420,
-        280,
+        2020,
+        670,
         220,
         18
       ],
       [
-        1400,
-        150,
+        1840,
+        410,
+        230,
+        18
+      ],
+      [
+        1550,
+        110,
         220,
         18
       ]
     ],
     "11": [
       [
-        1650,
+        1610,
         400,
         220,
         18
       ],
       [
-        1560,
-        270,
-        220,
-        18
-      ],
-      [
         1610,
-        140,
+        70,
         220,
         18
       ]
@@ -1521,8 +1556,20 @@
   "rings": {
     "3": [
       [
+        2130,
+        610
+      ],
+      [
+        1960,
+        350
+      ],
+      [
+        1690,
+        55
+      ],
+      [
         1510,
-        180
+        -25
       ]
     ],
     "12": [
@@ -1549,16 +1596,28 @@
     ],
     "13": [
       [
-        590,
-        1560
+        570,
+        1660
       ],
       [
-        680,
-        1000
+        670,
+        1320
       ],
       [
         570,
-        440
+        980
+      ],
+      [
+        670,
+        640
+      ],
+      [
+        570,
+        300
+      ],
+      [
+        570,
+        -25
       ]
     ],
     "14": [
@@ -1573,6 +1632,20 @@
       [
         2570,
         470
+      ]
+    ],
+    "11": [
+      [
+        1720,
+        350
+      ],
+      [
+        1720,
+        20
+      ],
+      [
+        1700,
+        -25
       ]
     ]
   },
@@ -1593,10 +1666,10 @@
       {
         "id": "cistern_wall",
         "rect": [
-          850,
-          1740,
+          1050,
+          1510,
           50,
-          260
+          200
         ],
         "reward": 30
       }
@@ -1605,9 +1678,9 @@
   "spikes": {
     "13": [
       [
-        300,
+        340,
         1980,
-        500,
+        110,
         20
       ]
     ],
@@ -1619,5 +1692,55 @@
         20
       ]
     ]
+  },
+  "ratking": {
+    "hp": 32,
+    "damage": 1,
+    "coins": 45,
+    "height": 130,
+    "speed": 145,
+    "charge_speed": 470,
+    "claw_reach": 100,
+    "windup": 0.8,
+    "charge_time": 0.65,
+    "recovery": 1.1,
+    "rat_speed": 235,
+    "trigger_x": 330,
+    "intro": {
+      "id": "ratking_intro",
+      "lines": [
+        {
+          "who": "ratking",
+          "text": "Quando alzarono la Reggia, dissero che per noi poveri non c’era più posto in città."
+        },
+        {
+          "who": "ratking",
+          "text": "Mi cacciarono qui sotto. I ratti mi divisero il pane. Sono cresciuto con loro."
+        },
+        {
+          "who": "ratking",
+          "text": "Guarda cosa sono diventato. Mezzo ragazzo, mezzo ratto. Questa è casa nostra. Non ce la prenderai."
+        }
+      ]
+    },
+    "outro": {
+      "id": "ratking_outro",
+      "lines": [
+        {
+          "text": "Ratking arretra nell’ombra. I ratti lo circondano e lo accompagnano al riparo."
+        },
+        {
+          "who": "ratking",
+          "text": "Hai vinto. Lassù ricordano i re... qualcuno ricorderà anche noi?"
+        },
+        {
+          "who": "ratking",
+          "text": "Prendi il mio rampino. Gli anelli portano fuori dalle Cisterne. Ho aperto anche il passaggio per Piazza Dante."
+        },
+        {
+          "text": "Ferruccio abbassa la lama. Il passaggio verso le Cisterne è di nuovo aperto."
+        }
+      ]
+    }
   }
 }

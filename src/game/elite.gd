@@ -23,8 +23,13 @@ var _clock := 0.0
 
 func _ready() -> void:
 	var rigs: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/npc_cutouts.json"))
-	_rig = preload("res://game/npc_cutout_rig.gd").new()
-	_rig.setup(_tex, rigs[_cfg.rig], Vector2(_tex.get_width() * .5, _tex.get_height()), float(_cfg.height) / _tex.get_height())
+	if kind == "lanterniere":
+		var puppets: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/npc_puppets.json"))
+		_rig = preload("res://game/npc_painted_puppet.gd").new()
+		_rig.setup(puppets.lanterniere,float(_cfg.height))
+	else:
+		_rig = preload("res://game/npc_cutout_rig.gd").new()
+		_rig.setup(_tex, rigs[_cfg.rig], Vector2(_tex.get_width() * .5, _tex.get_height()), float(_cfg.height) / _tex.get_height())
 	var feet := Node2D.new()
 	feet.position.y = half.y
 	feet.show_behind_parent = true
@@ -116,6 +121,12 @@ func _physics_process(delta: float) -> void:
 			_timer = float(_cfg.cooldown) * (0.8 if hp <= max_hp / 2 else 1.0)
 			_swing = 0.3
 			match kind:
+				"lanterniere":
+					# Una brace lenta nella direzione annunciata; da vicino colpisce con la lanterna.
+					if _pattern % 2 == 0:
+						world.enemy_fire(position + _aim*30, _aim, 190, Color(1,.5,.15))
+					else:
+						world.boss_sword_hit(position,position+Vector2(facing*float(_cfg.reach),10),position.x)
 				"madre":
 					var direction: Vector2 = _aim
 					for angle in ([-0.36, -0.18, 0.0, 0.18, 0.36] if _pattern % 2 else [-0.24, 0.0, 0.24]):
@@ -174,6 +185,9 @@ func _release_attack_token() -> void:
 ## Riceve colpi e restituisce true una volta sconfitto, lasciando al mondo ricompense e obiettivi.
 func take_hit(amount: int, push: Vector2 = Vector2.ZERO) -> bool:
 	_release_attack_token()
+	if kind == "lanterniere":
+		_windup = false
+		_timer = .75
 	hp -= amount
 	_flash = 0.15
 	velocity += push * 80
@@ -190,12 +204,15 @@ func _draw() -> void:
 	if _windup:
 		var cue := "FENDENTE"
 		match kind:
+			"lanterniere": cue = "BRACE" if _pattern % 2 == 0 else "LANTERNA"
 			"madre": cue = "VENTAGLIO"
 			"guardia": cue = "STOCCATA"
 			"cavaliere": cue = "URTO SISMICO" if _pattern % 2 else "FENDENTE PESANTE"
 			"spettro": cue = "RAFFICA SPETTRALE"
 			_: cue = "ONDA A TERRA" if _pattern % 2 else "FENDENTE"
+		draw_set_transform(Vector2.ZERO)
 		Art.text(self, Art.body_font(), Vector2(-100, -h - 5), cue, 14, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, 200)
+		draw_set_transform(Vector2.ZERO, 0, Vector2(facing, 1))
 		var w_total := float(_cfg.windup)
 		var w_prog := clampf(1.0 - _timer / maxf(0.01, w_total), 0.0, 1.0)
 		if w_prog > 0.4:

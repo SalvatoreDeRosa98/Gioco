@@ -6,7 +6,8 @@ extends RefCounted
 const MAIN_COUNT := 5
 const SECRET_ROOM := 5
 const EPILOGUE_ROOM := 6
-const COUNT := 15
+const COUNT := 16
+const RATKING_ROOM := 15
 const BOSS_ROOM := 4
 const ARCHIVES_ROOM := 11
 const Expansion := preload("res://game/expansion_data.gd")

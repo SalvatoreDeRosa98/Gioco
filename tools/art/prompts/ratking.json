@@ -1,0 +1,15 @@
+{
+  "tool": "image_gen.imagegen",
+  "assets": [
+    {
+      "file": "src/assets/art/characters/npc_puppets/ratking.png",
+      "prompt": "Create a NEW transparent 4x4 game cutout puppet atlas of RATKING, using attached image ONLY as reference for painted texture, anatomy and exact 16-cell layout. Ratking is a young adult half human half rat, a tragic outcast in 18th century Caserta. Human youthful face with short rat muzzle, large round rat ears, messy dark hair, whiskers, lean upright human proportions. Ragged ochre linen shirt, dark patched brown vest, rope belt, torn grey knee breeches, wrapped shins, bare rat claw feet. NO hump, no round joint caps, natural overlapping sleeve ends. Side three-quarter facing RIGHT. Exactly isolated pieces ordered 4 columns 4 rows: row1 head with neck / torso without arms or head / near upper arm / far upper arm. row2 near forearm / far forearm / near clawed hand / far clawed hand. row3 near thigh / far thigh / near shin / far shin. row4 near foot facing right / far foot facing right / single small whole grey rat facing right with curled tail / long pink rat tail curved from top-left root to bottom-right tip. Each piece fully inside its grid cell with transparent gaps. Arms and legs oriented vertically top joint to bottom joint, natural rounded painted ends with ample overlap, no black cut surfaces. Detailed handpainted brushwork, muted warm sepia, readable clean silhouettes. No text, no background, no shadows cast on background.",
+      "source": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-02bb9933-99b7-4fb4-9980-586af7308f4b.png"
+    },
+    {
+      "file": "src/assets/art/areas/espansione/ratking_arena.png",
+      "prompt": "Hand-painted 2D side-scrolling dark fairytale videogame background, panoramic 1600x1080 composition. Arena in an abandoned underground Bourbon palace cistern in 18th century Caserta, the home of Ratking, an expelled poor boy raised by rats. FRONT ON sideview, flat horizontal walkable dry stone floor at exactly 90 percent image height, uninterrupted and empty foreground combat space. Receding vaulted damp masonry, huge central bricked arch, trickle of blue water behind floor, tattered makeshift bedding and discarded bread bowls in far background, tiny grey rat silhouettes watching from cracks, crude throne made of broken palace construction timbers far behind center, faded royal lily carved high on wall. Two architectural sides, left arched entry, dark sealed right wall. Warm amber lanterns contrast deep teal shadow, painterly detailed handmade brush strokes, atmospheric legible uncluttered floor. No characters in foreground, no text, no UI.",
+      "source": "C:/Users/salva/.codex/generated_images/01a12355-e16c-7612-ae97-d0c02cea1f1b/exec-7902336a-e169-4b03-bd9a-ef9473365849.png"
+    }
+  ]
+}

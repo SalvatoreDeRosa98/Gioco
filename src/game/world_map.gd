@@ -6,11 +6,48 @@ const PLACES := {
 	3: Vector2(740, 320), 4: Vector2(1160, 320), 5: Vector2(310, 210),
 	6: Vector2(100, 530), 7: Vector2(310, 450), 8: Vector2(520, 210),
 	9: Vector2(740, 450), 10: Vector2(950, 210), 11: Vector2(950, 320),
-	12: Vector2(740, 150), 13: Vector2(740, 580), 14: Vector2(950, 75)
+	12: Vector2(740, 150), 13: Vector2(740, 580), 14: Vector2(950, 75),
+	15: Vector2(1000, 580)
 }
 var world: Node
 var opened := false
 var canvas: Control
+var journal := false
+var journal_page := 0
+
+## Obiettivi derivati dallo stato della partita, inclusi i vecchi salvataggi.
+func quest_entries() -> Array:
+	var pending: Array = []
+	var complete: Array = []
+	var quests: Array = JSON.parse_string(FileAccess.get_file_as_string("res://data/quests.json"))
+	for quest: Dictionary in quests:
+		var done := false
+		match str(quest.condition):
+			"seen": done = world.story.times_seen(quest.key)>0
+			"upgrade": done = world.upgrades.has(quest.key)
+			"choice": done = world.story.get_var(quest.key)!=""
+			"cleared": done = bool(world.cleared.get(int(quest.key),false))
+			"archives": done = Room.Expansion.archive_ready(world.story)
+			"seals": done = Room.Expansion.all_seals_ready(world.story)
+		quest["done"] = done
+		if done:
+			complete.append(quest)
+		else:
+			pending.append(quest)
+	return pending+complete
+
+## Tab o Interagisci alterna carta e registro; sinistra/destra scorre le missioni.
+func handle_input(event: InputEvent) -> void:
+	if event.is_action_pressed("interact") or (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_TAB):
+		journal = not journal
+		journal_page = 0
+	if journal:
+		var right_pressed: bool = event.is_action_pressed("ui_right") or event.is_action_pressed("move_right")
+		var left_pressed: bool = event.is_action_pressed("ui_left") or event.is_action_pressed("move_left")
+		var direction := int(right_pressed) - int(left_pressed)
+		var total_pages := maxi(1, ceili(quest_entries().size() / 6.0))
+		journal_page = clampi(journal_page + direction, 0, total_pages - 1)
+	canvas.queue_redraw()
 
 func _ready() -> void:
 	layer = 45
@@ -33,6 +70,10 @@ func _draw_map() -> void:
 	var scale := minf(viewport.x / 1320.0, viewport.y / 720.0)
 	canvas.draw_set_transform((viewport - Vector2(1320,720) * scale) / 2, 0, Vector2.ONE * scale)
 	Art.text(canvas, Art.title_font(), Vector2(40, 45), "LE STRADE DELLA REGGIA", 25, Art.OCRA)
+	Art.text(canvas, Art.body_font(), Vector2(800,45), "Tab / "+Controls.label("interact")+" · "+("Mappa" if journal else "Registro missioni"),20,Art.CREMA)
+	if journal:
+		_draw_journal()
+		return
 	var seal_names := {
 		"market_seal": "Mercato",
 		"barracks_seal": "Caserma",
@@ -81,3 +122,15 @@ func _draw_map() -> void:
 	var skills_txt := Controls.label("grapple") + " Catena · " + Controls.label("hammer") + " Martello · " + Controls.label("heal") + " Cura con 4 braci · Giù + " + Controls.label("attack") + " Rimbalzo"
 	Art.text(canvas, Art.body_font(), Vector2(40, 670), "%s   ·   Punto bianco: sei qui   ·   Esplora per completare la carta" % close_txt, 20, Art.CREMA)
 	Art.text(canvas, Art.body_font(), Vector2(40, 701), skills_txt, 17, Art.OCRA)
+
+func _draw_journal() -> void:
+	var entries := quest_entries()
+	Art.text(canvas,Art.title_font(),Vector2(40,94),"REGISTRO MISSIONI",24,Art.CREMA)
+	var first := journal_page*6
+	for i in range(first,mini(first+6,entries.size())):
+		var quest: Dictionary = entries[i]
+		var y := 145.0+float(i-first)*80
+		var color := Color(.5,.65,.58) if quest.done else Art.OCRA
+		Art.text(canvas,Art.title_font(),Vector2(40,y),("COMPLETATA · " if quest.done else "DA FARE · ")+str(quest.title),20,color)
+		Art.text(canvas,Art.body_font(),Vector2(40,y+29),quest.text,20,Art.CREMA)
+	Art.text(canvas,Art.body_font(),Vector2(40,670),"← / → · Pagina %d/%d     %s · Chiudi" % [journal_page+1,maxi(1, ceili(entries.size()/6.0)),Controls.label("map")],20,Art.CREMA)

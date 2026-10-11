@@ -42,9 +42,9 @@ func _run() -> void:
 	w.story.mark_seen("captain_defeated")
 	check(w._right_open(), "Capitano sconfitto apre percorso alternativo")
 	w._go(13, true)
-	check(not w._left_open(), "Cisterne Sepolte: porta sinistra chiusa prima di sconfiggere i nemici")
-	w.room_cleared = true
-	check(w._left_open(), "Cisterne Sepolte: porta sinistra si apre appena tutti i nemici sono sconfitti")
+	check(not w._left_open(), "Cisterne Sepolte: porta sinistra chiusa prima di sconfiggere Ratking")
+	w.story.mark_seen("ratking_defeated")
+	check(w._left_open(), "Cisterne Sepolte: porta sinistra si apre dopo aver sconfitto Ratking")
 	w.player.teleport(Vector2(Room.EDGE + 5, 2000))
 	w._check_doors()
 	check(w.room_index == 0, "Porta sinistra delle Cisterne riporta in Piazza Dante (prima zona)")

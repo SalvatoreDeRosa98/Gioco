@@ -82,7 +82,7 @@ def build():
     for name, span, anchor, bone in [
         ('sword',430,[.5,.12],'wrist'),('hammer',210,[.5,.82],'wrist'),
         ('cheese',100,[.5,.5],'wrist'),('scarf',240,[.5,.05],'wrist'),
-        ('handkerchief',140,[.5,.05],'wrist'),('basket',190,[.5,.12],'wrist'),
+        ('handkerchief',140,[.5,.05],'wrist'),('basket',190,[.18,.30],'wrist'),
         ('book',160,[.5,.5],'wrist'),('keys',160,[.5,.05],'hips'),
         ('shuttle',120,[.5,.5],'wrist'),('cane',410,[.5,.04],'wrist'),
         ('halberd',600,[.5,.52],'wrist'),('orb',140,[.5,.5],'wrist'),
@@ -92,6 +92,8 @@ def build():
     ]:
         accessories[name] = dict(span=span,anchor=anchor,bone=bone,z=7)
     accessories['keys']['position'] = [50,0]
+    accessories['lantern'] = dict(span=170,anchor=[.5,.06],bone='wrist',z=7)
+    accessories['rat_tail'] = dict(span=340,anchor=[.08,.08],bone='hips',z=-7,position=[-45,0])
     accessories['chair']['position'] = [-35,47]
     accessories['chair']['z'] = -8
     accessories['cloak']['position'] = [-25,-265]

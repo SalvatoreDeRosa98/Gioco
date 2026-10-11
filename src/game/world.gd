@@ -176,8 +176,12 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 	if _map != null and _map.opened:
-		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("map") or (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M):
+		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_TAB:
+			_map.handle_input(event)
+		elif event.is_action_pressed("ui_cancel") or (event.is_action_pressed("map") and not (event is InputEventKey and event.keycode == KEY_TAB)) or (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M):
 			_map.toggle()
+		else:
+			_map.handle_input(event)
 		get_viewport().set_input_as_handled()
 		return
 	var map_pressed: bool = event.is_action_pressed("map") or (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M)
@@ -426,11 +430,15 @@ func _left_open() -> bool:
 	if arena_active and not room_cleared:
 		return false
 	if room_index == 13:
-		return room_cleared
+		return story.times_seen("ratking_defeated") > 0
+	if room_index == 0:
+		return story.times_seen("lesson_menu") > 0 or story.times_seen("visited_1") > 0
 	return Room.Expansion.edge(room_index, false) >= 0
 
 
 func _right_open() -> bool:
+	if room_index == 13:
+		return room_cleared
 	if room_index == 0:
 		return story.times_seen("lesson_menu") > 0
 	if room_index == 1:
@@ -487,7 +495,7 @@ func _build_decor(th: Dictionary) -> void:
 func _clear_hostile() -> void:
 	_current_attacker = null
 	_attack_token_timer = 0.0
-	for group in ["enemies", "bullets", "pickups"]:
+	for group in ["enemies", "bullets", "pickups", "rat_swarm"]:
 		for n in get_tree().get_nodes_in_group(group):
 			n.queue_free()
 
@@ -539,6 +547,8 @@ func _check_doors() -> void:
 			_leave_forge()
 		elif room_index == 13:
 			_go(0, false)
+		elif room_index == 0:
+			_go(1, true)
 		else:
 			_go(Room.Expansion.edge(room_index, false), false)
 
@@ -587,8 +597,16 @@ func _check_cleared() -> void:
 		return
 	cleared[room_index] = true
 	_mark_cleared()
-	if room["boss"]:
+	if room_index == Room.BOSS_ROOM:
 		_start_finale()
+	elif room_index == Room.RATKING_ROOM:
+		arena_active = false
+		story.mark_seen("ratking_defeated")
+		upgrades["grapple"] = true
+		apply_upgrades()
+		_hud.toast("Rampino di Ratking ottenuto · " + Controls.label("grapple") + " per agganciarti")
+		hold(true)
+		narrate(Room.Expansion.data().ratking.outro)
 	else:
 		var size: Vector2 = room["size"]
 		_spawn_pickup(Vector2(size.x * 0.5, float(room["floor"]) - 40.0), "centesimi", int(Tuning.data.rewards.room_clear_coins))
@@ -708,6 +726,20 @@ func _do_slash(pos: Vector2, facing: float, down: bool, air: bool) -> void:
 			_hit_enemy(e, damage, Color(1.0, 0.95, 0.85), facing, down, contact_pos)
 			if down and air:
 				bounce = true
+	for b in get_tree().get_nodes_in_group("bullets"):
+		if b.is_queued_for_deletion():
+			continue
+		var b_rad: float = float(b.get("radius")) if "radius" in b else 6.0
+		if _overlap(center, half, b.global_position, Vector2(b_rad, b_rad)):
+			Fx.particles(fx_root, b.global_position, Color(1.0, 0.95, 0.7), {
+				"texture": Art.streak_texture(), "amount": 6, "life": 0.15,
+				"dir": Vector2(facing, 0.0), "spread": 60.0, "vmin": 200.0, "vmax": 450.0,
+				"damping": 1000.0, "smin": 0.25, "smax": 0.5, "align": true
+			})
+			Audio.sfx("colpo")
+			if down and air:
+				bounce = true
+			b.queue_free()
 	if bounce:
 		player.bounce()
 		_fx("shock", player.global_position + Vector2(0, PlayerScript.HALF.y), Color(1.0, 0.95, 0.7), player.facing)
@@ -751,7 +783,7 @@ func alive_player() -> Node2D:
 ## Il boss della stanza, se presente (serve all'HUD per la barra della vita).
 func boss() -> Node:
 	for e in get_tree().get_nodes_in_group("enemies"):
-		if e.kind == "custode" and not e.is_queued_for_deletion():
+		if e.kind in ["custode", "ratking"] and not e.is_queued_for_deletion():
 			return e
 	return null
 
@@ -778,7 +810,9 @@ func release_attack_token(enemy: Node) -> void:
 
 func _spawn_enemy(kind: String, pos: Vector2) -> void:
 	var e
-	if kind in ["capitano", "madre", "guardia", "cavaliere", "spettro"]:
+	if kind == "ratking":
+		e = preload("res://game/ratking.gd").new()
+	elif kind in ["capitano", "madre", "guardia", "cavaliere", "spettro", "lanterniere"]:
 		e = preload("res://game/elite.gd").new()
 	else:
 		e = preload("res://game/duelist.gd").new() if kind == "duellante" else EnemyScript.new()
@@ -1122,6 +1156,8 @@ func buy_item(key: String) -> String:
 	if room_index != Room.SECRET_ROOM or not can_save_memories() or player.dead or not Tuning.data.shop.has(key):
 		return "Acquisto non disponibile"
 	var item: Dictionary = Tuning.data.shop[key]
+	if bool(item.get("reward_only",false)):
+		return "Il rampino si ottiene sconfiggendo Ratking nelle Cisterne Sepolte"
 	var price := int(item.price)
 	if item.has("need") and story.times_seen(item.need) == 0:
 		return "Manca il progetto: " + str(item.description)
@@ -1208,6 +1244,12 @@ func _restore_state(state: Dictionary) -> void:
 	story.vars = state["vars"].duplicate(true)
 	story.seen = state["seen"].duplicate(true)
 	upgrades = state.get("upgrades", {}).duplicate(true)
+	# Migrazione: il vecchio rampino gratuito della fucina diventa il dono di Ratking.
+	if story.times_seen("ratking_defeated") > 0 or bool(cleared.get(Room.RATKING_ROOM,false)):
+		story.seen["ratking_defeated"] = 1
+		upgrades["grapple"] = true
+	else:
+		upgrades.erase("grapple")
 	# Compatibilità: i vecchi salvataggi non avevano i due doni narrativi espliciti.
 	if story.times_seen("gaetano_fucina_lore") > 0:
 		story.seen["ferruccio_identity"] = 1

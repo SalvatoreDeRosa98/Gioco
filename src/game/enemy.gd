@@ -146,6 +146,7 @@ var _mat: ShaderMaterial
 var _aura: Sprite2D
 var _aura_scale := Vector2.ONE
 var _painted_puppet: Node2D
+var _statue_aim := Vector2.LEFT
 
 
 func setup(d: Dictionary, w: Node) -> void:
@@ -167,6 +168,14 @@ func setup(d: Dictionary, w: Node) -> void:
 	facing = _dir
 	_last_facing = facing
 	half = _half_for(kind)
+	if kind == "statua":
+		# Colloca subito il basamento sul primo appoggio sottostante; niente cadute dall'alto.
+		var support := float(world.room.floor)
+		for surface: Rect2 in world.room.ledges + world.room.blocks:
+			if position.x >= surface.position.x and position.x <= surface.end.x and surface.position.y >= position.y+half.y-2:
+				support = minf(support,surface.position.y)
+		position.y = support-half.y
+		_home = position
 	if kind == "gatto":
 		position.y = minf(position.y, float(world.room.floor) - half.y)
 		var blocks: Array = world.room.get("blocks", [])
@@ -263,14 +272,14 @@ func _physics_process(delta: float) -> void:
 		_:
 			_ai_gatto(delta)
 	# Repulsione orizzontale morbida: evita l'accavallamento caotico tra nemici
-	if kind in ["gatto", "statua"]:
+	if kind == "gatto":
 		for other in get_tree().get_nodes_in_group("enemies"):
 			if other != self and is_instance_valid(other) and other is CharacterBody2D and other.kind in ["gatto", "statua", "guardia", "cavaliere"]:
 				var dx: float = global_position.x - other.global_position.x
 				if absf(dx) < 38.0 and absf(global_position.y - other.global_position.y) < 30.0:
 					var push_sign: float = signf(dx) if dx != 0.0 else (1.0 if get_instance_id() > other.get_instance_id() else -1.0)
 					velocity.x += push_sign * (38.0 - absf(dx)) * 4.0
-	if _knock_v != Vector2.ZERO:
+	if kind != "statua" and _knock_v != Vector2.ZERO:
 		velocity += _knock_v
 		_knock_v = _knock_v.move_toward(Vector2.ZERO, 1400.0 * delta)
 	move_and_slide()
@@ -877,31 +886,25 @@ func _after_move_vespa() -> void:
 
 ## Statua: ferma, osserva il raggio d'azione; quando il giocatore entra, carica e spara.
 func _ai_statua(delta: float) -> void:
-	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL)
-	velocity.x = 0.0
+	velocity = Vector2.ZERO
+	position = _home
 	var target: Node2D = world.alive_player()
-	if not target:
+	var origin := position + Vector2(0,-12)
+	if target == null or origin.distance_to(target.position) > _f("range") or not _clear_line(origin,target.position):
 		anim = "idle"
-		return
-	var dist: float = global_position.distance_to(target.global_position)
-	var in_range := dist <= 460.0 and absf(target.global_position.y - global_position.y) < 160.0
-	if in_range and absf(target.global_position.x - global_position.x) > 4.0:
-		facing = signf(target.global_position.x - global_position.x)
-	if not in_range:
-		anim = "idle"
-		_shoot_cd = minf(_shoot_cd, 0.8)
+		_shoot_cd = maxf(_shoot_cd,1.2)
 		return
 	_shoot_cd -= delta
 	var was := anim
-	anim = "charge" if _shoot_cd < 0.6 else "idle"
+	anim = "charge" if _shoot_cd < _f("windup") else "idle"
 	if anim == "charge" and was != "charge":
+		_statue_aim = (target.position-origin).normalized()
+		facing = -1.0 if _statue_aim.x < 0 else 1.0
 		_sfx("statua_carica")
-	if _shoot_cd <= 0.0:
-		_shoot_cd = _f("fire_every") * 1.5
-		world.enemy_fire(global_position + Vector2(facing * 26.0, -40.0), Vector2(facing, 0.0), _f("bullet_speed"), Color(0.6, 0.85, 1.0))
-		if _attack_variant % 2:
-			world.enemy_fire(global_position + Vector2(facing * 26, -40), Vector2(facing, -0.35).normalized(), _f("bullet_speed"), Color(0.6, 0.85, 1))
-		_attack_variant += 1
+	if _shoot_cd <= 0:
+		world.enemy_fire(origin+_statue_aim*28,_statue_aim,_f("bullet_speed"),Color(.6,.85,1))
+		_shoot_cd = _f("fire_every")
+		anim = "idle"
 		_sfx("statua_sparo")
 
 
@@ -1257,6 +1260,11 @@ func _goal_vespa() -> void:
 
 
 func _draw() -> void:
+	if kind == "statua" and anim == "charge":
+		var origin := Vector2(0,-12)
+		draw_line(origin,origin+_statue_aim*160,Color(.6,.85,1,.65),2,true)
+		draw_arc(origin,30,-PI*.5,-PI*.5+TAU*(1-_shoot_cd/_f("windup")),24,Art.OCRA,2,true)
+
 	if kind != "vespa":
 		# Ombra a terra: in salto resta sul pavimento e si stringe con la quota.
 		var drop := 0.0 if kind != "gatto" or is_on_floor() else _ground_below()

@@ -26,7 +26,7 @@ ACCESSORIES = {'guardia': 'sword', 'taddeo': 'sword', 'capitano': 'sword',
                'cesare': 'keys', 'lia': 'shuttle', 'don_ciccio': 'cane',
                'gregorio': 'halberd', 'cavaliere': 'lily', 'madre': 'books',
                'custode': 'sword', 'statua': 'orb',
-               'mariella': 'chair'}
+               'mariella': 'chair', 'lanterniere': 'lantern'}
 
 
 def registration(path, parts):
@@ -90,7 +90,8 @@ def build():
         # actual wrist; otherwise fitting the whole cell makes the palm tiny.
         wrist_trim = {'assunta': .48, 'capitano': .48, 'capuano': .54,
                       'don_ciccio': .48, 'elsa': .43, 'mariella': .47,
-                      'nunziatina': .28, 'taddeo': .40, 'violante': .55}.get(name, 0)
+                      'nunziatina': .28, 'taddeo': .40, 'violante': .55,
+                      'ratking': .40}.get(name, 0)
         if wrist_trim:
             for hand in ['wrist', 'wrist_f']:
                 rect = parts[hand]
@@ -142,6 +143,8 @@ def build():
             configs[name]['height'] = 1230
         if name == 'custode' and 'extra' in parts:
             configs[name]['extra'] = 'cloak'
+        if name == 'ratking':
+            configs[name]['extra'] = 'rat_tail'
         if name in ['guardia','taddeo','capitano','custode']:
             configs[name]['weapon'] = True
         print(name, len(parts))

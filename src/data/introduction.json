@@ -11,7 +11,7 @@
     {"id":"guard","action":"parry","text":"La guardia prepara la stoccata. Para al lampo, poi rispondi con un colpo.","condition":"enemy","enemy":"guardia","pos":[1260,942]},
     {"id":"wasp","action":"attack","text":"Salta verso la vespa. In aria, giù + attacco colpisce sotto di te.","condition":"enemy","enemy":"vespa","pos":[1800,840]},
     {"id":"map","action":"map","text":"Apri la mappa per ritrovare il cammino. Ripremi per chiuderla.","condition":"action"},
-    {"id":"tools","action":"interact","text":"Sciarpa: scatto {dash}. Fucina: catena {grapple}, martello {hammer}, cura {heal}.","condition":"wait","seconds":9},
+    {"id":"tools","action":"interact","text":"Sciarpa: scatto {dash}. Ratking custodisce il rampino {grapple}. Fucina: martello {hammer}. Cura: {heal}.","condition":"wait","seconds":9},
     {"id":"menu","action":"pause","text":"Il menu resta sempre disponibile. Ora segui Corso Trieste: là troverai il secondo indizio.","condition":"wait","seconds":5}
   ]
 }

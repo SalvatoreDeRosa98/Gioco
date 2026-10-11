@@ -93,22 +93,24 @@ func _run() -> void:
 	world._spawn_enemy("statua", Vector2(1000, 800))
 	var statue: Node = null
 	for enemy in get_nodes_in_group("enemies"):
-		if not enemy.is_queued_for_deletion() and enemy.kind == "statua" and enemy.position == Vector2(1000, 800):
+		if not enemy.is_queued_for_deletion() and enemy.kind == "statua" and roundi(enemy.position.x) == 1000:
 			statue = enemy
-	player.teleport(Vector2(960, 800))
-	player.facing = 1
-	player.iframes = 0
-	player.parry_window = 0.18
-	world.story.set_var("father_registry", "bruciato")
-	world._hurt_player(1, 1000)
-	world._do_slash(player.position, 1, false, false)
-	check(statue.hp == 4, "Registro bruciato potenzia il primo attacco dopo parata")
-	world._do_slash(player.position, 1, false, false)
-	check(statue.hp == 3, "Il bonus della parata si consuma")
-	world.story.set_var("father_registry", "conservato")
-	statue.anim = "charge"
-	world._do_slash(player.position, 1, false, false)
-	check(statue.anim == "idle" and is_equal_approx(statue._shoot_cd, 2.2), "Registro conservato interrompe il lancio")
+	check(statue != null, "Statua spawnata trovata")
+	if statue != null:
+		player.teleport(Vector2(statue.position.x - 40, statue.position.y))
+		player.facing = 1
+		player.iframes = 0
+		player.parry_window = 0.18
+		world.story.set_var("father_registry", "bruciato")
+		world._hurt_player(1, 1000)
+		world._do_slash(player.position, 1, false, false)
+		check(statue.hp == 4, "Registro bruciato potenzia il primo attacco dopo parata")
+		world._do_slash(player.position, 1, false, false)
+		check(statue.hp == 3, "Il bonus della parata si consuma")
+		world.story.set_var("father_registry", "conservato")
+		statue.anim = "charge"
+		world._do_slash(player.position, 1, false, false)
+		check(statue.anim == "idle" and is_equal_approx(statue._shoot_cd, 2.2), "Registro conservato interrompe il lancio")
 	world._go(0, true)
 	world.story.set_var("tonino_memory", "negato")
 	world._refresh_choice_effects()

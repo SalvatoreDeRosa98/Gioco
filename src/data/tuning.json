@@ -122,10 +122,12 @@
       "speed": 0,
       "damage": 1,
       "coins": 4,
-      "fire_every": 2.2,
-      "bullet_speed": 330,
+      "fire_every": 3.2,
+      "bullet_speed": 240,
       "knockback": 0,
-      "hitstun": 0
+      "hitstun": 0,
+      "windup": 1.0,
+      "range": 420
     },
     "custode": {
       "painted_height": 179,
@@ -178,7 +180,8 @@
     "grapple": {
       "name": "Rampino a catena",
       "price": 0,
-      "description": "Il dono di Gaetano. Tieni Q verso un anello; rilascia per slanciarti."
+      "description": "Ricompensa di Ratking. Tieni Q / RT / R2 per risalire agli anelli.",
+      "reward_only": true
     },
     "wall_grip": {
       "name": "Guanti da muratore",

@@ -1,0 +1,86 @@
+[
+  {
+    "title": "Il primo cammino",
+    "text": "Completa le lezioni di Piazza Dante e raggiungi Corso Trieste.",
+    "condition": "seen",
+    "key": "lesson_menu"
+  },
+  {
+    "title": "Il volto di Ferruccio",
+    "text": "A Corso Trieste entra nella fucina e parla con Gaetano.",
+    "condition": "seen",
+    "key": "ferruccio_identity"
+  },
+  {
+    "title": "Le Cisterne Reali",
+    "text": "Sali alla ruota della chiusa e interagisci per aprire il Belvedere.",
+    "condition": "seen",
+    "key": "sluice"
+  },
+  {
+    "title": "Scendere per risalire",
+    "text": "Scendi nel pozzo delle Cisterne Reali. Libera il fondo, entra a destra e sconfiggi Ratking.",
+    "condition": "seen",
+    "key": "ratking_defeated"
+  },
+  {
+    "title": "Il martello di Gaetano",
+    "text": "Raccogli il disegno nelle Cisterne Sepolte e portalo alla fucina.",
+    "condition": "upgrade",
+    "key": "hammer"
+  },
+  {
+    "title": "La memoria di Agnese",
+    "text": "Parla con Agnese sulla destra del Belvedere di San Leucio.",
+    "condition": "choice",
+    "key": "agnese_memory"
+  },
+  {
+    "title": "La via degli anelli",
+    "text": "Dal lato di Agnese risali con il rampino e raggiungi il Campanile delle Voci.",
+    "condition": "seen",
+    "key": "visited_12"
+  },
+  {
+    "title": "Le voci del campanile",
+    "text": "Raggiungi il meccanismo in cima e ascolta le campane.",
+    "condition": "seen",
+    "key": "bells"
+  },
+  {
+    "title": "Il telaio del setificio",
+    "text": "Sali sulla passerella mobile, raggiungi la leva sul pianerottolo e libera i fili.",
+    "condition": "seen",
+    "key": "loom"
+  },
+  {
+    "title": "La custode del setificio",
+    "text": "Sconfiggi la Madre di Marmo nelle Tessiture di San Leucio.",
+    "condition": "seen",
+    "key": "mother_defeated"
+  },
+  {
+    "title": "I tre frammenti",
+    "text": "Negli Archivi leggi il registro delle acque, la deposizione e il tessuto dei nomi.",
+    "condition": "archives",
+    "key": ""
+  },
+  {
+    "title": "Il registro di tuo padre",
+    "text": "Negli Archivi scegli che cosa fare del registro di Gaetano.",
+    "condition": "choice",
+    "key": "father_registry"
+  },
+  {
+    "title": "Le strade della città",
+    "text": "Attiva i sette sigilli: Mercato, Caserma, Chiusa, Telaio, Campane, Disegno e Orologiaio.",
+    "condition": "seals",
+    "key": ""
+  },
+  {
+    "title": "Il Cortile d’Onore",
+    "text": "Con frammenti, registro e sette sigilli, entra nel Cortile e affronta Donna Luciana.",
+    "condition": "cleared",
+    "key": "4"
+  }
+]

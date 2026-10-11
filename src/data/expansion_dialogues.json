@@ -19,6 +19,9 @@
       "name": "Grazia dei Vicoli",
       "image": "res://assets/art/characters/cittadini/lavandaia.png",
       "height": 112
+    },
+    "ratking": {
+      "name": "Ratking"
     }
   },
   "npcs": {

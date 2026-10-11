@@ -14,6 +14,53 @@ var _ui: CanvasLayer
 var _menu_box: VBoxContainer
 var _play_button: Button
 var _world: Node2D
+var _menu_axis := 0
+
+## Il menu accetta direttamente croce, stick e A/Croce anche dopo un clic fuori dai pulsanti.
+func _input(event: InputEvent) -> void:
+	if is_instance_valid(_world) or not is_instance_valid(_ui) or not _ui.visible:
+		return
+	Controls.observe(event)
+	if event is InputEventJoypadMotion and event.axis == JOY_AXIS_LEFT_Y:
+		if absf(event.axis_value) < .25:
+			_menu_axis = 0
+		elif absf(event.axis_value) > .55 and _menu_axis != int(signf(event.axis_value)):
+			_menu_axis = int(signf(event.axis_value))
+			_move_menu_focus(_menu_axis)
+		get_viewport().set_input_as_handled()
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index in [JOY_BUTTON_DPAD_UP,JOY_BUTTON_DPAD_DOWN]:
+			_move_menu_focus(-1 if event.button_index == JOY_BUTTON_DPAD_UP else 1)
+			get_viewport().set_input_as_handled()
+		elif event.button_index in [JOY_BUTTON_A, JOY_BUTTON_START]:
+			var focused := get_viewport().gui_get_focus_owner() as Button
+			if focused == null:
+				focused = _play_button
+			focused.pressed.emit()
+			get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode in [KEY_UP, KEY_W, KEY_DOWN, KEY_S]:
+			_move_menu_focus(-1 if event.keycode in [KEY_UP, KEY_W] else 1)
+			get_viewport().set_input_as_handled()
+		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
+			var focused := get_viewport().gui_get_focus_owner() as Button
+			if focused == null:
+				focused = _play_button
+			focused.pressed.emit()
+			get_viewport().set_input_as_handled()
+
+func _move_menu_focus(direction: int) -> void:
+	var buttons: Array[Button] = []
+	for child in _menu_box.get_children():
+		if child is Button and not child.disabled and child.visible:
+			buttons.append(child)
+	if buttons.is_empty():
+		return
+	var index := buttons.find(get_viewport().gui_get_focus_owner())
+	if index < 0:
+		buttons[0].grab_focus()
+	else:
+		buttons[posmod(index + direction, buttons.size())].grab_focus()
 var _t := 0.0
 
 

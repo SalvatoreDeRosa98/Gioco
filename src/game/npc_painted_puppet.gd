@@ -77,6 +77,21 @@ func setup(config: Dictionary, height: float) -> void:
 		_companion.position = Vector2(float(config.companion.offset[0]),float(config.companion.offset[1]))*height
 		add_child(_companion)
 	_apply(_sample("idle", 0))
+	_level_basket()
+
+## Cesto e lanterna restano diritti, agganciati alla mano anche mentre il braccio ruota.
+func _level_basket() -> void:
+	if str(_config.accessory) not in ["basket","lantern"] or not pieces.has("accessory"):
+		return
+	var angle := 0.0
+	var joint: Node2D = bones.wrist
+	while joint != _body:
+		angle += joint.rotation
+		joint = joint.get_parent() as Node2D
+	var basket: Sprite2D = pieces.accessory
+	basket.rotation = -angle
+	var anchor: Vector2 = basket.get_meta("painted_anchor")
+	basket.position = Vector2(0,float(_anatomy.hand_grip))-anchor.rotated(basket.rotation)
 
 func _register_joints() -> void:
 	# The painted neck and shoulder sockets belong to the torso image, not its box.
@@ -209,6 +224,7 @@ func pose(time: float, face: float, tint: Color, lift: float, talking: bool, wal
 		_blend = _mix(_blend,target,weight)
 		_last_time = time
 	_apply(_blend)
+	_level_basket()
 	if pieces.has("extra") and _config.extra == "cloak":
 		pieces.extra.rotation = deg_to_rad(sin(time*TAU/float(_anatomy.secondary.cloak_period))*float(_anatomy.secondary.cloak_angle))
 	if _companion:

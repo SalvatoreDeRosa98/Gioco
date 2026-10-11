@@ -394,15 +394,18 @@ func _draw_overlay() -> void:
 ## Tasto in un cerchio ocra e il verbo in maiuscoletto, come gli inviti di Hollow Knight.
 func _draw_prompt(a: float) -> void:
 	var c := _overlay
-	var key_label := "Y / △" if Controls.label("interact") == "Y / △" else "E"
+	var labels := Controls.label("interact").split(" / ")
 	var r := 12.0
-	c.draw_texture_rect(Art.soft_texture(), Rect2(-30, -30, 60, 60), false, Color(0, 0, 0, 0.55 * a))
-	c.draw_circle(Vector2.ZERO, r, Color(0.03, 0.03, 0.05, 0.7 * a))
-	c.draw_arc(Vector2.ZERO, r, 0.0, TAU, 32, Color(Art.OCRA, 0.95 * a), 1.5, true)
 	var kf := Art.title_font()
 	var ks := 15
-	var kw := kf.get_string_size(key_label, HORIZONTAL_ALIGNMENT_LEFT, -1, ks).x
-	c.draw_string(kf, Vector2(-kw * 0.5, ks * 0.36), key_label, HORIZONTAL_ALIGNMENT_LEFT, -1, ks, Color(Art.CREMA, a))
+	for i in labels.size():
+		var center := Vector2((float(i) - float(labels.size()-1)*.5)*32, 0)
+		c.draw_texture_rect(Art.soft_texture(), Rect2(center-Vector2(30,30), Vector2(60,60)), false, Color(0,0,0,.55*a))
+		c.draw_circle(center, r, Color(.03,.03,.05,.7*a))
+		c.draw_arc(center, r, 0, TAU, 32, Color(Art.OCRA,.95*a), 1.5, true)
+		var kw := kf.get_string_size(labels[i], HORIZONTAL_ALIGNMENT_LEFT, -1, ks).x
+		var baseline := (kf.get_ascent(ks)-kf.get_descent(ks))*.5
+		c.draw_string(kf, center+Vector2(-kw*.5,baseline), labels[i], HORIZONTAL_ALIGNMENT_LEFT, -1, ks, Color(Art.CREMA,a))
 	var verb := str(_cfg.get("verb", "Parla")).to_upper()
 	var vf := Art.title_wide()
 	var vs := 12

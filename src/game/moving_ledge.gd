@@ -14,7 +14,8 @@ func setup(cfg: Dictionary, owner_world: Node) -> void:
 	_origin = Vector2(cfg.pos[0], cfg.pos[1])
 	_size = Vector2(cfg.size[0], cfg.size[1])
 	position = _origin
-	collision_layer = 4
+	sync_to_physics = true
+	set_collision_layer_value(4, true)
 	collision_mask = 0
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
@@ -30,9 +31,11 @@ func _physics_process(delta: float) -> void:
 		return
 	if _world.story.times_seen(_cfg.stop) == 0:
 		_elapsed += delta
-		position = _origin + Vector2(_cfg.travel[0], _cfg.travel[1]) * sin(_elapsed * TAU / float(_cfg.period))
+		var progress := (1.0-cos(_elapsed * TAU / float(_cfg.period))) * .5
+		position = _origin + Vector2(_cfg.travel[0], _cfg.travel[1]) * progress
 	else:
-		position = position.move_toward(_origin, 80 * delta)
+		var dock: Array = _cfg.get("dock", _cfg.pos)
+		position = position.move_toward(Vector2(dock[0],dock[1]), 80 * delta)
 
 func _draw() -> void:
 	draw_texture_rect_region(STONE, Rect2(-_size.x / 2, 0, _size.x, 24), Rect2(0, 0, 600, 132))

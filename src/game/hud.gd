@@ -197,7 +197,7 @@ func _draw_boss(vp: Vector2) -> void:
 	var w := 620.0
 	var x := (vp.x - w) * 0.5
 	var y := vp.y - 70.0
-	Art.text(self, Art.title_wide(), Vector2(0, y - 16.0), "DONNA LUCIANA", 22, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+	Art.text(self, Art.title_wide(), Vector2(0, y - 16.0), "RATKING · IL FIGLIO DELLE CISTERNE" if boss.kind == "ratking" else "DONNA LUCIANA", 22, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	var frac := clampf(float(boss.hp) / maxf(1.0, float(boss.max_hp)), 0.0, 1.0)
 	draw_rect(Rect2(x - 2, y - 2, w + 4, 12), Color(0, 0, 0, 0.7 * a))
 	Art.grad_rect(self, Rect2(x, y, w * frac, 8), Color(1.0, 0.72, 0.3, a), Color(0.6, 0.15, 0.08, a))

@@ -83,7 +83,7 @@ func _draw() -> void:
 		if not exit.get("open", true):
 			var y := 12.0 if exit.side == "top" else float(world.room.floor)
 			draw_line(Vector2(exit.x - exit.width/2, y), Vector2(exit.x + exit.width/2, y), Art.OCRA, 6)
-			Art.text(self, Art.body_font(), Vector2(exit.x - 160, y+45), "Serve " + ("la catena della fucina" if exit.need == "grapple" else "la presa dei guanti"), 17, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 320)
+			Art.text(self, Art.body_font(), Vector2(exit.x - 160, y+45), "Serve " + ("il rampino di Ratking" if exit.need == "grapple" else "la presa dei guanti"), 17, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 320)
 	for a in rings:
 		var p := Vector2(a[0], a[1])
 		draw_line(p - Vector2(0, 64), p, Color("#61564a"), 3, true)

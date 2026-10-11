@@ -1532,13 +1532,12 @@
       "z": 7
     },
     "basket": {
-      "span": 210,
+      "span": 190,
       "anchor": [
-        0.38,
-        0.32
+        0.18,
+        0.3
       ],
       "bone": "wrist",
-      "angle": 85,
       "z": 7
     },
     "book": {
@@ -1650,6 +1649,28 @@
       "position": [
         -25,
         -265
+      ]
+    },
+    "lantern": {
+      "span": 170,
+      "anchor": [
+        0.5,
+        0.06
+      ],
+      "bone": "wrist",
+      "z": 7
+    },
+    "rat_tail": {
+      "span": 340,
+      "anchor": [
+        0.08,
+        0.08
+      ],
+      "bone": "hips",
+      "z": -7,
+      "position": [
+        -45,
+        0
       ]
     }
   },

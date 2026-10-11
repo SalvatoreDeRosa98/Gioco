@@ -75,6 +75,8 @@ func _refresh() -> void:
 	var first_button: Button = null
 	for key in Tuning.data.shop:
 		var item: Dictionary = Tuning.data.shop[key]
+		if bool(item.get("reward_only",false)):
+			continue
 		var row := HBoxContainer.new()
 		_rows.add_child(row)
 		var info := VBoxContainer.new()
