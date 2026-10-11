@@ -10,6 +10,7 @@ from scipy import ndimage as nd
 SRCDIR=os.environ.get('SRCDIR','/workspace/ferruccio-art/grok/')
 OUT=os.environ.get('OUT','/workspace/artproc/ferr_v2/')
 M=4
+REF={'15-ferruccio-salto-scatto-colpito-02.jpg':5,'16-ferruccio-parata-rampino-martello-cura-02.jpg':7}
 SHEETS={
  'frames_salto':('15-ferruccio-salto-scatto-colpito-02.jpg',
    ['salita','apice','caduta','doppio_salto','scatto','fine_scatto','colpito','ripresa_colpo']),
@@ -56,8 +57,9 @@ def cut(fname,names,ref_height=1004*0.95,mult=0.5):
         dist,(iy,ix)=nd.distance_transform_edt(lab==0,return_indices=True)
         near=lab[iy,ix]; ok=rest&(dist<80); lab[ok]=near[ok]
     cells=[lab==i+1 for i in range(8)]
-    # scala: altezza mediana delle figure a terra (riga in basso)
-    hs=[np.ptp(np.where(k.any(axis=1))[0]) for k in cells[4:]]
+    # scala: una figura in piedi di riferimento per foglio (cappello -> piedi, senza lame o
+    # braccia sopra la testa), così tutte le clip escono a circa 150 px a 1080p come la corsa
+    hs=[np.ptp(np.where(cells[REF[fname]].any(axis=1))[0])]
     S=ref_height/np.median(hs)*mult
     soft=np.clip((diff-3)/20,0,1)
     imgs=[];meta=[]

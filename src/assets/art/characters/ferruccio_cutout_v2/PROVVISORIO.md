@@ -8,3 +8,9 @@
 - Hurt: rinculo 8 unità + 8° che si smorza in 0,25 s; il knockback resta quello del tuning.
 - Tono: tono_02.py schiarisce avorio e sciarpa con curva di sola luminanza (CORREZIONI §6); le tinte sono quelle dello 02.
 - Pavimento tema "oro" (stanza 6): terrain_tint da #e6d2b4 a #9c8e7a, p90 da rimisurare in gioco.
+
+## Revisione CONTROLLO-SLICE3 (commit A)
+- Contorno idle: risolto nel commit precedente (pezzi piatti nel CanvasGroup, niente z_index).
+- Stanza 6 (tema oro): pavimento p90 misurato #8A6235 (obiettivo <= #9A7A4E).
+- Atlante attacco +15% luminosità, corsa -15% saturazione (uniforma_atlanti.py); l'attacco ha qualche luce al limite (p90 ~#FFE7CB).
+- Scala dei fogli 15/16 normalizzata su una figura in piedi di riferimento per foglio: altezze in atlante 450-560 px come corsa/attacco (stessa canvas_per_px). Le pose accucciate (parata, cura, rampino) restano più basse per disegno.
