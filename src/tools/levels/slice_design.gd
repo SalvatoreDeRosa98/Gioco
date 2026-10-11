@@ -50,7 +50,7 @@ static func r9() -> Dictionary:
 			# in d6e2123 (origin/feat/gameplay). Terzo marcatore: VAult bot lo chiama E2_guardia.
 			{"type": "vespa", "pos": Vector2(650, 690)},
 			{"type": "lanterniere", "pos": Vector2(1500, 946)},
-			{"type": "guardia", "pos": Vector2(1000, 946), "note": "Insegna la parata: stoccata parabile (tuning.json -> player.parry_window)."},
+			{"type": "guardia", "pos": Vector2(1250, 946), "note": "Insegna la parata: stoccata parabile (tuning.json -> player.parry_window)."},
 			{"type": "vespa", "pos": Vector2(1860, 470)},
 			{"type": "statua", "pos": Vector2(2060, 946)},
 		],

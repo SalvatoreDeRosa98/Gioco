@@ -105,38 +105,33 @@ func _draw() -> void:
 				var angle: float = a * TAU / 6 + (_time * 0.5 if done else 0)
 				draw_line(wheel, wheel + Vector2.from_angle(angle) * 22, color, 2, true)
 		if i == selected:
-			var txt: String = Controls.label("interact") + "  " + str(m.label)
-			var r := label_rect(p - Vector2(0, ARCH_SPRING + ARCH_R + 60 if m.kind == "route" else 86), txt)
-			Art.text(self, Art.body_font(), r.position + Vector2(0, LABEL_SIZE), txt, LABEL_SIZE, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
+			var text := Controls.label("interact") + "  " + str(m.label)
+			var lr := label_rect(p, str(m.kind), text)
+			Art.text(self, Art.body_font(), lr.position + Vector2(0, LABEL_BASE), text, LABEL_SIZE, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, lr.size.x)
 
 
 const LABEL_SIZE := 19
-## Margine dai bordi dello schermo per le scritte dei passaggi.
-const LABEL_MARGIN := 16.0
-
-
-## Riquadro (coordinate locali) della scritta di un passaggio centrata su anchor (base del testo):
-## spostato in orizzontale perche' resti tutto dentro lo schermo e non finisca sotto il pannello
-## dell'HUD in alto a sinistra (stanza 13: "Passaggio per Piazza Dante" usciva a sinistra).
-func label_rect(anchor: Vector2, txt: String) -> Rect2:
-	var w := Art.body_font().get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_SIZE).x + 12.0
-	var local := Rect2(anchor + Vector2(-w * 0.5, -LABEL_SIZE), Vector2(w, LABEL_SIZE + 6.0))
+## Riquadro (mondo) del cartello di un punto d'interesse: sopra l'arco o l'oggetto, ma sempre dentro
+## lo schermo e fuori dalle zone dell'HUD (slice_props.gd: fit_label, che copre anche il pannello
+## vitals_rect dell'HUD in alto a sinistra).
+const LABEL_BASE := 20.0
+## Firme accettate (integrazione levels + ui-audio):
+##   label_rect(punto, kind, testo)  -> levels: l'altezza sopra l'arco/oggetto la calcola qui;
+##   label_rect(ancora, testo)       -> ui-audio: ancora gia' sopra l'arco (base del testo).
+func label_rect(p: Vector2, kind: String, text := "") -> Rect2:
+	var top: Vector2
+	var txt := text
+	if text == "" and kind.contains(" "):  # i kind sono parole singole, il testo ha "tasto  etichetta"
+		txt = kind
+		top = p - Vector2(0, LABEL_BASE)
+	else:
+		top = p - Vector2(0, ARCH_SPRING + ARCH_R + 60 if kind == "route" else 86) - Vector2(0, LABEL_BASE)
+	# Largo quanto il testo (centrato sul punto), almeno 360 px.
+	var w := maxf(360.0, Art.body_font().get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_SIZE).x + 16.0)
+	var r := Rect2(top - Vector2(w / 2.0, 0), Vector2(w, 28))
 	if not is_inside_tree():
-		return local
-	var xf := get_global_transform_with_canvas()
-	var vp := get_viewport_rect().size
-	var scr := xf * local
-	var hud_panel := Rect2()
-	if world and world.get("_hud") and world._hud.has_method("vitals_rect"):
-		hud_panel = world._hud.vitals_rect()
-	var min_x := LABEL_MARGIN
-	if hud_panel.size.x > 0.0 and scr.position.y < hud_panel.end.y + 4.0 and scr.end.y > hud_panel.position.y:
-		min_x = hud_panel.end.x + 12.0
-	var max_x := vp.x - LABEL_MARGIN - scr.size.x
-	scr.position.x = clampf(scr.position.x, min_x, maxf(min_x, max_x))
-	scr.position.y = clampf(scr.position.y, LABEL_MARGIN, vp.y - LABEL_MARGIN - scr.size.y)
-	var back := xf.affine_inverse() * scr
-	return Rect2(back.position, local.size)
+		return r
+	return preload("res://game/slice_props.gd").fit_label(get_viewport(), r, world._slice_props.sprite_rects() if world and is_instance_valid(world.get("_slice_props")) else [])
 
 
 ## Portale in pietra appoggiato al suolo, con la stessa pietra dipinta del terreno:
