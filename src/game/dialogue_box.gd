@@ -15,6 +15,8 @@ signal voice(who: String, on: bool)
 const ITEM_PATH := "res://assets/art/items/%s.png"
 const BOX_W := 780.0
 const BOX_TOP := 26.0
+## Spazio extra riservato in alto (lo imposta la barra del boss quando e' visibile).
+static var reserve_top := 0.0
 const TEXT_SIZE := 27
 const LINE_H := 34.0
 const NAME_SIZE := 19
@@ -26,7 +28,7 @@ const INPUT_GUARD := 0.18
 const CHOICE_GUARD := 0.45
 const ADVANCE_ACTIONS := ["interact", "jump", "attack", "ui_accept"]
 
-## Ultimo dispositivo usato: decide se l'invito mostra "W" o "Y".
+## Ultimo dispositivo usato: decide se l'invito mostra "E" o "Y".
 static var pad := false
 static var _italic: FontVariation
 
@@ -298,7 +300,7 @@ func _input(event: InputEvent) -> void:
 		return
 	var advance := _is_advance(event)
 	if not advance and not _options.is_empty() and _typed():
-		# W e Freccia su sono anche "parla" (conferma): qui scelgono solo gli altri tasti di direzione.
+		# Interagisci (E / Y) conferma; tutte le direzioni cambiano la scelta.
 		for a in ["move_left", "move_right", "move_down", "move_up", "ui_left", "ui_right", "ui_down", "ui_up"]:
 			if InputMap.has_action(a) and event.is_action_pressed(a):
 				_sel = 1 - _sel
@@ -352,6 +354,21 @@ func _sfx(kind: String, db: float = 0.0) -> void:
 
 # ---------------------------------------------------------------- Disegno
 
+## Bordo superiore del riquadro: sotto la barra del boss se e' a schermo.
+func box_top() -> float:
+	return BOX_TOP + reserve_top
+
+
+## Riquadro occupato a schermo dal pannello del dialogo aperto (per i test di sovrapposizione).
+func panel_rect(vp_w: float) -> Rect2:
+	var name_h := 30.0 if _name != "" else 8.0
+	var text_h := maxf(1.0, float(_wrapped.size())) * LINE_H
+	var opt_h := 58.0 if not _options.is_empty() else 0.0
+	var body_h := maxf(text_h, ITEM_SIZE if _item != null else 0.0)
+	var h := 22.0 + name_h + 22.0 + body_h + opt_h + 34.0
+	return Rect2(vp_w * 0.5 - BOX_W * 0.5 - 70.0, box_top() - 16.0, BOX_W + 140.0, h + 36.0)
+
+
 func _draw_box() -> void:
 	if not _open:
 		return
@@ -360,7 +377,7 @@ func _draw_box() -> void:
 	var a := ease(_k, 0.6)
 	var cx := vp.x * 0.5
 	var x0 := cx - BOX_W * 0.5
-	var y0 := BOX_TOP - (1.0 - a) * 14.0
+	var y0 := box_top() - (1.0 - a) * 14.0
 	var name_h := 30.0 if _name != "" else 8.0
 	var text_h := maxf(1.0, float(_wrapped.size())) * LINE_H
 	var opt_h := 58.0 * ease(_opt_k, 0.5) if not _options.is_empty() else 0.0

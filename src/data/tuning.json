@@ -231,10 +231,24 @@
     "heal_chance": 0.12,
     "room_clear_coins": 10
   },
+  "ratking_arena": {
+    "_doc": "Camera della Tana di Ratking (stanza 15, 1600x1080): riquadro [x, y, w, h], zoom limiti e tempi del tween.",
+    "frame": [40, 300, 1520, 700],
+    "min_zoom": 0.5,
+    "max_zoom": 1.6,
+    "zoom_in_time": 1.0,
+    "zoom_out_time": 0.9
+  },
   "arena": {
     "trigger_x": 290,
     "transition_time": 1.6,
     "camera_zoom": 0.76,
+    "_frame_doc": "Riquadro [x, y, w, h] dell'arena da inquadrare tutto: lo zoom e' il piu' grande con cui ci sta (min_zoom..max_zoom). Tempi del tween di zoom in entrata/uscita in secondi.",
+    "frame": [205, 160, 1530, 840],
+    "min_zoom": 0.5,
+    "max_zoom": 1.6,
+    "zoom_in_time": 1.2,
+    "zoom_out_time": 0.9,
     "ledges": [
       [
         300,

@@ -1,5 +1,6 @@
 extends CanvasLayer
 const DialogueBoxScript := preload("res://game/dialogue_box.gd")
+const TraversalScript := preload("res://game/traversal.gd")
 const MAP_BG := preload("res://assets/art/ui/carta/carta_reale.png")
 const SEALS := {
 	"market_seal": preload("res://assets/art/ui/carta/sigillo_mercato.png"),
@@ -16,7 +17,18 @@ const SKILL_ICONS := {
 	"guard": preload("res://assets/art/ui/carta/icona_parata.png"),
 	"scarf": preload("res://assets/art/ui/carta/icona_sciarpa.png"),
 	"heal": preload("res://assets/art/ui/carta/icona_cura.png"),
+	# SEGNAPOSTO (assets/art/ui/segnaposto/manifest.json): guanti della presa.
+	"wall_grip": preload("res://assets/art/ui/segnaposto/abilita_guanti.png"),
 }
+## Icone della carta, 48x48 (SEGNAPOSTO, vedi assets/art/ui/segnaposto/manifest.json).
+const MAP_ICONS := {
+	"crepa": preload("res://assets/art/ui/segnaposto/mappa_crepa.png"),
+	"anello": preload("res://assets/art/ui/segnaposto/mappa_anello.png"),
+	"incudine": preload("res://assets/art/ui/segnaposto/mappa_incudine.png"),
+	"saracinesca": preload("res://assets/art/ui/segnaposto/mappa_saracinesca.png"),
+}
+## Lato a schermo delle icone sulla carta.
+const MARK_SIZE := 24.0
 ## Carta delle aree visitate: conserva l'esplorazione attraverso story.seen.
 const PLACES := {
 	0: Vector2(100, 320), 1: Vector2(310, 320), 2: Vector2(520, 320),
@@ -80,6 +92,44 @@ func toggle() -> void:
 	canvas.visible = opened
 	world._freeze_for_talk(opened)
 	canvas.queue_redraw()
+
+## Segni di una stanza visitata: crepe viste (spente se gia' rotte), incudini attivate, anelli
+## e saracinesche. Ogni voce: {kind, done}.
+func room_marks(idx: int) -> Array:
+	var marks := []
+	var key := str(idx)
+	for c in Room.Expansion.data().get("cracks", {}).get(key, []):
+		if world.story.times_seen(TraversalScript.seen_key(str(c.id))) > 0:
+			marks.append({"kind": "crepa", "done": world.story.times_seen(str(c.id)) > 0})
+	for id in world.stations:
+		if int(world.stations[id].get("room", -1)) == idx:
+			marks.append({"kind": "incudine", "done": false})
+			break
+	if not Room.Expansion.data().get("rings", {}).get(key, []).is_empty():
+		marks.append({"kind": "anello", "done": not world.upgrades.has("grapple")})
+	for mark in Room.Expansion.data().get("landmarks", {}).get(key, []):
+		# Passaggio sbarrato finche' manca una condizione (saracinesca); spento quando e' aperto.
+		if mark.has("need"):
+			marks.append({"kind": "saracinesca", "done": world.story.times_seen(str(mark.need)) > 0})
+			break
+	return marks
+
+
+func _draw_marks(p: Vector2, dims: Vector2, marks: Array) -> void:
+	var x := p.x - (marks.size() * (MARK_SIZE + 2.0)) * 0.5
+	for m in marks:
+		var col := Color(1, 1, 1, 0.35) if m.done else Color.WHITE
+		canvas.draw_texture_rect(MAP_ICONS[m.kind], Rect2(x, p.y + dims.y * 0.5 + 16.0, MARK_SIZE, MARK_SIZE), false, col)
+		x += MARK_SIZE + 2.0
+
+
+func _draw_legend() -> void:
+	var x := 40.0
+	for pair in [["crepa", "Muro incrinato visto"], ["incudine", "Incudine"], ["anello", "Anello del rampino"], ["saracinesca", "Saracinesca"]]:
+		canvas.draw_texture_rect(MAP_ICONS[pair[0]], Rect2(x, 600, MARK_SIZE, MARK_SIZE), false)
+		Art.text(canvas, Art.body_font(), Vector2(x + MARK_SIZE + 6, 618), pair[1], 13, Art.CREMA)
+		x += 180.0
+
 
 func _draw_map() -> void:
 	var viewport := canvas.get_viewport_rect().size
@@ -146,6 +196,8 @@ func _draw_map() -> void:
 		Art.text(canvas, Art.body_font(), p + Vector2(-90, 5), r.name, 14, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 180)
 		if idx == world.room_index:
 			canvas.draw_circle(p + Vector2(0, dims.y / 2 + 10), 4, Art.CREMA)
+		_draw_marks(p, dims, room_marks(idx))
+	_draw_legend()
 
 	# Medaglioni abilità artigiane di Ferruccio in basso a destra
 	var skill_defs := [
@@ -153,9 +205,10 @@ func _draw_map() -> void:
 		{"id": "hammer", "label": "Martello"},
 		{"id": "guard", "label": "Fibbia"},
 		{"id": "scarf", "label": "Sciarpa"},
+		{"id": "wall_grip", "label": "Guanti"},
 		{"id": "heal", "label": "Cura"},
 	]
-	var sx := 840.0
+	var sx := 790.0
 	for sk in skill_defs:
 		var unlocked: bool = sk.id == "heal" or world.upgrades.has(sk.id)
 		var icon_tex: Texture2D = SKILL_ICONS.get(sk.id)
@@ -163,7 +216,7 @@ func _draw_map() -> void:
 			var mod := Color(1.0, 1.0, 1.0, 0.95) if unlocked else Color(0.25, 0.22, 0.2, 0.35)
 			canvas.draw_texture_rect(icon_tex, Rect2(sx, 642, 38, 38), false, mod)
 		Art.text(canvas, Art.body_font(), Vector2(sx + 19, 686), sk.label, 12, Art.OCRA if unlocked else Color(0.45, 0.42, 0.4), HORIZONTAL_ALIGNMENT_CENTER, 70)
-		sx += 88.0
+		sx += 80.0
 
 	var close_txt := Controls.label("map") + " / " + Controls.label("pause") + "  Chiudi"
 	var skills_txt := Controls.label("grapple") + " Catena · " + Controls.label("hammer") + " Martello · " + Controls.label("heal") + " Cura · " + Controls.label("dash") + " Scatto"

@@ -48,6 +48,9 @@
 		"custode_raffica": {"files": ["sfx/custode_raffica.wav"], "db": 0.0, "pitch": 0.03},
 		"menu_click": {"files": ["sfx/menu_click.wav"], "db": 0.0, "pitch": 0.02},
 		"dialogo": {"files": ["sfx/dialogo_1.wav", "sfx/dialogo_2.wav"], "db": 0.0, "pitch": 0.06, "bus": "Voice"},
-		"scelta": {"files": ["sfx/scelta.wav"], "db": 0.0, "pitch": 0.0}
+		"scelta": {"files": ["sfx/scelta.wav"], "db": 0.0, "pitch": 0.0},
+		"incudine_salva": {"todo": true, "placeholder": "TODO audio: suono sintetizzato segnaposto (tools/audio/gen_placeholders.py)", "files": ["sfx/TODO_incudine_salva.wav"], "db": -2.0, "pitch": 0.0},
+		"boss_preavviso": {"todo": true, "placeholder": "TODO audio: preavviso attacchi del Cavaliere, segnaposto sintetizzato", "files": ["sfx/TODO_boss_preavviso.wav"], "db": -1.0, "pitch": 0.03},
+		"ratking_preavviso": {"todo": true, "placeholder": "TODO audio: preavviso attacchi di Ratking, segnaposto sintetizzato", "files": ["sfx/TODO_ratking_preavviso.wav"], "db": -1.0, "pitch": 0.05}
 	}
 }

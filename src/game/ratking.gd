@@ -161,6 +161,8 @@ func activate() -> void:
 	if _state != "waiting":
 		return
 	world.arena_active = true
+	# La tana si vede tutta: camera d'arena con tween (tuning.json, "ratking_arena").
+	ArenaCamera.enter(world, world.player._cam, Tuning.data.get("ratking_arena", {}))
 	world._hud._title_t = -1.0
 	world.refresh_routes()
 	_enter("approach", float(_cfg.intro_delay))
@@ -168,6 +170,8 @@ func activate() -> void:
 	world.narrate(_story.intro)
 
 func _enter(state: String, seconds: float) -> void:
+	if state == "windup":
+		Audio.sfx("ratking_preavviso")
 	_state = state
 	_timer = seconds
 	_duration = seconds
@@ -190,6 +194,8 @@ func take_hit(amount: int, _push: Vector2 = Vector2.ZERO) -> bool:
 	if phase == 1 and is_phase2_threshold():
 		_enter_phase2()
 	if hp <= 0:
+		for cam in get_tree().get_nodes_in_group(ArenaCamera.GROUP):
+			cam.leave(float(Tuning.data.get("ratking_arena", {}).get("zoom_out_time", 0.9)))
 		for rat in get_tree().get_nodes_in_group("rat_swarm"):
 			rat.queue_free()
 		queue_free()

@@ -1,0 +1,55 @@
+{
+  "_doc": "Icone SEGNAPOSTO generate da tools/art/gen_placeholders.py: sostituire con le icone definitive (stesso nome e dimensione). Vedi VERTICAL-SLICE.md, sezione 5.",
+  "placeholder": true,
+  "icons": {
+    "mappa_crepa": {
+      "size": [
+        48,
+        48
+      ],
+      "placeholder": true
+    },
+    "mappa_anello": {
+      "size": [
+        48,
+        48
+      ],
+      "placeholder": true
+    },
+    "mappa_incudine": {
+      "size": [
+        48,
+        48
+      ],
+      "placeholder": true
+    },
+    "mappa_saracinesca": {
+      "size": [
+        48,
+        48
+      ],
+      "placeholder": true
+    },
+    "abilita_guanti": {
+      "size": [
+        96,
+        96
+      ],
+      "placeholder": true
+    },
+    "abilita_rampino": {
+      "size": [
+        96,
+        96
+      ],
+      "placeholder": true
+    },
+    "abilita_martello": {
+      "size": [
+        96,
+        96
+      ],
+      "placeholder": true
+    }
+  }
+}

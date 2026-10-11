@@ -76,6 +76,8 @@ func _run() -> void:
 	check(player.hp == health - 1 and boss._sword_hit, "La parata annulla e consuma il fendente")
 	check(int(boss._cfg.burst_count) == 6 and float(boss._cfg.burst_speed) == 270, "Raffica più veloce ma ancora leggibile")
 	var shortcut := InputEventKey.new()
+	# La modalita' sviluppatore richiede ora un flag esplicito (--dev in build di debug).
+	DevFlags.force = 1
 	shortcut.keycode = KEY_F12
 	shortcut.ctrl_pressed = true
 	shortcut.shift_pressed = true

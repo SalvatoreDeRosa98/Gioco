@@ -98,6 +98,9 @@ Legenda stato: **E** = esiste già (placeholder generato da `tools/audio/`, da s
 | `madre_marmo_canto`, `madre_marmo_crepa`, `madre_marmo_telaio` | N | |
 | `arena_cancello_chiusura` | N | cancelli dell'arena che scendono |
 
+### 3.3b Segnaposto sintetizzati già nel gioco (da sostituire)
+`incudine_salva` (`sfx/TODO_incudine_salva.wav`, suona al salvataggio all'incudine), `boss_preavviso` (`sfx/TODO_boss_preavviso.wav`, preavviso di ogni attacco del Cavaliere: fendente, balzo, raffica), `ratking_preavviso` (`sfx/TODO_ratking_preavviso.wav`, a ogni carica di Ratking). Sono generati da `tools/art/gen_placeholders.py` e segnati `"todo": true` in `audio.json`. Il preavviso deve leggersi in 0,3–0,6 s e restare distinguibile dall'attacco vero e proprio.
+
 ### 3.4 Mondo e interazioni
 `moneta` (E), `mozzarella` (E), `portale` (E), N: `porta_apertura`, `chiusa_meccanismo`, `meccanismo_attivato`, `piattaforma_mobile` (loop), `salvataggio_statua`, `sigillo_risveglio`, `frammento_testimonianza`, `negozio_acquisto`, `incudine_ricordo`, `passaggio_aperto`, `segreto_trovato`.
 

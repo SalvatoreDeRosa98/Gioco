@@ -3,9 +3,11 @@ extends Node2D
 var world: Node
 var active := false
 var _closing := 0.0
-var _camera: Camera2D
+var _camera: ArenaCamera
 
 func _process(delta: float) -> void:
+	if active and world.room_cleared and is_instance_valid(_camera) and not _camera.exiting:
+		_camera.leave(float(Tuning.data.arena.get("zoom_out_time", 0.9)))
 	if world.room_index != Room.BOSS_ROOM or world.room_cleared or world.is_talking() or world.in_cutscene():
 		return
 	if not active and world.player.position.x >= float(Tuning.data.arena.trigger_x):
@@ -27,11 +29,8 @@ func activate() -> void:
 	world.room.blocks.append(Rect2(1700,0,40,980))
 	world._terrain.build(world.room, Themes.get_theme("oro"))
 	world.refresh_routes()
-	_camera = Camera2D.new()
-	_camera.position = Vector2(960,540)
-	_camera.zoom = Vector2.ONE * float(Tuning.data.arena.camera_zoom)
-	add_child(_camera)
-	_camera.make_current()
+	# Inquadratura di tutta l'arena con Ferruccio il piu' grande possibile (tuning.json, "arena").
+	_camera = ArenaCamera.enter(self, world.player._cam, Tuning.data.arena)
 	world.player.add_trauma(0.6)
 	world._hud.area_title("L'arena del Cavaliere Borbonico", "Il Cortile chiude le sue porte")
 	var tween := create_tween()

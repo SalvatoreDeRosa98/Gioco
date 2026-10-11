@@ -221,6 +221,8 @@ func _input(event: InputEvent) -> void:
 
 ## Comando locale di test: non viene registrato nel salvataggio.
 func _toggle_developer_mode() -> void:
+	if not DevFlags.enabled():
+		return
 	if player.dead:
 		_hud.toast("Riprendi la partita prima di attivare la modalità sviluppatore")
 		return
@@ -360,6 +362,8 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 		remove_child(_arena)
 		_arena.queue_free()
 		_arena = null
+	for cam in get_tree().get_nodes_in_group(ArenaCamera.GROUP):
+		cam.queue_free()
 	player._cam.make_current()
 	story.seen["visited_%d" % idx] = 1
 	if _map == null:
@@ -1167,6 +1171,7 @@ func _save_at(pos: Vector2) -> void:
 	_saved_state = state.duplicate(true)
 	choice_uses.clear()
 	player.heal(player.max_hp)
+	Audio.sfx("incudine_salva")
 	_hud.toast("Partita salvata · Vita ripristinata")
 
 
