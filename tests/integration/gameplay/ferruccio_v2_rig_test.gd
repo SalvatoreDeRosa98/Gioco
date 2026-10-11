@@ -25,9 +25,11 @@ func _run() -> void:
 	check(rig.rig_path == str(T.player.rig_dir), "Il rig v2 viene dal tuning (%s)" % rig.rig_path)
 	# Altezza a schermo: unità del mondo x zoom della camera x (1080 / altezza della finestra)
 	# Misura con lo zoom 1.6 della camera di feat/ui-audio (lo zoom di riferimento del gioco).
-	const UI_ZOOM := 1.6
-	var px: float = rig.height * UI_ZOOM * 1080.0 / float(ProjectSettings.get_setting("display/window/size/viewport_height"))
-	check(px >= 140.0 and px <= 160.0, "Ferruccio alto %.0f px a 1080p con zoom 1.6 (140-160)" % px)
+	# Zoom reale della camera del giocatore (Room.CAMERA_ZOOM, 1.6 nello slice-3), non una costante.
+	var cam_zoom: float = p._cam.zoom.y
+	check(is_equal_approx(cam_zoom, Room.CAMERA_ZOOM), "Camera del giocatore allo zoom della stanza (%.2f)" % cam_zoom)
+	var px: float = rig.height * cam_zoom * 1080.0 / float(ProjectSettings.get_setting("display/window/size/viewport_height"))
+	check(px >= 140.0 and px <= 160.0, "Ferruccio alto %.0f px a 1080p con lo zoom reale %.2f (140-160)" % [px, cam_zoom])
 	check(rig._outline != null and rig._outline.material != null, "Contorno v2 (shader §3.4) attivo")
 	check(rig._layer != null and rig._layer.layer > 5 and rig._layer.follow_viewport_enabled, "Ferruccio sopra il color grading (layer %d), segue la camera" % (rig._layer.layer if rig._layer else -1))
 	rig.advance(0.016, Vector2.ZERO)
@@ -98,6 +100,23 @@ func _run() -> void:
 	rig.advance(0.016, Vector2.ZERO)
 	check(rig.uses_frames() and is_equal_approx(rig._spin_node.rotation, 1.2), "double_jump: posa a fotogramma ruotata")
 	rig.spin = 0.0
+	# Atterraggio: lo squash resta entro ±0,25 (niente striscia).
+	rig._clip = "idle"
+	rig._squash = -3.0
+	rig.advance(0.016, Vector2.ZERO)
+	check(rig._body.scale.x > rig._factor * 0.8 and rig._body.scale.y > rig._factor * 0.7, "Squash limitato: la posa non diventa una striscia")
+	p._squash = 2.0
+	rig.select_state(p, false)
+	check(absf(rig._squash) <= 0.25, "select_state limita lo squash")
+	p._squash = 0.0
+	# Morte: piena nel primo secondo (contorno e rim visibili), poi mai sotto 0,6.
+	p.dead = true
+	p._dead_t = 0.0
+	p._process(0.5)
+	check(rig.modulate.a >= 0.99 and rig._outline != null, "Death: alfa piena e contorno nel primo secondo")
+	p._process(2.0)
+	check(rig.modulate.a >= 0.59, "Death: mai sotto 0,6 di alfa (%.2f)" % rig.modulate.a)
+	p.dead = false
 	# Ripiego: il rig v1 resta caricabile.
 	var v1 = CutoutRig.new()
 	v1.height = 84.0

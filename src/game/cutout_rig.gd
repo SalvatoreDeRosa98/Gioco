@@ -256,7 +256,8 @@ func select_state(player: Node, running: bool) -> void:
 		_update_weapon()
 	_progress = progress
 	_action_len = length
-	_squash = float(player._squash)
+	# Squash/stretch limitato a ±0,25: oltre, le pose diventavano una striscia (posa landing).
+	_squash = clampf(float(player._squash), -0.25, 0.25)
 	_speed_scale = clampf(absf(player.move_vel.x) / float(player._cfg.speed), 0.5, 1.4) if clip == "run" else 1.0
 
 
@@ -278,6 +279,7 @@ func _update_weapon() -> void:
 
 ## Avanza la clip, applica la posa e il moto secondario della sciarpa.
 func advance(delta: float, velocity: Vector2) -> void:
+	_squash = clampf(_squash, -0.25, 0.25)
 	_update_weapon()
 	_time += delta
 	_clip_t += delta * _speed_scale
