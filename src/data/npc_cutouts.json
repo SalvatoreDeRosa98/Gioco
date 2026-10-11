@@ -3400,5 +3400,105 @@
     ],
     "breath_period": 3.4,
     "puppet": "combat_duellante"
+  },
+  "luciana": {
+    "body_pivot": [
+      0.5,
+      0.74
+    ],
+    "parts": [
+      {
+        "name": "head",
+        "parent": "torso",
+        "pivot": [
+          0.55,
+          0.22
+        ],
+        "outline": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0.22
+          ],
+          [
+            0,
+            0.22
+          ]
+        ]
+      },
+      {
+        "name": "arm_near",
+        "parent": "torso",
+        "pivot": [
+          0.47,
+          0.28
+        ],
+        "outline": [
+          [
+            0.34,
+            0.25
+          ],
+          [
+            0.54,
+            0.26
+          ],
+          [
+            0.56,
+            0.43
+          ],
+          [
+            0.38,
+            0.45
+          ]
+        ]
+      },
+      {
+        "name": "hand_near",
+        "parent": "arm_near",
+        "pivot": [
+          0.48,
+          0.43
+        ],
+        "outline": [
+          [
+            0.38,
+            0.45
+          ],
+          [
+            0.56,
+            0.43
+          ],
+          [
+            0.64,
+            0.62
+          ],
+          [
+            0.46,
+            0.62
+          ]
+        ]
+      }
+    ],
+    "motion": {
+      "torso": 0.002,
+      "head": 0.008,
+      "arm_near": 0.004,
+      "hand_near": 0.006,
+      "leg_near": 0.002,
+      "leg_far": -0.002
+    },
+    "wrist": [
+      0.55,
+      0.53
+    ],
+    "breath_period": 3.4,
+    "puppet": "violante_scesa"
   }
 }
