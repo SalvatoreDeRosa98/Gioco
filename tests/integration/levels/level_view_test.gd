@@ -99,10 +99,14 @@ func _run() -> void:
 		var ct: Transform2D = root.get_viewport().get_canvas_transform()
 		var vp := root.get_viewport().get_visible_rect().size
 		var labels := {"cancello": props.hint_rect(gate)}
+		# Un solo cartello: l'arco "Passaggio per Piazza Dante" sotto il cancello non ne disegna un altro.
 		for m in world._expedition.marks:
 			if str(m.kind) == "route" and absf(float(m.pos[0]) - gate.pos.x) < 300.0:
-				labels["passaggio " + str(m.id)] = world._expedition.label_rect(Vector2(m.pos[0], m.pos[1]), "route", Controls.label("interact") + "  " + str(m.label))
-		check(labels.size() >= 2, "Stanza 13: cartello del passaggio a sinistra trovato")
+				check(not world._expedition.draws_mark(world._expedition.marks.find(m)), "Stanza 13: il passaggio %s non ha un secondo cartello" % m.id)
+		var st: Dictionary = props.state[props.props.find(gate)]
+		check(props.gate_label(gate, {"open": 0.0}).begins_with("Sbarrato"), "Stanza 13: cartello sbarrato prima di Ratking")
+		check(props.gate_label(gate, {"open": 1.0}).contains("Piazza Dante"), "Stanza 13: stesso cartello = passaggio per Piazza Dante dopo Ratking")
+		check(st != null, "stato del cancello")
 		for name in labels:
 			var hr: Rect2 = labels[name]
 			var screen := Rect2(ct * hr.position, Vector2.ZERO).expand(ct * hr.end)

@@ -86,6 +86,18 @@ func _run() -> void:
 	var hr: Rect2 = sp.hint_rect(gate)
 	check(sp.visible_rect().encloses(hr), "Stanza 13: suggerimento del cancello dentro lo schermo (%s in %s)" % [hr, sp.visible_rect()])
 	check(hr.position.x > float(gate.pos.x), "Stanza 13: suggerimento a destra del cancello")
+	# Niente arco sbarrato (assi incrociate di expedition.gd) sotto i cancelli dipinti, nemmeno se
+	# hidden_marks mancasse (stanza ricostruita senza i Props).
+	var ex = world._expedition
+	for keep_hidden in [true, false]:
+		if not keep_hidden:
+			world.room["hidden_marks"] = []
+		for i in ex.marks.size():
+			var m: Dictionary = ex.marks[i]
+			var at := Vector2(m.pos[0], m.pos[1])
+			for gr: Rect2 in sp.gate_rects():
+				if str(m.kind) == "route" and gr.grow(24.0).has_point(at - Vector2(0, 40)):
+					check(not ex.draws_mark(i), "Stanza 13: arco %s con le assi disegnato sotto il cancello (hidden_marks %s)" % [m.id, keep_hidden])
 	main.queue_free()
 	await process_frame
 	print("level_art_duplicates_test: %d fallimenti" % failures)
