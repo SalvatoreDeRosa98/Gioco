@@ -1,5 +1,5 @@
 {
- "_doc": "Ferruccio v2 a ritaglio dal model sheet 02 (arte approvata in ferruccio-art/grok): stessi pezzi, ossa e animazioni del rig v1. Generato da tools/art/ferruccio_v2/cutout_v2.py. frame_clips: fotogrammi interi da 07 (attacco) e 08 (corsa), tools/art/ferruccio_v2/frames_v2.py. Colori ricalibrati sulla guida di stile da tools/art/ferruccio_v2/recolor_v2.py.",
+ "_doc": "Ferruccio v2 a ritaglio dal model sheet 02 (arte approvata in ferruccio-art/grok): stessi pezzi, ossa e animazioni del rig v1. Generato da tools/art/ferruccio_v2/cutout_v2.py. frame_clips: fotogrammi interi da 07 (attacco) e 08 (corsa), tools/art/ferruccio_v2/frames_v2.py, con lo stocco dritto di stocco_dritto.py. Tinte, costume, sciarpa e macchie sono quelli dello 02/07/08 originali (decisione di Salvatore): niente ricolorazione; la leggibilit\u00e0 viene da contorno, rim light, CanvasLayer fuori dal grading e da un aumento uniforme di luminosit\u00e0 (brightness). Pose dai fogli 15 e 16 (02 finali; la 14 \u00e8 annullata) con pose_v2.py: salto, apice/caduta, doppio salto (ruotato dal rig), scatto, colpito con rinculo, parata, rampino, martello, cura. Tono avorio/sciarpa schiarito senza cambiare tinte con tono_02.py (CORREZIONI \u00a76). Restano sul pupazzo: idle, crouch, skid, pogo, wall, death.",
  "canvas": [
   633,
   1024
@@ -383,25 +383,25 @@
     [
      944,
      0,
-     332,
+     314,
      560,
-     173.1,
+     170.2,
      556
     ],
     [
-     1276,
+     1258,
      77,
-     357,
+     397,
      483,
-     157.8,
+     199.4,
      479
     ],
     [
-     1633,
+     1655,
      59,
-     273,
+     290,
      501,
-     142.2,
+     158.3,
      497
     ]
    ],
@@ -416,50 +416,50 @@
     [
      0,
      0,
-     282,
-     556,
-     144.4,
-     552
+     412,
+     574,
+     164.7,
+     570
     ],
     [
-     282,
-     0,
-     318,
-     556,
-     170.7,
-     552
+     412,
+     100,
+     496,
+     474,
+     149.4,
+     470
     ],
     [
-     600,
-     58,
-     401,
-     498,
-     210.8,
-     494
+     908,
+     60,
+     407,
+     514,
+     199.3,
+     510
     ],
     [
-     1001,
-     148,
-     334,
-     408,
-     165.5,
-     404
+     1315,
+     154,
+     372,
+     420,
+     212.3,
+     416
     ],
     [
-     1335,
-     83,
-     292,
-     473,
-     119.0,
-     469
+     1687,
+     86,
+     392,
+     488,
+     145.8,
+     484
     ],
     [
-     1627,
-     87,
-     299,
-     469,
-     134.0,
-     465
+     2079,
+     90,
+     291,
+     484,
+     121.5,
+     480
     ]
    ],
    "progress": true
@@ -471,53 +471,287 @@
     [
      0,
      0,
-     282,
-     556,
-     144.4,
-     552
+     412,
+     574,
+     164.7,
+     570
     ],
     [
-     282,
-     0,
-     318,
-     556,
-     170.7,
-     552
+     412,
+     100,
+     496,
+     474,
+     149.4,
+     470
     ],
     [
-     600,
-     58,
-     401,
-     498,
-     210.8,
-     494
+     908,
+     60,
+     407,
+     514,
+     199.3,
+     510
     ],
     [
-     1001,
-     148,
-     334,
-     408,
-     165.5,
-     404
+     1315,
+     154,
+     372,
+     420,
+     212.3,
+     416
     ],
     [
-     1335,
-     83,
-     292,
-     473,
-     119.0,
-     469
+     1687,
+     86,
+     392,
+     488,
+     145.8,
+     484
     ],
     [
-     1627,
-     87,
-     299,
-     469,
-     134.0,
-     465
+     2079,
+     90,
+     291,
+     484,
+     121.5,
+     480
     ]
    ],
    "progress": true
+  },
+  "rise": {
+   "atlas": "frames_salto.png",
+   "canvas_per_px": 2.0,
+   "frames": [
+    [
+     0,
+     76,
+     520,
+     488,
+     187.2,
+     484
+    ]
+   ],
+   "poses": [
+    "salita"
+   ],
+   "hold": true
+  },
+  "fall": {
+   "atlas": "frames_salto.png",
+   "canvas_per_px": 2.0,
+   "frames": [
+    [
+     520,
+     1,
+     473,
+     563,
+     170.5,
+     559
+    ],
+    [
+     993,
+     0,
+     638,
+     564,
+     389.7,
+     560
+    ]
+   ],
+   "poses": [
+    "apice",
+    "caduta"
+   ],
+   "fps": 6,
+   "hold": true
+  },
+  "double_jump": {
+   "atlas": "frames_salto.png",
+   "canvas_per_px": 2.0,
+   "frames": [
+    [
+     1631,
+     86,
+     483,
+     478,
+     214.0,
+     474
+    ]
+   ],
+   "poses": [
+    "doppio_salto"
+   ],
+   "progress": true
+  },
+  "dash": {
+   "atlas": "frames_salto.png",
+   "canvas_per_px": 2.0,
+   "frames": [
+    [
+     2114,
+     111,
+     627,
+     453,
+     263.3,
+     449
+    ],
+    [
+     2741,
+     84,
+     584,
+     480,
+     273.6,
+     476
+    ]
+   ],
+   "poses": [
+    "scatto",
+    "fine_scatto"
+   ],
+   "fps": 7,
+   "hold": true
+  },
+  "hurt": {
+   "atlas": "frames_salto.png",
+   "canvas_per_px": 2.0,
+   "frames": [
+    [
+     3325,
+     72,
+     555,
+     492,
+     255.6,
+     488
+    ],
+    [
+     3880,
+     52,
+     487,
+     512,
+     198.7,
+     508
+    ]
+   ],
+   "poses": [
+    "colpito",
+    "ripresa_colpo"
+   ],
+   "fps": 6,
+   "hold": true,
+   "recoil": [
+    -8,
+    8
+   ]
+  },
+  "parry": {
+   "atlas": "frames_azioni.png",
+   "canvas_per_px": 2.0,
+   "frames": [
+    [
+     0,
+     42,
+     432,
+     457,
+     170.7,
+     453
+    ],
+    [
+     432,
+     111,
+     595,
+     388,
+     215.0,
+     384
+    ]
+   ],
+   "poses": [
+    "parata",
+    "riposta"
+   ],
+   "fps": 6,
+   "hold": true
+  },
+  "grapple": {
+   "atlas": "frames_azioni.png",
+   "canvas_per_px": 2.0,
+   "frames": [
+    [
+     1027,
+     58,
+     474,
+     441,
+     203.7,
+     437
+    ],
+    [
+     1501,
+     57,
+     345,
+     442,
+     125.9,
+     438
+    ]
+   ],
+   "poses": [
+    "lancio_rampino",
+    "appeso"
+   ],
+   "fps": 5,
+   "hold": true
+  },
+  "hammer": {
+   "atlas": "frames_azioni.png",
+   "canvas_per_px": 2.0,
+   "frames": [
+    [
+     1846,
+     0,
+     315,
+     499,
+     141.3,
+     495
+    ],
+    [
+     2161,
+     25,
+     481,
+     474,
+     186.1,
+     470
+    ],
+    [
+     2943,
+     12,
+     418,
+     487,
+     135.2,
+     483
+    ]
+   ],
+   "poses": [
+    "martello_carica",
+    "martello_colpo",
+    "ripresa"
+   ],
+   "progress": true
+  },
+  "heal": {
+   "atlas": "frames_azioni.png",
+   "canvas_per_px": 2.0,
+   "frames": [
+    [
+     2642,
+     14,
+     301,
+     485,
+     141.1,
+     481
+    ]
+   ],
+   "poses": [
+    "cura"
+   ],
+   "fps": 1
   }
  },
  "outline": {
@@ -526,8 +760,9 @@
   "rim_color": "ffe6b0",
   "rim_px": 3.0,
   "rim_strength": 0.85,
-  "white_point": 0.82,
-  "highlight_desat": 0.65
+  "white_point": 1.0,
+  "highlight_desat": 0.0
  },
- "own_layer": 6
+ "own_layer": 6,
+ "brightness": 1.0
 }

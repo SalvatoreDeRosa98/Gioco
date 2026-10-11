@@ -41,7 +41,7 @@ func _run() -> void:
 		rig._progress = 0.5 if bool(clips[clip].progress) else -1.0
 		rig.advance(0.05, Vector2.ZERO)
 		rig.advance(0.05, Vector2(200, 0))
-		var framed: bool = clip in ["run", "slash_a", "slash_b"]
+		var framed: bool = rig._frame_clips.has(clip)
 		check(rig.uses_frames() == framed, "%s: fotogrammi interi = %s" % [clip, framed])
 		check(rig._body.visible != framed, "%s: pupazzo visibile solo senza fotogrammi" % clip)
 	# I fotogrammi della corsa avanzano col tempo, quelli del colpo con l'avanzamento della hitbox.
@@ -58,6 +58,46 @@ func _run() -> void:
 	rig._progress = 0.9
 	rig.advance(0.016, Vector2.ZERO)
 	check(rig._frame_sprite.region_rect != s0, "Il colpo segue l'avanzamento")
+	# Pose dei fogli 02 (15 e 16): ogni stato ha la sua clip a fotogrammi, con atlante e
+	# rettangoli validi; le clip senza arte restano sul pupazzo.
+	const POSE_CLIPS := ["run", "slash_a", "slash_b", "rise", "fall", "double_jump", "dash", "hurt", "parry", "grapple", "hammer", "heal"]
+	for clip in POSE_CLIPS:
+		check(rig._frame_clips.has(clip), "%s: clip a fotogrammi presente" % clip)
+		if not rig._frame_clips.has(clip):
+			continue
+		var fc: Dictionary = rig._frame_clips[clip]
+		var tex: Texture2D = rig._frame_textures[str(fc.atlas)]
+		for f in fc.frames:
+			var rr := Rect2(f[0], f[1], f[2], f[3])
+			check(Rect2(Vector2.ZERO, tex.get_size()).encloses(rr), "%s: rettangolo %s dentro l'atlante" % [clip, rr])
+		rig._clip = clip
+		rig._clip_t = 0.0
+		rig._progress = 0.0 if bool(fc.get("progress", false)) else -1.0
+		rig.advance(0.016, Vector2.ZERO)
+		var a0: Rect2 = rig._frame_sprite.region_rect
+		rig._progress = 0.95 if bool(fc.get("progress", false)) else -1.0
+		rig.advance(2.0 if bool(fc.get("hold", false)) else 0.13, Vector2.ZERO)
+		if fc.frames.size() > 1:
+			check(rig._frame_sprite.region_rect != a0, "%s: la sequenza avanza" % clip)
+		if bool(fc.get("hold", false)):
+			var last: Array = fc.frames[-1]
+			check(rig._frame_sprite.region_rect == Rect2(last[0], last[1], last[2], last[3]), "%s: si ferma sull'ultimo fotogramma" % clip)
+	for clip in ["idle", "crouch", "skid", "pogo", "wall", "death"]:
+		check(not rig._frame_clips.has(clip), "%s: resta sul pupazzo" % clip)
+	# Colpito: rinculo all'indietro appena preso il colpo, poi si smorza.
+	rig._clip = "hurt"
+	rig._clip_t = 0.0
+	rig.advance(0.001, Vector2.ZERO)
+	check(rig._frame_sprite.position.x < rig._body.position.x - 4.0, "hurt: rinculo all'indietro")
+	rig.advance(0.5, Vector2.ZERO)
+	check(is_equal_approx(rig._frame_sprite.position.x, rig._body.position.x), "hurt: rinculo smorzato")
+	# Doppio salto: la posa raccolta ruota col rig (spin).
+	rig._clip = "double_jump"
+	rig.spin = 1.2
+	rig._progress = 0.3
+	rig.advance(0.016, Vector2.ZERO)
+	check(rig.uses_frames() and is_equal_approx(rig._spin_node.rotation, 1.2), "double_jump: posa a fotogramma ruotata")
+	rig.spin = 0.0
 	# Ripiego: il rig v1 resta caricabile.
 	var v1 = CutoutRig.new()
 	v1.height = 84.0
