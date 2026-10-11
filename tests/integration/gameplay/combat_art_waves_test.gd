@@ -56,6 +56,7 @@ func _run() -> void:
 			lant._rig.pose(i * 0.17, 1.0, Color.WHITE, 0, false, true)
 			seen[lant._rig.frame] = true
 			check(lant._rig._glow.visible and absf(lant._rig._glow.modulate.a - 0.5) < 0.01, "Lanterna accesa camminando (%s)" % lant._rig.frame)
+		check(seen.size() == 3, "Camminata con 3 pose (%s)" % [seen.keys()])
 	var pend: Array = []
 	for e in world.pending_wave:
 		pend.append(e.type)

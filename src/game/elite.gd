@@ -230,6 +230,22 @@ func _draw() -> void:
 	if _windup or _swing > 0:
 		draw_arc(Vector2(18, 0), float(_cfg.reach), -1.0, 0.65, 24, Color(Art.OCRA, 0.9 if _swing > 0 else 0.6), 3 if _swing > 0 else 1, true)
 	draw_set_transform(Vector2.ZERO)
-	Art.text(self, Art.body_font(), Vector2(-150, -h + half.y - 28), _cfg.name, 17, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 300)
-	draw_rect(Rect2(-45, -h + half.y - 16, 90, 4), Color(0, 0, 0, 0.7))
-	draw_rect(Rect2(-45, -h + half.y - 16, 90.0 * hp / max_hp, 4), Art.OCRA)
+	# Etichette sfalsate di 22 px quando due nemici con nome sono vicini (CONTROLLO-SLICE3 §9).
+	var dy := -22.0 * label_rank()
+	Art.text(self, Art.body_font(), Vector2(-150, -h + half.y - 28 + dy), _cfg.name, 17, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 300)
+	draw_rect(Rect2(-45, -h + half.y - 16 + dy, 90, 4), Color(0, 0, 0, 0.7))
+	draw_rect(Rect2(-45, -h + half.y - 16 + dy, 90.0 * hp / max_hp, 4), Art.OCRA)
+
+
+## Quanti altri nemici con etichetta (elite) stanno entro 260 px e vengono prima in ordine:
+## ognuno sposta questa etichetta 22 px più in alto, così i nomi non si sovrappongono.
+func label_rank() -> int:
+	if not is_inside_tree():
+		return 0
+	var rank := 0
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if e == self or not (e is Node2D) or e.get_script() != get_script():
+			continue
+		if absf((e as Node2D).global_position.x - global_position.x) < 260.0 and e.get_instance_id() < get_instance_id():
+			rank += 1
+	return rank
