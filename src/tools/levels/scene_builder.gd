@@ -16,6 +16,10 @@ extends RefCounted
 ##   enemies: [{type, pos, placeholder?, swap_to?, note?, save_pos?}]
 ##   npcs:    [{id, pos}]   secrets: [Vector2]   landmarks: [{index, id, pos}]
 ##   notes:   [{pos, text}] etichette di progetto (solo editor)
+##   art:     true = TileSet dipinto (tufo bagnato) visibile in gioco al posto del disegno di terrain.gd
+##   mid_art: percorso del fondale del piano medio (parallasse 0.5, game/scene_backdrop.gd)
+##   props:   [{kind: wheel|gate, pos, side?, height?, hint?}]  oggetti interattivi (game/slice_props.gd)
+##   cracks[].hits: colpi di martello per romperlo (2 = intatto -> danneggiato -> rotto)
 
 const TILE := 64
 const TILES_PNG := "res://rooms/blockout/blockout_tiles.png"
@@ -31,6 +35,13 @@ const TILE_COUNT := 5
 const PHYS_SOLID := 0
 const PHYS_LEDGE := 1
 const LEDGE_THICK := 18.0
+## TileSet dipinto (prototipo Cisterne): stessi id della riga 0 e stessi strati fisici del blockout.
+## Riga 0: 0 muro, 1 mensola, 2 punte, 3 riferimento, 4 mensola bassa, 5 cresta (muro con la superficie).
+## Riga 1: 4 varianti di muro. Riga 2: 4 varianti di cresta. Tutte le varianti hanno collisione piena.
+const ART_PNG := "res://assets/art/slice/tufo_tiles.png"
+const ART_TILESET := "res://rooms/art/tufo_tileset.tres"
+const T_CREST := 5
+const ART_VARIANTS := 4
 
 static func make_tiles_png() -> void:
 	var img := Image.create(TILE * TILE_COUNT, TILE, false, Image.FORMAT_RGBA8)
@@ -74,8 +85,55 @@ static func tileset() -> TileSet:
 	ResourceSaver.save(ts, TILESET)
 	return load(TILESET)
 
+## TileSet del tufo bagnato: ritagliato da 03-tufo-tileset (design/art/cisterne-grok/make_art.py).
+static func art_tileset() -> TileSet:
+	if ResourceLoader.exists(ART_TILESET):
+		return load(ART_TILESET)
+	var ts := TileSet.new()
+	ts.tile_size = Vector2i(TILE, TILE)
+	ts.add_physics_layer()
+	ts.set_physics_layer_collision_layer(PHYS_SOLID, 1)
+	ts.set_physics_layer_collision_mask(PHYS_SOLID, 0)
+	ts.add_physics_layer()
+	ts.set_physics_layer_collision_layer(PHYS_LEDGE, 1 << 3)
+	ts.set_physics_layer_collision_mask(PHYS_LEDGE, 0)
+	var src := TileSetAtlasSource.new()
+	src.texture = load(ART_PNG)
+	src.texture_region_size = Vector2i(TILE, TILE)
+	ts.add_source(src, 0)
+	for i in 6:
+		src.create_tile(Vector2i(i, 0))
+	for row in [1, 2]:
+		for i in ART_VARIANTS:
+			src.create_tile(Vector2i(i, row))
+	var h := TILE / 2.0
+	var full := Rect2(-h, -h, TILE, TILE)
+	for t in [Vector2i(T_SOLID, 0), Vector2i(T_CREST, 0)]:
+		_poly_at(src, t, PHYS_SOLID, full, false)
+	for row in [1, 2]:
+		for i in ART_VARIANTS:
+			_poly_at(src, Vector2i(i, row), PHYS_SOLID, full, false)
+	_poly(src, T_LEDGE, PHYS_LEDGE, Rect2(-h, -h, TILE, LEDGE_THICK), true)
+	_poly(src, T_LEDGE_LOW, PHYS_LEDGE, Rect2(-h, 0, TILE, LEDGE_THICK), true)
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(ART_TILESET.get_base_dir()))
+	ResourceSaver.save(ts, ART_TILESET)
+	return load(ART_TILESET)
+
+## Sceglie la variante dipinta di ogni cella solida: cresta se sopra è vuoto, muro altrimenti.
+static func paint_variants(terrain: TileMapLayer) -> void:
+	var used := {}
+	for c in terrain.get_used_cells():
+		used[c] = true
+	for c in used:
+		var v := absi(c.x * 7 + c.y * 13) % ART_VARIANTS
+		var row := 1 if used.has(c + Vector2i(0, -1)) else 2
+		terrain.set_cell(c, 0, Vector2i(v, row))
+
 static func _poly(src: TileSetAtlasSource, tile: int, layer: int, r: Rect2, one_way: bool) -> void:
-	var data := src.get_tile_data(Vector2i(tile, 0), 0)
+	_poly_at(src, Vector2i(tile, 0), layer, r, one_way)
+
+static func _poly_at(src: TileSetAtlasSource, coords: Vector2i, layer: int, r: Rect2, one_way: bool) -> void:
+	var data := src.get_tile_data(coords, 0)
 	data.add_collision_polygon(layer)
 	data.set_collision_polygon_points(layer, 0, PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]))
 	data.set_collision_polygon_one_way(layer, 0, one_way)
@@ -105,6 +163,10 @@ static func build(spec: Dictionary, ts: TileSet) -> Node2D:
 	root.set_meta("size", size)
 	root.set_meta("grid_offset_y", oy)
 	root.set_meta("generated_by", spec.get("generated_by", "tools/levels/scene_builder.gd"))
+	if spec.get("art", false):
+		root.set_meta("art_tiles", true)
+	if spec.has("mid_art"):
+		root.set_meta("mid_art", str(spec.mid_art))
 	var bounds := ReferenceRect.new()
 	bounds.name = "Bounds"
 	bounds.size = size
@@ -139,6 +201,8 @@ static func build(spec: Dictionary, ts: TileSet) -> Node2D:
 		var lr := ledge_row(r.position.y, oy)
 		for col in range(cc.x, cc.y):
 			oneway.set_cell(Vector2i(col, lr.row), 0, Vector2i(T_LEDGE_LOW if lr.low else T_LEDGE, 0))
+	if spec.get("art", false):
+		paint_variants(terrain)
 	for r in spec.get("spikes", []):
 		var cc := cols(r)
 		var row := clampi(roundi((r.end.y - oy) / TILE) - 1, 0, floor_row - 1)
@@ -158,6 +222,8 @@ static func build(spec: Dictionary, ts: TileSet) -> Node2D:
 		rr.set_meta("id", str(c.id))
 		rr.set_meta("reward", int(c.get("reward", 0)))
 		rr.set_meta("gate", bool(c.get("gate", false)))
+		if int(c.get("hits", 1)) > 1:
+			rr.set_meta("hits", int(c.hits))
 		var fill := ColorRect.new()
 		fill.name = "Fill"
 		fill.color = Color(0.93, 0.6, 0.2, 0.45)
@@ -169,7 +235,7 @@ static func build(spec: Dictionary, ts: TileSet) -> Node2D:
 	var markers := Node2D.new()
 	markers.name = "Markers"
 	root.add_child(markers)
-	for g in ["Enemies", "Npcs", "Secrets", "Landmarks", "Rings", "Exits", "Saves", "Notes"]:
+	for g in ["Enemies", "Npcs", "Secrets", "Landmarks", "Rings", "Exits", "Saves", "Props", "Notes"]:
 		var n := Node2D.new()
 		n.name = g
 		markers.add_child(n)
@@ -220,6 +286,14 @@ static func build(spec: Dictionary, ts: TileSet) -> Node2D:
 	i = 0
 	for s in spec.get("saves", []):
 		_marker(markers.get_node("Saves"), "Save%d" % i, s.pos, "incudine" + (" (a stanza liberata)" if s.get("need_clear", false) else ""), Color(1, 1, 1), {"order": i, "need_clear": bool(s.get("need_clear", false))})
+		i += 1
+	i = 0
+	for p in spec.get("props", []):
+		var meta := {"order": i, "kind": str(p.kind)}
+		for k in ["side", "height", "hint"]:
+			if p.has(k):
+				meta[k] = p[k]
+		_marker(markers.get_node("Props"), "P%d_%s" % [i, p.kind], p.pos, "%s %s" % [p.kind, p.get("side", "")], Color(0.9, 0.75, 0.5), meta)
 		i += 1
 	i = 0
 	for n in spec.get("notes", []):

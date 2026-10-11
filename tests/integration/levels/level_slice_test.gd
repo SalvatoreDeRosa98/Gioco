@@ -28,8 +28,23 @@ func _run() -> void:
 		check(LevelScenes.saves_for(idx).size() == 1, "Stanza %d: un'incudine nella scena" % idx)
 		check(_reachable(r, Vector2(r.saves[0].pos.x, r.saves[0].pos.y)), "Stanza %d: incudine raggiungibile" % idx)
 	var r9 := Room.build(9)
-	var guard: Array = r9.enemies.filter(func(e): return e.get("placeholder", false))
-	check(guard.size() == 1 and guard[0].type == "guardia" and guard[0].swap_to == "guardia_parata", "Stanza 9: segnaposto della guardia della parata")
+	var guard: Array = r9.enemies.filter(func(e): return e.type == "guardia")
+	check(guard.size() == 1 and not guard[0].get("placeholder", false), "Stanza 9: guardia della parata col tipo vero (niente segnaposto)")
+	check(r9.enemies.filter(func(e): return e.type == "lanterniere").size() == 1, "Stanza 9: un solo lanterniere (come in feat/gameplay)")
+	var r9_scene: Node = load(LevelScenes.scene_path(9)).instantiate()
+	var marker: Node = r9_scene.get_node_or_null("Markers/Enemies/E2_guardia")
+	check(marker != null and marker.get_meta("type") == "guardia" and int(marker.get_meta("order")) == 2 and not marker.has_meta("placeholder"), "Stanza 9: marcatore E2_guardia coerente")
+	r9_scene.free()
+	# Prototipo artistico: tile dipinti con collisione su ogni variante, fondale medio, oggetti interattivi.
+	for idx in [9, 13, 15]:
+		var ra := Room.build(idx)
+		check(ra.get("tile_art", false) and ResourceLoader.exists(str(ra.get("mid_art", ""))), "Stanza %d: tile dipinti e fondale medio" % idx)
+	var art_ts: TileSet = load("res://rooms/art/tufo_tileset.tres")
+	var art_src: TileSetAtlasSource = art_ts.get_source(0)
+	for coords in [Vector2i(0, 0), Vector2i(5, 0), Vector2i(0, 1), Vector2i(3, 1), Vector2i(0, 2), Vector2i(3, 2)]:
+		check(art_src.get_tile_data(coords, 0).get_collision_polygons_count(0) == 1, "Tufo: collisione piena sul tile %s" % coords)
+	check(art_src.get_tile_data(Vector2i(4, 0), 0).get_collision_polygons_count(1) == 1, "Tufo: mensola bassa one-way")
+	check(r9.props.size() == 2 and r9.cracks[0].hits == 2, "Stanza 9: ruota, cancello e muro da due colpi")
 	check(r9.vertical.size() == 1 and r9.vertical[0].side == "bottom" and int(r9.vertical[0].target) == 13, "Stanza 9: caduta verso le Cisterne Sepolte dalla scena")
 	check(r9.cracks.size() == 1 and r9.secrets.size() == 3 and r9.landmark_pos.has(0) and r9.landmark_pos.has(1), "Stanza 9: muro incrinato, 3 segreti, chiusa e incisione")
 	check(_reachable(r9, r9.landmark_pos[0]), "Stanza 9: la chiusa si raggiunge saltando")
@@ -68,6 +83,41 @@ func _run() -> void:
 		elif c is StaticBody2D and c.get_collision_layer_value(4):
 			ledge_bodies += 1
 	check(tile_layers == 2 and ledge_bodies == 0, "In gioco: fisica di pavimento e mensole dai tile (%d strati, %d corpi mensola)" % [tile_layers, ledge_bodies])
+	var visible_tiles := 0
+	for c in world._walls.get_children():
+		if c is TileMapLayer and c.modulate.a > 0.9:
+			visible_tiles += 1
+	check(visible_tiles == 2 and world._forge_backdrop.get_script().resource_path.ends_with("scene_backdrop.gd"), "In gioco: tile dipinti visibili e fondale in parallasse")
+	# Cancello a destra chiuso finché non si gira la ruota della chiusa.
+	var props = world._slice_props
+	check(props != null and props.state.size() == 2, "In gioco: oggetti interattivi della stanza 9")
+	if props:
+		var was_open: bool = world._right_open()
+		check(props.is_open(props.props[1]) == was_open, "Cancello legato alla porta destra")
+		world.story.seen["sluice"] = 1
+		props._process(1.0)
+		check(props.is_open(props.props[0]) and props.is_open(props.props[1]) and props.state[1].open > 0.9, "Ruota girata: il cancello si apre")
+		check(props.state[0].spin > 0.0 or was_open, "La ruota sobbalza all'apertura")
+		world.story.seen.erase("sluice")
+	# Muro incrinato a tre stati legato al martello.
+	var tr = world.traversal
+	var crack: Dictionary = tr.cracks[0]
+	world.upgrades["hammer"] = true
+	world.player.set_physics_process(false)
+	var cr: Rect2 = Rect2(crack.rect[0], crack.rect[1], crack.rect[2], crack.rect[3])
+	world.player.teleport(cr.get_center() + Vector2(48, 0))
+	check(tr.crack_state(crack) == 0, "Muro: intatto")
+	for hit in 2:
+		tr._hammer_pending = true
+		world.player.hammer_time = 0.0
+		tr._physics_process(0.016)
+		check(tr.crack_state(crack) == hit + 1, "Muro: colpo %d -> stato %d" % [hit + 1, tr.crack_state(crack)])
+	world.story.seen.erase(crack.id)
+	world.story.seen.erase(str(crack.id) + "_crepa")
+	world._go(9, true)
+	await process_frame
+	for e in get_nodes_in_group("enemies"):
+		e.queue_free()
 	world.player.teleport(Vector2(320, 760))
 	world.player.set_physics_process(true)
 	await create_timer(0.8).timeout

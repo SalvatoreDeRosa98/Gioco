@@ -36,6 +36,8 @@ var introduction: Node
 var _intro_config: Dictionary
 var _expedition: Node2D
 var _forge_backdrop: Node2D
+## Ruota della chiusa e cancelli dipinti delle stanze in scena (game/slice_props.gd).
+var _slice_props: Node2D
 var upgrades: Dictionary = {}
 var equipped: Array = []
 var choice_uses: Dictionary = {}
@@ -377,6 +379,11 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 		_forge_backdrop = preload("res://game/forge_backdrop.gd").new()
 		_forge_backdrop.z_index = 1
 		add_child(_forge_backdrop)
+	elif room.has("mid_art"):
+		# Stanze in scena col prototipo artistico: fondale del piano medio in parallasse.
+		_forge_backdrop = preload("res://game/scene_backdrop.gd").new()
+		_forge_backdrop.setup(room)
+		add_child(_forge_backdrop)
 	elif idx >= 7:
 		_forge_backdrop = preload("res://game/painted_interior.gd").new()
 		_forge_backdrop.setup(room)
@@ -387,7 +394,7 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	_expedition = preload("res://game/expedition.gd").new()
 	_expedition.setup(self)
 	add_child(_expedition)
-	_terrain.build(room, th)
+	_terrain.build(_terrain_room(), th)
 	_terrain.visible = idx != Room.SECRET_ROOM
 	_terrain.set_doors(_left_open(), _right_open())
 	_build_walls()
@@ -397,6 +404,14 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	traversal = preload("res://game/traversal.gd").new()
 	traversal.setup(self)
 	add_child(traversal)
+	if is_instance_valid(_slice_props):
+		remove_child(_slice_props)
+		_slice_props.queue_free()
+		_slice_props = null
+	if not room.get("props", []).is_empty():
+		_slice_props = preload("res://game/slice_props.gd").new()
+		_slice_props.setup(self)
+		add_child(_slice_props)
 	if idx == Room.BOSS_ROOM and not cleared_now:
 		_arena = preload("res://game/boss_arena.gd").new()
 		_arena.world = self
@@ -474,6 +489,16 @@ func _right_open() -> bool:
 	return Room.Expansion.edge(room_index, true) >= 0
 
 
+## Stanza passata a terrain.gd: con i tile dipinti blocchi e mensole li disegna il TileMapLayer.
+func _terrain_room() -> Dictionary:
+	if not room.get("tile_art", false):
+		return room
+	var r := room.duplicate()
+	r["blocks"] = []
+	r["ledges"] = []
+	return r
+
+
 func _build_walls() -> void:
 	for c in _walls.get_children():
 		if c is StaticBody2D:
@@ -487,7 +512,10 @@ func _build_walls() -> void:
 	# Stanze in scena: pavimento, blocchi e mensole hanno la collisione nei tile (invisibili, il disegno resta di terrain.gd).
 	var tile_layers: Array = Room.LevelScenes.physics_layers(room_index) if room.has("scene") else []
 	for layer in tile_layers:
-		layer.modulate = Color(1, 1, 1, 0)
+		if room.get("tile_art", false):
+			layer.z_index = 4  # tile dipinti visibili: sotto porte e pilastri di terrain.gd (z 5)
+		else:
+			layer.modulate = Color(1, 1, 1, 0)
 		_walls.add_child(layer)
 	if tile_layers.is_empty():
 		for l in room["ledges"]:

@@ -15,6 +15,11 @@ static func r9() -> Dictionary:
 	# discesa a destra verso la caduta nelle Cisterne Sepolte. Righe: 20 + 64k, mensole 20 + 32k.
 	return {
 		"idx": 9, "name": "Cisterne Reali", "size": Vector2(2560, 1080), "floor": 980.0, "scene_name": "R09CisterneReali",
+		"art": true, "mid_art": "res://assets/art/slice/cisterne_reali_mid.png",
+		"props": [
+			{"kind": "wheel", "pos": Vector2(1440, 404), "height": 170.0},
+			{"kind": "gate", "pos": Vector2(2492, 980), "side": "right", "height": 250.0, "hint": "Saracinesca chiusa: gira la ruota della chiusa"},
+		],
 		"generated_by": "tools/levels/slice_design.gd",
 		"blocks": [
 			Rect2(0, 340, 448, 64),      # volta sopra la nicchia del martello
@@ -33,15 +38,16 @@ static func r9() -> Dictionary:
 			Rect2(2240, 276, 128, 18),   # cima del camino (serve la presa dei guanti)
 		],
 		"floor_holes": [Vector2(1730, 1950)],
-		"cracks": [{"id": "cistern_entry_wall", "rect": Rect2(128, 404, 64, 192), "reward": 40, "gate": false}],
+		"cracks": [{"id": "cistern_entry_wall", "rect": Rect2(128, 404, 64, 192), "reward": 40, "gate": false, "hits": 2}],
 		"exits": [{"side": "bottom", "x": 1840.0, "width": 220.0, "target": 13, "spawn": Vector2(570, 170), "need": ""}],
 		"saves": [{"pos": Vector2(260, 980), "need_clear": false}],
 		"npcs": [{"id": "cesare_cisterne", "pos": Vector2(470, 980)}],
 		"enemies": [
+			# E2_guardia: il tipo "guardia" di elite.gd (stoccata parabile, 6 HP), lo stesso usato da Gameplay
+			# in d6e2123 (origin/feat/gameplay). Terzo marcatore: VAult bot lo chiama E2_guardia.
 			{"type": "vespa", "pos": Vector2(650, 690)},
-			{"type": "guardia", "pos": Vector2(1000, 946), "placeholder": true, "swap_to": "guardia_parata",
-				"note": "Guardia che insegna la parata (agente Gameplay). Sostituire type con il nemico definitivo."},
 			{"type": "lanterniere", "pos": Vector2(1500, 946)},
+			{"type": "guardia", "pos": Vector2(1000, 946), "note": "Insegna la parata: stoccata parabile (tuning.json -> player.parry_window)."},
 			{"type": "vespa", "pos": Vector2(1860, 470)},
 			{"type": "statua", "pos": Vector2(2060, 946)},
 		],
@@ -63,6 +69,8 @@ static func r13() -> Dictionary:
 	# della Tana; risalita con gli anelli (rampino); nicchia col muro incrinato (martello). Righe: 16 + 64k.
 	return {
 		"idx": 13, "name": "Cisterne Sepolte", "size": Vector2(1280, 2100), "floor": 2000.0, "scene_name": "R13CisterneSepolte",
+		"art": true, "mid_art": "res://assets/art/slice/cisterne_sepolte_mid.png",
+		"props": [{"kind": "gate", "pos": Vector2(68, 2000), "side": "left", "height": 250.0, "hint": "Sbarrato dalla Tana: prima Ratking"}],
 		"generated_by": "tools/levels/slice_design.gd",
 		"blocks": [
 			Rect2(0, 1168, 448, 128),    # volta della nicchia (spessa: dalla mensola G2 non ci si sale sopra)
@@ -78,7 +86,7 @@ static func r13() -> Dictionary:
 			Rect2(896, 1712, 256, 18),   # mensola del segreto, dal muretto (+160)
 		],
 		"spikes": [Rect2(320, 1980, 128, 20)],
-		"cracks": [{"id": "cistern_wall", "rect": Rect2(192, 1296, 64, 224), "reward": 30, "gate": false}],
+		"cracks": [{"id": "cistern_wall", "rect": Rect2(192, 1296, 64, 224), "reward": 30, "gate": false, "hits": 2}],
 		"rings": [Vector2(570, 1660), Vector2(670, 1320), Vector2(570, 980), Vector2(670, 640), Vector2(570, 300), Vector2(570, -25)],
 		"exits": [{"side": "top", "x": 570.0, "width": 220.0, "target": 9, "spawn": Vector2(1650, 956), "need": "grapple"}],
 		"saves": [{"pos": Vector2(860, 2000), "need_clear": true}],
@@ -107,6 +115,7 @@ static func r15() -> Dictionary:
 	# una centrale più alta; l'anello dipinto è solo un presagio (non agganciabile).
 	return {
 		"idx": 15, "name": "Tana di Ratking", "size": Vector2(1600, 1080), "floor": 980.0, "scene_name": "R15TanaRatking",
+		"art": true, "mid_art": "res://assets/art/slice/tana_ratking_mid.png",
 		"generated_by": "tools/levels/slice_design.gd",
 		"ledges": [
 			Rect2(320, 852, 256, 18),    # pedana sinistra +128
@@ -123,7 +132,7 @@ static func r15() -> Dictionary:
 
 func _initialize() -> void:
 	var force := "--force" in OS.get_cmdline_user_args()
-	var ts := Builder.tileset()
+	var ts := Builder.art_tileset()
 	for pair in [[r9(), "res://rooms/r09_cisterne_reali.tscn"], [r13(), "res://rooms/r13_cisterne_sepolte.tscn"], [r15(), "res://rooms/r15_tana_ratking.tscn"]]:
 		if FileAccess.file_exists(pair[1]) and not force:
 			print("slice_design: %s esiste già, saltata (usa --force)" % pair[1])

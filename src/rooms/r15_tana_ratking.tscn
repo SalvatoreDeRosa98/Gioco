@@ -1,56 +1,58 @@
 [gd_scene format=4]
 
-[ext_resource type="TileSet" path="res://rooms/blockout/blockout_tileset.tres" id="1_q2t1j"]
+[ext_resource type="TileSet" path="res://rooms/art/tufo_tileset.tres" id="1_q2t1j"]
 
-[node name="R15TanaRatking" type="Node2D" unique_id=955870247]
+[node name="R15TanaRatking" type="Node2D" unique_id=723630137]
 metadata/room_id = 15
 metadata/room_name = "Tana di Ratking"
 metadata/floor = 980.0
 metadata/size = Vector2(1600, 1080)
 metadata/grid_offset_y = 20.0
 metadata/generated_by = "tools/levels/slice_design.gd"
+metadata/art_tiles = true
+metadata/mid_art = "res://assets/art/slice/tana_ratking_mid.png"
 
-[node name="Bounds" type="ReferenceRect" parent="." unique_id=678392462]
+[node name="Bounds" type="ReferenceRect" parent="." unique_id=1228453262]
 offset_right = 1600.0
 offset_bottom = 1080.0
 border_color = Color(0.3, 0.8, 1, 1)
 border_width = 4.0
 editor_only = false
 
-[node name="Terrain" type="TileMapLayer" parent="." unique_id=1416268421]
+[node name="Terrain" type="TileMapLayer" parent="." unique_id=455455268]
 position = Vector2(0, 20)
-tile_map_data = PackedByteArray("AAAAAA8AAAAAAAAAAAAAABAAAAAAAAAAAAABAA8AAAAAAAAAAAABABAAAAAAAAAAAAACAA8AAAAAAAAAAAACABAAAAAAAAAAAAADAA8AAAAAAAAAAAADABAAAAAAAAAAAAAEAA8AAAAAAAAAAAAEABAAAAAAAAAAAAAFAA8AAAAAAAAAAAAFABAAAAAAAAAAAAAGAA8AAAAAAAAAAAAGABAAAAAAAAAAAAAHAA8AAAAAAAAAAAAHABAAAAAAAAAAAAAIAA8AAAAAAAAAAAAIABAAAAAAAAAAAAAJAA8AAAAAAAAAAAAJABAAAAAAAAAAAAAKAA8AAAAAAAAAAAAKABAAAAAAAAAAAAALAA8AAAAAAAAAAAALABAAAAAAAAAAAAAMAA8AAAAAAAAAAAAMABAAAAAAAAAAAAANAA8AAAAAAAAAAAANABAAAAAAAAAAAAAOAA8AAAAAAAAAAAAOABAAAAAAAAAAAAAPAA8AAAAAAAAAAAAPABAAAAAAAAAAAAAQAA8AAAAAAAAAAAAQABAAAAAAAAAAAAARAA8AAAAAAAAAAAARABAAAAAAAAAAAAASAA8AAAAAAAAAAAASABAAAAAAAAAAAAATAA8AAAAAAAAAAAATABAAAAAAAAAAAAAUAA8AAAAAAAAAAAAUABAAAAAAAAAAAAAVAA8AAAAAAAAAAAAVABAAAAAAAAAAAAAWAA8AAAAAAAAAAAAWABAAAAAAAAAAAAAXAA8AAAAAAAAAAAAXABAAAAAAAAAAAAAYAA8AAAAAAAAAAAAYABAAAAAAAAAAAAA=")
+tile_map_data = PackedByteArray("AAAAAA8AAAADAAIAAAAAABAAAAAAAAEAAAABAA8AAAACAAIAAAABABAAAAADAAEAAAACAA8AAAABAAIAAAACABAAAAACAAEAAAADAA8AAAAAAAIAAAADABAAAAABAAEAAAAEAA8AAAADAAIAAAAEABAAAAAAAAEAAAAFAA8AAAACAAIAAAAFABAAAAADAAEAAAAGAA8AAAABAAIAAAAGABAAAAACAAEAAAAHAA8AAAAAAAIAAAAHABAAAAABAAEAAAAIAA8AAAADAAIAAAAIABAAAAAAAAEAAAAJAA8AAAACAAIAAAAJABAAAAADAAEAAAAKAA8AAAABAAIAAAAKABAAAAACAAEAAAALAA8AAAAAAAIAAAALABAAAAABAAEAAAAMAA8AAAADAAIAAAAMABAAAAAAAAEAAAANAA8AAAACAAIAAAANABAAAAADAAEAAAAOAA8AAAABAAIAAAAOABAAAAACAAEAAAAPAA8AAAAAAAIAAAAPABAAAAABAAEAAAAQAA8AAAADAAIAAAAQABAAAAAAAAEAAAARAA8AAAACAAIAAAARABAAAAADAAEAAAASAA8AAAABAAIAAAASABAAAAACAAEAAAATAA8AAAAAAAIAAAATABAAAAABAAEAAAAUAA8AAAADAAIAAAAUABAAAAAAAAEAAAAVAA8AAAACAAIAAAAVABAAAAADAAEAAAAWAA8AAAABAAIAAAAWABAAAAACAAEAAAAXAA8AAAAAAAIAAAAXABAAAAABAAEAAAAYAA8AAAADAAIAAAAYABAAAAAAAAEAAAA=")
 tile_set = ExtResource("1_q2t1j")
 
-[node name="OneWay" type="TileMapLayer" parent="." unique_id=1539336990]
+[node name="OneWay" type="TileMapLayer" parent="." unique_id=759587860]
 position = Vector2(0, 20)
 tile_map_data = PackedByteArray("AAAFAA0AAAABAAAAAAAGAA0AAAABAAAAAAAHAA0AAAABAAAAAAAIAA0AAAABAAAAAAAQAA0AAAABAAAAAAARAA0AAAABAAAAAAASAA0AAAABAAAAAAATAA0AAAABAAAAAAAKAAoAAAAEAAAAAAALAAoAAAAEAAAAAAAMAAoAAAAEAAAAAAANAAoAAAAEAAAAAAAOAAoAAAAEAAAAAAA=")
 tile_set = ExtResource("1_q2t1j")
 
-[node name="Hazards" type="TileMapLayer" parent="." unique_id=1253323150]
+[node name="Hazards" type="TileMapLayer" parent="." unique_id=56521190]
 position = Vector2(0, 20)
 tile_set = ExtResource("1_q2t1j")
 
-[node name="Cracks" type="Node2D" parent="." unique_id=1233088324]
+[node name="Cracks" type="Node2D" parent="." unique_id=1721175548]
 
-[node name="Markers" type="Node2D" parent="." unique_id=1303339535]
+[node name="Markers" type="Node2D" parent="." unique_id=851770205]
 
-[node name="Enemies" type="Node2D" parent="Markers" unique_id=1651350843]
+[node name="Enemies" type="Node2D" parent="Markers" unique_id=1682354755]
 
-[node name="E0_ratking" type="Marker2D" parent="Markers/Enemies" unique_id=1070474068]
+[node name="E0_ratking" type="Marker2D" parent="Markers/Enemies" unique_id=2115181667]
 position = Vector2(1100, 935)
 gizmo_extents = 24.0
 metadata/order = 0
 metadata/type = "ratking"
 
-[node name="Dot" type="ColorRect" parent="Markers/Enemies/E0_ratking" unique_id=1389744291]
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E0_ratking" unique_id=1862596420]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(1, 0.45, 0.4, 1)
 
-[node name="Label" type="Label" parent="Markers/Enemies/E0_ratking" unique_id=88754534]
+[node name="Label" type="Label" parent="Markers/Enemies/E0_ratking" unique_id=1767391016]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -59,31 +61,31 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
 text = "ratking"
 
-[node name="Npcs" type="Node2D" parent="Markers" unique_id=1241849329]
+[node name="Npcs" type="Node2D" parent="Markers" unique_id=371687865]
 
-[node name="Secrets" type="Node2D" parent="Markers" unique_id=1795940552]
+[node name="Secrets" type="Node2D" parent="Markers" unique_id=1852467917]
 
-[node name="Landmarks" type="Node2D" parent="Markers" unique_id=1514443724]
+[node name="Landmarks" type="Node2D" parent="Markers" unique_id=929292692]
 
-[node name="Rings" type="Node2D" parent="Markers" unique_id=982007516]
+[node name="Rings" type="Node2D" parent="Markers" unique_id=1657124517]
 
-[node name="Exits" type="Node2D" parent="Markers" unique_id=842080460]
+[node name="Exits" type="Node2D" parent="Markers" unique_id=237022404]
 
-[node name="Saves" type="Node2D" parent="Markers" unique_id=1050588300]
+[node name="Saves" type="Node2D" parent="Markers" unique_id=1692250301]
 
-[node name="Save0" type="Marker2D" parent="Markers/Saves" unique_id=2048917920]
+[node name="Save0" type="Marker2D" parent="Markers/Saves" unique_id=1623358277]
 position = Vector2(800, 980)
 gizmo_extents = 24.0
 metadata/order = 0
 metadata/need_clear = true
 
-[node name="Dot" type="ColorRect" parent="Markers/Saves/Save0" unique_id=476201242]
+[node name="Dot" type="ColorRect" parent="Markers/Saves/Save0" unique_id=102493446]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 
-[node name="Label" type="Label" parent="Markers/Saves/Save0" unique_id=1634693286]
+[node name="Label" type="Label" parent="Markers/Saves/Save0" unique_id=721715536]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -92,20 +94,22 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "incudine (a stanza liberata)"
 
-[node name="Notes" type="Node2D" parent="Markers" unique_id=640128747]
+[node name="Props" type="Node2D" parent="Markers" unique_id=1530346937]
 
-[node name="Note0" type="Marker2D" parent="Markers/Notes" unique_id=89973240]
+[node name="Notes" type="Node2D" parent="Markers" unique_id=2101657512]
+
+[node name="Note0" type="Marker2D" parent="Markers/Notes" unique_id=1225849219]
 position = Vector2(800, 420)
 gizmo_extents = 24.0
 
-[node name="Dot" type="ColorRect" parent="Markers/Notes/Note0" unique_id=1572691919]
+[node name="Dot" type="ColorRect" parent="Markers/Notes/Note0" unique_id=792968211]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.75, 0.75, 0.75, 1)
 
-[node name="Label" type="Label" parent="Markers/Notes/Note0" unique_id=1006974280]
+[node name="Label" type="Label" parent="Markers/Notes/Note0" unique_id=383976276]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0
@@ -114,18 +118,18 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
 text = "o anello dipinto (presagio)"
 
-[node name="Note1" type="Marker2D" parent="Markers/Notes" unique_id=1775724032]
+[node name="Note1" type="Marker2D" parent="Markers/Notes" unique_id=399210937]
 position = Vector2(330, 940)
 gizmo_extents = 24.0
 
-[node name="Dot" type="ColorRect" parent="Markers/Notes/Note1" unique_id=572539301]
+[node name="Dot" type="ColorRect" parent="Markers/Notes/Note1" unique_id=1339341869]
 offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.75, 0.75, 0.75, 1)
 
-[node name="Label" type="Label" parent="Markers/Notes/Note1" unique_id=426859137]
+[node name="Label" type="Label" parent="Markers/Notes/Note1" unique_id=1202913577]
 offset_left = -60.0
 offset_top = -44.0
 offset_right = -60.0

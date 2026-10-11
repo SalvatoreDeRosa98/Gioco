@@ -10,7 +10,8 @@ extends RefCounted
 ##   ├── OneWay   (TileMapLayer, collisione layer 4, one-way)  tile 1 = piano in alto, tile 4 = a metà cella
 ##   ├── Hazards  (TileMapLayer)  punte: il danno resta in traversal.gd
 ##   ├── Cracks   (ReferenceRect con meta id, reward, gate)  muri incrinati
-##   └── Markers/Enemies|Npcs|Secrets|Landmarks|Rings|Exits|Saves (Marker2D con metadati)
+##   └── Markers/Enemies|Npcs|Secrets|Landmarks|Rings|Exits|Saves|Props (Marker2D con metadati)
+## Meta facoltativi della radice: art_tiles (tile dipinti visibili in gioco), mid_art (fondale del piano medio).
 ## In gioco la fisica di pavimento, blocchi e mensole viene dai tile (physics_layers); bordi, porte
 ## e tappi delle uscite chiuse restano generati dal codice (Room.solids).
 
@@ -51,6 +52,11 @@ static func apply(idx: int, r: Dictionary) -> Dictionary:
 	r["landmark_pos"] = data.landmarks
 	r["pos_alias"] = data.alias
 	r["scene"] = scene_path(idx)
+	r["props"] = data.props
+	if data.art_tiles:
+		r["tile_art"] = true
+	if data.mid_art != "":
+		r["mid_art"] = data.mid_art
 	return r
 
 ## Incudini della stanza: dalla scena se esiste, altrimenti da expansion.json -> "saves".
@@ -96,7 +102,8 @@ static func read_root(root: Node) -> Dictionary:
 	var floor_y := float(root.get_meta("floor", 980.0))
 	var floor_row := roundi((floor_y - oy) / TILE)
 	var out := {"blocks": [], "ledges": [], "enemies": [], "npcs": [], "secrets": [], "landmarks": {}, "spikes": [],
-		"cracks": [], "rings": [], "vertical": [], "saves": [], "alias": {}, "floor_cells": []}
+		"cracks": [], "rings": [], "vertical": [], "saves": [], "alias": {}, "floor_cells": [], "props": [],
+		"art_tiles": bool(root.get_meta("art_tiles", false)), "mid_art": str(root.get_meta("mid_art", ""))}
 	var terrain: TileMapLayer = root.get_node_or_null("Terrain")
 	if terrain:
 		for rect in merge_cells(terrain.get_used_cells(), floor_row):
@@ -122,7 +129,7 @@ static func read_root(root: Node) -> Dictionary:
 		for c in cracks.get_children():
 			var rr := c as Control
 			out.cracks.append({"id": str(c.get_meta("id", c.name)), "rect": [rr.position.x, rr.position.y, rr.size.x, rr.size.y],
-				"reward": int(c.get_meta("reward", 0)), "gate": bool(c.get_meta("gate", false))})
+				"reward": int(c.get_meta("reward", 0)), "gate": bool(c.get_meta("gate", false)), "hits": int(c.get_meta("hits", 1))})
 	for m in _sorted(root, "Markers/Enemies"):
 		var e := {"type": str(m.get_meta("type")), "pos": m.position}
 		if m.get_meta("placeholder", false):
@@ -143,6 +150,12 @@ static func read_root(root: Node) -> Dictionary:
 		if m.has_meta("need"):
 			x.need = str(m.get_meta("need"))
 		out.vertical.append(x)
+	for m in _sorted(root, "Markers/Props"):
+		var p := {"kind": str(m.get_meta("kind")), "pos": m.position}
+		for k in ["side", "height", "hint"]:
+			if m.has_meta(k):
+				p[k] = m.get_meta(k)
+		out.props.append(p)
 	for m in _sorted(root, "Markers/Saves"):
 		out.saves.append({"pos": m.position, "need_clear": bool(m.get_meta("need_clear", false))})
 	var lm := root.get_node_or_null("Markers/Landmarks")
