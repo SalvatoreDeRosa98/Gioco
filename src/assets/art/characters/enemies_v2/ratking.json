@@ -35,5 +35,12 @@
    371,
    387
   ]
+ },
+ "look": {
+  "outline_px": 3.0,
+  "outline_color": "0d0e11",
+  "rim_color": "8fd3ff",
+  "rim_px": 2.0,
+  "rim_strength": 0.5
  }
 }

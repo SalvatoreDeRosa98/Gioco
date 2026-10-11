@@ -14,6 +14,8 @@ var _progress := 0.0
 var _attack := ""
 var _scale := 1.0
 var frame := "idle"
+var _glow: Sprite2D
+var _bob := 0.0
 
 
 func setup(sheet_json: String, screen_height: float) -> void:
@@ -26,6 +28,11 @@ func setup(sheet_json: String, screen_height: float) -> void:
 	mat.set_shader_parameter("white_point", 1.0)
 	mat.set_shader_parameter("highlight_desat", 0.0)
 	mat.set_shader_parameter("rim_strength", 0.45)
+	# Aspetto per nemico (CONTROLLO-SLICE3): contorno, colore e intensità del rim dal json.
+	var look: Dictionary = _cfg.get("look", {})
+	for key in look:
+		var v = look[key]
+		mat.set_shader_parameter(key, Color(str(v)) if v is String else float(v))
 	_group.material = mat
 	add_child(_group)
 	_sprite = Sprite2D.new()
@@ -34,6 +41,27 @@ func setup(sheet_json: String, screen_height: float) -> void:
 	_sprite.centered = false
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_group.add_child(_sprite)
+	if _cfg.has("lantern"):
+		# Lanterna sempre accesa: alone additivo fuori dal contorno, più forte nel windup.
+		var grad := Gradient.new()
+		grad.set_color(0, Color(1, 1, 1, 1))
+		grad.set_color(1, Color(1, 1, 1, 0))
+		var gt := GradientTexture2D.new()
+		gt.gradient = grad
+		gt.fill = GradientTexture2D.FILL_RADIAL
+		gt.fill_from = Vector2(0.5, 0.5)
+		gt.fill_to = Vector2(1.0, 0.5)
+		gt.width = 128
+		gt.height = 128
+		_glow = Sprite2D.new()
+		_glow.name = "LanternGlow"
+		_glow.texture = gt
+		var add := CanvasItemMaterial.new()
+		add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		_glow.material = add
+		var r := float(_cfg.lantern.radius)
+		_glow.scale = Vector2.ONE * (2.0 * r / 128.0)
+		add_child(_glow)
 	# altezza in unità di mondo della posa idle (senza margine)
 	_scale = height / float(_cfg.idle_px)
 	_show("idle", 1.0)
@@ -78,6 +106,11 @@ func _pick(time: float, walking: bool) -> String:
 			return "strike" if f.has("strike") else ("claw" if f.has("claw") else "idle")
 		"death":
 			return "death" if f.has("death") else "idle"
+	if walking and _cfg.has("walk_seq"):
+		var seq: Array = _cfg.walk_seq
+		var i := int(time * float(_cfg.get("walk_fps", 6))) % seq.size()
+		_bob = float(_cfg.get("walk_bob", [0])[i % _cfg.get("walk_bob", [0]).size()])
+		return str(seq[i])
 	if walking and f.has("walk1"):
 		var n := 0
 		while f.has("walk%d" % (n + 1)):
@@ -94,12 +127,21 @@ func _show(n: String, face: float) -> void:
 	var flip := face * float(_cfg.faces) < 0
 	_sprite.scale = Vector2(-_scale if flip else _scale, _scale)
 	# piedi sul punto d'origine, centrato in orizzontale
-	_sprite.position = Vector2((r[2] * 0.5) * _scale * (1 if flip else -1), -(r[3] - m) * _scale)
+	_sprite.position = Vector2((r[2] * 0.5) * _scale * (1 if flip else -1), -(r[3] - m) * _scale + _bob * _scale)
+	if _glow:
+		var pts: Dictionary = _cfg.lantern.points
+		var pt: Array = pts.get(n, [0, 0])
+		_glow.visible = float(pt[0]) > 0.0
+		var lx := float(pt[0]) * _scale * (-1.0 if flip else 1.0)
+		_glow.position = _sprite.position + Vector2(lx, float(pt[1]) * _scale)
+		var a := float(_cfg.lantern.windup_alpha) if n == "windup" else float(_cfg.lantern.alpha)
+		_glow.modulate = Color(Color(str(_cfg.lantern.color)), a)
 	if _group.material:
 		_group.material.set_shader_parameter("rim_dir", Vector2(-face, -0.4))
 
 
 func pose(time: float, face: float, tint: Color, _lift: float, _talking: bool, walking: bool) -> void:
+	_bob = 0.0
 	_show(_pick(time, walking), face)
 	_sprite.modulate = tint
 	# respiro leggero da fermo
