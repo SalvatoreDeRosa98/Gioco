@@ -29,10 +29,18 @@ var _slots_mode := "new"
 var _confirm_slot := 0
 var _options: Control
 var _remap: Control
+const TitleScreen := preload("res://game/title_screen.gd")
+## Schermata del titolo (solo avviando main.tscn come gioco; i test partono dal menu).
+var _title: Control
 
 ## Il menu accetta direttamente croce, stick e A/Croce anche dopo un clic fuori dai pulsanti.
 func _input(event: InputEvent) -> void:
 	if is_instance_valid(_world) or not is_instance_valid(_ui) or not _ui.visible:
+		return
+	if _title and _title.visible:
+		if event.is_pressed() and not event.is_echo() and (event is InputEventKey or event is InputEventJoypadButton or event is InputEventMouseButton):
+			_title.dismiss()
+			get_viewport().set_input_as_handled()
 		return
 	if (_options and _options.visible) or (_remap and _remap.visible):
 		return
@@ -94,6 +102,8 @@ func _ready() -> void:
 	_build_scene()
 	_build_ui()
 	_run_auto_args()
+	if scene_file_path != "" and not "--play" in OS.get_cmdline_user_args():
+		show_title()
 
 
 func _process(delta: float) -> void:
@@ -153,8 +163,8 @@ func _ensure_inputs() -> void:
 		"dash": [KEY_C, KEY_SHIFT],
 		"parry": [KEY_F, KEY_K],
 		"shop": [KEY_B],
-		# Parlare con i personaggi: W e Freccia su come in Hollow Knight, E per chi preferisce.
-		"interact": [KEY_W, KEY_UP, KEY_E],
+		# Parlare con i personaggi: E (controller Y). W e Freccia su restano solo per Su.
+		"interact": [KEY_E],
 		# Abilità metroidvania e strumenti:
 		"grapple": [KEY_Q],
 		"hammer": [KEY_V],
@@ -312,6 +322,10 @@ func _build_ui() -> void:
 	root.add_child(_remap)
 	_remap.hide()
 	_remap.closed.connect(_show_main_box)
+	_title = TitleScreen.new()
+	root.add_child(_title)
+	_title.hide()
+	_title.dismissed.connect(_show_main_box)
 
 	var footer := _label(root, "Beta  ·  Caserta, 1845", 18, Art.body_font())
 	footer.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -446,6 +460,12 @@ func _underline(color: Color) -> StyleBoxFlat:
 
 
 # ---------------------------------------------------------------- Slot e pannelli
+
+## Mostra la schermata del titolo sopra lo scenario; il menu arriva alla pressione di un tasto.
+func show_title() -> void:
+	_menu_center.hide()
+	_title.show()
+
 
 func _active_box() -> VBoxContainer:
 	return _slots_box if _slots_center and _slots_center.visible else _menu_box

@@ -990,6 +990,8 @@ func _ai_custode(delta: float) -> void:
 					_state = "burst"
 					_state_t = _f("burst_windup")
 				_boss_combo += 1
+				# Preavviso sonoro di ogni attacco (segnaposto, vedi audio.json "boss_preavviso").
+				_sfx("boss_preavviso")
 		"sword_windup":
 			velocity.x = 0
 			anim = "sword_windup"

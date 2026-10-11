@@ -252,4 +252,4 @@ func _draw_end(vp: Vector2) -> void:
 		var qa := clampf((_end_t - 1.8) / 1.5, 0.0, 1.0)
 		Art.text(self, Art.body_font(), Vector2(0, ly + 104.0), _end_quote, 23, Color(Art.OCRA.lightened(0.3), 0.85 * qa), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 		esc_y = ly + 158.0
-	Art.text(self, Art.body_font(), Vector2(0, esc_y), "W esplora Caserta  ·  Esc menu", 22, Color(Art.CREMA, 0.6 * a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+	Art.text(self, Art.body_font(), Vector2(0, esc_y), Controls.label("interact") + " esplora Caserta  ·  Esc menu", 22, Color(Art.CREMA, 0.6 * a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)

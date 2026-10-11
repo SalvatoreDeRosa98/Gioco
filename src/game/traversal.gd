@@ -31,6 +31,32 @@ func setup(w: Node) -> void:
 		body.add_child(shape)
 		add_child(body)
 
+## Chiave di story.seen che ricorda che il giocatore ha visto il muro incrinato (va nel salvataggio).
+static func seen_key(crack_id: String) -> String:
+	return "vista_" + crack_id
+
+
+## Segna come viste le crepe che entrano nel rettangolo iew (coordinate del mondo).
+## Ritorna gli id appena segnati.
+func mark_visible_cracks(view: Rect2) -> Array:
+	var marked := []
+	for c in cracks:
+		var key := seen_key(str(c.id))
+		if world.story.times_seen(key) > 0:
+			continue
+		if view.intersects(Rect2(c.rect[0], c.rect[1], c.rect[2], c.rect[3])):
+			world.story.mark_seen(key)
+			marked.append(str(c.id))
+	return marked
+
+
+## Parte di mondo inquadrata ora dalla camera attiva.
+func _view_rect() -> Rect2:
+	var inv := get_viewport().get_canvas_transform().affine_inverse()
+	var r := get_viewport_rect()
+	return Rect2(inv * r.position, Vector2.ZERO).expand(inv * r.end)
+
+
 ## Id del muro incrinato ancora intatto a contatto con Ferruccio, oppure "".
 func near_crack() -> String:
 	for c in cracks:
@@ -56,6 +82,8 @@ func _physics_process(delta: float) -> void:
 	if world.is_talking() or world.player.dead:
 		return
 	_hammer_cd = maxf(0, _hammer_cd - delta)
+	if not cracks.is_empty():
+		mark_visible_cracks(_view_rect())
 	var player = world.player
 	var hammer_input := Input.is_action_just_pressed("hammer") or Input.is_physical_key_pressed(KEY_V) or Input.is_key_pressed(KEY_V)
 	if hammer_input and _hammer_cd == 0 and world.upgrades.has("hammer") and player.attacking <= 0:

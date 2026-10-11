@@ -26,7 +26,7 @@ const INPUT_GUARD := 0.18
 const CHOICE_GUARD := 0.45
 const ADVANCE_ACTIONS := ["interact", "jump", "attack", "ui_accept"]
 
-## Ultimo dispositivo usato: decide se l'invito mostra "W" o "Y".
+## Ultimo dispositivo usato: decide se l'invito mostra "E" o "Y".
 static var pad := false
 static var _italic: FontVariation
 
@@ -298,7 +298,7 @@ func _input(event: InputEvent) -> void:
 		return
 	var advance := _is_advance(event)
 	if not advance and not _options.is_empty() and _typed():
-		# W e Freccia su sono anche "parla" (conferma): qui scelgono solo gli altri tasti di direzione.
+		# Interagisci (E / Y) conferma; tutte le direzioni cambiano la scelta.
 		for a in ["move_left", "move_right", "move_down", "move_up", "ui_left", "ui_right", "ui_down", "ui_up"]:
 			if InputMap.has_action(a) and event.is_action_pressed(a):
 				_sel = 1 - _sel
