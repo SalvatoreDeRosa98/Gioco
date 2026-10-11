@@ -1,0 +1,263 @@
+[gd_scene format=4]
+
+[ext_resource type="TileSet" path="res://rooms/blockout/blockout_tileset.tres" id="1_5aish"]
+
+[node name="R09CisterneReali" type="Node2D" unique_id=1787364259]
+metadata/room_id = 9
+metadata/room_name = "Cisterne Reali"
+metadata/floor = 980.0
+metadata/size = Vector2(2560, 1080)
+metadata/grid_offset_y = 20.0
+metadata/generated_by = "tools/levels/json_to_scenes.gd"
+
+[node name="Bounds" type="ReferenceRect" parent="." unique_id=1993122669]
+offset_right = 2560.0
+offset_bottom = 1080.0
+border_color = Color(0.3, 0.8, 1, 1)
+border_width = 4.0
+editor_only = false
+
+[node name="Terrain" type="TileMapLayer" parent="." unique_id=1695345284]
+position = Vector2(0, 20)
+tile_map_data = PackedByteArray("AAAAAA8AAAAAAAAAAAAAABAAAAAAAAAAAAABAA8AAAAAAAAAAAABABAAAAAAAAAAAAACAA8AAAAAAAAAAAACABAAAAAAAAAAAAADAA8AAAAAAAAAAAADABAAAAAAAAAAAAAEAA8AAAAAAAAAAAAEABAAAAAAAAAAAAAFAA8AAAAAAAAAAAAFABAAAAAAAAAAAAAGAA8AAAAAAAAAAAAGABAAAAAAAAAAAAAHAA8AAAAAAAAAAAAHABAAAAAAAAAAAAAIAA8AAAAAAAAAAAAIABAAAAAAAAAAAAAJAA8AAAAAAAAAAAAJABAAAAAAAAAAAAAKAA8AAAAAAAAAAAAKABAAAAAAAAAAAAALAA8AAAAAAAAAAAALABAAAAAAAAAAAAAMAA8AAAAAAAAAAAAMABAAAAAAAAAAAAANAA8AAAAAAAAAAAANABAAAAAAAAAAAAAOAA8AAAAAAAAAAAAOABAAAAAAAAAAAAAPAA8AAAAAAAAAAAAPABAAAAAAAAAAAAAQAA8AAAAAAAAAAAAQABAAAAAAAAAAAAARAA8AAAAAAAAAAAARABAAAAAAAAAAAAASAA8AAAAAAAAAAAASABAAAAAAAAAAAAATAA8AAAAAAAAAAAATABAAAAAAAAAAAAAUAA8AAAAAAAAAAAAUABAAAAAAAAAAAAAVAA8AAAAAAAAAAAAVABAAAAAAAAAAAAAWAA8AAAAAAAAAAAAWABAAAAAAAAAAAAAXAA8AAAAAAAAAAAAXABAAAAAAAAAAAAAYAA8AAAAAAAAAAAAYABAAAAAAAAAAAAAZAA8AAAAAAAAAAAAZABAAAAAAAAAAAAAaAA8AAAAAAAAAAAAaABAAAAAAAAAAAAAbAA8AAAAAAAAAAAAbABAAAAAAAAAAAAAcAA8AAAAAAAAAAAAcABAAAAAAAAAAAAAdAA8AAAAAAAAAAAAdABAAAAAAAAAAAAAeAA8AAAAAAAAAAAAeABAAAAAAAAAAAAAfAA8AAAAAAAAAAAAfABAAAAAAAAAAAAAgAA8AAAAAAAAAAAAgABAAAAAAAAAAAAAhAA8AAAAAAAAAAAAhABAAAAAAAAAAAAAiAA8AAAAAAAAAAAAiABAAAAAAAAAAAAAjAA8AAAAAAAAAAAAjABAAAAAAAAAAAAAkAA8AAAAAAAAAAAAkABAAAAAAAAAAAAAlAA8AAAAAAAAAAAAlABAAAAAAAAAAAAAmAA8AAAAAAAAAAAAmABAAAAAAAAAAAAAnAA8AAAAAAAAAAAAnABAAAAAAAAAAAAAKAA4AAAAAAAAAAAALAA4AAAAAAAAAAAAMAA4AAAAAAAAAAAANAA4AAAAAAAAAAAA=")
+tile_set = ExtResource("1_5aish")
+
+[node name="OneWay" type="TileMapLayer" parent="." unique_id=1240480244]
+position = Vector2(0, 20)
+tile_map_data = PackedByteArray("AAADAA0AAAABAAAAAAAEAA0AAAABAAAAAAAFAA0AAAABAAAAAAAGAA0AAAABAAAAAAAHAAsAAAAEAAAAAAAIAAsAAAAEAAAAAAAJAAsAAAAEAAAAAAAKAAsAAAAEAAAAAAALAAkAAAAEAAAAAAAMAAkAAAAEAAAAAAANAAkAAAAEAAAAAAAOAAkAAAAEAAAAAAAPAAgAAAABAAAAAAAQAAgAAAABAAAAAAARAAgAAAABAAAAAAASAAgAAAABAAAAAAATAAgAAAABAAAAAAATAAYAAAAEAAAAAAAUAAYAAAAEAAAAAAAVAAYAAAAEAAAAAAAWAAYAAAAEAAAAAAAXAAYAAAAEAAAAAAAYAAgAAAABAAAAAAAZAAgAAAABAAAAAAAaAAgAAAABAAAAAAAbAAgAAAABAAAAAAAcAAgAAAABAAAAAAAcAAoAAAABAAAAAAAdAAoAAAABAAAAAAAeAAoAAAABAAAAAAAfAAoAAAABAAAAAAAgAAoAAAABAAAAAAAhAAwAAAABAAAAAAAiAAwAAAABAAAAAAAjAAwAAAABAAAAAAAkAAwAAAABAAAAAAAlAAwAAAABAAAAAAA=")
+tile_set = ExtResource("1_5aish")
+
+[node name="Hazards" type="TileMapLayer" parent="." unique_id=1890799071]
+position = Vector2(0, 20)
+tile_set = ExtResource("1_5aish")
+
+[node name="Reference" type="TileMapLayer" parent="." unique_id=753744765]
+modulate = Color(1, 1, 1, 0.6)
+position = Vector2(0, 20)
+tile_set = ExtResource("1_5aish")
+
+[node name="Markers" type="Node2D" parent="." unique_id=184583508]
+
+[node name="Enemies" type="Node2D" parent="Markers" unique_id=1310881628]
+
+[node name="E0_vespa" type="Marker2D" parent="Markers/Enemies" unique_id=954176601]
+position = Vector2(750, 690)
+gizmo_extents = 24.0
+metadata/order = 0
+metadata/type = "vespa"
+
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E0_vespa" unique_id=273383920]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(1, 0.45, 0.4, 1)
+
+[node name="Label" type="Label" parent="Markers/Enemies/E0_vespa" unique_id=881007451]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
+text = "vespa"
+
+[node name="E1_lanterniere" type="Marker2D" parent="Markers/Enemies" unique_id=589296844]
+position = Vector2(1150, 946)
+gizmo_extents = 24.0
+metadata/order = 1
+metadata/type = "lanterniere"
+
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E1_lanterniere" unique_id=714221469]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(1, 0.45, 0.4, 1)
+
+[node name="Label" type="Label" parent="Markers/Enemies/E1_lanterniere" unique_id=235299635]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
+text = "lanterniere"
+
+[node name="E2_lanterniere" type="Marker2D" parent="Markers/Enemies" unique_id=1337257216]
+position = Vector2(1650, 946)
+gizmo_extents = 24.0
+metadata/order = 2
+metadata/type = "lanterniere"
+
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E2_lanterniere" unique_id=273957440]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(1, 0.45, 0.4, 1)
+
+[node name="Label" type="Label" parent="Markers/Enemies/E2_lanterniere" unique_id=342161942]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
+text = "lanterniere"
+
+[node name="E3_statua" type="Marker2D" parent="Markers/Enemies" unique_id=787000383]
+position = Vector2(2200, 946)
+gizmo_extents = 24.0
+metadata/order = 3
+metadata/type = "statua"
+
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E3_statua" unique_id=1191885198]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(1, 0.45, 0.4, 1)
+
+[node name="Label" type="Label" parent="Markers/Enemies/E3_statua" unique_id=556102899]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
+text = "statua"
+
+[node name="E4_vespa" type="Marker2D" parent="Markers/Enemies" unique_id=2069282440]
+position = Vector2(1860, 520)
+gizmo_extents = 24.0
+metadata/order = 4
+metadata/type = "vespa"
+
+[node name="Dot" type="ColorRect" parent="Markers/Enemies/E4_vespa" unique_id=2077972984]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(1, 0.45, 0.4, 1)
+
+[node name="Label" type="Label" parent="Markers/Enemies/E4_vespa" unique_id=816387657]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
+text = "vespa"
+
+[node name="Npcs" type="Node2D" parent="Markers" unique_id=565256225]
+
+[node name="N0_cesare_cisterne" type="Marker2D" parent="Markers/Npcs" unique_id=1541819966]
+position = Vector2(340, 980)
+gizmo_extents = 24.0
+metadata/order = 0
+metadata/id = "cesare_cisterne"
+
+[node name="Dot" type="ColorRect" parent="Markers/Npcs/N0_cesare_cisterne" unique_id=331480786]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(0.5, 1, 0.6, 1)
+
+[node name="Label" type="Label" parent="Markers/Npcs/N0_cesare_cisterne" unique_id=162962871]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.5, 1, 0.6, 1)
+text = "cesare_cisterne"
+
+[node name="Secrets" type="Node2D" parent="Markers" unique_id=1082201790]
+
+[node name="S0" type="Marker2D" parent="Markers/Secrets" unique_id=1676908415]
+position = Vector2(1680, 502)
+gizmo_extents = 24.0
+metadata/order = 0
+
+[node name="Dot" type="ColorRect" parent="Markers/Secrets/S0" unique_id=1381414297]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(1, 0.9, 0.3, 1)
+
+[node name="Label" type="Label" parent="Markers/Secrets/S0" unique_id=1317770306]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+text = "segreto"
+
+[node name="Landmarks" type="Node2D" parent="Markers" unique_id=1664433839]
+
+[node name="L0_sluice" type="Marker2D" parent="Markers/Landmarks" unique_id=1716653530]
+position = Vector2(1400, 436)
+gizmo_extents = 24.0
+metadata/index = 0
+metadata/id = "sluice"
+
+[node name="Dot" type="ColorRect" parent="Markers/Landmarks/L0_sluice" unique_id=379266705]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(0.6, 0.8, 1, 1)
+
+[node name="Label" type="Label" parent="Markers/Landmarks/L0_sluice" unique_id=289639423]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
+text = "lever: sluice"
+
+[node name="Reference" type="Node2D" parent="Markers" unique_id=1908475120]
+
+[node name="Exit" type="Marker2D" parent="Markers/Reference" unique_id=1076442739]
+position = Vector2(1840, 940)
+gizmo_extents = 24.0
+
+[node name="Dot" type="ColorRect" parent="Markers/Reference/Exit" unique_id=1346832524]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(0.7, 0.7, 1, 1)
+
+[node name="Label" type="Label" parent="Markers/Reference/Exit" unique_id=133285429]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.7, 0.7, 1, 1)
+text = "giu -> 13 "
+
+[node name="Save" type="Marker2D" parent="Markers/Reference" unique_id=1015632832]
+position = Vector2(520, 980)
+gizmo_extents = 24.0
+
+[node name="Dot" type="ColorRect" parent="Markers/Reference/Save" unique_id=1805768098]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+
+[node name="Label" type="Label" parent="Markers/Reference/Save" unique_id=270292157]
+offset_left = -60.0
+offset_top = -44.0
+offset_right = -60.0
+offset_bottom = -44.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "incudine"

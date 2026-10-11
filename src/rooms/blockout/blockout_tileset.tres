@@ -1,0 +1,16 @@
+[gd_resource type="TileSet" format=3]
+
+[ext_resource type="Texture2D" path="res://rooms/blockout/blockout_tiles.png" id="1_g3o76"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_4fade"]
+texture = ExtResource("1_g3o76")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+
+[resource]
+tile_size = Vector2i(64, 64)
+sources/0 = SubResource("TileSetAtlasSource_4fade")

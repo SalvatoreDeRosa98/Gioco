@@ -11,6 +11,8 @@ const RATKING_ROOM := 15
 const BOSS_ROOM := 4
 const ARCHIVES_ROOM := 11
 const Expansion := preload("res://game/expansion_data.gd")
+## Scene costruite nell'editor (TileMapLayer): sostituiscono i JSON solo per le stanze elencate in "scene_rooms".
+const LevelScenes := preload("res://game/level_scenes.gd")
 ## Altezza dei portali d'uscita, appoggiati al pavimento.
 const DOOR_H := 220.0
 ## Spessore visibile dei pilastri ai lati della stanza.
@@ -167,6 +169,10 @@ const SAVE_STATUES := [Vector2(2320, 946), Vector2(2320, 946), Vector2(2350, 946
 static func save_station_id(idx: int) -> String:
 	if idx == SECRET_ROOM:
 		return "forge-memory"
+	# Incudini definite nei dati (expansion.json -> "saves"), una per stanza.
+	var data_saves: Array = Expansion.data().get("saves", {}).get(str(idx), [])
+	if not data_saves.is_empty():
+		return "%d:incudine:%d:%d" % [idx, roundi(float(data_saves[0].pos[0])), roundi(float(data_saves[0].pos[1]))]
 	if idx == 0 or idx >= SAVE_STATUES.size():
 		return ""
 	var pos: Vector2 = SAVE_STATUES[idx]
@@ -184,6 +190,7 @@ static func build(idx: int, choices: Dictionary = {}) -> Dictionary:
 		r.branch_platform = Rect2()
 		r.invisible_steps = []
 		r.secrets = []
+	r = LevelScenes.apply(idx, r)
 	r["vertical"] = Expansion.data().get("vertical", {}).get(str(idx), [])
 	for l in Expansion.data().get("extra_ledges", {}).get(str(idx), []):
 		r.ledges.append(Rect2(l[0], l[1], l[2], l[3]))
