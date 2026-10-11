@@ -97,10 +97,10 @@ func _process(delta: float) -> void:
 		tint = Color(1.5, 1.2, 1)
 	elif _state == "windup":
 		# Preavviso leggibile: tinta del colore dell'attacco che cresce, lampo negli ultimi istanti.
-		var k := clampf(1.0 - _timer / maxf(0.01, _duration), 0.0, 1.0)
-		tint = Color.WHITE.lerp(telegraph_color(_attack) * 1.4, 0.35 + 0.4 * k)
+		# CONTROLLO-SLICE3 §5: niente tinta su tutto lo sprite (cancellava il disegno); il preavviso
+		# è l'anello ocra di _draw più un lampo finale, con modulate al massimo (1.25, 1.1, 1).
 		if _timer <= float(_cfg.telegraph_flash):
-			tint = Color(1.8, 1.8, 1.8)
+			tint = Color(1.25, 1.1, 1.0)
 	elif _state == "roar":
 		tint = Color(1.6, 0.7, 0.6) if int(_clock * 12.0) % 2 == 0 else Color.WHITE
 	_rig.pose(_clock, facing, tint, 0, world.is_talking(), absf(velocity.x) > 5)
@@ -238,7 +238,7 @@ func _draw() -> void:
 	var cue: String = {"claw":"ARTIGLI", "charge":"CARICA", "rats":"RICHIAMO DEI RATTI"}[_attack]
 	Art.text(self, Art.body_font(), Vector2(-145,-115), cue, 16, col, HORIZONTAL_ALIGNMENT_CENTER, 290)
 	var progress := 1.0 - _timer / _duration
-	draw_arc(Vector2(0,-20), 50, -PI*.5, -PI*.5 + TAU*progress, 36, col, 3, true)
+	draw_arc(Vector2(0,-20), 50, -PI*.5, -PI*.5 + TAU*progress, 36, Art.OCRA, 3, true)
 	if _attack == "charge":
 		# Traiettoria della carica: linea a terra nella direzione di corsa.
 		draw_line(Vector2(0, half.y - 2), Vector2(facing * 360.0, half.y - 2), Color(col, 0.35 + 0.5 * progress), 4)

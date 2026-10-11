@@ -46,6 +46,17 @@ func _run() -> void:
 		lant._rig.set_action("windup", 0.5)
 		lant._rig.pose(0.0, 1.0, Color.RED, 0, false, false)
 		check(lant._rig.frame == "windup" and lant._rig._sprite.modulate == Color.RED, "Preavviso: posa windup con la tinta colorata")
+		# CONTROLLO-SLICE3 §7-8: contorno e rim azzurro, lanterna sempre accesa, camminata sfalsata.
+		var lm: ShaderMaterial = lant._rig._group.material
+		check(is_equal_approx(float(lm.get_shader_parameter("outline_px")), 3.0) and is_equal_approx(float(lm.get_shader_parameter("rim_strength")), 0.6), "Lanterniere: contorno 3 px e rim 0,6")
+		check(lant._rig._glow != null and lant._rig._glow.visible and lant._rig._glow.modulate.a >= 0.99, "Lanterna al massimo nel windup")
+		lant._rig.set_action("", 0.0)
+		var seen := {}
+		for i in 8:
+			lant._rig.pose(i * 0.17, 1.0, Color.WHITE, 0, false, true)
+			seen[lant._rig.frame] = true
+			check(lant._rig._glow.visible and absf(lant._rig._glow.modulate.a - 0.5) < 0.01, "Lanterna accesa camminando (%s)" % lant._rig.frame)
+		check(seen.size() == 3, "Camminata con 3 pose (%s)" % [seen.keys()])
 	var pend: Array = []
 	for e in world.pending_wave:
 		pend.append(e.type)
@@ -88,5 +99,16 @@ func _run() -> void:
 			e._rig.set_action("windup", 0.5)
 			e._rig.pose(0.0, 1.0, Color.WHITE, 0, false, false)
 			check(e._rig.frame == "charge_windup", "Ratking: posa di preavviso della carica")
+			var rm: ShaderMaterial = e._rig._group.material
+			check(is_equal_approx(float(rm.get_shader_parameter("rim_strength")), 0.5) and is_equal_approx(float(rm.get_shader_parameter("rim_px")), 2.0), "Ratking: rim azzurro 2 px alfa 0,5")
+			e._state = "windup"
+			e._attack = "charge"
+			e._duration = 1.0
+			e._timer = 0.6
+			e._process(0.0)
+			check(e._rig._sprite.modulate == Color.WHITE, "Preavviso della carica senza tinta sullo sprite")
+			e._timer = 0.1
+			e._process(0.0)
+			check(e._rig._sprite.modulate == Color(1.25, 1.1, 1.0), "Lampo finale con modulate (1.25, 1.1, 1)")
 	print("COMBAT ART WAVES TEST: %d failure(s)" % failures)
 	quit(1 if failures else 0)

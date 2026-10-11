@@ -1,5 +1,5 @@
 {
- "_doc": "Prototipo a fotogrammi interi (tools/art/enemies_v2/pack_proto.py). height_px = altezza a schermo della posa idle a 1080p; margin = pixel trasparenti attorno a ogni fotogramma; faces = verso in cui guarda il disegno (1 destra, -1 sinistra).",
+ "_doc": "Prototipo a fotogrammi interi (tools/art/enemies_v2/pack_proto.py). height_px = altezza a schermo della posa idle a 1080p; margin = pixel trasparenti attorno a ogni fotogramma; faces = verso in cui guarda il disegno (1 destra, -1 sinistra). look: contorno/rim del CanvasGroup. lantern: alone additivo sempre acceso (punti in pixel del fotogramma). walk_seq/walk_bob: camminata con 3 pose sfalsate e saliscendi (le 5 pose originali sono quasi uguali). Ombre del mantello sollevate con schiarisci_lanterniere.py.",
  "height_px": 140,
  "idle_px": 280,
  "margin": 4,
@@ -65,5 +65,69 @@
    122,
    95
   ]
- }
+ },
+ "look": {
+  "outline_px": 3.0,
+  "outline_color": "0d0e11",
+  "rim_color": "8fd3ff",
+  "rim_px": 2.0,
+  "rim_strength": 0.6
+ },
+ "lantern": {
+  "color": "8fd3ff",
+  "radius": 40.0,
+  "alpha": 0.5,
+  "windup_alpha": 1.0,
+  "points": {
+   "idle": [
+    78,
+    47
+   ],
+   "walk1": [
+    78,
+    47
+   ],
+   "walk2": [
+    88,
+    46
+   ],
+   "walk3": [
+    75,
+    47
+   ],
+   "walk4": [
+    98,
+    51
+   ],
+   "walk5": [
+    82,
+    50
+   ],
+   "windup": [
+    111,
+    48
+   ],
+   "strike": [
+    112,
+    50
+   ],
+   "hit": [
+    0,
+    0
+   ]
+  }
+ },
+ "walk_seq": [
+  "walk1",
+  "walk3",
+  "walk5",
+  "walk3"
+ ],
+ "walk_bob": [
+  0,
+  -3,
+  0,
+  -2
+ ],
+ "walk_fps": 6
 }
