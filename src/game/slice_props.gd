@@ -56,7 +56,55 @@ func hint_rect(p: Dictionary) -> Rect2:
 	if view.size.x > HINT_W + 32.0:
 		r.position.x = clampf(r.position.x, view.position.x + 16.0, view.end.x - 16.0 - HINT_W)
 	r.position.y = clampf(r.position.y, view.position.y + 16.0, view.end.y - 16.0 - HINT_H)
-	return r
+	return fit_label(get_viewport(), r)
+
+## Zone dello schermo occupate dall'HUD (pixel del viewport): pannello vita/monete in alto a sinistra
+## (hud.gd: Rect2(18, 18, VITALS_RIGHT - 18, 128 + 4 * 21) con VITALS_RIGHT = 290, più margine) e la
+## fascia bassa di avvisi, notifiche e comandi (hud.gd: toast a vp.y - 118, notifiche da vp.y - 104 - 26).
+static func hud_rects(vp: Vector2) -> Array:
+	return [Rect2(0, 0, 330, 250), Rect2(0, vp.y - 150.0, vp.x, 150.0)]
+
+## Le zone dell'HUD in coordinate di mondo (con lo zoom attuale).
+static func hud_world_rects(vp: Viewport) -> Array:
+	var inv := vp.get_canvas_transform().affine_inverse()
+	var out := []
+	for s: Rect2 in hud_rects(vp.get_visible_rect().size):
+		out.append(Rect2(inv * s.position, Vector2.ZERO).expand(inv * s.end))
+	return out
+
+## Riquadro di un cartello (coordinate di mondo) dentro la vista e fuori dalle zone dell'HUD: se serve
+## lo sposta sotto, a destra o sopra di ogni zona e tiene la posizione valida più vicina a quella voluta.
+## Usato dai cartelli dei cancelli (qui) e dei passaggi (expedition.gd).
+static func fit_label(vp: Viewport, r: Rect2, avoid: Array = []) -> Rect2:
+	var zones := hud_world_rects(vp) + avoid
+	var inv := vp.get_canvas_transform().affine_inverse()
+	var view := Rect2(inv * Vector2.ZERO, Vector2.ZERO).expand(inv * vp.get_visible_rect().size)
+	var inner := view.grow(-16.0)
+	if inner.size.x > r.size.x:
+		r.position.x = clampf(r.position.x, inner.position.x, inner.end.x - r.size.x)
+	if inner.size.y > r.size.y:
+		r.position.y = clampf(r.position.y, inner.position.y, inner.end.y - r.size.y)
+	var ok := func(c: Rect2) -> bool:
+		if not inner.encloses(c):
+			return false
+		for z: Rect2 in zones:
+			if z.intersects(c):
+				return false
+		return true
+	if ok.call(r):
+		return r
+	var best := r
+	var best_d := INF
+	for z: Rect2 in zones:
+		for pos in [Vector2(r.position.x, z.end.y + 8.0), Vector2(z.end.x + 8.0, r.position.y), Vector2(r.position.x, z.position.y - 8.0 - r.size.y),
+				Vector2(z.end.x + 8.0, z.end.y + 8.0)]:
+			var c := Rect2(pos, r.size)
+			c.position.x = clampf(c.position.x, inner.position.x, inner.end.x - c.size.x)
+			c.position.y = clampf(c.position.y, inner.position.y, inner.end.y - c.size.y)
+			if ok.call(c) and c.position.distance_to(r.position) < best_d:
+				best = c
+				best_d = c.position.distance_to(r.position)
+	return best
 
 ## Area di mondo inquadrata dalla camera.
 func visible_rect() -> Rect2:
@@ -65,6 +113,18 @@ func visible_rect() -> Rect2:
 		return Rect2(Vector2(-1e6, -1e6), Vector2(2e6, 2e6))
 	var view := get_viewport_rect().size / cam.zoom
 	return Rect2(cam.get_screen_center_position() - view / 2.0, view)
+
+## Riquadri (mondo) dei cancelli disegnati e dei loro cartelli: i cartelli degli altri oggetti non
+## ci finiscono sotto né sopra.
+func sprite_rects() -> Array:
+	var out := []
+	for p: Dictionary in props:
+		if p.kind == "gate":
+			var h := float(p.get("height", 200.0))
+			var size := Vector2(GATE_SHUT.get_size()) * (h / GATE_SHUT.get_height())
+			out.append(Rect2(Vector2(p.pos.x - size.x / 2.0, p.pos.y - size.y), size))
+			out.append(hint_rect(p).grow(4.0))
+	return out
 
 func _sprite(tex: Texture2D, base: Vector2, height: float, alpha := 1.0, offset := Vector2.ZERO, angle := 0.0) -> void:
 	var size := Vector2(tex.get_size()) * (height / tex.get_height())

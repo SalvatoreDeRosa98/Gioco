@@ -226,6 +226,7 @@ func _toggle_developer_mode() -> void:
 
 
 func _process(delta: float) -> void:
+	_fit_camera()
 	if _pause != null and _pause.opened:
 		return
 	if _map != null and _map.opened:
@@ -436,6 +437,7 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 			spawn = Vector2(float(a.trim_prefix("--at=")), float(room["floor"]) - 30.0)
 	player.teleport(spawn)
 	player.apply_room(room["size"])
+	CameraBounds.fit(player._cam, room["size"])
 	player.apply_theme(th)
 	apply_upgrades()
 
@@ -458,6 +460,14 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 
 ## Guanti (wall_grip): si fa presa solo sulle superfici marcate come scalabili (room.climb, Rect2 di mondo,
 ## dai marcatori Markers/Climb delle scene). Mai sui bordi della stanza né su muri non marcati.
+## Limiti della camera attiva rispetto alla stanza, rifatti se lo zoom cambia (es. camere delle arene).
+const CameraBounds := preload("res://game/camera_bounds.gd")
+func _fit_camera() -> void:
+	if room.is_empty():
+		return
+	CameraBounds.fit(get_viewport().get_camera_2d(), room["size"])
+
+
 func can_grip(pos: Vector2, wall_normal: Vector2) -> bool:
 	var probe := pos - Vector2(signf(wall_normal.x), 0.0) * 34.0
 	for c in room.get("climb", []):

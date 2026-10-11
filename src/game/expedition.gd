@@ -105,7 +105,19 @@ func _draw() -> void:
 				var angle: float = a * TAU / 6 + (_time * 0.5 if done else 0)
 				draw_line(wheel, wheel + Vector2.from_angle(angle) * 22, color, 2, true)
 		if i == selected:
-			Art.text(self, Art.body_font(), p - Vector2(180, ARCH_SPRING + ARCH_R + 60 if m.kind == "route" else 86), Controls.label("interact") + "  " + str(m.label), 19, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, 360)
+			var text := Controls.label("interact") + "  " + str(m.label)
+			var lr := label_rect(p, str(m.kind), text)
+			Art.text(self, Art.body_font(), lr.position + Vector2(0, LABEL_BASE), text, 19, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, lr.size.x)
+
+
+## Riquadro (mondo) del cartello di un punto d'interesse: sopra l'arco o l'oggetto, ma sempre dentro
+## lo schermo e fuori dalle zone dell'HUD (slice_props.gd: fit_label).
+const LABEL_BASE := 20.0
+func label_rect(p: Vector2, kind: String, text := "") -> Rect2:
+	# Largo quanto il testo (centrato sul punto), almeno 360 px.
+	var w := maxf(360.0, Art.body_font().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x + 16.0)
+	var top := p - Vector2(w / 2.0, ARCH_SPRING + ARCH_R + 60 if kind == "route" else 86) - Vector2(0, LABEL_BASE)
+	return preload("res://game/slice_props.gd").fit_label(get_viewport(), Rect2(top, Vector2(w, 28)), world._slice_props.sprite_rects() if is_instance_valid(world.get("_slice_props")) else [])
 
 
 ## Portale in pietra appoggiato al suolo, con la stessa pietra dipinta del terreno:
