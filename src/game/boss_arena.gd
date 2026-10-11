@@ -1,5 +1,5 @@
 extends Node2D
-## Il Cortile si chiude e cambia assetto prima che il Custode inizi l'assalto.
+## Il Cortile si chiude e cambia assetto prima che il Cavaliere Borbonico inizi l'assalto.
 var world: Node
 var active := false
 var _closing := 0.0
@@ -33,7 +33,7 @@ func activate() -> void:
 	add_child(_camera)
 	_camera.make_current()
 	world.player.add_trauma(0.6)
-	world._hud.area_title("L'arena di Donna Luciana", "Il Cortile chiude le sue porte")
+	world._hud.area_title("L'arena del Cavaliere Borbonico", "Il Cortile chiude le sue porte")
 	var tween := create_tween()
 	tween.tween_property(world._backdrop, "modulate", Color(0.6,0.48,0.7), float(Tuning.data.arena.transition_time))
 	for enemy in get_tree().get_nodes_in_group("enemies"):

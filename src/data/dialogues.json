@@ -100,7 +100,12 @@
 			"shadow": 34
 		},
 		"violante_scesa": {
-			"name": "Violante",
+			"name": "Donna Luciana",
+			"image": "res://assets/art/characters/violante.png",
+			"height": 118
+		},
+		"luciana": {
+			"name": "Donna Luciana",
 			"image": "res://assets/art/characters/violante.png",
 			"height": 118
 		},
@@ -819,11 +824,11 @@
 			"verb": "Ascolta",
 			"dialogue": [
 				{"id": "gregorio_resa", "once": true, "lines": [
-					{"text": "Donna Luciana cade in ginocchio. Il giglio sul petto si incrina, poi si spezza: sotto l'elmo c'è una donna."},
+					{"text": "Il Cavaliere Borbonico cade in ginocchio. Il giglio sul petto si incrina, poi si spezza: sotto l'elmo c'è Gregorio."},
 					{"who": "gregorio", "text": "Ho protetto la porta per tutta la vita..."},
 					{"who": "gregorio", "text": "E non ho visto cosa entrava."}
 				], "choice": {
-					"prompt": "Donna Luciana respira ancora. Ferruccio può provare a parlarle, o restare con la spada alzata.",
+					"prompt": "Il Cavaliere respira ancora. Ferruccio può provare a parlargli, o restare con la spada alzata.",
 					"options": [
 						{
 							"label": "Cerca di farlo ragionare",
@@ -929,20 +934,20 @@
 		},
 		"violante_finale": {
 			"character": "violante_scesa",
-			"speakers": ["violante"],
+			"speakers": ["luciana"],
 			"face": -1,
 			"turn": "talk",
 			"leave": "fade",
 			"when": {"violante_fate": "!uccisa"},
 			"dialogue": [
 				{"id": "violante_velo", "once": true, "lines": [
-					{"text": "Dal balcone scende una donna vestita di blu. Le torce del cortile si spengono una dopo l'altra."},
-					{"who": "violante", "text": "Gregorio? Avevi promesso che saremmo rimasti insieme."},
-					{"who": "violante", "text": "E tu devi essere Ferruccio. Pensavo di averti tolto abbastanza ricordi da farti riposare."},
-					{"who": "violante", "text": "Non ho mai odiato questa città. L'ho amata più di quanto meritasse.", "item": "fazzoletto_giglio"},
+					{"text": "Dal balcone scende Donna Luciana, vestita di blu. Le torce del cortile si spengono una dopo l'altra."},
+					{"who": "luciana", "text": "Gregorio? Avevi promesso che saremmo rimasti insieme."},
+					{"who": "luciana", "text": "E tu devi essere Ferruccio. Pensavo di averti tolto abbastanza ricordi da farti riposare."},
+					{"who": "luciana", "text": "Non ho mai odiato questa città. L'ho amata più di quanto meritasse.", "item": "fazzoletto_giglio"},
 					{"text": "Dalle sue dita partono fili d'oro. Attraversano il cortile e scendono su tutte le strade di Caserta."},
-					{"who": "violante", "text": "Se mi uccidi, torneranno la fame, l'odio e la paura. Se mi risparmi, continueranno a sorridere."},
-					{"who": "violante", "text": "Dimmi, Ferruccio. Chi di noi due è davvero un mostro?"}
+					{"who": "luciana", "text": "Se mi uccidi, torneranno la fame, l'odio e la paura. Se mi risparmi, continueranno a sorridere."},
+					{"who": "luciana", "text": "Dimmi, Ferruccio. Chi di noi due è davvero un mostro?"}
 				], "choice": {
 					"prompt": "Quanto vale la felicità? Spezza il Velo, e tornerà anche il dolore. Risparmiala, e nessuno potrà più scegliere.",
 					"options": [
@@ -953,10 +958,10 @@
 							},
 							"lines": [
 								{
-									"text": "Ferruccio avanza. Violante non tenta di difendersi."
+									"text": "Ferruccio avanza. Donna Luciana non tenta di difendersi."
 								},
 								{
-									"who": "violante",
+									"who": "luciana",
 									"text": "Allora non hai imparato niente."
 								},
 								{
@@ -968,7 +973,7 @@
 							]
 						},
 						{
-							"label": "Risparmia Violante",
+							"label": "Risparmia Donna Luciana",
 							"set": {
 								"violante_fate": "risparmiata"
 							},
@@ -977,14 +982,14 @@
 									"text": "Ferruccio abbassa la spada."
 								},
 								{
-									"who": "violante",
+									"who": "luciana",
 									"text": "Lo sapevo. In fondo, anche tu desideri soltanto che il dolore finisca."
 								},
 								{
-									"text": "Violante raccoglie il giglio d'oro dal mantello del marito, e ricuce il Velo."
+									"text": "Donna Luciana raccoglie il giglio d'oro dal mantello del marito, e ricuce il Velo."
 								},
 								{
-									"who": "violante",
+									"who": "luciana",
 									"text": "Non sarai ricordato come un eroe. Ma potrai vivere in pace."
 								},
 								{
@@ -1016,7 +1021,7 @@
 				"dialogue": {"id": "finale_liberta", "lines": [
 					{"text": "Per un istante non si sente nulla. Poi una donna comincia a piangere. Un bambino chiama sua madre."},
 					{"text": "Un uomo ride davvero, sorpreso dalla propria risata. Sopra Caserta il cielo torna azzurro."},
-					{"who": "guardia", "text": "La Signora! L'ha ammazzata! Ha ucciso anche Donna Luciana!"},
+					{"who": "guardia", "text": "Donna Luciana! L'ha ammazzata! Ha ucciso la Signora!"},
 					{"who": "cittadino", "text": "Era lei che dava da mangiare ai nostri figli! Assassino!"},
 					{"who": "agnese", "text": "Ferruccio... ti prego. Non scappare. Posso ancora aiutarti!", "if": {"agnese_memory": "risvegliata"}},
 					{"who": "agnese", "text": "Sei tu... Sei davvero tu? Perché hai fatto questo?", "if": {"agnese_memory": "!risvegliata"}},

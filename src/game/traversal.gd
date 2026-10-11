@@ -7,6 +7,8 @@ var cracks: Array = []
 var spikes: Array = []
 var _hammer_cd := 0.0
 var _hammer_pending := false
+## Pausa tra due avvisi "Serve il martello" quando Ferruccio tocca un muro incrinato senza martello.
+var _crack_hint_cd := 0.0
 
 ## Ricostruisce solo i muri che non sono stati rotti nella partita corrente.
 func setup(w: Node) -> void:
@@ -28,6 +30,13 @@ func setup(w: Node) -> void:
 		shape.position = Vector2(c.rect[0], c.rect[1]) + rect.size / 2
 		body.add_child(shape)
 		add_child(body)
+
+## Id del muro incrinato ancora intatto a contatto con Ferruccio, oppure "".
+func near_crack() -> String:
+	for c in cracks:
+		if world.story.times_seen(c.id) == 0 and Rect2(c.rect[0], c.rect[1], c.rect[2], c.rect[3]).grow(30.0).has_point(world.player.position):
+			return str(c.id)
+	return ""
 
 ## Restituisce l'anello più vicino e visibile sopra il giocatore, oppure INF.
 func anchor(from: Vector2, reach: float) -> Vector2:
@@ -67,6 +76,10 @@ func _physics_process(delta: float) -> void:
 				Fx.dust(world.fx_root, rect.get_center(), 22)
 				player.add_trauma(0.25)
 				world._hud.toast("Il calcare cede sotto il martello")
+	_crack_hint_cd = maxf(0.0, _crack_hint_cd - delta)
+	if _crack_hint_cd == 0.0 and near_crack() != "" and not world.upgrades.has("hammer"):
+		_crack_hint_cd = 3.5
+		world._hud.toast("Muro incrinato: serve il martello del calcare (" + Controls.label("hammer") + ")")
 	for a in spikes:
 		var rect := Rect2(a[0], a[1], a[2], a[3])
 		if rect.grow(12).has_point(player.position + Vector2(0, 24)):
@@ -96,11 +109,23 @@ func _draw() -> void:
 		if world.story.times_seen(c.id) > 0:
 			continue
 		var r := Rect2(c.rect[0], c.rect[1], c.rect[2], c.rect[3])
-		draw_texture_rect(preload("res://assets/art/props/terreno.png"), r, false, Color(0.7, 0.7, 0.65))
+		draw_rect(r, Color("#6d6458"), true)
+		draw_texture_rect(preload("res://assets/art/props/terreno.png"), r, true, Color(1.0, 0.95, 0.85))
+		# Crepe ben leggibili: tronco a zig-zag, rami laterali e alone ocra che pulsa.
+		var pulse := 0.35 + 0.25 * sin(Time.get_ticks_msec() * 0.004)
+		draw_rect(r.grow(3), Color(Art.OCRA, pulse), false, 3.0)
+		var top := maxf(r.position.y, float(world.room.floor) - 520.0)
+		var span := r.end.y - top
 		var points := PackedVector2Array()
-		for i in 7:
-			points.append(Vector2(r.get_center().x + (-9 if i % 2 else 9), r.position.y + r.size.y * i / 6.0))
-		draw_polyline(points, Color("#17171c"), 3, true)
+		for i in 13:
+			points.append(Vector2(r.get_center().x + (-r.size.x * 0.22 if i % 2 else r.size.x * 0.22), top + span * i / 12.0))
+		draw_polyline(points, Color("#121216"), 4, true)
+		for i in range(1, 12, 2):
+			var from := points[i]
+			var side := -1.0 if i % 4 == 1 else 1.0
+			draw_line(from, from + Vector2(side * r.size.x * 0.45, -14), Color("#1c1b20"), 2, true)
+		if c.get("gate", false) and absf(world.player.position.x - r.get_center().x) < 260 and not world.upgrades.has("hammer"):
+			Art.text(self, Art.body_font(), Vector2(r.get_center().x - 160, float(world.room.floor) - 300), "Muro incrinato · serve il martello", 18, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 320)
 	for a in spikes:
 		for x in range(int(a[0]), int(a[0] + a[2]), 20):
 			draw_colored_polygon(PackedVector2Array([Vector2(x, a[1]+20), Vector2(x+10, a[1]), Vector2(x+20, a[1]+20)]), Color("#999eaa"))

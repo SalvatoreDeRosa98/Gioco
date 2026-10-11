@@ -62,7 +62,7 @@ func toast(text: String) -> void:
 ## passa titolo, sottotitolo e una citazione conclusiva (vedi data/dialogues.json, "finale").
 func show_end(won: bool, title: String = "", subtitle: String = "", quote: String = "") -> void:
 	_end_title = title if title != "" else ("CASERTA È SALVA" if won else "LA REGGIA TI HA VINTO")
-	_end_sub = subtitle if subtitle != "" else ("Donna Luciana è caduta. La città respira di nuovo." if won else "Donna Luciana veglia ancora sul Cortile d'Onore.")
+	_end_sub = subtitle if subtitle != "" else ("Il Cavaliere Borbonico è caduto. La città respira di nuovo." if won else "Il Cavaliere Borbonico veglia ancora sul Cortile d'Onore.")
 	_end_quote = quote
 	_end_t = 0.0
 
@@ -100,7 +100,6 @@ func _draw() -> void:
 		draw_rect(card, Color(Art.OCRA, 0.8), false, 1.5)
 	_draw_vitals()
 	_draw_area_title(vp)
-	_draw_boss(vp)
 	if world.player.invulnerable:
 		Art.text(self, Art.body_font(), Vector2(0, 28), "SVILUPPATORE · NESSUN DANNO", 18, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if _toast_t > 0.0:
@@ -183,27 +182,6 @@ func _draw_area_title(vp: Vector2) -> void:
 	draw_line(Vector2(cx + 18.0, ly), Vector2(cx + spread + 20.0, ly), Color(Art.OCRA, 0.8 * a), 1.5)
 	draw_colored_polygon(PackedVector2Array([Vector2(cx - 9, ly), Vector2(cx, ly - 6), Vector2(cx + 9, ly), Vector2(cx, ly + 6)]), Color(Art.OCRA, a))
 	Art.text(self, Art.body_font(), Vector2(0, ly + 38.0), _subtitle, 26, Color(Art.OCRA.lightened(0.3), 0.9 * a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
-
-
-func _draw_boss(vp: Vector2) -> void:
-	var boss = world.boss()
-	if boss == null:
-		_boss_name_t = -1.0
-		return
-	if _boss_name_t < 0.0:
-		_boss_name_t = 0.0
-	_boss_name_t += get_process_delta_time()
-	var a := minf(1.0, _boss_name_t / 1.5)
-	var w := 620.0
-	var x := (vp.x - w) * 0.5
-	var y := vp.y - 70.0
-	Art.text(self, Art.title_wide(), Vector2(0, y - 16.0), "RATKING · IL FIGLIO DELLE CISTERNE" if boss.kind == "ratking" else "DONNA LUCIANA", 22, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
-	var frac := clampf(float(boss.hp) / maxf(1.0, float(boss.max_hp)), 0.0, 1.0)
-	draw_rect(Rect2(x - 2, y - 2, w + 4, 12), Color(0, 0, 0, 0.7 * a))
-	Art.grad_rect(self, Rect2(x, y, w * frac, 8), Color(1.0, 0.72, 0.3, a), Color(0.6, 0.15, 0.08, a))
-	draw_rect(Rect2(x - 2, y - 2, w + 4, 12), Color(Art.OCRA, 0.6 * a), false, 1.0)
-	for side in [x - 14.0, x + w + 14.0]:
-		draw_colored_polygon(PackedVector2Array([Vector2(side - 7, y + 4), Vector2(side, y - 3), Vector2(side + 7, y + 4), Vector2(side, y + 11)]), Color(Art.OCRA, a))
 
 
 func _draw_end(vp: Vector2) -> void:

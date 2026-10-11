@@ -89,6 +89,11 @@ func _run() -> void:
 
 	# Act 2: Violante.
 	_check(await _wait_until(func() -> bool: return world.is_talking(), 20000), "poi parla Violante")
+	_check(world.boss() == null, "il Cavaliere Borbonico non c'è più")
+	while box._name == "" and world.is_talking():
+		await _tap("jump")
+		await create_timer(0.15).timeout
+	_check(box._name == "Donna Luciana", "dopo il Cavaliere arriva Donna Luciana (%s)" % box._name)
 	await _choose(box, 0)
 	_check(world.story.get_var("violante_fate") == "uccisa", "la scelta imposta violante_fate = uccisa")
 	await _close_dialogue(world)

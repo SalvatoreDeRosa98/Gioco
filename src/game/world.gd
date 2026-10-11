@@ -83,6 +83,10 @@ var _talk_npc: Node
 var _talk_lock := 0.0
 ## Finale della storia (game/finale.gd) e punto in cui è caduto il Custode.
 var _finale
+## Livello della barra del boss: sopra HUD (10), dialoghi (15) e dissolvenza (20).
+const BOSS_BAR_LAYER := 30
+const BossBarScript := preload("res://game/boss_bar.gd")
+var boss_bar_layer: CanvasLayer
 var _boss_fall := Vector2.ZERO
 var _hitstop_id := 0
 var _luciana_shout_cd := 0.0
@@ -303,6 +307,16 @@ func _build_overlays() -> void:
 	_hud = HudScript.new()
 	_hud.world = self
 	ui.add_child(_hud)
+
+	# Barra della vita del boss: livello più alto del gioco (sopra HUD, dialoghi e dissolvenze),
+	# così durante lo scontro non viene mai coperta. Solo i menu (negozio, mappa, pausa) la coprono.
+	boss_bar_layer = CanvasLayer.new()
+	boss_bar_layer.layer = BOSS_BAR_LAYER
+	boss_bar_layer.name = "BossBarLayer"
+	add_child(boss_bar_layer)
+	var bar := BossBarScript.new()
+	bar.world = self
+	boss_bar_layer.add_child(bar)
 
 	var fade_layer := CanvasLayer.new()
 	fade_layer.layer = 20
@@ -753,7 +767,7 @@ func on_player_double_jump() -> void:
 	var b = boss()
 	if b and not b.is_queued_for_deletion() and b.hp > 0:
 		_luciana_shout_cd = 8.0
-		_hud.toast("Donna Luciana: «Come osi pronunciare il mio nome?!»")
+		_hud.toast("Cavaliere Borbonico: «Non osare chiamare la mia Signora!»")
 		_fx("shock", b.global_position, Art.OCRA, b.facing)
 
 

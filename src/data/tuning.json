@@ -148,7 +148,13 @@
       "leap_windup": 0.45,
       "leap_speed": 370,
       "leap_velocity": -540,
-      "shockwave_speed": 370
+      "shockwave_speed": 370,
+      "platform_jump_windup": 0.32,
+      "platform_jump_arc": 90,
+      "platform_jump_max_speed": 620,
+      "platform_jump_min_rise": 70,
+      "platform_jump_cooldown": 0.8,
+      "platform_drop_time": 0.35
     }
   },
   "shop": {

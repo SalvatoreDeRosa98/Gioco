@@ -1673,6 +1673,30 @@
         ],
         "reward": 30
       }
+    ],
+    "14": [
+      {
+        "id": "clock_wall_west",
+        "rect": [
+          1260,
+          -400,
+          60,
+          1380
+        ],
+        "reward": 10,
+        "gate": true
+      },
+      {
+        "id": "clock_wall_east",
+        "rect": [
+          1660,
+          -400,
+          60,
+          1270
+        ],
+        "reward": 10,
+        "gate": true
+      }
     ]
   },
   "spikes": {

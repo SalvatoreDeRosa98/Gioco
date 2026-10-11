@@ -107,6 +107,10 @@ var _airborne := false
 var _step_s := 0.0
 var _sword_hit := false
 var _boss_combo := 0
+## Cavaliere Borbonico: pausa tra due salti di piattaforma, attraversamento delle mensole e meta del salto.
+var _climb_cd := 0.0
+var _drop_t := 0.0
+var _jump_goal := Vector2.ZERO
 ## Spinta dei colpi per chi non ha uno stato di stordimento (statua, Custode).
 var _knock_v := Vector2.ZERO
 # Gatto
@@ -925,14 +929,48 @@ func _ai_custode(delta: float) -> void:
 		_phase_two = true
 		_state = "walk"
 		_state_t = 2.0
-		world._hud.toast("Donna Luciana spezza il sigillo: seconda fase")
+		world._hud.toast("Il Cavaliere Borbonico spezza il sigillo: seconda fase")
 		Fx.ring(world.fx_root, global_position, Art.OCRA, 130, 0.8)
 	velocity.y = minf(velocity.y + GRAVITY * delta, 1000.0)
 	var target: Node2D = world.alive_player()
 	if target and absf(target.global_position.x - global_position.x) > 4.0 and _state == "walk":
 		facing = signf(target.global_position.x - global_position.x)
 	_state_t -= delta
+	_climb_cd = maxf(0.0, _climb_cd - delta)
+	if _drop_t > 0.0:
+		_drop_t -= delta
+		if _drop_t <= 0.0:
+			set_collision_mask_value(LEDGE_LAYER, true)
+	if _state == "walk" and target and _climb_cd <= 0.0 and is_on_floor():
+		match _platform_plan(target):
+			"up":
+				# Telegrafo: si accovaccia e solleva polvere prima di saltare sulla mensola di Ferruccio.
+				_state = "jump_windup"
+				_state_t = _f("platform_jump_windup")
+				facing = signf(_jump_goal.x - global_position.x) if absf(_jump_goal.x - global_position.x) > 4.0 else facing
+				Fx.dust(world.fx_root, global_position + Vector2(0, half.y), 10)
+			"down":
+				# Scende dalla mensola attraversandola, poi la ritrova solida.
+				set_collision_mask_value(LEDGE_LAYER, false)
+				_drop_t = _f("platform_drop_time")
+				_climb_cd = _f("platform_jump_cooldown")
 	match _state:
+		"jump_windup":
+			velocity.x = 0.0
+			anim = "crouch"
+			if _state_t <= 0.0:
+				_launch_platform_jump()
+		"platform_jump":
+			anim = "leap"
+			if not is_on_floor():
+				_airborne = true
+			elif _airborne or _state_t < -2.5:
+				Fx.dust(world.fx_root, global_position + Vector2(0, half.y), 14)
+				_sfx("custode_passo")
+				_state = "walk"
+				_state_t = 0.45
+				_climb_cd = _f("platform_jump_cooldown")
+				velocity.x = 0.0
 		"walk":
 			velocity.x = facing * speed * (1.2 if _phase_two else 1.0)
 			anim = "walk"
@@ -1003,6 +1041,44 @@ func _ai_custode(delta: float) -> void:
 				_state = "walk"
 				_state_t = 1.8 if _phase_two else 2.2
 
+
+
+## Decide se il Cavaliere deve salire sulla mensola di Ferruccio ("up"), scendere ("down") o restare ("").
+func _platform_plan(target: Node2D) -> String:
+	if not (target is CharacterBody2D and (target as CharacterBody2D).is_on_floor()):
+		return ""
+	var feet_y := global_position.y + half.y
+	var t_feet := target.global_position.y + PLAYER_HALF_Y
+	if t_feet < feet_y - _f("platform_jump_min_rise"):
+		for l in world.room.ledges:
+			var r: Rect2 = l
+			if absf(r.position.y - t_feet) < 26.0 and target.global_position.x >= r.position.x - 8.0 and target.global_position.x <= r.end.x + 8.0:
+				var margin := half.x + 6.0
+				var gx := r.get_center().x if r.size.x <= margin * 2.0 else clampf(target.global_position.x, r.position.x + margin, r.end.x - margin)
+				_jump_goal = Vector2(gx, r.position.y)
+				return "up"
+	elif t_feet > feet_y + 50.0:
+		for l in world.room.ledges:
+			var r: Rect2 = l
+			if absf(r.position.y - feet_y) < 8.0 and global_position.x >= r.position.x - half.x and global_position.x <= r.end.x + half.x:
+				return "down"
+	return ""
+
+
+## Salto balistico dai piedi del Cavaliere alla mensola scelta (_jump_goal), apice sopra il punto più alto.
+func _launch_platform_jump() -> void:
+	var feet := global_position + Vector2(0, half.y)
+	var apex_y := minf(feet.y, _jump_goal.y) - _f("platform_jump_arc")
+	var vy := -sqrt(2.0 * GRAVITY * (feet.y - apex_y))
+	var t := -vy / GRAVITY + sqrt(2.0 * maxf(_jump_goal.y - apex_y, 0.0) / GRAVITY)
+	var vx := clampf((_jump_goal.x - feet.x) / maxf(t, 0.05), -_f("platform_jump_max_speed"), _f("platform_jump_max_speed"))
+	velocity = Vector2(vx, vy)
+	if absf(vx) > 1.0:
+		facing = signf(vx)
+	_state = "platform_jump"
+	_state_t = 0.0
+	_airborne = false
+	_sfx("custode_urto")
 
 # ---------------------------------------------------------------- Colpi ricevuti
 

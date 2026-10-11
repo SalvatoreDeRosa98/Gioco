@@ -117,7 +117,7 @@ const ROOMS := [
 	},
 	{
 		"name": "Cortile d'Onore",
-		"subtitle": "Donna Luciana",
+		"subtitle": "Il Cavaliere Borbonico",
 		"theme": "oro",
 		"size": Vector2(1920, 1080),
 		"floor": 980.0,
