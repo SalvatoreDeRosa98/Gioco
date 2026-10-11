@@ -43,6 +43,8 @@ func _run() -> void:
 	DevFlags.force = 1
 	world._toggle_developer_mode()
 	check(world.player.invulnerable and world._hud.dev_overlay_visible(), "Con il flag la modalita' dev funziona e si vede")
+	var vp0: Vector2 = world.get_viewport().get_visible_rect().size
+	check(not world._hud.dev_overlay_rect(vp0).intersects(world.boss_bar_layer.get_child(0).bar_rect(vp0.x)), "La scritta dev non tocca mai il cartiglio del boss")
 	DevFlags.force = -1
 	# --- Ratking: narrazione all'attivazione
 	world._go(Room.RATKING_ROOM, true)
@@ -57,6 +59,12 @@ func _run() -> void:
 		for i in 4:
 			await process_frame
 		_no_overlap(world, "Ratking")
+		world._hud.area_title("Tana di Ratking", "")
+		world._dialogue.debug_skip()
+		for i in 30:
+			if world.is_talking(): world._dialogue.debug_skip()
+			await process_frame
+		check(not world._hud.area_title_visible() and world._hud._title_t < 0.0, "Ratking: TANA DI RATKING non resta a schermo durante lo scontro")
 		world._dialogue.debug_skip()
 	# --- Cavaliere: arena, titolo d'area e narrazione
 	world._go(Room.BOSS_ROOM, true)
@@ -64,7 +72,7 @@ func _run() -> void:
 	world._arena.activate()
 	for i in 4:
 		await process_frame
-	check(world._hud._title_t >= 0.0, "Cavaliere: il titolo dell'arena e' stato avviato")
+	check(not world._hud.area_title_visible(), "Cavaliere: niente titolo d'area sopra lo scontro")
 	world.narrate({"lines": [{"who": "gregorio", "text": "Prova di sovrapposizione"}]})
 	for i in 4:
 		await process_frame

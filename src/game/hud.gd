@@ -84,6 +84,10 @@ func _process(delta: float) -> void:
 	_toast_t = maxf(0.0, _toast_t - delta)
 	notices.update(delta)
 	_hint_t = maxf(0.0, _hint_t - delta)
+	# Con un boss in stanza il suo cartiglio (barra in alto) sostituisce il titolo d'area:
+	# niente "TANA DI RATKING" o titolo dell'arena sopra lo scontro.
+	if _title_t >= 0.0 and world != null and world.boss() != null:
+		_title_t = -1.0
 	if _title_t >= 0.0:
 		_title_t += delta
 		if _title_t > TITLE_TIME:
@@ -115,7 +119,7 @@ func _draw() -> void:
 	_draw_vitals()
 	_draw_area_title(vp)
 	if dev_overlay_visible():
-		Art.text(self, Art.body_font(), Vector2(34, vp.y - 20), "SVILUPPATORE · NESSUN DANNO", 15, Color(Art.OCRA, 0.8))
+		Art.text(self, Art.body_font(), dev_overlay_rect(vp).position + Vector2(0, 16), "SVILUPPATORE · NESSUN DANNO", 15, Color(Art.OCRA, 0.8))
 	_draw_notices(vp)
 	if world.room_index != 0 and _hint_t > 0.0:
 		var a := minf(1.0, _hint_t / 3.0) * 0.6
@@ -208,6 +212,11 @@ func _draw_mask(center: Vector2, filled: bool, glow_amount: float) -> void:
 		draw_texture_rect(MASK_TEX, r, false, Color(0.12, 0.12, 0.16, 0.55))
 
 
+## Riquadro della scritta da sviluppatore: in basso a sinistra, lontano dalla barra/cartiglio del boss.
+func dev_overlay_rect(vp: Vector2) -> Rect2:
+	return Rect2(34, vp.y - 36, 260, 20)
+
+
 ## La scritta da sviluppatore compare solo con i DevFlags attivi.
 func dev_overlay_visible() -> bool:
 	return world != null and world.player != null and world.player.invulnerable and DevFlags.enabled()
@@ -215,12 +224,12 @@ func dev_overlay_visible() -> bool:
 
 ## Il titolo d'area e' a schermo (non durante dialoghi e narrazioni).
 func area_title_visible() -> bool:
-	return _title_t >= 0.0 and world != null and not world.is_talking()
+	return _title_t >= 0.0 and world != null and not world.is_talking() and world.boss() == null
 
 
 func _draw_area_title(vp: Vector2) -> void:
 	# Durante dialoghi e narrazioni il titolo d'area si fa da parte (niente sovrapposizioni).
-	if _title_t < 0.0 or world.is_talking():
+	if _title_t < 0.0 or world.is_talking() or world.boss() != null:
 		return
 	var a := minf(1.0, _title_t / 0.9) * minf(1.0, (TITLE_TIME - _title_t) / 1.2)
 	# Sotto il pannello vita e la barra del boss, cosi' nulla si sovrappone in alto.
