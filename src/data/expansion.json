@@ -311,7 +311,7 @@
           ]
         },
         {
-          "type": "lanterniere",
+          "type": "guardia",
           "pos": [
             1650,
             946
@@ -1718,18 +1718,6 @@
     ]
   },
   "ratking": {
-    "hp": 32,
-    "damage": 1,
-    "coins": 45,
-    "height": 130,
-    "speed": 145,
-    "charge_speed": 470,
-    "claw_reach": 100,
-    "windup": 0.8,
-    "charge_time": 0.65,
-    "recovery": 1.1,
-    "rat_speed": 235,
-    "trigger_x": 330,
     "intro": {
       "id": "ratking_intro",
       "lines": [

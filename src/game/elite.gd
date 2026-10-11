@@ -132,7 +132,7 @@ func _physics_process(delta: float) -> void:
 					for angle in ([-0.36, -0.18, 0.0, 0.18, 0.36] if _pattern % 2 else [-0.24, 0.0, 0.24]):
 						world.enemy_fire(position, direction.rotated(angle), 180, Color(0.6, 0.82, 1))
 				"guardia":
-					velocity.x = facing * 250.0
+					velocity.x = facing * float(Tuning.data.guardia.lunge_speed)
 					world.boss_sword_hit(position, position + Vector2(facing * float(_cfg.reach), 16), position.x)
 					Audio.sfx("fendente")
 				"cavaliere":

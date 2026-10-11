@@ -278,5 +278,74 @@
     "shake_shock": 0.45,
     "shake_burst": 0.25,
     "shake_radius": 1100.0
+  },
+  "guardia": {
+    "lunge_speed": 250
+  },
+  "ratking": {
+    "hp": 32,
+    "damage": 1,
+    "coins": 45,
+    "height": 130,
+    "trigger_x": 330,
+    "intro_delay": 1.2,
+    "speed": 145,
+    "approach_time": 0.9,
+    "claw_reach": 100,
+    "claw_time": 0.32,
+    "claw_combo": 1,
+    "windup": 0.8,
+    "charge_speed": 470,
+    "charge_time": 0.65,
+    "recovery": 1.1,
+    "rat_speed": 235,
+    "rat_life": 7.0,
+    "rat_spacing": 58,
+    "rat_stagger": 0.16,
+    "rats_per_call": 3,
+    "max_rats_alive": 4,
+    "pattern": [
+      "claw",
+      "charge",
+      "rats"
+    ],
+    "telegraph_flash": 0.18,
+    "telegraph_colors": {
+      "claw": [
+        1.0,
+        0.78,
+        0.3
+      ],
+      "charge": [
+        1.0,
+        0.35,
+        0.25
+      ],
+      "rats": [
+        0.55,
+        1.0,
+        0.45
+      ]
+    },
+    "phase2_threshold": 0.5,
+    "phase2_roar": 1.0,
+    "phase2_shake": 0.6,
+    "phase2": {
+      "speed": 190,
+      "approach_time": 0.4,
+      "windup": 0.6,
+      "recovery": 0.65,
+      "charge_speed": 580,
+      "claw_combo": 2,
+      "rats_per_call": 4,
+      "max_rats_alive": 6,
+      "pattern": [
+        "charge",
+        "claw",
+        "rats",
+        "charge",
+        "claw"
+      ]
+    }
   }
 }
