@@ -1168,6 +1168,7 @@ func _build_stations() -> void:
 		if int(data["room"]) != room_index:
 			continue
 		var node := StationScript.new()
+		node.world = self
 		node.position = Vector2(float(data["x"]), float(data["y"]))
 		node.set_meta("station_id", id)
 		_stations_root.add_child(node)

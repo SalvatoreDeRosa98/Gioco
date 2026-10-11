@@ -30,6 +30,7 @@ func setup(owner_world: Node) -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
+	_label_a = TextDefer.step(_label_a, world, delta)
 	selected = -1
 	var nearest := float(Data.data().interaction_radius)
 	if not world.player.dead and not world.is_talking() and world.player.is_on_floor():
@@ -107,10 +108,20 @@ func _draw() -> void:
 		if i == selected and draws_mark(i):  # se sostituito, il cartello è quello del cancello (slice_props.gd)
 			var text := Controls.label("interact") + "  " + str(m.label)
 			var lr := label_rect(p, str(m.kind), text)
-			Art.text(self, Art.body_font(), lr.position + Vector2(0, LABEL_BASE), text, LABEL_SIZE, Art.OCRA, HORIZONTAL_ALIGNMENT_CENTER, lr.size.x)
+			if _label_a > 0.01:
+				Art.text(self, Art.body_font(), lr.position + Vector2(0, LABEL_BASE), text, LABEL_SIZE, Color(Art.OCRA, _label_a), HORIZONTAL_ALIGNMENT_CENTER, lr.size.x)
 
 
 const LABEL_SIZE := 19
+## Alpha delle scritte dei passaggi: nascoste col titolo d'area, poi in dissolvenza (TextDefer).
+var _label_a := 0.0
+
+
+## True se le scritte dei passaggi sono a schermo (anche solo in parte).
+func labels_visible() -> bool:
+	return _label_a > 0.01
+
+
 ## Riquadro (mondo) del cartello di un punto d'interesse: sopra l'arco o l'oggetto, ma sempre dentro
 ## lo schermo e fuori dalle zone dell'HUD (slice_props.gd: fit_label, che copre anche il pannello
 ## vitals_rect dell'HUD in alto a sinistra).

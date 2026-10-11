@@ -94,7 +94,7 @@ func _resolve_spawn() -> void:
 			break
 
 func _physics_process(delta: float) -> void:
-	_name_a = move_toward(_name_a, 0.0 if name_deferred() else 1.0, delta / NAME_FADE)
+	_name_a = TextDefer.step(_name_a, world, delta)
 	if world.is_talking() or world.in_cutscene():
 		return
 	_timer -= delta
@@ -204,14 +204,33 @@ func take_hit(amount: int, push: Vector2 = Vector2.ZERO) -> bool:
 		return true
 	return false
 
-## Dissolvenza del nome del nemico (secondi).
-const NAME_FADE := 0.5
 var _name_a := 0.0
+## Sfalsamento verticale delle etichette di nemici con nome vicini (stesso valore di feat/gameplay).
+const LABEL_STEP := 22.0
+
+
+## Quanti altri nemici con etichetta (elite) stanno entro 260 px e vengono prima in ordine:
+## ognuno sposta questa etichetta LABEL_STEP px piu' in alto, cosi' i nomi non si sovrappongono.
+func label_rank() -> int:
+	if not is_inside_tree():
+		return 0
+	var rank := 0
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if e == self or not (e is Node2D) or e.get_script() != get_script():
+			continue
+		if absf((e as Node2D).global_position.x - global_position.x) < 260.0 and e.get_instance_id() < get_instance_id():
+			rank += 1
+	return rank
+
+
+## Unica fonte dello sfalsamento: la usano sia il disegno sia name_rect_screen().
+func label_dy() -> float:
+	return -LABEL_STEP * label_rank()
 
 
 ## Il nome resta nascosto finche' il titolo d'area e' a schermo.
 func name_deferred() -> bool:
-	return world != null and world.get("_hud") != null and world._hud.area_title_visible()
+	return TextDefer.deferred(world)
 
 
 ## True se il nome e' disegnato (anche solo in parte).
@@ -222,7 +241,7 @@ func name_visible() -> bool:
 ## Riquadro del nome in coordinate schermo.
 func name_rect_screen() -> Rect2:
 	var h := float(_cfg.height)
-	return get_global_transform_with_canvas() * Rect2(Vector2(-150, -h + half.y - 45), Vector2(300, 22))
+	return get_global_transform_with_canvas() * Rect2(Vector2(-150, -h + half.y - 45 + label_dy()), Vector2(300, 22))
 
 
 func _draw() -> void:
@@ -253,24 +272,9 @@ func _draw() -> void:
 		draw_arc(Vector2(18, 0), float(_cfg.reach), -1.0, 0.65, 24, Color(Art.OCRA, 0.9 if _swing > 0 else 0.6), 3 if _swing > 0 else 1, true)
 	draw_set_transform(Vector2.ZERO)
 	# Il nome sta sopra la testa ma aspetta che titolo e sottotitolo d'area spariscano, poi entra in dissolvenza.
-	# Etichette sfalsate di 22 px quando due nemici con nome sono vicini (CONTROLLO-SLICE3 §9).
-	var dy := -22.0 * label_rank()
+	var dy := label_dy()
 	if _name_a > 0.01:
 		Art.text(self, Art.body_font(), Vector2(-150, -h + half.y - 28 + dy), _cfg.name, 17, Color(Art.CREMA, _name_a), HORIZONTAL_ALIGNMENT_CENTER, 300)
-		# anche la barretta della vita aspetta il titolo d'area
+	if _name_a > 0.01:  # anche la barretta della vita aspetta il titolo d'area
 		draw_rect(Rect2(-45, -h + half.y - 16 + dy, 90, 4), Color(0, 0, 0, 0.7 * _name_a))
 		draw_rect(Rect2(-45, -h + half.y - 16 + dy, 90.0 * hp / max_hp, 4), Color(Art.OCRA, _name_a))
-
-
-## Quanti altri nemici con etichetta (elite) stanno entro 260 px e vengono prima in ordine:
-## ognuno sposta questa etichetta 22 px più in alto, così i nomi non si sovrappongono.
-func label_rank() -> int:
-	if not is_inside_tree():
-		return 0
-	var rank := 0
-	for e in get_tree().get_nodes_in_group("enemies"):
-		if e == self or not (e is Node2D) or e.get_script() != get_script():
-			continue
-		if absf((e as Node2D).global_position.x - global_position.x) < 260.0 and e.get_instance_id() < get_instance_id():
-			rank += 1
-	return rank
