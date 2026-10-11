@@ -94,6 +94,7 @@ func _resolve_spawn() -> void:
 			break
 
 func _physics_process(delta: float) -> void:
+	_name_a = move_toward(_name_a, 0.0 if name_deferred() else 1.0, delta / NAME_FADE)
 	if world.is_talking() or world.in_cutscene():
 		return
 	_timer -= delta
@@ -203,6 +204,27 @@ func take_hit(amount: int, push: Vector2 = Vector2.ZERO) -> bool:
 		return true
 	return false
 
+## Dissolvenza del nome del nemico (secondi).
+const NAME_FADE := 0.5
+var _name_a := 0.0
+
+
+## Il nome resta nascosto finche' il titolo d'area e' a schermo.
+func name_deferred() -> bool:
+	return world != null and world.get("_hud") != null and world._hud.area_title_visible()
+
+
+## True se il nome e' disegnato (anche solo in parte).
+func name_visible() -> bool:
+	return _name_a > 0.01
+
+
+## Riquadro del nome in coordinate schermo.
+func name_rect_screen() -> Rect2:
+	var h := float(_cfg.height)
+	return get_global_transform_with_canvas() * Rect2(Vector2(-150, -h + half.y - 45), Vector2(300, 22))
+
+
 func _draw() -> void:
 	var h := float(_cfg.height)
 	draw_set_transform(Vector2.ZERO, 0, Vector2(facing, 1))
@@ -230,11 +252,14 @@ func _draw() -> void:
 	if _windup or _swing > 0:
 		draw_arc(Vector2(18, 0), float(_cfg.reach), -1.0, 0.65, 24, Color(Art.OCRA, 0.9 if _swing > 0 else 0.6), 3 if _swing > 0 else 1, true)
 	draw_set_transform(Vector2.ZERO)
+	# Il nome sta sopra la testa ma aspetta che titolo e sottotitolo d'area spariscano, poi entra in dissolvenza.
 	# Etichette sfalsate di 22 px quando due nemici con nome sono vicini (CONTROLLO-SLICE3 §9).
 	var dy := -22.0 * label_rank()
-	Art.text(self, Art.body_font(), Vector2(-150, -h + half.y - 28 + dy), _cfg.name, 17, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 300)
-	draw_rect(Rect2(-45, -h + half.y - 16 + dy, 90, 4), Color(0, 0, 0, 0.7))
-	draw_rect(Rect2(-45, -h + half.y - 16 + dy, 90.0 * hp / max_hp, 4), Art.OCRA)
+	if _name_a > 0.01:
+		Art.text(self, Art.body_font(), Vector2(-150, -h + half.y - 28 + dy), _cfg.name, 17, Color(Art.CREMA, _name_a), HORIZONTAL_ALIGNMENT_CENTER, 300)
+		# anche la barretta della vita aspetta il titolo d'area
+		draw_rect(Rect2(-45, -h + half.y - 16 + dy, 90, 4), Color(0, 0, 0, 0.7 * _name_a))
+		draw_rect(Rect2(-45, -h + half.y - 16 + dy, 90.0 * hp / max_hp, 4), Color(Art.OCRA, _name_a))
 
 
 ## Quanti altri nemici con etichetta (elite) stanno entro 260 px e vengono prima in ordine:

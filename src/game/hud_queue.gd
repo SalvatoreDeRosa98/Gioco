@@ -6,8 +6,8 @@ extends RefCounted
 
 ## Durata a schermo di un messaggio, in secondi (dissolvenze comprese).
 var life := 2.8
-## Quanti messaggi si vedono insieme.
-var max_visible := 3
+## Quanti messaggi si vedono insieme (uno: niente pile di avvisi).
+var max_visible := 1  # uno alla volta: gli altri aspettano in fila
 ## Durata della dissolvenza in entrata/uscita.
 var fade := 0.35
 
