@@ -661,28 +661,32 @@ func _fx(kind: String, pos: Vector2, col: Color, dir: float) -> void:
 	match kind:
 		"hit":
 			Fx.hit(fx_root, pos, col, dir)
-			Fx.hitstop(self, 0.06)
-			_shake_near(pos, 0.35)
+			_apply_hit_stop(_feel("hitstop_hit"))
+			_shake_near(pos, _feel("shake_hit"))
 		"death":
 			Fx.death(fx_root, pos, col)
-			Fx.hitstop(self, 0.09)
-			_shake_near(pos, 0.4)
+			_apply_hit_stop(_feel("hitstop_kill"))
+			_shake_near(pos, _feel("shake_kill"))
 		"hurt":
 			Fx.hit(fx_root, pos, Color(1.0, 0.35, 0.3), dir)
-			Fx.hitstop(self, 0.07)
+			_apply_hit_stop(_feel("hitstop_hurt"))
 		"collect":
 			Fx.sparkle(fx_root, pos, col)
 		"shock":
 			Fx.ring(fx_root, pos, col, 150.0, 0.45)
 			Fx.dust(fx_root, pos, 26)
-			_shake_near(pos, 0.55)
+			_shake_near(pos, _feel("shake_shock"))
 		"burst":
 			Fx.ring(fx_root, pos, col, 190.0, 0.5)
-			_shake_near(pos, 0.3)
+			_shake_near(pos, _feel("shake_burst"))
+
+
+func _feel(key: String) -> float:
+	return float(Tuning.data.feel[key])
 
 
 func _shake_near(pos: Vector2, amount: float) -> void:
-	if player.global_position.distance_to(pos) < 1100.0:
+	if player.global_position.distance_to(pos) < _feel("shake_radius"):
 		player.add_trauma(amount)
 
 
@@ -692,7 +696,7 @@ func _apply_hit_stop(duration: float = 0.06) -> void:
 		return
 	_hitstop_id += 1
 	var current_id := _hitstop_id
-	Engine.time_scale = 0.05
+	Engine.time_scale = _feel("hitstop_time_scale")
 	await get_tree().create_timer(duration, true, false, true).timeout
 	if is_inside_tree() and _hitstop_id == current_id:
 		Engine.time_scale = 1.0
@@ -777,6 +781,8 @@ func _hurt_player(dmg: int, from_x: float) -> void:
 	if player.try_parry(from_x):
 		_parry_attack = story.get_var("father_registry") == "bruciato"
 		_fx("shock", player.global_position, Color(0.65, 0.9, 1.0), player.facing)
+		_apply_hit_stop(_feel("hitstop_parry"))
+		player.add_trauma(_feel("shake_parry"))
 		_hud.toast("Parata perfetta! Scatto e fendente ricaricati")
 		return
 	player.iframes = float(Tuning.data.player.hurt_iframes)
@@ -852,8 +858,8 @@ func _hit_enemy(e: Node, dmg: int, col: Color, dir: float, down: bool = false, c
 
 	# Feedback d'impatto viscerale (screen shake / trauma e hit-stop micro-freeze)
 	if player != null and player.has_method("add_trauma"):
-		player.add_trauma(0.35)
-	_apply_hit_stop(0.06)
+		player.add_trauma(_feel("shake_hit"))
+	_apply_hit_stop(_feel("hitstop_hit"))
 
 	# Scintille e impatto brillante nel punto esatto di contatto della lama
 	Fx.hit(fx_root, contact_pos, col, dir)

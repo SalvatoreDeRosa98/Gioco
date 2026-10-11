@@ -62,6 +62,7 @@ var slash_side := 1.0
 
 var _cfg: Dictionary = {}
 var _coyote := 0.0
+var _attack_buf := 0.0
 var _jump_buf := 0.0
 var _dash_t := 0.0
 var _dash_cd := 0.0
@@ -175,7 +176,7 @@ func _physics_process(delta: float) -> void:
 	parry_cooldown = maxf(0.0, parry_cooldown - delta)
 	if attacking > 0.0:
 		attacking = maxf(0.0, attacking - delta)
-	if _slash_pending and attacking <= float(_cfg.attack_time) * (1.0 - float(_cfg.get("attack_active", 0.32))):
+	if _slash_pending and attacking <= float(_cfg.attack_time) - float(_cfg.attack_startup):
 		_slash_pending = false
 		if not dead and attacking > 0:
 			slash_requested.emit(global_position, facing, attack_down, not is_on_floor())
@@ -225,7 +226,13 @@ func _physics_process(delta: float) -> void:
 		_dash_cd = float(_cfg.dash_cooldown)
 		_spin_t = -1.0
 		_sfx("scatto")
-	if Input.is_action_just_pressed("attack") and _attack_cd <= 0.0 and hammer_time <= 0.0:
+	# Input buffer: un colpo premuto poco prima della fine della ricarica parte appena possibile.
+	if Input.is_action_just_pressed("attack"):
+		_attack_buf = float(_cfg.attack_buffer)
+	else:
+		_attack_buf = maxf(0.0, _attack_buf - delta)
+	if _attack_buf > 0.0 and _attack_cd <= 0.0 and hammer_time <= 0.0:
+		_attack_buf = 0.0
 		_attack_cd = float(_cfg.attack_cooldown)
 		attacking = float(_cfg.attack_time)
 		attack_down = Input.is_action_pressed("move_down") and not is_on_floor()
@@ -409,9 +416,9 @@ func _process(delta: float) -> void:
 		# L'anticipo va sulla posizione (rispetta i limiti della stanza); la scossa sull'offset.
 		_look = lerpf(_look, facing * 80.0, 1.0 - exp(-2.2 * delta))
 		_cam.position = Vector2(_look, -40.0) + _shown
-		var shake := _trauma * _trauma * 20.0
+		var shake := _trauma * _trauma * float(Tuning.data.feel.shake_max_px)
 		_cam.offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * shake
-		_trauma = maxf(0.0, _trauma - 1.7 * delta)
+		_trauma = maxf(0.0, _trauma - float(Tuning.data.feel.shake_decay) * delta)
 	queue_redraw()
 	_front.queue_redraw()
 
@@ -500,7 +507,7 @@ func take_damage(dmg: int) -> void:
 	hp = maxi(0, hp - dmg)
 	dead = hp <= 0
 	_flash = 1.0
-	add_trauma(0.55)
+	add_trauma(float(Tuning.data.feel.shake_hurt))
 	_sfx("ferito")
 
 
@@ -530,7 +537,8 @@ func try_parry(from_x: float) -> bool:
 	_dash_cd = 0.0
 	_air_dash_used = false
 	_attack_cd = 0.0
-	iframes = 0.25
+	iframes = float(_cfg.parry_success_iframes)
+	_flash = 0.6
 	return true
 
 
@@ -565,8 +573,8 @@ func teleport(pos: Vector2) -> void:
 
 
 func knock(dir: float) -> void:
-	velocity = Vector2(dir * 280.0, -260.0)
-	_knock_t = 0.2
+	velocity = Vector2(dir * float(_cfg.hurt_knockback_x), float(_cfg.hurt_knockback_y))
+	_knock_t = float(_cfg.hurt_knock_time)
 
 
 ## Rimbalzo sul nemico colpito dall'alto (pogo): come in Hollow Knight ridà il salto in aria.
