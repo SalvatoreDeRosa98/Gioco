@@ -97,6 +97,7 @@ position = Vector2(500, 1840)
 gizmo_extents = 24.0
 metadata/order = 1
 metadata/type = "vespa"
+metadata/wave = 2
 
 [node name="Dot" type="ColorRect" parent="Markers/Enemies/E1_vespa" unique_id=794930876]
 offset_left = -8.0
@@ -141,6 +142,7 @@ position = Vector2(980, 1980)
 gizmo_extents = 24.0
 metadata/order = 3
 metadata/type = "gatto"
+metadata/wave = 2
 
 [node name="Dot" type="ColorRect" parent="Markers/Enemies/E3_gatto" unique_id=1623305416]
 offset_left = -8.0
@@ -163,6 +165,7 @@ position = Vector2(1120, 1966)
 gizmo_extents = 24.0
 metadata/order = 4
 metadata/type = "lanterniere"
+metadata/wave = 2
 
 [node name="Dot" type="ColorRect" parent="Markers/Enemies/E4_lanterniere" unique_id=499568072]
 offset_left = -8.0

@@ -43,6 +43,8 @@ func _run() -> void:
 	check(not world.stations.has(Room.save_station_id(13)), "Cisterne Sepolte: niente incudine con nemici vivi")
 	for e in get_nodes_in_group("enemies"):
 		e.queue_free()
+	# Stanza 13 a due ondate (feat/gameplay): si scarta anche la seconda ondata in attesa.
+	world.pending_wave.clear()
 	await process_frame
 	world._room_t = 1
 	world._check_cleared()

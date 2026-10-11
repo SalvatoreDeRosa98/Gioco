@@ -146,6 +146,8 @@ static func read_root(root: Node) -> Dictionary:
 		if m.get_meta("placeholder", false):
 			e.placeholder = true
 			e.swap_to = str(m.get_meta("swap_to", ""))
+		if m.has_meta("wave"):
+			e.wave = int(m.get_meta("wave"))
 		out.enemies.append(e)
 		_alias(out.alias, m)
 	for m in _sorted(root, "Markers/Npcs"):
