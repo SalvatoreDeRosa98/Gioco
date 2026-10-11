@@ -39,6 +39,8 @@ var introduction: Node
 var _intro_config: Dictionary
 var _expedition: Node2D
 var _forge_backdrop: Node2D
+## Ruota della chiusa e cancelli dipinti delle stanze in scena (game/slice_props.gd).
+var _slice_props: Node2D
 var upgrades: Dictionary = {}
 var equipped: Array = []
 var choice_uses: Dictionary = {}
@@ -382,6 +384,11 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 		_forge_backdrop = preload("res://game/forge_backdrop.gd").new()
 		_forge_backdrop.z_index = 1
 		add_child(_forge_backdrop)
+	elif room.has("mid_art"):
+		# Stanze in scena col prototipo artistico: fondale del piano medio in parallasse.
+		_forge_backdrop = preload("res://game/scene_backdrop.gd").new()
+		_forge_backdrop.setup(room)
+		add_child(_forge_backdrop)
 	elif idx >= 7:
 		_forge_backdrop = preload("res://game/painted_interior.gd").new()
 		_forge_backdrop.setup(room)
@@ -392,7 +399,7 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	_expedition = preload("res://game/expedition.gd").new()
 	_expedition.setup(self)
 	add_child(_expedition)
-	_terrain.build(room, th)
+	_terrain.build(_terrain_room(), th)
 	_terrain.visible = idx != Room.SECRET_ROOM
 	_terrain.set_doors(_left_open(), _right_open())
 	_build_walls()
@@ -402,6 +409,14 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	traversal = preload("res://game/traversal.gd").new()
 	traversal.setup(self)
 	add_child(traversal)
+	if is_instance_valid(_slice_props):
+		remove_child(_slice_props)
+		_slice_props.queue_free()
+		_slice_props = null
+	if not room.get("props", []).is_empty():
+		_slice_props = preload("res://game/slice_props.gd").new()
+		_slice_props.setup(self)
+		add_child(_slice_props)
 	if idx == Room.BOSS_ROOM and not cleared_now:
 		_arena = preload("res://game/boss_arena.gd").new()
 		_arena.world = self
@@ -449,6 +464,9 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 func _left_open() -> bool:
 	if arena_active and not room_cleared:
 		return false
+	# Scorciatoia voluta: il cancello sinistro di Piazza porta a Corso dopo averlo visitato.
+	if room_index == 0:
+		return story.times_seen("lesson_menu") > 0 or story.times_seen("visited_1") > 0
 	if Room.Expansion.edge(room_index, false) < 0:
 		return false
 	# Uscite condizionate nei dati (expansion.json -> "edge_need"), es. Cisterne Sepolte -> Piazza dopo Ratking.
@@ -476,16 +494,37 @@ func _right_open() -> bool:
 	return Room.Expansion.edge(room_index, true) >= 0
 
 
+## Stanza passata a terrain.gd: con i tile dipinti blocchi e mensole li disegna il TileMapLayer.
+func _terrain_room() -> Dictionary:
+	if not room.get("tile_art", false):
+		return room
+	var r := room.duplicate()
+	r["blocks"] = []
+	r["ledges"] = []
+	return r
+
+
 func _build_walls() -> void:
 	for c in _walls.get_children():
-		var old := c as StaticBody2D
-		old.collision_layer = 0
-		old.queue_free()
+		if c is StaticBody2D:
+			c.collision_layer = 0
+		elif c is TileMapLayer:
+			c.collision_enabled = false
+		c.queue_free()
 	_solids = Room.solids(room, _left_open(), _right_open())
 	for r in _solids:
 		_add_body(r, false)
-	for l in room["ledges"]:
-		_add_body(l, true)
+	# Stanze in scena: pavimento, blocchi e mensole hanno la collisione nei tile (invisibili, il disegno resta di terrain.gd).
+	var tile_layers: Array = Room.LevelScenes.physics_layers(room_index) if room.has("scene") else []
+	for layer in tile_layers:
+		if room.get("tile_art", false):
+			layer.z_index = 4  # tile dipinti visibili: sotto porte e pilastri di terrain.gd (z 5)
+		else:
+			layer.modulate = Color(1, 1, 1, 0)
+		_walls.add_child(layer)
+	if tile_layers.is_empty():
+		for l in room["ledges"]:
+			_add_body(l, true)
 	for step in room.get("invisible_steps", []):
 		_add_body(step, true)
 
@@ -567,6 +606,8 @@ func _check_doors() -> void:
 			_go(0, true)
 		elif room_index == Room.SECRET_ROOM:
 			_leave_forge()
+		elif room_index == 0:
+			_go(1, true)
 		else:
 			_go(Room.Expansion.edge(room_index, false), false)
 
@@ -1042,7 +1083,7 @@ func is_ground(p: Vector2) -> bool:
 ## Incudini dei dati: compaiono all'ingresso o, con need_clear, a stanza liberata. True se ne è nata una.
 func _register_data_saves() -> bool:
 	var added := false
-	for s in Room.Expansion.data().get("saves", {}).get(str(room_index), []):
+	for s in Room.LevelScenes.saves_for(room_index):
 		if bool(s.get("need_clear", false)) and not room_cleared:
 			continue
 		var id := Room.save_station_id(room_index)

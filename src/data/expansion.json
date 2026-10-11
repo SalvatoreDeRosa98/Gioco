@@ -985,7 +985,10 @@
     }
   },
   "edges": {
-    "0": [-1, 1],
+    "0": [
+      1,
+      1
+    ],
     "1": [
       0,
       2
@@ -1126,6 +1129,19 @@
           "Cesare ha inciso un nome sulla ruota: Gaetano.",
           "Il fabbro costruì la chiusa per portare le voci fuori dalla Reggia.",
           "L'acqua scende. Il percorso per il Belvedere è aperto."
+        ]
+      },
+      {
+        "kind": "lever",
+        "id": "cesare_incisione",
+        "label": "Leggi l'incisione di Cesare",
+        "pos": [
+          2304,
+          276
+        ],
+        "text": [
+          "Sulla pietra del camino Cesare ha inciso i livelli dell'acqua, anno dopo anno.",
+          "Accanto, piccolissimo, un nome: Gaetano. La chiusa la costruirono insieme, di notte."
         ]
       }
     ],
@@ -1475,31 +1491,6 @@
         ]
       }
     ],
-    "9": [
-      {
-        "side": "bottom",
-        "x": 1840,
-        "width": 220,
-        "target": 13,
-        "spawn": [
-          570,
-          170
-        ]
-      }
-    ],
-    "13": [
-      {
-        "side": "top",
-        "x": 570,
-        "width": 220,
-        "target": 9,
-        "spawn": [
-          1650,
-          956
-        ],
-        "need": "grapple"
-      }
-    ],
     "11": [
       {
         "side": "top",
@@ -1591,32 +1582,6 @@
         270
       ]
     ],
-    "13": [
-      [
-        570,
-        1660
-      ],
-      [
-        670,
-        1320
-      ],
-      [
-        570,
-        980
-      ],
-      [
-        670,
-        640
-      ],
-      [
-        570,
-        300
-      ],
-      [
-        570,
-        -25
-      ]
-    ],
     "14": [
       [
         880,
@@ -1659,18 +1624,6 @@
         "reward": 35
       }
     ],
-    "13": [
-      {
-        "id": "cistern_wall",
-        "rect": [
-          1050,
-          1510,
-          50,
-          200
-        ],
-        "reward": 30
-      }
-    ],
     "14": [
       {
         "id": "clock_wall_west",
@@ -1697,14 +1650,6 @@
     ]
   },
   "spikes": {
-    "13": [
-      [
-        340,
-        1980,
-        110,
-        20
-      ]
-    ],
     "14": [
       [
         1850,
@@ -1753,17 +1698,16 @@
     }
   },
   "edge_need": {
-    "13": {"left": "ratking_defeated"}
+    "13": {
+      "left": "ratking_defeated"
+    }
   },
-  "saves": {
-    "9": [{"pos": [520, 980]}],
-    "13": [{"pos": [860, 2000], "need_clear": true}],
-    "15": [{"pos": [800, 980], "need_clear": true}]
-  },
+  "saves": {},
   "scene_rooms": {
     "5": "res://rooms/r05_fucina.tscn",
     "9": "res://rooms/r09_cisterne_reali.tscn",
     "13": "res://rooms/r13_cisterne_sepolte.tscn",
     "15": "res://rooms/r15_tana_ratking.tscn"
-  }
+  },
+  "_scene_rooms_doc": "Le stanze in scene_rooms prendono geometria, nemici, segreti, punte, muri incrinati, anelli, uscite verticali e incudini dalla scena .tscn; in rooms restano nome, tema, dimensioni e pavimento (la geometria JSON di 9, 13 e 15 non è più usata)."
 }

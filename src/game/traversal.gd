@@ -9,14 +9,17 @@ var _hammer_cd := 0.0
 var _hammer_pending := false
 ## Pausa tra due avvisi "Serve il martello" quando Ferruccio tocca un muro incrinato senza martello.
 var _crack_hint_cd := 0.0
+## Muro incrinato dipinto (stanze con tile_art): intatto, danneggiato (primo colpo), rotto.
+const CRACK_ART := [preload("res://assets/art/slice/muro_incrinato_intatto.png"), preload("res://assets/art/slice/muro_incrinato_danneggiato.png"), preload("res://assets/art/slice/muro_incrinato_rotto.png")]
 
 ## Ricostruisce solo i muri che non sono stati rotti nella partita corrente.
 func setup(w: Node) -> void:
 	world = w
 	var key := str(w.room_index)
-	rings = Data.data().get("rings", {}).get(key, [])
-	cracks = Data.data().get("cracks", {}).get(key, [])
-	spikes = Data.data().get("spikes", {}).get(key, [])
+	# Stanze in scena: anelli, muri incrinati e punte vengono dalla scena (Room.build), altrimenti dai JSON.
+	rings = w.room.get("rings", Data.data().get("rings", {}).get(key, []))
+	cracks = w.room.get("cracks", Data.data().get("cracks", {}).get(key, []))
+	spikes = w.room.get("spikes", Data.data().get("spikes", {}).get(key, []))
 	z_index = 7
 	for c in cracks:
 		if w.story.times_seen(c.id) > 0:
@@ -30,6 +33,23 @@ func setup(w: Node) -> void:
 		shape.position = Vector2(c.rect[0], c.rect[1]) + rect.size / 2
 		body.add_child(shape)
 		add_child(body)
+
+## 0 intatto, 1 danneggiato, 2 rotto.
+func crack_state(c: Dictionary) -> int:
+	if world.story.times_seen(c.id) > 0:
+		return 2
+	return 1 if world.story.times_seen(str(c.id) + "_crepa") > 0 else 0
+
+func _draw_crack_art(c: Dictionary) -> void:
+	var r := Rect2(c.rect[0], c.rect[1], c.rect[2], c.rect[3])
+	var state := crack_state(c)
+	var tex: Texture2D = CRACK_ART[state]
+	var w := r.size.y * tex.get_width() / tex.get_height()
+	draw_texture_rect(tex, Rect2(r.get_center().x - w / 2.0, r.position.y, w, r.size.y), false)
+	if state < 2:
+		# Leggibilità: alone ocra che pulsa finché il muro non cede.
+		var pulse := 0.25 + 0.2 * sin(Time.get_ticks_msec() * 0.004)
+		draw_rect(r.grow(3), Color(Art.OCRA, pulse), false, 2.0)
 
 ## Id del muro incrinato ancora intatto a contatto con Ferruccio, oppure "".
 func near_crack() -> String:
@@ -67,6 +87,14 @@ func _physics_process(delta: float) -> void:
 		for c in cracks:
 			var rect := Rect2(c.rect[0], c.rect[1], c.rect[2], c.rect[3])
 			if world.story.times_seen(c.id) == 0 and rect.grow(float(Tuning.data.player.hammer_reach)).has_point(player.position):
+				# Muri da più colpi ("hits" nella scena): i colpi intermedi lo danneggiano e basta.
+				var dmg_key := str(c.id) + "_crepa"
+				if world.story.times_seen(dmg_key) < int(c.get("hits", 1)) - 1:
+					world.story.seen[dmg_key] = world.story.times_seen(dmg_key) + 1
+					Fx.dust(world.fx_root, rect.get_center(), 12)
+					player.add_trauma(0.15)
+					world._hud.toast("Il muro si spacca: ancora un colpo")
+					continue
 				world.story.seen[c.id] = 1
 				var body := get_node_or_null(NodePath(c.id)) as StaticBody2D
 				if body:
@@ -106,6 +134,9 @@ func _draw() -> void:
 		if world.upgrades.has("grapple") and p.distance_to(world.player.position) < float(Tuning.data.player.grapple_range):
 			draw_arc(p, 17, 0, TAU, 24, Color(Art.CREMA, 0.25), 1, true)
 	for c in cracks:
+		if world.room.get("tile_art", false):
+			_draw_crack_art(c)
+			continue
 		if world.story.times_seen(c.id) > 0:
 			continue
 		var r := Rect2(c.rect[0], c.rect[1], c.rect[2], c.rect[3])

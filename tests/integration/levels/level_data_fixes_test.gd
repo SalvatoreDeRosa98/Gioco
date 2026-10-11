@@ -1,6 +1,7 @@
 extends SceneTree
-## Dati coerenti: Piazza senza uscita fantasma a sinistra, Cisterne Sepolte -> Piazza solo dopo Ratking,
-## incudini nelle stanze 9, 13 e 15 (13 e 15 a stanza liberata), compatibili col salvataggio.
+## Dati coerenti: scorciatoia sinistra Piazza -> Corso (voluta, si apre dopo aver visitato Corso),
+## Cisterne Sepolte -> Piazza solo dopo Ratking, incudini nelle stanze 9, 13 e 15 (13 e 15 a stanza liberata,
+## posizioni lette dalle scene), compatibili col salvataggio.
 var failures := 0
 
 func _initialize() -> void:
@@ -13,8 +14,7 @@ func check(ok: bool, message: String) -> void:
 
 func _run() -> void:
 	var data: Dictionary = Room.Expansion.data()
-	check(data.edges["0"].map(func(v): return int(v)) == [-1, 1], "Piazza: a sinistra nessuna uscita, a destra Corso")
-	check(Room.Expansion.edge(0, false) == -1 and Room.Expansion.edge(0, true) == 1, "edge() coerente per Piazza")
+	check(data.edges["0"].map(func(v): return int(v)) == [1, 1], "Piazza: Corso a destra e scorciatoia a sinistra")
 	for idx in [9, 13, 15]:
 		check(Room.save_station_id(idx) != "", "Stanza %d: id di incudine definito" % idx)
 	var main = load("res://scripts/main.gd").new()
@@ -27,10 +27,11 @@ func _run() -> void:
 	world.story.mark_seen("ferruccio_identity")
 	world._go(0, true)
 	await process_frame
-	check(not world._left_open() and world._right_open(), "Piazza: bordo sinistro chiuso, destro aperto")
+	world.story.seen["visited_1"] = 1
+	check(world._left_open() and world._right_open(), "Piazza: scorciatoia aperta dopo aver visitato Corso")
 	world.player.position = Vector2(20, float(world.room.floor) - 30)
 	world._check_doors()
-	check(world.room_index == 0, "Piazza: il bordo sinistro non porta più a Corso")
+	check(world.room_index == 1, "Piazza: la scorciatoia sinistra porta a Corso")
 	# Cisterne Reali: incudine subito disponibile.
 	world._go(9, true)
 	await process_frame
