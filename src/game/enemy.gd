@@ -9,6 +9,8 @@ extends CharacterBody2D
 const GRAVITY := 1500.0
 const MAX_FALL := 900.0
 const SPRITE_SHADER := preload("res://game/shaders/canvas_char_sprite.gdshader")
+## Gatto a fotogrammi disegnati; se gli atlanti mancano resta il gatto a pezzi (GATTO_*).
+const GattoSprite := preload("res://game/gatto_sprite.gd")
 
 ## Immagini dipinte (assets/art/enemies, bosses). Perni e ancore in pixel della tela;
 ## le parti mobili e i loro poligoni vengono da tools/art/rig_nemici.py.
@@ -27,14 +29,14 @@ const GATTO_HIP_B := Vector2(305, 422)
 const GATTO_SHOULDER_A := Vector2(512, 458)
 const GATTO_SHOULDER_B := Vector2(588, 460)
 const GATTO_EYE := Vector2(722, 147)
-const GATTO_SCALE := 0.078
+const GATTO_SCALE := 0.044
 const VESPA_BODY := preload("res://assets/art/enemies/vespa_rig/corpo.png")
 const VESPA_WINGS := preload("res://assets/art/enemies/vespa_rig/ali.png")
 const VESPA_ABDOMEN := preload("res://assets/art/enemies/vespa_rig/addome.png")
 const VESPA_CENTER := Vector2(330, 420)
 const VESPA_WING_ROOT := Vector2(338, 226)
 const VESPA_WAIST := Vector2(298, 298)
-const VESPA_SCALE := 0.0755
+const VESPA_SCALE := 0.046
 const STATUA_TEX := preload("res://assets/art/enemies/statua.png")
 const STATUA_FEET := Vector2(165, 1010)
 const STATUA_SCALE := 0.103
@@ -148,6 +150,7 @@ var _last_facing := 1.0
 var _eye_at := Vector2.ZERO
 var _mat: ShaderMaterial
 var _aura: Sprite2D
+var _gatto_sprite: GattoSprite
 var _aura_scale := Vector2.ONE
 var _painted_puppet: Node2D
 var _statue_aim := Vector2.LEFT
@@ -235,6 +238,11 @@ func setup(d: Dictionary, w: Node) -> void:
 			_enter("walk", _rand("patrol_time_min", "patrol_time_max"))
 			# Appena entrati nella stanza il giocatore ha un attimo per orientarsi.
 			_notice_cd = _f("spawn_grace")
+			if GattoSprite.available():
+				_gatto_sprite = GattoSprite.new()
+				_gatto_sprite.position.y = half.y
+				add_child(_gatto_sprite)
+				_gatto_sprite.setup(_f("sprite_height"))
 	if _aura:
 		_aura_scale = _aura.scale
 	if kind in ["custode","statua"]:
@@ -251,13 +259,15 @@ func setup(d: Dictionary, w: Node) -> void:
 static func _half_for(k: String) -> Vector2:
 	match k:
 		"vespa":
-			return Vector2(22, 18)
+			return Vector2(14, 11)
 		"statua":
 			return Vector2(20, 34)
 		"custode":
 			return Vector2(38, 64)
+		"gatto":
+			return Vector2(18, 13)
 		_:
-			return Vector2(22, 16)
+			return Vector2(18, 13)
 
 
 # ---------------------------------------------------------------- IA
@@ -671,6 +681,13 @@ func _wall_ahead(dir: float) -> bool:
 	var size: Vector2 = world.room["size"]
 	if x < ROOM_MARGIN or x > size.x - ROOM_MARGIN:
 		return true
+	# Oasi degli NPC: i nemici non pattugliano né avanzano dentro l'area di quiete degli NPC
+	if world and world.get("_npcs"):
+		for npc in world._npcs.get_children():
+			if absf(npc.global_position.y - global_position.y) < 140.0:
+				var dist_x: float = (npc.global_position.x - x) * dir
+				if dist_x > 0.0 and dist_x < 220.0:
+					return true
 	return world.is_solid(Vector2(x, global_position.y)) or world.is_solid(Vector2(x, global_position.y + half.y - 4.0))
 
 
@@ -1164,7 +1181,44 @@ func _process(delta: float) -> void:
 	_wing_ph += delta * WING_RATE * _pose[P.WING]
 	_mat.set_shader_parameter("flash", flash)
 	_update_glows()
+	if _gatto_sprite:
+		_update_gatto_sprite(delta)
 	queue_redraw()
+
+
+## Fotogramma del gatto disegnato secondo lo stato. Le clip sono in tools/art/gatto_cut.py:
+## jump è il volo, dalla spinta alla discesa (il fotogramma segue la velocità verticale); land è
+## l'atterraggio; windup il preavviso del balzo (si raccoglie e si impenna); pounce il balzo.
+func _update_gatto_sprite(delta: float) -> void:
+	var sp := _gatto_sprite
+	sp.flip_h = facing < 0.0
+	var k := clampf(_state_t / _state_len, 0.0, 1.0) if _state_len > 0.0 else 0.0
+	match _state:
+		"rest":
+			sp.play_loop("idle", delta)
+		"chase":
+			sp.play_loop("chase", delta, clampf(absf(velocity.x) / _f("chase_speed"), 0.5, 1.4))
+		"notice":
+			sp.play_progress("notice", k)
+		"crouch":
+			sp.play_progress("windup", k)
+		"pounce":
+			# Slancio in salita all'inizio, artigli avanti in discesa.
+			sp.play_progress("pounce", (velocity.y + 400.0) / 800.0)
+		"jump":
+			# In aria il fotogramma segue la velocità verticale: spinta a -500, discesa a +500.
+			sp.play_progress("jump", (velocity.y + 500.0) / 1000.0)
+		"land":
+			sp.play_progress("land", k)
+		"hurt":
+			sp.play_progress("hurt", k)
+		_:
+			# walk, turn, wander, retreat: fermo = seduto, in moto = camminata al passo della velocità.
+			var spd := absf(velocity.x)
+			if spd < 8.0:
+				sp.play_loop("idle", delta)
+			else:
+				sp.play_loop("walk", delta, clampf(spd / maxf(speed, 1.0), 0.5, 1.6))
 
 
 ## Avanzamento 0..1 dell'animazione corrente (calcolato dal tempo di vista).
@@ -1358,7 +1412,8 @@ func _draw() -> void:
 			if _painted_puppet == null:
 				_draw_custode()
 		_:
-			_draw_gatto()
+			if _gatto_sprite == null:
+				_draw_gatto()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if kind != "custode" and hp < max_hp and hp > 0:
 		var w := half.x * 2.0
@@ -1516,6 +1571,10 @@ func _update_glows() -> void:
 			_aura.modulate = Color(base_col.r, base_col.g, base_col.b, (0.35 if _phase_two else 0.25) + 0.15 * pulse + 0.6 * charge)
 			_aura.scale = _aura_scale * (1.0 + 0.8 * charge)
 		"gatto":
+			if _gatto_sprite:
+				# Il gatto disegnato ha occhi ambra senza alone: il preavviso è nella posa.
+				_aura.modulate.a = 0.0
+				return
 			var g := clampf(_pose[P.GLOW], 0.0, 1.2)
 			_aura.position = _eye_at
 			_aura.modulate = Color(0.75, 0.58, 1.0, 0.6 * g)
