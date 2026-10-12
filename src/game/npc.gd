@@ -67,11 +67,18 @@ func setup(k: String, pos: Vector2, w: Node) -> void:
 	key = k
 	world = w
 	position = pos
-	# I punti dei piedi non possono finire dentro i basamenti del livello.
+	# I punti dei piedi non possono finire dentro i basamenti del livello né incastrati nei muri.
 	for pass_index in range(w.room.get("blocks", []).size() + 1):
 		for block: Rect2 in w.room.get("blocks", []):
 			if block.has_point(position - Vector2(0, 1)):
 				position.y = block.position.y
+			elif block.has_point(position - Vector2(0, 12.0)):
+				if position.x < block.get_center().x:
+					position.x = minf(position.x, block.position.x - 36.0)
+				else:
+					position.x = maxf(position.x, block.end.x + 36.0)
+	var rsize: Vector2 = w.room.get("size", Vector2(2560, 1080))
+	position.x = clampf(position.x, 80.0, rsize.x - 80.0)
 	_home = position
 	_cfg = Story.npc(k)
 	_look = Story.character(str(_cfg.get("character", k)))

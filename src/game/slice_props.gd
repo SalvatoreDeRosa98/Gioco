@@ -3,21 +3,31 @@ extends Node2D
 ## - wheel: segue la leva "sluice" (expedition.gd). Quando la chiusa si apre la ruota sobbalza e gira l'acqua.
 ## - gate: cancello a due battenti sulla porta (side left/right). Chiuso finché la porta resta chiusa
 ##   (world._left_open/_right_open); si apre in dissolvenza; da vicino, se chiuso, mostra il suggerimento.
+##   Il cancello sta nello sfondo (_back, z 3): pavimento, pilastri e personaggi gli passano davanti.
 const WHEEL := preload("res://assets/art/slice/ruota_chiusa.png")
 const GATE_SHUT := preload("res://assets/art/slice/cancello_chiuso.png")
 const GATE_OPEN := preload("res://assets/art/slice/cancello_aperto.png")
+## Tono del cancello: un po' spento e bluastro, come la luce della stanza, così non sembra incollato.
+const GATE_TONE := Color(0.76, 0.76, 0.82, 1.0)
 const OPEN_TIME := 0.8
 var world: Node
 var props: Array = []
 ## Stato per oggetto: open (0..1) per i cancelli, spin (secondi rimasti di animazione) per la ruota.
 var state: Array = []
 var _t := 0.0
+## Figlio con z relativo -3 (assoluto 3): disegna i cancelli dietro terrain (5) e tile dipinti (4).
+var _back: Node2D
 
 func setup(w: Node) -> void:
 	world = w
 	props = w.room.get("props", [])
-	z_index = 6  # sopra le porte di terrain.gd: il cancello dipinto le copre
+	z_index = 6  # ruota e cartelli dei cancelli sopra terrain.gd (5)
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_back = Node2D.new()
+	_back.z_index = -3
+	_back.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_back.draw.connect(_draw_gates)
+	add_child(_back)
 	for p in props:
 		state.append({"open": 1.0 if is_open(p) else 0.0, "spin": 0.0, "was": is_open(p)})
 
@@ -42,6 +52,7 @@ func _process(delta: float) -> void:
 		s.spin = maxf(0.0, s.spin - delta)
 		s.open = move_toward(s.open, 1.0 if now else 0.0, delta / OPEN_TIME)
 	queue_redraw()
+	_back.queue_redraw()
 
 ## Riquadro del suggerimento del cancello (mondo): verso l'interno della stanza rispetto al cancello
 ## e sempre dentro la vista della camera, così non esce dallo schermo.
@@ -151,11 +162,25 @@ func sprite_rects() -> Array:
 			out.append(hint_rect(p).grow(4.0))
 	return out
 
-func _sprite(tex: Texture2D, base: Vector2, height: float, alpha := 1.0, offset := Vector2.ZERO, angle := 0.0) -> void:
+## Disegna su `c` (self o _back) lo sprite dipinto con base in `base`, altezza `height`, tinta `col`.
+func _sprite(c: CanvasItem, tex: Texture2D, base: Vector2, height: float, col := Color.WHITE, offset := Vector2.ZERO, angle := 0.0) -> void:
 	var size := Vector2(tex.get_size()) * (height / tex.get_height())
-	draw_set_transform(base + offset, angle, Vector2.ONE)
-	draw_texture_rect(tex, Rect2(Vector2(-size.x / 2.0, -size.y), size), false, Color(1, 1, 1, alpha))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	c.draw_set_transform(base + offset, angle, Vector2.ONE)
+	c.draw_texture_rect(tex, Rect2(Vector2(-size.x / 2.0, -size.y), size), false, col)
+	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+## Cancelli nello sfondo: solo lo sprite (il cartello resta in _draw, sopra le piattaforme).
+func _draw_gates() -> void:
+	for i in props.size():
+		var p: Dictionary = props[i]
+		if str(p.kind) != "gate":
+			continue
+		var s: Dictionary = state[i]
+		var h := float(p.get("height", 200.0))
+		var shut := Color(GATE_TONE.r, GATE_TONE.g, GATE_TONE.b, 1.0 - float(s.open))
+		var open := Color(GATE_TONE.r, GATE_TONE.g, GATE_TONE.b, float(s.open))
+		_sprite(_back, GATE_SHUT, p.pos, h, shut)
+		_sprite(_back, GATE_OPEN, p.pos, h, open)
 
 func _draw() -> void:
 	for i in props.size():
@@ -166,13 +191,11 @@ func _draw() -> void:
 			"wheel":
 				var spin := float(s.spin)
 				var shake := sin(_t * 40.0) * 3.0 * spin
-				_sprite(WHEEL, p.pos, h, 1.0, Vector2(shake, 0), sin(_t * 30.0) * 0.02 * spin)
+				_sprite(self, WHEEL, p.pos, h, Color.WHITE, Vector2(shake, 0), sin(_t * 30.0) * 0.02 * spin)
 				if float(s.open) > 0.5:
 					# Acqua che scorre dopo l'apertura: bagliore freddo alla base.
 					draw_circle(p.pos + Vector2(0, -12), 26.0 + sin(_t * 3.0) * 3.0, Color(0.55, 0.75, 0.9, 0.12))
 			"gate":
-				_sprite(GATE_SHUT, p.pos, h, 1.0 - float(s.open))
-				_sprite(GATE_OPEN, p.pos, h, float(s.open))
 				var label := gate_label(p, s)
 				if label != "" and world.player and absf(world.player.position.x - p.pos.x) < 200.0 and absf(world.player.position.y - p.pos.y) < 260.0:
 					var hr := hint_rect(p)

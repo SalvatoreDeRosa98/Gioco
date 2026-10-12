@@ -57,7 +57,7 @@ const ROOMS := [
 			{"id": "taddeo_corso", "pos": Vector2(2220, 980)},
 		],
 		"enemies": [
-			{"type": "gatto", "pos": Vector2(480, 960)},
+			{"type": "gatto", "pos": Vector2(680, 960)},
 			{"type": "guardia", "pos": Vector2(1200, 960)},
 			{"type": "vespa", "pos": Vector2(980, 420)},
 		],
@@ -86,7 +86,7 @@ const ROOMS := [
 			{"type": "gatto", "pos": Vector2(880, 960)},
 			{"type": "statua", "pos": Vector2(930, 616)},
 			{"type": "vespa", "pos": Vector2(1480, 380)},
-			{"type": "cavaliere", "pos": Vector2(1450, 946)},
+			{"type": "cavaliere", "pos": Vector2(740, 946)},
 			{"type": "statua", "pos": Vector2(2350, 946)},
 		],
 		"decor": [
@@ -109,7 +109,7 @@ const ROOMS := [
 		],
 		"enemies": [
 			{"type": "gatto", "pos": Vector2(760, 860)},
-			{"type": "statua", "pos": Vector2(1700, 666)},
+			{"type": "statua", "pos": Vector2(1120, 542)},
 			{"type": "vespa", "pos": Vector2(1250, 380)},
 			{"type": "cavaliere", "pos": Vector2(1300, 760)},
 		],
