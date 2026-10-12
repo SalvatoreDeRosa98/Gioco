@@ -101,12 +101,15 @@ def toon_material(mat, emissive=False):
     rim_fac.inputs[1].default_value = 0.35
     nt.links.new(rim_mask.outputs[0], rim_fac.inputs[0])
     nt.links.new(rim_fac.outputs[0], rim_col.inputs["Factor"])
-    if mat.name in ("tunica","cappello","calzoni","calze","sciarpa","scarpe"):
+    tex_path=mat.get("texture")
+    if tex_path or mat.name in ("tunica","cappello","calzoni","calze","sciarpa","scarpe"):
         image_node=_node(nt,"ShaderNodeTexImage",700,-400)
-        image_node.image=bpy.data.images.load(str(Path(__file__).resolve().parents[3]/"src/assets/art/characters/ferruccio.png"),check_existing=True)
+        if not tex_path:
+            tex_path=str(Path(__file__).resolve().parents[3]/"src/assets/art/characters/ferruccio.png")
+        image_node.image=bpy.data.images.load(str(tex_path),check_existing=True)
         # Materiale dipinto con una lieve modulazione volumetrica, senza doppie ombre pesanti.
         mix=_node(nt,"ShaderNodeMixRGB",900,-200,blend_type="MULTIPLY")
-        mix.inputs[0].default_value=.32
+        mix.inputs[0].default_value=float(mat.get("tex_mix",.32))
         nt.links.new(image_node.outputs["Color"],mix.inputs[1])
         nt.links.new(rim_col.outputs["Result"],mix.inputs[2])
         alpha=_node(nt,"ShaderNodeMixRGB",1100,0,blend_type="MIX")
