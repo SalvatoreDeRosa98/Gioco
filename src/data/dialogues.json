@@ -25,13 +25,13 @@
 		"tonino": {
 			"name": "Tonino",
 			"image": "res://assets/art/characters/tonino.png",
-			"height": 118,
+			"height": 116,
 			"light": [1.0, 0.78, 0.46, 0.5, 360, 34, -78]
 		},
 		"taddeo": {
 			"name": "Taddeo",
 			"image": "res://assets/art/characters/taddeo.png",
-			"height": 124
+			"height": 118
 		},
 		"mariella": {
 			"name": "Mariella",
@@ -43,7 +43,7 @@
 		"agnese": {
 			"name": "Agnese",
 			"image": "res://assets/art/characters/agnese.png",
-			"height": 112
+			"height": 110
 		},
 		"gaetano_umano": {
 			"name": "Gaetano",
@@ -55,59 +55,79 @@
 		"gaetano": {
 			"name": "Gaetano",
 			"image": "res://assets/art/characters/gaetano_v2.png",
-			"height": 134,
+			"height": 124,
 			"memory": true,
 			"glow": [1.0, 0.76, 0.36]
 		},
 		"bianca": {
 			"name": "Bianca",
 			"image": "res://assets/art/characters/bianca.png",
-			"height": 108,
+			"height": 106,
 			"memory": true,
 			"glow": [0.56, 0.8, 1.0]
 		},
 		"violante": {
 			"name": "Donna Luciana",
 			"image": "res://assets/art/characters/violante.png",
-			"height": 118,
+			"height": 116,
 			"tint": [0.62, 0.66, 0.84]
 		},
 		"assunta": {
 			"name": "Assunta",
 			"image": "res://assets/art/characters/cittadini/madre_e_figlia.png",
-			"height": 116
+			"height": 112
 		},
 		"nunziatina": {"name": "Nunziatina"},
 		"don_ciccio": {
 			"name": "Don Ciccio",
 			"image": "res://assets/art/characters/cittadini/anziano.png",
-			"height": 112
+			"height": 110
 		},
 		"carmela": {
 			"name": "Carmela",
 			"image": "res://assets/art/characters/cittadini/lavandaia.png",
-			"height": 112
+			"height": 106
 		},
 		"capuano": {
 			"name": "Brigadiere Capuano",
 			"image": "res://assets/art/characters/guardie/guardia_baffi.png",
-			"height": 126
+			"height": 122
 		},
 		"gregorio": {
 			"name": "Gregorio",
 			"image": "res://assets/art/characters/gregorio.png",
-			"height": 134,
+			"height": 126,
 			"shadow": 34
 		},
 		"violante_scesa": {
 			"name": "Donna Luciana",
 			"image": "res://assets/art/characters/violante.png",
-			"height": 118
+			"height": 116
 		},
 		"luciana": {
 			"name": "Donna Luciana",
 			"image": "res://assets/art/characters/violante.png",
+			"height": 116
+		},
+		"elsa": {
+			"name": "Elsa",
+			"image": "res://assets/art/characters/elsa.png",
+			"height": 108
+		},
+		"lia": {
+			"name": "Lia",
+			"image": "res://assets/art/characters/lia.png",
+			"height": 106
+		},
+		"cesare": {
+			"name": "Cesare",
+			"image": "res://assets/art/characters/cesare.png",
 			"height": 118
+		},
+		"rosa": {
+			"name": "Rosa",
+			"image": "res://assets/art/characters/cittadini/lavandaia.png",
+			"height": 104
 		},
 		"guardia": {"name": "Una guardia"},
 		"cittadino": {"name": "Un cittadino"}

@@ -7,7 +7,7 @@ signal slash_requested(pos: Vector2, facing: float, down: bool, air: bool)
 
 const HALF := Vector2(13, 24)
 ## Altezza a schermo dalla punta del cappello ai piedi, in unità di mondo.
-const FIGURE_HEIGHT := 84.0
+const FIGURE_HEIGHT := 96.0
 ## Maschera di collisione: 1 = muri e blocchi, 4 = mensole attraversabili.
 const LEDGE_LAYER := 4
 ## Colore della sciarpa (rosso dipinto): serve alle scie dello scatto e al fendente.

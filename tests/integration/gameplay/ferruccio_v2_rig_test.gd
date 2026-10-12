@@ -29,7 +29,9 @@ func _run() -> void:
 	var cam_zoom: float = p._cam.zoom.y
 	check(is_equal_approx(cam_zoom, Room.CAMERA_ZOOM), "Camera del giocatore allo zoom della stanza (%.2f)" % cam_zoom)
 	var px: float = rig.height * cam_zoom * 1080.0 / float(ProjectSettings.get_setting("display/window/size/viewport_height"))
-	check(px >= 140.0 and px <= 160.0, "Ferruccio alto %.0f px a 1080p con lo zoom reale %.2f (140-160)" % [px, cam_zoom])
+	# Dimensioni rifatte coerenti (12 ottobre): figure_screen_px 230 nel tuning.
+	var target := float(T.player.figure_screen_px)
+	check(absf(px - target) <= 10.0, "Ferruccio alto %.0f px a 1080p con lo zoom reale %.2f (atteso %.0f ±10)" % [px, cam_zoom, target])
 	check(rig._outline != null and rig._outline.material != null, "Contorno v2 (shader §3.4) attivo")
 	check(rig._layer != null and rig._layer.layer > 5 and rig._layer.follow_viewport_enabled, "Ferruccio sopra il color grading (layer %d), segue la camera" % (rig._layer.layer if rig._layer else -1))
 	rig.advance(0.016, Vector2.ZERO)

@@ -862,6 +862,8 @@ func on_player_double_jump() -> void:
 func _hurt_player(dmg: int, from_x: float) -> void:
 	if game_over or player.dead or player.iframes > 0.0 or player.invulnerable:
 		return
+	if (_dialogue and _dialogue.is_open()) or in_cutscene():
+		return
 	if player.try_parry(from_x):
 		_parry_attack = story.get_var("father_registry") == "bruciato"
 		_fx("shock", player.global_position, Color(0.65, 0.9, 1.0), player.facing)
