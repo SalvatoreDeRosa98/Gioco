@@ -17,10 +17,16 @@ Ferruccio deve recuperare il bellissimo disegno 2D originale anche nella resa 3D
 - Leggere src/CLAUDE.md e docs/engine-reference/ prima di modificare API Godot.
 
 ## Ultimo eseguibile verificato
-E:/gioco/Test-Ferruccio/Ferruccio-Metroidvania-Sigilli-3D.exe
-SHA256: 5B3B450859515A9B125EE27E523F4ACF774DFF3A93024E907F28EE8FC5FBFD45
-Dimensione: 210.243.280 byte.
-Export riuscito con template ufficiale Godot 4.6, smoke test reale di avvio su Windows eseguito con esito positivo (processo reattivo e stabile). I vecchi eseguibili restano intatti nella stessa cartella.
+E:/gioco/Test-Ferruccio/Ferruccio-Silksong-Ultimo.exe (e copia Ferruccio-Ultimo.exe)
+SHA256: 55E1ECDF40BECF5FF7482F319F78C63B35364AA305CC19C3741D71E23B361237
+Dimensione: 361.163.824 byte.
+Export riuscito con template ufficiale Godot 4.6 (14 ottobre 2026). Overhaul visuale e profondità in stile Silksong:
+1. Scala personaggio aumentata (figure_screen_px: 255) e inquadratura boss serrata (min_zoom: 0.85).
+2. CanvasModulate reale integrato per stanza (ambient th) e ricezione luce dinamica riattivata su rig e pupazzi (LIGHT_MODE_NORMAL), con fascio occhio e lampo fendente/affondo.
+3. Shader contorno a china scura (#14151df0), rim lighting e pseudo-normali volumetriche sul panneggio.
+4. Piattaforme ancorate con mensole e beccatelli barocchi scolpiti, catene forgiate e ombre d'appoggio a terra; fenditure realistiche sui muri incrinati.
+5. Foreground sfocato (scroll 1.35) e pulviscolo dorato/braci a più profondità.
+6. UI pulita con banner al 20% della vista e dissolvenza tasti senza sovrapposizioni.
 
 ## Funzioni introdotte
 - Mappatura completa Gamepad (Xbox/PlayStation):

@@ -178,9 +178,14 @@ func _draw_stone() -> void:
 
 	for l in room["ledges"]:
 		var r: Rect2 = l
-		# Tiranti laterali dal soffitto: le mensole non attraversano i pali dei lampioni.
+		# Tiranti e catene borboniche forgiate dal soffitto:
 		for x in [r.position.x + 16.0, r.end.x - 16.0]:
-			c.draw_line(Vector2(x, 0), Vector2(x, r.position.y), Color(0.22, 0.2, 0.18, 0.65), 2.0)
+			var cy := 0.0
+			while cy < r.position.y - 12.0:
+				c.draw_circle(Vector2(x, cy + 5.0), 2.8, Color(0.18, 0.16, 0.15, 0.85))
+				c.draw_circle(Vector2(x, cy + 5.0), 1.5, Color(0.06, 0.05, 0.05, 0.95))
+				cy += 8.5
+			c.draw_line(Vector2(x, r.position.y - 12.0), Vector2(x, r.position.y), Color(0.12, 0.11, 0.11, 0.9), 3.0)
 		_band(c, r.position.x, r.end.x, r.position.y - CAP_LIFT, CAP_ROWS, LEDGE_SCALE)
 
 
@@ -213,19 +218,31 @@ func _draw_detail() -> void:
 		c.draw_rect(Rect2(r.position.x - 1.0, r.position.y - CAP_LIFT, 2, r.size.y + CAP_LIFT), Color(0, 0, 0, 0.6))
 		c.draw_rect(Rect2(r.end.x - 1.0, r.position.y - CAP_LIFT, 2, r.size.y + CAP_LIFT), Color(0, 0, 0, 0.6))
 
-	# Mensole: ombra sotto e beccatelli scuri.
+	# Mensole: ombra sotto e beccatelli barocchi scolpiti.
 	for l in room["ledges"]:
 		var r: Rect2 = l
 		var bottom := r.position.y - CAP_LIFT + (CAP_ROWS.y - CAP_ROWS.x) * LEDGE_SCALE
-		Art.grad_rect(c, Rect2(r.position.x + 6, bottom, r.size.x - 12, 26), Color(0, 0, 0, 0.45), Color(0, 0, 0, 0))
+		Art.grad_rect(c, Rect2(r.position.x - 4, bottom, r.size.x + 8, 38), Color(0, 0, 0, 0.55), Color(0, 0, 0, 0))
 		var bx := r.position.x + 22.0
 		while bx < r.end.x - 14.0:
 			c.draw_colored_polygon(PackedVector2Array([
-				Vector2(bx - 9, bottom), Vector2(bx + 9, bottom), Vector2(bx + 4, bottom + 18), Vector2(bx - 4, bottom + 18),
+				Vector2(bx - 12, bottom), Vector2(bx + 12, bottom),
+				Vector2(bx + 10, bottom + 5), Vector2(bx + 6, bottom + 16),
+				Vector2(bx + 2, bottom + 24), Vector2(bx - 2, bottom + 24),
+				Vector2(bx - 6, bottom + 16), Vector2(bx - 10, bottom + 5)
 			]), dark)
+			c.draw_polyline(PackedVector2Array([
+				Vector2(bx - 10, bottom + 1), Vector2(bx - 8, bottom + 5),
+				Vector2(bx - 4, bottom + 15), Vector2(bx - 1, bottom + 23)
+			]), Color(_tint.lightened(0.2), 0.35), 1.5)
 			bx += 72.0
 		for x in [r.position.x, r.end.x - 2.0]:
 			c.draw_rect(Rect2(x, r.position.y - CAP_LIFT, 2, bottom - r.position.y + CAP_LIFT), Color(0, 0, 0, 0.5))
+
+	# Ombre d'appoggio sul pavimento sotto i blocchi sospesi:
+	for b in room["blocks"]:
+		if b.position.y + b.size.y < fy:
+			Art.grad_rect(c, Rect2(b.position.x - 14, fy - 6, b.size.x + 28, 16), Color(0, 0, 0, 0.45), Color(0, 0, 0, 0))
 
 	# Pilastri: ombra verso l'interno della stanza.
 	var door_top := fy - Room.DOOR_H

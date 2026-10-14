@@ -12,7 +12,7 @@ var exiting := false
 
 
 ## Zoom massimo con cui il riquadro sta tutto nello schermo, limitato a [min_zoom, max_zoom].
-static func fit_zoom(frame: Rect2, view: Vector2, min_zoom: float = 0.3, max_zoom: float = 4.0) -> float:
+static func fit_zoom(frame: Rect2, view: Vector2, min_zoom: float = 0.85, max_zoom: float = 4.0) -> float:
 	if frame.size.x <= 0.0 or frame.size.y <= 0.0:
 		return 1.0
 	return clampf(minf(view.x / frame.size.x, view.y / frame.size.y), min_zoom, max_zoom)
@@ -32,7 +32,7 @@ static func enter(parent: Node, from: Camera2D, cfg: Dictionary) -> ArenaCamera:
 	cam._from = from
 	var frame := frame_of(cfg)
 	var view := cam.get_viewport_rect().size
-	var target_zoom := fit_zoom(frame, view, float(cfg.get("min_zoom", 0.5)), float(cfg.get("max_zoom", 1.6)))
+	var target_zoom := fit_zoom(frame, view, float(cfg.get("min_zoom", 0.85)), float(cfg.get("max_zoom", 1.8)))
 	var target_pos := frame.get_center()
 	if is_instance_valid(from):
 		cam.global_position = from.get_screen_center_position()
@@ -47,7 +47,7 @@ static func enter(parent: Node, from: Camera2D, cfg: Dictionary) -> ArenaCamera:
 
 ## Zoom finale previsto per questa arena nella vista corrente.
 static func target_zoom_for(cfg: Dictionary, view: Vector2) -> float:
-	return fit_zoom(frame_of(cfg), view, float(cfg.get("min_zoom", 0.5)), float(cfg.get("max_zoom", 1.6)))
+	return fit_zoom(frame_of(cfg), view, float(cfg.get("min_zoom", 0.85)), float(cfg.get("max_zoom", 1.8)))
 
 
 ## Torna alla camera del giocatore con un tween, poi la rende attiva e si elimina.

@@ -78,6 +78,9 @@ var _was_grounded := true
 
 var _cam: Camera2D
 var _light: PointLight2D
+var _eye_light: PointLight2D
+var _slash_light: PointLight2D
+var _foot_shadow: Node2D
 var _rig: Node2D
 ## Gruppo con lo shader di contorno che avvolge il rig.
 var _silhouette: CanvasGroup
@@ -124,9 +127,22 @@ func setup(pos: Vector2) -> void:
 	add_child(cs)
 
 
+func _draw_foot_shadow() -> void:
+	if is_on_floor() and not dead:
+		_foot_shadow.draw_circle(Vector2.ZERO, 16.0, Color(0.04, 0.05, 0.08, 0.45))
+		_foot_shadow.draw_circle(Vector2.ZERO, 24.0, Color(0.04, 0.05, 0.08, 0.20))
+
+
 func _ready() -> void:
 	_light = Art.point_light(self, Vector2(0, -10), Color(1.0, 0.93, 0.82), float(_cfg.get("light_energy", 0.55)), 460.0)
+	_eye_light = Art.point_light(self, Vector2(facing * 10, -50), Color(0.35, 0.85, 1.0), 0.65, 160.0)
+	_slash_light = Art.point_light(self, Vector2(facing * 35.0, -25.0), Color(0.85, 0.95, 1.0), 0.0, 320.0)
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_foot_shadow = Node2D.new()
+	_foot_shadow.z_index = -1
+	_foot_shadow.draw.connect(_draw_foot_shadow)
+	_foot_shadow.position = Vector2(0, HALF.y)
+	add_child(_foot_shadow)
 	_rig = CutoutRig.new()
 	_rig.height = float(_cfg.get("figure_height", FIGURE_HEIGHT))
 	# Altezza a schermo fissa (px a 1080p) qualunque sia lo zoom della camera della stanza:
@@ -145,10 +161,10 @@ func _ready() -> void:
 	_silhouette.fit_margin = 16.0
 	var mat := ShaderMaterial.new()
 	mat.shader = OUTLINE_SHADER
-	mat.set_shader_parameter("outline_width", float(_cfg.get("outline_width", 2.0)))
-	mat.set_shader_parameter("outline_color", Color(_cfg.get("outline_color", "f5e6c4e0")))
-	mat.set_shader_parameter("rim_strength", float(_cfg.get("rim_strength", 0.55)))
-	mat.set_shader_parameter("lift", float(_cfg.get("silhouette_lift", 0.06)))
+	mat.set_shader_parameter("outline_width", float(_cfg.get("outline_width", 2.4)))
+	mat.set_shader_parameter("outline_color", Color(_cfg.get("outline_color", "14151df0")))
+	mat.set_shader_parameter("rim_strength", float(_cfg.get("rim_strength", 0.65)))
+	mat.set_shader_parameter("lift", float(_cfg.get("silhouette_lift", 0.04)))
 	_silhouette.material = mat
 	add_child(_silhouette)
 	_silhouette.add_child(_rig)
@@ -186,6 +202,8 @@ func apply_theme(th: Dictionary) -> void:
 	_rig.ambient_amount = AMBIENT_AMOUNT
 	var d: Vector2 = th.get("light_dir", DEFAULT_LIGHT_DIR)
 	_rig.light_dir = d.normalized()
+	if _silhouette and _silhouette.material:
+		_silhouette.material.set_shader_parameter("rim_color", _rig.light_color)
 
 
 func add_trauma(amount: float) -> void:
@@ -196,6 +214,8 @@ func add_trauma(amount: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	_prev_pos = global_position
+	if _foot_shadow:
+		_foot_shadow.queue_redraw()
 	hammer_time = maxf(0, hammer_time - delta)
 	iframes = maxf(0.0, iframes - delta)
 	parry_window = maxf(0.0, parry_window - delta)
@@ -227,6 +247,16 @@ func _physics_process(delta: float) -> void:
 	var axis := 0.0 if _knock_t > 0.0 else Input.get_axis("move_left", "move_right")
 	if axis != 0.0:
 		facing = signf(axis)
+	if _eye_light:
+		_eye_light.position = Vector2(facing * 10.0, -50.0)
+	if _slash_light:
+		if attacking > 0.0 and not dead:
+			_slash_light.position = Vector2(facing * (55.0 if slash_side > 0.0 else 40.0), -20.0)
+			_slash_light.energy = lerpf(_slash_light.energy, 0.95, 0.4)
+		else:
+			_slash_light.energy = move_toward(_slash_light.energy, 0.0, delta * 4.5)
+	if _silhouette and _silhouette.material:
+		_silhouette.material.set_shader_parameter("rim_dir", Vector2(-facing * 0.7, -0.7))
 
 	var jump_pressed := Input.is_action_just_pressed("jump")
 	_jump_held = Input.is_action_pressed("jump")

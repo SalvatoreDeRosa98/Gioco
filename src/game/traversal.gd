@@ -59,9 +59,11 @@ func _draw_crack_art(c: Dictionary) -> void:
 	# Disegno = collisione: si ritaglia il centro del pannello con le proporzioni del muro, senza deformarlo.
 	draw_texture_rect_region(tex, r, crack_region(tex, r))
 	if state < 2:
-		# Leggibilità: alone ocra che pulsa finché il muro non cede.
-		var pulse := 0.25 + 0.2 * sin(Time.get_ticks_msec() * 0.004)
-		draw_rect(r.grow(3), Color(Art.OCRA, pulse), false, 2.0)
+		# Bagliore ambrato caldo che filtra dalle fenditure della pietra (nessun riquadro artificiale):
+		var pulse := 0.35 + 0.25 * sin(Time.get_ticks_msec() * 0.004)
+		var center := r.get_center()
+		draw_circle(center, minf(r.size.x, r.size.y) * 0.42, Color(Art.OCRA.r, Art.OCRA.g, Art.OCRA.b, 0.16 * pulse))
+		draw_circle(center, minf(r.size.x, r.size.y) * 0.22, Color(1.0, 0.9, 0.6, 0.28 * pulse))
 
 ## Chiave di story.seen che ricorda che il giocatore ha visto il muro incrinato (va nel salvataggio).
 static func seen_key(crack_id: String) -> String:
@@ -190,19 +192,26 @@ func _draw() -> void:
 		var r := Rect2(c.rect[0], c.rect[1], c.rect[2], c.rect[3])
 		draw_rect(r, Color("#6d6458"), true)
 		draw_texture_rect(preload("res://assets/art/props/terreno.png"), r, true, Color(1.0, 0.95, 0.85))
-		# Crepe ben leggibili: tronco a zig-zag, rami laterali e alone ocra che pulsa.
+		# Fessure realistiche nella pietra con profondità d'ombra e bagliore ambrato interno:
 		var pulse := 0.35 + 0.25 * sin(Time.get_ticks_msec() * 0.004)
-		draw_rect(r.grow(3), Color(Art.OCRA, pulse), false, 3.0)
+		var center := r.get_center()
+		draw_circle(center, minf(r.size.x, r.size.y) * 0.38, Color(Art.OCRA.r, Art.OCRA.g, Art.OCRA.b, 0.16 * pulse))
 		var top := maxf(r.position.y, float(world.room.floor) - 520.0)
 		var span := r.end.y - top
+		var rng_seed := int(r.position.x) * 31 + int(r.position.y)
 		var points := PackedVector2Array()
-		for i in 13:
-			points.append(Vector2(r.get_center().x + (-r.size.x * 0.22 if i % 2 else r.size.x * 0.22), top + span * i / 12.0))
-		draw_polyline(points, Color("#121216"), 4, true)
-		for i in range(1, 12, 2):
+		for i in 15:
+			var frac := float(i) / 14.0
+			var ox := sin(frac * 12.0 + float(rng_seed % 7)) * r.size.x * 0.28
+			points.append(Vector2(center.x + ox, top + span * frac))
+		# Ombra della crepa e luce di taglio sul bordo
+		draw_polyline(points, Color(0.05, 0.05, 0.06, 0.95), 4.5, true)
+		draw_polyline(points, Color(Art.OCRA.r, Art.OCRA.g, Art.OCRA.b, 0.65 * pulse), 1.5, true)
+		for i in range(2, 13, 3):
 			var from := points[i]
-			var side := -1.0 if i % 4 == 1 else 1.0
-			draw_line(from, from + Vector2(side * r.size.x * 0.45, -14), Color("#1c1b20"), 2, true)
+			var side := -1.0 if i % 2 == 0 else 1.0
+			draw_line(from, from + Vector2(side * r.size.x * 0.32, -12), Color(0.07, 0.06, 0.07, 0.85), 2.5, true)
+			draw_line(from, from + Vector2(side * r.size.x * 0.24, -10), Color(Art.OCRA.r, Art.OCRA.g, Art.OCRA.b, 0.45 * pulse), 1.0, true)
 		if c.get("gate", false) and absf(world.player.position.x - r.get_center().x) < 260 and not world.upgrades.has("hammer"):
 			Art.text(self, Art.body_font(), Vector2(r.get_center().x - 160, float(world.room.floor) - 300), "Muro incrinato · serve il martello", 18, Art.CREMA, HORIZONTAL_ALIGNMENT_CENTER, 320)
 	for a in spikes:

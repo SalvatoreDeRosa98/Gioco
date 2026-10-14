@@ -114,9 +114,9 @@ func _ready() -> void:
 	_body = Node2D.new()
 	_body.position = Vector2(0, SPIN_CENTER * _factor)
 	_body.scale = Vector2.ONE * _factor
-	# La luce è già dipinta: le luci 2D della scena non devono bruciare la tunica.
+	# Riceve la luce 2D della scena e del CanvasModulate:
 	var painted := CanvasItemMaterial.new()
-	painted.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	painted.light_mode = CanvasItemMaterial.LIGHT_MODE_NORMAL
 	_body.material = painted
 	_spin_node.add_child(_body)
 	for name in _rig.bones:

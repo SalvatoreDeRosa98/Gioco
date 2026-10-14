@@ -187,14 +187,19 @@ func _draw_vitals() -> void:
 	draw_texture_rect(COIN_TEX, Rect2(coin - Vector2(13, 13), Vector2(26, 26)), false)
 	Art.text(self, Art.title_font(), Vector2(68, 118), str(int(round(_coins_shown))), 26, Art.CREMA)
 	if me:
-		var ready: bool = me.parry_cooldown <= 0.0
-		var parry_text: String = "%s  Parata" % Controls.label("parry") if ready else "Parata  %.1f s" % me.parry_cooldown
-		var dim := Color(Art.CREMA, 0.72)
-		var y := 150.0
-		Art.text(self, Art.body_font(), Vector2(34, y), parry_text, 15, Art.CREMA if ready else dim)
-		Art.text(self, Art.body_font(), Vector2(34, y + 21), me.dash_status(), 15, dim)
-		Art.text(self, Art.body_font(), Vector2(34, y + 42), "%s  Braci %d/12   \u00b7   Accessori %d/%d" % [Controls.label("heal"), me.embers, world.equipped.size(), world.accessory_slots()], 15, Color(Art.OCRA, 0.9))
-		Art.text(self, Art.body_font(), Vector2(34, y + 63), Controls.label("map") + "  Mappa", 15, Color(Art.OCRA, 0.65))
+		var hint_alpha := 1.0
+		if area_title_visible():
+			var ta := minf(1.0, _title_t / 0.9) * minf(1.0, (TITLE_TIME - _title_t) / 1.2)
+			hint_alpha = maxf(0.0, 1.0 - ta * 1.5)
+		if hint_alpha > 0.05:
+			var ready: bool = me.parry_cooldown <= 0.0
+			var parry_text: String = "%s  Parata" % Controls.label("parry") if ready else "Parata  %.1f s" % me.parry_cooldown
+			var dim := Color(Art.CREMA, 0.72 * hint_alpha)
+			var y := 150.0
+			Art.text(self, Art.body_font(), Vector2(34, y), parry_text, 15, Color(Art.CREMA, hint_alpha) if ready else dim)
+			Art.text(self, Art.body_font(), Vector2(34, y + 21), me.dash_status(), 15, dim)
+			Art.text(self, Art.body_font(), Vector2(34, y + 42), "%s  Braci %d/12   \u00b7   Accessori %d/%d" % [Controls.label("heal"), me.embers, world.equipped.size(), world.accessory_slots()], 15, Color(Art.OCRA, 0.9 * hint_alpha))
+			Art.text(self, Art.body_font(), Vector2(34, y + 63), Controls.label("map") + "  Mappa", 15, Color(Art.OCRA, 0.65 * hint_alpha))
 
 
 ## Notifiche in coda: dal basso verso l'alto, la piu' recente in fondo, ognuna sulla sua lastra.
@@ -242,32 +247,32 @@ func _draw_area_title(vp: Vector2) -> void:
 	if _title_t < 0.0 or world.is_talking() or world.boss() != null:
 		return
 	var a := minf(1.0, _title_t / 0.9) * minf(1.0, (TITLE_TIME - _title_t) / 1.2)
-	# Sotto il pannello vita e la barra del boss, cosi' nulla si sovrappone in alto.
-	var cy := vp.y * 0.40
+	# Posizionato con eleganza nell'architettura superiore, senza coprire porte o personaggi.
+	var cy := vp.y * 0.20
 	var cx := vp.x * 0.5
-	Art.grad_rect(self, Rect2(0, cy - 90.0, vp.x, 90), Color(0, 0, 0, 0), Color(0, 0, 0, 0.35 * a))
-	Art.grad_rect(self, Rect2(0, cy, vp.x, 90), Color(0, 0, 0, 0.35 * a), Color(0, 0, 0, 0))
+	Art.grad_rect(self, Rect2(cx - 380, cy - 45.0, 760, 45), Color(0, 0, 0, 0), Color(0, 0, 0, 0.35 * a))
+	Art.grad_rect(self, Rect2(cx - 380, cy, 760, 55), Color(0, 0, 0, 0.35 * a), Color(0, 0, 0, 0))
 	var size := title_size(_title, vp.x)
 	Art.text(self, Art.title_wide(), Vector2(0, cy), _title, size, Color(Art.CREMA, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
-	var spread := 60.0 + 200.0 * ease(minf(1.0, _title_t / 1.4), 0.3)
-	var ly := cy + 26.0
-	draw_line(Vector2(cx - spread - 20.0, ly), Vector2(cx - 18.0, ly), Color(Art.OCRA, 0.8 * a), 1.5)
-	draw_line(Vector2(cx + 18.0, ly), Vector2(cx + spread + 20.0, ly), Color(Art.OCRA, 0.8 * a), 1.5)
-	draw_colored_polygon(PackedVector2Array([Vector2(cx - 9, ly), Vector2(cx, ly - 6), Vector2(cx + 9, ly), Vector2(cx, ly + 6)]), Color(Art.OCRA, a))
-	Art.text(self, Art.body_font(), Vector2(0, ly + 38.0), _subtitle, 26, Color(Art.OCRA.lightened(0.3), 0.9 * a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+	var spread := 50.0 + 160.0 * ease(minf(1.0, _title_t / 1.4), 0.3)
+	var ly := cy + 22.0
+	draw_line(Vector2(cx - spread - 16.0, ly), Vector2(cx - 14.0, ly), Color(Art.OCRA, 0.8 * a), 1.5)
+	draw_line(Vector2(cx + 14.0, ly), Vector2(cx + spread + 16.0, ly), Color(Art.OCRA, 0.8 * a), 1.5)
+	draw_colored_polygon(PackedVector2Array([Vector2(cx - 7, ly), Vector2(cx, ly - 5), Vector2(cx + 7, ly), Vector2(cx, ly + 5)]), Color(Art.OCRA, a))
+	Art.text(self, Art.body_font(), Vector2(0, ly + 26.0), _subtitle, 20, Color(Art.OCRA.lightened(0.3), 0.9 * a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 
 
 ## Riquadro (schermo) occupato da titolo, ornamento e sottotitolo d'area.
 func title_rect(vp: Vector2) -> Rect2:
-	var cy := vp.y * 0.40
-	return Rect2(TITLE_SIDE * 0.5, cy - 62.0, vp.x - TITLE_SIDE, 62.0 + 26.0 + 38.0 + 14.0)
+	var cy := vp.y * 0.20
+	return Rect2(TITLE_SIDE * 0.5, cy - 40.0, vp.x - TITLE_SIDE, 90.0)
 
 
-## Corpo del titolo d'area: 54 px, ridotto finche' il testo non sta fra i due margini laterali.
+## Corpo del titolo d'area: proporzionato, ridotto se necessario per stare fra i margini.
 func title_size(text: String, vp_w: float) -> int:
 	var font: Font = Art.title_wide()
-	var size := 54
-	while size > 28 and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > vp_w - 2.0 * TITLE_SIDE:
+	var size := 40
+	while size > 22 and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > vp_w - 2.0 * TITLE_SIDE:
 		size -= 2
 	return size
 

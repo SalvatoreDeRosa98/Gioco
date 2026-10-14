@@ -27,7 +27,7 @@ func setup(tex: Texture2D, config: Dictionary, feet: Vector2, factor: float) -> 
 	_factor = factor
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	var painted := CanvasItemMaterial.new()
-	painted.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	painted.light_mode = CanvasItemMaterial.LIGHT_MODE_NORMAL
 	material = painted
 	var body := Node2D.new()
 	body.name = "torso"

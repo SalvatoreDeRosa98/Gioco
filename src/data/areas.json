@@ -419,7 +419,11 @@
 				{"tex": "characters/guardie/guardia_giovane.png", "x": 1520, "flip": true, "h": 112}
 			]
 		},
-		"fields": [{"kind": "embers", "scroll": 0.6, "z": -25, "density": 30, "size": 0.7, "alpha": 0.7}, {"kind": "bokeh", "scroll": 1.35, "z": 46, "density": 8, "color": "#ffc070"}],
+		"fields": [
+			{"kind": "embers", "scroll": 0.6, "z": -25, "density": 30, "size": 0.7, "alpha": 0.7},
+			{"kind": "embers", "scroll": 1.0, "z": 32, "density": 22, "size": 1.1, "alpha": 0.85},
+			{"kind": "bokeh", "scroll": 1.35, "z": 46, "density": 8, "color": "#ffc070"}
+		],
 		"flock": {"kind": "bats", "every": [9, 18], "count": [2, 4], "y": [0.05, 0.2], "size": [5, 7], "speed": [90, 140], "color": "#0a0705"},
 		"chains": {"chance": 0.5, "len": [40, 110]}
 	}

@@ -37,11 +37,11 @@
     "respawn_delay": 1.0,
     "hurt_blink_period": 0.12,
     "camera_smoothing": 6.5,
-    "outline_width": 2.0,
-    "outline_color": "f5e6c4e0",
-    "rim_strength": 0.55,
-    "silhouette_lift": 0.08,
-    "light_energy": 0.75,
+    "outline_width": 2.4,
+    "outline_color": "14151df0",
+    "rim_strength": 0.65,
+    "silhouette_lift": 0.04,
+    "light_energy": 0.65,
     "grapple_speed": 620,
     "grapple_range": 420,
     "wall_slide_speed": 65,
@@ -58,8 +58,8 @@
     "hurt_knockback_y": -240,
     "hurt_knock_time": 0.18,
     "rig_dir": "res://assets/art/characters/ferruccio_cutout_v2/",
-    "figure_height": 96,
-    "figure_screen_px": 230
+    "figure_height": 110,
+    "figure_screen_px": 255
   },
   "enemies": {
     "gatto": {

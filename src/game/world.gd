@@ -70,6 +70,7 @@ var story := Story.new()
 
 var _backdrop
 var _terrain
+var _modulate: CanvasModulate
 var _decor: Node2D
 var _walls: Node2D
 var _entities: Node2D
@@ -107,6 +108,9 @@ func _ready() -> void:
 	_intro_config = JSON.parse_string(FileAccess.get_file_as_string("res://data/introduction.json"))
 	_forge_return_room = int(_intro_config.forge.entry_room)
 	_rng.randomize()
+	_modulate = CanvasModulate.new()
+	_modulate.name = "SceneModulate"
+	add_child(_modulate)
 	_backdrop = BackdropScript.new()
 	add_child(_backdrop)
 	_decor = Node2D.new()
@@ -381,6 +385,8 @@ func _load_room(idx: int, from_left: bool, cleared_now: bool) -> void:
 	_choice_signature = ""
 	room_cleared = cleared_now
 	var th := Themes.get_theme(room["theme"])
+	if _modulate:
+		_modulate.color = th.get("ambient", Color(0.65, 0.65, 0.75))
 	_backdrop.build(room["theme"], room["size"], room["floor"], Room.CAMERA_ZOOM)
 	_backdrop.set_veil_visible(story.get_var("violante_fate") != "uccisa")
 	_backdrop.visible = idx != Room.SECRET_ROOM and idx < 7

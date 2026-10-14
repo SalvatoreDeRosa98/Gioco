@@ -28,7 +28,7 @@ func setup(config: Dictionary, height: float) -> void:
 	_factor = height / float(config.height)
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	var painted := CanvasItemMaterial.new()
-	painted.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	painted.light_mode = CanvasItemMaterial.LIGHT_MODE_NORMAL
 	material = painted
 	_body = Node2D.new()
 	_body.scale = Vector2.ONE * _factor
