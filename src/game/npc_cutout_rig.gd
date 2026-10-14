@@ -150,7 +150,7 @@ func pose(time: float, face: float, tint: Color, lift: float, talking: bool, wal
 			angle += sin(t * 9.0) * amount * 4.0 * (-1.0 if part_name.ends_with("far") else 1.0)
 		var bone: Node2D = bones[part_name]
 		bone.rotation = angle
-		var is_head := part_name.begins_with("head") or part_name.begins_with("testa")
+		var is_head: bool = part_name.begins_with("head") or part_name.begins_with("testa")
 		bone.scale.y = 0.9 if shut and is_head else 1.0
 
 ## Collega le animazioni dipinte alla fase reale dell'azione dell'avversario.

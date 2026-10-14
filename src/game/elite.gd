@@ -180,15 +180,16 @@ func _physics_process(delta: float) -> void:
 					var push_sign: float = signf(dx) if dx != 0.0 else (1.0 if get_instance_id() > other.get_instance_id() else -1.0)
 					velocity.x += push_sign * (38.0 - absf(dx)) * 3.5
 	move_and_slide()
-	if _flash > 0:
-		_rig.set_action("hurt", 1.0 - _flash / .15)
-	elif _windup:
-		_rig.set_action("cast_windup" if kind in ["madre","spettro"] else "windup", 1.0 - _timer / float(_cfg.windup))
-	elif _swing > 0:
-		_rig.set_action("cast_strike" if kind in ["madre","spettro"] else "strike", 1.0 - _swing / .3)
-	else:
-		_rig.set_action("")
-	_rig.pose(_clock, facing, Color(1.4,1.25,1) if _flash > 0 else Color.WHITE, 0, _windup or _swing > 0, absf(velocity.x) > 1)
+	if _rig != null:
+		if _flash > 0:
+			_rig.set_action("hurt", 1.0 - _flash / .15)
+		elif _windup:
+			_rig.set_action("cast_windup" if kind in ["madre","spettro"] else "windup", 1.0 - _timer / float(_cfg.windup))
+		elif _swing > 0:
+			_rig.set_action("cast_strike" if kind in ["madre","spettro"] else "strike", 1.0 - _swing / .3)
+		else:
+			_rig.set_action("")
+		_rig.pose(_clock, facing, Color(1.4,1.25,1) if _flash > 0 else Color.WHITE, 0, _windup or _swing > 0, absf(velocity.x) > 1)
 	queue_redraw()
 
 

@@ -18,9 +18,11 @@ Ferruccio deve recuperare il bellissimo disegno 2D originale anche nella resa 3D
 
 ## Ultimo eseguibile verificato
 E:/gioco/Test-Ferruccio/Ferruccio-Silksong-Ultimo.exe (e copia Ferruccio-Ultimo.exe)
-SHA256: 55E1ECDF40BECF5FF7482F319F78C63B35364AA305CC19C3741D71E23B361237
-Dimensione: 361.163.824 byte.
-Export riuscito con template ufficiale Godot 4.6 (14 ottobre 2026). Overhaul visuale e profondità in stile Silksong:
+SHA256: 4B553624B5CC6BFB81FF9E3A1634F712BCF463C121D37601CC8E4CD3F5D1C0C7
+Dimensione: 360.638.064 byte.
+Export riuscito con template ufficiale Godot 4.6 (14 ottobre 2026). Overhaul visuale e unificazione pennello (commit 92d523d):
+- 307 disegni unificati con stesso trattamento pittorico: 4 valori di luce, ombra fredda, luce calda, desaturazione coerente, Ferruccio forma più chiara e cittadini in silhouette.
+- Overhaul Silksong dei 6 pilastri: scala (160px), inquadratura boss (min_zoom 0.85), CanvasModulate dinamico con LIGHT_MODE_NORMAL, beccatelli barocchi e catene forgiate, fenditure su muri incrinati, foreground sfocato bokeh e UI ripulita.
 1. Scala personaggio aumentata (figure_screen_px: 255) e inquadratura boss serrata (min_zoom: 0.85).
 2. CanvasModulate reale integrato per stanza (ambient th) e ricezione luce dinamica riattivata su rig e pupazzi (LIGHT_MODE_NORMAL), con fascio occhio e lampo fendente/affondo.
 3. Shader contorno a china scura (#14151df0), rim lighting e pseudo-normali volumetriche sul panneggio.
