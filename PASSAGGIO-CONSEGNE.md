@@ -18,11 +18,11 @@ Ferruccio deve recuperare il bellissimo disegno 2D originale anche nella resa 3D
 
 ## Ultimo eseguibile verificato
 E:/gioco/Test-Ferruccio/Ferruccio-Silksong-Ultimo.exe (e copia Ferruccio-Ultimo.exe)
-SHA256: 4B553624B5CC6BFB81FF9E3A1634F712BCF463C121D37601CC8E4CD3F5D1C0C7
-Dimensione: 360.638.064 byte.
-Export riuscito con template ufficiale Godot 4.6 (14 ottobre 2026). Overhaul visuale e unificazione pennello (commit 92d523d):
-- 307 disegni unificati con stesso trattamento pittorico: 4 valori di luce, ombra fredda, luce calda, desaturazione coerente, Ferruccio forma più chiara e cittadini in silhouette.
-- Overhaul Silksong dei 6 pilastri: scala (160px), inquadratura boss (min_zoom 0.85), CanvasModulate dinamico con LIGHT_MODE_NORMAL, beccatelli barocchi e catene forgiate, fenditure su muri incrinati, foreground sfocato bokeh e UI ripulita.
+SHA256: A19ACE0EBEA91FDDD3FC26E3BB6E2255C53AEDE8BFB8D373309C6FAC7F27B3FC
+Dimensione: 436.893.512 byte.
+Export riuscito con template ufficiale Godot 4.6 (14 ottobre 2026). Integrazione arte 0769b7e (172 file attivi ridisegnati in stile fiaba dipinta/inchiostro morbido) e 6 pilastri Silksong:
+- 172 asset caricati a runtime ridisegnati (città, piazza, strada, giardino, Reggia, Belvedere, cisterne, terreno, oggetti, Ferruccio, NPC, gatto, boss, icone).
+- 6 pilastri Silksong: scala 160px, inquadratura boss 0.85, CanvasModulate dinamico, rim light e contorno china, beccatelli barocchi e catene forgiate, fenditure muri, foreground bokeh e UI pulita.
 1. Scala personaggio aumentata (figure_screen_px: 255) e inquadratura boss serrata (min_zoom: 0.85).
 2. CanvasModulate reale integrato per stanza (ambient th) e ricezione luce dinamica riattivata su rig e pupazzi (LIGHT_MODE_NORMAL), con fascio occhio e lampo fendente/affondo.
 3. Shader contorno a china scura (#14151df0), rim lighting e pseudo-normali volumetriche sul panneggio.
