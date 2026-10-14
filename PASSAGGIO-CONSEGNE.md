@@ -18,9 +18,10 @@ Ferruccio deve recuperare il bellissimo disegno 2D originale anche nella resa 3D
 
 ## Ultimo eseguibile verificato
 E:/gioco/Test-Ferruccio/Ferruccio-Fiaba-Ultimo.exe (e copia Ferruccio-Ultimo.exe)
-SHA256: F796F31F06F4B28CA0AC2971E0DD6ED5184DAA7D6C0A7FB17C53EB9ECB3E086E
-Dimensione: 409.089.048 byte.
-Export riuscito con template ufficiale Godot 4.6 (14 ottobre 2026). Integrazione arte 5f63301 (stile fiaba dipinta corretto senza incollare Ferruccio su altri personaggi):
+SHA256: 0DEE0A92B82239C891F4CB601AE212BD4D00C8FA6F4DB83A5D6C9E5DE707EE4C
+Dimensione: 376.669.592 byte.
+Export riuscito con template ufficiale Godot 4.6 (14 ottobre 2026). Integrazione arte 32615c4 (Ferruccio e Gatto frame per frame) + rimozione chromakey rosa:
+- Rimozione completa del background magenta da tutte le 11 spritesheet di Ferruccio e Gatto (trasparenza alpha e despill morbido dei contorni, zero quadrati rosa in gioco).
 - 172 asset caricati a runtime rifiniti con inchiostro morbido, poche masse e luce calda. Città, oggetti, boss, gatto e NPC conservano la loro identità e silhouette originali.
 - 6 pilastri Silksong: scala 160px, inquadratura boss 0.85, CanvasModulate dinamico, rim light e contorno china, beccatelli barocchi e catene forgiate, fenditure muri, foreground bokeh e UI pulita.
 1. Scala personaggio aumentata (figure_screen_px: 255) e inquadratura boss serrata (min_zoom: 0.85).
