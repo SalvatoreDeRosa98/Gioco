@@ -41,6 +41,8 @@ func setup(k: String, theme: Dictionary, pos: Vector2) -> void:
 	kind = k
 	th = theme
 	position = pos
+	if kind == "lamp" or kind == "torch":
+		add_to_group("style_lights")
 	_seed = pos.x * 0.37
 	var lamp: Color = th.lamp
 	match kind:

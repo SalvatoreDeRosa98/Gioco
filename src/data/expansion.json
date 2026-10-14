@@ -221,7 +221,7 @@
     "9": {
       "name": "Cisterne Reali",
       "subtitle": "L'acqua porta le voci",
-      "theme": "giardino",
+      "theme": "acquedotto",
       "art": "cisterne",
       "size": [
         2560,
@@ -722,7 +722,7 @@
     "13": {
       "name": "Cisterne Sepolte",
       "subtitle": "I ferri di Gaetano custodiscono altre strade",
-      "theme": "belvedere",
+      "theme": "acquedotto",
       "art": "cisterne_sepolte",
       "size": [
         1280,

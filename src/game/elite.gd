@@ -18,6 +18,8 @@ var _pattern := 0
 var _aim := Vector2.RIGHT
 var _swing := 0.0
 var _flash := 0.0
+var dying := false
+var _die_t := 0.0
 var _rig: Node2D
 var _clock := 0.0
 
@@ -74,7 +76,8 @@ func setup(data: Dictionary, owner_world: Node) -> void:
 	var sm := ShaderMaterial.new()
 
 	sm.shader = preload("res://game/shaders/canvas_char_volume.gdshader")
-
+	sm.set_shader_parameter("rim_strength", 0.0)
+	sm.set_shader_parameter("shade_strength", 0.4)
 	material = sm
 
 ## Appoggia i nemici terrestri sopra il suolo e i blocchi, mai dentro la muratura.
@@ -95,6 +98,16 @@ func _resolve_spawn() -> void:
 
 func _physics_process(delta: float) -> void:
 	_name_a = TextDefer.step(_name_a, world, delta)
+	if dying:
+		_die_t -= delta
+		velocity.y = minf(900.0, velocity.y + 1500.0 * delta)
+		velocity.x = move_toward(velocity.x, 0.0, 80.0 * delta)
+		rotation += delta * 1.5 * (-facing if facing != 0.0 else 1.0)
+		modulate.a = clampf(_die_t / 0.48, 0.0, 1.0)
+		move_and_slide()
+		if _die_t <= 0.0:
+			queue_free()
+		return
 	if world.is_talking() or world.in_cutscene():
 		return
 	_timer -= delta
@@ -190,6 +203,8 @@ func _release_attack_token() -> void:
 
 ## Riceve colpi e restituisce true una volta sconfitto, lasciando al mondo ricompense e obiettivi.
 func take_hit(amount: int, push: Vector2 = Vector2.ZERO) -> bool:
+	if dying:
+		return false
 	_release_attack_token()
 	if kind == "lanterniere":
 		_windup = false
@@ -200,7 +215,12 @@ func take_hit(amount: int, push: Vector2 = Vector2.ZERO) -> bool:
 	if hp <= 0:
 		if _cfg.has("flag"):
 			world.story.seen[str(_cfg.flag)] = 1
-		queue_free()
+		dying = true
+		_die_t = 0.48
+		damage = 0
+		collision_layer = 0
+		collision_mask = 0
+		velocity = Vector2(-facing * 70.0, -150.0)
 		return true
 	return false
 

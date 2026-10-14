@@ -17,9 +17,11 @@ var _last_time := -1.0
 var _blend: Dictionary = {}
 var _companion: Node2D
 var _profile: Dictionary
+var _blink_phase := 0.0
 
 ## Assembla una figura alta height pixel dai pezzi dipinti dell'atlante.
 func setup(config: Dictionary, height: float) -> void:
+	_blink_phase = randf() * 6.0
 	_config = config
 	_anatomy = JSON.parse_string(FileAccess.get_file_as_string("res://data/npc_puppet_anatomy.json"))
 	_clips = JSON.parse_string(FileAccess.get_file_as_string("res://data/ferruccio_anim.json")).clips.duplicate(true)
@@ -224,6 +226,9 @@ func pose(time: float, face: float, tint: Color, lift: float, talking: bool, wal
 		_blend = _mix(_blend,target,weight)
 		_last_time = time
 	_apply(_blend)
+	if bones.has("head"):
+		var shut := fposmod(time + _blink_phase, 4.6) < 0.09
+		bones.head.scale = Vector2(1.0, 0.9 if shut else 1.0)
 	_level_basket()
 	if pieces.has("extra") and _config.extra == "cloak":
 		pieces.extra.rotation = deg_to_rad(sin(time*TAU/float(_anatomy.secondary.cloak_period))*float(_anatomy.secondary.cloak_angle))

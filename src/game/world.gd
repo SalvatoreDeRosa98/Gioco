@@ -1023,7 +1023,7 @@ func _check_contacts() -> void:
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if player.dead:
 			return
-		if e.is_queued_for_deletion():
+		if e.is_queued_for_deletion() or ("dying" in e and bool(e.dying)):
 			continue
 		if not _overlap(e.global_position, e.half, p_center, p_half):
 			continue

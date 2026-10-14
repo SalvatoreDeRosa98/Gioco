@@ -88,6 +88,8 @@ var speed := 70.0
 var damage := 1
 var coins := 2
 var flash := 0.0
+var dying := false
+var _die_t := 0.0
 var facing := 1.0
 var anim := "idle"
 ## Secondi prima che il contatto possa ferire di nuovo il giocatore.
@@ -276,6 +278,16 @@ func _physics_process(delta: float) -> void:
 	_dt = delta
 	flash = maxf(0.0, flash - delta * 5.0)
 	touch_cd = maxf(0.0, touch_cd - delta)
+	if dying:
+		_die_t -= delta
+		velocity.y = minf(MAX_FALL, velocity.y + GRAVITY * delta)
+		velocity.x = move_toward(velocity.x, 0.0, 90.0 * delta)
+		rotation += delta * 1.7 * (-facing if facing != 0.0 else 1.0)
+		modulate.a = clampf(_die_t / 0.48, 0.0, 1.0)
+		move_and_slide()
+		if _die_t <= 0.0:
+			queue_free()
+		return
 	match kind:
 		"vespa":
 			_ai_vespa(delta)
@@ -1125,12 +1137,20 @@ func _release_attack_token() -> void:
 
 ## Ritorna true se il nemico è morto.
 func take_hit(dmg: int, push: Vector2 = Vector2.ZERO) -> bool:
+	if dying:
+		return false
 	hp -= dmg
 	flash = 1.0
 	_release_attack_token()
 	if hp <= 0:
 		_sfx("nemico_ucciso")
-		queue_free()
+		dying = true
+		_die_t = 0.48
+		damage = 0
+		collision_layer = 0
+		collision_mask = 0
+		var dir := push.normalized() if push != Vector2.ZERO else Vector2(-facing, 0.0)
+		velocity = Vector2(dir.x * 90.0, -170.0)
 		return true
 	_sfx("nemico_colpito")
 	_react(push)

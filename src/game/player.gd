@@ -192,6 +192,25 @@ func apply_room(size: Vector2) -> void:
 	_cam.reset_smoothing()
 
 
+## La rim light guarda la torcia o il lampione più vicini. Senza una fonte, resta sul davanti.
+func _rim_toward_light() -> Vector2:
+	var rim := Vector2(-facing * 0.7, -0.7)
+	if not is_inside_tree():
+		return rim
+	var origin := global_position + Vector2(0.0, -46.0)
+	var best := 460.0
+	for node in get_tree().get_nodes_in_group("style_lights"):
+		if not node is Node2D:
+			continue
+		var light := node as Node2D
+		var at := light.global_position + (Vector2(0.0, -232.0) if str(light.get("kind")) == "lamp" else Vector2(0.0, -16.0))
+		var dist := origin.distance_to(at)
+		if dist < best and dist > 12.0:
+			best = dist
+			rim = (at - origin).normalized()
+	return rim
+
+
 ## Tinta e luce dell'area (themes.gd: "ambient", "lamp", facoltativo "light_dir"): legano
 ## Ferruccio alla scena con la luce di taglio e il chiaroscuro del suo shader.
 func apply_theme(th: Dictionary) -> void:
@@ -256,7 +275,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			_slash_light.energy = move_toward(_slash_light.energy, 0.0, delta * 4.5)
 	if _silhouette and _silhouette.material:
-		_silhouette.material.set_shader_parameter("rim_dir", Vector2(-facing * 0.7, -0.7))
+		_silhouette.material.set_shader_parameter("rim_dir", _rim_toward_light())
 
 	var jump_pressed := Input.is_action_just_pressed("jump")
 	_jump_held = Input.is_action_pressed("jump")

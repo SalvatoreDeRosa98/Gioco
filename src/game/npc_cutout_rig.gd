@@ -10,9 +10,11 @@ var _canvas := Vector2.ZERO
 var _feet := Vector2.ZERO
 var _factor := 1.0
 var _puppet: Node2D
+var _blink_phase := 0.0
 
 ## Costruisce il corpo articolato dal dipinto e dai contorni normalizzati dell'NPC.
 func setup(tex: Texture2D, config: Dictionary, feet: Vector2, factor: float) -> void:
+	_blink_phase = randf() * 6.0
 	if config.has("puppet"):
 		var puppets: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/npc_puppets.json"))
 		_puppet = preload("res://game/npc_painted_puppet.gd").new()
@@ -135,6 +137,8 @@ func pose(time: float, face: float, tint: Color, lift: float, talking: bool, wal
 	position.y = lift
 	var breath := sin(t * TAU / float(_config.get("breath_period", 3.4)))
 	var gesture := sin(t * 5.5) if talking else 0.0
+	var blink := fposmod(t + _blink_phase, 4.6)
+	var shut := blink < 0.09
 	for part_name in bones:
 		var amount := float(_config.motion.get(part_name, 0.0))
 		var angle := breath * amount
@@ -144,7 +148,10 @@ func pose(time: float, face: float, tint: Color, lift: float, talking: bool, wal
 			angle += gesture * amount * 2.0
 		elif part_name.begins_with("leg") and walking:
 			angle += sin(t * 9.0) * amount * 4.0 * (-1.0 if part_name.ends_with("far") else 1.0)
-		bones[part_name].rotation = angle
+		var bone: Node2D = bones[part_name]
+		bone.rotation = angle
+		var is_head := part_name.begins_with("head") or part_name.begins_with("testa")
+		bone.scale.y = 0.9 if shut and is_head else 1.0
 
 ## Collega le animazioni dipinte alla fase reale dell'azione dell'avversario.
 func set_action(action: String, progress: float = 0.0) -> void:

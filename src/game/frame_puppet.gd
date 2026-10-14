@@ -27,7 +27,8 @@ func setup(sheet_json: String, screen_height: float) -> void:
 	mat.shader = preload("res://game/shaders/canvas_rig_outline_v2.gdshader")
 	mat.set_shader_parameter("white_point", 1.0)
 	mat.set_shader_parameter("highlight_desat", 0.0)
-	mat.set_shader_parameter("rim_strength", 0.45)
+	mat.set_shader_parameter("rim_strength", 0.15)
+	mat.set_shader_parameter("outline_px", 1.6)
 	# Aspetto per nemico (CONTROLLO-SLICE3): contorno, colore e intensità del rim dal json.
 	var look: Dictionary = _cfg.get("look", {})
 	for key in look:

@@ -47,6 +47,7 @@ var _hop := 0.0
 var _hop_v := 0.0
 var _near := false
 var _away_t := 0.0
+var _retreat := 0.0
 var _voice := false
 var _talking := false
 var _has_new := false
@@ -94,6 +95,9 @@ func setup(k: String, pos: Vector2, w: Node) -> void:
 	_glow_col = Color(float(gc[0]), float(gc[1]), float(gc[2]))
 	var tc: Array = _look.get("tint", [1.0, 1.0, 1.0])
 	_tint = Color(float(tc[0]), float(tc[1]), float(tc[2]))
+	# Più scuro e meno contrastato di Ferruccio. I ricordi restano luminosi.
+	if not _memory:
+		_tint *= Color(0.86, 0.87, 0.9)
 	speakers = _cfg.get("speakers", [str(_cfg.get("character", k))])
 	_turn_mode = str(_cfg.get("turn", "near"))
 	_home_face = signf(float(_cfg.get("face", 1.0)))
@@ -107,6 +111,9 @@ func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	var sm := ShaderMaterial.new()
 	sm.shader = preload("res://game/shaders/canvas_char_volume.gdshader")
+	# La rim light è di Ferruccio. Qui solo ombra, così l'NPC non compete con lui.
+	sm.set_shader_parameter("rim_strength", 0.0)
+	sm.set_shader_parameter("shade_strength", 0.42)
 	material = sm
 	_overlay = Node2D.new()
 	_overlay.material = CanvasItemMaterial.new()
@@ -216,9 +223,20 @@ func _process(delta: float) -> void:
 	_alpha = move_toward(_alpha, 1.0 if _present else 0.0, delta / fade_time)
 	if not _present:
 		position += _drift * delta
-	elif position != _home:
-		# Arrivo dall'alto (vedi appear): scivola dolcemente al suo posto.
-		position = position.lerp(_home, 1.0 - exp(-3.0 * delta))
+	elif _present:
+		var retreat_target := 0.0
+		var retreat_sign := _home_face
+		if _near and not _talking:
+			retreat_target = float(_set.get("step_back", 11.0))
+			var who: Node2D = world.player
+			if who:
+				var dx := who.global_position.x - _home.x
+				if absf(dx) > 4.0:
+					retreat_sign = -signf(dx)
+		_retreat = move_toward(_retreat, retreat_target, delta * 36.0)
+		var goal := _home + Vector2(retreat_sign * _retreat, 0.0)
+		if position.distance_to(goal) > 0.4:
+			position = position.lerp(goal, 1.0 - exp(-3.0 * delta))
 	visible = _alpha > 0.002
 	if not visible:
 		return

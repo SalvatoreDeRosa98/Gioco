@@ -13,6 +13,8 @@ var facing := -1.0
 var _attack := 1.8
 var _pattern := 0
 var _windup := 0.0
+var dying := false
+var _die_t := 0.0
 var _flash := 0.0
 var _rig: Node2D
 var _clock := 0.0
@@ -50,6 +52,15 @@ func setup(data: Dictionary, owner_world: Node) -> void:
 	add_to_group("enemies")
 
 func _physics_process(delta: float) -> void:
+	if dying:
+		_die_t -= delta
+		velocity.y = minf(900.0, velocity.y + 1500.0 * delta)
+		rotation += delta * 1.4 * (-facing if facing != 0.0 else 1.0)
+		modulate.a = clampf(_die_t / 0.48, 0.0, 1.0)
+		move_and_slide()
+		if _die_t <= 0.0:
+			queue_free()
+		return
 	if world.is_talking() or world.in_cutscene():
 		return
 	touch_cd = maxf(0, touch_cd - delta)
@@ -90,11 +101,18 @@ func _physics_process(delta: float) -> void:
 
 ## Il duello finisce a zero vita; Taddeo resta vivo come personaggio della storia.
 func take_hit(amount: int, push: Vector2 = Vector2.ZERO) -> bool:
+	if dying:
+		return false
 	hp -= amount
 	_flash = 0.15
 	velocity += push * 120
 	if hp <= 0:
-		queue_free()
+		dying = true
+		_die_t = 0.48
+		damage = 0
+		collision_layer = 0
+		collision_mask = 0
+		velocity = Vector2(-facing * 80.0, -140.0)
 		return true
 	return false
 
