@@ -58,13 +58,13 @@
     "hurt_knockback_y": -240,
     "hurt_knock_time": 0.18,
     "rig_dir": "res://assets/art/characters/ferruccio_cutout_v2/",
-    "figure_height": 96,
-    "figure_screen_px": 230
+    "figure_height": 62,
+    "figure_screen_px": 150
   },
   "enemies": {
     "gatto": {
       "hp": 3,
-      "sprite_height": 26,
+      "sprite_height": 46,
       "speed": 75,
       "damage": 1,
       "coins": 2,
@@ -76,7 +76,7 @@
       "turn_time": 0.32,
       "spawn_grace": 1.5,
       "sight_range": 380,
-      "sight_height": 140,
+      "sight_height": 230,
       "sight_behind": 110,
       "lose_range": 640,
       "notice_time": 0.6,
@@ -85,14 +85,14 @@
       "chase_speed": 165,
       "pounce_range": 220,
       "pounce_min_range": 40,
-      "pounce_reach_up": 80,
+      "pounce_reach_up": 120,
       "pounce_windup": 0.34,
       "pounce_arc": 46,
       "pounce_max_speed": 470,
       "pounce_cooldown": 2.0,
       "land_recover": 0.45,
-      "jump_height_max": 160,
-      "jump_reach": 240,
+      "jump_height_max": 200,
+      "jump_reach": 280,
       "jump_arc": 28,
       "give_up_time": 1.8,
       "knockback": 300,
@@ -237,7 +237,12 @@
   },
   "ratking_arena": {
     "_doc": "Camera della Tana di Ratking (stanza 15, 1600x1080): riquadro [x, y, w, h], zoom limiti e tempi del tween.",
-    "frame": [40, 300, 1520, 700],
+    "frame": [
+      40,
+      300,
+      1520,
+      700
+    ],
     "min_zoom": 0.5,
     "max_zoom": 1.6,
     "zoom_in_time": 1.0,
@@ -248,7 +253,12 @@
     "transition_time": 1.6,
     "camera_zoom": 0.76,
     "_frame_doc": "Riquadro [x, y, w, h] dell'arena da inquadrare tutto: lo zoom e' il piu' grande con cui ci sta (min_zoom..max_zoom). Tempi del tween di zoom in entrata/uscita in secondi.",
-    "frame": [205, 160, 1530, 840],
+    "frame": [
+      205,
+      160,
+      1530,
+      840
+    ],
     "min_zoom": 0.5,
     "max_zoom": 1.6,
     "zoom_in_time": 1.2,

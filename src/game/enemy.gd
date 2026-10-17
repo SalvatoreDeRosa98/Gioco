@@ -29,14 +29,14 @@ const GATTO_HIP_B := Vector2(305, 422)
 const GATTO_SHOULDER_A := Vector2(512, 458)
 const GATTO_SHOULDER_B := Vector2(588, 460)
 const GATTO_EYE := Vector2(722, 147)
-const GATTO_SCALE := 0.044
+const GATTO_SCALE := 0.078
 const VESPA_BODY := preload("res://assets/art/enemies/vespa_rig/corpo.png")
 const VESPA_WINGS := preload("res://assets/art/enemies/vespa_rig/ali.png")
 const VESPA_ABDOMEN := preload("res://assets/art/enemies/vespa_rig/addome.png")
 const VESPA_CENTER := Vector2(330, 420)
 const VESPA_WING_ROOT := Vector2(338, 226)
 const VESPA_WAIST := Vector2(298, 298)
-const VESPA_SCALE := 0.046
+const VESPA_SCALE := 0.0755
 const STATUA_TEX := preload("res://assets/art/enemies/statua.png")
 const STATUA_FEET := Vector2(165, 1010)
 const STATUA_SCALE := 0.103
@@ -259,15 +259,13 @@ func setup(d: Dictionary, w: Node) -> void:
 static func _half_for(k: String) -> Vector2:
 	match k:
 		"vespa":
-			return Vector2(14, 11)
+			return Vector2(22, 18)
 		"statua":
 			return Vector2(20, 34)
 		"custode":
 			return Vector2(38, 64)
-		"gatto":
-			return Vector2(18, 13)
 		_:
-			return Vector2(18, 13)
+			return Vector2(22, 16)
 
 
 # ---------------------------------------------------------------- IA

@@ -159,7 +159,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, default=ROOT / "src/assets/art/enemies/gatto_frames")
     ap.add_argument("--preview", type=Path, default=ROOT.parent / ".tools/gatto-preview")
+    ap.add_argument("--sheets-only", action="store_true", help="solo i fogli: niente cicli video ne' intermedie (stato Gatto-Nuovo)")
     args = ap.parse_args()
+    if args.sheets_only:
+        VIDEO.clear()
+        INTER.clear()
+        CLIPS["chase"] = (CLIPS["chase"][0], CLIPS["chase"][1], 24, True, False)
     args.out.mkdir(parents=True, exist_ok=True)
     args.preview.mkdir(parents=True, exist_ok=True)
     meta = {"size": CELL, "feet": [CELL / 2, FEET_Y], "height_pixels": None, "clips": {}}
