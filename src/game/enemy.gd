@@ -14,22 +14,24 @@ const GattoSprite := preload("res://game/gatto_sprite.gd")
 
 ## Immagini dipinte (assets/art/enemies, bosses). Perni e ancore in pixel della tela;
 ## le parti mobili e i loro poligoni vengono da tools/art/rig_nemici.py.
-const GATTO_BODY := preload("res://assets/art/enemies/gatto_rig/corpo.png")
-const GATTO_TAIL := preload("res://assets/art/enemies/gatto_rig/coda.png")
-const GATTO_HEAD := preload("res://assets/art/enemies/gatto_rig/testa.png")
-const GATTO_HIND_A := preload("res://assets/art/enemies/gatto_rig/zampa_post_a.png")
-const GATTO_HIND_B := preload("res://assets/art/enemies/gatto_rig/zampa_post_b.png")
-const GATTO_FORE_A := preload("res://assets/art/enemies/gatto_rig/zampa_ant_a.png")
-const GATTO_FORE_B := preload("res://assets/art/enemies/gatto_rig/zampa_ant_b.png")
-const GATTO_FEET := Vector2(400, 592)
-const GATTO_TAIL_ROOT := Vector2(190, 290)
-const GATTO_NECK := Vector2(618, 182)
-const GATTO_HIP_A := Vector2(225, 430)
-const GATTO_HIP_B := Vector2(305, 422)
-const GATTO_SHOULDER_A := Vector2(512, 458)
-const GATTO_SHOULDER_B := Vector2(588, 460)
-const GATTO_EYE := Vector2(722, 147)
-const GATTO_SCALE := 0.078
+const GATTO_BODY := preload("res://assets/art/enemies/gatto_v2_rig/corpo.png")
+const GATTO_TAIL := preload("res://assets/art/enemies/gatto_v2_rig/coda.png")
+const GATTO_HEAD := preload("res://assets/art/enemies/gatto_v2_rig/testa.png")
+const GATTO_HIND_A := preload("res://assets/art/enemies/gatto_v2_rig/zampa_post_a.png")
+const GATTO_HIND_B := preload("res://assets/art/enemies/gatto_v2_rig/zampa_post_b.png")
+const GATTO_FORE_A := preload("res://assets/art/enemies/gatto_v2_rig/zampa_ant_a.png")
+const GATTO_FORE_B := preload("res://assets/art/enemies/gatto_v2_rig/zampa_ant_b.png")
+## Gatto v2: pezzi dal model sheet (tools/art/gatto_v2_source.py + rig_nemici.py), tela 920x720.
+const GATTO_FEET := Vector2(465, 690)
+const GATTO_TAIL_ROOT := Vector2(245, 460)
+const GATTO_NECK := Vector2(700, 290)
+const GATTO_HIP_A := Vector2(262, 518)
+const GATTO_HIP_B := Vector2(390, 535)
+const GATTO_SHOULDER_A := Vector2(652, 518)
+const GATTO_SHOULDER_B := Vector2(577, 528)
+const GATTO_EYE := Vector2(800, 188)
+## 46 unita' dai piedi alle orecchie (figura alta ~655 px nella tela), come il gatto a fotogrammi.
+const GATTO_SCALE := 0.070
 const VESPA_BODY := preload("res://assets/art/enemies/vespa_rig/corpo.png")
 const VESPA_WINGS := preload("res://assets/art/enemies/vespa_rig/ali.png")
 const VESPA_ABDOMEN := preload("res://assets/art/enemies/vespa_rig/addome.png")
@@ -238,7 +240,8 @@ func setup(d: Dictionary, w: Node) -> void:
 			_enter("walk", _rand("patrol_time_min", "patrol_time_max"))
 			# Appena entrati nella stanza il giocatore ha un attimo per orientarsi.
 			_notice_cd = _f("spawn_grace")
-			if GattoSprite.available():
+			# use_frames (tuning): fotogrammi disegnati al posto del rig a pezzi; il rig e' piu' fluido.
+			if GattoSprite.available() and bool(_cfg.get("use_frames", false)):
 				_gatto_sprite = GattoSprite.new()
 				_gatto_sprite.position.y = half.y
 				add_child(_gatto_sprite)

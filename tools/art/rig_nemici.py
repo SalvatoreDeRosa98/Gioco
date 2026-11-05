@@ -28,6 +28,22 @@ ART = ROOT / "src/assets/art/enemies"
 # il corpo tiene una fascia sotto di lui; gli altri bordi passano nel vuoto e restano netti.
 # I perni corrispondenti sono in enemy.gd.
 PARTS = {
+    "gatto_v2": {
+        # Gatto dal model sheet (assets/art-source/nemici/gatto/model-sheet.jpg, profilo), tela 920x720
+        # = ritaglio (0,230)-(920,950) del foglio scontornato dal grigio (tools/art/gatto_v2_source.py).
+        "coda": {"poly": [(0, 400), (248, 400), (248, 420), (245, 470), (235, 505), (215, 515), (205, 550), (0, 630)],
+                 "seam": [(248, 420), (245, 470), (235, 505)], "soft": 5},
+        "zampa_post_a": {"poly": [(222, 515), (300, 515), (335, 570), (330, 640), (318, 695), (215, 695), (220, 630), (215, 570)],
+                         "seam": [(222, 515), (300, 515)], "soft": 6},
+        "zampa_post_b": {"poly": [(332, 530), (440, 530), (460, 675), (395, 675), (395, 640), (338, 570)],
+                         "seam": [(332, 530), (440, 530)], "soft": 6},
+        "zampa_ant_b": {"poly": [(552, 525), (602, 525), (602, 675), (552, 675)],
+                        "seam": [(552, 525), (602, 525)], "soft": 6},
+        "zampa_ant_a": {"poly": [(602, 515), (705, 515), (700, 695), (598, 695)],
+                        "seam": [(602, 515), (705, 515)], "soft": 6},
+        "testa": {"poly": [(605, 220), (610, 150), (690, 20), (830, 10), (900, 70), (900, 300), (840, 275), (790, 325), (720, 325), (650, 280)],
+                  "seam": [(605, 220), (650, 280), (720, 325), (790, 325), (840, 275)], "soft": 9},
+    },
     "gatto": {
         "coda": {"poly": [(0, 230), (186, 230), (194, 300), (184, 420), (176, 604), (0, 604)],
                  "seam": [(186, 230), (194, 300), (184, 420)], "soft": 5},
@@ -116,10 +132,13 @@ def _split(name: str, parts: dict, preview: Path | None) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--preview", type=Path, help="cartella dove salvare i poligoni disegnati sulle immagini")
+    ap.add_argument("--only", nargs="*", help="solo questi nemici (es. gatto_v2)")
     args = ap.parse_args()
     if args.preview:
         args.preview.mkdir(parents=True, exist_ok=True)
     for name, parts in PARTS.items():
+        if args.only and name not in args.only:
+            continue
         _split(name, parts, args.preview)
 
 

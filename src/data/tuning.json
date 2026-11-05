@@ -99,7 +99,8 @@
       "knock_lift": 180,
       "hitstun": 0.3,
       "swipe_reach": 90,
-      "swipe_recovery": 0.85
+      "swipe_recovery": 0.85,
+      "use_frames": false
     },
     "vespa": {
       "hp": 2,
