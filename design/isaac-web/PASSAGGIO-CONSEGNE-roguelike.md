@@ -28,6 +28,8 @@ Il platform è congelato: non lavorarci, non proporre migliorie. Si riusano solo
 
 ## 3. Regole di lavoro
 
+0. **Divisione del lavoro** (5 novembre): questa sessione scrive SOLO codice in `src/run/` e `src/data/run/player.json`, sul ramo `notte/prototipo`. Un'altra sessione Claude (locale, con Godot) lavora sul ramo `notte/arte`: ritaglia l'arte di Gemini in `src/assets/art/run/`, genera le icone, scrive `src/data/run/items.json` e `pools.json`, e costruisce exe e build web. **Non toccare quelle cartelle e quei file**: per l'arte usare segnaposto (rettangoli, i pezzi esistenti di `ferruccio_cutout_v2/`) finché il merge non li porta. Se serve un dato che non c'è ancora, crearlo in `player.json` o in un file nuovo sotto `src/data/run/` con nome diverso da quelli elencati.
+
 1. **Commit** liberi sul ramo `notte/prototipo`, Conventional Commits in italiano, riferimento al documento (`Rif: concept.md §4.3 S1-2`). **Push** alla fine di ogni milestone o quando Salvatore lo chiede. Mai forzare, mai toccare `main`.
 2. Dopo ogni run headless di Godot ripristinare il rumore di import (`git checkout -- '*.import' src/.godot/global_script_class_cache.cfg` se modificati) prima di committare.
 3. Valori di gioco in `src/data/` (JSON), mai costanti nel codice. Per il roguelike: `src/data/run/`.
