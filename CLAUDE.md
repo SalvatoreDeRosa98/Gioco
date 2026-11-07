@@ -6,11 +6,11 @@ Each agent owns a specific domain, enforcing separation of concerns and quality.
 ## Technology Stack
 
 - **Engine**: nessuno. Gioco web statico (HTML, SVG, CSS, JavaScript a moduli ES, senza build).
-- **Code root**: `gioco/` (motore in `gioco/motore/`, contenuti in `gioco/contenuti/`, QA in `gioco/qa/`).
+- **Code root**: `gioco/` (struttura in `docs/architecture/architecture.md` §3). Prototipi usa-e-getta in `prototypes/`.
 - **Version Control**: Git, branch di lavoro `claude/*`, commit in Conventional Commits.
 - **Verifica**: Playwright (preinstallato nella sessione cloud) per screenshot ed esplorazione
   automatica di tutti i percorsi narrativi.
-- **Stile**: teatro delle ombre. Vedi `design/game-brief.md` (record di design, modalità `minimal`).
+- **Stile**: teatro delle ombre in vista 3/4 («presepe d'ombre»). Vedi `design/art/art-bible.md`.
 
 > **Riavvio v2 (2026-11-07).** Il progetto è ripartito da zero conservando solo trama e ambientazione.
 > Il codice Godot v1, l'arte generata e gli strumenti sono nella storia di git (branch
@@ -23,8 +23,9 @@ Each agent owns a specific domain, enforcing separation of concerns and quality.
 1. `trama/ferruccio-bibbia.md` — la storia. Non si modifica senza l'autore.
 2. `trama/inizio-memoria-e-doni.md` — decisioni dell'autore che integrano la bibbia.
 3. `trama/storia.json` — mappa macchina di scene, scelte, condizioni e battute (derivata).
-4. `design/game-brief.md` — cosa è il gioco, cosa è dentro e cosa è fuori.
-5. `docs/architecture/motore-web.md` — come è fatto il motore.
+4. `design/gdd/game-concept.md` — cosa è il gioco (roguelike a stanze alla Isaac); `design/gdd/systems-index.md` e i GDD in `design/gdd/`.
+5. `design/art/art-bible.md` — identità visiva (presepe d'ombre).
+6. `docs/architecture/architecture.md` e gli ADR — come è fatto il motore.
 
 ## Project Structure
 
