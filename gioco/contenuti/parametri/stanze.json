@@ -1,0 +1,132 @@
+{
+  "_descrizione": "Regole della singola stanza. Fonte: design/gdd/stanze-porte.md (Tuning Knobs, Formulas). Ogni voce è {base, min, max}: min/max sono il Safe Range del GDD (clamp del valore effettivo, ADR-0002). Tempi in ms, distanze in px. I valori per piano sono gruppi p1..p5 (il validatore non ammette liste). 'camera' è l'aggiunta della storia 015 (architettura §4b: transizione di 250 ms; 'margine_hud' è provvisorio, da confermare con l'ui-programmer). Nessun valore è stato provato in gioco: sono i punti di partenza del GDD.",
+
+  "t_chiusura_porte": { "base": 500, "min": 200, "max": 1000 },
+  "t_anim_porta": { "base": 300, "min": 150, "max": 500 },
+  "t_ritardo_apertura": { "base": 600, "min": 300, "max": 1200 },
+  "t_ricompensa": { "base": 300, "min": 150, "max": 600 },
+  "t_marker": { "base": 800, "min": 500, "max": 1200 },
+  "t_inerte": { "base": 500, "min": 300, "max": 800 },
+
+  "r_sicurezza": { "base": 160, "min": 112, "max": 224 },
+  "r_sicurezza_apparizione": { "base": 112, "min": 80, "max": 160 },
+  "t_ritardo_max_spawn": { "base": 600, "min": 0, "max": 1200 },
+  "r_min_assoluto": { "base": 96, "min": 64, "max": 128 },
+  "d_porta_min": { "base": 128, "min": 64, "max": 192 },
+  "d_min_spawn": { "base": 48, "min": 32, "max": 96 },
+  "vestibolo_celle": { "base": 2, "min": 1, "max": 3 },
+
+  "t_pausa_ondata": { "base": 1200, "min": 600, "max": 2500 },
+  "soglia_ondata": { "base": 1, "min": 0, "max": 2 },
+  "t_ondata_max": { "base": 30000, "min": 0, "max": 60000 },
+  "t_antistallo": { "base": 60000, "min": 30000, "max": 120000 },
+
+  "n_base": {
+    "_descrizione": "valore base di n_nemici per piano",
+    "p1": { "base": 2.0, "min": 1.5, "max": 5.0 },
+    "p2": { "base": 2.5, "min": 1.5, "max": 5.0 },
+    "p3": { "base": 3.0, "min": 1.5, "max": 5.0 },
+    "p4": { "base": 3.5, "min": 1.5, "max": 5.0 },
+    "p5": { "base": 4.0, "min": 1.5, "max": 5.0 }
+  },
+  "k_prof": { "base": 2.5, "min": 1.0, "max": 4.0 },
+  "k_diff": { "base": 0.5, "min": 0, "max": 1.0 },
+  "molt_doppia": { "base": 1.6, "min": 1.3, "max": 2.0 },
+  "n_cap_1x1": { "base": 10, "min": 8, "max": 16 },
+  "n_cap_2x1": { "base": 16, "min": 12, "max": 20 },
+  "n_max_vivi": { "base": 16, "min": 8, "max": 20 },
+  "n_cap_ingresso": {
+    "_descrizione": "tetto di n_nemici per le stanze a d ≤ 1, per piano",
+    "p1": { "base": 2, "min": 1, "max": 6 },
+    "p2": { "base": 3, "min": 1, "max": 6 },
+    "p3": { "base": 4, "min": 1, "max": 6 },
+    "p4": { "base": 4, "min": 1, "max": 6 },
+    "p5": { "base": 5, "min": 1, "max": 6 }
+  },
+  "ondate_max": {
+    "p1": { "base": 2, "min": 1, "max": 3 },
+    "p2": { "base": 2, "min": 1, "max": 3 },
+    "p3": { "base": 3, "min": 1, "max": 3 },
+    "p4": { "base": 3, "min": 1, "max": 3 },
+    "p5": { "base": 3, "min": 1, "max": 3 }
+  },
+  "frazione": {
+    "_descrizione": "quota di n_nemici per ondata: o2 = due ondate, o3 = tre ondate; il resto va all'ondata 1",
+    "o2": {
+      "i1": { "base": 0.55, "min": 0, "max": 1 },
+      "i2": { "base": 0.45, "min": 0, "max": 1 }
+    },
+    "o3": {
+      "i1": { "base": 0.40, "min": 0, "max": 1 },
+      "i2": { "base": 0.35, "min": 0, "max": 1 },
+      "i3": { "base": 0.25, "min": 0, "max": 1 }
+    }
+  },
+  "peso_var": {
+    "_descrizione": "pesi della variazione var ∈ {−1, 0, +1} di n_nemici",
+    "meno": { "base": 0.25, "min": 0, "max": 1 },
+    "zero": { "base": 0.5, "min": 0, "max": 1 },
+    "piu": { "base": 0.25, "min": 0, "max": 1 }
+  },
+  "conto_elite": { "base": 2, "min": 1, "max": 3 },
+
+  "ricompensa": {
+    "_descrizione": "formula valore_ricompensa (stanze-porte.md) e conversione in oggetti",
+    "p_base": { "base": 0.6, "min": 0.3, "max": 0.9 },
+    "k_pd": { "base": 0.1, "min": 0, "max": 0.2 },
+    "p_min": { "base": 0.3, "min": 0.2, "max": 0.5 },
+    "p_max": { "base": 0.95, "min": 0.8, "max": 1.0 },
+    "v_base": {
+      "p1": { "base": 2, "min": 1, "max": 6 },
+      "p2": { "base": 2, "min": 1, "max": 6 },
+      "p3": { "base": 3, "min": 1, "max": 6 },
+      "p4": { "base": 3, "min": 1, "max": 6 },
+      "p5": { "base": 4, "min": 1, "max": 6 }
+    },
+    "k_vr": { "base": 0.5, "min": 0, "max": 1.0 },
+    "molt_stanza": {
+      "normale": { "base": 1.0, "min": 1.0, "max": 3.0 },
+      "doppia": { "base": 1.5, "min": 1.0, "max": 3.0 },
+      "elite": { "base": 1.5, "min": 1.0, "max": 3.0 },
+      "boss": { "base": 3.0, "min": 1.0, "max": 3.0 },
+      "segreta": { "base": 2.0, "min": 1.0, "max": 3.0 }
+    },
+    "costo_oggetto": {
+      "moneta": { "base": 1, "min": 1, "max": 6 },
+      "scintilla": { "base": 3, "min": 1, "max": 6 },
+      "cuore": { "base": 4, "min": 1, "max": 6 }
+    },
+    "peso_oggetto": {
+      "moneta": { "base": 0.60, "min": 0, "max": 1 },
+      "scintilla": { "base": 0.25, "min": 0, "max": 1 },
+      "cuore": { "base": 0.15, "min": 0, "max": 1 }
+    },
+    "unita_ricordo": { "base": 0, "min": 0, "max": 3 }
+  },
+
+  "vita": {
+    "_descrizione": "danno sopportato dagli ostacoli distruttibili e dalla finestra della segreta",
+    "colonna_crepata": { "base": 4, "min": 1, "max": 6 },
+    "cassa": { "base": 2, "min": 1, "max": 6 },
+    "siepe": { "base": 1, "min": 1, "max": 6 },
+    "finestra": { "base": 3, "min": 1, "max": 6 }
+  },
+  "p_drop_cassa": { "base": 0.25, "min": 0, "max": 0.5 },
+  "spawn_min_1x1": { "base": 8, "min": 6, "max": 12 },
+  "spawn_min_2x1": { "base": 14, "min": 10, "max": 20 },
+
+  "braciere": {
+    "t_riposo": { "base": 1800, "min": 1000, "max": 3000 },
+    "t_anticipo": { "base": 700, "min": 500, "max": 1000 },
+    "t_attivo": { "base": 1000, "min": 600, "max": 1500 },
+    "r_fiamma": { "base": 56, "min": 40, "max": 72 }
+  },
+  "danno_pericolo": { "base": 1, "min": 1, "max": 2 },
+  "max_oggetti_persistiti": { "base": 24, "min": 12, "max": 48 },
+
+  "camera": {
+    "_descrizione": "architettura §4b: la camera inquadra la stanza intera; scala = min(1, L/larghezza, (A − margine_hud)/altezza); transizione a scorrimento nella direzione della porta",
+    "t_transizione": { "base": 250, "min": 100, "max": 600 },
+    "margine_hud": { "base": 64, "min": 0, "max": 200 }
+  }
+}

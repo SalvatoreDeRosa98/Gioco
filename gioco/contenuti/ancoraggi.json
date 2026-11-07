@@ -1,0 +1,4 @@
+{
+  "_doc": "Dati di gioco che la bibbia non ha, uniti a runtime per id di scena a contenuti/storia.json (ADR-0004): per ogni scena 'ancoraggio' (hub:<npc>, banchetto, ricordo:<oggetto>, dopo-boss:<id>, ingresso-piano:<n>, fucina, epilogo; GDD incontri-dialoghi.md regola 1), eventualmente 'ripetibile' e 'posa'. Vuoto finché la storia 027 non assegna gli ancoraggi: stato-narrativo.disponibili(ancoraggio) restituisce la lista vuota, mentre disponibile(scena) e disponibiliPer(filtro) funzionano già. Formato: { \"scene\": { \"<id di scena>\": { \"ancoraggio\": \"hub:tonino\", \"ripetibile\": false } } }.",
+  "scene": {}
+}

@@ -1,0 +1,21 @@
+{
+  "id": "pd-i-01",
+  "tipo": "ingresso",
+  "dim": "1x1",
+  "piani": [1],
+  "difficolta": 1,
+  "tag": ["facile", "soglia_del_quartiere", "centro_libero"],
+  "peso_base": 1.0,
+  "griglia": [
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    "............."
+  ],
+  "spawn": [],
+  "tavolozza": [],
+  "contenuti": [{ "tipo": "arrivo", "c": 6, "r": 3 }]
+}

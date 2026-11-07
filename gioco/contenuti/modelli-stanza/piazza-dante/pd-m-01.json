@@ -1,0 +1,22 @@
+{
+  "id": "pd-m-01",
+  "tipo": "ricordo",
+  "dim": "1x1",
+  "piani": [1],
+  "difficolta": 1,
+  "tag": ["facile", "raccoglimento", "targa"],
+  "peso_base": 1.0,
+  "scena_id": "piazza-dante.targa-commemorativa",
+  "griglia": [
+    ".............",
+    ".............",
+    "....P.....P..",
+    ".............",
+    "..P.....P....",
+    ".............",
+    "............."
+  ],
+  "spawn": [],
+  "tavolozza": [],
+  "contenuti": [{ "tipo": "reperto", "c": 6, "r": 3 }]
+}

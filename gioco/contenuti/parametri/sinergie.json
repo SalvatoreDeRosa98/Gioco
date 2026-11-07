@@ -1,0 +1,18 @@
+{
+  "_doc": "Sinergie dichiarative (GDD doni-modificatori.md regola 6, ADR-0002). Una sinergia è attiva se il giocatore tiene due doni DISTINTI, uno con tag_a e uno con tag_b, e vale una volta sola. 'effetto' combina: 'modificatori' (entrano nella lista comune con gli stessi cap e clamp), 'param_extra' (si sommano ai parametri di ogni effetto di quel tipo posseduto), 'ganci_extra' (iscrizioni aggiuntive). Lo stato attivo non si salva: si rivaluta a ogni cambio della lista dei doni.",
+  "sinergie": [
+    { "id": "S1", "nome": "Scintille a catena", "tag_a": "scintilla", "tag_b": "catena",
+      "effetto": { "param_extra": { "scintilla": { "rimbalzi": 2 } } } },
+    { "id": "S2", "nome": "Ferro rovente", "tag_a": "fuoco", "tag_b": "ferro",
+      "effetto": { "modificatori": [ { "statistica": "molt_f3", "operazione": "somma", "valore": 0.2 } ] } },
+    { "id": "S3", "nome": "Trama fitta", "tag_a": "filo", "tag_b": "seta",
+      "effetto": { "modificatori": [ { "statistica": "t_invuln", "operazione": "somma", "valore": 100 } ] } },
+    { "id": "S4", "nome": "Scintille calde", "tag_a": "scintilla", "tag_b": "fuoco",
+      "effetto": { "param_extra": { "scintilla": { "danno": 1 } } } },
+    { "id": "S5", "nome": "Passo di seta", "tag_a": "scatto", "tag_b": "seta",
+      "effetto": { "modificatori": [ { "statistica": "d_scatto", "operazione": "moltiplica", "valore": 1.1 } ] } },
+    { "id": "S6", "nome": "Parata scintillante", "tag_a": "parata", "tag_b": "scintilla",
+      "effetto": { "ganci_extra": [ { "evento": "su_parata", "probabilita": 1.0, "ricarica_ms": 0, "max_per_stanza": null,
+                                      "effetto": "scintilla", "parametri": { "n": 1, "danno": 1 } } ] } }
+  ]
+}

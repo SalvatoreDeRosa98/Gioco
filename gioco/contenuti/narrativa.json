@@ -1,0 +1,79 @@
+{
+  "_doc": "Regole dello stato narrativo che trama/storia.json non contiene in forma macchina (GDD stato-narrativo.md regole 2, 3, 9; ADR-0004). Il motore non conosce nomi di flag o di scene: li legge da qui e da storia.json. 'derivati': per ogni flag derivato, la lista di condizioni in OR (stessa sintassi di 'quando') che lo rende vero; se nessuna è vera vale falso. 'booleani': le due parole con cui le condizioni confrontano derivati e flag booleani (stesse di storia.json › flag › prove.valori). 'finale': il flag la cui decisione imposta finale_visto e mondo; 'mondo' mappa il valore del finale nello stato del mondo dopo (bibbia §XVII: colonna 'uccisa' → A, 'risparmiata' → B; etichette del GDD, da confermare con l'autore). 'piani': il capitolo che non è un piano ma la sequenza dopo il finale, e i nomi dei campi di avanzamento che contano la notte e il piano massimo. 'avanzamento': i campi del profilo con il loro tipo per le condizioni (numero con confronti >=, <, ...; insieme con appartenenza; booleano; scelta con valori). 'tipi_obbligatori': i tipi di scena che la bibbia §XV non permette di saltare (regole 6-7: bloccano le scene con ordine maggiore dello stesso capitolo finché non sono viste).",
+  "derivati": {
+    "lettera_agnese": [
+      {
+        "tonino_ricordo": "restituito"
+      }
+    ],
+    "lettera_mariella": [
+      {
+        "taddeo": "perdonato"
+      }
+    ],
+    "prove": [
+      {
+        "registro": "conservato"
+      },
+      {
+        "taddeo": "perdonato"
+      }
+    ]
+  },
+  "booleani": {
+    "vero": "vera",
+    "falso": "falsa"
+  },
+  "finale": {
+    "flag": "violante"
+  },
+  "mondo": {
+    "uccisa": "A",
+    "risparmiata": "B"
+  },
+  "piani": {
+    "capitolo_dopo_finale": "epilogo",
+    "campo_notte": "notte",
+    "campo_piano_max": "piano_max"
+  },
+  "avanzamento": {
+    "notte": {
+      "tipo": "numero",
+      "iniziale": 1,
+      "min": 1
+    },
+    "piano_max": {
+      "tipo": "numero",
+      "iniziale": 0,
+      "min": 0
+    },
+    "boss_battuti": {
+      "tipo": "insieme",
+      "valori_da": "boss"
+    },
+    "scene_viste": {
+      "tipo": "insieme",
+      "valori_da": "scene"
+    },
+    "fucina_aperta": {
+      "tipo": "booleano",
+      "iniziale": false
+    },
+    "identita": {
+      "tipo": "booleano",
+      "iniziale": false
+    },
+    "finale_visto": {
+      "tipo": "scelta",
+      "valori_da": "finale"
+    },
+    "mondo": {
+      "tipo": "scelta",
+      "valori_da": "mondo"
+    }
+  },
+  "tipi_obbligatori": [
+    "obbligatoria",
+    "boss"
+  ]
+}

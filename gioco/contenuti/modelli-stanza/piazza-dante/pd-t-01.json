@@ -1,0 +1,21 @@
+{
+  "id": "pd-t-01",
+  "tipo": "tesoro",
+  "dim": "1x1",
+  "piani": [1],
+  "difficolta": 1,
+  "tag": ["facile", "bottega", "colonne"],
+  "peso_base": 1.0,
+  "griglia": [
+    ".............",
+    "...C.....C...",
+    ".............",
+    ".............",
+    ".............",
+    "...C.....C...",
+    "............."
+  ],
+  "spawn": [],
+  "tavolozza": [],
+  "contenuti": [{ "tipo": "piedistallo", "c": 6, "r": 3 }]
+}

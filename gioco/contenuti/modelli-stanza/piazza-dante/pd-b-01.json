@@ -1,0 +1,21 @@
+{
+  "id": "pd-b-01",
+  "tipo": "boss",
+  "dim": "1x1",
+  "piani": [1],
+  "difficolta": 3,
+  "tag": ["dura", "arena", "quattro_canti"],
+  "peso_base": 1.0,
+  "griglia": [
+    ".............",
+    ".C.........C.",
+    ".............",
+    ".............",
+    ".............",
+    ".C.........C.",
+    "............."
+  ],
+  "spawn": [],
+  "tavolozza": [],
+  "contenuti": [{ "tipo": "boss", "c": 6, "r": 3 }, { "tipo": "uscita", "c": 6, "r": 3 }]
+}

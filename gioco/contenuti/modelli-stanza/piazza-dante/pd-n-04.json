@@ -1,0 +1,29 @@
+{
+  "id": "pd-n-04",
+  "tipo": "normale",
+  "dim": "1x1",
+  "piani": [1],
+  "difficolta": 2,
+  "tag": ["media", "bracieri", "centro_libero"],
+  "peso_base": 1.0,
+  "griglia": [
+    ".............",
+    ".............",
+    "...F.........",
+    ".............",
+    ".........F...",
+    ".............",
+    "............."
+  ],
+  "spawn": [
+    { "c": 1, "r": 1, "tipo": "T" }, { "c": 11, "r": 1, "tipo": "T" },
+    { "c": 1, "r": 5, "tipo": "T" }, { "c": 11, "r": 5, "tipo": "T" },
+    { "c": 5, "r": 1, "tipo": "T" }, { "c": 7, "r": 5, "tipo": "T" },
+    { "c": 6, "r": 3, "tipo": "V" }, { "c": 9, "r": 1, "tipo": "T" },
+    { "c": 3, "r": 5, "tipo": "T" }, { "c": 8, "r": 2, "tipo": "T" }
+  ],
+  "tavolozza": [
+    { "tipo": "gatto", "peso": 1.0, "min": 1, "max": 6 },
+    { "tipo": "guardia", "peso": 0.3, "min": 0, "max": 1 }
+  ]
+}

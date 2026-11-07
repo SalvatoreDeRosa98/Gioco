@@ -1,0 +1,30 @@
+{
+  "id": "pd-n-05",
+  "tipo": "normale",
+  "dim": "1x1",
+  "piani": [1],
+  "difficolta": 3,
+  "tag": ["dura", "colonne", "bracieri"],
+  "peso_base": 1.0,
+  "griglia": [
+    ".............",
+    "...C.....C...",
+    ".............",
+    "....F.C.F....",
+    ".............",
+    "...C.....C...",
+    "............."
+  ],
+  "spawn": [
+    { "c": 1, "r": 1, "tipo": "T" }, { "c": 11, "r": 1, "tipo": "T" },
+    { "c": 1, "r": 5, "tipo": "T" }, { "c": 11, "r": 5, "tipo": "T" },
+    { "c": 5, "r": 1, "tipo": "T" }, { "c": 7, "r": 1, "tipo": "T" },
+    { "c": 5, "r": 5, "tipo": "T" }, { "c": 7, "r": 5, "tipo": "T" },
+    { "c": 2, "r": 3, "tipo": "T" }, { "c": 10, "r": 3, "tipo": "T" }
+  ],
+  "tavolozza": [
+    { "tipo": "gatto", "peso": 1.0, "min": 1, "max": 6 },
+    { "tipo": "vespa", "peso": 0.5, "min": 0, "max": 2 },
+    { "tipo": "statua", "peso": 0.2, "min": 0, "max": 1 }
+  ]
+}

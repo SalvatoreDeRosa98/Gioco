@@ -1,0 +1,21 @@
+{
+  "id": "pd-q-01",
+  "tipo": "banchetto",
+  "dim": "1x1",
+  "piani": [1],
+  "difficolta": 1,
+  "tag": ["facile", "banchetto_di_tonino"],
+  "peso_base": 1.0,
+  "griglia": [
+    ".............",
+    "...BBB.......",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    "............."
+  ],
+  "spawn": [],
+  "tavolozza": [],
+  "contenuti": [{ "tipo": "tonino", "c": 4, "r": 0 }, { "tipo": "lanterna", "c": 2, "r": 1 }]
+}

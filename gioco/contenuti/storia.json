@@ -1,0 +1,3651 @@
+{
+  "_doc": "Versione macchina della storia di Ferruccio, derivata da trama/ferruccio-bibbia.md e inizio-memoria-e-doni.md (la bibbia resta la fonte di verità; mappa-scene.md è la vista leggibile). Le scene sono ordinate per capitolo e 'ordine' (passi di 10; scene con lo stesso ordine ma 'quando' diversi sono rami alternativi). 'quando' è un AND di flag=valore ('*' = decisa qualunque sia, '' = non ancora decisa; 'quando_or' è una lista di alternative); le battute hanno 'se' per varianti dentro la stessa scena, sono verbatim dalla bibbia (solo le virgolette « » rimosse) e Ferruccio, muto, compare solo come 'didascalia'. Le 'scelta' impostano i sei flag; lettera_agnese, lettera_mariella e prove sono derivati.",
+  "versione": 1,
+  "flag": {
+    "tonino_ricordo": {
+      "valori": [
+        "restituito",
+        "negato"
+      ],
+      "decisa_in": "piazza-dante",
+      "descrizione": "XIX tonino_memory. Dopo la sconfitta del Gatto dei Quattro Canti Ferruccio raccoglie un'anima con il ricordo di Rosa, moglie di Tonino. Restituirlo gli ridà il lutto (e la lettera di Agnese); negarlo lo lascia sorridente davanti a una sedia vuota. Influenza: dialoghi, lettera, epilogo di Tonino. Deriva lettera_agnese."
+    },
+    "taddeo": {
+      "valori": [
+        "perdonato",
+        "accusato"
+      ],
+      "decisa_in": "corso-trieste",
+      "descrizione": "XIX taddeo_trust. Reazione di Ferruccio al tradimento di Taddeo dopo la Regina dei Debiti. Perdonato: Taddeo confessa, lascia messaggi e testimonianze, può parlare ad Agnese, dà accesso alla lettera di Mariella. Accusato: fugge, cerca i documenti che lo incriminano, diventa antagonista secondario senza combattimento. Influenza: testimonianze, Mariella, rapporto con Agnese (percorsi A-D). Deriva lettera_mariella e concorre a prove."
+    },
+    "registro": {
+      "valori": [
+        "conservato",
+        "bruciato"
+      ],
+      "decisa_in": "villa-comunale",
+      "descrizione": "XIX father_registry. Il documento originale con le cancellature che dimostrano la falsificazione del rapporto sul crollo del 1839. Conservarlo = accettare che la verità sul padre vada mostrata agli altri, anche se richiederà anni. Bruciarlo = rifiutare che il nome di Gaetano resti legato all'incidente, distruggendo però la prova della sua innocenza. Influenza: prove disponibili e verità sul padre. Concorre a prove."
+    },
+    "agnese": {
+      "valori": [
+        "risvegliata",
+        "sognante"
+      ],
+      "decisa_in": "san-leucio",
+      "descrizione": "XIX agnese_memory (Risvegliata / Sopita). Ferruccio restituisce ad Agnese i ricordi di lui oppure la lascia nella serenità del Velo. Decide il percorso A-D insieme a taddeo, il riconoscimento nei finali e, per inizio-memoria-e-doni.md, se la sciarpa compare sul rig e lo scatto (C / RB-R1) viene abilitato; 'sognante' lascia la sciarpa alla bottega e lo scatto bloccato."
+    },
+    "gregorio": {
+      "valori": [
+        "dialogo",
+        "attacco"
+      ],
+      "decisa_in": "reggia",
+      "descrizione": "XIX gregorio_mercy. Prima dello scontro con il Custode: tentare di farlo ragionare mostrando le prove, oppure attaccarlo subito. 'dialogo' è disponibile solo se prove=vera (registro conservato OPPURE taddeo perdonato); altrimenti il flag è fissato su 'attacco' e la rivelazione della complicità avviene dopo lo scontro (XIII). Non cambia i due finali: cambia la confessione anticipata e le ultime parole di Gregorio."
+    },
+    "violante": {
+      "valori": [
+        "uccisa",
+        "risparmiata"
+      ],
+      "decisa_in": "reggia",
+      "descrizione": "XIX violante_fate. Scelta finale dopo l'ultima conversazione nel Cortile d'Onore (schermata «Quanto vale la felicità?», XVI Scena 2). Uccidere Violante spezza il Velo e libera Caserta (cittadini ostili); risparmiarla lascia che ricucia il Velo (città controllata, felicità artificiale). Determina il finale, la palette, l'ostilità degli NPC e lo stato del mondo."
+    },
+    "lettera_agnese": {
+      "valori": [
+        "vera",
+        "falsa"
+      ],
+      "decisa_in": "derivato",
+      "descrizione": "Flag derivato, non una scelta: vera se tonino_ricordo=restituito. Tonino ricorda di aver custodito una vecchia lettera d'amore scritta da Agnese prima della maledizione (XV: scena condizionale 'Ricordo di Rosa, lettera di Agnese'). Non cambia il percorso obbligatorio: rende più personali le scene del Belvedere di San Leucio."
+    },
+    "lettera_mariella": {
+      "valori": [
+        "vera",
+        "falsa"
+      ],
+      "decisa_in": "derivato",
+      "descrizione": "Flag derivato, non una scelta: vera se taddeo=perdonato. Ferruccio può leggere la lettera che Mariella scrisse al fratello prima dell'incantesimo (Non devi aggiustarmi)."
+    },
+    "prove": {
+      "valori": [
+        "vera",
+        "falsa"
+      ],
+      "decisa_in": "derivato",
+      "descrizione": "Flag derivato, non una scelta: vera se registro=conservato oppure taddeo=perdonato. Abilita l'opzione 'dialogo' del flag gregorio (XIII, XV): Ferruccio mostra il registro o il messaggio di Taddeo."
+    }
+  },
+  "personaggi": {
+    "ferruccio": {
+      "nome": "Ferruccio",
+      "ruolo": "Protagonista muto. Fabbro, figlio di Gaetano; nel 1845 scopre il progetto di Violante, viene tradito da Taddeo, perde memoria, voce e aspetto umano, imprigionato in un costume da Pulcinella. Conserva la volontà di opporsi. Si risveglia in Piazza Dante credendo colpevole Gregorio. Arco centrale: identità e libertà (II); vendetta contro giustizia (III, Atti I-IV).",
+      "voce": "Muto. Nessuna battuta: si esprime solo con gesti resi in didascalia (colpisce la targa con la spada, indica la maschera, rinfodera o punta la spada, abbassa lo sguardo, piega la sciarpa, fa un inchino, si tocca il polso, stringe la sciarpa).",
+      "oggetto_simbolo": "La spada forgiata con gli ultimi strumenti del padre (inizialmente la vendetta); la maschera di Pulcinella; la sciarpa rossa di Agnese (ottenuta solo se agnese=risvegliata, da inizio-memoria-e-doni.md).",
+      "canon": "Established"
+    },
+    "tonino": {
+      "nome": "Tonino",
+      "ruolo": "Venditore di mozzarelle in Piazza Dante; rappresenta le persone comuni della città. Ha dimenticato la moglie Rosa. Arco: il diritto di soffrire / il diritto al lutto (II).",
+      "voce": "Dialetto campano caldo e ironico (uagliò/guagliò, Maronna mia, 'sta, ce sta, nun fa niente). Battute brevi, scherzose, auto-ironiche; ride da solo. Dopo il ricordo restituito mantiene l'ironia ma le battute diventano più consapevoli. Sotto il Velo ripete frasi di felicità artificiale (Sempre una bella giornata! Pure quando piove!).",
+      "oggetto_simbolo": "Banchetto con lanterna, mozzarella offerta, sedia vuota accanto al banchetto, medaglione di Rosa.",
+      "canon": "Established"
+    },
+    "rosa": {
+      "nome": "Rosa",
+      "ruolo": "Moglie defunta di Tonino. Non compare: esiste solo come anima-ricordo raccolta dopo il Gatto dei Quattro Canti e come vecchio medaglione.",
+      "voce": "Nessuna battuta nella bibbia.",
+      "oggetto_simbolo": "Medaglione.",
+      "canon": "Established"
+    },
+    "taddeo": {
+      "nome": "Taddeo",
+      "ruolo": "Amico d'infanzia di Ferruccio, guardia assegnata agli edifici reali; lo ha consegnato a Violante per salvare la sorella Mariella. Fragilita morale degli uomini comuni: non crudele, ha avuto paura. Arco: tradimento e redenzione (II).",
+      "voce": "Italiano standard, nessun dialetto. Registro supplichevole e spezzato nella confessione (frasi brevi, puntini di sospensione, invocazione religiosa: Che Dio mi perdoni). Difensivo e urlato quando minacciato. Nel finale ostile parla da guardia che chiede una resa volontaria, mai con odio.",
+      "oggetto_simbolo": "La spada di Ferruccio, forgiata insieme da ragazzi (riconosce la spada prima del volto). Da bambino voleva sempre essere il comandante.",
+      "canon": "Established"
+    },
+    "mariella": {
+      "nome": "Mariella",
+      "ruolo": "Sorella di Taddeo, sopravvissuta al crollo del 1839 con paura degli spazi chiusi e dei rumori improvvisi; il Velo le ha tolto la paura insieme a curiosita, desiderio di viaggiare e personalita. Non ha necessariamente un modello 3D: raccontata tramite Taddeo, una finestra illuminata, una lettera e una sagoma nel finale. Arco: la felicità come prigione (II). In inizio-memoria-e-doni.md compare in Piazza Dante e dà l'indizio del ferro che risuona (quella sola apparizione: Provisional).",
+      "voce": "Parla solo per iscritto, nella lettera: frasi brevissime, tono affettuoso e fermo, seconda persona verso il fratello. Frase centrale dell'arco: Non devi aggiustarmi. Nel presente non parla: sorride alla finestra.",
+      "oggetto_simbolo": "La lettera a Taddeo scritta prima dell'incantesimo; la finestra illuminata dove siede sorridendo.",
+      "canon": "Established"
+    },
+    "agnese": {
+      "nome": "Agnese",
+      "ruolo": "Giovane tessitrice di San Leucio, amata da Ferruccio prima della maledizione. Ha lavorato inconsapevolmente al tessuto del Velo; Violante le ha sottratto ogni ricordo di lui ma non il sentimento. Sottotrama sentimentale principale. Arco: amore e memoria (II). Spiega anche il fazzoletto con il giglio incompleto (terzo indizio di Bianca) e può chiedere a Ferruccio di rinunciare alla vendetta (Atto III).",
+      "voce": "Ironica e vivace, battute brevi e pungenti. Prima della maledizione dà del voi con cortesia beffarda (Siete venuto ad aggiustarlo o a finirlo?) e passa al tu con l'intimità. Sotto il Velo è gentile, sorridente, parla di sensazioni senza storia (Non so perché, ma credo che...). Risvegliata è diretta e malinconica, parla di attesa e di paura. Tic fisico: tessere sempre la stessa sciarpa rossa; dopo il Velo ripristinato si tocca il polso come faceva Ferruccio.",
+      "oggetto_simbolo": "La sciarpa rossa che continua a tessere senza sapere per chi (conservata sul telaio)",
+      "canon": "Established"
+    },
+    "gaetano": {
+      "nome": "Gaetano",
+      "ruolo": "Padre di Ferruccio, fabbro. Morto nel crollo del cantiere del 1839 mentre sorreggeva una trave per far uscire gli operai. Il rapporto firmato da Gregorio lo indica come responsabile: il suo nome è assente dalla targa e compare come colpevole nei registri pubblici. Arco: la vendetta del figlio (II). In inizio-memoria-e-doni.md è un NPC parlabile nella Fucina del Ricordo che restituisce nome e volto a Ferruccio (conflitto con VI, vedi note).",
+      "voce": "Non appare come personaggio: solo oggetti (punzone G. F., strumenti con cui è stata forgiata la spada), documenti e un'unica memoria liberata. Una sola battuta, un ordine gridato da capomastro, diretto e protettivo. Non deve diventare un fantasma che accompagna e spiega.",
+      "oggetto_simbolo": "Il punzone da fabbro con le lettere G. F.; il registro falsificato; la bottega / Fucina del Ricordo.",
+      "canon": "Established"
+    },
+    "gregorio": {
+      "nome": "Gregorio Valente, il Custode",
+      "ruolo": "Falso antagonista principale. Capitano delle guardie della Reggia, padre di Bianca, marito di Violante. Firmò il rapporto falso sul crollo del 1839 e tacque troppo a lungo sugli esperimenti della moglie; quando tentò di opporsi fu legato al giglio d'oro e imprigionato nella propria armatura. Cosciente, ma ogni suo movimento è controllato dal Velo. Arco: il dovere e la colpa (II).",
+      "voce": "Militare, italiano formale senza dialetto. Frasi brevi e spezzate, spesso lasciate in sospeso (puntini). Parla di dovere, ordini, padri e figli; si rivolge a Ferruccio come a un figlio che chiede conto. Mai supplica: anche l'avvertimento (Va' via) è un ordine. Nelle ultime parole affiora la lucidità e la colpa.",
+      "oggetto_simbolo": "Il giglio d'oro sul petto dell'armatura (lampeggia a ogni colpo, si spezza alla sconfitta) e il mantello rosso, vuoto, rimasto sull'armatura.",
+      "canon": "Established"
+    },
+    "violante": {
+      "nome": "Violante Valente",
+      "ruolo": "Vera antagonista e creatrice del Velo della Concordia. Nobildonna un tempo amatissima a Caserta (distribuzioni di viveri, famiglie degli operai, istruzione dei bambini). Dopo la morte della figlia Bianca trasforma un desiderio generoso in ossessione: alleviare, cancellare, prevenire il dolore, infine eliminare la libertà. È l'ultimo nodo vivente dell'incantesimo. Arco: amore trasformato in tirannia (II).",
+      "voce": "Aristocratica, calma, materna e assoluta. Non alza la voce, non si giustifica: constata. Usa coppie simmetriche (Se mi uccidi... / Se mi risparmi...) e domande retoriche rivolte direttamente a Ferruccio per nome. Parla del dolore come di una malattia da estirpare. Nessun dialetto, lessico elevato ma semplice. Nella scena della scatola musicale parla di Bianca al passato, senza enfasi.",
+      "oggetto_simbolo": "Il fazzoletto di seta di Bianca con il giglio ricamato (nucleo emotivo del Velo); i fili dorati che partono dalle sue dita verso la città. La scatola musicale di Bianca.",
+      "canon": "Established"
+    },
+    "bianca": {
+      "nome": "Bianca Valente",
+      "ruolo": "Figlia undicenne di Gregorio e Violante, morta nel crollo del 1839. Non torna in vita e non è un boss. Presente attraverso tre oggetti (fazzoletto con il giglio, disegno della Reggia incompleta, scatola musicale), una memoria nel marmo e la filastrocca. Arco: la figlia che non può tornare (II).",
+      "voce": "Bambina che ride e sbaglia apposta. Un'unica battuta, giocosa e imperativa. Nel finale del Velo una voce ripete un verso della filastrocca: non si deve stabilire se sia davvero la sua.",
+      "oggetto_simbolo": "Il fazzoletto di seta con il giglio ricamato.",
+      "canon": "Established"
+    },
+    "guardia": {
+      "nome": "Guardia della Reggia",
+      "ruolo": "Guardie della Reggia e della città. Prima e seconda guardia entrano nel Cortile d'Onore dopo la morte di Violante e danno il via alla caccia a Ferruccio; ostili nel finale della liberazione (XVI, XVII). In gioco sono attori distinti mappati sullo stesso id.",
+      "voce": "Grida brevi, esclamative, in italiano popolare («L'ha ammazzata!»). Chiama Violante «La Signora». Nessuna magia: agisce per fedeltà e panico.",
+      "oggetto_simbolo": "Alabarda.",
+      "canon": "Established"
+    },
+    "cittadino": {
+      "nome": "Cittadini di Caserta",
+      "ruolo": "Abitanti di Caserta. Folla che accorre nel cortile e insegue Ferruccio nella fuga: tutti ostili se Violante è uccisa, pacifici e sorridenti con frasi ripetitive se risparmiata (XVI, XVII, §10). In gioco sono attori distinti mappati sullo stesso id.",
+      "voce": "Accuse gridate, prima persona plurale («ai nostri figli»), rabbia e paura. Non controllati dal Velo: la loro ostilità è frutto delle loro scelte. Sotto il Velo: frasi ripetitive di felicità artificiale.",
+      "oggetto_simbolo": "Oggetti scagliati.",
+      "canon": "Established"
+    },
+    "assunta": {
+      "nome": "Assunta",
+      "ruolo": "NPC di Piazza Dante citato solo in inizio-memoria-e-doni.md: insieme a Tonino introduce la bottega di Gaetano. Assente dalla bibbia, nessuna battuta scritta.",
+      "voce": "Non definita.",
+      "oggetto_simbolo": "",
+      "canon": "Provisional"
+    }
+  },
+  "capitoli": [
+    {
+      "id": "piazza-dante",
+      "titolo": "Piazza Dante — Risveglio di Ferruccio",
+      "luogo": "Piazza Dante, Caserta",
+      "atmosfera": "Notte di festa congelata sotto una luna immobile dopo il completamento della Reggia (1845); lanterne, banchetti, finestre illuminate, città addormentata sotto il Velo. Introduzione sicura: movimento, salto, doppio salto, dialogo; poi gatto, guardia e vespa in incontri separati. Rabbia muta davanti alla targa.",
+      "ordine": 1
+    },
+    {
+      "id": "corso-trieste",
+      "titolo": "Corso Trieste — Rivelazione del tradimento",
+      "luogo": "Corso Trieste: vetrine, portoni, una finestra illuminata (Mariella), la porta della bottega di Gaetano (Fucina del Ricordo)",
+      "atmosfera": "Via commerciale; ambizioni e promesse mai mantenute dei lavori della Reggia (Regina dei Debiti); le vespe trasportano desideri rubati verso il palazzo. Dopo lo scontro, il silenzio della strada è rotto da un amico che riconosce una spada; dietro una porta il ferro che risuona.",
+      "ordine": 2
+    },
+    {
+      "id": "villa-comunale",
+      "titolo": "Villa Comunale — Verità sulla morte di Gaetano",
+      "luogo": "Villa Comunale di Caserta: fontana, statue, registri",
+      "atmosfera": "Giardino notturno sotto la luna immobile; marmo che custodisce i ricordi degli operai morti; memoria storica e mistero familiare. La melodia della scatola musicale si sente debolmente.",
+      "ordine": 3
+    },
+    {
+      "id": "san-leucio",
+      "titolo": "San Leucio — Incontro con Agnese e scoperta del Velo",
+      "luogo": "Manifattura della seta di San Leucio: telai, Belvedere",
+      "atmosfera": "Telai che si muovono da soli, fili che assorbono emozioni, il giglio sulle stoffe. Qui è nato il Velo. Romance malinconico: la stessa sciarpa rossa che non finisce mai.",
+      "ordine": 4
+    },
+    {
+      "id": "reggia",
+      "titolo": "Reggia di Caserta — Il Custode e Violante",
+      "luogo": "Reggia di Caserta, Cortile d'Onore, balcone",
+      "atmosfera": "Cortile d'Onore · Notte · Poche luci calde. Torce che si spengono una dopo l'altra mentre Violante scende la scala laterale; fili dorati dal balcone alle strade.",
+      "ordine": 5
+    },
+    {
+      "id": "epilogo",
+      "titolo": "Epilogo — Lo stato del mondo dopo i finali",
+      "luogo": "Cortile d'Onore, poi una porzione di Piazza Dante riutilizzata (XVII, §10); San Leucio per Agnese (IV)",
+      "atmosfera": "Due stati del mondo opposti. Violante uccisa: cielo azzurro intenso, verdi saturi, colori caldi, tutti gli NPC ostili — il mondo più bello e luminoso del gioco. Violante risparmiata: grigio-azzurro, foschia, luce fredda, NPC pacifici che ripetono frasi artificialmente felici, fili d'oro sulle case.",
+      "ordine": 6
+    }
+  ],
+  "scene": [
+    {
+      "id": "piazza-dante.risveglio",
+      "capitolo": "piazza-dante",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 10,
+      "sommario": "Violante ha attivato il Velo durante i festeggiamenti; Caserta si addormenta sotto una luna immobile. Ferruccio si risveglia in Piazza Dante con il volto nero, senza sciarpa e senza scatto; non sa perché è vivo, sa solo di aver perso il padre, la voce e la donna che amava, e crede che il responsabile sia Gregorio, il Custode della Reggia.",
+      "battute": [],
+      "oggetti": [
+        "maschera-pulcinella"
+      ],
+      "fonte": "I. La notte dell'inizio; inizio-memoria-e-doni.md (volto nero, senza sciarpa e senza scatto)"
+    },
+    {
+      "id": "piazza-dante.tutorial",
+      "capitolo": "piazza-dante",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 20,
+      "sommario": "Introduzione sicura: movimento, salto, doppio salto, discesa dalle mensole, dialogo; poi gatto, guardia e vespa in incontri separati. Mappa e pausa completano l'apprendimento; i comandi degli strumenti successivi vengono anticipati senza concederli. Nella Piazza non ci sono statua interattiva, incudine di salvataggio, basamento centrale né piattaforma invisibile.",
+      "battute": [],
+      "oggetti": [],
+      "fonte": "inizio-memoria-e-doni.md"
+    },
+    {
+      "id": "piazza-dante.targa-commemorativa",
+      "capitolo": "piazza-dante",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 30,
+      "sommario": "Ferruccio trova la targa commemorativa dedicata agli operai morti nel 1839. Legge l'iscrizione: il nome di Gaetano è assente. Colpisce la targa con la spada forgiata con gli ultimi strumenti del padre. Nessuna parola, soltanto un gesto di rabbia.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "In memoria degli uomini caduti nell'adempimento del loro dovere."
+        }
+      ],
+      "oggetti": [
+        "targa",
+        "spada"
+      ],
+      "fonte": "III. Arco di Ferruccio / Atto I — L'uomo che cerca un colpevole; VI. Arco di Gaetano / La falsa versione ufficiale"
+    },
+    {
+      "id": "piazza-dante.tonino-primo-incontro",
+      "capitolo": "piazza-dante",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 40,
+      "sommario": "Scena indispensabile del capitolo (XV). Ferruccio, appena risvegliato, trova Tonino dietro un banchetto illuminato da una lanterna. Tonino gli chiede della faccia; Ferruccio indica la propria maschera (volto nero, senza sciarpa). Tonino gli offre una mozzarella.",
+      "battute": [
+        {
+          "chi": "tonino",
+          "testo": "Uagliò, ma che è 'sta faccia?"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio indica la propria maschera."
+        },
+        {
+          "chi": "tonino",
+          "testo": "Ah, è proprio la tua. E che ne sapevo io?"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Gli offre una mozzarella."
+        },
+        {
+          "chi": "tonino",
+          "testo": "Mangia. Magari sotto 'sta maschera ce sta ancora qualcuno."
+        }
+      ],
+      "oggetti": [
+        "mozzarella-di-tonino"
+      ],
+      "fonte": "X. Arco di Tonino / Primo incontro; XV. Le scene obbligatorie (Piazza Dante: Risveglio e incontro con Tonino)"
+    },
+    {
+      "id": "piazza-dante.bottega-di-gaetano",
+      "capitolo": "piazza-dante",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 50,
+      "sommario": "Tonino e Assunta introducono la bottega di Gaetano; Mariella aggiunge l'indizio del ferro che risuona dietro una porta su Corso Trieste (la porta della Fucina del Ricordo). Ferruccio ascolta, si porta la mano alla maschera e indica la direzione del Corso. Nessuna battuta scritta: la decisione utente del 10 ottobre 2026 non fornisce testo, va scritta ex novo e approvata.",
+      "battute": [],
+      "oggetti": [
+        "indizio-ferro-che-risuona"
+      ],
+      "fonte": "inizio-memoria-e-doni.md (decisioni dell'utente, 10 ottobre 2026: Tonino e Assunta introducono la bottega; Mariella aggiunge l'indizio del ferro)"
+    },
+    {
+      "id": "piazza-dante.filastrocca",
+      "capitolo": "piazza-dante",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 60,
+      "sommario": "Vicino a una finestra Ferruccio trova una vecchia filastrocca dedicata ai bambini. Si ferma a leggerla; non è ancora chiaro cosa significhi. Primo indizio dell'arco di Bianca.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Quando il giglio si addormenta, la luna ascolta e non si lamenta."
+        }
+      ],
+      "oggetti": [
+        "filastrocca"
+      ],
+      "fonte": "XI. Arco di Bianca / Primo indizio — Piazza Dante"
+    },
+    {
+      "id": "piazza-dante.gatto-dei-quattro-canti",
+      "capitolo": "piazza-dante",
+      "tipo": "boss",
+      "quando": {},
+      "ordine": 70,
+      "sommario": "Boss formato dai ricordi domestici sottratti alle famiglie. Sconfitto, non lascia cadavere: si dissolve in anime colorate che salgono lentamente. Ferruccio comprende che le creature d'ombra custodiscono qualcosa di umano; raccoglie l'anima che contiene il ricordo di Rosa.",
+      "battute": [],
+      "oggetti": [
+        "anima-ricordo-rosa"
+      ],
+      "fonte": "XII. Gli archi dei boss intermedi; XV (flowchart: Scelta: memoria di Tonino)"
+    },
+    {
+      "id": "piazza-dante.scelta-tonino",
+      "capitolo": "piazza-dante",
+      "tipo": "scelta",
+      "quando": {},
+      "ordine": 80,
+      "sommario": "Dopo la sconfitta del Gatto dei Quattro Canti, Ferruccio raccoglie un'anima colorata che contiene il ricordo della moglie di Tonino, Rosa. Torna al banchetto: può restituire il ricordo a Tonino oppure lasciarlo dimenticato.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Dopo la sconfitta del Gatto dei Quattro Canti, Ferruccio raccoglie un'anima contenente il ricordo della moglie di Tonino, Rosa."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Può restituirglielo oppure lasciarlo dimenticato."
+        }
+      ],
+      "scelta": {
+        "flag": "tonino_ricordo",
+        "opzioni": [
+          {
+            "valore": "restituito",
+            "etichetta": "Restituisci il ricordo di Rosa",
+            "cosa_sacrifica": "Tonino perde la serenità del Velo: torna a piangere la moglie. Il giocatore sceglie il lutto di Tonino al posto della sua pace (principio 1: tra il ricordo e la serenità di Tonino). In cambio Tonino ricorda la lettera di Agnese."
+          },
+          {
+            "valore": "negato",
+            "etichetta": "Lascialo dimenticare",
+            "cosa_sacrifica": "Tonino resta sorridente ma continua a fissare una sedia vuota senza sapere perché. Ferruccio non ottiene la lettera di Agnese (il rapporto con lei andrà ricostruito solo tramite gli altri eventi). Scegliere al posto suo è il gesto che Taddeo, più avanti, paragonerà a quello di Violante."
+          }
+        ]
+      },
+      "oggetti": [
+        "anima-ricordo-rosa"
+      ],
+      "fonte": "X. Arco di Tonino / Primo incontro (dopo il Gatto dei Quattro Canti); XIV principi 1 e 2; XV. Struttura narrativa lineare (Piazza Dante — Scelta: memoria di Tonino); XIX tonino_memory"
+    },
+    {
+      "id": "piazza-dante.ricordo-negato",
+      "capitolo": "piazza-dante",
+      "tipo": "condizionale",
+      "quando": {
+        "tonino_ricordo": "negato"
+      },
+      "ordine": 90,
+      "sommario": "Ferruccio tiene per sé l'anima. Tonino continua a sorridere, scherza sulla moglie che non ricorda, ride da solo e poi torna a fissare una sedia vuota accanto al banchetto. Ferruccio non ottiene la lettera di Agnese.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Tonino continua a sorridere."
+        },
+        {
+          "chi": "tonino",
+          "testo": "Moglie? Io? E chi se la ricorda!"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ride da solo, poi torna a fissare una sedia vuota accanto al banchetto."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "X. Arco di Tonino / Se non restituisce il ricordo; XV. Le scene obbligatorie; XIX tonino_memory=Negato"
+    },
+    {
+      "id": "piazza-dante.ricordo-restituito",
+      "capitolo": "piazza-dante",
+      "tipo": "condizionale",
+      "quando": {
+        "tonino_ricordo": "restituito"
+      },
+      "ordine": 90,
+      "sommario": "Tonino riconosce un vecchio medaglione di Rosa e pronuncia il suo nome dopo anni. Piange; Ferruccio si avvicina in silenzio. Tonino lo rassicura: gli mancava anche il dolore. Da qui le sue battute restano ironiche ma più consapevoli, e ricorda di aver custodito una vecchia lettera di Agnese, che consegna a Ferruccio (lettera_agnese=vera: non cambia il percorso obbligatorio, rende più personali le scene del Belvedere di San Leucio).",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Tonino riconosce un vecchio medaglione appartenuto a Rosa."
+        },
+        {
+          "chi": "tonino",
+          "testo": "Rosa..."
+        },
+        {
+          "chi": "tonino",
+          "testo": "Maronna mia. Erano anni che non dicevo il suo nome."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Comincia a piangere."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio si avvicina."
+        },
+        {
+          "chi": "tonino",
+          "testo": "Nun fa niente, guagliò."
+        },
+        {
+          "chi": "tonino",
+          "testo": "Mi mancava pure questo."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Da quel momento Tonino mantiene la sua ironia, ma le sue battute diventano più consapevoli. Inoltre ricorda di aver custodito una vecchia lettera di Agnese."
+        }
+      ],
+      "oggetti": [
+        "medaglione-di-rosa",
+        "lettera-agnese"
+      ],
+      "fonte": "X. Arco di Tonino / Se restituisce il ricordo; XV. Le scene obbligatorie (Piazza Dante — condizionale: Ricordo di Rosa); XV. Le scene obbligatorie (Piazza Dante — condizionale: lettera di Agnese)"
+    },
+    {
+      "id": "corso-trieste.finestra-mariella",
+      "capitolo": "corso-trieste",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 10,
+      "sommario": "Lungo il Corso, una finestra illuminata: Mariella siede e sorride, immobile. Ferruccio si ferma sotto la finestra, alza lo sguardo, poi prosegue. E la prima immagine della felicita come prigione.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Adesso trascorre intere giornate seduta accanto alla finestra, sorridendo."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "IX. Arco di Mariella / Prima del Velo"
+    },
+    {
+      "id": "corso-trieste.regina-dei-debiti",
+      "capitolo": "corso-trieste",
+      "tipo": "boss",
+      "quando": {},
+      "ordine": 20,
+      "sommario": "Boss nato dalle ambizioni e dalle promesse mai mantenute durante i lavori della Reggia. Sconfitta, si dissolve in anime colorate. Rivelazione: le vespe trasportano desideri rubati verso il palazzo.",
+      "battute": [],
+      "oggetti": [],
+      "fonte": "XII. Gli archi dei boss intermedi"
+    },
+    {
+      "id": "corso-trieste.passato-taddeo",
+      "capitolo": "corso-trieste",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 30,
+      "sommario": "Dopo la Regina dei Debiti (nata dalle promesse mai mantenute) un'anima liberata mostra a Ferruccio il passato condiviso con Taddeo e il patto con Violante. Immagini immobili: due bambini con spade di legno, poi una guardia che consegna un nome. Ferruccio stringe l'elsa della spada.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Da bambini, Taddeo e Ferruccio giocavano tra le strade di Caserta, fingendo di essere cavalieri."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio costruiva spade di legno. Taddeo voleva sempre essere il comandante."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Quando Gaetano muore, Taddeo promette di proteggere Ferruccio come un fratello."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Anni dopo entra nella guardia e viene assegnato alla sorveglianza degli edifici reali."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Sua sorella Mariella, sopravvissuta al crollo del 1839, continua però a soffrire di incubi e terribili crisi di paura."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Violante lo avvicina."
+        },
+        {
+          "chi": "violante",
+          "testo": "Tua sorella non merita ciò che ha vissuto."
+        },
+        {
+          "chi": "violante",
+          "testo": "Dammi il nome di chi sta indagando. Io le restituirò la pace."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Taddeo consegna il nome di Ferruccio."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "V. Arco di Taddeo / Il passato condiviso"
+    },
+    {
+      "id": "corso-trieste.scelta-taddeo",
+      "capitolo": "corso-trieste",
+      "tipo": "scelta",
+      "quando": {},
+      "ordine": 40,
+      "sommario": "Scena indispensabile (XV): rivelazione del tradimento. Ferruccio trova Taddeo accanto a una vetrina. Taddeo riconosce la spada forgiata insieme e lo supplica di ascoltarlo. Ferruccio solleva lentamente la spada: il giocatore decide se rinfoderarla o puntarla alla gola dell'amico.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Dopo aver sconfitto la Regina dei Debiti, Ferruccio trova Taddeo accanto a una vetrina."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Il giovane riconosce la spada."
+        },
+        {
+          "chi": "taddeo",
+          "testo": "No... Quella l'abbiamo forgiata insieme."
+        },
+        {
+          "chi": "taddeo",
+          "testo": "Ti prego, lascia che ti spieghi."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio può scegliere come reagire."
+        }
+      ],
+      "scelta": {
+        "flag": "taddeo",
+        "opzioni": [
+          {
+            "valore": "perdonato",
+            "etichetta": "Rinfodera la spada e ascoltalo",
+            "cosa_sacrifica": "Rinunci a punire l'uomo che ti ha consegnato a Violante: la tua rabbia non avra un colpevole su cui scaricarsi. In cambio Taddeo confessa, resta al tuo fianco lasciando messaggi e testimonianze, puo parlare ad Agnese e ti apre la lettera di Mariella. La sua testimonianza e una prova per il confronto con Gregorio."
+          },
+          {
+            "valore": "accusato",
+            "etichetta": "Puntagli la spada alla gola",
+            "cosa_sacrifica": "Perdi l'unico testimone vivo del tradimento e del patto con Violante: niente confessione, niente lettera di Mariella, nessuno che racconti ad Agnese chi sei. Taddeo fugge e cerca i documenti che lo incriminano: diventa un antagonista che lavora contro le tue prove. Il registro restera la tua sola prova, se lo conserverai."
+          }
+        ]
+      },
+      "oggetti": [],
+      "fonte": "V. Arco di Taddeo / Il confronto su Corso Trieste; XV. Le scene obbligatorie (Corso Trieste: Taddeo riconosce Ferruccio); XV. Struttura narrativa lineare (Corso Trieste — Scelta: perdonare Taddeo); XIX taddeo_trust"
+    },
+    {
+      "id": "corso-trieste.taddeo-accusato",
+      "capitolo": "corso-trieste",
+      "tipo": "condizionale",
+      "quando": {
+        "taddeo": "accusato"
+      },
+      "ordine": 50,
+      "sommario": "Ferruccio punta la spada alla gola di Taddeo, che arretra contro la vetrina e grida che uccidendolo Mariella restera comunque nel Velo. Ferruccio abbassa la lama ma volta le spalle e si copre un orecchio con la mano: rifiuta di ascoltare. Taddeo fugge nel buio del Corso.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio gli punta la spada alla gola."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Taddeo arretra."
+        },
+        {
+          "chi": "taddeo",
+          "testo": "Se mi uccidi, lei resterà comunque là dentro!"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio non lo uccide, ma rifiuta di ascoltarlo."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Taddeo fugge e decide di cercare i documenti che potrebbero incriminarlo."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Diventa un antagonista secondario, senza richiedere un combattimento aggiuntivo."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "V. Arco di Taddeo / Se lo accusa; XV. Le scene obbligatorie (Corso Trieste — condizionale: fuga)"
+    },
+    {
+      "id": "corso-trieste.taddeo-perdonato",
+      "capitolo": "corso-trieste",
+      "tipo": "condizionale",
+      "quando": {
+        "taddeo": "perdonato"
+      },
+      "ordine": 50,
+      "sommario": "Taddeo confessa di aver denunciato Ferruccio per salvare Mariella. Ferruccio rinfodera la spada, resta un istante immobile, poi gli posa la mano sulla spalla. Taddeo decide di aiutarlo senza seguirlo: lascerà messaggi, documenti e testimonianze lungo il percorso. Imposta lettera_mariella=vera e prove=vera.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Taddeo confessa di aver denunciato Ferruccio per salvare Mariella."
+        },
+        {
+          "chi": "taddeo",
+          "testo": "Mi aveva promesso che mia sorella sarebbe stata bene."
+        },
+        {
+          "chi": "taddeo",
+          "testo": "E io le ho creduto. Che Dio mi perdoni."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio rinfodera la spada."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Taddeo decide di aiutarlo. Non diventa un secondo protagonista: lascia messaggi, documenti e testimonianze lungo il percorso obbligatorio."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "V. Arco di Taddeo / Se lo perdona; XV. Le scene obbligatorie (Corso Trieste — condizionale: Confessione)"
+    },
+    {
+      "id": "corso-trieste.lettera-mariella",
+      "capitolo": "corso-trieste",
+      "tipo": "condizionale",
+      "quando": {
+        "taddeo": "perdonato"
+      },
+      "ordine": 60,
+      "sommario": "Dopo la confessione, sotto la finestra illuminata di Mariella, Ferruccio puo leggere la lettera che lei scrisse al fratello prima dell'incantesimo. Taddeo guarda la finestra mentre Ferruccio legge; Ferruccio ripiega la lettera e gliela restituisce con due mani. Taddeo comprende di aver tradito per qualcosa che Mariella non gli aveva mai chiesto.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Se Taddeo viene perdonato, Ferruccio può leggere una lettera che Mariella aveva scritto prima dell'incantesimo."
+        },
+        {
+          "chi": "mariella",
+          "testo": "Caro Taddeo,"
+        },
+        {
+          "chi": "mariella",
+          "testo": "non devi aggiustarmi."
+        },
+        {
+          "chi": "mariella",
+          "testo": "Voglio soltanto che, quando ho paura, tu rimanga con me."
+        },
+        {
+          "chi": "mariella",
+          "testo": "Tua sorella."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Taddeo comprende di aver tradito Ferruccio per ottenere qualcosa che Mariella non gli aveva mai chiesto."
+        }
+      ],
+      "oggetti": [
+        "lettera-mariella"
+      ],
+      "fonte": "IX. Arco di Mariella / La lettera di Mariella"
+    },
+    {
+      "id": "corso-trieste.fucina-del-ricordo",
+      "capitolo": "corso-trieste",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 70,
+      "sommario": "Dopo aver percorso Piazza e Corso, la porta della bottega di Gaetano (introdotta da Tonino e Assunta, con l'indizio di Mariella del ferro che risuona dietro una porta) apre la Fucina del Ricordo. All'interno, parlare con Gaetano restituisce a Ferruccio il nome e il volto umano. Da questo momento compaiono le incudini utilizzabili, inclusa quella della fucina. Il ritorno riporta alla stessa porta.",
+      "battute": [],
+      "oggetti": [
+        "incudine-fucina"
+      ],
+      "fonte": "inizio-memoria-e-doni.md (decisioni dell'utente, 10 ottobre 2026) — nessuna battuta scritta nella bibbia"
+    },
+    {
+      "id": "villa-comunale.punzone",
+      "capitolo": "villa-comunale",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 10,
+      "sommario": "Accanto alla fontana della Villa Comunale Ferruccio trova il vecchio punzone da fabbro del padre. Lo raccoglie e lo rigira: sul manico sono incise due lettere. Lo stringe, poi lo infila alla cintura.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "G. F."
+        }
+      ],
+      "oggetti": [
+        "punzone"
+      ],
+      "fonte": "VI. Arco di Gaetano / La falsa versione ufficiale"
+    },
+    {
+      "id": "villa-comunale.messaggio-taddeo",
+      "capitolo": "villa-comunale",
+      "tipo": "condizionale",
+      "quando": {
+        "taddeo": "perdonato"
+      },
+      "ordine": 20,
+      "sommario": "Lungo il percorso obbligatorio Ferruccio trova un messaggio lasciato da Taddeo: una testimonianza scritta del patto con Violante. Ferruccio lo raccoglie e lo ripone accanto alla sciarpa. Questo oggetto e la 'testimonianza di Taddeo' che, insieme o in alternativa al registro, permette il dialogo con Gregorio.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Non diventa un secondo protagonista: lascia messaggi, documenti e testimonianze lungo il percorso obbligatorio."
+        }
+      ],
+      "oggetti": [
+        "messaggio-taddeo"
+      ],
+      "fonte": "V. Arco di Taddeo / Se lo perdona; VII. Arco di Gregorio / I due confronti possibili ('Ferruccio mostra il registro o il messaggio di Taddeo')"
+    },
+    {
+      "id": "villa-comunale.inchino-bianca",
+      "capitolo": "villa-comunale",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 30,
+      "sommario": "Una memoria conservata nel marmo mostra Gregorio mentre insegna a Bianca a fare un inchino. La bambina ride e sbaglia apposta. Il ricordo svanisce quando Gregorio cerca di prenderle la mano. Ferruccio resta immobile davanti al marmo tornato muto. Secondo indizio dell'arco di Bianca.",
+      "battute": [
+        {
+          "chi": "bianca",
+          "testo": "Ancora! Ma stavolta fallo tu!"
+        }
+      ],
+      "oggetti": [],
+      "fonte": "XI. Arco di Bianca / Secondo indizio — Villa Comunale"
+    },
+    {
+      "id": "villa-comunale.statua-cavaliere",
+      "capitolo": "villa-comunale",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 40,
+      "sommario": "Tra le statue della Villa Comunale Ferruccio trova un cavaliere di marmo inginocchiato davanti a un giglio. Si china sulla base e legge l'incisione; resta un istante a fissare il giglio, poi si tocca il petto dove il cavaliere porta il fiore. Primo indizio che il Custode è un prigioniero.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Nella Villa Comunale Ferruccio trova una statua che rappresenta un cavaliere inginocchiato davanti a un giglio."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Sulla base è inciso:"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Non tutte le catene fanno rumore."
+        }
+      ],
+      "oggetti": [
+        "statua-cavaliere"
+      ],
+      "fonte": "VII. Arco di Gregorio / Come il giocatore può intuire la verità"
+    },
+    {
+      "id": "villa-comunale.registri-pubblici",
+      "capitolo": "villa-comunale",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 50,
+      "sommario": "Tra i registri pubblici della Villa Comunale Gaetano compare come responsabile dell'incidente. Ferruccio sfoglia le pagine, si ferma sul nome del padre e serra il pugno sull'elsa. È la versione ufficiale che la targa tace e che i documenti confermano.",
+      "battute": [],
+      "oggetti": [
+        "registri-pubblici"
+      ],
+      "fonte": "VI. Arco di Gaetano / La falsa versione ufficiale"
+    },
+    {
+      "id": "villa-comunale.madre-di-marmo",
+      "capitolo": "villa-comunale",
+      "tipo": "boss",
+      "quando": {},
+      "ordine": 60,
+      "sommario": "Ferruccio affronta la Madre di Marmo, statua che custodisce i ricordi degli operai morti. Sconfitta, non lascia un cadavere: si dissolve in anime colorate che salgono lentamente. Tra queste una memoria del padre.",
+      "battute": [],
+      "oggetti": [],
+      "fonte": "XII. Gli archi dei boss intermedi (Madre di Marmo — Villa Comunale); VI. Arco di Gaetano / Il ricordo della tragedia; XII. Gli archi dei boss intermedi"
+    },
+    {
+      "id": "villa-comunale.ricordo-gaetano",
+      "capitolo": "villa-comunale",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 70,
+      "sommario": "Sconfiggendo la Madre di Marmo, Ferruccio libera una memoria del padre. Il giocatore vede soltanto una breve immagine immobile: Gaetano sorregge una trave mentre alcuni operai si mettono in salvo. Si sente la sua voce. L'immagine scompare. Ferruccio capisce che suo padre morì cercando di salvare altre persone; abbassa la spada e resta fermo nel punto in cui era l'immagine.",
+      "battute": [
+        {
+          "chi": "gaetano",
+          "testo": "Prima fate uscire i ragazzi!"
+        }
+      ],
+      "oggetti": [],
+      "fonte": "VI. Arco di Gaetano / Il ricordo della tragedia; XV. Le scene obbligatorie (Villa Comunale: Apparizione del ricordo di Gaetano); XV. Le scene obbligatorie (Villa Comunale: Apparizione del ricordo di Gaetano); XII (Madre di Marmo — Rivelazione)"
+    },
+    {
+      "id": "villa-comunale.scelta-registro",
+      "capitolo": "villa-comunale",
+      "tipo": "scelta",
+      "quando": {},
+      "ordine": 80,
+      "sommario": "Ferruccio trova il documento originale: contiene le cancellature e le correzioni che dimostrano la falsificazione. Suo padre non era responsabile del crollo. La prima reazione è la soddisfazione: può dimostrare che la famiglia è stata disonorata ingiustamente. Poi scopre che Gregorio era presente all'incidente e aveva tentato di salvare Bianca: il Custode non è più semplicemente il mostro da uccidere, è un padre che ha commesso un'ingiustizia mentre cercava di proteggere ciò che restava della propria famiglia. Ferruccio tiene il registro sopra la fiamma di una lanterna: può conservarlo o distruggerlo.",
+      "battute": [],
+      "scelta": {
+        "flag": "registro",
+        "opzioni": [
+          {
+            "valore": "conservato",
+            "etichetta": "Conserva il registro",
+            "cosa_sacrifica": "Accettare che la verità sul padre debba essere mostrata agli altri, anche se richiederà anni. Il nome di Gaetano resta per ora scritto accanto all'incidente; la prova vale solo se qualcuno vorrà leggerla."
+          },
+          {
+            "valore": "bruciato",
+            "etichetta": "Brucia il registro",
+            "cosa_sacrifica": "Rifiutare che il nome di Gaetano continui a essere associato all'incidente, ma distruggere anche la prova della sua innocenza. L'atto è emotivamente comprensibile, ma non risolve l'ingiustizia: resta solo ciò che Ferruccio ha visto."
+          }
+        ]
+      },
+      "oggetti": [
+        "registro"
+      ],
+      "fonte": "VI. Arco di Gaetano / La scelta del registro; III. Arco di Ferruccio / Atto II — Il dubbio; XV. Struttura narrativa lineare (Villa Comunale — Scelta: conservare il registro); XIX father_registry"
+    },
+    {
+      "id": "villa-comunale.registro-bruciato",
+      "capitolo": "villa-comunale",
+      "tipo": "condizionale",
+      "quando": {
+        "registro": "bruciato"
+      },
+      "ordine": 90,
+      "sommario": "Scena condizionale (XV): il registro brucia sulla fiamma della lanterna; resta solo ciò che Ferruccio ha visto. Senza la testimonianza di Taddeo (taddeo=accusato) non ci sarà dialogo con Gregorio.",
+      "battute": [],
+      "oggetti": [],
+      "fonte": "XV. Le scene obbligatorie (Villa Comunale — condizionale: Registro distrutto)"
+    },
+    {
+      "id": "villa-comunale.registro-conservato",
+      "capitolo": "villa-comunale",
+      "tipo": "condizionale",
+      "quando": {
+        "registro": "conservato"
+      },
+      "ordine": 90,
+      "sommario": "Scena condizionale (XV): Ferruccio ripone il registro originale; prove=vera. Se ha conservato il registro, nel finale della liberazione fugge portando con sé la prova che un giorno potrebbe riabilitare suo padre.",
+      "battute": [],
+      "oggetti": [
+        "registro"
+      ],
+      "fonte": "XV. Le scene obbligatorie (Villa Comunale — condizionale: Registro conservato)"
+    },
+    {
+      "id": "villa-comunale.risoluzione-taddeo",
+      "capitolo": "villa-comunale",
+      "tipo": "condizionale",
+      "quando": {
+        "registro": "*"
+      },
+      "ordine": 100,
+      "sommario": "Chiusa la scelta sul registro, l'arco di Taddeo si risolve in una delle quattro combinazioni. Mostrata, non spiegata: un foglio firmato sotto la porta, oppure Taddeo che evita lo sguardo di Ferruccio da lontano. Ferruccio tocca il registro (o la cenere) e guarda verso il Corso.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Taddeo confessa ufficialmente la falsificazione e indica gli altri responsabili.",
+          "se": {
+            "taddeo": "perdonato",
+            "registro": "conservato"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Taddeo confessa, ma la sua testimonianza non può essere verificata.",
+          "se": {
+            "taddeo": "perdonato",
+            "registro": "bruciato"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Taddeo tenta di nascondere la propria complicità; Ferruccio possiede comunque la prova.",
+          "se": {
+            "taddeo": "accusato",
+            "registro": "conservato"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Taddeo riesce a negare pubblicamente il tradimento. Rimane però tormentato dalla colpa.",
+          "se": {
+            "taddeo": "accusato",
+            "registro": "bruciato"
+          }
+        }
+      ],
+      "oggetti": [],
+      "fonte": "V. Arco di Taddeo / Le quattro risoluzioni"
+    },
+    {
+      "id": "san-leucio.tessitrice-di-pietra",
+      "capitolo": "san-leucio",
+      "tipo": "boss",
+      "quando": {},
+      "ordine": 10,
+      "sommario": "Boss: statua guardiana dei telai incantati. Sconfitta, si dissolve in anime colorate. Rivelazione: il Velo nasce dalla seta e il giglio è il simbolo che lega i guardiani a Violante.",
+      "battute": [],
+      "oggetti": [],
+      "fonte": "XII. Gli archi dei boss intermedi"
+    },
+    {
+      "id": "san-leucio.arrivo-manifattura",
+      "capitolo": "san-leucio",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 20,
+      "sommario": "Scena indispensabile (XV): incontro con Agnese e scoperta del Velo. Ferruccio entra nella manifattura. Alcuni fili destinati alla Reggia si muovono anche se nessuno aziona i telai. Agnese è al telaio e tesse una lunga sciarpa rossa: non lo riconosce e gli sorride come a uno sconosciuto. Ferruccio si ferma davanti a lei, allunga una mano verso la sciarpa senza toccarla, poi si tocca il polso. Il segreto di Agnese (ha lavorato inconsapevolmente al tessuto del Velo, ha tentato di avvertirlo, Violante le ha tolto ogni ricordo di lui ma non il sentimento) è mostrato, non spiegato: la sciarpa sul telaio è identica a quella che lei gli regalò.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Agnese conserva la sciarpa sul telaio."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Per questo Agnese continua a tessere la stessa sciarpa, senza sapere per chi."
+        }
+      ],
+      "oggetti": [
+        "sciarpa-rossa"
+      ],
+      "fonte": "IV. Arco di Agnese / Il segreto di Agnese; I. 1845 — Il tradimento di Ferruccio; inizio-memoria-e-doni.md; XV. Le scene obbligatorie (San Leucio: Incontro con Agnese e scoperta del Velo); inizio-memoria-e-doni.md (sciarpa sul telaio)"
+    },
+    {
+      "id": "san-leucio.giglio-sulle-stoffe",
+      "capitolo": "san-leucio",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 30,
+      "sommario": "Accanto ai telai, Ferruccio scopre che la stessa forma floreale del cavaliere di marmo compare sulle stoffe commissionate da Violante. Solleva un lembo di stoffa, lo confronta con il gesto della mano sul petto fatto alla Villa: il giglio lega chi lo porta a chi lo ha commissionato. Secondo indizio sulla vera natura del Custode.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "A San Leucio scopre che la stessa forma floreale compare sulle stoffe commissionate da Violante."
+        }
+      ],
+      "oggetti": [
+        "stoffe-giglio"
+      ],
+      "fonte": "VII. Arco di Gregorio / Come il giocatore può intuire la verità"
+    },
+    {
+      "id": "san-leucio.fazzoletto-giglio",
+      "capitolo": "san-leucio",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 40,
+      "sommario": "Accanto ai telai Ferruccio trova un piccolo fazzoletto ricamato con un giglio incompleto e lo mostra ad Agnese. Lei spiega che Violante chiedeva spesso di riprodurre quel disegno. Ferruccio passa il pollice sul ricamo interrotto. Terzo indizio dell'arco di Bianca; la stessa forma floreale compare sulle stoffe commissionate da Violante.",
+      "battute": [
+        {
+          "chi": "agnese",
+          "testo": "Nessuno riusciva a farlo uguale."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Forse perché era stato fatto da una bambina."
+        }
+      ],
+      "oggetti": [
+        "fazzoletto-bianca"
+      ],
+      "fonte": "XI. Arco di Bianca / Terzo indizio — San Leucio"
+    },
+    {
+      "id": "san-leucio.flashback-telaio",
+      "capitolo": "san-leucio",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 50,
+      "sommario": "Flashback: il primo incontro, prima della maledizione. Ferruccio, mandato a riparare i componenti metallici dei telai, è impacciato e rompe accidentalmente una piccola ruota del telaio. Agnese, ironica e vivace, lo prende in giro. Ferruccio gesticola cercando di spiegarsi, senza riuscirci.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Durante il loro primo incontro lui rompe accidentalmente una piccola ruota del telaio."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Siete venuto ad aggiustarlo o a finirlo?"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio cerca di spiegarsi."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Ah, siete pure un uomo di poche parole. Almeno quelle non le rompete."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Da quel momento Ferruccio comincia a inventare scuse per tornare nella manifattura."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "IV. Arco di Agnese / Prima della maledizione"
+    },
+    {
+      "id": "san-leucio.flashback-sciarpa",
+      "capitolo": "san-leucio",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 60,
+      "sommario": "Flashback: Agnese regala a Ferruccio una lunga sciarpa rossa. Ferruccio la riceve, se la avvolge al collo e, con un gesto delle mani, le promette che quando avrà abbastanza denaro apriranno insieme una bottega: una casa, un lavoro, una vita normale.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Un giorno Agnese gli regala una lunga sciarpa rossa."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Dicono che il rosso protegga dal malocchio."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Io non ci credo. Però con te non si sa mai."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio le promette che, quando avrà abbastanza denaro, apriranno insieme una bottega."
+        }
+      ],
+      "oggetti": [
+        "sciarpa-rossa"
+      ],
+      "fonte": "IV. Arco di Agnese / Prima della maledizione"
+    },
+    {
+      "id": "san-leucio.lettera-belvedere",
+      "capitolo": "san-leucio",
+      "tipo": "condizionale",
+      "quando": {
+        "tonino_ricordo": "restituito"
+      },
+      "ordine": 70,
+      "sommario": "Al Belvedere di San Leucio Ferruccio tira fuori la lettera d'amore che Agnese aveva scritto prima della maledizione, custodita da Tonino e consegnata in Piazza Dante. La legge in silenzio con la manifattura alle spalle, poi la piega e la ripone vicino al petto. La lettera non cambia il percorso obbligatorio: rende più personali le scene che seguono.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Il ricordo recuperato da Tonino nel primo capitolo può aggiungere una lettera d'amore scritta da Agnese prima della maledizione."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "La lettera non cambia il percorso obbligatorio, ma rende le scene del Belvedere più personali."
+        }
+      ],
+      "oggetti": [
+        "lettera-agnese"
+      ],
+      "fonte": "IV. Arco di Agnese / I quattro sviluppi del romance (chiusura); X. Arco di Tonino / Se restituisce il ricordo"
+    },
+    {
+      "id": "san-leucio.scelta-agnese",
+      "capitolo": "san-leucio",
+      "tipo": "scelta",
+      "quando": {},
+      "ordine": 80,
+      "sommario": "Davanti al telaio Ferruccio ha in mano ciò che può restituire ad Agnese i ricordi di lui. Sa quanto dolore contengono. Può farle ricordare o lasciarla sognare. Ferruccio guarda la sciarpa sul telaio, poi Agnese, poi le proprie mani.",
+      "battute": [],
+      "scelta": {
+        "flag": "agnese",
+        "opzioni": [
+          {
+            "valore": "risvegliata",
+            "etichetta": "Falle ricordare",
+            "cosa_sacrifica": "La serenità di Agnese: con il nome di Ferruccio tornano anche gli anni di attesa, la notte dell'incantesimo e il dolore che quei ricordi contengono. Lei tornerà a essere una persona con una storia, ma non è garantito che quella storia finisca bene."
+          },
+          {
+            "valore": "sognante",
+            "etichetta": "Lasciala sognare",
+            "cosa_sacrifica": "La libertà di Agnese di scegliere: Ferruccio decide al posto suo, come ha fatto Violante. Il loro amore resta una sensazione senza storia; lei continua a tessere per qualcuno che non ricorda, e la sciarpa (con lo scatto) resta alla bottega."
+          }
+        ]
+      },
+      "oggetti": [],
+      "fonte": "IV. Arco di Agnese / I quattro sviluppi del romance; XIV. principio 1 (tra la libertà e la sicurezza di Agnese); inizio-memoria-e-doni.md; XV. Struttura narrativa lineare (San Leucio — Scelta: risvegliare Agnese); XIX agnese_memory; inizio-memoria-e-doni.md"
+    },
+    {
+      "id": "san-leucio.amore-dimenticato",
+      "capitolo": "san-leucio",
+      "tipo": "condizionale",
+      "quando": {
+        "agnese": "sognante",
+        "taddeo": "perdonato"
+      },
+      "ordine": 90,
+      "sommario": "Percorso C — L'amore dimenticato. Ferruccio non ha restituito i ricordi ad Agnese perché sa quanto dolore contengono. Taddeo lo raggiunge e cerca di convincerlo a cambiare idea. Ferruccio abbassa lo sguardo. Momento fondamentale: nel tentativo di proteggere la donna amata, Ferruccio rischia di comportarsi come la sua nemica.",
+      "battute": [
+        {
+          "chi": "taddeo",
+          "testo": "Stai facendo esattamente quello che ha fatto Violante."
+        },
+        {
+          "chi": "taddeo",
+          "testo": "Stai scegliendo al posto suo."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio abbassa lo sguardo."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Taddeo cerca di convincerlo a cambiare idea."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "IV. Arco di Agnese / Percorso C — L'amore dimenticato; V. Arco di Taddeo / Se lo perdona; XV. Le scene obbligatorie (San Leucio — condizionale: addio inconsapevole)"
+    },
+    {
+      "id": "san-leucio.amore-ritrovato",
+      "capitolo": "san-leucio",
+      "tipo": "condizionale",
+      "quando": {
+        "agnese": "risvegliata",
+        "taddeo": "perdonato"
+      },
+      "ordine": 90,
+      "sommario": "Percorso A — L'amore ritrovato. Taddeo è arrivato prima: ha confessato ad Agnese di aver consegnato Ferruccio a Violante e l'ha aiutata a ricostruire gli ultimi giorni trascorsi insieme. Agnese riconosce Ferruccio e gli si avvicina; gli toglie delicatamente la polvere dalla maschera. Ferruccio resta immobile, poi le prende la mano e la porta alla propria maschera. Il percorso romantico più completo, ma non garantisce un lieto fine.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "A San Leucio può raccontare ad Agnese la verità su Ferruccio."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Taddeo confessa di aver consegnato Ferruccio a Violante. Aiuta Agnese a ricostruire gli ultimi giorni trascorsi insieme."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Non sapevo più il tuo nome."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Ma ricordavo come mi guardavi."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Gli toglie delicatamente la polvere dalla maschera."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Torna da me. Anche se non puoi più essere quello di prima."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "IV. Arco di Agnese / Percorso A — L'amore ritrovato; V. Arco di Taddeo / Se lo perdona; XV. Le scene obbligatorie (San Leucio — condizionale: Riavvicinamento romantico)"
+    },
+    {
+      "id": "san-leucio.amore-senza-fiducia",
+      "capitolo": "san-leucio",
+      "tipo": "condizionale",
+      "quando": {
+        "agnese": "risvegliata",
+        "taddeo": "accusato"
+      },
+      "ordine": 90,
+      "sommario": "Percorso B — L'amore senza fiducia. Agnese recupera i ricordi, ma scopre che Ferruccio ha scelto la vendetta contro il suo vecchio amico. Comprende la sua rabbia, però teme che ormai sia diventata più importante del loro amore. Ferruccio le mostra la sciarpa consumata e tenta di prenderle la mano; lei gliela stringe, ma non gli promette di aspettarlo.",
+      "battute": [
+        {
+          "chi": "agnese",
+          "testo": "Ho aspettato un uomo per anni."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Adesso ho paura che sia tornata soltanto la sua rabbia."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio le mostra la sciarpa consumata e tenta di prenderle la mano."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Lei gliela stringe, ma non gli promette di aspettarlo."
+        }
+      ],
+      "oggetti": [
+        "sciarpa-rossa"
+      ],
+      "fonte": "IV. Arco di Agnese / Percorso B — L'amore senza fiducia; XV. Le scene obbligatorie (San Leucio — condizionale: Riavvicinamento romantico)"
+    },
+    {
+      "id": "san-leucio.ultima-sciarpa",
+      "capitolo": "san-leucio",
+      "tipo": "condizionale",
+      "quando": {
+        "agnese": "sognante",
+        "taddeo": "accusato"
+      },
+      "ordine": 90,
+      "sommario": "Percorso D — L'ultima sciarpa. Ferruccio è arrivato a San Leucio senza nessuno disposto ad aiutarlo. Agnese non lo riconosce e gli offre soltanto la sciarpa appena terminata. Ferruccio prende la sciarpa, la piega accuratamente e le fa un inchino. Agnese sorride. Dopo la sua partenza, si accorge di stare piangendo senza conoscerne il motivo.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Agnese non lo riconosce e gli offre soltanto la sciarpa appena terminata."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Prendila. Non so perché, ma credo che debba averla tu."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio prende la sciarpa, la piega accuratamente e le fa un inchino."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Agnese sorride."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Che tipo buffo."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Dopo la sua partenza, si accorge di stare piangendo senza conoscerne il motivo."
+        }
+      ],
+      "oggetti": [
+        "sciarpa-rossa"
+      ],
+      "fonte": "IV. Arco di Agnese / Percorso D — L'ultima sciarpa; XV. Le scene obbligatorie (San Leucio — condizionale: addio inconsapevole); inizio-memoria-e-doni.md"
+    },
+    {
+      "id": "san-leucio.dono-sciarpa",
+      "capitolo": "san-leucio",
+      "tipo": "condizionale",
+      "quando": {
+        "agnese": "risvegliata"
+      },
+      "ordine": 100,
+      "sommario": "Il dono: alla fine del dialogo di risveglio la sciarpa rossa compare sul rig di Ferruccio e abilita lo scatto (C oppure RB/R1). Ferruccio se la stringe al collo e guarda Agnese. Rimane anche il bonus allo spazio accessorio della memoria risvegliata. Se Agnese è lasciata sognare, la sciarpa resta alla bottega e lo scatto resta bloccato.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Scegliendo di farle ricordare, il dialogo mostra il dono: la sciarpa compare sul rig e abilita lo scatto con C oppure RB/R1."
+        }
+      ],
+      "oggetti": [
+        "sciarpa-rossa"
+      ],
+      "fonte": "inizio-memoria-e-doni.md (10 ottobre 2026)"
+    },
+    {
+      "id": "san-leucio.rinuncia-vendetta",
+      "capitolo": "san-leucio",
+      "tipo": "condizionale",
+      "quando": {
+        "agnese": "risvegliata"
+      },
+      "ordine": 110,
+      "sommario": "Agnese chiede a Ferruccio di rinunciare alla vendetta. Non gli chiede di dimenticare ciò che è accaduto, ma di non lasciare che la morte del padre determini ogni sua decisione. Ferruccio guarda la spada, poi lei; non c'è una finestra di scelta. Se la ascolta, il suo percorso diventa una ricerca della verità (si prepara il tentativo di dialogo con Gregorio); se insiste nell'accusare e punire, arriva alla Reggia convinto che la giustizia richieda un colpevole da abbattere (attacco immediato).",
+      "battute": [],
+      "oggetti": [],
+      "fonte": "III. Arco di Ferruccio / Atto III — La responsabilità"
+    },
+    {
+      "id": "reggia.memoria-funerale-bianca",
+      "capitolo": "reggia",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 10,
+      "sommario": "Memoria del passato di Violante, prima della tragedia: la donna amata da Caserta resta immobile davanti alla piccola bara di Bianca. Gregorio tenta di prenderle la mano. Ferruccio osserva l'immagine ferma e abbassa il capo; la frase di Violante nasce da un desiderio generoso che negli anni diventerà ossessione. Collocazione nella Reggia provvisoria (la bibbia non la fissa).",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Durante il funerale di Bianca rimane immobile davanti alla piccola bara."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Gregorio tenta di prenderle la mano."
+        },
+        {
+          "chi": "violante",
+          "testo": "Non voglio più vedere un bambino morire."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "VIII. Arco di Violante / La donna prima della tragedia"
+    },
+    {
+      "id": "reggia.memoria-tradimento-marito",
+      "capitolo": "reggia",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 20,
+      "sommario": "Memoria del passato: Gregorio, scoperto il progetto, chiede a Violante di fermarsi; lei rifiuta. Quando lui tenta di distruggere il primo nucleo del Velo, Violante lo lega al giglio d'oro che gli aveva donato: l'amore diventa possesso. Ferruccio stringe l'elsa della spada e guarda il giglio inciso ovunque nella Reggia. Collocazione provvisoria (vedi note).",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Quando Gregorio scopre il progetto, le chiede di fermarsi."
+        },
+        {
+          "chi": "gregorio",
+          "testo": "Bianca non avrebbe voluto questo."
+        },
+        {
+          "chi": "violante",
+          "testo": "Bianca non vuole più niente."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Gregorio rimane in silenzio."
+        },
+        {
+          "chi": "violante",
+          "testo": "E non permetterò che un'altra madre debba pronunciare quelle parole."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Quando Gregorio tenta di distruggere il primo nucleo del Velo, Violante lo lega al giglio d'oro."
+        }
+      ],
+      "oggetti": [
+        "giglio-oro"
+      ],
+      "fonte": "VIII. Arco di Violante / Il tradimento di suo marito"
+    },
+    {
+      "id": "reggia.progressione-del-velo",
+      "capitolo": "reggia",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 30,
+      "sommario": "Ferruccio ricostruisce, attraverso frammenti di seta e appunti nella Reggia, i quattro passi della progressione morale di Violante: 1 Alleviare il dolore (piccoli frammenti di seta per riposare durante il lutto, effetti temporanei e apparentemente benefici); 2 Cancellare il dolore (i soggetti dimenticano le persone scomparse, sacrificio accettabile); 3 Impedire nuovi dolori (gelosia, desiderio, ambizione e disaccordo vanno controllati); 4 Eliminare la libertà (il Velo diventa permanente, ogni opposizione è prova che le persone non sanno cosa sia meglio per loro). Ferruccio passa in rassegna i frammenti e li lascia cadere uno dopo l'altro. Nessuna battuta nella bibbia: scena di sola ambientazione, collocazione provvisoria.",
+      "battute": [],
+      "oggetti": [
+        "frammenti-di-seta"
+      ],
+      "fonte": "VIII. Arco di Violante / La progressione morale"
+    },
+    {
+      "id": "reggia.attacco-senza-prove",
+      "capitolo": "reggia",
+      "tipo": "condizionale",
+      "quando": {
+        "prove": "falsa"
+      },
+      "ordine": 40,
+      "sommario": "Ferruccio arriva al Custode senza registro e senza la testimonianza di Taddeo (registro bruciato E Taddeo accusato): non ha nulla da mostrargli. L'unica via è l'attacco e il flag gregorio viene fissato su 'attacco'. Le mani di Ferruccio cercano istintivamente nella giubba qualcosa che non c'è, poi stringono la spada. La bibbia non dice se la finestra di scelta compare con 'dialogo' disabilitato o se lo scontro inizia direttamente (vedi note).",
+      "battute": [],
+      "scelta": {
+        "flag": "gregorio",
+        "opzioni": [
+          {
+            "valore": "attacco",
+            "etichetta": "Attacca il Custode",
+            "cosa_sacrifica": "Senza prove non c'è dialogo possibile: il giocatore deve capire che aver bruciato il registro e accusato Taddeo gli ha tolto la parola davanti al Custode. La verità su Gregorio arriverà solo dopo lo scontro."
+          }
+        ]
+      },
+      "oggetti": [],
+      "fonte": "VII. Arco di Gregorio / I due confronti possibili; XIII. Le ulteriori varianti; XV. Le scene obbligatorie (Confessione anticipata = scena condizionale); XIII (Il dialogo con Gregorio rivela la sua complicità in anticipo soltanto se Ferruccio possiede il registro o la testimonianza di Taddeo)"
+    },
+    {
+      "id": "reggia.scelta-gregorio",
+      "capitolo": "reggia",
+      "tipo": "scelta",
+      "quando": {
+        "prove": "vera"
+      },
+      "ordine": 40,
+      "sommario": "Nel Cortile d'Onore il Custode avanza con l'alabarda. Ferruccio possiede prove o testimonianze (il registro conservato e/o il messaggio di Taddeo): può estrarle e tendergliele, oppure sguainare la spada e attaccare senza tentare il dialogo. La scelta avviene prima dello scontro.",
+      "battute": [],
+      "scelta": {
+        "flag": "gregorio",
+        "opzioni": [
+          {
+            "valore": "dialogo",
+            "etichetta": "Mostragli le prove",
+            "cosa_sacrifica": "Rinuncia al primo colpo e si espone all'alabarda: il Custode non può fermarsi comunque, il combattimento comincerà lo stesso. In cambio Gregorio riconoscerà il torto fatto a Gaetano prima dello scontro e, morendo, confesserà l'innocenza del padre."
+          },
+          {
+            "valore": "attacco",
+            "etichetta": "Attacca il Custode",
+            "cosa_sacrifica": "Affronta Gregorio come un nemico da abbattere, senza sapere quanto sia ancora cosciente: perde la confessione anticipata della sua complicità e la frase Tuo padre era innocente. Scoprirà la verità sul Custode solo dopo averlo ucciso."
+          }
+        ]
+      },
+      "oggetti": [],
+      "fonte": "VII. Arco di Gregorio / I due confronti possibili; XIII. Le ulteriori varianti (il dialogo rivela la complicità in anticipo soltanto con registro o testimonianza di Taddeo); XV. Struttura narrativa lineare (Reggia — Scelta: tentare di farlo ragionare); XIII (dialogo solo con registro o testimonianza di Taddeo)"
+    },
+    {
+      "id": "reggia.confronto-attacco",
+      "capitolo": "reggia",
+      "tipo": "condizionale",
+      "quando": {
+        "gregorio": "attacco"
+      },
+      "ordine": 50,
+      "sommario": "Ferruccio si lancia contro il Custode senza tentare il dialogo. Gregorio solleva immediatamente l'alabarda e pronuncia una sola frase. Il combattimento comincia senza che il giocatore sappia quanto Gregorio sia ancora cosciente.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Gregorio solleva immediatamente l'alabarda."
+        },
+        {
+          "chi": "gregorio",
+          "testo": "Un altro figlio viene a chiedermi conto dei padri."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Il combattimento comincia senza che il giocatore sappia quanto Gregorio sia ancora cosciente."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "VII. Arco di Gregorio / I due confronti possibili / Se Ferruccio lo attacca senza tentare il dialogo"
+    },
+    {
+      "id": "reggia.confronto-dialogo",
+      "capitolo": "reggia",
+      "tipo": "condizionale",
+      "quando": {
+        "gregorio": "dialogo"
+      },
+      "ordine": 50,
+      "sommario": "Ferruccio tende al Custode il registro o il messaggio di Taddeo. Gregorio si ferma per un istante e pronuncia il nome di Gaetano; poi il giglio sul petto si illumina e la volontà di Violante lo riprende. Ordina a Ferruccio di andarsene prima che lo costringano a ucciderlo. Il combattimento comincia.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio mostra il registro o il messaggio di Taddeo."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Gregorio si ferma per un istante."
+        },
+        {
+          "chi": "gregorio",
+          "testo": "Gaetano..."
+        },
+        {
+          "chi": "gregorio",
+          "testo": "Gli abbiamo fatto un torto terribile."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Poi il giglio si illumina."
+        },
+        {
+          "chi": "gregorio",
+          "testo": "Va' via. Prima che mi faccia ucciderti."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Il combattimento comincia."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "VII. Arco di Gregorio / I due confronti possibili / Se Ferruccio possiede prove o testimonianze e cerca di parlargli; XV. Le scene obbligatorie (Reggia — condizionale: Confessione anticipata)"
+    },
+    {
+      "id": "reggia.scontro-custode",
+      "capitolo": "reggia",
+      "tipo": "boss",
+      "quando": {},
+      "ordine": 60,
+      "sommario": "Scontro con il Custode nel Cortile d'Onore. I suoi attacchi sono violenti e regolari, come quelli di una macchina che continua a eseguire un ordine. Ogni volta che Gregorio subisce un colpo, il giglio sul suo petto emette un lampo; in alcuni momenti sembra voler abbassare l'alabarda, ma una forza lo obbliga a sollevarla. Terzo indizio: Ferruccio, tra un affondo e l'altro, fissa il giglio che lampeggia e capisce da dove vengono gli ordini.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Durante lo scontro finale, ogni volta che Gregorio subisce un colpo, il giglio sul suo petto emette un lampo."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "In alcuni momenti il Custode sembra voler abbassare l'alabarda, ma una forza lo obbliga a sollevarla."
+        }
+      ],
+      "oggetti": [
+        "giglio-oro"
+      ],
+      "fonte": "VII. Arco di Gregorio / Il suo passato; Come il giocatore può intuire la verità (lampo del giglio); XV. Le scene obbligatorie (Reggia: Scontro con Gregorio); §10 Indicazioni (Il Custode conserva il suo combattimento originale)"
+    },
+    {
+      "id": "reggia.morte-del-custode",
+      "capitolo": "reggia",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 70,
+      "sommario": "L'armatura si spezza, Gregorio cade sulle ginocchia e per la prima volta si vede un volto umano dietro l'elmo. Confessa che non era un ordine del Re ma una promessa fatta alla moglie; se Ferruccio aveva mostrato le prove, aggiunge che il padre era innocente, altrimenti ammette di aver avuto paura di perderla. Muore; la sua anima sale verso il balcone. Ferruccio solleva lo sguardo: Violante è lì. Resta il mantello rosso, vuoto, sull'armatura.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Al termine dello scontro, l'armatura si spezza. Gregorio cade sulle ginocchia."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Il giocatore vede per la prima volta un volto umano dietro l'elmo."
+        },
+        {
+          "chi": "gregorio",
+          "testo": "Non era un ordine del Re..."
+        },
+        {
+          "chi": "gregorio",
+          "testo": "Era una promessa fatta a mia moglie."
+        },
+        {
+          "chi": "gregorio",
+          "testo": "Tuo padre era innocente.",
+          "se": {
+            "gregorio": "dialogo"
+          }
+        },
+        {
+          "chi": "gregorio",
+          "testo": "Anche io avevo paura di perderla.",
+          "se": {
+            "gregorio": "attacco"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Gregorio muore e la sua anima sale lentamente verso il balcone."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio solleva lo sguardo."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Violante è lì."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "L'ultima immagine della sua sottotrama è il mantello rosso, vuoto, rimasto sull'armatura."
+        }
+      ],
+      "oggetti": [
+        "mantello-rosso"
+      ],
+      "fonte": "VII. Arco di Gregorio / La morte del Custode"
+    },
+    {
+      "id": "reggia.custode-sconfitto",
+      "capitolo": "reggia",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 80,
+      "sommario": "Scena indispensabile (XV): rivelazione di Violante. Versione cinematografica (XVI) della morte di Gregorio: cade in ginocchio, il giglio sul petto si spezza e una luce azzurra esce dall'armatura; il Custode muore indicando il balcone. Violante compare, scende nel cortile mentre le torce si spengono; Ferruccio le punta la spada mentre lei mostra il fazzoletto di Bianca e i fili dorati si irradiano sulla città. Le informazioni che il giocatore ha perso per le sue scelte vengono qui recuperate in forma essenziale (principio 3): nessuno arriva alla decisione su Violante senza sapere cosa sta scegliendo. Da raccordare con reggia.morte-del-custode (VII), vedi note.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Cortile d'Onore · Notte · Poche luci calde"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Gregorio cade in ginocchio."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "L'alabarda tocca il pavimento con un rumore metallico."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Il giglio sul suo petto si incrina, poi si spezza."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Dall'armatura esce una piccola luce azzurra."
+        },
+        {
+          "chi": "gregorio",
+          "testo": "Ho protetto la porta per tutta la vita..."
+        },
+        {
+          "chi": "gregorio",
+          "testo": "E non ho visto cosa entrava."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio si avvicina."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Gregorio tende una mano verso il balcone."
+        },
+        {
+          "chi": "gregorio",
+          "testo": "Lei... crede ancora di poterla salvare."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Il Custode muore."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Dall'alto si sente una voce femminile."
+        },
+        {
+          "chi": "violante",
+          "testo": "Gregorio?"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "La donna compare sul balcone."
+        },
+        {
+          "chi": "violante",
+          "testo": "Avevi promesso che saremmo rimasti insieme."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Scende lentamente una breve scala laterale, mentre le torce si spengono una dopo l'altra."
+        },
+        {
+          "chi": "violante",
+          "testo": "E tu devi essere Ferruccio."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Lo osserva con tristezza."
+        },
+        {
+          "chi": "violante",
+          "testo": "Pensavo di averti tolto abbastanza ricordi da farti riposare."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio punta la spada verso di lei."
+        },
+        {
+          "chi": "violante",
+          "testo": "Non ho mai odiato questa città."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Una finestra si illumina dietro il colonnato."
+        },
+        {
+          "chi": "violante",
+          "testo": "L'ho amata più di quanto meritasse."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "La donna mostra il fazzoletto di Bianca."
+        },
+        {
+          "chi": "violante",
+          "testo": "Ed è per questo che non posso lasciarla andare."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Il giocatore vede i fili dorati irradiarsi da Violante fino alle strade di Caserta."
+        }
+      ],
+      "oggetti": [
+        "fazzoletto-bianca",
+        "giglio-oro"
+      ],
+      "fonte": "XVI. La conclusione cinematografica completa / Scena 1 — Il Custode sconfitto; XV. Le scene obbligatorie (Reggia: rivelazione di Violante); XV ultimo paragrafo"
+    },
+    {
+      "id": "reggia.nucleo-del-velo",
+      "capitolo": "reggia",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 90,
+      "sommario": "Rivelazione inevitabile (principio 3): il tessuto custodito a San Leucio è soltanto il mezzo attraverso cui la magia è stata diffusa; il vero nucleo del Velo è legato alla vita di Violante. Gregorio era il guardiano e il giglio il dispositivo con cui lei trasmetteva gli ordini, ma Violante è l'ultimo nodo vivente dell'incantesimo. Spezzare il giglio ha liberato Gregorio dal comando, troppo tardi per salvarlo, e non libera la città. Ferruccio guarda il giglio spezzato sul mantello, poi i fili che da Violante corrono verso le strade: capisce che il Velo si distrugge soltanto uccidendola, e che se la risparmia lei potrà ricucire i fili. Nessuna battuta nella bibbia: va mostrato (fili dorati), non spiegato.",
+      "battute": [],
+      "oggetti": [],
+      "fonte": "VIII. Arco di Violante / Perché Ferruccio non può semplicemente distruggere il Velo?"
+    },
+    {
+      "id": "reggia.scatola-musicale",
+      "capitolo": "reggia",
+      "tipo": "indizio",
+      "quando": {},
+      "ordine": 100,
+      "sommario": "Poco prima della scelta finale, nel Cortile d'Onore, Ferruccio trova una scatola musicale. La melodia è la stessa che si sente, debolmente, durante tutti gli incontri con le statue. Violante la apre. Ferruccio comprende finalmente che il Velo non è stato creato per riportare Bianca in vita, ma perché sua madre non potesse più provare il dolore di averla perduta. Abbassa di un palmo la spada. Quarto indizio dell'arco di Bianca.",
+      "battute": [
+        {
+          "chi": "violante",
+          "testo": "Aveva promesso di imparare a suonarla."
+        },
+        {
+          "chi": "violante",
+          "testo": "Non ne ha avuto il tempo."
+        }
+      ],
+      "oggetti": [
+        "scatola-musicale"
+      ],
+      "fonte": "XI. Arco di Bianca / Quarto indizio — Reggia"
+    },
+    {
+      "id": "reggia.ultima-conversazione",
+      "capitolo": "reggia",
+      "tipo": "obbligatoria",
+      "quando": {},
+      "ordine": 110,
+      "sommario": "Violante, scesa nel cortile, parla a Ferruccio che tiene la spada alzata. Lui non risponde: guarda la città oltre il cortile. Lei espone i due esiti con parole speculari, poi si inginocchia accanto al mantello del marito e gli chiede chi dei due sia davvero un mostro. La risposta appartiene al giocatore: segue la schermata del bivio (reggia.scelta-violante).",
+      "battute": [
+        {
+          "chi": "violante",
+          "testo": "Guardati. Hai attraversato un'intera città per uccidere qualcuno."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio tiene la spada alzata."
+        },
+        {
+          "chi": "violante",
+          "testo": "Io ho fatto tutto questo affinché nessuno dovesse farlo mai più."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Il ragazzo guarda la città oltre il cortile."
+        },
+        {
+          "chi": "violante",
+          "testo": "Se mi uccidi, torneranno la fame, l'odio e la paura."
+        },
+        {
+          "chi": "violante",
+          "testo": "Se mi risparmi, continueranno a sorridere."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Dopo qualche istante, la donna si inginocchia accanto al mantello del marito."
+        },
+        {
+          "chi": "violante",
+          "testo": "Dimmi, Ferruccio. Chi di noi due è davvero un mostro?"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "La risposta appartiene al giocatore."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "VIII. Arco di Violante / L'ultima conversazione"
+    },
+    {
+      "id": "reggia.scelta-violante",
+      "capitolo": "reggia",
+      "tipo": "scelta",
+      "quando": {},
+      "ordine": 120,
+      "sommario": "Atto IV — La scelta. Scoperto che Violante è la vera responsabile del Velo, Ferruccio affronta una contraddizione: la donna che ha tolto agli abitanti la libertà è anche una persona che ha perso una figlia e ha consacrato la vita all'idea di impedire altre sofferenze. Violante attende, immobile, con la spada di Ferruccio puntata verso di lei. Schermata di scelta: spezzare il Velo (ucciderla, è l'ultimo nodo vivente) o risparmiarla (le permette di ricucire i fili). Il suo arco non si conclude con il riconoscimento pubblico, ma con la consapevolezza che essere nel giusto non significa essere amati.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Quanto vale la felicità?"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Violante attende la tua decisione."
+        }
+      ],
+      "scelta": {
+        "flag": "violante",
+        "opzioni": [
+          {
+            "valore": "uccisa",
+            "etichetta": "Spezza il Velo",
+            "cosa_sacrifica": "La città sarà libera. Tornerà anche il dolore. Torneranno la fame, l'odio e la paura; Tonino ricorderà Rosa, Mariella la sua paura, Agnese tutto. E nessuno ringrazierà chi ha scelto per loro: Ferruccio diventa il liberatore odiato di Caserta, cacciato da cittadini, guardie, Taddeo e Agnese stessa."
+          },
+          {
+            "valore": "risparmiata",
+            "etichetta": "Risparmia Violante",
+            "cosa_sacrifica": "La città resterà in pace. Nessuno potrà più scegliere. Violante ricuce i fili: Agnese torna a non riconoscerlo, le testimonianze e il registro perdono valore, il padre resta il colpevole ufficiale. Ferruccio vive in pace come unico testimone cosciente di una menzogna, e dimostra a Violante che può ottenere obbedienza persino da chi conosce la verità."
+          }
+        ]
+      },
+      "oggetti": [],
+      "fonte": "XVI. La conclusione cinematografica completa / Scena 2 — Il bivio (testo della schermata); III. Arco di Ferruccio / Atto IV — La scelta; XV. Struttura narrativa lineare (Destino di Violante); XIX violante_fate"
+    },
+    {
+      "id": "reggia.velo-ricucito",
+      "capitolo": "reggia",
+      "tipo": "condizionale",
+      "quando": {
+        "violante": "risparmiata"
+      },
+      "ordine": 130,
+      "sommario": "Ferruccio abbassa la spada. Violante non si pente: raccoglie il giglio d'oro dal mantello del marito e ricuce il Velo; i fili tornano sulle case, le finestre si illuminano e le persone riprendono a sorridere. Il giocatore le ha dimostrato che può ottenere obbedienza persino da chi conosce la verità; Ferruccio diventa uno dei pochi uomini a conoscere la menzogna su cui si regge la città. Violante lo guarda un'ultima volta.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio abbassa la spada."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Violante lo osserva."
+        },
+        {
+          "chi": "violante",
+          "testo": "Lo sapevo."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Si avvicina al mantello del marito e raccoglie il giglio d'oro."
+        },
+        {
+          "chi": "violante",
+          "testo": "In fondo, anche tu desideri soltanto che il dolore finisca."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ricuce il Velo."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "I fili tornano a estendersi sulle case di Caserta. Le finestre si illuminano e le persone riprendono a sorridere."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Violante guarda Ferruccio un'ultima volta."
+        },
+        {
+          "chi": "violante",
+          "testo": "Non sarai ricordato come un eroe."
+        },
+        {
+          "chi": "violante",
+          "testo": "Ma potrai vivere in pace."
+        }
+      ],
+      "oggetti": [
+        "giglio-oro",
+        "mantello-rosso"
+      ],
+      "fonte": "XVI. La conclusione cinematografica completa / Se Ferruccio risparmia Violante; VIII. Arco di Violante / L'ultima conversazione (Se la risparmia); III. Atto IV — La scelta"
+    },
+    {
+      "id": "reggia.velo-spezzato",
+      "capitolo": "reggia",
+      "tipo": "condizionale",
+      "quando": {
+        "violante": "uccisa"
+      },
+      "ordine": 130,
+      "sommario": "Ferruccio avanza e affonda la spada in Violante, che non si difende e muore convinta di essere stata tradita dall'umanità che voleva proteggere. Il giglio si spegne, i fili si spezzano; nel silenzio tornano pianto, voci e una risata vera. La luna lascia il posto a un cielo azzurro e Ferruccio osserva la città libera. Da qui diventa il liberatore odiato di Caserta.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio avanza."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Violante non tenta di difendersi."
+        },
+        {
+          "chi": "violante",
+          "testo": "Allora non hai imparato niente."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio affonda la spada."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Il giglio ricamato si spegne e i fili che attraversano la città si spezzano."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Per un istante non si sente nulla."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Poi una donna comincia a piangere."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Un bambino chiama sua madre."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Un uomo ride davvero, sorpreso dalla propria risata."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "La luce della luna lascia spazio a un cielo azzurro e vivace."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio osserva la città finalmente libera."
+        }
+      ],
+      "oggetti": [
+        "fazzoletto-bianca"
+      ],
+      "fonte": "XVI. La conclusione cinematografica completa / Se Ferruccio uccide Violante; VIII. Arco di Violante / L'ultima conversazione (Se la uccide); III. Atto IV — La scelta"
+    },
+    {
+      "id": "epilogo.caserta-controllata",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "risparmiata"
+      },
+      "ordine": 10,
+      "sommario": "Stato del mondo con il Velo ripristinato: cielo grigio-azzurro con foschia, verdi pallidi e desaturati, luce uniforme e fredda, NPC tutti pacifici e sorridenti con frasi ripetitive e felicità artificiale, melodia lenta e ripetitiva; gatti d'ombra e vespe possono continuare a manifestarsi, le statue restano legate all'incantesimo. Città ordinata, sicura e apparentemente prospera in cui nessuno desidera più nulla di diverso.",
+      "battute": [],
+      "oggetti": [],
+      "fonte": "XVII. Lo stato del mondo dopo i finali; XX; §10 Indicazioni"
+    },
+    {
+      "id": "epilogo.caserta-libera",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "uccisa"
+      },
+      "ordine": 10,
+      "sommario": "Stato del mondo dopo la liberazione: cielo azzurro intenso e luminoso, verdi saturi e fiori vivaci, contrasti naturali e colori caldi, tutti gli NPC ostili (accuse, paura, rabbia, richieste d'arresto), melodia dinamica con note malinconiche; il Velo non può più generare gatti d'ombra e vespe, le statue tornano inerti. Deve essere il mondo più bello e luminoso dell'intero gioco anche mentre tutti cercano di uccidere il protagonista.",
+      "battute": [],
+      "oggetti": [],
+      "fonte": "XVII. Lo stato del mondo dopo i finali; XX; §10 Indicazioni"
+    },
+    {
+      "id": "epilogo.bianca-liberazione",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "uccisa"
+      },
+      "ordine": 20,
+      "sommario": "Il ricordo di Bianca viene liberato. Il giocatore vede il giglio ricamato perdere la sua luce soprannaturale. Rimane un semplice fazzoletto, accanto al corpo di Violante e al mantello vuoto di Gregorio.",
+      "battute": [],
+      "oggetti": [
+        "fazzoletto-bianca"
+      ],
+      "fonte": "XI. Arco di Bianca / Chiusura dell'arco (Se Violante muore)"
+    },
+    {
+      "id": "epilogo.piazza-grigia",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "risparmiata"
+      },
+      "ordine": 20,
+      "sommario": "La scena passa a Piazza Dante: commercianti ai banchetti, bambini che giocano senza litigare, palette sempre più grigia. Tonino saluta Ferruccio parlando di una bella giornata mentre lui guarda il cielo coperto; Agnese compare sotto un portico e non lo riconosce. Ferruccio stringe la sciarpa e passa oltre.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "La scena passa a Piazza Dante."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "I commercianti sono tornati ai loro banchetti. I bambini giocano senza litigare. Nessuno sembra preoccupato."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "La palette diventa progressivamente grigia e smorzata."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio incontra Tonino."
+        },
+        {
+          "chi": "tonino",
+          "testo": "Buongiorno, guagliò! Che bella giornata!"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio osserva il cielo coperto."
+        },
+        {
+          "chi": "tonino",
+          "testo": "Eh, bellissima. Proprio bellissima."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Agnese compare sotto un portico."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Non lo riconosce."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Scusate... cercate qualcuno?"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio stringe la sciarpa e passa oltre."
+        }
+      ],
+      "oggetti": [
+        "sciarpa-rossa"
+      ],
+      "fonte": "XVI. La conclusione cinematografica completa / Se Ferruccio risparmia Violante"
+    },
+    {
+      "id": "epilogo.accusa-folla",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "uccisa"
+      },
+      "ordine": 30,
+      "sommario": "Due guardie entrano nel cortile e vedono Violante e Gregorio a terra; gli abitanti accorrono e lo accusano. Ferruccio tenta di mostrare la sciarpa, la spada e, se lo possiede, il registro: nessuno lo ascolta.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Poi una guardia entra nel cortile."
+        },
+        {
+          "chi": "guardia",
+          "testo": "La Signora! L'ha ammazzata!"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Una seconda guardia vede Gregorio a terra."
+        },
+        {
+          "chi": "guardia",
+          "testo": "Ha ucciso anche il Custode!"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Gli abitanti accorrono."
+        },
+        {
+          "chi": "cittadino",
+          "testo": "Era lei che dava da mangiare ai nostri figli!"
+        },
+        {
+          "chi": "cittadino",
+          "testo": "Assassino!"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio tenta di mostrare la propria sciarpa, la spada e, se lo possiede, il registro. Nessuno è disposto ad ascoltarlo in mezzo al caos."
+        }
+      ],
+      "oggetti": [
+        "sciarpa-rossa",
+        "spada",
+        "registro"
+      ],
+      "fonte": "XVI. La conclusione cinematografica completa / Se Ferruccio uccide Violante"
+    },
+    {
+      "id": "epilogo.agnese-manifattura",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "risparmiata"
+      },
+      "ordine": 30,
+      "sommario": "Il Velo è ripristinato. Agnese è nella manifattura, sorridente e apparentemente felice. Se aveva recuperato i ricordi, Violante li ha cancellati di nuovo, ma alcuni gesti sono rimasti impressi nel suo corpo: quando Ferruccio le passa davanti si tocca istintivamente il polso, proprio come faceva lui. Se non li aveva mai recuperati, continua semplicemente a tessere. Ferruccio si ferma sulla soglia, stringe la sciarpa (se la possiede) o il polso, e passa oltre senza farsi riconoscere.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Se Agnese aveva recuperato i ricordi, Violante li cancella nuovamente, ma alcuni gesti rimangono impressi nel suo corpo.",
+          "se": {
+            "agnese": "risvegliata"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Quando Ferruccio le passa davanti, Agnese si tocca istintivamente il polso, proprio come faceva lui.",
+          "se": {
+            "agnese": "risvegliata"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Se non aveva mai recuperato i ricordi, continua semplicemente a tessere.",
+          "se": {
+            "agnese": "sognante"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "In entrambi i casi, rimane nella manifattura, sorridente e apparentemente felice."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Devo finire una sciarpa. Sento che qualcuno verrà a prenderla."
+        }
+      ],
+      "oggetti": [
+        "sciarpa-rossa"
+      ],
+      "fonte": "IV. Arco di Agnese / Il destino di Agnese nei due finali / Se Violante sopravvive"
+    },
+    {
+      "id": "epilogo.agnese-folla",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "uccisa"
+      },
+      "ordine": 40,
+      "sommario": "Il Velo si spezza e Agnese recupera ogni ricordo, indipendentemente dalla scelta di San Leucio. Dalla folla emerge Agnese: se era stata risvegliata riconosce immediatamente Ferruccio e gli chiede di non scappare; se era rimasta addormentata lo riconosce soltanto ora, dopo la morte di Violante, e gli chiede perché. Vedere il giovane con la spada davanti al corpo della benefattrice la sconvolge. Ferruccio, la spada ancora in mano, la vede emergere e abbassa lentamente la lama. Anche lei tenta di fermarlo (il come dipende dal rapporto: epilogo.agnese-fermati / epilogo.agnese-accusa).",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Il Velo si spezza e Agnese recupera ogni ricordo, indipendentemente dalla scelta compiuta nel quarto capitolo."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Se era stata risvegliata in precedenza, riconosce immediatamente Ferruccio tra la folla.",
+          "se": {
+            "agnese": "risvegliata"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Se invece era rimasta addormentata, il suo riconoscimento avviene soltanto dopo la morte di Violante.",
+          "se": {
+            "agnese": "sognante"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Tuttavia, vedere il giovane con la spada davanti al corpo della benefattrice la sconvolge."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Dalla folla emerge Agnese."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "La sua battuta dipende dall'arco romantico raggiunto."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Ferruccio... ti prego. Non scappare. Posso ancora aiutarti!",
+          "se": {
+            "agnese": "risvegliata"
+          }
+        },
+        {
+          "chi": "agnese",
+          "testo": "Sei tu... Sei davvero tu? Perché hai fatto questo?",
+          "se": {
+            "agnese": "sognante"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Anche lei tenta di fermarlo."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "IV. Arco di Agnese / Il destino di Agnese nei due finali / Se Violante muore; XVI. La conclusione cinematografica completa / Se Ferruccio uccide Violante"
+    },
+    {
+      "id": "epilogo.taddeo-guardia",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "risparmiata"
+      },
+      "ordine": 40,
+      "sommario": "Nella Piazza Dante grigia, Taddeo e di nuovo una guardia in pattuglia. Passando accanto a Ferruccio rallenta, lo fissa un istante come se ricordasse, poi il Velo lo riprende e riparte sorridendo. Ferruccio lo guarda allontanarsi senza fermarlo.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Se Violante viene risparmiata, Taddeo continua a essere una guardia."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "La sua redenzione, se raggiunta, rimane incompleta: ricorda a tratti di aver tradito qualcuno, ma il Velo gli impedisce di sostenere il peso di quella memoria.",
+          "se": {
+            "taddeo": "perdonato"
+          }
+        }
+      ],
+      "oggetti": [],
+      "fonte": "V. Arco di Taddeo / Il destino finale di Taddeo"
+    },
+    {
+      "id": "epilogo.agnese-accusa",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "uccisa",
+        "agnese": "risvegliata",
+        "taddeo": "accusato"
+      },
+      "ordine": 50,
+      "sommario": "Il rapporto era ormai compromesso (percorsi 5 e 7: Agnese risvegliata, Taddeo accusato): Agnese lo accusa direttamente davanti alla folla. Ferruccio non ha nulla da mostrarle oltre la sciarpa e la spada; resta un istante fermo sotto il suo sguardo, poi fugge.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Se il rapporto era ormai compromesso, invece, lo accusa direttamente."
+        },
+        {
+          "chi": "agnese",
+          "testo": "Hai liberato tutti. Ma chi ti ha dato il diritto di decidere chi deve morire?"
+        }
+      ],
+      "oggetti": [],
+      "fonte": "IV. Arco di Agnese / Se Violante muore (Se il rapporto era ormai compromesso); XIII. Percorsi 5, 7"
+    },
+    {
+      "id": "epilogo.agnese-fermati",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "uccisa"
+      },
+      "quando_or": [
+        {
+          "agnese": "sognante"
+        },
+        {
+          "agnese": "risvegliata",
+          "taddeo": "perdonato"
+        }
+      ],
+      "ordine": 50,
+      "sommario": "Agnese lo ama ancora (percorsi 1, 2, 3, 4, 6, 8): tenta di fermarlo per costringerlo a consegnarsi alle guardie, convinta che sia l'unico modo per salvarlo dal linciaggio. Diventa un NPC ostile come tutti nel mondo liberato, ma non per odio: vuole impedirgli di fuggire. Ferruccio deve scattare oltre di lei mentre tenta di bloccarlo, senza colpirla.",
+      "battute": [
+        {
+          "chi": "agnese",
+          "testo": "Fermati! Non voglio perderti un'altra volta!"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio deve scattare oltre di lei mentre tenta di bloccarlo."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "IV. Arco di Agnese / Se Violante muore (Se Agnese lo amava ancora); XIII. Percorsi 1, 2, 3, 6"
+    },
+    {
+      "id": "epilogo.tonino-negato-risparmiata",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "tonino_ricordo": "negato",
+        "violante": "risparmiata"
+      },
+      "ordine": 50,
+      "sommario": "Tonino è identico al primo incontro: sorridente al banchetto, ripete una frase di felicità artificiale sotto il cielo coperto. Ferruccio passa oltre.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Tonino rimane identico al primo incontro."
+        },
+        {
+          "chi": "tonino",
+          "testo": "Sempre una bella giornata! Pure quando piove!"
+        }
+      ],
+      "oggetti": [],
+      "fonte": "X. Arco di Tonino / Le quattro scene conclusive / Ricordo non restituito + Violante risparmiata"
+    },
+    {
+      "id": "epilogo.tonino-restituito-risparmiata",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "tonino_ricordo": "restituito",
+        "violante": "risparmiata"
+      },
+      "ordine": 50,
+      "sommario": "Il Velo ricucito cancella di nuovo il lutto di Tonino. Canticchia mentre sistema due piatti sul tavolo, senza sapere per chi sia il secondo. Ferruccio osserva senza poter dire nulla.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Il Velo torna a cancellare il suo lutto. Tonino canticchia mentre sistema due piatti sul tavolo."
+        },
+        {
+          "chi": "tonino",
+          "testo": "Uno per me e uno per... boh. Sarà l'abitudine."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "X. Arco di Tonino / Le quattro scene conclusive / Ricordo restituito + Violante risparmiata"
+    },
+    {
+      "id": "epilogo.gaetano-velo",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "risparmiata"
+      },
+      "ordine": 60,
+      "sommario": "I documenti vengono nuovamente alterati nella memoria collettiva. Il padre rimane il colpevole ufficiale, anche se Ferruccio ha conservato il registro. Ferruccio, passando davanti alla targa di Piazza Dante, non la colpisce più: la guarda e passa oltre.",
+      "battute": [],
+      "oggetti": [
+        "registro",
+        "targa"
+      ],
+      "fonte": "VI. Arco di Gaetano / Conseguenza sui finali (finale del Velo)"
+    },
+    {
+      "id": "epilogo.taddeo-caccia",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "uccisa"
+      },
+      "ordine": 60,
+      "sommario": "Nella fuga dal Cortile verso Piazza Dante, Taddeo e tra gli NPC ostili. Se perdonato, sbarra la strada con la mano aperta, non con l'arma, e chiede a Ferruccio di consegnarsi per salvarsi dal linciaggio; Ferruccio lo scarta e scatta oltre. Se accusato, guida la caccia e indica Ferruccio alla folla.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Se Violante viene uccisa, anche Taddeo diventa ostile a Ferruccio."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Nel percorso della redenzione cerca di arrestarlo, convinto che una resa possa impedirne l'uccisione. Non vuole infliggergli una nuova ingiustizia, ma è ancora incapace di opporsi completamente alle autorità.",
+          "se": {
+            "taddeo": "perdonato"
+          }
+        },
+        {
+          "chi": "taddeo",
+          "testo": "Una volta ti ho consegnato per paura. Stavolta vieni con me di tua volontà!",
+          "se": {
+            "taddeo": "perdonato"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Se invece non era stato perdonato, partecipa apertamente alla caccia contro Ferruccio, utilizzando la sua presunta colpevolezza per distogliere l'attenzione dai propri crimini.",
+          "se": {
+            "taddeo": "accusato"
+          }
+        }
+      ],
+      "oggetti": [],
+      "fonte": "V. Arco di Taddeo / Il destino finale di Taddeo"
+    },
+    {
+      "id": "epilogo.tonino-negato-uccisa",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "tonino_ricordo": "negato",
+        "violante": "uccisa"
+      },
+      "ordine": 70,
+      "sommario": "Il Velo scompare e Tonino ricorda improvvisamente Rosa. Sconvolto dal dolore e dalla notizia dell'uccisione di Violante, si unisce alla folla ostile contro Ferruccio.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Il Velo scompare e Tonino ricorda improvvisamente Rosa."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Sconvolto dal dolore e dalla notizia dell'uccisione di Violante, si unisce alla folla."
+        },
+        {
+          "chi": "tonino",
+          "testo": "E tu saresti quello che ci ha salvati?"
+        }
+      ],
+      "oggetti": [],
+      "fonte": "X. Arco di Tonino / Le quattro scene conclusive / Ricordo non restituito + Violante uccisa"
+    },
+    {
+      "id": "epilogo.tonino-restituito-uccisa",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "tonino_ricordo": "restituito",
+        "violante": "uccisa"
+      },
+      "ordine": 70,
+      "sommario": "Caserta libera. Tonino è tornato capace di soffrire e sa che Ferruccio lo ha aiutato, ma conosce le opere di carità di Violante e non accetta la sua morte. Gli scaglia contro un oggetto e tenta di fermarlo (NPC ostile, non controllato da magia).",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Tonino è tornato capace di soffrire e sa che Ferruccio lo ha aiutato. Ma conosce anche le opere di carità di Violante e non accetta che sia stata uccisa."
+        },
+        {
+          "chi": "tonino",
+          "testo": "Mi hai ridato mia moglie nei ricordi. Ma questo non ti dava diritto di togliere una vita!"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Gli scaglia contro un oggetto e tenta di fermarlo."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "X. Arco di Tonino / Le quattro scene conclusive / Ricordo restituito + Violante uccisa"
+    },
+    {
+      "id": "epilogo.mariella-sagoma",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "*"
+      },
+      "ordine": 80,
+      "sommario": "Breve sagoma di Mariella alla finestra durante il finale. Se il Velo e spezzato, la sagoma si ritrae dalla finestra (torna la paura) e Taddeo, se perdonato, sale le scale per starle accanto; se accusato, la finestra gli viene chiusa. Se il Velo resta, la sagoma continua a sorridere immobile. Ferruccio, in fuga o di passaggio, alza gli occhi alla finestra.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Mariella riacquista la capacità di provare paura. Taddeo comprende che può accompagnarla, ma non cancellare ciò che ha vissuto.",
+          "se": {
+            "taddeo": "perdonato",
+            "violante": "uccisa"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Mariella torna a provare emozioni, ma scopre che suo fratello ha tradito un amico per lei. Lo respinge.",
+          "se": {
+            "taddeo": "accusato",
+            "violante": "uccisa"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Mariella continua a sorridere. Taddeo conserva a tratti il ricordo della lettera, senza trovare il coraggio di opporsi.",
+          "se": {
+            "taddeo": "perdonato",
+            "violante": "risparmiata"
+          }
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Mariella rimane serena e Taddeo si convince che il tradimento sia stato necessario.",
+          "se": {
+            "taddeo": "accusato",
+            "violante": "risparmiata"
+          }
+        }
+      ],
+      "oggetti": [],
+      "fonte": "IX. Arco di Mariella / I possibili esiti"
+    },
+    {
+      "id": "epilogo.bianca-velo",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "risparmiata"
+      },
+      "ordine": 90,
+      "sommario": "Il giglio continua a brillare. La scatola musicale suona da sola e Violante, sul balcone della Reggia, ascolta una voce che ripete sempre lo stesso verso della filastrocca. Non sappiamo se sia davvero la voce di Bianca o soltanto un ricordo catturato dalla magia: il dubbio resta irrisolto.",
+      "battute": [],
+      "oggetti": [
+        "fazzoletto-bianca",
+        "scatola-musicale",
+        "filastrocca"
+      ],
+      "fonte": "XI. Arco di Bianca / Chiusura dell'arco (Se Violante vive)"
+    },
+    {
+      "id": "epilogo.fuga",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "uccisa"
+      },
+      "ordine": 90,
+      "sommario": "Breve fuga giocabile dal Cortile verso Piazza Dante: tutti gli NPC sono ostili, alcuni cercano di arrestare Ferruccio, altri lo colpiscono per rabbia e panico, senza alcuna magia. La verità emerge, ma i cittadini non sono disposti ad ascoltarlo mentre viene accusato di aver ucciso Violante: durante la fuga tenta di mostrare la sciarpa, la spada e, se lo possiede, il registro. Se ha conservato il registro, fugge portando con sé la prova che un giorno potrebbe riabilitare suo padre; se lo ha bruciato, fugge con il solo ricordo di ciò che ha visto. Ferruccio riesce a fuggire; sul nero compare la frase finale.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Comincia una breve fuga giocabile nel Cortile e verso Piazza Dante. Tutti gli NPC incontrabili sono ostili: alcuni cercano di arrestare Ferruccio, altri lo colpiscono in preda alla rabbia e al panico."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "È fondamentale che non siano controllati da alcuna magia. La loro ostilità deve essere il risultato delle loro scelte, della paura e della fedeltà a Violante."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Ferruccio riesce a fuggire."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Sul nero compare una frase:"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Il primo dono della libertà fu il diritto di odiarlo."
+        }
+      ],
+      "oggetti": [
+        "registro",
+        "sciarpa-rossa",
+        "spada"
+      ],
+      "fonte": "XVI. La conclusione cinematografica completa / Se Ferruccio uccide Violante; VI. Arco di Gaetano / Conseguenza sui finali (finale della liberazione); XVI. Se Ferruccio uccide Violante"
+    },
+    {
+      "id": "epilogo.ultima-inquadratura",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "risparmiata"
+      },
+      "ordine": 100,
+      "sommario": "L'ultima inquadratura mostra Violante sul balcone della Reggia, con fili d'oro che partono dalle sue dita e attraversano tutta la città. Sul nero compare la frase finale.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "L'ultima inquadratura mostra Violante sul balcone della Reggia."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Dalle sue dita partono fili d'oro che attraversano tutta la città."
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Sul nero compare una frase:"
+        },
+        {
+          "chi": "didascalia",
+          "testo": "Nessuno aveva più bisogno di essere salvato. Nessuno poteva più chiedere aiuto."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "XVI. La conclusione cinematografica completa / Se Ferruccio risparmia Violante"
+    },
+    {
+      "id": "epilogo.titoli-di-coda",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {},
+      "ordine": 110,
+      "sommario": "Titoli di coda, identici per entrambe le conclusioni, accompagnati dalla stessa frase.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "La libertà non promette la felicità. Promette soltanto che sarà tua la scelta."
+        }
+      ],
+      "oggetti": [],
+      "fonte": "XX. L'identità tematica del gioco"
+    },
+    {
+      "id": "epilogo.dopo-i-titoli",
+      "capitolo": "epilogo",
+      "tipo": "epilogo",
+      "quando": {
+        "violante": "*"
+      },
+      "ordine": 120,
+      "sommario": "Breve sequenza giocabile dopo i titoli di coda che riutilizza una porzione di Piazza Dante: stesso scenario, colori e comportamento degli NPC differenti secondo il flag violante. L'ostilità dei cittadini usa i comportamenti di inseguimento e attacco già presenti nei nemici. La domanda che il giocatore deve portarsi dietro chiude il gioco.",
+      "battute": [
+        {
+          "chi": "didascalia",
+          "testo": "Se nessuno vuole essere liberato, hai comunque il diritto di farlo?"
+        }
+      ],
+      "oggetti": [],
+      "fonte": "§10 Indicazioni per trasformare la storia in gioco; XVII ultimo paragrafo"
+    }
+  ],
+  "boss": [
+    {
+      "id": "gatto-dei-quattro-canti",
+      "capitolo": "piazza-dante",
+      "nome": "Gatto dei Quattro Canti",
+      "origine": "Formato dai ricordi domestici sottratti alle famiglie.",
+      "rivelazione": "Ferruccio comprende che le creature d'ombra custodiscono qualcosa di umano.",
+      "comportamento_demo": "Versione ingrandita e modificata del gatto della demo: pattugliamento e balzi. Si dissolve in anime colorate; rilascia l'anima con il ricordo di Rosa.",
+      "canon": "Established"
+    },
+    {
+      "id": "regina-dei-debiti",
+      "capitolo": "corso-trieste",
+      "nome": "Regina dei Debiti",
+      "origine": "Nata dalle ambizioni e dalle promesse mai mantenute durante i lavori della Reggia.",
+      "rivelazione": "Le vespe trasportano desideri rubati verso il palazzo.",
+      "comportamento_demo": "Versione ingrandita e modificata della vespa della demo: inseguimento. Si dissolve in anime colorate.",
+      "canon": "Established"
+    },
+    {
+      "id": "madre-di-marmo",
+      "capitolo": "villa-comunale",
+      "nome": "Madre di Marmo",
+      "origine": "Statua che custodisce i ricordi degli operai morti.",
+      "rivelazione": "Gaetano non causò l'incidente, ma tentò di salvare gli altri.",
+      "comportamento_demo": "Versione ingrandita e modificata dei proiettili luminosi delle statue già previsti nella demo. Non lascia cadavere: si dissolve in anime colorate che salgono lentamente, tra cui la memoria di Gaetano.",
+      "canon": "Established"
+    },
+    {
+      "id": "tessitrice-di-pietra",
+      "capitolo": "san-leucio",
+      "nome": "Tessitrice di Pietra",
+      "origine": "Statua utilizzata come guardiana dei telai incantati.",
+      "rivelazione": "Il Velo nasce dalla seta e il giglio è il simbolo che lega i guardiani a Violante.",
+      "comportamento_demo": "Versione ingrandita e modificata della statua della demo: proiettili luminosi. Si dissolve in anime colorate.",
+      "canon": "Established"
+    },
+    {
+      "id": "custode",
+      "capitolo": "reggia",
+      "nome": "Il Custode (Gregorio Valente)",
+      "origine": "Capitano delle guardie legato magicamente al giglio d'oro donatogli da Violante e imprigionato nella sua stessa armatura quando tentò di distruggere il primo nucleo del Velo. Rimane cosciente, ma ogni suo movimento è controllato dal Velo.",
+      "rivelazione": "Non era un ordine del Re, ma una promessa fatta alla moglie. Con gregorio=dialogo confessa anche Tuo padre era innocente (complicità e innocenza di Gaetano rivelate); con gregorio=attacco ammette Anche io avevo paura di perderla. In entrambi i casi muore e la sua anima sale verso il balcone dove appare Violante: il vero nemico non era lui.",
+      "comportamento_demo": "Il Custode conserva il suo combattimento originale della demo (Espansioni e indicazioni, §10). Attacchi con l'alabarda violenti e regolari, come una macchina che esegue un ordine. Feedback narrativo: a ogni colpo subito il giglio sul petto emette un lampo; in alcuni momenti abbozza l'abbassamento dell'alabarda, poi una forza lo obbliga a sollevarla. Alla sconfitta l'armatura si spezza e il giglio si incrina; non lascia cadavere di mostro ma un volto umano e il mantello rosso vuoto.",
+      "canon": "Established"
+    },
+    {
+      "id": "campanaro-senza-volto",
+      "capitolo": "espansione-casertavecchia",
+      "nome": "Il Campanaro Senza Volto",
+      "origine": "Figura di pietra di Casertavecchia che risveglia i rimorsi attraverso i rintocchi; le campane custodiscono le parole mai pronunciate dagli abitanti.",
+      "rivelazione": "Espansione I — Le Campane del Perdono. Sottotrama: Taddeo ricompare per chiedere perdono o completare il tradimento, secondo le scelte precedenti.",
+      "comportamento_demo": "Non definito (espansione, Provisional).",
+      "canon": "Provisional"
+    },
+    {
+      "id": "guardiano-delle-sorgenti",
+      "capitolo": "espansione-acquedotto-carolino",
+      "nome": "Il Guardiano delle Sorgenti",
+      "origine": "Gigantesca figura di pietra attraversata da acqua luminosa; nei sotterranei dell'Acquedotto sono conservati i ricordi sottratti dal Velo.",
+      "rivelazione": "Espansione II — Le Acque della Memoria. Sottotrama: Ferruccio ritrova un messaggio del padre e può comprendere che la vendetta non coincide necessariamente con la verità.",
+      "comportamento_demo": "Non definito (espansione, Provisional).",
+      "canon": "Provisional"
+    },
+    {
+      "id": "giudice-dell-arena",
+      "capitolo": "espansione-santa-maria-capua-vetere",
+      "nome": "Il Giudice dell'Arena",
+      "origine": "Custode di antichi giuramenti nell'Anfiteatro Campano, dove sono raccolte le memorie dei combattenti di molte epoche.",
+      "rivelazione": "Espansione III — L'Arena dei Dimenticati: la magia di Violante non nasceva a Caserta ma era tramandata da secoli. Sottotrama: Agnese può tornare, con rapporto dipendente dalla campagna principale.",
+      "comportamento_demo": "Non definito (espansione, Provisional).",
+      "canon": "Provisional"
+    }
+  ],
+  "oggetti": [
+    {
+      "id": "maschera-pulcinella",
+      "nome": "Costume/maschera da Pulcinella",
+      "dove": "piazza-dante.risveglio",
+      "significato": "Preparato per i festeggiamenti cittadini; Violante vi imprigiona la coscienza di Ferruccio. Il sortilegio fallisce in parte: perde voce e aspetto umano ma conserva la volontà di opporsi. All'inizio il volto è nero; nome e volto umano tornano nella Fucina del Ricordo.",
+      "canon": "Established"
+    },
+    {
+      "id": "spada",
+      "nome": "Spada di Ferruccio",
+      "dove": "piazza-dante.targa-commemorativa",
+      "significato": "Forgiata con gli ultimi strumenti del padre (e, secondo Taddeo, forgiata insieme a lui). Rappresenta inizialmente la vendetta; il suo gesto cambia di senso lungo gli atti.",
+      "canon": "Established"
+    },
+    {
+      "id": "targa",
+      "nome": "Targa commemorativa",
+      "dove": "piazza-dante.targa-commemorativa",
+      "significato": "La falsa versione ufficiale incisa nella pietra: onora gli operai caduti nel loro dovere e omette Gaetano. Primo bersaglio della rabbia muta di Ferruccio.",
+      "canon": "Established"
+    },
+    {
+      "id": "mozzarella-di-tonino",
+      "nome": "Mozzarella di Tonino",
+      "dove": "piazza-dante.tonino-primo-incontro",
+      "significato": "Primo gesto di umanità verso il Pulcinella muto: 'Magari sotto 'sta maschera ce sta ancora qualcuno.' Oggetto di scena, non di inventario.",
+      "canon": "Established"
+    },
+    {
+      "id": "indizio-ferro-che-risuona",
+      "nome": "Indizio: ferro che risuona dietro una porta su Corso Trieste",
+      "dove": "piazza-dante.bottega-di-gaetano",
+      "significato": "Indizio di Mariella che conduce alla porta della bottega di Gaetano (Fucina del Ricordo).",
+      "canon": "Provisional"
+    },
+    {
+      "id": "filastrocca",
+      "nome": "Filastrocca del giglio",
+      "dove": "piazza-dante.filastrocca",
+      "significato": "Vecchia filastrocca per bambini vicino a una finestra. Primo indizio di Bianca; il suo verso torna nel finale del Velo, ripetuto da una voce che potrebbe essere di Bianca.",
+      "canon": "Established"
+    },
+    {
+      "id": "anima-ricordo-rosa",
+      "nome": "Anima con il ricordo di Rosa",
+      "dove": "piazza-dante.gatto-dei-quattro-canti",
+      "significato": "Rilasciata dal Gatto dei Quattro Canti (formato dai ricordi domestici sottratti alle famiglie). Prima prova che le creature d'ombra custodiscono qualcosa di umano. Oggetto della scelta tonino_ricordo.",
+      "canon": "Established"
+    },
+    {
+      "id": "medaglione-di-rosa",
+      "nome": "Medaglione di Rosa",
+      "dove": "piazza-dante.ricordo-restituito",
+      "significato": "Oggetto che Tonino riconosce quando il ricordo gli viene restituito; fa riaffiorare il nome della moglie dopo anni.",
+      "canon": "Established"
+    },
+    {
+      "id": "lettera-agnese",
+      "nome": "Lettera d'amore di Agnese",
+      "dove": "piazza-dante.ricordo-restituito",
+      "significato": "Scritta da Agnese prima della maledizione e custodita da Tonino; ottenibile solo se tonino_ricordo=restituito (flag derivato lettera_agnese). Non cambia il percorso obbligatorio ma rende più personali le scene del Belvedere di San Leucio (san-leucio.lettera-belvedere). Il testo della lettera non è scritto nella bibbia.",
+      "canon": "Established"
+    },
+    {
+      "id": "lettera-mariella",
+      "nome": "Lettera di Mariella",
+      "dove": "corso-trieste.lettera-mariella",
+      "significato": "Scritta da Mariella a Taddeo prima dell'incantesimo: Non devi aggiustarmi. Voglio soltanto che, quando ho paura, tu rimanga con me. Prova che Taddeo ha tradito Ferruccio per ottenere qualcosa che la sorella non gli aveva mai chiesto. Risposta indiretta alla convinzione di Violante che ogni sofferenza debba essere eliminata. Disponibile solo se taddeo=perdonato (flag derivato lettera_mariella).",
+      "canon": "Established"
+    },
+    {
+      "id": "incudine-fucina",
+      "nome": "Incudine della Fucina del Ricordo",
+      "dove": "corso-trieste.fucina-del-ricordo",
+      "significato": "Prima incudine utilizzabile (checkpoint): compare dopo che Gaetano restituisce a Ferruccio nome e volto; prima non si può registrare un checkpoint. Le incudini conservano identità, sciarpa, decisioni e percorso; 'Torna al menu' riparte dall'ultimo checkpoint.",
+      "canon": "Established"
+    },
+    {
+      "id": "punzone",
+      "nome": "Punzone da fabbro G. F.",
+      "dove": "villa-comunale.punzone",
+      "significato": "Vecchio punzone di Gaetano abbandonato accanto alla fontana della Villa Comunale. Le iniziali incise sul manico sono la firma di un uomo che la storia ufficiale ha cancellato.",
+      "canon": "Established"
+    },
+    {
+      "id": "messaggio-taddeo",
+      "nome": "Messaggio di Taddeo",
+      "dove": "villa-comunale.messaggio-taddeo",
+      "significato": "Testimonianza scritta lasciata da Taddeo lungo il percorso obbligatorio dopo il perdono. E la 'testimonianza di Taddeo' che vale come prova nel confronto con Gregorio (flag derivato prove = registro conservato OPPURE taddeo perdonato). Taddeo non segue Ferruccio: parla attraverso messaggi, documenti e testimonianze.",
+      "canon": "Established"
+    },
+    {
+      "id": "statua-cavaliere",
+      "nome": "Statua del cavaliere inginocchiato davanti a un giglio",
+      "dove": "villa-comunale.statua-cavaliere",
+      "significato": "Primo indizio sulla natura del Custode: un cavaliere prigioniero del giglio. Incisione sulla base: Non tutte le catene fanno rumore.",
+      "canon": "Established"
+    },
+    {
+      "id": "registri-pubblici",
+      "nome": "Registri pubblici",
+      "dove": "villa-comunale.registri-pubblici",
+      "significato": "La versione ufficiale: Gaetano compare come responsabile dell'incidente. Da confrontare con il documento originale.",
+      "canon": "Established"
+    },
+    {
+      "id": "registro",
+      "nome": "Registro originale (rapporto del 1839)",
+      "dove": "villa-comunale.scelta-registro",
+      "significato": "Il documento originale del cantiere con le cancellature e le correzioni che dimostrano la falsificazione firmata da Gregorio: unica prova materiale dell'innocenza di Gaetano. Oggetto della terza scelta (conservarlo o bruciarlo) e una delle due vie al dialogo con Gregorio. Se conservato è mostrato al Custode e portato via nella fuga; nel finale del Velo non serve a nulla.",
+      "canon": "Established"
+    },
+    {
+      "id": "sciarpa-rossa",
+      "nome": "Sciarpa rossa",
+      "dove": "san-leucio.dono-sciarpa",
+      "significato": "Il regalo di Agnese contro il malocchio (Io non ci credo. Però con te non si sa mai). Dopo la maledizione lei continua a tesserla senza sapere per chi: è il sentimento sopravvissuto alla memoria. Nel gioco è il dono che abilita lo scatto, concesso solo se Agnese viene risvegliata (inizio-memoria-e-doni.md). Nel percorso D Agnese la offre comunque come oggetto narrativo; nel finale della liberazione Ferruccio tenta di mostrarla alla folla; nel finale del Velo la stringe passando oltre. Il colore della sciarpa identifica la manifestazione di Ferruccio ma non altera scelte o finali (XIX).",
+      "canon": "Established"
+    },
+    {
+      "id": "stoffe-giglio",
+      "nome": "Stoffe con il motivo del giglio commissionate da Violante",
+      "dove": "san-leucio.giglio-sulle-stoffe",
+      "significato": "Secondo indizio: la stessa forma floreale del cavaliere di marmo è sulle stoffe di Violante; il giglio è il simbolo che lega i guardiani a lei.",
+      "canon": "Established"
+    },
+    {
+      "id": "fazzoletto-bianca",
+      "nome": "Fazzoletto con il giglio",
+      "dove": "san-leucio.fazzoletto-giglio",
+      "significato": "Piccolo fazzoletto di seta sul quale Bianca aveva ricamato un giglio (incompleto). Stringendolo Violante sentì per pochi istanti la voce della figlia: origine della leggenda dei fili e quindi del Velo. Trovato accanto ai telai di San Leucio (terzo indizio di Bianca); Violante lo mostra nel Cortile d'Onore (reggia.custode-sconfitto). Nel finale della liberazione perde la luce soprannaturale e resta un semplice fazzoletto; nel finale del Velo continua a brillare.",
+      "canon": "Established"
+    },
+    {
+      "id": "disegno",
+      "nome": "Disegno della Reggia incompleta",
+      "dove": "",
+      "significato": "Uno dei tre oggetti attraverso cui Bianca è presente: un disegno della Reggia ancora incompleta, fatto dalla bambina. La bibbia non lo colloca in alcuna scena.",
+      "canon": "Established"
+    },
+    {
+      "id": "frammenti-di-seta",
+      "nome": "Frammenti di seta degli esperimenti di Violante",
+      "dove": "reggia.progressione-del-velo",
+      "significato": "Testimoni dei quattro passi della progressione morale: alleviare, cancellare, impedire, eliminare la libertà. Oggetto provvisorio: la bibbia descrive i passi ma non l'oggetto in gioco.",
+      "canon": "Provisional"
+    },
+    {
+      "id": "giglio-oro",
+      "nome": "Giglio d'oro sul petto del Custode",
+      "dove": "reggia.scontro-custode",
+      "significato": "Donato da Violante a Gregorio; lei vi lega magicamente la sua volontà trasformandolo nel Custode. Dispositivo tramite cui trasmette gli ordini: lampeggia a ogni colpo subito, si spezza alla sconfitta. Spezzarlo libera Gregorio troppo tardi e non libera la città. Nel finale risparmiata Violante lo raccoglie dal mantello per ricucire il Velo.",
+      "canon": "Established"
+    },
+    {
+      "id": "mantello-rosso",
+      "nome": "Mantello rosso del Custode",
+      "dove": "reggia.morte-del-custode",
+      "significato": "Resta vuoto sull'armatura: ultima immagine dell'arco di Gregorio. Violante vi si inginocchia accanto durante l'ultima conversazione.",
+      "canon": "Established"
+    },
+    {
+      "id": "scatola-musicale",
+      "nome": "Scatola musicale di Bianca",
+      "dove": "reggia.scatola-musicale",
+      "significato": "La sua melodia si sente debolmente in tutti gli incontri con le statue. Bianca aveva promesso di imparare a suonarla e non ne ha avuto il tempo. Nel finale del Velo suona da sola.",
+      "canon": "Established"
+    }
+  ],
+  "tabelle_esiti": [
+    {
+      "nome": "Taddeo: quattro risoluzioni",
+      "colonne": [
+        "taddeo",
+        "registro"
+      ],
+      "righe": [
+        {
+          "quando": {
+            "taddeo": "perdonato",
+            "registro": "conservato"
+          },
+          "esito": "Taddeo confessa ufficialmente la falsificazione e indica gli altri responsabili."
+        },
+        {
+          "quando": {
+            "taddeo": "perdonato",
+            "registro": "bruciato"
+          },
+          "esito": "Taddeo confessa, ma la sua testimonianza non può essere verificata."
+        },
+        {
+          "quando": {
+            "taddeo": "accusato",
+            "registro": "conservato"
+          },
+          "esito": "Taddeo tenta di nascondere la propria complicità; Ferruccio possiede comunque la prova."
+        },
+        {
+          "quando": {
+            "taddeo": "accusato",
+            "registro": "bruciato"
+          },
+          "esito": "Taddeo riesce a negare pubblicamente il tradimento. Rimane però tormentato dalla colpa."
+        }
+      ]
+    },
+    {
+      "nome": "Mariella: i possibili esiti",
+      "colonne": [
+        "taddeo",
+        "violante"
+      ],
+      "righe": [
+        {
+          "quando": {
+            "taddeo": "perdonato",
+            "violante": "uccisa"
+          },
+          "esito": "Mariella riacquista la capacità di provare paura. Taddeo comprende che può accompagnarla, ma non cancellare ciò che ha vissuto."
+        },
+        {
+          "quando": {
+            "taddeo": "accusato",
+            "violante": "uccisa"
+          },
+          "esito": "Mariella torna a provare emozioni, ma scopre che suo fratello ha tradito un amico per lei. Lo respinge."
+        },
+        {
+          "quando": {
+            "taddeo": "perdonato",
+            "violante": "risparmiata"
+          },
+          "esito": "Mariella continua a sorridere. Taddeo conserva a tratti il ricordo della lettera, senza trovare il coraggio di opporsi."
+        },
+        {
+          "quando": {
+            "taddeo": "accusato",
+            "violante": "risparmiata"
+          },
+          "esito": "Mariella rimane serena e Taddeo si convince che il tradimento sia stato necessario."
+        }
+      ]
+    },
+    {
+      "nome": "Tonino: le quattro scene conclusive",
+      "colonne": [
+        "tonino_ricordo",
+        "violante"
+      ],
+      "righe": [
+        {
+          "quando": {
+            "tonino_ricordo": "restituito",
+            "violante": "uccisa"
+          },
+          "esito": "Tonino è tornato capace di soffrire e sa che Ferruccio lo ha aiutato. Ma conosce anche le opere di carità di Violante e non accetta che sia stata uccisa. Tonino: «Mi hai ridato mia moglie nei ricordi. Ma questo non ti dava diritto di togliere una vita!» Gli scaglia contro un oggetto e tenta di fermarlo."
+        },
+        {
+          "quando": {
+            "tonino_ricordo": "negato",
+            "violante": "uccisa"
+          },
+          "esito": "Il Velo scompare e Tonino ricorda improvvisamente Rosa. Sconvolto dal dolore e dalla notizia dell'uccisione di Violante, si unisce alla folla. Tonino: «E tu saresti quello che ci ha salvati?»"
+        },
+        {
+          "quando": {
+            "tonino_ricordo": "restituito",
+            "violante": "risparmiata"
+          },
+          "esito": "Il Velo torna a cancellare il suo lutto. Tonino canticchia mentre sistema due piatti sul tavolo. Tonino: «Uno per me e uno per... boh. Sarà l'abitudine.»"
+        },
+        {
+          "quando": {
+            "tonino_ricordo": "negato",
+            "violante": "risparmiata"
+          },
+          "esito": "Tonino rimane identico al primo incontro. Tonino: «Sempre una bella giornata! Pure quando piove!»"
+        }
+      ]
+    },
+    {
+      "nome": "Agnese: quattro sviluppi del romance (San Leucio)",
+      "colonne": [
+        "agnese",
+        "taddeo"
+      ],
+      "righe": [
+        {
+          "quando": {
+            "agnese": "risvegliata",
+            "taddeo": "perdonato"
+          },
+          "esito": "Percorso A — L'amore ritrovato. Taddeo confessa e aiuta Agnese a ricostruire gli ultimi giorni insieme; Agnese riconosce Ferruccio: Torna da me. Anche se non puoi più essere quello di prima."
+        },
+        {
+          "quando": {
+            "agnese": "risvegliata",
+            "taddeo": "accusato"
+          },
+          "esito": "Percorso B — L'amore senza fiducia. Agnese ricorda ma teme che sia tornata soltanto la rabbia di Ferruccio; gli stringe la mano, non gli promette di aspettarlo."
+        },
+        {
+          "quando": {
+            "agnese": "sognante",
+            "taddeo": "perdonato"
+          },
+          "esito": "Percorso C — L'amore dimenticato. Taddeo: Stai facendo esattamente quello che ha fatto Violante. Stai scegliendo al posto suo. Ferruccio abbassa lo sguardo."
+        },
+        {
+          "quando": {
+            "agnese": "sognante",
+            "taddeo": "accusato"
+          },
+          "esito": "Percorso D — L'ultima sciarpa. Agnese non lo riconosce e gli offre la sciarpa appena terminata; dopo la sua partenza piange senza conoscerne il motivo."
+        }
+      ]
+    },
+    {
+      "nome": "Agnese: destino nei due finali",
+      "colonne": [
+        "violante",
+        "agnese",
+        "taddeo"
+      ],
+      "righe": [
+        {
+          "quando": {
+            "violante": "uccisa",
+            "agnese": "risvegliata",
+            "taddeo": "perdonato"
+          },
+          "esito": "Riconosce subito Ferruccio tra la folla. Lo ama ancora: tenta di fermarlo per farlo consegnare alle guardie (Fermati! Non voglio perderti un'altra volta!). NPC ostile per amore."
+        },
+        {
+          "quando": {
+            "violante": "uccisa",
+            "agnese": "risvegliata",
+            "taddeo": "accusato"
+          },
+          "esito": "Riconosce subito Ferruccio. Rapporto compromesso: lo accusa direttamente (Hai liberato tutti. Ma chi ti ha dato il diritto di decidere chi deve morire?)."
+        },
+        {
+          "quando": {
+            "violante": "uccisa",
+            "agnese": "sognante",
+            "taddeo": "*"
+          },
+          "esito": "Recupera tutto improvvisamente alla morte di Violante; il primo vero incontro avviene mentre Ferruccio è accusato di omicidio. Tenta di fermarlo tra la folla per farlo consegnare."
+        },
+        {
+          "quando": {
+            "violante": "risparmiata",
+            "agnese": "risvegliata",
+            "taddeo": "*"
+          },
+          "esito": "Violante le cancella di nuovo i ricordi; quando Ferruccio le passa davanti si tocca istintivamente il polso. Resta nella manifattura: Devo finire una sciarpa. Sento che qualcuno verrà a prenderla."
+        },
+        {
+          "quando": {
+            "violante": "risparmiata",
+            "agnese": "sognante",
+            "taddeo": "*"
+          },
+          "esito": "Continua semplicemente a tessere, sorridente e apparentemente felice: Devo finire una sciarpa. Sento che qualcuno verrà a prenderla."
+        }
+      ]
+    },
+    {
+      "nome": "XIII: otto percorsi × due finali (64 combinazioni con Tonino×Gregorio)",
+      "colonne": [
+        "taddeo",
+        "registro",
+        "agnese",
+        "violante"
+      ],
+      "righe": [
+        {
+          "percorso": 1,
+          "sigla": "P · C · R",
+          "titolo": "La verità condivisa",
+          "premessa": "Ferruccio perdona Taddeo, conserva il registro e restituisce la memoria ad Agnese. Arriva al finale con la storia del padre ricostruita, l'amore ritrovato e un amico che cerca di riscattarsi.",
+          "quando": {
+            "taddeo": "perdonato",
+            "registro": "conservato",
+            "agnese": "risvegliata",
+            "violante": "uccisa"
+          },
+          "esito": "è il percorso più dolorosamente ironico. Ferruccio possiede le prove, ma nessuno vuole ascoltarle. Taddeo cerca di arrestarlo per proteggerlo dalla folla; Agnese tenta di trattenerlo per salvarlo."
+        },
+        {
+          "percorso": 1,
+          "sigla": "P · C · R",
+          "titolo": "La verità condivisa",
+          "premessa": "Ferruccio perdona Taddeo, conserva il registro e restituisce la memoria ad Agnese. Arriva al finale con la storia del padre ricostruita, l'amore ritrovato e un amico che cerca di riscattarsi.",
+          "quando": {
+            "taddeo": "perdonato",
+            "registro": "conservato",
+            "agnese": "risvegliata",
+            "violante": "risparmiata"
+          },
+          "esito": "le testimonianze vengono dimenticate, l'amore di Agnese viene cancellato ancora una volta e il registro rimane come unica prova materiale di una verità che nessuno desidera conoscere."
+        },
+        {
+          "percorso": 2,
+          "sigla": "P · C · S",
+          "titolo": "Il sacrificio del sentimento",
+          "premessa": "Ferruccio perdona Taddeo e conserva il registro, ma sceglie di non risvegliare Agnese. Ha cercato la verità per suo padre, ma non ha avuto il coraggio di imporne il peso alla donna amata.",
+          "quando": {
+            "taddeo": "perdonato",
+            "registro": "conservato",
+            "agnese": "sognante",
+            "violante": "uccisa"
+          },
+          "esito": "Agnese recupera tutto improvvisamente. Il loro primo vero incontro avviene mentre Ferruccio è accusato di omicidio. Lei cerca di farlo consegnare alle guardie."
+        },
+        {
+          "percorso": 2,
+          "sigla": "P · C · S",
+          "titolo": "Il sacrificio del sentimento",
+          "premessa": "Ferruccio perdona Taddeo e conserva il registro, ma sceglie di non risvegliare Agnese. Ha cercato la verità per suo padre, ma non ha avuto il coraggio di imporne il peso alla donna amata.",
+          "quando": {
+            "taddeo": "perdonato",
+            "registro": "conservato",
+            "agnese": "sognante",
+            "violante": "risparmiata"
+          },
+          "esito": "Agnese rimane inconsapevole. Taddeo può comprendere l'identità di Ferruccio nei momenti in cui il Velo si indebolisce, ma non riesce più a parlarne apertamente."
+        },
+        {
+          "percorso": 3,
+          "sigla": "P · B · R",
+          "titolo": "La parola contro il potere",
+          "premessa": "Ferruccio perdona Taddeo e risveglia Agnese, ma brucia il documento che avrebbe potuto riabilitare suo padre. L'amore e l'amicizia sopravvivono, ma la verità non ha più una prova scritta.",
+          "quando": {
+            "taddeo": "perdonato",
+            "registro": "bruciato",
+            "agnese": "risvegliata",
+            "violante": "uccisa"
+          },
+          "esito": "Taddeo tenta di testimoniare, ma la folla lo accusa di aver aiutato un assassino. Agnese chiede a Ferruccio di arrendersi prima che qualcuno rimanga ucciso."
+        },
+        {
+          "percorso": 3,
+          "sigla": "P · B · R",
+          "titolo": "La parola contro il potere",
+          "premessa": "Ferruccio perdona Taddeo e risveglia Agnese, ma brucia il documento che avrebbe potuto riabilitare suo padre. L'amore e l'amicizia sopravvivono, ma la verità non ha più una prova scritta.",
+          "quando": {
+            "taddeo": "perdonato",
+            "registro": "bruciato",
+            "agnese": "risvegliata",
+            "violante": "risparmiata"
+          },
+          "esito": "la testimonianza di Taddeo viene soffocata dal Velo. Senza documenti, Ferruccio non possiede più nulla che possa confermare quanto accaduto."
+        },
+        {
+          "percorso": 4,
+          "sigla": "P · B · S",
+          "titolo": "Il peso della pietà",
+          "premessa": "Ferruccio perdona Taddeo, distrugge il registro e lascia Agnese nella sua serenità. Ha scelto di proteggere le persone a cui vuole bene, evitando di costringerle ad affrontare il passato. Ma arriva alla Reggia sempre più simile, nelle sue scelte, a Violante.",
+          "quando": {
+            "taddeo": "perdonato",
+            "registro": "bruciato",
+            "agnese": "sognante",
+            "violante": "uccisa"
+          },
+          "esito": "spezza la prigionia di una città alla quale aveva cercato di risparmiare la verità. Gli altri recuperano improvvisamente ricordi che Ferruccio aveva deciso di nascondere."
+        },
+        {
+          "percorso": 4,
+          "sigla": "P · B · S",
+          "titolo": "Il peso della pietà",
+          "premessa": "Ferruccio perdona Taddeo, distrugge il registro e lascia Agnese nella sua serenità. Ha scelto di proteggere le persone a cui vuole bene, evitando di costringerle ad affrontare il passato. Ma arriva alla Reggia sempre più simile, nelle sue scelte, a Violante.",
+          "quando": {
+            "taddeo": "perdonato",
+            "registro": "bruciato",
+            "agnese": "sognante",
+            "violante": "risparmiata"
+          },
+          "esito": "accetta la propria contraddizione. La città resta tranquilla, Taddeo rimane una guardia e Agnese continua ad attendere qualcuno che non ricorda."
+        },
+        {
+          "percorso": 5,
+          "sigla": "A · C · R",
+          "titolo": "La giustizia senza perdono",
+          "premessa": "Ferruccio accusa Taddeo, conserva le prove e risveglia Agnese. Ha scelto di conoscere tutta la verità, ma non è disposto a perdonare chi ha contribuito a nasconderla.",
+          "quando": {
+            "taddeo": "accusato",
+            "registro": "conservato",
+            "agnese": "risvegliata",
+            "violante": "uccisa"
+          },
+          "esito": "Taddeo conduce le guardie contro di lui per proteggere la propria posizione. Agnese riconosce Ferruccio, ma non accetta il suo ricorso alla violenza. Il registro rimane una prova per il futuro."
+        },
+        {
+          "percorso": 5,
+          "sigla": "A · C · R",
+          "titolo": "La giustizia senza perdono",
+          "premessa": "Ferruccio accusa Taddeo, conserva le prove e risveglia Agnese. Ha scelto di conoscere tutta la verità, ma non è disposto a perdonare chi ha contribuito a nasconderla.",
+          "quando": {
+            "taddeo": "accusato",
+            "registro": "conservato",
+            "agnese": "risvegliata",
+            "violante": "risparmiata"
+          },
+          "esito": "Agnese viene nuovamente privata dei ricordi, mentre Taddeo nasconde le proprie responsabilità. Ferruccio comprende che avere ragione non gli è servito a nulla."
+        },
+        {
+          "percorso": 6,
+          "sigla": "A · C · S",
+          "titolo": "La prova senza amore",
+          "premessa": "Ferruccio accusa Taddeo, conserva il registro e lascia Agnese nel Velo. Ha conservato tutto ciò che può dimostrare un'ingiustizia, ma ha sacrificato i legami personali per perseguirla.",
+          "quando": {
+            "taddeo": "accusato",
+            "registro": "conservato",
+            "agnese": "sognante",
+            "violante": "uccisa"
+          },
+          "esito": "fugge con il documento mentre Taddeo lo insegue. Agnese recupera improvvisamente i propri ricordi e cerca di fermarlo tra la folla."
+        },
+        {
+          "percorso": 6,
+          "sigla": "A · C · S",
+          "titolo": "La prova senza amore",
+          "premessa": "Ferruccio accusa Taddeo, conserva il registro e lascia Agnese nel Velo. Ha conservato tutto ciò che può dimostrare un'ingiustizia, ma ha sacrificato i legami personali per perseguirla.",
+          "quando": {
+            "taddeo": "accusato",
+            "registro": "conservato",
+            "agnese": "sognante",
+            "violante": "risparmiata"
+          },
+          "esito": "mantiene la prova di una verità che nessuno vuole riconoscere. Agnese vive serenamente e Taddeo continua a negare il passato."
+        },
+        {
+          "percorso": 7,
+          "sigla": "A · B · R",
+          "titolo": "L'amore sopra ogni cosa",
+          "premessa": "Ferruccio accusa Taddeo, brucia il registro e risveglia Agnese. Non vuole più inseguire i documenti e i colpevoli della tragedia: desidera soltanto tornare dalla persona amata. Ma non riesce a rinunciare al rancore contro chi lo ha tradito.",
+          "quando": {
+            "taddeo": "accusato",
+            "registro": "bruciato",
+            "agnese": "risvegliata",
+            "violante": "uccisa"
+          },
+          "esito": "Agnese gli chiede perché abbia scelto un'ultima morte proprio quando avrebbero potuto ricominciare. Taddeo approfitta della situazione per accusarlo."
+        },
+        {
+          "percorso": 7,
+          "sigla": "A · B · R",
+          "titolo": "L'amore sopra ogni cosa",
+          "premessa": "Ferruccio accusa Taddeo, brucia il registro e risveglia Agnese. Non vuole più inseguire i documenti e i colpevoli della tragedia: desidera soltanto tornare dalla persona amata. Ma non riesce a rinunciare al rancore contro chi lo ha tradito.",
+          "quando": {
+            "taddeo": "accusato",
+            "registro": "bruciato",
+            "agnese": "risvegliata",
+            "violante": "risparmiata"
+          },
+          "esito": "Ferruccio sacrifica l'ultima possibilità di recuperare stabilmente Agnese. La vede sorridere, sapendo che quel sorriso non gli appartiene più."
+        },
+        {
+          "percorso": 8,
+          "sigla": "A · B · S",
+          "titolo": "Il cavaliere senza nessuno",
+          "premessa": "Ferruccio accusa Taddeo, distrugge il registro e non risveglia Agnese. È il percorso più solitario. Non ha alleati, non possiede prove materiali e ha rinunciato alla possibilità di ritrovare il proprio amore prima del confronto finale.",
+          "quando": {
+            "taddeo": "accusato",
+            "registro": "bruciato",
+            "agnese": "sognante",
+            "violante": "uccisa"
+          },
+          "esito": "la città torna libera e Ferruccio diventa il nemico pubblico. Fugge senza poter contare su nessuno."
+        },
+        {
+          "percorso": 8,
+          "sigla": "A · B · S",
+          "titolo": "Il cavaliere senza nessuno",
+          "premessa": "Ferruccio accusa Taddeo, distrugge il registro e non risveglia Agnese. È il percorso più solitario. Non ha alleati, non possiede prove materiali e ha rinunciato alla possibilità di ritrovare il proprio amore prima del confronto finale.",
+          "quando": {
+            "taddeo": "accusato",
+            "registro": "bruciato",
+            "agnese": "sognante",
+            "violante": "risparmiata"
+          },
+          "esito": "accetta di vivere come l'unico testimone cosciente di un mondo costruito sulla menzogna. Non gli resta altro che la propria memoria."
+        }
+      ]
+    },
+    {
+      "nome": "Tonino × Gregorio: le varianti che completano le 64 combinazioni (XIII)",
+      "colonne": [
+        "tonino_ricordo",
+        "gregorio"
+      ],
+      "righe": [
+        {
+          "quando": {
+            "tonino_ricordo": "restituito",
+            "gregorio": "dialogo"
+          },
+          "esito": "Ferruccio conosce anche la storia di Rosa, possiede la lettera di Agnese e tenta una soluzione non violenta con Gregorio."
+        },
+        {
+          "quando": {
+            "tonino_ricordo": "restituito",
+            "gregorio": "attacco"
+          },
+          "esito": "Ferruccio dimostra compassione per Tonino, ma sceglie la violenza contro il Custode."
+        },
+        {
+          "quando": {
+            "tonino_ricordo": "negato",
+            "gregorio": "dialogo"
+          },
+          "esito": "Ferruccio protegge Tonino dalla sofferenza, ma tenta di comprendere Gregorio."
+        },
+        {
+          "quando": {
+            "tonino_ricordo": "negato",
+            "gregorio": "attacco"
+          },
+          "esito": "Ferruccio evita il dolore personale degli altri, ma affronta il Custode come un nemico da abbattere."
+        }
+      ]
+    },
+    {
+      "nome": "Gregorio: ultime parole",
+      "colonne": [
+        "gregorio"
+      ],
+      "righe": [
+        {
+          "quando": {
+            "gregorio": "dialogo"
+          },
+          "esito": "Tuo padre era innocente."
+        },
+        {
+          "quando": {
+            "gregorio": "attacco"
+          },
+          "esito": "Anche io avevo paura di perderla."
+        }
+      ]
+    },
+    {
+      "nome": "Violante: esito dell'ultima conversazione (VIII)",
+      "colonne": [
+        "violante"
+      ],
+      "righe": [
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "esito": "Violante muore convinta di essere stata tradita dall'umanità che voleva proteggere."
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "esito": "Non si pente: continua a governare la città attraverso il Velo. Il giocatore le ha dimostrato che può ottenere obbedienza persino da chi conosce la verità."
+        }
+      ]
+    },
+    {
+      "nome": "Gaetano: conseguenza sui finali",
+      "colonne": [
+        "violante",
+        "registro"
+      ],
+      "righe": [
+        {
+          "quando": {
+            "violante": "uccisa",
+            "registro": "conservato"
+          },
+          "esito": "Se ha conservato il registro, fugge portando con sé la prova che un giorno potrebbe riabilitare suo padre."
+        },
+        {
+          "quando": {
+            "violante": "uccisa",
+            "registro": "bruciato"
+          },
+          "esito": "Se lo ha bruciato, fugge con il solo ricordo di ciò che ha visto."
+        },
+        {
+          "quando": {
+            "violante": "risparmiata",
+            "registro": "conservato"
+          },
+          "esito": "Il padre rimane il colpevole ufficiale, anche se Ferruccio ha conservato il registro."
+        },
+        {
+          "quando": {
+            "violante": "risparmiata",
+            "registro": "bruciato"
+          },
+          "esito": "Nel finale del Velo, i documenti vengono nuovamente alterati nella memoria collettiva."
+        }
+      ]
+    },
+    {
+      "nome": "Bianca: chiusura dell'arco",
+      "colonne": [
+        "violante"
+      ],
+      "righe": [
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "esito": "Il ricordo di Bianca viene liberato. Il giocatore vede il giglio ricamato perdere la sua luce soprannaturale. Rimane un semplice fazzoletto."
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "esito": "Il giglio continua a brillare. La scatola musicale suona da sola e Violante ascolta una voce che ripete sempre lo stesso verso della filastrocca."
+        }
+      ]
+    },
+    {
+      "nome": "XVII: Lo stato del mondo dopo i finali",
+      "colonne": [
+        "violante"
+      ],
+      "righe": [
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "elemento": "Cielo",
+          "esito": "Azzurro intenso e luminoso"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "elemento": "Cielo",
+          "esito": "Grigio-azzurro, foschia"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "elemento": "Vegetazione",
+          "esito": "Verdi saturi e fiori vivaci"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "elemento": "Vegetazione",
+          "esito": "Verdi pallidi e desaturati"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "elemento": "Illuminazione",
+          "esito": "Contrasti naturali e colori caldi"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "elemento": "Illuminazione",
+          "esito": "Luce uniforme, fredda"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "elemento": "NPC",
+          "esito": "Tutti ostili a Ferruccio"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "elemento": "NPC",
+          "esito": "Tutti pacifici, sorridenti"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "elemento": "Dialoghi",
+          "esito": "Accuse, paura, rabbia, richieste d'arresto"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "elemento": "Dialoghi",
+          "esito": "Frasi ripetitive e felicità artificiale"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "elemento": "Musica",
+          "esito": "Melodia dinamica, con note malinconiche"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "elemento": "Musica",
+          "esito": "Melodia lenta, ripetitiva"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "elemento": "Gatti d'ombra e vespe",
+          "esito": "Il Velo non può più generarli"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "elemento": "Gatti d'ombra e vespe",
+          "esito": "Possono continuare a manifestarsi"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "elemento": "Statue",
+          "esito": "Tornano inerti"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "elemento": "Statue",
+          "esito": "Rimangono legate all'incantesimo"
+        }
+      ]
+    },
+    {
+      "nome": "XVIII: Conseguenze per i capitoli successivi (archi irrisolti)",
+      "colonne": [
+        "violante"
+      ],
+      "righe": [
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "arco": "Ferruccio",
+          "esito": "Ricercato per l'uccisione di Violante"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "arco": "Ferruccio",
+          "esito": "Unico testimone cosciente del Velo"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "arco": "Agnese",
+          "esito": "Può cercarlo o denunciarlo, secondo il rapporto"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "arco": "Agnese",
+          "esito": "Continua a vivere nel sogno, con residui di memoria"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "arco": "Taddeo",
+          "esito": "È coinvolto nella caccia a Ferruccio"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "arco": "Taddeo",
+          "esito": "Rimane nella guardia, protetto o tormentato dal Velo"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "arco": "Gaetano",
+          "esito": "La sua innocenza può ancora essere dimostrata"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "arco": "Gaetano",
+          "esito": "La versione falsa rimane nella memoria collettiva"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "arco": "Mariella",
+          "esito": "Deve imparare a convivere con il trauma"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "arco": "Mariella",
+          "esito": "Vive senza paura, ma anche senza piena volontà"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "arco": "Gregorio",
+          "esito": "La sua complicità può essere indagata"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "arco": "Gregorio",
+          "esito": "È ricordato come un fedele difensore della pace"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "arco": "Violante",
+          "esito": "Il suo culto popolare sopravvive alla morte"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "arco": "Violante",
+          "esito": "Governa ancora segretamente"
+        },
+        {
+          "quando": {
+            "violante": "uccisa"
+          },
+          "arco": "Bianca",
+          "esito": "Rimane un ricordo familiare"
+        },
+        {
+          "quando": {
+            "violante": "risparmiata"
+          },
+          "arco": "Bianca",
+          "esito": "Il suo ricordo alimenta l'ossessione della madre"
+        }
+      ]
+    }
+  ],
+  "note": [
+    "CONFLITTO Gaetano come NPC: la bibbia (VI) dice che il padre compare SOLO attraverso oggetti, documenti e anime liberate e non deve diventare un fantasma che parla; inizio-memoria-e-doni.md (10 ottobre 2026) lo rende un personaggio parlabile nella Fucina del Ricordo che restituisce nome e volto a Ferruccio. Il documento dell'utente è più recente e aggiorna la bibbia, ma non contiene battute: corso-trieste.fucina-del-ricordo è senza dialogo e va scritta ex novo con approvazione. Da decidere anche come conciliare il 'volto umano' restituito presto con la 'maschera' che Tonino e Agnese citano nei capitoli successivi.",
+    "CONFLITTO identità iniziale: la sezione I dice che al risveglio Ferruccio 'sa di aver perso suo padre, la propria voce e la donna che amava'; inizio-memoria-e-doni.md dice che il nome gli viene restituito solo da Gaetano nella Fucina. Il livello di memoria con cui parte Ferruccio non è coerente tra i due documenti.",
+    "CONFLITTO sciarpa: la bibbia (III, IV Percorso B, XVI) presuppone che Ferruccio abbia la sciarpa fin dall'inizio ('le mostra la sciarpa consumata', 'tenta di mostrare la propria sciarpa' alla folla, 'stringe la sciarpa' nell'epilogo del Velo); con inizio-memoria-e-doni.md la sciarpa compare sul rig solo se agnese=risvegliata. Nelle scene che citano la sciarpa serve una variante per agnese=sognante (Ferruccio senza sciarpa, mostra solo la spada). Eccezione interna alla bibbia: IV Percorso D (sognante+accusato) fa consegnare ad Agnese 'la sciarpa appena terminata' anche senza risveglio: o è un oggetto narrativo che non abilita lo scatto, o il percorso D va cambiato.",
+    "CONFLITTO scatto nel finale: IV dice 'Ferruccio deve scattare oltre di lei' (Agnese) durante la fuga, ma per inizio-memoria-e-doni.md lo scatto esiste solo con la sciarpa (agnese=risvegliata). Nei percorsi sognante+uccisa (2, 4, 6, 8) la fuga giocabile (epilogo.fuga) non può richiedere lo scatto: progettare il blocco di Agnese superabile senza dash (salto/doppio salto), oppure sbloccare lo scatto al momento del Velo spezzato.",
+    "CONFLITTO Mariella in Piazza Dante: la bibbia (IX) la vuole quasi assente (può non avere modello 3D: finestra illuminata, lettera, sagoma); inizio-memoria-e-doni.md la fa parlare in Piazza Dante per dare l'indizio del ferro. Perché è in Piazza e non alla finestra su Corso Trieste? piazza-dante.bottega-di-gaetano è senza battute (nessun testo verbatim esiste): va scritta ex novo e approvata; canon Provisional per quella sola apparizione. Assunta compare solo lì (Provisional, nessuna voce né oggetto).",
+    "COLLOCAZIONE Fucina del Ricordo: inizio-memoria-e-doni.md dice 'dopo aver percorso Piazza e Corso'; qui è l'ultima scena di corso-trieste (ordine 70), dopo il confronto con Taddeo, ma potrebbe essere un'area a sé tra Corso Trieste e Villa Comunale. Non è chiaro se arriva prima o dopo Taddeo.",
+    "DOPPIA VERSIONE della morte del Custode: VII 'La morte del Custode' dà le battute Non era un ordine del Re... / Era una promessa fatta a mia moglie + Tuo padre era innocente | Anche io avevo paura di perderla (secondo gregorio), con l'anima che sale verso il balcone dove Violante è già; XVI Scena 1 ne dà altre (Ho protetto la porta per tutta la vita... / E non ho visto cosa entrava / Lei... crede ancora di poterla salvare) e fa apparire Violante solo dopo la morte, chiamata dal suo Gregorio?. Qui sono due scene consecutive (reggia.morte-del-custode 70 → reggia.custode-sconfitto 80): la proposta è concatenarle, con la variante per flag gregorio come unica differenza; in alternativa una sostituisce l'altra. Da decidere.",
+    "DOPPIA VERSIONE dell'ultima conversazione: VIII (Guardati. Hai attraversato un'intera città... / Chi di noi due è davvero un mostro?) e XVI Scena 1 (Pensavo di averti tolto abbastanza ricordi... / Ed è per questo che non posso lasciarla andare) descrivono lo stesso momento con parole diverse. Ordine proposto: XVI Scena 1 (80) → nucleo del Velo (90) → scatola musicale XI (100) → VIII ultima conversazione (110) → XVI Scena 2 bivio (120). Quattro estrazioni descrivevano la stessa scelta su Violante: unificate in reggia.scelta-violante.",
+    "DOPPIA VERSIONE delle battute di Agnese nel finale della liberazione: IV dà Fermati! Non voglio perderti un'altra volta! (lo amava ancora) e Hai liberato tutti. Ma chi ti ha dato il diritto di decidere chi deve morire? (rapporto compromesso, criterio legato a taddeo); XVI dà per lo stesso momento Ferruccio... ti prego. Non scappare. Posso ancora aiutarti! (risvegliata) e Sei tu... Sei davvero tu? Perché hai fatto questo? (sognante), con criterio diverso. Qui XVI è in epilogo.agnese-folla (40) e IV in epilogo.agnese-fermati / agnese-accusa (50): da riconciliare (concatenare o scegliere un set). 'Compromesso' = risvegliata + accusato (percorsi 5 e 7, da XIII); in tutti gli altri casi Agnese tenta di fermarlo per salvarlo.",
+    "DOPPIA VERSIONE dell'epilogo del Velo per Agnese e Tonino: IV lascia Agnese nella manifattura di San Leucio (Devo finire una sciarpa. Sento che qualcuno verrà a prenderla.), XVI la fa comparire sotto un portico in Piazza Dante (Scusate... cercate qualcuno?); X dà a Tonino Uno per me e uno per... boh. Sarà l'abitudine. / Sempre una bella giornata! Pure quando piove! secondo tonino_ricordo, XVI gli dà Buongiorno, guagliò! Che bella giornata! / Eh, bellissima. Proprio bellissima. indipendentemente dal flag. L'epilogo giocabile riusa Piazza Dante, quindi XVI è più realizzabile; le battute di IV e X possono essere spostate lì come varianti. Decidere quale set usare o concatenarli (epilogo.piazza-grigia 20, agnese-manifattura 30, tonino-*-risparmiata 50).",
+    "COLLOCAZIONE provvisoria delle memorie di Violante e Gregorio (funerale di Bianca, tradimento del marito, progressione morale in 4 passi): la bibbia (VIII) le descrive come retroscena senza collocazione in gioco. Qui sono all'inizio del capitolo Reggia (ordini 10-30) come memorie/indizi. Alternativa coerente con i boss intermedi: agganciare la memoria del tradimento del marito all'anima di Gregorio che sale verso il balcone, tra reggia.morte-del-custode e reggia.nucleo-del-velo. L'oggetto frammenti-di-seta è un'invenzione di comodo (Provisional), da confermare o eliminare.",
+    "COLLOCAZIONE provvisoria del passato di Taddeo (corso-trieste.passato-taddeo): la bibbia (V) non indica come il giocatore lo veda. Qui è una memoria liberata dopo la Regina dei Debiti (coerente con la sua origine 'promesse mai mantenute'); le due battute di Violante sono le uniche righe parlate.",
+    "COLLOCAZIONE provvisoria della lettera di Mariella: la bibbia non dice DOVE Ferruccio la legge. Qui su Corso Trieste subito dopo la confessione, sotto la finestra illuminata di Mariella (unico luogo dell'arco citato). Alternativa: consegnata da Taddeo a San Leucio o trovata tra i suoi messaggi alla Villa Comunale.",
+    "COLLOCAZIONE provvisoria del messaggio di Taddeo (villa-comunale.messaggio-taddeo, ordine 20): la 'testimonianza di Taddeo' usata nel confronto con Gregorio (VII: 'il registro o il messaggio di Taddeo') non ha un oggetto definito nella bibbia; l'oggetto messaggio-taddeo è creato qui. A runtime mostrare il registro se registro=conservato, il messaggio se taddeo=perdonato; se entrambi, la bibbia non dice quale.",
+    "COLLOCAZIONE dei flashback di Agnese (Prima della maledizione): la bibbia non dice quando o come vengono mostrati. Ipotesi: memorie liberate a San Leucio (dopo la Tessitrice di Pietra o toccando il telaio). Qui ordini 50-60, prima della scelta.",
+    "COLLOCAZIONE del disegno della Reggia incompleta: elencato tra i tre oggetti di Bianca (XI) ma non collocato in nessuna scena ('dove' vuoto). Candidato naturale: Villa Comunale (accanto alla memoria dell'inchino) o la Reggia prima della scatola musicale.",
+    "COLLOCAZIONE del fazzoletto: compare a San Leucio 'ricamato con un giglio incompleto' accanto ai telai e nelle mani di Violante nel Cortile d'Onore (XVI) e nella chiusura dell'arco. La bibbia non chiarisce se quello di San Leucio sia l'originale di Bianca o una riproduzione delle tessitrici; qui un unico oggetto fazzoletto-bianca (se è l'originale, va spiegato come passa da San Leucio a Violante).",
+    "COLLOCAZIONE di Atto II e Villa Comunale: la bibbia dice che Ferruccio scopre l'innocenza del padre 'attraverso i registri', mentre VI distingue i registri pubblici (Gaetano colpevole) dal documento originale con le cancellature: qui separati (registri-pubblici 50, registro originale nella scelta 80). La scoperta che Gregorio era presente e tentò di salvare Bianca non ha una fonte in-game specificata: attribuita al documento originale, ma potrebbe venire dalla memoria nel marmo. L'ordine boss → ricordo di Gaetano → scelta non è fissato dalla bibbia.",
+    "COLLOCAZIONE di Atto III (san-leucio.rinuncia-vendetta): 'Agnese può chiedere a Ferruccio di rinunciare alla vendetta' non ha battute nella bibbia e nessuna condizione; 'se Ferruccio sceglie di ascoltarla' è di fatto assorbito dal flag gregorio (dialogo/attacco), deciso però solo alla Reggia e solo con prove. Condizionata qui ad agnese=risvegliata perché un'Agnese nel Velo non conosce la storia del padre, ma la bibbia non lo dice esplicitamente.",
+    "DUBBIO Gregorio senza prove: la bibbia non dice se con prove=falsa il giocatore vede comunque una finestra di scelta con 'dialogo' disabilitato (principio 2: deve capire cosa ha perso) o se lo scontro inizia direttamente. Qui reggia.attacco-senza-prove è una scena condizionale con la sola opzione 'attacco', così il flag viene comunque fissato. Da decidere in UX.",
+    "DUBBIO lettera di Agnese: la bibbia non ne scrive il testo e non dice se Tonino la CONSEGNA nella scena del ricordo restituito o se la ricorda soltanto; qui è consegnata subito (oggetto in piazza-dante.ricordo-restituito) e letta al Belvedere (san-leucio.lettera-belvedere). Non è detto se Ferruccio la mostra ad Agnese o se influisce sulle battute dei percorsi A-D ('rende le scene del Belvedere più personali'). Da scrivere.",
+    "DUBBIO segreto di Agnese (tessuto del Velo, tentativo di avvertire Ferruccio, ricordi sottratti la notte dell'incantesimo): è backstory senza battute; può emergere solo tramite Taddeo (percorso A), la lettera o la rivelazione della Tessitrice di Pietra (XII). Non deciso.",
+    "DUBBIO Percorso C: 'Taddeo cerca di convincerlo a cambiare idea' — la bibbia non dice se la scelta su Agnese può essere rifatta dopo l'intervento di Taddeo. Qui irreversibile (Ferruccio abbassa lo sguardo e basta).",
+    "DUBBIO Tonino nei capitoli intermedi: dopo il ricordo restituito 'le sue battute diventano più consapevoli', ma la bibbia non scrive battute aggiuntive per Corso Trieste–Reggia. Se Tonino ricompare prima dell'epilogo, quelle righe vanno scritte ex novo rispettando la voce. Il medaglione di Rosa: non è chiaro se sia l'anima stessa a materializzarsi o se fosse già al banchetto (regia aperta).",
+    "DUBBIO Taddeo accusato nel finale della liberazione: la bibbia non gli dà battute (solo 'partecipa apertamente alla caccia'); reso con didascalia e comportamento ostile, nessuna riga inventata.",
+    "DUBBIO voce nel finale del Velo: 'una voce ripete sempre lo stesso verso della filastrocca' (XI) — la bibbia non dice quale dei due versi; non inserito per non scegliere al posto dell'autore. Il dubbio sull'identità della voce (Bianca o ricordo catturato) deve restare irrisolto per scelta autoriale.",
+    "DUBBIO frasi a schermo: la frase finale «Se nessuno vuole essere liberato, hai comunque il diritto di farlo?» (§10) è 'la domanda che il giocatore deve portarsi dietro': non è detto se appare a schermo (qui didascalia in epilogo.dopo-i-titoli, rimovibile). L'epigrafe del preambolo «Un uomo può sopportare una vita di dolore. Ma quanto dolore è disposto a infliggere agli altri per non soffrire più?» è utilizzabile come cartello d'apertura; la bibbia non specifica dove appare.",
+    "DUBBIO nemici nell'epilogo del Velo: XVII dice che con Violante risparmiata gatti d'ombra e vespe 'possono continuare a manifestarsi': non è detto se nella sequenza post-titoli compaiono davvero nemici o solo NPC.",
+    "DUBBIO villa-comunale.risoluzione-taddeo: le 'quattro risoluzioni' di Taddeo (V) sono solo una tabella nella bibbia, non una scena; qui una scena con didascalie condizionate a doppio flag (mostrare, non spiegare). Può essere tagliata e lasciata solo come tabella_esiti.",
+    "CONVENZIONE didascalie: le didascalie usano il testo della bibbia dove esiste e alcune conservano la clausola condizionale ('Se Violante viene uccisa, ...') per restare verbatim; la condizione è già codificata in quando/se e la clausola può essere rimossa in redazione finale. Didascalie prese da tabelle o paragrafi di esito superano talvolta i 120 caratteri: sono testo di regia, non dialogo in box; se vanno a schermo andranno spezzate senza alterare il senso. Tutte le battute parlate rispettano il limite di 120 caratteri (narrative.md). I gesti di Ferruccio nei sommari sono proposte di regia, non testo della bibbia.",
+    "CONVENZIONE 'guardia' e 'cittadino': 'Seconda guardia' e 'Un altro' (cittadino) sono mappati sugli id guardia e cittadino; in gioco sono attori distinti. Nessuna combinazione di flag è 'giusta' (XIV): non implementare un contatore di moralità; le scelte alimentano solo i sei flag, memorizzati dopo ogni scelta e non persi alla morte (XIX). In cooperativa il gruppo condivide un unico stato narrativo e la conferma spetta all'host.",
+    "CONVENZIONE scelte (§10): semplici finestre con due risposte, senza modificare movimento o combattimento; le conseguenze vengono memorizzate e richiamate nei dialoghi successivi. Il campo cosa_sacrifica deriva dal principio 2 (XIV): il giocatore deve comprendere cosa sta sacrificando prima di decidere.",
+    "PRINCIPI XIV (verbatim): 1. La scelta riguarda sempre una persona concreta. Non si sceglie astrattamente tra bene e male, ma tra il ricordo e la serenità di Tonino, tra la fiducia e la rabbia verso Taddeo, tra la libertà e la sicurezza di Agnese. 2. Il giocatore deve comprendere cosa sta sacrificando. Prima di prendere una decisione, riceve indizi sufficienti sulle sue conseguenze immediate. 3. Le rivelazioni fondamentali sono inevitabili. Nessuna scelta deve impedire di comprendere chi controlla il Velo, perché lo ha creato e quale prezzo comporta distruggerlo. 4. Le conseguenze devono essere mostrate, non spiegate. Un personaggio che non riconosce una sciarpa, una guardia che abbassa lo sguardo e una lettera mai consegnata raccontano più di una lunga schermata di testo.",
+    "CONTEGGIO XIII: 5 scelte prima del finale, 32 percorsi prima della Reggia, 64 combinazioni con i due finali = 8 percorsi principali (P/A · C/B · R/S) × 4 varianti Tonino/Gregorio × 2 finali. Non sono 64 finali indipendenti ma varianti coerenti di due esiti per Caserta; il bivio e i due finali sono identici per tutti gli 8 percorsi, le differenze vanno rese con le battute condizionate degli archi.",
+    "PRODUZIONE §10/XII: usare i cinque livelli esistenti; i quattro boss intermedi sono versioni ingrandite e modificate dei tre archetipi della demo (pattugliamento e balzi del gatto, inseguimento delle vespe, proiettili luminosi delle statue); nessun boss lascia cadaveri, si dissolvono in anime colorate. Il Custode conserva il combattimento originale; il lampo del giglio e l'abbozzo di abbassare l'alabarda sono feedback VFX/animazione, non dialogo. Nel Mercato il gatto iniziale nasce fuori dal blocco solido; lo Spettro del Calcare è rimosso dal Mercato ma resta nelle altre aree (inizio-memoria-e-doni.md).",
+    "ESPANSIONI XVIII (Provisional): Casertavecchia 'Le Campane del Perdono' (Campanaro Senza Volto; Taddeo ricompare), Acquedotto Carolino 'Le Acque della Memoria' (Guardiano delle Sorgenti; messaggio del padre), Santa Maria Capua Vetere 'L'Arena dei Dimenticati' (Giudice dell'Arena; Agnese può tornare). Stessi livelli e boss in entrambi gli stati del mondo ma motivazioni diverse: nel percorso della libertà Ferruccio cerca prove per difendersi, nel percorso del Velo cerca l'origine dell'incantesimo.",
+    "BACKSTORY 1839 | evento: cedimento di una struttura provvisoria nel cantiere della Reggia (sei anni prima del gioco). | vittime: diversi operai, Bianca (11 anni, figlia di Gregorio e Violante Valente), Gaetano (padre di Ferruccio, fabbro, muore tentando di salvare lavoratori intrappolati). | causa vera: un appaltatore ha usato materiali scadenti per risparmiare, nonostante gli avvertimenti delle maestranze. | indizi in gioco: targa in Piazza Dante senza il nome di Gaetano; registri pubblici che lo indicano come responsabile; memoria della Madre di Marmo (Villa Comunale); memoria di Gregorio che insegna l'inchino a Bianca.",
+    "BACKSTORY 1839 | evento: Gregorio, capitano delle guardie, scopre la verità ma riceve l'ordine di firmare un rapporto che attribuisce l'incidente a un errore di Gaetano. Firma per paura che una nuova indagine travolga la famiglia già distrutta dalla morte di Bianca. | effetto: la morte del fabbro diventa un disonore per la famiglia di Ferruccio. | colpa: PRIMA colpa di Gregorio. | indizi in gioco: registro originale con cancellature e correzioni (Villa Comunale); 'Non tutte le catene fanno rumore' sulla statua del cavaliere inginocchiato.",
+    "BACKSTORY 1840-1844 | evento: Violante non accetta la morte della figlia; trova tra gli effetti di Bianca un fazzoletto di seta con un giglio ricamato e scopre che stringendolo sente per pochi istanti la voce della bambina. | leggenda (inventata per il gioco): ogni sentimento lascia un filo invisibile nel mondo, i fili più forti non scompaiono nemmeno dopo la morte. | indizi in gioco: fazzoletto con giglio incompleto accanto ai telai (San Leucio); filastrocca in Piazza Dante; scatola musicale (Reggia).",
+    "BACKSTORY 1840-1844 | evento: Violante finanzia in segreto esperimenti nei laboratori di seta di San Leucio. Progressione: 1) allevia temporaneamente il dolore; 2) impara a separare i ricordi dalle emozioni; 3) scopre che eliminando dolore E capacità di opporsi una persona può essere resa permanentemente felice. | risultato: nasce il Velo della Concordia. | indizi in gioco: motivi floreali (giglio) sulle stoffe commissionate alle tessitrici; fili che si muovono senza che nessuno azioni i telai.",
+    "BACKSTORY 1840-1844 | evento: Gregorio conosce gli esperimenti ma li crede un modo innocuo per superare il lutto; quando comprende la vera natura del Velo è troppo tardi. Violante lega magicamente la sua volontà al giglio d'oro che gli aveva donato e lo trasforma nel Custode. | colpa: SECONDA colpa di Gregorio (aver taciuto troppo a lungo). | indizi in gioco: il giglio sul petto del Custode lampeggia a ogni colpo; il Custode sembra voler abbassare l'alabarda ma una forza lo obbliga a sollevarla.",
+    "BACKSTORY 1845 | evento: Ferruccio è fabbro come il padre, lavora a piccoli incarichi per la Reggia e ama Agnese, tessitrice di San Leucio. Agnese, inconsapevolmente, gli mostra che alcuni fili destinati alla Reggia si muovono anche quando nessuno aziona i telai; Ferruccio indaga e scopre il progetto di Violante. | indizi in gioco: sciarpa rossa sul telaio; lettera d'amore di Agnese custodita da Tonino.",
+    "BACKSTORY 1845 | evento: Ferruccio chiede aiuto a Taddeo, amico d'infanzia diventato guardia. Violante ha promesso a Taddeo di liberare la sorella Mariella dal dolore e dai traumi del 1839; Taddeo consegna Ferruccio alle guardie. | indizi in gioco: Taddeo riconosce la spada forgiata insieme; lettera di Mariella 'Non devi aggiustarmi'; finestra illuminata di Mariella.",
+    "BACKSTORY 1845 | evento: Violante potrebbe uccidere Ferruccio ma, poiché conosce troppo del Velo, gli cancella la memoria e imprigiona la sua coscienza in un costume da Pulcinella preparato per i festeggiamenti. Il sortilegio fallisce parzialmente: perde voce e aspetto umano ma conserva la volontà di opporsi. | indizi in gioco: la maschera che Ferruccio indica a Tonino; il volto nero iniziale (inizio-memoria-e-doni).",
+    "BACKSTORY 1845 — La notte dell'inizio | evento: il completamento della Reggia (storicamente nel 1845 furono completati i lavori della Sala del Trono) diventa l'occasione di una grande festa cittadina; Violante attiva il Velo durante i festeggiamenti; Caserta si addormenta sotto una luna immobile; Ferruccio si risveglia in Piazza Dante. Non sa perché è vivo; sa solo di aver perso il padre, la voce e la donna che amava; crede responsabile Gregorio, il Custode della Reggia."
+  ]
+}
