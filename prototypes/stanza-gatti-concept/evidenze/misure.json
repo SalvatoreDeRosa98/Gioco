@@ -1,0 +1,290 @@
+{
+ "bot120": {
+  "n": 30,
+  "stanze_pulite": 30,
+  "morti": 0,
+  "tempo_medio_stanza_s": 4.67,
+  "tempo_medio_uccisione_dal_primo_inseguimento_ms": 1340,
+  "balzi": 93,
+  "parate_riuscite": 89,
+  "parate_mancate": 1,
+  "parate_premute": 90,
+  "pct_balzi_parati": 95.7,
+  "maschere_perse_medie": 0.07,
+  "colpi_medi": 6.1,
+  "fendenti_medi": 6.1
+ },
+ "bot_senza_parata": {
+  "n": 30,
+  "stanze_pulite": 30,
+  "morti": 0,
+  "tempo_medio_stanza_s": 3.97,
+  "tempo_medio_uccisione_dal_primo_inseguimento_ms": 1116,
+  "balzi": 8,
+  "parate_riuscite": 0,
+  "parate_mancate": 0,
+  "parate_premute": 0,
+  "pct_balzi_parati": 0,
+  "maschere_perse_medie": 0.23,
+  "colpi_medi": 9,
+  "fendenti_medi": 9.2
+ },
+ "sweep_reazione": {
+  "40": {
+   "pct_balzi_parati": 78.4,
+   "maschere_perse_medie": 0.5,
+   "morti": 2
+  },
+  "80": {
+   "pct_balzi_parati": 96.8,
+   "maschere_perse_medie": 0.1,
+   "morti": 0
+  },
+  "120": {
+   "pct_balzi_parati": 100,
+   "maschere_perse_medie": 0,
+   "morti": 0
+  },
+  "160": {
+   "pct_balzi_parati": 100,
+   "maschere_perse_medie": 0,
+   "morti": 0
+  },
+  "200": {
+   "pct_balzi_parati": 100,
+   "maschere_perse_medie": 0,
+   "morti": 0
+  },
+  "220": {
+   "pct_balzi_parati": 0,
+   "maschere_perse_medie": 3.15,
+   "morti": 1
+  },
+  "240": {
+   "pct_balzi_parati": 0,
+   "maschere_perse_medie": 3.1,
+   "morti": 0
+  },
+  "260": {
+   "pct_balzi_parati": 0,
+   "maschere_perse_medie": 2.95,
+   "morti": 0
+  },
+  "300": {
+   "pct_balzi_parati": 0,
+   "maschere_perse_medie": 2.9,
+   "morti": 0
+  }
+ },
+ "max_attaccanti": {
+  "1": {
+   "tempo_medio_stanza_s": 4.51,
+   "pct_balzi_parati": 100,
+   "maschere_perse_medie": 0
+  },
+  "2": {
+   "tempo_medio_stanza_s": 4.5,
+   "pct_balzi_parati": 100,
+   "maschere_perse_medie": 0
+  },
+  "3": {
+   "tempo_medio_stanza_s": 4.5,
+   "pct_balzi_parati": 100,
+   "maschere_perse_medie": 0
+  }
+ },
+ "hitbox_balzo_da_inizio": {
+  "pct_balzi_parati": 4.6,
+  "maschere_perse_medie": 3.1
+ },
+ "parata": [
+  {
+   "delta": 300,
+   "T_impatto": 764,
+   "esito": "danno",
+   "maschere": 4,
+   "stordito_ms": null,
+   "cariche_dopo": 1,
+   "colpo_post_parata": null
+  },
+  {
+   "delta": 260,
+   "T_impatto": 764,
+   "esito": "danno",
+   "maschere": 4,
+   "stordito_ms": null,
+   "cariche_dopo": 1,
+   "colpo_post_parata": null
+  },
+  {
+   "delta": 220,
+   "T_impatto": 764,
+   "esito": "danno",
+   "maschere": 4,
+   "stordito_ms": null,
+   "cariche_dopo": 1,
+   "colpo_post_parata": null
+  },
+  {
+   "delta": 100,
+   "T_impatto": 764,
+   "esito": "parata",
+   "maschere": 5,
+   "stordito_ms": 600,
+   "cariche_dopo": 1,
+   "colpo_post_parata": {
+    "danno": 2,
+    "vita": 1
+   }
+  },
+  {
+   "delta": 40,
+   "T_impatto": 764,
+   "esito": "parata",
+   "maschere": 5,
+   "stordito_ms": 600,
+   "cariche_dopo": 1,
+   "colpo_post_parata": {
+    "danno": 2,
+    "vita": 1
+   }
+  },
+  {
+   "delta": 30,
+   "T_impatto": 764,
+   "esito": "danno",
+   "maschere": 4,
+   "stordito_ms": null,
+   "cariche_dopo": 1,
+   "colpo_post_parata": null
+  },
+  {
+   "delta": 0,
+   "T_impatto": 764,
+   "esito": "danno",
+   "maschere": 4,
+   "stordito_ms": null,
+   "cariche_dopo": 1,
+   "colpo_post_parata": null
+  }
+ ],
+ "parata_sweep_esito": "0:danno 10:danno 20:danno 30:danno 40:parata 50:parata 60:parata 70:parata 80:parata 90:parata 100:parata 110:parata 120:parata 130:parata 140:parata 150:parata 160:parata 170:parata 180:parata 190:parata 200:parata 210:parata 220:danno 230:danno 240:danno 250:danno 260:danno 270:danno 280:danno 290:danno 300:danno 310:danno 320:danno",
+ "fendente": [
+  {
+   "dist": 80,
+   "colpito": true,
+   "t_dopo_pressione": 84,
+   "danno": 1
+  },
+  {
+   "dist": 95,
+   "colpito": false,
+   "t_dopo_pressione": null,
+   "danno": null
+  }
+ ],
+ "combo_fermo": {
+  "colpi": [
+   {
+    "t": 92,
+    "danno": 1,
+    "vita": 5
+   },
+   {
+    "t": 264,
+    "danno": 1,
+    "vita": 4
+   }
+  ],
+  "archi": [
+   {
+    "t": 88,
+    "n": 1,
+    "arco": 110
+   },
+   {
+    "t": 260,
+    "n": 2,
+    "arco": 110
+   },
+   {
+    "t": 460,
+    "n": 3,
+    "arco": 150
+   }
+  ],
+  "fendenti": [
+   8,
+   208,
+   408
+  ]
+ },
+ "combo_avanzando": {
+  "colpi": [
+   {
+    "t": 92,
+    "danno": 1,
+    "vita": 5
+   },
+   {
+    "t": 264,
+    "danno": 1,
+    "vita": 4
+   },
+   {
+    "t": 464,
+    "danno": 1,
+    "vita": 3
+   }
+  ],
+  "archi": [
+   {
+    "t": 88,
+    "n": 1,
+    "arco": 110
+   },
+   {
+    "t": 260,
+    "n": 2,
+    "arco": 110
+   },
+   {
+    "t": 460,
+    "n": 3,
+    "arco": 150
+   }
+  ],
+  "fendenti": [
+   8,
+   208,
+   408
+  ]
+ },
+ "affondo": {
+  "colpi": [
+   {
+    "t": 92,
+    "danno": 1,
+    "spinta": 160,
+    "come": "fendente"
+   },
+   {
+    "t": 540,
+    "danno": 2,
+    "spinta": 320,
+    "come": "affondo"
+   }
+  ],
+  "affondo": [
+   "affondo@460",
+   "affondo_attivo@520"
+  ]
+ },
+ "scatto": {
+  "esiti": [
+   "scatto@500"
+  ],
+  "maschere": 5,
+  "schivate": 0
+ }
+}
