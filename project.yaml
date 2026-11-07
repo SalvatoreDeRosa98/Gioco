@@ -19,14 +19,13 @@ specialists:
   ui: ui-programmer
 
 modes:
-  rigor: minimal
+  rigor: standard
   automation: autonomous
-  workflow: minimal
 
 project:
   title: "Ferruccio — La Menzogna dei Borbone"
   genre: "roguelike d'azione a stanze, grafica da teatro delle ombre"
-  design_record: design/game-brief.md  # scritto da /brainstorm
+  design_record: design/gdd/game-concept.md  # scritto da /brainstorm
   narrative_bible: trama/ferruccio-bibbia.md
   story_graph: trama/storia.json
   stage: Concept
