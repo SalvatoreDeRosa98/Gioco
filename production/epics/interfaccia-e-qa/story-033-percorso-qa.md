@@ -28,7 +28,7 @@
 *Dai GDD citati, scoped a questa storia:*
 
 - [ ] GIVEN `node gioco/qa/percorri.js`, WHEN gira, THEN apre il gioco con `?debug=1&seme=1845`, gioca il piano 1 con il bot fino al Gatto, compie la scelta su Rosa in entrambe le varianti e salva gli screenshot in `production/qa/evidence/`
-- [ ] GIVEN `node gioco/qa/stati64.js`, WHEN gira, THEN forza i 64 stati e verifica che per ognuno esista almeno una scena `epilogo` disponibile a ogni ordine da 10 a 110 (il test può fallire finché i piani 2-5 non esistono: il risultato è riportato, non nascosto)
+- [ ] GIVEN `node gioco/qa/stati64.js`, WHEN gira, THEN forza i 64 stati e verifica che per ognuno esista almeno una scena `epilogo` disponibile a ogni ordine in cui il file ha scene compatibili con il suo valore di `violante`, dall'ordine 10 ai titoli di coda, senza conflitti (già verde con la storia 026: 64/64)
 - [ ] GIVEN `node gioco/qa/seme.js 200`, WHEN gira, THEN riporta i violatori dei vincoli di generazione (zero attesi)
 - [ ] GIVEN un errore in console durante il percorso, WHEN avviene, THEN il percorso fallisce
 

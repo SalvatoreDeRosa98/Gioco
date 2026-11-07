@@ -150,7 +150,7 @@ Nessun valore numerico di bilanciamento: i soli parametri sono i dati di `trama/
 - [ ] **GIVEN** `violante = uccisa`, `agnese = risvegliata`, `taddeo = accusato`, **WHEN** si chiedono le scene `epilogo` a ordine 50, **THEN** `epilogo.agnese-accusa` e `epilogo.agnese-fermati` sono entrambe candidate e il sistema logga il conflitto scegliendo la più specifica (più coppie in `quando`).
 - [ ] **GIVEN** `piazza-dante.tonino-primo-incontro` non vista, **WHEN** si chiede `piazza-dante.filastrocca` (ordine 60), **THEN** non è disponibile.
 - [ ] **GIVEN** una condizione `{"flag_inesistente": "x"}`, **WHEN** valutata, **THEN** è falsa e viene loggato un errore di contenuto.
-- [ ] **GIVEN** lo strumento QA, **WHEN** forza ciascuno dei 64 stati, **THEN** per ognuno esiste almeno una scena `epilogo` disponibile a ogni ordine da 10 a 110.
+- [ ] **GIVEN** lo strumento QA, **WHEN** forza ciascuno dei 64 stati, **THEN** per ognuno esiste almeno una scena `epilogo` disponibile a ogni ordine **in cui il file ha scene compatibili con il valore di `violante` di quello stato** (la bibbia usa ordini diversi nei due mondi), la sequenza inizia a ordine 10 e termina con `epilogo.titoli-di-coda`, e nessun ordine ha due scene in conflitto.
 - [ ] Nessun nome di flag o di scena è scritto nel codice del motore.
 
 ## Open Questions

@@ -1,6 +1,6 @@
 /**
  * gioco/qa/stati64.js — Copertura dei 64 stati narrativi (GDD stato-narrativo.md, formula
- * `numero_percorsi` e criterio «ogni ordine da 10 a 110 ha una scena epilogo»; ADR-0004). Storia 026.
+ * `numero_percorsi` e criterio «ogni ordine del proprio mondo ha una scena epilogo»; ADR-0004). Storia 026.
  *
  * Esecuzione: `node gioco/qa/stati64.js` dalla radice. Forza, con `imposta`, ciascuna delle 2^5 × 2 = 64
  * combinazioni dei cinque flag di percorso × il flag del finale (letti da storia.json e narrativa.json,
@@ -65,7 +65,17 @@ async function main() {
     }
     const disponibili = sn.disponibiliPer((s) => s.capitolo === capitolo);
     const coperti = new Set(disponibili.map((s) => s.ordine));
-    const mancanti = ordini.filter((o) => !coperti.has(o));
+    // Un ordine conta come buco solo se nel file esiste almeno una scena a
+    // quell'ordine compatibile con il valore del flag finale di questo stato:
+    // la bibbia usa ordini diversi nei due mondi (es. Tonino a 50 in un mondo e
+    // a 70 nell'altro), e un ordine che appartiene solo all'altro mondo non e'
+    // una mancanza di contenuto.
+    const vFinale = stato[flagFinale];
+    const ordiniDelMondo = new Set(storia.scene
+      .filter((s) => s.capitolo === capitolo)
+      .filter((s) => { const q = (s.quando || {})[flagFinale]; return q === undefined || q === '*' || q === vFinale; })
+      .map((s) => s.ordine));
+    const mancanti = ordini.filter((o) => ordiniDelMondo.has(o) && !coperti.has(o));
     const etichetta = Object.entries(stato).map(([f, v]) => `${f}=${v}`).join(' ');
     if (mancanti.length === 0) statiCompleti += 1;
     else {
