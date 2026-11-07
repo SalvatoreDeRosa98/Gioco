@@ -237,8 +237,9 @@ Niente che richieda un disegnatore: sagome, luce, carta, tipografia. *Test*: tra
 ## Prossimi passi
 
 - [x] Direzione approvata dall'autore (Isaac)
-- [ ] `/art-bible` — identità visiva del presepe d'ombre in vista 3/4
-- [ ] `/map-systems` — scomposizione in sistemi e ordine di design
-- [ ] `/design-system` — GDD dei sistemi core (combattimento, generazione dei piani, doni, storia tra le notti)
-- [ ] `/create-architecture` — architettura del motore web
-- [ ] `/prototype` — una stanza con tre gatti e la parata
+- [x] `/art-bible` — sezioni 1-4 (`design/art/art-bible.md`)
+- [x] `/map-systems` — `design/gdd/systems-index.md`
+- [x] `/design-system` — 11 GDD in `design/gdd/`
+- [x] `/create-architecture` — `docs/architecture/architecture.md` + ADR
+- [x] `/prototype` — `prototypes/stanza-gatti-concept/` (da giocare)
+- [ ] `/create-epics`, `/create-stories`, `/dev-story` — il codice del piano 1

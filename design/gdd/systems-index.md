@@ -2,7 +2,7 @@
 
 > **Status**: Draft (autonomo: enumerazione, dipendenze e priorità decise e registrate nel decision log; gate TD-SYSTEM-BOUNDARY, PR-SCOPE e CD-SYSTEMS saltati — review mode solo)
 > **Created**: 2026-11-07
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-07 (11 GDD in bozza, passata di coerenza fatta)
 > **Source Concept**: design/gdd/game-concept.md
 
 ---
@@ -37,19 +37,19 @@ Sistemi dedotti e non citati esplicitamente nel concept sono marcati "(inferred)
 | 2 | Input (inferred) | Core | MVP | Not Started | design/gdd/input.md | — |
 | 3 | Rendering a teatro delle ombre | Core | MVP | Not Started | design/gdd/rendering-ombre.md | — |
 | 4 | Fisica e collisioni (inferred) | Core | MVP | Not Started | design/gdd/fisica-collisioni.md | Ciclo di gioco |
-| 5 | Controllo di Ferruccio | Gameplay | MVP | Not Started | design/gdd/controllo-ferruccio.md | Input, Fisica |
+| 5 | Controllo di Ferruccio | Gameplay | MVP | In Design | design/gdd/controllo-ferruccio.md | Input, Fisica |
 | 6 | Camera e transizioni di stanza (inferred) | Core | MVP | Not Started | design/gdd/camera-stanza.md | Rendering, Stanze e porte |
-| 7 | Combattimento | Gameplay | MVP | Not Started | design/gdd/combattimento.md | Controllo di Ferruccio, Fisica |
+| 7 | Combattimento | Gameplay | MVP | In Design | design/gdd/combattimento.md | Controllo di Ferruccio, Fisica |
 | 8 | Nemici e IA | Gameplay | MVP | In Design | design/gdd/nemici.md | Combattimento, Stanze e porte |
 | 9 | Boss | Gameplay | MVP | In Design | design/gdd/boss.md | Nemici e IA, Stato narrativo |
 | 10 | Generazione dei piani | Gameplay | MVP | In Design | design/gdd/generazione-piani.md | Stanze e porte, Salvataggio (seme) |
 | 11 | Stanze e porte (inferred) | Gameplay | MVP | In Design | design/gdd/stanze-porte.md | Fisica, Ciclo di gioco |
 | 12 | Doni e modificatori | Gameplay | MVP | In Design | design/gdd/doni-modificatori.md | Combattimento, Controllo di Ferruccio |
-| 13 | Ricordi con scelta | Narrative | MVP | Not Started | design/gdd/ricordi-scelta.md | Doni e modificatori, Stato narrativo, Incontri e dialoghi |
+| 13 | Ricordi con scelta | Narrative | MVP | In Design | design/gdd/ricordi-scelta.md | Doni e modificatori, Stato narrativo, Incontri e dialoghi |
 | 14 | Economia: monete, scintille, banchetto | Economy | MVP | In Design | design/gdd/economia.md | Doni e modificatori, Stanze e porte |
 | 15 | Fucina del Ricordo (meta-progressione) | Progression | Vertical Slice | Not Started | design/gdd/fucina-ricordo.md | Economia, Salvataggio, Stato narrativo |
-| 16 | Stato narrativo (sei flag) | Narrative | MVP | Not Started | design/gdd/stato-narrativo.md | — |
-| 17 | Incontri e dialoghi | Narrative | MVP | Not Started | design/gdd/incontri-dialoghi.md | Stato narrativo, Stanze e porte |
+| 16 | Stato narrativo (sei flag) | Narrative | MVP | In Design | design/gdd/stato-narrativo.md | — |
+| 17 | Incontri e dialoghi | Narrative | MVP | In Design | design/gdd/incontri-dialoghi.md | Stato narrativo, Stanze e porte |
 | 18 | Finali e mondo dopo | Narrative | Alpha | Not Started | design/gdd/finali-mondo-dopo.md | Stato narrativo, Boss, Rendering, Nemici e IA |
 | 19 | Salvataggio e profilo (inferred) | Persistence | MVP | Not Started | design/gdd/salvataggio.md | Stato narrativo |
 | 20 | HUD (inferred) | UI | MVP | Not Started | design/ux/hud.md | Combattimento, Doni, Economia |
@@ -189,18 +189,20 @@ dipendenti e vanno costruiti.
 | Metric | Count |
 |--------|-------|
 | Total systems identified | 26 |
-| Design docs started | 0 |
+| Design docs started | 11 |
 | Design docs reviewed | 0 |
 | Design docs approved | 0 |
-| MVP systems designed | 0/19 |
+| MVP systems designed | 11/19 (in bozza) |
 | Vertical Slice systems designed | 0/4 |
 
 ---
 
 ## Next Steps
 
-- [ ] `/design-system controllo-ferruccio` e `combattimento` (coppia)
-- [ ] `/prototype` una stanza con tre gatti: fendente, parata, scatto
-- [ ] `/design-system stanze-porte`, `generazione-piani`, `nemici`, `doni-modificatori`, `stato-narrativo`
-- [ ] `/create-architecture`
+- [x] `/design-system controllo-ferruccio` e `combattimento` (coppia)
+- [x] `/prototype` una stanza con tre gatti: fendente, parata, scatto (`prototypes/stanza-gatti-concept/`, NOT ASSESSED finché l'autore non gioca)
+- [x] `/design-system stanze-porte`, `generazione-piani`, `nemici`, `boss`, `doni-modificatori`, `economia`, `stato-narrativo`, `incontri-dialoghi`, `ricordi-scelta`
+- [x] `/create-architecture` (+ ADR-0001..0006 Proposed)
+- [ ] `/review-all-gdds` e `/balance-check` sui numeri (danno, vita dei boss, prezzi)
+- [ ] `/create-epics` e `/create-stories` per l'MVP (piano 1)
 - [ ] `/gate-check systems-design`
