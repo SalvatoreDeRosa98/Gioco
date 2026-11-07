@@ -42,8 +42,8 @@ Sistemi dedotti e non citati esplicitamente nel concept sono marcati "(inferred)
 | 7 | Combattimento | Gameplay | MVP | Not Started | design/gdd/combattimento.md | Controllo di Ferruccio, Fisica |
 | 8 | Nemici e IA | Gameplay | MVP | Not Started | design/gdd/nemici.md | Combattimento, Stanze e porte |
 | 9 | Boss | Gameplay | MVP | Not Started | design/gdd/boss.md | Nemici e IA, Stato narrativo |
-| 10 | Generazione dei piani | Gameplay | MVP | Not Started | design/gdd/generazione-piani.md | Stanze e porte, Salvataggio (seme) |
-| 11 | Stanze e porte (inferred) | Gameplay | MVP | Not Started | design/gdd/stanze-porte.md | Fisica, Ciclo di gioco |
+| 10 | Generazione dei piani | Gameplay | MVP | In Design | design/gdd/generazione-piani.md | Stanze e porte, Salvataggio (seme) |
+| 11 | Stanze e porte (inferred) | Gameplay | MVP | In Design | design/gdd/stanze-porte.md | Fisica, Ciclo di gioco |
 | 12 | Doni e modificatori | Gameplay | MVP | In Design | design/gdd/doni-modificatori.md | Combattimento, Controllo di Ferruccio |
 | 13 | Ricordi con scelta | Narrative | MVP | Not Started | design/gdd/ricordi-scelta.md | Doni e modificatori, Stato narrativo, Incontri e dialoghi |
 | 14 | Economia: monete, scintille, banchetto | Economy | MVP | In Design | design/gdd/economia.md | Doni e modificatori, Stanze e porte |
