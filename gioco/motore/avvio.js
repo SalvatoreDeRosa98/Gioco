@@ -5,7 +5,11 @@
  * il ciclo. Storie 001-004. Qui vivono anche:
  *  - l'adattamento del canvas (1280×720 logici scalati al contenitore, device pixel ratio rispettato);
  *  - il renderer SEGNAPOSTO (fondo dal token CSS, numero di tick in debug) che la storia 005
- *    sostituisce con `resa/renderer.js`;
+ *    sostituisce con `resa/renderer.js`; con `?debug=1&wire=1` al suo posto gira il disegno
+ *    diagnostico in fil di ferro di `resa/debug.js` (storie 007-011), dentro una scena di prova
+ *    con fantocci (`SCENA_WIRE`), e il ciclo entra subito nello stato `notte`;
+ *  - la composizione di Ferruccio e del combattimento (storie 007-011): campo, modificatori,
+ *    corpo, spada, bersagli;
  *  - la superficie di debug `window.__gioco`, presente SOLO con `?debug=1` (ADR-0003).
  *
  * La risoluzione logica è un vincolo del motore (ADR-0001), non un valore di gioco.
@@ -19,15 +23,37 @@ import { creaInput, collega as collegaInput } from './fondazione/input.js';
 import { creaRng } from './fondazione/rng.js';
 import { creaBus } from './fondazione/eventi.js';
 import { creaParametri, leggiOverrideUrl } from './fondazione/parametri.js';
+import { creaModificatori } from './oggetti/modificatori.js';
+import { creaCampo } from './mondo/fisica.js';
+import { creaFerruccio } from './attori/ferruccio.js';
+import { creaCombattimento } from './attori/combattimento.js';
+import { creaFantoccio } from './attori/bersaglio.js';
+import { creaResaDebug } from './resa/debug.js';
 
 /** Risoluzione logica della scena (ADR-0001). */
 const RISOLUZIONE = Object.freeze({ larghezza: 1280, altezza: 720 });
 
 /** Cartella dei parametri e file da caricare (nomi di file, non valori di gioco). */
 const CARTELLA_PARAMETRI = 'contenuti/parametri/';
-const FILE_STATISTICHE = ['ferruccio', 'combattimento'];
+const FILE_STATISTICHE = ['ferruccio', 'combattimento', 'stanza'];
 const FILE_TABELLE = ['input'];
 const FILE_MOTO_RIDOTTO = 'moto-ridotto';
+
+/**
+ * Scena diagnostica del modo `wire` (non è contenuto di gioco: posizioni in celle della griglia).
+ * Ferruccio al centro; un fantoccio fermo a destra (`fermo`), uno che attacca a ciclo se l'URL ha
+ * `fantoccio=attacca`, una colonna con un fantoccio dietro per la linea di colpo, un peso 3.
+ */
+const SCENA_WIRE = Object.freeze({
+  ferruccio: { colonna: 6.5, riga: 3.5 },
+  ostacoli: [{ colonna: 4, riga: 3, id: 'colonna' }],
+  fantocci: [
+    { id: 'destra', colonna: 8.5, riga: 3.5 },
+    { id: 'dietro-colonna', colonna: 3.5, riga: 3.5 },
+    { id: 'pesante', colonna: 10.5, riga: 1.5, peso: 3, r: 22, vita: 20 },
+    { id: 'attaccante', colonna: 6.5, riga: 5.5, automatico: 'fantoccio' },
+  ],
+});
 
 /**
  * Legge un token CSS dalla radice del documento.
@@ -132,12 +158,64 @@ async function avvia() {
 
   // L'input è il primo sistema: fotografa i fronti all'inizio di ogni tick.
   ciclo.registra({ tick: () => input.inizioTick() });
-  ciclo.registra(creaSegnaposto(canvas, { debug, contaTick: ciclo.contaTick }));
+
+  // Ferruccio e combattimento (storie 007-011): campo della stanza standard, statistiche effettive,
+  // corpo, spada, bersagli. Girano solo nello stato `notte`.
+  const wire = debug && url.searchParams.get('wire') === '1';
+  const modificatori = creaModificatori(parametri);
+  const campo = creaCampo({
+    colonne: parametri.get('stanza.colonne'),
+    righe: parametri.get('stanza.righe'),
+    cella: parametri.get('stanza.cella'),
+    scenaLarghezza: RISOLUZIONE.larghezza,
+    scenaAltezza: RISOLUZIONE.altezza,
+    ostacoli: wire ? SCENA_WIRE.ostacoli : [],
+  });
+  const cella = (c, r) => ({ x: campo.x + c * campo.cella, y: campo.y + r * campo.cella });
+  const partenza = cella(SCENA_WIRE.ferruccio.colonna, SCENA_WIRE.ferruccio.riga);
+  const ferruccio = creaFerruccio({ modificatori, tempo, eventi, input, campo, x: partenza.x, y: partenza.y });
+  /** @type {object[]} */
+  const bersagli = [];
+  /** @type {object[]} */
+  const proiettili = [];
+  const combattimento = creaCombattimento({ modificatori, tempo, eventi, input, campo, ferruccio, bersagli: () => bersagli });
+  if (wire) {
+    const attaccaAuto = url.searchParams.get('fantoccio') === 'attacca';
+    for (const f of SCENA_WIRE.fantocci) {
+      const p = cella(f.colonna, f.riga);
+      bersagli.push(creaFantoccio({
+        modificatori, tempo, eventi, campo, bersaglio: combattimento.comeBersaglio,
+        id: f.id, x: p.x, y: p.y, peso: f.peso, r: f.r, vita: f.vita,
+        automatico: f.automatico === 'fantoccio' && attaccaAuto,
+      }));
+    }
+  }
+  ciclo.registra(ferruccio, { stati: ['notte'] });
+  ciclo.registra(combattimento, { stati: ['notte'] });
+  ciclo.registra({
+    tick: (dt) => {
+      for (const b of bersagli) b.tick(dt);
+      for (const p of proiettili) p.tick(dt);
+    },
+  }, { stati: ['notte'] });
+
+  if (wire) {
+    ciclo.registra(creaResaDebug({
+      canvas, campo, ferruccio, combattimento, bersagli: () => bersagli, proiettili: () => proiettili,
+      token, scena: RISOLUZIONE, contaTick: ciclo.contaTick,
+    }));
+    ciclo.vaiA('hub');
+    ciclo.vaiA('notte');
+  } else {
+    ciclo.registra(creaSegnaposto(canvas, { debug, contaTick: ciclo.contaTick }));
+  }
 
   if (debug) {
     /** Superficie di debug (ADR-0003, storia 004). `imposta` e `vaiA` sono ganci per le storie
      *  dello stato narrativo e delle stanze: finché quei moduli non si registrano, rispondono false. */
     const ganci = { imposta: null, vaiA: null };
+    /** Sorgente sintetica della tastiera per un'azione (primo tasto della mappa). */
+    const sorgente = (azione) => `t:${parametri.get(`input.tastiera.${azione}`)[0]}`;
     window.__gioco = Object.freeze({
       get stato() { return ciclo.stato(); },
       tick: (n) => ciclo.tick(n ?? 0),
@@ -148,6 +226,23 @@ async function avvia() {
       ciclo,
       rng,
       motoRidotto,
+      modificatori,
+      campo,
+      ferruccio,
+      combattimento,
+      bersagli,
+      proiettili,
+      wire,
+      /** Tiene giù un'azione del contratto (es. 'destra') finché non si chiama `lascia`. */
+      tieni: (azione) => input.sorgenteGiu(sorgente(azione)),
+      lascia: (azione) => input.sorgenteSu(sorgente(azione)),
+      /** Preme un'azione per `n` tick forzati (giù, n tick, su); ritorna il contatore dei tick. */
+      premi: (azione, n = 1) => {
+        input.sorgenteGiu(sorgente(azione));
+        const esito = ciclo.tick(Math.max(1, n));
+        input.sorgenteSu(sorgente(azione));
+        return esito;
+      },
       imposta: (flag, valore) => (ganci.imposta ? ganci.imposta(flag, valore) : false),
       vaiA: (stanza) => (ganci.vaiA ? ganci.vaiA(stanza) : false),
       /** Registra l'implementazione di `imposta` o `vaiA` quando il modulo relativo esiste. */

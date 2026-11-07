@@ -1,12 +1,12 @@
 # Story 008: Maschere, danno subito, invulnerabilità, spinta, morte
 
 > **Epic**: Ferruccio e combattimento
-> **Status**: Ready
+> **Status**: Done
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: M
 > **Manifest Version**: N/A (nessun control manifest: `/create-control-manifest` non eseguito)
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-07 (Done: implementazione e test, gameplay-programmer)
 
 ## Context
 
@@ -27,10 +27,10 @@
 
 *Dai GDD citati, scoped a questa storia:*
 
-- [ ] GIVEN 5 maschere, WHEN il Colpo di un nemico raggiunge Ferruccio, THEN le maschere diventano 4, è spinto a 260 px/s decadenti in 150 ms e per 800 ms un secondo Colpo non toglie maschere
-- [ ] GIVEN un gatto in pattuglia che lo tocca, WHEN avviene, THEN le maschere restano 5 e i corpi si separano
-- [ ] GIVEN 1 maschera, WHEN subisce un attacco pesante, THEN le maschere sono 0 e l'evento `ferruccio.morto` è emesso entro 200 ms
-- [ ] GIVEN armatura 1, WHEN subisce un attacco pesante, THEN perde 1 maschera (minimo 1)
+- [x] GIVEN 5 maschere, WHEN il Colpo di un nemico raggiunge Ferruccio, THEN le maschere diventano 4, è spinto a 260 px/s decadenti in 150 ms e per 800 ms un secondo Colpo non toglie maschere
+- [x] GIVEN un gatto in pattuglia che lo tocca, WHEN avviene, THEN le maschere restano 5 e i corpi si separano
+- [x] GIVEN 1 maschera, WHEN subisce un attacco pesante, THEN le maschere sono 0 e l'evento `ferruccio.morto` è emesso entro 200 ms
+- [x] GIVEN armatura 1, WHEN subisce un attacco pesante, THEN perde 1 maschera (minimo 1)
 
 ---
 
@@ -56,7 +56,8 @@ Le storie vicine dell'epica (vedi `EPIC.md`) gestiscono il resto; non anticiparl
 
 **Story Type**: Logic
 **Required evidence**: test in `gioco/qa/` (node o Playwright) che esercita i criteri
-**Status**: [ ] Not yet created
+**Status**: [x] Creato e superato (2026-11-07)
+**Evidenza**: `gioco/qa/combattimento.test.mjs` casi «008: …» (Colpo → 4 maschere, spinta 260 px/s in 150 ms, 800 ms i-frames; contatto passivo innocuo; pesante a 1 maschera → `ferruccio.morto` nello stesso tick; armatura 1; due Colpi → un danno) + wire test (il fantoccio automatico toglie una maschera)
 
 ---
 

@@ -37,10 +37,10 @@ Il corpo e la spada: movimento in otto direzioni, scatto invulnerabile, maschere
 
 | # | Story | Type | Status | ADR |
 |---|-------|------|--------|-----|
-| 007 | Movimento in otto direzioni, collisioni con le mura, scatto | Logic | Ready | ADR-0002 |
-| 008 | Maschere, danno subito, invulnerabilità, spinta, morte | Logic | Ready | ADR-0002 |
-| 009 | Fendente a settore, combo da tre, buffer e cancellazioni | Logic | Ready | ADR-0002 |
-| 010 | Affondo caricato | Logic | Ready | ADR-0002 |
-| 011 | Parata, stordimento, controcolpo, riflesso | Logic | Ready | ADR-0002 |
+| 007 | Movimento in otto direzioni, collisioni con le mura, scatto | Logic | Done | ADR-0002 |
+| 008 | Maschere, danno subito, invulnerabilità, spinta, morte | Logic | Done | ADR-0002 |
+| 009 | Fendente a settore, combo da tre, buffer e cancellazioni | Logic | Done | ADR-0002 |
+| 010 | Affondo caricato | Logic | Done | ADR-0002 |
+| 011 | Parata, stordimento, controcolpo, riflesso | Logic | Done | ADR-0002 |
 | 012 | Hit-stop, scossa, scie, lampi, anima | Visual/Feel | Ready | ADR-0002 |
 | 013 | Sagoma di Ferruccio: pezzi, pose, sciarpa, lama orientabile | Visual/Feel | Ready | ADR-0002 |

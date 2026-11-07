@@ -1,12 +1,12 @@
 # Story 010: Affondo caricato
 
 > **Epic**: Ferruccio e combattimento
-> **Status**: Ready
+> **Status**: Done
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: M
 > **Manifest Version**: N/A (nessun control manifest: `/create-control-manifest` non eseguito)
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-07 (Done: implementazione e test, gameplay-programmer)
 
 ## Context
 
@@ -27,10 +27,10 @@
 
 *Dai GDD citati, scoped a questa storia:*
 
-- [ ] GIVEN attacco tenuto 450 ms poi rilasciato, WHEN un nemico è sul percorso a 60 px, THEN subisce 2,5 danni ed è spinto a 320 px/s
-- [ ] GIVEN attacco rilasciato a 300 ms, WHEN si rilascia, THEN non parte alcun affondo (il fendente è già partito alla pressione)
-- [ ] GIVEN un affondo verso un muro, WHEN urta, THEN si ferma al muro e la hitbox copre solo il tratto percorso
-- [ ] GIVEN un nemico con peso ≥ 3, WHEN l'affondo lo colpisce, THEN danno sì, spinta no, Ferruccio si ferma a contatto
+- [x] GIVEN attacco tenuto 450 ms poi rilasciato, WHEN un nemico è sul percorso a 60 px, THEN subisce 2,5 danni ed è spinto a 320 px/s
+- [x] GIVEN attacco rilasciato a 300 ms, WHEN si rilascia, THEN non parte alcun affondo (il fendente è già partito alla pressione)
+- [x] GIVEN un affondo verso un muro, WHEN urta, THEN si ferma al muro e la hitbox copre solo il tratto percorso
+- [x] GIVEN un nemico con peso ≥ 3, WHEN l'affondo lo colpisce, THEN danno sì, spinta no, Ferruccio si ferma a contatto
 
 ---
 
@@ -56,7 +56,8 @@ Le storie vicine dell'epica (vedi `EPIC.md`) gestiscono il resto; non anticiparl
 
 **Story Type**: Logic
 **Required evidence**: test in `gioco/qa/` (node o Playwright) che esercita i criteri
-**Status**: [ ] Not yet created
+**Status**: [x] Creato e superato (2026-11-07)
+**Evidenza**: `gioco/qa/combattimento.test.mjs` casi «010: …» (450 ms → 2,5 e 320 px/s; rilascio a 300 ms nessun affondo; muro: fermo e hitbox 40 + lama 46; peso 3: danno sì, spinta no, nessuna sovrapposizione)
 
 ---
 

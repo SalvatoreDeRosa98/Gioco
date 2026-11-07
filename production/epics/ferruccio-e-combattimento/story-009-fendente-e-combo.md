@@ -1,12 +1,12 @@
 # Story 009: Fendente a settore, combo da tre, buffer e cancellazioni
 
 > **Epic**: Ferruccio e combattimento
-> **Status**: Ready
+> **Status**: Done
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: M
 > **Manifest Version**: N/A (nessun control manifest: `/create-control-manifest` non eseguito)
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-07 (Done: implementazione e test, gameplay-programmer)
 
 ## Context
 
@@ -27,11 +27,11 @@
 
 *Dai GDD citati, scoped a questa storia:*
 
-- [ ] GIVEN un gatto (r 16) a 80 px davanti, WHEN si preme attacco, THEN subisce 1 danno tra 80 e 180 ms; a 95 px non subisce danno
-- [ ] GIVEN tre pressioni a 200 ms, WHEN colpiscono un nemico con vita 6 avanzando, THEN la vita scende a 2,5 e il terzo fendente ha arco 150°
-- [ ] GIVEN attacco premuto durante lo scatto, WHEN lo scatto finisce entro 150 ms, THEN il fendente parte; oltre, no
-- [ ] GIVEN un nemico dietro una colonna che blocca i colpi, WHEN il fendente lo coprirebbe, THEN non subisce danno
-- [ ] GIVEN 20 nemici, WHEN si risolvono le hitbox, THEN costa ≤ 0,5 ms per tick
+- [x] GIVEN un gatto (r 16) a 80 px davanti, WHEN si preme attacco, THEN subisce 1 danno tra 80 e 180 ms; a 95 px non subisce danno
+- [x] GIVEN tre pressioni a 200 ms, WHEN colpiscono un nemico con vita 6 avanzando, THEN la vita scende a 2,5 e il terzo fendente ha arco 150°
+- [x] GIVEN attacco premuto durante lo scatto, WHEN lo scatto finisce entro 150 ms, THEN il fendente parte; oltre, no
+- [x] GIVEN un nemico dietro una colonna che blocca i colpi, WHEN il fendente lo coprirebbe, THEN non subisce danno
+- [x] GIVEN 20 nemici, WHEN si risolvono le hitbox, THEN costa ≤ 0,5 ms per tick
 
 ---
 
@@ -57,7 +57,8 @@ Le storie vicine dell'epica (vedi `EPIC.md`) gestiscono il resto; non anticiparl
 
 **Story Type**: Logic
 **Required evidence**: test in `gioco/qa/` (node o Playwright) che esercita i criteri
-**Status**: [ ] Not yet created
+**Status**: [x] Creato e superato (2026-11-07)
+**Evidenza**: `gioco/qa/combattimento.test.mjs` casi «009: …» (80 px → 1 danno a 100 ms, 95 px nessuno; combo 6 → 2,5 e arco 150°; buffer durante lo scatto entro/oltre 150 ms; cancellazioni; danno interrompe; linea di colpo dietro colonna; 20 bersagli ≈ 0,08 ms/tick) + wire test (settore attivo nello screenshot)
 
 ---
 
