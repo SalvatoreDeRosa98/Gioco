@@ -1237,8 +1237,15 @@ resolve_code_root() {
     godot)   root="src" ;;
     unity)   root="Assets" ;;
     unreal*) root="Source" ;;
+    web)     root="gioco" ;;
     *)       root="" ;;
   esac
+  # Un progetto puo' dichiarare esplicitamente la radice del codice
+  # (engine.code_root, es. "gioco/"): se esiste come cartella, vince.
+  if [ -f "$_YH_ROOT/project.yaml" ]; then
+    _cr=$(get_yaml_key "$_YH_ROOT/project.yaml" engine.code_root 2>/dev/null | sed 's#/$##')
+    [ -n "$_cr" ] && [ -d "$_YH_ROOT/$_cr" ] && root="$_cr"
+  fi
 
   # 3. No usable engine value — believe the tree, but only if it is unambiguous.
   #    Names are compared exactly, against the directory listing: `[ -d Assets ]`

@@ -15,6 +15,7 @@ code. This file is the procedure for applying it.
 | Godot | `src/` | No constraint; Godot loads from `res://` anywhere under the project root |
 | Unity | `Assets/` | Unity compiles **only** `Assets/` and `Packages/` |
 | Unreal | `Source/<Module>/` | UnrealBuildTool discovers modules under `Source/`; content lives in `Content/` |
+| Web | `gioco/` (o `engine.code_root` in `project.yaml`) | Nessun vincolo di toolchain: la radice è dichiarata nel progetto |
 
 `src/` is the **Godot row of that table, not a universal path.**
 
