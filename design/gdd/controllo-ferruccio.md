@@ -213,7 +213,7 @@ la capriola, non quella: troppo lunga).
 
 ## Acceptance Criteria
 
-- [ ] **GIVEN** Ferruccio fermo, **WHEN** si tiene la diagonale alto-destra per 1 s, **THEN** si sposta di 220 ± 5 px lungo la diagonale (velocità normalizzata).
+- [ ] **GIVEN** Ferruccio fermo, **WHEN** si tiene la diagonale alto-destra per 1 s, **THEN** si sposta di 220 ± 10 px lungo la diagonale (velocità normalizzata; la rampa `t_accel` di 60 ms toglie circa 6 px, misurato nell'implementazione).
 - [ ] **GIVEN** una carica di scatto, **WHEN** si preme scatto verso destra in spazio libero, **THEN** la posizione avanza di 180 ± 4 px in 160 ± 16 ms e il contatto con un nemico in quel tratto non toglie maschere.
 - [ ] **GIVEN** 0 cariche, **WHEN** si preme scatto, **THEN** la posizione non cambia e non viene accodato alcuno scatto.
 - [ ] **GIVEN** 5 maschere, **WHEN** il Colpo del balzo di un gatto raggiunge Ferruccio, **THEN** le maschere diventano 4, Ferruccio è spinto nella direzione opposta al gatto, e per 800 ms un secondo Colpo non toglie maschere.
@@ -230,3 +230,4 @@ la capriola, non quella: troppo lunga).
 |----------|-------|----------|-----------|
 | Lo scatto base esiste senza sciarpa? La decisione dell'autore del 10/10 lega lo scatto alla sciarpa di Agnese (capitolo IV). In un roguelike lo scatto è un verbo di base: proposta = scatto base sempre disponibile, la sciarpa (dono narrativo) aggiunge una carica e allunga la scia | autore | prima del prototipo | — |
 | Mezze maschere (come i mezzi cuori di Isaac)? | game-designer | dopo il prototipo | no nell'MVP |
+| `armatura` compare sia in `ferruccio.json` (0-1) sia in `combattimento.json` (0-2): la formula `danno_subito` legge quella di Ferruccio; unificare nel GDD e nei JSON alla passata di bilanciamento | game-designer | prima del VS | — |
