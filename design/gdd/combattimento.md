@@ -59,8 +59,12 @@ di *Sekiro* ridotta a un gioco dall'alto, l'affondo di *Hades* (Stygius) per la 
    **ricarica una carica di scatto** e apre la finestra di **controcolpo**: per `t_controcolpo` il
    prossimo fendente ha moltiplicatore `molt_controcolpo`. Gli attacchi segnati come **imparabili**
    (rossi pieni, non lampeggianti) non si parano: vanno scattati.
-6. **Danno e vita dei nemici**. Ogni nemico ha `vita` intera. Il danno è intero dopo arrotondamento
-   per difetto, minimo 1. A 0 il nemico muore (dissoluzione in anima, GDD `nemici.md`).
+6. **Danno e vita dei nemici**. Ogni nemico ha `vita` (numero, anche decimale). Il danno è un
+   numero decimale, **senza arrotondamento** (così il terzo fendente ×1,5 e i bonus frazionari
+   contano davvero; la vita si mostra solo come barra), minimo `danno_min`. A vita ≤ 0 il nemico
+   muore (dissoluzione in anima, GDD `nemici.md`). I colpi che attraversano un ostacolo che blocca
+   i colpi (GDD `stanze-porte.md`) non arrivano: la linea tra il centro di Ferruccio e il nemico
+   deve essere libera.
 7. **Spinta sui nemici**. Ogni colpo spinge il nemico lontano da Ferruccio di `spinta_f` (o
    `spinta_affondo`) decadente in `t_spinta_nemico`; i nemici con `peso ≥ 3` non sono spinti.
 8. **Feedback obbligatorio**. Ogni colpo a segno: hit-stop `hs_colpo`, lampo bianco sulla sagoma
@@ -68,8 +72,12 @@ di *Sekiro* ridotta a un gioco dall'alto, l'affondo di *Hades* (Stygius) per la 
    bianco ad anello, scossa.
 9. **Statistiche nominate** (il contratto con i doni, GDD `doni-modificatori.md`): `danno`,
    `portata`, `arco_f`, `t_startup_f`, `t_recupero_f`, `molt_f3`, `t_finestra_p`, `molt_controcolpo`,
-   `molt_affondo`, `d_affondo`, `t_carica`, `danno_riflesso`, `spinta_f`. I doni possono solo
-   moltiplicare o sommare queste; non introducono rami di codice. Effetti "a evento" (es. "ogni
+   `molt_affondo`, `d_affondo`, `t_carica`, `danno_riflesso`, `spinta_f`, `armatura` (riduzione del
+   danno subito, intera), più quelle del corpo in GDD `controllo-ferruccio.md`: `v_base`, `d_scatto`,
+   `cariche_scatto`, `maschere_max`, `t_invuln`. I doni possono `sommare`, `moltiplicare` o
+   `impostare` (solo flag booleani) queste statistiche nell'ordine e con i clamp di
+   `doni-modificatori.md`; il combattimento legge **il valore effettivo già calcolato** (non
+   riapplica i moltiplicatori dei doni) e non introduce rami di codice. Effetti "a evento" (es. "ogni
    parata lancia una scintilla") passano per **ganci** nominati: `su_colpo`, `su_uccisione`,
    `su_parata`, `su_affondo`, `su_danno_subito`.
 
@@ -102,18 +110,18 @@ interrompe tutto tranne l'attivo dell'affondo.
 
 The `danno_colpo` formula is defined as:
 
-`danno_colpo = max(1, floor(danno × molt_combo × molt_affondo × molt_controcolpo × Π(mod_danno_i)))`
+`danno_colpo = max(danno_min, danno_eff × molt_combo × molt_affondo × molt_controcolpo)`
 
 **Variables:**
 | Variable | Type | Range | Source | Description |
 |----------|------|-------|--------|-------------|
-| danno | int | 1–3 | data file | danno base della spada (1) |
+| danno_eff | float | 1–5 | calculated (doni) | valore effettivo di `danno` dopo i modificatori dei doni (base 1, clamp 5) |
+| danno_min | float | 0,25–1 | data file | minimo per colpo (0,5) |
 | molt_combo | float | 1,0 / 1,0 / 1,5 | data file | per fendente 1, 2, 3 |
 | molt_affondo | float | 2,0–3,0 | data file | solo nell'affondo (2,5); altrimenti 1 |
 | molt_controcolpo | float | 1,5–3,0 | data file | solo nella finestra di controcolpo (2,0); altrimenti 1 |
-| mod_danno_i | float | 0,8–2,0 ciascuno | calculated (doni) | moltiplicatori dei doni |
 
-**Output Range:** 1 to 15 nell'MVP. **Example:** terzo fendente in controcolpo con un dono +50%: floor(1 × 1,5 × 1 × 2,0 × 1,5) = 4.
+**Output Range:** 0,5 a 25 (affondo in controcolpo con `danno_eff` 5); nell'MVP tipicamente 1–7,5. **Example:** terzo fendente in controcolpo con il Martello da fabbro (`danno_eff` 2): 2 × 1,5 × 1 × 2,0 = 6.
 
 The `area_fendente` formula is defined as:
 
@@ -142,7 +150,7 @@ The `finestra_parata` formula is defined as:
 
 The `dps_riferimento` formula (per il bilanciamento, non per il codice) is defined as:
 
-`dps = (danno × (1 + 1 + 1,5)) / (3 × (t_startup_combo + t_attivo_f) + t_recupero_f3) ≈ 3,5 / 0,74 s ≈ 4,7 vita/s`
+`dps = (danno_eff × (1 + 1 + 1,5)) / (3 × (t_startup_combo + t_attivo_f) + t_recupero_f3) ≈ 3,5 / 0,74 s ≈ 4,7 vita/s` (con `danno_eff` 1; il danno decimale rende il conto esatto)
 
 Serve a dimensionare la vita dei nemici (GDD `nemici.md`): un nemico comune muore in 1–2 combo, un
 élite in 3–4, un boss in 60–90 s di colpi netti.
@@ -179,7 +187,8 @@ Serve a dimensionare la vita dei nemici (GDD `nemici.md`): un nemico comune muor
 
 | Parameter | Current Value | Safe Range | Effect of Increase | Effect of Decrease |
 |-----------|--------------|------------|-------------------|-------------------|
-| danno | 1 | 1–3 | nemici muoiono prima | run più lunghe |
+| danno (base) | 1 | 1–3 | nemici muoiono prima | run più lunghe |
+| danno_min | 0,5 | 0,25–1 | — | — |
 | portata | 70 px | 56–96 | più sicuro | più rischio |
 | arco_f | 110° | 90–140 | copre più lati | mira precisa |
 | arco_f3 | 150° | 120–180 | il terzo spazza | — |
@@ -249,12 +258,14 @@ scudo che blocca tutto senza tempi.
 
 - [ ] **GIVEN** un gatto (r 16) fermo a 80 px davanti a Ferruccio, **WHEN** si preme attacco, **THEN** il gatto subisce 1 danno tra 80 e 180 ms dalla pressione.
 - [ ] **GIVEN** lo stesso gatto a 95 px, **WHEN** si preme attacco, **THEN** non subisce danno (fuori portata 70+16).
-- [ ] **GIVEN** tre pressioni di attacco distanziate di 200 ms, **WHEN** si colpisce un nemico con vita 6, **THEN** la vita scende a 6−1−1−1 = 3 e il terzo fendente mostra l'arco a 150°.
-- [ ] **GIVEN** attacco tenuto 450 ms poi rilasciato, **WHEN** un nemico è sul percorso a 60 px, **THEN** subisce floor(1×2,5)=2 danni ed è spinto a 320 px/s.
-- [ ] **GIVEN** un gatto che balza con impatto a T, **WHEN** parata premuta a T−100 ms, **THEN** maschere invariate, gatto in Stordito per 600 ms, una carica di scatto ripristinata, e il fendente successivo entro 500 ms fa floor(1×2,0)=2.
+- [ ] **GIVEN** tre pressioni di attacco distanziate di 200 ms, **WHEN** si colpisce un nemico con vita 6, **THEN** la vita scende a 6−1−1−1,5 = 2,5 e il terzo fendente mostra l'arco a 150°.
+- [ ] **GIVEN** attacco tenuto 450 ms poi rilasciato, **WHEN** un nemico è sul percorso a 60 px, **THEN** subisce 1×2,5 = 2,5 danni ed è spinto a 320 px/s.
+- [ ] **GIVEN** un nemico dietro una colonna che blocca i colpi, **WHEN** il fendente lo coprirebbe per portata e arco, **THEN** non subisce danno.
+- [ ] **GIVEN** un gatto che balza con impatto a T, **WHEN** parata premuta a T−100 ms, **THEN** maschere invariate, gatto in Stordito per 600 ms, una carica di scatto ripristinata, e il fendente successivo entro 500 ms fa 1×2,0 = 2.
 - [ ] **GIVEN** parata premuta a T−300 ms, **WHEN** il gatto impatta a T, **THEN** la finestra (T−260…T−80) è chiusa: Ferruccio subisce 1 danno.
 - [ ] **GIVEN** un attacco imparabile, **WHEN** si para nel tempo giusto, **THEN** il danno passa comunque.
-- [ ] **GIVEN** un dono con mod_danno 1,5, **WHEN** terzo fendente in controcolpo, **THEN** danno 4.
+- [ ] **GIVEN** il Martello da fabbro (`danno_eff` 2), **WHEN** terzo fendente in controcolpo, **THEN** danno 6.
+- [ ] **GIVEN** un boss, **WHEN** una parata riesce, **THEN** valgono i tempi di `boss.md` (stordimento 900 ms, immunità 5 s, hit-stop 30 ms), non quelli dei nemici comuni.
 - [ ] **GIVEN** un dono che porta t_finestra_p a 320, **WHEN** si legge il parametro effettivo, **THEN** vale 300.
 - [ ] Prestazioni: risoluzione delle hitbox con 20 nemici entro 0,5 ms per frame.
 - [ ] Nessun valore di questo documento è nel codice: tutto in `contenuti/parametri/combattimento.json`.

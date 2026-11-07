@@ -47,17 +47,22 @@ subito era evitabile.
    **invulnerabile** per tutta la durata, attraversa nemici e proiettili ma non mura né ostacoli
    (si ferma contro), poi ha `t_recupero_scatto` in cui non può scattare di nuovo né attaccare. Le
    cariche si ricaricano una alla volta ogni `t_ricarica_scatto`. Di base ha 1 carica.
-5. **Vita**: `maschere_max` maschere (5 di base). Un contatto con un nemico comune toglie 1
-   maschera; attacchi segnati come pesanti ne tolgono 2. Dopo un danno Ferruccio è invulnerabile per
-   `t_invuln` e lampeggia; durante l'invulnerabilità non subisce né danno né spinta.
-6. **Spinta**: al contatto Ferruccio è spinto via dal nemico con velocità iniziale `v_spinta` che
-   decade a zero in `t_spinta`; durante la spinta l'input di movimento è ridotto al 30%.
-7. **Morte**: a 0 maschere la notte finisce: la sagoma cade, dissolvenza, risveglio in Piazza Dante
+5. **Vita**: `maschere_max` maschere (5 di base). **Il contatto passivo con un nemico non fa
+   danno** (coerente con GDD `nemici.md` regola 2): Ferruccio perde maschere solo dalla hitbox del
+   Colpo di un attacco telegrafato (1 maschera; attacchi pesanti 2) o da un pericolo ambientale
+   (GDD `stanze-porte.md`). Dopo un danno è invulnerabile per `t_invuln` e lampeggia; durante
+   l'invulnerabilità non subisce né danno né spinta.
+6. **Spinta**: il contatto passivo con un nemico separa i due corpi (il più leggero è spinto)
+   senza danno; un Colpo subito spinge Ferruccio via dall'attaccante con velocità iniziale
+   `v_spinta` che decade a zero in `t_spinta`; durante la spinta l'input di movimento è ridotto al 30%.
+7. **Terreno**: alcune celle modificano la velocità dopo il clamp: `mod_pozza` (acqua del Corso,
+   0,8) e `v_corrente` (spinta costante, px/s, Villa) definiti in GDD `stanze-porte.md`.
+8. **Morte**: a 0 maschere la notte finisce: la sagoma cade, dissolvenza, risveglio in Piazza Dante
    (GDD `ciclo-di-gioco.md`). Nessuna rianimazione nell'MVP.
-8. **Orientamento**: la sagoma guarda nella direzione dell'ultimo input orizzontale (destra o
+9. **Orientamento**: la sagoma guarda nella direzione dell'ultimo input orizzontale (destra o
    sinistra: è un cutout, ha solo due facce). Mirare in verticale non ruota il corpo; il fendente
    decide da solo (GDD `combattimento.md`).
-9. **Raccolta**: monete, scintille e cuori (maschere) si raccolgono passandoci sopra; i doni si
+10. **Raccolta**: monete, scintille e cuori (maschere) si raccolgono passandoci sopra; i doni si
    raccolgono con il tasto interagisci davanti al piedistallo (GDD `doni-modificatori.md`).
 
 ### States and Transitions
@@ -99,7 +104,7 @@ The `velocita_effettiva` formula is defined as:
 | mod_velocita_i | float | 0,7–1,5 ciascuno | calculated (doni) | moltiplicatori dei doni attivi |
 
 **Output Range:** 150 to 330 px/s; sotto 150 e sopra 330 si blocca (clamp) per leggibilità.
-**Example:** 220 × 1,15 (Scarpette di Bianca) × 0,9 (Martello di Gaetano) = 227,7 px/s.
+**Example:** 220 × 1,12 (Pantofole di seta) × 0,9 (Martello da fabbro) = 221,8 px/s; su una pozza del Corso × 0,8 = 177 px/s (il terreno si applica dopo il clamp).
 
 The `distanza_scatto` formula is defined as:
 
@@ -128,7 +133,8 @@ armatura. Le maschere sono intere: non esistono mezze maschere nell'MVP.
 |----------|------------------|-----------|
 | Scatto verso un muro a 20 px | Ferruccio si ferma contro il muro; resta invulnerabile fino alla fine di `t_scatto` | la durata dell'invulnerabilità deve essere prevedibile, non dipendere dalla geometria |
 | Scatto con 0 cariche | nessun effetto, nessun buffer; un suono secco "a vuoto" | niente input accodati che partono quando non li vuoi |
-| Due nemici lo toccano nello stesso istante | un solo danno (il primo risolto), poi invulnerabilità | pilastro 1: un errore, un danno |
+| Due Colpi lo raggiungono nello stesso istante | un solo danno (il primo risolto), poi invulnerabilità | pilastro 1: un errore, un danno |
+| Un gatto lo tocca mentre pattuglia (nessun Colpo) | nessun danno; i corpi si separano | il contatto passivo non ferisce (nemici.md regola 2) |
 | Danno mentre è in Scatta | ignorato | lo scatto è invulnerabile per definizione |
 | Danno a 1 maschera da un attacco pesante | muore (min(2,1) = 1) | nessuna sopravvivenza a 0 |
 | Input diagonale su muro | scivola lungo il muro alla componente libera | movimento fluido lungo le pareti |
@@ -210,7 +216,8 @@ la capriola, non quella: troppo lunga).
 - [ ] **GIVEN** Ferruccio fermo, **WHEN** si tiene la diagonale alto-destra per 1 s, **THEN** si sposta di 220 ± 5 px lungo la diagonale (velocità normalizzata).
 - [ ] **GIVEN** una carica di scatto, **WHEN** si preme scatto verso destra in spazio libero, **THEN** la posizione avanza di 180 ± 4 px in 160 ± 16 ms e il contatto con un nemico in quel tratto non toglie maschere.
 - [ ] **GIVEN** 0 cariche, **WHEN** si preme scatto, **THEN** la posizione non cambia e non viene accodato alcuno scatto.
-- [ ] **GIVEN** 5 maschere, **WHEN** un gatto tocca Ferruccio, **THEN** le maschere diventano 4, Ferruccio è spinto nella direzione opposta al gatto, e per 800 ms un secondo contatto non toglie maschere.
+- [ ] **GIVEN** 5 maschere, **WHEN** il Colpo del balzo di un gatto raggiunge Ferruccio, **THEN** le maschere diventano 4, Ferruccio è spinto nella direzione opposta al gatto, e per 800 ms un secondo Colpo non toglie maschere.
+- [ ] **GIVEN** 5 maschere, **WHEN** un gatto in pattuglia tocca Ferruccio, **THEN** le maschere restano 5 e i due corpi si separano.
 - [ ] **GIVEN** 1 maschera, **WHEN** subisce un attacco pesante, **THEN** le maschere sono 0 e parte la sequenza di morte entro 200 ms.
 - [ ] **GIVEN** un dono con mod_velocita 0,5, **WHEN** si muove, **THEN** la velocità è 150 px/s (clamp), non 110.
 - [ ] **GIVEN** uno scatto verso un muro a 20 px, **WHEN** urta, **THEN** si ferma al muro e resta invulnerabile fino a 160 ms dall'inizio.

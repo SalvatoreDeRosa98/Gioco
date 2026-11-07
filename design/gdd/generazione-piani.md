@@ -203,13 +203,16 @@ const derive = (seme, sale) =>
 | Piano | Quartiere | `scena_id` principale | Alternativa | Tipo in `storia.json` | Reperto (proposta per l'art-director) | Scena del boss |
 |-------|-----------|----------------------|-------------|----------------------|--------------------------------------|----------------|
 | 1 | Piazza Dante | `piazza-dante.targa-commemorativa` | `piazza-dante.filastrocca` (primo indizio di Bianca) | obbligatoria / indizio | la targa degli operai del 1839 | `piazza-dante.gatto-dei-quattro-canti` |
-| 2 | Corso Trieste | `corso-trieste.passato-taddeo` | `corso-trieste.scelta-taddeo` (la vetrina; è una scelta, non un indizio) | indizio / scelta | la vetrina di Taddeo | `corso-trieste.regina-dei-debiti` |
+| 2 | Corso Trieste | `corso-trieste.finestra-mariella` (obbligatoria, ordine 10: viene prima del boss) | — (`passato-taddeo` e `scelta-taddeo` vengono **dopo** la Regina: ancoraggio `dopo-boss` e vetrina nella stanza del boss, GDD `incontri-dialoghi.md`) | obbligatoria | la finestra illuminata di Mariella e il ferro che risuona dietro una porta | `corso-trieste.regina-dei-debiti` |
 | 3 | Villa Comunale | `villa-comunale.inchino-bianca` (secondo indizio di Bianca, memoria nel marmo) | `villa-comunale.statua-cavaliere` | indizio | la lastra di marmo | `villa-comunale.madre-di-marmo` |
 | 4 | San Leucio | `san-leucio.flashback-sciarpa` | `san-leucio.fazzoletto-giglio` | indizio | la sciarpa sul telaio | `san-leucio.tessitrice-di-pietra` |
 | 5 | Reggia | `reggia.memoria-funerale-bianca` (collocazione provvisoria nella Reggia, dice `storia.json`) | `reggia.memoria-tradimento-marito` | indizio | il catafalco piccolo | `reggia.scontro-custode` |
 
     Il piano porta `scena_id` nella stanza; la scena condizionata ai flag la decide
-    `incontri-dialoghi.md`. La scelta della scena principale è una proposta: i vincoli di ordine
+    `incontri-dialoghi.md`. **Garanzia delle obbligatorie** (GDD `stato-narrativo.md` regola 6): se la
+    scena della stanza-ricordo è `obbligatoria` e non è in `scene_viste`, la stanza-ricordo è
+    sempre generata (è già così: è una foglia obbligatoria H4) e sta sul cammino critico o a
+    distanza 1 da esso; una volta vista, può essere una foglia qualunque. La scelta della scena principale è una proposta: i vincoli di ordine
     (la targa è obbligatoria; `passato-taddeo` è dopo la Regina dei Debiti) sono in Open Questions.
 
 **F. Parametri per piano** (tutti in `contenuti/parametri/generazione.json`)
@@ -553,8 +556,8 @@ Tutti in `contenuti/parametri/generazione.json`. I valori per piano sono nella t
 
 | Question | Owner | Deadline | Resolution |
 |----------|-------|----------|-----------|
-| La targa commemorativa è una scena **obbligatoria** in `storia.json`, ma la stanza-ricordo è facoltativa. Il piano 1 la mette a distanza 1 dall'ingresso. Va bene o la scena deve scattare comunque all'ingresso? | narrative-director | prima del prototipo | non deciso |
-| `corso-trieste.passato-taddeo` avviene **dopo** la Regina dei Debiti in `storia.json`, ma la stanza-ricordo è prima del boss. Alternative: scena `scelta-taddeo` (vetrina), o la stanza-ricordo si apre dopo il boss | narrative-director | GDD incontri | non deciso |
+| La targa commemorativa è una scena **obbligatoria**: la stanza-ricordo del piano 1 è una foglia obbligatoria a distanza 1 dall'ingresso finché la scena non è vista | narrative-director | — | risolto (regola 23, garanzia delle obbligatorie) |
+| `corso-trieste.passato-taddeo` viene dopo la Regina: la stanza-ricordo del piano 2 usa `finestra-mariella`; Taddeo si incontra nella stanza del boss a porte aperte | narrative-director | — | risolto (regola 23) |
 | Piano 5: la collocazione di `reggia.memoria-funerale-bianca` è provvisoria anche in `storia.json` | narrative-director | Alpha | — |
 | Tonino compare in tutti i piani, o il banchetto degli altri quartieri è di altri venditori? | narrative-director | prima del piano 2 | non deciso |
 | Le soglie `soglia_Q`, i pesi di `Q` e `max_tentativi` non sono stati tarati: servono 10.000 semi e la misura di `p_acc` per piano. Con pochi extra (`n_extra` vale 0–2 ai piani 2–5), i piani rischiano di somigliarsi molto | systems-designer, qa-lead | prima della vertical slice | da simulare |

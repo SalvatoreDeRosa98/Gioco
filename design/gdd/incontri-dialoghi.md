@@ -61,8 +61,11 @@ malinconia della bibbia: capire da un gesto, non da una spiegazione.
    `corso-trieste.scelta-taddeo`, se perdonato), Agnese (dopo `san-leucio.scelta-agnese`, se
    risvegliata: sotto il portico), la finestra illuminata di Mariella (sempre, mai un personaggio).
    Il Principio C dell'art bible vale: ogni decisione lascia un segno fisico nell'hub.
-8. **Piani**. Dentro un piano gli NPC sono solo Tonino (banchetto) e, nelle stanze-ricordo, le voci
-   dei ricordi. Taddeo appare una volta su Corso Trieste nella stanza-ricordo della vetrina
+8. **Piani**. Dentro un piano gli NPC sono solo Tonino (il banchetto esiste in **ogni** piano, GDD
+   `generazione-piani.md` ed `economia.md`) e, nelle stanze-ricordo, le voci dei ricordi. La
+   stanza-ricordo di un piano usa una scena che nella bibbia viene **prima** del boss di quel
+   capitolo; le scene che vengono dopo il boss hanno ancoraggio `dopo-boss` o stanno nella stanza
+   del boss a porte aperte (Taddeo alla vetrina su Corso Trieste). Taddeo appare una volta su Corso Trieste nella stanza-ricordo della vetrina
    (`corso-trieste.scelta-taddeo`), Agnese nella stanza della manifattura a San Leucio.
 9. **Salto**. Un dialogo già visto si può saltare con `indietro` (chiude il cartiglio). Una scena di
    scelta non si salta.

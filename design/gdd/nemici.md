@@ -746,7 +746,7 @@ nemici che attaccano da tutti i lati senza segnale.
 |----------|-------|----------|-----------|
 | **Il dps di riferimento è ottimista.** Con `danno` = 1, `floor(1 × 1,5)` = 1: il terzo fendente base non fa 1,5 e la combo vale 3 in ≈ 0,74 s (≈ 4,05 vita/s, non 4,7). Qui si usa 4,7 come da brief; le vite sono dimensionate su combo da 3 | game-designer | prototipo | misurare il dps reale; opzioni: danno interno decimale con arrotondamento solo sulla vita visibile, oppure `molt_f3` = 2,0 (combo 4, ≈ 5,4 vita/s: allora rialzare le vite del 15%) |
 | Lo scatto base: la decisione del 10/10 lega lo scatto alla sciarpa (San Leucio). Il primo boss e quelli dei piani 1-4 si affrontano senza. Per questo ogni imparabile è evitabile a piedi (R6) | autore | prima del prototipo | adottata R6 in ogni caso |
-| Contatto passivo senza danno (regola 5 di `controllo-ferruccio.md`) | autore | prototipo | proposta: riportare in controllo |
+| Contatto passivo senza danno (regola 5 di `controllo-ferruccio.md`) | autore | — | risolto: controllo-ferruccio.md regole 5-6 aggiornate il 2026-11-07 |
 | Il graticcio con bordo continuo per gli imparabili e il lampo crema senza anello per le azioni non offensive sono proposte, non sono nell'art bible | art-director | prima del prototipo | — |
 | Classi «pesanti» (statua 9, guardia 8) a 3 combo contro il «1-2 combo» di `combattimento.md` | game-designer | prototipo | se i pesanti durano troppo scendere a 6-7 vita |
 | `P(n)` e `u_stanza` sono stime. `P(n)` appartiene a `doni-modificatori.md` | systems-designer | dopo `doni-modificatori.md` | — |

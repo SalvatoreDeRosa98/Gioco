@@ -81,6 +81,15 @@ gioco/
 - **Dialogo**: `stanza` (porte aperte) + `incontri` (ancoraggio) → `stato-narrativo.disponibili()` → `cartiglio` → scelta → `stato-narrativo.decidi()` → `salvataggio`.
 - **Morte**: `ferruccio` → evento `morte` → `ciclo` (stato hub) → `profilo` (scintille, flag, notte+1) → hub con `incontri`.
 
+## 4b. Camera
+
+La camera inquadra sempre la stanza intera (pilastro 1): per le stanze 1×1 (832×448 di area) la
+scala è 1; per le stanze doppie 2×1 (1664 px) e per le arene dei boss (1152×640) la camera
+**riduce la scala per far entrare tutto** (fattore min(1280/larghezza, 720/altezza) con margine per
+l'HUD), senza scorrimento. La transizione tra stanze è uno scorrimento di 250 ms nella direzione
+della porta, come in *Isaac*. Decisione provvisoria: la verifica di leggibilità a scala 0,77 è un
+criterio del prototipo.
+
 ## 5. ADR critici (Foundation) e di livello Core
 
 | ADR | Titolo | Layer | Stato |
