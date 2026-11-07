@@ -6,7 +6,7 @@
 > **Type**: Config/Data
 > **Estimate**: M
 > **Manifest Version**: N/A (nessun control manifest: `/create-control-manifest` non eseguito)
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-07 (dati, validatore e smoke check fatti; resta la vetrina `qa/vetrina-stanze.html` con screenshot in scala di grigi, gameplay-programmer)
 
 ## Context
 
@@ -27,9 +27,9 @@
 
 *Dai GDD citati, scoped a questa storia:*
 
-- [ ] GIVEN `contenuti/modelli-stanza/piazza-dante/`, WHEN si validano, THEN ci sono 6 normali 1×1, 2 doppie 2×1, ingresso, ricordo, boss, tesoro, banchetto, segreta, tutti con tag di difficoltà e spawn fuori dall'anello di sicurezza
+- [x] GIVEN `contenuti/modelli-stanza/piazza-dante/`, WHEN si validano, THEN ci sono 6 normali 1×1, 2 doppie 2×1, ingresso, ricordo, boss, tesoro, banchetto, segreta, tutti con tag di difficoltà e spawn fuori dall'anello di sicurezza
 - [ ] GIVEN ogni modello, WHEN si disegna in `qa/vetrina-stanze.html`, THEN ogni ostacolo e pericolo si legge in sagoma nera (screenshot in scala di grigi conservato)
-- [ ] Smoke check: ogni modello si carica senza errori di contenuto
+- [x] Smoke check: ogni modello si carica senza errori di contenuto
 
 ---
 
@@ -55,7 +55,8 @@ Le storie vicine dell'epica (vedi `EPIC.md`) gestiscono il resto; non anticiparl
 
 **Story Type**: Config/Data
 **Required evidence**: smoke check (caricamento senza errori di contenuto) in `production/qa/smoke-<data>.md`
-**Status**: [ ] Not yet created
+**Status**: [x] Creato e superato (2026-11-07)
+**Evidenza**: `gioco/qa/mondo.test.mjs` caso «017: …» (smoke: i 14 modelli di `contenuti/modelli-stanza/piazza-dante/` si caricano senza errori di contenuto; conteggi 6/2/1/1/1/1/1/1; tag di difficoltà; spawn a ≥ 128 px da ogni slot e fuori da vestiboli e ostacoli; il validatore rifiuta colonna nel vestibolo, spawn su ostacolo, porta irraggiungibile, simbolo ignoto). Il criterio «vetrina-stanze.html con screenshot in scala di grigi» NON è fatto: i modelli si vedono solo nel fil di ferro (`mondo-wire.png`).
 
 ---
 

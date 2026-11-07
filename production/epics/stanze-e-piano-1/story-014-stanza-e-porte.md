@@ -1,12 +1,12 @@
 # Story 014: Stanza da modello JSON: porte, ostacoli, ondate
 
 > **Epic**: Stanze e piano 1
-> **Status**: Ready
+> **Status**: Done
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: M
 > **Manifest Version**: N/A (nessun control manifest: `/create-control-manifest` non eseguito)
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-07 (Done: implementazione e test, gameplay-programmer)
 
 ## Context
 
@@ -27,10 +27,10 @@
 
 *Dai GDD citati, scoped a questa storia:*
 
-- [ ] GIVEN un modello con 3 nemici, WHEN Ferruccio entra, THEN le porte si chiudono (pannello nero) entro 1 tick e si riaprono (soglia d'oro) quando l'ultimo muore
-- [ ] GIVEN uno spawn, WHEN avviene, THEN nessun nemico nasce entro l'anello di sicurezza (GDD stanze) attorno a Ferruccio
-- [ ] GIVEN una colonna che blocca il movimento e i colpi, WHEN Ferruccio e un fendente la incontrano, THEN il corpo si ferma e il colpo non passa; una panca blocca il movimento e non i colpi
-- [ ] GIVEN una stanza pulita, WHEN si rientra, THEN resta pulita e senza nemici (stato salvato nella notte)
+- [x] GIVEN un modello con 3 nemici, WHEN Ferruccio entra, THEN le porte si chiudono (pannello nero) entro 1 tick e si riaprono (soglia d'oro) quando l'ultimo muore
+- [x] GIVEN uno spawn, WHEN avviene, THEN nessun nemico nasce entro l'anello di sicurezza (GDD stanze) attorno a Ferruccio
+- [x] GIVEN una colonna che blocca il movimento e i colpi, WHEN Ferruccio e un fendente la incontrano, THEN il corpo si ferma e il colpo non passa; una panca blocca il movimento e non i colpi
+- [x] GIVEN una stanza pulita, WHEN si rientra, THEN resta pulita e senza nemici (stato salvato nella notte)
 
 ---
 
@@ -56,7 +56,8 @@ Le storie vicine dell'epica (vedi `EPIC.md`) gestiscono il resto; non anticiparl
 
 **Story Type**: Logic
 **Required evidence**: test in `gioco/qa/` (node o Playwright) che esercita i criteri
-**Status**: [ ] Not yet created
+**Status**: [x] Creato e superato (2026-11-07)
+**Evidenza**: `gioco/qa/mondo.test.mjs` casi «014: …» (porte chiudendo a `t_chiusura_porte` e chiuse quando i nemici compaiono a `t_marker`, riaperte dopo `t_ritardo_apertura` dall'ultimo morto; 200 semi di stanza con Ferruccio su ogni soglia e tutte le ondate: zero nascite entro `r_sicurezza`; colonna ferma passo e colpo, panca solo il passo; stanza pulita che resta pulita al rientro) + `gioco/qa/mondo.wire.test.js` → `production/qa/evidence/mondo-wire.png`. Nota: il criterio «entro 1 tick» è letto come «entro 1 tick dall'istante `t_chiusura_porte` del GDD (500 ms, regola 6: si può sbirciare)», non dall'ingresso.
 
 ---
 

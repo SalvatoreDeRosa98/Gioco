@@ -1,12 +1,12 @@
 # Story 015: Transizioni di stanza e camera
 
 > **Epic**: Stanze e piano 1
-> **Status**: Ready
+> **Status**: Done
 > **Layer**: Core
 > **Type**: Integration
 > **Estimate**: M
 > **Manifest Version**: N/A (nessun control manifest: `/create-control-manifest` non eseguito)
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-07 (Done: implementazione e test, gameplay-programmer)
 
 ## Context
 
@@ -27,9 +27,9 @@
 
 *Dai GDD citati, scoped a questa storia:*
 
-- [ ] GIVEN Ferruccio sulla soglia della porta nord a porte aperte, WHEN la attraversa, THEN la stanza scorre di 250 ms verso nord e Ferruccio appare sulla soglia sud della nuova stanza
-- [ ] GIVEN una stanza 2×1 (1664 px), WHEN si entra, THEN la scala è min(1280/1664, 720/448) con margine per l'HUD e tutta la stanza è visibile
-- [ ] GIVEN una transizione in corso, WHEN si preme attacco, THEN l'input è ignorato fino alla fine
+- [x] GIVEN Ferruccio sulla soglia della porta nord a porte aperte, WHEN la attraversa, THEN la stanza scorre di 250 ms verso nord e Ferruccio appare sulla soglia sud della nuova stanza
+- [x] GIVEN una stanza 2×1 (1664 px), WHEN si entra, THEN la scala è min(1280/1664, 720/448) con margine per l'HUD e tutta la stanza è visibile
+- [x] GIVEN una transizione in corso, WHEN si preme attacco, THEN l'input è ignorato fino alla fine
 
 ---
 
@@ -55,7 +55,8 @@ Le storie vicine dell'epica (vedi `EPIC.md`) gestiscono il resto; non anticiparl
 
 **Story Type**: Integration
 **Required evidence**: test Playwright in `gioco/qa/` o scena riproducibile da seme + screenshot
-**Status**: [ ] Not yet created
+**Status**: [x] Creato e superato (2026-11-07)
+**Evidenza**: `gioco/qa/mondo.test.mjs` casi «015: …» (attraversamento della porta N: 15 tick = 250 ms, Ferruccio sulla soglia S della nuova stanza; scala 2x1 = min(1280/1664, 720/448) con `margine_hud` sull'altezza; attacco/scatto/movimento ignorati in transizione) + `gioco/qa/mondo.wire.test.js` → `production/qa/evidence/mondo-pianta.png` (transizione a metà corsa in fil di ferro). La resa vera è della storia 005.
 
 ---
 

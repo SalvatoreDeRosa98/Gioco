@@ -1,12 +1,12 @@
 # Story 016: Generazione del piano 1 dal seme con vincoli e validatore
 
 > **Epic**: Stanze e piano 1
-> **Status**: Ready
+> **Status**: Done
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: M
 > **Manifest Version**: N/A (nessun control manifest: `/create-control-manifest` non eseguito)
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-07 (Done: implementazione e test, gameplay-programmer)
 
 ## Context
 
@@ -27,10 +27,10 @@
 
 *Dai GDD citati, scoped a questa storia:*
 
-- [ ] GIVEN il seme 1845, WHEN si genera il piano 1 due volte, THEN le due piante sono identiche
-- [ ] GIVEN 200 semi, WHEN si generano, THEN ogni piano ha esattamente 1 ingresso, 1 boss, 1 tesoro, 1 banchetto, 1 ricordo (grado 1), il boss non è adiacente all'ingresso, la stanza-ricordo è a distanza 1 dall'ingresso, nessuna stanza vuota; i violatori sono zero
-- [ ] GIVEN un piano sotto `soglia_Q`, WHEN si rigenera, THEN al massimo `max_tentativi` volte e poi il piano di riserva
-- [ ] GIVEN la pianta, WHEN si salva la notte, THEN contiene solo il seme, il piano e la stanza corrente (non la pianta)
+- [x] GIVEN il seme 1845, WHEN si genera il piano 1 due volte, THEN le due piante sono identiche
+- [x] GIVEN 200 semi, WHEN si generano, THEN ogni piano ha esattamente 1 ingresso, 1 boss, 1 tesoro, 1 banchetto, 1 ricordo (grado 1), il boss non è adiacente all'ingresso, la stanza-ricordo è a distanza 1 dall'ingresso, nessuna stanza vuota; i violatori sono zero
+- [x] GIVEN un piano sotto `soglia_Q`, WHEN si rigenera, THEN al massimo `max_tentativi` volte e poi il piano di riserva
+- [x] GIVEN la pianta, WHEN si salva la notte, THEN contiene solo il seme, il piano e la stanza corrente (non la pianta)
 
 ---
 
@@ -56,7 +56,8 @@ Le storie vicine dell'epica (vedi `EPIC.md`) gestiscono il resto; non anticiparl
 
 **Story Type**: Logic
 **Required evidence**: test in `gioco/qa/` (node o Playwright) che esercita i criteri
-**Status**: [ ] Not yet created
+**Status**: [x] Creato e superato (2026-11-07)
+**Evidenza**: `gioco/qa/mondo.test.mjs` casi «016: …» (determinismo seme 1845; 200 semi con zero violatori di H1-H10, ricordo a distanza 1, boss non adiacente, nessuna stanza vuota; soglia irraggiungibile → 12 tentativi poi il migliore; catalogo senza banchetto → piano di riserva con errore QA; salvataggio = {seme, piano, stanza}) + `node gioco/qa/seme.js 200` (0 violatori, 0 riserve, 0,7 ms/piano).
 
 ---
 

@@ -21,6 +21,7 @@ Parametri dell'URL:
 | `?debug=1&p.combattimento.portata=90` | override di un parametro (solo con `debug=1`; fuori range → errore in console e valore riportato nel range) |
 | `?debug=1&wire=1` | disegno DIAGNOSTICO in fil di ferro (`resa/debug.js`): pavimento 13×7, mura, Ferruccio, hitbox, fantocci; il ciclo entra subito in `notte` |
 | `?debug=1&wire=1&fantoccio=attacca` | come sopra, con il fantoccio in basso che attacca a ciclo (anticipo 500 → lampo 150 → impatto a +252 ms) per provare la parata |
+| `?debug=1&wire=1&piano=1&seme=1845` | storie 014-017: genera il piano 1 dal seme (`mondo/generazione.js`, modelli di `contenuti/modelli-stanza/piazza-dante/`), parte dall'ingresso; porte con stato, ostacoli, soglie, segnalini e fantocci segnaposto (`archetipo`) delle ondate, transizione della camera (250 ms), pianta del piano nell'angolo in alto a destra |
 
 `window.__gioco` (solo debug): `stato`, `tick(n)` (forza n tick, ritorna il contatore), `seme`,
 `parametri` (`get`, `statistica`, `imposta`, `errori`, `tutti`), `eventi`, `input`, `ciclo`, `rng`,
@@ -28,7 +29,9 @@ Parametri dell'URL:
 moduli dello stato narrativo e delle stanze non si registrano con `estendi(nome, fn)`); dalle storie
 007-011 anche `modificatori`, `campo`, `ferruccio`, `combattimento`, `bersagli`, `proiettili`, `wire`,
 `tieni(azione)` / `lascia(azione)` e `premi(azione, n)` (giù, n tick forzati, su). Per un percorso
-deterministico: `__gioco.ciclo.ferma()` e poi solo `tick`/`premi`.
+deterministico: `__gioco.ciclo.ferma()` e poi solo `tick`/`premi`. Con `?piano=N` (storie 014-017)
+anche `piano` (la pianta), `stanza` (la stanza corrente: `stato`, `porte`, `segnalini`, `puntoArrivo`),
+`notte` (`salvataggio()` = {seme, piano, stanza}, `statoDi(id)`), `camera` e `vaiA(id_stanza)` vero.
 
 ## Test
 
@@ -40,6 +43,11 @@ node gioco/qa/combattimento.test.mjs      # unitari delle storie 007-011: ciclo 
                                           # un caso per criterio Given-When-Then + prestazioni (20 bersagli)
 node gioco/qa/combattimento.wire.test.js  # Playwright: ?debug=1&wire=1, cammina/colpisce/scatta/para,
                                           # salva production/qa/evidence/combattimento-wire.png
+node gioco/qa/mondo.test.mjs              # unitari delle storie 014-017: porte, spawn (200 semi), colonna/panca,
+                                          # stanza pulita, generazione (determinismo, 200 semi, riserva), camera
+node gioco/qa/mondo.wire.test.js          # Playwright: ?debug=1&wire=1&piano=1&seme=1845, attraversa una porta,
+                                          # pulisce una stanza; salva mondo-wire.png e mondo-pianta.png
+node gioco/qa/seme.js 200 [--piano P] [--stampa K]   # genera N piani e riporta violatori e distribuzione dei tipi
 ```
 
 Entrambi escono con codice 1 se un caso fallisce. Il test di pagina usa il Chromium di Playwright
@@ -69,9 +77,19 @@ gioco/
 │   │   └── modificatori.js     ADR-0002 minimo: valore(nome) = clamp((base+Σsomme)×Πmolt); applica()
 │   │                           (la storia 023 aggiunge doni, flag e ganci)
 │   ├── mondo/
-│   │   └── fisica.js           campo a griglia con mura/ostacoli, cerchio contro rettangoli con
-│   │                           scivolamento, settore e rettangolo spazzato contro cerchi, linea di
-│   │                           colpo, separazione dei cerchi (funzioni pure)
+│   │   ├── fisica.js           campo a griglia con mura/ostacoli, cerchio contro rettangoli con
+│   │   │                       scivolamento, settore e rettangolo spazzato contro cerchi, linea di
+│   │   │                       colpo, separazione dei cerchi (funzioni pure)
+│   │   ├── modelli.js          legenda dei modelli di stanza, slot delle porte, vestibolo, validatore
+│   │   │                       (regola 25), catalogo e caricatore (storie 014, 017)
+│   │   ├── porte.js            porta: aperta/chiudendo/chiusa/aprendo, solido dinamico, attesa se occupata
+│   │   ├── stanza.js           monta un modello nel campo condiviso; formule n_nemici/ondate/ricompensa;
+│   │   │                       segnalini, anello di sicurezza, stati della stanza, eventi (storia 014)
+│   │   ├── generazione.js      generaPiano puro dal seme: cammino, anelli, rami, foglie, doppie, modelli
+│   │   │                       pesati, segreta, ricompense, H1-H10, Q, tentativi, riserva (storia 016)
+│   │   ├── camera.js           scala min(1, L/larg, (A−hud)/alt), transizione 250 ms, inTransizione (015)
+│   │   └── notte.js            piano + stanza corrente + passaggi; input ignorato in transizione; vaiA;
+│   │                           salvataggio() = {seme, piano, stanza}
 │   ├── attori/
 │   │   ├── ferruccio.js        corpo: Fermo/Cammina/Scatta/Recupero scatto/Colpito/Morto, cariche,
 │   │   │                       maschere, invulnerabilità, spinta (storie 007-008)
@@ -85,9 +103,14 @@ gioco/
 │   ├── ferruccio.json          statistiche del corpo (GDD controllo-ferruccio.md)
 │   ├── combattimento.json      statistiche nominate del combattimento (GDD combattimento.md) + fantoccio
 │   ├── stanza.json             griglia della stanza standard (13×7 celle da 64 px)
+│   ├── stanze.json             regole della stanza (GDD stanze-porte: porte, spawn, ondate, ricompense, camera)
+│   ├── generazione.json        parametri del generatore per piano (GDD generazione-piani)
 │   ├── input.json              mappa dei tasti per le 12 azioni del contratto
 │   └── moto-ridotto.json       sovrascritture applicate con prefers-reduced-motion
+├── contenuti/modelli-stanza/piazza-dante/   14 modelli JSON del piano 1 + indice.json (storia 017)
+├── contenuti/piani/piazza-dante-riserva.json piano di riserva disegnato a mano (esempio del GDD, Q = 100)
 └── qa/
+    ├── mondo.test.mjs / mondo.wire.test.js / seme.js   storie 014-017
     ├── fondazione.test.mjs          test unitari della fondazione
     ├── pagina.test.js               test Playwright della pagina
     ├── combattimento.test.mjs       test unitari delle storie 007-011

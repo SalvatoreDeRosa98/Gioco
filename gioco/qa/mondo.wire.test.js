@@ -157,8 +157,8 @@ async function main() {
 
       const fine = await pagina.evaluate(() => {
         const g = window.__gioco;
+        g.lascia('su'); g.lascia('giu'); g.lascia('destra'); g.lascia('sinistra'); // il rilascio è letto dal primo tick dopo la transizione
         g.tick(8);
-        g.lascia('su'); g.lascia('giu'); g.lascia('destra'); g.lascia('sinistra');
         const opposto = { N: 'S', S: 'N', E: 'W', W: 'E' };
         return {
           inTransizione: g.camera.inTransizione, stanza: g.stanza.id, tipo: g.stanza.tipo, stato: g.stanza.stato,
