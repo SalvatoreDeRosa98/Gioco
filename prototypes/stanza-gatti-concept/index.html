@@ -1,0 +1,906 @@
+<!doctype html>
+<!-- PROTOTYPE - NOT FOR PRODUCTION -->
+<!-- Question: tre gatti d'ombra, fendente + parata sul lampo rosso + scatto: il combattimento e' leggibile e soddisfacente? -->
+<!-- Date: 2026-11-07 -->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Ferruccio - Stanza dei gatti (prototipo)</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden}
+  canvas{position:absolute;left:50%;top:50%;width:min(100vw,177.7778vh);height:min(100vh,56.25vw);transform:translate(-50%,-50%)}
+</style>
+</head>
+<body>
+<canvas id="c" width="1280" height="720"></canvas>
+
+<script>
+// PROTOTYPE - NOT FOR PRODUCTION
+// Question: tre gatti d'ombra, fendente + parata sul lampo rosso + scatto: leggibile e soddisfacente?
+// Date: 2026-11-07
+//
+// PARAMETRI: tutti i numeri di gioco stanno qui. Ogni chiave si puo' cambiare da URL: index.html?t_finestra_p=240&gatto_vita=2
+// Fonti: design/gdd/controllo-ferruccio.md, design/gdd/combattimento.md; i gatti sono dalla richiesta (GDD nemici assente).
+// Le voci marcate [PROTO] NON sono nei GDD: le ho dovute scegliere io.
+const PARAMETRI = {
+  // --- Ferruccio (controllo-ferruccio.md) ---
+  v_base: 220, t_accel: 60, t_decel: 50, r_corpo: 14,
+  d_scatto: 180, t_scatto: 160, t_recupero_scatto: 120, t_ricarica_scatto: 1200, cariche_scatto: 1,
+  maschere_max: 5, t_invuln: 800, v_spinta: 260, t_spinta: 150, input_spinta: 0.3,
+  // --- Combattimento (combattimento.md) ---
+  danno: 1, portata: 70, arco_f: 110, arco_f3: 150, molt_f3: 1.5,
+  t_startup_f: 80, t_attivo_f: 100, t_recupero_f: 160, t_recupero_f3: 260, t_startup_combo: 50,
+  t_finestra_combo: 250, t_buffer: 150, vel_recupero_f: 0.6,
+  t_carica: 400, d_affondo: 120, t_affondo: 140, molt_affondo: 2.5, spinta_affondo: 320, vel_carica: 0.5,
+  t_startup_p: 40, t_finestra_p: 180, t_recupero_p: 220, t_stordito: 600, t_controcolpo: 500, molt_controcolpo: 2,
+  spinta_f: 160, hs_colpo: 50, hs_uccisione: 110, hs_parata: 90, hs_danno: 90,
+  t_scia_lama: 120, scossa_parata: 6, scossa_danno: 5,
+  // --- Non nei GDD [PROTO] ---
+  larg_affondo: 40,          // [PROTO] larghezza hitbox affondo
+  lama_affondo: 46,          // [PROTO] sporgenza della lama oltre i piedi nell'affondo
+  t_startup_affondo: 60,     // [PROTO] da tabella animazioni (4 frame)
+  t_recupero_affondo: 260,   // [PROTO] da tabella animazioni (16 frame)
+  t_spinta_nemico: 200,      // [PROTO] il GDD dice solo "decadente"
+  buffer_parata: 0,          // [PROTO] ms di buffer della parata (0 = come da GDD: nessun buffer)
+  buffer_scatto: 0,          // [PROTO] idem per lo scatto
+  // --- Gatti (richiesta; GDD nemici assente) ---
+  n_gatti: 3, gatto_vita: 3, gatto_vel: 150, gatto_raggio: 16, gatto_aggro: 260, gatto_stop: 120,
+  t_accucciato: 500, t_lampo: 150, d_balzo: 180, t_balzo: 220, t_recupero_gatto: 500, gatto_danno: 1,
+  gatto_vel_pattuglia: 70,   // [PROTO]
+  max_attaccanti: 2,         // [PROTO] quanti gatti possono stare in anticipo/lampo/balzo insieme
+  armatura_telegrafo: 1,     // [PROTO] 1 = un colpo non interrompe anticipo/lampo/balzo del gatto
+  balzo_hit_dal: 0.45,       // [PROTO] frazione del balzo prima della quale la hitbox del gatto e' spenta (0 = attiva dall'inizio). Vedi REPORT: a distanza ravvicinata l'impatto arrivava 152 ms dopo l'inizio del lampo
+  // --- Prova ---
+  reazione_bot: 120,         // ms tra l'inizio del lampo e la pressione della parata del bot
+  auto: 0,                   // 1 = bot (para), 2 = bot che non para mai (solo fendenti)
+  semente: 1,                // seme del generatore casuale
+  mira: 'dir'                // 'dir' (GDD: direzione di movimento), 'auto' (verso il gatto piu' vicino da fermo), 'mouse'
+};
+(function(){
+  const qs = new URLSearchParams(location.search), mod = {};
+  for (const k in PARAMETRI) if (qs.has(k)) {
+    const d = PARAMETRI[k], v = typeof d === 'number' ? Number(qs.get(k)) : qs.get(k);
+    if (typeof d === 'number' && isNaN(v)) continue;
+    PARAMETRI[k] = v; mod[k] = v;
+  }
+  window.PARAMETRI = PARAMETRI; window.PARAMETRI_MODIFICATI = mod;
+})();
+</script>
+
+<script>
+// PROTOTYPE - NOT FOR PRODUCTION
+// Question: tre gatti d'ombra, fendente + parata sul lampo rosso + scatto: leggibile e soddisfacente?
+// Date: 2026-11-07
+(function () {
+'use strict';
+const P = PARAMETRI;
+const C = { carta:'#c98a3c', luce:'#f2c278', bruno:'#5a2a0e', pav:'#9a6428', ink:'#0b0704', crema:'#f4e3bd', oro:'#f3c14b', rosso:'#c8301b', azzurro:'#7fd3ff' };
+const K = 1.25, RY = 0.6, X0 = 120, Y0 = 232, W = 832, H = 448, DT = 4;   // mondo 832x448 -> schermo: x*K, y*K*0.6
+const PI = Math.PI, TAU = PI * 2;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const mk = () => { const c = document.createElement('canvas'); c.width = 1280; c.height = 720; return c; };
+const shc = mk(), sg = shc.getContext('2d'), bgc = mk(), bg = bgc.getContext('2d');
+const sx = wx => X0 + wx * K, sy = wy => Y0 + wy * K * RY;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const hyp = Math.hypot;
+const angDiff = (a, b) => ((a - b + 3 * PI) % TAU) - PI;
+const projAng = th => Math.atan2(RY * Math.sin(th), Math.cos(th));      // angolo mondo -> angolo a schermo
+const rngMake = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const LANTERNE = [{ wx: 208, wy: -30 }, { wx: 624, wy: -30 }];
+
+// ---------------------------------------------------------------- stato
+let S = null, tentativo = 1, paused = false, botOn = P.auto > 0;
+const Inp = { keys: new Set(), atkKeys: new Set(), edge: {}, scriptHeld: false, botDir: { x: 0, y: 0 }, muovi: null, mouse: { x: 0, y: 0, valid: false }, ultimoBotAtk: -1e9 };
+const press = a => { Inp.edge[a] = true; };
+
+function nuovoGiocatore(x, y) {
+  return { x, y, vx: 0, vy: 0, face: 1, faceS: 1, stato: 'libero', fase: null, tf: 0, maschere: P.maschere_max, cariche: P.cariche_scatto, ricarica: 0,
+    invuln: 0, controcolpo: 0, bufAtk: 0, bufParry: 0, bufDash: 0, heldT: 0, carica: false, colpo: 0, comboFin: 0, sw: 0, swArc: 0, swMult: 1, swDir: 1,
+    aim: { x: 1, y: 0 }, hit: null, startupDur: 0, sp: { vx: 0, vy: 0, t: 0, d: 1 }, sc: null, hist: [], walk: 0, tilt: 0, scarf: null,
+    traveled: 0, ox: 0, oy: 0, parata: null, tMorte: 0 };
+}
+const POS_GATTI = [{ x: 460, y: 200 }, { x: 700, y: 360 }, { x: 720, y: 70 }, { x: 600, y: 420 }, { x: 560, y: 40 }, { x: 780, y: 220 }];
+function nuovoGatto(x, y, rng, stato) {
+  return { id: S.nid++, x, y, vita: P.gatto_vita, stato: stato || 'pattuglia', t: 0, f: -1, wp: { x, y }, wait: rng() * 600, o: { x, y }, dir: { x: -1, y: 0 }, mira: { x: -1, y: 0 },
+    colpito: false, flash: 0, sp: { vx: 0, vy: 0, t: 0, d: 1 }, aggroT: null, tLampo: 0, botVisto: false, walk: rng() * 6, tMorte: 0, spawn: { x, y }, strafe: rng() < .5 ? 1 : -1 };
+}
+function nuovaStanza(opz) {
+  opz = opz || {};
+  Inp.ultimoBotAtk = -1e9; Inp.edge = {}; Inp.botDir = { x: 0, y: 0 };
+  const rng = rngMake(P.semente * 7919 + tentativo * 104729);
+  S = { t: 0, rt: 0, rng, fase: 'gioco', hitstop: 0, shake: { amp: 0, t0: -1e9, dur: 1, dx: 0, dy: 0 }, fx: [], log: [], copione: [],
+    p: nuovoGiocatore(opz.px != null ? opz.px : 150, opz.py != null ? opz.py : 224),
+    gatti: [], mostraFine: false, tFase: 0, nid: 1, test: !!opz.test,
+    m: { tentativo, tempo_ms: 0, maschere_perse: 0, parate_riuscite: 0, parate_mancate: 0, parate_premute: 0, colpi_dati: 0, fendenti: 0, affondi: 0, scatti: 0, uccisioni: 0, balzi: 0, schivate: 0, balzi_a_vuoto: 0, prima_parata_ms: null, prima_parata_dopo_balzi: null, uccisioni_dettaglio: [] } };
+  const lista = opz.gatti || POS_GATTI.slice(0, P.n_gatti).map(g => ({ x: g.x, y: g.y }));
+  lista.forEach(g => {
+    const c = nuovoGatto(g.x, g.y, rng, g.stato); S.gatti.push(c);
+    if (g.vita) c.vita = g.vita;
+    if (c.stato === 'accucciato') c.aggroT = 0;
+  });
+  ev('inizio', { tentativo, n_gatti: S.gatti.length });
+}
+function ev(tipo, d) { S.log.push(Object.assign({ t: Math.round(S.t), tipo }, d || {})); }
+
+// ---------------------------------------------------------------- input
+const KMAP = { w: 'u', arrowup: 'u', s: 'd', arrowdown: 'd', a: 'l', arrowleft: 'l', d: 'r', arrowright: 'r' };
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (KMAP[k]) { Inp.keys.add(KMAP[k]); e.preventDefault(); return; }
+  if (k === 'j' || k === 'z') { if (!e.repeat) press('atk'); Inp.atkKeys.add(k); e.preventDefault(); }
+  else if (k === 'k' || k === 'x') { if (!e.repeat) press('parry'); e.preventDefault(); }
+  else if (k === ' ' || k === 'shift') { if (!e.repeat) press('dash'); e.preventDefault(); }
+  else if (k === 'r') { tentativo++; nuovaStanza(); }
+});
+addEventListener('keyup', e => {
+  const k = e.key.toLowerCase();
+  if (KMAP[k]) Inp.keys.delete(KMAP[k]);
+  if (k === 'j' || k === 'z') Inp.atkKeys.delete(k);
+});
+addEventListener('blur', () => { Inp.keys.clear(); Inp.atkKeys.clear(); });
+cv.addEventListener('mousemove', e => { const r = cv.getBoundingClientRect(); Inp.mouse = { x: (e.clientX - r.left) / r.width * 1280, y: (e.clientY - r.top) / r.height * 720, valid: true }; });
+
+function leggiInput() {
+  let dx = 0, dy = 0;
+  if (Inp.muovi) { dx = Inp.muovi.x; dy = Inp.muovi.y; }
+  else if (botOn) { dx = Inp.botDir.x; dy = Inp.botDir.y; }
+  else { dx = (Inp.keys.has('r') ? 1 : 0) - (Inp.keys.has('l') ? 1 : 0); dy = (Inp.keys.has('d') ? 1 : 0) - (Inp.keys.has('u') ? 1 : 0); }
+  const m = hyp(dx, dy); if (m > 1) { dx /= m; dy /= m; }
+  const r = { dx, dy, atkHeld: Inp.atkKeys.size > 0 || Inp.scriptHeld, atk: !!Inp.edge.atk, parry: !!Inp.edge.parry, dash: !!Inp.edge.dash };
+  Inp.edge = {};
+  return r;
+}
+function miraDi(p, inp) {
+  if (P.mira === 'mouse' && Inp.mouse.valid) {
+    const dx = (Inp.mouse.x - sx(p.x)) / K, dy = (Inp.mouse.y - (sy(p.y) - 30 * K)) / (K * RY), m = hyp(dx, dy) || 1; return { x: dx / m, y: dy / m };
+  }
+  if (inp.dx || inp.dy) { const m = hyp(inp.dx, inp.dy); return { x: inp.dx / m, y: inp.dy / m }; }
+  if (P.mira === 'auto') {
+    let b = null, bd = 150; for (const c of S.gatti) if (c.stato !== 'morto') { const d = hyp(c.x - p.x, c.y - p.y); if (d < bd) { bd = d; b = c; } }
+    if (b) return { x: (b.x - p.x) / bd, y: (b.y - p.y) / bd };
+  }
+  return { x: p.face, y: 0 };
+}
+
+// ---------------------------------------------------------------- Ferruccio
+const clampW = (o, r) => { o.x = clamp(o.x, r, W - r); o.y = clamp(o.y, r, H - r); };
+function iniziaFendente(p, inp) {
+  const prev = (p.colpo > 0 && p.comboFin > 0) ? p.colpo : 0;
+  p.sw = prev + 1; p.comboFin = 0; p.stato = 'fendente'; p.fase = 'startup'; p.tf = 0; p.hit = new Set(); p.bufAtk = 0; p.carica = false;
+  p.startupDur = prev ? P.t_startup_combo : P.t_startup_f; p.aim = miraDi(p, inp); p.swDir = p.sw % 2 ? 1 : -1;
+  p.swArc = p.sw === 3 ? P.arco_f3 : P.arco_f;
+  if (Math.abs(p.aim.x) > .3) p.face = p.aim.x > 0 ? 1 : -1;
+  S.m.fendenti++; ev('fendente', { n: p.sw });
+}
+function iniziaParata(p) {
+  const near = S.gatti.filter(c => ['accucciato', 'lampo', 'balzo'].includes(c.stato)).sort((a, b) => hyp(a.x - p.x, a.y - p.y) - hyp(b.x - p.x, b.y - p.y))[0];
+  p.stato = 'parata'; p.fase = 'startup'; p.tf = 0; p.bufParry = 0; p.carica = false; p.colpo = 0; p.comboFin = 0; p.parata = { tPress: S.t };
+  S.m.parate_premute++;
+  ev('parata_premuta', { contesto: near ? near.stato : 'nessun_gatto', t_nello_stato: near ? Math.round(near.t) : null });
+}
+function tentaScatto(p, inp) {
+  if (p.cariche <= 0) { ev('scatto_vuoto'); p.bufDash = 0; return false; }
+  let dx = inp.dx, dy = inp.dy; const m = hyp(dx, dy); if (m < .01) { dx = p.face; dy = 0; } else { dx /= m; dy /= m; }
+  p.stato = 'scatto'; p.fase = null; p.tf = 0; p.sc = { dx, dy }; p.cariche--; p.bufDash = 0; p.carica = false; p.colpo = 0; p.comboFin = 0; p.hist = [];
+  if (Math.abs(dx) > .2) p.face = dx > 0 ? 1 : -1;
+  S.m.scatti++; ev('scatto');
+  return true;
+}
+function iniziaAffondo(p, inp) {
+  p.stato = 'affondo'; p.fase = 'startup'; p.tf = 0; p.hit = new Set(); p.carica = false; p.heldT = 0; p.colpo = 0; p.comboFin = 0; p.aim = miraDi(p, inp);
+  if (Math.abs(p.aim.x) > .3) p.face = p.aim.x > 0 ? 1 : -1;
+  S.m.affondi++; ev('affondo');
+}
+function updatePlayer(dt, inp) {
+  const p = S.p;
+  if (p.stato === 'morto') { p.vx *= .9; p.vy *= .9; return; }
+  p.invuln = Math.max(0, p.invuln - dt); p.controcolpo = Math.max(0, p.controcolpo - dt);
+  p.bufAtk = Math.max(0, p.bufAtk - dt); p.bufParry = Math.max(0, p.bufParry - dt); p.bufDash = Math.max(0, p.bufDash - dt);
+  if (p.cariche < P.cariche_scatto) { p.ricarica += dt; if (p.ricarica >= P.t_ricarica_scatto) { p.cariche++; p.ricarica = 0; } }
+  if (p.comboFin > 0 && !(p.stato === 'fendente' && p.fase !== 'recupero')) { p.comboFin -= dt; if (p.comboFin <= 0) { p.comboFin = 0; p.colpo = 0; } }
+  if (inp.atk) p.bufAtk = P.t_buffer;
+  if (inp.parry) p.bufParry = P.buffer_parata + dt;
+  if (inp.dash) p.bufDash = P.buffer_scatto + dt;
+  p.heldT = inp.atkHeld ? p.heldT + dt : 0;
+  let mult = 1, mover = true;
+  const liberoOra = () => {
+    if (p.carica && !inp.atkHeld) { iniziaAffondo(p, inp); return; }
+    if (p.bufDash > 0) { tentaScatto(p, inp); if (p.stato === 'scatto') return; }
+    if (p.bufParry > 0) { iniziaParata(p); return; }
+    if (p.bufAtk > 0) { iniziaFendente(p, inp); return; }
+    if (inp.atkHeld && p.heldT >= P.t_carica) p.carica = true;
+    if (!inp.atkHeld) p.carica = false;
+  };
+  switch (p.stato) {
+    case 'libero': liberoOra(); if (p.stato === 'libero') mult = p.carica ? P.vel_carica : 1; else mult = 0; break;
+    case 'recScatto': p.tf += dt; if (p.tf >= P.t_recupero_scatto) { p.stato = 'libero'; p.tf = 0; } break;
+    case 'colpito': p.tf += dt; mult = P.input_spinta; if (p.tf >= P.t_spinta) { p.stato = 'libero'; p.tf = 0; } break;
+    case 'fendente': {
+      p.tf += dt;
+      const dur = p.fase === 'startup' ? p.startupDur : p.fase === 'attivo' ? P.t_attivo_f : (p.sw === 3 ? P.t_recupero_f3 : P.t_recupero_f);
+      if (p.fase === 'recupero') {
+        mult = P.vel_recupero_f;
+        if (p.bufDash > 0 && p.cariche > 0) { tentaScatto(p, inp); mult = 0; break; }
+        if (p.bufParry > 0) { iniziaParata(p); mult = 0; break; }
+        if (p.bufAtk > 0 && p.sw < 3 && p.comboFin > 0) { iniziaFendente(p, inp); break; }
+      } else if (p.fase === 'attivo') {
+        colpisciSettore(p);
+      }
+      if (p.tf >= dur) {
+        if (p.fase === 'startup') { p.fase = 'attivo'; p.tf = 0; entraAttivo(p); }
+        else if (p.fase === 'attivo') { p.fase = 'recupero'; p.tf = 0; if (p.sw === 3) { p.colpo = 0; p.comboFin = 0; } else { p.colpo = p.sw; p.comboFin = P.t_finestra_combo; } }
+        else { p.stato = 'libero'; p.fase = null; p.tf = 0; }
+      }
+      break;
+    }
+    case 'affondo': {
+      p.tf += dt; mult = 0;
+      if (p.fase === 'startup' && p.tf >= P.t_startup_affondo) {
+        p.fase = 'attivo'; p.tf = 0; p.ox = p.x; p.oy = p.y; p.traveled = 0; p.swMult = P.molt_affondo * (p.controcolpo > 0 ? P.molt_controcolpo : 1); p.controcolpo = 0;
+        ev('affondo_attivo', { molt: p.swMult });
+      } else if (p.fase === 'attivo') {
+        const st = P.d_affondo * dt / P.t_affondo;
+        p.x = clamp(p.x + p.aim.x * st, P.r_corpo, W - P.r_corpo); p.y = clamp(p.y + p.aim.y * st, P.r_corpo, H - P.r_corpo);
+        p.traveled = hyp(p.x - p.ox, p.y - p.oy); p.vx = p.vy = 0; colpisciRettangolo(p);
+        if (p.tf >= P.t_affondo) { p.fase = 'recupero'; p.tf = 0; }
+      } else if (p.fase === 'recupero' && p.tf >= P.t_recupero_affondo) { p.stato = 'libero'; p.fase = null; p.tf = 0; }
+      break;
+    }
+    case 'parata': {
+      p.tf += dt; mult = 0;
+      if (p.fase === 'startup' && p.tf >= P.t_startup_p) { p.fase = 'finestra'; p.tf = 0; ev('finestra_aperta'); }
+      else if (p.fase === 'finestra' && p.tf >= P.t_finestra_p) { p.fase = 'recupero'; p.tf = 0; S.m.parate_mancate++; ev('parata_mancata'); }
+      else if (p.fase === 'recupero' && p.tf >= P.t_recupero_p) { p.stato = 'libero'; p.fase = null; p.tf = 0; }
+      break;
+    }
+    case 'scatto': {
+      p.tf += dt; mover = false;
+      const v = P.d_scatto * dt / P.t_scatto;
+      p.x = clamp(p.x + p.sc.dx * v, P.r_corpo, W - P.r_corpo); p.y = clamp(p.y + p.sc.dy * v, P.r_corpo, H - P.r_corpo); p.vx = 0; p.vy = 0;
+      p.hist.push({ x: p.x, y: p.y, t: S.t });
+      if (p.tf >= P.t_scatto) { p.stato = 'recScatto'; p.tf = 0; }
+      break;
+    }
+  }
+  p.hist = p.hist.filter(h => S.t - h.t < 220);
+  if (p.stato === 'affondo' && p.fase === 'attivo') mover = false;
+  if (mover) {
+    if (Math.abs(inp.dx) > .1 && (p.stato === 'libero' || p.stato === 'recScatto' || p.stato === 'colpito')) p.face = inp.dx > 0 ? 1 : -1;
+    const tvx = inp.dx * P.v_base * mult, tvy = inp.dy * P.v_base * mult, ax = tvx - p.vx, ay = tvy - p.vy, dm = hyp(ax, ay);
+    const rate = (hyp(tvx, tvy) > 0 ? P.v_base / (P.t_accel / 1000) : P.v_base / (P.t_decel / 1000)), maxd = rate * dt / 1000;
+    if (dm <= maxd) { p.vx = tvx; p.vy = tvy; } else { p.vx += ax / dm * maxd; p.vy += ay / dm * maxd; }
+    let kx = 0, ky = 0;
+    if (p.sp.t > 0) { const k = p.sp.t / p.sp.d; kx = p.sp.vx * k; ky = p.sp.vy * k; p.sp.t -= dt; }
+    p.x += (p.vx + kx) * dt / 1000; p.y += (p.vy + ky) * dt / 1000; clampW(p, P.r_corpo);
+    p.walk += hyp(p.vx, p.vy) * dt / 1000 * .12;
+  }
+}
+function entraAttivo(p) {
+  p.swArc = p.sw === 3 ? P.arco_f3 : P.arco_f;
+  p.swMult = (p.sw === 3 ? P.molt_f3 : 1) * (p.controcolpo > 0 ? P.molt_controcolpo : 1);
+  if (p.controcolpo > 0) ev('controcolpo_usato');
+  p.controcolpo = 0;
+  S.fx.push({ k: 'arco', x: p.x, y: p.y, ang: Math.atan2(p.aim.y, p.aim.x), arc: p.swArc, r: P.portata, t0: S.t, dur: P.t_scia_lama });
+  ev('arco', { n: p.sw, arco: p.swArc, portata: P.portata });
+}
+function dannoColpo(m) { return Math.max(1, Math.floor(P.danno * m)); }
+function colpisciSettore(p) {
+  const a0 = Math.atan2(p.aim.y, p.aim.x);
+  for (const c of S.gatti) {
+    if (c.stato === 'morto' || p.hit.has(c.id)) continue;
+    const dx = c.x - p.x, dy = c.y - p.y, d = hyp(dx, dy);
+    if (d <= P.portata + P.gatto_raggio && (d < 1 || Math.abs(angDiff(Math.atan2(dy, dx), a0)) <= p.swArc / 2 * PI / 180)) {
+      p.hit.add(c.id); colpisci(c, dannoColpo(p.swMult), P.spinta_f, dx, dy, 'fendente');
+    }
+  }
+}
+function colpisciRettangolo(p) {
+  for (const c of S.gatti) {
+    if (c.stato === 'morto' || p.hit.has(c.id)) continue;
+    const vx = c.x - p.ox, vy = c.y - p.oy, along = vx * p.aim.x + vy * p.aim.y, lat = Math.abs(vx * p.aim.y - vy * p.aim.x);
+    if (along + P.gatto_raggio >= 0 && along - P.gatto_raggio <= p.traveled + P.lama_affondo && lat <= P.larg_affondo / 2 + P.gatto_raggio) {
+      p.hit.add(c.id); colpisci(c, dannoColpo(p.swMult), P.spinta_affondo, c.x - p.x, c.y - p.y, 'affondo');
+    }
+  }
+}
+function colpisci(c, dmg, kb, dx, dy, tipo) {
+  c.vita -= dmg; c.flash = 110; S.m.colpi_dati++;
+  const armato = P.armatura_telegrafo && ['accucciato', 'lampo', 'balzo'].includes(c.stato);
+  ev('colpo', { gatto: c.id, danno: dmg, vita: c.vita, come: tipo, spinta: armato ? 0 : kb, stato_gatto: c.stato });
+  if (c.stato === 'pattuglia') { c.stato = 'insegue'; c.t = 0; if (c.aggroT == null) c.aggroT = S.t; }
+  if (c.vita <= 0) {
+    c.stato = 'morto'; c.tMorte = S.t; S.m.uccisioni++;
+    S.m.uccisioni_dettaglio.push({ gatto: c.id, t: Math.round(S.t), dal_aggro_ms: c.aggroT == null ? null : Math.round(S.t - c.aggroT) });
+    ev('uccisione', { gatto: c.id });
+    S.fx.push({ k: 'anima', x: c.x, y: c.y, t0: S.t, dur: 900 });
+    S.hitstop = Math.max(S.hitstop, P.hs_uccisione);
+    if (S.gatti.every(g => g.stato === 'morto')) { S.fase = 'pulita'; S.tFase = S.t; S.m.tempo_ms = Math.round(S.t); ev('stanza_pulita'); }
+  } else {
+    S.hitstop = Math.max(S.hitstop, P.hs_colpo);
+    if (!armato) {
+      const m = hyp(dx, dy) || 1; c.sp = { vx: dx / m * kb, vy: dy / m * kb, t: P.t_spinta_nemico, d: P.t_spinta_nemico };
+      if (c.stato === 'accucciato' || c.stato === 'lampo') { c.stato = 'insegue'; c.t = 0; }
+    }
+  }
+}
+
+// ---------------------------------------------------------------- gatti
+const attaccanti = () => S.gatti.filter(c => c.stato === 'accucciato' || c.stato === 'lampo' || c.stato === 'balzo').length;
+function setStato(c, s) { c.stato = s; c.t = 0; }
+function aggiornaGatto(c, dt) {
+  if (c.stato === 'morto') return;
+  const p = S.p; c.t += dt; c.flash = Math.max(0, c.flash - dt);
+  if (c.sp.t > 0 && !(P.armatura_telegrafo && c.stato === 'balzo')) { const k = c.sp.t / c.sp.d; c.x += c.sp.vx * k * dt / 1000; c.y += c.sp.vy * k * dt / 1000; c.sp.t -= dt; }
+  const dx = p.x - c.x, dy = p.y - c.y, d = hyp(dx, dy) || 1, ux = dx / d, uy = dy / d;
+  const vai = (tx, ty, v) => { const ex = tx - c.x, ey = ty - c.y, m = hyp(ex, ey) || 1; c.x += ex / m * v * dt / 1000; c.y += ey / m * v * dt / 1000; c.walk += v * dt / 1000 * .1; if (Math.abs(ex) > 3) c.f = ex > 0 ? 1 : -1; };
+  switch (c.stato) {
+    case 'fermo': break;
+    case 'pattuglia':
+      if (p.stato !== 'morto' && d <= P.gatto_aggro) { setStato(c, 'insegue'); if (c.aggroT == null) { c.aggroT = S.t; ev('gatto_aggro', { gatto: c.id }); } break; }
+      if (c.wait > 0) c.wait -= dt;
+      else { vai(c.wp.x, c.wp.y, P.gatto_vel_pattuglia); if (hyp(c.wp.x - c.x, c.wp.y - c.y) < 4) { c.wait = 500 + S.rng() * 900; c.wp = { x: clamp(c.spawn.x + (S.rng() - .5) * 280, 30, W - 30), y: clamp(c.spawn.y + (S.rng() - .5) * 200, 30, H - 30) }; } }
+      break;
+    case 'insegue':
+      if (d > P.gatto_stop) { vai(p.x, p.y, P.gatto_vel); }
+      else { c.f = dx >= 0 ? 1 : -1; if (attaccanti() < P.max_attaccanti) { setStato(c, 'accucciato'); c.mira = { x: ux, y: uy }; ev('gatto_anticipo', { gatto: c.id }); } else setStato(c, 'attesa'); }
+      break;
+    case 'attesa':
+      c.f = dx >= 0 ? 1 : -1;
+      if (attaccanti() < P.max_attaccanti && d <= P.gatto_stop + 10) { setStato(c, 'accucciato'); c.mira = { x: ux, y: uy }; ev('gatto_anticipo', { gatto: c.id }); }
+      else if (d < P.gatto_stop - 15) vai(c.x - ux * 50, c.y - uy * 50, P.gatto_vel * .6);
+      else if (d > P.gatto_stop + 10) vai(p.x, p.y, P.gatto_vel * .8);
+      else vai(c.x - uy * c.strafe * 50, c.y + ux * c.strafe * 50, P.gatto_vel * .4);
+      break;
+    case 'accucciato':
+      c.f = dx >= 0 ? 1 : -1; c.mira = { x: ux, y: uy };
+      if (c.t >= P.t_accucciato) { c.dir = { x: ux, y: uy }; setStato(c, 'lampo'); c.tLampo = S.t; ev('gatto_lampo', { gatto: c.id }); }
+      break;
+    case 'lampo':
+      if (Math.abs(c.dir.x) > .2) c.f = c.dir.x > 0 ? 1 : -1;
+      if (c.t >= P.t_lampo) { setStato(c, 'balzo'); c.o = { x: c.x, y: c.y }; c.colpito = false; S.m.balzi++; ev('gatto_balzo', { gatto: c.id }); }
+      break;
+    case 'balzo': {
+      const u = Math.min(1, c.t / P.t_balzo);
+      c.x = clamp(c.o.x + c.dir.x * P.d_balzo * u, P.gatto_raggio, W - P.gatto_raggio); c.y = clamp(c.o.y + c.dir.y * P.d_balzo * u, P.gatto_raggio, H - P.gatto_raggio);
+      if (u >= 1) { if (!c.colpito) { S.m.balzi_a_vuoto++; ev('balzo_a_vuoto', { gatto: c.id }); } setStato(c, 'recupero'); }
+      break;
+    }
+    case 'recupero': c.f = dx >= 0 ? 1 : -1; if (c.t >= P.t_recupero_gatto) setStato(c, 'insegue'); break;
+    case 'stordito': if (c.t >= P.t_stordito) { ev('stordito_fine', { gatto: c.id, durata: Math.round(c.t) }); setStato(c, 'insegue'); } break;
+  }
+}
+function separa() {
+  const g = S.gatti.filter(c => c.stato !== 'morto'), p = S.p;
+  for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) {
+    const a = g[i], b = g[j], dx = b.x - a.x, dy = b.y - a.y, d = hyp(dx, dy), m = P.gatto_raggio * 1.7;
+    if (d < m && d > 0.01 && a.stato !== 'balzo' && b.stato !== 'balzo') { const k = (m - d) / 2 / d; a.x -= dx * k; a.y -= dy * k; b.x += dx * k; b.y += dy * k; }
+  }
+  for (const c of g) {
+    if (c.stato !== 'balzo' && p.stato !== 'scatto' && p.stato !== 'morto') {
+      const dx = c.x - p.x, dy = c.y - p.y, d = hyp(dx, dy), m = P.gatto_raggio + P.r_corpo - 6;
+      if (d < m && d > 0.01) { c.x += dx / d * (m - d); c.y += dy / d * (m - d); }
+    }
+    clampW(c, P.gatto_raggio);
+  }
+}
+function distSeg(px, py, ax, ay, bx, by) { const ex = bx - ax, ey = by - ay, l2 = ex * ex + ey * ey; const t = l2 ? clamp(((px - ax) * ex + (py - ay) * ey) / l2, 0, 1) : 0; return hyp(ax + ex * t - px, ay + ey * t - py); }
+function risolviGatti() {
+  const p = S.p;
+  for (const c of S.gatti) {
+    if (c.stato !== 'balzo' || c.colpito) continue;
+    if (c.t < P.balzo_hit_dal * P.t_balzo) continue;
+    if (distSeg(p.x, p.y, c.o.x, c.o.y, c.x, c.y) > P.gatto_raggio + P.r_corpo) continue;   // hitbox spazzata: il gatto non 'salta oltre' chi gli e' vicino
+    if (p.stato === 'scatto') { if (!c.schivato) { c.schivato = true; S.m.schivate++; ev('schivata', { gatto: c.id }); } continue; }
+    c.colpito = true;
+    if (p.stato === 'parata' && p.fase === 'finestra') {
+      const premuta = Math.round(S.t - p.parata.tPress);
+      setStato(c, 'stordito'); c.sp.t = 0;
+      p.stato = 'libero'; p.fase = null; p.tf = 0; p.controcolpo = P.t_controcolpo; p.cariche = Math.min(P.cariche_scatto, p.cariche + 1); if (p.cariche >= P.cariche_scatto) p.ricarica = 0;
+      S.m.parate_riuscite++;
+      if (S.m.prima_parata_ms == null) { S.m.prima_parata_ms = Math.round(S.t); S.m.prima_parata_dopo_balzi = S.m.balzi; }
+      ev('impatto', { esito: 'parata', gatto: c.id, dal_lampo: Math.round(S.t - c.tLampo) }); ev('parata_riuscita', { gatto: c.id, premuta_ms_prima: premuta });
+      S.hitstop = Math.max(S.hitstop, P.hs_parata);
+      S.shake = { amp: P.scossa_parata, t0: S.rt, dur: 180, dx: 0, dy: 0 };
+      S.fx.push({ k: 'anello', x: (p.x + c.x) / 2, y: (p.y + c.y) / 2, t0: S.t, dur: 380 });
+    } else if (p.invuln > 0) { ev('impatto', { esito: 'ignorato_invuln', gatto: c.id, dal_lampo: Math.round(S.t - c.tLampo) }); }
+    else danneggia(c);
+  }
+}
+function danneggia(c) {
+  const p = S.p; ev('impatto', { esito: 'danno', gatto: c.id, dal_lampo: Math.round(S.t - c.tLampo) });
+  p.maschere = Math.max(0, p.maschere - P.gatto_danno); S.m.maschere_perse += P.gatto_danno; p.invuln = P.t_invuln;
+  p.carica = false; p.colpo = 0; p.comboFin = 0; p.bufAtk = 0; p.bufParry = 0; p.bufDash = 0;
+  if (!(p.stato === 'affondo' && p.fase === 'attivo')) { p.stato = 'colpito'; p.fase = null; p.tf = 0; }
+  const dx = p.x - c.x, dy = p.y - c.y, m = hyp(dx, dy) || 1; p.sp = { vx: dx / m * P.v_spinta, vy: dy / m * P.v_spinta, t: P.t_spinta, d: P.t_spinta };
+  S.hitstop = Math.max(S.hitstop, P.hs_danno);
+  S.shake = { amp: P.scossa_danno, t0: S.rt, dur: 160, dx: dx / m, dy: dy / m };
+  ev('danno', { maschere: p.maschere });
+  if (p.maschere <= 0) { p.stato = 'morto'; p.tMorte = S.t; S.fase = 'morto'; S.tFase = S.t; S.m.tempo_ms = Math.round(S.t); ev('morte'); }
+}
+
+// ---------------------------------------------------------------- bot
+function pericolo(c) {
+  const p = S.p, o = c.stato === 'balzo' ? c.o : { x: c.x, y: c.y }, ex = c.dir.x * P.d_balzo, ey = c.dir.y * P.d_balzo, l2 = ex * ex + ey * ey;
+  const t = clamp(((p.x - o.x) * ex + (p.y - o.y) * ey) / l2, 0, 1);
+  return hyp(o.x + ex * t - p.x, o.y + ey * t - p.y) <= P.gatto_raggio + P.r_corpo + 8;
+}
+function botThink() {
+  const p = S.p, R = P.reazione_bot, vivi = S.gatti.filter(c => c.stato !== 'morto');
+  Inp.botDir = { x: 0, y: 0 };
+  if (!vivi.length || p.stato === 'morto') return;
+  if (P.auto !== 2) for (const c of vivi) {
+    if ((c.stato === 'lampo' || c.stato === 'balzo') && !c.colpito && !c.botVisto && S.t - c.tLampo >= R) { c.botVisto = true; if (pericolo(c)) press('parry'); }
+  }
+  let tg = null, bd = 1e9; for (const c of vivi) { const d = hyp(c.x - p.x, c.y - p.y); if (d < bd) { bd = d; tg = c; } }
+  let blocca = false;
+  if (P.auto !== 2) for (const c of vivi) {
+    if (c.stato === 'lampo' || (c.stato === 'balzo' && !c.colpito)) blocca = true;
+    else if (c.stato === 'accucciato' && (P.t_accucciato - c.t) + R < P.t_startup_f + P.t_attivo_f + P.t_buffer + 60) blocca = true;   // il bot non comincia un fendente che gli impedirebbe di parare
+  }
+  const dx = tg.x - p.x, dy = tg.y - p.y, d = hyp(dx, dy) || 1;
+  Inp.botDir = { x: dx / d, y: dy / d };
+  if (d < P.portata + P.gatto_raggio - 12 && !blocca && S.t - Inp.ultimoBotAtk >= 90) { press('atk'); Inp.ultimoBotAtk = S.t; }
+}
+
+// ---------------------------------------------------------------- passo di simulazione
+const SCRIPT = { atk: () => press('atk'), parata: () => press('parry'), scatto: () => press('dash'), atk_giu: () => { press('atk'); Inp.scriptHeld = true; }, atk_su: () => { Inp.scriptHeld = false; } };
+function step(dt) {
+  S.rt += dt;
+  if (S.hitstop > 0) { S.hitstop -= dt; return; }
+  S.t += dt;
+  while (S.copione.length && S.copione[0].t <= S.t) { const a = S.copione.shift(); SCRIPT[a.az](); }
+  if (botOn && !S.test) botThink();
+  const inp = leggiInput();
+  updatePlayer(dt, inp);
+  for (const c of S.gatti) aggiornaGatto(c, dt);
+  separa(); risolviGatti();
+  S.fx = S.fx.filter(f => S.t - f.t0 < f.dur);
+  aggiornaSciarpa(dt);
+  if ((S.fase === 'pulita' && S.t - S.tFase > 1800) || (S.fase === 'morto' && S.t - S.tFase > 1300)) S.mostraFine = true;
+}
+function aggiornaSciarpa(dt) {
+  const p = S.p; if (!p.scarf) p.scarf = [0, 1, 2].map(() => ({ x: sx(p.x), y: sy(p.y) - 27 * K }));
+  const nx = sx(p.x), ny = sy(p.y) - 27 * K, vx = p.vx * K, vy = p.vy * K * RY, sp = hyp(vx, vy);
+  const dd = p.stato === 'scatto' ? { x: -p.sc.dx, y: -p.sc.dy * RY } : (sp > 20 ? { x: -vx / sp * .8 - p.face * .3, y: -vy / sp * .8 + .4 } : { x: -p.face * .9, y: .5 });
+  const k = 1 - Math.exp(-dt / 55), m = hyp(dd.x, dd.y) || 1;
+  for (let i = 0; i < 3; i++) {
+    const pr = i ? p.scarf[i - 1] : { x: nx, y: ny }, fl = Math.sin(S.rt / 110 + i * 1.3) * .7;
+    const tx = pr.x + dd.x / m * 9 * K, ty = pr.y + dd.y / m * 9 * K + fl * K;
+    p.scarf[i].x += (tx - p.scarf[i].x) * k; p.scarf[i].y += (ty - p.scarf[i].y) * k;
+    const mx = p.scarf[i].x - pr.x, my = p.scarf[i].y - pr.y, md = hyp(mx, my), lim = 9 * K * 1.15;
+    if (md > lim) { p.scarf[i].x = pr.x + mx / md * lim; p.scarf[i].y = pr.y + my / md * lim; }
+  }
+  p.faceS += clamp(p.face - p.faceS, -dt / 90, dt / 90);
+  const wantTilt = p.stato === 'scatto' ? 20 : (p.stato === 'affondo' ? 12 : (hyp(p.vx, p.vy) > 40 ? 6 : 0));
+  const wt = (p.stato === 'scatto' ? Math.sign(p.sc.dx) : (Math.abs(p.vx) > 10 ? Math.sign(p.vx) : p.face)) * wantTilt;
+  p.tilt += (wt - p.tilt) * (1 - Math.exp(-dt / 50));
+}
+
+// ---------------------------------------------------------------- disegno: helpers
+let MODE = 0;   // 0 normale, 1 inchiostro (ombra portata), 2 bianco (scia)
+const F = c => MODE === 1 ? C.ink : MODE === 2 ? '#ffffff' : c;
+const ST = c => MODE ? null : c;
+function poly(g, pts, fill, stroke, lw) {
+  g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath();
+  if (fill) { g.fillStyle = F(fill); g.fill(); }
+  if (stroke && ST(stroke)) { g.lineJoin = 'round'; g.lineWidth = lw || 1.6; g.strokeStyle = stroke; g.stroke(); }
+}
+function ell(g, x, y, rx, ry, fill, stroke, lw, rot) {
+  g.beginPath(); g.ellipse(x, y, Math.max(.01, rx), Math.max(.01, ry), rot || 0, 0, TAU);
+  if (fill) { g.fillStyle = F(fill); g.fill(); }
+  if (stroke && ST(stroke)) { g.lineWidth = lw || 1.6; g.strokeStyle = stroke; g.stroke(); }
+}
+function lineW(g, pts, w, col, outline) {
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  const path = () => { g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); };
+  if (outline && ST(outline)) { path(); g.lineWidth = w + 3.2; g.strokeStyle = outline; g.stroke(); }
+  path(); g.lineWidth = w; g.strokeStyle = F(col); g.stroke();
+}
+
+// ---------------------------------------------------------------- disegno: Ferruccio
+function drawFerruccio(g, p, opt) {
+  opt = opt || {};
+  const s = p.faceS, olw = 1.6, cre = C.crema, ink = C.ink;
+  const moving = hyp(p.vx, p.vy) > 30 && p.stato !== 'parata', ph = Math.sin(p.walk * 6), bob = moving ? Math.abs(ph) * 1.6 : Math.sin(S.rt / 520) * .5;
+  // sciarpa (in spazio schermo relativo ai piedi, dietro al corpo)
+  if (p.scarf && !opt.noScarf) {
+    const fx = sx(p.x), fy = sy(p.y);
+    lineW(g, [[0, -27 - bob]].concat(p.scarf.map(q => [(q.x - fx) / K, (q.y - fy) / K])), 5.2, C.rosso, ink);
+  }
+  g.save(); g.rotate(p.tilt * PI / 180);
+  if (p.stato === 'morto') g.rotate(clamp((S.t - p.tMorte) / 500, 0, 1) * 1.35 * p.face);
+  g.save(); g.scale(s, 1);
+  const lo = moving ? ph * 2.2 : 0;
+  poly(g, [[-8, -9], [-2, -9], [-2 + lo * .5, 0], [-9 + lo, 0]], cre, ink, olw);
+  poly(g, [[2, -9], [8, -9], [9 - lo, 0], [3 - lo * .5, 0]], cre, ink, olw);
+  g.translate(0, -bob);
+  poly(g, [[-9, -9], [9, -9], [7, -27], [-7, -27]], cre, ink, olw);
+  ell(g, 0, -35, 9, 9, cre, ink, olw);
+  poly(g, [[-8.5, -40], [8.5, -40], [3 - (p.vx / 220) * 3, -63]], cre, ink, olw);
+  poly(g, [[7, -37], [16, -33], [7, -31]], ink, ink, 1);               // becco della maschera
+  if (MODE === 0) ell(g, 3.5, -37.5, 1.4, 1.4, ink);
+  g.restore();
+  disegnaBraccio(g, p, -bob);
+  g.restore();
+}
+function angoloBraccio(p) {
+  const aim = Math.atan2(p.aim.y, p.aim.x);
+  if (p.stato === 'libero' || p.stato === 'recScatto' || p.stato === 'colpito' || p.stato === 'scatto') {
+    let a = hyp(p.vx, p.vy) > 30 ? Math.atan2(p.vy, p.vx) : (p.face > 0 ? 0.25 : PI - 0.25);
+    if (p.stato === 'colpito') a = p.face > 0 ? .5 : PI - .5;
+    if (p.stato === 'scatto') a = Math.atan2(-p.sc.dy, -p.sc.dx);
+    if (p.carica) a = aim;
+    return { a: projAng(a), ext: 0, glow: p.carica ? 1 : 0 };
+  }
+  if (p.stato === 'fendente') {
+    const half = p.swArc * PI / 360, d = p.swDir; let a;
+    if (p.fase === 'startup') { const u = clamp(p.tf / p.startupDur, 0, 1); a = lerp(aim - d * (half + .25), aim - d * (half + .65), 1 - Math.pow(1 - u, 2)); }
+    else if (p.fase === 'attivo') { const u = clamp(p.tf / P.t_attivo_f, 0, 1); a = aim - d * half + d * 2 * half * u; }
+    else a = aim + d * half;
+    return { a: projAng(a), ext: 0, glow: 0 };
+  }
+  if (p.stato === 'affondo') return { a: projAng(aim), ext: p.fase === 'attivo' ? 7 : (p.fase === 'startup' ? -4 : 2), glow: 1 };
+  if (p.stato === 'parata') return { a: p.fase === 'recupero' ? PI / 2 + (p.face > 0 ? -.15 : .15) : -PI / 2 + (p.face > 0 ? .12 : -.12), ext: 0, glow: 0 };
+  return { a: projAng(aim), ext: 0, glow: 0 };
+}
+function disegnaBraccio(g, p, yoff) {
+  const o = angoloBraccio(p), a = o.a, ink = C.ink, cre = C.crema;
+  const shx = p.faceS * 4, shy = -23 + yoff, armL = 8 + o.ext, bl = 27 + o.ext;
+  const ca = Math.cos(a), sa = Math.sin(a), hx = shx + ca * armL, hy = shy + sa * armL, tx = hx + ca * bl, ty = hy + sa * bl;
+  if (o.glow && MODE === 0) {
+    const mx = hx + ca * bl * .5, my = hy + sa * bl * .5, gr = g.createRadialGradient(mx, my, 1, mx, my, 26), pu = .65 + .35 * Math.sin(S.rt / 70);
+    gr.addColorStop(0, 'rgba(255,248,225,' + (.8 * pu) + ')'); gr.addColorStop(1, 'rgba(255,248,225,0)'); g.fillStyle = gr; g.fillRect(mx - 30, my - 30, 60, 60);
+  }
+  lineW(g, [[shx, shy], [hx, hy]], 3.6, cre, ink);
+  const nx = -sa, ny = ca;
+  poly(g, [[hx + nx * 2, hy + ny * 2], [tx, ty], [hx - nx * 2, hy - ny * 2]], o.glow && MODE === 0 ? '#ffffff' : cre, ink, 1.4);
+  poly(g, [[hx + nx * 3.6, hy + ny * 3.6], [hx - nx * 3.6, hy - ny * 3.6], [hx - nx * 3.6 + ca * 2.4, hy - ny * 3.6 + sa * 2.4], [hx + nx * 3.6 + ca * 2.4, hy + ny * 3.6 + sa * 2.4]], ink, null);
+}
+
+// ---------------------------------------------------------------- disegno: gatto
+function posaGatto(c) {
+  const po = { sxs: 1, sys: 1, tilt: 0, ear: 0, tail: 0, lift: 0, eye: 'slit', jit: 0, rev: false, headDrop: 0, legExt: 0, wob: 0, eyeScale: 1, walk: c.walk, alpha: 1 };
+  const e = u => u * u * (3 - 2 * u);
+  switch (c.stato) {
+    case 'accucciato': { const u = clamp(c.t / P.t_accucciato, 0, 1), k = e(clamp(u * 1.6, 0, 1)); po.sxs = 1 - .26 * k; po.sys = 1 - .42 * k; po.tilt = 17 * k * PI / 180; po.ear = k; po.tail = k; po.headDrop = 5 * k; po.jit = u > .55 ? (u - .55) * 2.2 : 0; po.eyeScale = 1 + .9 * u; po.walk = 0; break; }
+    case 'lampo': po.sxs = .74; po.sys = .58; po.tilt = 19 * PI / 180; po.ear = 1; po.tail = 1; po.headDrop = 6; po.eye = 'rosso'; po.jit = 1; po.walk = 0; break;
+    case 'balzo': { const u = clamp(c.t / P.t_balzo, 0, 1); po.sxs = 1.34; po.sys = .8; po.tilt = -8 * PI / 180; po.lift = Math.sin(u * PI) * 17; po.legExt = 1; po.tail = .6; po.eye = 'rosso'; po.walk = 0; break; }
+    case 'recupero': po.sxs = 1.04; po.sys = .94; po.walk = 0; po.headDrop = 2; break;
+    case 'stordito': po.rev = true; po.wob = Math.sin(S.rt / 70) * 4 * PI / 180; po.eye = 'spento'; po.walk = 0; po.tail = .3; break;
+    case 'morto': po.alpha = 1 - clamp((S.t - c.tMorte) / 500, 0, 1); po.eye = 'spento'; po.walk = 0; break;
+  }
+  return po;
+}
+function drawGatto(g, c) {
+  const po = posaGatto(c); if (po.alpha <= 0) return;
+  const f = c.f, flash = c.flash > 0 && MODE === 0, ink = C.ink;
+  const col = flash ? '#ffffff' : ink;
+  g.save(); g.globalAlpha *= po.alpha; g.scale(.85 * f, .85);
+  const jx = po.jit ? Math.sin(S.rt / 17) * po.jit * 1.1 : 0;
+  g.translate(jx, -po.lift / .85);
+  if (po.rev) { g.translate(0, -12); g.rotate(po.wob); g.scale(1, -1); g.translate(0, 12); }
+  const wl = Math.sin(po.walk * 5) * 3.2;
+  // coda a S (2 segmenti)
+  const T = po.tail, wag = Math.sin(S.rt / 260 + c.id) * (1 - T) * 3;
+  g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = MODE === 0 ? col : F(ink); g.lineWidth = 4.6;
+  g.beginPath(); g.moveTo(-22, -11 + po.headDrop * .3);
+  g.quadraticCurveTo(lerp(-36, -34, T), lerp(-12, -17, T), lerp(-34 + wag, -39, T), lerp(-23, -27, T));
+  g.quadraticCurveTo(lerp(-32 + wag, -42, T), lerp(-32, -37, T), lerp(-24 + wag, -42, T), lerp(-34, -44, T));
+  g.stroke();
+  // zampe
+  const ex = po.legExt * 7;
+  poly(g, [[-18, -8], [-11, -8], [-9 - ex * 1.6, 0], [-17 - ex * 1.6 + wl, 0]], col);
+  poly(g, [[-10, -8], [-4, -8], [-2 - ex * 1.2, 0], [-9 - ex * 1.2 - wl, 0]], col);
+  poly(g, [[8, -8], [14, -8], [16 + ex * 1.8 - wl, 0], [10 + ex * 1.8, 0]], col);
+  poly(g, [[14, -8], [19, -8], [22 + ex * 2 + wl, 0], [16 + ex * 2, 0]], col);
+  // corpo (ruota attorno alle spalle: il posteriore sale nell'anticipo)
+  g.save(); g.translate(16, -11); g.rotate(po.tilt); g.scale(po.sxs, po.sys); g.translate(-16, 11);
+  poly(g, [[-25, -6], [-23, -17], [-13, -22], [-5, -27], [4, -22], [16, -21], [24, -11], [15, -3], [-9, -4]], col);
+  g.restore();
+  // testa, orecchie, occhi
+  g.save(); g.translate(0, po.headDrop);
+  const er = po.ear;
+  poly(g, [[25, -14], [25, -24], [31, -27], [40, -23], [44, -16], [39, -10], [28, -9]], col);
+  poly(g, [[25.5, -24], [31.5, -27], [lerp(24, 18, er), lerp(-36, -27, er)]], col);
+  poly(g, [[32, -27], [38.5, -23.5], [lerp(40, 31, er), lerp(-35, -28.5, er)]], col);
+  if (MODE === 0 && !flash && po.eye !== 'spento') {
+    for (const [ex2, ey2] of [[34, -17.5], [39.5, -17]]) {
+      if (po.eye === 'rosso') { ell(g, ex2, ey2, 3.6, 3.0, C.rosso); ell(g, ex2, ey2, 1.4, 1.4, C.crema); }
+      else ell(g, ex2, ey2, 2.6 * Math.min(po.eyeScale, 1.5), 1.1 * po.eyeScale, C.luce);
+    }
+  }
+  g.restore();
+  g.restore();
+  // anello che si chiude, nel lampo
+  if (MODE === 0 && c.stato === 'lampo' && !flash) {
+    const u = clamp(c.t / P.t_lampo, 0, 1), rr2 = lerp(26, 6, u);
+    g.save(); g.translate(f * 37 * .85, -17 * .85 + po.headDrop * .85);
+    g.lineWidth = 2.8; g.strokeStyle = C.rosso; g.beginPath(); g.arc(0, 0, rr2, 0, TAU); g.stroke();
+    g.lineWidth = 1.2; g.strokeStyle = C.crema; g.beginPath(); g.arc(0, 0, rr2 + 3.2, 0, TAU); g.stroke();
+    g.restore();
+  }
+}
+
+// ---------------------------------------------------------------- disegno: stanza
+function costruisciSfondo() {
+  const g = bg; g.clearRect(0, 0, 1280, 720); g.fillStyle = C.ink; g.fillRect(0, 0, 1280, 720);
+  const gr = g.createLinearGradient(0, 44, 0, 232); gr.addColorStop(0, '#1a0d05'); gr.addColorStop(.45, C.bruno); gr.addColorStop(.5, '#a8702f'); gr.addColorStop(1, C.carta);
+  g.fillStyle = gr; g.fillRect(40, 44, 1200, 188);
+  g.fillStyle = 'rgba(11,7,4,.14)'; for (let x = 120; x < 1170; x += 130) g.fillRect(x, 96, 8, 136);
+  g.fillStyle = 'rgba(11,7,4,.28)'; g.fillRect(40, 224, 1200, 8);
+  g.fillStyle = C.pav; g.fillRect(X0, Y0, W * K, H * K * RY);
+  const rg = rngMake(77);
+  g.fillStyle = 'rgba(11,7,4,.10)'; for (let i = 0; i < 160; i++) { const x = X0 + rg() * W * K, y = Y0 + rg() * H * K * RY; g.fillRect(x, y, 2 + rg() * 3, 1 + rg() * 1.5); }
+  g.strokeStyle = 'rgba(11,7,4,.07)'; g.lineWidth = 1;
+  for (let i = 1; i < 13; i++) { g.beginPath(); g.moveTo(sx(i * 64), Y0); g.lineTo(sx(i * 64), sy(H)); g.stroke(); }
+  for (let j = 1; j < 7; j++) { g.beginPath(); g.moveTo(X0, sy(j * 64)); g.lineTo(X0 + W * K, sy(j * 64)); g.stroke(); }
+  g.fillStyle = C.ink; g.fillRect(40, 44, 80, 576); g.fillRect(1160, 44, 80, 576); g.fillRect(40, 568, 1200, 52);
+  g.fillStyle = C.luce; g.fillRect(118, 232, 2, 336); g.fillRect(1160, 232, 2, 336); g.fillRect(120, 568, 1040, 2); g.fillRect(40, 44, 1200, 2); g.fillRect(40, 44, 2, 576); g.fillRect(1238, 44, 2, 576); g.fillRect(40, 618, 1200, 2);
+  g.fillStyle = 'rgba(242,194,120,.55)'; g.fillRect(40, 230, 80, 2); g.fillRect(1160, 230, 80, 2);
+  g.save(); g.beginPath(); g.rect(X0, Y0, W * K, H * K * RY); g.clip();
+  g.translate(640, Y0 + H * K * RY / 2); g.scale(1, .55);
+  const vg = g.createRadialGradient(0, 0, 200, 0, 0, 640); vg.addColorStop(0, 'rgba(11,7,4,0)'); vg.addColorStop(1, 'rgba(11,7,4,.5)'); g.fillStyle = vg; g.fillRect(-700, -600, 1400, 1200);
+  g.restore();
+}
+function archi(g, aperta, t) {
+  const cx = 640, defs = [
+    { tipo: 'su', x: cx, y: Y0 }, { tipo: 'giu', x: cx, y: 620 }, { tipo: 'sin', x: 80, y: sy(224) + 40 }, { tipo: 'des', x: 1200, y: sy(224) + 40 }];
+  for (const d of defs) {
+    g.save(); g.beginPath();
+    if (d.tipo === 'su') { g.moveTo(d.x - 55, d.y); g.lineTo(d.x - 55, d.y - 72); g.arc(d.x, d.y - 72, 55, PI, 0); g.lineTo(d.x + 55, d.y); }
+    else if (d.tipo === 'giu') { g.moveTo(d.x - 50, d.y); g.lineTo(d.x - 50, d.y - 26); g.ellipse(d.x, d.y - 26, 50, 22, 0, PI, 0); g.lineTo(d.x + 50, d.y); }
+    else { g.moveTo(d.x - 26, d.y); g.lineTo(d.x - 26, d.y - 78); g.arc(d.x, d.y - 78, 26, PI, 0); g.lineTo(d.x + 26, d.y); }
+    g.closePath();
+    if (aperta) { const gr = g.createLinearGradient(0, d.y - 130, 0, d.y); gr.addColorStop(0, '#8a5a18'); gr.addColorStop(1, C.oro); g.fillStyle = gr; g.fill(); g.lineWidth = 3; g.strokeStyle = C.oro; g.stroke(); }
+    else { g.fillStyle = '#030201'; g.fill(); g.lineWidth = 2; g.strokeStyle = 'rgba(242,194,120,.65)'; g.stroke(); }
+    g.restore();
+  }
+  if (aperta) {
+    g.save(); g.beginPath(); g.rect(X0, Y0, W * K, H * K * RY); g.clip(); g.globalAlpha = .45 + .1 * Math.sin(t / 300);
+    const soglie = [[cx, Y0 + 4, 110, 22], [cx, sy(H) - 4, 100, 22], [X0 + 6, sy(224), 22, 54], [X0 + W * K - 6, sy(224), 22, 54]];
+    for (const [x, y, rx, ry] of soglie) {
+      const R = Math.max(rx, ry) * 1.6, gr = g.createRadialGradient(0, 0, 1, 0, 0, R); gr.addColorStop(0, 'rgba(243,193,75,.9)'); gr.addColorStop(1, 'rgba(243,193,75,0)');
+      g.save(); g.translate(x, y); g.scale(rx > ry ? 1 : .55, rx > ry ? .5 : 1); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R, 0, TAU); g.fill(); g.restore();
+    }
+    g.restore();
+  }
+}
+function lanterne(g, t) {
+  g.save(); g.beginPath(); g.rect(X0, Y0, W * K, H * K * RY); g.clip();
+  for (const L of LANTERNE) {
+    const fl = .88 + .12 * Math.sin(t / 170 + L.wx);
+    g.save(); g.translate(sx(L.wx), sy(95)); g.scale(1, RY);
+    const gr = g.createRadialGradient(0, 0, 10, 0, 0, 330); gr.addColorStop(0, 'rgba(243,193,75,' + (.34 * fl) + ')'); gr.addColorStop(.55, 'rgba(243,193,75,' + (.12 * fl) + ')'); gr.addColorStop(1, 'rgba(243,193,75,0)');
+    g.fillStyle = gr; g.fillRect(-340, -340, 680, 680); g.restore();
+  }
+  g.restore();
+  for (const L of LANTERNE) {
+    g.save(); g.translate(sx(L.wx), 112);
+    const gr = g.createRadialGradient(0, 8, 2, 0, 8, 70); gr.addColorStop(0, 'rgba(243,193,75,.6)'); gr.addColorStop(1, 'rgba(243,193,75,0)'); g.fillStyle = gr; g.fillRect(-80, -70, 160, 160);
+    g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); g.moveTo(0, -60); g.lineTo(0, -22); g.stroke();
+    poly(g, [[-9, -22], [9, -22], [11, -8], [8, 12], [-8, 12], [-11, -8]], C.oro, C.ink, 2.2);
+    poly(g, [[-3, -14], [3, -14], [4, 5], [-4, 5]], '#fff3c4', null);
+    g.fillStyle = C.ink; g.fillRect(-10, -25, 20, 4); g.fillRect(-7, 12, 14, 3);
+    g.restore();
+  }
+}
+
+// ---------------------------------------------------------------- render
+function proiettaOmbra(wx, wy) {
+  let L = LANTERNE[0], bd = 1e9; for (const l of LANTERNE) { const d = hyp(wx - l.wx, wy - l.wy); if (d < bd) { bd = d; L = l; } }
+  const dx = wx - L.wx, dy = wy - L.wy, d = hyp(dx, dy) || 1, lam = .5 + Math.min(.5, d / 900);
+  return { a: dx / d * lam, b: Math.max(.13, dy / d * lam * RY) };
+}
+function render() {
+  const g = ctx; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 1280, 720); g.drawImage(bgc, 0, 0);
+  const sh = S.shake, ageS = S.rt - sh.t0; let ox = 0, oy = 0;
+  if (ageS < sh.dur) { const k = 1 - ageS / sh.dur, a = sh.amp * k; if (sh.dx || sh.dy) { ox = sh.dx * a * Math.sin(ageS / 18); oy = sh.dy * a * Math.sin(ageS / 18) * RY; } else { ox = Math.sin(ageS / 11) * a; oy = Math.cos(ageS / 9) * a * .7; } }
+  g.save(); g.translate(ox, oy);
+  lanterne(g, S.rt); archi(g, S.fase === 'pulita', S.rt);
+  const p = S.p, vivi = S.gatti.filter(c => c.stato !== 'morto' || S.t - c.tMorte < 500);
+  g.save(); g.beginPath(); g.rect(X0, Y0, W * K, H * K * RY); g.clip();
+  for (const c of S.gatti) if (['accucciato', 'lampo', 'balzo'].includes(c.stato)) segnoBalzo(g, c);
+  for (const c of vivi) {
+    const u = c.stato === 'accucciato' ? clamp(c.t / P.t_accucciato, 0, 1) : c.stato === 'lampo' ? 1 : 0, r = P.gatto_raggio * K;
+    g.globalAlpha = (c.stato === 'morto' ? 1 - (S.t - c.tMorte) / 500 : 1);
+    if (c.stato === 'balzo') { const ang = Math.atan2(c.dir.y * RY, c.dir.x), un = clamp(c.t / P.t_balzo, 0, 1); ell(g, sx(c.x), sy(c.y), r * (1.35 + .7 * Math.sin(un * PI)), r * RY * .8, 'rgba(11,7,4,.5)', null, 0, ang); }
+    else ell(g, sx(c.x), sy(c.y), r * (1 - .22 * u), r * RY * (1 - .22 * u), 'rgba(11,7,4,.45)');
+    g.globalAlpha = 1;
+  }
+  ell(g, sx(p.x), sy(p.y), P.r_corpo * K, P.r_corpo * K * RY, 'rgba(11,7,4,.45)');
+  for (const f of S.fx) if (f.k === 'arco') arcoFendente(g, f);
+  if (p.stato === 'affondo' && p.fase === 'attivo') rettAffondo(g, p);
+  g.restore();
+  // ombre portate dalle lanterne
+  sg.setTransform(1, 0, 0, 1, 0, 0); sg.clearRect(0, 0, 1280, 720);
+  const ombra = (wx, wy, fn) => { const o = proiettaOmbra(wx, wy); sg.save(); sg.translate(sx(wx), sy(wy)); sg.scale(K, K); sg.transform(1, 0, -o.a, -o.b, 0, 0); MODE = 1; fn(sg); MODE = 0; sg.restore(); };
+  for (const c of vivi) { if (c.stato !== 'morto') ombra(c.x, c.y, q => drawGatto(q, c)); }
+  if (p.stato !== 'morto') ombra(p.x, p.y, q => drawFerruccio(q, p));
+  g.save(); g.beginPath(); g.rect(X0, Y0, W * K, H * K * RY); g.clip(); g.globalAlpha = .3; g.drawImage(shc, 0, 0); g.restore();
+  // attori in ordine di y
+  const att = vivi.map(c => ({ x: c.x, y: c.y, c })).concat([{ x: p.x, y: p.y, p }]).sort((a, b) => a.y - b.y);
+  for (const a of att) {
+    g.save(); g.translate(sx(a.x), sy(a.y)); g.scale(K, K);
+    if (a.c) drawGatto(g, a.c); else drawFerrucioCompleto(g, p);
+    g.restore();
+  }
+  for (const f of S.fx) { if (f.k === 'anello') anelloParata(g, f); else if (f.k === 'anima') anima(g, f); }
+  g.restore();
+  hud(g);
+  if (S.mostraFine) cartiglio(g);
+  const mod = window.PARAMETRI_MODIFICATI, ks = Object.keys(mod);
+  if (ks.length) { g.font = '11px monospace'; g.letterSpacing = '0px'; g.fillStyle = 'rgba(244,227,189,.55)'; g.textAlign = 'right'; g.fillText('URL: ' + ks.map(k => k + '=' + mod[k]).join(' '), 1270, 14); g.textAlign = 'left'; }
+}
+function drawFerrucioCompleto(g, p) {
+  const blink = p.invuln > 0 && p.stato !== 'scatto' && Math.floor(S.rt / 83) % 2 === 0;
+  if ((p.stato === 'scatto' || p.stato === 'recScatto') && p.hist.length) {
+    const ages = [40, 80, 120], als = [.5, .32, .18];
+    ages.forEach((ag, i) => {
+      const qq = p.hist.reduce((b, q) => Math.abs(S.t - q.t - ag) < Math.abs(S.t - b.t - ag) ? q : b, p.hist[0]);
+      if (S.t - qq.t < 12) return;
+      g.save(); g.translate((sx(qq.x) - sx(p.x)) / K, (sy(qq.y) - sy(p.y)) / K); g.globalAlpha = als[i]; MODE = 2; drawFerruccio(g, p, { noScarf: true }); MODE = 0; g.restore();
+    });
+  }
+  if (blink) g.globalAlpha = .35;
+  if (p.stato === 'parata' && p.fase !== 'recupero') {
+    const fin = p.fase === 'finestra';
+    const gr = g.createRadialGradient(0, -30, 6, 0, -30, 50); gr.addColorStop(0, 'rgba(255,250,235,' + (fin ? .55 : .15) + ')'); gr.addColorStop(1, 'rgba(255,250,235,0)'); g.fillStyle = gr; g.fillRect(-60, -90, 120, 120);
+    g.lineWidth = fin ? 3.2 : 1.6; g.strokeStyle = 'rgba(255,255,255,' + (fin ? .95 : .3) + ')'; g.beginPath(); g.ellipse(0, -30, 30, 38, 0, 0, TAU); g.stroke();
+    if (fin) { g.lineWidth = 1.4; g.strokeStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.ellipse(0, 0, P.r_corpo + 7, (P.r_corpo + 7) * RY, 0, 0, TAU); g.stroke(); }
+  }
+  drawFerruccio(g, p);
+  if (p.controcolpo > 0) { g.lineWidth = 1.6; g.strokeStyle = 'rgba(255,255,255,' + (.4 + .4 * Math.sin(S.rt / 60)) + ')'; g.beginPath(); g.ellipse(0, 0, P.r_corpo + 5, (P.r_corpo + 5) * RY, 0, 0, TAU); g.stroke(); }
+  g.globalAlpha = 1;
+}
+function segnoBalzo(g, c) {
+  const lock = c.stato !== 'accucciato', dir = lock ? c.dir : c.mira, o = c.stato === 'balzo' ? c.o : { x: c.x, y: c.y };
+  const nx = -dir.y, ny = dir.x, hw = P.gatto_raggio + P.r_corpo, L = P.d_balzo;
+  const u = c.stato === 'accucciato' ? clamp(c.t / P.t_accucciato, 0, 1) : 1;
+  const pt = (a, b) => [sx(o.x + dir.x * a + nx * b), sy(o.y + dir.y * a + ny * b)];
+  const pts = [pt(0, -hw), pt(L, -hw), pt(L, hw), pt(0, hw)];
+  g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath();
+  g.fillStyle = 'rgba(11,7,4,' + (lock ? .2 : .05 + .06 * u) + ')'; g.fill();
+  g.setLineDash(lock ? [11, 7] : [5, 9]); g.lineWidth = lock ? 2.6 : 1.8; g.strokeStyle = 'rgba(11,7,4,' + (lock ? .8 : .25 + .3 * u) + ')'; g.stroke(); g.setLineDash([]);
+  if (lock) { const e = pt(L, 0); g.lineWidth = 2.4; g.strokeStyle = 'rgba(11,7,4,.8)'; g.beginPath(); g.ellipse(e[0], e[1], 13, 13 * RY, 0, 0, TAU); g.stroke(); }
+}
+function arcoFendente(g, f) {
+  const age = (S.t - f.t0) / f.dur, a0 = f.ang, half = f.arc * PI / 360, n = 28;
+  const pts = [[sx(f.x), sy(f.y)]]; for (let i = 0; i <= n; i++) { const a = a0 - half + 2 * half * i / n; pts.push([sx(f.x + Math.cos(a) * f.r), sy(f.y + Math.sin(a) * f.r)]); }
+  const al = clamp(1 - age, 0, 1);
+  g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath();
+  g.fillStyle = 'rgba(255,255,255,' + (.34 * al) + ')'; g.fill(); g.lineJoin = 'round'; g.lineWidth = 3; g.strokeStyle = 'rgba(255,255,255,' + (.95 * al) + ')'; g.stroke();
+}
+function rettAffondo(g, p) {
+  const d = p.aim, nx = -d.y, ny = d.x, hw = P.larg_affondo / 2, L = p.traveled + P.lama_affondo;
+  const q = (a, b) => [sx(p.ox + d.x * a + nx * b), sy(p.oy + d.y * a + ny * b)], pts = [q(0, -hw), q(L, -hw), q(L, hw), q(0, hw)];
+  g.beginPath(); pts.forEach((z, i) => i ? g.lineTo(z[0], z[1]) : g.moveTo(z[0], z[1])); g.closePath(); g.fillStyle = 'rgba(255,255,255,.3)'; g.fill(); g.lineWidth = 3; g.strokeStyle = 'rgba(255,255,255,.9)'; g.stroke();
+}
+function anelloParata(g, f) {
+  const u = (S.t - f.t0) / f.dur, x = sx(f.x), y = sy(f.y) - 22, r = lerp(14, 78, 1 - Math.pow(1 - u, 2)), al = 1 - u;
+  g.save(); g.translate(x, y);
+  g.lineWidth = lerp(7, 1.5, u); g.strokeStyle = 'rgba(255,255,255,' + al + ')'; g.beginPath(); g.arc(0, 0, r, 0, TAU); g.stroke();
+  g.lineWidth = 3; g.strokeStyle = 'rgba(255,255,255,' + (al * .9) + ')';
+  for (let i = 0; i < 10; i++) { const a = i / 10 * TAU + .3, r1 = r * .35, r2 = r * (.75 + (i % 2) * .5) * Math.min(1, u * 4 + .3); g.beginPath(); g.moveTo(Math.cos(a) * r1, Math.sin(a) * r1); g.lineTo(Math.cos(a) * r2, Math.sin(a) * r2); g.stroke(); }
+  g.restore();
+}
+function anima(g, f) {
+  const u = (S.t - f.t0) / f.dur, x = sx(f.x), y = sy(f.y) - 24 - u * 46;
+  g.save(); g.globalAlpha = 1 - u; g.translate(x, y); poly(g, [[0, -10], [5, 0], [0, 8], [-5, 0]], C.azzurro, null); g.restore();
+}
+
+// ---------------------------------------------------------------- HUD
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function hud(g) {
+  const p = S.p;
+  g.save();
+  g.fillStyle = 'rgba(11,7,4,.88)'; rr(g, 20, 5, 420, 34, 8); g.fill(); g.lineWidth = 2; g.strokeStyle = C.oro; g.stroke(); g.lineWidth = 1; g.strokeStyle = C.bruno; rr(g, 24, 9, 412, 26, 6); g.stroke();
+  for (let i = 0; i < P.maschere_max; i++) {
+    g.save(); g.translate(46 + i * 27, 23); g.beginPath(); g.moveTo(0, -10); g.bezierCurveTo(9, -2, 9, 9, 0, 9); g.bezierCurveTo(-9, 9, -9, -2, 0, -10); g.closePath();
+    if (i < p.maschere) { g.fillStyle = C.crema; g.fill(); g.lineWidth = 1.4; g.strokeStyle = C.ink; g.stroke(); } else { g.lineWidth = 1.6; g.strokeStyle = 'rgba(244,227,189,.5)'; g.stroke(); }
+    g.restore();
+  }
+  const fr = p.cariche > 0 ? 1 : p.ricarica / P.t_ricarica_scatto;
+  g.save(); g.translate(204, 22); g.beginPath(); g.arc(0, 0, 11, 0, TAU); g.fillStyle = '#1b0f07'; g.fill(); g.lineWidth = 1.6; g.strokeStyle = C.oro; g.stroke();
+  g.lineCap = 'round'; g.strokeStyle = C.rosso; g.lineWidth = 4; g.beginPath(); g.arc(0, 0, 6, -PI / 2, -PI / 2 + TAU * Math.max(.02, fr)); g.stroke();
+  g.lineWidth = 2.6; g.beginPath(); const ta = -PI / 2 + TAU * fr; g.moveTo(Math.cos(ta) * 6, Math.sin(ta) * 6); g.quadraticCurveTo(Math.cos(ta) * 12 + 8 * (1 - fr), Math.sin(ta) * 12 - 6, 22 + 10 * (1 - fr), -2 + 8 * (1 - fr)); g.stroke(); g.restore();
+  const vivi = S.gatti.filter(c => c.stato !== 'morto').length;
+  g.font = '700 15px Georgia, serif'; g.letterSpacing = '3px'; g.fillStyle = C.crema; g.textBaseline = 'middle'; g.fillText('GATTI ' + vivi + '/' + S.gatti.length, 262, 23);
+  g.letterSpacing = '1px'; g.font = '13px Georgia, serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(244,227,189,.82)'; g.textBaseline = 'alphabetic';
+  g.fillText('WASD/FRECCE muovi  ·  J o Z fendente (tieni = affondo)  ·  K o X parata  ·  SPAZIO o MAIUSC scatto  ·  R ricomincia', 640, 690);
+  g.restore();
+}
+function cartiglio(g) {
+  const m = S.m, pulita = S.fase === 'pulita', x = 340, y = 190, w = 600, h = 330;
+  g.save(); g.fillStyle = 'rgba(11,7,4,.93)'; rr(g, x, y, w, h, 16); g.fill(); g.lineWidth = 4; g.strokeStyle = C.oro; g.stroke(); g.lineWidth = 1.5; g.strokeStyle = C.bruno; rr(g, x + 8, y + 8, w - 16, h - 16, 11); g.stroke();
+  g.textAlign = 'center'; g.fillStyle = C.crema; g.font = '700 30px Georgia, serif'; g.letterSpacing = '5px'; g.fillText(pulita ? 'STANZA PULITA' : 'LA NOTTE FINISCE', 640, y + 62);
+  g.font = '19px Georgia, serif'; g.letterSpacing = '1px'; const fm = v => v.toFixed(1).replace('.', ',');
+  const righe = [['Tempo', fm(m.tempo_ms / 1000) + ' s'], ['Maschere perse', String(m.maschere_perse)], ['Parate riuscite / mancate', m.parate_riuscite + ' / ' + m.parate_mancate], ['Colpi dati', String(m.colpi_dati)], ['Gatti', m.uccisioni + ' su ' + S.gatti.length]];
+  righe.forEach((r, i) => { g.textAlign = 'left'; g.fillStyle = 'rgba(244,227,189,.8)'; g.fillText(r[0], x + 70, y + 118 + i * 31); g.textAlign = 'right'; g.fillStyle = C.crema; g.fillText(r[1], x + w - 70, y + 118 + i * 31); });
+  g.textAlign = 'center'; g.fillStyle = C.oro; g.font = '700 20px Georgia, serif'; g.letterSpacing = '4px'; g.fillText('R PER RIGIOCARE', 640, y + h - 34);
+  g.restore();
+}
+
+// ---------------------------------------------------------------- ciclo principale
+let last = performance.now(), acc = 0;
+function frame(now) {
+  const d = Math.min(100, now - last); last = now;
+  if (!paused) { acc += d; while (acc >= DT) { step(DT); acc -= DT; } }
+  render(); requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- banco di prova (misure)
+function simula(o) {
+  o = o || {};
+  const salva = {}, pr = Object.assign({}, o.params || {});
+  if (o.reazione != null) pr.reazione_bot = o.reazione; if (o.auto != null) pr.auto = o.auto;
+  for (const k in pr) { salva[k] = P[k]; P[k] = pr[k]; }
+  const oldBot = botOn, oldT = tentativo, oldS = S; botOn = true; tentativo = o.seme || 1; nuovaStanza();
+  while (S.fase === 'gioco' && S.t < (o.max || 120000)) step(DT);
+  const m = S.m, r = Object.assign({}, m, { fase: S.fase, tempo_ms: m.tempo_ms || Math.round(S.t), log: S.log });
+  for (const k in salva) P[k] = salva[k]; botOn = oldBot; tentativo = oldT; S = oldS;
+  return r;
+}
+function scenarioProva(o) {
+  const old = {}, pr = o.params || {}; for (const k in pr) { old[k] = P[k]; P[k] = pr[k]; }
+  const oldBot = botOn; botOn = false; Inp.muovi = o.muovi || { x: 0, y: 0 }; Inp.scriptHeld = false; Inp.edge = {}; Inp.atkKeys.clear();
+  const oldS = S, oldT = tentativo; tentativo = 1;
+  nuovaStanza({ test: true, px: o.px != null ? o.px : 300, py: o.py != null ? o.py : 224, gatti: o.gatti });
+  if (o.cariche != null) S.p.cariche = o.cariche;
+  S.copione = (o.copione || []).slice().sort((a, b) => a.t - b.t);
+  const fine = o.fine || 1600;
+  while (S.t < fine && S.fase === 'gioco') step(DT);
+  const res = { log: S.log, m: S.m, p: S.p, gatti: S.gatti };
+  for (const k in old) P[k] = old[k]; botOn = oldBot; Inp.muovi = null; Inp.scriptHeld = false; Inp.edge = {};
+  tentativo = oldT; S = oldS;
+  return res;
+}
+function provaParata(delta) {
+  const g = [{ x: 420, y: 224, stato: 'accucciato' }];
+  const r0 = scenarioProva({ gatti: g, fine: 1500 }); const T = r0.log.find(e => e.tipo === 'impatto').t;
+  const r1 = scenarioProva({ gatti: g, fine: 1700, cariche: 0, copione: [{ t: T - delta, az: 'parata' }, { t: T + 60, az: 'atk' }] });
+  const e = r1.log.find(x => x.tipo === 'impatto'), st = r1.log.find(x => x.tipo === 'stordito_fine'), col = r1.log.find(x => x.tipo === 'colpo');
+  return { delta, T_impatto: T, esito: e ? e.esito : 'nessun_impatto', maschere: r1.p.maschere, stordito_ms: st ? st.durata : null, cariche_dopo: r1.p.cariche, colpo_post_parata: col ? { danno: col.danno, vita: col.vita } : null };
+}
+function provaFendente(dist, extra) {
+  const r = scenarioProva(Object.assign({ gatti: [{ x: 300 + dist, y: 224, stato: 'fermo' }], fine: 700, copione: [{ t: 8, az: 'atk' }] }, extra || {}));
+  const col = r.log.find(e => e.tipo === 'colpo');
+  return { dist, colpito: !!col, t_dopo_pressione: col ? col.t - 8 : null, danno: col ? col.danno : null };
+}
+function provaCombo(muovi) {
+  const r = scenarioProva({ gatti: [{ x: 360, y: 224, stato: 'fermo', vita: 6 }], fine: 1200, muovi, copione: [{ t: 8, az: 'atk' }, { t: 208, az: 'atk' }, { t: 408, az: 'atk' }] });
+  return { colpi: r.log.filter(e => e.tipo === 'colpo').map(e => ({ t: e.t, danno: e.danno, vita: e.vita })), archi: r.log.filter(e => e.tipo === 'arco').map(e => ({ t: e.t, n: e.n, arco: e.arco })), fendenti: r.log.filter(e => e.tipo === 'fendente').map(e => e.t) };
+}
+function provaAffondo() {
+  const r = scenarioProva({ gatti: [{ x: 360, y: 224, stato: 'fermo', vita: 6 }], fine: 1200, copione: [{ t: 8, az: 'atk_giu' }, { t: 458, az: 'atk_su' }] });
+  return { colpi: r.log.filter(e => e.tipo === 'colpo'), affondo: r.log.filter(e => e.tipo === 'affondo' || e.tipo === 'affondo_attivo') };
+}
+function provaScatto() {
+  const r = scenarioProva({ gatti: [{ x: 420, y: 224, stato: 'accucciato' }], fine: 1500, copione: [{ t: 500, az: 'scatto' }] });
+  return { esiti: r.log.filter(e => e.tipo === 'impatto' || e.tipo === 'schivata' || e.tipo === 'scatto').map(e => e.tipo + (e.esito ? ':' + e.esito : '') + '@' + e.t), maschere: r.p.maschere, schivate: r.m.schivate };
+}
+
+// ---------------------------------------------------------------- telemetria
+window.__proto = {
+  get stato() { const p = S.p; return { fase: S.fase, t: Math.round(S.t), hitstop: S.hitstop, giocatore: { x: p.x, y: p.y, stato: p.stato, fase: p.fase, tf: p.tf, maschere: p.maschere, cariche: p.cariche, invuln: p.invuln, controcolpo: p.controcolpo, colpo: p.colpo }, gatti: S.gatti.map(c => ({ id: c.id, x: c.x, y: c.y, stato: c.stato, t: Math.round(c.t), vita: c.vita })), mostraFine: S.mostraFine }; },
+  get metriche() { return S.m; },
+  get log() { return S.log; },
+  premi(az) { const m = { fendente: 'atk', parata: 'parry', scatto: 'dash' }[az]; if (m) press(m); else if (az === 'ricomincia') { tentativo++; nuovaStanza(); } return !!m; },
+  muovi(x, y) { Inp.muovi = (x == null) ? null : { x, y }; },
+  scarica() { const t = S.log.map(e => JSON.stringify(e)).join('\n'); console.log(t); return t; },
+  pausa(b) { paused = b !== false; }, bot(b) { botOn = b !== false; },
+  avanza(ms) { for (let i = 0; i < ms / DT; i++) step(DT); render(); },
+  disegna() { render(); },
+  sim: { step: () => step(DT), get S() { return S; }, DT },
+  simula, provaParata, provaFendente, provaCombo, provaAffondo, provaScatto, scenarioProva,
+  nuova(seme) { if (seme != null) tentativo = seme; nuovaStanza(); render(); },
+  PARAMETRI
+};
+
+costruisciSfondo();
+nuovaStanza();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
