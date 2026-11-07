@@ -5,14 +5,26 @@ Each agent owns a specific domain, enforcing separation of concerns and quality.
 
 ## Technology Stack
 
-- **Engine**: [CHOOSE: Godot 4 / Unity / Unreal Engine 5]
-- **Language**: [CHOOSE: GDScript / C# / C++ / Blueprint]
-- **Version Control**: Git with trunk-based development
-- **Build System**: [SPECIFY after choosing engine]
-- **Asset Pipeline**: [SPECIFY after choosing engine]
+- **Engine**: nessuno. Gioco web statico (HTML, SVG, CSS, JavaScript a moduli ES, senza build).
+- **Code root**: `gioco/` (motore in `gioco/motore/`, contenuti in `gioco/contenuti/`, QA in `gioco/qa/`).
+- **Version Control**: Git, branch di lavoro `claude/*`, commit in Conventional Commits.
+- **Verifica**: Playwright (preinstallato nella sessione cloud) per screenshot ed esplorazione
+  automatica di tutti i percorsi narrativi.
+- **Stile**: teatro delle ombre. Vedi `design/game-brief.md` (record di design, modalità `minimal`).
 
-> **Note**: Engine-specialist agents exist for Godot, Unity, and Unreal with
-> dedicated sub-specialists. Use the set matching your engine.
+> **Riavvio v2 (2026-11-07).** Il progetto è ripartito da zero conservando solo trama e ambientazione.
+> Il codice Godot v1, l'arte generata e gli strumenti sono nella storia di git (branch
+> `claude/optimistic-wozniak-9l570p`), non sul branch corrente. Gli agenti e le skill specifici di
+> Godot/Unity/Unreal in `.claude/` non si applicano: usare `gameplay-programmer`, `ui-programmer`,
+> `technical-artist`, `narrative-director`, `writer`.
+
+## Fonti di verità
+
+1. `design/narrative/ferruccio-bibbia.md` — la storia. Non si modifica senza l'autore.
+2. `design/narrative/inizio-memoria-e-doni.md` — decisioni dell'autore che integrano la bibbia.
+3. `design/narrative/storia.json` — mappa macchina di scene, scelte, condizioni e battute (derivata).
+4. `design/game-brief.md` — cosa è il gioco, cosa è dentro e cosa è fuori.
+5. `docs/architecture/motore-web.md` — come è fatto il motore.
 
 ## Project Structure
 
@@ -26,7 +38,7 @@ Each agent owns a specific domain, enforcing separation of concerns and quality.
      session. It defaults to Godot (the template's example engine); skills that
      need the pinned version read docs/engine-reference/<engine>/VERSION.md on
      demand regardless of this import. -->
-@docs/engine-reference/godot/VERSION.md
+`docs/engine-reference/godot/` è storico (v1) e non si applica più.
 
 
 ## Technical Preferences
