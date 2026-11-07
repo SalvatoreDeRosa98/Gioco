@@ -10,6 +10,10 @@
  *    con fantocci (`SCENA_WIRE`), e il ciclo entra subito nello stato `notte`;
  *  - la composizione di Ferruccio e del combattimento (storie 007-011): campo, modificatori,
  *    corpo, spada, bersagli;
+ *  - con `?debug=1&wire=1&piano=N` (storie 014-017) il piano N viene generato dal seme
+ *    (`mondo/generazione.js`) con i modelli di `contenuti/modelli-stanza/`, e al posto della scena di
+ *    prova gira la notte (`mondo/notte.js`): stanza corrente, porte, ondate di fantocci segnaposto
+ *    (`archetipo`), transizioni della camera; `window.__gioco` espone `piano`, `stanza`, `vaiA`;
  *  - la superficie di debug `window.__gioco`, presente SOLO con `?debug=1` (ADR-0003).
  *
  * La risoluzione logica è un vincolo del motore (ADR-0001), non un valore di gioco.
@@ -20,7 +24,7 @@
 import { creaTempo } from './fondazione/tempo.js';
 import { creaCiclo } from './fondazione/ciclo.js';
 import { creaInput, collega as collegaInput } from './fondazione/input.js';
-import { creaRng } from './fondazione/rng.js';
+import { creaRng, derivato } from './fondazione/rng.js';
 import { creaBus } from './fondazione/eventi.js';
 import { creaParametri, leggiOverrideUrl } from './fondazione/parametri.js';
 import { creaModificatori } from './oggetti/modificatori.js';
@@ -29,15 +33,24 @@ import { creaFerruccio } from './attori/ferruccio.js';
 import { creaCombattimento } from './attori/combattimento.js';
 import { creaFantoccio } from './attori/bersaglio.js';
 import { creaResaDebug } from './resa/debug.js';
+import { caricaModelli, creaCatalogo, regoleDaParametri, validaParametriGenerazione } from './mondo/modelli.js';
+import { generaPiano } from './mondo/generazione.js';
+import { creaCamera } from './mondo/camera.js';
+import { creaNotte } from './mondo/notte.js';
 
 /** Risoluzione logica della scena (ADR-0001). */
 const RISOLUZIONE = Object.freeze({ larghezza: 1280, altezza: 720 });
 
 /** Cartella dei parametri e file da caricare (nomi di file, non valori di gioco). */
 const CARTELLA_PARAMETRI = 'contenuti/parametri/';
-const FILE_STATISTICHE = ['ferruccio', 'combattimento', 'stanza'];
-const FILE_TABELLE = ['input'];
+const FILE_STATISTICHE = ['ferruccio', 'combattimento', 'stanza', 'stanze', 'generazione'];
+const FILE_TABELLE = ['input', 'doni', 'sinergie'];
 const FILE_MOTO_RIDOTTO = 'moto-ridotto';
+
+/** Contenuti del piano 1 (nomi di cartelle e file, non valori di gioco). */
+const CARTELLA_MODELLI = 'contenuti/modelli-stanza/piazza-dante/';
+const FILE_INDICE_MODELLI = 'indice';
+const FILE_RISERVA = 'contenuti/piani/piazza-dante-riserva.json';
 
 /**
  * Scena diagnostica del modo `wire` (non è contenuto di gioco: posizioni in celle della griglia).
@@ -123,18 +136,20 @@ async function avvia() {
   const { debug, override } = leggiOverrideUrl(url.search);
   const motoRidotto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  const caricaJson = async (percorso) => {
+    const risposta = await fetch(percorso, { cache: 'no-cache' });
+    if (!risposta.ok) throw new Error(`impossibile caricare ${percorso} (${risposta.status})`);
+    return risposta.json();
+  };
   const parametri = creaParametri();
   await parametri.carica({
-    caricatore: async (nome) => {
-      const risposta = await fetch(`${CARTELLA_PARAMETRI}${nome}.json`, { cache: 'no-cache' });
-      if (!risposta.ok) throw new Error(`parametri: impossibile caricare ${nome}.json (${risposta.status})`);
-      return risposta.json();
-    },
+    caricatore: (nome) => caricaJson(`${CARTELLA_PARAMETRI}${nome}.json`),
     statistiche: FILE_STATISTICHE,
     tabelle: FILE_TABELLE,
     sovrascritture: motoRidotto ? [FILE_MOTO_RIDOTTO] : [],
     override,
   });
+  for (const e of validaParametriGenerazione(parametri)) console.error(`[parametri] errore di contenuto: ${e}`);
 
   const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('scena'));
   adattaCanvas(canvas);
@@ -162,14 +177,19 @@ async function avvia() {
   // Ferruccio e combattimento (storie 007-011): campo della stanza standard, statistiche effettive,
   // corpo, spada, bersagli. Girano solo nello stato `notte`.
   const wire = debug && url.searchParams.get('wire') === '1';
-  const modificatori = creaModificatori(parametri);
+  const pianoRichiesto = Number(url.searchParams.get('piano'));
+  const conPiano = wire && Number.isInteger(pianoRichiesto) && pianoRichiesto >= 1 && pianoRichiesto <= 5;
+  // Storia 023: catalogo dei doni e sinergie dai JSON, probabilità dei ganci dal generatore derivato 'doni'.
+  const modificatori = creaModificatori(parametri, {
+    catalogo: parametri.get('doni'), sinergie: parametri.get('sinergie'), eventi, rng: derivato(rng, 'doni'),
+  });
   const campo = creaCampo({
     colonne: parametri.get('stanza.colonne'),
     righe: parametri.get('stanza.righe'),
     cella: parametri.get('stanza.cella'),
     scenaLarghezza: RISOLUZIONE.larghezza,
     scenaAltezza: RISOLUZIONE.altezza,
-    ostacoli: wire ? SCENA_WIRE.ostacoli : [],
+    ostacoli: wire && !conPiano ? SCENA_WIRE.ostacoli : [],
   });
   const cella = (c, r) => ({ x: campo.x + c * campo.cella, y: campo.y + r * campo.cella });
   const partenza = cella(SCENA_WIRE.ferruccio.colonna, SCENA_WIRE.ferruccio.riga);
@@ -179,7 +199,35 @@ async function avvia() {
   /** @type {object[]} */
   const proiettili = [];
   const combattimento = creaCombattimento({ modificatori, tempo, eventi, input, campo, ferruccio, bersagli: () => bersagli });
-  if (wire) {
+  /** Factory dei nemici delle ondate: oggi fantocci segnaposto con `archetipo` (le storie 019-021 la sostituiscono). */
+  const creaNemico = ({ archetipo, x, y, id }) => {
+    const f = creaFantoccio({ modificatori, tempo, eventi, campo, bersaglio: combattimento.comeBersaglio, id, x, y });
+    f.archetipo = archetipo;
+    return f;
+  };
+
+  // Piano generato dal seme (storie 014-017): modelli, catalogo, pianta, camera e notte.
+  let notte = null;
+  let camera = null;
+  if (conPiano) {
+    const indice = await caricaJson(`${CARTELLA_MODELLI}${FILE_INDICE_MODELLI}.json`);
+    const { modelli } = await caricaModelli({
+      caricatore: (nome) => caricaJson(`${CARTELLA_MODELLI}${nome}.json`),
+      indice,
+      regole: regoleDaParametri(parametri),
+    });
+    const riserva = await caricaJson(FILE_RISERVA);
+    const catalogo = creaCatalogo(modelli);
+    const esito = generaPiano({ seme, piano: pianoRichiesto, parametri, catalogo, riserva });
+    camera = creaCamera({ parametri, tempo, scena: RISOLUZIONE, eventi });
+    notte = creaNotte({
+      seme, numeroPiano: pianoRichiesto, pianta: esito.pianta, catalogo, parametri, tempo, eventi, campo, scena: RISOLUZIONE,
+      ferruccio, combattimento, bersagli, proiettili, camera, creaNemico,
+    });
+    notte.entra(esito.pianta.stanze.find((st) => st.tipo === 'ingresso').id);
+  }
+
+  if (wire && !conPiano) {
     const attaccaAuto = url.searchParams.get('fantoccio') === 'attacca';
     for (const f of SCENA_WIRE.fantocci) {
       const p = cella(f.colonna, f.riga);
@@ -190,19 +238,24 @@ async function avvia() {
       }));
     }
   }
-  ciclo.registra(ferruccio, { stati: ['notte'] });
-  ciclo.registra(combattimento, { stati: ['notte'] });
-  ciclo.registra({
-    tick: (dt) => {
-      for (const b of bersagli) b.tick(dt);
-      for (const p of proiettili) p.tick(dt);
-    },
-  }, { stati: ['notte'] });
+  if (notte) {
+    // la notte fa girare lei Ferruccio, combattimento, bersagli, proiettili e stanza (e ignora l'input in transizione)
+    ciclo.registra(notte, { stati: ['notte'] });
+  } else {
+    ciclo.registra(ferruccio, { stati: ['notte'] });
+    ciclo.registra(combattimento, { stati: ['notte'] });
+    ciclo.registra({
+      tick: (dt) => {
+        for (const b of bersagli) b.tick(dt);
+        for (const p of proiettili) p.tick(dt);
+      },
+    }, { stati: ['notte'] });
+  }
 
   if (wire) {
     ciclo.registra(creaResaDebug({
       canvas, campo, ferruccio, combattimento, bersagli: () => bersagli, proiettili: () => proiettili,
-      token, scena: RISOLUZIONE, contaTick: ciclo.contaTick,
+      token, scena: RISOLUZIONE, contaTick: ciclo.contaTick, notte: () => notte, camera,
     }));
     ciclo.vaiA('hub');
     ciclo.vaiA('notte');
@@ -213,7 +266,7 @@ async function avvia() {
   if (debug) {
     /** Superficie di debug (ADR-0003, storia 004). `imposta` e `vaiA` sono ganci per le storie
      *  dello stato narrativo e delle stanze: finché quei moduli non si registrano, rispondono false. */
-    const ganci = { imposta: null, vaiA: null };
+    const ganci = { imposta: null, vaiA: notte ? (id) => notte.vaiA(id) : null };
     /** Sorgente sintetica della tastiera per un'azione (primo tasto della mappa). */
     const sorgente = (azione) => `t:${parametri.get(`input.tastiera.${azione}`)[0]}`;
     window.__gioco = Object.freeze({
@@ -233,6 +286,11 @@ async function avvia() {
       bersagli,
       proiettili,
       wire,
+      /** Storie 014-017: pianta del piano, stanza corrente, notte e camera (null senza `?piano=N`). */
+      get piano() { return notte?.pianta ?? null; },
+      get stanza() { return notte?.stanza ?? null; },
+      notte,
+      camera,
       /** Tiene giù un'azione del contratto (es. 'destra') finché non si chiama `lascia`. */
       tieni: (azione) => input.sorgenteGiu(sorgente(azione)),
       lascia: (azione) => input.sorgenteSu(sorgente(azione)),
@@ -244,6 +302,7 @@ async function avvia() {
         return esito;
       },
       imposta: (flag, valore) => (ganci.imposta ? ganci.imposta(flag, valore) : false),
+      /** Salta alla stanza `id` del piano (notte.vaiA); false senza piano o con id sconosciuto. */
       vaiA: (stanza) => (ganci.vaiA ? ganci.vaiA(stanza) : false),
       /** Registra l'implementazione di `imposta` o `vaiA` quando il modulo relativo esiste. */
       estendi: (nome, fn) => {

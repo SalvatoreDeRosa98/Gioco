@@ -101,6 +101,7 @@ export function creaPorta({ slot, lato, verso, rett, tempo, parametri, eventi = 
     if (p.richiesta === 'chiudi' && p.stato === 'aperta' && !occupata) {
       p.richiesta = null;
       avviaAnimazione('chiudendo');
+      return; // il primo passo dell'animazione è nel tick successivo
     }
     if (p.stato === 'chiudendo' || p.stato === 'aprendo') {
       p.ticks -= 1;

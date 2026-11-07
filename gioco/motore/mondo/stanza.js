@@ -509,8 +509,6 @@ export function creaStanza({
    */
   function tick(_dt) {
     s.t += 1;
-    const f = cerchioFerruccio();
-    for (const p of porte.values()) p.tick(p.occupataDa(f));
     switch (s.stato) {
       case 'annuncio':
         if (s.t === ticks('t_chiusura_porte')) chiudiPorte();
@@ -558,6 +556,10 @@ export function creaStanza({
       default:
         break;
     }
+    // le porte DOPO la macchina: la chiusura chiesta a `t_chiusura_porte` parte nello stesso tick,
+    // così con t_chiusura + t_anim = t_marker sono `chiuse` nel tick in cui i nemici compaiono
+    const f = cerchioFerruccio();
+    for (const p of porte.values()) p.tick(p.occupataDa(f));
   }
 
   /** La porta aperta che Ferruccio ha appena attraversato (centro oltre la metà del muro), o `null`. */
