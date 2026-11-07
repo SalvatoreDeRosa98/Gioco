@@ -1,0 +1,18 @@
+{
+  "_descrizione": "Geometria della stanza standard (controllo-ferruccio.md regola 1, stanze-porte.md): griglia di celle dentro una cornice di mura spesse una cella. Aggiunta dalle storie 007-011 per il pavimento piatto di prova; la storia delle stanze (006) la estende.",
+  "colonne": {
+    "base": 13,
+    "min": 5,
+    "max": 26
+  },
+  "righe": {
+    "base": 7,
+    "min": 3,
+    "max": 14
+  },
+  "cella": {
+    "base": 64,
+    "min": 32,
+    "max": 128
+  }
+}
