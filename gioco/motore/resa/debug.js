@@ -9,6 +9,13 @@
  * stato scritto in piccolo, i proiettili, e una riga di stato (stato del corpo, stato dell'attacco,
  * maschere, cariche).
  *
+ * Storie 014-017 (opzionali `notte` e `camera`): la stanza è disegnata dentro la trasformazione della
+ * camera (scala per le doppie, scorrimento della transizione); porte colorate per stato (soglia
+ * d'oro aperta, pannello d'inchiostro chiuso, pannello parziale in corsa), finestre accese, piedi e
+ * cerchi tratteggiati dei bracieri, contenuti, segnalini di nascita, punti di spawn; in un angolo la
+ * pianta del piano (celle con la lettera del tipo, stanza corrente piena, porte come segmenti,
+ * finestre come tacche) e una riga di stato della stanza.
+ *
  * I colori vengono dai token CSS (unico posto con i colori); i testi sono etichette diagnostiche,
  * non testi di gioco. Nessun numero di gioco: geometrie e raggi arrivano dai moduli di logica.
  */
@@ -23,10 +30,14 @@
  *   proiettili?: () => object[],
  *   token: (nome: string) => string,
  *   scena: { larghezza: number, altezza: number },
- *   contaTick?: () => number
+ *   contaTick?: () => number,
+ *   notte?: (() => object | null) | null,
+ *   camera?: object | null
  * }} opzioni `scena` è la risoluzione logica (il contesto è già trasformato dal canvas)
  */
-export function creaResaDebug({ canvas, campo, ferruccio, combattimento, bersagli, proiettili = () => [], token, scena, contaTick = () => 0 }) {
+export function creaResaDebug({
+  canvas, campo, ferruccio, combattimento, bersagli, proiettili = () => [], token, scena, contaTick = () => 0, notte = null, camera = null,
+}) {
   const ctx = canvas.getContext('2d');
   const colori = () => ({
     fondo: token('--colore-fondo'),
@@ -74,19 +85,174 @@ export function creaResaDebug({ canvas, campo, ferruccio, combattimento, bersagl
       ctx.lineTo(campo.x + campo.larghezza, campo.y + j * campo.cella);
       ctx.stroke();
     }
-    ctx.strokeStyle = c.muro;
     ctx.lineWidth = 2;
     for (const s of campo.solidi) {
+      if (s.id === 'porta') {
+        disegnaPorta(c, s);
+        continue;
+      }
+      if (s.id === 'finestra') {
+        ctx.fillStyle = c.oro;
+        ctx.fillRect(s.x + s.w * 0.25, s.y + s.h * 0.25, s.w * 0.5, s.h * 0.5);
+        ctx.strokeStyle = c.muro;
+        ctx.strokeRect(s.x, s.y, s.w, s.h);
+        continue;
+      }
+      ctx.strokeStyle = s.ferma_colpi === false ? c.griglia : c.muro;
+      ctx.setLineDash(s.ferma_passo === false ? [3, 3] : []);
       ctx.strokeRect(s.x, s.y, s.w, s.h);
+      ctx.setLineDash([]);
       if (s.id !== 'muro') {
         ctx.beginPath();
         ctx.moveTo(s.x, s.y);
         ctx.lineTo(s.x + s.w, s.y + s.h);
-        ctx.moveTo(s.x + s.w, s.y);
-        ctx.lineTo(s.x, s.y + s.h);
+        if (s.ferma_colpi !== false) {
+          ctx.moveTo(s.x + s.w, s.y);
+          ctx.lineTo(s.x, s.y + s.h);
+        }
         ctx.stroke();
+        ctx.fillStyle = c.testo;
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(s.id, s.x + s.w / 2, s.y + 2);
       }
     }
+  }
+
+  /** Porta: soglia d'oro se passabile, pannello d'inchiostro se chiusa, pannello parziale in corsa. */
+  function disegnaPorta(c, s) {
+    const porta = notte?.()?.stanza?.portaIn(s.slot);
+    const stato = porta?.stato ?? 'aperta';
+    const prog = porta?.progresso() ?? 1;
+    const quota = stato === 'chiusa' ? 1 : stato === 'chiudendo' ? prog : stato === 'aprendo' ? 1 - prog : 0;
+    ctx.strokeStyle = c.muro;
+    ctx.setLineDash([2, 2]);
+    ctx.strokeRect(s.x, s.y, s.w, s.h);
+    ctx.setLineDash([]);
+    if (quota > 0) {
+      ctx.fillStyle = c.nemico;
+      if (s.lato === 'N' || s.lato === 'S') ctx.fillRect(s.x, s.y, s.w, s.h * quota);
+      else ctx.fillRect(s.x, s.y, s.w * quota, s.h);
+    }
+    if (quota < 1) {
+      ctx.strokeStyle = c.oro;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      if (s.lato === 'N') { ctx.moveTo(s.x, s.y + s.h); ctx.lineTo(s.x + s.w, s.y + s.h); }
+      else if (s.lato === 'S') { ctx.moveTo(s.x, s.y); ctx.lineTo(s.x + s.w, s.y); }
+      else if (s.lato === 'W') { ctx.moveTo(s.x + s.w, s.y); ctx.lineTo(s.x + s.w, s.y + s.h); }
+      else { ctx.moveTo(s.x, s.y); ctx.lineTo(s.x, s.y + s.h); }
+      ctx.stroke();
+      ctx.lineWidth = 2;
+    }
+    ctx.fillStyle = c.testo;
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${s.slot} ${stato}`, s.x + s.w / 2, s.y + s.h / 2);
+  }
+
+  /** Pericoli, contenuti, segnalini e punti di nascita della stanza corrente. */
+  function disegnaStanza(c) {
+    const st = notte?.()?.stanza;
+    if (!st) return;
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+    for (const p of st.spawnPunti) {
+      ctx.fillStyle = c.griglia;
+      ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+    }
+    for (const p of st.pericoli) {
+      ctx.strokeStyle = c.nemico;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.rFiamma, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = c.testo;
+      ctx.textBaseline = 'top';
+      ctx.fillText(p.id, p.x, p.y + p.rFiamma + 2);
+    }
+    for (const k of st.contenuti) {
+      ctx.strokeStyle = c.parata;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(k.x - 10, k.y - 10, 20, 20);
+      ctx.fillStyle = c.testo;
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(k.tipo, k.x, k.y - 12);
+    }
+    for (const sg of st.segnalini) {
+      ctx.strokeStyle = c.nemico;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(sg.x, sg.y, 14, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = c.testo;
+      ctx.textBaseline = 'top';
+      ctx.fillText(sg.archetipo, sg.x, sg.y + 16);
+    }
+  }
+
+  /** Pianta del piano in un angolo (storia 016): celle con la lettera del tipo, stanza corrente piena. */
+  function disegnaPianta(c) {
+    const n = notte?.();
+    if (!n) return;
+    const lettere = { ingresso: 'I', normale: 'N', tesoro: 'T', banchetto: 'Q', boss: 'B', segreta: 'S', ricordo: 'M' };
+    const lato = 20;
+    const x0 = scena.larghezza - n.pianta.griglia.w * lato - 16;
+    const y0 = 16;
+    const centro = (cella) => ({ x: x0 + (cella[0] + 0.5) * lato, y: y0 + (cella[1] + 0.5) * lato });
+    ctx.fillStyle = c.fondo;
+    ctx.fillRect(x0 - 4, y0 - 4, n.pianta.griglia.w * lato + 8, n.pianta.griglia.h * lato + 8);
+    ctx.strokeStyle = c.griglia;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x0 - 4, y0 - 4, n.pianta.griglia.w * lato + 8, n.pianta.griglia.h * lato + 8);
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const s of n.pianta.stanze) {
+      const corrente = n.stanza?.id === s.id;
+      const stato = n.statoDi(s.id)?.stato;
+      for (const cella of s.celle) {
+        const p = centro(cella);
+        ctx.fillStyle = corrente ? c.oro : stato === 'pulita' ? c.pavimento : c.fondo;
+        ctx.fillRect(p.x - lato / 2 + 1, p.y - lato / 2 + 1, lato - 2, lato - 2);
+        ctx.strokeStyle = s.tipo === 'segreta' ? c.oro : c.muro;
+        ctx.strokeRect(p.x - lato / 2 + 1, p.y - lato / 2 + 1, lato - 2, lato - 2);
+        ctx.fillStyle = corrente ? c.fondo : c.testo;
+        ctx.fillText(lettere[s.tipo] ?? '?', p.x, p.y);
+      }
+      // porte: segmento tra i centri delle celle collegate; finestre: tacca d'oro
+      ctx.strokeStyle = c.testo;
+      for (const verso of Object.values(s.porte)) {
+        const altra = n.pianta.stanze.find((t) => t.id === verso);
+        if (!altra || altra.id < s.id) continue;
+        const a = centro(s.celle[0]);
+        const b = centro(altra.celle[0]);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+      ctx.fillStyle = c.oro;
+      for (const slot of s.finestre ?? []) {
+        const meta = slot.length > 1 ? Number(slot[1]) : 0;
+        const p = centro(s.celle[Math.min(meta, s.celle.length - 1)]);
+        const l = slot[0];
+        const dx = l === 'E' ? lato / 2 - 2 : l === 'W' ? -lato / 2 : 0;
+        const dy = l === 'S' ? lato / 2 - 2 : l === 'N' ? -lato / 2 : 0;
+        ctx.fillRect(p.x + dx - (dx === 0 ? 3 : 0), p.y + dy - (dy === 0 ? 3 : 0), dx === 0 ? 6 : 2, dy === 0 ? 6 : 2);
+      }
+    }
+    ctx.fillStyle = c.testo;
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`piano ${n.piano} · seme ${n.seme} · Q ${n.pianta.Q}${n.pianta.riserva ? ' · RISERVA' : ''}`, x0 + n.pianta.griglia.w * lato + 4, y0 + n.pianta.griglia.h * lato + 8);
   }
 
   function disegnaHitbox(c) {
@@ -161,7 +327,7 @@ export function creaResaDebug({ canvas, campo, ferruccio, combattimento, bersagl
       ctx.textBaseline = 'middle';
       ctx.fillText(String(Math.round(b.vita * 100) / 100), b.x, b.y);
       ctx.textBaseline = 'top';
-      ctx.fillText(`${b.stato}${b.imparabile ? ' !' : ''}${b.peso >= 3 ? ' ■' : ''}`, b.x, b.y + b.r + 3);
+      ctx.fillText(`${b.archetipo ? `${b.archetipo} ` : ''}${b.stato}${b.imparabile ? ' !' : ''}${b.peso >= 3 ? ' ■' : ''}`, b.x, b.y + b.r + 3);
     }
     for (const p of proiettili()) {
       if (!p?.vivo) continue;
@@ -191,6 +357,18 @@ export function creaResaDebug({ canvas, campo, ferruccio, combattimento, bersagl
     ].filter(Boolean).join('   ');
     ctx.fillText(riga, 16, 16);
     ctx.fillText('wire: diagnostica, non resa (storie 005/006/013 bloccate dalla tavola visiva)', 16, 36);
+    const n = notte?.();
+    if (n?.stanza) {
+      const st = n.stanza;
+      const riga2 = [
+        `stanza ${st.id} ${st.tipo} ${st.modello.id} ${st.modello.dim}`,
+        `stato ${st.stato}${st.combatte ? ` ondata ${st.ondata}/${st.quote.length} (${st.quote.join('+')})` : ''}`,
+        `vivi ${st.vivi()}`,
+        `porte ${st.porte.map((p) => `${p.slot}:${p.stato}`).join(' ')}`,
+        `camera ×${camera ? camera.scala.toFixed(3) : '1'}${camera?.inTransizione ? ` transizione ${camera.lato} ${(camera.progresso() * 100).toFixed(0)}%` : ''}`,
+      ].join('   ');
+      ctx.fillText(riga2, 16, 56);
+    }
   }
 
   return {
@@ -198,11 +376,16 @@ export function creaResaDebug({ canvas, campo, ferruccio, combattimento, bersagl
       const c = colori();
       ctx.fillStyle = c.fondo;
       ctx.fillRect(0, 0, scena.larghezza, scena.altezza);
+      ctx.save();
+      if (camera) camera.applica(ctx);
       disegnaCampo(c);
+      disegnaStanza(c);
       disegnaHitbox(c);
       disegnaBersagli(c);
       disegnaFerruccio(c);
+      ctx.restore();
       disegnaRiga(c);
+      disegnaPianta(c);
     },
   };
 }
