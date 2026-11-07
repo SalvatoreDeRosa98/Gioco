@@ -1,12 +1,12 @@
 # Story 003: RNG seminato e parametri JSON con override da URL
 
 > **Epic**: Fondazione del motore
-> **Status**: Ready
+> **Status**: Done
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: M
 > **Manifest Version**: N/A (nessun control manifest: `/create-control-manifest` non eseguito)
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-07 (Done)
 
 ## Context
 
@@ -56,7 +56,8 @@ Le storie vicine dell'epica (vedi `EPIC.md`) gestiscono il resto; non anticiparl
 
 **Story Type**: Logic
 **Required evidence**: test in `gioco/qa/` (node o Playwright) che esercita i criteri
-**Status**: [ ] Not yet created
+**Status**: [x] Created and passing (2026-11-07)
+**Evidenza**: `node gioco/qa/fondazione.test.mjs` (rng: due sequenze da 1000 identiche con seme 1845, `derivato(rng,'spawn')` non cambia `derivato(rng,'drop')`; parametri: validazione `{base,min,max}`, fuori range segnalato e riportato nel range, override solo con `debug=1`; i JSON reali `ferruccio.json` e `combattimento.json` validi; grep di `Math.random` in `gioco/motore/` = 0) e `node gioco/qa/pagina.test.js` (`?debug=1&p.combattimento.portata=90` → 90; `=900` → errore in console e 96; senza `debug=1` → 70). Esito del 2026-11-07: 28/28 e 5/5.
 
 ---
 

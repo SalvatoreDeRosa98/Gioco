@@ -1,12 +1,12 @@
 # Story 002: Input unificato: tastiera, mouse, gamepad
 
 > **Epic**: Fondazione del motore
-> **Status**: Ready
+> **Status**: Done
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: M
 > **Manifest Version**: N/A (nessun control manifest: `/create-control-manifest` non eseguito)
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-07 (Done)
 
 ## Context
 
@@ -56,7 +56,8 @@ Le storie vicine dell'epica (vedi `EPIC.md`) gestiscono il resto; non anticiparl
 
 **Story Type**: Logic
 **Required evidence**: test in `gioco/qa/` (node o Playwright) che esercita i criteri
-**Status**: [ ] Not yet created
+**Status**: [x] Created and passing (2026-11-07)
+**Evidenza**: `node gioco/qa/fondazione.test.mjs` (input, parte pura: diagonale WASD/frecce di lunghezza 1; `premuto` vero una sola volta e `tenuto` finché è giù; pressione+rilascio tra due tick non persi; `azzera` al blur senza tasti incastrati; levetta oltre zona morta 0,2 e bottoni A/X/B/RB → attacco/parata/scatto/interagisci; mappa reale `input.json` con le 12 azioni) e `node gioco/qa/pagina.test.js` (KeyW+KeyD in Chromium → `direzione()` di lunghezza 1; mouse in coordinate di scena). Il gamepad fisico non è stato provato (nessun dispositivo nella sessione). Esito del 2026-11-07: 28/28 e 5/5.
 
 ---
 

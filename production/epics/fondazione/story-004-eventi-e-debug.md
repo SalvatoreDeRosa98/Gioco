@@ -1,12 +1,12 @@
 # Story 004: Bus eventi e superficie di debug
 
 > **Epic**: Fondazione del motore
-> **Status**: Ready
+> **Status**: Done
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: M
 > **Manifest Version**: N/A (nessun control manifest: `/create-control-manifest` non eseguito)
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-07 (Done)
 
 ## Context
 
@@ -55,7 +55,8 @@ Le storie vicine dell'epica (vedi `EPIC.md`) gestiscono il resto; non anticiparl
 
 **Story Type**: Logic
 **Required evidence**: test in `gioco/qa/` (node o Playwright) che esercita i criteri
-**Status**: [ ] Not yet created
+**Status**: [x] Created and passing (2026-11-07)
+**Evidenza**: `node gioco/qa/fondazione.test.mjs` (eventi: payload `{id,x,y}` ricevuto in modo sincrono, ascoltatore rimosso non riceve, errore isolato e loggato una volta, `off` durante `emit` sicuro) e `node gioco/qa/pagina.test.js` (`window.__gioco` con `?debug=1` espone `stato`, `tick(n)`, `imposta`, `vaiA`, `seme`, `parametri`; `typeof window.__gioco === 'undefined'` senza debug; bus reale nella pagina con ascoltatore rotto: gli altri ricevono, un `console.error` per emissione). Nota: `imposta(flag, valore)` e `vaiA(stanza)` sono ganci che rispondono `false` finché stato narrativo e stanze non si registrano con `__gioco.estendi`. Esito del 2026-11-07: 28/28 e 5/5.
 
 ---
 

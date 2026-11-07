@@ -1,0 +1,40 @@
+/* Impaginazione della pagina (storia 001): il palco 16:9 sta tutto nella finestra, senza scroll;
+   il canvas riempie il palco e #interfaccia (DOM per HUD e cartiglio) gli sta sopra. */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--inchiostro);
+  color: var(--colore-testo);
+  font-family: var(--font-testo);
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#palco {
+  position: relative;
+  /* rapporto 16:9 della risoluzione logica 1280×720 */
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+}
+
+#scena {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: var(--colore-fondo);
+}
+
+#interfaccia {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* i figli interattivi riattivano gli eventi da soli */
+}

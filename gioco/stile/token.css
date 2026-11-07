@@ -1,0 +1,18 @@
+/* Token della palette primaria. Fonte: design/art/art-bible.md §Palette primaria e §Palette dell'HUD.
+   Unico punto in cui i colori sono scritti: motore e interfaccia li leggono come variabili CSS. */
+:root {
+  --inchiostro: #0b0704;      /* sagome, contorni, cartigli */
+  --carta-luce: #f2c278;      /* sorgenti, aloni, buchi di luce (mai pavimento) */
+  --carta: #c98a3c;           /* carta, muri */
+  --bruno: #5a2a0e;           /* fondo di carta in ombra */
+  --pavimento: #9a6428;       /* pavimento di gioco (valore derivato, da confermare a schermo) */
+  --crema: #f4e3bd;           /* Ferruccio, luna, testo */
+  --oro: #f3c14b;             /* lanterne, monete, fili del Velo, cornici HUD */
+  --azzurro: #7fd3ff;         /* anime, ricordi */
+  --rosso: #c8301b;           /* sciarpa, lampo di parata, icona dello scatto */
+
+  --colore-fondo: var(--bruno);
+  --colore-testo: var(--crema);
+  --font-titoli: "Cinzel", serif;
+  --font-testo: "Cormorant Garamond", "Georgia", serif;
+}

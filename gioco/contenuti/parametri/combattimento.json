@@ -1,0 +1,52 @@
+{
+  "_descrizione": "Statistiche nominate del combattimento. Fonte: design/gdd/combattimento.md (regola 9, Tuning Knobs, Formulas, Game Feel). Ogni voce è {base, min, max}: min/max sono il clamp del valore EFFETTIVO dopo i doni (ADR-0002). Tempi in ms, distanze in px, velocità in px/s, angoli in gradi. 'larg_affondo' e 't_spinta_nemico' sono citati dal GDD senza valore: i numeri qui sono provvisori (vedi README).",
+
+  "danno": { "base": 1, "min": 1, "max": 5 },
+  "danno_min": { "base": 0.5, "min": 0.25, "max": 1 },
+  "armatura": { "base": 0, "min": 0, "max": 2 },
+
+  "portata": { "base": 70, "min": 56, "max": 96 },
+  "arco_f": { "base": 110, "min": 90, "max": 160 },
+  "arco_f3": { "base": 150, "min": 120, "max": 180 },
+  "molt_f1": { "base": 1, "min": 1, "max": 1 },
+  "molt_f2": { "base": 1, "min": 1, "max": 1 },
+  "molt_f3": { "base": 1.5, "min": 1.2, "max": 2 },
+
+  "t_startup_f": { "base": 80, "min": 50, "max": 120 },
+  "t_attivo_f": { "base": 100, "min": 60, "max": 140 },
+  "t_recupero_f": { "base": 160, "min": 100, "max": 260 },
+  "t_recupero_f3": { "base": 260, "min": 180, "max": 360 },
+  "t_startup_combo": { "base": 50, "min": 30, "max": 80 },
+  "t_finestra_combo": { "base": 250, "min": 150, "max": 400 },
+  "t_buffer": { "base": 150, "min": 80, "max": 250 },
+  "mod_velocita_recupero": { "base": 0.6, "min": 0, "max": 1 },
+
+  "t_carica": { "base": 400, "min": 300, "max": 700 },
+  "d_affondo": { "base": 120, "min": 90, "max": 180 },
+  "t_affondo": { "base": 140, "min": 100, "max": 200 },
+  "larg_affondo": { "base": 32, "min": 20, "max": 64 },
+  "molt_affondo": { "base": 2.5, "min": 2, "max": 3 },
+  "mod_velocita_carica": { "base": 0.5, "min": 0, "max": 1 },
+
+  "t_startup_p": { "base": 40, "min": 30, "max": 60 },
+  "t_finestra_p": { "base": 180, "min": 140, "max": 300 },
+  "t_recupero_p": { "base": 220, "min": 150, "max": 350 },
+  "t_stordito": { "base": 600, "min": 400, "max": 1000 },
+  "t_controcolpo": { "base": 500, "min": 300, "max": 800 },
+  "molt_controcolpo": { "base": 2, "min": 1.5, "max": 3 },
+  "danno_riflesso": { "base": 2, "min": 1, "max": 4 },
+
+  "spinta_f": { "base": 160, "min": 100, "max": 400 },
+  "spinta_affondo": { "base": 320, "min": 100, "max": 400 },
+  "t_spinta_nemico": { "base": 150, "min": 80, "max": 300 },
+  "peso_inamovibile": { "base": 3, "min": 1, "max": 10 },
+
+  "feel": {
+    "_descrizione": "Impact Moments del GDD (tutti 'Configurable? Yes'). moto-ridotto.json porta la scossa a zero.",
+    "hs_colpo": { "base": 50, "min": 0, "max": 150 },
+    "hs_uccisione": { "base": 110, "min": 0, "max": 150 },
+    "hs_parata": { "base": 90, "min": 0, "max": 150 },
+    "scossa_parata_px": { "base": 6, "min": 0, "max": 12 },
+    "t_scia_lama": { "base": 120, "min": 0, "max": 400 }
+  }
+}

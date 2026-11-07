@@ -1,0 +1,9 @@
+{
+  "_descrizione": "Sovrascritture applicate da parametri.carica() quando il browser dichiara prefers-reduced-motion (storia 001, criterio 4): scossa e scie disattivate. Chiave = percorso della statistica, valore = nuovo base (deve stare nel suo [min, max]).",
+  "ferruccio.feel.scossa_px": 0,
+  "ferruccio.feel.t_scossa": 0,
+  "ferruccio.feel.copie_scia": 0,
+  "ferruccio.feel.t_scia": 0,
+  "combattimento.feel.scossa_parata_px": 0,
+  "combattimento.feel.t_scia_lama": 0
+}
