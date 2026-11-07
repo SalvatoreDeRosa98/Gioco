@@ -101,7 +101,18 @@ sagoma più bassa ma è meno evidente del rosso; l'anello copre in parte la test
 | Feel assessment | NOT ASSESSED; oggettivo: finestra utile 40-210 ms dopo il lampo; bot a 120 ms para il 95,7% |
 | Hypothesis verdict | NOT ASSESSED |
 
-## Recommendation: NOT ASSESSED — built but nobody has played it
+## Feedback dell'autore (2026-11-07, dopo aver giocato)
+
+- «Sì e no, ha tutto senso come bozza.» Le regole reggono come bozza.
+- «La cosa da migliorare è il feedback quando colpisci il nemico: deve essere marcato come in Isaac.»
+- «La cosa più grande da migliorare, dove si deve perdere più tempo, è la grafica: non si può guardare così.»
+
+**Verdetto aggiornato**: regole e struttura **PROCEED come bozza**; resa visiva e feedback dei colpi
+**PIVOT**: il prototipo è troppo sotto il mockup approvato (`design/mockup/`). Conseguenze nel piano:
+una tavola di qualità visiva da approvare prima del motore (storia 000) e una storia dedicata al
+feedback dei colpi con criteri alla Isaac (storia 012).
+
+## Recommendation (del bot): NOT ASSESSED — built but nobody has played it
 
 Le regole dei GDD sono eseguibili con i loro numeri e il bot pulisce tutte le stanze. Restano due dubbi
 che solo un giocatore scioglie: (1) la finestra di parata sta sul bordo del tempo di reazione umano
