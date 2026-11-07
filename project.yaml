@@ -25,11 +25,11 @@ modes:
 
 project:
   title: "Ferruccio — La Menzogna dei Borbone"
-  genre: "avventura narrativa a scelte, teatro delle ombre"
-  design_record: design/game-brief.md
-  narrative_bible: design/narrative/ferruccio-bibbia.md
-  story_graph: design/narrative/storia.json
-  stage: pre-production
+  genre: "roguelike d'azione a stanze, grafica da teatro delle ombre"
+  design_record: design/game-brief.md  # scritto da /brainstorm
+  narrative_bible: trama/ferruccio-bibbia.md
+  story_graph: trama/storia.json
+  stage: Concept
 
 platform:
   primary: browser

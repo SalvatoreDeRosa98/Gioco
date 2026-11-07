@@ -20,9 +20,9 @@ Each agent owns a specific domain, enforcing separation of concerns and quality.
 
 ## Fonti di verità
 
-1. `design/narrative/ferruccio-bibbia.md` — la storia. Non si modifica senza l'autore.
-2. `design/narrative/inizio-memoria-e-doni.md` — decisioni dell'autore che integrano la bibbia.
-3. `design/narrative/storia.json` — mappa macchina di scene, scelte, condizioni e battute (derivata).
+1. `trama/ferruccio-bibbia.md` — la storia. Non si modifica senza l'autore.
+2. `trama/inizio-memoria-e-doni.md` — decisioni dell'autore che integrano la bibbia.
+3. `trama/storia.json` — mappa macchina di scene, scelte, condizioni e battute (derivata).
 4. `design/game-brief.md` — cosa è il gioco, cosa è dentro e cosa è fuori.
 5. `docs/architecture/motore-web.md` — come è fatto il motore.
 
