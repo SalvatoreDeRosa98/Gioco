@@ -389,13 +389,14 @@ test('S026-10: battute filtrate con `se`; ordine e capitolo delle scene disponib
   const { sn } = statoReale();
   const conSe = STORIA.scene.find((s) => s.battute.some((b) => b.se));
   assert.ok(conSe, 'storia.json ha battute con se');
-  const flagSe = Object.keys(conSe.battute.find((b) => b.se).se)[0];
+  const primoSe = conSe.battute.find((b) => b.se).se;
   const tutte = conSe.battute.length;
   const senzaSe = conSe.battute.filter((b) => !b.se).length;
-  assert.equal(sn.battute(conSe.id).length, senzaSe, 'con il flag non deciso restano solo le battute senza se');
-  const valore = STORIA.flag[flagSe].valori[0];
-  sn.imposta(flagSe, valore);
-  const attese = conSe.battute.filter((b) => !b.se || b.se[flagSe] === valore).length;
+  assert.equal(sn.battute(conSe.id).length, senzaSe, 'con i flag non decisi restano solo le battute senza se');
+  for (const [f, v] of Object.entries(primoSe)) sn.imposta(f, v); // `se` è un AND (regola 4): si impostano tutte le coppie
+  const st = sn.stato();
+  const attese = conSe.battute.filter((b) => !b.se || Object.entries(b.se).every(([f, v]) => st[f] === v)).length;
+  assert.ok(attese > senzaSe, 'almeno una battuta con se diventa visibile');
   assert.equal(sn.battute(conSe.id).length, attese);
   assert.ok(attese <= tutte);
   assert.deepEqual(sn.battute('scena.ignota'), []);

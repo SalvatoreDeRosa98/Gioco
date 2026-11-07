@@ -1,12 +1,12 @@
 # Story 026: Stato narrativo: condizioni, decidi, derivati, profilo
 
 > **Epic**: Storia e hub
-> **Status**: Ready
+> **Status**: Done
 > **Layer**: Feature
 > **Type**: Logic
 > **Estimate**: M
 > **Manifest Version**: N/A (nessun control manifest: `/create-control-manifest` non eseguito)
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-07 (Done)
 
 ## Context
 
@@ -27,11 +27,11 @@
 
 *Dai GDD citati, scoped a questa storia:*
 
-- [ ] GIVEN lo stato iniziale, WHEN si decide `taddeo = perdonato`, THEN `prove` e `lettera_mariella` valgono `vera`; ridecidere è rifiutato
-- [ ] GIVEN `prove = falsa`, WHEN si tenta `gregorio = dialogo`, THEN è rifiutato
-- [ ] GIVEN i 30 casi di `qa/condizioni.test.js` ("*", "", "!x", derivati, `>=2`, appartenenza), WHEN girano, THEN passano tutti
-- [ ] GIVEN una decisione, WHEN avviene, THEN il profilo è salvato in `ferruccio.v3.profilo.<slot>` e ricaricato identico dopo un reload
-- [ ] GIVEN un flag ignoto in una condizione, WHEN valutata, THEN è falsa e viene loggato un errore di contenuto
+- [x] GIVEN lo stato iniziale, WHEN si decide `taddeo = perdonato`, THEN `prove` e `lettera_mariella` valgono `vera`; ridecidere è rifiutato
+- [x] GIVEN `prove = falsa`, WHEN si tenta `gregorio = dialogo`, THEN è rifiutato
+- [x] GIVEN i 30 casi di `qa/condizioni.test.js` (realizzato come `qa/condizioni.test.mjs`, 37 casi) ("*", "", "!x", derivati, `>=2`, appartenenza), WHEN girano, THEN passano tutti
+- [x] GIVEN una decisione, WHEN avviene, THEN il profilo è salvato in `ferruccio.v3.profilo.<slot>` e ricaricato identico dopo un reload
+- [x] GIVEN un flag ignoto in una condizione, WHEN valutata, THEN è falsa e viene loggato un errore di contenuto
 
 ---
 
@@ -57,7 +57,8 @@ Le storie vicine dell'epica (vedi `EPIC.md`) gestiscono il resto; non anticiparl
 
 **Story Type**: Logic
 **Required evidence**: test in `gioco/qa/` (node o Playwright) che esercita i criteri
-**Status**: [ ] Not yet created
+**Status**: [x] Creato
+**Evidenza**: `node gioco/qa/condizioni.test.mjs` → 37/37 pass (operatori, derivati, errori di contenuto, ordine/obbligatorie con scene reali, rifiuti di `decidi`, finale → mondo, round-trip del salvataggio in RAM, migrazioni, esporta/importa). `node gioco/qa/stati64.js` → 0/64 stati completi, exit 2: BUCHI DI CONTENUTO in storia.json, non del motore: ordine 70 manca per tutti i 32 stati `violante=risparmiata` (esistono solo le due scene di Tonino «uccisa»); ordine 100 manca per tutti i 32 stati `violante=uccisa` (`ultima-inquadratura` è solo «risparmiata»). Conflitti allo stesso ordine: 0 (le due scene a 50 di Agnese sono già esclusive). File: `gioco/motore/storia/{condizioni,stato-narrativo}.js`, `gioco/motore/persistenza/{salvataggio,migrazioni}.js`, `gioco/contenuti/{storia,ancoraggi,narrativa}.json`. Deviazione: `contenuti/narrativa.json` (derivati, booleani, finale→mondo A/B, tipi obbligatori, schema avanzamento) aggiunto perché storia.json non li ha in forma macchina e il motore non può contenere nomi di flag; mondo A=uccisa/B=risparmiata è una convenzione da confermare con l'autore.
 
 ---
 

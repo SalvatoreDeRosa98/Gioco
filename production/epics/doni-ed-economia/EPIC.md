@@ -35,6 +35,6 @@ Il contratto dei modificatori su statistiche nominate con ordine e clamp, i ganc
 
 | # | Story | Type | Status | ADR |
 |---|-------|------|--------|-----|
-| 023 | Modificatori: statistiche nominate, ordine, clamp, ganci, sinergie | Logic | Ready | ADR-0002 |
+| 023 | Modificatori: statistiche nominate, ordine, clamp, ganci, sinergie | Logic | Done | ADR-0002 |
 | 024 | Catalogo dei 12 doni MVP, pool, piedistallo, cartiglio del dono | Integration | Ready | ADR-0002 |
 | 025 | Monete di luce, drop, scintille, banchetto di Tonino | Logic | Ready | ADR-0002 |

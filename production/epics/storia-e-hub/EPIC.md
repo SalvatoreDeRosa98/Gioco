@@ -36,7 +36,7 @@ I sei flag e le condizioni di `trama/storia.json`, il cartiglio e i tableau, gli
 
 | # | Story | Type | Status | ADR |
 |---|-------|------|--------|-----|
-| 026 | Stato narrativo: condizioni, decidi, derivati, profilo | Logic | Ready | ADR-0004 |
+| 026 | Stato narrativo: condizioni, decidi, derivati, profilo | Logic | Done | ADR-0004, ADR-0006 |
 | 027 | Cartiglio, didascalie, tableau, incontri per ancoraggio | UI | Ready | ADR-0004 |
 | 028 | Il Medaglione di Rosa: ricordo con scelta ed esiti | Integration | Ready | ADR-0004 |
 | 029 | Hub di Piazza Dante tra le notti | Integration | Ready | ADR-0004 |
