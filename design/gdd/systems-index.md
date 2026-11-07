@@ -40,8 +40,8 @@ Sistemi dedotti e non citati esplicitamente nel concept sono marcati "(inferred)
 | 5 | Controllo di Ferruccio | Gameplay | MVP | Not Started | design/gdd/controllo-ferruccio.md | Input, Fisica |
 | 6 | Camera e transizioni di stanza (inferred) | Core | MVP | Not Started | design/gdd/camera-stanza.md | Rendering, Stanze e porte |
 | 7 | Combattimento | Gameplay | MVP | Not Started | design/gdd/combattimento.md | Controllo di Ferruccio, Fisica |
-| 8 | Nemici e IA | Gameplay | MVP | Not Started | design/gdd/nemici.md | Combattimento, Stanze e porte |
-| 9 | Boss | Gameplay | MVP | Not Started | design/gdd/boss.md | Nemici e IA, Stato narrativo |
+| 8 | Nemici e IA | Gameplay | MVP | In Design | design/gdd/nemici.md | Combattimento, Stanze e porte |
+| 9 | Boss | Gameplay | MVP | In Design | design/gdd/boss.md | Nemici e IA, Stato narrativo |
 | 10 | Generazione dei piani | Gameplay | MVP | In Design | design/gdd/generazione-piani.md | Stanze e porte, Salvataggio (seme) |
 | 11 | Stanze e porte (inferred) | Gameplay | MVP | In Design | design/gdd/stanze-porte.md | Fisica, Ciclo di gioco |
 | 12 | Doni e modificatori | Gameplay | MVP | In Design | design/gdd/doni-modificatori.md | Combattimento, Controllo di Ferruccio |
