@@ -270,7 +270,7 @@
   // CAPPUCCIO CONICO IN LINO CREMA, VOLTO INCAVATO NERO COI 2 OCCHI TONDI LUMINOSI,
   // SCIARPA ROSSA A DUE CODE ONDULATE, MANTELLO A CAMPANA, GAMBE SOTTILI SCURE E STOCCO )
   // ===========================================================================
-  function disegnaFerruccioPittorico() {
+    function disegnaFerruccioPittorico() {
     let px, py, opts;
     const a0 = arguments[0];
     if (a0 && typeof a0.save === 'function') {
@@ -305,7 +305,8 @@
     const wave2 = Math.cos(tick * 0.13) * 3.2;
 
     // Ombra morbida sul pavimento
-    const sh = ctx.createRadialGradient(px, py + 9, 1, px, py + 9, 15);
+    const shRadius = charId === 'taddeo' ? 18 : 15;
+    const sh = ctx.createRadialGradient(px, py + 9, 1, px, py + 9, shRadius);
     sh.addColorStop(0, 'rgba(8, 5, 3, 0.72)');
     sh.addColorStop(1, 'rgba(8, 5, 3, 0)');
     ctx.fillStyle = sh;
@@ -313,20 +314,367 @@
     ctx.translate(px, py + 9);
     ctx.scale(1, 0.42);
     ctx.beginPath();
-    ctx.arc(0, 0, 15, 0, TAU);
+    ctx.arc(0, 0, shRadius, 0, TAU);
     ctx.fill();
     ctx.restore();
 
     ctx.translate(px, py + bob);
     if (flipX) ctx.scale(-1, 1);
 
-    // Palette in base al personaggio selezionato (Ferruccio, Agnese, Taddeo, Pulcinella d'Ombra)
+    // =========================================================================
+    // CASO 1: AGNESE — LA TESSITRICE DI SAN LEUCIO (Fedele all\'artwork agnese.jpg)
+    // =========================================================================
+    if (charId === 'agnese') {
+      const colLuceA = flash ? '#ffffff' : '#fdf8ef';
+      const colMediaA = flash ? '#ffffff' : '#e6dac3';
+      const colOmbraA = flash ? '#f43f5e' : '#9c8b73';
+      const colRibbon1 = flash ? '#ffffff' : '#be123c';
+      const colRibbon2 = flash ? '#fda4af' : '#881337';
+      const colThread = flash ? '#ffffff' : '#ff2a44';
+
+      // 1. Nastri di seta bordeaux svolazzanti a sinistra
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.fillStyle = colRibbon1;
+      ctx.strokeStyle = '#120a07';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(-3, -15);
+      ctx.bezierCurveTo(-12, -20 - wave * 0.4, -22, -14 + wave * 0.7, -32, -18 + wave);
+      ctx.bezierCurveTo(-26, -11 + wave * 0.6, -14, -13, -3, -11);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      ctx.fillStyle = colRibbon2;
+      ctx.beginPath();
+      ctx.moveTo(-2, -12);
+      ctx.bezierCurveTo(-11, -11 + wave2 * 0.3, -20, -4 - wave2 * 0.6, -29, -3 - wave2);
+      ctx.bezierCurveTo(-24, 3 - wave2 * 0.8, -13, -4, -2, -8);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // 2. Gambette e scarpette delicate di seta/legno
+      const walkSwing = moving ? Math.sin(tick * 0.34) * 3.2 : 0;
+      ctx.strokeStyle = '#110d0a';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(-2.5, 0); ctx.lineTo(-3 - walkSwing * 0.5, 7.5); ctx.stroke();
+      ctx.moveTo(2.2, 0);  ctx.lineTo(2.5 + walkSwing * 0.5, 8.0); ctx.stroke();
+
+      ctx.fillStyle = '#1e1014';
+      ctx.beginPath();
+      ctx.ellipse(-2 - walkSwing * 0.5, 8.2, 2.8, 1.3, 0.1, 0, TAU);
+      ctx.ellipse(3.6 + walkSwing * 0.5, 8.5, 3.0, 1.4, 0.12, 0, TAU);
+      ctx.fill();
+
+      // 3. Gonna e Grembiule da tessitrice di San Leucio a campana
+      const skirtGrad = ctx.createLinearGradient(-12, -15, 12, 3);
+      skirtGrad.addColorStop(0, colOmbraA);
+      skirtGrad.addColorStop(0.5, colMediaA);
+      skirtGrad.addColorStop(1, colLuceA);
+      ctx.fillStyle = skirtGrad;
+      ctx.strokeStyle = '#120c08';
+      ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      ctx.moveTo(-5.5, -14.5);
+      ctx.bezierCurveTo(-8.5, -9, -12.5, -3, -14.0, 1.2);
+      ctx.quadraticCurveTo(-9.0, 3.2, -5.0, 1.5);
+      ctx.quadraticCurveTo(-1.0, 3.6, 3.8, 1.8);
+      ctx.quadraticCurveTo(8.0, 3.2, 12.0, 0.8);
+      ctx.bezierCurveTo(10.0, -5, 7.2, -10, 4.8, -14.5);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Pieghettature del grembiule di canapa e seta
+      ctx.strokeStyle = 'rgba(78, 58, 42, 0.35)';
+      ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.moveTo(-4.5, -11); ctx.quadraticCurveTo(-6.2, -4, -8.0, 1.5);
+      ctx.moveTo(-0.5, -11); ctx.quadraticCurveTo(-1.0, -4, -1.5, 2.2);
+      ctx.moveTo(3.5, -10);  ctx.quadraticCurveTo(5.0, -4, 6.8, 1.8);
+      ctx.stroke();
+
+      // Manica aggraziata e Spola da Telaio di San Leucio
+      ctx.fillStyle = colMediaA;
+      ctx.strokeStyle = '#120c08';
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.moveTo(-1.0, -10.5);
+      ctx.quadraticCurveTo(-3.0, -5.5, -2.5, -1.8);
+      ctx.quadraticCurveTo(1.0, -0.8, 3.5, -2.2);
+      ctx.quadraticCurveTo(2.8, -6.5, 1.5, -10.5);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Manine in legno scuro che stringono la Spola di San Leucio
+      ctx.fillStyle = '#100c0a';
+      ctx.beginPath(); ctx.arc(1.2, -1.2, 2.0, 0, TAU); ctx.fill();
+
+      // Spola da telaio (navetta affusolata in legno di pero con anima di seta rossa)
+      ctx.save();
+      ctx.translate(2.5, -1.0);
+      ctx.rotate(-0.35);
+      ctx.fillStyle = '#6d4c41';
+      ctx.strokeStyle = '#271c19';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(-7, 0); ctx.quadraticCurveTo(0, -2.4, 7, 0); ctx.quadraticCurveTo(0, 2.4, -7, 0);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e11d48';
+      ctx.fillRect(-2.5, -1.2, 5, 2.4);
+      ctx.restore();
+
+      // Filo di seta rosso vivo che fluisce a spirale nell\'aria dalla spola!
+      const threadWave = Math.sin(tick * 0.22) * 4;
+      ctx.strokeStyle = colThread;
+      ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      ctx.moveTo(7, -1.5);
+      ctx.bezierCurveTo(12, -4 + threadWave * 0.6, 15, 2 - threadWave * 0.5, 20, -1 + threadWave);
+      ctx.stroke();
+      const sparkG = ctx.createRadialGradient(20, -1 + threadWave, 0.5, 20, -1 + threadWave, 3.5);
+      sparkG.addColorStop(0, '#ffffff');
+      sparkG.addColorStop(0.5, 'rgba(244,63,94,0.7)');
+      sparkG.addColorStop(1, 'rgba(244,63,94,0)');
+      ctx.fillStyle = sparkG;
+      ctx.beginPath(); ctx.arc(20, -1 + threadWave, 3.5, 0, TAU); ctx.fill();
+
+      // 4. Collare in seta bordeaux al collo
+      ctx.fillStyle = colRibbon1;
+      ctx.strokeStyle = '#120a07';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(-6.2, -15.2);
+      ctx.quadraticCurveTo(0, -17.0, 6.0, -14.8);
+      ctx.quadraticCurveTo(6.5, -12.0, 0, -11.8);
+      ctx.quadraticCurveTo(-6.5, -12.2, -6.2, -15.2);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // 5. Cappuccio conico in lino grezzo chiaro con fiocchetto di seta
+      const headGradA = ctx.createRadialGradient(2, -21, 2, -2, -23, 18);
+      headGradA.addColorStop(0, colLuceA);
+      headGradA.addColorStop(0.58, colMediaA);
+      headGradA.addColorStop(1, colOmbraA);
+      ctx.fillStyle = headGradA;
+      ctx.strokeStyle = '#120c08';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(-6.2, -15.0);
+      ctx.bezierCurveTo(-10.5, -17.5, -10.8, -23.5, -7.8, -27.8);
+      ctx.bezierCurveTo(-7.5, -31.5, -8.8, -36.5, -9.5, -40.5);
+      ctx.bezierCurveTo(-6.2, -37.2, -2.5, -32.8, 1.2, -29.5);
+      ctx.bezierCurveTo(6.8, -28.0, 9.8, -24.2, 9.2, -19.5);
+      ctx.bezierCurveTo(8.5, -16.0, 4.5, -14.5, -6.2, -15.0);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Nastro di seta e fiocco sul cappuccio di Agnese
+      ctx.fillStyle = colRibbon1;
+      ctx.strokeStyle = '#120a07';
+      ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.ellipse(-6.0, -27.0, 3.6, 1.9, -0.4, 0, TAU);
+      ctx.ellipse(-2.2, -28.2, 3.4, 1.7, 0.35, 0, TAU);
+      ctx.fill(); ctx.stroke();
+
+      // 6. Maschera/Viso in legno bruno con occhi tondi chiari e dolci
+      ctx.strokeStyle = 'rgba(85, 66, 46, 0.65)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.ellipse(3.6, -21.2, 4.8, 5.3, -0.06, 0, TAU);
+      ctx.stroke();
+
+      ctx.fillStyle = '#0a0809';
+      ctx.beginPath();
+      ctx.ellipse(3.8, -21.2, 4.4, 4.9, -0.06, 0, TAU);
+      ctx.fill();
+
+      // Occhi luminosi rosei/bianchi di Agnese
+      const eyeRA = shootTimer > 0 ? 1.55 : 1.30;
+      for (const [ex, ey] of [[2.2, -21.0], [6.1, -21.2]]) {
+        const eg = ctx.createRadialGradient(ex, ey, 0.2, ex, ey, eyeRA * 2.5);
+        eg.addColorStop(0, '#ffffff');
+        eg.addColorStop(0.5, 'rgba(254, 205, 211, 0.6)');
+        eg.addColorStop(1, 'rgba(254, 205, 211, 0)');
+        ctx.fillStyle = eg;
+        ctx.beginPath(); ctx.arc(ex, ey, eyeRA * 2.5, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(ex, ey, eyeRA, 0, TAU); ctx.fill();
+      }
+
+      ctx.restore();
+      return;
+    }
+
+    // =========================================================================
+    // CASO 2: TADDEO — LA GUARDIA BORBONICA (Fedele all\'artwork taddeo.jpg)
+    // =========================================================================
+    if (charId === 'taddeo') {
+      const colIron1 = flash ? '#ffffff' : '#475569';
+      const colIron2 = flash ? '#fca5a5' : '#1e293b';
+      const colBrass = flash ? '#ffffff' : '#d97706';
+      const colBrassDark = flash ? '#fef08a' : '#78350f';
+      const colTunic = flash ? '#f87171' : '#1c1917';
+
+      // 1. Gambe robuste e cosciali di cuoio/ferro
+      const walkSwingT = moving ? Math.sin(tick * 0.34) * 3.0 : 0;
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 3.6;
+      ctx.beginPath();
+      ctx.moveTo(-3.5, 0); ctx.lineTo(-4.0 - walkSwingT * 0.5, 8.0); ctx.stroke();
+      ctx.moveTo(3.2, 0);  ctx.lineTo(3.5 + walkSwingT * 0.5, 8.5); ctx.stroke();
+
+      // Stivaletti borbonici con fibbia d\'ottone
+      ctx.fillStyle = '#1c1917';
+      ctx.beginPath();
+      ctx.ellipse(-3.5 - walkSwingT * 0.5, 8.8, 3.8, 1.8, 0.1, 0, TAU);
+      ctx.ellipse(4.2 + walkSwingT * 0.5, 9.2, 4.0, 1.9, 0.12, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = colBrass;
+      ctx.fillRect(-4.5 - walkSwingT * 0.5, 8.0, 2.2, 1.6);
+      ctx.fillRect(3.2 + walkSwingT * 0.5, 8.4, 2.2, 1.6);
+
+      // 2. Corazza toracica in ferro battuto con spallacci e tunica scura
+      ctx.fillStyle = colTunic;
+      ctx.strokeStyle = '#0a0a0a';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-7.5, -14); ctx.lineTo(-11.5, 1.5); ctx.lineTo(11.5, 1.5); ctx.lineTo(7.5, -14);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Pettorale sagomato in ferro con rivetti
+      const ironGrad = ctx.createLinearGradient(-8, -14, 8, 0);
+      ironGrad.addColorStop(0, colIron2);
+      ironGrad.addColorStop(0.5, colIron1);
+      ironGrad.addColorStop(1, colIron2);
+      ctx.fillStyle = ironGrad;
+      ctx.strokeStyle = '#090d16';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(-6, -14);
+      ctx.lineTo(-8.5, -4);
+      ctx.quadraticCurveTo(0, 3, 8.5, -4);
+      ctx.lineTo(6, -14);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Cinghia a tracolla in cuoio con borchie dorate
+      ctx.strokeStyle = '#451a03';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.moveTo(-7, -13); ctx.lineTo(6, 0); ctx.stroke();
+      ctx.fillStyle = colBrass;
+      ctx.beginPath();
+      ctx.arc(0, -6.5, 1.5, 0, TAU);
+      ctx.arc(-4, -10.5, 1.2, 0, TAU);
+      ctx.arc(4, -2.5, 1.2, 0, TAU);
+      ctx.fill();
+
+      // Spallacci corazzati d\'ottone e ferro
+      ctx.fillStyle = colBrassDark;
+      ctx.strokeStyle = '#0a0a0a';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath(); ctx.ellipse(-7.5, -13.5, 3.8, 2.4, -0.2, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(7.5, -13.5, 3.8, 2.4, 0.2, 0, TAU); ctx.fill(); ctx.stroke();
+
+      // 3. Braccia robuste e Pesante Martello da Fabbro / Spadone di Taddeo
+      ctx.fillStyle = '#292524';
+      ctx.strokeStyle = '#0a0a0a';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(8.5, -3.5, 2.5, 0, TAU); ctx.fill(); ctx.stroke();
+
+      // Martellone da forgia borbonico in ferro battuto
+      ctx.save();
+      ctx.translate(9.5, -2.5);
+      ctx.rotate(0.35 + (moving ? Math.sin(tick * 0.34) * 0.15 : 0));
+      // Manico di frassino
+      ctx.fillStyle = '#78350f';
+      ctx.strokeStyle = '#271c19';
+      ctx.lineWidth = 0.9;
+      ctx.fillRect(-1.5, -16, 3.0, 26);
+      ctx.strokeRect(-1.5, -16, 3.0, 26);
+      // Testa del martello in acciaio brunito
+      const hammerG = ctx.createLinearGradient(-6, -18, 6, -12);
+      hammerG.addColorStop(0, '#64748b');
+      hammerG.addColorStop(0.5, '#1e293b');
+      hammerG.addColorStop(1, '#0f172a');
+      ctx.fillStyle = hammerG;
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1.2;
+      ctx.fillRect(-6.5, -20, 13.0, 8.0);
+      ctx.strokeRect(-6.5, -20, 13.0, 8.0);
+      // Fascia di rinforzo in ottone
+      ctx.fillStyle = colBrass;
+      ctx.fillRect(-2, -20, 4, 8);
+      ctx.restore();
+
+      // 4. Morione Borbonico d\'Ottone e Ferro con Cresta Alta
+      const morioneG = ctx.createLinearGradient(-10, -36, 10, -20);
+      morioneG.addColorStop(0, colBrass);
+      morioneG.addColorStop(0.4, colBrassDark);
+      morioneG.addColorStop(1, '#271c19');
+      ctx.fillStyle = morioneG;
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1.35;
+      ctx.beginPath();
+      // Tesa curva a becco anteriore e posteriore
+      ctx.moveTo(-11.5, -22);
+      ctx.quadraticCurveTo(-1, -25, 12.5, -22);
+      ctx.quadraticCurveTo(8, -26, 4, -28);
+      // Cresta alta arcuata del morione
+      ctx.bezierCurveTo(7, -35, 3, -42, -1, -43);
+      ctx.bezierCurveTo(-5, -42, -9, -35, -8, -28);
+      ctx.quadraticCurveTo(-10, -26, -11.5, -22);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Cordone di rivetti d\'acciaio lungo la calotta dell\'elmo
+      ctx.fillStyle = colIron1;
+      for (const [rx, ry] of [[-6, -26], [-3, -29], [0, -31], [3, -29], [6, -26]]) {
+        ctx.beginPath(); ctx.arc(rx, ry, 1.1, 0, TAU); ctx.fill();
+      }
+
+      // Cresta centrale dorata sagomata
+      ctx.strokeStyle = colBrass;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-1, -43);
+      ctx.bezierCurveTo(3, -37, 4, -30, 2, -26);
+      ctx.stroke();
+
+      // 5. Visiera d\'ombra e Occhi Ambrati/Dorati ardenti di Taddeo
+      ctx.fillStyle = '#050505';
+      ctx.beginPath();
+      ctx.ellipse(1.5, -19.5, 7.5, 4.2, 0, 0, TAU);
+      ctx.fill();
+
+      // Due fari ambrati severi e decisi
+      const eyeRT = shootTimer > 0 ? 1.6 : 1.35;
+      for (const [ex, ey] of [[-1.2, -19.5], [4.5, -19.5]]) {
+        const eg = ctx.createRadialGradient(ex, ey, 0.2, ex, ey, eyeRT * 2.6);
+        eg.addColorStop(0, '#fef08a');
+        eg.addColorStop(0.5, 'rgba(245, 158, 11, 0.65)');
+        eg.addColorStop(1, 'rgba(245, 158, 11, 0)');
+        ctx.fillStyle = eg;
+        ctx.beginPath(); ctx.arc(ex, ey, eyeRT * 2.6, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(ex, ey, eyeRT, 0, TAU); ctx.fill();
+      }
+
+      ctx.restore();
+      return;
+    }
+
+    // =========================================================================
+    // CASO 3 & 4: FERRUCCIO (Default) & PULCINELLA D\'OMBRA
+    // =========================================================================
     const isOmbra = charId === 'ombra';
     const colLuce = flash ? '#ffffff' : isOmbra ? '#3e3552' : '#fcf5e6';
     const colMedia = flash ? '#ffffff' : isOmbra ? '#241e30' : '#dfd1b6';
     const colOmbra = flash ? '#f87171' : isOmbra ? '#110d18' : '#96856b';
-    const colScarf1 = flash ? '#ffffff' : charId === 'agnese' ? '#f43f5e' : '#df3624';
-    const colScarf2 = flash ? '#fca5a5' : charId === 'agnese' ? '#9f1239' : '#85160c';
+    const colScarf1 = flash ? '#ffffff' : '#df3624';
+    const colScarf2 = flash ? '#fca5a5' : '#85160c';
     const colOcchi = sinergie.patto_raggio ? '#ff3b30' : isOmbra ? '#fbbf24' : '#fffdf5';
 
     // Sinergia Visiva: Aura Sacra / Cuore Sacro o Catena Elettrica
@@ -341,7 +689,6 @@
     // 1. CODE ONDULATE DELLA SCIARPA ROSSA (2 lunghi nastri mossi dal vento a sinistra, come nel dipinto!)
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    // Lembo superiore della sciarpa
     ctx.fillStyle = colScarf1;
     ctx.strokeStyle = '#120a07';
     ctx.lineWidth = 1.1;
@@ -353,7 +700,6 @@
     ctx.fill();
     ctx.stroke();
 
-    // Lembo inferiore più lungo della sciarpa
     ctx.fillStyle = colScarf2;
     ctx.beginPath();
     ctx.moveTo(-3, -12);
@@ -373,22 +719,20 @@
       }
     }
 
-    // 2. GAMBETTE SOTTILI SCURE E SCARPETTE NERE (esattamente come nell'immagine di riferimento!)
+    // 2. GAMBETTE SOTTILI SCURE E SCARPETTE NERE
     const walkSwing = moving ? Math.sin(tick * 0.34) * 3.2 : 0;
-    // Gamba posteriore (sinistra)
     ctx.strokeStyle = '#110d0a';
     ctx.lineWidth = 2.6;
     ctx.beginPath();
     ctx.moveTo(-2.5, -1);
     ctx.lineTo(-3 - walkSwing * 0.5, 7.5);
     ctx.stroke();
-    // Scarpetta posteriore
+
     ctx.fillStyle = '#0d0907';
     ctx.beginPath();
     ctx.ellipse(-2 - walkSwing * 0.5, 8.2, 3.0, 1.4, 0.1, 0, TAU);
     ctx.fill();
 
-    // Gamba anteriore (destra) con filo di luce calda
     ctx.strokeStyle = '#18120e';
     ctx.lineWidth = 2.8;
     ctx.beginPath();
@@ -401,7 +745,7 @@
     ctx.moveTo(2.8, 0);
     ctx.lineTo(3.0 + walkSwing * 0.5, 7.5);
     ctx.stroke();
-    // Scarpetta anteriore
+
     ctx.fillStyle = '#120d0a';
     ctx.beginPath();
     ctx.ellipse(3.6 + walkSwing * 0.5, 8.5, 3.3, 1.5, 0.12, 0, TAU);
@@ -419,7 +763,6 @@
     ctx.beginPath();
     ctx.moveTo(-5.5, -14.5);
     ctx.bezierCurveTo(-8.5, -9, -11.5, -3.5, -13.0, 0.8);
-    // Orlo inferiore ondulato a pieghe morbide (come nel dipinto!)
     ctx.quadraticCurveTo(-8.5, 2.5, -5.0, 1.2);
     ctx.quadraticCurveTo(-1.0, 3.0, 3.5, 1.5);
     ctx.quadraticCurveTo(7.5, 2.8, 11.2, 0.5);
@@ -428,7 +771,6 @@
     ctx.fill();
     ctx.stroke();
 
-    // Pieghe verticali soffuse sul mantello e manica centrale
     ctx.strokeStyle = isOmbra ? 'rgba(0,0,0,0.55)' : 'rgba(62, 46, 30, 0.38)';
     ctx.lineWidth = 0.95;
     ctx.beginPath();
@@ -437,7 +779,6 @@
     ctx.moveTo(3.2, -10);  ctx.quadraticCurveTo(4.8, -4, 6.2, 1.4);
     ctx.stroke();
 
-    // Manica a campana anteriore e manina guantata nera
     ctx.fillStyle = colMedia;
     ctx.strokeStyle = '#120c08';
     ctx.lineWidth = 1.0;
@@ -450,7 +791,6 @@
     ctx.fill();
     ctx.stroke();
 
-    // Manina guantata scura
     ctx.fillStyle = '#0e0b09';
     ctx.beginPath();
     ctx.arc(1.2, -1.0, 2.0, 0, TAU);
@@ -479,7 +819,7 @@
     ctx.fill();
     ctx.stroke();
 
-    // 5. CAPPUCCIO CONICO CONTINUO IN LINO CREMA + TESTA TONDA (1:1 CON L'IMMAGINE DI RIFERIMENTO!)
+    // 5. CAPPUCCIO CONICO CONTINUO IN LINO CREMA + TESTA TONDA
     const headGrad = ctx.createRadialGradient(2, -21, 2, -2, -23, 18);
     headGrad.addColorStop(0, colLuce);
     headGrad.addColorStop(0.58, colMedia);
@@ -489,21 +829,16 @@
     ctx.strokeStyle = '#120c08';
     ctx.lineWidth = 1.3;
     ctx.beginPath();
-    // Base sinistra della nuca
     ctx.moveTo(-6.2, -15.0);
     ctx.bezierCurveTo(-10.5, -17.5, -10.8, -23.5, -7.8, -27.8);
-    // Salita al cono appuntito inclinato leggermente all'indietro (identico al riferimento!)
     ctx.bezierCurveTo(-7.5, -31.5, -8.8, -36.5, -9.5, -40.5);
-    // Punta del cappuccio e discesa frontale morbida
     ctx.bezierCurveTo(-6.2, -37.2, -2.5, -32.8, 1.2, -29.5);
-    // Cupola frontale sopra la maschera nera
     ctx.bezierCurveTo(6.8, -28.0, 9.8, -24.2, 9.2, -19.5);
     ctx.bezierCurveTo(8.5, -16.0, 4.5, -14.5, -6.2, -15.0);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    // Pieghe morbide di cucitura alla base del cono del cappuccio (come nel dipinto!)
     ctx.strokeStyle = isOmbra ? 'rgba(0,0,0,0.5)' : 'rgba(72, 55, 38, 0.35)';
     ctx.lineWidth = 0.85;
     ctx.beginPath();
@@ -513,38 +848,18 @@
     ctx.quadraticCurveTo(-4.5, -30.5, -2.0, -32.2);
     ctx.stroke();
 
-    // Dettagli distintivi per Agnese (fiocco di seta rossa) o Taddeo (visiera/piuma d'ottone)
-    if (charId === 'agnese') {
-      ctx.fillStyle = '#e11d48';
-      ctx.strokeStyle = '#120a07';
-      ctx.lineWidth = 0.9;
-      ctx.beginPath();
-      ctx.ellipse(-6.5, -26.5, 3.5, 1.8, -0.4, 0, TAU);
-      ctx.ellipse(-2.5, -27.8, 3.2, 1.6, 0.3, 0, TAU);
-      ctx.fill(); ctx.stroke();
-    } else if (charId === 'taddeo') {
-      ctx.fillStyle = '#d97706';
-      ctx.strokeStyle = '#120a07';
-      ctx.lineWidth = 0.9;
-      ctx.fillRect(-3, -29.5, 11, 2.4);
-      ctx.strokeRect(-3, -29.5, 11, 2.4);
-    }
-
-    // 6. VOLTO OVALE INCAVATO NERO CORVINO CON I DUE OCCHI TONDI BIANCHI LUMINOSI (1:1 RIFERIMENTO!)
-    // Bordo incavato del cappuccio attorno al viso
+    // 6. VOLTO OVALE INCAVATO NERO CORVINO CON I DUE OCCHI TONDI BIANCHI LUMINOSI
     ctx.strokeStyle = isOmbra ? '#4c1d95' : 'rgba(85, 66, 46, 0.65)';
     ctx.lineWidth = 1.4;
     ctx.beginPath();
     ctx.ellipse(3.6, -21.2, 4.9, 5.4, -0.06, 0, TAU);
     ctx.stroke();
 
-    // Cavità nera profonda della maschera/viso
     ctx.fillStyle = sinergie.piombo ? '#1e293b' : '#06070a';
     ctx.beginPath();
     ctx.ellipse(3.8, -21.2, 4.5, 5.0, -0.06, 0, TAU);
     ctx.fill();
 
-    // I DUE OCCHI TONDI BIANCHI LUMINOSI (con alone caldo soffuso come nel dipinto!)
     const eyeR = (shootTimer > 0 ? 1.55 : 1.30) * (sinergie.piombo ? 1.25 : 1.0);
     for (const [ex, ey] of [[2.2, -21.0], [6.1, -21.2]]) {
       const eg = ctx.createRadialGradient(ex, ey, 0.2, ex, ey, eyeR * 2.4);
@@ -558,13 +873,11 @@
       ctx.beginPath(); ctx.arc(ex, ey, eyeR, 0, TAU); ctx.fill();
     }
 
-    // --- PROPOSTA 1: SINERGIE VISIVE DEGLI OGGETTI EQUIPAGGIATI SUL CORPO DI FERRUCCIO ---
-    // Triplo Occhio: 3° occhio luminoso sulla fronte della maschera nera!
+    // Sinergie Visive
     if (sinergie.triplo) {
       ctx.fillStyle = '#fef08a';
       ctx.beginPath(); ctx.arc(4.1, -24.0, 1.25, 0, TAU); ctx.fill();
     }
-    // Lente di San Leucio (20/20): occhialini d'ottone davanti ai due occhi luminosi!
     if (sinergie.doppia) {
       ctx.strokeStyle = '#fbbf24';
       ctx.lineWidth = 0.85;
@@ -573,7 +886,6 @@
       ctx.arc(6.1, -21.2, 1.9, 0, TAU);
       ctx.stroke();
     }
-    // Anello Cremisi: aureola cremisi dorata sopra il cappuccio conico!
     if (sinergie.anello) {
       ctx.strokeStyle = '#ef4444';
       ctx.lineWidth = 1.5;
@@ -581,85 +893,60 @@
       ctx.ellipse(-2, -42.5, 6.5, 2.0, -0.1, 0, TAU);
       ctx.stroke();
     }
-    // Maschera dei 4 Venti: mascherine dorate ai lati del cappuccio!
-    if (sinergie.venti) {
-      ctx.fillStyle = '#facc15';
-      ctx.beginPath();
-      ctx.arc(-8.2, -21.5, 2.2, 0, TAU);
-      ctx.fill();
-    }
-    // Catena della Chiusa: archi elettrici azzurri attorno alle spalle!
-    if (sinergie.catena && (tick % 6 < 4)) {
-      ctx.strokeStyle = '#67e8f9';
-      ctx.lineWidth = 1.1;
-      ctx.beginPath();
-      ctx.moveTo(-7, -14); ctx.lineTo(-2, -17); ctx.lineTo(4, -13);
-      ctx.stroke();
-    }
-    // Patto d'Ombra (Raggio Cremisi): corna d'ombra sul cappuccio!
-    if (sinergie.patto_raggio) {
-      ctx.fillStyle = '#1f0909';
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 0.9;
-      ctx.beginPath();
-      ctx.moveTo(-1, -28); ctx.quadraticCurveTo(4, -35, 8, -32); ctx.quadraticCurveTo(4, -29, 1, -26);
-      ctx.fill(); ctx.stroke();
-    }
 
-    // 7. STOCCO SOTTILE A SPILLO IMPUGNATO NELLA MANO NERA (come nell'immagine di riferimento!)
-    // O COLTELLO DELLA BURATTINAIA:
-    if ((haSpada || sinergie.patto_coltello) && swordAnimTick < 0) {
+    // 7. LO STOCCO DI FERRUCCIO
+    if (haSpada) {
       ctx.save();
-      ctx.translate(1.5, -1.0);
-      // Guardia a coccia scura/ottone
-      ctx.strokeStyle = '#1c1613';
-      ctx.lineWidth = 1.6;
+      let ang = 0.78;
+      let ox = 2.5, oy = -1.0;
+      if (swordAnimTick >= 0 && swordAnimTick < 14) {
+        ang = swordAngle + Math.sin(swordAnimTick * 0.28) * 0.6;
+        ox = 4.0; oy = -2.0;
+      }
+      ctx.translate(ox, oy);
+      ctx.rotate(ang);
+
+      ctx.strokeStyle = '#d4af37';
+      ctx.lineWidth = 1.3;
       ctx.beginPath();
-      ctx.moveTo(-1.5, 1.5);
-      ctx.lineTo(2.5, -2.0);
+      ctx.arc(0, 0, 2.4, 0, TAU);
       ctx.stroke();
-      // Lama ad ago sottile puntata in basso in avanti (identica a media_1794171707580_83eb1b57.jpg!)
-      const bladeGrad = ctx.createLinearGradient(0, 0, 15, 11);
-      bladeGrad.addColorStop(0, '#2a2421');
-      bladeGrad.addColorStop(0.5, sinergie.patto_coltello ? '#fca5a5' : '#d6d3cd');
-      bladeGrad.addColorStop(1, '#57534e');
-      ctx.strokeStyle = bladeGrad;
-      ctx.lineWidth = sinergie.patto_coltello ? 2.1 : 1.35;
+
+      ctx.fillStyle = '#1c1917';
+      ctx.fillRect(-0.8, -4.5, 1.6, 4.5);
+      ctx.fillStyle = '#d4af37';
+      ctx.beginPath(); ctx.arc(0, -4.8, 1.2, 0, TAU); ctx.fill();
+
+      const bladeGrad = ctx.createLinearGradient(-0.9, 0, 0.9, 19);
+      bladeGrad.addColorStop(0, '#f8fafc');
+      bladeGrad.addColorStop(0.5, '#cbd5e1');
+      bladeGrad.addColorStop(1, '#64748b');
+      ctx.fillStyle = bladeGrad;
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 0.7;
       ctx.beginPath();
-      ctx.moveTo(0.5, -0.2);
-      ctx.lineTo(15.5, 10.5);
+      ctx.moveTo(-1.1, 0);
+      ctx.lineTo(0, 19.5);
+      ctx.lineTo(1.1, 0);
+      ctx.closePath();
+      ctx.fill();
       ctx.stroke();
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, 18.5);
+      ctx.stroke();
+
       ctx.restore();
     }
 
     ctx.restore();
-
-    // Se sta eseguendo il fendente in 6 frame, disegna l'arco tagliente luminoso + la lama in rotazione!
-    if (haSpada && swordAnimTick >= 0) {
-      const prog = Math.min(1, swordAnimTick / 17);
-      const aStart = swordAngle - 1.05;
-      const aEnd = swordAngle + 1.05;
-      const aCurr = aStart + (aEnd - aStart) * prog;
-      ctx.save();
-      ctx.translate(px, py - 6);
-      // Mezzaluna del fendente
-      ctx.strokeStyle = `rgba(255, 248, 225, ${(1 - prog * 0.65).toFixed(2)})`;
-      ctx.lineWidth = 5 * (1 - prog * 0.5);
-      ctx.beginPath();
-      ctx.arc(0, 0, 26, aStart, aCurr);
-      ctx.stroke();
-      ctx.strokeStyle = sinergie.fuoco ? '#fb923c' : '#ffffff';
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.moveTo(Math.cos(aCurr) * 6, Math.sin(aCurr) * 6);
-      ctx.lineTo(Math.cos(aCurr) * 29, Math.sin(aCurr) * 29);
-      ctx.stroke();
-      ctx.restore();
-    }
   }
 
-  // Grandi Mani di Marionettista col bilancino in legno e merletto borbonico
-  function disegnaManoMarionettaPittorica() {
+
+function disegnaManoMarionettaPittorica() {
     let args = Array.from(arguments);
     if (args[0] && typeof args[0].save === 'function') args.shift();
     const cx = args[0] || 0;
@@ -728,7 +1015,7 @@
   }
 
   // Disegno pittorico differenziato per ogni archetipo di Nemico stile The Binding of Isaac!
-  function disegnaNemicoPittorico() {
+    function disegnaNemicoPittorico() {
     const args = Array.from(arguments);
     if (args[0] && typeof args[0].save === 'function') args.shift();
     const n = args[0];
@@ -741,29 +1028,54 @@
     ctx.save();
     ctx.imageSmoothingEnabled = true;
 
-    // Aura eventuale da Campione Colorato (Proposta 6: 🔴 Cremisi, 🟡 Dorato, 🔵 Elettrico)
+    // 1. FILO D'ORO DELLA MARIONETTA (Collega ogni burattino nemico al bilancino del soffitto!)
+    ctx.strokeStyle = 'rgba(249, 203, 64, 0.35)';
+    ctx.lineWidth = 0.85;
+    ctx.beginPath();
+    ctx.moveTo(x, y - 18);
+    ctx.lineTo(x, Math.max(20, y - 220));
+    ctx.stroke();
+
+    // 2. Ombra a terra morbida ellittica
+    const shadowR = n.r ? Math.max(9, n.r * 0.9) : 12;
+    const nsh = ctx.createRadialGradient(x, y + 4, 1, x, y + 4, shadowR);
+    nsh.addColorStop(0, 'rgba(8, 5, 3, 0.68)');
+    nsh.addColorStop(1, 'rgba(8, 5, 3, 0)');
+    ctx.fillStyle = nsh;
+    ctx.save();
+    ctx.translate(x, y + 4);
+    ctx.scale(1, 0.36);
+    ctx.beginPath();
+    ctx.arc(0, 0, shadowR, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+
+    // 3. Aura da Campione Colorato (Proposta 6: 🔴 Cremisi, 🟡 Dorato, 🔵 Elettrico)
     if (champion) {
-      const colChamp = champion === 'cremisi' ? 'rgba(239,68,68,0.38)' : champion === 'dorato' ? 'rgba(250,204,21,0.42)' : 'rgba(56,189,248,0.42)';
-      const cg = ctx.createRadialGradient(x, y - 6, 2, x, y - 6, n.r + 9);
+      const colChamp = champion === 'cremisi' ? 'rgba(239,68,68,0.45)' : champion === 'dorato' ? 'rgba(250,204,21,0.48)' : 'rgba(56,189,248,0.48)';
+      const cg = ctx.createRadialGradient(x, y - 6, 2, x, y - 6, n.r + 12);
       cg.addColorStop(0, colChamp);
       cg.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = cg;
-      ctx.beginPath(); ctx.arc(x, y - 6, n.r + 9, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y - 6, n.r + 12, 0, TAU); ctx.fill();
     }
 
-    // Se è immobilizzato dalle Forbici di Gaetano (Attivo [Q]), mostra i fili tagliati!
+    // Se è immobilizzato dalle Forbici di Gaetano (Attivo [Q]), mostra i fili tagliati e stordimento
     if (n.stunTicks > 0) {
       ctx.strokeStyle = '#67e8f9';
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 1.3;
       ctx.beginPath();
-      ctx.arc(x, y - 18, 6, 0, TAU);
+      ctx.arc(x, y - 20, 7, 0, TAU);
       ctx.stroke();
+      ctx.fillStyle = '#67e8f9';
+      ctx.font = '8px monospace';
+      ctx.fillText('✂', x - 4, y - 24);
     }
 
-    // Telegrafo a terra per il Gatto d'Ombra quando prepara il balzo (come in tavola-presepe-C!)
+    // Telegrafo a terra per il Gatto d'Ombra quando prepara il balzo
     if (tipo === 'gatto' && state === 'crouch') {
       ctx.save();
-      ctx.strokeStyle = 'rgba(239, 68, 68, 0.78)';
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
       ctx.lineWidth = 1.6;
       ctx.setLineDash([5, 4]);
       ctx.beginPath();
@@ -771,8 +1083,13 @@
       ctx.lineTo(n.leapTargetX ?? player.x, n.leapTargetY ?? player.y);
       ctx.stroke();
       ctx.setLineDash([]);
+      // Bersaglio d'atterraggio
+      const tx = n.leapTargetX ?? player.x;
+      const ty = n.leapTargetY ?? player.y;
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.4;
       ctx.beginPath();
-      ctx.arc(x, y - 6, 13, 0, TAU);
+      ctx.arc(tx, ty, 11, 0, TAU);
       ctx.stroke();
       ctx.restore();
     }
@@ -790,166 +1107,430 @@
             ? '#0284c7'
             : null;
 
+    // =========================================================================
+    // 1. VESPA CIECA / VESPA D'OMBRA (Isaac Attack Fly / Pooter)
+    // =========================================================================
     if (tipo === 'vespa_cieca' || tipo === 'vespa') {
-      // 1. MOSCA / VESPA CIECA (Isaac Attack Fly / Pooter): vola contro di te ronzando!
-      const wingY = Math.sin(tick * 0.85) * 4.5;
+      const wingWave = Math.sin(tick * 0.95) * 5.5;
       ctx.scale(flip, 1);
-      // Ali translucide vibranti
+
+      // Doppia coppia di ali diafane con nervature chine
       ctx.fillStyle = 'rgba(224, 242, 254, 0.55)';
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 0.9;
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.75)';
+      ctx.lineWidth = 0.85;
+      // Ala anteriore superiore
       ctx.beginPath();
-      ctx.ellipse(-3, -13 + wingY * 0.4, 7, 3.8, -0.35, 0, TAU);
-      ctx.ellipse(3, -14 - wingY * 0.3, 6, 3.2, 0.35, 0, TAU);
+      ctx.ellipse(-4, -14 + wingWave * 0.45, 9, 4.2, -0.4, 0, TAU);
       ctx.fill(); ctx.stroke();
-      // Addome a strisce o nero-insetto per la vespa cieca
-      ctx.fillStyle = tint || (tipo === 'vespa_cieca' ? '#1e1b24' : '#d97706');
-      ctx.strokeStyle = '#090604';
+      // Nervature
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+      ctx.beginPath();
+      ctx.moveTo(-4, -14 + wingWave * 0.45); ctx.lineTo(-10, -16 + wingWave * 0.5);
+      ctx.stroke();
+      // Ala posteriore
+      ctx.fillStyle = 'rgba(186, 230, 253, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(3, -15 - wingWave * 0.35, 7.5, 3.6, 0.35, 0, TAU);
+      ctx.fill(); ctx.stroke();
+
+      // Carapace in 3 segmenti (testa, torace, addome a strisce)
+      const chitinG = ctx.createLinearGradient(-6, -12, 6, 0);
+      chitinG.addColorStop(0, tint || (tipo === 'vespa_cieca' ? '#2e1065' : '#78350f'));
+      chitinG.addColorStop(0.5, tint || (tipo === 'vespa_cieca' ? '#1e1b24' : '#b45309'));
+      chitinG.addColorStop(1, '#090604');
+      ctx.fillStyle = chitinG;
+      ctx.strokeStyle = '#050302';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.ellipse(0, -6, 7.5, 5.5, 0, 0, TAU);
+      ctx.ellipse(0, -6, 8.5, 6.0, 0, 0, TAU);
       ctx.fill(); ctx.stroke();
-      // Occhi rossi incandescenti
-      ctx.fillStyle = tipo === 'vespa_cieca' ? '#ef4444' : '#fef08a';
+
+      // Anelli chitinici dell'addome
+      ctx.strokeStyle = tipo === 'vespa_cieca' ? 'rgba(168, 85, 247, 0.5)' : 'rgba(251, 191, 36, 0.55)';
+      ctx.lineWidth = 1.0;
       ctx.beginPath();
-      ctx.arc(4.2, -7.2, 1.8, 0, TAU);
-      ctx.arc(1.5, -7.0, 1.5, 0, TAU);
-      ctx.fill();
+      ctx.moveTo(-5, -6); ctx.lineTo(5, -6);
+      ctx.moveTo(-4, -3); ctx.lineTo(4, -3);
+      ctx.stroke();
+
+      // Zampette in fil di ferro curvato
+      ctx.strokeStyle = '#0a0a0a';
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.moveTo(-3, -2); ctx.lineTo(-5, 3);
+      ctx.moveTo(1, -2); ctx.lineTo(1, 4);
+      ctx.moveTo(4, -2); ctx.lineTo(6, 3);
+      ctx.stroke();
+
+      // Aculeo ricurvo
+      ctx.fillStyle = '#0a0a0a';
+      ctx.beginPath();
+      ctx.moveTo(-7, -5); ctx.lineTo(-11, -3); ctx.lineTo(-6, -7);
+      ctx.closePath(); ctx.fill();
+
+      // Occhi sfaccettati ardenti (rosso cremisi per vespa cieca, ambra per vespa)
+      const colVespaEye = tipo === 'vespa_cieca' ? '#ef4444' : '#facc15';
+      const eyeVg = ctx.createRadialGradient(4.5, -7.5, 0.2, 4.5, -7.5, 3.5);
+      eyeVg.addColorStop(0, '#ffffff');
+      eyeVg.addColorStop(0.5, colVespaEye);
+      eyeVg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = eyeVg;
+      ctx.beginPath(); ctx.arc(4.5, -7.5, 3.5, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(4.5, -7.5, 1.3, 0, TAU); ctx.fill();
+
+    // =========================================================================
+    // 2. BOMBA FERMA / BOZZO DI BRACE (Isaac Boil / Mulliboom)
+    // =========================================================================
     } else if (tipo === 'bomba_ferma') {
-      // 2. BOZZO / BURATTINO ESPLOSIVO FERMO (Isaac Boil / Mulliboom):
-      // Sta fermo e pulsa, esplodendo se ti avvicini o quando muore!
-      const pulse = 1 + Math.sin(tick * (state === 'primed' ? 0.65 : 0.18)) * (state === 'primed' ? 0.22 : 0.08);
-      ctx.scale(pulse, 1 / (0.5 + pulse * 0.5));
-      if (state === 'primed') {
+      const isPrimed = state === 'primed';
+      const pulse = 1 + Math.sin(tick * (isPrimed ? 0.75 : 0.22)) * (isPrimed ? 0.22 : 0.08);
+      ctx.scale(pulse, 1 / (0.6 + pulse * 0.4));
+
+      // Aura d'esplosione imminente se primed
+      if (isPrimed) {
         ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(0, -6, 26, 0, TAU); ctx.stroke();
+        ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.arc(0, -7, 28 + (tick % 6) * 1.5, 0, TAU); ctx.stroke();
       }
-      const bg = ctx.createRadialGradient(-2, -9, 1, 0, -7, 12);
-      bg.addColorStop(0, isFlash ? '#ffffff' : state === 'primed' ? '#fef08a' : '#fb923c');
-      bg.addColorStop(0.6, tint || '#b91c1c');
-      bg.addColorStop(1, '#1f0808');
+
+      // Corpo bulboso a toppe di tela grezza e braci ardenti
+      const bg = ctx.createRadialGradient(-3, -10, 1, 0, -7, 13);
+      bg.addColorStop(0, isFlash ? '#ffffff' : isPrimed ? '#fef08a' : '#fb923c');
+      bg.addColorStop(0.45, tint || (isPrimed ? '#ef4444' : '#b91c1c'));
+      bg.addColorStop(0.85, '#450a0a');
+      bg.addColorStop(1, '#160404');
       ctx.fillStyle = bg;
-      ctx.strokeStyle = '#090504';
-      ctx.lineWidth = 1.3;
-      ctx.beginPath();
-      ctx.arc(0, -7, 10.5, 0, TAU);
-      ctx.fill(); ctx.stroke();
-      // Miccia accesa in testa e maschera crepata
-      ctx.strokeStyle = '#fde047';
+      ctx.strokeStyle = '#0a0504';
       ctx.lineWidth = 1.4;
       ctx.beginPath();
-      ctx.moveTo(0, -17); ctx.quadraticCurveTo(4, -22, 6, -20);
-      ctx.stroke();
-      ctx.fillStyle = '#fef08a';
+      ctx.arc(0, -7, 11.5, 0, TAU);
+      ctx.fill(); ctx.stroke();
+
+      // Cuciture a croce (toppe di juta da marionetta)
+      ctx.strokeStyle = '#271c19';
+      ctx.lineWidth = 1.0;
       ctx.beginPath();
-      ctx.arc(6, -20, 2.2 + (tick % 3) * 0.5, 0, TAU);
-      ctx.arc(-3.2, -8, 1.6, 0, TAU);
-      ctx.arc(3.2, -8, 1.6, 0, TAU);
+      // Toppa 1
+      ctx.moveTo(-6, -11); ctx.lineTo(-2, -5);
+      ctx.moveTo(-5, -6); ctx.lineTo(-7, -4);
+      ctx.moveTo(-2, -9); ctx.lineTo(-4, -7);
+      // Toppa 2
+      ctx.moveTo(3, -11); ctx.lineTo(7, -6);
+      ctx.moveTo(4, -7); ctx.lineTo(6, -5);
+      ctx.stroke();
+
+      // Collare metallico e miccia fumante con faville
+      ctx.fillStyle = '#78350f';
+      ctx.strokeStyle = '#1c1917';
+      ctx.fillRect(-2.5, -17, 5, 2.5);
+      ctx.strokeRect(-2.5, -17, 5, 2.5);
+
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, -17); ctx.quadraticCurveTo(4, -22, 6, -21);
+      ctx.stroke();
+
+      // Faville ardenti vive dalla miccia
+      const sparkCol = (tick % 2 === 0) ? '#fef08a' : '#f97316';
+      ctx.fillStyle = sparkCol;
+      ctx.beginPath();
+      ctx.arc(6.5, -21.5, 2.4, 0, TAU);
+      ctx.arc(4 + Math.sin(tick * 0.4) * 3, -25 - (tick % 5), 1.2, 0, TAU);
       ctx.fill();
+
+      // Occhi fessurati che piangono braci incandescenti
+      ctx.fillStyle = isPrimed ? '#ffffff' : '#fef08a';
+      ctx.beginPath();
+      ctx.ellipse(-3.5, -7.5, 2.0, 1.2, -0.2, 0, TAU);
+      ctx.ellipse(3.5, -7.5, 2.0, 1.2, 0.2, 0, TAU);
+      ctx.fill();
+
+    // =========================================================================
+    // 3. GATTO D'OMBRA (Isaac Hopper / Trite — Il Gatto dei Quattro Canti)
+    // =========================================================================
     } else if (tipo === 'gatto') {
-      // 3. GATTO D'OMBRA (Isaac Trite / Hopper): si accuccia e balza senza sparare!
-      ctx.scale(flip, state === 'crouch' ? 0.78 : 1.0);
-      ctx.fillStyle = tint || '#140e0b';
-      ctx.strokeStyle = 'rgba(242, 194, 120, 0.55)';
+      const isCrouch = state === 'crouch';
+      const isLeap = state === 'leap';
+      ctx.scale(flip, isCrouch ? 0.72 : 1.0);
+
+      // Corpo intagliato in legno d'ebano scuro con venature
+      const catG = ctx.createLinearGradient(-10, -18, 12, 0);
+      catG.addColorStop(0, tint || '#292524');
+      catG.addColorStop(0.5, tint || '#140e0b');
+      catG.addColorStop(1, '#090706');
+      ctx.fillStyle = catG;
+      ctx.strokeStyle = '#f2c278';
       ctx.lineWidth = 1.1;
-      // Coda a frusta
+
+      // Coda flessuosa da marionetta con giunti
+      const tailWave = Math.sin(tick * 0.25) * 4;
+      ctx.strokeStyle = '#140e0b';
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
-      ctx.moveTo(-8, -6);
-      ctx.bezierCurveTo(-16, -10, -18, -19, -11, -22);
+      ctx.moveTo(-9, -6);
+      ctx.bezierCurveTo(-16, -11, -19, -19 + tailWave, -12, -23 + tailWave);
       ctx.stroke();
-      // Corpo felino inarcato col pelo irto
+
+      // Groppa inarcata e zampe posteriori a molla
+      ctx.fillStyle = catG;
+      ctx.strokeStyle = '#090706';
+      ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.moveTo(10, -1);
-      ctx.bezierCurveTo(12, -7, 8, -13, 2, -14);
-      ctx.lineTo(-2, -17); ctx.lineTo(-4, -14);
-      ctx.lineTo(-8, -16); ctx.lineTo(-10, -11);
-      ctx.quadraticCurveTo(-12, -4, -8, -1);
+      ctx.moveTo(11, -1);
+      ctx.bezierCurveTo(13, -7, 9, -14, 2, -15);
+      ctx.lineTo(-2, -18); ctx.lineTo(-5, -15);
+      ctx.lineTo(-9, -17); ctx.lineTo(-11, -12);
+      ctx.quadraticCurveTo(-13, -4, -9, -1);
       ctx.closePath();
       ctx.fill(); ctx.stroke();
-      // Testa con orecchie lunghe a punta
+
+      // Perno d'ottone dell'anca (dettaglio marionetta!)
+      ctx.fillStyle = '#f9cb40';
+      ctx.beginPath(); ctx.arc(-7, -7, 1.4, 0, TAU); ctx.fill();
+
+      // Muso felino sagomato con orecchie a punta erette
       ctx.beginPath();
       ctx.moveTo(5, -9);
-      ctx.lineTo(4, -19); ctx.lineTo(8, -13);
-      ctx.lineTo(12, -19); ctx.lineTo(12, -10);
+      ctx.lineTo(4, -20); ctx.lineTo(8, -14);
+      ctx.lineTo(12, -20); ctx.lineTo(12, -11);
       ctx.lineTo(15, -7);
-      ctx.quadraticCurveTo(10, -4, 5, -6);
+      ctx.quadraticCurveTo(11, -4, 5, -6);
       ctx.closePath();
       ctx.fill(); ctx.stroke();
-      // Occhi gialli o rossi in fase di balzo
-      ctx.fillStyle = state === 'crouch' || state === 'leap' ? '#ef4444' : '#fde047';
+
+      // Interno orecchie in velluto cremisi/rosa scuro
+      ctx.fillStyle = '#881337';
       ctx.beginPath();
-      ctx.arc(9.5, -9.5, 1.5, 0, TAU);
-      ctx.arc(12.2, -9.0, 1.4, 0, TAU);
-      ctx.fill();
+      ctx.moveTo(5.5, -13); ctx.lineTo(5.0, -18); ctx.lineTo(7.5, -14); ctx.fill();
+      ctx.moveTo(10.5, -13); ctx.lineTo(11.5, -18); ctx.lineTo(9.5, -14); ctx.fill();
+
+      // Baffi sottili in fil d'ottone
+      ctx.strokeStyle = 'rgba(253, 224, 71, 0.65)';
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(13, -7); ctx.lineTo(19, -9);
+      ctx.moveTo(13, -6); ctx.lineTo(19, -5);
+      ctx.stroke();
+
+      // Occhi felini ardenti (oro magnetico, rosso fiammante se crouch/balzo)
+      const colCatEye = (isCrouch || isLeap) ? '#ef4444' : '#fbbf24';
+      const eyeCg = ctx.createRadialGradient(10.5, -9.5, 0.2, 10.5, -9.5, 3.2);
+      eyeCg.addColorStop(0, '#ffffff');
+      eyeCg.addColorStop(0.5, colCatEye);
+      eyeCg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = eyeCg;
+      ctx.beginPath(); ctx.arc(10.5, -9.5, 3.2, 0, TAU); ctx.fill();
+      // Pupilla a fessura verticale
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(10.2, -11.0, 0.8, 3.0);
+
+    // =========================================================================
+    // 4. MASCHERA D'OSSO / PULCINELLA D'ASSALTO (Isaac Host)
+    // =========================================================================
     } else if (tipo === 'maschera') {
-      // 4. MASCHERA DI PULCINELLA (Isaac Host): chiusa è corazzata, si apre per sparare!
-      const openY = maskOpen ? -5 : 0;
-      // Base / mantello sotto la maschera
-      ctx.fillStyle = maskOpen ? '#dc2626' : '#334155';
+      const openY = maskOpen ? -7 : 0;
+
+      // Bavero / collare di velluto scarlatto e oro
+      ctx.fillStyle = maskOpen ? '#991b1b' : '#1e293b';
       ctx.strokeStyle = '#090604';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.arc(0, -5, 8.5, 0, TAU);
+      ctx.arc(0, -5, 9.5, 0, TAU);
       ctx.fill(); ctx.stroke();
+
+      // Frangia dorata del bavero
+      ctx.strokeStyle = '#f9cb40';
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.arc(0, -5, 9.5, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+
+      // Se la maschera è aperta, rivela il cuore d'ombra pulsante con occhio cremisi!
       if (maskOpen) {
-        // Nucleo vulnerabile rosso vivo quando si apre per sparare!
-        ctx.fillStyle = '#fef08a';
-        ctx.beginPath();
-        ctx.arc(-2.5, -4, 1.6, 0, TAU);
-        ctx.arc(2.5, -4, 1.6, 0, TAU);
-        ctx.fill();
+        const corePulse = 1 + Math.sin(tick * 0.4) * 0.15;
+        const cg = ctx.createRadialGradient(0, -5, 1, 0, -5, 6 * corePulse);
+        cg.addColorStop(0, '#fef08a');
+        cg.addColorStop(0.5, '#dc2626');
+        cg.addColorStop(1, '#1e0505');
+        ctx.fillStyle = cg;
+        ctx.beginPath(); ctx.arc(0, -5, 6 * corePulse, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(0, -5, 1.8, 0, TAU); ctx.fill();
       }
-      // Calotta di porcellana/avorio sopra
-      ctx.fillStyle = tint || (maskOpen ? '#f8fafc' : '#cbd5e1');
+
+      // Maschera di porcellana/osso intagliata (la calotta protettiva)
+      ctx.save();
+      ctx.translate(0, openY);
+      const maskG = ctx.createLinearGradient(-8, -16, 8, -2);
+      maskG.addColorStop(0, tint || (maskOpen ? '#f8fafc' : '#f1f5f9'));
+      maskG.addColorStop(0.6, tint || (maskOpen ? '#e2e8f0' : '#cbd5e1'));
+      maskG.addColorStop(1, '#94a3b8');
+      ctx.fillStyle = maskG;
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.35;
       ctx.beginPath();
-      ctx.ellipse(0, -8 + openY, 9.5, 7.5, 0, 0, TAU);
+      // Sagoma a becco / calotta teatrale napoletana
+      ctx.moveTo(-9.5, -8);
+      ctx.bezierCurveTo(-11, -16, -6, -20, 0, -20);
+      ctx.bezierCurveTo(6, -20, 11, -16, 9.5, -8);
+      ctx.bezierCurveTo(7, -1, 3, 1, 0, 1);
+      ctx.bezierCurveTo(-3, 1, -7, -1, -9.5, -8);
+      ctx.closePath();
       ctx.fill(); ctx.stroke();
-      ctx.fillStyle = maskOpen ? '#ef4444' : '#0f172a';
+
+      // Crepe sulla porcellana
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.45)';
+      ctx.lineWidth = 0.8;
       ctx.beginPath();
-      ctx.arc(-3, -8 + openY, 1.6, 0, TAU);
-      ctx.arc(3, -8 + openY, 1.6, 0, TAU);
+      ctx.moveTo(-2, -18); ctx.lineTo(1, -14); ctx.lineTo(-1, -11);
+      ctx.stroke();
+
+      // Cavità oculari della maschera
+      ctx.fillStyle = maskOpen ? '#ef4444' : '#09070a';
+      ctx.beginPath();
+      ctx.ellipse(-3.5, -8, 2.2, 3.2, -0.15, 0, TAU);
+      ctx.ellipse(3.5, -8, 2.2, 3.2, 0.15, 0, TAU);
       ctx.fill();
+      ctx.restore();
+
+    // =========================================================================
+    // 5. STATUA SENTINELLA / CHERUBINO DI MARMO (Isaac Grimace)
+    // =========================================================================
     } else if (tipo === 'statua') {
-      // 5. STATUA / TORRIONE DI MARMO (Isaac Grimace): ferma, spara croci rotanti!
-      ctx.fillStyle = tint || '#64748b';
+      const isCharging = (n.shootCd || 0) < 22;
+
+      // Piedistallo barocco a gradoni in pietra e marmo di Caserta
+      const stoneG = ctx.createLinearGradient(-12, -22, 12, 0);
+      stoneG.addColorStop(0, tint || '#64748b');
+      stoneG.addColorStop(0.5, tint || '#475569');
+      stoneG.addColorStop(1, '#1e293b');
+
+      ctx.fillStyle = stoneG;
       ctx.strokeStyle = '#0f172a';
       ctx.lineWidth = 1.3;
-      ctx.fillRect(-10, -18, 20, 18);
-      ctx.strokeRect(-10, -18, 20, 18);
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillRect(-12, -20, 24, 4);
-      ctx.strokeRect(-12, -20, 24, 4);
-      ctx.fillStyle = n.shootCd < 18 ? '#ef4444' : '#facc15';
+      // Zoccolo inferiore
+      ctx.fillRect(-12, -4, 24, 4);
+      ctx.strokeRect(-12, -4, 24, 4);
+      // Fusto centrale sagomato
+      ctx.fillRect(-9, -16, 18, 12);
+      ctx.strokeRect(-9, -16, 18, 12);
+      // Capitello superiore
+      ctx.fillRect(-11, -19, 22, 3);
+      ctx.strokeRect(-11, -19, 22, 3);
+
+      // Busto / volto di cherubino in marmo scolpito
+      const marbleG = ctx.createRadialGradient(0, -25, 2, 0, -25, 10);
+      marbleG.addColorStop(0, '#e2e8f0');
+      marbleG.addColorStop(0.6, '#94a3b8');
+      marbleG.addColorStop(1, '#475569');
+      ctx.fillStyle = marbleG;
       ctx.beginPath();
-      ctx.arc(-3.5, -10, 2.0, 0, TAU);
-      ctx.arc(3.5, -10, 2.0, 0, TAU);
+      ctx.arc(0, -25, 8.5, 0, TAU);
+      ctx.fill(); ctx.stroke();
+
+      // Crepe runiche luminose quando carica il colpo a croce!
+      if (isCharging) {
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(-5, -28); ctx.lineTo(-2, -24); ctx.lineTo(-4, -20);
+        ctx.moveTo(3, -29); ctx.lineTo(1, -25); ctx.lineTo(4, -21);
+        ctx.stroke();
+      }
+
+      // Occhi di pietra cieca che si accendono di rosso/oro
+      const eyeStatCol = isCharging ? '#ef4444' : '#facc15';
+      const eyeSg = ctx.createRadialGradient(-2.8, -25, 0.2, -2.8, -25, 2.5);
+      eyeSg.addColorStop(0, '#ffffff');
+      eyeSg.addColorStop(0.6, eyeStatCol);
+      eyeSg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = eyeSg;
+      ctx.beginPath();
+      ctx.arc(-2.8, -25, 2.5, 0, TAU);
+      ctx.arc(2.8, -25, 2.5, 0, TAU);
       ctx.fill();
-    } else {
-      // 6. GUARDIA DI PIOMBO / PREDONE D'ORO (Isaac Knight / Greed Mob)
-      ctx.scale(flip, 1);
-      ctx.fillStyle = tint || (tipo === 'predone' ? '#eab308' : '#b91c1c');
-      ctx.strokeStyle = '#090604';
-      ctx.lineWidth = 1.2;
+      ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.moveTo(-8, 0); ctx.lineTo(-6, -13); ctx.lineTo(6, -13); ctx.lineTo(8, 0);
+      ctx.arc(-2.8, -25, 1.0, 0, TAU);
+      ctx.arc(2.8, -25, 1.0, 0, TAU);
+      ctx.fill();
+
+    // =========================================================================
+    // 6. GUARDIA D'ACCIAIO / PREDONE DEI BORBONI (Isaac Knight / Greed Mob)
+    // =========================================================================
+    } else {
+      ctx.scale(flip, 1);
+
+      // Gambette articolate e stivali borbonici
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(-3, 0); ctx.lineTo(-3, 6);
+      ctx.moveTo(3, 0); ctx.lineTo(3, 6);
+      ctx.stroke();
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.ellipse(-3, 6.5, 3.0, 1.4, 0, 0, TAU);
+      ctx.ellipse(3, 6.5, 3.0, 1.4, 0, 0, TAU);
+      ctx.fill();
+
+      // Giubba borbonica scarlatta o dorata (Predone) con bottoni
+      const colCoat = tint || (tipo === 'predone' ? '#ca8a04' : '#991b1b');
+      ctx.fillStyle = colCoat;
+      ctx.strokeStyle = '#090604';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(-7.5, 0); ctx.lineTo(-6.5, -13); ctx.lineTo(6.5, -13); ctx.lineTo(7.5, 0);
       ctx.closePath();
       ctx.fill(); ctx.stroke();
-      // Testa ed elmo piumato
-      ctx.fillStyle = tipo === 'predone' ? '#fef08a' : '#e2e8f0';
-      ctx.beginPath(); ctx.arc(0, -17, 6.2, 0, TAU); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#090604';
-      ctx.beginPath(); ctx.arc(2.2, -17, 1.5, 0, TAU); ctx.fill();
-      // Baionetta/Lancia puntata
-      ctx.strokeStyle = '#cbd5e1';
-      ctx.lineWidth = 1.8;
-      ctx.beginPath(); ctx.moveTo(3, -8); ctx.lineTo(14, -8); ctx.stroke();
+
+      // Corazza di piombo/ottone sul petto con giglio borbonico
+      ctx.fillStyle = tipo === 'predone' ? '#fef08a' : '#475569';
+      ctx.beginPath();
+      ctx.moveTo(-5, -13); ctx.lineTo(-6, -4); ctx.quadraticCurveTo(0, 1, 6, -4); ctx.lineTo(5, -13);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Morione / Elmo piumato con cresta
+      const colHelm = tipo === 'predone' ? '#d97706' : '#64748b';
+      ctx.fillStyle = colHelm;
+      ctx.beginPath();
+      ctx.arc(0, -18, 6.5, 0, TAU);
+      ctx.fill(); ctx.stroke();
+      // Tesa dell'elmo e piumetto
+      ctx.fillRect(-7.5, -18.5, 15, 2.2);
+      ctx.fillStyle = tipo === 'predone' ? '#ef4444' : '#f9cb40';
+      ctx.beginPath();
+      ctx.moveTo(-2, -24); ctx.quadraticCurveTo(3, -28, 6, -24); ctx.lineTo(1, -21);
+      ctx.closePath(); ctx.fill();
+
+      // Fessura d'ombra e sguardo gelido
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(-3, -17.5, 6, 2.0);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(2.0, -16.5, 1.1, 0, TAU); ctx.fill();
+
+      // Fucile a baionetta in pugno puntato in avanti
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(1, -8, 10, 2.4);
+      // Lama della baionetta lucida
+      const bayoG = ctx.createLinearGradient(11, -8, 19, -8);
+      bayoG.addColorStop(0, '#f8fafc');
+      bayoG.addColorStop(1, '#94a3b8');
+      ctx.fillStyle = bayoG;
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(11, -9.5); ctx.lineTo(19, -7.5); ctx.lineTo(11, -5.5);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
     }
 
     ctx.restore();
   }
 
-  // Disegno pittorico dei Boss in stile The Binding of Isaac (con ombre di salto Monstro, cariche Chub, ecc.)
+
   function disegnaBossPittorico() {
     const args = Array.from(arguments);
     if (args[0] && typeof args[0].save === 'function') args.shift();
@@ -965,137 +1546,287 @@
 
     // Ombra a terra (fondamentale quando Re Gatto / Monstro salta in alto fuori campo!)
     const shadowScale = Math.max(0.35, 1 - airZ / 180);
-    ctx.fillStyle = airZ > 10 ? 'rgba(220, 38, 38, 0.55)' : 'rgba(8, 5, 3, 0.65)';
+    ctx.fillStyle = airZ > 10 ? 'rgba(220, 38, 38, 0.55)' : 'rgba(8, 5, 3, 0.68)';
     ctx.beginPath();
-    ctx.ellipse(x, y + 8, 22 * shadowScale, 8 * shadowScale, 0, 0, TAU);
+    ctx.ellipse(x, y + 8, 26 * shadowScale, 9.5 * shadowScale, 0, 0, TAU);
     ctx.fill();
     if (airZ > 10) {
       ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.6;
       ctx.beginPath();
-      ctx.ellipse(x, y + 8, 24 * shadowScale, 9 * shadowScale, 0, 0, TAU);
+      ctx.ellipse(x, y + 8, 28 * shadowScale, 10.5 * shadowScale, 0, 0, TAU);
       ctx.stroke();
     }
 
     ctx.translate(x, y - airZ);
 
+    // =========================================================================
+    // BOSS 5: DONNA LUCIANA — LA BURATTINAIA DEL VELO (Isaac Mom)
+    // =========================================================================
     if (bossId === 'donna-luciana') {
-      // DONNA LUCIANA — LA BURATTINAIA DEL VELO (con gonna barocca, giglio cremisi, corona e le 2 Mani giganti!)
-      const floatY = Math.sin(tick * 0.08) * 3;
+      const floatY = Math.sin(tick * 0.08) * 3.5;
       ctx.translate(0, floatY);
-      // Fili d'oro che salgono anche dai suoi polsi verso l'alto (l'escamotage del Loop Infinito!)
-      ctx.strokeStyle = 'rgba(249, 203, 64, 0.72)';
+
+      // Fascio di fili dorati che salgono dalla corona e dai polsi
+      ctx.strokeStyle = 'rgba(249, 203, 64, 0.75)';
       ctx.lineWidth = 1.4;
       ctx.beginPath();
-      ctx.moveTo(-64, -18); ctx.lineTo(-64, -180);
-      ctx.moveTo(64, -18);  ctx.lineTo(64, -180);
-      ctx.moveTo(0, -34);   ctx.lineTo(0, -180);
+      ctx.moveTo(-64, -18); ctx.lineTo(-64, -220);
+      ctx.moveTo(64, -18);  ctx.lineTo(64, -220);
+      ctx.moveTo(0, -36);   ctx.lineTo(0, -220);
       ctx.stroke();
 
-      // Gonna ampia barocca nera e oro
-      const dg = ctx.createLinearGradient(0, -28, 0, 8);
-      dg.addColorStop(0, isFlash ? '#ffffff' : '#450a0a');
-      dg.addColorStop(1, isFlash ? '#fca5a5' : '#0f0504');
+      // Ampia gonna a crinolina barocca nera e scarlatta con trame dorate
+      const dg = ctx.createLinearGradient(0, -28, 0, 10);
+      dg.addColorStop(0, isFlash ? '#ffffff' : '#581c87');
+      dg.addColorStop(0.4, isFlash ? '#fca5a5' : '#450a0a');
+      dg.addColorStop(1, isFlash ? '#ef4444' : '#0f0504');
       ctx.fillStyle = dg;
       ctx.strokeStyle = '#f9cb40';
-      ctx.lineWidth = 1.6;
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(-10, -20);
-      ctx.bezierCurveTo(-24, -10, -30, 2, -32, 8);
-      ctx.quadraticCurveTo(0, 12, 32, 8);
-      ctx.bezierCurveTo(30, 2, 24, -10, 10, -20);
+      ctx.moveTo(-12, -22);
+      ctx.bezierCurveTo(-26, -10, -34, 4, -36, 10);
+      ctx.quadraticCurveTo(0, 15, 36, 10);
+      ctx.bezierCurveTo(34, 4, 26, -10, 12, -22);
       ctx.closePath();
       ctx.fill(); ctx.stroke();
 
-      // Volto di porcellana e Corona d'oro
-      ctx.fillStyle = isFlash ? '#ffffff' : '#f5e4c3';
-      ctx.beginPath(); ctx.arc(0, -28, 9.5, 0, TAU); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#ef4444';
+      // Merletto e balze dorate della gonna
+      ctx.strokeStyle = 'rgba(249, 203, 64, 0.65)';
+      ctx.lineWidth = 1.0;
       ctx.beginPath();
-      ctx.arc(-3.2, -28, 1.8, 0, TAU);
-      ctx.arc(3.2, -28, 1.8, 0, TAU);
-      ctx.fill();
+      ctx.moveTo(-32, 4); ctx.quadraticCurveTo(0, 8, 32, 4);
+      ctx.stroke();
+
+      // Busto e corpetto con Giglio d'oro borbonico
+      ctx.fillStyle = isFlash ? '#ffffff' : '#2e1065';
+      ctx.fillRect(-8, -26, 16, 7);
       ctx.fillStyle = '#f9cb40';
+      ctx.beginPath(); ctx.arc(0, -23, 2.0, 0, TAU); ctx.fill();
+
+      // Volto di porcellana diafana e velo funebre
+      ctx.fillStyle = isFlash ? '#ffffff' : '#fef2f2';
+      ctx.strokeStyle = '#18181b';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.arc(0, -30, 9.5, 0, TAU); ctx.fill(); ctx.stroke();
+
+      // Occhi di sangue cremisi da burattinaia
+      const eyeLg = ctx.createRadialGradient(-3.2, -30, 0.2, -3.2, -30, 3.5);
+      eyeLg.addColorStop(0, '#ffffff');
+      eyeLg.addColorStop(0.5, '#ef4444');
+      eyeLg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = eyeLg;
       ctx.beginPath();
-      ctx.moveTo(-9, -35); ctx.lineTo(-7, -44); ctx.lineTo(-2, -38);
-      ctx.lineTo(0, -46);  ctx.lineTo(2, -38);  ctx.lineTo(7, -44); ctx.lineTo(9, -35);
-      ctx.closePath();
+      ctx.arc(-3.2, -30, 3.5, 0, TAU);
+      ctx.arc(3.2, -30, 3.5, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(-3.2, -30, 1.4, 0, TAU);
+      ctx.arc(3.2, -30, 1.4, 0, TAU);
       ctx.fill();
 
-      // Le due Grandi Mani di Marionetta scese ai suoi lati!
+      // Corona d'oro traforata a punte
+      ctx.fillStyle = '#f9cb40';
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.moveTo(-9, -37); ctx.lineTo(-7, -46); ctx.lineTo(-2, -40);
+      ctx.lineTo(0, -48);  ctx.lineTo(2, -40);  ctx.lineTo(7, -46); ctx.lineTo(9, -37);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
       ctx.restore();
+
+      // Le due Grandi Mani di Marionetta scese ai suoi lati che sbattono a terra!
       const slamOff = b.handSlamY || 0;
-      disegnaManoMarionettaPittorica(x - 64, y - 18 + slamOff, 1, 1.0, tick, isFlash);
-      disegnaManoMarionettaPittorica(x + 64, y - 18 + slamOff, -1, 1.0, tick, isFlash);
+      disegnaManoMarionettaPittorica(x - 64, y - 18 + slamOff, 1, 1.05, tick, isFlash);
+      disegnaManoMarionettaPittorica(x + 64, y - 18 + slamOff, -1, 1.05, tick, isFlash);
       return;
     }
 
     ctx.scale(flip, 1);
+
+    // =========================================================================
+    // BOSS 1: RE GATTO DEI QUATTRO CANTI (Isaac Monstro)
+    // =========================================================================
     if (bossId === 're-gatto') {
-      // IL GATTO DEI QUATTRO CANTI (Monstro): grande felino d'ombra coronato che salta e schianta a terra!
-      ctx.fillStyle = isFlash ? '#ffffff' : '#1c120d';
-      ctx.strokeStyle = '#f9cb40';
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      ctx.ellipse(0, -10, 20, 14, 0, 0, TAU);
-      ctx.fill(); ctx.stroke();
-      // Orecchie e corona
-      ctx.beginPath();
-      ctx.moveTo(-14, -18); ctx.lineTo(-18, -32); ctx.lineTo(-6, -22);
-      ctx.moveTo(6, -22);   ctx.lineTo(18, -32);  ctx.lineTo(14, -18);
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath();
-      ctx.arc(4, -13, 3.0, 0, TAU);
-      ctx.arc(12, -12, 2.8, 0, TAU);
-      ctx.fill();
-      ctx.fillStyle = '#f9cb40';
-      ctx.beginPath();
-      ctx.moveTo(-6, -23); ctx.lineTo(-4, -31); ctx.lineTo(0, -26); ctx.lineTo(4, -31); ctx.lineTo(6, -23);
-      ctx.closePath(); ctx.fill();
-    } else if (bossId === 'regina-vespa') {
-      // LA REGINA DELLE VESPE (Duke of Flies): grande regina alata che genera vespe orbitanti!
-      const wy = Math.sin(tick * 0.6) * 5;
-      ctx.fillStyle = 'rgba(224, 242, 254, 0.55)';
-      ctx.strokeStyle = '#f9cb40';
-      ctx.beginPath();
-      ctx.ellipse(-8, -22 + wy * 0.4, 15, 7, -0.3, 0, TAU);
-      ctx.ellipse(8, -22 - wy * 0.4, 15, 7, 0.3, 0, TAU);
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = isFlash ? '#ffffff' : '#ca8a04';
-      ctx.strokeStyle = '#090604';
-      ctx.lineWidth = 1.6;
-      ctx.beginPath(); ctx.ellipse(0, -11, 18, 13, 0, 0, TAU); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath(); ctx.arc(6, -13, 2.8, 0, TAU); ctx.arc(12, -12, 2.5, 0, TAU); ctx.fill();
-    } else if (bossId === 'colosso-statua') {
-      // IL CUSTODE DI MARMO (Gurdy / Mega Maw): colosso centrale di pietra!
-      ctx.fillStyle = isFlash ? '#ffffff' : '#475569';
+      // Corpo massiccio scolpito in ebano scuro
+      const catG = ctx.createRadialGradient(0, -12, 2, 0, -12, 24);
+      catG.addColorStop(0, isFlash ? '#ffffff' : '#3c2415');
+      catG.addColorStop(0.6, isFlash ? '#fca5a5' : '#1c120d');
+      catG.addColorStop(1, '#090503');
+      ctx.fillStyle = catG;
       ctx.strokeStyle = '#f9cb40';
       ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(-22, 4); ctx.lineTo(-18, -28); ctx.lineTo(0, -36); ctx.lineTo(18, -28); ctx.lineTo(22, 4);
+      ctx.ellipse(0, -12, 23, 16, 0, 0, TAU);
+      ctx.fill(); ctx.stroke();
+
+      // Fauci ruggenti spalancate con zanne d'avorio e bava cremisi
+      ctx.fillStyle = '#090503';
+      ctx.beginPath();
+      ctx.ellipse(6, -8, 12, 8, 0, 0, TAU);
+      ctx.fill();
+      // Zanne affilate
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.moveTo(0, -14); ctx.lineTo(2, -9); ctx.lineTo(4, -14);
+      ctx.moveTo(8, -14); ctx.lineTo(10, -9); ctx.lineTo(12, -14);
+      ctx.moveTo(2, -3); ctx.lineTo(4, -7); ctx.lineTo(6, -3);
+      ctx.fill();
+
+      // Orecchie feroci e mantella reale d'ermellino
+      ctx.fillStyle = '#1c120d';
+      ctx.beginPath();
+      ctx.moveTo(-16, -20); ctx.lineTo(-21, -34); ctx.lineTo(-8, -24);
+      ctx.moveTo(8, -24);   ctx.lineTo(21, -34);  ctx.lineTo(16, -20);
+      ctx.fill(); ctx.stroke();
+
+      // Corona borbonica ammaccata con rubini
+      ctx.fillStyle = '#f9cb40';
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-7, -25); ctx.lineTo(-5, -34); ctx.lineTo(0, -28); ctx.lineTo(5, -34); ctx.lineTo(7, -25);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.arc(0, -29, 1.8, 0, TAU); ctx.fill();
+
+      // Occhi rossi incandescenti da sovrano d'ombra
+      const eyeRg = ctx.createRadialGradient(6, -14, 0.2, 6, -14, 4.0);
+      eyeRg.addColorStop(0, '#ffffff');
+      eyeRg.addColorStop(0.5, '#ef4444');
+      eyeRg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = eyeRg;
+      ctx.beginPath();
+      ctx.arc(6, -14, 4.0, 0, TAU);
+      ctx.arc(14, -13, 3.6, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(6, -14, 1.5, 0, TAU);
+      ctx.arc(14, -13, 1.4, 0, TAU);
+      ctx.fill();
+
+    // =========================================================================
+    // BOSS 3: LA REGINA DELLE VESPE (Isaac Duke of Flies)
+    // =========================================================================
+    } else if (bossId === 'regina-vespa') {
+      const wy = Math.sin(tick * 0.6) * 6;
+
+      // 4 Ali gigantesche di pizzo e garza diafana
+      ctx.fillStyle = 'rgba(224, 242, 254, 0.55)';
+      ctx.strokeStyle = '#f9cb40';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(-10, -24 + wy * 0.45, 18, 8.5, -0.35, 0, TAU);
+      ctx.ellipse(10, -24 - wy * 0.45, 18, 8.5, 0.35, 0, TAU);
+      ctx.fill(); ctx.stroke();
+
+      // Addome rigonfio regale striato d'oro e velluto scuro
+      const queenG = ctx.createRadialGradient(0, -13, 2, 0, -13, 22);
+      queenG.addColorStop(0, isFlash ? '#ffffff' : '#facc15');
+      queenG.addColorStop(0.55, isFlash ? '#fef08a' : '#ca8a04');
+      queenG.addColorStop(1, '#1c1917');
+      ctx.fillStyle = queenG;
+      ctx.strokeStyle = '#090604';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.ellipse(0, -13, 22, 16, 0, 0, TAU);
+      ctx.fill(); ctx.stroke();
+
+      // Balze di pizzo e tiara d'avorio della regina
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(0, -13, 18, 0.3, Math.PI - 0.3);
+      ctx.stroke();
+
+      // Occhi composti scarlatti
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(7, -15, 3.5, 0, TAU);
+      ctx.arc(15, -14, 3.2, 0, TAU);
+      ctx.fill();
+
+    // =========================================================================
+    // BOSS 4: IL COLOSSO DI CASERTA (Isaac Gurdy)
+    // =========================================================================
+    } else if (bossId === 'colosso-statua') {
+      // Busto titanico di pietra e marmo emergente dalla pedana
+      const colG = ctx.createLinearGradient(-24, -38, 24, 6);
+      colG.addColorStop(0, isFlash ? '#ffffff' : '#94a3b8');
+      colG.addColorStop(0.55, isFlash ? '#cbd5e1' : '#475569');
+      colG.addColorStop(1, '#0f172a');
+      ctx.fillStyle = colG;
+      ctx.strokeStyle = '#f9cb40';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(-26, 6);
+      ctx.lineTo(-21, -30);
+      ctx.lineTo(0, -40);
+      ctx.lineTo(21, -30);
+      ctx.lineTo(26, 6);
       ctx.closePath();
       ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath(); ctx.arc(-6, -16, 3.2, 0, TAU); ctx.arc(6, -16, 3.2, 0, TAU); ctx.fill();
-    } else {
-      // CAPITANO DI PIOMBO (Chub charge) o SPEZZAFILI D'OTTONE
-      ctx.fillStyle = isFlash ? '#ffffff' : '#991b1b';
-      ctx.strokeStyle = '#f9cb40';
-      ctx.lineWidth = 1.6;
+
+      // Barba e chioma scolpita nella pietra con muschio
+      ctx.fillStyle = '#334155';
       ctx.beginPath();
-      ctx.roundRect(-16, -26, 32, 28, 6);
+      ctx.moveTo(-16, -18); ctx.lineTo(0, -2); ctx.lineTo(16, -18);
+      ctx.closePath(); ctx.fill();
+
+      // Occhi titani cavi di fuoco rosso
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(-7, -20, 3.8, 0, TAU);
+      ctx.arc(7, -20, 3.8, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(-7, -20, 1.4, 0, TAU);
+      ctx.arc(7, -20, 1.4, 0, TAU);
+      ctx.fill();
+
+    // =========================================================================
+    // BOSS 2: CAPITANO GREGORIO / ARIETE DI PIOMBO (Isaac Chub)
+    // =========================================================================
+    } else {
+      // Juggernaut d'acciaio e ottone in carica
+      const ironG = ctx.createLinearGradient(-18, -28, 18, 4);
+      ironG.addColorStop(0, isFlash ? '#ffffff' : '#b91c1c');
+      ironG.addColorStop(0.5, isFlash ? '#fca5a5' : '#7f1d1d');
+      ironG.addColorStop(1, '#1e293b');
+      ctx.fillStyle = ironG;
+      ctx.strokeStyle = '#f9cb40';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.roundRect(-18, -28, 36, 32, 8);
       ctx.fill(); ctx.stroke();
+
+      // Grata da visiera con occhi fiammeggianti
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(-8, -20, 24, 7);
       ctx.fillStyle = '#fef08a';
-      ctx.beginPath(); ctx.arc(5, -16, 2.8, 0, TAU); ctx.arc(11, -16, 2.8, 0, TAU); ctx.fill();
-      // Lancia / Forbice d'ottone gigante
+      ctx.beginPath();
+      ctx.arc(6, -16.5, 3.2, 0, TAU);
+      ctx.arc(13, -16.5, 3.2, 0, TAU);
+      ctx.fill();
+
+      // Grande lancia/ariete frontale con sperone d'oro
       ctx.strokeStyle = '#facc15';
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(6, -8); ctx.lineTo(26, -8); ctx.stroke();
+      ctx.lineWidth = 3.6;
+      ctx.beginPath();
+      ctx.moveTo(8, -8);
+      ctx.lineTo(32, -8);
+      ctx.stroke();
     }
+
     ctx.restore();
   }
+
 
   const SPRITE_PROIETTILI = {
     base: [
