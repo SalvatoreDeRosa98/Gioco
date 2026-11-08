@@ -17,5 +17,5 @@
   ],
   "spawn": [],
   "tavolozza": [],
-  "contenuti": [{ "tipo": "boss", "c": 6, "r": 3 }, { "tipo": "uscita", "c": 6, "r": 3 }]
+  "contenuti": [{ "tipo": "boss", "c": 6, "r": 3, "archetipo": "gatto" }, { "tipo": "uscita", "c": 6, "r": 3 }]
 }

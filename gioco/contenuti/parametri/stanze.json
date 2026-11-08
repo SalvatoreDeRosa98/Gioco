@@ -125,6 +125,12 @@
   "r_dispersione_ricompensa": { "base": 48, "min": 24, "max": 96 },
   "max_oggetti_persistiti": { "base": 24, "min": 12, "max": 48 },
 
+  "uscita": {
+    "_descrizione": "Storia P01 (provvisoria): l'uscita del piano, contenuto 'uscita' del modello della stanza boss (regola 24: un arco al centro, attivo quando la stanza boss è pulita). raggio: distanza dal centro dell'arco entro cui Ferruccio è «sopra» l'uscita; t_attesa: quanto deve restarci di seguito prima che la stanza emetta piano.completato (così raccogliere il bottino del boss al centro non fa uscire per sbaglio). Nessun numero nel GDD: punti di partenza.",
+    "raggio": { "base": 40, "min": 24, "max": 96 },
+    "t_attesa": { "base": 600, "min": 0, "max": 2000 }
+  },
+
   "camera": {
     "_descrizione": "architettura §4b: la camera inquadra la stanza intera; scala = min(1, L/larghezza, (A − margine_hud)/altezza); transizione a scorrimento nella direzione della porta",
     "t_transizione": { "base": 250, "min": 100, "max": 600 },

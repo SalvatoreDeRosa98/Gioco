@@ -7,7 +7,8 @@
  * salvata si cancella: non c'è nulla da riprendere. «Continua» (`riprendi`) rigenera il piano dal seme
  * tramite il gancio `avvia({seme, piano, stanza})` della radice di composizione e ripristina doni (anche
  * nel pool, se c'è), maschere e monete. Lo stato delle stanze visitate e dei piedistalli non è
- * serializzato (storia 032): le stanze ripartono non visitate.
+ * serializzato (storia 032): le stanze ripartono non visitate. Storia P01: anche `piano.completato` (l'uscita
+ * della stanza boss) cancella la notte salvata, con motivo `vittoria`: la notte è finita, non c'è nulla da riprendere.
  * I dati letti sono normalizzati (campi mancanti o corrotti → predefiniti; doni ignoti scartati dai
  * modificatori con errore di contenuto). Nessun numero e nessuna stringa di gioco.
  * Eventi: `notte.salvata` {stanza}, `notte.cancellata` {motivo}, `notte.ripresa` {seme, piano, stanza, ...}.
@@ -15,7 +16,7 @@
  */
 
 /** Motivi della cancellazione (codici stabili). */
-export const MOTIVI_CANCELLAZIONE = Object.freeze({ morte: 'morte', lasciata: 'lasciata', manuale: 'manuale' });
+export const MOTIVI_CANCELLAZIONE = Object.freeze({ morte: 'morte', lasciata: 'lasciata', manuale: 'manuale', vittoria: 'vittoria' });
 
 /**
  * Normalizza i dati di una notte salvata; null se non c'è una notte riprendibile.
@@ -129,6 +130,7 @@ export function creaNotteSalvata({ salvataggio, slot, eventi, notte, ferruccio, 
   const disiscrizioni = [
     eventi.on('notte.stanza', () => salva()),
     eventi.on('ferruccio.morto', () => cancella(MOTIVI_CANCELLAZIONE.morte)),
+    eventi.on('piano.completato', () => cancella(MOTIVI_CANCELLAZIONE.vittoria)),
   ];
 
   return {

@@ -1,5 +1,5 @@
 {
-  "_doc": "Testi dell'interfaccia (HUD, banchetto, doni e cartiglio). Unico posto con stringhe mostrate dal motore: nessuna stringa di gioco nel codice. {tasto}, {nome}, {prezzo} sono segnaposto riempiti dall'interfaccia. Storia 025 (interfaccia minimale in DOM: il renderer definitivo aspetta l'approvazione dell'autore). Storia 027: 'incontri' (etichette del cartiglio dei dialoghi e del tableau; {nome} è il nome dell'NPC). Storia 029: 'hub' (cartellino dell'hub: {n} numero della notte, {tasto}, {nome}, {piano}). Storia 030: 'morte' (didascalie del velo della sequenza di morte, una per fase) e 'ripresa' (pannello «Continua» nell'hub: {piano}, {notte}).",
+  "_doc": "Testi dell'interfaccia (HUD, banchetto, doni e cartiglio). Unico posto con stringhe mostrate dal motore: nessuna stringa di gioco nel codice. {tasto}, {nome}, {prezzo} sono segnaposto riempiti dall'interfaccia. Storia 025 (interfaccia minimale in DOM: il renderer definitivo aspetta l'approvazione dell'autore). Storia 027: 'incontri' (etichette del cartiglio dei dialoghi e del tableau; {nome} è il nome dell'NPC). Storia 029: 'hub' (cartellino dell'hub: {n} numero della notte, {tasto}, {nome}, {piano}). Storia 030: 'morte' (didascalie del velo della sequenza di morte, una per fase) e 'ripresa' (pannello «Continua» nell'hub: {piano}, {notte}). Storia P01 (provvisoria): 'fine_piano' (didascalia del velo all'uscita del piano; {piano} è il piano che non esiste ancora).",
   "hud": {
     "monete": "Monete",
     "scintille": "Scintille",
@@ -59,5 +59,8 @@
     "titolo": "Una notte è rimasta a metà: notte {notte}, piano {piano}",
     "continua": "Continua",
     "lascia": "Lascia andare"
+  },
+  "fine_piano": {
+    "velo": "Il piano {piano} non è ancora stato costruito. La prova finisce qui: Ferruccio torna in Piazza Dante."
   }
 }

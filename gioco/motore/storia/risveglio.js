@@ -17,6 +17,14 @@
  * `morte.fase` {fase, indice}, `risveglio.fine` {notte} e la radice di composizione fa il resto
  * (pausa logica durante la sequenza, poi `hub`). Il velo DOM (`interfaccia/morte.js`) legge
  * `fase`, `progresso`, `progressoFase` e `lanterneSpente()`.
+ *
+ * Storia P01 (PROVVISORIA, build di prova): la **fine del piano**. A `piano.completato` {piano} (l'uscita della
+ * stanza boss, `mondo/stanza.js`) il modulo registra `piano_max = max(piano_max, piano + 1)` con
+ * `narrativa.raggiungiPiano`, fa una sequenza di una sola fase (`velo`, durata `risveglio.fine_piano.t_velo`;
+ * eventi `fine_piano.avvio` {durata_ms, piano, notte} e `fine_piano.fase`) e poi lo STESSO risveglio della
+ * morte (notte + 1, doni/pool/economia azzerati, corpo in piedi) con `risveglio.fine` {…, motivo: 'vittoria'}:
+ * la radice di composizione non distingue i due casi. `morti` non cresce. Il piano 2 non esiste: la build di
+ * prova torna in piazza. `boss_battuti` non è toccato (storia 022).
  * Nessun numero e nessuna stringa di gioco: durate e numero di lanterne dai parametri; i nomi delle fasi
  * sono etichette di stato (come gli stati del corpo), non testo mostrato.
  * Dipendenze: solo moduli iniettati.
@@ -24,6 +32,12 @@
 
 /** Fasi della sequenza, nell'ordine (etichette di stato; le durate sono in `risveglio.fasi.<fase>`). */
 export const FASI_MORTE = Object.freeze(['lanterne', 'fili', 'maschera', 'buio']);
+
+/** Storia P01: fasi della sequenza di fine piano (una sola: il velo con la didascalia). */
+export const FASI_FINE_PIANO = Object.freeze(['velo']);
+
+/** Motivi del risveglio (codici stabili nel payload di `risveglio.fine`). */
+export const MOTIVI_RISVEGLIO = Object.freeze({ morte: 'morte', vittoria: 'vittoria' });
 
 /** Stato della sequenza quando non è in corso. */
 export const INATTIVO = 'inattivo';
@@ -34,7 +48,7 @@ export const INATTIVO = 'inattivo';
  *   parametri: { get: (chiave: string) => any },
  *   tempo: { ticksDaMs: (ms: number) => number },
  *   eventi: { on: Function, emit: Function },
- *   narrativa: { nuovaNotte: () => number, avanzamento: () => object },
+ *   narrativa: { nuovaNotte: () => number, avanzamento: () => object, raggiungiPiano?: (piano: number) => number },
  *   modificatori: { azzera: () => void },
  *   ferruccio: { risveglia: () => void, maschere: number },
  *   economia?: { nuovaNotte: () => void } | null,
@@ -60,56 +74,100 @@ export function creaRisveglio({
     /** @type {number[]} ticks di ogni fase, fotografati all'avvio */
     durate: [],
     morti: 0,
+    /** motivo della sequenza in corso (null da inattivo) e fasi/durate che la descrivono */
+    motivo: null,
+    /** @type {readonly string[]} */
+    fasi: FASI_MORTE,
+    /** storia P01: piano completato dalla sequenza di vittoria in corso (null altrimenti) */
+    pianoCompletato: null,
   };
 
-  /** Durate delle fasi in ms (lette ora: i parametri possono cambiare in debug). */
-  function durateMs() {
+  /** Durate in ms delle fasi di un motivo (lette ora: i parametri possono cambiare in debug). */
+  function durateMsDi(motivo) {
+    if (motivo === MOTIVI_RISVEGLIO.vittoria) return FASI_FINE_PIANO.map((f) => R(`fine_piano.t_${f}`));
     return FASI_MORTE.map((f) => R(`fasi.${f}`));
   }
 
-  /** Durata totale della sequenza in ms con i parametri correnti. */
-  function durataMs() {
-    return durateMs().reduce((a, b) => a + b, 0);
+  /** Durate delle fasi della sequenza di morte in ms. */
+  function durateMs() {
+    return durateMsDi(MOTIVI_RISVEGLIO.morte);
   }
 
-  /** Avvia la sequenza (idempotente mentre è in corso). */
+  /** Durata totale in ms della sequenza del motivo dato (morte se omesso) con i parametri correnti. */
+  function durataMs(motivo = MOTIVI_RISVEGLIO.morte) {
+    return durateMsDi(motivo).reduce((a, b) => a + b, 0);
+  }
+
+  /** Avvia la sequenza di morte (idempotente mentre una sequenza è in corso). */
   function avvia() {
     if (s.fase !== INATTIVO) return false;
     const ms = durateMs();
     if (ms.reduce((a, b) => a + b, 0) > R('t_max')) log?.error?.(`[risveglio] errore di contenuto: la sequenza dura ${ms.reduce((a, b) => a + b, 0)} ms, oltre t_max ${R('t_max')}`);
-    s.durate = ms.map((m) => Math.max(0, tempo.ticksDaMs(m)));
-    s.durataTicks = s.durate.reduce((a, b) => a + b, 0);
-    s.ticksTotali = 0;
     s.morti += 1;
-    eventi.emit('morte.avvio', { durata_ms: ms.reduce((a, b) => a + b, 0), fasi: FASI_MORTE.slice(), notte: narrativa.avanzamento()[campoNotte] });
+    avviaSequenza({ motivo: MOTIVI_RISVEGLIO.morte, fasi: FASI_MORTE, ms });
+    eventi.emit('morte.avvio', { durata_ms: s.durataMsAvvio, fasi: FASI_MORTE.slice(), notte: narrativa.avanzamento()[campoNotte], motivo: s.motivo });
     entraFase(0);
     return true;
   }
 
+  /**
+   * Storia P01: il piano `piano` è completato (uscita della stanza boss). Registra `piano_max`, poi la
+   * sequenza del velo e il risveglio con motivo `vittoria`. Falso se una sequenza è già in corso.
+   * @param {number} piano
+   */
+  function completaPiano(piano) {
+    if (s.fase !== INATTIVO) return false;
+    if (!Number.isInteger(piano) || piano < 1) {
+      log?.error?.(`[risveglio] piano.completato con un piano non valido: ${piano}`);
+      return false;
+    }
+    narrativa.raggiungiPiano?.(piano + 1);
+    s.pianoCompletato = piano;
+    avviaSequenza({ motivo: MOTIVI_RISVEGLIO.vittoria, fasi: FASI_FINE_PIANO, ms: durateMsDi(MOTIVI_RISVEGLIO.vittoria) });
+    eventi.emit('fine_piano.avvio', { durata_ms: s.durataMsAvvio, fasi: FASI_FINE_PIANO.slice(), piano, notte: narrativa.avanzamento()[campoNotte], motivo: s.motivo });
+    entraFase(0);
+    return true;
+  }
+
+  /** Fotografa motivo, fasi e durate (tick) di una sequenza che parte. */
+  function avviaSequenza({ motivo, fasi, ms }) {
+    s.motivo = motivo;
+    s.fasi = fasi;
+    s.durataMsAvvio = ms.reduce((a, b) => a + b, 0);
+    s.durate = ms.map((m) => Math.max(0, tempo.ticksDaMs(m)));
+    s.durataTicks = s.durate.reduce((a, b) => a + b, 0);
+    s.ticksTotali = 0;
+  }
+
   /** Entra nella fase `i` saltando quelle a durata zero; oltre l'ultima → risveglio. */
   function entraFase(i) {
-    while (i < FASI_MORTE.length && s.durate[i] === 0) i += 1;
-    if (i >= FASI_MORTE.length) {
+    while (i < s.fasi.length && s.durate[i] === 0) i += 1;
+    if (i >= s.fasi.length) {
       risveglia();
       return;
     }
     s.indice = i;
-    s.fase = FASI_MORTE[i];
+    s.fase = s.fasi[i];
     s.ticksFase = 0;
-    eventi.emit('morte.fase', { fase: s.fase, indice: i, durata_ms: R(`fasi.${s.fase}`) });
+    const nome = s.motivo === MOTIVI_RISVEGLIO.vittoria ? 'fine_piano.fase' : 'morte.fase';
+    eventi.emit(nome, { fase: s.fase, indice: i, durata_ms: durateMsDi(s.motivo)[i], motivo: s.motivo });
   }
 
-  /** Il risveglio: notte + 1, doni e pool azzerati, economia nuova, corpo in piedi. */
+  /** Il risveglio: notte + 1, doni e pool azzerati, economia nuova, corpo in piedi (per morte e vittoria). */
   function risveglia() {
+    const motivo = s.motivo ?? MOTIVI_RISVEGLIO.morte;
+    const piano = s.pianoCompletato;
     s.fase = INATTIVO;
     s.indice = -1;
+    s.motivo = null;
+    s.pianoCompletato = null;
     const notte = narrativa.nuovaNotte();
     modificatori.azzera();
     pool?.azzera?.();
     economia?.nuovaNotte?.();
     combattimento?.interrompi?.();
     ferruccio.risveglia();
-    eventi.emit('risveglio.fine', { notte, maschere: ferruccio.maschere });
+    eventi.emit('risveglio.fine', { notte, maschere: ferruccio.maschere, motivo, piano });
   }
 
   /**
@@ -135,21 +193,29 @@ export function creaRisveglio({
     return Math.min(1, s.ticksTotali / s.durataTicks);
   }
 
-  /** Lanterne già spente: una a una nella prima fase, tutte dopo, nessuna da inattivo. */
+  /** Lanterne già spente: una a una nella prima fase, tutte dopo, nessuna da inattivo né nella vittoria. */
   function lanterneSpente() {
     const n = R('lanterne');
-    if (s.fase === INATTIVO) return 0;
+    if (s.fase === INATTIVO || s.motivo !== MOTIVI_RISVEGLIO.morte) return 0;
     if (s.indice > 0) return n;
     return Math.min(n, Math.floor(progressoFase() * n));
   }
 
-  const disiscrizioni = [eventi.on('ferruccio.morto', () => avvia())];
+  const disiscrizioni = [
+    eventi.on('ferruccio.morto', () => avvia()),
+    eventi.on('piano.completato', (p) => completaPiano(p?.piano)),
+  ];
 
   return {
     get attivo() { return s.fase !== INATTIVO; },
     get fase() { return s.fase; },
     get indice() { return s.indice; },
     get morti() { return s.morti; },
+    /** Storia P01: motivo della sequenza in corso (`morte` | `vittoria`, null da inattivo), piano completato e prossimo. */
+    get motivo() { return s.motivo; },
+    get pianoCompletato() { return s.pianoCompletato; },
+    get pianoProssimo() { return s.pianoCompletato === null ? null : s.pianoCompletato + 1; },
+    completaPiano,
     lanterne: () => R('lanterne'),
     durataMs,
     progresso,
@@ -158,7 +224,7 @@ export function creaRisveglio({
     avvia,
     tick,
     /** Fotografia per il debug e i test. */
-    stato: () => ({ fase: s.fase, indice: s.indice, progresso: progresso(), progressoFase: progressoFase(), lanterneSpente: lanterneSpente(), morti: s.morti }),
+    stato: () => ({ fase: s.fase, indice: s.indice, progresso: progresso(), progressoFase: progressoFase(), lanterneSpente: lanterneSpente(), morti: s.morti, motivo: s.motivo, pianoCompletato: s.pianoCompletato }),
     /** Toglie gli ascoltatori (test). */
     distruggi: () => { for (const d of disiscrizioni) d(); disiscrizioni.length = 0; },
   };

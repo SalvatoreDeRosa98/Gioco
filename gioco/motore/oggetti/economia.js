@@ -19,7 +19,9 @@
  * di stanze-porte.md regola 23 — cadono sparsi con il generatore `drop` entro `dispersione` dal centro,
  * riportati con il gancio `puntoSicuro` del payload alla cella sicura se cadono su ostacolo o pericolo:
  * monete e cuori a terra, scintille accreditate subito al profilo come quelle del boss), `stanza.pulita` (`combattuta` → conta e scala i consumabili),
- * `notte.stanza` (stanza corrente), `ferruccio.morto` (monete perse, residuo di notte accreditato).
+ * `notte.stanza` (stanza corrente), `ferruccio.morto` (monete perse, residuo di notte accreditato), `piano.completato`
+ * (storia P01: la notte è vinta → `fineNotte()`: residuo accreditato e `economia.fine_notte`, che fa perdere ai ricordi
+ * ciò che è a terra; le monete le azzera poi `nuovaNotte()` al risveglio).
  * Emette: `economia.monete` {monete, delta, motivo}, `economia.oggetto` {stanza, oggetto, preso},
  * `economia.scintille` {scintille, accreditate, motivo}, `economia.morte` {monete_perse},
  * `economia.fine_notte` {stanze_ripulite, residuo}, `economia.consumabile` {id, attivo, restanti}.
@@ -466,6 +468,7 @@ export function creaEconomia({ parametri, eventi = null, rng, profilo, ferruccio
     disiscrizioni.push(eventi.on('stanza.ricompensa', suRicompensa));
     disiscrizioni.push(eventi.on('stanza.pulita', suPulita));
     disiscrizioni.push(eventi.on('ferruccio.morto', () => morte()));
+    disiscrizioni.push(eventi.on('piano.completato', () => fineNotte()));
   }
 
   /** Prezzo di uno slot del banchetto con i parametri correnti (rarità solo per il dono). */

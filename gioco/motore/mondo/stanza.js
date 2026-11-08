@@ -27,8 +27,19 @@
  * pericolo alla cella sicura più vicina (regola 24); a lasciare gli oggetti a terra è l'economia (che usa il
  * suo generatore `drop`). `ricompensa_data` resta vero nello stato salvato: al rientro nessuna ricompensa.
  *
+ * Storia P01 (PROVVISORIA, build di prova per l'autore; la storia 022 la sostituisce): la stanza di tipo
+ * `boss` combatte una sola ondata con un solo nemico, nato dal punto del contenuto `boss` del modello con
+ * l'archetipo scritto lì (`archetipo`, es. gatto) e il flag `boss: true` passato alla factory (che applica
+ * la taglia di `nemici.boss_provvisorio`); porte chiuse come una stanza normale; quando il boss muore la
+ * stanza emette `boss.sconfitto` {id: archetipo, x, y} (lo ascoltano i ricordi: cade il Medaglione) e passa
+ * per `svuotata → pulita` come le altre (il bottino del boss lo dà l'economia dal payload `boss`). Il
+ * contenuto `uscita` (regola 24: un arco al centro) è attivo solo a stanza `pulita`: se Ferruccio resta
+ * entro `stanze.uscita.raggio` per `t_attesa` di seguito la stanza emette `piano.completato` {piano, id,
+ * x, y} una sola volta. `boss_battuti` dello stato narrativo NON è toccato (è della storia 022).
+ *
  * Eventi (verso l'alto): `stanza.entrata`, `stanza.chiusa`, `ondata.inizio`, `nemico.nato`,
- * `stanza.svuotata`, `stanza.ricompensa`, `stanza.pulita`, `stanza.abbandonata`, `stanza.pericolo`.
+ * `stanza.svuotata`, `stanza.ricompensa`, `stanza.pulita`, `stanza.abbandonata`, `stanza.pericolo`,
+ * `boss.sconfitto`, `piano.completato`.
  * Nessun numero di gioco: tutto da `stanza.*` e `stanze.*`; nessuna casualità nativa (ADR-0003):
  * `rng_comp`, `rng_spawn`, `rng_ric`, `rng_pericoli` derivano dal `seme_stanza`.
  */
@@ -51,8 +62,13 @@ export const TRANSIZIONI_STANZA = Object.freeze({
   pulita: Object.freeze([]),
 });
 
-/** Tipi che combattono (hanno ondate). */
+/** Tipi che combattono con le ondate della tavolozza. */
 export const TIPI_COMBATTIMENTO = Object.freeze(['normale']);
+
+/** Storia P01: tipo della stanza del boss e tipi dei contenuti del modello che la stanza gestisce. */
+export const TIPO_BOSS = 'boss';
+export const CONTENUTO_BOSS = 'boss';
+export const CONTENUTO_USCITA = 'uscita';
 
 /** Fasi del ciclo di un pericolo a tempo (braciere, regola 16). */
 export const FASI_PERICOLO = Object.freeze(['riposo', 'anticipo', 'attivo']);
@@ -344,13 +360,14 @@ export function costruisciMura({ geo, cella, origine, aperture }) {
  *   campo: object,
  *   scena: { larghezza: number, altezza: number },
  *   bersagli: object[],
- *   creaNemico: (o: { archetipo: string, x: number, y: number, id: string }) => object,
+ *   creaNemico: (o: { archetipo: string, x: number, y: number, id: string, boss?: boolean }) => object,
  *   ferruccio: { x: number, y: number, r: number },
- *   statoSalvato?: object | null
+ *   statoSalvato?: object | null,
+ *   log?: { error: Function }
  * }} o `campo` è l'oggetto condiviso che viene sostituito in loco
  */
 export function creaStanza({
-  record, modello, piano, parametri, tempo, eventi, campo, scena, bersagli, creaNemico, ferruccio, statoSalvato = null,
+  record, modello, piano, parametri, tempo, eventi, campo, scena, bersagli, creaNemico, ferruccio, statoSalvato = null, log = console,
 }) {
   if (!record || !modello || !parametri || !tempo || !eventi || !campo || !scena || !bersagli || !creaNemico || !ferruccio) {
     throw new TypeError('creaStanza: dipendenze mancanti');
@@ -429,6 +446,13 @@ export function creaStanza({
   Object.assign(campo, { ...base, solidi });
 
   const contenuti = analisi.contenuti.map((c) => ({ ...c, ...centroCella(c.c, c.r) }));
+  // storia P01: il punto e l'archetipo del boss provvisorio (solo nella stanza `boss`) e l'arco dell'uscita
+  const contenutoBoss = record.tipo === TIPO_BOSS ? contenuti.find((c) => c.tipo === CONTENUTO_BOSS) ?? null : null;
+  if (contenutoBoss && typeof contenutoBoss.archetipo !== 'string') {
+    log?.error?.(`[stanza] errore di contenuto: il contenuto 'boss' di ${modello.id} non ha 'archetipo': nessun boss`);
+  }
+  const puntoBoss = contenutoBoss && typeof contenutoBoss.archetipo === 'string' ? contenutoBoss : null;
+  const puntoUscita = contenuti.find((c) => c.tipo === CONTENUTO_USCITA) ?? null;
   // storia 018: celle sicure per la ricompensa (regola 24): libere da ostacoli `ferma_passo` e dai dischi dei pericoli
   const occupato = (x, y) => solidi.some((sol) => sol.ferma_passo && x >= sol.x && x < sol.x + sol.w && y >= sol.y && y < sol.y + sol.h)
     || pericoli.some((p) => Math.hypot(p.x - x, p.y - y) < p.rFiamma);
@@ -444,11 +468,17 @@ export function creaStanza({
   const centriPorte = Array.from(porte.values(), (p) => p.centro);
 
   // composizione pre-estratta (stesso seme → stessa composizione, regola «seme_stanza»)
-  const combatte = TIPI_COMBATTIMENTO.includes(record.tipo) && modello.tavolozza.length > 0 && spawnPunti.length > 0;
+  const combatteBoss = puntoBoss !== null;
+  const combatte = (TIPI_COMBATTIMENTO.includes(record.tipo) && modello.tavolozza.length > 0 && spawnPunti.length > 0) || combatteBoss;
   let totale = 0;
   let quote = [];
   let ondateArchetipi = [];
-  if (combatte) {
+  if (combatteBoss) {
+    // storia P01: una sola ondata con il solo boss, dal punto del contenuto (niente tavolozza né spawn)
+    totale = 1;
+    quote = [1];
+    ondateArchetipi = [[puntoBoss.archetipo]];
+  } else if (combatte) {
     const variazione = estraiVariazione(parametri, rngComp);
     totale = nNemici({ parametri, p: piano, d: record.profondita, dBoss: record.d_boss, diff: modello.difficolta, dim: modello.dim, variazione });
     quote = quoteOndate({ parametri, p: piano, n: totale });
@@ -473,6 +503,10 @@ export function creaStanza({
     /** @type {{ archetipo: string, punto: object, nato: number, attesa: number }[]} */
     segnalini: [],
     usati: new Set(),
+    /** storia P01: il boss vivo della stanza (null altrove) e l'attesa sull'uscita */
+    boss: null,
+    uscitaTicks: 0,
+    uscitaAttraversata: false,
   };
 
   function vai(nuovo) {
@@ -494,7 +528,7 @@ export function creaStanza({
   function creaSegnalini(k) {
     const scelti = [];
     for (const archetipo of ondateArchetipi[k - 1] ?? []) {
-      const punto = scegliPunto(S('r_sicurezza'), scelti);
+      const punto = combatteBoss ? puntoBoss : scegliPunto(S('r_sicurezza'), scelti);
       if (!punto) break; // nessun punto: l'ondata è più piccola (mai un nemico addosso)
       s.usati.add(punto);
       scelti.push(punto);
@@ -529,9 +563,10 @@ export function creaStanza({
         }
       }
       s.nati += 1;
-      const nemico = creaNemico({ archetipo: seg.archetipo, x: punto.x, y: punto.y, id: `${record.id}-${s.nati}` });
+      const nemico = creaNemico({ archetipo: seg.archetipo, x: punto.x, y: punto.y, id: `${record.id}-${s.nati}`, boss: combatteBoss });
+      if (combatteBoss) s.boss = nemico;
       bersagli.push(nemico);
-      eventi.emit('nemico.nato', { id: record.id, archetipo: seg.archetipo, x: punto.x, y: punto.y, ondata: s.ondata });
+      eventi.emit('nemico.nato', { id: record.id, archetipo: seg.archetipo, x: punto.x, y: punto.y, ondata: s.ondata, boss: combatteBoss });
     }
     s.segnalini = restanti;
     s.usati.clear(); // i punti tornano disponibili per l'ondata successiva (d_min_spawn vale dentro l'ondata)
@@ -642,6 +677,11 @@ export function creaStanza({
         } else if (v === 0) {
           vai('svuotata');
           s.tSvuotata = s.t;
+          if (s.boss) {
+            // storia P01: il boss provvisorio è caduto: chi ascolta fa cadere il ricordo (ricordi.js) nel punto della morte
+            eventi.emit('boss.sconfitto', { id: s.boss.archetipo, stanza: record.id, x: s.boss.x, y: s.boss.y });
+            s.boss = null;
+          }
           eventi.emit('stanza.svuotata', { id: record.id });
         }
         break;
@@ -664,6 +704,34 @@ export function creaStanza({
     // così con t_chiusura + t_anim = t_marker sono `chiuse` nel tick in cui i nemici compaiono
     const f = cerchioFerruccio();
     for (const p of porte.values()) p.tick(p.occupataDa(f));
+    tickUscita(f);
+  }
+
+  /**
+   * Storia P01: l'uscita del piano. Attiva solo a stanza `pulita`; Ferruccio deve restarci sopra (centro entro
+   * `uscita.raggio`) per `uscita.t_attesa` di seguito; poi `piano.completato` una sola volta per stanza montata.
+   * @param {{ x: number, y: number }} f il corpo di Ferruccio
+   */
+  function tickUscita(f) {
+    if (!puntoUscita || s.uscitaAttraversata || s.stato !== 'pulita') {
+      s.uscitaTicks = 0;
+      return;
+    }
+    const sopra = Math.hypot(f.x - puntoUscita.x, f.y - puntoUscita.y) < S('uscita.raggio');
+    s.uscitaTicks = sopra ? s.uscitaTicks + 1 : 0;
+    if (!sopra || s.uscitaTicks < ticks('uscita.t_attesa')) return;
+    s.uscitaAttraversata = true;
+    eventi.emit('piano.completato', { piano, id: record.id, x: puntoUscita.x, y: puntoUscita.y });
+  }
+
+  /** Storia P01: l'uscita del piano per il disegno e i test, o null se il modello non ne ha una. */
+  function uscita() {
+    if (!puntoUscita) return null;
+    const attesa = ticks('uscita.t_attesa');
+    return {
+      x: puntoUscita.x, y: puntoUscita.y, raggio: S('uscita.raggio'), attiva: s.stato === 'pulita',
+      progresso: attesa > 0 ? Math.min(1, s.uscitaTicks / attesa) : (s.uscitaTicks > 0 ? 1 : 0), attraversata: s.uscitaAttraversata,
+    };
   }
 
   /** La porta aperta che Ferruccio ha appena attraversato (centro oltre la metà del muro), o `null`. */
@@ -698,6 +766,7 @@ export function creaStanza({
       s.segnalini = [];
       s.usati = new Set();
       s.ondata = 0;
+      s.boss = null;
       for (const p of porte.values()) p.annulla();
       eventi.emit('stanza.abbandonata', { id: record.id });
     }
@@ -736,6 +805,10 @@ export function creaStanza({
     get segnalini() { return s.segnalini.map((x) => ({ archetipo: x.archetipo, x: x.punto.x, y: x.punto.y })); },
     get tick_() { return s.t; },
     get combatte() { return combatte; },
+    /** Storia P01: vero nella stanza del boss provvisorio; il boss vivo (o null); l'uscita del piano (o null). */
+    get combatteBoss() { return combatteBoss; },
+    get boss() { return s.boss; },
+    get uscita() { return uscita(); },
     record,
     modello,
     geo,

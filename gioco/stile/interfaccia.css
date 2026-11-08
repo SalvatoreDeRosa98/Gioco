@@ -154,6 +154,9 @@
 #interfaccia .morte-maschera.staccata .pezzo:nth-child(2) { transform: translateY(-4.5em); }
 #interfaccia .morte-didascalia { margin: 0; font-style: italic; opacity: 0.9; }
 #interfaccia .morte-velo[data-fase="buio"] .morte-didascalia { color: var(--oro); }
+/* Storia P01 (provvisoria): lo stesso velo per la fine del piano: niente lanterne, fili e maschera; didascalia d'oro. */
+#interfaccia .morte-velo [hidden] { display: none; }
+#interfaccia .morte-velo[data-motivo="vittoria"] .morte-didascalia { color: var(--oro); font-style: normal; }
 
 /* Storia 030: pannello «Continua» della notte salvata, nell'hub, non definitivo. */
 #interfaccia .ripresa {

@@ -21,6 +21,10 @@
  * occhi a fessura che diventano cerchietti rossi nel lampo — con l'anello rosso che si chiude durante il
  * lampo e la striscia tratteggiata del segno a terra (`segnoATerra()`) dal lampo all'atterraggio.
  *
+ * Storia P01 (provvisoria): il boss provvisorio è il gatto scalato (il raggio arriva già scalato dalla scheda) con
+ * l'etichetta `boss (provvisorio)`; l'uscita del piano è un arco tratteggiato al centro della stanza boss, pieno e
+ * d'oro quando è attiva (stanza pulita), con il raggio di `stanze.uscita.raggio` e l'attesa che si riempie.
+ *
  * I colori vengono dai token CSS (unico posto con i colori); i testi sono etichette diagnostiche,
  * non testi di gioco. Nessun numero di gioco: geometrie e raggi arrivano dai moduli di logica.
  */
@@ -197,12 +201,47 @@ export function creaResaDebug({
       ctx.fillText(p.fase ? `${p.id} ${p.fase}` : p.id, p.x, p.y + p.rFiamma + 2);
     }
     for (const k of st.contenuti) {
+      if (k.tipo === 'uscita') continue; // storia P01: l'arco dell'uscita si disegna da `st.uscita`
       ctx.strokeStyle = c.parata;
       ctx.lineWidth = 2;
       ctx.strokeRect(k.x - 10, k.y - 10, 20, 20);
       ctx.fillStyle = c.testo;
       ctx.textBaseline = 'bottom';
       ctx.fillText(k.tipo, k.x, k.y - 12);
+    }
+    // storia P01: l'uscita del piano come arco (semicerchio su due piedritti) largo quanto il raggio dell'uscita:
+    // tratteggiato e d'inchiostro finché la stanza non è pulita, pieno e d'oro quando è attiva; il cerchio sottile è
+    // il raggio di attivazione e si riempie con l'attesa
+    const u = st.uscita;
+    if (u) {
+      const r = u.raggio;
+      const piede = r * 0.6;
+      ctx.strokeStyle = u.attiva ? c.oro : c.nemico;
+      ctx.lineWidth = u.attiva ? 4 : 2;
+      ctx.setLineDash(u.attiva ? [] : [6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(u.x - r * 0.6, u.y + piede);
+      ctx.lineTo(u.x - r * 0.6, u.y);
+      ctx.arc(u.x, u.y, r * 0.6, Math.PI, Math.PI * 2);
+      ctx.lineTo(u.x + r * 0.6, u.y + piede);
+      ctx.stroke();
+      ctx.setLineDash([2, 4]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(u.x, u.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      if (u.progresso > 0) {
+        ctx.setLineDash([]);
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(u.x, u.y, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * u.progresso);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      ctx.lineWidth = 2;
+      ctx.fillStyle = c.testo;
+      ctx.textBaseline = 'top';
+      ctx.fillText(`uscita ${u.attraversata ? 'attraversata' : u.attiva ? 'attiva' : 'chiusa'}`, u.x, u.y + r + 2);
     }
     for (const sg of st.segnalini) {
       ctx.strokeStyle = c.nemico;
@@ -647,7 +686,7 @@ export function creaResaDebug({
       ctx.textBaseline = 'middle';
       ctx.fillText(String(Math.round(b.vita * 100) / 100), b.x, b.y);
       ctx.textBaseline = 'top';
-      ctx.fillText(`${b.archetipo ? `${b.archetipo} ` : ''}${b.stato}${b.imparabile ? ' !' : ''}${b.peso >= 3 ? ' ■' : ''}`, b.x, b.y + b.r + 3);
+      ctx.fillText(`${b.boss ? 'boss (provvisorio) ' : ''}${b.archetipo ? `${b.archetipo} ` : ''}${b.stato}${b.imparabile ? ' !' : ''}${b.peso >= 3 ? ' ■' : ''}`, b.x, b.y + b.r + 3);
     }
     for (const p of proiettili()) {
       if (!p?.vivo) continue;

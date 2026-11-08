@@ -53,6 +53,12 @@
  *    `notte.stanza` e la cancella alla morte; nell'hub il pannello «Continua» (`interfaccia/ripresa.js`) la riprende
  *    rigenerando il piano dal seme nella stanza salvata (`avviaNotte` con `stanza`) e ripristinando maschere, doni e
  *    monete; `?debug=1&wire=1&hub=1&continua=1` preme «Continua» da solo all'avvio (strumento di QA);
+ *  - storia P01 (PROVVISORIA, build di prova; la 022 la sostituisce): nella stanza `boss` la factory dei nemici riceve
+ *    `boss: true` e crea il gatto con la taglia di `nemici.boss_provvisorio` (`schedaBossProvvisorio`); alla sua morte la
+ *    stanza emette `boss.sconfitto` (i ricordi fanno cadere il Medaglione) e, pulita, attiva l'uscita: `piano.completato`
+ *    → `storia/risveglio.js` registra `piano_max`, mostra il velo (`fine_piano.avvio`: qui pausa logica come alla morte)
+ *    e chiude con lo stesso `risveglio.fine` della morte (motivo `vittoria`): si torna in piazza con notte + 1, la notte
+ *    salvata è cancellata (`notte-salvata.js`); senza hub la notte riparte dallo stesso seme;
  *  - la superficie di debug `window.__gioco`, presente SOLO con `?debug=1` (ADR-0003).
  *
  * La risoluzione logica è un vincolo del motore (ADR-0001), non un valore di gioco.
@@ -71,7 +77,7 @@ import { creaCampo } from './mondo/fisica.js';
 import { creaFerruccio } from './attori/ferruccio.js';
 import { creaCombattimento } from './attori/combattimento.js';
 import { creaFantoccio } from './attori/bersaglio.js';
-import { creaNemico as creaNemicoArchetipo } from './attori/nemico.js';
+import { creaNemico as creaNemicoArchetipo, schedaBossProvvisorio } from './attori/nemico.js';
 import { creaGatto, ARCHETIPO_GATTO } from './attori/gatto.js'; // storia 020: il gatto d'ombra con la posa
 import { creaDirettore } from './attori/ia/direttore.js';
 import { creaResaDebug } from './resa/debug.js';
@@ -335,11 +341,13 @@ async function avvia() {
     parametri, tempo, eventi, narrativa, modificatori, ferruccio, economia, pool, combattimento, campoNotte: regoleNarrativa.piani.campo_notte,
   });
   ciclo.registra({ tick: (dt) => risveglio.tick(dt) }, { stati: ['notte', 'pausa'] });
-  eventi.on('morte.avvio', () => {
-    // pausa logica durante la sequenza: nemici, pericoli e timer fermi; il velo gira sul disegno
+  // pausa logica durante la sequenza (morte o fine del piano, storia P01): nemici, pericoli e timer fermi; il velo gira sul disegno
+  const pausaPerSequenza = () => {
     pausaDaIncontro = false;
     if (ciclo.stato() === 'notte') ciclo.vaiA('pausa');
-  });
+  };
+  eventi.on('morte.avvio', pausaPerSequenza);
+  eventi.on('fine_piano.avvio', pausaPerSequenza);
   const effettiDoni = collegaEffettiDoni({ eventi, parametri, modificatori, ferruccio, bersagli: () => bersagli, proiettili });
   ciclo.registra({ tick: (dt) => modificatori.tick(dt) }, { stati: ['notte'] });
   // Storia 019: nemici veri per archetipo (nemici.json), un direttore dei gettoni per piano
@@ -356,11 +364,13 @@ async function avvia() {
   let rngNemici = derivato(rng, 'nemici'); // storia 029: dalla partenza dall'hub deriva dal seme della notte
   let natiNemici = 0;
   /** Factory dei nemici delle ondate (iniettata nella stanza): archetipo dalla tavolozza del modello;
-   *  il gatto passa da `attori/gatto.js` (storia 020: posa per il renderer, stessa scheda). */
-  const creaNemico = ({ archetipo, x, y, id }) => (archetipo === ARCHETIPO_GATTO ? creaGatto : creaNemicoArchetipo)({
+   *  il gatto passa da `attori/gatto.js` (storia 020: posa per il renderer, stessa scheda); con `boss: true`
+   *  (storia P01, stanza del boss) il nemico ha il flag boss e la taglia di `nemici.boss_provvisorio`. */
+  const creaNemico = ({ archetipo, x, y, id, boss = false }) => (archetipo === ARCHETIPO_GATTO ? creaGatto : creaNemicoArchetipo)({
     modificatori, parametri, tempo, eventi, campo, bersaglio: combattimento.comeBersaglio, altri: () => bersagli, direttore,
     rng: derivato(rngNemici, `${id}#${natiNemici++}`), archetipo, piano: pianoNemici, x, y, id,
     ferito: () => ferruccio.maschere < modificatori.valore('ferruccio.maschere_max'),
+    boss, schedaBoss: boss ? schedaBossProvvisorio({ modificatori, parametri }) : null,
   });
 
   // Piano generato dal seme (storie 014-017): modelli, catalogo, pianta, camera e notte. Dalla storia 029 la
@@ -444,8 +454,9 @@ async function avvia() {
     });
   }
   if (conPiano) avviaNotte({ seme, piano: pianoRichiesto });
-  // storia 030: al risveglio la notte è lasciata; con l'hub si torna in piazza (notte + 1), con `?piano=N`
-  // la notte riparte dallo stesso seme (strumento di QA), nella scena di prova Ferruccio è solo in piedi
+  // storia 030: al risveglio (morte, o fine del piano della storia P01: stesso evento, motivo diverso) la notte è
+  // lasciata; con l'hub si torna in piazza (notte + 1), con `?piano=N` la notte riparte dallo stesso seme (strumento
+  // di QA), nella scena di prova Ferruccio è solo in piedi
   eventi.on('risveglio.fine', () => {
     if (conPiano || conHub) lasciaNotte();
     if (hub) {
@@ -589,7 +600,7 @@ async function avvia() {
       bersagli,
       proiettili,
       wire,
-      /** Storie 014-017: pianta del piano, stanza corrente, notte e camera (null senza `?piano=N`). */
+      /** Storie 014-017: pianta del piano, stanza corrente (storia P01: anche `boss`, `uscita`, `combatteBoss`), notte e camera (null senza `?piano=N`). */
       get piano() { return notte?.pianta ?? null; },
       get stanza() { return notte?.stanza ?? null; },
       get notte() { return notte; },
@@ -597,8 +608,9 @@ async function avvia() {
       /** Storia 029: l'hub (`presenze`, `vicino`, `semeNotte`, `notte`, `entra`, `partito`) e lo stato del suo cartellino DOM. */
       hub,
       cartellinoHub: () => interfacciaHub.stato(),
-      /** Storia 030: il risveglio (`fase`, `progresso`, `stato()`), la notte salvata (`presente`, `carica`, `cancella`, `fotografa`),
-       *  il pannello «Continua» (`ripresa.continua()` / `lascia()` / `stato()`) e lo stato del velo di morte nel DOM. */
+      /** Storia 030: il risveglio (`fase`, `progresso`, `stato()`; storia P01: `motivo`, `completaPiano(piano)`), la notte salvata
+       *  (`presente`, `carica`, `cancella`, `fotografa`), il pannello «Continua» (`ripresa.continua()` / `lascia()` / `stato()`) e lo
+       *  stato del velo di morte (e di fine piano) nel DOM. */
       risveglio,
       notteSalvata,
       ripresa: { continua: () => interfacciaRipresa.continua(), lascia: () => interfacciaRipresa.lascia(), stato: () => interfacciaRipresa.stato() },

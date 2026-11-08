@@ -27,6 +27,11 @@
  * (`L` = portata corrente). `segnoATerra()` è la striscia fissata all'inizio del lampo (GDD 4.1).
  * Un gancio `posa` opzionale (es. `attori/gatto.js`) descrive la sagoma per il renderer.
  *
+ * Storia P01 (PROVVISORIA, build di prova; la storia 022 porta la scheda vera del boss): `schedaBoss`
+ * `{ vita, scalaRaggio, scalaPortata }` sostituisce la vita della scheda (non scalata per piano) e
+ * moltiplica il raggio del corpo e la geometria dell'attacco (portata, banda, balzo); si costruisce con
+ * `schedaBossProvvisorio()` da `nemici.boss_provvisorio`. Il flag `boss` resta quello della storia 019.
+ *
  * Nessun numero di gioco qui; nessuna casualità nativa: `rng` è un generatore derivato (pattuglia,
  * verso di separazione, verso dell'orbita, bottino).
  */
@@ -125,6 +130,32 @@ export function schedaArchetipo({ modificatori, parametri, archetipo, piano = 1 
 }
 
 /**
+ * Storia P01: la taglia del boss provvisorio da `nemici.boss_provvisorio` (null se il blocco manca:
+ * il boss sarebbe un nemico comune con il solo flag `boss`).
+ * @param {{ modificatori: { valore: (nome: string) => number }, parametri: { ha: (chiave: string) => boolean } }} o
+ * @returns {{ vita: number, scalaRaggio: number, scalaPortata: number } | null}
+ */
+export function schedaBossProvvisorio({ modificatori, parametri }) {
+  const radice = 'nemici.boss_provvisorio';
+  if (!parametri.ha(radice)) return null;
+  const v = (k) => modificatori.valore(`${radice}.${k}`);
+  return { vita: v('vita'), scalaRaggio: v('scala_raggio'), scalaPortata: v('scala_portata') };
+}
+
+/**
+ * Applica la taglia del boss a una scheda scalata (pura: ritorna una copia). Vita sostituita e mai sotto 1;
+ * raggio × `scalaRaggio`; portata, `d_min`, `d_max`, `balzo_min`, `balzo_extra` × `scalaPortata`.
+ * @param {object} scheda da `schedaArchetipo`
+ * @param {{ vita: number, scalaRaggio: number, scalaPortata: number }} taglia
+ */
+export function applicaSchedaBoss(scheda, taglia) {
+  const a = { ...scheda.attacco };
+  for (const k of ['portata', 'd_min', 'd_max']) a[k] *= taglia.scalaPortata;
+  for (const k of ['balzo_min', 'balzo_extra']) if (a[k] !== null && a[k] !== undefined) a[k] *= taglia.scalaPortata;
+  return { ...scheda, vita: Math.max(1, Math.round(taglia.vita)), r: scheda.r * taglia.scalaRaggio, attacco: a };
+}
+
+/**
  * Regole del telegrafo sui dati (R2, R4): errori in parole, vuoto se tutto va bene.
  * @param {{ get: Function }} parametri
  * @returns {string[]}
@@ -166,16 +197,18 @@ export function validaSchede(parametri) {
  *   rng: () => number,
  *   archetipo: string, piano?: number, x: number, y: number, id?: string,
  *   boss?: boolean, elite?: boolean, ferito?: () => boolean,
- *   posa?: ((nemico: object) => object) | null
+ *   posa?: ((nemico: object) => object) | null,
+ *   schedaBoss?: { vita: number, scalaRaggio: number, scalaPortata: number } | null
  * }} o `altri` ritorna la lista dei bersagli (per la separazione); `ferito` dice se Ferruccio ha maschere non piene;
- *   `posa` descrive la sagoma per stato (storia 020, `attori/gatto.js`)
+ *   `posa` descrive la sagoma per stato (storia 020, `attori/gatto.js`); `schedaBoss` è la taglia del boss provvisorio (storia P01)
  */
 export function creaNemico({
   modificatori, parametri, tempo, eventi = null, campo, bersaglio = null, altri = () => [], direttore = null, rng,
-  archetipo, piano = 1, x, y, id = archetipo, boss = false, elite = false, ferito = () => false, posa = null,
+  archetipo, piano = 1, x, y, id = archetipo, boss = false, elite = false, ferito = () => false, posa = null, schedaBoss = null,
 }) {
   if (!modificatori || !parametri || !tempo || !campo || typeof rng !== 'function') throw new TypeError('creaNemico: dipendenze mancanti');
-  const scheda = schedaArchetipo({ modificatori, parametri, archetipo, piano });
+  const schedaBase = schedaArchetipo({ modificatori, parametri, archetipo, piano });
+  const scheda = schedaBoss ? applicaSchedaBoss(schedaBase, schedaBoss) : schedaBase;
   const G = (k) => modificatori.valore(`nemici.globali.${k}`);
   const D = (k) => modificatori.valore(`nemici.drop.${k}`);
   const ticks = (ms) => tempo.ticksDaMs(ms);
