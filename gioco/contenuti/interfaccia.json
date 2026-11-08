@@ -1,5 +1,5 @@
 {
-  "_doc": "Testi dell'interfaccia (HUD, banchetto, doni e cartiglio). Unico posto con stringhe mostrate dal motore: nessuna stringa di gioco nel codice. {tasto}, {nome}, {prezzo} sono segnaposto riempiti dall'interfaccia. Storia 025 (interfaccia minimale in DOM: il renderer definitivo aspetta l'approvazione dell'autore). Storia 027: 'incontri' (etichette del cartiglio dei dialoghi e del tableau; {nome} è il nome dell'NPC). Storia 029: 'hub' (cartellino dell'hub: {n} numero della notte, {tasto}, {nome}, {piano}). Storia 030: 'morte' (didascalie del velo della sequenza di morte, una per fase) e 'ripresa' (pannello «Continua» nell'hub: {piano}, {notte}). Storia P01 (provvisoria): 'fine_piano' (didascalia del velo all'uscita del piano; {piano} è il piano che non esiste ancora). Storia P02 (provvisoria): 'prova' (pannello delle istruzioni iniziali di prova.html: titolo e righe) e 'tocco' (etichette brevi dei bottoni touch e testo del velo «ruota il telefono»).",
+  "_doc": "Testi dell'interfaccia (HUD, banchetto, doni e cartiglio). Unico posto con stringhe mostrate dal motore: nessuna stringa di gioco nel codice. {tasto}, {nome}, {prezzo} sono segnaposto riempiti dall'interfaccia. Storia 025 (interfaccia minimale in DOM: il renderer definitivo aspetta l'approvazione dell'autore). Storia 027: 'incontri' (etichette del cartiglio dei dialoghi e del tableau; {nome} è il nome dell'NPC). Storia 029: 'hub' (cartellino dell'hub: {n} numero della notte, {tasto}, {nome}, {piano}). Storia 030: 'morte' (didascalie del velo della sequenza di morte, una per fase) e 'ripresa' (pannello «Continua» nell'hub: {piano}, {notte}). Storia P01 (provvisoria): 'fine_piano' (didascalia del velo all'uscita del piano; {piano} è il piano che non esiste ancora). Storia P02 (provvisoria): 'prova' (pannello delle istruzioni iniziali di prova.html: titolo e righe).",
   "hud": {
     "monete": "Monete",
     "scintille": "Scintille",
@@ -67,16 +67,8 @@
     "titolo": "Ferruccio — La Notte Immobile (prova)",
     "righe": [
       "WASD o frecce: cammina · J: fendente (tieni premuto: affondo) · K: parata · Spazio: scatto · E: parla, raccogli, compra",
-      "Sul telefono: tieni il telefono orizzontale e usa i comandi sullo schermo",
       "Disegno provvisorio in fil di ferro: la grafica vera arriva dopo",
-      "Tocca o premi un tasto per cominciare"
+      "Premi un tasto per cominciare"
     ]
-  },
-  "tocco": {
-    "attacco": "Spada",
-    "parata": "Para",
-    "scatto": "Scatto",
-    "interagisci": "Parla",
-    "ruota": "Ruota il telefono"
   }
 }

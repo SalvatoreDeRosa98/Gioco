@@ -43,5 +43,6 @@ La cornice su cui tutto gira: pagina, ciclo a passo fisso, input, rng seminato, 
 | 002 | Input unificato: tastiera, mouse, gamepad | Logic | Ready | ADR-0001 |
 | 003 | RNG seminato e parametri JSON con override da URL | Logic | Ready | ADR-0001 |
 | 004 | Bus eventi e superficie di debug | Logic | Ready | ADR-0001 |
+| P02 | Pagina di prova e parametri di avvio dalla pagina — provvisoria per la build di prova; niente touch per decisione dell'autore | UI | Done (`gioco/qa/prova.test.mjs` 3/3, `gioco/qa/prova.wire.test.js` 2/2, `production/qa/evidence/prova-pagina.png`) | ADR-0001 |
 | 005 | Renderer: stanza 13×7, pavimento, mura, luci, passate | Visual/Feel | Ready | ADR-0001 |
 | 006 | Cutout a pezzi da JSON: pose, ellisse d'appoggio, ombra portata | Visual/Feel | Ready | ADR-0001 |

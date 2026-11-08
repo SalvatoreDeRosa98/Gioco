@@ -1,5 +1,5 @@
 {
-  "_descrizione": "Mappa dei tasti (storia 002). Azioni del contratto: sinistra, destra, su, giu, attacco, parata, scatto, interagisci, avanza, conferma, indietro, menu. 'tastiera' usa i KeyboardEvent.code, 'mouse' gli indici di MouseEvent.button, 'gamepad.bottoni' gli indici del layout standard (0=A, 1=B, 2=X, 3=Y, 4=LB, 5=RB, 9=Start, 12-15=croce), 'gamepad.assi' gli indici della levetta sinistra. 'tocco' (storia P02, provvisoria): misure dei controlli touch in px CSS (raggio della levetta virtuale, zona morta come frazione del raggio, diametro dei bottoni).",
+  "_descrizione": "Mappa dei tasti (storia 002). Azioni del contratto: sinistra, destra, su, giu, attacco, parata, scatto, interagisci, avanza, conferma, indietro, menu. 'tastiera' usa i KeyboardEvent.code, 'mouse' gli indici di MouseEvent.button, 'gamepad.bottoni' gli indici del layout standard (0=A, 1=B, 2=X, 3=Y, 4=LB, 5=RB, 9=Start, 12-15=croce), 'gamepad.assi' gli indici della levetta sinistra.",
 
   "tastiera": {
     "sinistra": ["KeyA", "ArrowLeft"],
@@ -38,11 +38,5 @@
       "sinistra": [14],
       "destra": [15]
     }
-  },
-
-  "tocco": {
-    "raggio_levetta": { "base": 56, "min": 32, "max": 120 },
-    "zona_morta": { "base": 0.2, "min": 0, "max": 0.6 },
-    "diametro_bottone": { "base": 72, "min": 48, "max": 120 }
   }
 }

@@ -1,0 +1,24 @@
+/* Build di prova (storia P02, PROVVISORIA): pannello delle istruzioni iniziali di prova.html.
+   Non è grafica definitiva: colori solo dai token. */
+#interfaccia .prova {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 80%;
+  padding: 1em 1.4em;
+  border: 1px solid var(--oro);
+  background: color-mix(in srgb, var(--inchiostro) 88%, transparent);
+  color: var(--crema);
+  font-size: clamp(12px, 1.8vw, 22px);
+  text-align: center;
+  pointer-events: none;
+}
+#interfaccia .prova-titolo {
+  margin: 0 0 0.4em;
+  font-family: var(--font-titoli);
+  font-size: 1.2em;
+  color: var(--oro);
+}
+#interfaccia .prova-riga { margin: 0.25em 0; }
+#interfaccia .prova-riga:last-child { margin-top: 0.8em; color: var(--carta-luce); }

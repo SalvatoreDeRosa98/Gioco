@@ -27,6 +27,7 @@ Parametri dell'URL:
 | `?debug=1&wire=1&scena=piazza-dante.tonino-primo-incontro` | storia 027 (strumento di QA): fa partire subito quella scena di `contenuti/storia.json` nel cartiglio dei dialoghi (`ui/cartiglio.js`) o, se `ancoraggi.json` la marca `tableau`, nel tableau (`ui/tableau.js`); il ciclo entra in `pausa` finché il dialogo è aperto; si avanza con `avanza`/`interagisci`/`conferma` o un click (antirimbalzo 160 ms), `indietro` salta una ripetizione; nel piano (`&piano=1`) nella stanza `banchetto` `interagisci` lontano dagli slot parla con Tonino (ancoraggio `banchetto`), mai con nemici vivi |
 | `?debug=1&wire=1&hub=1&seme=1845` | storia 029: parte dall'hub di Piazza Dante (`mondo/hub.js`, modello `contenuti/modelli-stanza/hub/piazza-dante.json`), ciclo in `hub`: mura chiuse tranne l'ingresso al piano 1 (soglia d'oro a destra, etichetta `piano 1`), Tonino al banchetto (cerchio d'inchiostro con alone d'oro, pieno quando `interagisci` risponde), la porta della bottega di Gaetano nel muro in alto (pannello pieno = chiusa finché `fucina_aperta` è falso), la finestra accesa di Mariella (quadrato d'oro, mai un personaggio), la luna (disco crema in alto a sinistra) e i fili d'oro tratteggiati; Taddeo compare solo con `taddeo = perdonato`, Agnese sotto il portico solo con `agnese = risvegliata` (`__gioco.imposta`); alla notte 1 partono da sole risveglio, tutorial e targa; vicino a un NPC `interagisci` apre il suo ancoraggio `hub:<npc>` (nessuna pausa del ciclo); camminando nell'ingresso parte la notte: piano 1 generato con il seme derivato dal profilo e dalla notte (`hub.semeNotte()`, diverso da `?seme=`), ciclo in `notte`, `notte` dell'avanzamento invariata; cartellino DOM in basso a sinistra con la notte e i suggerimenti |
 | `?debug=1&wire=1&hub=1&seme=1845&continua=1` | storia 030: se nello slot c'è una notte salvata, preme «Continua» da solo all'avvio (strumento di QA). Senza `continua=1`, nell'hub compare il pannello DOM «Continua / Lascia andare» (`interfaccia/ripresa.js`) quando una notte è salvata: «Continua» rigenera il piano dal seme salvato ed entra nella stanza salvata con maschere, doni e monete ripristinati; «Lascia andare» cancella la notte salvata. La notte si salva a ogni `notte.stanza` (`persistenza/notte-salvata.js`, chiave `ferruccio.v3.notte.1`) e si cancella alla morte. Alla morte (`ferruccio.morto`) il ciclo va in `pausa`, il velo DOM (`interfaccia/morte.js`) mostra le quattro fasi di `risveglio.json` (lanterne una a una, fili, maschera, buio; ≤ 5 s) e al `risveglio.fine` si torna nell'hub con `notte + 1`: flag, scintille, `piano_max` e scene viste restano; monete, doni, consumabili e pool della notte spariscono; con `&piano=N` (senza hub) la notte riparte dallo stesso seme |
+| `prova.html?seme=1845` (storia P02, provvisoria) | **build di prova per l'autore**: la pagina dichiara `<meta name="gioco-avvio" content="debug=1&wire=1&hub=1">` e `fondazione/avvio-url.js` fonde quei valori come default della query (l'URL vince sempre: `?seme=` resta tuo); all'avvio compare il pannello dei tasti (`interfaccia/prova.js`, testi in `interfaccia.json › prova`, stile `stile/prova.css`) che sparisce al primo tasto o click. Il gioco è da tastiera (e gamepad): nessun controllo touch, per scelta dell'autore. `__gioco.pannelloProva()` = `true/false` (a schermo o chiuso) o `null` senza la meta. Il file unico pubblicabile si produce con `node tools/impacchetta.js --entrata gioco/prova.html --frammento` (vedi `tools/README-impacchetta.md`) |
 | `?debug=1&wire=1&piano=1&seme=1845` | storie 014-017: genera il piano 1 dal seme (`mondo/generazione.js`, modelli di `contenuti/modelli-stanza/piazza-dante/`), parte dall'ingresso; porte con stato, ostacoli, soglie, segnalini e fantocci segnaposto (`archetipo`) delle ondate, transizione della camera (250 ms), pianta del piano nell'angolo in alto a destra; dalla storia 019 le ondate sono nemici veri per archetipo (`attori/nemico.js`), con direttore dei gettoni per piano; dalla storia 025 monete e cuori a terra (dischi/quadrati), HUD DOM in alto a destra e, nella stanza `banchetto`, i tre slot sui banchi con la lista dei prezzi (tasto `interagisci`); dalla storia 024, nella stanza `tesoro`, il piedistallo (quadrato d'oro, cono di luce tratteggiato `r_anteprima`, tratteggiato spento se inerte), il cartiglio del dono e l'HUD dei doni in DOM (sotto l'HUD dell'economia), le scintille dei ganci in oro; dalla storia 018 i bracieri (modelli `pd-n-04`, `pd-n-05`, `pd-d-02`) con piede pieno e cerchio tratteggiato solo in `anticipo` (largo) e `attivo` (fitto), etichetta con la fase; ogni pericolo di `__gioco.stanza.pericoli` espone `fase`, `progresso`, `sfasamento`; storia P01 (PROVVISORIA, build di prova; la 022 la sostituisce): nella stanza `boss` nasce dal contenuto `boss` di `pd-b-01` un solo gatto con `boss: true` e la taglia di `nemici.json › boss_provvisorio` (vita 60, raggio ×1,6, etichetta «boss (provvisorio)»), porte chiuse come in una stanza normale; alla sua morte `boss.sconfitto` {id: 'gatto', x, y} (cade il Medaglione), stanza svuotata → pulita, bottino del boss dall'economia; l'arco dell'uscita al centro (`stanze.json › uscita`) è tratteggiato finché la stanza non è pulita, poi pieno d'oro: restandoci `t_attesa` parte `piano.completato` {piano} una sola volta → ciclo in `pausa`, velo DOM con `interfaccia.json › fine_piano.velo`, poi lo stesso risveglio della morte con motivo `vittoria` (notte + 1, `piano_max` 2, notte salvata cancellata); senza hub la notte riparte dallo stesso seme |
 
 `window.__gioco` (solo debug): `stato`, `tick(n)` (forza n tick, ritorna il contatore), `seme`,
@@ -136,6 +137,10 @@ node gioco/qa/boss-provvisorio.test.mjs   # storia P01 (node:test, provvisoria):
 node gioco/qa/boss.wire.test.js           # Playwright della storia P01: ?debug=1&wire=1&piano=1&seme=1845, vaiA(stanza boss), boss nato e ucciso,
                                           # Medaglione a terra e raccolto, uscita attiva → piano.completato, velo di vittoria, notte 2 dallo stesso seme;
                                           # salva boss-provvisorio.png
+node gioco/qa/prova.test.mjs              # storia P02: fondiDefault/leggiMetaAvvio (la meta riempie solo le chiavi assenti, l'URL vince)
+node gioco/qa/prova.wire.test.js          # Playwright della storia P02: prova.html?debug=1&seme=1845 parte in hub dalla meta, pannello dei tasti
+                                          # visibile che sparisce al primo tasto, nessun controllo touch; index.html senza pannello;
+                                          # salva production/qa/evidence/prova-pagina.png
 node gioco/qa/hub.wire.test.js            # Playwright della storia 029: ?debug=1&wire=1&hub=1&seme=1845, targa automatica, presenze base e con
                                           # taddeo/agnese, Tonino, partenza nella notte con seme derivato; salva hub-wire.png e hub-presenze.png
 node gioco/qa/seme.js 200 [--piano P] [--stampa K]   # genera N piani e riporta violatori e distribuzione dei tipi
@@ -149,14 +154,17 @@ preinstallato; non eseguire `playwright install`.
 ```
 gioco/
 ├── index.html                  pagina completa: <canvas id="scena"> 1280×720 logici + <div id="interfaccia">
+├── prova.html                  storia P02 (provvisoria): come index.html più <meta name="gioco-avvio"> (parte in hub, fil di ferro) e pannello dei tasti
 ├── stile/
 │   ├── token.css               palette dell'art bible come variabili CSS (unico posto con i colori)
-│   └── base.css                palco 16:9 senza scroll, canvas e interfaccia sovrapposti
+│   ├── base.css                palco 16:9 senza scroll, canvas e interfaccia sovrapposti
+│   └── prova.css               storia P02: pannello delle istruzioni iniziali di prova.html
 ├── motore/
 │   ├── avvio.js                radice di composizione: carica i parametri, collega input e ciclo,
 │   │                           compone campo + Ferruccio + combattimento + fantocci, renderer
 │   │                           SEGNAPOSTO (sostituito dalla storia 005) o debug wire, window.__gioco
 │   ├── fondazione/
+│   │   ├── avvio-url.js        storia P02: parametri di avvio di default dalla meta gioco-avvio (l'URL vince)
 │   │   ├── tempo.js            passo fisso 16,667 ms, accumulatore, max 5 tick/frame, alpha, ticksDaMs
 │   │   ├── ciclo.js            avvia/ferma, sistemi {tick(dt), disegna(alpha)}, stati menu|hub|notte|pausa
 │   │   ├── input.js            tastiera, mouse (coordinate di scena), gamepad (zona morta);
@@ -202,7 +210,8 @@ gioco/
 │   │   └── doni.js             storia 024: HUD dei doni raccolti e cartiglio del dono (nome, riga, avviso, anteprima) in DOM
 │   │   ├── hub.js              storia 029: cartellino DOM dell'hub (notte, suggerimento per parlare/partire)
 │   │   ├── morte.js            storia 030: velo DOM della sequenza di morte (dissolvenza, lanterne, fili, maschera, didascalie)
-│   │   └── ripresa.js          storia 030: pannello DOM «Continua / Lascia andare» della notte salvata (nell'hub)
+│   │   ├── ripresa.js          storia 030: pannello DOM «Continua / Lascia andare» della notte salvata (nell'hub)
+│   │   └── prova.js            storia P02: pannello DOM dei tasti di prova.html (sparisce al primo tasto o click)
 │   ├── mondo/
 │   │   ├── fisica.js           campo a griglia con mura/ostacoli, cerchio contro rettangoli con
 │   │   │                       scivolamento, settore e rettangolo spazzato contro cerchi, linea di
@@ -294,6 +303,8 @@ gioco/
     ├── notte.wire.test.js           test Playwright della storia 030 (reload, «Continua», morte → hub notte 2)
     ├── boss-provvisorio.test.mjs    test della storia P01 (provvisoria: boss provvisorio, uscita, piano.completato → notte + 1)
     ├── boss.wire.test.js            test Playwright della storia P01 (stanza boss, Medaglione, uscita, velo di vittoria, screenshot)
+    ├── prova.test.mjs               test della storia P02 (parametri di avvio dalla meta)
+    ├── prova.wire.test.js           test Playwright della storia P02 (prova.html, pannello dei tasti, screenshot)
     └── combattimento.wire.test.js   test Playwright del modo wire
 ```
 
