@@ -2,7 +2,7 @@
   "id": "pd-i-01",
   "tipo": "ingresso",
   "dim": "1x1",
-  "piani": [1],
+  "piani": [1, 2, 3, 4],
   "difficolta": 1,
   "tag": ["facile", "soglia_del_quartiere", "centro_libero"],
   "peso_base": 1.0,

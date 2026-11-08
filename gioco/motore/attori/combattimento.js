@@ -54,10 +54,26 @@ const MOLT_FENDENTE = Object.freeze(['molt_f1', 'molt_f2', 'molt_f3']);
  *   bersagli: () => { x: number, y: number, r: number, vita: number, peso: number, stato: string, colpisci: Function, stordisci?: Function }[]
  * }} opzioni
  */
-export function creaCombattimento({ modificatori, tempo, eventi, input, campo, ferruccio, bersagli = () => [] }) {
+export function creaCombattimento({ modificatori, tempo, eventi, input, campo, ferruccio, bersagli = () => [], proiettiliBase = false }) {
   if (!modificatori || !tempo || !eventi || !input || !campo || !ferruccio) throw new TypeError('creaCombattimento: dipendenze mancanti');
   const val = (nome) => modificatori.valore(`combattimento.${nome}`);
   const ticks = (nome) => tempo.ticksDaMs(val(nome));
+  const proiettiliFerruccio = [];
+  const esplosioniProiettili = [];
+
+  function haSpada() {
+    if (!proiettiliBase) return true;
+    const doni = typeof modificatori.doniAttivi === 'function' ? modificatori.doniAttivi() : [];
+    return doni.includes('stocco-d-argento');
+  }
+
+  function direzione4Vie() {
+    const m = ferruccio.direzioneMira();
+    if (Math.abs(m.x) >= Math.abs(m.y)) {
+      return { x: m.x >= 0 ? 1 : -1, y: 0 };
+    }
+    return { x: 0, y: m.y >= 0 ? 1 : -1 };
+  }
 
   const s = {
     stato: 'pronto',
@@ -162,6 +178,84 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
     }
   }
 
+  function sparaProiettile4Vie() {
+    const dir = direzione4Vie();
+    s.mira = dir;
+    s.angolo = Math.atan2(dir.y, dir.x);
+    const doni = typeof modificatori.doniAttivi === 'function' ? modificatori.doniAttivi() : [];
+    const baseDmg = dannoColpo(1, 1);
+    const tipo = doni.includes('anello-cremisi')
+      ? 'cremisi'
+      : doni.includes('tizzone-ardente') || doni.includes('acciarino-caserta')
+        ? 'fuoco'
+        : doni.includes('catena-chiusa')
+          ? 'elettrico'
+          : 'base';
+    const perforante = tipo === 'cremisi';
+    const angoli = doni.includes('bilancino-spezzato') ? [-0.22, 0, 0.22] : [0];
+    const raggioMax = Math.max(220, val('portata') * 3.4);
+    for (const da of angoli) {
+      const a = s.angolo + da;
+      proiettiliFerruccio.push({
+        x: ferruccio.x + Math.cos(a) * 18,
+        y: ferruccio.y - 16 + Math.sin(a) * 14,
+        vx: Math.cos(a) * 7.8,
+        vy: Math.sin(a) * 7.8,
+        r: Math.min(14, 6 + baseDmg * 0.45),
+        danno: baseDmg,
+        dist: 0,
+        maxDist: raggioMax,
+        tipo,
+        perforante,
+        colpiti: new Set(),
+      });
+    }
+  }
+
+  function tickProiettili() {
+    for (let i = proiettiliFerruccio.length - 1; i >= 0; i--) {
+      const p = proiettiliFerruccio[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.dist += Math.hypot(p.vx, p.vy);
+      let rimuovi = p.dist >= p.maxDist;
+      for (const b of bersagli()) {
+        if (!b || b.stato === 'morto' || p.colpiti.has(b)) continue;
+        const d = Math.hypot(b.x - p.x, (b.y - 14) - p.y);
+        if (d <= (b.r ?? 20) + p.r) {
+          p.colpiti.add(b);
+          const norm = Math.hypot(p.vx, p.vy) || 1;
+          const dx = p.vx / norm;
+          const dy = p.vy / norm;
+          const inamovibile = (b.peso ?? 0) >= val('peso_inamovibile');
+          const vettore = inamovibile ? null : { x: dx * val('spinta_f'), y: dy * val('spinta_f'), ms: val('t_spinta_nemico') };
+          b.colpisci(p.danno, vettore);
+          eventi.emit('ferruccio.colpo', { x: b.x, y: b.y, direzione: { x: dx, y: dy }, bersaglio: b, danno: p.danno });
+          if (b.vita <= 0) {
+            eventi.emit('ferruccio.uccisione', { x: b.x, y: b.y, direzione: { x: dx, y: dy }, bersaglio: b, danno: p.danno });
+          }
+          esplosioniProiettili.push({ x: p.x, y: p.y, tick: 0, maxTick: 12, tipo: p.tipo });
+          if (!p.perforante) {
+            rimuovi = true;
+            break;
+          }
+        }
+      }
+      if (rimuovi) {
+        if (p.dist >= p.maxDist) {
+          esplosioniProiettili.push({ x: p.x, y: p.y, tick: 0, maxTick: 12, tipo: p.tipo });
+        }
+        proiettiliFerruccio.splice(i, 1);
+      }
+    }
+    for (let i = esplosioniProiettili.length - 1; i >= 0; i--) {
+      esplosioniProiettili[i].tick += 1;
+      if (esplosioniProiettili[i].tick >= esplosioniProiettili[i].maxTick) {
+        esplosioniProiettili.splice(i, 1);
+      }
+    }
+  }
+
   function avviaFendente() {
     const numero = s.prossimo;
     s.numero = numero;
@@ -169,6 +263,9 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
     fissaMira();
     consumaControcolpo();
     s.comboTicks = 0;
+    if (!haSpada()) {
+      sparaProiettile4Vie();
+    }
     vai('fendente', 'startup', numero > 1 ? 't_startup_combo' : 't_startup_f');
   }
 
@@ -257,7 +354,7 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
   }
 
   function tickFendente() {
-    if (s.fase === 'attivo') {
+    if (s.fase === 'attivo' && haSpada()) {
       const settore = settoreCorrente();
       colpisciBersagli((b) => settoreColpisceCerchio(settore, b), dannoColpo(val(MOLT_FENDENTE[s.numero - 1]), 1), val('spinta_f'));
     }
@@ -412,6 +509,8 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
         break;
     }
 
+    tickProiettili();
+
     // contatto passivo: i corpi si separano senza danno (controllo-ferruccio.md regola 6)
     for (const b of bersagli()) {
       if (b && b.stato !== 'morto') ferruccio.separaDa(b);
@@ -486,6 +585,13 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
   });
   ferruccio.collegaVincoli({ puoScattare, modVelocita });
 
+  function frameSpada() {
+    if (s.stato !== 'fendente') return 0;
+    if (s.fase === 'startup') return s.faseTicks > 2 ? 0 : 1;
+    if (s.fase === 'attivo') return s.faseTicks > 2 ? 2 : 3;
+    return s.faseTicks > 3 ? 4 : 5;
+  }
+
   return {
     get stato() { return s.controcolpoTicks > 0 && s.stato === 'pronto' ? 'controcolpo' : s.stato; },
     get fase() { return s.fase; },
@@ -494,6 +600,10 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
     get caricaCompleta() { return s.stato === 'carica' && s.tenutoTicks >= ticks('t_carica'); },
     get controcolpoAttivo() { return s.controcolpoTicks > 0; },
     get bufferAttivo() { return s.bufferTicks > 0; },
+    haSpada,
+    frameSpada,
+    proiettiliFerruccio: () => proiettiliFerruccio,
+    esplosioniProiettili: () => esplosioniProiettili,
     tick,
     ricevi,
     comeBersaglio,

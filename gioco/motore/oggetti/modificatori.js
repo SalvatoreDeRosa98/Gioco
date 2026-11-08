@@ -357,7 +357,7 @@ export function creaModificatori(parametri, opzioni = {}) {
    * @param {string} id
    * @returns {boolean} falso (con errore loggato) se l'id è sconosciuto, escluso dal validatore o già attivo
    */
-  function aggiungiDono(id) {
+  function aggiungiDono(id, opzioniAggiunta = {}) {
     const dono = indice.get(id);
     if (!dono) {
       log.error(`[modificatori] errore di contenuto: dono sconosciuto o non valido '${id}'`);
@@ -367,6 +367,15 @@ export function creaModificatori(parametri, opzioni = {}) {
       log.error(`[modificatori] dono '${id}' già attivo`);
       return false;
     }
+    const maxSlot = Math.min(5, limite('max_slot_doni'));
+    let rimosso = null;
+    if (attivi.length >= maxSlot) {
+      const idDaTogliere = opzioniAggiunta.sostituisciId && attivi.includes(opzioniAggiunta.sostituisciId)
+        ? opzioniAggiunta.sostituisciId
+        : attivi[0];
+      rimuoviDono(idDaTogliere);
+      rimosso = idDaTogliere;
+    }
     istante += 1;
     for (const m of dono.modificatori ?? []) {
       const v = m.operazione === 'imposta' && typeof m.valore === 'boolean' ? Number(m.valore) : m.valore;
@@ -375,8 +384,17 @@ export function creaModificatori(parametri, opzioni = {}) {
     for (const g of dono.ganci ?? []) iscrizioni.push(creaIscrizione(g, id, 'dono'));
     attivi.push(id);
     rivalutaSinergie();
-    eventi?.emit('doni.aggiunto', { id, attivi: attivi.slice() });
+    if (rimosso) {
+      eventi?.emit('doni.sostituito', { rimosso, aggiunto: id, attivi: attivi.slice() });
+    }
+    eventi?.emit('doni.aggiunto', { id, rimosso, attivi: attivi.slice() });
     return true;
+  }
+
+  function sostituisciDono(idVecchioOSlot, idNuovo) {
+    const idVecchio = typeof idVecchioOSlot === 'number' ? attivi[idVecchioOSlot] : idVecchioOSlot;
+    if (!idVecchio || !attivi.includes(idVecchio)) return false;
+    return aggiungiDono(idNuovo, { sostituisciId: idVecchio });
   }
 
   /**
@@ -432,6 +450,7 @@ export function creaModificatori(parametri, opzioni = {}) {
     attivi: attiviSu,
     aggiungiDono,
     rimuoviDono,
+    sostituisciDono,
     doniAttivi,
     sinergieAttive,
     dono,

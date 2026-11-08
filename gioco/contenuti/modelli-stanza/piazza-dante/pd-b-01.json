@@ -2,7 +2,7 @@
   "id": "pd-b-01",
   "tipo": "boss",
   "dim": "1x1",
-  "piani": [1],
+  "piani": [1, 2, 3, 4],
   "difficolta": 3,
   "tag": ["dura", "arena", "quattro_canti"],
   "peso_base": 1.0,

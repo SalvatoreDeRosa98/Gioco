@@ -1,0 +1,21 @@
+{
+  "id": "pd-b-03",
+  "tipo": "boss",
+  "dim": "1x1",
+  "piani": [1, 2, 3, 4],
+  "difficolta": 4,
+  "tag": ["durissima", "arena", "giardino_inglese"],
+  "peso_base": 1.0,
+  "griglia": [
+    ".............",
+    "..K.......K..",
+    ".............",
+    ".............",
+    ".............",
+    "..K.......K..",
+    "............."
+  ],
+  "spawn": [],
+  "tavolozza": [],
+  "contenuti": [{ "tipo": "boss", "c": 6, "r": 3, "archetipo": "vespa" }, { "tipo": "uscita", "c": 6, "r": 3 }]
+}

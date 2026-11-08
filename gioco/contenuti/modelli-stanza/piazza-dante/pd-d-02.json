@@ -2,7 +2,7 @@
   "id": "pd-d-02",
   "tipo": "normale",
   "dim": "2x1",
-  "piani": [1],
+  "piani": [1, 2, 3, 4],
   "difficolta": 3,
   "tag": ["dura", "bracieri", "panche"],
   "peso_base": 1.0,

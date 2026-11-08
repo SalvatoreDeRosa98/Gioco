@@ -51,27 +51,37 @@ export function creaBanchetto({
   const E = (k) => parametri.get(`economia.${k}`);
   const maschereMax = () => modificatori.valore('ferruccio.maschere_max');
 
-  // --- generazione degli slot (una volta, dal seme) ---
-  const pesi = pesiRarita({
-    pesi: Object.fromEntries(RARITA_VENDIBILI.map((r) => [r, E(`banchetto.peso_rarita.${r}`)])),
-    derivePct: Object.fromEntries(RARITA_VENDIBILI.map((r) => [r, E(`banchetto.deriva_rarita_pct.${r}`)])),
-    piano,
-  });
-  const fuori = new Set([...esclusi, ...modificatori.doniAttivi()]);
-  const dono = pool ? pool.estrai({ piano, canale: 'banchetto' }) : estraiDono({ catalogo, piano, esclusi: fuori, rng, pesi });
-  const consumabile = consumabili.length > 0 ? consumabili[Math.min(consumabili.length - 1, Math.floor(rng() * consumabili.length))] : null;
-
+  let pianoCorrente = piano;
   /** @type {object[]} */
-  const slots = [
-    dono
-      ? { indice: 0, tipo: 'dono', id: dono.id, rarita: dono.rarita, prezzo: economia.prezzoDi({ tipo: 'dono', rarita: dono.rarita, piano }), comprato: false, fallback: false }
-      // pool vuoto (edge case): lo slot non resta mai vuoto → un cuore al prezzo di un comune
-      : { indice: 0, tipo: 'cuore', id: null, rarita: 'comune', prezzo: economia.prezzoDi({ tipo: 'dono', rarita: 'comune', piano }), comprato: false, fallback: true },
-    { indice: 1, tipo: 'cuore', id: null, rarita: null, prezzo: economia.prezzoDi({ tipo: 'cuore', piano }), comprato: false, fallback: false },
-    consumabile
-      ? { indice: 2, tipo: 'consumabile', id: consumabile.id, rarita: null, prezzo: economia.prezzoDi({ tipo: 'consumabile', piano }), comprato: false, fallback: false }
-      : { indice: 2, tipo: 'cuore', id: null, rarita: null, prezzo: economia.prezzoDi({ tipo: 'consumabile', piano }), comprato: false, fallback: true },
-  ];
+  let slots = [];
+
+  function generaSlots(p) {
+    pianoCorrente = p;
+    const pesi = pesiRarita({
+      pesi: Object.fromEntries(RARITA_VENDIBILI.map((r) => [r, E(`banchetto.peso_rarita.${r}`)])),
+      derivePct: Object.fromEntries(RARITA_VENDIBILI.map((r) => [r, E(`banchetto.deriva_rarita_pct.${r}`)])),
+      piano: p,
+    });
+    const fuori = new Set([...esclusi, ...modificatori.doniAttivi()]);
+    const dono = pool ? pool.estrai({ piano: p, canale: 'banchetto' }) : estraiDono({ catalogo, piano: p, esclusi: fuori, rng, pesi });
+    if (dono) fuori.add(dono.id);
+    const dono2 = pool && rng() < 0.65 ? pool.estrai({ piano: p, canale: 'banchetto' }) : null;
+    const consumabile = consumabili.length > 0 ? consumabili[Math.min(consumabili.length - 1, Math.floor(rng() * consumabili.length))] : null;
+
+    slots = [
+      dono
+        ? { indice: 0, tipo: 'dono', id: dono.id, rarita: dono.rarita, prezzo: economia.prezzoDi({ tipo: 'dono', rarita: dono.rarita, piano: p }), comprato: false, fallback: false }
+        : { indice: 0, tipo: 'cuore', id: null, rarita: 'comune', prezzo: economia.prezzoDi({ tipo: 'dono', rarita: 'comune', piano: p }), comprato: false, fallback: true },
+      { indice: 1, tipo: 'cuore', id: null, rarita: null, prezzo: economia.prezzoDi({ tipo: 'cuore', piano: p }), comprato: false, fallback: false },
+      dono2
+        ? { indice: 2, tipo: 'dono', id: dono2.id, rarita: dono2.rarita, prezzo: economia.prezzoDi({ tipo: 'dono', rarita: dono2.rarita, piano: p }), comprato: false, fallback: false }
+        : consumabile
+          ? { indice: 2, tipo: 'consumabile', id: consumabile.id, rarita: null, prezzo: economia.prezzoDi({ tipo: 'consumabile', piano: p }), comprato: false, fallback: false }
+          : { indice: 2, tipo: 'cuore', id: null, rarita: null, prezzo: economia.prezzoDi({ tipo: 'consumabile', piano: p }), comprato: false, fallback: true },
+    ];
+  }
+
+  generaSlots(piano);
   /** @type {{ x: number, y: number }[]} */
   let posizioni = [];
   let attivo = false;
@@ -145,13 +155,14 @@ export function creaBanchetto({
   }
 
   return {
-    get piano() { return piano; },
+    get piano() { return pianoCorrente; },
     get attivo() { return attivo; },
     get ultimoEsito() { return ultimoEsito; },
     slots: elenco,
     compra,
     vicino,
     tick,
+    rigenera: (nuovoPiano) => { ultimoEsito = null; generaSlots(nuovoPiano ?? pianoCorrente); },
     /** Posizioni (x, y) degli slot nella stanza, nell'ordine degli slot. */
     posiziona: (punti) => { posizioni = (punti ?? []).slice(0, slots.length).map((p) => ({ x: p.x, y: p.y })); },
     posizioni: () => posizioni.map((p) => ({ ...p })),

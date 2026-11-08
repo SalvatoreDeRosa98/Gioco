@@ -2,815 +2,1640 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<title>Ferruccio — Tavola del presepe d'ombre (style frame)</title>
+<title>Ferruccio — Teatro delle Marionette d'Ombra (Variante C + Donna Luciana)</title>
 <style>
-  html,body{margin:0;height:100%;background:#050302;overflow:hidden}
-  body{display:flex;align-items:center;justify-content:center}
-  canvas{display:block;width:min(100vw,calc(100vh*16/9));height:auto;aspect-ratio:16/9;background:#050302}
-  canvas.grigi{filter:grayscale(1)}
+  :root {
+    --bg: #070402;
+    --gold: #f3c14b;
+    --cream: #f4e3bd;
+    --ink: #0b0704;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--cream);
+    font-family: Georgia, "Times New Roman", serif;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .stage-wrap {
+    position: relative;
+    width: min(100vw, calc((100vh - 46px) * 16 / 9));
+    aspect-ratio: 16 / 9;
+    box-shadow: 0 20px 60px rgba(0,0,0,.85);
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #050302;
+  }
+  canvas.grigi { filter: grayscale(1); }
+  .toolbar {
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 16px;
+    background: rgba(14, 8, 4, 0.95);
+    border-top: 1px solid rgba(243, 193, 75, 0.3);
+    width: 100%;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+  }
+  .btn {
+    background: rgba(243, 193, 75, 0.08);
+    color: var(--cream);
+    border: 1px solid rgba(243, 193, 75, 0.45);
+    padding: 5px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: all 0.15s ease;
+  }
+  .btn:hover {
+    background: rgba(243, 193, 75, 0.2);
+    border-color: var(--gold);
+  }
+  .btn.active {
+    background: rgba(243, 193, 75, 0.28);
+    border-color: var(--gold);
+    color: #fff;
+    box-shadow: 0 0 12px rgba(243, 193, 75, 0.3);
+  }
+  .sep {
+    width: 1px;
+    height: 20px;
+    background: rgba(243, 193, 75, 0.25);
+    margin: 0 4px;
+  }
 </style>
 </head>
 <body>
-<canvas id="c" width="1280" height="720"></canvas>
+<div class="stage-wrap">
+  <canvas id="c" width="1280" height="720"></canvas>
+</div>
+<div class="toolbar">
+  <button class="btn active" id="btn-stanza" onclick="setScena('stanza')">1. Stanza (Variante C + Mani di Marionetta)</button>
+  <button class="btn" id="btn-transizione" onclick="setScena('transizione')">2. Discesa delle Mani</button>
+  <button class="btn" id="btn-boss" onclick="setScena('boss')">3. Boss Finale: Donna Luciana</button>
+  <div class="sep"></div>
+  <button class="btn active" id="btn-anim" onclick="toggleAnim()">Animazione: ON</button>
+  <button class="btn" id="btn-grigi" onclick="toggleGrigi()">Scala di Grigi</button>
+</div>
+
 <script>
 'use strict';
 /* =====================================================================
-   TAVOLA DEL PRESEPE D'OMBRE — un solo fotogramma immobile, Canvas 2D.
-   ?variante=A|B|C   ?grigi=1 (filtro grayscale)   ?dpr=1 (forza la scala)
-   Tutto è procedurale: niente bitmap, niente font esterni.
-   PRECALCOLATO (una volta): texture della carta del pavimento, fondale,
-   sfondo del teatro, tile di grana. PER FRAME: tutto il resto.
+   TEATRO DELLE MARIONETTE D'OMBRA — Variante C approvata e ridisegnata.
+   - Boccascena barocco napoletano con quinte drappeggiate e luci di ribalta
+   - Mani giganti di marionettista (Donna Luciana) con bilancini in legno e
+     fili d'oro che reggono e muovono i personaggi/nemici dall'alto
+   - Modalità Boss Finale (?scena=boss): le mani scendono nel palco e si
+     rivelano come Donna Luciana, signora del Velo
+   - Disegni rifatti da zero: Ferruccio (burattino articolato con giunti in
+     ottone, maschera scolpita, coppolone, sciarpa doppia, stocco), Gatti
+     d'ombra (anatomia felina predatoria, artigli, pelo, occhi a fessura),
+     colpo marcato alla Isaac (flash, squash, schizzi, onda d'urto, scia).
    ===================================================================== */
 const W = 1280, H = 720;
 const Q = new URLSearchParams(location.search);
-const VAR = (Q.get('variante') || 'A').toUpperCase();
+const VAR = (Q.get('variante') || 'C').toUpperCase();
+let SCENA = Q.get('scena') || 'stanza'; // 'stanza' | 'transizione' | 'boss'
 const cv = document.getElementById('c');
 if (Q.get('grigi')) cv.classList.add('grigi');
 const DPR = Q.get('dpr') ? +Q.get('dpr') : Math.min(2, window.devicePixelRatio || 1);
 cv.width = W * DPR; cv.height = H * DPR;
 const ctx = cv.getContext('2d', { alpha: false });
 
-/* ---------- palette (art bible §4) ---------- */
 const P = {
-  ink: '#0b0704', inkMid: '#1c1008', bruno: '#5a2a0e', carta: '#c98a3c', luce: '#f2c278',
-  pav: '#9a6428', crema: '#f4e3bd', bianco: '#fff8e8', oro: '#f3c14b', oroDim: '#c9a24a',
-  rosso: '#c8301b', rossoDeep: '#9c231f', azzurro: '#7fd3ff', legno: '#2a1608', bg: '#0a0604'
+  ink: '#0b0704', inkMid: '#180d06', bruno: '#5a2a0e', brunoChiaro: '#7d3e18',
+  carta: '#c98a3c', luce: '#f2c278', pav: '#9a6428', crema: '#f4e3bd',
+  bianco: '#fff8e8', oro: '#f3c14b', oroDim: '#b88b32', rosso: '#c8301b',
+  rossoDeep: '#8f1d14', azzurro: '#7fd3ff', legno: '#241207', legnoLuce: '#4a2610',
+  sipario: '#380d09', siparioOmbra: '#1a0503'
 };
 
-/* ---------- varianti ---------- */
 const VARIANTI = {
-  A: { nome: 'A — calda e teatrale', esp: 1.00, wallTop: 76, pool: .72, alone: .68, vign: .78, vignIn: .60, ombra: .30, grana: .10,
-       fondaleAlpha: 1.0, nebbia: .45, quinte: false, scalaFondale: 1.0, blurMid: .8, blurFar: 2.6, bordoFloor: .26, centroMix: .26 },
-  B: { nome: 'B — scura e contrastata', esp: .84, wallTop: 76, pool: 1.0, alone: .9, vign: .97, vignIn: .50, ombra: .5, grana: .15,
-       fondaleAlpha: .66, nebbia: .25, quinte: false, scalaFondale: 1.0, blurMid: .8, blurFar: 2.6, bordoFloor: .5, centroMix: .18 },
-  C: { nome: 'C — più fondale e profondità', esp: .94, wallTop: 100, pool: .66, alone: .60, vign: .74, vignIn: .60, ombra: .30, grana: .10,
-       fondaleAlpha: 1.0, nebbia: .60, quinte: true, scalaFondale: 1.18, blurMid: 1.1, blurFar: 3.2, bordoFloor: .28, centroMix: .26 }
+  A: { nome: 'A — calda e teatrale', esp: 1.00, wallTop: 118, pool: .75, alone: .70, vign: .72, vignIn: .62, ombra: .34, grana: .08, quinte: true, scalaFondale: 1.12 },
+  B: { nome: 'B — scura e contrastata', esp: 0.88, wallTop: 118, pool: .95, alone: .88, vign: .88, vignIn: .54, ombra: .46, grana: .12, quinte: true, scalaFondale: 1.12 },
+  C: { nome: 'C — Teatro di Marionette (Variante C)', esp: 0.98, wallTop: 132, pool: .78, alone: .72, vign: .68, vignIn: .64, ombra: .35, grana: .08, quinte: true, scalaFondale: 1.22 }
 };
-const V = VARIANTI[VAR] || VARIANTI.A;
-/* ?no=ombre,blur,scia,aloni,grana,vign,hud,sb  — spegne una tecnica per misurarne il costo */
-const OFF = new Set((Q.get('no') || '').split(',').filter(Boolean));
-const on = k => !OFF.has(k);
+const V = VARIANTI[VAR] || VARIANTI.C;
 
-/* ---------- geometria della stanza: 13×7 celle da 64 px, area 832×448 centrata ---------- */
-const G = { fx: 224, fy: 136, fw: 832, fh: 448, cella: 64, wallW: 24, southH: 30 };
+/* Geometria ampliata e ben proporzionata: il palco riempie armoniosamente la scena */
+const G = { fx: 148, fy: 168, fw: 984, fh: 472, cella: 64, wallW: 32, southH: 42 };
 G.fr = G.fx + G.fw; G.fb = G.fy + G.fh;
 const wallTop = V.wallTop;
-const LANTERNE = [{ x: 400, y: 150 }, { x: 880, y: 150 }];   // anello di sospensione
-const PORTA_N = { x: 640, w: 72, h: 58 };
+const LANTERNE = [{ x: 350, y: 174 }, { x: 930, y: 174 }];
+const PORTA_N = { x: 640, w: 86, h: 66 };
 
-/* ---------- utilità ---------- */
-function rng(seed) { let t = seed >>> 0; return function () { t = (t + 0x6D2B79F5) >>> 0; let r = Math.imul(t ^ (t >>> 15), 1 | t); r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r; return ((r ^ (r >>> 14)) >>> 0) / 4294967296; }; }
+function rng(seed) {
+  let t = seed >>> 0;
+  return function () {
+    t = (t + 0x6D2B79F5) >>> 0;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
 function hex(h) { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
 function rgba(c, a) { const [r, g, b] = typeof c === 'string' ? hex(c) : c; return `rgba(${r | 0},${g | 0},${b | 0},${a == null ? 1 : a})`; }
 function mix(c1, c2, t) { const a = typeof c1 === 'string' ? hex(c1) : c1, b = typeof c2 === 'string' ? hex(c2) : c2; return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
 function esp(c, k) { const a = typeof c === 'string' ? hex(c) : c; return [Math.min(255, a[0] * k), Math.min(255, a[1] * k), Math.min(255, a[2] * k)]; }
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const TAU = Math.PI * 2;
-
-/* path con jitter a seme (la linea storta è umana) */
-function path(cmds, seed, amp) {
-  const r = seed == null ? null : rng(seed); const j = r ? (v => v + (r() * 2 - 1) * amp) : (v => v);
-  const p = new Path2D();
-  for (const c of cmds) {
-    const k = c[0];
-    if (k === 'M') p.moveTo(j(c[1]), j(c[2]));
-    else if (k === 'L') p.lineTo(j(c[1]), j(c[2]));
-    else if (k === 'Q') p.quadraticCurveTo(j(c[1]), j(c[2]), j(c[3]), j(c[4]));
-    else if (k === 'C') p.bezierCurveTo(j(c[1]), j(c[2]), j(c[3]), j(c[4]), j(c[5]), j(c[6]));
-    else if (k === 'Z') p.closePath();
-  }
-  return p;
-}
-/* ritaglio d'inchiostro con spessore di carta chiara sul bordo in controluce (alto-sinistra) */
-function ritaglio(x, p, fill, o) {
-  o = o || {};
-  x.fillStyle = fill || P.ink; x.fill(p);
-  if (o.bordo === false) return;
-  x.save(); x.clip(p); x.translate(o.dx == null ? 1.0 : o.dx, o.dy == null ? 1.0 : o.dy);
-  x.lineWidth = o.lw || 1.5; x.strokeStyle = o.lip || 'rgba(242,194,120,.32)'; x.stroke(p); x.restore();
-}
-/* pezzo chiaro di Ferruccio: contorno d'inchiostro 2 px + riempimento crema con gradiente */
-function pezzoChiaro(x, p, fill, modo) {
-  x.lineJoin = 'round'; x.lineCap = 'round';
-  if (modo === 'ombra') { x.lineWidth = 3.6; x.strokeStyle = x.fillStyle; x.stroke(p); x.fill(p); return; }
-  x.lineWidth = 3.6; x.strokeStyle = P.ink; x.stroke(p);
-  x.fillStyle = fill || P.crema; x.fill(p);
-}
-function rr(x, X, Y, w, h, r) { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); }
 function lum(r, g, b) { const f = c => { c /= 255; return c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); }; return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); }
 
-/* rumore a valore, più ottave, celle anisotrope (fibre) */
+function nuovoCanvas(w, h) {
+  const c = document.createElement('canvas');
+  c.width = Math.round(w * DPR);
+  c.height = Math.round(h * DPR);
+  const x = c.getContext('2d');
+  x.scale(DPR, DPR);
+  return [c, x];
+}
+
 function rumore(w, h, seed, ott) {
   const out = new Float32Array(w * h), r = rng(seed);
   for (const o of ott) {
     const cx = o.cx, cy = o.cy || o.cx, amp = o.amp;
-    const gw = Math.ceil(w / cx) + 2, gh = Math.ceil(h / cy) + 2; const g = new Float32Array(gw * gh);
+    const gw = Math.ceil(w / cx) + 2, gh = Math.ceil(h / cy) + 2;
+    const g = new Float32Array(gw * gh);
     for (let i = 0; i < g.length; i++) g[i] = r() * 2 - 1;
     for (let y = 0; y < h; y++) {
       const fy = y / cy, y0 = fy | 0, ty = fy - y0, sy = ty * ty * (3 - 2 * ty);
       for (let x = 0; x < w; x++) {
         const fx = x / cx, x0 = fx | 0, tx = fx - x0, sx = tx * tx * (3 - 2 * tx);
-        const i = y0 * gw + x0; const a = g[i], b = g[i + 1], c = g[i + gw], d = g[i + gw + 1];
-        const top = a + (b - a) * sx, bot = c + (d - c) * sx; out[y * w + x] += amp * (top + (bot - top) * sy);
+        const i = y0 * gw + x0;
+        const top = g[i] + (g[i + 1] - g[i]) * sx;
+        const bot = g[i + gw] + (g[i + gw + 1] - g[i + gw]) * sx;
+        out[y * w + x] += amp * (top + (bot - top) * sy);
       }
     }
   }
   return out;
 }
-function nuovoCanvas(w, h) { const c = document.createElement('canvas'); c.width = Math.round(w * DPR); c.height = Math.round(h * DPR); const x = c.getContext('2d'); x.scale(DPR, DPR); return [c, x]; }
 
 /* =====================================================================
-   PRECALCOLO 1 — la carta del pavimento (retroilluminata, fibre, grana, ciottoli)
+   PRECALCOLO 1 — Pavimento del Palco (Basolato caldo + tavole da palcoscenico)
    ===================================================================== */
-function creaCarta() {
-  const w = G.fw, h = G.fh; const [c, x] = nuovoCanvas(w, h);
-  const cen = esp(mix(P.pav, P.carta, V.centroMix), V.esp), med = esp(P.pav, V.esp), bordo = esp(mix(P.pav, P.bruno, .34), V.esp);
-  const g = x.createRadialGradient(w * .5, h * .42, 10, w * .5, h * .5, w * .62);
-  g.addColorStop(0, rgba(cen)); g.addColorStop(.5, rgba(med)); g.addColorStop(1, rgba(bordo));
-  x.fillStyle = g; x.fillRect(0, 0, w, h);
-  // luce di chiave dall'alto a sinistra
-  const k = x.createLinearGradient(0, 0, w, h); k.addColorStop(0, 'rgba(255,225,160,.10)'); k.addColorStop(1, 'rgba(20,8,2,.12)');
-  x.fillStyle = k; x.fillRect(0, 0, w, h);
-  // chiazze (rumore grande), fibre (rumore anisotropo), grana fine
+function creaCartaPavimento() {
+  const w = G.fw, h = G.fh;
+  const [c, x] = nuovoCanvas(w, h);
+  const cen = esp(mix(P.pav, P.carta, .32), V.esp);
+  const med = esp(P.pav, V.esp);
+  const bordo = esp(mix(P.pav, P.bruno, .38), V.esp);
+  const g = x.createRadialGradient(w * .5, h * .45, 20, w * .5, h * .5, w * .65);
+  g.addColorStop(0, rgba(cen));
+  g.addColorStop(.58, rgba(med));
+  g.addColorStop(1, rgba(bordo));
+  x.fillStyle = g;
+  x.fillRect(0, 0, w, h);
+
+  // Grana e fibre della carta
   const pw = Math.round(w * DPR), ph = Math.round(h * DPR);
   const id = x.getImageData(0, 0, pw, ph), d = id.data;
-  const n1 = rumore(pw, ph, 11, [{ cx: 190 * DPR, amp: .5 }, { cx: 90 * DPR, amp: .3 }, { cx: 40 * DPR, amp: .2 }]);
-  const n2 = rumore(pw, ph, 23, [{ cx: 70 * DPR, cy: 2.2 * DPR, amp: .6 }, { cx: 30 * DPR, cy: 1.6 * DPR, amp: .4 }]);
+  const n1 = rumore(pw, ph, 11, [{ cx: 180 * DPR, amp: .45 }, { cx: 75 * DPR, amp: .3 }]);
+  const n2 = rumore(pw, ph, 23, [{ cx: 65 * DPR, cy: 2.2 * DPR, amp: .55 }]);
   const rr_ = rng(37);
   for (let i = 0, p = 0; i < pw * ph; i++, p += 4) {
-    const m = 1 + .09 * n1[i] + .07 * n2[i] + (rr_() * 2 - 1) * .05;
-    d[p] = clamp(d[p] * m, 0, 255); d[p + 1] = clamp(d[p + 1] * m, 0, 255); d[p + 2] = clamp(d[p + 2] * m, 0, 255);
+    const m = 1 + .08 * n1[i] + .06 * n2[i] + (rr_() * 2 - 1) * .04;
+    d[p] = clamp(d[p] * m, 0, 255);
+    d[p + 1] = clamp(d[p + 1] * m, 0, 255);
+    d[p + 2] = clamp(d[p + 2] * m, 0, 255);
   }
   x.putImageData(id, 0, 0);
-  // fibre disegnate: fili chiari e scuri, quasi orizzontali con qualche trama trasversale
-  const rf = rng(5); x.lineCap = 'round';
-  for (let i = 0; i < 2400; i++) {
-    const px = rf() * w, py = rf() * h;
-    const ang = rf() < .78 ? (rf() - .5) * .5 : Math.PI / 2 + (rf() - .5) * .4;
-    const len = 8 + rf() * 54, chiaro = rf() < .55;
-    x.strokeStyle = chiaro ? rgba(P.luce, .05 + rf() * .07) : rgba(P.bruno, .04 + rf() * .07);
-    x.lineWidth = .5 + rf() * .9; x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(ang) * len, py + Math.sin(ang) * len); x.stroke();
-  }
-  // ciottoli appena accennati (griglia sfalsata, ellissi in 3/4)
-  const rc = rng(8);
-  for (let gy = 8; gy < h + 20; gy += 26) {
-    for (let gx = (((gy / 26) | 0) % 2 ? 18 : 0); gx < w + 36; gx += 36) {
-      const cx = gx + (rc() - .5) * 10, cy = gy + (rc() - .5) * 6, rx = 11 + rc() * 5, ry = 6 + rc() * 3;
-      x.beginPath(); x.ellipse(cx, cy, rx, ry, (rc() - .5) * .3, 0, TAU); x.fillStyle = rgba(P.bruno, .05 + rc() * .04); x.fill();
-      x.beginPath(); x.ellipse(cx - 1, cy - 1.5, rx * .8, ry * .7, 0, Math.PI * 1.05, Math.PI * 1.95); x.strokeStyle = rgba(P.luce, .09); x.lineWidth = 1; x.stroke();
-      x.beginPath(); x.ellipse(cx + 1, cy + 1.5, rx * .85, ry * .75, 0, Math.PI * .05, Math.PI * .95); x.strokeStyle = rgba(P.ink, .09); x.lineWidth = 1; x.stroke();
+
+  // Fuga prospettica del basolato teatrale (lastre convergenti verso la Reggia)
+  x.save();
+  x.strokeStyle = 'rgba(40,18,6,0.16)';
+  x.lineWidth = 1.2;
+  for (let row = 0; row <= 7; row++) {
+    const t = row / 7;
+    const py = Math.pow(t, 1.12) * h;
+    x.beginPath();
+    x.moveTo(0, py);
+    x.lineTo(w, py);
+    x.stroke();
+    if (row < 7) {
+      const nextY = Math.pow((row + 1) / 7, 1.12) * h;
+      const cols = 13;
+      const offset = (row % 2) * 0.5;
+      for (let col = 0; col <= cols; col++) {
+        const u = (col + offset) / cols;
+        const xTop = w * 0.5 + (u - 0.5) * w * (0.86 + 0.14 * t);
+        const xBot = w * 0.5 + (u - 0.5) * w * (0.86 + 0.14 * ((row + 1) / 7));
+        x.beginPath();
+        x.moveTo(xTop, py);
+        x.lineTo(xBot, nextY);
+        x.stroke();
+      }
     }
   }
-  // occlusione lungo i muri: il nord proietta di più (la parete è alta), il sinistro per la luce di chiave
-  const ao = (x0, y0, x1, y1, a) => { const gg = x.createLinearGradient(x0, y0, x1, y1); gg.addColorStop(0, rgba(P.ink, a)); gg.addColorStop(1, rgba(P.ink, 0)); x.fillStyle = gg; x.fillRect(0, 0, w, h); };
-  ao(0, 0, 0, 78, V.bordoFloor); ao(0, h, 0, h - 42, V.bordoFloor * .7); ao(0, 0, 52, 0, V.bordoFloor * .85); ao(w, 0, w - 46, 0, V.bordoFloor * .7);
+  // Rosone barocco centrale inciso nel pavimento della piazza
+  x.translate(w / 2, h * 0.52);
+  x.scale(1, 0.58);
+  x.strokeStyle = 'rgba(242,194,120,0.13)';
+  x.lineWidth = 2;
+  x.beginPath(); x.arc(0, 0, 145, 0, TAU); x.stroke();
+  x.beginPath(); x.arc(0, 0, 136, 0, TAU); x.stroke();
+  x.strokeStyle = 'rgba(58,26,10,0.18)';
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * TAU;
+    x.beginPath();
+    x.moveTo(Math.cos(a) * 28, Math.sin(a) * 28);
+    x.lineTo(Math.cos(a) * 136, Math.sin(a) * 136);
+    x.stroke();
+  }
+  x.restore();
+
+  // Occlusione ambientale morbida lungo i muri
+  const ao = (x0, y0, x1, y1, a) => {
+    const gg = x.createLinearGradient(x0, y0, x1, y1);
+    gg.addColorStop(0, rgba(P.ink, a));
+    gg.addColorStop(1, rgba(P.ink, 0));
+    x.fillStyle = gg;
+    x.fillRect(0, 0, w, h);
+  };
+  ao(0, 0, 0, 85, .36);
+  ao(0, h, 0, h - 50, .28);
+  ao(0, 0, 64, 0, .32);
+  ao(w, 0, w - 64, 0, .32);
   return c;
 }
 
 /* =====================================================================
-   PRECALCOLO 2 — il fondale di Piazza Dante oltre la parete di fondo
+   PRECALCOLO 2 — Fondale Teatrale (Piazza Dante, Palazzi, Reggia, Luna)
    ===================================================================== */
 function creaFondale() {
-  const FH = 360; const [c, x] = nuovoCanvas(W, FH);
-  const s = V.scalaFondale, yG = wallTop + 54 * s;     // linea di terra della piazza (dietro il muro)
-  // cielo di carta: bruno in alto, luce solo all'orizzonte
+  const FH = 380;
+  const [c, x] = nuovoCanvas(W, FH);
+  const yG = wallTop + 42;
+
+  // Cielo notturno ambrato retroilluminato
   const sky = x.createLinearGradient(0, 0, 0, yG);
-  sky.addColorStop(0, '#1a0b04'); sky.addColorStop(.3, '#36180a'); sky.addColorStop(.62, '#6a3312'); sky.addColorStop(.86, '#a85f22'); sky.addColorStop(1, '#c98a3c');
-  x.fillStyle = sky; x.fillRect(0, 0, W, yG);
-  const terra = x.createLinearGradient(0, yG, 0, FH); terra.addColorStop(0, '#4a2109'); terra.addColorStop(1, '#120803');
-  x.fillStyle = terra; x.fillRect(0, yG, W, FH - yG);
-  // fibre della carta del cielo
-  {
-    const pw = Math.round(W * DPR), ph = Math.round(yG * DPR); const n = rumore(pw, ph, 2, [{ cx: 120 * DPR, cy: 3 * DPR, amp: .6 }, { cx: 60 * DPR, cy: 2 * DPR, amp: .4 }]);
-    const id = x.createImageData(pw, ph), d = id.data;
-    for (let i = 0, p = 0; i < pw * ph; i++, p += 4) { const v = n[i]; if (v > 0) { d[p] = 255; d[p + 1] = 205; d[p + 2] = 140; d[p + 3] = v * 70; } else { d[p] = 40; d[p + 1] = 15; d[p + 2] = 4; d[p + 3] = -v * 50; } }
-    const [t, tx] = nuovoCanvas(W, yG); tx.putImageData(id, 0, 0); x.drawImage(t, 0, 0, W, yG);
+  sky.addColorStop(0, '#120703');
+  sky.addColorStop(.28, '#2d1307');
+  sky.addColorStop(.58, '#6e3412');
+  sky.addColorStop(.82, '#b86825');
+  sky.addColorStop(1, '#e09e46');
+  x.fillStyle = sky;
+  x.fillRect(0, 0, W, yG);
+
+  // Grande bagliore all'orizzonte dietro la Reggia di Caserta
+  const hot = x.createRadialGradient(640, yG - 48, 10, 640, yG - 48, 420);
+  hot.addColorStop(0, 'rgba(255,232,175,0.72)');
+  hot.addColorStop(0.45, 'rgba(243,193,75,0.28)');
+  hot.addColorStop(1, 'rgba(243,193,75,0)');
+  x.fillStyle = hot;
+  x.fillRect(0, 0, W, yG);
+
+  // Luna piena in crema con crateri
+  const mx = 370, my = 56, mr = 28;
+  const halo = x.createRadialGradient(mx, my, 4, mx, my, mr * 3.8);
+  halo.addColorStop(0, 'rgba(255,246,220,0.85)');
+  halo.addColorStop(0.35, 'rgba(255,230,175,0.28)');
+  halo.addColorStop(1, 'rgba(255,230,175,0)');
+  x.fillStyle = halo;
+  x.beginPath(); x.arc(mx, my, mr * 3.8, 0, TAU); x.fill();
+  x.fillStyle = '#fff5d8';
+  x.beginPath(); x.arc(mx, my, mr, 0, TAU); x.fill();
+  x.fillStyle = 'rgba(218,190,138,0.38)';
+  x.beginPath(); x.arc(mx - 8, my - 6, 5, 0, TAU); x.arc(mx + 9, my + 6, 6.5, 0, TAU); x.arc(mx - 3, my + 10, 3.2, 0, TAU); x.fill();
+
+  // Colline Tifatine e Reggia di Caserta in lontananza
+  x.save();
+  x.fillStyle = 'rgba(62,28,11,0.78)';
+  x.beginPath();
+  x.moveTo(180, yG);
+  x.bezierCurveTo(340, yG - 85, 510, yG - 102, 640, yG - 90);
+  x.bezierCurveTo(790, yG - 104, 940, yG - 82, 1100, yG);
+  x.closePath();
+  x.fill();
+
+  // Silhouette monumentale della Reggia vanvitelliana
+  const rx = 640, ry = yG;
+  x.fillStyle = '#240f05';
+  x.fillRect(rx - 150, ry - 74, 300, 74);
+  x.fillRect(rx - 156, ry - 78, 312, 5);
+  // Timpano centrale e cupola
+  x.fillRect(rx - 38, ry - 92, 76, 18);
+  x.beginPath();
+  x.moveTo(rx - 44, ry - 92);
+  x.lineTo(rx, ry - 112);
+  x.lineTo(rx + 44, ry - 92);
+  x.closePath();
+  x.fill();
+  // Torrette laterali
+  x.fillRect(rx - 150, ry - 86, 24, 10);
+  x.fillRect(rx + 126, ry - 86, 24, 10);
+  // Finestre accese della Reggia
+  x.fillStyle = 'rgba(255,214,128,0.78)';
+  for (let wx = -136; wx <= 136; wx += 14) {
+    if (Math.abs(wx) < 12) continue;
+    x.fillRect(rx + wx - 2, ry - 64, 4, 8);
+    x.fillRect(rx + wx - 2, ry - 46, 4, 8);
   }
-  x.save(); x.translate(640, yG); x.scale(s, s);
-  // alone caldo dietro la Reggia
-  const hot = x.createRadialGradient(0, -60, 0, 0, -60, 330); hot.addColorStop(0, 'rgba(255,225,160,.55)'); hot.addColorStop(.5, 'rgba(255,207,122,.22)'); hot.addColorStop(1, 'rgba(255,225,160,0)');
-  x.save(); x.scale(1, .36); x.fillStyle = hot; x.beginPath(); x.arc(0, -60 / .36, 330, 0, TAU); x.fill(); x.restore();
-  // luna crema, ferma, in alto a sinistra
-  {
-    const mx = -150, my = -104, r = 19;
-    const halo = x.createRadialGradient(mx, my, 0, mx, my, r * 3.6); halo.addColorStop(0, 'rgba(255,246,220,.8)'); halo.addColorStop(.35, 'rgba(255,233,180,.28)'); halo.addColorStop(1, 'rgba(255,233,180,0)');
-    x.fillStyle = halo; x.beginPath(); x.arc(mx, my, r * 3.6, 0, TAU); x.fill();
-    x.fillStyle = '#fff4d6'; x.beginPath(); x.arc(mx, my, r, 0, TAU); x.fill();
-    x.fillStyle = 'rgba(231,207,156,.35)'; x.beginPath(); x.arc(mx - 6, my - 5, 3.4, 0, TAU); x.arc(mx + 6, my + 4, 4.4, 0, TAU); x.fill(); x.beginPath(); x.arc(mx - 3, my + 7, 2, 0, TAU); x.fill();
-  }
+  // Grande portale centrale della Reggia
+  x.beginPath();
+  x.arc(rx, ry - 18, 9, Math.PI, 0);
+  x.lineTo(rx + 9, ry);
+  x.lineTo(rx - 9, ry);
+  x.closePath();
+  x.fill();
   x.restore();
-  // ---- strato lontano: colline + Reggia (sfocato) ----
-  {
-    const [f, fx] = nuovoCanvas(W, FH); fx.translate(640, yG); fx.scale(s, s);
-    fx.fillStyle = 'rgba(78,38,16,.7)'; fx.beginPath(); fx.moveTo(-300, -30); fx.bezierCurveTo(-180, -78, -40, -92, 90, -84); fx.bezierCurveTo(200, -78, 270, -66, 320, -46); fx.lineTo(320, 0); fx.lineTo(-300, 0); fx.closePath(); fx.fill();
-    fx.fillStyle = '#2a1206';
-    fx.fillRect(-124, -70, 248, 70); fx.fillRect(-128, -73, 256, 4); fx.fillRect(-30, -84, 60, 14); fx.fillRect(-122, -78, 16, 6); fx.fillRect(106, -78, 16, 6);
-    fx.beginPath(); fx.moveTo(-36, -84); fx.lineTo(0, -100); fx.lineTo(36, -84); fx.closePath(); fx.fill();
-    fx.fillStyle = 'rgba(243,197,122,.78)';
-    for (let wx = -114; wx <= 110; wx += 13) { if (Math.abs(wx) < 10) continue; fx.fillRect(wx, -62, 4, 7); fx.fillRect(wx, -46, 4, 7); }
-    fx.fillRect(-5, -34, 10, 16);
-    x.filter = `blur(${V.blurFar}px)`; x.drawImage(f, 0, 0, W, FH); x.filter = 'none';
-    // l'alone si rimette sopra: la Reggia si scioglie nella luce
-    x.save(); x.translate(640, yG); x.scale(s, s);
-    const h2 = x.createRadialGradient(0, -62, 0, 0, -62, 120); h2.addColorStop(0, 'rgba(255,225,160,.5)'); h2.addColorStop(1, 'rgba(255,225,160,0)');
-    x.fillStyle = h2; x.beginPath(); x.arc(0, -62, 120, 0, TAU); x.fill(); x.restore();
-  }
-  // ---- strato medio: pini a ombrello e case basse (sfocato poco) ----
-  function pino(gx, px, py, k) {
-    gx.save(); gx.translate(px - 40 * k, py - 100 * k); gx.scale(k, k);
-    gx.beginPath(); gx.moveTo(39, 44); gx.bezierCurveTo(37, 58, 41, 72, 37, 100); gx.lineTo(43, 100); gx.bezierCurveTo(45, 72, 42, 58, 44, 44); gx.closePath(); gx.fill();
-    gx.beginPath(); gx.moveTo(41, 52); gx.bezierCurveTo(47, 47, 53, 47, 58, 42); gx.lineTo(59.5, 44.5); gx.bezierCurveTo(54, 49, 48, 50, 42.5, 55); gx.closePath(); gx.fill();
-    gx.beginPath(); gx.moveTo(3, 42); gx.bezierCurveTo(8, 30, 16, 20, 26, 18); gx.bezierCurveTo(30, 8, 40, 3, 48, 9); gx.bezierCurveTo(56, 5, 66, 10, 70, 20); gx.bezierCurveTo(76, 22, 80, 30, 78, 40); gx.bezierCurveTo(72, 36, 64, 42, 56, 38); gx.bezierCurveTo(48, 44, 40, 38, 32, 42); gx.bezierCurveTo(24, 38, 14, 45, 3, 42); gx.closePath(); gx.fill();
-    gx.beginPath(); gx.moveTo(10, 44); gx.bezierCurveTo(20, 37, 30, 40, 40, 36); gx.bezierCurveTo(50, 40, 60, 37, 72, 43); gx.lineTo(66, 48); gx.bezierCurveTo(56, 44, 48, 48, 40, 45); gx.bezierCurveTo(32, 48, 24, 44, 14, 48); gx.closePath(); gx.fill();
-    gx.restore();
-  }
-  {
-    const [m, mx] = nuovoCanvas(W, FH); mx.translate(640, yG); mx.scale(s, s); mx.fillStyle = '#2c1406';
-    mx.beginPath(); mx.moveTo(-200, 0); mx.lineTo(-200, -34); mx.lineTo(-170, -46); mx.lineTo(-140, -34); mx.lineTo(-140, -40); mx.lineTo(-100, -40); mx.lineTo(-100, 0); mx.closePath(); mx.fill();
-    mx.beginPath(); mx.moveTo(100, 0); mx.lineTo(100, -36); mx.lineTo(136, -50); mx.lineTo(172, -36); mx.lineTo(172, -42); mx.lineTo(206, -42); mx.lineTo(206, 0); mx.closePath(); mx.fill();
-    mx.fillStyle = 'rgba(240,180,90,.85)'; mx.fillRect(-168, -28, 6, 9); mx.fillRect(130, -30, 6, 9);
-    mx.fillStyle = '#1c0d05'; pino(mx, -182, -4, .92); pino(mx, 176, 0, 1.0); pino(mx, 60, 6, .55);
-    x.filter = `blur(${V.blurMid}px)`; x.drawImage(m, 0, 0, W, FH); x.filter = 'none';
-  }
-  // ---- palazzi neoclassici con finestre accese e busti ----
-  x.save(); x.translate(640, yG); x.scale(s, s);
-  const L = -(640 / s) - 30, R = (640 / s) + 30;
-  const facciate = [{ x0: L, x1: -210 }, { x0: 210, x1: R }];
+
+  // Palazzi neoclassici ai lati con portici e abitanti addormentati alle finestre
+  const palazzi = [{ x0: 40, x1: 445 }, { x0: 835, x1: 1240 }];
   const finestre = [];
-  for (const f of facciate) {
-    const n = Math.max(2, Math.round((f.x1 - f.x0 - 40) / 66));
-    for (let i = 0; i < n; i++) finestre.push({ x: f.x0 + 30 + i * ((f.x1 - f.x0 - 60) / Math.max(1, n - 1)) - 10, y: -104, tipo: i % 4 });
-  }
-  // aloni dietro le finestre
-  for (const f of finestre) { const g = x.createRadialGradient(f.x + 10, f.y + 16, 2, f.x + 10, f.y + 16, 34); g.addColorStop(0, 'rgba(255,178,74,.34)'); g.addColorStop(1, 'rgba(255,178,74,0)'); x.fillStyle = g; x.fillRect(f.x - 30, f.y - 30, 80, 90); }
-  for (const f of facciate) {
-    x.fillStyle = '#160c05'; x.fillRect(f.x0, -190, f.x1 - f.x0, 190);
-    x.fillRect(f.x0 - 6, -120, f.x1 - f.x0 + 12, 9);           // cornicione
-    x.fillStyle = 'rgba(90,42,14,.6)'; x.fillRect(f.x0 - 6, -111, f.x1 - f.x0 + 12, 1.2); // spessore della carta del cornicione
-    x.fillStyle = '#160c05'; x.fillRect(f.x0 - 3, -66, f.x1 - f.x0 + 6, 3);              // marcapiano
-    // portici: archi scuri, uno acceso
-    const n = Math.round((f.x1 - f.x0) / 70); let k = 0;
-    for (let ax = f.x0 + 22; ax + 44 < f.x1 - 10 && k < n; ax += 70, k++) {
-      const acceso = (k === Math.floor(n / 2));
-      if (acceso) { const g = x.createLinearGradient(0, -54, 0, 0); g.addColorStop(0, 'rgba(241,165,60,.55)'); g.addColorStop(1, 'rgba(241,165,60,.2)'); x.fillStyle = g; }
-      else x.fillStyle = '#2e180a';
-      x.beginPath(); x.moveTo(ax, 0); x.lineTo(ax, -32); x.arc(ax + 22, -32, 22, Math.PI, 0); x.lineTo(ax + 44, 0); x.closePath(); x.fill();
+  for (const f of palazzi) {
+    x.fillStyle = '#150a04';
+    x.fillRect(f.x0, yG - 158, f.x1 - f.x0, 165);
+    x.fillRect(f.x0 - 5, yG - 163, f.x1 - f.x0 + 10, 7);
+    x.fillStyle = 'rgba(242,194,120,0.35)';
+    x.fillRect(f.x0 - 5, yG - 156, f.x1 - f.x0 + 10, 1.3);
+
+    // Finestre ad arco con dormienti
+    const nWin = 4;
+    const step = (f.x1 - f.x0 - 60) / (nWin - 1);
+    for (let i = 0; i < nWin; i++) {
+      const wx = f.x0 + 30 + i * step;
+      const wy = yG - 122;
+      finestre.push({ x: wx, y: wy, tipo: (i + (f.x0 > 500 ? 1 : 0)) % 3 });
+      // Alone finestra
+      const wg = x.createRadialGradient(wx, wy + 16, 2, wx, wy + 16, 36);
+      wg.addColorStop(0, 'rgba(255,190,82,0.42)');
+      wg.addColorStop(1, 'rgba(255,190,82,0)');
+      x.fillStyle = wg;
+      x.beginPath(); x.arc(wx, wy + 16, 36, 0, TAU); x.fill();
+
+      // Vano illuminato
+      const lg = x.createLinearGradient(0, wy, 0, wy + 38);
+      lg.addColorStop(0, '#ffe8aa');
+      lg.addColorStop(1, '#eb9b34');
+      x.fillStyle = lg;
+      x.beginPath();
+      x.arc(wx, wy + 12, 12, Math.PI, 0);
+      x.lineTo(wx + 12, wy + 38);
+      x.lineTo(wx - 12, wy + 38);
+      x.closePath();
+      x.fill();
+
+      // Sagoma dell'abitante incantato col sorriso sottile
+      x.fillStyle = P.ink;
+      x.beginPath();
+      x.moveTo(wx - 9, wy + 38);
+      x.bezierCurveTo(wx - 8, wy + 27, wx - 4, wy + 24, wx, wy + 24);
+      x.bezierCurveTo(wx + 4, wy + 24, wx + 8, wy + 27, wx + 9, wy + 38);
+      x.fill();
+      x.beginPath();
+      x.arc(wx, wy + 17, 4.8, 0, TAU);
+      x.fill();
+      x.strokeStyle = '#f6c76a';
+      x.lineWidth = 0.9;
+      x.beginPath();
+      x.arc(wx, wy + 17.5, 2.2, 0.15 * Math.PI, 0.85 * Math.PI);
+      x.stroke();
+      // Ringhierina
+      x.fillStyle = P.ink;
+      x.fillRect(wx - 13, wy + 29, 26, 1.4);
     }
-    // finestre del sottotetto (si vede solo il davanzale)
-    x.fillStyle = 'rgba(241,165,60,.5)'; for (let wx = f.x0 + 30; wx < f.x1 - 20; wx += 66) x.fillRect(wx - 6, -150, 14, 24);
   }
-  // finestre con busti
-  const winG = x.createLinearGradient(0, -104, 0, -72); winG.addColorStop(0, '#ffe6a6'); winG.addColorStop(1, '#f1a53c');
-  function busto(fx0, fy0, tipo) {
-    x.fillStyle = winG; x.beginPath(); x.moveTo(fx0, fy0 + 10); x.arc(fx0 + 10, fy0 + 10, 10, Math.PI, 0); x.lineTo(fx0 + 20, fy0 + 32); x.lineTo(fx0, fy0 + 32); x.closePath(); x.fill();
-    x.fillStyle = P.ink;
-    if (tipo !== 3) {
-      // spalle + testa, in scala .5 del simbolo del mockup
-      x.beginPath(); x.moveTo(fx0 + 2.5, fy0 + 32); x.bezierCurveTo(fx0 + 3, fy0 + 24, fx0 + 5.5, fy0 + 21, fx0 + 8, fy0 + 20); x.lineTo(fx0 + 12, fy0 + 20); x.bezierCurveTo(fx0 + 14.5, fy0 + 21, fx0 + 17, fy0 + 24, fx0 + 17.5, fy0 + 32); x.closePath(); x.fill();
-      x.beginPath(); x.moveTo(fx0 + 6.7, fy0 + 11); x.bezierCurveTo(fx0 + 6.7, fy0 + 7.7, fx0 + 8.2, fy0 + 6, fx0 + 10, fy0 + 6); x.bezierCurveTo(fx0 + 11.8, fy0 + 6, fx0 + 13.3, fy0 + 7.7, fx0 + 13.3, fy0 + 11); x.bezierCurveTo(fx0 + 13.3, fy0 + 14, fx0 + 12.2, fy0 + 17, fx0 + 11.2, fy0 + 20); x.lineTo(fx0 + 8.8, fy0 + 20); x.bezierCurveTo(fx0 + 7.8, fy0 + 17, fx0 + 6.7, fy0 + 14, fx0 + 6.7, fy0 + 11); x.closePath(); x.fill();
-      if (tipo === 1) { x.beginPath(); x.moveTo(fx0 + 6, fy0 + 9.7); x.bezierCurveTo(fx0 + 6, fy0 + 5, fx0 + 14, fy0 + 5, fx0 + 14, fy0 + 9.7); x.lineTo(fx0 + 15, fy0 + 10.5); x.lineTo(fx0 + 5, fy0 + 10.5); x.closePath(); x.fill(); }
-      if (tipo === 2) { x.beginPath(); x.arc(fx0 + 13.2, fy0 + 8.5, 1.9, 0, TAU); x.fill(); }
-      x.strokeStyle = 'rgba(246,199,106,.9)'; x.lineWidth = .7; x.beginPath(); x.moveTo(fx0 + 8.5, fy0 + 14.5); x.quadraticCurveTo(fx0 + 10, fy0 + 15.7, fx0 + 11.5, fy0 + 14.5); x.stroke(); // il sorriso
-    } else { x.fillRect(fx0 + 9.5, fy0, 1, 32); }
-    x.fillRect(fx0 - .5, fy0 + 22, 21, .9); x.fillRect(fx0 + 2, fy0 + 18.5, .7, 3.5); x.fillRect(fx0 + 18, fy0 + 18.5, .7, 3.5);
+
+  // Fili d'oro del Velo che collegano le finestre alla Reggia
+  for (const w of finestre) {
+    const cx = (w.x + 640) * 0.5;
+    const cy = Math.max(w.y, yG - 68) + 22;
+    x.strokeStyle = 'rgba(243,193,75,0.22)';
+    x.lineWidth = 4.5;
+    x.beginPath(); x.moveTo(w.x, w.y + 16); x.quadraticCurveTo(cx, cy, 640, yG - 68); x.stroke();
+    x.strokeStyle = 'rgba(255,232,168,0.85)';
+    x.lineWidth = 1.1;
+    x.beginPath(); x.moveTo(w.x, w.y + 16); x.quadraticCurveTo(cx, cy, 640, yG - 68); x.stroke();
   }
-  for (const f of finestre) busto(f.x, f.y, f.tipo);
-  // fili d'oro: dalle finestre dei dormienti alla Reggia
-  const T = { x: 0, y: -62 };
-  const fili = finestre.filter((f, i) => i % 2 === 0 || Math.abs(f.x) < 420).map(f => ({ x0: f.x + 10, y0: f.y + 12, cx: (f.x + 10) * .45, cy: Math.max(f.y + 12, T.y) + 18 }));
-  x.lineCap = 'round'; x.lineJoin = 'round';
-  const passa = (lw, st, dash) => { x.lineWidth = lw; x.strokeStyle = st; x.setLineDash(dash || []); for (const f of fili) { x.beginPath(); x.moveTo(f.x0, f.y0); x.quadraticCurveTo(f.cx, f.cy, T.x, T.y); x.stroke(); } x.setLineDash([]); };
-  passa(6, 'rgba(246,200,90,.14)'); passa(3.2, 'rgba(26,11,4,.55)'); passa(1, 'rgba(255,217,120,.85)'); passa(1.5, 'rgba(255,241,192,.95)', [2, 18]);
-  // scintille sui fili
-  x.fillStyle = 'rgba(255,244,204,.9)';
-  for (const f of fili) { const t = .5; const px = (1 - t) * (1 - t) * f.x0 + 2 * (1 - t) * t * f.cx + t * t * T.x, py = (1 - t) * (1 - t) * f.y0 + 2 * (1 - t) * t * f.cy + t * t * T.y; const g = x.createRadialGradient(px, py, 0, px, py, 6); g.addColorStop(0, 'rgba(255,244,204,.95)'); g.addColorStop(.3, 'rgba(255,244,204,.5)'); g.addColorStop(1, 'rgba(255,244,204,0)'); x.fillStyle = g; x.beginPath(); x.arc(px, py, 6, 0, TAU); x.fill(); }
-  // selciato della piazza (si vede solo quando le quinte sono aperte)
-  x.fillStyle = P.ink; x.fillRect(L - 40, -2, R - L + 80, 200); x.fillStyle = 'rgba(122,74,28,.55)'; x.fillRect(L - 40, -2, R - L + 80, 1.2);
-  x.strokeStyle = 'rgba(42,23,8,.6)'; x.lineWidth = 1; for (let yy = 28; yy < 180; yy += 42) { x.beginPath(); x.moveTo(L, yy); x.quadraticCurveTo(0, yy - 8, R, yy); x.stroke(); }
-  x.restore();
-  // nebbia bassa sopra il muro
-  {
-    const [n, nx] = nuovoCanvas(W, FH);
-    nx.fillStyle = `rgba(232,176,104,${.5 * V.nebbia})`;
-    for (const [cx, rx] of [[240, 320], [640, 380], [1040, 320]]) { nx.beginPath(); nx.ellipse(cx, wallTop - 12 * s, rx, 16 * s, 0, 0, TAU); nx.fill(); }
-    x.filter = 'blur(9px)'; x.drawImage(n, 0, 0, W, FH); x.filter = 'none';
-    const g = x.createLinearGradient(0, wallTop - 30 * s, 0, wallTop + 4); g.addColorStop(0, 'rgba(232,176,104,0)'); g.addColorStop(1, `rgba(232,176,104,${.38 * V.nebbia})`); x.fillStyle = g; x.fillRect(0, wallTop - 30 * s, W, 30 * s + 4);
-  }
-  if (V.fondaleAlpha < 1) { x.fillStyle = `rgba(10,6,4,${1 - V.fondaleAlpha})`; x.fillRect(0, 0, W, FH); }
   return c;
 }
 
-/* =====================================================================
-   PRECALCOLO 3 — sfondo del teatro (fuori dalla scatola) e tile di grana
-   ===================================================================== */
-function creaSfondo() {
-  const [c, x] = nuovoCanvas(W, H);
-  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#140b05'); g.addColorStop(1, '#070402'); x.fillStyle = g; x.fillRect(0, 0, W, H);
-  // la luce dietro la carta trapela attorno alla scatola
-  x.save(); x.shadowBlur = 60; x.shadowColor = 'rgba(242,194,120,.30)'; x.fillStyle = '#000';
-  x.fillRect(G.fx - G.wallW, wallTop - 6, G.fw + 2 * G.wallW, G.fb + G.southH - wallTop + 6); x.restore();
-  // quinte: pannelli verticali appena più scuri, come fondali di teatro
-  x.fillStyle = 'rgba(0,0,0,.25)'; x.fillRect(0, 0, 60, H); x.fillRect(W - 60, 0, 60, H);
-  return c;
-}
-function creaGrana() {
-  const S = 256; const c = document.createElement('canvas'); c.width = S; c.height = S; const x = c.getContext('2d');
-  const id = x.createImageData(S, S), d = id.data, r = rng(99);
-  for (let i = 0; i < S * S * 4; i += 4) { const v = 128 + (r() + r() - 1) * 110; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
-  x.putImageData(id, 0, 0); return c;
-}
-
-const PRE = {};
-let t0 = performance.now(); const CARTA = creaCarta(); PRE.carta_ms = +(performance.now() - t0).toFixed(1);
-t0 = performance.now(); const FONDALE = creaFondale(); PRE.fondale_ms = +(performance.now() - t0).toFixed(1);
-t0 = performance.now(); const SFONDO = creaSfondo(); PRE.sfondo_ms = +(performance.now() - t0).toFixed(1);
-t0 = performance.now(); const GRANA = creaGrana(); PRE.grana_ms = +(performance.now() - t0).toFixed(1);
-t0 = performance.now(); const VIGN = (() => { const [c, x] = nuovoCanvas(W, H); const g = x.createRadialGradient(640, 350, 120, 640, 350, 760); g.addColorStop(0, 'rgba(26,10,2,0)'); g.addColorStop(V.vignIn, 'rgba(26,10,2,0)'); g.addColorStop(1, `rgba(26,10,2,${V.vign})`); x.fillStyle = g; x.fillRect(0, 0, W, H); return c; })(); PRE.vignetta_ms = +(performance.now() - t0).toFixed(1);
-let GRANA_PAT = null;
+let CARTA = creaCartaPavimento();
+let FONDALE = creaFondale();
 
 /* =====================================================================
-   ATTORI — Ferruccio (crema, contorno 2 px) e gatti d'ombra (inchiostro)
+   DISEGNO 1 — FERRUCCIO (Burattino articolato in crema, maschera, stocco)
    ===================================================================== */
-const FERRUCCIO = { x: 470, y: 395, s: .74 };
-const GATTO_ACC = { x: 905, y: 302, s: .92, dir: -1 };      // accucciato, guarda a sinistra, il lampo
-const GATTO_COL = { x: 612, y: 452, s: .95, dir: 1 };        // appena colpito, flash bianco
-const MONETE = [[704, 522], [740, 506], [768, 541]];
-
-function disegnaFerruccio(x, modo) {
+function disegnaFerruccio(x, modo, tAnim) {
   const ink = modo === 'ombra';
-  const J = 1.1;
-  const C = (c) => ink ? P.ink : c;
-  // ---- sciarpa rossa: nastro sottile in tre segmenti che vola a sinistra dal nodo, frange in punta ----
-  const sc1 = path([['M', -6, -108], ['C', -16, -110, -24, -106, -30, -100], ['L', -26, -93], ['C', -20, -98, -14, -100, -6, -99], ['Z']], 301, J);
-  const sc2 = path([['M', -30, -100], ['C', -38, -96, -44, -98, -52, -104], ['L', -54, -97], ['C', -46, -90, -36, -89, -26, -93], ['Z']], 302, J);
-  const sc3 = path([['M', -52, -104], ['C', -60, -108, -68, -108, -78, -104], ['L', -76, -96], ['C', -68, -99, -62, -99, -54, -97], ['Z']], 303, J);
-  pezzoChiaro(x, sc3, C(P.rossoDeep), modo); pezzoChiaro(x, sc2, C(P.rosso), modo); pezzoChiaro(x, sc1, C(P.rosso), modo);
-  if (!ink) { x.strokeStyle = P.rossoDeep; x.lineWidth = 1.7; x.lineCap = 'round'; for (const [fy0, dy] of [[-104, -3], [-101, -1], [-98, 1], [-96, 3]]) { x.beginPath(); x.moveTo(-77, fy0); x.lineTo(-86, fy0 + dy); x.stroke(); } }
-  // ---- gambe e scarpe ----
-  const gD = path([['M', -15, -44], ['L', -3, -44], ['L', -2, -5], ['L', -16, -5], ['Z']], 304, J);
-  const gA = path([['M', 2, -44], ['L', 15, -44], ['L', 17, -5], ['L', 3, -5], ['Z']], 305, J);
-  pezzoChiaro(x, gD, C('#e3cc9a'), modo); pezzoChiaro(x, gA, C(P.crema), modo);
-  const pD = path([['M', -20, -1], ['C', -20, -7, -1, -7, 0, -1], ['Q', -10, 3, -20, -1], ['Z']], 306, .6);
-  const pA = path([['M', 0, 0], ['C', 2, -7, 22, -7, 24, 0], ['Q', 12, 4, 0, 0], ['Z']], 307, .6);
-  x.fillStyle = P.ink; x.fill(pD); x.fill(pA);
-  // ---- camicione con pieghe ----
-  const cam = path([['M', -21, -98], ['C', -12, -104, 16, -104, 23, -98], ['C', 28, -78, 31, -58, 33, -38], ['Q', 2, -28, -33, -38], ['C', -31, -58, -27, -78, -21, -98], ['Z']], 308, J);
-  let gr = null; if (!ink) { gr = x.createLinearGradient(-32, -104, 32, -34); gr.addColorStop(0, P.bianco); gr.addColorStop(1, '#e4cd9c'); }
-  pezzoChiaro(x, cam, ink ? P.ink : gr, modo);
-  if (!ink) { x.strokeStyle = 'rgba(11,7,4,.34)'; x.lineWidth = 1.2; x.lineCap = 'round'; for (const [a, b, c, d] of [[-10, -56, -13, -36], [0, -55, 0, -33], [10, -56, 13, -36], [-20, -60, -24, -40], [20, -60, 24, -40]]) { x.beginPath(); x.moveTo(a, b); x.quadraticCurveTo((a + c) / 2 + 1.5, (b + d) / 2, c, d); x.stroke(); } }
-  // ---- cintura e fibbia ----
-  const cin = path([['M', -29, -68], ['Q', 2, -62, 29, -68], ['L', 30, -57], ['Q', 2, -51, -30, -57], ['Z']], 309, .8);
-  x.fillStyle = P.ink; x.fill(cin);
-  if (!ink) { x.fillStyle = P.carta; x.fillRect(-4.5, -66, 9, 10.5); x.strokeStyle = P.ink; x.lineWidth = 1.3; x.strokeRect(-4.5, -66, 9, 10.5); }
-  // ---- nodo della sciarpa sul collo ----
-  const nodo = path([['M', -14, -106], ['Q', 0, -112, 12, -106], ['Q', 12, -97, 0, -96], ['Q', -13, -97, -14, -106], ['Z']], 310, .8);
-  pezzoChiaro(x, nodo, C(P.rosso), modo);
-  // ---- testa (un terzo dell'altezza), maschera con il becco, occhi come buchi di luce ----
-  const testa = new Path2D(); testa.arc(4, -126, 19, 0, TAU);
-  pezzoChiaro(x, testa, C(P.crema), modo);
-  const masc = path([['M', -15, -131], ['C', -12, -147, 18, -148, 22, -132], ['C', 30, -130, 38, -123, 42, -115], ['C', 40, -111, 34, -113, 26, -116], ['C', 22, -111, 10, -110, 2, -114], ['C', -6, -117, -13, -123, -15, -131], ['Z']], 312, .7);
-  x.fillStyle = P.ink; x.fill(masc);
-  if (!ink) { x.fillStyle = '#fff0b3'; x.beginPath(); x.ellipse(7, -131, 2.6, 2.1, 0, 0, TAU); x.fill(); x.beginPath(); x.ellipse(17, -128, 2.3, 1.9, 0, 0, TAU); x.fill(); }
-  // ---- coppolone: cono morbido con la punta piegata ----
-  const cono = path([['M', -16, -140], ['L', 23, -140], ['C', 21, -156, 14, -168, 4, -174], ['C', -4, -179, -18, -182, -28, -176], ['C', -21, -174, -17, -166, -17, -156], ['C', -17, -150, -16, -145, -16, -140], ['Z']], 313, J);
-  if (!ink) { gr = x.createLinearGradient(-24, -180, 20, -140); gr.addColorStop(0, P.bianco); gr.addColorStop(1, '#e8d2a2'); }
-  pezzoChiaro(x, cono, ink ? P.ink : gr, modo);
-  const tesa = path([['M', -20, -141], ['C', -12, -146, 20, -146, 27, -141], ['C', 20, -136, -12, -136, -20, -141], ['Z']], 315, .6);
-  pezzoChiaro(x, tesa, C(P.crema), modo);
-  if (!ink) { x.strokeStyle = 'rgba(11,7,4,.3)'; x.lineWidth = 1.1; x.beginPath(); x.moveTo(-10, -160); x.quadraticCurveTo(-4, -156, 2, -160); x.stroke(); }
-  // ---- braccio con la lama (davanti), elsa, pomo, mano ----
-  const bra = path([['M', 14, -96], ['L', 26, -94], ['L', 52, -72], ['L', 44, -62], ['L', 16, -82], ['Z']], 314, .9);
-  pezzoChiaro(x, bra, C(P.crema), modo);
+  const C = c => ink ? P.ink : c;
+  const bob = Math.sin(tAnim * 2.6) * 2.2;
+  const scarfWave = Math.sin(tAnim * 4.2) * 5;
+
+  x.save();
+  x.translate(0, bob);
   x.lineCap = 'round';
-  x.strokeStyle = P.ink; x.lineWidth = 4.4; x.beginPath(); x.moveTo(50, -66); x.lineTo(104, -8); x.stroke();
-  if (!ink) { const bl = x.createLinearGradient(50, -66, 104, -8); bl.addColorStop(0, '#9a948a'); bl.addColorStop(.5, '#e6e1d5'); bl.addColorStop(1, '#8e887d'); x.strokeStyle = bl; x.lineWidth = 2.3; x.beginPath(); x.moveTo(52, -64); x.lineTo(103, -9); x.stroke(); }
-  x.strokeStyle = P.ink; x.lineWidth = 3.6; x.beginPath(); x.moveTo(41, -58); x.lineTo(57, -73); x.stroke();
-  x.fillStyle = P.ink; x.beginPath(); x.arc(43, -70, 3.8, 0, TAU); x.fill();
-  const mano = new Path2D(); mano.arc(49, -66, 5.6, 0, TAU); pezzoChiaro(x, mano, C(P.crema), modo);
+  x.lineJoin = 'round';
+
+  const outlineFill = (pathFn, fillStyle, lw = 3.4) => {
+    x.beginPath();
+    pathFn();
+    if (ink) {
+      x.fillStyle = P.ink;
+      x.strokeStyle = P.ink;
+      x.lineWidth = lw;
+      x.stroke();
+      x.fill();
+    } else {
+      x.strokeStyle = P.ink;
+      x.lineWidth = lw;
+      x.stroke();
+      x.fillStyle = fillStyle;
+      x.fill();
+    }
+  };
+
+  // 1. Asta metallica da burattino (dietro la schiena) e fili spezzati
+  if (!ink) {
+    x.strokeStyle = 'rgba(175,148,108,0.65)';
+    x.lineWidth = 2.2;
+    x.beginPath();
+    x.moveTo(-8, -110);
+    x.lineTo(-22, -260);
+    x.stroke();
+    // Fili d'oro spezzati che pendono (Ferruccio è libero dal Velo!)
+    x.strokeStyle = 'rgba(243,193,75,0.75)';
+    x.lineWidth = 1.3;
+    x.beginPath();
+    x.moveTo(6, -182);
+    x.bezierCurveTo(12, -210, -4, -225, 8, -242);
+    x.stroke();
+  }
+
+  // 2. Code della sciarpa rossa (2 lembi dinamici con frange)
+  outlineFill(() => {
+    x.moveTo(-10, -116);
+    x.bezierCurveTo(-36, -122, -62, -104 + scarfWave * 0.6, -92, -114 + scarfWave);
+    x.lineTo(-89, -101 + scarfWave);
+    x.bezierCurveTo(-60, -92 + scarfWave * 0.5, -34, -106, -8, -104);
+    x.closePath();
+  }, C(P.rossoDeep), 3.0);
+
+  outlineFill(() => {
+    x.moveTo(-6, -112);
+    x.bezierCurveTo(-32, -110, -56, -90 - scarfWave * 0.5, -84, -95 - scarfWave * 0.8);
+    x.lineTo(-80, -83 - scarfWave * 0.8);
+    x.bezierCurveTo(-52, -78 - scarfWave * 0.4, -28, -96, -4, -100);
+    x.closePath();
+  }, C(P.rosso), 3.0);
+
+  // Frange dorate/rosse sulla punta della sciarpa
+  if (!ink) {
+    x.strokeStyle = P.rosso;
+    x.lineWidth = 1.8;
+    for (let i = -2; i <= 2; i++) {
+      x.beginPath();
+      x.moveTo(-90, -107 + scarfWave + i * 2.5);
+      x.lineTo(-100, -109 + scarfWave + i * 3.2);
+      x.stroke();
+    }
+  }
+
+  // 3. Gambe larghe da Pulcinella con snodi a vista e scarpette nere
+  // Gamba sinistra (dietro)
+  outlineFill(() => {
+    x.moveTo(-18, -54);
+    x.quadraticCurveTo(-24, -28, -19, -6);
+    x.lineTo(-5, -6);
+    x.quadraticCurveTo(-6, -28, -4, -54);
+    x.closePath();
+  }, C('#dfd0b0'), 3.2);
+
+  // Gamba destra (avanti, piegata in guardia)
+  outlineFill(() => {
+    x.moveTo(4, -54);
+    x.quadraticCurveTo(18, -28, 22, -6);
+    x.lineTo(8, -6);
+    x.quadraticCurveTo(4, -26, -2, -54);
+    x.closePath();
+  }, C(P.crema), 3.2);
+
+  // Scarpette da maschera con punta all'insù
+  x.fillStyle = P.ink;
+  x.beginPath();
+  x.moveTo(-24, -6); x.quadraticCurveTo(-28, 2, -6, 1); x.lineTo(-4, -7); x.closePath();
+  x.moveTo(6, -6); x.quadraticCurveTo(22, -8, 32, -2); x.quadraticCurveTo(24, 4, 6, 1); x.closePath();
+  x.fill();
+
+  // 4. Braccio sinistro arretrato (bilanciamento da schermidore)
+  outlineFill(() => {
+    x.moveTo(-16, -108);
+    x.quadraticCurveTo(-36, -94, -44, -74);
+    x.lineTo(-33, -68);
+    x.quadraticCurveTo(-24, -84, -8, -96);
+    x.closePath();
+  }, C('#dfd0b0'), 3.0);
+
+  // 5. Camicione ampio da Pulcinella con pieghe d'inchiostro e cintura
+  const camGrad = !ink ? (() => {
+    const g = x.createLinearGradient(-30, -114, 34, -44);
+    g.addColorStop(0, P.bianco);
+    g.addColorStop(1, '#e2ce9f');
+    return g;
+  })() : P.ink;
+
+  outlineFill(() => {
+    x.moveTo(-22, -110);
+    x.bezierCurveTo(-8, -118, 16, -118, 26, -108);
+    x.bezierCurveTo(34, -86, 40, -64, 42, -46);
+    x.quadraticCurveTo(4, -36, -38, -46);
+    x.bezierCurveTo(-36, -68, -30, -88, -22, -110);
+    x.closePath();
+  }, camGrad, 3.6);
+
+  if (!ink) {
+    // Pieghe del camicione
+    x.strokeStyle = 'rgba(11,7,4,0.38)';
+    x.lineWidth = 1.4;
+    for (const [x0, y0, x1, y1] of [[-14, -68, -20, -45], [0, -66, 0, -42], [14, -68, 20, -45]]) {
+      x.beginPath(); x.moveTo(x0, y0); x.lineTo(x1, y1); x.stroke();
+    }
+    // Cintura nera con fibbia d'ottone
+    x.fillStyle = P.ink;
+    x.beginPath();
+    x.moveTo(-33, -76); x.quadraticCurveTo(2, -68, 35, -76);
+    x.lineTo(37, -65); x.quadraticCurveTo(2, -57, -35, -65);
+    x.closePath();
+    x.fill();
+    x.fillStyle = P.oro;
+    x.strokeStyle = P.ink;
+    x.lineWidth = 1.4;
+    x.fillRect(-5, -75, 11, 12);
+    x.strokeRect(-5, -75, 11, 12);
+  }
+
+  // 6. Nodo della sciarpa rossa al collo
+  outlineFill(() => {
+    x.moveTo(-18, -115);
+    x.quadraticCurveTo(2, -123, 20, -114);
+    x.quadraticCurveTo(18, -102, 2, -101);
+    x.quadraticCurveTo(-18, -102, -18, -115);
+    x.closePath();
+  }, C(P.rosso), 3.0);
+
+  // 7. Testa, Maschera nera scolpita col becco adunco e Coppolone ricurvo
+  outlineFill(() => {
+    x.arc(4, -138, 21, 0, TAU);
+  }, C(P.crema), 3.4);
+
+  // Maschera lupina / Pulcinella con naso adunco e sopracciglio fiero
+  x.fillStyle = P.ink;
+  x.beginPath();
+  x.moveTo(-16, -144);
+  x.bezierCurveTo(-10, -160, 20, -160, 25, -142);
+  x.bezierCurveTo(36, -139, 49, -130, 52, -121);
+  x.bezierCurveTo(48, -116, 36, -119, 26, -123);
+  x.bezierCurveTo(20, -116, 6, -116, -4, -122);
+  x.bezierCurveTo(-12, -126, -16, -134, -16, -144);
+  x.closePath();
+  x.fill();
+
+  if (!ink) {
+    // Occhio luminoso nella maschera
+    x.fillStyle = '#fff4c2';
+    x.beginPath();
+    x.ellipse(14, -139, 3.6, 2.5, -0.15, 0, TAU);
+    x.fill();
+    // Filo di luce sul profilo del becco
+    x.strokeStyle = 'rgba(242,194,120,0.45)';
+    x.lineWidth = 1.2;
+    x.beginPath();
+    x.moveTo(22, -142);
+    x.quadraticCurveTo(38, -136, 50, -122);
+    x.stroke();
+  }
+
+  // Coppolone tradizionale alto con punta ripiegata all'indietro
+  outlineFill(() => {
+    x.moveTo(-19, -150);
+    x.lineTo(26, -150);
+    x.bezierCurveTo(24, -174, 14, -196, -2, -206);
+    x.bezierCurveTo(-14, -214, -32, -212, -38, -198);
+    x.bezierCurveTo(-30, -196, -22, -186, -20, -170);
+    x.closePath();
+  }, camGrad, 3.5);
+
+  // Risvolto del coppolone
+  outlineFill(() => {
+    x.moveTo(-24, -150);
+    x.quadraticCurveTo(4, -158, 30, -150);
+    x.quadraticCurveTo(30, -141, 4, -143);
+    x.quadraticCurveTo(-24, -141, -24, -150);
+    x.closePath();
+  }, C(P.bianco), 3.0);
+
+  // 8. Braccio destro armato e Stocco napoletano (con guardia a coccia e lama lucente)
+  outlineFill(() => {
+    x.moveTo(14, -104);
+    x.lineTo(30, -98);
+    x.lineTo(56, -72);
+    x.lineTo(46, -62);
+    x.lineTo(16, -88);
+    x.closePath();
+  }, C(P.crema), 3.2);
+
+  // Lama dello stocco
+  x.strokeStyle = P.ink;
+  x.lineWidth = 5.2;
+  x.beginPath(); x.moveTo(52, -68); x.lineTo(124, -4); x.stroke();
+  if (!ink) {
+    const bl = x.createLinearGradient(52, -68, 124, -4);
+    bl.addColorStop(0, '#a8a096');
+    bl.addColorStop(0.5, '#ffffff');
+    bl.addColorStop(1, '#c8c0b4');
+    x.strokeStyle = bl;
+    x.lineWidth = 2.6;
+    x.beginPath(); x.moveTo(52, -68); x.lineTo(123, -5); x.stroke();
+  }
+  // Guardia a coccia ed elsa
+  x.fillStyle = ink ? P.ink : P.oro;
+  x.strokeStyle = P.ink;
+  x.lineWidth = 2;
+  x.beginPath();
+  x.arc(54, -66, 7, -0.8, 2.3);
+  x.fill();
+  x.stroke();
+  x.beginPath();
+  x.moveTo(42, -56); x.lineTo(64, -78);
+  x.strokeStyle = P.ink; x.lineWidth = 3.6; x.stroke();
+
+  // Mano e rivetti di ottone (perni da marionetta)
+  outlineFill(() => { x.arc(50, -68, 5.8, 0, TAU); }, C(P.crema), 2.8);
+  if (!ink) {
+    x.fillStyle = '#3b2614';
+    x.strokeStyle = P.oro;
+    x.lineWidth = 1;
+    for (const [jx, jy] of [[18, -98], [36, -80], [-12, -30], [12, -30]]) {
+      x.beginPath(); x.arc(jx, jy, 2.6, 0, TAU); x.fill(); x.stroke();
+    }
+  }
+  x.restore();
 }
 
-/* gatto d'ombra: posa 'accucciato' o 'neutro' (quest'ultimo usato per il colpito) */
+/* =====================================================================
+   DISEGNO 2 — GATTO D'OMBRA (Silhouette felina predatoria, artigli, pelo)
+   ===================================================================== */
 function disegnaGatto(x, posa, modo, fill) {
-  const col = fill || P.ink; const J = 1.0;
-  const seed = posa === 'accucciato' ? 400 : 500;
-  let corpo, testa, orecchie, coda, zampe, occhi;
+  const col = fill || P.ink;
+  const isOmbra = modo === 'ombra' || !!fill;
+  x.save();
+  x.lineCap = 'round';
+  x.lineJoin = 'round';
+
+  // Coda sinuosa a frusta
+  x.strokeStyle = col;
+  x.lineWidth = 6;
+  x.beginPath();
   if (posa === 'accucciato') {
-    corpo = path([['M', 34, -3], ['C', 40, -4, 42, -9, 40, -14], ['C', 38, -19, 30, -24, 20, -26], ['C', 10, -29, -4, -33, -16, -34], ['C', -26, -35, -36, -30, -40, -20], ['C', -43, -12, -40, -5, -34, -3], ['Z']], seed, J);
-    testa = new Path2D(); testa.arc(50, -19, 10.5, 0, TAU); testa.moveTo(62, -16); testa.ellipse(58, -16, 4.5, 3.2, 0, 0, TAU);
-    orecchie = path([['M', 43, -27], ['Q', 36, -33, 34, -38], ['Q', 42, -34, 48, -29], ['Z'], ['M', 53, -29], ['Q', 51, -36, 52, -41], ['Q', 56, -34, 59, -28], ['Z']], seed + 1, .7);
-    coda = [['M', -38, -22], ['C', -52, -26, -56, -40, -48, -48], ['C', -44, -52, -36, -50, -38, -44]];
-    zampe = [[30, -3.5, 8, 3.6], [18, -3.5, 7, 3.2], [-30, -5, 9.5, 4.2]];
-    occhi = [[47.5, -21, 2.8, 1.9], [54, -20, 2.8, 1.9]];
+    x.moveTo(-42, -26);
+    x.bezierCurveTo(-64, -34, -72, -58, -56, -70);
+    x.bezierCurveTo(-46, -78, -34, -68, -40, -56);
   } else {
-    corpo = path([['M', 30, -6], ['C', 36, -8, 38, -16, 36, -24], ['C', 34, -30, 28, -33, 20, -33], ['C', 8, -34, -6, -33, -18, -32], ['C', -30, -31, -38, -26, -40, -16], ['C', -41, -10, -38, -6, -34, -5], ['Z']], seed, J);
-    testa = new Path2D(); testa.arc(40, -36, 10, 0, TAU); testa.moveTo(52, -33); testa.ellipse(48, -33, 4.2, 3, 0, 0, TAU);
-    orecchie = path([['M', 32, -44], ['Q', 30, -52, 31, -57], ['Q', 36, -50, 40, -46], ['Z'], ['M', 44, -46], ['Q', 48, -52, 51, -57], ['Q', 49, -49, 48, -43], ['Z']], seed + 1, .7);
-    coda = [['M', -38, -24], ['C', -50, -26, -54, -40, -46, -50], ['C', -42, -55, -34, -52, -36, -46]];
-    zampe = null;
-    occhi = [[37, -38, 2.6, 1.3], [43.5, -37, 2.6, 1.3]];
+    x.moveTo(-40, -28);
+    x.bezierCurveTo(-60, -40, -64, -66, -48, -76);
   }
-  x.lineCap = 'round'; x.lineJoin = 'round';
-  // coda a S: due tratti, più sottile in punta
-  x.strokeStyle = col; x.lineWidth = 5.2; x.stroke(path(coda, seed + 2, .8));
-  x.lineWidth = 3; x.beginPath(); const cp = path([coda[0], coda[1], coda[2]], seed + 2, .8); x.stroke(cp);
-  const lipOpt = (modo === 'ombra' || fill) ? { bordo: false } : {};
-  ritaglio(x, corpo, col, lipOpt);
-  // pelo irregolare sul dorso: ciuffi lungo la schiena
-  const rf = rng(seed + 7); x.fillStyle = col;
-  const dorso = posa === 'accucciato' ? [[20, -26], [-16, -34]] : [[20, -33], [-18, -32]];
-  for (let i = 0; i < 7; i++) { const t = (i + .5) / 7; const px = dorso[0][0] + (dorso[1][0] - dorso[0][0]) * t, py = dorso[0][1] + (dorso[1][1] - dorso[0][1]) * t; const hgt = 2.5 + rf() * 3.5, wd = 3 + rf() * 3; x.beginPath(); x.moveTo(px - wd / 2, py + 2); x.lineTo(px - 1 + (rf() - .5) * 2, py - hgt); x.lineTo(px + wd / 2, py + 2); x.closePath(); x.fill(); }
-  if (zampe) { for (const [zx, zy, zrx, zry] of zampe) { x.beginPath(); x.ellipse(zx, zy, zrx, zry, 0, 0, TAU); x.fill(); } }
-  else {
-    for (const z of [[24, -8, 29, -8, 31, 0, 25, 0], [15, -8, 21, -8, 20, 0, 14, 0], [-28, -8, -22, -8, -22, 0, -29, 0], [-37, -9, -31, -8, -33, 0, -39, 0]]) { x.beginPath(); x.moveTo(z[0], z[1]); x.lineTo(z[2], z[3]); x.lineTo(z[4], z[5]); x.lineTo(z[6], z[7]); x.closePath(); x.fill(); }
+  x.stroke();
+
+  // Corpo felino inarcato con schiena irta di pelo ritagliato
+  const pCorpo = new Path2D();
+  if (posa === 'accucciato') {
+    pCorpo.moveTo(42, -6);
+    pCorpo.bezierCurveTo(48, -12, 46, -24, 34, -28);
+    // Schiena inarcata con punte di pelo
+    pCorpo.lineTo(22, -36); pCorpo.lineTo(24, -31);
+    pCorpo.lineTo(8, -42);  pCorpo.lineTo(11, -36);
+    pCorpo.lineTo(-8, -46); pCorpo.lineTo(-5, -40);
+    pCorpo.lineTo(-22, -45); pCorpo.lineTo(-19, -39);
+    pCorpo.bezierCurveTo(-34, -42, -46, -32, -46, -18);
+    pCorpo.bezierCurveTo(-46, -10, -40, -4, -30, -4);
+    pCorpo.bezierCurveTo(-14, -10, 12, -10, 42, -6);
+    pCorpo.closePath();
+  } else {
+    pCorpo.moveTo(38, -8);
+    pCorpo.bezierCurveTo(44, -18, 38, -34, 22, -38);
+    pCorpo.lineTo(8, -46); pCorpo.lineTo(10, -40);
+    pCorpo.lineTo(-8, -48); pCorpo.lineTo(-5, -42);
+    pCorpo.bezierCurveTo(-24, -44, -40, -34, -42, -16);
+    pCorpo.lineTo(-32, -4);
+    pCorpo.bezierCurveTo(-12, -14, 14, -14, 38, -8);
+    pCorpo.closePath();
   }
-  ritaglio(x, testa, col, lipOpt); x.fillStyle = col; x.fill(orecchie);
+  x.fillStyle = col;
+  x.fill(pCorpo);
+
+  // Zampe artigliate
+  x.beginPath();
+  // Zampe anteriori protese
+  x.moveTo(30, -12); x.lineTo(52, -2); x.lineTo(44, 2); x.lineTo(22, -6);
+  x.moveTo(18, -10); x.lineTo(36, 1); x.lineTo(28, 3); x.lineTo(12, -6);
+  // Zampe posteriori muscolose
+  x.moveTo(-26, -18); x.lineTo(-42, 0); x.lineTo(-28, 2); x.lineTo(-16, -12);
+  x.fill();
+
+  // Testa felina affilata con orecchie lunghe a punta
+  const hx = posa === 'accucciato' ? 48 : 42;
+  const hy = posa === 'accucciato' ? -22 : -36;
+  const pTesta = new Path2D();
+  pTesta.moveTo(hx - 12, hy + 6);
+  // Orecchio sinistro
+  pTesta.lineTo(hx - 18, hy - 22);
+  pTesta.lineTo(hx - 4, hy - 10);
+  // Fronte e orecchio destro
+  pTesta.lineTo(hx + 4, hy - 11);
+  pTesta.lineTo(hx + 12, hy - 24);
+  pTesta.lineTo(hx + 14, hy - 4);
+  // Muso aguzzo
+  pTesta.lineTo(hx + 24, hy + 2);
+  pTesta.quadraticCurveTo(hx + 14, hy + 12, hx - 6, hy + 10);
+  pTesta.closePath();
+  x.fill(pTesta);
+
+  // Bordo di carta chiara in controluce + intagli interni da teatro delle ombre
+  if (!isOmbra) {
+    x.strokeStyle = 'rgba(242,194,120,0.42)';
+    x.lineWidth = 1.4;
+    x.stroke(pCorpo);
+    x.stroke(pTesta);
+    // Intagli decorativi barocchi (costole d'ombra / spirale) nel corpo
+    x.fillStyle = 'rgba(242,194,120,0.22)';
+    for (const cx of [-18, -6, 6]) {
+      x.beginPath();
+      x.ellipse(cx, -26, 2.2, 7, 0.25, 0, TAU);
+      x.fill();
+    }
+  }
+
+  const occhi = [[hx + 4, hy - 1, 3.6, 2.0], [hx + 13, hy, 3.4, 1.9]];
   if (modo !== 'ombra') {
-    // occhi: fessure di carta chiara (buchi di luce nella sagoma)
-    x.fillStyle = fill ? 'rgba(11,7,4,.55)' : P.luce;
-    for (const [ox, oy, orx, ory] of occhi) { x.beginPath(); x.ellipse(ox, oy, orx, ory, -.2, 0, TAU); x.fill(); }
+    x.fillStyle = fill ? 'rgba(11,7,4,0.65)' : P.luce;
+    for (const [ox, oy, orx, ory] of occhi) {
+      x.beginPath();
+      x.ellipse(ox, oy, orx, ory, -0.22, 0, TAU);
+      x.fill();
+    }
   }
+  x.restore();
   return occhi;
 }
 
-/* ombra portata: la sagoma si rasterizza e si sfoca UNA volta (sprite in cache per posa);
-   per frame resta un solo drawImage con la matrice di proiezione sul pavimento */
-const OMBRE_CACHE = new Map();
-function spriteOmbra(key, disegna, s, blur) {
-  let sp = OMBRE_CACHE.get(key); if (sp) return sp;
-  const R = 160, ox = R, oy = 2 * R - 20;
-  const [t, tx] = nuovoCanvas(2 * R, 2 * R); tx.translate(ox, oy); tx.scale(s, s); tx.fillStyle = P.ink; tx.strokeStyle = P.ink; disegna(tx, 'ombra');
-  const [c, x] = nuovoCanvas(2 * R, 2 * R); if (blur) x.filter = `blur(${blur}px)`; x.drawImage(t, 0, 0, 2 * R, 2 * R); x.filter = 'none';
-  sp = { c, ox, oy, w: 2 * R, h: 2 * R }; OMBRE_CACHE.set(key, sp); return sp;
+/* =====================================================================
+   DISEGNO 3 — LE MANI DI MARIONETTA E DONNA LUCIANA (Boss Finale)
+   ===================================================================== */
+function disegnaManoMarionettista(x, cx, cy, lato, scala, tAnim, conBilancino, puntiFili) {
+  const swayX = Math.sin(tAnim * 1.4 + lato) * 8;
+  const swayY = Math.cos(tAnim * 1.8 + lato * 0.5) * 4;
+  const mx = cx + swayX;
+  const my = cy + swayY;
+
+  x.save();
+  // 1. Fili d'oro del Velo che scendono dalle dita / dal bilancino ai personaggi sotto
+  if (puntiFili && puntiFili.length) {
+    const attacchi = [
+      [mx - 48 * scala * lato, my + 58 * scala],
+      [mx - 12 * scala * lato, my + 68 * scala],
+      [mx + 28 * scala * lato, my + 62 * scala],
+      [mx + 56 * scala * lato, my + 48 * scala]
+    ];
+    for (let i = 0; i < puntiFili.length; i++) {
+      const [tx, ty] = puntiFili[i];
+      const [ax, ay] = attacchi[i % attacchi.length];
+      const midX = (ax + tx) * 0.5 + Math.sin(tAnim * 3 + i) * 4;
+      const midY = (ay + ty) * 0.5 + 14;
+      // Alone caldo del filo
+      x.strokeStyle = 'rgba(243,193,75,0.22)';
+      x.lineWidth = 4;
+      x.beginPath(); x.moveTo(ax, ay); x.quadraticCurveTo(midX, midY, tx, ty); x.stroke();
+      // Filo d'oro nitido
+      x.strokeStyle = 'rgba(255,228,150,0.88)';
+      x.lineWidth = 1.3;
+      x.beginPath(); x.moveTo(ax, ay); x.quadraticCurveTo(midX, midY, tx, ty); x.stroke();
+      // Nodo luminoso sul punto di aggancio
+      x.fillStyle = P.oro;
+      x.beginPath(); x.arc(tx, ty, 2.5, 0, TAU); x.fill();
+    }
+  }
+
+  x.translate(mx, my);
+  x.scale(lato * scala, scala);
+
+  // Alone di retroilluminazione viola/ambra dietro la mano gigante
+  const hg = x.createRadialGradient(0, 10, 8, 0, 15, 115);
+  hg.addColorStop(0, 'rgba(243,193,75,0.28)');
+  hg.addColorStop(1, 'rgba(243,193,75,0)');
+  x.fillStyle = hg;
+  x.beginPath(); x.arc(0, 15, 115, 0, TAU); x.fill();
+
+  // Polso con merletto barocco borbonico
+  x.fillStyle = P.ink;
+  x.strokeStyle = 'rgba(243,193,75,0.62)';
+  x.lineWidth = 1.6;
+  x.beginPath();
+  x.moveTo(-42, -90);
+  x.lineTo(-28, -22);
+  x.quadraticCurveTo(0, -14, 28, -22);
+  x.lineTo(44, -90);
+  x.closePath();
+  x.fill();
+  x.stroke();
+
+  // Merletto traforato sul polsino (perforazioni di luce)
+  x.fillStyle = P.luce;
+  for (let i = -2; i <= 2; i++) {
+    x.beginPath();
+    x.arc(i * 10, -28, 2.4, 0, TAU);
+    x.fill();
+  }
+
+  // Palmo affusolato e dita articolate da marionettista
+  const pMano = new Path2D();
+  pMano.moveTo(-26, -20);
+  pMano.bezierCurveTo(-36, -6, -42, 10, -34, 22);
+  // Pollice opposto
+  pMano.lineTo(-64, 42);
+  pMano.quadraticCurveTo(-68, 48, -58, 50);
+  pMano.lineTo(-26, 30);
+  // Indice che pizzica il filo
+  pMano.lineTo(-34, 66);
+  pMano.quadraticCurveTo(-32, 74, -24, 66);
+  pMano.lineTo(-10, 32);
+  // Medio lungo ed elegante
+  pMano.lineTo(-6, 74);
+  pMano.quadraticCurveTo(0, 82, 4, 72);
+  pMano.lineTo(8, 32);
+  // Anulare con anello col giglio
+  pMano.lineTo(22, 68);
+  pMano.quadraticCurveTo(28, 74, 30, 64);
+  pMano.lineTo(22, 28);
+  // Mignolo inarcato
+  pMano.lineTo(48, 52);
+  pMano.quadraticCurveTo(54, 56, 52, 46);
+  pMano.bezierCurveTo(42, 24, 36, 4, 26, -20);
+  pMano.closePath();
+
+  x.fillStyle = P.ink;
+  x.fill(pMano);
+  x.strokeStyle = 'rgba(243,193,75,0.68)';
+  x.lineWidth = 1.5;
+  x.stroke(pMano);
+
+  // Anelli d'oro e giunti luminosi sulle falangi
+  x.fillStyle = P.oro;
+  x.beginPath();
+  x.ellipse(24, 44, 4.2, 2.2, -0.2, 0, TAU);
+  x.fill();
+  x.fillStyle = 'rgba(242,194,120,0.45)';
+  for (const [jx, jy] of [[-28, 46], [-2, 50], [24, 44], [40, 38]]) {
+    x.beginPath(); x.arc(jx, jy, 1.8, 0, TAU); x.fill();
+  }
+
+  // Bilancino in legno (croce da marionettista) tenuto tra le dita
+  if (conBilancino) {
+    x.save();
+    x.translate(0, 56);
+    x.rotate(Math.sin(tAnim * 2.1 + lato) * 0.08);
+    // Asta principale del bilancino
+    x.fillStyle = '#2b1508';
+    x.strokeStyle = P.oro;
+    x.lineWidth = 1.4;
+    x.beginPath();
+    x.roundRect(-64, -5, 128, 10, 4);
+    x.fill();
+    x.stroke();
+    // Traversa in prospettiva
+    x.beginPath();
+    x.moveTo(-28, -16); x.lineTo(28, 16);
+    x.lineWidth = 6; x.strokeStyle = '#2b1508'; x.stroke();
+    x.lineWidth = 1.4; x.strokeStyle = P.oro; x.stroke();
+    // Pomelli dorati alle estremità
+    x.fillStyle = P.oro;
+    for (const px of [-62, 0, 62]) {
+      x.beginPath(); x.arc(px, 0, 3.6, 0, TAU); x.fill();
+    }
+    x.restore();
+  }
+  x.restore();
 }
-function ombraPortata(key, disegna, px, py, s, cx, dy, alpha, blur) {
-  if (!on('ombre')) return;
-  const sp = spriteOmbra(key, disegna, s, on('blur') ? blur : 0);
-  ctx.save(); ctx.translate(px, py); ctx.transform(1, 0, cx, dy, 0, 0); ctx.globalAlpha = alpha;
-  ctx.drawImage(sp.c, -sp.ox, -sp.oy, sp.w, sp.h); ctx.restore();
-}
-function ellisseAppoggio(px, py, rx, ry, a) {
-  const g = ctx.createRadialGradient(px, py, 0, px, py, rx); g.addColorStop(0, rgba(P.ink, a)); g.addColorStop(.7, rgba(P.ink, a * .9)); g.addColorStop(1, rgba(P.ink, 0));
-  ctx.save(); ctx.translate(px, py); ctx.scale(1, ry / rx); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, rx, 0, TAU); ctx.fill(); ctx.restore();
-  // un filo di luce lungo il bordo basso: la basetta del presepe
-  ctx.save(); ctx.translate(px, py); ctx.scale(1, ry / rx); ctx.strokeStyle = 'rgba(242,194,120,.22)'; ctx.lineWidth = 1.2 / (ry / rx); ctx.beginPath(); ctx.arc(0, 1.5, rx * .92, .15 * Math.PI, .85 * Math.PI); ctx.stroke(); ctx.restore();
-}
-/* direzione della seconda ombra (dalla lanterna più vicina) */
-function ombraDaLanterna(px, py) {
-  let best = null, bd = 1e9; for (const l of LANTERNE) { const lx = l.x, ly = l.y + 150; const d = Math.hypot(px - lx, py - ly); if (d < bd) { bd = d; best = [px - lx, py - ly]; } }
-  const n = Math.hypot(best[0], best[1]) || 1; const k = clamp(240 / bd, .25, .7); return [best[0] / n * k, best[1] / n * k * .62];
+
+/* Donna Luciana: quando le mani scendono nel palco e diventano il Boss Finale */
+function disegnaDonnaLuciana(x, cx, cy, tAnim, discesa) {
+  // discesa: 0.45 = in discesa (transizione), 1.0 = nel palco (boss finale)
+  const yPos = cy * discesa + 110 * (1 - discesa);
+  const floatY = Math.sin(tAnim * 2.0) * 5;
+
+  x.save();
+  x.translate(cx, yPos + floatY);
+
+  // Grande aura dorata/crema dietro Donna Luciana (controluce teatrale)
+  const aura = x.createRadialGradient(0, -110, 15, 0, -110, 240);
+  aura.addColorStop(0, 'rgba(255,224,140,0.55)');
+  aura.addColorStop(0.45, 'rgba(200,48,27,0.22)');
+  aura.addColorStop(1, 'rgba(200,48,27,0)');
+  x.fillStyle = aura;
+  x.beginPath(); x.arc(0, -110, 240, 0, TAU); x.fill();
+
+  // Ragnatela di fili d'oro del Velo tesi tra Donna Luciana e il soffitto del teatro
+  x.strokeStyle = 'rgba(243,193,75,0.45)';
+  x.lineWidth = 1.4;
+  for (let i = -5; i <= 5; i++) {
+    x.beginPath();
+    x.moveTo(i * 28, -190);
+    x.quadraticCurveTo(i * 45, -280, i * 85, -420);
+    x.stroke();
+  }
+
+  // Ombra monumentale a terra
+  x.save();
+  x.scale(1, 0.35);
+  const sh = x.createRadialGradient(0, 0, 10, 0, 0, 150);
+  sh.addColorStop(0, 'rgba(11,7,4,0.75)');
+  sh.addColorStop(1, 'rgba(11,7,4,0)');
+  x.fillStyle = sh;
+  x.beginPath(); x.arc(0, 0, 150, 0, TAU); x.fill();
+  x.restore();
+
+  // Gonna ampia barocca a campana (ombra cinese perforata con gigli e finestre di luce)
+  const pGonna = new Path2D();
+  pGonna.moveTo(-24, -125);
+  pGonna.bezierCurveTo(-68, -95, -96, -45, -108, 0);
+  pGonna.quadraticCurveTo(0, 18, 108, 0);
+  pGonna.bezierCurveTo(96, -45, 68, -95, 24, -125);
+  pGonna.closePath();
+  x.fillStyle = P.ink;
+  x.fill(pGonna);
+  x.strokeStyle = P.oro;
+  x.lineWidth = 2;
+  x.stroke(pGonna);
+
+  // Perforazioni di luce nella gonna barocca (motivi di fusi, archi e gigli)
+  x.fillStyle = P.luce;
+  for (let i = -2; i <= 2; i++) {
+    const gx = i * 32;
+    const gy = -38 + Math.abs(i) * 4;
+    x.beginPath();
+    x.moveTo(gx, gy - 22);
+    x.quadraticCurveTo(gx + 10, gy, gx, gy + 18);
+    x.quadraticCurveTo(gx - 10, gy, gx, gy - 22);
+    x.fill();
+  }
+
+  // Busto aristocratico con corsetto e grande colletto di pizzo in controluce
+  x.fillStyle = P.ink;
+  x.beginPath();
+  x.moveTo(-48, -172);
+  x.quadraticCurveTo(-36, -205, 0, -192);
+  x.quadraticCurveTo(36, -205, 48, -172);
+  x.lineTo(22, -122);
+  x.lineTo(-22, -122);
+  x.closePath();
+  x.fill();
+  x.strokeStyle = 'rgba(243,193,75,0.75)';
+  x.lineWidth = 1.6;
+  x.stroke();
+
+  // Giglio borbonico acceso sul petto di Donna Luciana
+  x.fillStyle = P.rosso;
+  x.beginPath();
+  x.moveTo(0, -170);
+  x.bezierCurveTo(8, -158, 8, -144, 0, -136);
+  x.bezierCurveTo(-8, -144, -8, -158, 0, -170);
+  x.fill();
+  x.fillStyle = P.crema;
+  x.beginPath(); x.arc(0, -153, 3.2, 0, TAU); x.fill();
+
+  // Testa coronata, chignon alto e velo che scende
+  x.fillStyle = P.ink;
+  x.beginPath();
+  x.arc(0, -210, 18, 0, TAU);
+  x.fill();
+  x.strokeStyle = P.oro;
+  x.lineWidth = 1.5;
+  x.stroke();
+
+  // Corona/Tiara a punte d'oro e fusi
+  x.fillStyle = P.oro;
+  x.beginPath();
+  x.moveTo(-18, -224);
+  x.lineTo(-14, -246);
+  x.lineTo(-6, -230);
+  x.lineTo(0, -254);
+  x.lineTo(6, -230);
+  x.lineTo(14, -246);
+  x.lineTo(18, -224);
+  x.closePath();
+  x.fill();
+
+  // Occhi luminosi e sorriso enigmatico tagliato nella sagoma
+  x.fillStyle = P.rosso;
+  x.beginPath();
+  x.ellipse(-6, -212, 3.2, 1.8, 0.1, 0, TAU);
+  x.ellipse(6, -212, 3.2, 1.8, -0.1, 0, TAU);
+  x.fill();
+  x.strokeStyle = P.crema;
+  x.lineWidth = 1.3;
+  x.beginPath();
+  x.arc(0, -204, 5, 0.15 * Math.PI, 0.85 * Math.PI);
+  x.stroke();
+
+  x.restore();
+
+  // Le due Grandi Mani di Marionetta ora scese ai lati di Donna Luciana come sue braccia!
+  const handY = yPos - 135;
+  disegnaManoMarionettista(x, cx - 165, handY, 1, 1.05, tAnim, true, [
+    [FERRUCCIO.x + 8, FERRUCCIO.y - 115],
+    [GATTO_ACC.x, GATTO_ACC.y - 28]
+  ]);
+  disegnaManoMarionettista(x, cx + 165, handY, -1, 1.05, tAnim, true, [
+    [GATTO_ACC.x + 30, GATTO_ACC.y - 24],
+    [GATTO_COL.x, GATTO_COL.y - 24]
+  ]);
 }
 
 /* =====================================================================
-   SEGNI A TERRA — corridoio del balzo, schizzi d'inchiostro, frammenti
+   DISEGNO 4 — BOCCASCENA BAROCCO, QUINTE DRAPPEGGIATE E RIBALTA
    ===================================================================== */
-const SPLATS = (() => {
-  const r = rng(77), out = { gocce: [], macchie: [], frammenti: [] }; const dir = .75;
-  for (let i = 0; i < 16; i++) { const a = dir + (r() - .5) * 1.5, d = 18 + r() * 85; out.gocce.push({ x: Math.cos(a) * d, y: Math.sin(a) * d * .62, a, s: 1.4 + r() * 4.5, t: r() }); }
-  for (let i = 0; i < 3; i++) { const a = dir + (r() - .5) * .9, d = 22 + r() * 40; const pts = []; const R = 7 + r() * 7; for (let k = 0; k < 10; k++) pts.push(R * (.6 + r() * .8)); out.macchie.push({ x: Math.cos(a) * d, y: Math.sin(a) * d * .62, pts, R }); }
-  for (let i = 0; i < 9; i++) { const a = dir + (r() - .5) * 2.2, d = 10 + r() * 70; out.frammenti.push({ x: Math.cos(a) * d, y: Math.sin(a) * d * .62, rot: r() * TAU, s: 2.5 + r() * 4, chiaro: r() < .5 }); }
-  return out;
-})();
-const PULVISCOLO = (() => { const r = rng(1234), out = []; for (let i = 0; i < 90; i++) out.push({ x: G.fx + r() * G.fw, y: wallTop + r() * (G.fb - wallTop), rad: .5 + r() * 1.5, a: .12 + r() * .5, glow: r() < .3 }); return out; })();
+function disegnaProscenioTeatrale() {
+  // 1. Quinte di velluto rosso/bruno drappeggiate ai lati (incorniciano la Variante C)
+  for (const side of [-1, 1]) {
+    ctx.save();
+    if (side === 1) { ctx.translate(W, 0); ctx.scale(-1, 1); }
+    const cg = ctx.createLinearGradient(0, 0, 150, 0);
+    cg.addColorStop(0, '#120403');
+    cg.addColorStop(0.65, '#2b0906');
+    cg.addColorStop(1, '#140504');
+    ctx.fillStyle = cg;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(145, 0);
+    ctx.bezierCurveTo(120, 160, 105, 310, 132, 430);
+    ctx.bezierCurveTo(95, 520, 88, 640, 110, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fill();
 
-function corridoioBalzo(x0, y0, x1, y1) {
-  // forma sul pavimento in 3/4: ruota nello spazio del pavimento, poi schiaccia a .6
-  const dx = x1 - x0, dy = (y1 - y0) / .6, L = Math.hypot(dx, dy), ang = Math.atan2(dy, dx);
-  ctx.save(); ctx.translate(x0, y0); ctx.scale(1, .6); ctx.rotate(ang);
-  ctx.strokeStyle = 'rgba(11,7,4,.6)'; ctx.lineWidth = 1.6; ctx.setLineDash([9, 7]);
-  rr(ctx, 0, -26, L, 52, 14); ctx.stroke();
-  ctx.setLineDash([]); ctx.lineWidth = 1.4; ctx.strokeStyle = 'rgba(11,7,4,.5)';
-  ctx.beginPath(); ctx.arc(L - 12, 0, 10, 0, TAU); ctx.stroke(); ctx.fillStyle = 'rgba(11,7,4,.5)'; ctx.beginPath(); ctx.arc(L - 12, 0, 2.5, 0, TAU); ctx.fill();
-  ctx.strokeStyle = 'rgba(11,7,4,.35)'; for (let k = 40; k < L - 30; k += 46) { ctx.beginPath(); ctx.moveTo(k, -8); ctx.lineTo(k + 10, 0); ctx.lineTo(k, 8); ctx.stroke(); }
+    // Bordo dorato e cordone con nappa del sipario
+    ctx.strokeStyle = P.oro;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(145, 0);
+    ctx.bezierCurveTo(120, 160, 105, 310, 132, 430);
+    ctx.bezierCurveTo(95, 520, 88, 640, 110, H);
+    ctx.stroke();
+
+    // Nappa dorata dove il sipario è raccolto
+    ctx.fillStyle = P.oro;
+    ctx.beginPath();
+    ctx.arc(118, 425, 6, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(118, 431);
+    ctx.lineTo(111, 456);
+    ctx.lineTo(125, 456);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 2. Mantovana superiore (drappeggio barocco in alto da cui spuntano le mani)
+  ctx.save();
+  const mg = ctx.createLinearGradient(0, 0, 0, 56);
+  mg.addColorStop(0, '#0e0403');
+  mg.addColorStop(1, '#2d0a07');
+  ctx.fillStyle = mg;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(W, 0);
+  ctx.lineTo(W, 38);
+  for (let x = W; x > 0; x -= 160) {
+    ctx.quadraticCurveTo(x - 80, 64, x - 160, 38);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(243,193,75,0.65)';
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+  ctx.restore();
+
+  // 3. Palco di ribalta in legno intagliato sul fondo con conchiglie luminose (luci di ribalta)
+  const ry = G.fb + G.southH;
+  const rg = ctx.createLinearGradient(0, ry - 8, 0, H);
+  rg.addColorStop(0, '#2a1509');
+  rg.addColorStop(0.3, '#170b04');
+  rg.addColorStop(1, '#080402');
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, ry, W, H - ry);
+  ctx.strokeStyle = 'rgba(243,193,75,0.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, ry); ctx.lineTo(W, ry); ctx.stroke();
+
+  // Conchiglie delle luci di ribalta teatrale
+  for (const lx of [280, 460, 820, 1000]) {
+    const fg = ctx.createRadialGradient(lx, ry - 4, 2, lx, ry - 24, 68);
+    fg.addColorStop(0, 'rgba(255,214,125,0.38)');
+    fg.addColorStop(1, 'rgba(255,214,125,0)');
+    ctx.fillStyle = fg;
+    ctx.beginPath(); ctx.arc(lx, ry - 8, 68, Math.PI, 0); ctx.fill();
+
+    ctx.fillStyle = '#1b0d05';
+    ctx.strokeStyle = P.oro;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(lx, ry + 6, 14, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // 4. Cornice esterna in legno dorato con stemma del Giglio in alto al centro
+  ctx.strokeStyle = P.legno;
+  ctx.lineWidth = 16;
+  ctx.strokeRect(8, 8, W - 16, H - 16);
+  ctx.strokeStyle = 'rgba(243,193,75,0.65)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(14, 14, W - 28, H - 28);
+}
+
+/* =====================================================================
+   ATTORI E FEEDBACK DEL COLPO ALLA ISAAC
+   ===================================================================== */
+const FERRUCCIO = { x: 430, y: 435, s: .82 };
+const GATTO_ACC = { x: 895, y: 345, s: 1.0, dir: -1 };
+const GATTO_COL = { x: 590, y: 488, s: 1.02, dir: 1 };
+const MONETE = [[704, 555], [744, 538], [776, 568]];
+
+function ellisseAppoggio(px, py, rx, ry, a) {
+  const g = ctx.createRadialGradient(px, py, 0, px, py, rx);
+  g.addColorStop(0, rgba(P.ink, a));
+  g.addColorStop(.7, rgba(P.ink, a * .85));
+  g.addColorStop(1, rgba(P.ink, 0));
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.scale(1, ry / rx);
+  ctx.fillStyle = g;
+  ctx.beginPath(); xArc(ctx, 0, 0, rx); ctx.fill();
+  ctx.strokeStyle = 'rgba(242,194,120,0.28)';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(0, 1.5, rx * 0.9, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
   ctx.restore();
 }
-function schizzi(cx, cy) {
-  ctx.save(); ctx.translate(cx, cy);
-  for (const m of SPLATS.macchie) { ctx.fillStyle = 'rgba(11,7,4,.86)'; ctx.beginPath(); for (let k = 0; k < m.pts.length; k++) { const a = k / m.pts.length * TAU; const r = m.pts[k]; const px = Math.cos(a) * r, py = Math.sin(a) * r * .6; if (k === 0) ctx.moveTo(m.x + px, m.y + py); else ctx.quadraticCurveTo(m.x + Math.cos(a - .3) * r * 1.1, m.y + Math.sin(a - .3) * r * .66, m.x + px, m.y + py); } ctx.closePath(); ctx.fill(); }
-  for (const g of SPLATS.gocce) { ctx.save(); ctx.translate(g.x, g.y); ctx.rotate(Math.atan2(g.y, g.x)); ctx.fillStyle = `rgba(11,7,4,${.65 + g.t * .3})`; ctx.beginPath(); ctx.ellipse(0, 0, g.s * 1.5, g.s * .75, 0, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.moveTo(-g.s * 1.2, 0); ctx.lineTo(-g.s * 3.2, -g.s * .25); ctx.lineTo(-g.s * 3.2, g.s * .25); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.arc(g.s * 2.3, g.s * .4, g.s * .3, 0, TAU); ctx.fill(); ctx.restore(); }
-  for (const f of SPLATS.frammenti) {
-    ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.rot);
-    ctx.fillStyle = 'rgba(11,7,4,.28)'; ctx.beginPath(); ctx.moveTo(-f.s + 1.5, 1.5); ctx.lineTo(f.s * .8 + 1.5, -f.s * .4 + 1.5); ctx.lineTo(f.s * .3 + 1.5, f.s + 1.5); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = f.chiaro ? P.luce : P.crema; ctx.strokeStyle = 'rgba(11,7,4,.7)'; ctx.lineWidth = .7;
-    ctx.beginPath(); ctx.moveTo(-f.s, 0); ctx.lineTo(f.s * .8, -f.s * .4); ctx.lineTo(f.s * .3, f.s); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+function xArc(c, x, y, r) { c.arc(x, y, r, 0, TAU); }
+
+function disegnaMuraStanza() {
+  const { fx, fy, fr, fb, fw, wallW, southH } = G;
+  // Muro nord in tufo scuro con archi ciechi e cornice di carta illuminata
+  const g = ctx.createLinearGradient(0, wallTop, 0, fy);
+  g.addColorStop(0, '#0d0603');
+  g.addColorStop(0.5, '#1d0e06');
+  g.addColorStop(1, '#3e1e0b');
+  ctx.fillStyle = g;
+  ctx.fillRect(fx - wallW, wallTop, fw + 2 * wallW, fy - wallTop);
+
+  // Archi ciechi scolpiti lungo la parete di fondo
+  for (let ax = fx + 28; ax < fr - 60; ax += 116) {
+    if (Math.abs(ax + 36 - PORTA_N.x) < 76) continue;
+    ctx.fillStyle = 'rgba(242,194,120,0.07)';
+    ctx.strokeStyle = 'rgba(242,194,120,0.18)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(ax, fy);
+    ctx.lineTo(ax, fy - 24);
+    ctx.arc(ax + 34, fy - 24, 34, Math.PI, 0);
+    ctx.lineTo(ax + 68, fy);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // Cordolo superiore illuminato del muro nord
+  ctx.fillStyle = '#4a240e';
+  ctx.fillRect(fx - wallW, wallTop - 4, fw + 2 * wallW, 6);
+  ctx.strokeStyle = 'rgba(242,194,120,0.72)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(fx - wallW, wallTop - 4);
+  ctx.lineTo(fr + wallW, wallTop - 4);
+  ctx.stroke();
+
+  // Pareti laterali in prospettiva
+  for (const side of [-1, 1]) {
+    const X = side < 0 ? fx - wallW : fr;
+    ctx.fillStyle = '#140a04';
+    ctx.fillRect(X, fy - 2, wallW, fb - fy + southH + 2);
+    ctx.strokeStyle = 'rgba(242,194,120,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(side < 0 ? fx : fr, fy);
+    ctx.lineTo(side < 0 ? fx : fr, fb);
+    ctx.stroke();
+  }
+
+  // Porta Nord aperta con soglia d'oro
+  const { x, w, h } = PORTA_N;
+  ctx.fillStyle = P.ink;
+  ctx.beginPath();
+  ctx.arc(x, fy - h + 18, w / 2 + 10, Math.PI, 0);
+  ctx.lineTo(x + w / 2 + 10, fy);
+  ctx.lineTo(x - w / 2 - 10, fy);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(243,193,75,0.65)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  const pg = ctx.createLinearGradient(0, fy - h, 0, fy);
+  pg.addColorStop(0, '#7a3b14');
+  pg.addColorStop(1, '#f5c776');
+  ctx.fillStyle = pg;
+  ctx.beginPath();
+  ctx.arc(x, fy - h + 20, w / 2, Math.PI, 0);
+  ctx.lineTo(x + w / 2, fy);
+  ctx.lineTo(x - w / 2, fy);
+  ctx.closePath();
+  ctx.fill();
+
+  // Soglia d'oro brillante
+  ctx.fillStyle = P.oro;
+  ctx.fillRect(x - w / 2 - 4, fy - 2, w + 8, 5);
+}
+
+function disegnaColpoIsaac(px, py) {
+  ctx.save();
+  ctx.translate(px, py);
+  // 1. Onda d'urto radiale (shockwave ring alla Isaac)
+  ctx.save();
+  ctx.scale(1, 0.6);
+  const rg = ctx.createRadialGradient(0, 0, 10, 0, 0, 92);
+  rg.addColorStop(0, 'rgba(255,248,232,0.55)');
+  rg.addColorStop(0.65, 'rgba(243,193,75,0.35)');
+  rg.addColorStop(1, 'rgba(243,193,75,0)');
+  ctx.fillStyle = rg;
+  ctx.beginPath(); ctx.arc(0, 0, 92, 0, TAU); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,250,235,0.85)';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(0, 0, 64, 0, TAU); ctx.stroke();
+  ctx.restore();
+
+  // 2. Schizzi densi d'inchiostro e frammenti di carta dorata esplosi dal colpo
+  const r = rng(77);
+  for (let i = 0; i < 22; i++) {
+    const a = 0.65 + (r() - 0.5) * 1.9;
+    const d = 16 + r() * 98;
+    const gx = Math.cos(a) * d;
+    const gy = Math.sin(a) * d * 0.62;
+    const sz = 2.5 + r() * 5.5;
+    ctx.save();
+    ctx.translate(gx, gy);
+    ctx.rotate(a);
+    ctx.fillStyle = i % 5 === 0 ? P.oro : P.ink;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, sz * 1.7, sz * 0.8, 0, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 3. Raggi d'impatto bianchi ("comic/Isaac hit burst")
+  ctx.strokeStyle = '#fffdf5';
+  ctx.lineWidth = 2.6;
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * TAU + 0.2;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * 18, Math.sin(a) * 12);
+    ctx.lineTo(Math.cos(a) * 48, Math.sin(a) * 30);
+    ctx.stroke();
   }
   ctx.restore();
 }
+
 function sciaFendente(px, py) {
-  const a0 = -.46, a1 = 1.26, r1 = 118;
-  ctx.save(); ctx.translate(px, py); ctx.lineCap = 'round';
-  // velo tenue dentro l'arco
-  const g = ctx.createRadialGradient(0, 0, r1 * .55, 0, 0, r1); g.addColorStop(0, 'rgba(255,248,232,0)'); g.addColorStop(.8, 'rgba(255,248,232,.10)'); g.addColorStop(.97, 'rgba(255,248,232,.34)'); g.addColorStop(1, 'rgba(255,248,232,0)');
-  ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, r1, a0, a1); ctx.closePath(); ctx.fill();
-  // la lama di luce: un arco che si assottiglia all'inizio
-  const n = 14;
-  for (let i = 0; i < n; i++) { const t0 = i / n, t1 = (i + 1) / n; const w = 1 + 7 * Math.pow(t1, .9); ctx.strokeStyle = `rgba(255,252,240,${.15 + .7 * t1})`; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(0, 0, r1 - 4, a0 + (a1 - a0) * t0, a0 + (a1 - a0) * t1 + .02); ctx.stroke(); }
-  ctx.strokeStyle = 'rgba(255,255,248,.95)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(0, 0, r1 - 1.5, a0 + .5, a1); ctx.stroke();
-  ctx.strokeStyle = 'rgba(255,252,240,.28)'; ctx.lineWidth = 1; for (const rr_ of [r1 - 20, r1 - 34]) { ctx.beginPath(); ctx.arc(0, 0, rr_, a0 + .7, a1 - .25); ctx.stroke(); }
+  const a0 = -0.58, a1 = 1.32, r1 = 132;
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.lineCap = 'round';
+  // Mezzaluna tagliente multistrato
+  for (let i = 0; i < 16; i++) {
+    const t0 = i / 16, t1 = (i + 1) / 16;
+    ctx.strokeStyle = `rgba(255,248,225,${0.18 + 0.78 * t1})`;
+    ctx.lineWidth = 2 + 12 * Math.pow(t1, 0.85);
+    ctx.beginPath();
+    ctx.arc(0, 0, r1 - 5, a0 + (a1 - a0) * t0, a0 + (a1 - a0) * t1 + 0.03);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.arc(0, 0, r1, a0 + 0.35, a1);
+  ctx.stroke();
   ctx.restore();
 }
+
+function lanterna(l, tAnim) {
+  const { x, y } = l;
+  const flick = 1 + Math.sin(tAnim * 7 + x) * 0.05;
+  ctx.save();
+  // Alone grande caldo
+  ctx.globalCompositeOperation = 'screen';
+  const ag = ctx.createRadialGradient(x, y + 26, 2, x, y + 26, 135 * flick);
+  ag.addColorStop(0, 'rgba(255,216,130,0.82)');
+  ag.addColorStop(0.4, 'rgba(243,178,74,0.32)');
+  ag.addColorStop(1, 'rgba(243,178,74,0)');
+  ctx.fillStyle = ag;
+  ctx.beginPath(); ctx.arc(x, y + 26, 135 * flick, 0, TAU); ctx.fill();
+  ctx.restore();
+
+  // Catena e lanterna in ferro battuto
+  ctx.strokeStyle = P.ink;
+  ctx.lineWidth = 1.8;
+  ctx.beginPath(); ctx.moveTo(x, 36); ctx.lineTo(x, y); ctx.stroke();
+  ctx.fillStyle = '#ffe29a';
+  ctx.fillRect(x - 7, y + 10, 14, 24);
+  ctx.strokeStyle = P.ink;
+  ctx.lineWidth = 2.2;
+  ctx.strokeRect(x - 7, y + 10, 14, 24);
+  ctx.fillStyle = P.ink;
+  ctx.beginPath();
+  ctx.moveTo(x - 11, y + 10); ctx.lineTo(x + 11, y + 10); ctx.lineTo(x, y + 2); ctx.closePath();
+  ctx.fill();
+}
+
 function moneta(px, py) {
   ctx.save();
-  ctx.fillStyle = 'rgba(11,7,4,.35)'; ctx.beginPath(); ctx.ellipse(px + 4, py + 4, 8, 3.2, 0, 0, TAU); ctx.fill();
-  const glow = ctx.createRadialGradient(px, py, 2, px, py, 22); glow.addColorStop(0, 'rgba(243,193,75,.35)'); glow.addColorStop(1, 'rgba(243,193,75,0)'); ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(px, py, 22, 0, TAU); ctx.fill();
-  ctx.translate(px, py); ctx.rotate(-.35); ctx.scale(1, .78);
-  const g = ctx.createRadialGradient(-2, -2, 1, 0, 0, 9); g.addColorStop(0, '#fff1c0'); g.addColorStop(.55, P.oro); g.addColorStop(1, P.oroDim);
-  ctx.beginPath(); ctx.arc(0, 0, 8, 0, TAU); ctx.fillStyle = g; ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = P.ink; ctx.stroke();
-  ctx.fillStyle = '#5a3208'; ctx.beginPath(); ctx.moveTo(0, -5); ctx.bezierCurveTo(1.6, -3, 1.6, 0, 0, 2.2); ctx.bezierCurveTo(-1.6, 0, -1.6, -3, 0, -5); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(-.6, 1.5); ctx.bezierCurveTo(-3, 0, -5, -1, -4.6, -3.6); ctx.bezierCurveTo(-3, -2.2, -2, -.5, -.6, 1.5); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(.6, 1.5); ctx.bezierCurveTo(3, 0, 5, -1, 4.6, -3.6); ctx.bezierCurveTo(3, -2.2, 2, -.5, .6, 1.5); ctx.closePath(); ctx.fill();
-  ctx.fillRect(-2.4, 2.4, 4.8, 1.2); ctx.restore();
+  ctx.fillStyle = 'rgba(11,7,4,0.4)';
+  ctx.beginPath(); ctx.ellipse(px + 3, py + 4, 9, 4, 0, 0, TAU); ctx.fill();
+  ctx.translate(px, py);
+  ctx.scale(1, 0.78);
+  ctx.fillStyle = P.oro;
+  ctx.strokeStyle = P.ink;
+  ctx.lineWidth = 1.8;
+  ctx.beginPath(); ctx.arc(0, 0, 8.5, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#5a3208';
+  ctx.fillRect(-1.5, -5, 3, 10);
+  ctx.fillRect(-4.5, -1.5, 9, 3);
+  ctx.restore();
 }
 
-/* =====================================================================
-   MURA, PORTE, LANTERNE
-   ===================================================================== */
-function lineaStorta(x0, y0, x1, y1, seed, amp, passo) {
-  const r = rng(seed), pts = []; const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / passo);
-  for (let i = 0; i <= n; i++) { const t = i / n; pts.push([x0 + (x1 - x0) * t + (i && i < n ? (r() - .5) * amp : 0), y0 + (y1 - y0) * t + (i && i < n ? (r() - .5) * amp : 0)]); }
-  return pts;
-}
-function disegnaMura() {
-  const { fx, fy, fr, fb, fw, wallW, southH } = G;
-  // ---- parete di fondo (faccia verticale), inchiostro con una fascia meno scura in basso ----
-  const top = lineaStorta(fx - wallW, wallTop, fr + wallW, wallTop, 61, 2.2, 48);
-  const faccia = new Path2D(); faccia.moveTo(top[0][0], top[0][1]); for (const p of top) faccia.lineTo(p[0], p[1]); faccia.lineTo(fr + wallW, fy); faccia.lineTo(fx - wallW, fy); faccia.closePath();
-  const g = ctx.createLinearGradient(0, wallTop, 0, fy); g.addColorStop(0, '#0b0704'); g.addColorStop(.5, '#180c05'); g.addColorStop(1, '#3c1d0a');
-  ctx.fillStyle = g; ctx.fill(faccia);
-  // archi ciechi del portico sulla faccia (ritmo regolare), lesene appena più chiare
-  ctx.save(); ctx.clip(faccia);
-  for (let ax = fx + 32; ax < fr - 20; ax += 128) {
-    if (Math.abs(ax + 32 - PORTA_N.x) < 70) continue;
-    const ag = ctx.createLinearGradient(0, fy - 50, 0, fy); ag.addColorStop(0, 'rgba(242,194,120,.03)'); ag.addColorStop(1, 'rgba(242,194,120,.10)');
-    ctx.fillStyle = ag; ctx.beginPath(); ctx.moveTo(ax, fy); ctx.lineTo(ax, fy - 30); ctx.arc(ax + 32, fy - 30, 32, Math.PI, 0); ctx.lineTo(ax + 64, fy); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = 'rgba(242,194,120,.12)'; ctx.lineWidth = 1; ctx.stroke();
-  }
-  ctx.restore();
-  // spessore della carta sul bordo alto: banda bruna + filo di luce
-  ctx.lineJoin = 'round'; ctx.strokeStyle = '#3b1d0b'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(top[0][0], top[0][1] - 2); for (const p of top) ctx.lineTo(p[0], p[1] - 2); ctx.stroke();
-  ctx.strokeStyle = 'rgba(242,194,120,.6)'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(top[0][0], top[0][1] - 4); for (const p of top) ctx.lineTo(p[0], p[1] - 4); ctx.stroke();
-  // battiscopa: la giunzione muro/pavimento
-  ctx.fillStyle = 'rgba(11,7,4,.9)'; ctx.fillRect(fx, fy - 2, fw, 3); ctx.fillStyle = 'rgba(90,42,14,.5)'; ctx.fillRect(fx, fy + 1, fw, 1);
-  // ---- pareti laterali: si vede il bordo alto della carta ----
-  for (const side of [-1, 1]) {
-    const X = side < 0 ? fx - wallW : fr; const g2 = ctx.createLinearGradient(X, 0, X + wallW, 0);
-    if (side < 0) { g2.addColorStop(0, '#0a0603'); g2.addColorStop(1, '#1e1007'); } else { g2.addColorStop(0, '#1e1007'); g2.addColorStop(1, '#0a0603'); }
-    ctx.fillStyle = g2; ctx.fillRect(X, fy - 2, wallW, fb - fy + southH + 2);
-    const lx = side < 0 ? fx - .6 : fr + .6; ctx.strokeStyle = 'rgba(242,194,120,.42)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(lx, fy); ctx.lineTo(lx, fb); ctx.stroke();
-  }
-  // ---- parete davanti (si vede solo il bordo alto) ----
-  const g3 = ctx.createLinearGradient(0, fb, 0, fb + southH); g3.addColorStop(0, '#1a0e06'); g3.addColorStop(1, '#070402'); ctx.fillStyle = g3; ctx.fillRect(fx - wallW, fb, fw + 2 * wallW, southH);
-  const bot = lineaStorta(fx, fb + .6, fr, fb + .6, 62, 1.6, 52); ctx.strokeStyle = 'rgba(242,194,120,.38)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(bot[0][0], bot[0][1]); for (const p of bot) ctx.lineTo(p[0], p[1]); ctx.stroke();
-  // ---- porte: nord aperta con soglia d'oro; ovest, est, sud chiuse (pannelli d'inchiostro) ----
-  portaNord();
-  portaChiusa(fx - wallW / 2, 360, 0); portaChiusa(fr + wallW / 2, 360, 0); portaChiusa(640, fb + southH / 2, Math.PI);
-}
-function portaNord() {
-  const { fy } = G; const { x, w, h } = PORTA_N;
-  // portale d'inchiostro che supera il muro, con spessore di carta
-  const cornice = path([['M', x - w / 2 - 9, fy], ['L', x - w / 2 - 9, fy - h + 2], ['C', x - w / 2 - 9, fy - h - 30, x + w / 2 + 9, fy - h - 30, x + w / 2 + 9, fy - h + 2], ['L', x + w / 2 + 9, fy], ['Z']], 71, 1.2);
-  ritaglio(ctx, cornice, '#0b0704', { lip: 'rgba(242,194,120,.5)', lw: 1.6 });
-  // apertura: luce della piazza che entra
-  const ap = new Path2D(); ap.moveTo(x - w / 2, fy); ap.lineTo(x - w / 2, fy - h + 10); ap.arc(x, fy - h + 10, w / 2, Math.PI, 0); ap.lineTo(x + w / 2, fy); ap.closePath();
-  const g = ctx.createLinearGradient(0, fy - h - 26, 0, fy); g.addColorStop(0, '#6a3312'); g.addColorStop(.55, '#b56b28'); g.addColorStop(1, '#f2c278');
-  ctx.fillStyle = g; ctx.fill(ap);
-  ctx.save(); ctx.clip(ap);
-  // oltre la porta: un lampione in sagoma e la nebbia
-  ctx.fillStyle = 'rgba(11,7,4,.85)'; ctx.fillRect(x + 14, fy - 40, 2.2, 40); ctx.beginPath(); ctx.moveTo(x + 11, fy - 40); ctx.lineTo(x + 19, fy - 40); ctx.lineTo(x + 17.5, fy - 49); ctx.lineTo(x + 12.5, fy - 49); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = 'rgba(255,230,166,.9)'; ctx.fillRect(x + 13.2, fy - 47.6, 3.6, 6.6);
-  const neb = ctx.createLinearGradient(0, fy - 26, 0, fy); neb.addColorStop(0, 'rgba(255,230,170,0)'); neb.addColorStop(1, 'rgba(255,230,170,.55)'); ctx.fillStyle = neb; ctx.fillRect(x - w, fy - 26, 2 * w, 26);
-  ctx.restore();
-  // soglia d'oro con il suo bagliore
-  ctx.save(); if (on('sb')) { ctx.shadowBlur = 14; ctx.shadowColor = 'rgba(243,193,75,.9)'; } ctx.fillStyle = P.oro; ctx.fillRect(x - w / 2 - 3, fy - 1, w + 6, 5); ctx.restore();
-  ctx.fillStyle = 'rgba(255,241,192,.9)'; ctx.fillRect(x - w / 2 - 3, fy - 1, w + 6, 1.2);
-  ctx.fillStyle = 'rgba(11,7,4,.7)'; ctx.fillRect(x - w / 2 - 3, fy + 3.6, w + 6, 1);
-}
-function portaChiusa(cx, cy, rot) {
-  ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot);
-  const p = path([['M', -24, 32], ['L', -24, -6], ['C', -24, -34, 24, -34, 24, -6], ['L', 24, 32], ['Z']], 72 + (cx | 0), 1.2);
-  ctx.fillStyle = '#060302'; ctx.fill(p);
-  ctx.strokeStyle = 'rgba(90,42,14,.75)'; ctx.lineWidth = 2.4; ctx.stroke(p);
-  ctx.save(); ctx.clip(p); ctx.translate(1, 1); ctx.strokeStyle = 'rgba(242,194,120,.22)'; ctx.lineWidth = 1.4; ctx.stroke(p); ctx.restore();
-  const g = ctx.createLinearGradient(0, -30, 0, 32); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.5)'); ctx.fillStyle = g; ctx.fill(p);
-  ctx.restore();
-}
-function lanterna(l) {
-  const { x, y } = l;
-  // corda
-  ctx.strokeStyle = 'rgba(11,7,4,.9)'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(x + 2, 0); ctx.quadraticCurveTo(x + 3, y / 2, x, y); ctx.stroke();
-  ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(x, y + 3, 3, 0, TAU); ctx.stroke();
-  // corpo: cappello, vetro acceso, telaio
-  const vetro = new Path2D(); vetro.moveTo(x - 7, y + 12); vetro.lineTo(x + 7, y + 12); vetro.lineTo(x + 6, y + 36); vetro.lineTo(x - 6, y + 36); vetro.closePath();
-  const g = ctx.createLinearGradient(0, y + 12, 0, y + 36); g.addColorStop(0, '#ffe6a6'); g.addColorStop(1, '#f1a53c'); ctx.fillStyle = g; ctx.fill(vetro);
-  // fiamma crema
-  ctx.save(); if (on('sb')) { ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(255,240,192,.9)'; } ctx.fillStyle = '#fff6dc'; ctx.beginPath(); ctx.moveTo(x, y + 32); ctx.bezierCurveTo(x - 3.5, y + 28, x - 3, y + 22, x, y + 18); ctx.bezierCurveTo(x + 3, y + 22, x + 3.5, y + 28, x, y + 32); ctx.fill(); ctx.restore();
-  ctx.fillStyle = P.ink; ctx.fillRect(x - .7, y + 12, 1.4, 24); ctx.fillRect(x - 7.5, y + 23, 15, 1.2);
-  const cap = path([['M', x - 10, y + 12], ['L', x + 10, y + 12], ['L', x + 6, y + 5], ['L', x - 6, y + 5], ['Z']], 81, .5);
-  ritaglio(ctx, cap, P.ink, { lip: 'rgba(242,194,120,.45)' });
-  ctx.strokeStyle = P.ink; ctx.lineWidth = 2; ctx.stroke(vetro);
-  const base = path([['M', x - 7, y + 36], ['L', x + 7, y + 36], ['L', x + 5, y + 41], ['L', x - 5, y + 41], ['Z']], 82, .4); ctx.fillStyle = P.ink; ctx.fill(base);
-}
-function aloneLanterna(l, k) {
-  const cx = l.x, cy = l.y + 25, r = 120;
-  const g = ctx.createRadialGradient(cx, cy, 2, cx, cy, r); g.addColorStop(0, `rgba(255,210,122,${.9 * k})`); g.addColorStop(.35, `rgba(255,178,74,${.35 * k})`); g.addColorStop(1, 'rgba(255,154,42,0)');
-  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.fill();
-}
-function pozzaLanterna(l, k) {
-  const cx = l.x, cy = l.y + 150; const rx = 190, ry = 112;
-  ctx.save(); ctx.translate(cx, cy); ctx.scale(1, ry / rx);
-  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx); g.addColorStop(0, `rgba(255,194,106,${.55 * k})`); g.addColorStop(.45, `rgba(255,184,96,${.22 * k})`); g.addColorStop(1, 'rgba(255,184,96,0)');
-  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, rx, 0, TAU); ctx.fill(); ctx.restore();
-}
-
-/* =====================================================================
-   HUD a proscenio
-   ===================================================================== */
-const FONT = 'Georgia, "Times New Roman", "DejaVu Serif", "Liberation Serif", serif';
-function cartiglio(X, Y, w, h) {
-  ctx.save(); if (on('sb')) { ctx.shadowBlur = 10; ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowOffsetY = 3; } rr(ctx, X, Y, w, h, 5); ctx.fillStyle = 'rgba(11,7,4,.86)'; ctx.fill(); ctx.restore();
-  rr(ctx, X + .5, Y + .5, w - 1, h - 1, 5); ctx.strokeStyle = 'rgba(243,193,75,.6)'; ctx.lineWidth = 1; ctx.stroke();
-  rr(ctx, X + 3.5, Y + 3.5, w - 7, h - 7, 3); ctx.strokeStyle = 'rgba(90,42,14,.9)'; ctx.lineWidth = 1; ctx.stroke();
-  ctx.fillStyle = P.oro; for (const [px, py] of [[X, Y], [X + w, Y], [X, Y + h], [X + w, Y + h]]) { ctx.save(); ctx.translate(px, py); ctx.rotate(Math.PI / 4); ctx.fillRect(-3, -3, 6, 6); ctx.restore(); }
-}
-function maschera(X, Y, k, fantasma) {
-  ctx.save(); ctx.translate(X, Y); ctx.scale(k, k);
-  const p = new Path2D('M-10,0 C-10,-6 -6,-10 0,-10 C6,-10 10,-6 10,-1 L16,3 C17.5,5 15.5,6.5 13,5.5 L10,4 C9,9 5,12 0,12 C-6,12 -10,7 -10,0 Z');
-  if (fantasma) { ctx.strokeStyle = 'rgba(255,244,222,.32)'; ctx.lineWidth = 1.2; ctx.stroke(p); }
-  else { ctx.fillStyle = '#fff4de'; ctx.fill(p); ctx.fillStyle = P.ink; ctx.beginPath(); ctx.arc(-3.5, -1.5, 2.4, 0, TAU); ctx.arc(4, -2.5, 2.4, 0, TAU); ctx.fill(); }
-  ctx.restore();
-}
-function nastroScatto(X, Y) {
-  ctx.save(); ctx.translate(X, Y); ctx.strokeStyle = P.rosso; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, Math.PI * 1.5); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, 5, Math.PI * .5, Math.PI * 2.2); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(4.5, -2); ctx.quadraticCurveTo(10, -6, 14, -1); ctx.quadraticCurveTo(17, 2, 21, -2); ctx.stroke();
-  ctx.strokeStyle = 'rgba(255,200,180,.5)'; ctx.lineWidth = .8; ctx.beginPath(); ctx.arc(0, 0, 5, Math.PI * .7, Math.PI * 1.3); ctx.stroke();
-  ctx.restore();
-}
-function monetaHUD(X, Y) {
-  ctx.save(); ctx.translate(X, Y); if (on('sb')) { ctx.shadowBlur = 6; ctx.shadowColor = 'rgba(243,193,75,.7)'; }
-  const g = ctx.createRadialGradient(-2, -2, 1, 0, 0, 8); g.addColorStop(0, '#fff1c0'); g.addColorStop(.6, P.oro); g.addColorStop(1, P.oroDim); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 8, 0, TAU); ctx.fill();
-  ctx.shadowBlur = 0; ctx.fillStyle = '#5a3208';
-  ctx.beginPath(); ctx.moveTo(0, -5.5); ctx.bezierCurveTo(1.6, -3, 1.6, 0, 0, 2.2); ctx.bezierCurveTo(-1.6, 0, -1.6, -3, 0, -5.5); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(-.6, 1.5); ctx.bezierCurveTo(-3, 0, -5, -1, -4.6, -3.8); ctx.bezierCurveTo(-3, -2.2, -2, -.5, -.6, 1.5); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(.6, 1.5); ctx.bezierCurveTo(3, 0, 5, -1, 4.6, -3.8); ctx.bezierCurveTo(3, -2.2, 2, -.5, .6, 1.5); ctx.closePath(); ctx.fill();
-  ctx.fillRect(-2.6, 2.4, 5.2, 1.3); ctx.beginPath(); ctx.moveTo(-1.8, 3.7); ctx.lineTo(1.8, 3.7); ctx.lineTo(1.2, 6); ctx.lineTo(-1.2, 6); ctx.closePath(); ctx.fill();
-  ctx.restore();
-}
-function romboScintille(X, Y) {
-  ctx.save(); ctx.translate(X, Y); ctx.fillStyle = P.luce; if (on('sb')) { ctx.shadowBlur = 5; ctx.shadowColor = 'rgba(242,194,120,.7)'; }
-  ctx.beginPath(); ctx.moveTo(0, -9); ctx.quadraticCurveTo(1.6, -1.6, 9, 0); ctx.quadraticCurveTo(1.6, 1.6, 0, 9); ctx.quadraticCurveTo(-1.6, 1.6, -9, 0); ctx.quadraticCurveTo(-1.6, -1.6, 0, -9); ctx.closePath(); ctx.fill(); ctx.restore();
-}
-function testo(t, X, Y, size, color, spacing, align, weight) {
-  ctx.save(); ctx.font = `${weight || 400} ${size}px ${FONT}`; ctx.fillStyle = color; ctx.textBaseline = 'alphabetic';
-  if ('letterSpacing' in ctx) { ctx.letterSpacing = `${spacing || 0}px`; ctx.textAlign = align || 'left'; ctx.fillText(t, X, Y); const w = ctx.measureText(t).width; ctx.restore(); return w; }
-  // ripiego: spaziatura manuale
-  let w = 0; for (const ch of t) w += ctx.measureText(ch).width + (spacing || 0);
-  let x0 = align === 'right' ? X - w : align === 'center' ? X - w / 2 : X;
-  for (const ch of t) { ctx.fillText(ch, x0, Y); x0 += ctx.measureText(ch).width + (spacing || 0); }
-  ctx.restore(); return w;
-}
-/* maiuscoletto spaziato: le minuscole diventano maiuscole più piccole */
-function maiuscoletto(t, X, Y, size, color, spacing, align) {
-  const parti = []; let cur = '', curUp = null;
-  for (const ch of t) { const up = ch === ch.toUpperCase(); if (curUp === null || up === curUp) { cur += ch; curUp = up; } else { parti.push([cur, curUp]); cur = ch; curUp = up; } }
-  if (cur) parti.push([cur, curUp]);
-  ctx.save(); ctx.font = `400 ${size}px ${FONT}`; if ('letterSpacing' in ctx) ctx.letterSpacing = `${spacing}px`;
-  let tot = 0; for (const [s, up] of parti) { ctx.font = `400 ${up ? size : size * .78}px ${FONT}`; tot += ctx.measureText(up ? s : s.toUpperCase()).width; }
-  let x0 = align === 'right' ? X - tot : align === 'center' ? X - tot / 2 : X;
-  for (const [s, up] of parti) { const sz = up ? size : size * .78; ctx.font = `400 ${sz}px ${FONT}`; ctx.fillStyle = color; ctx.fillText(up ? s : s.toUpperCase(), x0, Y); x0 += ctx.measureText(up ? s : s.toUpperCase()).width; }
-  ctx.restore();
-}
 function disegnaHUD() {
-  ctx.save(); ctx.globalAlpha = .95;
-  cartiglio(24, 18, 282, 52);
-  for (let i = 0; i < 5; i++) maschera(50 + i * 25, 44, .9, i === 4);
-  nastroScatto(182, 44);
-  monetaHUD(222, 44); testo('12', 236, 49, 15, P.oro, 1, 'left', 600);
-  romboScintille(272, 44); testo('3', 285, 49, 15, P.luce, 1, 'left', 600);
-  cartiglio(1030, 18, 226, 38);
-  maiuscoletto('PIAZZA DANTE · stanza 3', 1238, 43, 14.5, P.crema, 3.2, 'right');
+  ctx.save();
+  // Cartiglio sinistro: Vita, Scatto, Monete, Scintille
+  ctx.fillStyle = 'rgba(11,7,4,0.88)';
+  ctx.strokeStyle = P.oro;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(24, 16, 290, 48, 6); ctx.fill(); ctx.stroke();
+
+  for (let i = 0; i < 5; i++) {
+    const mx = 52 + i * 26, my = 40;
+    ctx.fillStyle = i < 4 ? P.crema : 'rgba(244,227,189,0.25)';
+    ctx.beginPath(); ctx.arc(mx, my, 9, 0, TAU); ctx.fill();
+    ctx.fillStyle = P.ink;
+    ctx.beginPath(); ctx.arc(mx - 3, my - 1, 2, 0, TAU); ctx.arc(mx + 3, my - 1, 2, 0, TAU); ctx.fill();
+  }
+  ctx.fillStyle = P.oro;
+  ctx.font = 'bold 15px Georgia, serif';
+  ctx.fillText('12', 228, 45);
+  ctx.fillStyle = P.luce;
+  ctx.fillText('✦ 3', 268, 45);
+
+  // Cartiglio destro: Nome stanza o Boss
+  ctx.fillStyle = 'rgba(11,7,4,0.88)';
+  ctx.strokeStyle = P.oro;
+  ctx.beginPath(); ctx.roundRect(960, 16, 296, 42, 6); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = P.crema;
+  ctx.font = '13px Georgia, serif';
+  ctx.textAlign = 'right';
+  const titolo = SCENA === 'boss'
+    ? 'CORTILE D’ONORE · DONNA LUCIANA'
+    : SCENA === 'transizione'
+      ? 'IL VELO SI SQUARCIA · DISCESA'
+      : 'PIAZZA DANTE · STANZA 3 (VAR. C)';
+  ctx.fillText(titolo, 1240, 42);
+
+  // Barra vita del Boss se siamo nella scena Boss
+  if (SCENA === 'boss' || SCENA === 'transizione') {
+    const bw = 520, bh = 18, bx = (W - bw) / 2, by = 652;
+    ctx.fillStyle = 'rgba(11,7,4,0.92)';
+    ctx.strokeStyle = P.oro;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 4); ctx.fill(); ctx.stroke();
+    const fillW = SCENA === 'boss' ? bw * 0.72 : bw;
+    const bg = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+    bg.addColorStop(0, P.rossoDeep);
+    bg.addColorStop(1, P.rosso);
+    ctx.fillStyle = bg;
+    ctx.fillRect(bx + 3, by + 3, fillW - 6, bh - 6);
+    ctx.fillStyle = P.crema;
+    ctx.font = 'bold 12px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('DONNA LUCIANA — LA MARIONETTISTA DEL VELO', W / 2, by - 7);
+  }
   ctx.restore();
 }
 
 /* =====================================================================
-   RENDER del fotogramma
+   CICLO DI RENDER PRINCIPALE
    ===================================================================== */
-const T = { on: false, acc: {}, last: 0, mark(n) { if (!this.on) return; const t = performance.now(); this.acc[n] = (this.acc[n] || 0) + (t - this.last); this.last = t; }, start() { this.last = performance.now(); } };
+let animAttiva = !Q.get('dpr'); // statico per screenshot automatici con ?dpr=1, animato per l'utente
+let tStart = performance.now();
 
-function render() {
-  T.start();
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.filter = 'none';
-  const { fx, fy, fr, fb, fw, fh, wallW, southH } = G;
-  // 0. teatro
-  ctx.drawImage(SFONDO, 0, 0, W, H);
-  // 1. fondale: sopra la parete di fondo; con le quinte aperte anche ai lati
-  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, wallTop - 4);
-  if (V.quinte) { ctx.rect(0, 0, fx - wallW, 330); ctx.rect(fr + wallW, 0, W - fr - wallW, 330); }
-  ctx.clip(); ctx.drawImage(FONDALE, 0, 0, W, 360);
-  if (V.quinte) { const g = ctx.createLinearGradient(0, 150, 0, 330); g.addColorStop(0, 'rgba(7,4,2,0)'); g.addColorStop(1, 'rgba(7,4,2,1)'); ctx.fillStyle = g; ctx.fillRect(0, 150, W, 180); }
-  ctx.restore();
-  T.mark('fondale');
-  // 2. pavimento di carta + luci a terra
+function render(now) {
+  const tAnim = animAttiva ? ((now || performance.now()) - tStart) / 1000 : 0.4;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+
+  const { fx, fy, fr, fb, fw, fh } = G;
+
+  // 1. Fondale di Caserta e Reggia
+  ctx.fillStyle = '#090402';
+  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(FONDALE, 0, 0, W, 380);
+
+  // 2. Pavimento della stanza e pozze di luce delle lanterne
   ctx.drawImage(CARTA, fx, fy, fw, fh);
-  ctx.save(); ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
-  // luce che entra dalla porta aperta
-  { const g = ctx.createRadialGradient(PORTA_N.x, fy, 4, PORTA_N.x, fy, 150); g.addColorStop(0, 'rgba(255,214,122,.55)'); g.addColorStop(.4, 'rgba(255,200,110,.22)'); g.addColorStop(1, 'rgba(255,200,110,0)'); ctx.save(); ctx.translate(PORTA_N.x, fy); ctx.scale(1, .6); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 150, 0, Math.PI); ctx.fill(); ctx.restore(); ctx.fillStyle = g; ctx.save(); ctx.translate(PORTA_N.x, fy); ctx.scale(1, .6); ctx.translate(-PORTA_N.x, -fy); ctx.fillRect(PORTA_N.x - 150, fy, 300, 100); ctx.restore(); }
-  for (const l of LANTERNE) pozzaLanterna(l, V.pool);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
+  for (const l of LANTERNE) {
+    const pg = ctx.createRadialGradient(l.x, l.y + 165, 4, l.x, l.y + 165, 220);
+    pg.addColorStop(0, 'rgba(255,198,108,0.44)');
+    pg.addColorStop(1, 'rgba(255,198,108,0)');
+    ctx.fillStyle = pg;
+    ctx.beginPath(); ctx.arc(l.x, l.y + 165, 220, 0, TAU); ctx.fill();
+  }
   ctx.restore();
-  T.mark('pavimento');
-  // 3. mura e porte
-  disegnaMura();
-  T.mark('mura');
-  // 4. segni a terra e attori (ordinati per la y dei piedi)
-  ctx.save(); ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
-  corridoioBalzo(GATTO_ACC.x - 10, GATTO_ACC.y - 2, GATTO_ACC.x - 215, GATTO_ACC.y + 44);
-  schizzi(GATTO_COL.x + 6, GATTO_COL.y - 2);
-  // gatto accucciato (più lontano)
-  {
-    const a = GATTO_ACC; const sil = (x, m) => { x.scale(a.dir, 1); disegnaGatto(x, 'accucciato', m); };
-    ellisseAppoggio(a.x, a.y, 44, 13, .45);
-    const [lx, ly] = ombraDaLanterna(a.x, a.y);
-    ombraPortata('gattoAcc', sil, a.x, a.y, a.s, -.55, -.38, V.ombra, 2.2); ombraPortata('gattoAcc3', sil, a.x, a.y, a.s, lx, ly, V.ombra * .55, 3);
-    ctx.save(); ctx.translate(a.x, a.y); ctx.scale(a.s * a.dir, a.s);
-    const occhi = disegnaGatto(ctx, 'accucciato', 'pieno');
-    // il lampo: occhi rossi che filtrano dalla sagoma, nucleo crema, anello che si chiude
-    ctx.save(); ctx.globalCompositeOperation = 'screen';
-    for (const [ox, oy] of occhi) { const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, 11); g.addColorStop(0, 'rgba(255,90,60,.95)'); g.addColorStop(.4, 'rgba(200,48,27,.55)'); g.addColorStop(1, 'rgba(200,48,27,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ox, oy, 11, 0, TAU); ctx.fill(); }
-    ctx.restore();
-    ctx.fillStyle = P.rosso; for (const [ox, oy, orx, ory] of occhi) { ctx.beginPath(); ctx.ellipse(ox, oy, orx, ory, -.2, 0, TAU); ctx.fill(); }
-    ctx.fillStyle = P.crema; for (const [ox, oy] of occhi) { ctx.beginPath(); ctx.arc(ox, oy, .9, 0, TAU); ctx.fill(); }
-    ctx.restore();
-    // anello (in spazio schermo, non ribaltato)
-    const hx = a.x + a.dir * 50 * a.s, hy = a.y - 20 * a.s;
-    ctx.save(); ctx.strokeStyle = 'rgba(200,48,27,.9)'; ctx.lineWidth = 2.2; if (on('sb')) { ctx.shadowBlur = 6; ctx.shadowColor = 'rgba(200,48,27,.8)'; } ctx.beginPath(); ctx.arc(hx, hy, 21, 0, TAU); ctx.stroke();
-    ctx.strokeStyle = 'rgba(244,227,189,.9)'; ctx.lineWidth = 1; ctx.shadowBlur = 0; ctx.beginPath(); ctx.arc(hx, hy, 24.5, 0, TAU); ctx.stroke(); ctx.restore();
+
+  // 3. Mura e porte della stanza
+  disegnaMuraStanza();
+
+  // 4. Attori nella stanza
+  ctx.save();
+  ctx.beginPath(); ctx.rect(fx, fy - 90, fw, fh + 90); ctx.clip();
+
+  // Segno a terra del balzo del gatto
+  ctx.save();
+  ctx.strokeStyle = 'rgba(11,7,4,0.58)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([10, 7]);
+  ctx.beginPath();
+  ctx.moveTo(GATTO_ACC.x - 16, GATTO_ACC.y);
+  ctx.lineTo(GATTO_ACC.x - 210, GATTO_ACC.y + 42);
+  ctx.stroke();
+  ctx.restore();
+
+  // Effetto colpo alla Isaac sotto il gatto colpito
+  disegnaColpoIsaac(GATTO_COL.x + 8, GATTO_COL.y - 10);
+
+  // Gatto accucciato con lampo rosso sugli occhi
+  ellisseAppoggio(GATTO_ACC.x, GATTO_ACC.y, 46, 14, 0.48);
+  ctx.save();
+  ctx.translate(GATTO_ACC.x, GATTO_ACC.y);
+  ctx.scale(GATTO_ACC.s * GATTO_ACC.dir, GATTO_ACC.s);
+  const occhi = disegnaGatto(ctx, 'accucciato', 'pieno');
+  ctx.fillStyle = P.rosso;
+  for (const [ox, oy, orx, ory] of occhi) {
+    ctx.beginPath(); ctx.ellipse(ox, oy, orx * 1.3, ory * 1.3, -0.2, 0, TAU); ctx.fill();
   }
-  // Ferruccio
-  {
-    const f = FERRUCCIO; const sil = (x, m) => disegnaFerruccio(x, m);
-    ellisseAppoggio(f.x, f.y, 30, 10, .45);
-    const [lx, ly] = ombraDaLanterna(f.x, f.y);
-    ombraPortata('ferruccio', sil, f.x, f.y, f.s, -.55, -.38, V.ombra, 2.4); ombraPortata('ferruccio3', sil, f.x, f.y, f.s, lx, ly, V.ombra * .5, 3.2);
-    ctx.save(); ctx.translate(f.x, f.y); ctx.scale(f.s, f.s); disegnaFerruccio(ctx, 'pieno'); ctx.restore();
+  ctx.restore();
+  // Anello rosso di parata attorno alla testa del gatto
+  const hx = GATTO_ACC.x + GATTO_ACC.dir * 52 * GATTO_ACC.s;
+  const hy = GATTO_ACC.y - 22 * GATTO_ACC.s;
+  ctx.strokeStyle = P.rosso;
+  ctx.lineWidth = 2.6;
+  ctx.beginPath(); ctx.arc(hx, hy, 22, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = P.crema;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(hx, hy, 26, 0, TAU); ctx.stroke();
+
+  // Boss Finale Donna Luciana (se siamo in modalità transizione o boss)
+  if (SCENA === 'transizione' || SCENA === 'boss') {
+    disegnaDonnaLuciana(ctx, 670, 355, tAnim, SCENA === 'boss' ? 1.0 : 0.45);
   }
-  // scia del fendente: dal perno della mano
-  if (on('scia')) sciaFendente(FERRUCCIO.x + 49 * FERRUCCIO.s, FERRUCCIO.y - 66 * FERRUCCIO.s);
-  // gatto colpito: bianco pieno, schiacciato nella direzione del colpo
-  {
-    const c = GATTO_COL; const sil = (x, m) => { x.transform(1.2, 0, .3, .78, 0, 0); x.scale(c.dir, 1); disegnaGatto(x, 'neutro', m); };
-    ellisseAppoggio(c.x + 6, c.y, 46, 12, .4);
-    ombraPortata('gattoCol', sil, c.x, c.y, c.s, -.55, -.38, V.ombra * .8, 2.4);
-    ctx.save(); ctx.globalCompositeOperation = 'screen'; const g = ctx.createRadialGradient(c.x + 8, c.y - 18, 4, c.x + 8, c.y - 18, 70); g.addColorStop(0, 'rgba(255,248,232,.5)'); g.addColorStop(1, 'rgba(255,248,232,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x + 8, c.y - 18, 70, 0, TAU); ctx.fill(); ctx.restore();
-    ctx.save(); ctx.translate(c.x, c.y); ctx.scale(c.s, c.s); ctx.transform(1.2, 0, .3, .78, 0, 0); ctx.scale(c.dir, 1); disegnaGatto(ctx, 'neutro', 'pieno', P.bianco); ctx.restore();
-  }
+
+  // Ferruccio e fendente
+  ellisseAppoggio(FERRUCCIO.x, FERRUCCIO.y, 34, 12, 0.5);
+  ctx.save();
+  ctx.translate(FERRUCCIO.x, FERRUCCIO.y);
+  ctx.scale(FERRUCCIO.s, FERRUCCIO.s);
+  disegnaFerruccio(ctx, 'pieno', tAnim);
+  ctx.restore();
+  sciaFendente(FERRUCCIO.x + 48 * FERRUCCIO.s, FERRUCCIO.y - 68 * FERRUCCIO.s);
+
+  // Gatto colpito (flash bianco pieno + squash)
+  ellisseAppoggio(GATTO_COL.x + 6, GATTO_COL.y, 48, 13, 0.42);
+  ctx.save();
+  ctx.translate(GATTO_COL.x, GATTO_COL.y);
+  ctx.scale(GATTO_COL.s, GATTO_COL.s);
+  ctx.transform(1.22, 0, 0.28, 0.76, 0, 0);
+  ctx.scale(GATTO_COL.dir, 1);
+  disegnaGatto(ctx, 'neutro', 'pieno', P.bianco);
+  ctx.restore();
+
   for (const [mx, my] of MONETE) moneta(mx, my);
   ctx.restore();
-  T.mark('attori');
-  // 5. lanterne appese, aloni, pulviscolo
-  for (const l of LANTERNE) lanterna(l);
-  if (on('aloni')) { ctx.save(); ctx.globalCompositeOperation = 'screen'; for (const l of LANTERNE) aloneLanterna(l, V.alone); ctx.restore(); }
-  for (const d of PULVISCOLO) { if (d.glow) { const g = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, 4); g.addColorStop(0, `rgba(255,228,170,${d.a * .5})`); g.addColorStop(1, 'rgba(255,228,170,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(d.x, d.y, 4, 0, TAU); ctx.fill(); } ctx.fillStyle = `rgba(255,232,180,${d.a})`; ctx.beginPath(); ctx.arc(d.x, d.y, d.rad, 0, TAU); ctx.fill(); }
-  T.mark('luci');
-  // 6. grana leggera per frame, vignetta, cornice di boccascena
-  if (!GRANA_PAT) GRANA_PAT = ctx.createPattern(GRANA, 'repeat');
-  if (on('grana')) { ctx.save(); ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = V.grana * 2.2; ctx.fillStyle = GRANA_PAT; ctx.fillRect(0, 0, W, H); ctx.restore(); }
-  if (on('vign')) ctx.drawImage(VIGN, 0, 0, W, H);
-  ctx.fillStyle = P.legno; ctx.fillRect(0, 0, W, 10); ctx.fillRect(0, H - 10, W, 10); ctx.fillRect(0, 0, 10, H); ctx.fillRect(W - 10, 0, 10, H);
-  ctx.strokeStyle = 'rgba(201,162,74,.55)'; ctx.lineWidth = 1; ctx.strokeRect(10.5, 10.5, W - 21, H - 21);
-  ctx.strokeStyle = 'rgba(90,58,20,.8)'; ctx.strokeRect(3.5, 3.5, W - 7, H - 7);
-  T.mark('post');
-  // 7. HUD
-  if (on('hud')) disegnaHUD();
-  T.mark('hud');
+
+  // 5. Lanterne appese
+  for (const l of LANTERNE) lanterna(l, tAnim);
+
+  // 6. SOPRA A TUTTO (Stanza normale): LE MANI DI MARIONETTA CON BILANCINI E FILI D'ORO
+  if (SCENA === 'stanza') {
+    // Mano sinistra sopra Ferruccio e il centro stanza
+    disegnaManoMarionettista(ctx, 430, 56, 1, 0.96, tAnim, true, [
+      [FERRUCCIO.x - 16, FERRUCCIO.y - 168],
+      [FERRUCCIO.x + 38, FERRUCCIO.y - 72],
+      [GATTO_COL.x - 12, GATTO_COL.y - 28]
+    ]);
+    // Mano destra sopra i Gatti d'ombra (li muove come marionette)
+    disegnaManoMarionettista(ctx, 875, 56, -1, 0.96, tAnim, true, [
+      [GATTO_ACC.x - 32, GATTO_ACC.y - 38],
+      [GATTO_ACC.x + 12, GATTO_ACC.y - 34],
+      [GATTO_ACC.x - 48, GATTO_ACC.y - 52],
+      [GATTO_COL.x + 22, GATTO_COL.y - 26]
+    ]);
+  }
+
+  // 7. Boccascena teatrale barocco, quinte e ribalta
+  disegnaProscenioTeatrale();
+
+  // 8. HUD
+  disegnaHUD();
+
+  if (animAttiva) requestAnimationFrame(render);
 }
 
-/* ---------- misure ---------- */
+/* Misure compatibili con la suite QA */
 function campione(x, y, n) {
-  const h = (n - 1) / 2; const id = ctx.getImageData(Math.round((x - h) * DPR), Math.round((y - h) * DPR), Math.max(1, Math.round(n * DPR)), Math.max(1, Math.round(n * DPR))).data;
-  let r = 0, g = 0, b = 0, k = 0; for (let i = 0; i < id.length; i += 4) { r += id[i]; g += id[i + 1]; b += id[i + 2]; k++; }
+  const h = (n - 1) / 2;
+  const id = ctx.getImageData(Math.round((x - h) * DPR), Math.round((y - h) * DPR), Math.max(1, Math.round(n * DPR)), Math.max(1, Math.round(n * DPR))).data;
+  let r = 0, g = 0, b = 0, k = 0;
+  for (let i = 0; i < id.length; i += 4) { r += id[i]; g += id[i + 1]; b += id[i + 2]; k++; }
   return [r / k, g / k, b / k];
 }
 function misura() {
-  const punti = { centro_pavimento: [640, 360], pozza_lanterna_sx: [400, 300], angolo_pavimento_bd: [1030, 560], angolo_pavimento_as: [250, 160], parete_nord: [640, 110], camicia_ferruccio: [FERRUCCIO.x + 2, FERRUCCIO.y - 58], dorso_gatto: [GATTO_ACC.x - 12, GATTO_ACC.y - 26] };
+  const punti = {
+    centro_pavimento: [640, 380],
+    pozza_lanterna_sx: [350, 330],
+    angolo_pavimento_bd: [1080, 600],
+    angolo_pavimento_as: [200, 190],
+    parete_nord: [640, 145],
+    camicia_ferruccio: [FERRUCCIO.x + 2, FERRUCCIO.y - 62],
+    dorso_gatto: [GATTO_ACC.x - 10, GATTO_ACC.y - 24]
+  };
   const out = {};
-  for (const k in punti) { const [x, y] = punti[k]; const p1 = campione(x, y, 1), p5 = campione(x, y, 5); out[k] = { x, y, rgb: p1.map(v => Math.round(v)), L: +lum(...p1).toFixed(3), L_media5x5: +lum(...p5).toFixed(3) }; }
-  out.contrasto_pozza_angolo = +((out.pozza_lanterna_sx.L + .05) / (out.angolo_pavimento_bd.L + .05)).toFixed(2);
-  out.contrasto_ink_su_pavimento = +((out.centro_pavimento.L + .05) / (lum(11, 7, 4) + .05)).toFixed(2);
-  out.contrasto_crema_su_pavimento = +((out.camicia_ferruccio.L + .05) / (out.centro_pavimento.L + .05)).toFixed(2);
+  for (const k in punti) {
+    const [x, y] = punti[k];
+    const p1 = campione(x, y, 1), p5 = campione(x, y, 5);
+    out[k] = { x, y, rgb: p1.map(v => Math.round(v)), L: +lum(...p1).toFixed(3), L_media5x5: +lum(...p5).toFixed(3) };
+  }
   return out;
 }
-window.__bench = function (n, flush) {
-  n = n || 60; T.on = true; T.acc = {};
-  const t0 = performance.now();
-  for (let i = 0; i < n; i++) { render(); if (flush) ctx.getImageData(0, 0, 1, 1); }
-  const media = (performance.now() - t0) / n; const fasi = {}; for (const k in T.acc) fasi[k] = +(T.acc[k] / n).toFixed(3);
-  T.on = false; render();
-  return { variante: VAR, dpr: DPR, n, flush: !!flush, media_ms: +media.toFixed(3), fasi, precalcolo_ms: PRE };
+
+window.setScena = function (s) {
+  SCENA = s;
+  document.getElementById('btn-stanza').classList.toggle('active', s === 'stanza');
+  document.getElementById('btn-transizione').classList.toggle('active', s === 'transizione');
+  document.getElementById('btn-boss').classList.toggle('active', s === 'boss');
+  if (!animAttiva) render(performance.now());
 };
-render();
+window.toggleAnim = function () {
+  animAttiva = !animAttiva;
+  const b = document.getElementById('btn-anim');
+  b.textContent = 'Animazione: ' + (animAttiva ? 'ON' : 'OFF');
+  b.classList.toggle('active', animAttiva);
+  if (animAttiva) requestAnimationFrame(render);
+};
+window.toggleGrigi = function () {
+  cv.classList.toggle('grigi');
+  document.getElementById('btn-grigi').classList.toggle('active', cv.classList.contains('grigi'));
+};
+window.__bench = function (n, flush) {
+  n = n || 60;
+  const wasAnim = animAttiva;
+  animAttiva = false;
+  const t0 = performance.now();
+  for (let i = 0; i < n; i++) { render(t0); if (flush) ctx.getImageData(0, 0, 1, 1); }
+  const media = (performance.now() - t0) / n;
+  animAttiva = wasAnim;
+  if (animAttiva) requestAnimationFrame(render);
+  return { variante: VAR, scena: SCENA, media_ms: +media.toFixed(3) };
+};
+
+render(performance.now());
 window.__misure = misura();
 window.__pronto = true;
-window.__info = { variante: V.nome, precalcolo_ms: PRE, misure: window.__misure };
-console.log('tavola-presepe', JSON.stringify(window.__info));
 </script>
 </body>
 </html>

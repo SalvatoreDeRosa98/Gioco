@@ -2,7 +2,7 @@
   "id": "pd-n-01",
   "tipo": "normale",
   "dim": "1x1",
-  "piani": [1],
+  "piani": [1, 2, 3, 4],
   "difficolta": 1,
   "tag": ["facile", "piazza_aperta", "centro_libero"],
   "peso_base": 1.0,

@@ -2,7 +2,7 @@
   "id": "pd-n-05",
   "tipo": "normale",
   "dim": "1x1",
-  "piani": [1],
+  "piani": [1, 2, 3, 4],
   "difficolta": 3,
   "tag": ["dura", "colonne", "bracieri"],
   "peso_base": 1.0,

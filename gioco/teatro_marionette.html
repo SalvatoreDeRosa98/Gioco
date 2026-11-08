@@ -1,0 +1,4692 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ferruccio — Pixel-Art Roguelike (Bilanciamento Isaac + 5 Slot + Loop Infinito)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  html, body {
+    background: transparent;
+    color: #f6e7c4;
+    font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace;
+    overflow: hidden;
+  }
+  .game-card {
+    background: #0b0806;
+    border: 2px solid #4a3520;
+    border-radius: 10px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    max-width: 744px;
+    margin: 0 auto;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.75);
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    align-items: center;
+    background: #16100b;
+    border: 1px solid #5c4024;
+    border-radius: 6px;
+    padding: 4px 6px;
+    width: 100%;
+  }
+  .toolbar button {
+    background: #261a10;
+    color: #f6e7c4;
+    border: 1px solid #8a5a2b;
+    border-radius: 4px;
+    padding: 3px 6px;
+    font: 700 12px/1.2 ui-monospace, monospace;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .toolbar button:hover { background: #3c2816; border-color: #f7c844; }
+  .toolbar button.active {
+    background: #8a1c12;
+    border-color: #f7c844;
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(247, 200, 68, 0.45);
+  }
+  .toolbar .sep {
+    width: 1px;
+    height: 16px;
+    background: #4b3219;
+    margin: 0 1px;
+  }
+  .palco-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 712px;
+    aspect-ratio: 16 / 9;
+    background: #0d0907;
+    border: 2px solid #7c5227;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.85);
+    outline: none;
+  }
+  .palco-wrap:focus { border-color: #f7c844; }
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: crosshair;
+  }
+  .statusbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    font: 12px/1.3 ui-monospace, monospace;
+    color: #e6d2aa;
+    width: 100%;
+    background: #140e0a;
+    border: 1px solid #3d2814;
+    border-radius: 5px;
+    padding: 4px 8px;
+  }
+  .statusbar b { color: #f7c844; }
+</style>
+</head>
+<body>
+<div class="game-card">
+  <div class="toolbar">
+    <button id="btn-menu-char" class="active" style="background:#5a170e; border-color:#f9cb40; color:#f9cb40; font-weight:bold;">🎭 Menù Personaggi</button>
+    <button id="btn-new-run">🎲 Riavvia Run</button>
+    <span class="sep"></span>
+    <button id="btn-char-ferruccio" class="active" title="Ferruccio: 3❤️ · 3.50 DMG · Attivo: Forbici [Q]">🎭 Ferruccio</button>
+    <button id="btn-char-agnese" title="Agnese: 2❤️ · 3.20 DMG · 1.25 SPD · Inizia con Lente 20/20 + Tamburello [Q]">🧣 Agnese</button>
+    <button id="btn-char-taddeo" title="Taddeo: 4❤️ · 4.20 DMG · 0.88 SPD · Inizia con Spada Gaetano + Ampolla [Q]">🗡 Taddeo</button>
+    <button id="btn-char-ombra" title="Pulcinella d'Ombra: 1.5❤️ · 5.20 DMG · 1.12 SPD · Inizia con Anello Cremisi">🌑 Ombra</button>
+    <span class="sep"></span>
+    <button id="btn-p1">P1</button>
+    <button id="btn-p2">P2</button>
+    <button id="btn-p3">P3</button>
+    <button id="btn-p4">P4·Luciana</button>
+    <button id="btn-p5" title="Loop Infinito (Piano 5+)">∞ P5+</button>
+    <span class="sep"></span>
+    <button id="btn-segreta" title="Entra nella Stanza Segreta (?)">🕵️ Segreta</button>
+    <button id="btn-fucina" title="Entra ne La Fucina (Shop)">⚒ Fucina</button>
+    <button id="btn-patto" title="Entra nella Stanza del Patto d'Ombra (Devil Deal)">😈 Patto</button>
+    <button id="btn-boss" title="Vai alla Stanza del Boss">💀 Boss</button>
+    <button id="btn-storia" title="Rivedi il Sipario Narrativo">📜 Storia</button>
+  </div>
+
+  <div class="palco-wrap" id="wrap" tabindex="0">
+    <canvas id="c" width="640" height="360"></canvas>
+  </div>
+
+  <div class="statusbar">
+    <div>
+      <b>WASD</b> muovi · <b>Frecce/Click</b> mira e attacca · <b>Q</b> Usa Attivo · <b>E/Click</b> raccogli/compra/patto · <b>ESC</b> Menù Personaggi
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const W = 640, H = 360, TAU = Math.PI * 2;
+  const MAX_SLOT_OGGETTI = 5;
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const wrap = document.getElementById('wrap');
+
+  // ===========================================================================
+  // PALETTE PIXEL-ART 16-BIT & COMPILATORE DI SPRITE DISEGNATI 1 AD 1
+  // ===========================================================================
+  const PALETTE = {
+    '.': null,
+    'k': '#0a0604',
+    'd': '#1f1510',
+    'w': '#ffffff',
+    'c': '#f3dfc1',
+    's': '#c9a679',
+    'e': '#9c7850',
+    'r': '#e53222',
+    'R': '#8f160c',
+    'y': '#f9cb40',
+    'o': '#ea8626',
+    'O': '#9c4c12',
+    'b': '#3b82f6',
+    'B': '#1d4ed8',
+    'a': '#67e8f9',
+    'A': '#0891b2',
+    'g': '#cbd5e1',
+    'G': '#64748b',
+    'D': '#334155',
+    'm': '#854d0e',
+    'M': '#451a03',
+    'p': '#c084fc',
+    'P': '#6b21a8',
+    'v': '#4ade80',
+    'V': '#15803d',
+  };
+
+  // ===========================================================================
+  // MOTORE DI TESTO ANTI-OVERFLOW (AUTO-FIT E WORD-WRAP DENTRO I RIQUADRI)
+  // ===========================================================================
+  function drawTextFit(text, x, y, maxW, {
+    size = 8.5,
+    weight = 'bold',
+    style = '',
+    color = '#ffffff',
+    align = 'center',
+    shadow = true,
+  } = {}) {
+    if (!text) return;
+    ctx.save();
+    ctx.textAlign = align;
+    let curSize = size;
+    const prefix = `${style ? style + ' ' : ''}${weight ? weight + ' ' : ''}`;
+    ctx.font = `${prefix}${curSize}px ui-monospace, monospace`;
+    while (curSize > 5.5 && ctx.measureText(text).width > maxW) {
+      curSize -= 0.5;
+      ctx.font = `${prefix}${curSize}px ui-monospace, monospace`;
+    }
+    if (shadow) {
+      ctx.fillStyle = '#070403';
+      ctx.fillText(text, Math.round(x) + 1, Math.round(y) + 1, maxW);
+    }
+    ctx.fillStyle = color;
+    ctx.fillText(text, Math.round(x), Math.round(y), maxW);
+    ctx.restore();
+  }
+
+  function drawPillLabel(text, cx, cy, maxW, {
+    size = 8,
+    color = '#f9cb40',
+    bg = 'rgba(10, 6, 4, 0.92)',
+    border = '#8a5a2b',
+  } = {}) {
+    ctx.save();
+    ctx.font = `bold ${size}px ui-monospace, monospace`;
+    const measured = Math.min(maxW, Math.ceil(ctx.measureText(text).width) + 10);
+    const pw = Math.max(28, measured);
+    const ph = size + 6;
+    const rx = Math.max(8, Math.min(W - pw - 8, Math.round(cx - pw / 2)));
+    const ry = Math.max(4, Math.min(H - ph - 4, Math.round(cy - ph + 3)));
+    ctx.fillStyle = bg;
+    ctx.fillRect(rx, ry, pw, ph);
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(rx, ry, pw, ph);
+    drawTextFit(text, rx + pw / 2, ry + ph - 4, pw - 6, { size, color, align: 'center', shadow: false });
+    ctx.restore();
+  }
+
+  const spriteCache = new Map();
+  function getSpriteCanvas(griglia, flash = false) {
+    const key = griglia.join('|') + (flash ? '_F' : '');
+    let c = spriteCache.get(key);
+    if (!c) {
+      const h = griglia.length;
+      const w = griglia[0].length;
+      c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const x = c.getContext('2d');
+      for (let py = 0; py < h; py++) {
+        const row = griglia[py];
+        for (let px = 0; px < w; px++) {
+          const ch = row[px];
+          const col = PALETTE[ch];
+          if (!col) continue;
+          x.fillStyle = flash ? (ch === 'k' ? '#3a110a' : '#ffffff') : col;
+          x.fillRect(px, py, 1, 1);
+        }
+      }
+      spriteCache.set(key, c);
+    }
+    return c;
+  }
+
+  function drawPixelSprite(griglia, x, y, scala = 2, flipX = false, flash = false, rot = 0) {
+    if (!griglia) return;
+    const off = getSpriteCanvas(griglia, flash);
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.translate(Math.round(x), Math.round(y));
+    if (rot !== 0) ctx.rotate(rot);
+    if (flipX) ctx.scale(-1, 1);
+    const dw = Math.round(off.width * scala);
+    const dh = Math.round(off.height * scala);
+    ctx.drawImage(off, -Math.round(dw / 2), -Math.round(dh / 2), dw, dh);
+    ctx.restore();
+  }
+
+  // ===========================================================================
+  // RENDERING PITTORICO / ILLUSTRATO AD ALTA DEFINIZIONE ( ISPIRATO 1:1 ALL'IMMAGINE DI RIFERIMENTO:
+  // CAPPUCCIO CONICO IN LINO CREMA, VOLTO INCAVATO NERO COI 2 OCCHI TONDI LUMINOSI,
+  // SCIARPA ROSSA A DUE CODE ONDULATE, MANTELLO A CAMPANA, GAMBE SOTTILI SCURE E STOCCO )
+  // ===========================================================================
+  function disegnaFerruccioPittorico() {
+    let px, py, opts;
+    const a0 = arguments[0];
+    if (a0 && typeof a0.save === 'function') {
+      px = arguments[1];
+      py = arguments[2];
+      opts = arguments[3] || {};
+    } else {
+      px = arguments[0];
+      py = arguments[1];
+      opts = arguments[2] || {};
+    }
+
+    const {
+      charId = (opts.charInfo?.id || statoRun.personaggioId || 'ferruccio'),
+      flipX = false,
+      moving = false,
+      shootTimer = 0,
+      pickupTimer = 0,
+      flash = false,
+      tick = 0,
+      haSpada = false,
+      swordAnimTick = -1,
+      swordAngle = 0,
+      sinergie = {},
+    } = opts;
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+
+    const bob = moving ? Math.sin(tick * 0.34) * 1.8 : Math.sin(tick * 0.09) * 1.1;
+    const wave = Math.sin(tick * 0.16) * 3.8;
+    const wave2 = Math.cos(tick * 0.13) * 3.2;
+
+    // Ombra morbida sul pavimento
+    const sh = ctx.createRadialGradient(px, py + 9, 1, px, py + 9, 15);
+    sh.addColorStop(0, 'rgba(8, 5, 3, 0.72)');
+    sh.addColorStop(1, 'rgba(8, 5, 3, 0)');
+    ctx.fillStyle = sh;
+    ctx.save();
+    ctx.translate(px, py + 9);
+    ctx.scale(1, 0.42);
+    ctx.beginPath();
+    ctx.arc(0, 0, 15, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.translate(px, py + bob);
+    if (flipX) ctx.scale(-1, 1);
+
+    // Palette in base al personaggio selezionato (Ferruccio, Agnese, Taddeo, Pulcinella d'Ombra)
+    const isOmbra = charId === 'ombra';
+    const colLuce = flash ? '#ffffff' : isOmbra ? '#3e3552' : '#fcf5e6';
+    const colMedia = flash ? '#ffffff' : isOmbra ? '#241e30' : '#dfd1b6';
+    const colOmbra = flash ? '#f87171' : isOmbra ? '#110d18' : '#96856b';
+    const colScarf1 = flash ? '#ffffff' : charId === 'agnese' ? '#f43f5e' : '#df3624';
+    const colScarf2 = flash ? '#fca5a5' : charId === 'agnese' ? '#9f1239' : '#85160c';
+    const colOcchi = sinergie.patto_raggio ? '#ff3b30' : isOmbra ? '#fbbf24' : '#fffdf5';
+
+    // Sinergia Visiva: Aura Sacra / Cuore Sacro o Catena Elettrica
+    if (sinergie.patto_sacro) {
+      const ag = ctx.createRadialGradient(0, -14, 2, 0, -14, 24);
+      ag.addColorStop(0, 'rgba(250, 204, 21, 0.35)');
+      ag.addColorStop(1, 'rgba(250, 204, 21, 0)');
+      ctx.fillStyle = ag;
+      ctx.beginPath(); ctx.arc(0, -14, 24, 0, TAU); ctx.fill();
+    }
+
+    // 1. CODE ONDULATE DELLA SCIARPA ROSSA (2 lunghi nastri mossi dal vento a sinistra, come nel dipinto!)
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    // Lembo superiore della sciarpa
+    ctx.fillStyle = colScarf1;
+    ctx.strokeStyle = '#120a07';
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(-4, -15);
+    ctx.bezierCurveTo(-13, -18 - wave * 0.4, -22, -12 + wave * 0.7, -30, -15 + wave);
+    ctx.bezierCurveTo(-24, -9 + wave * 0.6, -14, -12, -4, -11);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Lembo inferiore più lungo della sciarpa
+    ctx.fillStyle = colScarf2;
+    ctx.beginPath();
+    ctx.moveTo(-3, -12);
+    ctx.bezierCurveTo(-12, -10 + wave2 * 0.3, -19, -3 - wave2 * 0.6, -27, -1 - wave2);
+    ctx.bezierCurveTo(-24, 4 - wave2 * 0.8, -15, -3, -3, -8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Sinergia Visiva: Tizzone di Bragia (fiamme vive sulle code della sciarpa)
+    if (sinergie.fuoco) {
+      for (let i = 0; i < 3; i++) {
+        const fx = -14 - i * 5 + Math.sin(tick * 0.3 + i) * 2;
+        const fy = -10 + i * 2 + Math.cos(tick * 0.25 + i) * 2;
+        ctx.fillStyle = i % 2 === 0 ? '#fb923c' : '#fde047';
+        ctx.beginPath(); ctx.arc(fx, fy, 2.2 - i * 0.3, 0, TAU); ctx.fill();
+      }
+    }
+
+    // 2. GAMBETTE SOTTILI SCURE E SCARPETTE NERE (esattamente come nell'immagine di riferimento!)
+    const walkSwing = moving ? Math.sin(tick * 0.34) * 3.2 : 0;
+    // Gamba posteriore (sinistra)
+    ctx.strokeStyle = '#110d0a';
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    ctx.moveTo(-2.5, -1);
+    ctx.lineTo(-3 - walkSwing * 0.5, 7.5);
+    ctx.stroke();
+    // Scarpetta posteriore
+    ctx.fillStyle = '#0d0907';
+    ctx.beginPath();
+    ctx.ellipse(-2 - walkSwing * 0.5, 8.2, 3.0, 1.4, 0.1, 0, TAU);
+    ctx.fill();
+
+    // Gamba anteriore (destra) con filo di luce calda
+    ctx.strokeStyle = '#18120e';
+    ctx.lineWidth = 2.8;
+    ctx.beginPath();
+    ctx.moveTo(2.2, -1);
+    ctx.lineTo(2.5 + walkSwing * 0.5, 8.0);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(180, 148, 112, 0.35)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(2.8, 0);
+    ctx.lineTo(3.0 + walkSwing * 0.5, 7.5);
+    ctx.stroke();
+    // Scarpetta anteriore
+    ctx.fillStyle = '#120d0a';
+    ctx.beginPath();
+    ctx.ellipse(3.6 + walkSwing * 0.5, 8.5, 3.3, 1.5, 0.12, 0, TAU);
+    ctx.fill();
+
+    // 3. MANTELLO / CAMICIONE A CAMPANA IN STOFFA CREMA CON PIEGHE PITTORICHE
+    const cloakGrad = ctx.createLinearGradient(-11, -15, 11, 2);
+    cloakGrad.addColorStop(0, colOmbra);
+    cloakGrad.addColorStop(0.52, colMedia);
+    cloakGrad.addColorStop(1, colLuce);
+
+    ctx.fillStyle = cloakGrad;
+    ctx.strokeStyle = '#120c08';
+    ctx.lineWidth = 1.25;
+    ctx.beginPath();
+    ctx.moveTo(-5.5, -14.5);
+    ctx.bezierCurveTo(-8.5, -9, -11.5, -3.5, -13.0, 0.8);
+    // Orlo inferiore ondulato a pieghe morbide (come nel dipinto!)
+    ctx.quadraticCurveTo(-8.5, 2.5, -5.0, 1.2);
+    ctx.quadraticCurveTo(-1.0, 3.0, 3.5, 1.5);
+    ctx.quadraticCurveTo(7.5, 2.8, 11.2, 0.5);
+    ctx.bezierCurveTo(9.5, -5, 7.0, -10, 4.8, -14.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Pieghe verticali soffuse sul mantello e manica centrale
+    ctx.strokeStyle = isOmbra ? 'rgba(0,0,0,0.55)' : 'rgba(62, 46, 30, 0.38)';
+    ctx.lineWidth = 0.95;
+    ctx.beginPath();
+    ctx.moveTo(-4.5, -11); ctx.quadraticCurveTo(-6.5, -5, -8.2, 1.0);
+    ctx.moveTo(-1.0, -11); ctx.quadraticCurveTo(-1.5, -4, -2.0, 1.8);
+    ctx.moveTo(3.2, -10);  ctx.quadraticCurveTo(4.8, -4, 6.2, 1.4);
+    ctx.stroke();
+
+    // Manica a campana anteriore e manina guantata nera
+    ctx.fillStyle = colMedia;
+    ctx.strokeStyle = '#120c08';
+    ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    ctx.moveTo(-1.5, -10.5);
+    ctx.quadraticCurveTo(-3.5, -5.5, -3.2, -1.8);
+    ctx.quadraticCurveTo(0.5, -0.8, 3.2, -2.2);
+    ctx.quadraticCurveTo(2.5, -6.5, 1.2, -10.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Manina guantata scura
+    ctx.fillStyle = '#0e0b09';
+    ctx.beginPath();
+    ctx.arc(1.2, -1.0, 2.0, 0, TAU);
+    ctx.fill();
+
+    // Sinergia Visiva: Cuore Sacro / Medaglione sul petto
+    if (sinergie.patto_sacro || sinergie.cuore) {
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.arc(3.5, -7.5, 2.1, 0, TAU); ctx.fill();
+    }
+
+    // 4. COLLARE DELLA SCIARPA ROSSA AVVOLTO AL COLLO
+    const scarfGrad = ctx.createLinearGradient(-7, -16, 7, -12);
+    scarfGrad.addColorStop(0, colScarf2);
+    scarfGrad.addColorStop(0.6, colScarf1);
+    scarfGrad.addColorStop(1, '#ff644c');
+    ctx.fillStyle = scarfGrad;
+    ctx.strokeStyle = '#120a07';
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(-6.5, -15.2);
+    ctx.quadraticCurveTo(0, -17.0, 6.2, -14.8);
+    ctx.quadraticCurveTo(6.8, -12.0, 0, -11.8);
+    ctx.quadraticCurveTo(-6.8, -12.2, -6.5, -15.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 5. CAPPUCCIO CONICO CONTINUO IN LINO CREMA + TESTA TONDA (1:1 CON L'IMMAGINE DI RIFERIMENTO!)
+    const headGrad = ctx.createRadialGradient(2, -21, 2, -2, -23, 18);
+    headGrad.addColorStop(0, colLuce);
+    headGrad.addColorStop(0.58, colMedia);
+    headGrad.addColorStop(1, colOmbra);
+
+    ctx.fillStyle = headGrad;
+    ctx.strokeStyle = '#120c08';
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    // Base sinistra della nuca
+    ctx.moveTo(-6.2, -15.0);
+    ctx.bezierCurveTo(-10.5, -17.5, -10.8, -23.5, -7.8, -27.8);
+    // Salita al cono appuntito inclinato leggermente all'indietro (identico al riferimento!)
+    ctx.bezierCurveTo(-7.5, -31.5, -8.8, -36.5, -9.5, -40.5);
+    // Punta del cappuccio e discesa frontale morbida
+    ctx.bezierCurveTo(-6.2, -37.2, -2.5, -32.8, 1.2, -29.5);
+    // Cupola frontale sopra la maschera nera
+    ctx.bezierCurveTo(6.8, -28.0, 9.8, -24.2, 9.2, -19.5);
+    ctx.bezierCurveTo(8.5, -16.0, 4.5, -14.5, -6.2, -15.0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Pieghe morbide di cucitura alla base del cono del cappuccio (come nel dipinto!)
+    ctx.strokeStyle = isOmbra ? 'rgba(0,0,0,0.5)' : 'rgba(72, 55, 38, 0.35)';
+    ctx.lineWidth = 0.85;
+    ctx.beginPath();
+    ctx.moveTo(-7.2, -27.5);
+    ctx.quadraticCurveTo(-2.8, -26.8, 0.8, -28.8);
+    ctx.moveTo(-7.8, -31.2);
+    ctx.quadraticCurveTo(-4.5, -30.5, -2.0, -32.2);
+    ctx.stroke();
+
+    // Dettagli distintivi per Agnese (fiocco di seta rossa) o Taddeo (visiera/piuma d'ottone)
+    if (charId === 'agnese') {
+      ctx.fillStyle = '#e11d48';
+      ctx.strokeStyle = '#120a07';
+      ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.ellipse(-6.5, -26.5, 3.5, 1.8, -0.4, 0, TAU);
+      ctx.ellipse(-2.5, -27.8, 3.2, 1.6, 0.3, 0, TAU);
+      ctx.fill(); ctx.stroke();
+    } else if (charId === 'taddeo') {
+      ctx.fillStyle = '#d97706';
+      ctx.strokeStyle = '#120a07';
+      ctx.lineWidth = 0.9;
+      ctx.fillRect(-3, -29.5, 11, 2.4);
+      ctx.strokeRect(-3, -29.5, 11, 2.4);
+    }
+
+    // 6. VOLTO OVALE INCAVATO NERO CORVINO CON I DUE OCCHI TONDI BIANCHI LUMINOSI (1:1 RIFERIMENTO!)
+    // Bordo incavato del cappuccio attorno al viso
+    ctx.strokeStyle = isOmbra ? '#4c1d95' : 'rgba(85, 66, 46, 0.65)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.ellipse(3.6, -21.2, 4.9, 5.4, -0.06, 0, TAU);
+    ctx.stroke();
+
+    // Cavità nera profonda della maschera/viso
+    ctx.fillStyle = sinergie.piombo ? '#1e293b' : '#06070a';
+    ctx.beginPath();
+    ctx.ellipse(3.8, -21.2, 4.5, 5.0, -0.06, 0, TAU);
+    ctx.fill();
+
+    // I DUE OCCHI TONDI BIANCHI LUMINOSI (con alone caldo soffuso come nel dipinto!)
+    const eyeR = (shootTimer > 0 ? 1.55 : 1.30) * (sinergie.piombo ? 1.25 : 1.0);
+    for (const [ex, ey] of [[2.2, -21.0], [6.1, -21.2]]) {
+      const eg = ctx.createRadialGradient(ex, ey, 0.2, ex, ey, eyeR * 2.4);
+      eg.addColorStop(0, colOcchi);
+      eg.addColorStop(0.5, sinergie.patto_raggio ? 'rgba(239,68,68,0.55)' : 'rgba(255, 243, 200, 0.48)');
+      eg.addColorStop(1, 'rgba(255, 243, 200, 0)');
+      ctx.fillStyle = eg;
+      ctx.beginPath(); ctx.arc(ex, ey, eyeR * 2.4, 0, TAU); ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(ex, ey, eyeR, 0, TAU); ctx.fill();
+    }
+
+    // --- PROPOSTA 1: SINERGIE VISIVE DEGLI OGGETTI EQUIPAGGIATI SUL CORPO DI FERRUCCIO ---
+    // Triplo Occhio: 3° occhio luminoso sulla fronte della maschera nera!
+    if (sinergie.triplo) {
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath(); ctx.arc(4.1, -24.0, 1.25, 0, TAU); ctx.fill();
+    }
+    // Lente di San Leucio (20/20): occhialini d'ottone davanti ai due occhi luminosi!
+    if (sinergie.doppia) {
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 0.85;
+      ctx.beginPath();
+      ctx.arc(2.2, -21.0, 1.9, 0, TAU);
+      ctx.arc(6.1, -21.2, 1.9, 0, TAU);
+      ctx.stroke();
+    }
+    // Anello Cremisi: aureola cremisi dorata sopra il cappuccio conico!
+    if (sinergie.anello) {
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(-2, -42.5, 6.5, 2.0, -0.1, 0, TAU);
+      ctx.stroke();
+    }
+    // Maschera dei 4 Venti: mascherine dorate ai lati del cappuccio!
+    if (sinergie.venti) {
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(-8.2, -21.5, 2.2, 0, TAU);
+      ctx.fill();
+    }
+    // Catena della Chiusa: archi elettrici azzurri attorno alle spalle!
+    if (sinergie.catena && (tick % 6 < 4)) {
+      ctx.strokeStyle = '#67e8f9';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(-7, -14); ctx.lineTo(-2, -17); ctx.lineTo(4, -13);
+      ctx.stroke();
+    }
+    // Patto d'Ombra (Raggio Cremisi): corna d'ombra sul cappuccio!
+    if (sinergie.patto_raggio) {
+      ctx.fillStyle = '#1f0909';
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.moveTo(-1, -28); ctx.quadraticCurveTo(4, -35, 8, -32); ctx.quadraticCurveTo(4, -29, 1, -26);
+      ctx.fill(); ctx.stroke();
+    }
+
+    // 7. STOCCO SOTTILE A SPILLO IMPUGNATO NELLA MANO NERA (come nell'immagine di riferimento!)
+    // O COLTELLO DELLA BURATTINAIA:
+    if ((haSpada || sinergie.patto_coltello) && swordAnimTick < 0) {
+      ctx.save();
+      ctx.translate(1.5, -1.0);
+      // Guardia a coccia scura/ottone
+      ctx.strokeStyle = '#1c1613';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-1.5, 1.5);
+      ctx.lineTo(2.5, -2.0);
+      ctx.stroke();
+      // Lama ad ago sottile puntata in basso in avanti (identica a media_1794171707580_83eb1b57.jpg!)
+      const bladeGrad = ctx.createLinearGradient(0, 0, 15, 11);
+      bladeGrad.addColorStop(0, '#2a2421');
+      bladeGrad.addColorStop(0.5, sinergie.patto_coltello ? '#fca5a5' : '#d6d3cd');
+      bladeGrad.addColorStop(1, '#57534e');
+      ctx.strokeStyle = bladeGrad;
+      ctx.lineWidth = sinergie.patto_coltello ? 2.1 : 1.35;
+      ctx.beginPath();
+      ctx.moveTo(0.5, -0.2);
+      ctx.lineTo(15.5, 10.5);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.restore();
+
+    // Se sta eseguendo il fendente in 6 frame, disegna l'arco tagliente luminoso + la lama in rotazione!
+    if (haSpada && swordAnimTick >= 0) {
+      const prog = Math.min(1, swordAnimTick / 17);
+      const aStart = swordAngle - 1.05;
+      const aEnd = swordAngle + 1.05;
+      const aCurr = aStart + (aEnd - aStart) * prog;
+      ctx.save();
+      ctx.translate(px, py - 6);
+      // Mezzaluna del fendente
+      ctx.strokeStyle = `rgba(255, 248, 225, ${(1 - prog * 0.65).toFixed(2)})`;
+      ctx.lineWidth = 5 * (1 - prog * 0.5);
+      ctx.beginPath();
+      ctx.arc(0, 0, 26, aStart, aCurr);
+      ctx.stroke();
+      ctx.strokeStyle = sinergie.fuoco ? '#fb923c' : '#ffffff';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(aCurr) * 6, Math.sin(aCurr) * 6);
+      ctx.lineTo(Math.cos(aCurr) * 29, Math.sin(aCurr) * 29);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // Grandi Mani di Marionettista col bilancino in legno e merletto borbonico
+  function disegnaManoMarionettaPittorica() {
+    let args = Array.from(arguments);
+    if (args[0] && typeof args[0].save === 'function') args.shift();
+    const cx = args[0] || 0;
+    const cy = args[1] || 0;
+    const lato = typeof args[2] === 'boolean' ? (args[2] ? -1 : 1) : (args[2] ?? 1);
+    const scala = args[3] ?? 1;
+    let tick = 0, flash = false;
+    for (let i = 4; i < args.length; i++) {
+      if (typeof args[i] === 'boolean') flash = args[i];
+      else if (typeof args[i] === 'number') tick = args[i];
+    }
+    const swayX = Math.sin(tick * 0.04 + lato) * 4;
+    const swayY = Math.cos(tick * 0.05 + lato) * 2;
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.translate(cx + swayX, cy + swayY);
+    ctx.scale(lato * scala, scala);
+
+    // Polsino con merletto barocco
+    ctx.fillStyle = flash ? '#ffffff' : '#160d08';
+    ctx.strokeStyle = '#f9cb40';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(-18, -22);
+    ctx.lineTo(-13, -7);
+    ctx.quadraticCurveTo(0, -3, 13, -7);
+    ctx.lineTo(18, -22);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Mano scolpita in porcellana/legno d'ombra con dita articolate
+    const hg = ctx.createLinearGradient(-14, -6, 14, 16);
+    hg.addColorStop(0, flash ? '#ffffff' : '#f5e4c3');
+    hg.addColorStop(1, flash ? '#fca5a5' : '#b89466');
+    ctx.fillStyle = hg;
+    ctx.strokeStyle = '#0d0704';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(-12, -6);
+    ctx.lineTo(-19, 5);
+    ctx.quadraticCurveTo(-15, 9, -10, 3);
+    ctx.lineTo(-11, 15);
+    ctx.quadraticCurveTo(-8, 18, -5, 6);
+    ctx.lineTo(-1, 17);
+    ctx.quadraticCurveTo(2, 19, 3, 6);
+    ctx.lineTo(9, 15);
+    ctx.quadraticCurveTo(12, 17, 11, 5);
+    ctx.lineTo(17, 11);
+    ctx.quadraticCurveTo(19, 8, 12, -6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Bilancino di legno (croce da burattinaio)
+    ctx.fillStyle = '#3b1d0b';
+    ctx.strokeStyle = '#f9cb40';
+    ctx.lineWidth = 1.0;
+    ctx.fillRect(-22, 13, 44, 4);
+    ctx.strokeRect(-22, 13, 44, 4);
+    ctx.fillStyle = '#f9cb40';
+    for (const kx of [-20, 0, 20]) {
+      ctx.beginPath(); ctx.arc(kx, 15, 1.8, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Disegno pittorico differenziato per ogni archetipo di Nemico stile The Binding of Isaac!
+  function disegnaNemicoPittorico() {
+    const args = Array.from(arguments);
+    if (args[0] && typeof args[0].save === 'function') args.shift();
+    const n = args[0];
+    const tick = args[1] || 0;
+    if (!n) return;
+    const { x, y, tipo, flash, champion, state, stateTimer, maskOpen } = n;
+    const isFlash = flash > 0;
+    const flip = player.x < x ? -1 : 1;
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+
+    // Aura eventuale da Campione Colorato (Proposta 6: 🔴 Cremisi, 🟡 Dorato, 🔵 Elettrico)
+    if (champion) {
+      const colChamp = champion === 'cremisi' ? 'rgba(239,68,68,0.38)' : champion === 'dorato' ? 'rgba(250,204,21,0.42)' : 'rgba(56,189,248,0.42)';
+      const cg = ctx.createRadialGradient(x, y - 6, 2, x, y - 6, n.r + 9);
+      cg.addColorStop(0, colChamp);
+      cg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = cg;
+      ctx.beginPath(); ctx.arc(x, y - 6, n.r + 9, 0, TAU); ctx.fill();
+    }
+
+    // Se è immobilizzato dalle Forbici di Gaetano (Attivo [Q]), mostra i fili tagliati!
+    if (n.stunTicks > 0) {
+      ctx.strokeStyle = '#67e8f9';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(x, y - 18, 6, 0, TAU);
+      ctx.stroke();
+    }
+
+    // Telegrafo a terra per il Gatto d'Ombra quando prepara il balzo (come in tavola-presepe-C!)
+    if (tipo === 'gatto' && state === 'crouch') {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.78)';
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(n.leapTargetX ?? player.x, n.leapTargetY ?? player.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(x, y - 6, 13, 0, TAU);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.translate(x, y);
+    if (champion) ctx.scale(1.18, 1.18);
+
+    const tint = isFlash
+      ? '#ffffff'
+      : champion === 'cremisi'
+        ? '#dc2626'
+        : champion === 'dorato'
+          ? '#eab308'
+          : champion === 'elettrico'
+            ? '#0284c7'
+            : null;
+
+    if (tipo === 'vespa_cieca' || tipo === 'vespa') {
+      // 1. MOSCA / VESPA CIECA (Isaac Attack Fly / Pooter): vola contro di te ronzando!
+      const wingY = Math.sin(tick * 0.85) * 4.5;
+      ctx.scale(flip, 1);
+      // Ali translucide vibranti
+      ctx.fillStyle = 'rgba(224, 242, 254, 0.55)';
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.ellipse(-3, -13 + wingY * 0.4, 7, 3.8, -0.35, 0, TAU);
+      ctx.ellipse(3, -14 - wingY * 0.3, 6, 3.2, 0.35, 0, TAU);
+      ctx.fill(); ctx.stroke();
+      // Addome a strisce o nero-insetto per la vespa cieca
+      ctx.fillStyle = tint || (tipo === 'vespa_cieca' ? '#1e1b24' : '#d97706');
+      ctx.strokeStyle = '#090604';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(0, -6, 7.5, 5.5, 0, 0, TAU);
+      ctx.fill(); ctx.stroke();
+      // Occhi rossi incandescenti
+      ctx.fillStyle = tipo === 'vespa_cieca' ? '#ef4444' : '#fef08a';
+      ctx.beginPath();
+      ctx.arc(4.2, -7.2, 1.8, 0, TAU);
+      ctx.arc(1.5, -7.0, 1.5, 0, TAU);
+      ctx.fill();
+    } else if (tipo === 'bomba_ferma') {
+      // 2. BOZZO / BURATTINO ESPLOSIVO FERMO (Isaac Boil / Mulliboom):
+      // Sta fermo e pulsa, esplodendo se ti avvicini o quando muore!
+      const pulse = 1 + Math.sin(tick * (state === 'primed' ? 0.65 : 0.18)) * (state === 'primed' ? 0.22 : 0.08);
+      ctx.scale(pulse, 1 / (0.5 + pulse * 0.5));
+      if (state === 'primed') {
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(0, -6, 26, 0, TAU); ctx.stroke();
+      }
+      const bg = ctx.createRadialGradient(-2, -9, 1, 0, -7, 12);
+      bg.addColorStop(0, isFlash ? '#ffffff' : state === 'primed' ? '#fef08a' : '#fb923c');
+      bg.addColorStop(0.6, tint || '#b91c1c');
+      bg.addColorStop(1, '#1f0808');
+      ctx.fillStyle = bg;
+      ctx.strokeStyle = '#090504';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.arc(0, -7, 10.5, 0, TAU);
+      ctx.fill(); ctx.stroke();
+      // Miccia accesa in testa e maschera crepata
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(0, -17); ctx.quadraticCurveTo(4, -22, 6, -20);
+      ctx.stroke();
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(6, -20, 2.2 + (tick % 3) * 0.5, 0, TAU);
+      ctx.arc(-3.2, -8, 1.6, 0, TAU);
+      ctx.arc(3.2, -8, 1.6, 0, TAU);
+      ctx.fill();
+    } else if (tipo === 'gatto') {
+      // 3. GATTO D'OMBRA (Isaac Trite / Hopper): si accuccia e balza senza sparare!
+      ctx.scale(flip, state === 'crouch' ? 0.78 : 1.0);
+      ctx.fillStyle = tint || '#140e0b';
+      ctx.strokeStyle = 'rgba(242, 194, 120, 0.55)';
+      ctx.lineWidth = 1.1;
+      // Coda a frusta
+      ctx.beginPath();
+      ctx.moveTo(-8, -6);
+      ctx.bezierCurveTo(-16, -10, -18, -19, -11, -22);
+      ctx.stroke();
+      // Corpo felino inarcato col pelo irto
+      ctx.beginPath();
+      ctx.moveTo(10, -1);
+      ctx.bezierCurveTo(12, -7, 8, -13, 2, -14);
+      ctx.lineTo(-2, -17); ctx.lineTo(-4, -14);
+      ctx.lineTo(-8, -16); ctx.lineTo(-10, -11);
+      ctx.quadraticCurveTo(-12, -4, -8, -1);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Testa con orecchie lunghe a punta
+      ctx.beginPath();
+      ctx.moveTo(5, -9);
+      ctx.lineTo(4, -19); ctx.lineTo(8, -13);
+      ctx.lineTo(12, -19); ctx.lineTo(12, -10);
+      ctx.lineTo(15, -7);
+      ctx.quadraticCurveTo(10, -4, 5, -6);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Occhi gialli o rossi in fase di balzo
+      ctx.fillStyle = state === 'crouch' || state === 'leap' ? '#ef4444' : '#fde047';
+      ctx.beginPath();
+      ctx.arc(9.5, -9.5, 1.5, 0, TAU);
+      ctx.arc(12.2, -9.0, 1.4, 0, TAU);
+      ctx.fill();
+    } else if (tipo === 'maschera') {
+      // 4. MASCHERA DI PULCINELLA (Isaac Host): chiusa è corazzata, si apre per sparare!
+      const openY = maskOpen ? -5 : 0;
+      // Base / mantello sotto la maschera
+      ctx.fillStyle = maskOpen ? '#dc2626' : '#334155';
+      ctx.strokeStyle = '#090604';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(0, -5, 8.5, 0, TAU);
+      ctx.fill(); ctx.stroke();
+      if (maskOpen) {
+        // Nucleo vulnerabile rosso vivo quando si apre per sparare!
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.arc(-2.5, -4, 1.6, 0, TAU);
+        ctx.arc(2.5, -4, 1.6, 0, TAU);
+        ctx.fill();
+      }
+      // Calotta di porcellana/avorio sopra
+      ctx.fillStyle = tint || (maskOpen ? '#f8fafc' : '#cbd5e1');
+      ctx.beginPath();
+      ctx.ellipse(0, -8 + openY, 9.5, 7.5, 0, 0, TAU);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = maskOpen ? '#ef4444' : '#0f172a';
+      ctx.beginPath();
+      ctx.arc(-3, -8 + openY, 1.6, 0, TAU);
+      ctx.arc(3, -8 + openY, 1.6, 0, TAU);
+      ctx.fill();
+    } else if (tipo === 'statua') {
+      // 5. STATUA / TORRIONE DI MARMO (Isaac Grimace): ferma, spara croci rotanti!
+      ctx.fillStyle = tint || '#64748b';
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.3;
+      ctx.fillRect(-10, -18, 20, 18);
+      ctx.strokeRect(-10, -18, 20, 18);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(-12, -20, 24, 4);
+      ctx.strokeRect(-12, -20, 24, 4);
+      ctx.fillStyle = n.shootCd < 18 ? '#ef4444' : '#facc15';
+      ctx.beginPath();
+      ctx.arc(-3.5, -10, 2.0, 0, TAU);
+      ctx.arc(3.5, -10, 2.0, 0, TAU);
+      ctx.fill();
+    } else {
+      // 6. GUARDIA DI PIOMBO / PREDONE D'ORO (Isaac Knight / Greed Mob)
+      ctx.scale(flip, 1);
+      ctx.fillStyle = tint || (tipo === 'predone' ? '#eab308' : '#b91c1c');
+      ctx.strokeStyle = '#090604';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-8, 0); ctx.lineTo(-6, -13); ctx.lineTo(6, -13); ctx.lineTo(8, 0);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Testa ed elmo piumato
+      ctx.fillStyle = tipo === 'predone' ? '#fef08a' : '#e2e8f0';
+      ctx.beginPath(); ctx.arc(0, -17, 6.2, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#090604';
+      ctx.beginPath(); ctx.arc(2.2, -17, 1.5, 0, TAU); ctx.fill();
+      // Baionetta/Lancia puntata
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(3, -8); ctx.lineTo(14, -8); ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  // Disegno pittorico dei Boss in stile The Binding of Isaac (con ombre di salto Monstro, cariche Chub, ecc.)
+  function disegnaBossPittorico() {
+    const args = Array.from(arguments);
+    if (args[0] && typeof args[0].save === 'function') args.shift();
+    const b = args[0];
+    const tick = args[1] || 0;
+    if (!b) return;
+    const { x, y, bossId, flash, airZ = 0 } = b;
+    const isFlash = flash > 0;
+    const flip = player.x < x ? -1 : 1;
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+
+    // Ombra a terra (fondamentale quando Re Gatto / Monstro salta in alto fuori campo!)
+    const shadowScale = Math.max(0.35, 1 - airZ / 180);
+    ctx.fillStyle = airZ > 10 ? 'rgba(220, 38, 38, 0.55)' : 'rgba(8, 5, 3, 0.65)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 8, 22 * shadowScale, 8 * shadowScale, 0, 0, TAU);
+    ctx.fill();
+    if (airZ > 10) {
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(x, y + 8, 24 * shadowScale, 9 * shadowScale, 0, 0, TAU);
+      ctx.stroke();
+    }
+
+    ctx.translate(x, y - airZ);
+
+    if (bossId === 'donna-luciana') {
+      // DONNA LUCIANA — LA BURATTINAIA DEL VELO (con gonna barocca, giglio cremisi, corona e le 2 Mani giganti!)
+      const floatY = Math.sin(tick * 0.08) * 3;
+      ctx.translate(0, floatY);
+      // Fili d'oro che salgono anche dai suoi polsi verso l'alto (l'escamotage del Loop Infinito!)
+      ctx.strokeStyle = 'rgba(249, 203, 64, 0.72)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(-64, -18); ctx.lineTo(-64, -180);
+      ctx.moveTo(64, -18);  ctx.lineTo(64, -180);
+      ctx.moveTo(0, -34);   ctx.lineTo(0, -180);
+      ctx.stroke();
+
+      // Gonna ampia barocca nera e oro
+      const dg = ctx.createLinearGradient(0, -28, 0, 8);
+      dg.addColorStop(0, isFlash ? '#ffffff' : '#450a0a');
+      dg.addColorStop(1, isFlash ? '#fca5a5' : '#0f0504');
+      ctx.fillStyle = dg;
+      ctx.strokeStyle = '#f9cb40';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-10, -20);
+      ctx.bezierCurveTo(-24, -10, -30, 2, -32, 8);
+      ctx.quadraticCurveTo(0, 12, 32, 8);
+      ctx.bezierCurveTo(30, 2, 24, -10, 10, -20);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Volto di porcellana e Corona d'oro
+      ctx.fillStyle = isFlash ? '#ffffff' : '#f5e4c3';
+      ctx.beginPath(); ctx.arc(0, -28, 9.5, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(-3.2, -28, 1.8, 0, TAU);
+      ctx.arc(3.2, -28, 1.8, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#f9cb40';
+      ctx.beginPath();
+      ctx.moveTo(-9, -35); ctx.lineTo(-7, -44); ctx.lineTo(-2, -38);
+      ctx.lineTo(0, -46);  ctx.lineTo(2, -38);  ctx.lineTo(7, -44); ctx.lineTo(9, -35);
+      ctx.closePath();
+      ctx.fill();
+
+      // Le due Grandi Mani di Marionetta scese ai suoi lati!
+      ctx.restore();
+      const slamOff = b.handSlamY || 0;
+      disegnaManoMarionettaPittorica(x - 64, y - 18 + slamOff, 1, 1.0, tick, isFlash);
+      disegnaManoMarionettaPittorica(x + 64, y - 18 + slamOff, -1, 1.0, tick, isFlash);
+      return;
+    }
+
+    ctx.scale(flip, 1);
+    if (bossId === 're-gatto') {
+      // IL GATTO DEI QUATTRO CANTI (Monstro): grande felino d'ombra coronato che salta e schianta a terra!
+      ctx.fillStyle = isFlash ? '#ffffff' : '#1c120d';
+      ctx.strokeStyle = '#f9cb40';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.ellipse(0, -10, 20, 14, 0, 0, TAU);
+      ctx.fill(); ctx.stroke();
+      // Orecchie e corona
+      ctx.beginPath();
+      ctx.moveTo(-14, -18); ctx.lineTo(-18, -32); ctx.lineTo(-6, -22);
+      ctx.moveTo(6, -22);   ctx.lineTo(18, -32);  ctx.lineTo(14, -18);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(4, -13, 3.0, 0, TAU);
+      ctx.arc(12, -12, 2.8, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#f9cb40';
+      ctx.beginPath();
+      ctx.moveTo(-6, -23); ctx.lineTo(-4, -31); ctx.lineTo(0, -26); ctx.lineTo(4, -31); ctx.lineTo(6, -23);
+      ctx.closePath(); ctx.fill();
+    } else if (bossId === 'regina-vespa') {
+      // LA REGINA DELLE VESPE (Duke of Flies): grande regina alata che genera vespe orbitanti!
+      const wy = Math.sin(tick * 0.6) * 5;
+      ctx.fillStyle = 'rgba(224, 242, 254, 0.55)';
+      ctx.strokeStyle = '#f9cb40';
+      ctx.beginPath();
+      ctx.ellipse(-8, -22 + wy * 0.4, 15, 7, -0.3, 0, TAU);
+      ctx.ellipse(8, -22 - wy * 0.4, 15, 7, 0.3, 0, TAU);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = isFlash ? '#ffffff' : '#ca8a04';
+      ctx.strokeStyle = '#090604';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.ellipse(0, -11, 18, 13, 0, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.arc(6, -13, 2.8, 0, TAU); ctx.arc(12, -12, 2.5, 0, TAU); ctx.fill();
+    } else if (bossId === 'colosso-statua') {
+      // IL CUSTODE DI MARMO (Gurdy / Mega Maw): colosso centrale di pietra!
+      ctx.fillStyle = isFlash ? '#ffffff' : '#475569';
+      ctx.strokeStyle = '#f9cb40';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(-22, 4); ctx.lineTo(-18, -28); ctx.lineTo(0, -36); ctx.lineTo(18, -28); ctx.lineTo(22, 4);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.arc(-6, -16, 3.2, 0, TAU); ctx.arc(6, -16, 3.2, 0, TAU); ctx.fill();
+    } else {
+      // CAPITANO DI PIOMBO (Chub charge) o SPEZZAFILI D'OTTONE
+      ctx.fillStyle = isFlash ? '#ffffff' : '#991b1b';
+      ctx.strokeStyle = '#f9cb40';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.roundRect(-16, -26, 32, 28, 6);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath(); ctx.arc(5, -16, 2.8, 0, TAU); ctx.arc(11, -16, 2.8, 0, TAU); ctx.fill();
+      // Lancia / Forbice d'ottone gigante
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(6, -8); ctx.lineTo(26, -8); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  const SPRITE_PROIETTILI = {
+    base: [
+      '..kkkk..',
+      '.kwwwwk.',
+      'kwwccwwk',
+      'kwccccsk',
+      'kwccccsk',
+      'kssccssk',
+      '.kssssk.',
+      '..kkkk..',
+    ],
+    fuoco: [
+      '...kk...',
+      '..kook..',
+      '.kooyyk.',
+      'koywwwyk',
+      'koyyyyyk',
+      'kroooork',
+      '.krrrrk.',
+      '..kkkk..',
+    ],
+    elettrico: [
+      '..kkkk..',
+      '.kaaaak.',
+      'kawwwwak',
+      'kawaaawk',
+      'kawwwwak',
+      'kAAaaAAk',
+      '.kAAAAk.',
+      '..kkkk..',
+    ],
+    cremisi: [
+      '..kkkk..',
+      '.krrrrk.',
+      'krwwwwrk',
+      'krwrrrrk',
+      'krrrrrRk',
+      'kRRrrRRk',
+      '.kRRRRk.',
+      '..kkkk..',
+    ],
+    piombo: [
+      '..kkkk..',
+      '.kggggk.',
+      'kgwwwwgk',
+      'kggggGGk',
+      'kGGGDDGk',
+      'kDDDDDDk',
+      '.kDDDDk.',
+      '..kkkk..',
+    ],
+    nemico: [
+      '..kkkk..',
+      '.kppppk.',
+      'kpwwwwpk',
+      'kpwppprk',
+      'kprrrrRk',
+      'kPPrrPPk',
+      '.kPPPPk.',
+      '..kkkk..',
+    ],
+    splash: [
+      [
+        '..k..k..',
+        '.kwkkwk.',
+        'kwwwwwwk',
+        '.kwwwwk.',
+        'kwwwwwwk',
+        '.kwkkwk.',
+        '..k..k..',
+        '........',
+      ],
+      [
+        'k..kk..k',
+        '.kw..wk.',
+        'kw....wk',
+        'k......k',
+        'kw....wk',
+        '.kw..wk.',
+        'k..kk..k',
+        '........',
+      ],
+      [
+        'k......k',
+        '.kw..wk.',
+        '........',
+        '..k..k..',
+        '........',
+        '.kw..wk.',
+        'k......k',
+        '........',
+      ],
+      [
+        'k......k',
+        '........',
+        '........',
+        '........',
+        '........',
+        '........',
+        'k......k',
+        '........',
+      ],
+    ],
+  };
+
+  const SPRITE_OGGETTI = {
+    forbici: [
+      '..kk....kk..',
+      '.kyyk..kyyk.',
+      'ky..k..k..yk',
+      '.kyyk..kyyk.',
+      '..kkk..kkk..',
+      '....kyyk....',
+      '...kggggk...',
+      '..kgg..ggk..',
+      '.kgg....ggk.',
+      '.kwk....kwk.',
+      '............',
+      '............',
+    ],
+    tamburello: [
+      '...kkkkkk...',
+      '.kkyyyyyykk.',
+      'kyyccccccyyk',
+      'kyccccccccyk',
+      'kyccrrrrccyk',
+      'kyccccccccyk',
+      'kyyccccccyyk',
+      '.kkyyyyyykk.',
+      '...kkkkkk...',
+      '............',
+      '............',
+      '............',
+    ],
+    ampolla: [
+      '....kkkk....',
+      '....kyyk....',
+      '....kkkk....',
+      '...kwwwwk...',
+      '..kwrrrrwk..',
+      '.kwrrrrrrwk.',
+      '.kwrrrrrrwk.',
+      '..kRRRRRRk..',
+      '...kkkkkk...',
+      '............',
+      '............',
+      '............',
+    ],
+    patto_raggio: [
+      '.kk......kk.',
+      'krrk....krrk',
+      'kRRkkkkkkRRk',
+      '.krrrrrrrrk.',
+      '..krrwwrrk..',
+      '.krrrwwrrrk.',
+      'krrk.kk.krrk',
+      'kRk..kk..kRk',
+      '....krrk....',
+      '....kkkk....',
+      '............',
+      '............',
+    ],
+    patto_sacro: [
+      '....kyyk....',
+      '..kkywwykk..',
+      '....kyyk....',
+      '.kkkk..kkkk.',
+      'krrrrkkrrrrk',
+      'krwyywwyyrwk',
+      'krrrwwwwrrrk',
+      '.krrrrrrrrk.',
+      '..krrrrrrk..',
+      '...kRRRRk...',
+      '....kkkk....',
+      '............',
+    ],
+    patto_coltello: [
+      '.........kkk',
+      '........kwwk',
+      '.......kwwgk',
+      '......kwwggk',
+      '.....kwwggk.',
+      '....krrggk..',
+      '...kyyyyk...',
+      '..kRRRRk....',
+      '.kRRRRk.....',
+      'kkkkkk......',
+      '............',
+      '............',
+    ],
+    spada: [
+      '.........kkk',
+      '........kwwk',
+      '.......kggk.',
+      '......kggk..',
+      '.....kggk...',
+      '..kkkygk....',
+      '.kyyyyk.....',
+      '..kMyyk.....',
+      '.kMMk.k.....',
+      'kMMk........',
+      'kkk.........',
+      '............',
+    ],
+    triplo: [
+      '....kkkk....',
+      '..kkwwwwkk..',
+      '.kwwrrrrwwk.',
+      '.kwrrrrrrwk.',
+      'kwwrwwwwrwwk',
+      'kwwrwkkrwwwk',
+      'kwwrwwwwrwwk',
+      '.kwrrrrrrwk.',
+      '.kwwrrrrwwk.',
+      '..kkwwwwkk..',
+      '....kkkk....',
+      '............',
+    ],
+    fuoco: [
+      '.....kk.....',
+      '....kook....',
+      '...kooyyk...',
+      '..koyywwyk..',
+      '.koyywwwwyk.',
+      '.koryyyyyrok',
+      'korrrooorrrk',
+      'krrrrrrrrrrk',
+      '.kRRRRRRRRk.',
+      '..kkkkkkkk..',
+      '............',
+      '............',
+    ],
+    piombo: [
+      '...kkkkkk...',
+      '..kggggggk..',
+      '.kggwwwwggk.',
+      'kggwwggggGGk',
+      'kggggggggGGk',
+      'kggggGGGGGGk',
+      'kGGGGDDDDGGk',
+      '.kDDDDDDDDk.',
+      '..kDDDDDDk..',
+      '...kkkkkk...',
+      '............',
+      '............',
+    ],
+    catena: [
+      '....kkkk....',
+      '...kaaaak...',
+      '..kawwwwak..',
+      '..kawaaawk..',
+      '...kaaaak...',
+      '....kyyk....',
+      '...kaaaak...',
+      '..kawwwwak..',
+      '..kawaaawk..',
+      '...kaaaak...',
+      '....kkkk....',
+      '............',
+    ],
+    anello: [
+      '....kkkk....',
+      '..krrrrrrk..',
+      '.krrwwwwrrk.',
+      '.krrrrrrrrk.',
+      '..kyyyyyyk..',
+      '.kyykkkkyyk.',
+      'kyyk....kyyk',
+      'kyyk....kyyk',
+      '.kyykkkkyyk.',
+      '..kyyyyyyk..',
+      '....kkkk....',
+      '............',
+    ],
+    doppia: [
+      '.kkkk..kkkk.',
+      'kwwwwkkwwwwk',
+      'kwaawwkwaawk',
+      'kwaawwkwaawk',
+      'kwwwwkkwwwwk',
+      '.kkkk..kkkk.',
+      '............',
+      '....kkkk....',
+      '...kyyyyk...',
+      '....kkkk....',
+      '............',
+      '............',
+    ],
+    mercurio: [
+      '.....kk.....',
+      '....kggk....',
+      '...kgwwgk...',
+      '..kggwwggk..',
+      '.kgggwwgggk.',
+      'kggggggggggk',
+      'kggggggggGGk',
+      'kGGGGGGGGGGk',
+      '.kGGGGGGGGk.',
+      '..kkkkkkkk..',
+      '............',
+      '............',
+    ],
+    venti: [
+      '....kkkk....',
+      '..kcccccck..',
+      '.kccwwwwcck.',
+      'kcckkcckkcck',
+      'kccccccccssk',
+      'kccsskksscck',
+      '.kcckddkcck.',
+      '..kcccccck..',
+      '....kkkk....',
+      '............',
+      '............',
+      '............',
+    ],
+    cuore: [
+      '.kkkk..kkkk.',
+      'krrrrkkrrrrk',
+      'krwwrrrrrrrk',
+      'krwrrrrrrrrk',
+      'krrrrrrrrrRk',
+      '.krrrrrrrRk.',
+      '..krrrrrRk..',
+      '...krrrRk...',
+      '....kRRk....',
+      '.....kk.....',
+      '............',
+      '............',
+    ],
+    stivali: [
+      '....kkkkkk..',
+      '...kyyyyyyk.',
+      '...kyrrrrryk',
+      '...kyrrrrryk',
+      '...kyyyyyyk.',
+      '.kkkyyyyyk..',
+      'kyyyyyyyyk..',
+      'kMMMMMMMMk..',
+      'kkkkkkkkkk..',
+      '............',
+      '............',
+      '............',
+    ],
+    mantice: [
+      '...kkkkkk...',
+      '..kMMMMMMk..',
+      '.kMMyyyyyMk.',
+      'kMMywwwwyyMk',
+      'kMMyyyyyyyMk',
+      '.kMMMMMMMok.',
+      '..kkkkkkook.',
+      '........kggk',
+      '.........kkk',
+      '............',
+      '............',
+      '............',
+    ],
+    chiodo: [
+      '....kkkkkk..',
+      '...kggggggk.',
+      '...kggwwggk.',
+      '....kkggkk..',
+      '.....kggk...',
+      '.....kGGk...',
+      '.....kggk...',
+      '.....kGGk...',
+      '.....kDDk...',
+      '......kk....',
+      '............',
+      '............',
+    ],
+    mezzaMaschera: [
+      '..kkkk......',
+      '.krrrrk.....',
+      'krwwrrk.....',
+      'krrrrrRk....',
+      '.krrrrRk....',
+      '..krrrRk....',
+      '...krrRk....',
+      '....krRk....',
+      '.....kkk....',
+      '............',
+    ],
+    moneta1: [
+      '...kkkk...',
+      '..kyyyyk..',
+      '.kywwwwyk.',
+      '.kywyyoyk.',
+      '.kyyooyyk.',
+      '.kyyyyyyk.',
+      '..koooOk..',
+      '...kkkk...',
+    ],
+    moneta3: [
+      '...kkkk...',
+      '..kaaaak..',
+      '.kawwwwak.',
+      '.kawaAAak.',
+      '.kaaAAAak.',
+      '.kaaaaaak.',
+      '..kAAAAk..',
+      '...kkkk...',
+    ],
+  };
+
+  const SPRITE_SCENA = {
+    piedistallo: [
+      '..kkkkkkkkkkkk..',
+      '.kyyyyyyyyyyyyk.',
+      '.kggggggggggggk.',
+      '..kGGGGGGGGGGk..',
+      '...kggggggggk...',
+      '...kGGGGGGGGk...',
+      '..kggggggggggk..',
+      '.kGGGGGGGGGGGGk.',
+      '.kkkkkkkkkkkkkk.',
+    ],
+    piedistalloOro: [
+      '..kkkkkkkkkkkk..',
+      '.kwwwwwwwwwwwwk.',
+      '.kyyyyyyyyyyyyk.',
+      '..koooooooooOk..',
+      '...kyyyyyyyyk...',
+      '...koooooooOk...',
+      '..kyyyyyyyyyyk..',
+      '.koooooooooooOk.',
+      '.kkkkkkkkkkkkkk.',
+    ],
+    incudine: [
+      '..kkkkkkkkkkkk..',
+      'kggggggggggggggk',
+      'kggGGGGGGGGGGggk',
+      '.kkkkGGGGGGkkkk.',
+      '....kGGGGGGk....',
+      '...kGGGGGGGGk...',
+      '..kGGGGGGGGGGk..',
+      '.kkkkkkkkkkkkkk.',
+    ],
+    mercante: [
+      '.....kkkkkkkkkk.....',
+      '....kMMMMMMMMMMk....',
+      '...kMyyaaMMyyaaMk...',
+      '...kMyyaaMMyyaaMk...',
+      '...kkkkkkkkkkkkkk...',
+      '....kccccsssscck....',
+      '...kcckkwccwkkcck...',
+      '...kcccggggggccck...',
+      '..kggggwwwwwwggggk..',
+      '.krrMMMwwwwwwMMMrrk.',
+      '.krkMMMyyyyyyMMMkggk',
+      '.keekMMMMMMMMMMkeGGk',
+      '...kMMMooooooMMMk.k.',
+      '...kMMMMMMMMMMMMk...',
+      '....kkkkkkkkkkkk....',
+    ],
+    mercante1: [
+      '.....kkkkkkkkkk.....',
+      '....kMMMMMMMMMMk....',
+      '...kMyyaaMMyyaaMk...',
+      '...kMyyaaMMyyaaMk...',
+      '...kkkkkkkkkkkkkk...',
+      '....kccccsssscck....',
+      '...kcckkwccwkkcck...',
+      '...kcccggggggccck...',
+      '..kggggwwwwwwggggk..',
+      '.krrMMMwwwwwwMMMrrk.',
+      '.krkMMMyyyyyyMMMkrk.',
+      '.keekMMMMMMMMMMkeggk',
+      '...kMMMooooooMMMkeGk',
+      '...kMMMMMMMMMMMMk...',
+      '....kkkkkkkkkkkk....',
+    ],
+    braciere0: [
+      '.....kk.....',
+      '....kook....',
+      '...kooyyk...',
+      '..koywwwyk..',
+      '.krrrrrrrrk.',
+      'kGGGGGGGGGGk',
+      '.kGGGGGGGGk.',
+      '..kddkkddk..',
+      '..kkkkkkkk..',
+    ],
+    braciere1: [
+      '....kk......',
+      '...kyyk.....',
+      '..kooyyk....',
+      '..koywwyk...',
+      '.krrrrrrrrk.',
+      'kGGGGGGGGGGk',
+      '.kGGGGGGGGk.',
+      '..kddkkddk..',
+      '..kkkkkkkk..',
+    ],
+    urna: [
+      '...kkkkkk...',
+      '..kMMMMMMk..',
+      '...kmmmmk...',
+      '..kmmwwmmk..',
+      '.kmmmyyyymk.',
+      '.kmmmmmmmmk.',
+      '..kMMMMMMk..',
+      '...kkkkkk...',
+    ],
+    colonna: [
+      '..kkkkkkkk..',
+      '.kggggggggk.',
+      '.kggGGGGggk.',
+      '..kgGGGGgk..',
+      '..kgGGGGgk..',
+      '..kgGGGGgk..',
+      '.kggGGGGggk.',
+      '.kDDDDDDDDk.',
+      '..kkkkkkkk..',
+    ],
+  };
+
+  // ===========================================================================
+  // BILANCIAMENTO REALE STILE THE BINDING OF ISAAC:
+  // - Ferruccio NON ha il filo (solo i nemici, i boss e il mercante hanno i fili!)
+  // - Mappa ad esplorazione (solo quando entri in una stanza compare sulla minimappa)
+  // - 1 Stanza Segreta per piano con mob dorati (il modo principale per fare soldi!)
+  // - 1 stanza su 3 ha un OGGETTO GRATIS (tier 'base') e 1 stanza su 10 ha un OGGETTO FORTE GRATIS (tier 'forte')
+  // - Economia stile Isaac: parti da 0🪙, i mostri normali non regalano piogge di monete,
+  //   devi risparmiare e cercare la Stanza Segreta per comprare gli oggetti forti (15-18🪙) ne La Fucina!
+  // ===========================================================================
+  const STANZE_PER_PIANO_CICLO = { 1: 5, 2: 7, 3: 8, 4: 9 };
+
+  // --- PROPOSTA 3: ROSTER DI 4 PERSONAGGI GIOCABILI STILE THE BINDING OF ISAAC ---
+  const PERSONAGGI_GIOCABILI = {
+    ferruccio: {
+      id: 'ferruccio', nome: 'Ferruccio', titolo: 'Il Burattino Senza Filo',
+      hpHalf: 6, baseDmg: 3.50, baseSpd: 1.00, attivoIniziale: 'forbici', passivoIniziale: null,
+    },
+    agnese: {
+      id: 'agnese', nome: 'Agnese', titolo: 'La Tessitrice di San Leucio',
+      hpHalf: 4, baseDmg: 3.20, baseSpd: 1.25, attivoIniziale: 'tamburello', passivoIniziale: 'doppia',
+    },
+    taddeo: {
+      id: 'taddeo', nome: 'Taddeo', titolo: 'La Guardia Pentita',
+      hpHalf: 8, baseDmg: 4.10, baseSpd: 0.88, attivoIniziale: 'ampolla', passivoIniziale: 'spada',
+    },
+    ombra: {
+      id: 'ombra', nome: 'Pulcinella d\'Ombra', titolo: 'Lo Spettro del Velo (Judas)',
+      hpHalf: 4, baseDmg: 5.10, baseSpd: 1.12, attivoIniziale: 'forbici', passivoIniziale: 'anello',
+    },
+  };
+
+  // --- PROPOSTA 5: OGGETTI ATTIVI A RICARICA PER STANZA ([Q] O CLICK SULLO SLOT ATTIVO) ---
+  const OGGETTI_ATTIVI = {
+    forbici: {
+      id: 'forbici', sprite: 'forbici', nome: 'Forbici di Gaetano', maxCarica: 3,
+      desc: '[Q] Spezza i fili d\'oro: immobilizza tutti i nemici per 4s e infligge danno!',
+    },
+    tamburello: {
+      id: 'tamburello', sprite: 'tamburello', nome: 'Tamburello di Piazza Dante', maxCarica: 2,
+      desc: '[Q] Onda d\'urto sonora: distrugge tutti i proiettili nemici e respinge i mostri!',
+    },
+    ampolla: {
+      id: 'ampolla', sprite: 'ampolla', nome: 'Ampolla di San Gennaro', maxCarica: 4,
+      desc: '[Q] Miracolo cremisi: rigenera subito +1 ❤️ Maschera intera!',
+    },
+  };
+
+  // --- PROPOSTA 2: RELIQUIE PROIBITE DEL PATTO D'OMBRA (COSTANO 1 ❤️ MASCHERA MASSIMA, STILE DEVIL DEAL!) ---
+  const CATALOGO_PATTO = [
+    {
+      id: 'patto_raggio', sprite: 'patto_raggio', nome: 'Raggio Cremisi del Velo (Brimstone)', tier: 'patto',
+      statsDesc: '[😈 PATTO] DMG x2.1 · +1.5 DMG Up · Proiettili Cremisi Perforanti Giganti',
+      lore: 'Stringi il patto col Velo: cedi 1 Maschera di vita per un potere devastante.',
+      costoMaxHpHalf: 2,
+      mod: { dmgUp: 1.5, dmgMult: 2.1, piercing: true, tipoProiettile: 'cremisi', size: 1.45 },
+    },
+    {
+      id: 'patto_sacro', sprite: 'patto_sacro', nome: 'Cuore Sacro di San Leucio (Sacred Heart)', tier: 'patto',
+      statsDesc: '[😈 PATTO] DMG x2.3 · +1.0 Flat DMG · Rigenera tutta la vita rimasta',
+      lore: 'Il cuore luminoso nascosto dietro l\'altare del Belvedere.',
+      costoMaxHpHalf: 2,
+      mod: { flatDmg: 1.0, dmgMult: 2.3, healOnEquip: 12 },
+    },
+    {
+      id: 'patto_coltello', sprite: 'patto_coltello', nome: 'Lama della Burattinaia (Mom\'s Knife)', tier: 'patto',
+      statsDesc: '[😈 PATTO] Equipa Lama + Proiettili Perforanti · DMG x1.85 · +0.5 Tears Up',
+      lore: 'La lama con cui Donna Luciana recide i ricordi superflui.',
+      costoMaxHpHalf: 2,
+      mod: { spada: true, piercing: true, dmgMult: 1.85, tearsUp: 0.5, tipoProiettile: 'cremisi' },
+    },
+  ];
+
+  const CATALOGO_OGGETTI = [
+    // --- OGGETTI FORTI (TIER 'forte': 1 stanza su 10 gratis, oppure 15-18🪙 ne La Fucina) ---
+    {
+      id: 'spada', sprite: 'spada', nome: 'Spada di Gaetano', tier: 'forte',
+      statsDesc: '[★ FORTE] Equipa Spada (6 frame) · DMG x1.45 · +1.0 Flat DMG',
+      lore: 'Forgiata con gli ultimi attrezzi di tuo padre prima del crollo del 1839.',
+      prezzo: 15,
+      mod: { spada: true, flatDmg: 1.0, dmgMult: 1.45 },
+    },
+    {
+      id: 'piombo', sprite: 'piombo', nome: 'Lacrima di Piombo (Polyphemus)', tier: 'forte',
+      statsDesc: '[★ FORTE] +3.8 Flat DMG · DMG x1.9 · Tears x0.48 (Colpi Giganti)',
+      lore: 'Pesante come il silenzio di Piazza Dante sotto il Velo.',
+      prezzo: 18,
+      mod: { flatDmg: 3.8, dmgMult: 1.9, tearsMult: 0.48, tipoProiettile: 'piombo', size: 1.55, overflowPierce: true },
+    },
+    {
+      id: 'anello', sprite: 'anello', nome: 'Anello Cremisi (Cricket\'s Head)', tier: 'forte',
+      statsDesc: '[★ FORTE] +0.8 DMG Up · DMG x1.5 · Proiettili Perforanti',
+      lore: 'Anello caduto dal dito di una burattinaia: trapassa ogni marionetta.',
+      prezzo: 16,
+      mod: { dmgUp: 0.8, dmgMult: 1.5, piercing: true, tipoProiettile: 'cremisi' },
+    },
+    {
+      id: 'triplo', sprite: 'triplo', nome: 'Triplo Occhio (Inner Eye)', tier: 'forte',
+      statsDesc: '[★ FORTE] Triplo Colpo a ventaglio · +0.4 DMG Up · Tears x0.58',
+      lore: 'Tre pupille di vetro che vedono i fili d\'oro nel cielo.',
+      prezzo: 15,
+      mod: { triplo: true, dmgUp: 0.4, tearsMult: 0.58 },
+    },
+    {
+      id: 'catena', sprite: 'catena', nome: 'Catena della Chiusa (Jacob\'s Ladder)', tier: 'forte',
+      statsDesc: '[★ FORTE] +0.6 Tears Up · Fulmini a catena tra tutti i nemici',
+      lore: 'Spezzata dalla chiusa reale: scarica scintille azzurrine a ogni impatto.',
+      prezzo: 15,
+      mod: { tearsUp: 0.6, chain: true, tipoProiettile: 'elettrico' },
+    },
+    {
+      id: 'venti', sprite: 'venti', nome: 'Maschera dei 4 Venti (Loki\'s Horns)', tier: 'forte',
+      statsDesc: '[★ FORTE] Spara contemporaneamente nelle 4 direzioni · +0.5 DMG Up',
+      lore: 'Quattro volti di Pulcinella che guardano ogni angolo del palco.',
+      prezzo: 15,
+      mod: { quadDir: true, dmgUp: 0.5 },
+    },
+
+    // --- OGGETTI BASE (TIER 'base': 1 stanza su 3 gratis, oppure 10🪙 ne La Fucina) ---
+    {
+      id: 'chiodo', sprite: 'chiodo', nome: 'Chiodo della Fucina (Blood Clot)', tier: 'base',
+      statsDesc: '[BASE] +0.65 DMG Up · +20 Range',
+      lore: 'Un chiodo battuto a mano da Ferruccio prima dell\'incantesimo.',
+      prezzo: 10,
+      mod: { dmgUp: 0.65, rangeUp: 20 },
+    },
+    {
+      id: 'fuoco', sprite: 'fuoco', nome: 'Tizzone di Bragia (Fire Mind)', tier: 'base',
+      statsDesc: '[BASE] +0.6 DMG Up · Proiettili Infuocati (Bruciatura DoT)',
+      lore: 'Carbone ardente della vecchia fucina di famiglia.',
+      prezzo: 10,
+      mod: { dmgUp: 0.6, burn: true, tipoProiettile: 'fuoco' },
+    },
+    {
+      id: 'doppia', sprite: 'doppia', nome: 'Lente di San Leucio (20/20)', tier: 'base',
+      statsDesc: '[BASE] Doppio Colpo parallelo · DMG x0.80',
+      lore: 'Lente da tessitrice usata da Agnese sul telaio reale.',
+      prezzo: 10,
+      mod: { doppia: true, dmgMult: 0.80 },
+    },
+    {
+      id: 'mercurio', sprite: 'mercurio', nome: 'Goccia di Mercurio (Sad Onion)', tier: 'base',
+      statsDesc: '[BASE] +0.85 Tears Up (Raffica) · +0.10 Speed',
+      lore: 'Argento vivo degli specchi del teatro reale.',
+      prezzo: 10,
+      mod: { tearsUp: 0.85, speedUp: 0.10 },
+    },
+    {
+      id: 'cuore', sprite: 'cuore', nome: 'Medaglione di Rosa (<3)', tier: 'base',
+      statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera · +0.2 DMG Up',
+      lore: 'Il ricordo della moglie che Tonino ha dimenticato per non soffrire.',
+      prezzo: 10,
+      mod: { bonusMaxHp: 2, dmgUp: 0.2, healOnEquip: 2 },
+    },
+    {
+      id: 'stivali', sprite: 'stivali', nome: 'Sciarpa Rossa di Agnese', tier: 'base',
+      statsDesc: '[BASE] +0.25 Speed Up · +0.4 DMG Up · +35 Range',
+      lore: 'Tessuta da Agnese senza ricordare per chi le tremassero le mani.',
+      prezzo: 10,
+      mod: { speedUp: 0.25, dmgUp: 0.4, rangeUp: 35 },
+    },
+    {
+      id: 'mantice', sprite: 'mantice', nome: 'Mantice del Fabbro', tier: 'base',
+      statsDesc: '[BASE] +0.55 DMG Up · +0.45 Tears Up',
+      lore: 'Soffia aria calda nella vecchia bottega di Piazza Dante.',
+      prezzo: 10,
+      mod: { dmgUp: 0.55, tearsUp: 0.45 },
+    },
+  ];
+
+  // Pool Boss stile Isaac (Monstro, Chub, Duke of Flies, Gurdy, Gemini/Peep, Mom/Satan)
+  const POOL_BOSS = [
+    { id: 're-gatto', nome: 'Il Gatto dei Quattro Canti (Monstro)', tipo: 'gatto', hpBase: 175, speed: 1.05, pattern: 'monstro_jump' },
+    { id: 'capitano-guardia', nome: 'Il Capitano di Piombo (Chub)', tipo: 'guardia', hpBase: 210, speed: 0.92, pattern: 'chub_charge' },
+    { id: 'regina-vespa', nome: 'La Regina delle Vespe (Duke of Flies)', tipo: 'vespa', hpBase: 165, speed: 1.15, pattern: 'duke_flies' },
+    { id: 'colosso-statua', nome: 'Il Custode di Marmo (Gurdy)', tipo: 'statua', hpBase: 235, speed: 0.40, pattern: 'gurdy_turret' },
+    { id: 'maestro-fucina', nome: 'Lo Spezzafili d\'Ottone (Peep)', tipo: 'guardia', hpBase: 195, speed: 1.05, pattern: 'scissor_blades' },
+  ];
+  const BOSS_FINALE = {
+    id: 'donna-luciana',
+    nome: 'Donna Luciana — La Burattinaia del Velo',
+    tipo: 'donna-luciana',
+    hpBase: 480,
+    speed: 0.92,
+    pattern: 'marionette_queen',
+  };
+
+  function getRaccontoAtto(piano, ciclo) {
+    const pianoNelCiclo = ((piano - 1) % 4) + 1;
+    const pInfo = PERSONAGGI_GIOCABILI[statoRun.personaggioId] || PERSONAGGI_GIOCABILI.ferruccio;
+    if (ciclo > 1 && pianoNelCiclo === 1) {
+      return {
+        atto: `CICLO INFINITO ${ciclo} · ATTO I (PIANO ${piano} · 5 STANZE + SEGRETA)`,
+        titolo: '«BIS! I FILI SOPRA LA BURATTINAIA»',
+        testo1: 'Spezzando Donna Luciana hai scoperto l\'inganno: anche ai suoi polsi erano legati fili d\'oro',
+        testo2: 'che salgono ancora più in alto nel buio del Teatro! Una voce invisibile grida: «BIS! DA CAPO!»',
+        testo3: `Il palco si ricuce più feroce (+${Math.round((ciclo - 1) * 45)}% Vita/Vel). Conservi i tuoi 5 oggetti e le monete!`,
+      };
+    }
+    if (pianoNelCiclo === 1) {
+      return {
+        atto: `ATTO I · PIAZZA DANTE (PIANO ${piano} · ${pInfo.nome.toUpperCase()})`,
+        titolo: `«${pInfo.titolo.toUpperCase()}»`,
+        testo1: 'I nemici ora si comportano come in Isaac: Vespe Cieche che volano contro di te senza sparare,',
+        testo2: 'Bozzi Esplosivi fermi che esplodono se ti avvicini, Gatti che balzano, Maschere corazzate e Campioni!',
+        testo3: 'Premi [Q] per usare il tuo Oggetto Attivo! Batti il Boss per aprire anche la Stanza del Patto d\'Ombra (😈)!',
+      };
+    }
+    if (pianoNelCiclo === 2) {
+      return {
+        atto: `ATTO II · CORSO TRIESTE E LE OFFICINE (PIANO ${piano} · 7 STANZE + 1 SEGRETA)`,
+        titolo: '«IL SORRISO DI TONINO E IL TRADIMENTO DI TADDEO»',
+        testo1: 'Sotto il Velo, Tonino ride davanti alla sedia vuota della moglie Rosa senza ricordare il suo nome.',
+        testo2: 'Il tuo amico Taddeo ti ha consegnato alla Burattinaia per guarire le paure della sorella Mariella.',
+        testo3: 'Risparmia le monete e scova la Stanza Segreta per permetterti le Reliquie Forti (15-18🪙) della Fucina!',
+      };
+    }
+    if (pianoNelCiclo === 3) {
+      return {
+        atto: `ATTO III · BELVEDERE DI SAN LEUCIO (PIANO ${piano} · 8 STANZE + 1 SEGRETA)`,
+        titolo: '«LA SCIARPA ROSSA DI AGNESE»',
+        testo1: 'Ai telai reali di San Leucio, Agnese continua a tessere una sciarpa rossa senza ricordare il tuo volto.',
+        testo2: 'Da questo piano il Velo stringe più forte: ogni colpo subito spezza 1 Maschera intera (come in Isaac!).',
+        testo3: 'Ogni oggetto equipaggiato nei 5 slot cambia visivamente il tuo costume e il tuo attacco!',
+      };
+    }
+    return {
+      atto: `ATTO IV · IL TRONO DEL VELO (PIANO ${piano} · 9 STANZE + 1 SEGRETA)`,
+      titolo: ciclo > 1 ? `«DONNA LUCIANA ASCESA (CICLO ${ciclo})»` : '«QUANTO VALE LA FELICITÀ?»',
+      testo1: 'Nelle 9 stanze finali, le Grandi Mani di Marionetta caleranno dal cielo per diventare Donna Luciana.',
+      testo2: 'Spezzarle restituirà a Caserta il dolore, il lutto e la libertà... o svelerà chi tira davvero i suoi fili.',
+      testo3: 'Fai gli ultimi acquisti ne La Fucina prima di varcare la porta del Boss Finale!',
+    };
+  }
+
+  const ARENA = { x1: 76, y1: 78, x2: 564, y2: 298 };
+
+  let runSeed = Date.now() >>> 0;
+  function rng() {
+    runSeed = (runSeed + 0x6D2B79F5) | 0;
+    let t = Math.imul(runSeed ^ (runSeed >>> 15), 1 | runSeed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  const statoRun = {
+    fase: 'menu_selezione', // 'menu_selezione' | 'in_gioco'
+    numeroRun: 0,
+    personaggioId: 'ferruccio',
+    piano: 1,
+    ciclo: 1,
+    bossOrdine: [],
+    poolOggettiBase: [],
+    poolOggettiForti: [],
+    poolPatto: [],
+    oggettiEquipaggiati: [], // MAX 5 OGGETTI PASSIVI!
+    sinergieVisive: {},
+    // Oggetto Attivo (Proposta 5: [Q])
+    oggettoAttivo: { ...OGGETTI_ATTIVI.forbici },
+    caricaAttivo: 3,
+    monete: 0,
+    hpHalf: 6,
+    maxHpHalf: 6,
+    baseMaxHpHalf: 6,
+    baseDmgChar: 3.50,
+    baseSpdChar: 1.00,
+    dmg: 3.50,
+    tearsPerSec: 2.73,
+    cooldownMax: 22,
+    speed: 2.0,
+    range: 170,
+    haSpada: false,
+    triplo: false,
+    doppia: false,
+    quadDir: false,
+    piercing: false,
+    overflowPierce: false,
+    burn: false,
+    chain: false,
+    tipoProiettile: 'base',
+    projScale: 1,
+    mappa: null,
+    stanzaCorrente: null,
+    proiettili: [],
+    proiettiliNemici: [],
+    effettiSplash: [],
+    scintilleFulmine: [],
+    ondeEsplosione: [],
+    scambioPendente: null,
+    siparioAttivo: null,
+    banner: '',
+    bannerTimer: 0,
+    scossa: 0,
+    dannoSubitoNelBoss: false,
+  };
+
+  const player = {
+    x: 320,
+    y: 190,
+    targetX: null,
+    targetY: null,
+    dirX: 1,
+    dirY: 0,
+    flipX: false,
+    moving: false,
+    cooldown: 0,
+    shootAnimTimer: 0,
+    swordAnimTick: -1,
+    swordAngle: 0,
+    swordHitIds: new Set(),
+    pickupTimer: 0,
+    pickupItem: null,
+    invuln: 0,
+  };
+
+  function ricalcolaStatisticheIsaac() {
+    let totalDmgUps = 0;
+    let flatDmg = 0;
+    let dmgMult = 1.0;
+    let totalTearsUps = 0;
+    let tearsMult = 1.0;
+    let speedUp = 0;
+    let rangeUp = 0;
+    let bonusMaxHp = 0;
+
+    let haSpada = false;
+    let triplo = false;
+    let doppia = false;
+    let quadDir = false;
+    let piercing = false;
+    let overflowPierce = false;
+    let burn = false;
+    let chain = false;
+    let tipoProiettile = 'base';
+    let projScale = 1.0;
+    const sinergie = {};
+
+    for (const item of statoRun.oggettiEquipaggiati) {
+      sinergie[item.id] = true;
+      const m = item.mod || {};
+      if (m.dmgUp) totalDmgUps += m.dmgUp;
+      if (m.flatDmg) flatDmg += m.flatDmg;
+      if (m.dmgMult) dmgMult *= m.dmgMult;
+      if (m.tearsUp) totalTearsUps += m.tearsUp;
+      if (m.tearsMult) tearsMult *= m.tearsMult;
+      if (m.speedUp) speedUp += m.speedUp;
+      if (m.rangeUp) rangeUp += m.rangeUp;
+      if (m.bonusMaxHp) bonusMaxHp += m.bonusMaxHp;
+      if (m.spada) haSpada = true;
+      if (m.triplo) triplo = true;
+      if (m.doppia) doppia = true;
+      if (m.quadDir) quadDir = true;
+      if (m.piercing) piercing = true;
+      if (m.overflowPierce) overflowPierce = true;
+      if (m.burn) burn = true;
+      if (m.chain) chain = true;
+      if (m.tipoProiettile) tipoProiettile = m.tipoProiettile;
+      if (m.size) projScale = Math.max(projScale, m.size);
+    }
+
+    const baseD = statoRun.baseDmgChar || 3.50;
+    const effDmg = (baseD * Math.sqrt(Math.max(0, totalDmgUps * 1.2 + 1)) + flatDmg) * dmgMult;
+    statoRun.dmg = Math.max(1.0, effDmg);
+
+    const effTears = Math.max(0.85, Math.min(7.5, (2.73 + totalTearsUps * 0.95) * tearsMult));
+    statoRun.tearsPerSec = effTears;
+    statoRun.cooldownMax = Math.max(7, Math.round(60 / effTears));
+
+    const isaacSpd = Math.max(0.7, Math.min(2.0, (statoRun.baseSpdChar || 1.0) + speedUp));
+    statoRun.speed = 2.0 * isaacSpd;
+    statoRun.range = Math.min(320, 170 + rangeUp);
+
+    const nuovoMax = Math.max(2, Math.min(24, statoRun.baseMaxHpHalf + bonusMaxHp));
+    statoRun.maxHpHalf = nuovoMax;
+    if (statoRun.hpHalf > statoRun.maxHpHalf) statoRun.hpHalf = statoRun.maxHpHalf;
+
+    statoRun.haSpada = haSpada;
+    statoRun.triplo = triplo;
+    statoRun.doppia = doppia;
+    statoRun.quadDir = quadDir;
+    statoRun.piercing = piercing;
+    statoRun.overflowPierce = overflowPierce;
+    statoRun.burn = burn;
+    statoRun.chain = chain;
+    statoRun.tipoProiettile = tipoProiettile;
+    statoRun.projScale = projScale;
+    statoRun.sinergieVisive = sinergie;
+  }
+
+  // Usa l'Oggetto Attivo [Q] (Proposta 5)
+  function usaOggettoAttivo() {
+    if (statoRun.scambioPendente || statoRun.siparioAttivo) return;
+    const att = statoRun.oggettoAttivo;
+    if (!att) return;
+    if (statoRun.caricaAttivo < att.maxCarica) {
+      mostraBanner(`⚡ ${att.nome}: carica ${statoRun.caricaAttivo}/${att.maxCarica} (pulisci stanze per ricaricare!)`, 130);
+      return;
+    }
+    const st = statoRun.stanzaCorrente;
+    statoRun.caricaAttivo = 0;
+    statoRun.scossa = 5;
+
+    if (att.id === 'forbici') {
+      statoRun.ondeEsplosione.push({ x: player.x, y: player.y, r: 8, maxR: 180, color: '#67e8f9' });
+      if (st) {
+        for (const n of st.nemici) {
+          if (n.hp > 0) {
+            n.stunTicks = 240; // 4 secondi immobilizzato coi fili tagliati!
+            danneggiaNemico(n, statoRun.dmg * 1.4, 0, 0);
+          }
+        }
+      }
+      mostraBanner('✂️ FORBICI DI GAETANO! Fili d\'oro recisi: tutti i nemici sono immobilizzati per 4s!', 180);
+    } else if (att.id === 'tamburello') {
+      statoRun.ondeEsplosione.push({ x: player.x, y: player.y, r: 8, maxR: 160, color: '#f9cb40' });
+      statoRun.proiettiliNemici = [];
+      if (st) {
+        for (const n of st.nemici) {
+          if (n.hp > 0) {
+            const a = Math.atan2(n.y - player.y, n.x - player.x);
+            danneggiaNemico(n, statoRun.dmg * 0.9, Math.cos(a) * 4, Math.sin(a) * 4);
+          }
+        }
+      }
+      mostraBanner('🥁 TAMBURELLO DI PIAZZA DANTE! Onda sonora: proiettili spazzati via e mostri respinti!', 180);
+    } else if (att.id === 'ampolla') {
+      statoRun.ondeEsplosione.push({ x: player.x, y: player.y, r: 8, maxR: 90, color: '#ef4444' });
+      statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + 2);
+      mostraBanner('🩸 AMPOLLA DI SAN GENNARO! Rigenerata +1 ❤️ Maschera intera!', 180);
+    }
+  }
+
+  function acquisisciOggettoConLimite5Slot(nuovoItem, origine, refSlot) {
+    if (origine === 'patto' && refSlot) {
+      const costo = refSlot.costoMaxHpHalf || 2;
+      if (statoRun.maxHpHalf <= costo && statoRun.hpHalf <= costo) {
+        mostraBanner('⚠ Non hai abbastanza Maschere Massime per stringere questo Patto d\'Ombra!', 160);
+        return;
+      }
+    }
+
+    if (statoRun.oggettiEquipaggiati.length < MAX_SLOT_OGGETTI) {
+      statoRun.oggettiEquipaggiati.push(nuovoItem);
+      if (origine === 'piedistallo' && refSlot) refSlot.preso = true;
+      if (origine === 'fucina' && refSlot) {
+        statoRun.monete -= refSlot.prezzo;
+        refSlot.comprato = true;
+      }
+      if (origine === 'patto' && refSlot) {
+        statoRun.baseMaxHpHalf = Math.max(2, statoRun.baseMaxHpHalf - (refSlot.costoMaxHpHalf || 2));
+        refSlot.comprato = true;
+      }
+      ricalcolaStatisticheIsaac();
+      if (nuovoItem.mod?.healOnEquip) {
+        statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + nuovoItem.mod.healOnEquip);
+      }
+      player.pickupTimer = 55;
+      player.pickupItem = nuovoItem;
+      mostraBanner(`★ ${nuovoItem.nome} [${statoRun.oggettiEquipaggiati.length}/5]: ${nuovoItem.statsDesc}`, 210);
+      return;
+    }
+
+    statoRun.scambioPendente = { nuovoItem, origine, refSlot };
+  }
+
+  function confermaSostituzioneSlot(idxSlot) {
+    const sc = statoRun.scambioPendente;
+    if (!sc || idxSlot < 0 || idxSlot >= MAX_SLOT_OGGETTI) return;
+    const vecchioItem = statoRun.oggettiEquipaggiati[idxSlot];
+    statoRun.oggettiEquipaggiati[idxSlot] = sc.nuovoItem;
+
+    if (sc.origine === 'piedistallo' && sc.refSlot) {
+      sc.refSlot.id = vecchioItem.id;
+      sc.refSlot.sprite = vecchioItem.sprite;
+      sc.refSlot.nome = vecchioItem.nome;
+      sc.refSlot.statsDesc = vecchioItem.statsDesc;
+      sc.refSlot.lore = vecchioItem.lore;
+      sc.refSlot.mod = vecchioItem.mod;
+      sc.refSlot.preso = false;
+    } else if (sc.origine === 'fucina' && sc.refSlot) {
+      statoRun.monete -= sc.refSlot.prezzo;
+      sc.refSlot.comprato = true;
+    } else if (sc.origine === 'patto' && sc.refSlot) {
+      statoRun.baseMaxHpHalf = Math.max(2, statoRun.baseMaxHpHalf - (sc.refSlot.costoMaxHpHalf || 2));
+      sc.refSlot.comprato = true;
+    }
+
+    statoRun.scambioPendente = null;
+    ricalcolaStatisticheIsaac();
+    if (sc.nuovoItem.mod?.healOnEquip) {
+      statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + sc.nuovoItem.mod.healOnEquip);
+    }
+    player.pickupTimer = 55;
+    player.pickupItem = sc.nuovoItem;
+    mostraBanner(`🔄 Sostituito [${vecchioItem.nome}] con [${sc.nuovoItem.nome}]!`, 200);
+  }
+
+  const keys = {};
+  window.addEventListener('keydown', (e) => {
+    keys[e.code] = true;
+    player.targetX = null;
+    player.targetY = null;
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+
+    if (statoRun.fase === 'menu_selezione') {
+      const charIds = ['ferruccio', 'agnese', 'taddeo', 'ombra'];
+      let currIdx = charIds.indexOf(statoRun.personaggioId);
+      if (currIdx === -1) currIdx = 0;
+      if (['ArrowLeft', 'KeyA'].includes(e.code)) {
+        currIdx = (currIdx - 1 + charIds.length) % charIds.length;
+        selezionaPersonaggio(charIds[currIdx]);
+      } else if (['ArrowRight', 'KeyD'].includes(e.code)) {
+        currIdx = (currIdx + 1) % charIds.length;
+        selezionaPersonaggio(charIds[currIdx]);
+      } else if (e.code === 'Digit1') selezionaPersonaggio('ferruccio');
+      else if (e.code === 'Digit2') selezionaPersonaggio('agnese');
+      else if (e.code === 'Digit3') selezionaPersonaggio('taddeo');
+      else if (e.code === 'Digit4') selezionaPersonaggio('ombra');
+      else if (['Space', 'Enter'].includes(e.code)) {
+        avviaPartitaConPersonaggio(statoRun.personaggioId);
+      }
+      return;
+    }
+
+    if (e.code === 'Escape') {
+      statoRun.fase = 'menu_selezione';
+      statoRun.siparioAttivo = null;
+      return;
+    }
+
+    if (statoRun.siparioAttivo && ['Space', 'KeyE', 'Enter', 'Escape'].includes(e.code)) {
+      statoRun.siparioAttivo = null;
+      return;
+    }
+
+    if (statoRun.scambioPendente) {
+      if (e.code === 'Digit1') confermaSostituzioneSlot(0);
+      else if (e.code === 'Digit2') confermaSostituzioneSlot(1);
+      else if (e.code === 'Digit3') confermaSostituzioneSlot(2);
+      else if (e.code === 'Digit4') confermaSostituzioneSlot(3);
+      else if (e.code === 'Digit5') confermaSostituzioneSlot(4);
+      else if (e.code === 'Escape' || e.code === 'KeyQ') statoRun.scambioPendente = null;
+      return;
+    }
+
+    if (e.code === 'KeyQ') usaOggettoAttivo();
+    if (e.code === 'KeyE') interagisciStanza();
+    if (e.code === 'Space') eseguiAttacco4Direzioni(player.dirX, player.dirY);
+  });
+  window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+  wrap.addEventListener('mouseenter', () => {
+    try { window.focus(); wrap.focus({ preventScroll: true }); } catch (_) {}
+  });
+
+  canvas.addEventListener('mousedown', (e) => {
+    try { window.focus(); wrap.focus({ preventScroll: true }); } catch (_) {}
+    const r = canvas.getBoundingClientRect();
+    const mx = (e.clientX - r.left) * (W / r.width);
+    const my = (e.clientY - r.top) * (H / r.height);
+
+    if (statoRun.fase === 'menu_selezione') {
+      const charIds = ['ferruccio', 'agnese', 'taddeo', 'ombra'];
+      const cardW = 132, cardH = 224, cardY = 56, gap = 14, startX = 35;
+      for (let i = 0; i < charIds.length; i++) {
+        const cx = startX + i * (cardW + gap);
+        if (mx >= cx && mx <= cx + cardW && my >= cardY && my <= cardY + cardH) {
+          if (statoRun.personaggioId === charIds[i]) {
+            avviaPartitaConPersonaggio(charIds[i]);
+          } else {
+            selezionaPersonaggio(charIds[i]);
+          }
+          return;
+        }
+      }
+      if (mx >= 150 && mx <= 490 && my >= 298 && my <= 344) {
+        avviaPartitaConPersonaggio(statoRun.personaggioId);
+        return;
+      }
+      return;
+    }
+
+    if (statoRun.siparioAttivo) {
+      statoRun.siparioAttivo = null;
+      return;
+    }
+
+    if (statoRun.scambioPendente) {
+      for (let i = 0; i < MAX_SLOT_OGGETTI; i++) {
+        const bx = 118 + i * 84;
+        const by = 162;
+        if (mx >= bx && mx <= bx + 74 && my >= by && my <= by + 82) {
+          confermaSostituzioneSlot(i);
+          return;
+        }
+      }
+      if (mx >= 250 && mx <= 390 && my >= 262 && my <= 290) {
+        statoRun.scambioPendente = null;
+      }
+      return;
+    }
+
+    // Click sullo Slot Oggetto Attivo [Q] in basso a sinistra nella dock
+    if (mx >= 214 && mx <= 246 && my >= H - 36 && my <= H - 6) {
+      usaOggettoAttivo();
+      return;
+    }
+
+    const st = statoRun.stanzaCorrente;
+    if (!st) return;
+
+    if (statoRun.mappa && st.pulita) {
+      const cell = 12, x0 = W - 118, y0 = 24;
+      for (const s of statoRun.mappa.stanze) {
+        if (!s.visitata) continue;
+        const px = x0 + (s.cx - 1) * cell;
+        const py = y0 + (s.cy - 1) * cell;
+        if (mx >= px && mx <= px + cell && my >= py && my <= py + cell) {
+          entraInStanza(s, null);
+          return;
+        }
+      }
+    }
+
+    if (st.pulita) {
+      const porteClick = {
+        N: { x: 320, y: 66, rx: 28, ry: 20, opp: 'S' },
+        S: { x: 320, y: 310, rx: 28, ry: 20, opp: 'N' },
+        W: { x: 62, y: 188, rx: 20, ry: 28, opp: 'E' },
+        E: { x: 578, y: 188, rx: 20, ry: 28, opp: 'W' },
+      };
+      if (st.muroSegreto && !st.muroSegreto.aperto) {
+        const ms = porteClick[st.muroSegreto.lato];
+        if (ms && Math.abs(mx - ms.x) <= ms.rx + 8 && Math.abs(my - ms.y) <= ms.ry + 8) {
+          apriMuroSegreto(st);
+          return;
+        }
+      }
+      for (const [lato, idDest] of Object.entries(st.porte)) {
+        const pc = porteClick[lato];
+        if (Math.abs(mx - pc.x) <= pc.rx && Math.abs(my - pc.y) <= pc.ry) {
+          entraInStanza(statoRun.mappa.perId.get(idDest), pc.opp);
+          return;
+        }
+      }
+    }
+
+    if (st.pulita && st.oggettoPiedistallo && !st.oggettoPiedistallo.preso) {
+      const o = st.oggettoPiedistallo;
+      if (Math.hypot(mx - o.x, my - o.y) < 36) {
+        player.x = o.x;
+        player.y = o.y + 12;
+        acquisisciOggettoConLimite5Slot({ ...o }, 'piedistallo', o);
+        return;
+      }
+    }
+
+    if (st.tipo === 'fucina' || st.tipo === 'patto') {
+      const listaSlot = st.tipo === 'patto' ? st.slotPatto : st.slotFucina;
+      for (const sl of listaSlot || []) {
+        if (!sl.comprato && Math.hypot(mx - sl.x, my - sl.y) < 32) {
+          player.x = sl.x;
+          player.y = sl.y + 14;
+          interagisciStanza();
+          return;
+        }
+      }
+    }
+
+    // Click sulla Porta del Patto d'Ombra (nella stanza del Boss sconfitto) o sulla porta di ritorno dal Patto
+    if (st.tipo === 'boss' && st.portaPattoAperta && Math.hypot(mx - 430, my - 190) < 34) {
+      const stanzaPatto = statoRun.mappa?.stanze.find((x) => x.tipo === 'patto');
+      if (stanzaPatto) entraInStanza(stanzaPatto, null);
+      return;
+    }
+    if (st.tipo === 'patto' && Math.hypot(mx - 320, my - 252) < 36) {
+      const bossRoom = statoRun.mappa?.stanze.find((x) => x.tipo === 'boss');
+      if (bossRoom) entraInStanza(bossRoom, null);
+      return;
+    }
+
+    if (st.tipo === 'boss' && st.uscitaAperta && Math.hypot(mx - 320, my - 190) < 34) {
+      interagisciStanza();
+      return;
+    }
+
+    const dx = mx - player.x;
+    const dy = my - player.y;
+    let dirX = 0, dirY = 0;
+    if (Math.abs(dx) >= Math.abs(dy)) dirX = dx >= 0 ? 1 : -1;
+    else dirY = dy >= 0 ? 1 : -1;
+    player.targetX = Math.max(ARENA.x1, Math.min(ARENA.x2, mx));
+    player.targetY = Math.max(ARENA.y1, Math.min(ARENA.y2, my));
+    eseguiAttacco4Direzioni(dirX, dirY);
+  });
+
+  function mostraBanner(testo, durata = 160) {
+    statoRun.banner = testo;
+    statoRun.bannerTimer = durata;
+  }
+
+  function estraiOggettoBase() {
+    if (!statoRun.poolOggettiBase.length) {
+      statoRun.poolOggettiBase = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'base'));
+    }
+    return { ...statoRun.poolOggettiBase.pop() };
+  }
+
+  function estraiOggettoForte() {
+    if (!statoRun.poolOggettiForti.length) {
+      statoRun.poolOggettiForti = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'forte'));
+    }
+    return { ...statoRun.poolOggettiForti.pop() };
+  }
+
+  function estraiOggettoPatto() {
+    if (!statoRun.poolPatto.length) {
+      statoRun.poolPatto = shuffle(CATALOGO_PATTO);
+    }
+    return { ...statoRun.poolPatto.pop() };
+  }
+
+  function tiraOggettoGratisStanza(garantito = false) {
+    const roll = rng();
+    if (roll < 0.10) {
+      return { ...estraiOggettoForte(), forteGratis: true };
+    }
+    if (garantito || roll < 0.10 + (1 / 3)) {
+      return { ...estraiOggettoBase(), forteGratis: false };
+    }
+    return null;
+  }
+
+  function apriMuroSegreto(st) {
+    if (!st?.muroSegreto || st.muroSegreto.aperto) return;
+    st.muroSegreto.aperto = true;
+    const seg = statoRun.mappa.perId.get(st.muroSegreto.idDest);
+    if (seg) {
+      st.porte[st.muroSegreto.lato] = seg.id;
+      seg.porte[st.muroSegreto.opposto] = st.id;
+    }
+    statoRun.scossa = 5;
+    mostraBanner('🔓 PASSAGGIO SEGRETO APERTO! Entra nella Stanza Segreta (?) coi Mob d\'Oro per fare soldi!', 220);
+  }
+
+  function numeroStanzeDelPiano(piano) {
+    const pianoNelCiclo = ((piano - 1) % 4) + 1;
+    return STANZE_PER_PIANO_CICLO[pianoNelCiclo] || 5;
+  }
+
+  function generaMappaPiano(piano) {
+    const nTotale = numeroStanzeDelPiano(piano);
+    const nNormali = nTotale - 4;
+    const dirs = [
+      { lato: 'N', opposto: 'S', dx: 0, dy: -1 },
+      { lato: 'E', opposto: 'W', dx: 1, dy: 0 },
+      { lato: 'S', opposto: 'N', dx: 0, dy: 1 },
+      { lato: 'W', opposto: 'E', dx: -1, dy: 0 },
+    ];
+
+    for (let tentativo = 0; tentativo < 100; tentativo++) {
+      const griglia = new Map();
+      const stanze = [];
+      const key = (x, y) => `${x},${y}`;
+      const aggiungi = (tipo, cx, cy) => {
+        const s = {
+          id: `r${stanze.length}`,
+          tipo,
+          cx, cy,
+          porte: {},
+          muroSegreto: null,
+          pulita: tipo === 'ingresso' || tipo === 'tesoro' || tipo === 'fucina' || tipo === 'patto',
+          visitata: tipo === 'ingresso',
+          nemici: [],
+          ostacoli: [],
+          oggettiATerra: [],
+          oggettoPiedistallo: null,
+          ricompensaOggetto: null,
+          slotFucina: [],
+          slotPatto: [],
+          uscitaAperta: false,
+          portaPattoAperta: false,
+        };
+        stanze.push(s);
+        if (cx >= 1 && cy >= 1) griglia.set(key(cx, cy), s);
+        return s;
+      };
+      const collega = (a, b, d) => {
+        a.porte[d.lato] = b.id;
+        b.porte[d.opposto] = a.id;
+      };
+
+      const ingresso = aggiungi('ingresso', 4, 3);
+      let curr = ingresso;
+      let ok = true;
+      for (let i = 0; i < nNormali; i++) {
+        const libere = shuffle(dirs).filter((d) => {
+          const nx = curr.cx + d.dx, ny = curr.cy + d.dy;
+          return nx >= 1 && nx <= 7 && ny >= 1 && ny <= 6 && !griglia.has(key(nx, ny));
+        });
+        if (!libere.length) { ok = false; break; }
+        const d = libere[0];
+        const nuova = aggiungi('normale', curr.cx + d.dx, curr.cy + d.dy);
+        collega(curr, nuova, d);
+        if (rng() < 0.75) curr = nuova;
+      }
+      if (!ok) continue;
+
+      const normali = stanze.filter((s) => s.tipo === 'normale');
+      let bossOk = false;
+      for (const cand of shuffle(normali).reverse()) {
+        for (const d of shuffle(dirs)) {
+          const nx = cand.cx + d.dx, ny = cand.cy + d.dy;
+          if (nx < 1 || nx > 7 || ny < 1 || ny > 6 || griglia.has(key(nx, ny))) continue;
+          if (Math.abs(nx - ingresso.cx) + Math.abs(ny - ingresso.cy) <= 1) continue;
+          const vicini = dirs.filter((d2) => griglia.has(key(nx + d2.dx, ny + d2.dy)));
+          if (vicini.length !== 1) continue;
+          const bossRoom = aggiungi('boss', nx, ny);
+          collega(cand, bossRoom, d);
+          bossOk = true;
+          break;
+        }
+        if (bossOk) break;
+      }
+      if (!bossOk) continue;
+
+      for (const tipoSpec of ['tesoro', 'fucina']) {
+        let pos = false;
+        const genitori = shuffle(stanze.filter((s) => s.tipo === 'normale' || s.tipo === 'ingresso'));
+        for (const g of genitori) {
+          for (const d of shuffle(dirs)) {
+            const nx = g.cx + d.dx, ny = g.cy + d.dy;
+            if (nx < 1 || nx > 7 || ny < 1 || ny > 6 || griglia.has(key(nx, ny))) continue;
+            const vicini = dirs.filter((d2) => griglia.has(key(nx + d2.dx, ny + d2.dy)));
+            if (vicini.length !== 1) continue;
+            const spec = aggiungi(tipoSpec, nx, ny);
+            collega(g, spec, d);
+            pos = true;
+            break;
+          }
+          if (pos) break;
+        }
+        if (!pos) { ok = false; break; }
+      }
+      if (!ok || stanze.length !== nTotale) continue;
+
+      let segretaOk = false;
+      const candidatiSegreta = shuffle(stanze.filter((s) => s.tipo === 'normale' || s.tipo === 'ingresso'));
+      for (const g of candidatiSegreta) {
+        for (const d of shuffle(dirs)) {
+          const nx = g.cx + d.dx, ny = g.cy + d.dy;
+          if (nx < 1 || nx > 7 || ny < 1 || ny > 6 || griglia.has(key(nx, ny))) continue;
+          const confBoss = dirs.some((d2) => griglia.get(key(nx + d2.dx, ny + d2.dy))?.tipo === 'boss');
+          if (confBoss) continue;
+          const stanzaSegreta = aggiungi('segreta', nx, ny);
+          g.muroSegreto = { lato: d.lato, opposto: d.opposto, idDest: stanzaSegreta.id, aperto: false };
+          stanzaSegreta.porte[d.opposto] = g.id;
+          segretaOk = true;
+          break;
+        }
+        if (segretaOk) break;
+      }
+      if (!segretaOk) continue;
+
+      // Aggiunge la Stanza del Patto d'Ombra (Proposta 2: accessibile dopo aver sconfitto il Boss!)
+      aggiungi('patto', 0, 0);
+
+      for (const s of stanze) popolaStanzaIsaac(s, piano);
+      return { piano, stanze, perId: new Map(stanze.map((s) => [s.id, s])) };
+    }
+    return null;
+  }
+
+  function popolaStanzaIsaac(s, piano) {
+    const ciclo = Math.floor((piano - 1) / 4) + 1;
+    const moltCiclo = Math.pow(1.45, ciclo - 1);
+    const moltVel = Math.min(1.55, 1 + (piano - 1) * 0.045);
+    const nomeCorto = (str) => str.replace(/\s*\(.*?\)/g, '');
+
+    if (s.tipo === 'tesoro') {
+      const item = tiraOggettoGratisStanza(true);
+      s.oggettoPiedistallo = {
+        ...item,
+        x: 320,
+        y: 192,
+        preso: false,
+      };
+    } else if (s.tipo === 'patto') {
+      // STANZA DEL PATTO D'OMBRA (Proposta 2: 2 reliquie proibite in cambio di 1 Maschera Massima!)
+      const p1 = estraiOggettoPatto();
+      const p2 = estraiOggettoPatto();
+      s.slotPatto = [
+        {
+          tipo: 'patto', item: p1, nome: p1.nome, nomeBreve: nomeCorto(p1.nome),
+          statsDesc: p1.statsDesc, costoMaxHpHalf: p1.costoMaxHpHalf || 2,
+          sprite: p1.sprite, x: 236, y: 188, comprato: false,
+        },
+        {
+          tipo: 'patto', item: p2, nome: p2.nome, nomeBreve: nomeCorto(p2.nome),
+          statsDesc: p2.statsDesc, costoMaxHpHalf: p2.costoMaxHpHalf || 2,
+          sprite: p2.sprite, x: 404, y: 188, comprato: false,
+        },
+      ];
+    } else if (s.tipo === 'fucina') {
+      const objBase = estraiOggettoBase();
+      const objForte = estraiOggettoForte();
+      const scontoBase = rng() < 0.22;
+      const scontoForte = rng() < 0.12;
+      const prezzoBase = scontoBase ? Math.floor(objBase.prezzo / 2) : objBase.prezzo;
+      const prezzoForte = scontoForte ? Math.floor(objForte.prezzo / 2) : objForte.prezzo;
+
+      s.slotFucina = [
+        {
+          tipo: 'cura', curaHalf: 1, nome: '½ Maschera di Cera', nomeBreve: '½ Maschera',
+          statsDesc: 'Rigenera +½ ❤️ Maschera (Prezzo Isaac: 3🪙)',
+          prezzo: 3, inSaldo: false, sprite: 'mezzaMaschera', tier: 'cura', x: 158, y: 196, comprato: false,
+        },
+        {
+          tipo: 'cura', curaHalf: 2, nome: 'Maschera Intera', nomeBreve: '1 Maschera',
+          statsDesc: 'Rigenera +1 ❤️ Maschera intera (Prezzo Isaac: 5🪙)',
+          prezzo: 5, inSaldo: false, sprite: 'cuore', tier: 'cura', x: 266, y: 196, comprato: false,
+        },
+        {
+          tipo: 'oggetto', item: objBase, nome: objBase.nome, nomeBreve: nomeCorto(objBase.nome),
+          statsDesc: objBase.statsDesc,
+          prezzo: prezzoBase, inSaldo: scontoBase, sprite: objBase.sprite, tier: 'base', x: 374, y: 196, comprato: false,
+        },
+        {
+          tipo: 'oggetto', item: objForte, nome: `★ ${objForte.nome}`, nomeBreve: `★ ${nomeCorto(objForte.nome)}`,
+          statsDesc: objForte.statsDesc,
+          prezzo: prezzoForte, inSaldo: scontoForte, sprite: objForte.sprite, tier: 'forte', x: 482, y: 196, comprato: false,
+        },
+      ];
+    } else if (s.tipo === 'segreta') {
+      s.ricompensaOggetto = tiraOggettoGratisStanza(false);
+      const nMobSoldi = 4 + Math.min(2, Math.floor(piano * 0.5));
+      const tipiAttacco = ['vespa_cieca', 'gatto', 'bomba_ferma', 'guardia'];
+      const baseHpMap = { vespa_cieca: 10, gatto: 15, bomba_ferma: 16, guardia: 22 };
+      const baseSpdMap = { vespa_cieca: 1.55, gatto: 1.45, bomba_ferma: 0, guardia: 1.08 };
+      for (let i = 0; i < nMobSoldi; i++) {
+        const t = tipiAttacco[i % tipiAttacco.length];
+        const hpMax = Math.round((baseHpMap[t] + (piano - 1) * 4) * moltCiclo);
+        s.nemici.push({
+          id: `${s.id}-sec${i}`,
+          tipo: 'predone',
+          patternMob: t,
+          nome: 'Predone d\'Oro',
+          boss: false,
+          mobSoldi: true,
+          champion: 'dorato',
+          x: 130 + rng() * 380,
+          y: 108 + rng() * 145,
+          hp: hpMax,
+          maxHp: hpMax,
+          speed: baseSpdMap[t] * moltVel,
+          r: 11,
+          flash: 0,
+          burnTicks: 0,
+          stunTicks: 0,
+          state: 'idle',
+          stateTimer: 25 + Math.floor(rng() * 30),
+          maskOpen: true,
+          shootCd: 38 + Math.floor(rng() * 35),
+        });
+      }
+    } else if (s.tipo === 'normale') {
+      s.ricompensaOggetto = tiraOggettoGratisStanza(false);
+
+      const nOst = 2 + Math.floor(rng() * 3);
+      const tipiOst = ['urna', 'colonna', 'braciere'];
+      for (let i = 0; i < nOst; i++) {
+        s.ostacoli.push({
+          x: Math.round(135 + rng() * 370),
+          y: Math.round(115 + rng() * 140),
+          tipo: tipiOst[Math.floor(rng() * tipiOst.length)],
+        });
+      }
+
+      // ARCHETIPI DIFFERENZIATI COME IN THE BINDING OF ISAAC:
+      // - 'vespa_cieca' (Attack Fly): vola contro di te SENZA sparare!
+      // - 'bomba_ferma' (Mulliboom / Boil): sta ferma e pulsa, esplodendo se ti avvicini o quando uccisa!
+      // - 'gatto' (Trite / Hopper): NON spara, si accuccia col mirino rosso e balza verso di te!
+      // - 'maschera' (Host): corazzata finché è chiusa, si apre per sparare un ventaglio di 3 colpi!
+      // - 'guardia' (Knight / Clotty): pattuglia e spara doppiette di moschetto!
+      // - 'statua' (Stone Grimace): ferma sul posto, spara croci rotanti (+ e x)!
+      const nNem = 3 + Math.floor(rng() * 2) + Math.min(3, Math.floor(piano * 0.5));
+      const tipiNem = ['vespa_cieca', 'bomba_ferma', 'gatto', 'maschera', 'guardia', 'statua'];
+      const nomiNem = {
+        vespa_cieca: 'Vespa Cieca (Attack Fly)',
+        bomba_ferma: 'Bozzo Esplosivo (Boil)',
+        gatto: 'Gatto d\'Ombra (Hopper)',
+        maschera: 'Maschera Corazzata (Host)',
+        guardia: 'Guardia di Piombo',
+        statua: 'Torrione di Marmo',
+      };
+      const baseHpMap = { vespa_cieca: 9, bomba_ferma: 14, gatto: 14, maschera: 18, guardia: 22, statua: 26 };
+      const stageHpMap = { vespa_cieca: 2.5, bomba_ferma: 3.5, gatto: 4, maschera: 5, guardia: 6, statua: 7 };
+      const baseSpdMap = { vespa_cieca: 1.55, bomba_ferma: 0.0, gatto: 1.45, maschera: 0.35, guardia: 1.02, statua: 0.0 };
+
+      for (let i = 0; i < nNem; i++) {
+        const t = tipiNem[Math.floor(rng() * tipiNem.length)];
+        // Proposta 6: ~20% probabilità di nascere come CAMPIONE COLORATO (🔴 Cremisi, 🟡 Dorato, 🔵 Elettrico)
+        let champion = null;
+        if (rng() < 0.20) {
+          const rCh = rng();
+          champion = rCh < 0.34 ? 'cremisi' : rCh < 0.67 ? 'dorato' : 'elettrico';
+        }
+        const multHpChamp = champion === 'cremisi' ? 1.75 : champion ? 1.45 : 1.0;
+        const multSpdChamp = champion === 'dorato' ? 1.25 : 1.0;
+        const hpMax = Math.round((baseHpMap[t] + (piano - 1) * stageHpMap[t]) * moltCiclo * multHpChamp);
+
+        s.nemici.push({
+          id: `${s.id}-e${i}`,
+          tipo: t,
+          patternMob: t,
+          nome: champion ? `${nomiNem[t]} [Campione ${champion}]` : nomiNem[t],
+          boss: false,
+          mobSoldi: champion === 'dorato',
+          champion,
+          x: 120 + rng() * 400,
+          y: 105 + rng() * 155,
+          hp: hpMax,
+          maxHp: hpMax,
+          speed: baseSpdMap[t] * moltVel * multSpdChamp,
+          r: t === 'statua' ? 13 : 11,
+          flash: 0,
+          burnTicks: 0,
+          stunTicks: 0,
+          state: 'idle',
+          stateTimer: 25 + Math.floor(rng() * 35),
+          maskOpen: false,
+          shootCd: 35 + Math.floor(rng() * 45),
+        });
+      }
+    } else if (s.tipo === 'boss') {
+      const pianoNelCiclo = ((piano - 1) % 4) + 1;
+      const bossInfo = pianoNelCiclo === 4
+        ? BOSS_FINALE
+        : statoRun.bossOrdine[(piano - 1) % statoRun.bossOrdine.length];
+      const hpMax = Math.round((bossInfo.hpBase + (pianoNelCiclo - 1) * 45) * moltCiclo);
+      s.nemici.push({
+        id: `${s.id}-boss`,
+        bossId: bossInfo.id,
+        nome: ciclo > 1 ? `${bossInfo.nome} (Ciclo ${ciclo})` : bossInfo.nome,
+        tipo: bossInfo.tipo,
+        pattern: bossInfo.pattern,
+        boss: true,
+        x: 320,
+        y: 162,
+        vx: 1.35,
+        vy: 1.05,
+        airZ: 0,
+        handSlamY: 0,
+        state: 'idle',
+        stateTimer: 45,
+        hp: hpMax,
+        maxHp: hpMax,
+        speed: bossInfo.speed * moltVel,
+        r: pianoNelCiclo === 4 ? 22 : 18,
+        flash: 0,
+        burnTicks: 0,
+        stunTicks: 0,
+        shootCd: 40,
+        phaseTick: 0,
+      });
+    }
+  }
+
+  function avviaPiano(piano, mostraSipario = true) {
+    statoRun.piano = piano;
+    statoRun.ciclo = Math.floor((piano - 1) / 4) + 1;
+    statoRun.dannoSubitoNelBoss = false;
+    if ((piano - 1) % 4 === 0 && piano > 1) {
+      statoRun.bossOrdine = shuffle(POOL_BOSS);
+    }
+    statoRun.mappa = generaMappaPiano(piano);
+    const ing = statoRun.mappa.stanze.find((s) => s.tipo === 'ingresso');
+    entraInStanza(ing, null);
+    aggiornaBottoniPiano();
+    if (mostraSipario) {
+      statoRun.siparioAttivo = getRaccontoAtto(piano, statoRun.ciclo);
+    }
+  }
+
+  function getCharCorrente() {
+    return PERSONAGGI_GIOCABILI[statoRun.personaggioId] || PERSONAGGI_GIOCABILI.ferruccio;
+  }
+
+  function selezionaPersonaggio(charId) {
+    if (!PERSONAGGI_GIOCABILI[charId]) return;
+    statoRun.personaggioId = charId;
+    for (const k of Object.keys(PERSONAGGI_GIOCABILI)) {
+      const btn = document.getElementById(`btn-char-${k}`);
+      if (btn) btn.classList.toggle('active', k === charId);
+    }
+  }
+
+  function avviaPartitaConPersonaggio(charId) {
+    if (charId) selezionaPersonaggio(charId);
+    statoRun.fase = 'in_gioco';
+    nuovaRun();
+  }
+
+  function nuovaRun() {
+    runSeed = (Date.now() ^ Math.floor(performance.now() * 1000)) >>> 0;
+    statoRun.fase = 'in_gioco';
+    const pInfo = PERSONAGGI_GIOCABILI[statoRun.personaggioId] || PERSONAGGI_GIOCABILI.ferruccio;
+    statoRun.numeroRun += 1;
+    statoRun.bossOrdine = shuffle(POOL_BOSS);
+    statoRun.poolOggettiBase = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'base'));
+    statoRun.poolOggettiForti = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'forte'));
+    statoRun.poolPatto = shuffle(CATALOGO_PATTO);
+    statoRun.oggettiEquipaggiati = [];
+    if (pInfo.passivoIniziale) {
+      const initItem = CATALOGO_OGGETTI.find((x) => x.id === pInfo.passivoIniziale);
+      if (initItem) statoRun.oggettiEquipaggiati.push({ ...initItem });
+    }
+    statoRun.oggettoAttivo = { ...(OGGETTI_ATTIVI[pInfo.attivoIniziale] || OGGETTI_ATTIVI.forbici) };
+    statoRun.caricaAttivo = statoRun.oggettoAttivo.maxCarica;
+    statoRun.scambioPendente = null;
+    statoRun.monete = 0;
+    statoRun.baseMaxHpHalf = pInfo.hpHalf;
+    statoRun.maxHpHalf = pInfo.hpHalf;
+    statoRun.hpHalf = pInfo.hpHalf;
+    statoRun.baseDmgChar = pInfo.baseDmg;
+    statoRun.baseSpdChar = pInfo.baseSpd;
+    ricalcolaStatisticheIsaac();
+    avviaPiano(1, true);
+  }
+
+  function entraInStanza(stanza, daLato) {
+    statoRun.stanzaCorrente = stanza;
+    if (stanza.tipo !== 'patto') stanza.visitata = true;
+    statoRun.proiettili = [];
+    statoRun.proiettiliNemici = [];
+    statoRun.effettiSplash = [];
+    statoRun.ondeEsplosione = [];
+    statoRun.scambioPendente = null;
+    player.targetX = null;
+    player.targetY = null;
+    if (daLato === 'N') { player.x = 320; player.y = ARENA.y1 + 18; }
+    else if (daLato === 'S') { player.x = 320; player.y = ARENA.y2 - 18; }
+    else if (daLato === 'W') { player.x = ARENA.x1 + 22; player.y = 188; }
+    else if (daLato === 'E') { player.x = ARENA.x2 - 22; player.y = 188; }
+    else { player.x = 260; player.y = 225; }
+
+    if (stanza.tipo === 'tesoro' && stanza.oggettoPiedistallo && !stanza.oggettoPiedistallo.preso) {
+      const o = stanza.oggettoPiedistallo;
+      mostraBanner(`${o.forteGratis ? '★ OGGETTO FORTE GRATIS' : '🎁 OGGETTO GRATIS'}: ${o.nome} — ${o.statsDesc}`, 220);
+    } else if (stanza.tipo === 'fucina') {
+      mostraBanner('⚒ LA FUCINA DI MASTRO PEPPE: Risparmia i Grani (o cerca la Stanza Segreta ?) per le Reliquie da 15-18🪙!', 210);
+    } else if (stanza.tipo === 'patto') {
+      mostraBanner('😈 STANZA DEL PATTO D\'OMBRA: Cedi 1 ❤️ Maschera Massima per una Reliquia Proibita del Velo!', 230);
+    } else if (stanza.tipo === 'segreta' && !stanza.pulita) {
+      mostraBanner('🕵️ STANZA SEGRETA SCOPERTA! Sconfiggi i Predoni d\'Oro per raccogliere un bottino di monete!', 220);
+    } else if (stanza.tipo === 'boss' && !stanza.pulita) {
+      const b = stanza.nemici[0];
+      const pianoNelCiclo = ((statoRun.piano - 1) % 4) + 1;
+      mostraBanner(
+        pianoNelCiclo === 4
+          ? `♛ BOSS FINALE (${b.hp} HP): Le Mani di Marionetta scendono e diventano ${b.nome}!`
+          : `💀 BOSS PIANO ${statoRun.piano} (${b.hp} HP): ${b.nome}!`,
+        220
+      );
+    } else if (stanza.muroSegreto && !stanza.muroSegreto.aperto && stanza.pulita) {
+      mostraBanner(`✨ C'è una Crepa Dorata sul muro ${stanza.muroSegreto.lato}! Spara o fai esplodere un Bozzo per aprire la Segreta!`, 180);
+    }
+  }
+
+  function eseguiAttacco4Direzioni(dx, dy) {
+    if (player.cooldown > 0 || statoRun.scambioPendente || statoRun.siparioAttivo) return;
+    player.dirX = dx;
+    player.dirY = dy;
+    if (dx !== 0) player.flipX = dx < 0;
+
+    if (statoRun.haSpada) {
+      player.cooldown = Math.max(9, Math.round(statoRun.cooldownMax * 0.75));
+      player.swordAnimTick = 0;
+      player.swordAngle = Math.atan2(dy, dx);
+      player.swordHitIds = new Set();
+      if (statoRun.triplo || statoRun.tipoProiettile !== 'base' || statoRun.quadDir || statoRun.piercing) {
+        sparaProiettiliDirezione(dx, dy, 0.65);
+      }
+    } else {
+      player.cooldown = statoRun.cooldownMax;
+      player.shootAnimTimer = 7;
+      sparaProiettiliDirezione(dx, dy, 1.0);
+    }
+  }
+
+  function sparaProiettiliDirezione(dx, dy, dmgScale = 1.0) {
+    const baseAng = Math.atan2(dy, dx);
+    const direzioniBase = statoRun.quadDir
+      ? [0, Math.PI / 2, Math.PI, -Math.PI / 2]
+      : [baseAng];
+
+    for (const dirAng of direzioniBase) {
+      const angoli = statoRun.triplo ? [-0.20, 0, 0.20] : [0];
+      const offsets = statoRun.doppia && !statoRun.triplo ? [-4, 4] : [0];
+      for (const da of angoli) {
+        for (const off of offsets) {
+          const a = dirAng + da;
+          const perpX = -Math.sin(a) * off;
+          const perpY = Math.cos(a) * off;
+          statoRun.proiettili.push({
+            x: player.x + Math.cos(a) * 10 + perpX,
+            y: player.y - 6 + Math.sin(a) * 10 + perpY,
+            vx: Math.cos(a) * 4.2,
+            vy: Math.sin(a) * 4.2,
+            dist: 0,
+            maxDist: statoRun.range,
+            dmg: statoRun.dmg * dmgScale,
+            r: 4.5 * statoRun.projScale,
+            tipo: statoRun.tipoProiettile,
+            piercing: statoRun.piercing,
+            overflowPierce: statoRun.overflowPierce,
+            hitIds: new Set(),
+          });
+        }
+      }
+    }
+  }
+
+  function spawnaMonetaATerra(st, x, y, valore = 1) {
+    if (!st) return;
+    st.oggettiATerra.push({
+      tipo: 'moneta',
+      valore,
+      sprite: valore >= 3 ? 'moneta3' : 'moneta1',
+      x: Math.max(ARENA.x1 + 20, Math.min(ARENA.x2 - 20, x + (rng() - 0.5) * 22)),
+      y: Math.max(ARENA.y1 + 20, Math.min(ARENA.y2 - 20, y + (rng() - 0.5) * 22)),
+    });
+  }
+
+  // Esplosione stile Isaac per i Bozzi Esplosivi ('bomba_ferma' — Mulliboom/Boil):
+  // danneggia i nemici vicini, spara 6 proiettili radiali, può colpire il giocatore e apre il Muro Segreto!
+  function innescaEsplosioneBomba(st, bx, by) {
+    if (!st) return;
+    statoRun.scossa = 6;
+    statoRun.ondeEsplosione.push({ x: bx, y: by, r: 6, maxR: 48, color: '#fb923c' });
+    for (let k = 0; k < 6; k++) {
+      const a = (TAU * k) / 6;
+      statoRun.proiettiliNemici.push({
+        x: bx, y: by - 6,
+        vx: Math.cos(a) * 2.15, vy: Math.sin(a) * 2.15,
+        dist: 0,
+      });
+    }
+    if (st.muroSegreto && !st.muroSegreto.aperto) {
+      const posMuro = { N: [320, ARENA.y1], S: [320, ARENA.y2], W: [ARENA.x1, 188], E: [ARENA.x2, 188] }[st.muroSegreto.lato];
+      if (posMuro && Math.hypot(bx - posMuro[0], by - posMuro[1]) < 95) {
+        apriMuroSegreto(st);
+      }
+    }
+    for (const altro of st.nemici) {
+      if (altro.hp > 0 && Math.hypot(altro.x - bx, altro.y - by) < 48) {
+        altro.hp -= 12;
+        altro.flash = 6;
+      }
+    }
+    if (Math.hypot(player.x - bx, player.y - by) < 38 && player.invuln <= 0) {
+      subisciColpoGiocatore(2, 'un Bozzo Esplosivo');
+    }
+  }
+
+  function danneggiaNemico(nem, dmg, knockX, knockY) {
+    // Se il Boss Re Gatto (Monstro) è in volo alto (airZ > 25), non può essere colpito finché non atterra!
+    if (nem.boss && (nem.airZ || 0) > 25) return;
+
+    // Maschera di Pulcinella (Isaac Host): quando è chiusa è corazzata e riduce l'85% del danno!
+    if ((nem.patternMob || nem.tipo) === 'maschera' && !nem.maskOpen) {
+      nem.flash = 3;
+      nem.hp -= dmg * 0.12;
+      return;
+    }
+
+    nem.hp -= dmg;
+    nem.flash = 6;
+    if (statoRun.burn) nem.burnTicks = 120;
+    const isStun = (nem.patternMob || nem.tipo) === 'bomba_ferma' || (nem.patternMob || nem.tipo) === 'statua';
+    const mult = nem.boss ? 1.5 : isStun ? 0.5 : 5.0;
+    nem.x = Math.max(ARENA.x1 + 16, Math.min(ARENA.x2 - 16, nem.x + knockX * mult));
+    nem.y = Math.max(ARENA.y1 + 16, Math.min(ARENA.y2 - 16, nem.y + knockY * mult));
+    statoRun.scossa = 2.5;
+
+    if (statoRun.chain && statoRun.stanzaCorrente) {
+      for (const altro of statoRun.stanzaCorrente.nemici) {
+        if (altro !== nem && altro.hp > 0 && Math.hypot(altro.x - nem.x, altro.y - nem.y) < 72) {
+          altro.hp -= dmg * 0.45;
+          altro.flash = 4;
+          statoRun.scintilleFulmine.push({ x1: nem.x, y1: nem.y - 8, x2: altro.x, y2: altro.y - 8, tick: 6 });
+        }
+      }
+    }
+
+    if (nem.hp <= 0) {
+      const st = statoRun.stanzaCorrente;
+      // Se muore un Bozzo Esplosivo ('bomba_ferma'), esplode alla morte!
+      if ((nem.patternMob || nem.tipo) === 'bomba_ferma' && !nem.exploded) {
+        nem.exploded = true;
+        innescaEsplosioneBomba(st, nem.x, nem.y);
+      }
+      // Drop garantiti per Campioni Colorati (Proposta 6), Mob della Stanza Segreta e Boss!
+      if (nem.champion === 'cremisi' && st) {
+        st.oggettiATerra.push({ tipo: 'cura', valore: 1, sprite: 'mezzaMaschera', x: nem.x, y: nem.y });
+      } else if (nem.champion === 'elettrico' && st) {
+        if (statoRun.oggettoAttivo) {
+          statoRun.caricaAttivo = Math.min(statoRun.oggettoAttivo.maxCarica, statoRun.caricaAttivo + 1);
+        }
+        for (let k = 0; k < 4; k++) {
+          const a = (k * Math.PI) / 2;
+          statoRun.proiettiliNemici.push({ x: nem.x, y: nem.y - 6, vx: Math.cos(a) * 2.0, vy: Math.sin(a) * 2.0, dist: 0 });
+        }
+      }
+      if ((nem.mobSoldi || nem.champion === 'dorato') && st) {
+        spawnaMonetaATerra(st, nem.x, nem.y, rng() < 0.28 ? 3 : 1);
+        if (rng() < 0.45) spawnaMonetaATerra(st, nem.x, nem.y, 1);
+      } else if (nem.boss && st) {
+        spawnaMonetaATerra(st, nem.x - 16, nem.y, 1);
+        spawnaMonetaATerra(st, nem.x + 16, nem.y, rng() < 0.35 ? 3 : 1);
+      }
+      statoRun.effettiSplash.push({ x: nem.x, y: nem.y - 8, tick: 0 });
+    }
+    verificaStanzaPulita();
+  }
+
+  function verificaStanzaPulita() {
+    const st = statoRun.stanzaCorrente;
+    if (!st || st.pulita) return;
+    if (st.nemici.every((n) => n.hp <= 0)) {
+      st.pulita = true;
+      // Ricarica di +1 tacca l'Oggetto Attivo [Q] a ogni stanza ripulita (Proposta 5: come in Isaac!)
+      if (statoRun.oggettoAttivo) {
+        statoRun.caricaAttivo = Math.min(statoRun.oggettoAttivo.maxCarica, statoRun.caricaAttivo + 1);
+      }
+
+      if (st.tipo === 'boss') {
+        st.uscitaAperta = true;
+        // Proposta 2: Apertura della Porta del Patto d'Ombra (100% se non hai subito danni nel boss, 60% altrimenti!)
+        if (!statoRun.dannoSubitoNelBoss || rng() < 0.60) {
+          st.portaPattoAperta = true;
+        }
+        const pianoNelCiclo = ((statoRun.piano - 1) % 4) + 1;
+        if (pianoNelCiclo === 4) {
+          mostraBanner(`★ DONNA LUCIANA SCONFITTA! Entra nella Botola per il LOOP INFINITO (Piano ${statoRun.piano + 1}) o nel Patto 😈!`, 320);
+        } else {
+          mostraBanner(`Boss sconfitto! ${st.portaPattoAperta ? 'È apparsa la PORTA DEL PATTO D\'OMBRA (😈) a destra + ' : ''}Botola aperta!`, 240);
+        }
+        return;
+      }
+
+      if (st.ricompensaOggetto && !st.oggettoPiedistallo) {
+        st.oggettoPiedistallo = {
+          ...st.ricompensaOggetto,
+          x: 320,
+          y: 192,
+          preso: false,
+        };
+      }
+
+      const rPick = rng();
+      if (st.tipo === 'segreta') {
+        spawnaMonetaATerra(st, 320, 165, 3);
+      } else if (rPick < 0.25) {
+        spawnaMonetaATerra(st, 320, 165, 1);
+      } else if (rPick < 0.40 && statoRun.hpHalf < statoRun.maxHpHalf) {
+        st.oggettiATerra.push({ tipo: 'cura', valore: 1, sprite: 'mezzaMaschera', x: 320, y: 165 });
+      }
+
+      if (st.oggettoPiedistallo) {
+        const tag = st.oggettoPiedistallo.forteGratis ? '★ OGGETTO FORTE GRATIS (1 su 10)!' : '🎁 OGGETTO GRATIS (1 su 3)!';
+        mostraBanner(`Stanza pulita! È apparso ${tag} → ${st.oggettoPiedistallo.nome} [Click/E]`, 220);
+      } else if (st.muroSegreto && !st.muroSegreto.aperto) {
+        mostraBanner(`Stanza pulita! ✨ Nota la Crepa Dorata sul muro ${st.muroSegreto.lato}: sparaci per la Stanza Segreta!`, 200);
+      } else {
+        mostraBanner(st.tipo === 'segreta' ? 'Stanza Segreta ripulita! Raccogli tutte le monete a terra!' : 'Stanza ripulita! (+1⚡ Carica Attivo [Q])', 130);
+      }
+    }
+  }
+
+  function interagisciStanza() {
+    if (statoRun.scambioPendente || statoRun.siparioAttivo) return;
+    const st = statoRun.stanzaCorrente;
+    if (!st) return;
+
+    if (st.pulita && st.muroSegreto && !st.muroSegreto.aperto) {
+      apriMuroSegreto(st);
+      return;
+    }
+
+    if (st.pulita && st.oggettoPiedistallo && !st.oggettoPiedistallo.preso) {
+      const o = st.oggettoPiedistallo;
+      if (Math.hypot(player.x - o.x, player.y - o.y) < 52) {
+        acquisisciOggettoConLimite5Slot({ ...o }, 'piedistallo', o);
+        return;
+      }
+    }
+
+    if (st.tipo === 'patto') {
+      for (const sl of st.slotPatto) {
+        if (sl.comprato) continue;
+        if (Math.hypot(player.x - sl.x, player.y - sl.y) < 44) {
+          acquisisciOggettoConLimite5Slot({ ...sl.item }, 'patto', sl);
+          return;
+        }
+      }
+      if (Math.hypot(player.x - 320, player.y - 252) < 46) {
+        const bossRoom = statoRun.mappa?.stanze.find((x) => x.tipo === 'boss');
+        if (bossRoom) entraInStanza(bossRoom, null);
+      }
+      return;
+    }
+
+    if (st.tipo === 'fucina') {
+      for (const sl of st.slotFucina) {
+        if (sl.comprato) continue;
+        if (Math.hypot(player.x - sl.x, player.y - sl.y) < 42) {
+          if (statoRun.monete < sl.prezzo) {
+            mostraBanner(`Grani insufficienti! Servono ${sl.prezzo}🪙 (hai ${statoRun.monete}🪙 — cerca la Stanza Segreta ? per fare soldi!).`, 160);
+            return;
+          }
+          if (sl.tipo === 'cura') {
+            if (statoRun.hpHalf >= statoRun.maxHpHalf) {
+              mostraBanner('Hai già tutte le Maschere piene!', 100);
+              return;
+            }
+            statoRun.monete -= sl.prezzo;
+            sl.comprato = true;
+            statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + sl.curaHalf);
+            mostraBanner(`Acquistato ne La Fucina: +${sl.curaHalf === 1 ? '½' : '1'} Maschera rigenerata!`, 130);
+          } else {
+            acquisisciOggettoConLimite5Slot({ ...sl.item }, 'fucina', sl);
+          }
+          return;
+        }
+      }
+    } else if (st.tipo === 'boss') {
+      if (st.portaPattoAperta && Math.hypot(player.x - 430, player.y - 190) < 42) {
+        const stanzaPatto = statoRun.mappa?.stanze.find((x) => x.tipo === 'patto');
+        if (stanzaPatto) entraInStanza(stanzaPatto, null);
+        return;
+      }
+      if (st.uscitaAperta) {
+        avviaPiano(statoRun.piano + 1, true);
+      }
+    }
+  }
+
+  function subisciColpoGiocatore(mezzeMaschereDanno, fonte) {
+    if (player.invuln > 0) return;
+    if (statoRun.stanzaCorrente?.tipo === 'boss') statoRun.dannoSubitoNelBoss = true;
+    statoRun.hpHalf = Math.max(0, statoRun.hpHalf - mezzeMaschereDanno);
+    player.invuln = 52;
+    statoRun.scossa = 5;
+    if (statoRun.hpHalf <= 0) {
+      mostraBanner(`Le tue maschere si sono spezzate contro ${fonte}... Nuova Run al Piano 1!`, 200);
+      nuovaRun();
+    }
+  }
+
+  function aggiornaBottoniPiano() {
+    const pianoNelCiclo = ((statoRun.piano - 1) % 4) + 1;
+    for (let p = 1; p <= 4; p++) {
+      document.getElementById(`btn-p${p}`).classList.toggle('active', statoRun.piano <= 4 && pianoNelCiclo === p);
+    }
+    document.getElementById('btn-p5').classList.toggle('active', statoRun.piano >= 5);
+  }
+  const btnMenuEl = document.getElementById('btn-menu-char');
+  if (btnMenuEl) {
+    btnMenuEl.addEventListener('click', () => {
+      statoRun.fase = 'menu_selezione';
+      statoRun.siparioAttivo = null;
+    });
+  }
+  document.getElementById('btn-new-run').addEventListener('click', () => {
+    statoRun.fase = 'in_gioco';
+    nuovaRun();
+  });
+  for (const charId of ['ferruccio', 'agnese', 'taddeo', 'ombra']) {
+    const b = document.getElementById(`btn-char-${charId}`);
+    if (b) {
+      b.addEventListener('click', () => {
+        selezionaPersonaggio(charId);
+        if (statoRun.fase === 'in_gioco') nuovaRun();
+      });
+    }
+  }
+  for (let p = 1; p <= 4; p++) {
+    document.getElementById(`btn-p${p}`).addEventListener('click', () => avviaPiano(p, true));
+  }
+  document.getElementById('btn-p5').addEventListener('click', () => {
+    const nextLoopFloor = statoRun.piano >= 5 ? statoRun.piano + 1 : 5;
+    avviaPiano(nextLoopFloor, true);
+  });
+  document.getElementById('btn-segreta').addEventListener('click', () => {
+    statoRun.siparioAttivo = null;
+    const s = statoRun.mappa?.stanze.find((x) => x.tipo === 'segreta');
+    if (s) {
+      const genitore = statoRun.mappa.stanze.find((g) => g.muroSegreto?.idDest === s.id);
+      if (genitore) apriMuroSegreto(genitore);
+      entraInStanza(s, null);
+    }
+  });
+  document.getElementById('btn-fucina').addEventListener('click', () => {
+    statoRun.siparioAttivo = null;
+    const s = statoRun.mappa?.stanze.find((x) => x.tipo === 'fucina');
+    if (s) entraInStanza(s, null);
+  });
+  document.getElementById('btn-patto').addEventListener('click', () => {
+    statoRun.siparioAttivo = null;
+    const s = statoRun.mappa?.stanze.find((x) => x.tipo === 'patto');
+    if (s) entraInStanza(s, null);
+  });
+  document.getElementById('btn-boss').addEventListener('click', () => {
+    statoRun.siparioAttivo = null;
+    const s = statoRun.mappa?.stanze.find((x) => x.tipo === 'boss');
+    if (s) entraInStanza(s, null);
+  });
+  document.getElementById('btn-storia').addEventListener('click', () => {
+    statoRun.siparioAttivo = getRaccontoAtto(statoRun.piano, statoRun.ciclo);
+  });
+
+  // ===========================================================================
+  // PAVIMENTO E STANZA PIXEL-ART
+  // ===========================================================================
+  let floorCache = null;
+  function getFloorTileCanvas() {
+    if (floorCache) return floorCache;
+    floorCache = document.createElement('canvas');
+    floorCache.width = W;
+    floorCache.height = H;
+    const x = floorCache.getContext('2d');
+    x.imageSmoothingEnabled = false;
+
+    x.fillStyle = '#0c0806';
+    x.fillRect(0, 0, W, H);
+
+    x.fillStyle = '#241811';
+    x.fillRect(48, 52, W - 96, H - 96);
+    x.strokeStyle = '#0a0604';
+    x.lineWidth = 2;
+    x.strokeRect(48, 52, W - 96, H - 96);
+
+    for (let bx = 52; bx < W - 52; bx += 24) {
+      x.fillStyle = '#332218';
+      x.fillRect(bx, 56, 20, 12);
+      x.fillRect(bx, H - 60, 20, 12);
+    }
+    for (let by = 68; by < H - 64; by += 20) {
+      x.fillStyle = '#332218';
+      x.fillRect(52, by, 12, 16);
+      x.fillRect(W - 64, by, 12, 16);
+    }
+
+    const tileColors = ['#3d2b1f', '#38261b', '#433022', '#352318'];
+    let seed = 1337;
+    const nextR = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return (seed >>> 16) / 65536; };
+
+    for (let ty = 70; ty < 304; ty += 16) {
+      for (let tx = 68; tx < 572; tx += 16) {
+        const c = tileColors[Math.floor(nextR() * tileColors.length)];
+        x.fillStyle = c;
+        x.fillRect(tx, ty, 16, 16);
+        x.fillStyle = '#281a11';
+        x.fillRect(tx, ty + 15, 16, 1);
+        x.fillRect(tx + 15, ty, 1, 16);
+        if (nextR() < 0.28) {
+          x.fillStyle = '#523b2b';
+          x.fillRect(tx + 4, ty + 4, 2, 2);
+        }
+        if (nextR() < 0.16) {
+          x.fillStyle = '#22150d';
+          x.fillRect(tx + 9, ty + 8, 3, 1);
+          x.fillRect(tx + 10, ty + 9, 1, 2);
+        }
+      }
+    }
+
+    x.strokeStyle = '#0a0604';
+    x.lineWidth = 2;
+    x.strokeRect(68, 70, 504, 234);
+    return floorCache;
+  }
+
+  function disegnaStanzaPixelArt(tick, st) {
+    ctx.drawImage(getFloorTileCanvas(), 0, 0);
+
+    if (st.tipo === 'tesoro' || st.tipo === 'fucina' || st.tipo === 'boss' || st.tipo === 'segreta' || st.tipo === 'patto') {
+      ctx.fillStyle = st.tipo === 'tesoro'
+        ? '#5c4214'
+        : st.tipo === 'fucina'
+          ? '#472112'
+          : st.tipo === 'segreta'
+            ? '#2d193c'
+            : st.tipo === 'patto'
+              ? '#240812'
+              : '#4a1210';
+      const rx = (st.tipo === 'fucina' || st.tipo === 'patto') ? 126 : 210;
+      const rw = (st.tipo === 'fucina' || st.tipo === 'patto') ? 388 : 220;
+      ctx.fillRect(rx, 130, rw, 114);
+      ctx.strokeStyle = st.tipo === 'segreta' ? '#c084fc' : st.tipo === 'patto' ? '#ef4444' : '#f9cb40';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(rx + 2, 132, rw - 4, 110);
+    }
+
+    const brFrame = Math.floor(tick / 8) % 2 === 0 ? SPRITE_SCENA.braciere0 : SPRITE_SCENA.braciere1;
+    for (const tx of [150, 490]) {
+      drawPixelSprite(brFrame, tx, 62, 1.5);
+    }
+
+    const chiuse = !st.pulita;
+    const porte = {
+      N: { x: 320, y: 61, w: 36, h: 18 },
+      S: { x: 320, y: 313, w: 36, h: 18 },
+      W: { x: 59, y: 187, w: 18, h: 36 },
+      E: { x: 581, y: 187, w: 18, h: 36 },
+    };
+
+    if (st.muroSegreto && !st.muroSegreto.aperto) {
+      const p = porte[st.muroSegreto.lato];
+      if (p) {
+        const pulse = 0.55 + 0.45 * Math.sin(tick * 0.14);
+        ctx.save();
+        ctx.strokeStyle = `rgba(249, 203, 64, ${pulse.toFixed(2)})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(p.x - 8, p.y - 6);
+        ctx.lineTo(p.x - 2, p.y);
+        ctx.lineTo(p.x + 5, p.y - 4);
+        ctx.lineTo(p.x + 2, p.y + 5);
+        ctx.lineTo(p.x + 9, p.y + 8);
+        ctx.stroke();
+        if (st.pulita) {
+          const lx = st.muroSegreto.lato === 'W' ? p.x + 48 : st.muroSegreto.lato === 'E' ? p.x - 48 : p.x;
+          const ly = st.muroSegreto.lato === 'N' ? p.y + 22 : st.muroSegreto.lato === 'S' ? p.y - 12 : p.y - 12;
+          drawPillLabel('? CREPA [Spara/E]', lx, ly, 108, { size: 7.5, color: '#f9cb40', border: '#f9cb40' });
+        }
+        ctx.restore();
+      }
+    }
+
+    for (const [lato, idDest] of Object.entries(st.porte)) {
+      const dest = statoRun.mappa.perId.get(idDest);
+      const p = porte[lato];
+      const colCornice = dest?.tipo === 'tesoro'
+        ? '#f9cb40'
+        : dest?.tipo === 'fucina'
+          ? '#ea8626'
+          : dest?.tipo === 'boss'
+            ? '#e53222'
+            : dest?.tipo === 'segreta'
+              ? '#c084fc'
+              : '#9ca3af';
+
+      ctx.fillStyle = '#0a0604';
+      ctx.fillRect(p.x - p.w / 2 - 2, p.y - p.h / 2 - 2, p.w + 4, p.h + 4);
+      ctx.fillStyle = colCornice;
+      ctx.fillRect(p.x - p.w / 2, p.y - p.h / 2, p.w, p.h);
+      ctx.fillStyle = chiuse ? '#571b14' : '#090604';
+      ctx.fillRect(p.x - p.w / 2 + 3, p.y - p.h / 2 + 3, p.w - 6, p.h - 6);
+
+      if (chiuse) {
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(p.x - 6, p.y - p.h / 2 + 3, 2, p.h - 6);
+        ctx.fillRect(p.x + 4, p.y - p.h / 2 + 3, 2, p.h - 6);
+      } else if (dest) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 9px ui-monospace, monospace';
+        ctx.textAlign = 'center';
+        const tag = dest.tipo === 'tesoro'
+          ? '★'
+          : dest.tipo === 'fucina'
+            ? '⚒'
+            : dest.tipo === 'boss'
+              ? '💀'
+              : dest.tipo === 'segreta'
+                ? '?'
+                : '';
+        if (tag) ctx.fillText(tag, p.x, p.y + 3);
+      }
+    }
+  }
+
+  // ===========================================================================
+  // MENÙ INIZIALE DI SELEZIONE DEL PERSONAGGIO (STILE THE BINDING OF ISAAC)
+  // ===========================================================================
+  function disegnaMenuSelezionePersonaggio(tick) {
+    // 1. Fondale teatrale e pedana in legno
+    ctx.fillStyle = '#0a0604';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = '#180e08';
+    ctx.fillRect(0, 276, W, H - 276);
+    ctx.strokeStyle = '#2d180d';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0, 276, W, H - 276);
+    for (let tx = 0; tx < W; tx += 36) {
+      ctx.beginPath();
+      ctx.moveTo(tx, 276);
+      ctx.lineTo(tx, H);
+      ctx.stroke();
+    }
+
+    // 2. Drappeggi e tende del teatro in alto
+    ctx.fillStyle = '#5c120a';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(W, 0);
+    ctx.lineTo(W, 36);
+    for (let x = W; x >= 0; x -= 32) {
+      ctx.quadraticCurveTo(x - 16, 46 + Math.sin(x) * 2.5, x - 32, 36);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#f9cb40';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Frange e quinte laterali
+    ctx.fillStyle = '#3a0805';
+    ctx.fillRect(0, 36, 20, H - 36);
+    ctx.fillRect(W - 20, 36, 20, H - 36);
+    ctx.strokeStyle = '#f9cb40';
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(0, 36, 20, H - 36);
+    ctx.strokeRect(W - 20, 36, 20, H - 36);
+
+    // Grandi Mani di Marionetta che muovono i bilancini in alto
+    disegnaManoMarionettaPittorica(140, 24, 1, 0.95, tick, false);
+    disegnaManoMarionettaPittorica(500, 24, -1, 0.95, tick + 14, false);
+
+    // 3. Titolo del Menù
+    drawTextFit('★ TEATRO DELLE MARIONETTE D\'OMBRA ★', W / 2, 17, 360, {
+      size: 10.5, color: '#f9cb40', shadow: true, weight: 'bold',
+    });
+    drawTextFit('SCEGLI IL TUO BURATTINO PER INIZIARE LA COMMEDIA', W / 2, 40, 460, {
+      size: 7.8, color: '#f3dfc1', shadow: false,
+    });
+
+    // 4. Le 4 Card dei personaggi affiancate
+    const listaPersonaggi = ['ferruccio', 'agnese', 'taddeo', 'ombra'];
+    const cardW = 132, cardH = 226, cardY = 56;
+    const gap = 14;
+    const startX = 35;
+
+    for (let i = 0; i < listaPersonaggi.length; i++) {
+      const pId = listaPersonaggi[i];
+      const p = PERSONAGGI_GIOCABILI[pId];
+      const cx = startX + i * (cardW + gap);
+      const isSelected = statoRun.personaggioId === pId;
+
+      ctx.save();
+      // Filo dorato che scende dal soffitto verso la pedana del burattino
+      ctx.strokeStyle = isSelected ? 'rgba(249, 203, 64, 0.85)' : 'rgba(249, 203, 64, 0.35)';
+      ctx.lineWidth = isSelected ? 1.5 : 1;
+      ctx.beginPath();
+      ctx.moveTo(cx + cardW / 2, 34);
+      ctx.lineTo(cx + cardW / 2, cardY + 20);
+      ctx.stroke();
+
+      // Card Box
+      ctx.fillStyle = isSelected ? '#24140b' : '#140c08';
+      ctx.fillRect(cx, cardY, cardW, cardH);
+      ctx.strokeStyle = isSelected ? '#f9cb40' : '#452c1a';
+      ctx.lineWidth = isSelected ? 2.5 : 1.2;
+      ctx.strokeRect(cx, cardY, cardW, cardH);
+
+      // Bagliore dorato pulsante sulla card selezionata
+      if (isSelected) {
+        const pulse = 0.55 + 0.45 * Math.sin(tick * 0.12);
+        ctx.strokeStyle = `rgba(249, 203, 64, ${pulse.toFixed(2)})`;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cx + 3, cardY + 3, cardW - 6, cardH - 6);
+      }
+
+      // Pedana circolare di legno sotto il personaggio
+      const pedX = cx + cardW / 2;
+      const pedY = cardY + 68;
+      ctx.fillStyle = isSelected ? '#4a2c16' : '#28170c';
+      ctx.beginPath();
+      ctx.ellipse(pedX, pedY + 8, 28, 9, 0, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = isSelected ? '#f9cb40' : '#694121';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Disegno pittorico completo del personaggio in posa animata
+      const charSinergie = {};
+      if (p.passivoIniziale) charSinergie[p.passivoIniziale] = true;
+      if (pId === 'ombra') charSinergie.patto_raggio = true;
+
+      disegnaFerruccioPittorico(pedX, pedY, {
+        charId: pId,
+        charInfo: p,
+        flipX: false,
+        moving: false,
+        tick,
+        haSpada: pId === 'taddeo' || p.passivoIniziale === 'spada',
+        sinergie: charSinergie,
+      });
+
+      // Tasto rapido [1]..[4]
+      drawPillLabel(`[${i + 1}]`, cx + 18, cardY + 12, 24, {
+        size: 7,
+        color: isSelected ? '#f9cb40' : '#9ca3af',
+        border: isSelected ? '#f9cb40' : '#4b5563',
+      });
+
+      // Nome Personaggio
+      drawTextFit(p.nome.toUpperCase(), pedX, cardY + 95, cardW - 10, {
+        size: 8.5,
+        color: isSelected ? '#f9cb40' : '#ffffff',
+        weight: 'bold',
+      });
+      // Sottotitolo / Ruolo
+      drawTextFit(p.titolo, pedX, cardY + 107, cardW - 12, {
+        size: 7,
+        color: isSelected ? '#67e8f9' : '#a8a29e',
+        weight: '',
+      });
+
+      // Statistiche
+      const hpHearts = p.hpHalf === 8 ? '❤️❤️❤️❤️' : p.hpHalf === 6 ? '❤️❤️❤️' : p.hpHalf === 4 ? '❤️❤️' : '❤️½';
+      drawTextFit(`Vita: ${hpHearts}`, pedX, cardY + 126, cardW - 12, {
+        size: 7.5, color: '#ef4444',
+      });
+      drawTextFit(`⚔ DMG: ${p.baseDmg.toFixed(2)}  🥾 SPD: ${p.baseSpd.toFixed(2)}`, pedX, cardY + 140, cardW - 12, {
+        size: 7.5, color: '#f9cb40',
+      });
+
+      // Oggetto Attivo [Q]
+      const att = OGGETTI_ATTIVI[p.attivoIniziale];
+      drawTextFit(`Attivo [Q]: ${att ? att.nome.split(' ')[0] : 'Forbici'}`, pedX, cardY + 160, cardW - 10, {
+        size: 7.5, color: '#38bdf8',
+      });
+
+      // Oggetto / Potere Iniziale
+      const donoNome = pId === 'agnese' ? '👓 Lente 20/20' : pId === 'taddeo' ? '🗡 Spada Gaetano' : pId === 'ombra' ? '🩸 Anello Cremisi' : '✨ Libero dai Fili';
+      drawTextFit(`Dono: ${donoNome}`, pedX, cardY + 175, cardW - 10, {
+        size: 7.5, color: '#4ade80',
+      });
+
+      // Indicatore di Selezione
+      if (isSelected) {
+        ctx.fillStyle = '#63150d';
+        ctx.fillRect(cx + 8, cardY + 196, cardW - 16, 20);
+        ctx.strokeStyle = '#f9cb40';
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(cx + 8, cardY + 196, cardW - 16, 20);
+        drawTextFit('★ SELEZIONATO ★', pedX, cardY + 209, cardW - 20, {
+          size: 7.5, color: '#f9cb40', weight: 'bold',
+        });
+      } else {
+        ctx.fillStyle = '#1c140e';
+        ctx.fillRect(cx + 8, cardY + 196, cardW - 16, 20);
+        ctx.strokeStyle = '#382518';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cx + 8, cardY + 196, cardW - 16, 20);
+        drawTextFit('Clicca per scegliere', pedX, cardY + 209, cardW - 20, {
+          size: 7, color: '#78716c',
+        });
+      }
+
+      ctx.restore();
+    }
+
+    // 5. Pulsante Dorato Avvia Commedia in basso
+    const curP = PERSONAGGI_GIOCABILI[statoRun.personaggioId] || PERSONAGGI_GIOCABILI.ferruccio;
+    const btnW = 320, btnH = 34;
+    const btnX = (W - btnW) / 2, btnY = 302;
+    const pulseBtn = 0.8 + 0.2 * Math.sin(tick * 0.14);
+
+    ctx.save();
+    ctx.fillStyle = '#6e150d';
+    ctx.fillRect(btnX, btnY, btnW, btnH);
+    ctx.strokeStyle = `rgba(249, 203, 64, ${pulseBtn.toFixed(2)})`;
+    ctx.lineWidth = 2.2;
+    ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+    drawTextFit(`▶ INIZIA LA COMMEDIA CON ${curP.nome.toUpperCase()} ◀`, W / 2, btnY + 16, btnW - 16, {
+      size: 9.5, color: '#f9cb40', weight: 'bold',
+    });
+    drawTextFit('Clicca qui o premi [SPAZIO / INVIO] per entrare nel Teatro', W / 2, btnY + 27, btnW - 16, {
+      size: 7.5, color: '#ffffff',
+    });
+    ctx.restore();
+  }
+
+  // ===========================================================================
+  // LOOP DI GIOCO E IA DIFFERENZIATA NEMICI/BOSS IN STILE THE BINDING OF ISAAC
+  // ===========================================================================
+  let tick = 0;
+  function loop() {
+    tick++;
+
+    if (statoRun.fase === 'menu_selezione') {
+      disegnaMenuSelezionePersonaggio(tick);
+      requestAnimationFrame(loop);
+      return;
+    }
+
+    const st = statoRun.stanzaCorrente;
+    const inPausaUI = Boolean(statoRun.scambioPendente || statoRun.siparioAttivo);
+
+    if (st && !inPausaUI) {
+      let mx = 0, my = 0;
+      if (keys.KeyA) mx -= 1;
+      if (keys.KeyD) mx += 1;
+      if (keys.KeyW) my -= 1;
+      if (keys.KeyS) my += 1;
+
+      player.moving = false;
+      if (mx !== 0 || my !== 0) {
+        const l = Math.hypot(mx, my);
+        player.x = Math.max(ARENA.x1, Math.min(ARENA.x2, player.x + (mx / l) * statoRun.speed));
+        player.y = Math.max(ARENA.y1, Math.min(ARENA.y2, player.y + (my / l) * statoRun.speed));
+        if (mx !== 0) player.flipX = mx < 0;
+        player.moving = true;
+      } else if (player.targetX !== null && player.targetY !== null) {
+        const dx = player.targetX - player.x;
+        const dy = player.targetY - player.y;
+        const d = Math.hypot(dx, dy);
+        if (d > 4) {
+          player.x = Math.max(ARENA.x1, Math.min(ARENA.x2, player.x + (dx / d) * statoRun.speed));
+          player.y = Math.max(ARENA.y1, Math.min(ARENA.y2, player.y + (dy / d) * statoRun.speed));
+          player.flipX = dx < 0;
+          player.moving = true;
+        } else {
+          player.targetX = null;
+          player.targetY = null;
+        }
+      }
+
+      if (player.cooldown > 0) player.cooldown--;
+      if (player.shootAnimTimer > 0) player.shootAnimTimer--;
+      if (player.pickupTimer > 0) player.pickupTimer--;
+      if (player.invuln > 0) player.invuln--;
+
+      if (st.oggettiATerra && st.oggettiATerra.length > 0) {
+        for (let i = st.oggettiATerra.length - 1; i >= 0; i--) {
+          const pk = st.oggettiATerra[i];
+          if (Math.hypot(player.x - pk.x, player.y - pk.y) < 20) {
+            if (pk.tipo === 'moneta') {
+              statoRun.monete = Math.min(99, statoRun.monete + pk.valore);
+              st.oggettiATerra.splice(i, 1);
+            } else if (pk.tipo === 'cura' && statoRun.hpHalf < statoRun.maxHpHalf) {
+              statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + pk.valore);
+              st.oggettiATerra.splice(i, 1);
+            }
+          }
+        }
+      }
+
+      if (keys.ArrowRight || keys.KeyL) eseguiAttacco4Direzioni(1, 0);
+      else if (keys.ArrowLeft || keys.KeyJ) eseguiAttacco4Direzioni(-1, 0);
+      else if (keys.ArrowUp || keys.KeyI) eseguiAttacco4Direzioni(0, -1);
+      else if (keys.ArrowDown || keys.KeyK) eseguiAttacco4Direzioni(0, 1);
+
+      const posMuroSegreto = {
+        N: { x: 320, y: ARENA.y1 },
+        S: { x: 320, y: ARENA.y2 },
+        W: { x: ARENA.x1, y: 188 },
+        E: { x: ARENA.x2, y: 188 },
+      };
+
+      // Fendente di Spada animato in 6 frame
+      if (player.swordAnimTick >= 0) {
+        const frameIdx = Math.floor(player.swordAnimTick / 3);
+        if (frameIdx >= 1 && frameIdx <= 4) {
+          const reach = 38;
+          const hx = player.x + Math.cos(player.swordAngle) * 20;
+          const hy = (player.y - 6) + Math.sin(player.swordAngle) * 20;
+          if (st.muroSegreto && !st.muroSegreto.aperto) {
+            const pm = posMuroSegreto[st.muroSegreto.lato];
+            if (pm && Math.hypot(hx - pm.x, hy - pm.y) <= reach + 16) {
+              apriMuroSegreto(st);
+            }
+          }
+          for (const nem of st.nemici) {
+            if (nem.hp <= 0 || (nem.airZ || 0) > 16 || player.swordHitIds.has(nem.id)) continue;
+            if (Math.hypot(nem.x - hx, (nem.y - 6) - hy) <= reach + nem.r) {
+              player.swordHitIds.add(nem.id);
+              danneggiaNemico(nem, statoRun.dmg, Math.cos(player.swordAngle), Math.sin(player.swordAngle));
+            }
+          }
+          for (let i = statoRun.proiettiliNemici.length - 1; i >= 0; i--) {
+            const pr = statoRun.proiettiliNemici[i];
+            if (Math.hypot(pr.x - hx, pr.y - hy) <= reach * 0.85) {
+              statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
+              statoRun.proiettiliNemici.splice(i, 1);
+            }
+          }
+        }
+        player.swordAnimTick++;
+        if (player.swordAnimTick >= 18) player.swordAnimTick = -1;
+      }
+
+      // Proiettili di Ferruccio
+      for (let i = statoRun.proiettili.length - 1; i >= 0; i--) {
+        const p = statoRun.proiettili[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.dist += Math.hypot(p.vx, p.vy);
+
+        if (st.muroSegreto && !st.muroSegreto.aperto) {
+          const pm = posMuroSegreto[st.muroSegreto.lato];
+          if (pm && Math.hypot(p.x - pm.x, p.y - pm.y) < 26) {
+            apriMuroSegreto(st);
+            statoRun.effettiSplash.push({ x: p.x, y: p.y, tick: 0 });
+            statoRun.proiettili.splice(i, 1);
+            continue;
+          }
+        }
+
+        let rimuovi = p.dist >= p.maxDist || p.x < ARENA.x1 - 8 || p.x > ARENA.x2 + 8 || p.y < ARENA.y1 - 8 || p.y > ARENA.y2 + 8;
+
+        for (const nem of st.nemici) {
+          if (nem.hp <= 0 || (nem.airZ || 0) > 16 || p.hitIds.has(nem.id)) continue;
+          if (Math.hypot(nem.x - p.x, (nem.y - 6) - p.y) <= nem.r + p.r) {
+            p.hitIds.add(nem.id);
+            const hpPrima = nem.hp;
+            const l = Math.hypot(p.vx, p.vy) || 1;
+            danneggiaNemico(nem, p.dmg, p.vx / l, p.vy / l);
+            statoRun.effettiSplash.push({ x: p.x, y: p.y, tick: 0 });
+            if (p.piercing) {
+              // Continua
+            } else if (p.overflowPierce && p.dmg > hpPrima) {
+              p.dmg -= hpPrima;
+            } else {
+              rimuovi = true;
+              break;
+            }
+          }
+        }
+        if (rimuovi) {
+          if (p.dist >= p.maxDist) statoRun.effettiSplash.push({ x: p.x, y: p.y, tick: 0 });
+          statoRun.proiettili.splice(i, 1);
+        }
+      }
+
+      // Proiettili Nemici
+      const dannoBasePiano = statoRun.piano >= 3 ? 2 : 1;
+      for (let i = statoRun.proiettiliNemici.length - 1; i >= 0; i--) {
+        const pr = statoRun.proiettiliNemici[i];
+        pr.x += pr.vx;
+        pr.y += pr.vy;
+        pr.dist += Math.hypot(pr.vx, pr.vy);
+        if (Math.hypot(player.x - pr.x, (player.y - 6) - pr.y) < 9 && player.invuln <= 0) {
+          statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
+          statoRun.proiettiliNemici.splice(i, 1);
+          subisciColpoGiocatore(pr.bossShot ? 2 : dannoBasePiano, 'un proiettile del Velo');
+          if (statoRun.hpHalf <= 0) break;
+          continue;
+        }
+        if (pr.dist > 250 || pr.x < ARENA.x1 - 8 || pr.x > ARENA.x2 + 8 || pr.y < ARENA.y1 - 8 || pr.y > ARENA.y2 + 8) {
+          statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
+          statoRun.proiettiliNemici.splice(i, 1);
+        }
+      }
+
+      // Passaggio porte aperte
+      if (st.pulita) {
+        const opp = { N: 'S', S: 'N', W: 'E', E: 'W' };
+        if (st.porte.N && player.y <= ARENA.y1 + 5 && Math.abs(player.x - 320) < 26) {
+          entraInStanza(statoRun.mappa.perId.get(st.porte.N), opp.N);
+        } else if (st.porte.S && player.y >= ARENA.y2 - 5 && Math.abs(player.x - 320) < 26) {
+          entraInStanza(statoRun.mappa.perId.get(st.porte.S), opp.S);
+        } else if (st.porte.W && player.x <= ARENA.x1 + 5 && Math.abs(player.y - 188) < 26) {
+          entraInStanza(statoRun.mappa.perId.get(st.porte.W), opp.W);
+        } else if (st.porte.E && player.x >= ARENA.x2 - 5 && Math.abs(player.y - 188) < 26) {
+          entraInStanza(statoRun.mappa.perId.get(st.porte.E), opp.E);
+        }
+      }
+
+      // 6. IA DIFFERENZIATA NEMICI E BOSS IN STILE THE BINDING OF ISAAC
+      for (const n of st.nemici) {
+        if (n.hp <= 0) continue;
+        if (n.flash > 0) n.flash--;
+        if (n.burnTicks > 0) {
+          n.burnTicks--;
+          if (n.burnTicks % 20 === 0) {
+            danneggiaNemico(n, 1.2, 0, 0);
+            if (n.hp <= 0) continue;
+          }
+        }
+        if (n.stunTicks > 0) {
+          n.stunTicks--;
+          continue;
+        }
+
+        const ang = Math.atan2(player.y - n.y, player.x - n.x);
+        const distPlayer = Math.hypot(player.x - n.x, player.y - n.y);
+
+        if (n.boss) {
+          n.phaseTick = (n.phaseTick || 0) + 1;
+          const enrage = n.hp < n.maxHp * 0.5;
+
+          if (n.bossId === 're-gatto') {
+            // MONSTRO (Re Gatto): saltelli + grande balzo in aria (airZ > 0) con schianto e rosa caotica di 14 colpi
+            if (n.jumpPhase === 'air') {
+              n.jumpTimer--;
+              n.airZ = Math.round(Math.sin((1 - n.jumpTimer / 44) * Math.PI) * 95);
+              n.x += (n.jumpTargetX - n.x) * 0.09;
+              n.y += (n.jumpTargetY - n.y) * 0.09;
+              if (n.jumpTimer <= 0) {
+                n.jumpPhase = 'ground';
+                n.airZ = 0;
+                statoRun.scossa = 8;
+                statoRun.ondeEsplosione.push({ x: n.x, y: n.y, r: 8, maxR: 48, tick: 0 });
+                for (let k = 0; k < 14; k++) {
+                  const a = (TAU * k) / 14 + (rng() - 0.5) * 0.22;
+                  const sp = 1.65 + rng() * 0.95;
+                  statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dist: 0, bossShot: true });
+                }
+                n.shootCd = enrage ? 42 : 56;
+              }
+            } else {
+              n.x = Math.max(ARENA.x1 + 20, Math.min(ARENA.x2 - 20, n.x + Math.cos(ang) * n.speed * 0.65));
+              n.y = Math.max(ARENA.y1 + 20, Math.min(ARENA.y2 - 20, n.y + Math.sin(ang) * n.speed * 0.65));
+              n.shootCd--;
+              if (n.shootCd <= 0) {
+                if (n.phaseTick % 2 === 0) {
+                  n.jumpPhase = 'air';
+                  n.jumpTimer = 44;
+                  n.jumpTargetX = Math.max(ARENA.x1 + 28, Math.min(ARENA.x2 - 28, player.x));
+                  n.jumpTargetY = Math.max(ARENA.y1 + 28, Math.min(ARENA.y2 - 28, player.y));
+                } else {
+                  for (let k = -3; k <= 3; k++) {
+                    const a = ang + k * 0.14;
+                    statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(a) * 2.25, vy: Math.sin(a) * 2.25, dist: 0, bossShot: true });
+                  }
+                  n.shootCd = enrage ? 38 : 52;
+                }
+              }
+            }
+          } else if (n.bossId === 'capitano-guardia') {
+            // CHUB (Capitano di Piombo): carica rettilinea ad alta velocità da parete a parete!
+            if (n.charging && n.chargeTimer > 0) {
+              n.chargeTimer--;
+              n.x = Math.max(ARENA.x1 + 18, Math.min(ARENA.x2 - 18, n.x + n.vx));
+              n.y = Math.max(ARENA.y1 + 18, Math.min(ARENA.y2 - 18, n.y + n.vy));
+              if (n.x <= ARENA.x1 + 19 || n.x >= ARENA.x2 - 19 || n.y <= ARENA.y1 + 19 || n.y >= ARENA.y2 - 19 || n.chargeTimer <= 0) {
+                n.charging = false;
+                statoRun.scossa = 6;
+                for (let k = 0; k < 8; k++) {
+                  const a = (TAU * k) / 8;
+                  statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2, dist: 0, bossShot: true });
+                }
+                n.shootCd = enrage ? 38 : 50;
+              }
+            } else {
+              n.x = Math.max(ARENA.x1 + 18, Math.min(ARENA.x2 - 18, n.x + Math.cos(ang) * n.speed * 0.6));
+              n.y = Math.max(ARENA.y1 + 18, Math.min(ARENA.y2 - 18, n.y + Math.sin(ang) * n.speed * 0.6));
+              n.shootCd--;
+              if (n.shootCd <= 0) {
+                n.charging = true;
+                n.chargeTimer = 38;
+                const horiz = Math.abs(player.x - n.x) >= Math.abs(player.y - n.y);
+                const cSpd = enrage ? 4.2 : 3.5;
+                n.vx = horiz ? Math.sign(player.x - n.x || 1) * cSpd : 0;
+                n.vy = horiz ? 0 : Math.sign(player.y - n.y || 1) * cSpd;
+              }
+            }
+          } else if (n.bossId === 'regina-vespa') {
+            // DUKE OF FLIES (Regina Vespa): rimbalza in diagonale sui muri ed evoca Vespe Cieche che volano addosso senza sparare
+            n.x += n.vx || 1.1;
+            n.y += n.vy || 0.85;
+            if (n.x <= ARENA.x1 + 20 || n.x >= ARENA.x2 - 20) n.vx = -(n.vx || 1.1);
+            if (n.y <= ARENA.y1 + 20 || n.y >= ARENA.y2 - 20) n.vy = -(n.vy || 0.85);
+            n.x = Math.max(ARENA.x1 + 20, Math.min(ARENA.x2 - 20, n.x));
+            n.y = Math.max(ARENA.y1 + 20, Math.min(ARENA.y2 - 20, n.y));
+            n.shootCd--;
+            if (n.shootCd <= 0) {
+              n.shootCd = enrage ? 52 : 68;
+              const nVespeVive = st.nemici.filter((m) => !m.boss && m.hp > 0).length;
+              if (nVespeVive < 4) {
+                st.nemici.push({
+                  id: `spawn-vespa-${tick}`,
+                  tipo: 'vespa_cieca',
+                  nome: 'Vespa Cieca (Attack Fly)',
+                  comportamento: 'volo_puro',
+                  x: n.x + (rng() - 0.5) * 26,
+                  y: n.y + (rng() - 0.5) * 20,
+                  vx: 0, vy: 0,
+                  r: 11,
+                  hp: 8, maxHp: 8,
+                  speed: 1.55,
+                  shootCd: 999,
+                  boss: false,
+                  flash: 4,
+                  burnTicks: 0,
+                  stunTicks: 0,
+                });
+              }
+              for (let k = 0; k < 8; k++) {
+                const a = (TAU * k) / 8 + n.phaseTick * 0.25;
+                statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(a) * 2.0, vy: Math.sin(a) * 2.0, dist: 0, bossShot: true });
+              }
+            }
+          } else if (n.bossId === 'colosso-statua') {
+            // GURDY (Colosso di Marmo): immobile al centro, spara spirali rotanti a 8 vie e genera Bozzoli Esplosivi
+            n.x = 320;
+            n.y = 165;
+            n.shootCd--;
+            if (n.shootCd <= 0) {
+              n.shootCd = enrage ? 36 : 48;
+              for (let k = 0; k < 8; k++) {
+                const a = (TAU * k) / 8 + n.phaseTick * 0.28;
+                statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 8, vx: Math.cos(a) * 2.15, vy: Math.sin(a) * 2.15, dist: 0, bossShot: true });
+              }
+              const nBombe = st.nemici.filter((m) => m.tipo === 'bomba_ferma' && m.hp > 0).length;
+              if (n.phaseTick % 3 === 0 && nBombe < 2) {
+                st.nemici.push({
+                  id: `spawn-bomba-${tick}`,
+                  tipo: 'bomba_ferma',
+                  nome: 'Bozzolo di Polvere',
+                  comportamento: 'bomba_ferma',
+                  x: 160 + rng() * 320,
+                  y: 120 + rng() * 130,
+                  vx: 0, vy: 0,
+                  r: 12,
+                  hp: 10, maxHp: 10,
+                  speed: 0,
+                  shootCd: 999,
+                  boss: false,
+                  flash: 4,
+                  burnTicks: 0,
+                  stunTicks: 0,
+                  fuseTimer: 0,
+                });
+              }
+            }
+          } else if (n.bossId === 'donna-luciana') {
+            // DONNA LUCIANA (Mom / Satan): le 2 Mani Giganti sparano ventagli + schianti + anelli rotanti
+            n.x = Math.max(ARENA.x1 + 32, Math.min(ARENA.x2 - 32, n.x + Math.cos(ang) * n.speed * 0.55));
+            n.y = Math.max(ARENA.y1 + 24, Math.min(ARENA.y2 - 24, n.y + Math.sin(ang) * n.speed * 0.55));
+            n.shootCd--;
+            if (n.shootCd <= 0) {
+              n.shootCd = enrage ? 34 : 46;
+              for (const handOffset of [-68, 68]) {
+                const ha = Math.atan2(player.y - (n.y - 14), player.x - (n.x + handOffset));
+                for (const da of [-0.25, 0, 0.25]) {
+                  statoRun.proiettiliNemici.push({
+                    x: n.x + handOffset, y: n.y - 14,
+                    vx: Math.cos(ha + da) * 2.45, vy: Math.sin(ha + da) * 2.45,
+                    dist: 0, bossShot: true,
+                  });
+                }
+              }
+              if (enrage || n.phaseTick % 2 === 0) {
+                const nRing = 10;
+                for (let k = 0; k < nRing; k++) {
+                  const a = (TAU * k) / nRing + n.phaseTick * 0.3;
+                  statoRun.proiettiliNemici.push({
+                    x: n.x, y: n.y - 8,
+                    vx: Math.cos(a) * 2.1, vy: Math.sin(a) * 2.1,
+                    dist: 0, bossShot: true,
+                  });
+                }
+              }
+            }
+          }
+        } else {
+          // IA DIFFERENZIATA DEI NEMICI COMUNI IN STILE THE BINDING OF ISAAC:
+          const comp = n.comportamento || n.tipo;
+
+          if (comp === 'volo_puro' || n.tipo === 'vespa_cieca') {
+            // 1. VESPA CIECA (Attack Fly): vola dritta contro di te SENZA SPARARE!
+            const osc = Math.sin(tick * 0.22 + n.x * 0.05) * 0.3;
+            n.x = Math.max(ARENA.x1 + 12, Math.min(ARENA.x2 - 12, n.x + Math.cos(ang + osc) * n.speed));
+            n.y = Math.max(ARENA.y1 + 12, Math.min(ARENA.y2 - 12, n.y + Math.sin(ang + osc) * n.speed));
+          } else if (comp === 'bomba_ferma' || n.tipo === 'bomba_ferma') {
+            // 2. BOZZOLO DI POLVERE (Mulliboom / Boil): STA FERMO sul posto, pulsa quando ti avvicini ed ESPLODE!
+            if (distPlayer < 64 || n.fuseTimer > 0) {
+              n.fuseTimer = (n.fuseTimer || 0) + 1;
+              if (n.fuseTimer >= 42) {
+                n.hp = 0;
+                innescaEsplosioneBomba(st, n.x, n.y, n.nome);
+                verificaStanzaPulita();
+                continue;
+              }
+            }
+          } else if (comp === 'balzo' || n.tipo === 'gatto') {
+            // 3. GATTO DEL VELO (Trite / Hopper): NON spara! Si accovaccia (telegraph) e balza rapido verso di te
+            if (n.leapTimer > 0) {
+              n.leapTimer--;
+              n.x = Math.max(ARENA.x1 + 14, Math.min(ARENA.x2 - 14, n.x + n.vx));
+              n.y = Math.max(ARENA.y1 + 14, Math.min(ARENA.y2 - 14, n.y + n.vy));
+            } else {
+              n.shootCd--;
+              if (n.shootCd <= 18 && n.shootCd > 0) {
+                n.crouchTicks = n.shootCd;
+              } else if (n.shootCd <= 0) {
+                n.crouchTicks = 0;
+                n.leapTimer = 18;
+                const lSpd = 3.25;
+                n.vx = Math.cos(ang) * lSpd;
+                n.vy = Math.sin(ang) * lSpd;
+                n.shootCd = 54 + Math.floor(rng() * 20);
+              }
+            }
+          } else if (comp === 'host_scudo' || n.tipo === 'maschera') {
+            // 4. MASCHERA CORAZZATA (Host): immobile e corazzata finché chiusa; si apre per sparare un ventaglio di 3 colpi!
+            n.shootCd--;
+            if (n.shootCd > 30) {
+              n.maskOpen = false;
+            } else if (n.shootCd === 30) {
+              n.maskOpen = true;
+              n.flash = 4;
+            } else if (n.shootCd === 15) {
+              n.maskOpen = true;
+              for (const da of [-0.22, 0, 0.22]) {
+                statoRun.proiettiliNemici.push({
+                  x: n.x, y: n.y - 6,
+                  vx: Math.cos(ang + da) * 2.25, vy: Math.sin(ang + da) * 2.25,
+                  dist: 0,
+                });
+              }
+            } else if (n.shootCd <= 0) {
+              n.maskOpen = false;
+              n.shootCd = 92;
+            }
+          } else if (comp === 'torretta_croce' || n.tipo === 'statua') {
+            // 5. BUSTO DI MARMO (Stone Grimace): completamente FERMO sul posto, spara salve alternate a '+' e '×'
+            n.shootCd--;
+            if (n.shootCd <= 0) {
+              n.shootCd = 76;
+              n.salvoParity = ((n.salvoParity || 0) + 1) % 2;
+              const baseRot = n.salvoParity === 0 ? 0 : Math.PI / 4;
+              for (let k = 0; k < 4; k++) {
+                const a = baseRot + (k * Math.PI) / 2;
+                statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(a) * 2.05, vy: Math.sin(a) * 2.05, dist: 0 });
+              }
+            }
+          } else {
+            // 6. SOLDATO DI PIOMBO (Knight / Clotty): pattuglia ed esegue doppi colpi mirati
+            n.x = Math.max(ARENA.x1 + 14, Math.min(ARENA.x2 - 14, n.x + Math.cos(ang) * n.speed * 0.72));
+            n.y = Math.max(ARENA.y1 + 14, Math.min(ARENA.y2 - 14, n.y + Math.sin(ang) * n.speed * 0.72));
+            n.shootCd--;
+            if (n.shootCd <= 0) {
+              n.shootCd = 68;
+              for (const da of [-0.12, 0.12]) {
+                statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(ang + da) * 2.3, vy: Math.sin(ang + da) * 2.3, dist: 0 });
+              }
+            }
+          }
+        }
+
+        // Danno da contatto (solo se il boss non è in volo alto airZ > 20)
+        if ((n.airZ || 0) < 20 && Math.hypot(player.x - n.x, player.y - n.y) < n.r + 9 && player.invuln <= 0) {
+          subisciColpoGiocatore(n.boss ? 2 : dannoBasePiano, n.nome);
+          if (statoRun.hpHalf <= 0) break;
+        }
+      }
+    }
+
+    // =========================================================================
+    // RENDERING PITTORICO DARK-FAIRYTALE DELLA SCENA
+    // =========================================================================
+    if (statoRun.scossa > 0.2) statoRun.scossa *= 0.8;
+    else statoRun.scossa = 0;
+
+    ctx.save();
+    if (statoRun.scossa > 0) {
+      ctx.translate(Math.round(Math.sin(tick * 2.3) * statoRun.scossa), Math.round(Math.cos(tick * 2.9) * statoRun.scossa));
+    }
+
+    if (st) {
+      disegnaStanzaPixelArt(tick, st);
+
+      const brFrame = Math.floor(tick / 8) % 2 === 0 ? SPRITE_SCENA.braciere0 : SPRITE_SCENA.braciere1;
+      for (const o of st.ostacoli) {
+        const sp = o.tipo === 'braciere' ? brFrame : o.tipo === 'colonna' ? SPRITE_SCENA.colonna : SPRITE_SCENA.urna;
+        drawPixelSprite(sp, o.x, o.y, 2);
+      }
+
+      if (st.oggettiATerra && st.oggettiATerra.length > 0) {
+        for (const pk of st.oggettiATerra) {
+          const bounce = Math.round(Math.sin(tick * 0.12 + pk.x) * 2);
+          ctx.fillStyle = 'rgba(0,0,0,0.4)';
+          ctx.fillRect(Math.round(pk.x - 5), Math.round(pk.y + 5), 10, 3);
+          drawPixelSprite(SPRITE_OGGETTI[pk.sprite] || SPRITE_OGGETTI.moneta1, pk.x, pk.y + bounce, 1.8);
+          if (pk.tipo === 'moneta' && pk.valore >= 3) {
+            drawTextFit('3🪙', pk.x, pk.y - 9 + bounce, 28, { size: 7, color: '#67e8f9' });
+          }
+        }
+      }
+
+      if (st.pulita && st.oggettoPiedistallo) {
+        const o = st.oggettoPiedistallo;
+        const spPed = o.forteGratis ? SPRITE_SCENA.piedistalloOro : SPRITE_SCENA.piedistallo;
+        drawPixelSprite(spPed, o.x, o.y + 8, 2);
+        if (!o.preso) {
+          const floatY = Math.round(Math.sin(tick * 0.08) * 3);
+          drawPixelSprite(SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI.spada, o.x, o.y - 12 + floatY, 2);
+          const badge = o.forteGratis ? '★ FORTE GRATIS' : '🎁 OGGETTO GRATIS';
+          drawPillLabel(`${badge}: ${o.nome} [Click/E]`, o.x, o.y - 28, 300, {
+            size: 8,
+            color: o.forteGratis ? '#f9cb40' : '#67e8f9',
+            border: o.forteGratis ? '#f9cb40' : '#0891b2',
+          });
+          const pw = 336, ph = 30;
+          const px = Math.max(82, Math.min(W - pw - 82, Math.round(o.x - pw / 2)));
+          const py = Math.min(256, Math.round(o.y + 18));
+          ctx.fillStyle = 'rgba(10, 6, 4, 0.92)';
+          ctx.fillRect(px, py, pw, ph);
+          ctx.strokeStyle = o.forteGratis ? '#f9cb40' : '#5c4024';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(px, py, pw, ph);
+          drawTextFit(o.statsDesc, px + pw / 2, py + 12, pw - 12, { size: 8, color: '#4ade80' });
+          drawTextFit(`«${o.lore}»`, px + pw / 2, py + 24, pw - 12, { size: 7.5, style: 'italic', weight: '', color: '#e6d2aa' });
+        }
+      }
+
+      // NOTA: Ferruccio NON ha il filo! Solo i nemici, i boss e Mastro Peppe hanno i fili d'oro!
+      const fili = [];
+
+      // La Fucina (⚒ Shop in stile The Binding of Isaac)
+      if (st.tipo === 'fucina') {
+        fili.push([320, 124]);
+        const peppeFrame = Math.floor(tick / 14) % 2 === 0 ? SPRITE_SCENA.mercante : SPRITE_SCENA.mercante1;
+        drawPixelSprite(peppeFrame, 320, 138, 1.9);
+        drawPixelSprite(SPRITE_SCENA.incudine, 282, 146, 1.6);
+        drawPixelSprite(brFrame, 210, 142, 1.7);
+        drawPixelSprite(brFrame, 430, 142, 1.7);
+
+        drawPillLabel(
+          `⚒ LA FUCINA DI MASTRO PEPPE · SLOT EQUIPAGGIATI ${statoRun.oggettiEquipaggiati.length}/5 ⚒`,
+          320,
+          112,
+          376,
+          { size: 8, color: '#f9cb40', border: '#f9cb40' }
+        );
+
+        let slotVicino = null;
+        let minDistSlot = 999;
+
+        for (const sl of st.slotFucina) {
+          const spPed = sl.tier === 'forte' ? SPRITE_SCENA.piedistalloOro : SPRITE_SCENA.piedistallo;
+          drawPixelSprite(spPed, sl.x, sl.y + 10, 1.55);
+          if (!sl.comprato) {
+            const dPlayer = Math.hypot(player.x - sl.x, player.y - sl.y);
+            if (dPlayer < minDistSlot) {
+              minDistSlot = dPlayer;
+              slotVicino = sl;
+            }
+            const floatY = Math.round(Math.sin(tick * 0.08 + sl.x) * 2);
+            drawPixelSprite(SPRITE_OGGETTI[sl.sprite] || SPRITE_OGGETTI.cuore, sl.x, sl.y - 6 + floatY, 1.75);
+            drawPillLabel(sl.nomeBreve || sl.nome, sl.x, sl.y - 20, 96, {
+              size: 7.5,
+              color: sl.tier === 'forte' ? '#f9cb40' : '#ffffff',
+              border: sl.tier === 'forte' ? '#f9cb40' : '#5c4024',
+            });
+            if (sl.inSaldo) {
+              drawPillLabel(`SALDI ${sl.prezzo}🪙!`, sl.x, sl.y + 27, 88, {
+                size: 7.5, color: '#4ade80', border: '#22c55e',
+              });
+            } else {
+              const puo = statoRun.monete >= sl.prezzo;
+              drawPillLabel(`${sl.prezzo}🪙 [Click/E]`, sl.x, sl.y + 27, 92, {
+                size: 7.5,
+                color: puo ? '#f9cb40' : '#f87171',
+                border: puo ? '#8a5a2b' : '#7f1d1d',
+              });
+            }
+          } else {
+            drawPillLabel('VENDUTO', sl.x, sl.y + 2, 72, { size: 7, color: '#64748b', border: '#334155' });
+          }
+        }
+
+        if (slotVicino) {
+          const bx = 132, by = 232, bw = 376, bh = 28;
+          ctx.fillStyle = 'rgba(10, 6, 4, 0.94)';
+          ctx.fillRect(bx, by, bw, bh);
+          ctx.strokeStyle = slotVicino.tier === 'forte' ? '#f9cb40' : '#8a5a2b';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(bx, by, bw, bh);
+          drawTextFit(
+            `${slotVicino.nome} (${slotVicino.prezzo}🪙)`,
+            bx + bw / 2,
+            by + 11,
+            bw - 12,
+            { size: 8, color: slotVicino.tier === 'forte' ? '#f9cb40' : '#ffffff' }
+          );
+          drawTextFit(
+            slotVicino.statsDesc,
+            bx + bw / 2,
+            by + 23,
+            bw - 12,
+            { size: 7.5, color: '#4ade80' }
+          );
+        }
+      }
+
+      // PROPOSTA 2: Stanza del Patto d'Ombra (😈 Devil Room in stile Isaac)
+      if (st.tipo === 'patto') {
+        drawPillLabel(
+          `😈 STANZA DEL PATTO D'OMBRA · SACRIFICA 1 MASCHERA INTERA (-1 ❤️ MAX) 😈`,
+          320,
+          106,
+          410,
+          { size: 8, color: '#f87171', border: '#ef4444' }
+        );
+        for (const p of (st.slotPatto || [])) {
+          drawPixelSprite(SPRITE_SCENA.piedistalloOro, p.x, p.y + 10, 1.8);
+          if (!p.comprato) {
+            const floatY = Math.round(Math.sin(tick * 0.08 + p.x) * 3);
+            drawPixelSprite(SPRITE_OGGETTI[p.sprite] || SPRITE_OGGETTI.anello, p.x, p.y - 8 + floatY, 1.9);
+            drawPillLabel(p.nomeBreve || p.nome, p.x, p.y - 24, 150, {
+              size: 8, color: '#fca5a5', border: '#ef4444',
+            });
+            drawPillLabel(`PATTO: -1 ❤️ MAX [Click/E]`, p.x, p.y + 28, 148, {
+              size: 7.5, color: '#f87171', border: '#991b1b',
+            });
+            drawTextFit(p.statsDesc, p.x, p.y + 42, 170, { size: 7.5, color: '#4ade80' });
+          } else {
+            drawPillLabel('PATTO SIGILLATO', p.x, p.y + 2, 110, { size: 7.5, color: '#9ca3af', border: '#4b5563' });
+          }
+        }
+        // Portale per tornare alla Stanza del Boss
+        ctx.fillStyle = '#1f0910';
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.fillRect(280, 248, 80, 22);
+        ctx.strokeRect(280, 248, 80, 22);
+        drawTextFit('▲ TORNA AL BOSS [Click/E]', 320, 262, 140, { size: 7.5, color: '#fca5a5' });
+      }
+
+      // Botola del Boss + Porta di Velluto Cremisi del Patto d'Ombra!
+      if (st.tipo === 'boss') {
+        ctx.fillStyle = '#0a0604';
+        ctx.fillRect(302, 174, 36, 32);
+        ctx.strokeStyle = st.uscitaAperta ? '#f9cb40' : '#8f160c';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(302, 174, 36, 32);
+        const pianoNelCiclo = ((statoRun.piano - 1) % 4) + 1;
+        const msgBotola = st.uscitaAperta
+          ? (pianoNelCiclo === 4
+            ? `▼ BIS! LOOP INFINITO · PIANO ${statoRun.piano + 1} (CICLO ${statoRun.ciclo + 1}) [Click/E] ▼`
+            : `▼ SCENDI AL PIANO ${statoRun.piano + 1} [Click/E] ▼`)
+          : '🔒 SCONFIGGI IL BOSS PER APRIRE LA BOTOLA';
+        drawPillLabel(msgBotola, 320, 222, 340, {
+          size: 8,
+          color: st.uscitaAperta ? '#f9cb40' : '#f87171',
+          border: st.uscitaAperta ? '#f9cb40' : '#8f160c',
+        });
+
+        if (st.portaPattoAperta) {
+          ctx.fillStyle = '#24060d';
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 2;
+          ctx.fillRect(422, 168, 48, 40);
+          ctx.strokeRect(422, 168, 48, 40);
+          drawTextFit('😈', 446, 193, 30, { size: 13, color: '#ef4444' });
+          drawPillLabel('😈 PATTO D\'OMBRA [Click/E]', 446, 156, 142, {
+            size: 7.5, color: '#fca5a5', border: '#ef4444',
+          });
+        }
+      }
+
+      // Onde d'urto delle esplosioni (Bozzoli Esplosivi / Atterraggio Monstro / Tamburello)
+      if (statoRun.ondeEsplosione && statoRun.ondeEsplosione.length > 0) {
+        for (let i = statoRun.ondeEsplosione.length - 1; i >= 0; i--) {
+          const onda = statoRun.ondeEsplosione[i];
+          onda.r += (onda.maxR - onda.r) * 0.25;
+          onda.tick++;
+          const alpha = Math.max(0, 1 - onda.tick / 16);
+          ctx.save();
+          ctx.strokeStyle = onda.color || onda.colore || `rgba(251, 146, 60, ${alpha.toFixed(2)})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(onda.x, onda.y, onda.r, 0, TAU);
+          ctx.stroke();
+          ctx.restore();
+          if (onda.tick >= 16) statoRun.ondeEsplosione.splice(i, 1);
+        }
+      }
+
+      // Nemici e Boss dipinti in stile pittorico dark-fairytale!
+      for (const n of st.nemici) {
+        if (n.hp <= 0) continue;
+        const airOffset = n.airZ || 0;
+        fili.push([n.x, n.y - 18 - airOffset]);
+
+        if (n.boss) {
+          disegnaBossPittorico(ctx, n, tick);
+          if (n.bossId === 'donna-luciana') {
+            ctx.strokeStyle = 'rgba(249,203,64,0.72)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(n.x - 68, 0); ctx.lineTo(n.x - 68, n.y - 26);
+            ctx.moveTo(n.x + 68, 0); ctx.lineTo(n.x + 68, n.y - 26);
+            ctx.stroke();
+            disegnaManoMarionettaPittorica(ctx, n.x - 68, n.y - 18, 1.0, false, n.flash > 0, tick);
+            disegnaManoMarionettaPittorica(ctx, n.x + 68, n.y - 18, 1.0, true, n.flash > 0, tick);
+          }
+        } else {
+          disegnaNemicoPittorico(ctx, n, tick);
+          if (n.mobSoldi) {
+            drawTextFit('🪙', n.x, n.y - 25, 20, { size: 7.5, color: '#f9cb40' });
+          } else if (n.champion) {
+            const chCol = n.champion === 'cremisi' ? '#ef4444' : n.champion === 'dorato' ? '#f9cb40' : '#38bdf8';
+            drawTextFit(`★${String(n.champion).toUpperCase()}`, n.x, n.y - 25, 58, { size: 6.5, color: chCol });
+          }
+          if (n.hp < n.maxHp) {
+            ctx.fillStyle = '#0a0604';
+            ctx.fillRect(n.x - 12, n.y - 21, 24, 4);
+            ctx.fillStyle = n.burnTicks > 0 ? '#ea8626' : '#ef4444';
+            ctx.fillRect(n.x - 11, n.y - 20, Math.round(22 * Math.max(0, n.hp / n.maxHp)), 2);
+          }
+        }
+      }
+
+      // Ferruccio Pittorico Dark-Fairytale fedele all'immagine di riferimento (SENZA ALCUN FILO!)
+      const pFlash = player.invuln > 0 && (tick % 4 < 2);
+      disegnaFerruccioPittorico(ctx, player.x, player.y, {
+        scale: 1.0,
+        flipX: player.flipX,
+        tick,
+        moving: player.moving,
+        shootAnim: player.shootAnimTimer > 0,
+        pickup: player.pickupTimer > 0,
+        flash: pFlash,
+        haSpada: statoRun.haSpada,
+        swordAnimTick: player.swordAnimTick,
+        swordAngle: player.swordAngle,
+        charInfo: getCharCorrente(),
+        sinergie: statoRun.sinergieVisive,
+      });
+
+      if (player.pickupTimer > 0 && player.pickupItem) {
+        drawPixelSprite(SPRITE_OGGETTI[player.pickupItem.sprite] || SPRITE_OGGETTI.spada, player.x, player.y - 38, 2);
+      }
+
+      // Proiettili di Ferruccio
+      for (const p of statoRun.proiettili) {
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.fillRect(Math.round(p.x - 4), Math.round(p.y + 7), 8, 3);
+        const sp = SPRITE_PROIETTILI[p.tipo] || SPRITE_PROIETTILI.base;
+        drawPixelSprite(sp, p.x, p.y, 1.55 * statoRun.projScale);
+      }
+
+      // Proiettili Nemici
+      for (const pr of statoRun.proiettiliNemici) {
+        drawPixelSprite(SPRITE_PROIETTILI.nemico, pr.x, pr.y, pr.bossShot ? 1.85 : 1.55);
+      }
+
+      // Splash di impatto a 4 frame
+      for (let i = statoRun.effettiSplash.length - 1; i >= 0; i--) {
+        const ef = statoRun.effettiSplash[i];
+        const fIdx = Math.min(3, Math.floor(ef.tick / 3));
+        drawPixelSprite(SPRITE_PROIETTILI.splash[fIdx], ef.x, ef.y, 1.8);
+        ef.tick++;
+        if (ef.tick >= 12) statoRun.effettiSplash.splice(i, 1);
+      }
+
+      // Fulmini a catena
+      for (let i = statoRun.scintilleFulmine.length - 1; i >= 0; i--) {
+        const f = statoRun.scintilleFulmine[i];
+        ctx.strokeStyle = '#67e8f9';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(f.x1, f.y1);
+        ctx.lineTo((f.x1 + f.x2) / 2, (f.y1 + f.y2) / 2 - 6);
+        ctx.lineTo(f.x2, f.y2);
+        ctx.stroke();
+        f.tick--;
+        if (f.tick <= 0) statoRun.scintilleFulmine.splice(i, 1);
+      }
+
+      // Grandi Mani di Marionetta sopra a tutto (i fili d'oro scendono SOLO verso tutti gli altri e MAI verso Ferruccio!)
+      const pianoNelCiclo = ((statoRun.piano - 1) % 4) + 1;
+      const inBossFinale = st.tipo === 'boss' && pianoNelCiclo === 4 && st.nemici.some((n) => n.hp > 0);
+      if (!inBossFinale) {
+        ctx.strokeStyle = 'rgba(249, 203, 64, 0.58)';
+        ctx.lineWidth = 1.2;
+        for (const [tx, ty] of fili) {
+          const hx = tx <= W / 2 ? 216 : 424;
+          ctx.beginPath();
+          ctx.moveTo(hx, 36);
+          ctx.lineTo(Math.round(tx), Math.round(ty));
+          ctx.stroke();
+        }
+        disegnaManoMarionettaPittorica(ctx, 216, 25, 0.95, false, false, tick);
+        disegnaManoMarionettaPittorica(ctx, 424, 25, 0.95, true, false, tick + 12);
+      }
+
+      disegnaHUDPixelArt(st);
+      if (statoRun.scambioPendente) disegnaModalSostituzione5Slot();
+      if (statoRun.siparioAttivo) disegnaSiparioNarrativo(statoRun.siparioAttivo);
+    }
+    ctx.restore();
+
+    requestAnimationFrame(loop);
+  }
+
+  // ===========================================================================
+  // HUD PIXEL-ART CON STATISTICHE ISAAC + MINIMAPPA AD ESPLORAZIONE + DOCK 5 SLOT
+  // (Ogni singola scritta usa drawTextFit + clip per NON uscire mai dai riquadri!)
+  // ===========================================================================
+  function disegnaHUDPixelArt(st) {
+    // 1. Box alto a sinistra: Vita (Maschere intere e mezze) + Statistiche Isaac (DMG, TEARS, SPD, Monete)
+    const hx = 6, hy = 5, hw = 172, hh = 52;
+    ctx.save();
+    ctx.fillStyle = 'rgba(10, 6, 4, 0.92)';
+    ctx.fillRect(hx, hy, hw, hh);
+    ctx.strokeStyle = '#f9cb40';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(hx, hy, hw, hh);
+    ctx.beginPath();
+    ctx.rect(hx + 2, hy + 2, hw - 4, hh - 4);
+    ctx.clip();
+
+    const etichettaCiclo = statoRun.ciclo > 1 ? ` · Ciclo ∞${statoRun.ciclo}` : '';
+    const chInfo = getCharCorrente();
+    drawTextFit(`${chInfo.nome} · Piano ${statoRun.piano}${etichettaCiclo}`, hx + 6, hy + 11, hw - 12, {
+      size: 8.5, color: '#ffffff', align: 'left',
+    });
+
+    // Barra HP + Maschere (1 Maschera = 2 mezze-maschere)
+    const hpRatio = Math.max(0, statoRun.hpHalf / statoRun.maxHpHalf);
+    ctx.fillStyle = '#2d1210';
+    ctx.fillRect(hx + 6, hy + 15, 98, 8);
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(hx + 6, hy + 15, Math.round(98 * hpRatio), 8);
+    ctx.strokeStyle = '#0a0604';
+    ctx.strokeRect(hx + 6, hy + 15, 98, 8);
+    drawTextFit(
+      `${(statoRun.hpHalf / 2).toFixed(1)}/${(statoRun.maxHpHalf / 2).toFixed(0)} ❤️`,
+      hx + 108,
+      hy + 22,
+      hw - 112,
+      { size: 7.5, color: '#ffffff', align: 'left' }
+    );
+
+    // Statistiche stile Found HUD di Isaac
+    drawTextFit(
+      `⚔DMG:${statoRun.dmg.toFixed(2)}  💧TRS:${statoRun.tearsPerSec.toFixed(1)}/s`,
+      hx + 6,
+      hy + 35,
+      hw - 12,
+      { size: 8, color: '#f9cb40', align: 'left' }
+    );
+    drawTextFit(
+      `🪙${statoRun.monete} · 🥾SPD:${(statoRun.speed / 2).toFixed(2)} · Slot:${statoRun.oggettiEquipaggiati.length}/5`,
+      hx + 6,
+      hy + 47,
+      hw - 12,
+      { size: 8, color: '#e6d2aa', align: 'left' }
+    );
+    ctx.restore();
+
+    // 2. In alto al centro: Barra Vita Boss (con HP numerici!) o Info Piano
+    const boss = st.nemici.find((n) => n.boss && n.hp > 0);
+    if (boss) {
+      const bw = 204, bx = Math.round((W - bw) / 2), by = 17;
+      ctx.save();
+      ctx.fillStyle = 'rgba(10,6,4,0.92)';
+      ctx.fillRect(bx - 6, 4, bw + 12, 26);
+      ctx.strokeStyle = '#e53222';
+      ctx.strokeRect(bx - 6, 4, bw + 12, 26);
+      drawTextFit(
+        `${boss.nome.toUpperCase()} (${Math.ceil(boss.hp)}/${boss.maxHp})`,
+        W / 2,
+        13,
+        bw + 4,
+        { size: 7.5, color: '#f9cb40' }
+      );
+      ctx.fillStyle = '#2d0c0a';
+      ctx.fillRect(bx, by, bw, 8);
+      ctx.fillStyle = '#e53222';
+      ctx.fillRect(bx, by, Math.round(bw * Math.max(0, boss.hp / boss.maxHp)), 8);
+      ctx.restore();
+    } else {
+      const nVisitate = statoRun.mappa ? statoRun.mappa.stanze.filter((s) => s.visitata).length : 1;
+      const nTot = statoRun.mappa ? statoRun.mappa.stanze.length : 6;
+      drawPillLabel(
+        `PIANO ${statoRun.piano} (CICLO ${statoRun.ciclo}) · STANZE ${nVisitate}/${nTot}`,
+        W / 2,
+        15,
+        210,
+        { size: 8, color: '#f9cb40', border: '#8a5a2b' }
+      );
+    }
+
+    // 3. Minimappa ad ESPLORAZIONE in alto a destra:
+    const m = statoRun.mappa;
+    if (m) {
+      const cell = 12, x0 = W - 118, y0 = 24;
+      const mw = 114, mh = 92;
+      ctx.save();
+      ctx.fillStyle = 'rgba(10,6,4,0.92)';
+      ctx.fillRect(x0 - 6, y0 - 16, mw, mh);
+      ctx.strokeStyle = '#f9cb40';
+      ctx.strokeRect(x0 - 6, y0 - 16, mw, mh);
+      ctx.beginPath();
+      ctx.rect(x0 - 5, y0 - 15, mw - 2, mh - 2);
+      ctx.clip();
+
+      const scoperte = m.stanze.filter((s) => s.visitata).length;
+      drawTextFit(
+        `MAPPA (${scoperte}/${m.stanze.length})`,
+        x0 - 6 + mw / 2,
+        y0 - 5,
+        mw - 8,
+        { size: 7.5, color: '#f9cb40' }
+      );
+
+      for (const s of m.stanze) {
+        if (!s.visitata) continue;
+
+        const px = x0 + (s.cx - 1) * cell;
+        const py = y0 + (s.cy - 1) * cell;
+        const corr = st.id === s.id;
+        ctx.fillStyle = corr
+          ? '#f9cb40'
+          : s.tipo === 'boss'
+            ? '#7f1d1d'
+            : s.tipo === 'tesoro'
+              ? '#713f12'
+              : s.tipo === 'fucina'
+                ? '#7c2d12'
+                : s.tipo === 'segreta'
+                  ? '#581c87'
+                  : '#57534e';
+        ctx.fillRect(px + 1, py + 1, cell - 2, cell - 2);
+
+        ctx.fillStyle = '#f9cb40';
+        if (s.porte.N) ctx.fillRect(px + 5, py - 1, 2, 2);
+        if (s.porte.S) ctx.fillRect(px + 5, py + cell - 1, 2, 2);
+        if (s.porte.W) ctx.fillRect(px - 1, py + 5, 2, 2);
+        if (s.porte.E) ctx.fillRect(px + cell - 1, py + 5, 2, 2);
+
+        const ic = s.tipo === 'tesoro'
+          ? '★'
+          : s.tipo === 'fucina'
+            ? '⚒'
+            : s.tipo === 'boss'
+              ? '💀'
+              : s.tipo === 'segreta'
+                ? '?'
+                : s.oggettoPiedistallo && !s.oggettoPiedistallo.preso
+                  ? '🎁'
+                  : '';
+        if (ic) {
+          drawTextFit(ic, px + cell / 2, py + cell - 3, cell - 2, {
+            size: 6.5, color: corr ? '#0a0604' : '#ffffff', shadow: false,
+          });
+        }
+      }
+      ctx.restore();
+    }
+
+    // 4. IN BASSO AL CENTRO: DOCK CON ARMA + I 5 SLOT MASSIMI (1..5) + SLOT ATTIVO [Q] CON CARICHE!
+    const slotSize = 26;
+    const gap = 5;
+    const totBoxes = 1 + MAX_SLOT_OGGETTI;
+    const dockW = totBoxes * (slotSize + gap) + 12;
+    const dx0 = Math.round((W - dockW) / 2);
+    const dy0 = H - 34;
+
+    // PROPOSTA 5: Slot Oggetto Attivo [Q] a sinistra del dock con barra di carica a tacche
+    const act = statoRun.oggettoAttivo;
+    if (act) {
+      const ax = dx0 - 44;
+      const ay = dy0;
+      const maxC = act.maxCarica || 3;
+      const curC = statoRun.caricaAttivo ?? maxC;
+      const pronto = curC >= maxC;
+      ctx.fillStyle = 'rgba(15, 12, 10, 0.94)';
+      ctx.fillRect(ax, ay, slotSize, slotSize);
+      ctx.strokeStyle = pronto ? '#4ade80' : '#38bdf8';
+      ctx.lineWidth = pronto ? 2 : 1.5;
+      ctx.strokeRect(ax, ay, slotSize, slotSize);
+      drawPixelSprite(SPRITE_OGGETTI[act.sprite] || SPRITE_OGGETTI.forbici, ax + slotSize / 2, ay + slotSize / 2, 1.55);
+      drawTextFit('Q', ax + 3, ay + 8, 10, {
+        size: 7, color: pronto ? '#4ade80' : '#38bdf8', align: 'left', shadow: false,
+      });
+      // Barra verticale cariche a fianco dello slot [Q]
+      const barX = ax + slotSize + 3;
+      const segH = Math.floor((slotSize - 2) / maxC);
+      for (let c = 0; c < maxC; c++) {
+        const sy = ay + slotSize - 1 - (c + 1) * segH;
+        ctx.fillStyle = c < curC ? (pronto ? '#4ade80' : '#38bdf8') : '#1c1917';
+        ctx.fillRect(barX, sy, 5, segH - 1);
+        ctx.strokeStyle = '#0a0604';
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(barX, sy, 5, segH - 1);
+      }
+    }
+
+    for (let i = 0; i < totBoxes; i++) {
+      const sx = dx0 + 4 + i * (slotSize + gap) + (i > 0 ? 4 : 0);
+      ctx.fillStyle = 'rgba(15, 12, 10, 0.94)';
+      ctx.fillRect(sx, dy0, slotSize, slotSize);
+
+      if (i === 0) {
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(sx, dy0, slotSize, slotSize);
+        if (statoRun.haSpada) {
+          drawPixelSprite(SPRITE_OGGETTI.spada, sx + slotSize / 2, dy0 + slotSize / 2, 1.6);
+        } else {
+          drawPixelSprite(SPRITE_PROIETTILI[statoRun.tipoProiettile] || SPRITE_PROIETTILI.base, sx + slotSize / 2, dy0 + slotSize / 2, 2.0);
+        }
+      } else {
+        const slotIdx = i - 1;
+        const item = statoRun.oggettiEquipaggiati[slotIdx];
+        ctx.strokeStyle = item ? '#f9cb40' : '#44403c';
+        ctx.lineWidth = item ? 1.6 : 1;
+        ctx.strokeRect(sx, dy0, slotSize, slotSize);
+        if (item) {
+          drawPixelSprite(SPRITE_OGGETTI[item.sprite] || SPRITE_OGGETTI.spada, sx + slotSize / 2, dy0 + slotSize / 2, 1.6);
+        }
+        drawTextFit(`${slotIdx + 1}`, sx + 3, dy0 + 8, 10, {
+          size: 7, color: '#9ca3af', align: 'left', shadow: false,
+        });
+      }
+    }
+
+    // 5. Banner informativo (con auto-fit rigoroso dentro i 500px!)
+    if (statoRun.bannerTimer > 0) {
+      statoRun.bannerTimer--;
+      const bw = 516, bx = Math.round((W - bw) / 2), by = H - 56, bh = 18;
+      ctx.save();
+      ctx.fillStyle = 'rgba(10, 6, 4, 0.95)';
+      ctx.fillRect(bx, by, bw, bh);
+      ctx.strokeStyle = '#f9cb40';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx, by, bw, bh);
+      ctx.beginPath();
+      ctx.rect(bx + 2, by + 1, bw - 4, bh - 2);
+      ctx.clip();
+      drawTextFit(statoRun.banner, W / 2, by + 12, bw - 14, { size: 8, color: '#f9cb40' });
+      ctx.restore();
+    }
+  }
+
+  // ===========================================================================
+  // MODAL DI SOSTITUZIONE QUANDO HAI GIÀ 5 OGGETTI E NE PRENDI/COMPRI UN 6°
+  // ===========================================================================
+  function disegnaModalSostituzione5Slot() {
+    const sc = statoRun.scambioPendente;
+    if (!sc) return;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(5, 3, 2, 0.88)';
+    ctx.fillRect(0, 0, W, H);
+
+    const mx = 84, my = 56, mw = 472, mh = 244;
+    ctx.fillStyle = '#17100b';
+    ctx.strokeStyle = '#f9cb40';
+    ctx.lineWidth = 2;
+    ctx.fillRect(mx, my, mw, mh);
+    ctx.strokeRect(mx, my, mw, mh);
+    ctx.beginPath();
+    ctx.rect(mx + 4, my + 4, mw - 8, mh - 8);
+    ctx.clip();
+
+    drawTextFit('⚠ SLOT OGGETTI PIENI (5/5) — SCEGLI QUALE SOSTITUIRE ⚠', W / 2, 78, mw - 24, {
+      size: 10, color: '#f9cb40',
+    });
+
+    drawPixelSprite(SPRITE_OGGETTI[sc.nuovoItem.sprite] || SPRITE_OGGETTI.spada, W / 2, 104, 2.1);
+    drawTextFit(`NUOVO: ${sc.nuovoItem.nome}`, W / 2, 126, mw - 24, {
+      size: 9, color: '#4ade80',
+    });
+    drawTextFit(sc.nuovoItem.statsDesc, W / 2, 138, mw - 24, {
+      size: 8, color: '#67e8f9',
+    });
+    drawTextFit('Clicca su uno dei 5 slot qui sotto (o premi i tasti 1-5) per sostituirlo:', W / 2, 152, mw - 24, {
+      size: 8, color: '#e6d2aa', weight: '',
+    });
+
+    for (let i = 0; i < MAX_SLOT_OGGETTI; i++) {
+      const it = statoRun.oggettiEquipaggiati[i];
+      const bx = 118 + i * 84;
+      const by = 162;
+      const bw = 74, bh = 84;
+      ctx.save();
+      ctx.fillStyle = '#26180f';
+      ctx.strokeStyle = '#f9cb40';
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(bx, by, bw, bh);
+      ctx.strokeRect(bx, by, bw, bh);
+      ctx.beginPath();
+      ctx.rect(bx + 2, by + 2, bw - 4, bh - 4);
+      ctx.clip();
+
+      drawTextFit(`SLOT [${i + 1}]`, bx + bw / 2, by + 13, bw - 8, { size: 8.5, color: '#f9cb40' });
+      if (it) {
+        drawPixelSprite(SPRITE_OGGETTI[it.sprite] || SPRITE_OGGETTI.spada, bx + bw / 2, by + 37, 1.9);
+        const nomeCorto = it.nome.replace(/\s*\(.*?\)/g, '');
+        drawTextFit(nomeCorto, bx + bw / 2, by + 63, bw - 8, { size: 7.5, color: '#ffffff' });
+        drawTextFit('SOSTITUISCI', bx + bw / 2, by + 76, bw - 8, { size: 7, color: '#f87171' });
+      }
+      ctx.restore();
+    }
+
+    ctx.fillStyle = '#451a14';
+    ctx.strokeStyle = '#e53222';
+    ctx.fillRect(250, 264, 140, 24);
+    ctx.strokeRect(250, 264, 140, 24);
+    drawTextFit('ANNULLA [ESC / Click]', 320, 279, 128, { size: 8.5, color: '#ffffff' });
+    ctx.restore();
+  }
+
+  // ===========================================================================
+  // SIPARIO NARRATIVO DEGLI ATTI (CON AUTO-FIT E CLIP RIGOROSO DENTRO LA CORNICE!)
+  // ===========================================================================
+  function disegnaSiparioNarrativo(info) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(6, 3, 2, 0.88)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = '#5c110b';
+    ctx.fillRect(58, 42, 24, 276);
+    ctx.fillRect(W - 82, 42, 24, 276);
+
+    const cx = 82, cy = 46, cw = 476, ch = 268;
+    ctx.fillStyle = '#140c08';
+    ctx.strokeStyle = '#f9cb40';
+    ctx.lineWidth = 2;
+    ctx.fillRect(cx, cy, cw, ch);
+    ctx.strokeRect(cx, cy, cw, ch);
+    ctx.beginPath();
+    ctx.rect(cx + 6, cy + 6, cw - 12, ch - 12);
+    ctx.clip();
+
+    // Le Mani di Marionetta sopra il cartellone + Ferruccio pittorico al centro
+    disegnaManoMarionettaPittorica(ctx, 232, 82, 0.92, false, false, tick);
+    disegnaManoMarionettaPittorica(ctx, 408, 82, 0.92, true, false, tick);
+    disegnaFerruccioPittorico(ctx, 320, 108, {
+      scale: 0.95,
+      flipX: false,
+      tick,
+      moving: false,
+      shootAnim: false,
+      pickup: false,
+      flash: false,
+      haSpada: true,
+      swordAnimTick: -1,
+      swordAngle: 0,
+      charInfo: getCharCorrente(),
+      sinergie: statoRun.sinergieVisive,
+    });
+
+    const maxTextW = cw - 28;
+    drawTextFit(info.atto, W / 2, 144, maxTextW, { size: 9.5, color: '#f9cb40' });
+    drawTextFit(info.titolo, W / 2, 166, maxTextW, { size: 11, color: '#ffffff' });
+    drawTextFit(info.testo1, W / 2, 194, maxTextW, { size: 8.5, weight: '', color: '#f3dfc1' });
+    drawTextFit(info.testo2, W / 2, 214, maxTextW, { size: 8.5, weight: '', color: '#f3dfc1' });
+    drawTextFit(info.testo3, W / 2, 236, maxTextW, { size: 8.5, color: '#4ade80' });
+
+    ctx.fillStyle = '#7a1c12';
+    ctx.strokeStyle = '#f9cb40';
+    ctx.fillRect(206, 264, 228, 28);
+    ctx.strokeRect(206, 264, 228, 28);
+    drawTextFit('▶ ALZA IL SIPARIO [Click / Spazio]', W / 2, 281, 214, { size: 9, color: '#ffffff' });
+    ctx.restore();
+  }
+
+  statoRun.fase = 'menu_selezione';
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

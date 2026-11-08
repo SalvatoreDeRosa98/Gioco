@@ -1,0 +1,30 @@
+{
+  "id": "pd-n-09",
+  "tipo": "normale",
+  "dim": "1x1",
+  "piani": [1, 2, 3, 4],
+  "difficolta": 4,
+  "tag": ["durissima", "statue", "bracieri"],
+  "peso_base": 1.0,
+  "griglia": [
+    ".............",
+    "...F.....F...",
+    ".....K.K.....",
+    ".............",
+    ".....K.K.....",
+    "...F.....F...",
+    "............."
+  ],
+  "spawn": [
+    { "c": 2, "r": 1, "tipo": "T" }, { "c": 10, "r": 1, "tipo": "T" },
+    { "c": 4, "r": 1, "tipo": "T" }, { "c": 8, "r": 1, "tipo": "T" },
+    { "c": 2, "r": 5, "tipo": "T" }, { "c": 10, "r": 5, "tipo": "T" },
+    { "c": 4, "r": 5, "tipo": "T" }, { "c": 8, "r": 5, "tipo": "T" },
+    { "c": 3, "r": 3, "tipo": "T" }, { "c": 9, "r": 3, "tipo": "T" }
+  ],
+  "tavolozza": [
+    { "tipo": "statua", "peso": 0.8, "min": 1, "max": 2 },
+    { "tipo": "guardia", "peso": 0.8, "min": 1, "max": 3 },
+    { "tipo": "vespa", "peso": 0.6, "min": 0, "max": 3 }
+  ]
+}

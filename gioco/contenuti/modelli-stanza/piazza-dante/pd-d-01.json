@@ -2,7 +2,7 @@
   "id": "pd-d-01",
   "tipo": "normale",
   "dim": "2x1",
-  "piani": [1],
+  "piani": [1, 2, 3, 4],
   "difficolta": 2,
   "tag": ["media", "galleria", "colonne"],
   "peso_base": 1.0,

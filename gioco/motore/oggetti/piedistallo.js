@@ -63,16 +63,17 @@ export function creaPiedistalli({ pool, modificatori, parametri, piano, ferrucci
 
   /** @type {Map<string, object[]>} stanza → piedistalli */
   const perStanza = new Map();
+  let pianoCorrente = piano;
   let stanzaId = null;
   let attivo = false;
 
   /** Genera i piedistalli della stanza (una volta per stanza). */
   function genera(stanza) {
-    const n = piano >= P('piano_doppio') ? 2 : 1;
+    const n = pianoCorrente >= P('piano_doppio') ? 2 : 1;
     const punti = puntiPiedistallo(stanza, n);
     const lista = [];
     for (let i = 0; i < n; i++) {
-      const dono = pool.estrai({ piano, canale: 'piedistallo' });
+      const dono = pool.estrai({ piano: pianoCorrente, canale: 'piedistallo' });
       if (dono) {
         lista.push({ indice: lista.length, id: dono.id, x: punti[i].x, y: punti[i].y, stato: 'offerto', fallback: null });
       } else if (i === 0) {
@@ -173,16 +174,18 @@ export function creaPiedistalli({ pool, modificatori, parametri, piano, ferrucci
   /** Un tick: con la stanza del tesoro attiva, `interagisci` raccoglie il piedistallo vicino. */
   function tick() {
     if (!attivo || !input || !ferruccio) return;
-    if (!input.premuto('interagisci')) return;
     if (!STATI_RACCOLTA.includes(ferruccio.stato)) return;
-    const i = vicino(rInteragisci());
-    if (i >= 0) raccogli(i);
+    if (input.premuto('interagisci')) {
+      const i = vicino(rInteragisci());
+      if (i >= 0) raccogli(i);
+    }
   }
 
   return {
     get attivo() { return attivo; },
     get stanza() { return stanzaId; },
-    get piano() { return piano; },
+    get piano() { return pianoCorrente; },
+    impostaPiano: (nuovoPiano) => { pianoCorrente = nuovoPiano; perStanza.clear(); stanzaId = null; attivo = false; },
     attiva,
     disattiva,
     elenco,

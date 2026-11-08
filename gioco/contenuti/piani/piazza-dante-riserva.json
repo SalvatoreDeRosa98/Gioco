@@ -1,16 +1,13 @@
 {
-  "_descrizione": "Piano di riserva del piano 1 (generazione-piani.md regola 18 ed esempio «piano 1, 8 stanze, L = 4»). Usato SOLO se nessun tentativo del generatore è valido: non usa un seme per la pianta (i semi delle stanze derivano comunque dal seme della notte). Disegnato a mano, deve rispettare H1-H10.",
+  "_descrizione": "Piano di riserva a 5 stanze (1 ingresso, 1 normale, 1 boss, 1 fucina/banchetto, 1 tesoro). Usato solo se nessun tentativo del generatore è valido.",
   "p": 1,
   "stanze": [
-    { "id": "r0", "cella": [4, 3], "dim": "1x1", "tipo": "ingresso", "modello": "pd-i-01", "porte": { "E": "r1", "W": "r7" } },
-    { "id": "r1", "cella": [5, 3], "dim": "1x1", "tipo": "normale", "modello": "pd-n-01", "porte": { "W": "r0", "N": "r2", "S": "r6" } },
-    { "id": "r2", "cella": [5, 2], "dim": "1x1", "tipo": "normale", "modello": "pd-n-02", "porte": { "S": "r1", "E": "r3" } },
-    { "id": "r3", "cella": [6, 2], "dim": "1x1", "tipo": "normale", "modello": "pd-n-03", "porte": { "W": "r2", "N": "r4", "E": "r5" } },
-    { "id": "r4", "cella": [6, 1], "dim": "1x1", "tipo": "boss", "modello": "pd-b-01", "porte": { "S": "r3" } },
-    { "id": "r5", "cella": [7, 2], "dim": "1x1", "tipo": "banchetto", "modello": "pd-q-01", "porte": { "W": "r3" } },
-    { "id": "r6", "cella": [5, 4], "dim": "1x1", "tipo": "tesoro", "modello": "pd-t-01", "porte": { "N": "r1" } },
-    { "id": "r7", "cella": [3, 3], "dim": "1x1", "tipo": "ricordo", "modello": "pd-m-01", "porte": { "E": "r0" } }
+    { "id": "r0", "cella": [4, 3], "dim": "1x1", "tipo": "ingresso", "modello": "pd-i-01", "porte": { "E": "r1", "W": "r4" } },
+    { "id": "r1", "cella": [5, 3], "dim": "1x1", "tipo": "normale", "modello": "pd-n-01", "porte": { "W": "r0", "N": "r2", "S": "r3" } },
+    { "id": "r2", "cella": [5, 2], "dim": "1x1", "tipo": "boss", "modello": "pd-b-01", "porte": { "S": "r1" } },
+    { "id": "r3", "cella": [5, 4], "dim": "1x1", "tipo": "banchetto", "modello": "pd-q-01", "porte": { "N": "r1" } },
+    { "id": "r4", "cella": [3, 3], "dim": "1x1", "tipo": "tesoro", "modello": "pd-t-01", "porte": { "E": "r0" } }
   ],
-  "segreta": { "id": "s", "cella": [6, 3], "modello": "pd-s-01", "finestre": [["r1", "E"], ["r3", "S"]] },
-  "cammino": ["r0", "r1", "r2", "r3", "r4"]
+  "segreta": null,
+  "cammino": ["r0", "r1", "r2"]
 }

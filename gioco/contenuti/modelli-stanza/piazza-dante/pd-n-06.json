@@ -2,7 +2,7 @@
   "id": "pd-n-06",
   "tipo": "normale",
   "dim": "1x1",
-  "piani": [1],
+  "piani": [1, 2, 3, 4],
   "difficolta": 2,
   "tag": ["media", "casse", "panche"],
   "peso_base": 1.0,

@@ -73,7 +73,7 @@
 import { creaTempo } from './fondazione/tempo.js';
 import { creaCiclo } from './fondazione/ciclo.js';
 import { creaInput, collega as collegaInput } from './fondazione/input.js';
-import { creaRng, derivato } from './fondazione/rng.js';
+import { creaRng, derivato, mescola } from './fondazione/rng.js';
 import { creaBus } from './fondazione/eventi.js';
 import { creaParametri, leggiOverrideUrl } from './fondazione/parametri.js';
 import { fondiDefault, leggiMetaAvvio } from './fondazione/avvio-url.js';
@@ -86,6 +86,7 @@ import { creaNemico as creaNemicoArchetipo, schedaBossProvvisorio } from './atto
 import { creaGatto, ARCHETIPO_GATTO } from './attori/gatto.js'; // storia 020: il gatto d'ombra con la posa
 import { creaDirettore } from './attori/ia/direttore.js';
 import { creaResaDebug } from './resa/debug.js';
+import { creaRenderer } from './resa/renderer.js';
 import { caricaModelli, creaCatalogo, regoleDaParametri, validaParametriGenerazione } from './mondo/modelli.js';
 import { generaPiano } from './mondo/generazione.js';
 import { creaCamera } from './mondo/camera.js';
@@ -298,7 +299,16 @@ async function avvia() {
   const bersagli = [];
   /** @type {object[]} */
   const proiettili = [];
-  const combattimento = creaCombattimento({ modificatori, tempo, eventi, input, campo, ferruccio, bersagli: () => bersagli });
+  const combattimento = creaCombattimento({
+    modificatori,
+    tempo,
+    eventi,
+    input,
+    campo,
+    ferruccio,
+    bersagli: () => bersagli,
+    proiettiliBase: conPiano || conHub || !wire,
+  });
   // Storia 025: profilo persistente (scintille) ed economia della notte (monete, drop con il generatore
   // derivato 'drop', oggetti a terra, consumabili); il banchetto del piano estrae gli slot dal generatore 'banchetto'.
   const salvataggio = creaSalvataggio();
@@ -362,26 +372,62 @@ async function avvia() {
   ciclo.registra({ tick: (dt) => modificatori.tick(dt) }, { stati: ['notte'] });
   // Storia 019: nemici veri per archetipo (nemici.json), un direttore dei gettoni per piano
   // (si azzera a ogni `stanza.entrata`), generatori derivati dal seme per nemico.
-  const pianoNemici = conPiano ? pianoRichiesto : 1;
+  let pianoCorrente = conPiano ? pianoRichiesto : 1;
   const direttore = creaDirettore({
-    gettoni: parametri.get(`nemici.direttore.gettoni.p${pianoNemici}`),
+    gettoni: parametri.get(`nemici.direttore.gettoni.p${pianoCorrente}`),
     gapTicks: tempo.ticksDaMs(parametri.get('nemici.direttore.gap_impatti_min')),
-    imparabiliMax: parametri.get(`nemici.direttore.imparabili_max.p${pianoNemici}`),
+    imparabiliMax: parametri.get(`nemici.direttore.imparabili_max.p${pianoCorrente}`),
     attaccantiMax: parametri.get('nemici.direttore.attaccanti_max'), // storia 020: tetto agli attaccanti contemporanei
     eventi,
   });
   ciclo.registra({ tick: () => direttore.tick() }, { stati: ['notte'] });
   let rngNemici = derivato(rng, 'nemici'); // storia 029: dalla partenza dall'hub deriva dal seme della notte
   let natiNemici = 0;
-  /** Factory dei nemici delle ondate (iniettata nella stanza): archetipo dalla tavolozza del modello;
-   *  il gatto passa da `attori/gatto.js` (storia 020: posa per il renderer, stessa scheda); con `boss: true`
-   *  (storia P01, stanza del boss) il nemico ha il flag boss e la taglia di `nemici.boss_provvisorio`. */
-  const creaNemico = ({ archetipo, x, y, id, boss = false }) => (archetipo === ARCHETIPO_GATTO ? creaGatto : creaNemicoArchetipo)({
-    modificatori, parametri, tempo, eventi, campo, bersaglio: combattimento.comeBersaglio, altri: () => bersagli, direttore,
-    rng: derivato(rngNemici, `${id}#${natiNemici++}`), archetipo, piano: pianoNemici, x, y, id,
-    ferito: () => ferruccio.maschere < modificatori.valore('ferruccio.maschere_max'),
-    boss, schedaBoss: boss ? schedaBossProvvisorio({ modificatori, parametri }) : null,
+
+  /** Pool dei Boss per i Piani 1-3 (estratti senza ripetizione a ogni run) + Boss Finale Donna Luciana al Piano 4. */
+  const POOL_BOSS_PIANI = Object.freeze([
+    Object.freeze({ id: 're-gatto', nome: 'Il Gatto dei Quattro Canti', archetipoBase: 'gatto', scalaRaggio: 1.75, scalaPortata: 1.35, bonusVita: 0 }),
+    Object.freeze({ id: 'capitano-guardia', nome: 'Il Capitano di Piombo', archetipoBase: 'guardia', scalaRaggio: 1.75, scalaPortata: 1.3, bonusVita: 12 }),
+    Object.freeze({ id: 'regina-vespa', nome: 'La Regina delle Vespe', archetipoBase: 'vespa', scalaRaggio: 1.85, scalaPortata: 1.35, bonusVita: -6 }),
+    Object.freeze({ id: 'colosso-statua', nome: 'L\'Automa del Giardino', archetipoBase: 'statua', scalaRaggio: 1.7, scalaPortata: 1.4, bonusVita: 18 }),
+    Object.freeze({ id: 'maestro-fucina', nome: 'Lo Spezzafili d\'Ottone', archetipoBase: 'guardia', scalaRaggio: 1.65, scalaPortata: 1.45, bonusVita: 8 }),
+  ]);
+  const BOSS_FINALE_DONNA_LUCIANA = Object.freeze({
+    id: 'donna-luciana', nome: 'Donna Luciana — La Burattinaia', archetipoBase: 'guardia', scalaRaggio: 2.15, scalaPortata: 1.5, bonusVita: 55,
   });
+  let semeRun = seme;
+  let usiModelliRun = {};
+  let bossRun = mescola(derivato(creaRng(semeRun), 'boss-run'), POOL_BOSS_PIANI);
+  const bossDelPiano = (p) => {
+    const pianoNelCiclo = ((p - 1) % 4) + 1;
+    return pianoNelCiclo === 4 ? BOSS_FINALE_DONNA_LUCIANA : bossRun[(p - 1) % bossRun.length];
+  };
+
+  /** Factory dei nemici delle ondate (iniettata nella stanza): archetipo dalla tavolozza del modello;
+   *  con `boss: true` seleziona il boss randomico della run per i piani 1-3 e Donna Luciana al piano 4. */
+  const creaNemico = ({ archetipo, x, y, id, boss = false }) => {
+    const infoBoss = boss ? bossDelPiano(pianoCorrente) : null;
+    const archEffettivo = infoBoss ? infoBoss.archetipoBase : archetipo;
+    const baseTaglia = boss ? schedaBossProvvisorio({ modificatori, parametri }) : null;
+    const schedaBoss = boss && baseTaglia && infoBoss
+      ? {
+        vita: Math.max(20, baseTaglia.vita + (pianoCorrente - 1) * 18 + infoBoss.bonusVita),
+        scalaRaggio: infoBoss.scalaRaggio,
+        scalaPortata: infoBoss.scalaPortata,
+      }
+      : baseTaglia;
+    const attore = (archEffettivo === ARCHETIPO_GATTO ? creaGatto : creaNemicoArchetipo)({
+      modificatori, parametri, tempo, eventi, campo, bersaglio: combattimento.comeBersaglio, altri: () => bersagli, direttore,
+      rng: derivato(rngNemici, `${id}#${natiNemici++}`), archetipo: archEffettivo, piano: pianoCorrente, x, y, id,
+      ferito: () => ferruccio.maschere < modificatori.valore('ferruccio.maschere_max'),
+      boss, schedaBoss,
+    });
+    if (infoBoss) {
+      attore.bossId = infoBoss.id;
+      attore.nomeBoss = infoBoss.nome;
+    }
+    return attore;
+  };
 
   // Piano generato dal seme (storie 014-017): modelli, catalogo, pianta, camera e notte. Dalla storia 029 la
   // notte può partire anche dopo, dall'hub (`avviaNotte` con il seme derivato dal profilo): `notte` è riassegnata
@@ -409,11 +455,14 @@ async function avvia() {
    * @param {{ seme: number, piano: number, stanza?: string | null }} o
    */
   function avviaNotte({ seme: semeNotte, piano, stanza = null }) {
-    const esito = generaPiano({ seme: semeNotte, piano, parametri, catalogo: catalogoModelli, riserva: riservaPiano });
-    rngNemici = derivato(creaRng(semeNotte), 'nemici');
+    pianoCorrente = piano;
+    const pianoModello = ((piano - 1) % 4) + 1;
+    const esito = generaPiano({ seme: semeNotte + piano * 131, piano: pianoModello, usiModelli: usiModelliRun, parametri, catalogo: catalogoModelli, riserva: riservaPiano });
+    usiModelliRun = esito.usiModelli;
+    rngNemici = derivato(creaRng(semeNotte), `nemici-p${piano}`);
     natiNemici = 0;
     notte = creaNotte({
-      seme: semeNotte, numeroPiano: piano, pianta: esito.pianta, catalogo: catalogoModelli, parametri, tempo, eventi, campo, scena: RISOLUZIONE,
+      seme: semeNotte, numeroPiano: pianoModello, pianta: esito.pianta, catalogo: catalogoModelli, parametri, tempo, eventi, campo, scena: RISOLUZIONE,
       ferruccio, combattimento, bersagli, proiettili, camera, creaNemico,
     });
     const ingressoId = esito.pianta.stanze.find((st) => st.tipo === 'ingresso').id;
@@ -464,17 +513,38 @@ async function avvia() {
     });
   }
   if (conPiano) avviaNotte({ seme, piano: pianoRichiesto });
-  // storia 030: al risveglio (morte, o fine del piano della storia P01: stesso evento, motivo diverso) la notte è
-  // lasciata; con l'hub si torna in piazza (notte + 1), con `?piano=N` la notte riparte dallo stesso seme (strumento
-  // di QA), nella scena di prova Ferruccio è solo in piedi
+  // Discesa al piano successivo (1 → 2 → 3 → 4) dopo aver battuto il boss del piano:
+  // Ferruccio conserva tutti gli oggetti (doni), le monete e le maschere, mentre la Fucina e la Stanza Oggetto estraggono nuovi oggetti randomici!
+  eventi.on('piano.discesa', ({ aPiano }) => {
+    if (!conPiano && !conHub) return;
+    lasciaNotte();
+    pool.preparaPiano(aPiano);
+    banchetto.rigenera(aPiano);
+    piedistalli.impostaPiano(aPiano);
+    avviaNotte({ seme: semeRun, piano: aPiano });
+    if (ciclo.stato() === 'pausa') ciclo.vaiA('notte');
+    incontri.automatiche(`${ANCORAGGIO_INGRESSO_PIANO}${aPiano}`);
+  });
+
+  // Al risveglio (morte o vittoria finale al 4° piano contro Donna Luciana): nuova run con nuovo seme, stanze, boss e oggetti tutti nuovi!
   eventi.on('risveglio.fine', () => {
     if (conPiano || conHub) lasciaNotte();
+    if (!url.searchParams.has('seme')) {
+      semeRun = (semeRun + 0x9e3779b9) >>> 0;
+    }
+    usiModelliRun = {};
+    bossRun = mescola(derivato(creaRng(semeRun), 'boss-run'), POOL_BOSS_PIANI);
     if (hub) {
       hub.entra();
-      camera?.inquadra(campo); // la camera torna sulla piazza (scala 1:1 del campo dell'hub)
+      camera?.inquadra(campo);
       if (ciclo.stato() !== 'hub') ciclo.vaiA('hub');
     } else {
-      if (conPiano) avviaNotte({ seme, piano: pianoRichiesto });
+      if (conPiano) {
+        pool.preparaPiano(1);
+        banchetto.rigenera(1);
+        piedistalli.impostaPiano(1);
+        avviaNotte({ seme: semeRun, piano: 1 });
+      }
       if (ciclo.stato() === 'pausa') ciclo.vaiA('notte');
     }
   });
@@ -491,6 +561,12 @@ async function avvia() {
     eventi.on('hub.partenza', ({ seme: semeNotte, piano }) => {
       if (notteSalvata.presente) notteSalvata.cancella(MOTIVI_CANCELLAZIONE.lasciata); // storia 030: una partenza nuova lascia la notte salvata
       hub.esci();
+      semeRun = semeNotte;
+      usiModelliRun = {};
+      bossRun = mescola(derivato(creaRng(semeRun), 'boss-run'), POOL_BOSS_PIANI);
+      pool.preparaPiano(piano);
+      banchetto.rigenera(piano);
+      piedistalli.impostaPiano(piano);
       avviaNotte({ seme: semeNotte, piano });
       if (ciclo.stato() === 'hub') ciclo.vaiA('notte');
       incontri.automatiche(`${ANCORAGGIO_INGRESSO_PIANO}${piano}`);
@@ -579,11 +655,13 @@ async function avvia() {
   ciclo.registra({ disegna: () => { interfaccia.aggiorna(); interfacciaDoni.aggiorna(); cartiglio.aggiorna(); tableau.aggiorna(); interfacciaHub.aggiorna(); interfacciaMorte.aggiorna(); interfacciaRipresa.aggiorna(); } });
 
   if (wire) {
-    ciclo.registra(creaResaDebug({
+    const usaDiagnostica = url.searchParams.get('diagnostica') === '1';
+    const creaResa = usaDiagnostica ? creaResaDebug : creaRenderer;
+    ciclo.registra(creaResa({
       canvas, campo, ferruccio, combattimento, bersagli: () => bersagli, proiettili: () => proiettili,
       token, scena: RISOLUZIONE, contaTick: ciclo.contaTick, notte: () => notte, camera,
       economia: () => economia, banchetto: () => banchetto, piedistalli: () => piedistalli, ricordi: () => ricordi,
-      hub: () => hub, ciclo,
+      hub: () => hub, ciclo, eventi, motoRidotto,
     }));
     ciclo.vaiA('hub');
     if (!conHub) ciclo.vaiA('notte');

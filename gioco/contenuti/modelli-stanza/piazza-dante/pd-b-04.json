@@ -1,0 +1,21 @@
+{
+  "id": "pd-b-04",
+  "tipo": "boss",
+  "dim": "1x1",
+  "piani": [4],
+  "difficolta": 5,
+  "tag": ["picco", "arena", "teatro_donna_luciana"],
+  "peso_base": 2.0,
+  "griglia": [
+    ".............",
+    ".C.........C.",
+    ".............",
+    ".............",
+    ".............",
+    ".C.........C.",
+    "............."
+  ],
+  "spawn": [],
+  "tavolozza": [],
+  "contenuti": [{ "tipo": "boss", "c": 6, "r": 2, "archetipo": "guardia" }, { "tipo": "uscita", "c": 6, "r": 3 }]
+}

@@ -1,9 +1,15 @@
 {
-  "_descrizione": "Indice dei modelli di stanza del piano 1 (Piazza Dante). Storia 017: 6 normali 1x1, 2 doppie 2x1, ingresso, ricordo, boss, tesoro, banchetto, segreta. Solo dati: il motore li carica da qui (modelli.js). Legenda della griglia in design/gdd/stanze-porte.md regola 28.",
+  "_descrizione": "Indice dei modelli di stanza per i 4 piani della run.",
   "quartiere": "piazza-dante",
   "piano": 1,
   "modelli": [
-    "pd-i-01", "pd-n-01", "pd-n-02", "pd-n-03", "pd-n-04", "pd-n-05", "pd-n-06",
-    "pd-d-01", "pd-d-02", "pd-m-01", "pd-b-01", "pd-t-01", "pd-q-01", "pd-s-01"
+    "pd-i-01",
+    "pd-n-01", "pd-n-02", "pd-n-03", "pd-n-04", "pd-n-05", "pd-n-06", "pd-n-07", "pd-n-08", "pd-n-09", "pd-n-10",
+    "pd-d-01", "pd-d-02",
+    "pd-m-01",
+    "pd-b-01", "pd-b-02", "pd-b-03", "pd-b-04",
+    "pd-t-01",
+    "pd-q-01",
+    "pd-s-01"
   ]
 }

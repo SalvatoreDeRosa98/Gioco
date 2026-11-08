@@ -35,9 +35,11 @@ export const FASI_MORTE = Object.freeze(['lanterne', 'fili', 'maschera', 'buio']
 
 /** Storia P01: fasi della sequenza di fine piano (una sola: il velo con la didascalia). */
 export const FASI_FINE_PIANO = Object.freeze(['velo']);
+export const FASI_DISCESA_PIANO = Object.freeze(['discesa']);
+export const PIANO_FINALE = 4;
 
 /** Motivi del risveglio (codici stabili nel payload di `risveglio.fine`). */
-export const MOTIVI_RISVEGLIO = Object.freeze({ morte: 'morte', vittoria: 'vittoria' });
+export const MOTIVI_RISVEGLIO = Object.freeze({ morte: 'morte', vittoria: 'vittoria', discesa: 'discesa' });
 
 /** Stato della sequenza quando non è in corso. */
 export const INATTIVO = 'inattivo';
@@ -84,6 +86,7 @@ export function creaRisveglio({
 
   /** Durate in ms delle fasi di un motivo (lette ora: i parametri possono cambiare in debug). */
   function durateMsDi(motivo) {
+    if (motivo === MOTIVI_RISVEGLIO.discesa) return [Math.min(900, R('fine_piano.t_velo'))];
     if (motivo === MOTIVI_RISVEGLIO.vittoria) return FASI_FINE_PIANO.map((f) => R(`fine_piano.t_${f}`));
     return FASI_MORTE.map((f) => R(`fasi.${f}`));
   }
@@ -123,8 +126,13 @@ export function creaRisveglio({
     }
     narrativa.raggiungiPiano?.(piano + 1);
     s.pianoCompletato = piano;
-    avviaSequenza({ motivo: MOTIVI_RISVEGLIO.vittoria, fasi: FASI_FINE_PIANO, ms: durateMsDi(MOTIVI_RISVEGLIO.vittoria) });
-    eventi.emit('fine_piano.avvio', { durata_ms: s.durataMsAvvio, fasi: FASI_FINE_PIANO.slice(), piano, notte: narrativa.avanzamento()[campoNotte], motivo: s.motivo });
+    // Dopo aver sconfitto i Boss dei Piani 1-3 e anche dopo aver ucciso Donna Luciana al Piano 4,
+    // la run continua all'infinito nei Cicli successivi (Piano 5, 6, 7, 8...)!
+    const eDiscesa = true;
+    const motivo = eDiscesa ? MOTIVI_RISVEGLIO.discesa : MOTIVI_RISVEGLIO.vittoria;
+    const fasi = eDiscesa ? FASI_DISCESA_PIANO : FASI_FINE_PIANO;
+    avviaSequenza({ motivo, fasi, ms: durateMsDi(motivo) });
+    eventi.emit('fine_piano.avvio', { durata_ms: s.durataMsAvvio, fasi: fasi.slice(), piano, notte: narrativa.avanzamento()[campoNotte], motivo: s.motivo });
     entraFase(0);
     return true;
   }
@@ -149,11 +157,11 @@ export function creaRisveglio({
     s.indice = i;
     s.fase = s.fasi[i];
     s.ticksFase = 0;
-    const nome = s.motivo === MOTIVI_RISVEGLIO.vittoria ? 'fine_piano.fase' : 'morte.fase';
+    const nome = (s.motivo === MOTIVI_RISVEGLIO.vittoria || s.motivo === MOTIVI_RISVEGLIO.discesa) ? 'fine_piano.fase' : 'morte.fase';
     eventi.emit(nome, { fase: s.fase, indice: i, durata_ms: durateMsDi(s.motivo)[i], motivo: s.motivo });
   }
 
-  /** Il risveglio: notte + 1, doni e pool azzerati, economia nuova, corpo in piedi (per morte e vittoria). */
+  /** Il risveglio: per morte o vittoria finale azzera la run; per discesa passa al piano successivo conservando oggetti, monete e maschere. */
   function risveglia() {
     const motivo = s.motivo ?? MOTIVI_RISVEGLIO.morte;
     const piano = s.pianoCompletato;
@@ -161,6 +169,11 @@ export function creaRisveglio({
     s.indice = -1;
     s.motivo = null;
     s.pianoCompletato = null;
+    if (motivo === MOTIVI_RISVEGLIO.discesa && Number.isInteger(piano) && piano < PIANO_FINALE) {
+      combattimento?.interrompi?.();
+      eventi.emit('piano.discesa', { daPiano: piano, aPiano: piano + 1 });
+      return;
+    }
     const notte = narrativa.nuovaNotte();
     modificatori.azzera();
     pool?.azzera?.();

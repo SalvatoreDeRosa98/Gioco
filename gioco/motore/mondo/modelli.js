@@ -267,11 +267,11 @@ export function regoleDaParametri(parametri) {
  */
 export function validaParametriGenerazione(parametri) {
   const errori = [];
-  for (let p = 1; p <= 5; p++) {
+  for (let p = 1; p <= 4; p++) {
     if (!parametri.ha(`generazione.piani.p${p}.n_min`)) continue;
     const nMin = parametri.get(`generazione.piani.p${p}.n_min`);
     const lMin = parametri.get(`generazione.piani.p${p}.L_min`);
-    if (lMin > nMin - 4) errori.push(`generazione.piani.p${p}.L_min (${lMin}) > n_min − 4 (${nMin - 4})`);
+    if (lMin > nMin - 3) errori.push(`generazione.piani.p${p}.L_min (${lMin}) > n_min − 3 (${nMin - 3})`);
   }
   return errori;
 }

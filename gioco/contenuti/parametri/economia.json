@@ -1,17 +1,17 @@
 {
   "_descrizione": "Economia della notte e del profilo. Fonte: design/gdd/economia.md (Core Rules 2-6, Formulas, Tuning Knobs). Ogni voce è {base, min, max}: min/max sono il Safe Range del GDD (clamp del valore effettivo, ADR-0002). Distanze in px, probabilità 0-1, percentuali intere (la formula del prezzo è in aritmetica intera: prezzo = floor((base × rar_pct × (100 + inc_pct × piano) × (100 − sconto_pct) + 500000) / 1000000)). Storia 025. 'banchetto.peso_rarita' e 'deriva_rarita_pct' sono i pesi W0_r e le derive d_r del pool di doni-modificatori.md (W_r(p) = max(0, W0 × (1 + d × (p − 1)))): la storia 024 (pool e piedistallo) li sposterà nel suo modulo; qui servono allo slot dono del banchetto. 'sconto_pct' è 0 finché la Fucina (sconto al banchetto I e II) non lo alza.",
 
-  "p_drop_moneta": { "base": 0.40, "min": 0.25, "max": 0.55 },
-  "q_moneta_grande": { "base": 0.10, "min": 0.0, "max": 0.5 },
+  "p_drop_moneta": { "base": 0.12, "min": 0.05, "max": 0.55 },
+  "q_moneta_grande": { "base": 0.08, "min": 0.0, "max": 0.5 },
   "v_moneta_piccola": { "base": 1, "min": 1, "max": 2 },
-  "v_moneta_grande": { "base": 5, "min": 2, "max": 10 },
-  "bonus_stanza": { "base": 2, "min": 0, "max": 4 },
-  "monete_segreta": { "base": 10, "min": 5, "max": 20 },
-  "p_segreta": { "base": 0.5, "min": 0.0, "max": 1.0 },
+  "v_moneta_grande": { "base": 3, "min": 2, "max": 10 },
+  "bonus_stanza": { "base": 0, "min": 0, "max": 4 },
+  "monete_segreta": { "base": 7, "min": 5, "max": 20 },
+  "p_segreta": { "base": 1.0, "min": 0.0, "max": 1.0 },
   "monete_boss": {
     "_descrizione": "monete_boss(p) = s0 + k × p",
-    "s0": { "base": 6, "min": 4, "max": 8 },
-    "k": { "base": 2, "min": 1, "max": 3 }
+    "s0": { "base": 1, "min": 1, "max": 8 },
+    "k": { "base": 1, "min": 1, "max": 3 }
   },
   "tetto_monete": { "base": 99, "min": 50, "max": 199 },
   "tetto_scintille": { "base": 99999, "min": 999, "max": 999999 },
@@ -36,18 +36,18 @@
   },
 
   "prezzi": {
-    "_descrizione": "formula prezzo (aritmetica intera); rar_pct per rarità, cuore e consumabile usano 100",
-    "base_dono": { "base": 15, "min": 10, "max": 25 },
-    "base_cuore": { "base": 10, "min": 6, "max": 15 },
-    "base_consumabile": { "base": 8, "min": 5, "max": 12 },
+    "_descrizione": "formula prezzo stile The Binding of Isaac: Cuore 3¢, Consumabile 5¢, Dono Base 10¢, Dono Raro 15¢, Dono Forte/Prezioso 20¢",
+    "base_dono": { "base": 10, "min": 7, "max": 25 },
+    "base_cuore": { "base": 3, "min": 2, "max": 15 },
+    "base_consumabile": { "base": 5, "min": 3, "max": 12 },
     "rar_pct": {
       "comune": { "base": 100, "min": 100, "max": 100 },
-      "raro": { "base": 180, "min": 150, "max": 220 },
-      "prezioso": { "base": 300, "min": 250, "max": 400 }
+      "raro": { "base": 150, "min": 130, "max": 220 },
+      "prezioso": { "base": 200, "min": 150, "max": 400 }
     },
-    "inc_pct": { "base": 15, "min": 10, "max": 25 },
-    "sconto_pct": { "base": 0, "min": 0, "max": 40 },
-    "sconto_max": { "base": 30, "min": 10, "max": 40 },
+    "inc_pct": { "base": 0, "min": 0, "max": 25 },
+    "sconto_pct": { "base": 0, "min": 0, "max": 50 },
+    "sconto_max": { "base": 50, "min": 10, "max": 50 },
     "prezzo_min": { "base": 1, "min": 1, "max": 5 }
   },
 

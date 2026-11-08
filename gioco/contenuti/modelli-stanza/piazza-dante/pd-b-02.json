@@ -1,0 +1,21 @@
+{
+  "id": "pd-b-02",
+  "tipo": "boss",
+  "dim": "1x1",
+  "piani": [1, 2, 3, 4],
+  "difficolta": 3,
+  "tag": ["dura", "arena", "fucina_ardente"],
+  "peso_base": 1.0,
+  "griglia": [
+    ".............",
+    "..F.......F..",
+    ".............",
+    ".............",
+    ".............",
+    "..F.......F..",
+    "............."
+  ],
+  "spawn": [],
+  "tavolozza": [],
+  "contenuti": [{ "tipo": "boss", "c": 6, "r": 3, "archetipo": "guardia" }, { "tipo": "uscita", "c": 6, "r": 3 }]
+}

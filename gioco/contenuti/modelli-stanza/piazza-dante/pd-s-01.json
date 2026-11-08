@@ -2,7 +2,7 @@
   "id": "pd-s-01",
   "tipo": "segreta",
   "dim": "1x1",
-  "piani": [1],
+  "piani": [1, 2, 3, 4],
   "difficolta": 1,
   "tag": ["facile", "finestra_accesa"],
   "peso_base": 1.0,

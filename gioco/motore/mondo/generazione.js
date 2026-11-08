@@ -28,7 +28,7 @@ const LATI = Object.freeze(['N', 'E', 'S', 'W']);
 export const TIPI_IDONEI_SEGRETA = Object.freeze(new Set(['normale', 'ricordo', 'tesoro', 'banchetto', 'ingresso']));
 
 /** Foglie speciali che devono avere grado 1 (H5). */
-export const FOGLIE_SPECIALI = Object.freeze(['boss', 'tesoro', 'banchetto', 'ricordo']);
+export const FOGLIE_SPECIALI = Object.freeze(['boss', 'tesoro', 'banchetto']);
 
 /** Tipi che azzerano la serie «senza ricompensa» (regola 13). */
 const TIPI_SPECIALI = new Set(['ingresso', 'tesoro', 'banchetto', 'ricordo', 'boss', 'segreta']);
@@ -68,8 +68,8 @@ export function dimensioniPiano({ parametri, piano, u, u2 }) {
   const G = (k) => parametri.get(`generazione.${k}`);
   const PP = (k) => parametri.get(`generazione.piani.p${piano}.${k}`);
   const nStanze = Math.min(G('n_clamp_max'), Math.max(G('n_clamp_min'), PP('n_min') + Math.floor(u * (PP('n_var') + 1))));
-  const L = Math.min(PP('L_min') + Math.floor(u2 * (PP('L_var') + 1)), nStanze - 4);
-  return { nStanze, L, nExtra: nStanze - (L + 1) - 3 };
+  const L = Math.min(PP('L_min') + Math.floor(u2 * (PP('L_var') + 1)), nStanze - 3);
+  return { nStanze, L, nExtra: nStanze - (L + 1) - 2 };
 }
 
 /**
@@ -309,7 +309,7 @@ export function validaPianta(pianta, { parametri, catalogo }) {
   if (dBoss === undefined) v.push('H2: il boss non è raggiungibile');
   else if (dBoss < PP('L_min')) v.push(`H2: d_boss ${dBoss} < L_min ${PP('L_min')}`);
   if (boss.celle.some((cb) => ingresso.celle.some((ci) => confinano(cb, ci)))) v.push('H3: il boss confina con l\'ingresso');
-  for (const tipo of ['ingresso', 'boss', 'tesoro', 'banchetto', 'ricordo']) {
+  for (const tipo of ['ingresso', 'boss', 'tesoro', 'banchetto']) {
     if (conta(tipo) !== 1) v.push(`H4: ${conta(tipo)} stanze di tipo ${tipo}`);
   }
   for (const s of pianta.stanze) {
@@ -446,6 +446,7 @@ function tentativo({ rng, rngPiano, piano, nStanze, L, parametri, catalogo, usi 
     for (const lato of LATI) {
       const c = [cu[0] + VERSO_LATO[lato].x, cu[1] + VERSO_LATO[lato].y];
       if (!ammessa(c, new Set([ultimo.id]))) continue;
+      if (i === L && confinano(c, ingresso.cella)) continue;
       if (lato === dirPrec && run >= G('max_rettilineo_walk')) continue;
       candidati.push({ c, lato, peso: lato === dirPrec ? G('k_dritto') : 1 });
     }
@@ -457,7 +458,7 @@ function tentativo({ rng, rngPiano, piano, nStanze, L, parametri, catalogo, usi 
     collega(ultimo, s);
     cammino.push(s);
   }
-  const nExtra = nStanze - (L + 1) - 3;
+  const nExtra = nStanze - (L + 1) - 2;
   let extra = 0;
 
   // 2. anelli (angolo interno di ogni svolta)
@@ -491,7 +492,7 @@ function tentativo({ rng, rngPiano, piano, nStanze, L, parametri, catalogo, usi 
     extra += 1;
   }
 
-  // 4. foglie speciali
+  // 4. foglie speciali: 1 Fucina ('banchetto') e 1 Stanza Oggetto ('tesoro') in ogni piano
   const coppie = (genitori) => genitori.flatMap((g) => libereAccanto(g).map((c) => ({ g, c })));
   const posa = (tipo, candidati) => {
     if (!candidati.length) return null;
@@ -501,17 +502,15 @@ function tentativo({ rng, rngPiano, piano, nStanze, L, parametri, catalogo, usi 
     return { s, g };
   };
   let dist = distanze();
-  const iMin = Math.floor(G('f_banchetto') * L);
+  const iMin = Math.max(1, Math.floor(G('f_banchetto') * L));
   let candidati = coppie(cammino.filter((s, i) => i >= iMin && i <= L - 1));
-  if (!candidati.length) candidati = coppie(stanze.filter((s) => s.tipo === 'normale' && dist.get(s.id) >= 2));
+  if (!candidati.length) candidati = coppie(stanze.filter((s) => s.tipo === 'normale' || s.tipo === 'ingresso'));
   const banchetto = posa('banchetto', candidati);
-  if (!banchetto) return fallisci('nessun posto per il banchetto');
-  candidati = coppie(stanze.filter((s) => s.tipo === 'normale' && dist.get(s.id) + 1 >= G('d_tesoro_min') && s.id !== banchetto.g.id));
+  if (!banchetto) return fallisci('nessun posto per la fucina (banchetto)');
+  candidati = coppie(stanze.filter((s) => (s.tipo === 'normale' || s.tipo === 'ingresso') && s.id !== banchetto.g.id));
+  if (!candidati.length) candidati = coppie(stanze.filter((s) => s.tipo === 'normale' || s.tipo === 'ingresso'));
   const tesoro = posa('tesoro', candidati);
   if (!tesoro) return fallisci('nessun posto per il tesoro');
-  const genitoriRicordo = piano === 1 ? [ingresso] : stanze.filter((s) => s.tipo === 'normale' || s.tipo === 'ingresso');
-  const ricordo = posa('ricordo', coppie(genitoriRicordo));
-  if (!ricordo) return fallisci('nessun posto per la stanza-ricordo');
 
   // 5. élite e doppie
   let elite = 0;

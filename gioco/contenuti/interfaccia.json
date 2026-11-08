@@ -1,25 +1,25 @@
 {
-  "_doc": "Testi dell'interfaccia (HUD, banchetto, doni e cartiglio). Unico posto con stringhe mostrate dal motore: nessuna stringa di gioco nel codice. {tasto}, {nome}, {prezzo} sono segnaposto riempiti dall'interfaccia. Storia 025 (interfaccia minimale in DOM: il renderer definitivo aspetta l'approvazione dell'autore). Storia 027: 'incontri' (etichette del cartiglio dei dialoghi e del tableau; {nome} è il nome dell'NPC). Storia 029: 'hub' (cartellino dell'hub: {n} numero della notte, {tasto}, {nome}, {piano}). Storia 030: 'morte' (didascalie del velo della sequenza di morte, una per fase) e 'ripresa' (pannello «Continua» nell'hub: {piano}, {notte}). Storia P01 (provvisoria): 'fine_piano' (didascalia del velo all'uscita del piano; {piano} è il piano che non esiste ancora). Storia P02 (provvisoria): 'prova' (pannello delle istruzioni iniziali di prova.html: titolo e righe).",
+  "_doc": "Testi dell'interfaccia (HUD, La Fucina, doni e cartiglio).",
   "hud": {
     "monete": "Monete",
     "scintille": "Scintille",
     "maschere": "Maschere"
   },
   "banchetto": {
-    "titolo": "Banchetto di Tonino",
-    "istruzione": "Avvicinati a uno slot e premi {tasto}",
+    "titolo": "La Fucina",
+    "istruzione": "Avvicinati al banco della Fucina e premi {tasto} per acquistare",
     "cuore": "Cuore",
     "cuore_descrizione": "Ripristina una maschera",
     "comprato": "venduto",
     "vuoto": "—",
-    "esito_comprato": "Comprato: {nome}",
-    "esito_monete": "A vuoto: servono {prezzo} monete",
+    "esito_comprato": "Forgiato nella Fucina: {nome}",
+    "esito_monete": "Monete insufficienti: servono {prezzo} monete",
     "esito_maschere_piene": "Le maschere sono già piene",
     "esito_comprato_gia": "Lo slot è vuoto"
   },
   "doni": {
-    "titolo": "Doni",
-    "anteprima": "Premi {tasto} per raccogliere",
+    "titolo": "Oggetti",
+    "anteprima": "Avvicinati o premi {tasto} per raccogliere l'oggetto",
     "gia_al_massimo": "Già al massimo.",
     "fallback_cuore": "Cuore",
     "fallback_cuore_riga": "Il pool è vuoto: una maschera in dono",
@@ -28,8 +28,8 @@
   },
   "consumabili": {
     "olio-da-fabbro": {
-      "nome": "Olio da fabbro",
-      "descrizione": "La lama morde di più per due stanze"
+      "nome": "Olio della Fucina",
+      "descrizione": "La lama morde più forte per due stanze"
     },
     "pezzuola-di-lino": {
       "nome": "Pezzuola di lino",
@@ -45,30 +45,31 @@
     "aspetta": "Aspetta: prima le ombre."
   },
   "hub": {
-    "notte": "Notte {n}",
+    "notte": "Run {n}",
     "parla": "Premi {tasto} per parlare con {nome}",
     "parti": "L'ingresso al piano {piano}: avanti per partire"
   },
   "morte": {
-    "lanterne": "Le lanterne si spengono, una a una.",
+    "lanterne": "Le lanterne della ribalta si spengono, una a una.",
     "fili": "I fili d'oro si spezzano.",
     "maschera": "La maschera si stacca in pezzi che salgono.",
-    "buio": "Il lampione della piazza si accende."
+    "buio": "Il sipario cala: una nuova run ha inizio al Piano 1."
   },
   "ripresa": {
-    "titolo": "Una notte è rimasta a metà: notte {notte}, piano {piano}",
+    "titolo": "Una run è rimasta a metà: run {notte}, piano {piano}",
     "continua": "Continua",
-    "lascia": "Lascia andare"
+    "lascia": "Nuova Run"
   },
   "fine_piano": {
-    "velo": "Il piano {piano} non è ancora stato costruito. La prova finisce qui: Ferruccio torna in Piazza Dante."
+    "discesa": "Boss del piano sconfitto! Discesa al Piano {piano}...",
+    "velo": "Donna Luciana è sconfitta! Le mani del marionettista crollano e Ferruccio è finalmente libero."
   },
   "prova": {
-    "titolo": "Ferruccio — La Notte Immobile (prova)",
+    "titolo": "Ferruccio — Il Teatro delle Marionette (4 Piani stile Isaac)",
     "righe": [
-      "WASD o frecce: cammina · J: fendente (tieni premuto: affondo) · K: parata · Spazio: scatto · E: parla, raccogli, compra",
-      "Disegno provvisorio in fil di ferro: la grafica vera arriva dopo",
-      "Premi un tasto per cominciare"
+      "WASD / Frecce: muovi · J: fendente (tieni premuto: affondo) · K: parata · Spazio: scatto · E: raccogli / compra nella Fucina",
+      "Piano 1 (5 stanze) → Piano 2 (7 stanze) → Piano 3 (8 stanze) → Piano 4 (9 stanze, Boss Finale: Donna Luciana)",
+      "Ogni piano ha 1 Stanza Oggetto gratuita, 1 Fucina (Shop) e 1 Boss da battere per scendere. Premi un tasto per iniziare!"
     ]
   }
 }

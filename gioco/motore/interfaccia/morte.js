@@ -69,8 +69,8 @@ export function creaInterfacciaMorte({ documento, contenitore, testi, risveglio 
       return;
     }
     velo.hidden = false;
-    const vittoria = r.motivo === MOTIVO_VITTORIA;
-    velo.dataset.motivo = vittoria ? MOTIVO_VITTORIA : MOTIVO_MORTE;
+    const vittoria = r.motivo === MOTIVO_VITTORIA || r.motivo === 'discesa';
+    velo.dataset.motivo = vittoria ? r.motivo : MOTIVO_MORTE;
     lanterne.hidden = vittoria;
     fili.hidden = vittoria;
     maschera.hidden = vittoria;

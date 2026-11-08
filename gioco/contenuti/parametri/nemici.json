@@ -65,7 +65,7 @@
 
   "boss_provvisorio": {
     "_descrizione": "Storia P01 (PROVVISORIA, build di prova per l'autore; la storia 022 la sostituisce con la scheda vera del Gatto dei Quattro Canti: boss.md §5 dà vita 280 e raggio 40 px). Il boss provvisorio è un nemico dell'archetipo indicato dal contenuto 'boss' del modello della stanza boss (pd-b-01: gatto), creato con il flag boss (t_stordito_boss, t_immunita_boss, bottino del boss in economia.json): 'vita' sostituisce la vita della scheda (NON scalata per piano), 'scala_raggio' moltiplica il raggio del corpo, 'scala_portata' moltiplica portata, banda d_min/d_max e balzo. La vita è molto più bassa del GDD perché i pattern veri (graffio a ventaglio, Caduta dei Quattro Canti, aggiunte, due fasi) non esistono: con un solo balzo ripetuto, 280 di vita sarebbero un minuto di attesa, non un duello.",
-    "vita": { "base": 60, "min": 10, "max": 400 },
+    "vita": { "base": 140, "min": 10, "max": 600 },
     "scala_raggio": { "base": 1.6, "min": 1, "max": 3 },
     "scala_portata": { "base": 1.3, "min": 1, "max": 2 }
   },
@@ -73,7 +73,7 @@
   "archetipi": {
     "_descrizione": "Schede dell'MVP (§4). Dentro 'attacco' i tre tempi del telegrafo (t_ant, t_lamp, t_imp), recupero e cooldown, banda di distanza [d_min, d_max], geometria del colpo e flag.",
     "gatto": {
-      "vita": { "base": 6, "min": 1, "max": 30 },
+      "vita": { "base": 8, "min": 1, "max": 40 },
       "r": { "base": 16, "min": 8, "max": 32 },
       "peso": { "base": 1, "min": 0, "max": 10 },
       "r_aggro": { "base": 260, "min": 180, "max": 340 },
