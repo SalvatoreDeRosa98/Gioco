@@ -1,0 +1,7 @@
+{
+  "_doc": "Consumabili del banchetto di Tonino (design/gdd/economia.md regola 5): doni temporanei applicati all'acquisto, durata in stanze di combattimento ripulite; lo stesso consumabile ricomprato rinnova la durata, non la somma. File 'tabella' (non {base,min,max}): lo legge motore/oggetti/banchetto.js. 'statistica' è un nome corto del registro di doni.json. I nomi mostrati sono in contenuti/interfaccia.json (consumabili.<id>.nome). Storia 025.",
+  "consumabili": [
+    { "id": "olio-da-fabbro", "statistica": "danno", "operazione": "somma", "valore": 1, "durata_stanze": 2 },
+    { "id": "pezzuola-di-lino", "statistica": "t_invuln", "operazione": "somma", "valore": 300, "durata_stanze": 3 }
+  ]
+}

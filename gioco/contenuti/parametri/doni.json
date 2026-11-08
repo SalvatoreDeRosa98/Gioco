@@ -43,6 +43,14 @@
     "max_proiettili_attivi":     { "base": 24, "min": 12, "max": 48 },
     "max_effetti_gancio_frame":  { "base": 6,  "min": 3,  "max": 12 }
   },
+  "piedistallo": {
+    "_doc": "Piedistallo della bottega e cartiglio (GDD regole 8, 10, 11, Tuning Knobs). Statistiche {base,min,max} lette con il base (storia 024). r_interagisci è economia.r_interagisci (condiviso con il banchetto). avviso_cap: 1 acceso, 0 spento.",
+    "piano_doppio":  { "base": 3,    "min": 2,    "max": 4 },
+    "r_anteprima":   { "base": 96,   "min": 64,   "max": 140 },
+    "t_cartiglio":   { "base": 3000, "min": 1500, "max": 5000 },
+    "lato_icona_hud": { "base": 28,  "min": 24,   "max": 40 },
+    "avviso_cap":    { "base": 1,    "min": 0,    "max": 1 }
+  },
 
   "sagome": {
     "_doc": "Art bible sezione 4: le forme d'oro non ripetono mai una forma ed evitano quelle della moneta e della scintilla.",

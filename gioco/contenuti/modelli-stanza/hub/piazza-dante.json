@@ -1,0 +1,33 @@
+{
+  "_descrizione": "Hub di Piazza Dante tra le notti (storia 029; GDD incontri-dialoghi.md regola 7, stato-narrativo.md «Hub», art bible §2 «Hub di Piazza Dante tra le notti» e Principio C). Stanza SPECIALE: stessa legenda della griglia dei modelli del piano (stanze-porte.md regola 28; B = banco, C = colonna del portico), nessuna porta di stanza, nessuna nascita di nemici. 'ingresso' è la porta speciale verso il piano: attraversarla fa partire la notte (evento hub.partenza) con il seme derivato dal profilo. 'arrivo' è la cella dove Ferruccio compare. 'presenze' sono gli ancoraggi e la scenografia: tipo npc (interagisci entro incontri.r_interazione apre l'ancoraggio), porta (chiusa finché 'aperta_se' è falsa; nell'MVP la bottega di Gaetano resta chiusa: si apre al piano 2, decisione provvisoria), finestra (una luce, mai un personaggio: Mariella), scenografia (luna immobile, fili d'oro). 'quando' ha la sintassi delle scene di storia.json: la presenza compare solo se vera (Taddeo se perdonato, Agnese sotto il portico se risvegliata). Le coordinate c/r sono celle (anche fuori dalla griglia per ciò che sta sui muri o nel cielo); 'fino_a' è la seconda estremità di un filo. 'automatiche': ancoraggi le cui scene partono da sole entrando nell'hub quando 'quando' è vero (decisione provvisoria: la Piazza è l'hub E il piano 1 della notte 1, quindi risveglio, tutorial e targa partono qui alla notte 1). Testi mostrati: nessuno (i nomi vengono da storia.json › personaggi; 'etichetta' è diagnostica per il fil di ferro).",
+  "id": "piazza-dante",
+  "tipo": "hub",
+  "dim": "1x1",
+  "quartiere": "piazza-dante",
+  "piano": 1,
+  "griglia": [
+    "..........C.C",
+    ".............",
+    ".BB..........",
+    ".............",
+    ".............",
+    ".............",
+    "............."
+  ],
+  "arrivo": { "c": 6, "r": 3 },
+  "ingresso": { "slot": "E", "piano": 1 },
+  "automatiche": [
+    { "ancoraggio": "ingresso-piano:1", "quando": { "notte": 1 } }
+  ],
+  "presenze": [
+    { "id": "tonino", "tipo": "npc", "personaggio": "tonino", "ancoraggio": "hub:tonino", "c": 3, "r": 2, "etichetta": "banchetto" },
+    { "id": "bottega", "tipo": "porta", "c": 6, "r": -1, "aperta_se": { "fucina_aperta": "vera" }, "etichetta": "bottega di Gaetano" },
+    { "id": "mariella", "tipo": "finestra", "personaggio": "mariella", "c": 2, "r": -1, "accesa": true },
+    { "id": "finestra-portico", "tipo": "finestra", "c": 9, "r": -1, "accesa": false },
+    { "id": "taddeo", "tipo": "npc", "personaggio": "taddeo", "ancoraggio": "hub:taddeo", "c": 8, "r": 4, "quando": { "taddeo": "perdonato" } },
+    { "id": "agnese", "tipo": "npc", "personaggio": "agnese", "ancoraggio": "hub:agnese", "c": 11, "r": 0, "quando": { "agnese": "risvegliata" }, "etichetta": "portico" },
+    { "id": "luna", "tipo": "scenografia", "forma": "luna", "c": 0.5, "r": -2.5 },
+    { "id": "filo-1", "tipo": "scenografia", "forma": "filo_oro", "c": 2.5, "r": -1.5, "fino_a": { "c": 6.5, "r": -1.9 } },
+    { "id": "filo-2", "tipo": "scenografia", "forma": "filo_oro", "c": 6.5, "r": -1.9, "fino_a": { "c": 9.5, "r": -1.5 } }
+  ]
+}

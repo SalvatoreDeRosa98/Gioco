@@ -24,7 +24,7 @@ export const STATI_CORPO = Object.freeze(['fermo', 'cammina', 'scatta', 'recuper
 
 /**
  * Tabella esplicita delle transizioni (da → verso ammessi). Il danno porta a `colpito` da ogni
- * stato non invulnerabile; `morto` è terminale.
+ * stato non invulnerabile; `morto` è terminale per il gioco: ne esce solo `risveglia()` (storia 030).
  */
 export const TRANSIZIONI_CORPO = Object.freeze({
   fermo: Object.freeze(['cammina', 'scatta', 'colpito', 'morto']),
@@ -353,6 +353,27 @@ export function creaFerruccio({ modificatori, tempo, eventi, input, campo, x, y,
   }
 
   /**
+   * Risveglio dopo la morte (storia 030, GDD stato-narrativo regola 8): il corpo torna `fermo` con
+   * tutte le maschere e le cariche, senza invulnerabilità, scatto né spinta. È l'unica uscita da
+   * `morto` e non passa da `vai`: la tabella delle transizioni lo tiene terminale per il gioco.
+   * Emette `ferruccio.risveglio`.
+   */
+  function risveglia() {
+    corpo.stato = 'fermo';
+    corpo.maschere = val('maschere_max');
+    corpo.cariche = val('cariche_scatto');
+    corpo.ricaricaTicks = 0;
+    corpo.invulnTicks = 0;
+    corpo.scattoTicks = 0;
+    corpo.recuperoTicks = 0;
+    corpo.spintaTicks = 0;
+    corpo.spintaTotale = 0;
+    corpo.vx = 0;
+    corpo.vy = 0;
+    emetti('ferruccio.risveglio', { maschere: corpo.maschere });
+  }
+
+  /**
    * Teletrasporto (debug e test).
    * @param {number} nx
    * @param {number} ny
@@ -385,6 +406,7 @@ export function creaFerruccio({ modificatori, tempo, eventi, input, campo, x, y,
     separaDa,
     collegaVincoli,
     impostaMaschere,
+    risveglia,
     posiziona,
   };
 }

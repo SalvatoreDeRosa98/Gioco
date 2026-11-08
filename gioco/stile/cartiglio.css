@@ -1,0 +1,166 @@
+/* Storia 027: cartiglio dei dialoghi e tableau dei ricordi (DOM, non definitivo: il renderer vero aspetta
+   l'approvazione dell'autore). Riferimento visivo: design/mockup/teatro-delle-ombre.html — il cartiglio scuro
+   bordato d'oro con il doppio filo, i quattro rombi agli angoli, il nome del parlante su una targhetta in
+   maiuscoletto, la battuta in crema, la didascalia in corsivo, CONTINUA in oro in basso a destra.
+   Colori SOLO dai token di stile/token.css. */
+
+/* `display` esplicito sotto: l'attributo hidden deve comunque spegnere gli elementi */
+#interfaccia .cartiglio-scena[hidden],
+#interfaccia .cartiglio-scena [hidden],
+#interfaccia .tableau[hidden] { display: none; }
+
+#interfaccia .cartiglio-scena {
+  position: absolute;
+  left: 50%;
+  bottom: 4.5%;
+  transform: translateX(-50%);
+  width: 64%;
+  min-height: 15.5%;
+  box-sizing: border-box;
+  padding: 1.1em 1.6em 0.9em;
+  border: 1px solid var(--oro);
+  outline: 1px solid color-mix(in srgb, var(--oro) 40%, transparent);
+  outline-offset: -7px;
+  background: color-mix(in srgb, var(--inchiostro) 92%, var(--bruno));
+  color: var(--crema);
+  font-family: var(--font-testo);
+  font-size: clamp(14px, 2.2vw, 30px);
+  line-height: 1.25;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* i quattro rombi d'oro agli angoli (due per pseudo-elemento) */
+#interfaccia .cartiglio-scena::before,
+#interfaccia .cartiglio-scena::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--oro);
+  transform: rotate(45deg);
+}
+#interfaccia .cartiglio-scena::before { left: -5px; top: -5px; }
+#interfaccia .cartiglio-scena::after { right: -5px; bottom: -5px; }
+
+/* targhetta del parlante: maiuscoletto, oro, spaziato, a cavallo del bordo superiore */
+#interfaccia .cartiglio-scena .parlante {
+  position: absolute;
+  left: 1.2em;
+  top: -0.8em;
+  margin: 0;
+  padding: 0.15em 0.9em;
+  border: 1px solid var(--oro);
+  background: var(--inchiostro);
+  color: var(--oro);
+  font-family: var(--font-titoli);
+  font-variant: small-caps;
+  font-size: 0.5em;
+  font-weight: 400;
+  letter-spacing: 0.28em;
+}
+
+#interfaccia .cartiglio-scena .battuta {
+  margin: 0;
+  padding-right: 4.5em;
+  color: var(--crema);
+}
+
+#interfaccia .cartiglio-scena .battuta::before { content: '«'; }
+#interfaccia .cartiglio-scena .battuta::after { content: '»'; }
+
+/* didascalia: corsivo, colore attenuato, senza virgolette e senza nome */
+#interfaccia .cartiglio-scena.didascalia .battuta {
+  font-style: italic;
+  color: color-mix(in srgb, var(--crema) 70%, var(--carta));
+}
+#interfaccia .cartiglio-scena.didascalia .battuta::before,
+#interfaccia .cartiglio-scena.didascalia .battuta::after { content: ''; }
+
+#interfaccia .cartiglio-scena.ripetizione { border-color: color-mix(in srgb, var(--oro) 70%, var(--bruno)); }
+
+/* suggerimento CONTINUA / SCEGLI · CONFERMA: in basso a destra, oro, maiuscolo spaziato */
+#interfaccia .cartiglio-scena .suggerimento {
+  position: absolute;
+  right: 1.2em;
+  bottom: 0.5em;
+  margin: 0;
+  color: var(--oro);
+  font-family: var(--font-titoli);
+  font-size: 0.36em;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+#interfaccia .cartiglio-scena .suggerimento::before { content: '▸ '; }
+
+/* scelta: due opzioni affiancate, nessuna evidenziata per default */
+#interfaccia .cartiglio-scena .opzioni {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6em;
+  margin: 0.2em 0 1.1em;
+  padding: 0;
+  list-style: none;
+}
+#interfaccia .cartiglio-scena .opzione {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+  padding: 0.35em 0.7em;
+  border: 1px solid color-mix(in srgb, var(--oro) 45%, transparent);
+  border-radius: 3px;
+  font-size: 0.62em;
+  cursor: pointer;
+}
+#interfaccia .cartiglio-scena .opzione:hover { border-color: color-mix(in srgb, var(--oro) 80%, transparent); }
+#interfaccia .cartiglio-scena .opzione.selezionata {
+  border-color: var(--oro);
+  background: color-mix(in srgb, var(--oro) 14%, transparent);
+}
+#interfaccia .cartiglio-scena .opzione .etichetta { color: var(--crema); }
+#interfaccia .cartiglio-scena .opzione.selezionata .etichetta::before { content: '⚜ '; color: var(--oro); }
+#interfaccia .cartiglio-scena .opzione .sacrificio {
+  font-style: italic;
+  font-size: 0.78em;
+  line-height: 1.2;
+  color: color-mix(in srgb, var(--crema) 65%, var(--carta));
+}
+
+/* tableau: velo a schermo intero di carta più chiara, immobile, una sola voce */
+#interfaccia .tableau {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 9%;
+  /* velo di carta più chiara, quasi coprente: le sagome ferme sotto restano appena leggibili */
+  background: color-mix(in srgb, color-mix(in srgb, var(--carta) 70%, var(--carta-luce)) 88%, transparent);
+  color: var(--inchiostro);
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+}
+
+#interfaccia .tableau .voce {
+  margin: 0;
+  max-width: 70%;
+  text-align: center;
+  font-family: var(--font-testo);
+  font-size: clamp(16px, 2.6vw, 36px);
+}
+#interfaccia .tableau .parlante {
+  font-family: var(--font-titoli);
+  font-variant: small-caps;
+  font-size: 0.5em;
+  letter-spacing: 0.28em;
+  color: var(--bruno);
+}
+#interfaccia .tableau .testo {
+  margin: 0.2em 0 0;
+  font-style: italic;
+}
+#interfaccia .tableau .testo::before { content: '«'; }
+#interfaccia .tableau .testo::after { content: '»'; }

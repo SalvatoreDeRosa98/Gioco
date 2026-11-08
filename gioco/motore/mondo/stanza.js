@@ -16,13 +16,24 @@
  * più lontano mai sotto `r_min_assoluto`. I nemici sono creati dalla factory `creaNemico` iniettata
  * (oggi fantocci con `archetipo`: le storie 019-021 cambiano solo la factory).
  *
+ * Storia 018: i pericoli ambientali (regola 16) girano in OGNI stato della stanza, anche `pulita`
+ * (`hazard_in_pulita`): il braciere ha il ciclo `riposo → anticipo → attivo` (`stanze.braciere.*`, fase
+ * iniziale dal generatore derivato `pericoli` del `seme_stanza`) e solo in `attivo`, se il disco di
+ * fiamma `r_fiamma` tocca il corpo di Ferruccio, gli chiede `subisciDanno({danno: danno_pericolo, x, y})`:
+ * è Ferruccio a decidere (invulnerabilità, scatto, spinta radiale dal punto del braciere, morte con
+ * `hazard_letale`); i nemici non sono toccati (`hazard_danneggia_nemici` = no). La ricompensa pre-estratta
+ * (`record.ricompensa.oggetti`) viaggia nell'evento `stanza.ricompensa` con il raggio di dispersione
+ * (`r_dispersione_ricompensa`) e il gancio `puntoSicuro(x, y)` che riporta un punto caduto su ostacolo o
+ * pericolo alla cella sicura più vicina (regola 24); a lasciare gli oggetti a terra è l'economia (che usa il
+ * suo generatore `drop`). `ricompensa_data` resta vero nello stato salvato: al rientro nessuna ricompensa.
+ *
  * Eventi (verso l'alto): `stanza.entrata`, `stanza.chiusa`, `ondata.inizio`, `nemico.nato`,
- * `stanza.svuotata`, `stanza.ricompensa`, `stanza.pulita`, `stanza.abbandonata`.
+ * `stanza.svuotata`, `stanza.ricompensa`, `stanza.pulita`, `stanza.abbandonata`, `stanza.pericolo`.
  * Nessun numero di gioco: tutto da `stanza.*` e `stanze.*`; nessuna casualità nativa (ADR-0003):
- * `rng_comp`, `rng_spawn`, `rng_ric` derivano dal `seme_stanza`.
+ * `rng_comp`, `rng_spawn`, `rng_ric`, `rng_pericoli` derivano dal `seme_stanza`.
  */
 
-import { creaCampo, cerchioInRettangolo } from './fisica.js';
+import { creaCampo, cerchioInRettangolo, cerchiSiToccano } from './fisica.js';
 import { creaRng, derivato, mescola } from '../fondazione/rng.js';
 import { creaPorta } from './porte.js';
 import { analizzaGriglia, geometriaStanza, vestiboloDi, VERSO_LATO } from './modelli.js';
@@ -42,6 +53,12 @@ export const TRANSIZIONI_STANZA = Object.freeze({
 
 /** Tipi che combattono (hanno ondate). */
 export const TIPI_COMBATTIMENTO = Object.freeze(['normale']);
+
+/** Fasi del ciclo di un pericolo a tempo (braciere, regola 16). */
+export const FASI_PERICOLO = Object.freeze(['riposo', 'anticipo', 'attivo']);
+
+/** Id del pericolo con il ciclo a tempo (legenda `F` di modelli.js). */
+export const ID_BRACIERE = 'braciere';
 
 // ---------------------------------------------------------------------------------------------
 // Formule (sezione Formulas del GDD), pure e testabili
@@ -173,6 +190,40 @@ export function oggettiRicompensa({ parametri, valore, rng }) {
     residuo -= costi[scelto].base;
   }
   return oggetti;
+}
+
+/**
+ * Fase del ciclo di un braciere al tick `t` (riposo → anticipo → attivo, periodico).
+ * @param {{ t: number, riposo: number, anticipo: number, attivo: number }} o durate in tick
+ * @returns {{ fase: string, progresso: number }} `progresso` 0→1 dentro la fase
+ */
+export function fasePericolo({ t, riposo, anticipo, attivo }) {
+  const totale = riposo + anticipo + attivo;
+  if (totale <= 0) return { fase: FASI_PERICOLO[0], progresso: 0 };
+  const u = ((t % totale) + totale) % totale;
+  if (u < riposo) return { fase: FASI_PERICOLO[0], progresso: riposo > 0 ? u / riposo : 0 };
+  if (u < riposo + anticipo) return { fase: FASI_PERICOLO[1], progresso: anticipo > 0 ? (u - riposo) / anticipo : 0 };
+  return { fase: FASI_PERICOLO[2], progresso: attivo > 0 ? (u - riposo - anticipo) / attivo : 0 };
+}
+
+/**
+ * La cella sicura più vicina a un punto (regola 24): tra le celle libere da ostacoli e pericoli,
+ * quella con il centro più vicino; il punto stesso se non è occupato.
+ * @param {{ x: number, y: number, occupato: (x: number, y: number) => boolean, celleLibere: { x: number, y: number }[] }} o
+ * @returns {{ x: number, y: number }}
+ */
+export function puntoSicuro({ x, y, occupato, celleLibere }) {
+  if (!occupato(x, y)) return { x, y };
+  let migliore = { x, y };
+  let dMin = Infinity;
+  for (const c of celleLibere) {
+    const d = Math.hypot(c.x - x, c.y - y);
+    if (d < dMin) {
+      dMin = d;
+      migliore = { x: c.x, y: c.y };
+    }
+  }
+  return migliore;
 }
 
 /**
@@ -312,6 +363,7 @@ export function creaStanza({
   const rngStanza = creaRng(record.seme_stanza);
   const rngComp = derivato(rngStanza, 'comp');
   const rngSpawn = derivato(rngStanza, 'spawn');
+  const rngPericoli = derivato(rngStanza, 'pericoli');
 
   // campo: base centrata nella scena (creaCampo) con gli ostacoli; mura rifatte attorno alle aperture
   const base = creaCampo({
@@ -344,18 +396,28 @@ export function creaStanza({
     aperture.add(`${def.c},${def.r}`);
   }
   const ostacoli = base.solidi.filter((s) => s.id !== 'muro').map((s, i) => Object.assign(s, { indice: i, vita: analisi.ostacoli[i].vita ? S(`vita.${analisi.ostacoli[i].vita}`) : null }));
+  // storia 018: ciclo del braciere in tick e fase iniziale a seme (rng_pericoli), così due stanze con lo
+  // stesso seme hanno gli stessi bracieri e due bracieri della stessa stanza non vanno all'unisono
+  const cicloBraciere = { riposo: ticks('braciere.t_riposo'), anticipo: ticks('braciere.t_anticipo'), attivo: ticks('braciere.t_attivo') };
+  const periodoBraciere = cicloBraciere.riposo + cicloBraciere.anticipo + cicloBraciere.attivo;
   const pericoli = analisi.pericoli.map((p) => {
     const centro = centroCella(p.c, p.r);
     const piede = cella / 2;
+    const braciere = p.id === ID_BRACIERE;
     return {
       ...p,
       ...centro,
-      rFiamma: p.id === 'braciere' ? S('braciere.r_fiamma') : cella / 2,
+      rFiamma: braciere ? S('braciere.r_fiamma') : cella / 2,
       solido: p.ferma_passo
         ? { id: p.id, x: centro.x - piede / 2, y: centro.y - piede / 2, w: piede, h: piede, ferma_passo: true, ferma_colpi: false }
         : null,
+      /** fase iniziale del ciclo (tick), 0 per i pericoli senza ciclo */
+      sfasamento: braciere ? Math.floor(rngPericoli() * periodoBraciere) : 0,
+      fase: braciere ? FASI_PERICOLO[0] : null,
+      progresso: 0,
     };
   });
+  for (const p of pericoli) if (p.fase) Object.assign(p, fasePericolo({ t: p.sfasamento, ...cicloBraciere }));
   const solidi = [
     ...costruisciMura({ geo, cella, origine, aperture }),
     ...Array.from(porte.values(), (p) => p.solido),
@@ -367,6 +429,16 @@ export function creaStanza({
   Object.assign(campo, { ...base, solidi });
 
   const contenuti = analisi.contenuti.map((c) => ({ ...c, ...centroCella(c.c, c.r) }));
+  // storia 018: celle sicure per la ricompensa (regola 24): libere da ostacoli `ferma_passo` e dai dischi dei pericoli
+  const occupato = (x, y) => solidi.some((sol) => sol.ferma_passo && x >= sol.x && x < sol.x + sol.w && y >= sol.y && y < sol.y + sol.h)
+    || pericoli.some((p) => Math.hypot(p.x - x, p.y - y) < p.rFiamma);
+  const celleLibere = [];
+  for (let r = 0; r < geo.righe; r++) {
+    for (let c = 0; c < geo.colonne; c++) {
+      const centro = centroCella(c, r);
+      if (!occupato(centro.x, centro.y)) celleLibere.push(centro);
+    }
+  }
   const spawnPunti = modello.spawn.map((s) => ({ c: s.c, r: s.r, tipo: s.tipo, ...centroCella(s.c, s.r) }));
   const permutazione = mescola(rngSpawn, spawnPunti);
   const centriPorte = Array.from(porte.values(), (p) => p.centro);
@@ -396,6 +468,8 @@ export function creaStanza({
     tSvuotata: 0,
     nati: 0,
     ricompensaData: Boolean(statoSalvato?.ricompensa_data),
+    /** tick dei pericoli: non si azzera con `entra` (il ciclo del braciere non riparte quando si rientra) */
+    tPericoli: 0,
     /** @type {{ archetipo: string, punto: object, nato: number, attesa: number }[]} */
     segnalini: [],
     usati: new Set(),
@@ -473,11 +547,39 @@ export function creaStanza({
     for (const p of porte.values()) p.apri();
   }
 
+  /**
+   * Consegna della ricompensa pre-estratta (regola 24): una sola volta per stanza, anche al rientro
+   * (`ricompensa_data` è nello stato salvato). Chi ascolta lascia gli oggetti attorno al centro entro
+   * `dispersione`, spostando con `puntoSicuro` quelli caduti su ostacolo o pericolo.
+   */
   function daRicompensa() {
     if (s.ricompensaData) return;
     s.ricompensaData = true;
     const centro = { x: origine.x + base.larghezza / 2, y: origine.y + base.altezza / 2 };
-    eventi.emit('stanza.ricompensa', { id: record.id, ricompensa: record.ricompensa ?? { valore: 0, oggetti: [] }, ...centro });
+    eventi.emit('stanza.ricompensa', {
+      id: record.id,
+      ricompensa: record.ricompensa ?? { valore: 0, oggetti: [] },
+      ...centro,
+      dispersione: S('r_dispersione_ricompensa'),
+      puntoSicuro: (x, y) => puntoSicuro({ x, y, occupato, celleLibere }),
+    });
+  }
+
+  /**
+   * Pericoli ambientali (regola 16), in ogni stato della stanza: avanza il ciclo dei bracieri e, in
+   * `attivo`, se il disco di fiamma tocca il corpo di Ferruccio gli chiede il danno (è lui a sapere se è
+   * invulnerabile o in scatto; la spinta è radiale dal piede). I nemici non sono toccati.
+   */
+  function tickPericoli() {
+    const f = cerchioFerruccio();
+    for (const p of pericoli) {
+      if (!p.fase) continue;
+      Object.assign(p, fasePericolo({ t: s.tPericoli + p.sfasamento, ...cicloBraciere }));
+      if (p.fase !== FASI_PERICOLO[2] || typeof ferruccio.subisciDanno !== 'function') continue;
+      if (!cerchiSiToccano(f, { x: p.x, y: p.y, r: p.rFiamma })) continue;
+      const esito = ferruccio.subisciDanno({ danno: S('danno_pericolo'), x: p.x, y: p.y });
+      if (esito?.applicato) eventi.emit('stanza.pericolo', { id: record.id, pericolo: p.id, x: p.x, y: p.y, danno: esito.danno });
+    }
   }
 
   /** Ferruccio è entrato (già posizionato). */
@@ -509,6 +611,8 @@ export function creaStanza({
    */
   function tick(_dt) {
     s.t += 1;
+    s.tPericoli += 1;
+    tickPericoli();
     switch (s.stato) {
       case 'annuncio':
         if (s.t === ticks('t_chiusura_porte')) chiudiPorte();

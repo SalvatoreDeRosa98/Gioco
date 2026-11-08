@@ -1,5 +1,6 @@
 /**
- * gioco/qa/doni.test.mjs — Test unitari della storia 023 (modificatori, doni, ganci, sinergie), senza DOM.
+ * gioco/qa/doni.test.mjs — Test unitari delle storie 023 (modificatori, doni, ganci, sinergie) e 024
+ * (catalogo MVP, pool: eleggibilità, probabilità, rimozione, flag), senza DOM.
  *
  * Esecuzione: `node gioco/qa/doni.test.mjs` dalla radice (node:test, Node ≥ 20). Parametri e catalogo
  * sono i JSON reali di `contenuti/parametri/`; dove un criterio cita una statistica che il
@@ -21,6 +22,7 @@ import { creaRng, derivato } from '../motore/fondazione/rng.js';
 import { creaModificatori } from '../motore/oggetti/modificatori.js';
 import { validaCatalogo } from '../motore/oggetti/catalogo.js';
 import { creaLibreria } from '../motore/oggetti/effetti.js';
+import { creaPool, flagSoddisfatto, scegliPesato } from '../motore/oggetti/pool.js';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const CARTELLA = join(QUI, '..', 'contenuti', 'parametri');
@@ -413,4 +415,161 @@ test('GDD prestazioni: ricalcolo di tutte le statistiche del registro < 0,05 ms 
   }
   const perRicalcolo = (performance.now() - t1) / giri;
   assert.ok(perRicalcolo < 0.2, `ricalcolo: ${perRicalcolo.toFixed(4)} ms`);
+});
+
+// ---------------------------------------------------------------------------------------------
+// Storia 024: catalogo MVP e pool (GDD regola 7, formula probabilita_estrazione)
+// ---------------------------------------------------------------------------------------------
+
+/** Pesi W0_r e derive d_r (in percento) di economia.json, come li inietta avvio.js. */
+function pesiEconomia() {
+  const eco = leggiJson('economia');
+  const R = ['comune', 'raro', 'prezioso'];
+  return {
+    pesi: Object.fromEntries(R.map((r) => [r, eco.banchetto.peso_rarita[r].base])),
+    derivePct: Object.fromEntries(R.map((r) => [r, eco.banchetto.deriva_rarita_pct[r].base])),
+    fallbackMonete: eco.banchetto.fallback_monete.base,
+  };
+}
+
+function creaPoolProva({ seme = 1845, flag = () => ({}), soloMvp = true, sblocchi = () => false, eventi = null, restituiti = () => [] } = {}) {
+  return creaPool({ catalogo: leggiJson('doni').doni, ...pesiEconomia(), rng: derivato(creaRng(seme), 'pool'), flag, soloMvp, sblocchi, eventi, restituiti });
+}
+
+const pct = (x) => Math.round(x * 10000) / 100;
+
+test('S024-1: doni.json contiene i 12 doni MVP del GDD con modificatori validi (registro, intervalli, ganci, sagome)', async () => {
+  const { parametri, mod } = await crea();
+  const catalogo = leggiJson('doni');
+  const mvp = catalogo.doni.filter((d) => d.mvp);
+  assert.equal(mvp.length, 12);
+  const attesi = ['mantice', 'lima', 'acciarino', 'catena-della-chiusa', 'grembiule-di-cuoio', 'martello-da-fabbro', 'filo-teso', 'matassa-d-oro',
+    'spola-del-telaio', 'pantofole-di-seta', 'seta-grezza', 'medaglione-di-rosa'];
+  assert.deepEqual(mvp.map((d) => d.id).sort(), attesi.sort());
+  const esito = validaCatalogo(catalogo, { parametri, libreria: creaLibreria(catalogo.effetti).voci });
+  assert.deepEqual(esito.errori, []);
+  for (const d of mvp) {
+    assert.ok(esito.indice.has(d.id), `${d.id} valido`);
+    assert.ok(typeof d.nome === 'string' && d.nome.length > 0 && d.nome.length <= 28, `${d.id}: nome ≤ 28`);
+    assert.ok(typeof d.cartiglio === 'string' && d.cartiglio.length > 0 && d.cartiglio.length <= 60, `${d.id}: una riga di cartiglio`);
+    assert.ok(d.modificatori.length + d.ganci.length >= 1, `${d.id}: fa qualcosa`);
+    for (const m of d.modificatori) assert.ok(m.statistica in catalogo.statistiche, `${d.id}: statistica ${m.statistica} nel registro`);
+    assert.equal(d.sblocco, null, `${d.id}: nell'MVP non c'è la Fucina`);
+  }
+  // ognuno si raccoglie e cambia almeno una statistica o iscrive un gancio
+  for (const d of mvp) {
+    mod.azzera();
+    assert.ok(mod.aggiungiDono(d.id));
+    const toccate = d.modificatori.some((m) => mod.attivi(m.statistica).length > 0);
+    const ganci = catalogo.ganci.some((g) => mod.ganci.iscrizioni(g).length > 0);
+    assert.ok(toccate || ganci, `${d.id}: modificatori o ganci attivi`);
+  }
+});
+
+test('S024-3: sagome: un ricordo (azzurro) ha il profilo dell\'oggetto, un dono d\'oro una forma geometrica; mai disco o rombo', () => {
+  const catalogo = leggiJson('doni');
+  for (const d of catalogo.doni) {
+    if (d.categoria === 'ricordi') {
+      assert.equal(d.sagoma.tipo, 'profilo', d.id);
+      assert.equal(d.rarita, 'unico');
+      assert.ok(d.tag.includes('ricordo'));
+    } else {
+      assert.equal(d.sagoma.tipo, 'geometrica', d.id);
+      assert.ok(!catalogo.sagome.vietate_oro.includes(d.sagoma.forma), `${d.id}: ${d.sagoma.forma}`);
+    }
+  }
+});
+
+test('GDD pool: al piano 1 ogni comune 10,0 %, ogni raro 7,5 %, il Martello 10,0 %, somma 100 %; dopo il Mantice i comuni 12,0 %', () => {
+  const pool = creaPoolProva();
+  const p1 = pool.probabilita({ piano: 1, canale: 'piedistallo' });
+  const eleggibili = pool.eleggibili({ piano: 1, canale: 'piedistallo' });
+  assert.equal(eleggibili.length, 11, 'pool MVP: 6 comuni, 4 rari, 1 prezioso (il Medaglione è unico)');
+  assert.ok(eleggibili.every((d) => d.rarita !== 'unico'));
+  for (const d of eleggibili) {
+    const atteso = d.rarita === 'comune' ? 10 : d.rarita === 'raro' ? 7.5 : 10;
+    assert.equal(pct(p1.get(d.id)), atteso, `${d.id} (${d.rarita})`);
+  }
+  assert.ok(vicino(Array.from(p1.values()).reduce((a, b) => a + b, 0), 1), 'somma 100 %');
+  assert.ok(pool.raccolto('mantice'));
+  const dopo = pool.probabilita({ piano: 1, canale: 'piedistallo' });
+  assert.equal(dopo.has('mantice'), false);
+  for (const d of eleggibili.filter((x) => x.rarita === 'comune' && x.id !== 'mantice')) assert.equal(pct(dopo.get(d.id)), 12, d.id);
+});
+
+test('GDD pool: build piena al piano 5 (7/6/2): P(Broccato) = 11,0 % e le tre classi sommano a W = 100', () => {
+  const pool = creaPoolProva({ soloMvp: false, sblocchi: () => true });
+  const el = pool.eleggibili({ piano: 5, canale: 'piedistallo' });
+  const conta = (r) => el.filter((d) => d.rarita === r).length;
+  assert.deepEqual([conta('comune'), conta('raro'), conta('prezioso')], [7, 6, 2]);
+  const w = pool.pesiAl(5);
+  assert.ok(vicino(w.comune + w.raro + w.prezioso, 100), JSON.stringify(w));
+  const p5 = pool.probabilita({ piano: 5, canale: 'piedistallo' });
+  assert.equal(pct(p5.get('broccato')), 11);
+  assert.equal(pct(p5.get('mantice')), 5.14);
+  assert.equal(pct(p5.get('acciarino')), 7);
+  // senza sblocchi della Fucina i doni con `sblocco` restano fuori anche in build piena
+  const chiuso = creaPoolProva({ soloMvp: false });
+  assert.ok(chiuso.eleggibili({ piano: 5, canale: 'piedistallo' }).every((d) => d.sblocco === null));
+});
+
+test('GDD pool: un dono raccolto non compare in 1000 estrazioni con semi diversi nella stessa notte; offerto e non preso resta per i piani dopo ma non nello stesso', () => {
+  for (let seme = 1; seme <= 1000; seme++) {
+    const pool = creaPoolProva({ seme });
+    pool.raccolto('lima');
+    const d = pool.estrai({ piano: 1, canale: 'piedistallo' });
+    assert.ok(d && d.id !== 'lima', `seme ${seme}`);
+  }
+  const pool = creaPoolProva({ seme: 3 });
+  const primo = pool.estrai({ piano: 1 });
+  assert.ok(pool.offertiIn(1).includes(primo.id));
+  assert.equal(pool.eleggibile(primo, { piano: 1, canale: 'piedistallo' }), false, 'offerto: non ricompare nello stesso piano');
+  assert.equal(pool.eleggibile(primo, { piano: 2, canale: 'piedistallo' }), true, 'non preso: resta nel pool del piano dopo');
+  // estrazione deterministica con lo stesso seme, distinte senza reinserimento fino a esaurire il pool
+  const a = creaPoolProva({ seme: 9 });
+  const b = creaPoolProva({ seme: 9 });
+  const ida = []; const idb = [];
+  for (let i = 0; i < 11; i++) { ida.push(a.estrai({ piano: 1 })?.id); idb.push(b.estrai({ piano: 1 })?.id); }
+  assert.deepEqual(ida, idb);
+  assert.equal(new Set(ida).size, 11, 'undici doni distinti');
+  assert.equal(a.estrai({ piano: 1 }), null, 'pool del piano esaurito');
+  assert.deepEqual(a.fallback({ maschere: 3, maschereMax: 5 }), { tipo: 'cuore', valore: 1 });
+  assert.deepEqual(a.fallback({ maschere: 5, maschereMax: 5 }), { tipo: 'monete', valore: pesiEconomia().fallbackMonete });
+});
+
+test('S024-4: escludi_se_flag: con tonino_ricordo=restituito il Medaglione non è estratto dal canale boss; richiede_flag apre la Lettera di Agnese; i flag sono fotografati alla generazione', () => {
+  const flags = {};
+  const pool = creaPoolProva({ flag: () => flags, soloMvp: false });
+  assert.deepEqual(pool.eleggibili({ piano: 1, canale: 'boss' }).map((d) => d.id), ['medaglione-di-rosa']);
+  assert.deepEqual(pool.eleggibili({ piano: 1, canale: 'narrativo' }), [], 'Lettera di Agnese richiede il flag');
+  flags.tonino_ricordo = 'restituito';
+  assert.deepEqual(pool.eleggibili({ piano: 1, canale: 'boss' }), [], 'il ricordo con la scelta decisa non è estratto');
+  assert.deepEqual(pool.eleggibili({ piano: 1, canale: 'narrativo' }).map((d) => d.id), ['lettera-di-agnese']);
+  // i ricordi non entrano mai nel pool pesato (regola 7)
+  assert.ok(pool.eleggibili({ piano: 1, canale: 'piedistallo' }).every((d) => d.rarita !== 'unico'));
+  // fotografia: un flag che cambia a metà notte non tocca il piano già generato
+  const f2 = {};
+  const p2 = creaPoolProva({ flag: () => f2, soloMvp: false });
+  p2.preparaPiano(1);
+  f2.tonino_ricordo = 'restituito';
+  assert.deepEqual(p2.eleggibili({ piano: 1, canale: 'boss' }).map((d) => d.id), ['medaglione-di-rosa'], 'il piano 1 è stato fotografato prima');
+  p2.preparaPiano(2);
+  assert.deepEqual(p2.eleggibili({ piano: 2, canale: 'narrativo' }).map((d) => d.id), ['lettera-di-agnese'], 'il piano 2 rivaluta');
+  // ricordi restituiti del profilo: mai più nel pool; piano fisso
+  const p3 = creaPoolProva({ soloMvp: false, restituiti: () => ['medaglione-di-rosa'] });
+  assert.deepEqual(p3.eleggibili({ piano: 1, canale: 'boss' }), []);
+  assert.deepEqual(p3.eleggibili({ piano: 2, canale: 'stanza-ricordo' }).map((d) => d.id), [], 'Lettera di Mariella richiede taddeo=perdonato');
+  assert.deepEqual(p3.eleggibili({ piano: 3, canale: 'stanza-ricordo' }).map((d) => d.id), ['punzone-gf']);
+  assert.equal(flagSoddisfatto(null, {}), false);
+  assert.equal(scegliPesato([0, 0], 0.5), 1);
+  assert.equal(scegliPesato([1, 3], 0.2), 0);
+  assert.equal(scegliPesato([1, 3], 0.3), 1);
+});
+
+test('GDD pool: `doni.aggiunto` sul bus (banchetto, piedistallo, anima) toglie il dono dal pool', async () => {
+  const { mod, eventi } = await crea();
+  const pool = creaPoolProva({ eventi });
+  assert.ok(mod.aggiungiDono('lima'));
+  assert.deepEqual(pool.raccolti(), ['lima']);
+  assert.equal(pool.probabilita({ piano: 1 }).has('lima'), false);
 });

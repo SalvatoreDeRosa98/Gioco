@@ -1,0 +1,11 @@
+{
+  "_descrizione": "Storia 030 (GDD stato-narrativo.md regola 8, ADR-0006, art bible §2 «Morte / risveglio»). Sequenza di morte in quattro fasi, in ms: lanterne (si spengono una a una), fili (i fili d'oro si spezzano), maschera (si stacca in pezzi azzurri che salgono), buio (il risveglio accende il lampione della piazza). La somma dei massimi è 5000: la sequenza non supera mai i 5 s del criterio. lanterne: quante lanterne si spengono nella prima fase (una a una). Valori provvisori: l'art bible dà solo «breve».",
+  "fasi": {
+    "lanterne": { "base": 1200, "min": 300, "max": 2000 },
+    "fili": { "base": 600, "min": 100, "max": 1000 },
+    "maschera": { "base": 1200, "min": 300, "max": 1500 },
+    "buio": { "base": 400, "min": 0, "max": 500 }
+  },
+  "lanterne": { "base": 3, "min": 1, "max": 6 },
+  "t_max": { "base": 5000, "min": 5000, "max": 5000 }
+}

@@ -1,0 +1,208 @@
+{
+  "_descrizione": "Nemici e IA. Fonte: design/gdd/nemici.md (schede degli archetipi §4, direttore e separazione §8, morte §9, Formulas F1-F4, F9, Tuning Knobs). Ogni voce è {base, min, max}: min/max sono il Safe Range del GDD dove c'è, altrimenti un intervallo prudente (clamp del valore EFFETTIVO dopo i doni, ADR-0002). Tempi in ms, distanze in px, velocità in px/s, angoli in gradi. I flag sono 0/1 (il validatore non ammette booleani né stringhe): 'pesante' = danno 2 maschere, 'imparabile', 'volante' (sorvola gli ostacoli, non i muri), 'avanza' (il corpo percorre 'portata' durante il Colpo: balzo/picchiata; 0 = l'arma si estende: affondo/cuneo), 'linea_libera' (l'attacco richiede la linea di colpo libera), 'settore_gradi' > 0 = hitbox a settore (cuneo) invece del rettangolo. Storia 019: fabbrica generica e IA base; le storie 020-021 aggiungono i comportamenti specifici (anello d'attesa, d_balzo, atterraggio della vespa, proiettile della statua) e la 022 il boss. 'd_attesa' ha min 0 per permettere il test del fermo a contatto (criterio 1 della storia 019).",
+
+  "globali": {
+    "d_contatto": { "base": 6, "min": 0, "max": 24 },
+    "extra_separazione": { "base": 12, "min": 0, "max": 32 },
+    "d_separazione_volanti": { "base": 44, "min": 24, "max": 80 },
+    "k_separazione": { "base": 0.5, "min": 0.1, "max": 1 },
+    "t_emersione": { "base": 700, "min": 300, "max": 1200 },
+    "t_dissoluzione": { "base": 700, "min": 300, "max": 1200 },
+    "t_bottino": { "base": 350, "min": 0, "max": 1200 },
+    "t_cuore": { "base": 700, "min": 0, "max": 1200 },
+    "lancio_bottino": { "base": 40, "min": 0, "max": 80 },
+    "t_allarme": { "base": 4000, "min": 2000, "max": 8000 },
+    "t_perdita": { "base": 3000, "min": 1000, "max": 6000 },
+    "t_stordito_boss": { "base": 900, "min": 400, "max": 1500 },
+    "t_immunita_boss": { "base": 5000, "min": 1000, "max": 10000 },
+    "r_pattuglia": { "base": 96, "min": 32, "max": 192 },
+    "punti_pattuglia_min": { "base": 2, "min": 1, "max": 4 },
+    "punti_pattuglia_max": { "base": 3, "min": 1, "max": 6 },
+    "pausa_pattuglia_min": { "base": 600, "min": 0, "max": 2000 },
+    "pausa_pattuglia_max": { "base": 1200, "min": 0, "max": 3000 },
+    "tolleranza_attesa": { "base": 20, "min": 0, "max": 60 },
+    "v_cap": { "base": 187, "min": 150, "max": 200 }
+  },
+
+  "scalatura": {
+    "_descrizione": "F1 vita, F2 velocità (con tetto v_cap), F3 anticipo (t_lamp non scala mai, R3)",
+    "k_vita": { "base": 0.20, "min": 0.10, "max": 0.30 },
+    "k_vel": { "base": 0.04, "min": 0, "max": 0.08 },
+    "k_tel": { "base": 0.04, "min": 0, "max": 0.08 },
+    "t_ant_min": { "base": 300, "min": 250, "max": 400 },
+    "t_lamp_min_parabile": { "base": 280, "min": 200, "max": 400 },
+    "t_lamp_min_imparabile": { "base": 350, "min": 250, "max": 500 }
+  },
+
+  "direttore": {
+    "_descrizione": "gettoni di attacco per piano, distanza minima tra gli impatti programmati, imparabili contemporanei",
+    "gettoni": {
+      "p1": { "base": 1, "min": 1, "max": 4 },
+      "p2": { "base": 2, "min": 1, "max": 4 },
+      "p3": { "base": 2, "min": 1, "max": 4 },
+      "p4": { "base": 3, "min": 1, "max": 4 },
+      "p5": { "base": 3, "min": 1, "max": 4 }
+    },
+    "imparabili_max": {
+      "p1": { "base": 1, "min": 1, "max": 3 },
+      "p2": { "base": 1, "min": 1, "max": 3 },
+      "p3": { "base": 1, "min": 1, "max": 3 },
+      "p4": { "base": 2, "min": 1, "max": 3 },
+      "p5": { "base": 2, "min": 1, "max": 3 }
+    },
+    "gap_impatti_min": { "base": 350, "min": 250, "max": 500 },
+    "t_riprova": { "base": 100, "min": 50, "max": 500 },
+    "attaccanti_max": { "base": 2, "min": 1, "max": 4 }
+  },
+
+  "drop": {
+    "_descrizione": "F9 cuore e monete (§9.4): monete = ceil(costo/2) + intero[0, monete_extra]; valori iniziali, economia.md li rivede",
+    "p_0_cuore": { "base": 0.010, "min": 0.005, "max": 0.02 },
+    "m_ferito": { "base": 2, "min": 1, "max": 3 },
+    "monete_extra": { "base": 1, "min": 0, "max": 2 },
+    "molt_monete_elite": { "base": 2, "min": 1, "max": 3 }
+  },
+
+  "archetipi": {
+    "_descrizione": "Schede dell'MVP (§4). Dentro 'attacco' i tre tempi del telegrafo (t_ant, t_lamp, t_imp), recupero e cooldown, banda di distanza [d_min, d_max], geometria del colpo e flag.",
+    "gatto": {
+      "vita": { "base": 6, "min": 1, "max": 30 },
+      "r": { "base": 16, "min": 8, "max": 32 },
+      "peso": { "base": 1, "min": 0, "max": 10 },
+      "r_aggro": { "base": 260, "min": 180, "max": 340 },
+      "r_lose": { "base": 400, "min": 280, "max": 520 },
+      "v_pattuglia": { "base": 70, "min": 30, "max": 187 },
+      "v_insegue": { "base": 150, "min": 50, "max": 187 },
+      "d_attesa": { "base": 170, "min": 0, "max": 300 },
+      "omega_attesa": { "base": 45, "min": 0, "max": 120 },
+      "costo": { "base": 2, "min": 1, "max": 13 },
+      "pezzi": { "base": 5, "min": 3, "max": 6 },
+      "volante": { "base": 0, "min": 0, "max": 1 },
+      "attacco": {
+        "_descrizione": "Balzo (storia 020). d_balzo = clamp(d_lampo + balzo_extra, balzo_min, portata) fissata all'inizio del lampo (GDD 4.1); la hitbox (capsula larga max(larghezza, 2r) dal punto hit_dal·d_balzo all'atterraggio) si accende a hit_dal del balzo (REPORT del prototipo: 0,45, impatto costante a t_lamp + hit_dal·t_imp dal lampo, qualunque sia la distanza); t_anello = durata della chiusura dell'anello rosso del lampo (segnale di tempo per la parata).",
+        "t_ant": { "base": 480, "min": 300, "max": 700 },
+        "t_lamp": { "base": 320, "min": 280, "max": 440 },
+        "t_anello": { "base": 150, "min": 50, "max": 320 },
+        "t_imp": { "base": 200, "min": 100, "max": 300 },
+        "t_rec": { "base": 700, "min": 400, "max": 1500 },
+        "t_cd": { "base": 1500, "min": 800, "max": 3000 },
+        "d_min": { "base": 100, "min": 0, "max": 200 },
+        "d_max": { "base": 230, "min": 100, "max": 320 },
+        "portata": { "base": 170, "min": 100, "max": 221 },
+        "balzo_extra": { "base": 24, "min": 0, "max": 60 },
+        "balzo_min": { "base": 100, "min": 50, "max": 170 },
+        "hit_dal": { "base": 0.45, "min": 0, "max": 0.9 },
+        "larghezza": { "base": 32, "min": 16, "max": 48 },
+        "settore_gradi": { "base": 0, "min": 0, "max": 180 },
+        "pesante": { "base": 0, "min": 0, "max": 1 },
+        "imparabile": { "base": 0, "min": 0, "max": 1 },
+        "avanza": { "base": 1, "min": 0, "max": 1 },
+        "linea_libera": { "base": 1, "min": 0, "max": 1 }
+      },
+      "posa": {
+        "_descrizione": "Fattori della sagoma per stato (GDD 4.1 tabella dei pezzi; storia 020): usati dal fil di ferro e dalla sagoma vera (020-visiva). area_anticipo = area del corpo a fine anticipo (−25%: altezza 0,7, lunghezza accorciata), posteriore_su_gradi = inclinazione del dorso accucciato, scala_x_colpo = allungamento nel balzo, inclinazione_stordito_gradi, oscillazione_riposo_gradi e coda_hz dal GDD.",
+        "area_anticipo": { "base": 0.75, "min": 0.5, "max": 1 },
+        "altezza_anticipo": { "base": 0.7, "min": 0.4, "max": 1 },
+        "posteriore_su_gradi": { "base": 12, "min": 0, "max": 30 },
+        "scala_x_colpo": { "base": 1.25, "min": 1, "max": 1.6 },
+        "inclinazione_stordito_gradi": { "base": 12, "min": 0, "max": 45 },
+        "oscillazione_riposo_gradi": { "base": 8, "min": 0, "max": 20 },
+        "coda_hz": { "base": 1.5, "min": 0, "max": 4 }
+      }
+    },
+    "vespa": {
+      "vita": { "base": 3, "min": 1, "max": 30 },
+      "r": { "base": 12, "min": 8, "max": 32 },
+      "peso": { "base": 0, "min": 0, "max": 10 },
+      "r_aggro": { "base": 320, "min": 220, "max": 420 },
+      "r_lose": { "base": 480, "min": 330, "max": 620 },
+      "v_pattuglia": { "base": 90, "min": 30, "max": 187 },
+      "v_insegue": { "base": 170, "min": 50, "max": 187 },
+      "d_attesa": { "base": 230, "min": 0, "max": 320 },
+      "omega_attesa": { "base": 0, "min": 0, "max": 120 },
+      "costo": { "base": 2, "min": 1, "max": 13 },
+      "pezzi": { "base": 4, "min": 3, "max": 6 },
+      "volante": { "base": 1, "min": 0, "max": 1 },
+      "attacco": {
+        "t_ant": { "base": 450, "min": 300, "max": 700 },
+        "t_lamp": { "base": 300, "min": 280, "max": 440 },
+        "t_anello": { "base": 150, "min": 50, "max": 500 },
+        "t_imp": { "base": 260, "min": 100, "max": 300 },
+        "t_rec": { "base": 900, "min": 400, "max": 1500 },
+        "t_cd": { "base": 1800, "min": 800, "max": 3000 },
+        "d_min": { "base": 120, "min": 0, "max": 200 },
+        "d_max": { "base": 300, "min": 150, "max": 400 },
+        "portata": { "base": 220, "min": 154, "max": 286 },
+        "larghezza": { "base": 24, "min": 16, "max": 48 },
+        "settore_gradi": { "base": 0, "min": 0, "max": 180 },
+        "pesante": { "base": 0, "min": 0, "max": 1 },
+        "imparabile": { "base": 0, "min": 0, "max": 1 },
+        "avanza": { "base": 1, "min": 0, "max": 1 },
+        "linea_libera": { "base": 0, "min": 0, "max": 1 }
+      }
+    },
+    "statua": {
+      "vita": { "base": 9, "min": 1, "max": 30 },
+      "r": { "base": 22, "min": 8, "max": 32 },
+      "peso": { "base": 3, "min": 0, "max": 10 },
+      "r_aggro": { "base": 360, "min": 250, "max": 470 },
+      "r_lose": { "base": 2000, "min": 400, "max": 4000 },
+      "v_pattuglia": { "base": 0, "min": 0, "max": 187 },
+      "v_insegue": { "base": 0, "min": 0, "max": 187 },
+      "d_attesa": { "base": 0, "min": 0, "max": 300 },
+      "omega_attesa": { "base": 0, "min": 0, "max": 120 },
+      "costo": { "base": 4, "min": 1, "max": 13 },
+      "pezzi": { "base": 6, "min": 3, "max": 6 },
+      "volante": { "base": 0, "min": 0, "max": 1 },
+      "attacco": {
+        "_descrizione": "A. colpo a cuneo (imparabile, pesante); il proiettile B arriva con la storia 021",
+        "t_ant": { "base": 550, "min": 300, "max": 700 },
+        "t_lamp": { "base": 350, "min": 350, "max": 500 },
+        "t_anello": { "base": 150, "min": 50, "max": 500 },
+        "t_imp": { "base": 160, "min": 100, "max": 300 },
+        "t_rec": { "base": 1000, "min": 400, "max": 1500 },
+        "t_cd": { "base": 2200, "min": 800, "max": 3000 },
+        "d_min": { "base": 0, "min": 0, "max": 100 },
+        "d_max": { "base": 120, "min": 60, "max": 130 },
+        "portata": { "base": 120, "min": 60, "max": 130 },
+        "larghezza": { "base": 0, "min": 0, "max": 48 },
+        "settore_gradi": { "base": 70, "min": 30, "max": 180 },
+        "pesante": { "base": 1, "min": 0, "max": 1 },
+        "imparabile": { "base": 1, "min": 0, "max": 1 },
+        "avanza": { "base": 0, "min": 0, "max": 1 },
+        "linea_libera": { "base": 1, "min": 0, "max": 1 }
+      }
+    },
+    "guardia": {
+      "vita": { "base": 8, "min": 1, "max": 30 },
+      "r": { "base": 18, "min": 8, "max": 32 },
+      "peso": { "base": 2, "min": 0, "max": 10 },
+      "r_aggro": { "base": 340, "min": 240, "max": 440 },
+      "r_lose": { "base": 520, "min": 360, "max": 680 },
+      "v_pattuglia": { "base": 60, "min": 30, "max": 187 },
+      "v_insegue": { "base": 100, "min": 50, "max": 187 },
+      "d_attesa": { "base": 170, "min": 0, "max": 300 },
+      "omega_attesa": { "base": 0, "min": 0, "max": 120 },
+      "costo": { "base": 3, "min": 1, "max": 13 },
+      "pezzi": { "base": 5, "min": 3, "max": 6 },
+      "volante": { "base": 0, "min": 0, "max": 1 },
+      "attacco": {
+        "t_ant": { "base": 500, "min": 300, "max": 700 },
+        "t_lamp": { "base": 300, "min": 280, "max": 440 },
+        "t_anello": { "base": 150, "min": 50, "max": 500 },
+        "t_imp": { "base": 140, "min": 100, "max": 300 },
+        "t_rec": { "base": 900, "min": 400, "max": 1500 },
+        "t_cd": { "base": 1600, "min": 800, "max": 3000 },
+        "d_min": { "base": 0, "min": 0, "max": 100 },
+        "d_max": { "base": 170, "min": 100, "max": 250 },
+        "portata": { "base": 150, "min": 105, "max": 195 },
+        "larghezza": { "base": 24, "min": 16, "max": 48 },
+        "settore_gradi": { "base": 0, "min": 0, "max": 180 },
+        "pesante": { "base": 0, "min": 0, "max": 1 },
+        "imparabile": { "base": 0, "min": 0, "max": 1 },
+        "avanza": { "base": 0, "min": 0, "max": 1 },
+        "linea_libera": { "base": 1, "min": 0, "max": 1 }
+      }
+    }
+  }
+}

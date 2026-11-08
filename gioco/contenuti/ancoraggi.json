@@ -1,4 +1,16 @@
 {
-  "_doc": "Dati di gioco che la bibbia non ha, uniti a runtime per id di scena a contenuti/storia.json (ADR-0004): per ogni scena 'ancoraggio' (hub:<npc>, banchetto, ricordo:<oggetto>, dopo-boss:<id>, ingresso-piano:<n>, fucina, epilogo; GDD incontri-dialoghi.md regola 1), eventualmente 'ripetibile' e 'posa'. Vuoto finché la storia 027 non assegna gli ancoraggi: stato-narrativo.disponibili(ancoraggio) restituisce la lista vuota, mentre disponibile(scena) e disponibiliPer(filtro) funzionano già. Formato: { \"scene\": { \"<id di scena>\": { \"ancoraggio\": \"hub:tonino\", \"ripetibile\": false } } }.",
-  "scene": {}
+  "_doc": "Dati di gioco che la bibbia non ha, uniti a runtime per id di scena a contenuti/storia.json (ADR-0004): per ogni scena 'ancoraggio' (hub:<npc>, banchetto, ricordo:<oggetto>, dopo-boss:<id>, ingresso-piano:<n>, fucina, epilogo; GDD incontri-dialoghi.md regola 1), eventualmente 'ripetibile', 'tableau' (regola 6: immagine immobile con una sola voce) e 'posa'. Storia 027: tutte le scene del capitolo piazza-dante più il tableau di Gaetano. Decisioni provvisorie (canon Provisional, da confermare con l'autore): risveglio, tutorial e targa partono da sole all'ingresso del piano 1 (la Piazza è l'hub e il piano 1 della notte 1); la scelta di Tonino e i suoi esiti stanno al banchetto (GDD ricordi-scelta.md: «banchetto di Tonino o hub»; una scena ha un solo ancoraggio); la filastrocca è un tableau nella stanza-ricordo (ricordi-scelta.md regola 6: gli indizi di Bianca sono tableau). stato-narrativo.disponibili(ancoraggio) legge questo file; storia/incontri.js legge anche 'tableau'. Formato: { \"scene\": { \"<id di scena>\": { \"ancoraggio\": \"hub:tonino\", \"ripetibile\": false, \"tableau\": false } } }.",
+  "scene": {
+    "piazza-dante.risveglio": { "ancoraggio": "ingresso-piano:1" },
+    "piazza-dante.tutorial": { "ancoraggio": "ingresso-piano:1" },
+    "piazza-dante.targa-commemorativa": { "ancoraggio": "ingresso-piano:1" },
+    "piazza-dante.tonino-primo-incontro": { "ancoraggio": "hub:tonino" },
+    "piazza-dante.bottega-di-gaetano": { "ancoraggio": "hub:tonino" },
+    "piazza-dante.filastrocca": { "ancoraggio": "ricordo:filastrocca", "tableau": true },
+    "piazza-dante.gatto-dei-quattro-canti": { "ancoraggio": "dopo-boss:gatto-dei-quattro-canti" },
+    "piazza-dante.scelta-tonino": { "ancoraggio": "banchetto" },
+    "piazza-dante.ricordo-negato": { "ancoraggio": "banchetto" },
+    "piazza-dante.ricordo-restituito": { "ancoraggio": "banchetto" },
+    "villa-comunale.ricordo-gaetano": { "ancoraggio": "dopo-boss:madre-di-marmo", "tableau": true }
+  }
 }

@@ -46,6 +46,12 @@
   "t_spinta_nemico": { "base": 150, "min": 80, "max": 300 },
   "peso_inamovibile": { "base": 3, "min": 1, "max": 10 },
 
+  "scintilla": {
+    "_descrizione": "Proiettile della scintilla dei ganci dei doni (doni-modificatori.md regola 5, effetto `scintilla`; storia 024). Il GDD non dà numeri: velocità, raggio e gittata sono provvisori, da confermare con il game-designer. Il danno è nei parametri del gancio.",
+    "velocita": { "base": 420, "min": 200, "max": 800 },
+    "r":        { "base": 5,   "min": 3,   "max": 10 },
+    "gittata":  { "base": 260, "min": 120, "max": 480 }
+  },
   "fantoccio": {
     "_descrizione": "Nemico fantoccio delle storie 007-011 (manichino di prova, sostituito dal nemico vero nelle storie 019-020). Telegrafo in tre tempi (nemici.md regola 1): anticipo, lampo, impatto misurato dall'inizio del lampo (prototipo: 252 ms), colpo attivo, recupero, cooldown. Vita/raggio/peso del gatto d'ombra.",
     "t_anticipo": { "base": 500, "min": 300, "max": 1000 },

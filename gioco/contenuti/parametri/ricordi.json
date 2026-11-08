@@ -1,0 +1,17 @@
+{
+  "_doc": "Storia 028, GDD ricordi-scelta.md (regole 1-4, 7, Tuning Knobs). File 'tabella': lo legge motore/oggetti/ricordi.js. Per ogni ricordo (id = dono del catalogo doni.json con categoria 'ricordi'): 'persona' (NPC a cui appartiene), 'flag' (il flag di storia.json che la scelta decide), 'scena_scelta' (la scena di storia.json con la scelta: si apre solo con il ricordo in mano), 'boss' (id del boss di storia.json che lo lascia alla dissoluzione), 'archetipo_boss' (archetipo di nemici.json usato dall'evento boss.sconfitto finché il boss vero della storia 022 non esiste), 'valore_restituzione' (il valore del flag che CEDE il ricordo: il dono sparisce e scatta effetto_ceduto; ogni altro valore lo TIENE fino a fine notte), 'effetto_ceduto' (scintille accreditate subito al profilo, {base,min,max} letto con il base). Il bonus_tenuto è la lista 'modificatori' del dono nel catalogo (nessun doppione qui). r_raccolta: raggio in px entro cui Ferruccio raccoglie un ricordo caduto a terra (provvisorio: come il cuore, non c'è un numero nel GDD). Valori di equilibrio provvisori (tolleranza ±20%: la formula V_A/V_B del GDD usa 12 scintille).",
+  "r_raccolta": { "base": 24, "min": 18, "max": 40 },
+  "ricordi": {
+    "medaglione-di-rosa": {
+      "persona": "tonino",
+      "flag": "tonino_ricordo",
+      "scena_scelta": "piazza-dante.scelta-tonino",
+      "boss": "gatto-dei-quattro-canti",
+      "archetipo_boss": "gatto",
+      "valore_restituzione": "restituito",
+      "effetto_ceduto": {
+        "scintille": { "base": 12, "min": 8, "max": 20 }
+      }
+    }
+  }
+}

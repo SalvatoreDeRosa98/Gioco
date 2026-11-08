@@ -1,0 +1,63 @@
+{
+  "_doc": "Testi dell'interfaccia (HUD, banchetto, doni e cartiglio). Unico posto con stringhe mostrate dal motore: nessuna stringa di gioco nel codice. {tasto}, {nome}, {prezzo} sono segnaposto riempiti dall'interfaccia. Storia 025 (interfaccia minimale in DOM: il renderer definitivo aspetta l'approvazione dell'autore). Storia 027: 'incontri' (etichette del cartiglio dei dialoghi e del tableau; {nome} è il nome dell'NPC). Storia 029: 'hub' (cartellino dell'hub: {n} numero della notte, {tasto}, {nome}, {piano}). Storia 030: 'morte' (didascalie del velo della sequenza di morte, una per fase) e 'ripresa' (pannello «Continua» nell'hub: {piano}, {notte}).",
+  "hud": {
+    "monete": "Monete",
+    "scintille": "Scintille",
+    "maschere": "Maschere"
+  },
+  "banchetto": {
+    "titolo": "Banchetto di Tonino",
+    "istruzione": "Avvicinati a uno slot e premi {tasto}",
+    "cuore": "Cuore",
+    "cuore_descrizione": "Ripristina una maschera",
+    "comprato": "venduto",
+    "vuoto": "—",
+    "esito_comprato": "Comprato: {nome}",
+    "esito_monete": "A vuoto: servono {prezzo} monete",
+    "esito_maschere_piene": "Le maschere sono già piene",
+    "esito_comprato_gia": "Lo slot è vuoto"
+  },
+  "doni": {
+    "titolo": "Doni",
+    "anteprima": "Premi {tasto} per raccogliere",
+    "gia_al_massimo": "Già al massimo.",
+    "fallback_cuore": "Cuore",
+    "fallback_cuore_riga": "Il pool è vuoto: una maschera in dono",
+    "fallback_monete": "{n} monete",
+    "fallback_monete_riga": "Il pool è vuoto: monete di luce in dono"
+  },
+  "consumabili": {
+    "olio-da-fabbro": {
+      "nome": "Olio da fabbro",
+      "descrizione": "La lama morde di più per due stanze"
+    },
+    "pezzuola-di-lino": {
+      "nome": "Pezzuola di lino",
+      "descrizione": "Dopo un colpo si resta al riparo più a lungo, per tre stanze"
+    }
+  },
+  "incontri": {
+    "continua": "Continua",
+    "scegli": "Scegli",
+    "conferma": "Conferma",
+    "salta": "Salta",
+    "ripetizione_generica": "{nome} non ha altro da dire, per stanotte.",
+    "aspetta": "Aspetta: prima le ombre."
+  },
+  "hub": {
+    "notte": "Notte {n}",
+    "parla": "Premi {tasto} per parlare con {nome}",
+    "parti": "L'ingresso al piano {piano}: avanti per partire"
+  },
+  "morte": {
+    "lanterne": "Le lanterne si spengono, una a una.",
+    "fili": "I fili d'oro si spezzano.",
+    "maschera": "La maschera si stacca in pezzi che salgono.",
+    "buio": "Il lampione della piazza si accende."
+  },
+  "ripresa": {
+    "titolo": "Una notte è rimasta a metà: notte {notte}, piano {piano}",
+    "continua": "Continua",
+    "lascia": "Lascia andare"
+  }
+}

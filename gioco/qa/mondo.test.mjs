@@ -6,6 +6,9 @@
  * simulato a tick fissi nell'ordine della notte (input → Ferruccio → combattimento → bersagli →
  * stanza), un caso per ogni criterio Given-When-Then delle quattro storie più le formule dei GDD e
  * le prestazioni. Stampa il conteggio dei 200 semi senza violatori.
+ * Storia 018 (pericoli e ricompense): bracieri (ciclo, danno solo in attivo, spinta, scatto, morte,
+ * determinismo) e ricompensa pre-estratta a stanza pulita con l'economia reale (generatore `drop`),
+ * nessuna ricompensa al rientro.
  */
 
 import { test } from 'node:test';
@@ -37,6 +40,9 @@ import {
   generaPiano, validaPianta, punteggioQ, pesoModello, diffTarget, dimensioniPiano, piantaDaRiserva, esplora,
 } from '../motore/mondo/generazione.js';
 import { creaNotte } from '../motore/mondo/notte.js';
+import { creaEconomia } from '../motore/oggetti/economia.js';
+import { derivato } from '../motore/fondazione/rng.js';
+import { fasePericolo, puntoSicuro, FASI_PERICOLO, ID_BRACIERE } from '../motore/mondo/stanza.js';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const RADICE = join(QUI, '..');
@@ -65,7 +71,7 @@ function modelloColonnaPanca() {
  * Parametri reali (con eventuale ritocco del JSON prima della validazione e override di statistica),
  * catalogo dei 14 modelli, piano di riserva.
  */
-async function caricaContenuti({ override = {}, ritocca = null } = {}) {
+async function caricaContenuti({ override = {}, ritocca = null, conEconomia = false } = {}) {
   const log = logFinto();
   const parametri = creaParametri({ log });
   await parametri.carica({
@@ -74,7 +80,7 @@ async function caricaContenuti({ override = {}, ritocca = null } = {}) {
       if (ritocca) ritocca(nome, j);
       return j;
     },
-    statistiche: ['ferruccio', 'combattimento', 'stanza', 'stanze', 'generazione'],
+    statistiche: ['ferruccio', 'combattimento', 'stanza', 'stanze', 'generazione', ...(conEconomia ? ['economia'] : [])],
     tabelle: ['input'],
     override,
   });
@@ -108,14 +114,20 @@ async function creaMondo(opzioni = {}) {
     f.archetipo = archetipo;
     return f;
   };
+  // storia 018: economia reale opzionale (profilo in RAM, generatore derivato 'drop' dal seme)
+  const profilo = { scintille: 0, aggiungiScintille(n, tetto) { const prima = this.scintille; this.scintille = Math.min(tetto, prima + n); return this.scintille - prima; } };
+  const economia = opzioni.conEconomia
+    ? creaEconomia({ parametri, eventi, rng: derivato(creaRng(opzioni.seme ?? SEME), 'drop'), profilo, ferruccio, modificatori: mod, piano: 1, log: c.log })
+    : null;
   const ricevuti = [];
   for (const nome of ['stanza.entrata', 'stanza.chiusa', 'ondata.inizio', 'nemico.nato', 'stanza.svuotata', 'stanza.ricompensa',
-    'stanza.pulita', 'stanza.abbandonata', 'porta.stato', 'notte.stanza', 'camera.transizione', 'ferruccio.colpo']) {
+    'stanza.pulita', 'stanza.abbandonata', 'porta.stato', 'notte.stanza', 'camera.transizione', 'ferruccio.colpo',
+    'stanza.pericolo', 'ferruccio.danno', 'ferruccio.morto', 'economia.oggetto', 'economia.scintille']) {
     eventi.on(nome, (p) => ricevuti.push({ nome, payload: p }));
   }
   const tasto = (azione) => `t:${parametri.get(`input.tastiera.${azione}`)[0]}`;
   const m = {
-    ...c, tempo, eventi, input, mod, campo, ferruccio, comb, bersagli, proiettili, creaNemico, ricevuti,
+    ...c, tempo, eventi, input, mod, campo, ferruccio, comb, bersagli, proiettili, creaNemico, ricevuti, economia, profilo,
     stanza: null,
     notte: null,
     ticks: (chiave) => tempo.ticksDaMs(parametri.get(chiave)),
@@ -125,6 +137,7 @@ async function creaMondo(opzioni = {}) {
         input.inizioTick();
         if (m.notte) {
           m.notte.tick(tempo.passoS);
+          economia?.tick();
           continue;
         }
         ferruccio.tick(tempo.passoS);
@@ -706,4 +719,260 @@ test('prestazioni: creare una stanza costa meno di 5 ms; un tick della notte con
   console.log(`  stanza montata in ${perStanza.toFixed(2)} ms; tick della notte ${perTick.toFixed(3)} ms`);
   assert.ok(perStanza < 5);
   assert.ok(perTick < 2);
+});
+
+// ---------------------------------------------------------------------------------------------
+// Storia 018: pericoli ambientali e ricompense a stanza pulita
+// ---------------------------------------------------------------------------------------------
+
+/** Ferruccio con il bordo del corpo appena dentro il disco di fiamma del pericolo `p`, sul lato `lato` (±1 in x). */
+function appoggiaAlBraciere(m, p, lato = 1) {
+  m.ferruccio.posiziona(p.x + lato * (p.rFiamma + m.ferruccio.r - 1), p.y);
+}
+
+/** Avanza di un tick alla volta finché il pericolo `p` non è nella fase `fase` (al più `max` tick); ritorna i tick spesi. */
+function finoAFase(m, p, fase, max) {
+  let n = 0;
+  while (p.fase !== fase && n < max) {
+    m.tick(1);
+    n += 1;
+  }
+  assert.equal(p.fase, fase, `fase ${fase} raggiunta entro ${max} tick`);
+  return n;
+}
+
+test('018 formule: fasePericolo (riposo → anticipo → attivo, periodico) e puntoSicuro (cella libera più vicina)', async () => {
+  const ciclo = { riposo: 108, anticipo: 42, attivo: 60 };
+  assert.deepEqual(fasePericolo({ t: 0, ...ciclo }), { fase: 'riposo', progresso: 0 });
+  assert.equal(fasePericolo({ t: 107, ...ciclo }).fase, 'riposo');
+  assert.deepEqual(fasePericolo({ t: 108, ...ciclo }), { fase: 'anticipo', progresso: 0 });
+  assert.equal(fasePericolo({ t: 149, ...ciclo }).fase, 'anticipo');
+  assert.deepEqual(fasePericolo({ t: 150, ...ciclo }), { fase: 'attivo', progresso: 0 });
+  assert.equal(fasePericolo({ t: 209, ...ciclo }).fase, 'attivo');
+  assert.equal(fasePericolo({ t: 210, ...ciclo }).fase, 'riposo', 'periodico');
+  assert.equal(fasePericolo({ t: 210 + 108 + 42 + 59, ...ciclo }).fase, 'attivo');
+  assert.deepEqual(FASI_PERICOLO, ['riposo', 'anticipo', 'attivo']);
+  const celle = [{ x: 0, y: 0 }, { x: 64, y: 0 }, { x: 128, y: 0 }];
+  assert.deepEqual(puntoSicuro({ x: 10, y: 5, occupato: () => false, celleLibere: celle }), { x: 10, y: 5 }, 'libero: resta dov\'è');
+  assert.deepEqual(puntoSicuro({ x: 100, y: 5, occupato: () => true, celleLibere: celle }), { x: 128, y: 0 }, 'occupato: la cella più vicina');
+  assert.deepEqual(puntoSicuro({ x: 100, y: 5, occupato: () => true, celleLibere: [] }), { x: 100, y: 5 }, 'senza celle: il punto stesso');
+});
+
+test('018: GIVEN un braciere, WHEN Ferruccio lo tocca senza invulnerabilità, THEN perde 1 maschera solo in attivo ed è spinto via; il tratteggio (anticipo) precede l\'attivo di t_anticipo; una sola maschera per fase attiva; stessa fase iniziale con lo stesso seme', async () => {
+  const m = await creaMondo();
+  const modello = m.catalogo.perId('pd-n-04');
+  assert.ok(modello, 'pd-n-04 ha due bracieri (tag "bracieri")');
+  // tipo non di combattimento: la stanza è pulita alla prima visita, e i pericoli funzionano anche lì (hazard_in_pulita)
+  const st = m.monta(recordDi(modello, { tipo: 'ingresso' }), modello);
+  m.ferruccio.posiziona(st.origine.x + st.cella * 6.5, st.origine.y + st.cella * 5.5);
+  st.entra();
+  assert.equal(st.stato, 'pulita');
+  const bracieri = st.pericoli.filter((p) => p.id === ID_BRACIERE);
+  assert.equal(bracieri.length, 2);
+  const periodo = m.ticks('stanze.braciere.t_riposo') + m.ticks('stanze.braciere.t_anticipo') + m.ticks('stanze.braciere.t_attivo');
+  for (const b of bracieri) {
+    assert.ok(FASI_PERICOLO.includes(b.fase));
+    assert.ok(b.sfasamento >= 0 && b.sfasamento < periodo, 'fase iniziale a seme dentro il periodo');
+    assert.equal(b.rFiamma, m.parametri.get('stanze.braciere.r_fiamma'));
+    assert.ok(b.solido?.ferma_passo && !b.solido.ferma_colpi, 'il piede ferma il passo, non i colpi');
+  }
+  const p = bracieri[0];
+  const max = m.mod.valore('ferruccio.maschere_max');
+  const x0 = p.x + p.rFiamma + m.ferruccio.r - 1;
+  // Ferruccio tocca il disco di fiamma: in riposo e anticipo nessun danno
+  appoggiaAlBraciere(m, p, 1);
+  finoAFase(m, p, 'riposo', periodo);
+  assert.equal(m.ferruccio.maschere, max);
+  const inRiposo = finoAFase(m, p, 'anticipo', periodo);
+  assert.ok(inRiposo >= 1);
+  assert.equal(m.ferruccio.maschere, max, 'nessun danno in riposo');
+  const inAnticipo = finoAFase(m, p, 'attivo', periodo);
+  assert.equal(inAnticipo, m.ticks('stanze.braciere.t_anticipo'), 'il tratteggio è leggibile per tutto t_anticipo (700 ms)');
+  assert.ok(inAnticipo * m.tempo.passoMs >= 700 - 1, `anticipo ≥ 700 ms (${inAnticipo} tick)`);
+  // attivo: danno 1 nello stesso tick, Colpito, spinta radiale (via dal braciere, +x), evento stanza.pericolo
+  assert.equal(m.ferruccio.maschere, max - 1, 'nessun danno in anticipo, 1 maschera al primo tick attivo');
+  assert.equal(m.ferruccio.stato, 'colpito');
+  assert.ok(m.ferruccio.inSpinta());
+  assert.ok(m.ferruccio.invulnerabile());
+  const pericolo = m.eventiDi('stanza.pericolo');
+  assert.equal(pericolo.length, 1);
+  assert.equal(pericolo[0].payload.pericolo, 'braciere');
+  assert.equal(pericolo[0].payload.danno, m.parametri.get('stanze.danno_pericolo'));
+  const danno = m.eventiDi('ferruccio.danno');
+  assert.equal(danno.length, 1);
+  assert.ok(danno[0].payload.direzione.x > 0.99, 'spinta radiale dal piede del braciere');
+  m.tick(m.ticks('ferruccio.t_spinta') + 1);
+  assert.ok(m.ferruccio.x > x0 + 5, `spinto via: ${m.ferruccio.x.toFixed(1)} > ${x0}`);
+  // per tutta la fase attiva (1000 ms > t_invuln 800 ms) resta una sola maschera persa: la spinta lo ha portato fuori
+  finoAFase(m, p, 'riposo', periodo);
+  assert.equal(m.ferruccio.maschere, max - 1);
+  assert.equal(m.eventiDi('stanza.pericolo').length, 1);
+  // scatto attraverso il braciere attivo: invulnerabile, nessun danno
+  m.ferruccio.posiziona(p.x - p.rFiamma - m.ferruccio.r - 8, p.y);
+  finoAFase(m, p, 'attivo', periodo);
+  const prima = m.ferruccio.maschere;
+  m.tieni('destra');
+  m.premi('scatto');
+  assert.equal(m.ferruccio.stato, 'scatta');
+  let toccatoInScatto = false;
+  for (let guardia = 0; guardia < 40 && m.ferruccio.stato === 'scatta'; guardia++) {
+    if (Math.hypot(m.ferruccio.x - p.x, m.ferruccio.y - p.y) <= p.rFiamma + m.ferruccio.r && p.fase === 'attivo') toccatoInScatto = true;
+    assert.equal(m.ferruccio.maschere, prima, 'lo scatto attraversa senza danno');
+    m.tick(1);
+  }
+  m.lascia('destra');
+  assert.ok(toccatoInScatto, 'durante lo scatto Ferruccio è stato dentro la fiamma attiva');
+  // con 1 maschera muore (hazard_letale): prima si lascia finire l'invulnerabilità (e la spinta) del colpo preso
+  // uscendo dallo scatto dentro la fiamma, poi lo si appoggia al disco
+  finoAFase(m, p, 'riposo', periodo);
+  m.tick(m.ticks('ferruccio.t_invuln') + 1);
+  assert.ok(!m.ferruccio.invulnerabile() && !m.ferruccio.inSpinta());
+  assert.equal(p.fase, 'riposo');
+  m.ferruccio.impostaMaschere(1);
+  appoggiaAlBraciere(m, p, -1);
+  finoAFase(m, p, 'attivo', periodo);
+  assert.equal(m.ferruccio.maschere, 0);
+  assert.equal(m.ferruccio.stato, 'morto');
+  assert.equal(m.eventiDi('ferruccio.morto').length, 1);
+  // determinismo: stesso seme_stanza → stesse fasi iniziali; i due bracieri non vanno all'unisono
+  const m2 = await creaMondo();
+  const st2 = m2.monta(recordDi(modello, { tipo: 'ingresso' }), modello);
+  assert.deepEqual(st2.pericoli.map((q) => q.sfasamento), st.pericoli.map((q) => q.sfasamento));
+  assert.notEqual(st.pericoli[0].sfasamento, st.pericoli[1].sfasamento);
+});
+
+/** Stanza normale premiata con almeno una moneta tra gli oggetti pre-estratti, sul piano del seme dato. */
+function stanzaPremiata(notte) {
+  return notte.pianta.stanze.find((s) => s.tipo === 'normale' && (s.ricompensa?.oggetti ?? []).some((o) => o.tipo === 'moneta')) ?? null;
+}
+
+/** Ripulisce la stanza corrente uccidendo i fantocci ondata dopo ondata; Ferruccio fermo in un angolo. */
+function ripulisci(m, notte) {
+  m.tick(m.ticks('stanze.t_marker') + 1);
+  const st = notte.stanza;
+  m.ferruccio.posiziona(st.origine.x + st.cella * 1.5, st.origine.y + st.cella * 1.5);
+  for (let guardia = 0; guardia < 10 && notte.stanza.stato !== 'pulita'; guardia++) {
+    m.uccidiTutti();
+    m.tick(m.ticks('stanze.t_pausa_ondata') + m.ticks('stanze.t_marker') + m.ticks('stanze.t_ritardo_apertura') + 3);
+  }
+  assert.equal(notte.stanza.stato, 'pulita');
+}
+
+test('018: GIVEN una stanza normale pulita, WHEN le porte si riaprono, THEN cadono gli oggetti della ricompensa pre-estratta (formula del GDD stanze) sparsi con il generatore drop entro 48 px dal centro, mai su ostacoli o pericoli; stesso seme → stesse posizioni', async () => {
+  let seme = SEME;
+  let m = await creaMondo({ conEconomia: true, seme });
+  let notte = m.avviaNotte({ seme });
+  let premiata = stanzaPremiata(notte);
+  for (let k = 1; !premiata && k < 20; k++) {
+    seme = SEME + k;
+    m = await creaMondo({ conEconomia: true, seme });
+    notte = m.avviaNotte({ seme });
+    premiata = stanzaPremiata(notte);
+  }
+  assert.ok(premiata, 'una stanza normale con monete nella ricompensa pre-estratta');
+  const attese = premiata.ricompensa.oggetti;
+  const nMonete = attese.filter((o) => o.tipo === 'moneta').length;
+  const nCuori = attese.filter((o) => o.tipo === 'cuore').length;
+  const nScintille = attese.filter((o) => o.tipo === 'scintilla').length;
+  assert.equal(attese.reduce((a, o) => a + o.valore, 0), premiata.ricompensa.valore, 'gli oggetti valgono le unità della formula');
+  assert.equal(notte.vaiA(premiata.id), true);
+  assert.equal(m.economia.aTerra(premiata.id).length, 0);
+  ripulisci(m, notte);
+  const ric = m.eventiDi('stanza.ricompensa');
+  assert.equal(ric.length, 1);
+  assert.equal(ric[0].payload.dispersione, m.parametri.get('stanze.r_dispersione_ricompensa'));
+  assert.equal(typeof ric[0].payload.puntoSicuro, 'function');
+  assert.deepEqual(ric[0].payload.ricompensa, premiata.ricompensa);
+  const aTerra = m.economia.aTerra(premiata.id);
+  const bonus = m.parametri.get('economia.bonus_stanza');
+  assert.equal(aTerra.filter((o) => o.tipo === 'moneta').length, bonus + nMonete, `bonus di stanza ${bonus} + ${nMonete} monete della ricompensa`);
+  assert.equal(aTerra.filter((o) => o.tipo === 'cuore').length, nCuori, 'a maschere piene p_cuore = 0: solo i cuori pre-estratti');
+  assert.equal(m.profilo.scintille, nScintille, 'le scintille della ricompensa vanno subito al profilo');
+  // gli oggetti della ricompensa (dopo i `bonus` del centro) cadono entro la dispersione o sulla cella sicura più vicina
+  const centro = { x: ric[0].payload.x, y: ric[0].payload.y };
+  const st = notte.stanza;
+  const dentroSolido = (o) => st.record && m.campo.solidi.some((s) => s.ferma_passo && o.x >= s.x && o.x < s.x + s.w && o.y >= s.y && o.y < s.y + s.h);
+  const suPericolo = (o) => st.pericoli.some((p) => Math.hypot(p.x - o.x, p.y - o.y) < p.rFiamma);
+  const sparsi = aTerra.filter((o) => o.tipo !== 'cuore' || nCuori > 0).slice(bonus);
+  assert.equal(sparsi.length, nMonete + nCuori);
+  for (const o of sparsi) {
+    const d = DIST(o, centro);
+    const suCella = st.centroCella(Math.floor((o.x - st.origine.x) / st.cella), Math.floor((o.y - st.origine.y) / st.cella));
+    assert.ok(d <= ric[0].payload.dispersione + 1e-6 || (Math.abs(suCella.x - o.x) < 1e-6 && Math.abs(suCella.y - o.y) < 1e-6), `entro 48 px dal centro o al centro di una cella sicura (d = ${d.toFixed(1)})`);
+    assert.ok(!dentroSolido(o) && !suPericolo(o), 'mai su ostacolo o pericolo');
+  }
+  // determinismo: un secondo mondo con lo stesso seme lascia gli stessi oggetti negli stessi punti
+  const m2 = await creaMondo({ conEconomia: true, seme });
+  const notte2 = m2.avviaNotte({ seme });
+  notte2.vaiA(premiata.id);
+  ripulisci(m2, notte2);
+  const forma = (lista) => lista.map((o) => ({ tipo: o.tipo, x: o.x, y: o.y }));
+  assert.deepEqual(forma(m2.economia.aTerra(premiata.id)), forma(aTerra));
+  // il punto sicuro riporta su una cella libera un punto dentro un ostacolo del modello (se il modello ne ha)
+  const ostacolo = m.campo.solidi.find((s) => s.ferma_passo && s.id !== 'muro' && s.id !== 'porta');
+  if (ostacolo) {
+    const q = ric[0].payload.puntoSicuro(ostacolo.x + ostacolo.w / 2, ostacolo.y + ostacolo.h / 2);
+    assert.ok(!dentroSolido(q) && !suPericolo(q));
+  }
+});
+
+test('018: GIVEN una stanza già pulita, WHEN si rientra (anche rimontandola dallo stato salvato), THEN nessuna nuova ricompensa e gli oggetti non raccolti restano dove sono', async () => {
+  let seme = SEME;
+  let m = await creaMondo({ conEconomia: true, seme });
+  let notte = m.avviaNotte({ seme });
+  let premiata = stanzaPremiata(notte);
+  for (let k = 1; !premiata && k < 20; k++) {
+    seme = SEME + k;
+    m = await creaMondo({ conEconomia: true, seme });
+    notte = m.avviaNotte({ seme });
+    premiata = stanzaPremiata(notte);
+  }
+  const ingresso = notte.stanza.id;
+  notte.vaiA(premiata.id);
+  ripulisci(m, notte);
+  const prima = m.economia.aTerra(premiata.id).map((o) => ({ ...o }));
+  assert.ok(prima.length > 0);
+  assert.equal(notte.statoDi(premiata.id).ricompensa_data, true);
+  const attesa = m.ticks('stanze.t_ritardo_apertura') + m.ticks('stanze.t_ricompensa') + m.ticks('stanze.t_marker') + 5;
+  // rientro dalla notte
+  notte.vaiA(ingresso);
+  m.tick(3);
+  notte.vaiA(premiata.id);
+  assert.equal(notte.stanza.stato, 'pulita');
+  // vaiA mette Ferruccio al centro, dove giacciono le monete: lo si sposta in un angolo prima che l'economia raccolga
+  m.ferruccio.posiziona(notte.stanza.origine.x + notte.stanza.cella * 1.5, notte.stanza.origine.y + notte.stanza.cella * 1.5);
+  m.tick(attesa);
+  assert.equal(m.eventiDi('stanza.ricompensa').length, 1, 'nessuna nuova ricompensa');
+  assert.deepEqual(m.economia.aTerra(premiata.id), prima, 'gli oggetti restano dove sono (Ferruccio lontano dal centro)');
+  // rimontare la stanza dallo stato salvato (resume, ADR-0006): ricompensa_data resta vero
+  const stato = notte.statoDi(premiata.id);
+  const modello = m.catalogo.perId(premiata.modello);
+  const ricEventi = m.eventiDi('stanza.ricompensa').length;
+  const st = creaStanza({
+    record: premiata, modello, piano: 1, parametri: m.parametri, tempo: m.tempo, eventi: m.eventi, campo: m.campo, scena: SCENA,
+    bersagli: m.bersagli, creaNemico: m.creaNemico, ferruccio: m.ferruccio, statoSalvato: stato,
+  });
+  st.entra();
+  assert.equal(st.stato, 'pulita');
+  for (let i = 0; i < attesa; i++) st.tick(m.tempo.passoS);
+  assert.equal(m.eventiDi('stanza.ricompensa').length, ricEventi);
+  assert.equal(st.statoSalvabile().ricompensa_data, true);
+  // la ricompensa è pre-estratta: un'altra stanza con lo stesso record ma stato nuovo la darebbe una sola volta
+  const monete0 = m.economia.monete;
+  // raccolta: Ferruccio passa sul centro e prende le monete; al rientro successivo non ricompaiono
+  notte.vaiA(ingresso);
+  notte.vaiA(premiata.id);
+  const centro = { x: notte.stanza.origine.x + notte.stanza.geo.colonne * notte.stanza.cella / 2, y: notte.stanza.origine.y + notte.stanza.geo.righe * notte.stanza.cella / 2 };
+  for (const o of m.economia.aTerra(premiata.id)) {
+    if (o.tipo !== 'moneta') continue;
+    m.ferruccio.posiziona(o.x, o.y);
+    m.tick(2);
+  }
+  assert.ok(m.economia.monete > monete0, `monete raccolte: ${m.economia.monete}`);
+  assert.equal(m.economia.aTerra(premiata.id).filter((o) => o.tipo === 'moneta').length, 0);
+  notte.vaiA(ingresso);
+  notte.vaiA(premiata.id);
+  m.tick(attesa);
+  assert.equal(m.economia.aTerra(premiata.id).filter((o) => o.tipo === 'moneta').length, 0, 'le monete raccolte non ricompaiono');
+  assert.ok(Number.isFinite(centro.x));
 });

@@ -1,0 +1,17 @@
+{
+  "_doc": "Battute di ripetizione degli NPC (GDD incontri-dialoghi.md regola 3): quando un NPC ha già mostrato la sua scena nuova della notte, ripete una battuta vera per lo stato narrativo. Testi NON nella bibbia: scritti dal writer, canon Provisional, nello stile della voce del personaggio (storia.json › personaggi). 'quando' ha la sintassi delle scene ('' = flag non deciso). Quando più battute sono vere si alternano in ordine. 'npc_per_ancoraggio': quale NPC parla a un ancoraggio senza nome (il banchetto è di Tonino). Se nessuna battuta è vera per uno stato è un errore di contenuto e si mostra la didascalia generica di contenuti/interfaccia.json › incontri.",
+  "canon": "Provisional",
+  "npc_per_ancoraggio": {
+    "banchetto": "tonino"
+  },
+  "npc": {
+    "tonino": [
+      { "quando": { "tonino_ricordo": "" }, "chi": "tonino", "testo": "Uagliò, 'a mozzarella sta ancora qua. Nun se la mangia nisciuno." },
+      { "quando": { "tonino_ricordo": "" }, "chi": "didascalia", "testo": "Tonino lustra la lanterna del banchetto e ride da solo." },
+      { "quando": { "tonino_ricordo": "restituito" }, "chi": "tonino", "testo": "Vai, guagliò. Rosa diceva sempre che chi sta fermo s'arruggina." },
+      { "quando": { "tonino_ricordo": "restituito" }, "chi": "didascalia", "testo": "Tonino sistema due piatti sul banco. Uno resta vuoto." },
+      { "quando": { "tonino_ricordo": "negato" }, "chi": "tonino", "testo": "Sempre una bella giornata, uagliò! Pure 'sta notte." },
+      { "quando": { "tonino_ricordo": "negato" }, "chi": "didascalia", "testo": "Tonino ride, poi torna a fissare la sedia vuota accanto al banchetto." }
+    ]
+  }
+}

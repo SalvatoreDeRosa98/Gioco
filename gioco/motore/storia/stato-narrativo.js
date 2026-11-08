@@ -185,9 +185,14 @@ export function crea({ storia, regole, ancoraggi = null, eventi = null, salvatag
     return regole.piani?.campo_piano_max;
   }
 
+  /**
+   * Scrive flag e avanzamento nello slot del profilo, conservando i campi che vi scrivono altri moduli
+   * (scintille, sblocchi e ricordi restituiti di `persistenza/profilo.js`): la busta è una sola (ADR-0006).
+   */
   function salva() {
     if (!salvataggio) return false;
-    return salvataggio.salva('profilo', slot, serializza());
+    const altri = salvataggio.carica('profilo', slot) ?? {};
+    return salvataggio.salva('profilo', slot, { ...altri, ...serializza() });
   }
 
   function emetti(nome, payload) {

@@ -1,0 +1,181 @@
+/* Interfaccia DOM MINIMALE dell'economia (storia 025): HUD e lista del banchetto. Non è grafica
+   definitiva: colori solo dai token, nessun ornamento; il renderer vero aspetta l'approvazione dell'autore. */
+#interfaccia .hud {
+  position: absolute;
+  right: 1.5%;
+  top: 1.5%;
+  display: flex;
+  gap: 1.2em;
+  font-size: clamp(12px, 1.6vw, 22px);
+  color: var(--crema);
+  text-shadow: 0 0 2px var(--inchiostro);
+}
+
+#interfaccia .hud-monete .valore { color: var(--oro); }
+#interfaccia .hud-scintille .valore { color: var(--carta-luce); }
+
+#interfaccia .banchetto {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  transform: translateX(-50%);
+  min-width: 40%;
+  padding: 0.6em 1em;
+  border: 1px solid var(--oro);
+  background: color-mix(in srgb, var(--inchiostro) 85%, transparent);
+  color: var(--crema);
+  font-size: clamp(12px, 1.5vw, 20px);
+}
+
+#interfaccia .banchetto h2 {
+  margin: 0 0 0.2em;
+  font-family: var(--font-titoli);
+  font-size: 1.1em;
+  color: var(--oro);
+}
+
+#interfaccia .banchetto .istruzione { margin: 0 0 0.4em; opacity: 0.8; font-size: 0.85em; }
+
+#interfaccia .banchetto ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  gap: 1.5em;
+}
+
+#interfaccia .banchetto .slot { display: flex; gap: 0.5em; padding: 0.2em 0.4em; border: 1px solid transparent; }
+#interfaccia .banchetto .slot.vicino { border-color: var(--carta-luce); }
+#interfaccia .banchetto .slot.comprato { opacity: 0.45; }
+#interfaccia .banchetto .prezzo { color: var(--oro); }
+#interfaccia .banchetto .non-accessibile .prezzo { color: var(--carta); }
+#interfaccia .banchetto .esito { margin: 0.4em 0 0; min-height: 1.2em; font-size: 0.9em; }
+
+/* Storia 024: HUD dei doni raccolti e cartiglio del dono (DOM minimale, non definitivo). Fondo
+   inchiostro all'85 %, bordo oro al 60 % (azzurro per i ricordi), nome in crema, riga in carta. */
+#interfaccia .hud-doni {
+  position: absolute;
+  right: 1.5%;
+  top: 7%;
+  text-align: right;
+  color: var(--crema);
+  font-size: clamp(11px, 1.3vw, 18px);
+}
+
+#interfaccia .hud-doni h2 { margin: 0 0 0.2em; font-family: var(--font-titoli); font-size: 0.9em; color: var(--oro); }
+
+#interfaccia .hud-doni ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.3em;
+  max-width: 24em;
+}
+
+#interfaccia .hud-doni .dono {
+  min-width: 1.6em;
+  padding: 0.15em 0.4em;
+  border: 1px solid var(--oro);
+  font-size: 0.7em;
+  white-space: nowrap;
+}
+
+#interfaccia .hud-doni .dono.azzurro { border-color: var(--azzurro); color: var(--azzurro); box-shadow: 0 0 6px var(--azzurro); }
+
+#interfaccia .cartiglio {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+  min-width: 30%;
+  padding: 0.6em 1.2em;
+  border: 1px solid color-mix(in srgb, var(--oro) 60%, var(--bruno));
+  background: color-mix(in srgb, var(--inchiostro) 85%, transparent);
+  color: var(--crema);
+  text-align: center;
+  font-size: clamp(12px, 1.5vw, 20px);
+}
+
+#interfaccia .cartiglio.azzurro { border-color: color-mix(in srgb, var(--azzurro) 60%, var(--bruno)); }
+#interfaccia .cartiglio.anteprima { opacity: 0.8; border-style: dashed; }
+#interfaccia .cartiglio .nome { margin: 0; font-family: var(--font-titoli); font-size: 1.1em; }
+#interfaccia .cartiglio.azzurro .nome { color: var(--azzurro); }
+#interfaccia .cartiglio .riga { margin: 0.2em 0 0; color: var(--carta); }
+#interfaccia .cartiglio .avviso { margin: 0.2em 0 0; font-size: 0.85em; opacity: 0.8; }
+
+/* Storia 029: cartellino DOM minimale dell'hub (notte e suggerimento), non definitivo. */
+#interfaccia .hub-cartellino {
+  position: absolute;
+  left: 1.5%;
+  bottom: 3%;
+  padding: 0.4em 0.8em;
+  border: 1px solid var(--oro);
+  background: color-mix(in srgb, var(--inchiostro) 85%, transparent);
+  color: var(--crema);
+  font-size: clamp(12px, 1.5vw, 20px);
+}
+#interfaccia .hub-cartellino .hub-notte { font-family: var(--font-titoli); color: var(--oro); }
+#interfaccia .hub-cartellino .hub-suggerimento { min-height: 1.2em; font-size: 0.85em; opacity: 0.9; }
+
+/* Storia 030: velo DOM della sequenza di morte (dissolvenza), non definitivo. --progresso 0→1 dal risveglio. */
+#interfaccia .morte-velo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2em;
+  background: color-mix(in srgb, var(--inchiostro) calc(var(--progresso, 0) * 100%), transparent);
+  color: var(--crema);
+  font-family: var(--font-testo);
+  font-size: clamp(14px, 1.8vw, 24px);
+  pointer-events: none;
+}
+#interfaccia .morte-velo[hidden] { display: none; }
+#interfaccia .morte-lanterne { display: flex; gap: 1.5em; }
+#interfaccia .morte-lanterne .lanterna {
+  width: 0.8em; height: 0.8em; border-radius: 50%;
+  background: var(--oro); box-shadow: 0 0 1.2em var(--oro);
+  transition: background 300ms, box-shadow 300ms;
+}
+#interfaccia .morte-lanterne .lanterna.spenta { background: var(--bruno); box-shadow: none; }
+#interfaccia .morte-fili { width: 40%; height: 0; border-top: 1px dashed var(--oro); transition: opacity 400ms; }
+#interfaccia .morte-fili.spezzati { opacity: 0; border-top-style: dotted; }
+#interfaccia .morte-maschera { display: flex; gap: 0.3em; }
+#interfaccia .morte-maschera .pezzo {
+  width: 0.7em; height: 1em; background: var(--crema); border-radius: 0.1em;
+  transition: transform 1200ms ease-out, background 400ms, opacity 1200ms;
+}
+#interfaccia .morte-maschera.staccata .pezzo { background: var(--azzurro); transform: translateY(-3em); opacity: 0.2; }
+#interfaccia .morte-maschera.staccata .pezzo:nth-child(2) { transform: translateY(-4.5em); }
+#interfaccia .morte-didascalia { margin: 0; font-style: italic; opacity: 0.9; }
+#interfaccia .morte-velo[data-fase="buio"] .morte-didascalia { color: var(--oro); }
+
+/* Storia 030: pannello «Continua» della notte salvata, nell'hub, non definitivo. */
+#interfaccia .ripresa {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  transform: translateX(-50%);
+  padding: 0.6em 1em;
+  border: 1px solid var(--oro);
+  background: color-mix(in srgb, var(--inchiostro) 88%, transparent);
+  color: var(--crema);
+  font-family: var(--font-testo);
+  font-size: clamp(12px, 1.5vw, 20px);
+  text-align: center;
+  pointer-events: auto;
+}
+#interfaccia .ripresa[hidden] { display: none; }
+#interfaccia .ripresa .ripresa-titolo { margin: 0 0 0.5em; }
+#interfaccia .ripresa .ripresa-bottoni { display: flex; gap: 0.8em; justify-content: center; }
+#interfaccia .ripresa button {
+  font: inherit; font-family: var(--font-titoli);
+  padding: 0.3em 0.9em; cursor: pointer;
+  color: var(--crema); background: var(--bruno); border: 1px solid var(--oro);
+}
+#interfaccia .ripresa button.ripresa-continua { color: var(--inchiostro); background: var(--oro); }

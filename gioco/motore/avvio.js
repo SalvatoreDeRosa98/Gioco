@@ -12,8 +12,47 @@
  *    corpo, spada, bersagli;
  *  - con `?debug=1&wire=1&piano=N` (storie 014-017) il piano N viene generato dal seme
  *    (`mondo/generazione.js`) con i modelli di `contenuti/modelli-stanza/`, e al posto della scena di
- *    prova gira la notte (`mondo/notte.js`): stanza corrente, porte, ondate di fantocci segnaposto
- *    (`archetipo`), transizioni della camera; `window.__gioco` espone `piano`, `stanza`, `vaiA`;
+ *    prova gira la notte (`mondo/notte.js`): stanza corrente, porte, ondate di nemici veri per
+ *    archetipo (`attori/nemico.js`, storia 019: IA base, telegrafo, direttore dei gettoni),
+ *    transizioni della camera; `window.__gioco` espone `piano`, `stanza`, `vaiA`, `direttore`;
+ *  - l'economia (storia 025): salvataggio in localStorage → profilo (scintille), `oggetti/economia.js`
+ *    (monete, drop, oggetti a terra, consumabili) e il banchetto di Tonino del piano
+ *    (`oggetti/banchetto.js`, attivo nella stanza di tipo `banchetto`), con l'interfaccia DOM minimale
+ *    (`interfaccia/banchetto.js`: HUD e lista dei prezzi, testi da `contenuti/interfaccia.json`);
+ *  - i doni (storia 024): il pool della notte (`oggetti/pool.js`, generatore derivato 'pool', flag
+ *    narrativi da `__gioco.flag` finché lo stato narrativo non è composto qui), i piedistalli della bottega (`oggetti/piedistallo.js`, attivi
+ *    nella stanza `tesoro`), i ganci dei doni collegati agli eventi del combattimento e della stanza e
+ *    gli effetti `doni.*` eseguiti dagli attori (`attori/effetti-doni.js`), l'HUD dei doni e il
+ *    cartiglio in DOM (`interfaccia/doni.js`);
+ *  - la storia (storie 026-027): lo stato narrativo (`storia/stato-narrativo.js`: storia.json, narrativa.json,
+ *    ancoraggi.json, profilo nel salvataggio), gli incontri per ancoraggio (`storia/incontri.js`: scene,
+ *    ripetizioni di `ripetizioni.json`, scelte, tableau), il cartiglio dei dialoghi e il tableau in DOM
+ *    (`ui/cartiglio.js`, `ui/tableau.js`, stile `stile/cartiglio.css`); durante un dialogo il ciclo è in
+ *    `pausa` (pausa logica: nemici e timer fermi) e torna in `notte` alla chiusura; nella stanza del
+ *    banchetto `interagisci` lontano dagli slot parla con Tonino (ancoraggio `banchetto`), mai a porte
+ *    chiuse; con `?debug=1&wire=1&scena=<id>` la scena parte subito (strumento di QA);
+ *  - i ricordi (storia 028, `oggetti/ricordi.js`, `contenuti/parametri/ricordi.json`): all'evento
+ *    `boss.sconfitto` {id, x, y} (il boss vero è della storia 022: in debug lo emette `__gioco.eventi`) il
+ *    ricordo del boss cade a terra se il suo flag è `null`, si raccoglie passandoci sopra (dono azzurro),
+ *    apre la scena di scelta solo se è in mano (`puoAprire` negli incontri), la decisione lo cede
+ *    (scintille al profilo) o lo tiene fino a fine notte; morte → perso, il boss lo lascia di nuovo. Il
+ *    pool dei doni legge ora i flag dallo stato narrativo (più gli override di `__gioco.flag`);
+ *  - l'hub di Piazza Dante (storia 029, `mondo/hub.js`, modello `contenuti/modelli-stanza/hub/piazza-dante.json`):
+ *    con `?debug=1&wire=1&hub=1` il ciclo resta in `hub`; l'hub monta il suo campo (mura chiuse tranne l'ingresso al
+ *    piano), risolve le presenze sullo stato narrativo (Tonino al banchetto, porta della bottega chiusa finché
+ *    `fucina_aperta` è falso, finestra accesa di Mariella, Taddeo se perdonato, Agnese se risvegliata, luna e fili
+ *    d'oro), fa partire le scene automatiche del modello (notte 1: risveglio, tutorial, targa) e, quando Ferruccio
+ *    attraversa l'ingresso, emette `hub.partenza` {piano, seme}: qui si genera il piano con quel seme (derivato dal
+ *    seme del profilo e dal numero della notte), la notte parte (`avviaNotte`) e all'ingresso del piano partono le
+ *    scene automatiche `ingresso-piano:N`; il cartellino DOM (`interfaccia/hub.js`) mostra la notte e i suggerimenti;
+ *  - morte → risveglio e salvataggio della notte (storia 030, ADR-0006, GDD stato-narrativo regola 8):
+ *    `storia/risveglio.js` ascolta `ferruccio.morto` e fa la sequenza in quattro fasi (`risveglio.json`, ≤ 5 s) mentre
+ *    il ciclo sta in `pausa`; al `risveglio.fine` (notte + 1, doni e pool azzerati, economia nuova, Ferruccio in piedi)
+ *    la notte è lasciata e si torna nell'hub (`hub.entra`, ciclo `hub`; senza hub la notte riparte dallo stesso seme);
+ *    il velo DOM (`interfaccia/morte.js`) mostra la dissolvenza. `persistenza/notte-salvata.js` salva la notte a ogni
+ *    `notte.stanza` e la cancella alla morte; nell'hub il pannello «Continua» (`interfaccia/ripresa.js`) la riprende
+ *    rigenerando il piano dal seme nella stanza salvata (`avviaNotte` con `stanza`) e ripristinando maschere, doni e
+ *    monete; `?debug=1&wire=1&hub=1&continua=1` preme «Continua» da solo all'avvio (strumento di QA);
  *  - la superficie di debug `window.__gioco`, presente SOLO con `?debug=1` (ADR-0003).
  *
  * La risoluzione logica è un vincolo del motore (ADR-0001), non un valore di gioco.
@@ -32,25 +71,67 @@ import { creaCampo } from './mondo/fisica.js';
 import { creaFerruccio } from './attori/ferruccio.js';
 import { creaCombattimento } from './attori/combattimento.js';
 import { creaFantoccio } from './attori/bersaglio.js';
+import { creaNemico as creaNemicoArchetipo } from './attori/nemico.js';
+import { creaGatto, ARCHETIPO_GATTO } from './attori/gatto.js'; // storia 020: il gatto d'ombra con la posa
+import { creaDirettore } from './attori/ia/direttore.js';
 import { creaResaDebug } from './resa/debug.js';
 import { caricaModelli, creaCatalogo, regoleDaParametri, validaParametriGenerazione } from './mondo/modelli.js';
 import { generaPiano } from './mondo/generazione.js';
 import { creaCamera } from './mondo/camera.js';
 import { creaNotte } from './mondo/notte.js';
+import { creaSalvataggio } from './persistenza/salvataggio.js';
+import { creaProfilo } from './persistenza/profilo.js';
+import { creaEconomia } from './oggetti/economia.js';
+import { creaBanchetto, puntiSlot, TIPI_SLOT } from './oggetti/banchetto.js';
+import { creaInterfacciaEconomia } from './interfaccia/banchetto.js';
+import { creaPool } from './oggetti/pool.js';
+import { creaPiedistalli } from './oggetti/piedistallo.js';
+import { collegaEffettiDoni, collegaGanci } from './attori/effetti-doni.js';
+import { creaInterfacciaDoni } from './interfaccia/doni.js';
+import { crea as creaStatoNarrativo } from './storia/stato-narrativo.js';
+import { creaIncontri } from './storia/incontri.js';
+import { creaCartiglio } from './ui/cartiglio.js';
+import { creaTableau } from './ui/tableau.js';
+import { creaRicordi } from './oggetti/ricordi.js';
+import { creaHub } from './mondo/hub.js';
+import { creaInterfacciaHub } from './interfaccia/hub.js';
+import { creaRisveglio } from './storia/risveglio.js';
+import { creaNotteSalvata, MOTIVI_CANCELLAZIONE } from './persistenza/notte-salvata.js';
+import { creaInterfacciaMorte } from './interfaccia/morte.js';
+import { creaInterfacciaRipresa } from './interfaccia/ripresa.js';
 
 /** Risoluzione logica della scena (ADR-0001). */
 const RISOLUZIONE = Object.freeze({ larghezza: 1280, altezza: 720 });
 
 /** Cartella dei parametri e file da caricare (nomi di file, non valori di gioco). */
 const CARTELLA_PARAMETRI = 'contenuti/parametri/';
-const FILE_STATISTICHE = ['ferruccio', 'combattimento', 'stanza', 'stanze', 'generazione'];
-const FILE_TABELLE = ['input', 'doni', 'sinergie'];
+const FILE_STATISTICHE = ['ferruccio', 'combattimento', 'stanza', 'stanze', 'generazione', 'nemici', 'economia', 'incontri', 'risveglio'];
+const FILE_TABELLE = ['input', 'doni', 'sinergie', 'consumabili', 'ricordi'];
 const FILE_MOTO_RIDOTTO = 'moto-ridotto';
+/** Testi dell'interfaccia (storia 025) e slot del profilo salvato (nome di slot, non valore di gioco). */
+const FILE_INTERFACCIA = 'contenuti/interfaccia.json';
+const SLOT_PROFILO = '1';
+/** Contenuti della storia (storie 026-027): nomi di file, non valori di gioco. */
+const FILE_STORIA = 'contenuti/storia.json';
+const FILE_NARRATIVA = 'contenuti/narrativa.json';
+const FILE_ANCORAGGI = 'contenuti/ancoraggi.json';
+const FILE_RIPETIZIONI = 'contenuti/ripetizioni.json';
+/** Tipo della stanza del banchetto e ancoraggio di Tonino dentro i piani (GDD incontri regola 1: `banchetto`). */
+const STANZA_BANCHETTO = 'banchetto';
+const ANCORAGGIO_BANCHETTO = 'banchetto';
+/** Stati della stanza a porte aperte (stanza.js): fuori da questi, o con nemici vivi, nessun dialogo (regola 2). */
+const STATI_PORTE_APERTE = ['non_visitata', 'pulita'];
+/** Stanza fittizia della scena di prova `wire` per gli oggetti a terra dell'economia. */
+const STANZA_WIRE = 'wire';
 
 /** Contenuti del piano 1 (nomi di cartelle e file, non valori di gioco). */
 const CARTELLA_MODELLI = 'contenuti/modelli-stanza/piazza-dante/';
 const FILE_INDICE_MODELLI = 'indice';
 const FILE_RISERVA = 'contenuti/piani/piazza-dante-riserva.json';
+/** Storia 029: modello dell'hub di Piazza Dante (nomi di cartella e file) e prefisso degli ancoraggi automatici all'ingresso di un piano. */
+const CARTELLA_MODELLI_HUB = 'contenuti/modelli-stanza/hub/';
+const FILE_MODELLO_HUB = 'piazza-dante';
+const ANCORAGGIO_INGRESSO_PIANO = 'ingresso-piano:';
 
 /**
  * Scena diagnostica del modo `wire` (non è contenuto di gioco: posizioni in celle della griglia).
@@ -59,6 +140,7 @@ const FILE_RISERVA = 'contenuti/piani/piazza-dante-riserva.json';
  */
 const SCENA_WIRE = Object.freeze({
   ferruccio: { colonna: 6.5, riga: 3.5 },
+  nemico: { colonna: 1.5, riga: 1.5 },
   ostacoli: [{ colonna: 4, riga: 3, id: 'colonna' }],
   fantocci: [
     { id: 'destra', colonna: 8.5, riga: 3.5 },
@@ -179,6 +261,8 @@ async function avvia() {
   const wire = debug && url.searchParams.get('wire') === '1';
   const pianoRichiesto = Number(url.searchParams.get('piano'));
   const conPiano = wire && Number.isInteger(pianoRichiesto) && pianoRichiesto >= 1 && pianoRichiesto <= 5;
+  // storia 029: `&hub=1` parte dall'hub di Piazza Dante; la notte (piano 1) comincia attraversando l'ingresso
+  const conHub = wire && !conPiano && url.searchParams.get('hub') === '1';
   // Storia 023: catalogo dei doni e sinergie dai JSON, probabilità dei ganci dal generatore derivato 'doni'.
   const modificatori = creaModificatori(parametri, {
     catalogo: parametri.get('doni'), sinergie: parametri.get('sinergie'), eventi, rng: derivato(rng, 'doni'),
@@ -189,7 +273,7 @@ async function avvia() {
     cella: parametri.get('stanza.cella'),
     scenaLarghezza: RISOLUZIONE.larghezza,
     scenaAltezza: RISOLUZIONE.altezza,
-    ostacoli: wire && !conPiano ? SCENA_WIRE.ostacoli : [],
+    ostacoli: wire && !conPiano && !conHub ? SCENA_WIRE.ostacoli : [],
   });
   const cella = (c, r) => ({ x: campo.x + c * campo.cella, y: campo.y + r * campo.cella });
   const partenza = cella(SCENA_WIRE.ferruccio.colonna, SCENA_WIRE.ferruccio.riga);
@@ -199,36 +283,207 @@ async function avvia() {
   /** @type {object[]} */
   const proiettili = [];
   const combattimento = creaCombattimento({ modificatori, tempo, eventi, input, campo, ferruccio, bersagli: () => bersagli });
-  /** Factory dei nemici delle ondate: oggi fantocci segnaposto con `archetipo` (le storie 019-021 la sostituiscono). */
-  const creaNemico = ({ archetipo, x, y, id }) => {
-    const f = creaFantoccio({ modificatori, tempo, eventi, campo, bersaglio: combattimento.comeBersaglio, id, x, y });
-    f.archetipo = archetipo;
-    return f;
-  };
+  // Storia 025: profilo persistente (scintille) ed economia della notte (monete, drop con il generatore
+  // derivato 'drop', oggetti a terra, consumabili); il banchetto del piano estrae gli slot dal generatore 'banchetto'.
+  const salvataggio = creaSalvataggio();
+  const profilo = creaProfilo({ salvataggio, slot: SLOT_PROFILO, eventi });
+  const pianoEconomia = conPiano ? pianoRichiesto : 1;
+  const economia = creaEconomia({ parametri, eventi, rng: derivato(rng, 'drop'), profilo, ferruccio, modificatori, piano: pianoEconomia });
+  const testiInterfaccia = await caricaJson(FILE_INTERFACCIA);
+  // Storie 026-027: stato narrativo (profilo nello stesso salvataggio) e incontri per ancoraggio.
+  const [storia, regoleNarrativa, ancoraggi, ripetizioni] = await Promise.all([FILE_STORIA, FILE_NARRATIVA, FILE_ANCORAGGI, FILE_RIPETIZIONI].map(caricaJson));
+  const narrativa = creaStatoNarrativo({ storia, regole: regoleNarrativa, ancoraggi, eventi, salvataggio, slot: SLOT_PROFILO });
+  // Storia 028: i ricordi (dono azzurro con un volto); la scena di scelta si apre solo con il ricordo in mano.
+  const ricordi = creaRicordi({
+    parametri, catalogo: parametri.get('doni').doni, storia, narrativa, modificatori, profilo, economia, ferruccio, eventi,
+    stanza: conPiano || conHub ? null : STANZA_WIRE,
+  });
+  const incontri = creaIncontri({
+    stato: narrativa, storia, ancoraggi, ripetizioni, parametri, eventi, testi: testiInterfaccia.incontri,
+    notte: () => narrativa.avanzamento()[regoleNarrativa.piani.campo_notte], tipiSenzaAttesa: regoleNarrativa.tipi_senza_attesa,
+    puoAprire: (scena) => ricordi.puoAprire(scena),
+  });
+  // pausa logica (regola 4): durante un dialogo il ciclo sta in `pausa`; alla chiusura torna in `notte`
+  let pausaDaIncontro = false;
+  eventi.on('incontri.avvio', () => {
+    if (ciclo.stato() === 'notte') { ciclo.vaiA('pausa'); pausaDaIncontro = true; }
+  });
+  eventi.on('incontri.fine', () => {
+    if (pausaDaIncontro && ciclo.stato() === 'pausa') ciclo.vaiA('notte');
+    pausaDaIncontro = false;
+  });
+  // Storia 024: pool dei doni della notte (pesi W0_r e derive da economia.json; flag narrativi da un oggetto che lo
+  // stato narrativo riempirà quando sarà composto qui — in debug è `__gioco.flag`), piedistalli, ganci ed effetti.
+  const flagNotte = {};
+  const RARITA = ['comune', 'raro', 'prezioso'];
+  const pool = creaPool({
+    catalogo: parametri.get('doni').doni,
+    pesi: Object.fromEntries(RARITA.map((r) => [r, parametri.get(`economia.banchetto.peso_rarita.${r}`)])),
+    derivePct: Object.fromEntries(RARITA.map((r) => [r, parametri.get(`economia.banchetto.deriva_rarita_pct.${r}`)])),
+    fallbackMonete: parametri.get('economia.banchetto.fallback_monete'),
+    rng: derivato(rng, 'pool'), flag: () => ({ ...narrativa.flag(), ...flagNotte }), restituiti: () => profilo.ricordiRestituiti, eventi,
+  });
+  pool.preparaPiano(pianoEconomia);
+  const banchetto = creaBanchetto({
+    economia, modificatori, parametri, catalogo: parametri.get('doni').doni, consumabili: parametri.get('consumabili').consumabili,
+    rng: derivato(rng, 'banchetto'), piano: pianoEconomia, ferruccio, input, eventi, pool,
+  });
+  const piedistalli = creaPiedistalli({ pool, modificatori, parametri, piano: pianoEconomia, ferruccio, input, economia, eventi });
+  collegaGanci({ eventi, modificatori, combattimento });
+  // Storia 030: morte → risveglio (sequenza a fasi, poi notte + 1 e azzeramento di doni, pool ed economia).
+  const risveglio = creaRisveglio({
+    parametri, tempo, eventi, narrativa, modificatori, ferruccio, economia, pool, combattimento, campoNotte: regoleNarrativa.piani.campo_notte,
+  });
+  ciclo.registra({ tick: (dt) => risveglio.tick(dt) }, { stati: ['notte', 'pausa'] });
+  eventi.on('morte.avvio', () => {
+    // pausa logica durante la sequenza: nemici, pericoli e timer fermi; il velo gira sul disegno
+    pausaDaIncontro = false;
+    if (ciclo.stato() === 'notte') ciclo.vaiA('pausa');
+  });
+  const effettiDoni = collegaEffettiDoni({ eventi, parametri, modificatori, ferruccio, bersagli: () => bersagli, proiettili });
+  ciclo.registra({ tick: (dt) => modificatori.tick(dt) }, { stati: ['notte'] });
+  // Storia 019: nemici veri per archetipo (nemici.json), un direttore dei gettoni per piano
+  // (si azzera a ogni `stanza.entrata`), generatori derivati dal seme per nemico.
+  const pianoNemici = conPiano ? pianoRichiesto : 1;
+  const direttore = creaDirettore({
+    gettoni: parametri.get(`nemici.direttore.gettoni.p${pianoNemici}`),
+    gapTicks: tempo.ticksDaMs(parametri.get('nemici.direttore.gap_impatti_min')),
+    imparabiliMax: parametri.get(`nemici.direttore.imparabili_max.p${pianoNemici}`),
+    attaccantiMax: parametri.get('nemici.direttore.attaccanti_max'), // storia 020: tetto agli attaccanti contemporanei
+    eventi,
+  });
+  ciclo.registra({ tick: () => direttore.tick() }, { stati: ['notte'] });
+  let rngNemici = derivato(rng, 'nemici'); // storia 029: dalla partenza dall'hub deriva dal seme della notte
+  let natiNemici = 0;
+  /** Factory dei nemici delle ondate (iniettata nella stanza): archetipo dalla tavolozza del modello;
+   *  il gatto passa da `attori/gatto.js` (storia 020: posa per il renderer, stessa scheda). */
+  const creaNemico = ({ archetipo, x, y, id }) => (archetipo === ARCHETIPO_GATTO ? creaGatto : creaNemicoArchetipo)({
+    modificatori, parametri, tempo, eventi, campo, bersaglio: combattimento.comeBersaglio, altri: () => bersagli, direttore,
+    rng: derivato(rngNemici, `${id}#${natiNemici++}`), archetipo, piano: pianoNemici, x, y, id,
+    ferito: () => ferruccio.maschere < modificatori.valore('ferruccio.maschere_max'),
+  });
 
-  // Piano generato dal seme (storie 014-017): modelli, catalogo, pianta, camera e notte.
+  // Piano generato dal seme (storie 014-017): modelli, catalogo, pianta, camera e notte. Dalla storia 029 la
+  // notte può partire anche dopo, dall'hub (`avviaNotte` con il seme derivato dal profilo): `notte` è riassegnata
+  // e chi la usa la legge in modo pigro.
   let notte = null;
   let camera = null;
-  if (conPiano) {
+  let catalogoModelli = null;
+  let riservaPiano = null;
+  /** Carica una volta i modelli del piano 1 e il piano di riserva. */
+  async function caricaCatalogo() {
+    if (catalogoModelli) return catalogoModelli;
     const indice = await caricaJson(`${CARTELLA_MODELLI}${FILE_INDICE_MODELLI}.json`);
     const { modelli } = await caricaModelli({
       caricatore: (nome) => caricaJson(`${CARTELLA_MODELLI}${nome}.json`),
       indice,
       regole: regoleDaParametri(parametri),
     });
-    const riserva = await caricaJson(FILE_RISERVA);
-    const catalogo = creaCatalogo(modelli);
-    const esito = generaPiano({ seme, piano: pianoRichiesto, parametri, catalogo, riserva });
-    camera = creaCamera({ parametri, tempo, scena: RISOLUZIONE, eventi });
+    riservaPiano = await caricaJson(FILE_RISERVA);
+    catalogoModelli = creaCatalogo(modelli);
+    return catalogoModelli;
+  }
+  /**
+   * Genera il piano dal seme e monta la notte nella stanza d'ingresso, o nella stanza `stanza` se è data
+   * e esiste nel piano (ripresa, storia 030). Il catalogo deve essere caricato.
+   * @param {{ seme: number, piano: number, stanza?: string | null }} o
+   */
+  function avviaNotte({ seme: semeNotte, piano, stanza = null }) {
+    const esito = generaPiano({ seme: semeNotte, piano, parametri, catalogo: catalogoModelli, riserva: riservaPiano });
+    rngNemici = derivato(creaRng(semeNotte), 'nemici');
+    natiNemici = 0;
     notte = creaNotte({
-      seme, numeroPiano: pianoRichiesto, pianta: esito.pianta, catalogo, parametri, tempo, eventi, campo, scena: RISOLUZIONE,
+      seme: semeNotte, numeroPiano: piano, pianta: esito.pianta, catalogo: catalogoModelli, parametri, tempo, eventi, campo, scena: RISOLUZIONE,
       ferruccio, combattimento, bersagli, proiettili, camera, creaNemico,
     });
-    notte.entra(esito.pianta.stanze.find((st) => st.tipo === 'ingresso').id);
+    const ingressoId = esito.pianta.stanze.find((st) => st.tipo === 'ingresso').id;
+    const iniziale = stanza && esito.pianta.stanze.some((st) => st.id === stanza) ? stanza : ingressoId;
+    if (stanza && iniziale !== stanza) console.error(`[avvio] la stanza salvata '${stanza}' non è nel piano rigenerato: si riparte dall'ingresso`);
+    notte.entra(iniziale);
+    return notte;
+  }
+  /** Lascia la notte in corso (morte): nessuna stanza montata, liste vuote, banchetto e piedistalli spenti. */
+  function lasciaNotte() {
+    notte = null;
+    bersagli.length = 0;
+    proiettili.length = 0;
+    banchetto.attiva(false);
+    piedistalli.disattiva();
+  }
+  // Storia 030: la notte salvata a ogni cambio di stanza (ADR-0006) e cancellata alla morte; `riprendiNotte` è «Continua».
+  const notteSalvata = creaNotteSalvata({
+    salvataggio, slot: SLOT_PROFILO, eventi, notte: () => notte, ferruccio, modificatori, economia, pool,
+    numeroNotte: () => narrativa.avanzamento()[regoleNarrativa.piani.campo_notte],
+  });
+  function riprendiNotte() {
+    if (!catalogoModelli || !camera) return false;
+    const esito = notteSalvata.riprendi({
+      avvia: ({ seme: semeNotte, piano, stanza }) => {
+        hub?.esci();
+        avviaNotte({ seme: semeNotte, piano, stanza });
+      },
+    });
+    if (!esito.ok) return false;
+    if (ciclo.stato() === 'hub') ciclo.vaiA('notte');
+    return true;
+  }
+  if (conPiano || conHub) {
+    camera = creaCamera({ parametri, tempo, scena: RISOLUZIONE, eventi });
+    await caricaCatalogo();
+    // storia 025: il banchetto è attivo (slot posizionati sui banchi del modello) solo nella sua stanza
+    eventi.on('notte.stanza', ({ tipo }) => {
+      if (tipo === 'banchetto' && notte?.stanza) {
+        banchetto.posiziona(puntiSlot(notte.stanza, TIPI_SLOT.length));
+        banchetto.attiva(true);
+      } else {
+        banchetto.attiva(false);
+      }
+      // storia 024: i piedistalli vivono solo nella bottega (stanza `tesoro`)
+      if (tipo === 'tesoro' && notte?.stanza) piedistalli.attiva(notte.stanza);
+      else piedistalli.disattiva();
+    });
+  }
+  if (conPiano) avviaNotte({ seme, piano: pianoRichiesto });
+  // storia 030: al risveglio la notte è lasciata; con l'hub si torna in piazza (notte + 1), con `?piano=N`
+  // la notte riparte dallo stesso seme (strumento di QA), nella scena di prova Ferruccio è solo in piedi
+  eventi.on('risveglio.fine', () => {
+    if (conPiano || conHub) lasciaNotte();
+    if (hub) {
+      hub.entra();
+      camera?.inquadra(campo); // la camera torna sulla piazza (scala 1:1 del campo dell'hub)
+      if (ciclo.stato() !== 'hub') ciclo.vaiA('hub');
+    } else {
+      if (conPiano) avviaNotte({ seme, piano: pianoRichiesto });
+      if (ciclo.stato() === 'pausa') ciclo.vaiA('notte');
+    }
+  });
+  // Storia 029: l'hub di Piazza Dante come stanza speciale (mondo/hub.js): presenze dallo stato narrativo,
+  // Tonino al banchetto, la porta della bottega, l'ingresso al piano; attraversandolo parte la notte con il
+  // seme derivato dal profilo (`hub.partenza`), e all'ingresso del piano partono le scene automatiche.
+  let hub = null;
+  if (conHub) {
+    const modelloHub = await caricaJson(`${CARTELLA_MODELLI_HUB}${FILE_MODELLO_HUB}.json`);
+    hub = creaHub({
+      modello: modelloHub, parametri, eventi, campo, scena: RISOLUZIONE, ferruccio, input, narrativa, incontri,
+      semeProfilo: seme, campoNotte: regoleNarrativa.piani.campo_notte,
+    });
+    eventi.on('hub.partenza', ({ seme: semeNotte, piano }) => {
+      if (notteSalvata.presente) notteSalvata.cancella(MOTIVI_CANCELLAZIONE.lasciata); // storia 030: una partenza nuova lascia la notte salvata
+      hub.esci();
+      avviaNotte({ seme: semeNotte, piano });
+      if (ciclo.stato() === 'hub') ciclo.vaiA('notte');
+      incontri.automatiche(`${ANCORAGGIO_INGRESSO_PIANO}${piano}`);
+    });
   }
 
-  if (wire && !conPiano) {
+  if (wire && !conPiano && !conHub) {
     const attaccaAuto = url.searchParams.get('fantoccio') === 'attacca';
+    // storia 019: `&nemico=<archetipo>` aggiunge un nemico vero (nemici.json) in alto a sinistra della scena di prova
+    const archetipoWire = url.searchParams.get('nemico');
+    if (archetipoWire && parametri.ha(`nemici.archetipi.${archetipoWire}`)) {
+      const p = cella(SCENA_WIRE.nemico.colonna, SCENA_WIRE.nemico.riga);
+      bersagli.push(creaNemico({ archetipo: archetipoWire, x: p.x, y: p.y, id: 'nemico' }));
+    }
     for (const f of SCENA_WIRE.fantocci) {
       const p = cella(f.colonna, f.riga);
       bersagli.push(creaFantoccio({
@@ -238,10 +493,13 @@ async function avvia() {
       }));
     }
   }
-  if (notte) {
-    // la notte fa girare lei Ferruccio, combattimento, bersagli, proiettili e stanza (e ignora l'input in transizione)
-    ciclo.registra(notte, { stati: ['notte'] });
+  if (conPiano || conHub) {
+    // la notte fa girare lei Ferruccio, combattimento, bersagli, proiettili e stanza (e ignora l'input in transizione);
+    // nell'hub (storia 029) gira l'hub: solo Ferruccio, le presenze e l'ingresso
+    ciclo.registra({ tick: (dt) => notte?.tick(dt) }, { stati: ['notte'] });
+    if (hub) ciclo.registra({ tick: (dt) => hub.tick(dt) }, { stati: ['hub'] });
   } else {
+    economia.entraIn(STANZA_WIRE);
     ciclo.registra(ferruccio, { stati: ['notte'] });
     ciclo.registra(combattimento, { stati: ['notte'] });
     ciclo.registra({
@@ -252,13 +510,58 @@ async function avvia() {
     }, { stati: ['notte'] });
   }
 
+  // storia 025: raccolta passando sopra e tasto `interagisci` al banchetto, dopo la notte (stessi stati)
+  ciclo.registra({ tick: () => { economia.tick(); banchetto.tick(); piedistalli.tick(); ricordi.tick(); } }, { stati: ['notte'] });
+  // storia 027: nella stanza del banchetto, `interagisci` lontano dagli slot parla con Tonino; a porte chiuse niente
+  ciclo.registra({
+    tick: () => {
+      const st = notte?.stanza;
+      if (!st || st.tipo !== STANZA_BANCHETTO || !input.premuto('interagisci') || banchetto.vicino() >= 0) return;
+      incontri.interagisci(ANCORAGGIO_BANCHETTO, { porteChiuse: st.vivi() > 0 || !STATI_PORTE_APERTE.includes(st.stato) });
+    },
+  }, { stati: ['notte'] });
+  const interfaccia = creaInterfacciaEconomia({
+    documento: document, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia, economia, ferruccio,
+    maschereMax: () => modificatori.valore('ferruccio.maschere_max'), banchetto: () => banchetto,
+    nomeDono: (id) => modificatori.dono(id)?.nome ?? id, tastoInteragisci: () => parametri.get('input.tastiera.interagisci')[0],
+  });
+  const interfacciaDoni = creaInterfacciaDoni({
+    documento: document, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia, modificatori, eventi,
+    piedistalli: () => piedistalli, tCartiglioMs: () => parametri.get('doni').piedistallo.t_cartiglio.base,
+    tastoInteragisci: () => parametri.get('input.tastiera.interagisci')[0],
+  });
+  ciclo.registra({ tick: (dt) => interfacciaDoni.tick(dt) }, { stati: ['notte'] });
+  // storia 029: cartellino DOM dell'hub (notte, suggerimento), visibile solo con l'hub attivo
+  const interfacciaHub = creaInterfacciaHub({
+    documento: document, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia, hub: () => hub, ferruccio,
+    nomeDi: (id) => storia.personaggi?.[id]?.nome ?? id, tastoInteragisci: () => parametri.get('input.tastiera.interagisci')[0],
+  });
+  // storia 027: cartiglio dei dialoghi e tableau (DOM), vivi anche in `pausa` e nell'hub
+  const cartiglio = creaCartiglio({
+    documento: document, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia, input, incontri,
+    antirimbalzoMs: () => parametri.get('incontri.antirimbalzo'),
+  });
+  const tableau = creaTableau({
+    documento: document, contenitore: document.getElementById('interfaccia'), input, incontri, tMinMs: () => parametri.get('incontri.tableau.t_min'),
+  });
+  ciclo.registra({ tick: (dt) => { cartiglio.tick(dt); tableau.tick(dt); } }, { stati: ['notte', 'pausa', 'hub'] });
+  // storia 030: velo della sequenza di morte e pannello «Continua» (solo nell'hub, se c'è una notte salvata)
+  const interfacciaMorte = creaInterfacciaMorte({ documento: document, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia, risveglio: () => risveglio });
+  const interfacciaRipresa = creaInterfacciaRipresa({
+    documento: document, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia, notteSalvata,
+    visibile: () => Boolean(hub?.attivo) && ciclo.stato() === 'hub', suContinua: riprendiNotte, motivoLasciata: MOTIVI_CANCELLAZIONE.lasciata,
+  });
+  ciclo.registra({ disegna: () => { interfaccia.aggiorna(); interfacciaDoni.aggiorna(); cartiglio.aggiorna(); tableau.aggiorna(); interfacciaHub.aggiorna(); interfacciaMorte.aggiorna(); interfacciaRipresa.aggiorna(); } });
+
   if (wire) {
     ciclo.registra(creaResaDebug({
       canvas, campo, ferruccio, combattimento, bersagli: () => bersagli, proiettili: () => proiettili,
       token, scena: RISOLUZIONE, contaTick: ciclo.contaTick, notte: () => notte, camera,
+      economia: () => economia, banchetto: () => banchetto, piedistalli: () => piedistalli, ricordi: () => ricordi,
+      hub: () => hub, ciclo,
     }));
     ciclo.vaiA('hub');
-    ciclo.vaiA('notte');
+    if (!conHub) ciclo.vaiA('notte');
   } else {
     ciclo.registra(creaSegnaposto(canvas, { debug, contaTick: ciclo.contaTick }));
   }
@@ -266,7 +569,7 @@ async function avvia() {
   if (debug) {
     /** Superficie di debug (ADR-0003, storia 004). `imposta` e `vaiA` sono ganci per le storie
      *  dello stato narrativo e delle stanze: finché quei moduli non si registrano, rispondono false. */
-    const ganci = { imposta: null, vaiA: notte ? (id) => notte.vaiA(id) : null };
+    const ganci = { imposta: (flag, valore) => narrativa.imposta(flag, valore).ok, vaiA: (id) => (notte ? notte.vaiA(id) : false) };
     /** Sorgente sintetica della tastiera per un'azione (primo tasto della mappa). */
     const sorgente = (azione) => `t:${parametri.get(`input.tastiera.${azione}`)[0]}`;
     window.__gioco = Object.freeze({
@@ -289,8 +592,41 @@ async function avvia() {
       /** Storie 014-017: pianta del piano, stanza corrente, notte e camera (null senza `?piano=N`). */
       get piano() { return notte?.pianta ?? null; },
       get stanza() { return notte?.stanza ?? null; },
-      notte,
+      get notte() { return notte; },
       camera,
+      /** Storia 029: l'hub (`presenze`, `vicino`, `semeNotte`, `notte`, `entra`, `partito`) e lo stato del suo cartellino DOM. */
+      hub,
+      cartellinoHub: () => interfacciaHub.stato(),
+      /** Storia 030: il risveglio (`fase`, `progresso`, `stato()`), la notte salvata (`presente`, `carica`, `cancella`, `fotografa`),
+       *  il pannello «Continua» (`ripresa.continua()` / `lascia()` / `stato()`) e lo stato del velo di morte nel DOM. */
+      risveglio,
+      notteSalvata,
+      ripresa: { continua: () => interfacciaRipresa.continua(), lascia: () => interfacciaRipresa.lascia(), stato: () => interfacciaRipresa.stato() },
+      veloMorte: () => interfacciaMorte.stato(),
+      /** Storia 019: direttore degli attacchi e factory dei nemici (`creaNemico({archetipo, x, y, id})` aggiunge ai bersagli). */
+      direttore,
+      creaNemico: (o) => { const n = creaNemico(o); bersagli.push(n); return n; },
+      /** Storia 025: economia della notte (monete, oggetti a terra), banchetto del piano, profilo (scintille), salvataggio. */
+      economia,
+      banchetto,
+      profilo,
+      salvataggio,
+      /** Storia 024: pool dei doni, piedistalli della bottega, effetti dei ganci, stato del cartiglio e i flag
+       *  narrativi letti dal pool (oggetto scrivibile di debug, finché lo stato narrativo non è composto qui). */
+      pool,
+      piedistalli,
+      effettiDoni,
+      cartiglio: () => interfacciaDoni.cartiglio(),
+      flag: flagNotte,
+      /** Storie 026-027: stato narrativo, incontri, dialogo corrente, stato del cartiglio dei dialoghi e del tableau. */
+      narrativa,
+      incontri,
+      dialogo: () => incontri.dialogo(),
+      cartiglioScena: () => cartiglio.stato(),
+      tableau: () => tableau.stato(),
+      /** Storia 028: i ricordi (`cade`, `raccogli`, `inMano`, `aTerra`, `puoAprire`, `perdi`, `modello`, `stato`); il drop
+       *  si prova con `eventi.emit('boss.sconfitto', { id: 'gatto', x, y })`. */
+      ricordi,
       /** Tiene giù un'azione del contratto (es. 'destra') finché non si chiama `lascia`. */
       tieni: (azione) => input.sorgenteGiu(sorgente(azione)),
       lascia: (azione) => input.sorgenteSu(sorgente(azione)),
@@ -314,6 +650,15 @@ async function avvia() {
 
   ciclo.avvia();
   eventi.emit('gioco.avviato', { seme, debug });
+  // storia 029: nell'hub Ferruccio compare sull'arrivo e partono le scene automatiche del modello (notte 1)
+  if (hub) {
+    hub.entra();
+    // storia 030, strumento di QA: `&continua=1` preme «Continua» da solo se c'è una notte salvata
+    if (url.searchParams.get('continua') === '1' && notteSalvata.presente) interfacciaRipresa.continua();
+  }
+  // storia 027, strumento di QA: `?debug=1&wire=1&scena=<id>` fa partire subito quella scena
+  const scenaRichiesta = wire ? url.searchParams.get('scena') : null;
+  if (scenaRichiesta) incontri.mostra(scenaRichiesta);
 }
 
 avvia().catch((errore) => {

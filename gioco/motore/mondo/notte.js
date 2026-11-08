@@ -92,6 +92,8 @@ export function creaNotte({
     ferruccio.tick(dt);
     combattimento.tick(dt);
     for (const b of bersagli.slice()) b.tick(dt);
+    // storia 019: i nemici dissolti (anima salita) escono dalla lista
+    for (let i = bersagli.length - 1; i >= 0; i--) if (bersagli[i]?.dissolto) bersagli.splice(i, 1);
     for (const p of proiettili.slice()) p.tick(dt);
     stanza.tick(dt);
     stati.set(stanza.id, stanza.statoSalvabile());

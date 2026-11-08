@@ -40,5 +40,5 @@ La singola stanza (porte che si chiudono, ostacoli, pericoli in sagoma, ondate, 
 | 014 | Stanza da modello JSON: porte, ostacoli, ondate | Logic | Done | ADR-0003 |
 | 015 | Transizioni di stanza e camera | Integration | Done | ADR-0003 |
 | 016 | Generazione del piano 1 dal seme con vincoli e validatore | Logic | Done | ADR-0003 |
-| 017 | Quattordici modelli di stanza del piano 1 | Config/Data | Ready (2 criteri su 3: manca la vetrina) | ADR-0003 |
-| 018 | Pericoli ambientali e ricompense a stanza pulita | Logic | Ready | ADR-0003 |
+| 017 | Quattordici modelli di stanza del piano 1 | Config/Data | Done (3 criteri su 3: vetrina `qa/vetrina-stanze.html` e screenshot in scala di grigi) | ADR-0003 |
+| 018 | Pericoli ambientali e ricompense a stanza pulita | Logic | Done | ADR-0003 |

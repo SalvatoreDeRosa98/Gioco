@@ -1,0 +1,12 @@
+{
+  "_descrizione": "Manopole del GDD incontri-dialoghi.md (Tuning Knobs), storia 027. max_nuove_per_notte: scene nuove per NPC per notte e per luogo (hub/piano); max_caratteri_battuta: oltre, la battuta è spezzata in due cartigli dello stesso parlante (mai riscritta); tableau: durata = max(t_min, t_base + ms_per_carattere × caratteri della voce); antirimbalzo: ms minimi tra due avanzamenti del cartiglio; r_interazione: raggio in px entro cui un ancoraggio risponde a interagisci.",
+  "max_nuove_per_notte": { "base": 1, "min": 1, "max": 2 },
+  "max_caratteri_battuta": { "base": 120, "min": 90, "max": 140 },
+  "tableau": {
+    "t_min": { "base": 3000, "min": 2000, "max": 4000 },
+    "t_base": { "base": 1500, "min": 1000, "max": 2000 },
+    "ms_per_carattere": { "base": 60, "min": 0, "max": 120 }
+  },
+  "antirimbalzo": { "base": 160, "min": 100, "max": 250 },
+  "r_interazione": { "base": 56, "min": 40, "max": 80 }
+}

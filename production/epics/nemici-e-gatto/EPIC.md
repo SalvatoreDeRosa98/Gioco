@@ -37,7 +37,7 @@ L'IA a stati con il telegrafo in tre tempi (anticipo, lampo, colpo), la separazi
 
 | # | Story | Type | Status | ADR |
 |---|-------|------|--------|-----|
-| 019 | IA a stati, separazione, telegrafo in tre tempi, stordimento, anima | Logic | Ready | ADR-0002 |
-| 020 | Gatto d'ombra | Integration | Ready | ADR-0002 |
+| 019 | IA a stati, separazione, telegrafo in tre tempi, stordimento, anima | Logic | Done (`gioco/qa/nemici.test.mjs`, 19/19) | ADR-0002 |
+| 020 | Gatto d'ombra | Integration | Ready — logica e wire fatti (`gioco/qa/nemici.test.mjs`, 24/24; bot 100% parate, stanza media 6,6 s ma 3,8-12,2 per stanza); mancano sagoma vera + sign-off e screenshot | ADR-0002 |
 | 021 | Vespa dorata, statua animata, guardia del Velo | Integration | Ready | ADR-0002 |
 | 022 | Boss: il Gatto dei Quattro Canti | Integration | Ready | ADR-0002 |

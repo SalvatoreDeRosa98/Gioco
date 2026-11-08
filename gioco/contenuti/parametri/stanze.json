@@ -1,5 +1,5 @@
 {
-  "_descrizione": "Regole della singola stanza. Fonte: design/gdd/stanze-porte.md (Tuning Knobs, Formulas). Ogni voce è {base, min, max}: min/max sono il Safe Range del GDD (clamp del valore effettivo, ADR-0002). Tempi in ms, distanze in px. I valori per piano sono gruppi p1..p5 (il validatore non ammette liste). 'camera' è l'aggiunta della storia 015 (architettura §4b: transizione di 250 ms; 'margine_hud' è provvisorio, da confermare con l'ui-programmer). Nessun valore è stato provato in gioco: sono i punti di partenza del GDD.",
+  "_descrizione": "Regole della singola stanza. Fonte: design/gdd/stanze-porte.md (Tuning Knobs, Formulas). Ogni voce è {base, min, max}: min/max sono il Safe Range del GDD (clamp del valore effettivo, ADR-0002). Tempi in ms, distanze in px. I valori per piano sono gruppi p1..p5 (il validatore non ammette liste). 'camera' è l'aggiunta della storia 015 (architettura §4b: transizione di 250 ms; 'margine_hud' è provvisorio, da confermare con l'ui-programmer). Nessun valore è stato provato in gioco: sono i punti di partenza del GDD. 'r_dispersione_ricompensa' (storia 018) è il raggio di 48 px della regola 24 (gli oggetti della ricompensa cadono attorno al centro).",
 
   "t_chiusura_porte": { "base": 500, "min": 200, "max": 1000 },
   "t_anim_porta": { "base": 300, "min": 150, "max": 500 },
@@ -122,6 +122,7 @@
     "r_fiamma": { "base": 56, "min": 40, "max": 72 }
   },
   "danno_pericolo": { "base": 1, "min": 1, "max": 2 },
+  "r_dispersione_ricompensa": { "base": 48, "min": 24, "max": 96 },
   "max_oggetti_persistiti": { "base": 24, "min": 12, "max": 48 },
 
   "camera": {

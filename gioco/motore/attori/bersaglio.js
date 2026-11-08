@@ -278,3 +278,76 @@ export function creaProiettile({ x, y, dirX, dirY, velocita, r, danno, gittata, 
   };
   return facciata;
 }
+
+/**
+ * Scintilla dei ganci dei doni (storia 024; doni-modificatori.md regola 5, effetto `scintilla`):
+ * piccolo proiettile che ferisce i nemici vivi che tocca (`colpisci(danno, null)`, una volta per
+ * nemico), escluso `escludi` (il bersaglio da cui parte). Con `rimbalzi` > 0, dopo un colpo punta il
+ * nemico vivo non ancora colpito più vicino entro `raggioRimbalzo` e riparte (gittata da capo); senza
+ * rimbalzi o senza bersagli si spegne. Si spegne anche oltre la `gittata`.
+ * @param {{
+ *   x: number, y: number, dirX: number, dirY: number, velocita: number, r: number, danno: number, gittata: number,
+ *   rimbalzi?: number, raggioRimbalzo?: number,
+ *   bersagli: () => object[],  nemici vivi (filtrati da chi compone)
+ *   escludi?: object | null
+ * }} o
+ */
+export function creaScintilla({ x, y, dirX, dirY, velocita, r, danno, gittata, rimbalzi = 0, raggioRimbalzo = 0, bersagli, escludi = null }) {
+  const l = Math.hypot(dirX, dirY) || 1;
+  const p = { x, y, dx: dirX / l, dy: dirY / l, velocita, r, danno, gittata, rimbalzi, percorso: 0, vivo: true };
+  const colpiti = new Set();
+  if (escludi) colpiti.add(escludi);
+
+  /** Punta il nemico vivo non colpito più vicino entro `raggioRimbalzo`; falso se non c'è. */
+  function rimbalza() {
+    let scelto = null;
+    let dMin = Infinity;
+    for (const b of bersagli()) {
+      if (!b || colpiti.has(b) || b.stato === 'morto') continue;
+      const d = Math.hypot(b.x - p.x, b.y - p.y);
+      if (d <= raggioRimbalzo && d < dMin) { dMin = d; scelto = b; }
+    }
+    if (!scelto) return false;
+    const d = dMin || 1;
+    p.dx = (scelto.x - p.x) / d;
+    p.dy = (scelto.y - p.y) / d;
+    p.percorso = 0;
+    p.rimbalzi -= 1;
+    return true;
+  }
+
+  function tick(dt) {
+    if (!p.vivo) return;
+    const passo = p.velocita * dt;
+    p.x += p.dx * passo;
+    p.y += p.dy * passo;
+    p.percorso += passo;
+    if (p.percorso > p.gittata) {
+      p.vivo = false;
+      return;
+    }
+    for (const b of bersagli()) {
+      if (!b || colpiti.has(b) || b.stato === 'morto' || !cerchiSiToccano(p, b)) continue;
+      colpiti.add(b);
+      b.colpisci(p.danno, null);
+      if (!(p.rimbalzi > 0 && rimbalza())) p.vivo = false;
+      return;
+    }
+  }
+
+  return {
+    get x() { return p.x; },
+    get y() { return p.y; },
+    get r() { return p.r; },
+    get danno() { return p.danno; },
+    get velocita() { return p.velocita; },
+    get direzione() { return { x: p.dx, y: p.dy }; },
+    get rimbalzi() { return p.rimbalzi; },
+    get vivo() { return p.vivo; },
+    get riflesso() { return false; },
+    get stato() { return p.vivo ? 'in_volo' : 'spento'; },
+    scintilla: true,
+    colpiti: () => colpiti.size - (escludi ? 1 : 0),
+    tick,
+  };
+}
