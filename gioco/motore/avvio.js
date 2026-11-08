@@ -72,6 +72,7 @@ import { creaInput, collega as collegaInput } from './fondazione/input.js';
 import { creaRng, derivato } from './fondazione/rng.js';
 import { creaBus } from './fondazione/eventi.js';
 import { creaParametri, leggiOverrideUrl } from './fondazione/parametri.js';
+import { fondiDefault, leggiMetaAvvio } from './fondazione/avvio-url.js';
 import { creaModificatori } from './oggetti/modificatori.js';
 import { creaCampo } from './mondo/fisica.js';
 import { creaFerruccio } from './attori/ferruccio.js';
@@ -105,6 +106,8 @@ import { creaRisveglio } from './storia/risveglio.js';
 import { creaNotteSalvata, MOTIVI_CANCELLAZIONE } from './persistenza/notte-salvata.js';
 import { creaInterfacciaMorte } from './interfaccia/morte.js';
 import { creaInterfacciaRipresa } from './interfaccia/ripresa.js';
+import { creaInterfacciaProva } from './interfaccia/prova.js';
+import { creaTocco } from './interfaccia/tocco.js';
 
 /** Risoluzione logica della scena (ADR-0001). */
 const RISOLUZIONE = Object.freeze({ larghezza: 1280, altezza: 720 });
@@ -116,6 +119,8 @@ const FILE_TABELLE = ['input', 'doni', 'sinergie', 'consumabili', 'ricordi'];
 const FILE_MOTO_RIDOTTO = 'moto-ridotto';
 /** Testi dell'interfaccia (storia 025) e slot del profilo salvato (nome di slot, non valore di gioco). */
 const FILE_INTERFACCIA = 'contenuti/interfaccia.json';
+/** Foglio di stile dei controlli touch (storia P02): index.html non lo linka, lo aggiunge `avvia` solo se i controlli sono attivi. */
+const FOGLIO_TOCCO = 'stile/tocco.css';
 const SLOT_PROFILO = '1';
 /** Contenuti della storia (storie 026-027): nomi di file, non valori di gioco. */
 const FILE_STORIA = 'contenuti/storia.json';
@@ -221,6 +226,10 @@ function semeIniziale(query) {
 
 async function avvia() {
   const url = new URL(window.location.href);
+  // storia P02 (provvisoria): `<meta name="gioco-avvio" content="debug=1&wire=1&hub=1">` dà i DEFAULT della query
+  // (prova.html); l'URL vince sempre. `leggiOverrideUrl` deve vedere la query fusa.
+  const metaAvvio = leggiMetaAvvio(document);
+  if (metaAvvio !== null) url.search = fondiDefault(url.search, metaAvvio);
   const { debug, override } = leggiOverrideUrl(url.search);
   const motoRidotto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -562,6 +571,24 @@ async function avvia() {
     documento: document, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia, notteSalvata,
     visibile: () => Boolean(hub?.attivo) && ciclo.stato() === 'hub', suContinua: riprendiNotte, motivoLasciata: MOTIVI_CANCELLAZIONE.lasciata,
   });
+  // storia P02 (PROVVISORIA, build di prova): controlli touch (levetta a sinistra, quattro bottoni a destra) che alimentano
+  // l'input con una sonda composita (gamepad reale se connesso, altrimenti i tocchi): va creato DOPO `collegaInput`, che
+  // installa la propria sonda, e la sostituisce. Attivi su puntatore grosso, schermo touch o `?tocco=1`.
+  const toccoAttivo = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window || url.searchParams.get('tocco') === '1';
+  if (toccoAttivo && !document.querySelector(`link[href$="${FOGLIO_TOCCO}"]`)) {
+    const foglio = document.createElement('link');
+    foglio.rel = 'stylesheet';
+    foglio.href = FOGLIO_TOCCO;
+    document.head.append(foglio);
+  }
+  const tocco = creaTocco({
+    documento: document, contenitore: document.getElementById('interfaccia'), input, mappa: parametri.get('input.gamepad'),
+    parametri, testi: testiInterfaccia, attivo: toccoAttivo, navigatore: navigator,
+  });
+  // storia P02: pannello delle istruzioni iniziali, solo nella pagina con la meta `gioco-avvio` (prova.html)
+  const interfacciaProva = metaAvvio !== null
+    ? creaInterfacciaProva({ documento: document, finestra: window, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia })
+    : null;
   ciclo.registra({ disegna: () => { interfaccia.aggiorna(); interfacciaDoni.aggiorna(); cartiglio.aggiorna(); tableau.aggiorna(); interfacciaHub.aggiorna(); interfacciaMorte.aggiorna(); interfacciaRipresa.aggiorna(); } });
 
   if (wire) {
@@ -615,6 +642,9 @@ async function avvia() {
       notteSalvata,
       ripresa: { continua: () => interfacciaRipresa.continua(), lascia: () => interfacciaRipresa.lascia(), stato: () => interfacciaRipresa.stato() },
       veloMorte: () => interfacciaMorte.stato(),
+      /** Storia P02 (provvisoria): controlli touch (`attivo`, `levetta()`, `premuti()`, `sonda()`) e pannello delle istruzioni di prova. */
+      tocco: { attivo: tocco.attivo, levetta: () => tocco.levetta(), premuti: () => tocco.premuti(), sonda: () => tocco.sonda() },
+      pannelloProva: () => (interfacciaProva ? interfacciaProva.visibile() : null),
       /** Storia 019: direttore degli attacchi e factory dei nemici (`creaNemico({archetipo, x, y, id})` aggiunge ai bersagli). */
       direttore,
       creaNemico: (o) => { const n = creaNemico(o); bersagli.push(n); return n; },
