@@ -41,3 +41,4 @@ L'IA a stati con il telegrafo in tre tempi (anticipo, lampo, colpo), la separazi
 | 020 | Gatto d'ombra | Integration | Ready — logica e wire fatti (`gioco/qa/nemici.test.mjs`, 24/24; bot 100% parate, stanza media 6,6 s ma 3,8-12,2 per stanza); mancano sagoma vera + sign-off e screenshot | ADR-0002 |
 | 021 | Vespa dorata, statua animata, guardia del Velo | Integration | Ready | ADR-0002 |
 | 022 | Boss: il Gatto dei Quattro Canti | Integration | Ready | ADR-0002 |
+| P01 | Boss provvisorio e uscita del piano — provvisoria per la build di prova; la 022 la sostituisce | Integration | Done (`gioco/qa/boss-provvisorio.test.mjs` 5/5, `gioco/qa/boss.wire.test.js` 1/1, `production/qa/evidence/boss-provvisorio.png`) | ADR-0002, ADR-0006 |
