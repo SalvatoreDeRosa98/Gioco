@@ -100,6 +100,12 @@ node gioco/qa/feel.wire.test.js           # Playwright della storia P08: ?debug=
                                           # alpha < 1 misurato sul pixel più chiaro della sagoma e corpo arretrato; fendente su un nemico vero →
                                           # tick fermi per hit_stop_ms mentre contaFrame() avanza; nemico morto → macchia e pixel scuri che
                                           # restano, azzerati al cambio di stanza; screenshot feel-iframes.png e feel-macchie.png
+node gioco/qa/fili.test.mjs               # storia P11 (fili del Velo): resa.json › fili nella richiesta dell'autore (1 px, oro al 25-35 %,
+                                          # spalle a ~3/4 dell'altezza), resa/fili.js: due punti d'attacco simmetrici, due curve quadratiche
+                                          # che pendono, senza tratteggio né alone, spessore/alpha/colore dai parametri (ctx finto)
+node gioco/qa/fili.wire.test.js           # Playwright della storia P11: hub (?debug=1&hub=1&piano=0) e piano 1 con un nemico (&nemico=gatto):
+                                          # __gioco.resa.fili() conta fili = 2 × marionette (Tonino, nemici; mai Ferruccio), spessore 1,
+                                          # alpha nel 25-35 %; salva fili-hub.png e fili-marionette.png
 node gioco/qa/combattimento.wire.test.js  # Playwright: ?debug=1&wire=1, cammina/colpisce/scatta/para,
                                           # salva production/qa/evidence/combattimento-wire.png
 node gioco/qa/mondo.test.mjs              # unitari delle storie 014-018: porte, spawn (200 semi), colonna/panca,
@@ -308,8 +314,6 @@ gioco/
 │   │   │                       {personaggio, slot}; non conosce il ciclo, avvio.js applica la scelta
 │   │   ├── audio.js            storia P10: interruttore DOM del muto «Audio: acceso/spento (M)» (testi `interfaccia.json › audio`), visibile nel menu
 │   │   └── oggetti.js          storie P04/P09: HUD dell'attivo con le tacche, modale di sostituzione dei cinque slot, pannello del Patto (stile/oggetti.css)
-│   │   └── menu.js             storia P04: menu DOM di selezione del personaggio e dello slot (Teatro ~4042): `apri()` → Promise
-│   │                           {personaggio, slot}; non conosce il ciclo, avvio.js applica la scelta
 │   ├── mondo/
 │   │   ├── fisica.js           campo a griglia con mura/ostacoli, cerchio contro rettangoli con
 │   │   │                       scivolamento, settore e rettangolo spazzato contro cerchi, linea di
@@ -360,6 +364,10 @@ gioco/
 │   │   │                       nemico, cancellato dal fendente attivo, si spegne su solidi e a fine gittata), cancellaInRaggio
 │   │   │                       (Tamburello), potaSpenti (lista condivisa)
 │   └── resa/
+│       ├── renderer.js         renderer pixel-art del Teatro (Mani, palco, hub, HUD); `fili()` espone i fili dell'ultimo frame alla QA
+│       ├── pixel-sprites.js    sprite provvisori in griglia di pixel
+│       ├── feel.js             storia P08: lampeggio, scossa contestuale, macchie
+│       ├── fili.js             storia P11: i due fili d'oro di ogni marionetta del Velo (uno per Mano, spalle, curva, 1 px) da resa.fili
 │       └── debug.js            disegno diagnostico in fil di ferro, solo con ?debug=1&wire=1
 ├── contenuti/parametri/
 │   ├── ferruccio.json          statistiche del corpo (GDD controllo-ferruccio.md)
@@ -391,7 +399,7 @@ gioco/
 │   │                           (passo, passo_nemico, sibilo, tonfo, campana, colpo_a_segno, colpo_subito, moneta, porta_chiusa, attivo) frequenze,
 │   │                           durate, inviluppi, filtri, volume e gap_min_ms, tutti {base,min,max}
 │   ├── resa.json               game feel della resa (storia P08): alpha e semiperiodo del lampeggio, scosse per contesto (px, frame), macchie
-│   └── moto-ridotto.json       sovrascritture applicate con prefers-reduced-motion (anche resa.scossa.*_px → 0)
+│   └── moto-ridotto.json       sovrascritture applicate con prefers-reduced-motion (anche resa.scossa.*_px → 0); `fili` (storia P11): alpha, spessore, ancoraggio_y, scarto_x, curva_px
 ├── contenuti/interfaccia.json  testi di HUD, banchetto, doni, cartiglio, hub e menu (unico posto con le stringhe mostrate; storie 024-025, 027 `incontri`, 029 `hub`, P04 `menu`)
 ├── contenuti/storia.json       la storia in forma macchina (copia di trama/storia.json; storia 026)
 ├── contenuti/narrativa.json    regole dello stato narrativo che storia.json non ha (derivati, finale → mondo, tipi obbligatori e senza attesa)
@@ -430,6 +438,8 @@ gioco/
     ├── audio.wire.test.js           test Playwright della storia P10 (AudioContext monkey-patchato: contesto dopo un gesto, nodi per evento, M, screenshot)
     ├── feel.test.mjs                game feel della storia P08 (node:test)
     ├── feel.wire.test.js            Playwright della storia P08 (i-frames, hit-stop, macchie; screenshot feel-*.png)
+    ├── fili.test.mjs                storia P11 (node:test): resa.fili e resa/fili.js su un contesto finto
+    ├── fili.wire.test.js            Playwright della storia P11 (fili = 2 × marionette nell'hub e nel piano 1; fili-hub.png, fili-marionette.png)
     └── combattimento.wire.test.js   test Playwright del modo wire
 ```
 
@@ -465,6 +475,18 @@ gioco/
 - **Macchie permanenti**: a `nemico.morto` resta a terra una chiazza d'inchiostro di china (schegge di legno per `statua`, `guardia`,
   `bomba`), seminata con `derivato(rng, 'fx')`, per stanza (azzerata a `notte.stanza`); `__gioco.feel.macchie()` la espone. Il disegno
   sta in `resa/feel.js › disegnaMacchie`, chiamato dal renderer dopo gli schizzi dei colpi.
+
+## Fili del Velo (storia P11, regola dell'autore 2026-11-09)
+
+Ogni marionetta mossa dal Velo — tutti i nemici, i boss dei piani, gli NPC dell'hub — ha **sempre due fili d'oro**: uno che
+scende dalla Mano sinistra e uno dalla Mano destra delle Grandi Mani (in alto a sinistra e a destra del proscenio; nella
+stanza di Donna Luciana le Mani scese nel palco), attaccati alle due spalle (quota `resa.fili.ancoraggio_y` dell'altezza del
+corpo dai piedi, scostate di `resa.fili.scarto_x` della mezza larghezza). Mai su Ferruccio e i personaggi giocabili, che hanno
+spezzato i fili; Donna Luciana è la Marionettista e non pende. Il filo è una linea di `resa.fili.spessore` px (1), oro al
+`resa.fili.alpha` (0,30), curva quadratica che pende di `resa.fili.curva_px`: niente alone, niente tratteggio, niente moncone
+sul nemico. `resa/fili.js` calcola e disegna; il renderer raccoglie i corpi (`disegnaFiliMarionette`), porta le dita delle Mani
+dal proscenio al palco (inverso di scossa + camera) e li tira prima di disegnare Ferruccio. `__gioco.resa.fili()` espone
+`{marionette, fili, alpha, spessore, ancoraggio_y, scarto_x, curva_px}` dell'ultimo frame alla QA.
 
 ## Valori provvisori da confermare con il game-designer
 

@@ -4,8 +4,9 @@
  * Implementa:
  *  - Tavola approvata Variante C (quinte drappeggiate aperte, fondale di Piazza Dante e Reggia di Caserta,
  *    luna crema, fili d'oro del Velo, pavimento in basolato retroilluminato con pozze di lanterna);
- *  - Sopra a tutto: le Grandi Mani di Marionetta con bilancini in legno e fili d'oro tesi verso i
- *    personaggi e i nemici nella stanza;
+ *  - Sopra a tutto: le Grandi Mani di Marionetta con bilancini in legno; ogni marionetta del Velo (nemici, boss,
+ *    NPC; mai Ferruccio e i giocabili) pende da DUE fili d'oro sottili, uno dalla Mano sinistra e uno dalla destra,
+ *    attaccati alle spalle (`resa/fili.js`, numeri in `resa.json › fili`: 1 px, oro al 30 %, curva);
  *  - Nella stanza Boss: le Mani scendono nel palco e diventano Donna Luciana (la Marionettista del Velo);
  *  - Disegni rifiniti per Ferruccio (burattino articolato in crema con coppolone, maschera col becco,
  *    sciarpa rossa a due code, stocco), Gatto d'ombra, Vespa, Statua, Guardia, NPC dell'Hub (Tonino col
@@ -24,6 +25,7 @@ import {
   SPRITE_NEMICI,
   SPRITE_BOSS,
 } from './pixel-sprites.js';
+import { creaFili } from './fili.js'; // fili d'oro del Velo: due per marionetta (regola dell'autore 2026-11-09)
 
 const TAU = Math.PI * 2;
 
@@ -44,6 +46,7 @@ export function creaRenderer({
   hub = null, ciclo = null, eventi = null, motoRidotto = false, foglioGiocatore = () => null,
   feel = null, // --- squadra feel (P08): scossa contestuale, macchie a terra, lampeggio ---
   squadraOggetti = null, // --- squadra oggetti (storie P04/P09): getter di segreta, gratis, patto ---
+  parametri = null, // resa.fili.* (alpha, spessore, ancoraggio delle spalle, curva): senza parametri niente fili
 }) {
   const ctx = canvas.getContext('2d');
   const W = scena.larghezza;
@@ -56,6 +59,10 @@ export function creaRenderer({
     oroDim: '#b88b32', rosso: '#c8301b', rossoDeep: '#8f1d14',
     azzurro: '#7fd3ff', legno: '#241207',
   };
+  /** Disegnatore dei fili d'oro (resa/fili.js): ogni marionetta del Velo ne ha due, uno per Mano. */
+  const fili = parametri ? creaFili({ parametri, colore: P.oro }) : null;
+  /** Conteggio dell'ultimo frame (lettura di QA): marionette con i fili e fili disegnati (= 2 × marionette). */
+  let ultimiFili = { marionette: 0, fili: 0 };
 
   // Stato visivo per il feedback dei colpi alla Isaac (flash, schizzi, onde d'urto, scossa)
   const schizziStanza = [];
@@ -202,42 +209,49 @@ export function creaRenderer({
     ctx.restore();
   }
 
-  function disegnaManoMarionettista(cx, cy, lato, scala, tAnim, bersagliFili) {
-    const swayX = Math.sin(tAnim * 1.5 + lato) * 7;
-    const swayY = Math.cos(tAnim * 1.9 + lato * 0.5) * 3.5;
-    const mx = cx + swayX;
-    const my = cy + swayY;
+  /** Posizione oscillante di una Mano e i suoi quattro punti d'attacco dei fili (dita), nelle coordinate di chi la disegna. */
+  function attacchiMano(cx, cy, lato, scala, tAnim) {
+    const mx = cx + Math.sin(tAnim * 1.5 + lato) * 7;
+    const my = cy + Math.cos(tAnim * 1.9 + lato * 0.5) * 3.5;
+    const attacchi = [
+      [mx - 42 * scala * lato, my + 24 * scala],
+      [mx - 12 * scala * lato, my + 26 * scala],
+      [mx + 14 * scala * lato, my + 26 * scala],
+      [mx + 42 * scala * lato, my + 24 * scala],
+    ];
+    return { mx, my, attacchi };
+  }
 
-    ctx.save();
-    if (bersagliFili && bersagliFili.length) {
-      const attacchi = [
-        [mx - 42 * scala * lato, my + 24 * scala],
-        [mx - 12 * scala * lato, my + 26 * scala],
-        [mx + 14 * scala * lato, my + 26 * scala],
-        [mx + 42 * scala * lato, my + 24 * scala],
-      ];
-      for (let i = 0; i < bersagliFili.length; i++) {
-        const [tx, ty] = bersagliFili[i];
-        const [ax, ay] = attacchi[i % attacchi.length];
-        ctx.strokeStyle = 'rgba(247,200,68,0.85)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(Math.round(ax), Math.round(ay));
-        ctx.lineTo(Math.round(tx), Math.round(ty));
-        ctx.stroke();
-      }
-    }
-    ctx.restore();
-
+  /** Disegna una Grande Mano (senza fili: i fili li disegna `disegnaFiliMarionette`, due per marionetta). */
+  function disegnaManoMarionettista(cx, cy, lato, scala, tAnim) {
+    const { mx, my } = attacchiMano(cx, cy, lato, scala, tAnim);
     const frameIdx = Math.floor(contaTick() / 16) % SPRITE_MANO_MARIONETTA.length;
     disegnaGrigliaPixel(ctx, SPRITE_MANO_MARIONETTA[frameIdx], mx, my, Math.max(3, Math.round(4 * scala)), lato < 0, false);
   }
 
-  function disegnaDonnaLucianaBoss(cx, cy, tAnim, bersagliFili) {
+  /**
+   * I due fili di ogni marionetta: dalla Mano sinistra alla spalla sinistra, dalla Mano destra alla spalla destra
+   * (regola dell'autore 2026-11-09). `maniSx`/`maniDx` sono i punti d'attacco delle due Mani nelle stesse coordinate
+   * dei corpi; la marionetta i-esima pende dal dito i % 4. Mai su Ferruccio. Aggiorna `ultimiFili`.
+   */
+  function disegnaFiliMarionette(corpi, maniSx, maniDx) {
+    let n = 0;
+    if (fili && maniSx.length && maniDx.length) {
+      corpi.forEach((corpo, i) => {
+        n += fili.disegnaMarionetta(ctx, { sinistra: maniSx[i % maniSx.length], destra: maniDx[i % maniDx.length] }, corpo);
+      });
+    }
+    ultimiFili = { marionette: corpi.length, fili: n };
+  }
+
+  function disegnaDonnaLucianaBoss(cx, cy, tAnim, corpi) {
     const floatY = Math.sin(tAnim * 2.2) * 4;
     disegnaGrigliaPixel(ctx, SPRITE_BOSS['donna-luciana'], cx, cy - 32 + floatY, 4.5, false, false);
-    disegnaManoMarionettista(cx - 135, cy - 75, 1, 0.88, tAnim, bersagliFili.slice(0, 2));
-    disegnaManoMarionettista(cx + 135, cy - 75, -1, 0.88, tAnim, bersagliFili.slice(2, 4));
+    const sx = attacchiMano(cx - 135, cy - 75, 1, 0.88, tAnim).attacchi;
+    const dx = attacchiMano(cx + 135, cy - 75, -1, 0.88, tAnim).attacchi;
+    disegnaFiliMarionette(corpi, sx, dx);
+    disegnaManoMarionettista(cx - 135, cy - 75, 1, 0.88, tAnim);
+    disegnaManoMarionettista(cx + 135, cy - 75, -1, 0.88, tAnim);
   }
 
   function disegnaCampoEMura(tAnim) {
@@ -345,7 +359,7 @@ export function creaRenderer({
   function disegnaHubScena(tAnim) {
     const h = hub?.();
     if (!h || !h.attivo) return [];
-    const puntiFili = [];
+    const corpi = []; // marionette dell'hub (NPC) per i due fili delle Mani
     const vicino = h.vicino();
 
     for (const p of h.presenze()) {
@@ -368,7 +382,7 @@ export function creaRenderer({
         ctx.fillRect(p.x - 22, p.y - 26, 44, 52);
         ctx.strokeRect(p.x - 22, p.y - 26, 44, 52);
       } else if (p.tipo === 'npc') {
-        puntiFili.push([p.x, p.y - 42]);
+        corpi.push({ x: p.x, piedi: p.y + 6, altezza: 49, mezzaLarghezza: 14 }); // sagoma: piedi a y+6, testa a y-43
         ellisseAppoggio(p.x, p.y + 10, 22, 8, 0.5);
         // Alone d'oro attorno all'NPC
         const ag = ctx.createRadialGradient(p.x, p.y - 12, 2, p.x, p.y - 12, 42);
@@ -426,7 +440,7 @@ export function creaRenderer({
       ctx.textAlign = 'center';
       ctx.fillText(`PIANO ${h.piano} →`, i.x - 28, i.y + i.h / 2 + 4);
     }
-    return puntiFili;
+    return corpi;
   }
 
   /** Fotogramma del foglio di gioco per lo stato del corpo: posa e indice (animazione a cadenza fissa di resa). */
@@ -733,13 +747,7 @@ export function creaRenderer({
     }
     ctx.globalAlpha = morto && typeof b.dissoluzione === 'number' ? Math.max(0.15, 1 - b.dissoluzione) : 1;
 
-    // Filo d'oro di controllo
-    ctx.strokeStyle = 'rgba(247,200,68,0.75)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(b.x, b.y - b.r);
-    ctx.lineTo(b.x, b.y - b.r - 45);
-    ctx.stroke();
+    // I fili non si disegnano qui: `disegnaFiliMarionette` ne tira due per marionetta dalle Mani (sinistra e destra).
 
     const frame = Math.floor(contaTick() / 8) % 2;
     if (b.boss && b.bossId && SPRITE_BOSS[b.bossId]) {
@@ -1197,6 +1205,8 @@ export function creaRenderer({
   return {
     /** Alpha della sagoma di Ferruccio nell'ultimo frame disegnato (squadra feel, lettura di QA). */
     ultimoAlphaSagoma: () => ultimoAlphaSagoma,
+    /** Fili dell'ultimo frame (QA): {marionette, fili} più i valori di resa.fili in uso. */
+    fili: () => ({ ...ultimiFili, ...(fili ? fili.valori() : {}) }),
     disegna() {
       const tAnim = contaTick() / 60;
       if (scossa > 0.1) scossa *= 0.82;
@@ -1218,19 +1228,20 @@ export function creaRenderer({
       if (camera) camera.applica(ctx);
 
       disegnaCampoEMura(tAnim);
-      const filiHub = disegnaHubScena(tAnim);
+      const corpiHub = disegnaHubScena(tAnim);
       disegnaOggettiEInteragibili();
       disegnaSquadraOggetti(); // --- squadra oggetti (storie P04/P09) ---
       disegnaOndeUrto();
 
-      // Raccogliamo i punti dei nemici vivi per collegarvi i fili delle Mani di Marionetta
+      // Raccogliamo i corpi delle marionette vive (nemici e boss; Donna Luciana è la Marionettista, non pende)
+      // per tirarvi i DUE fili delle Mani: ancora ai piedi, altezza ≈ 2r, spalle a ±r.
       const listaBersagli = bersagli() || [];
-      const filiNemici = [];
+      const corpi = [...corpiHub];
       let bossPresente = null;
       for (const b of listaBersagli) {
         if (!b) continue;
         if (b.boss && b.stato !== 'morto') bossPresente = b;
-        if (b.stato !== 'morto') filiNemici.push([b.x, b.y - b.r]);
+        if (b.stato !== 'morto' && b.bossId !== 'donna-luciana') corpi.push({ x: b.x, piedi: b.y + b.r, altezza: b.r * 2, mezzaLarghezza: b.r });
         disegnaBersaglioMarionetta(b, tAnim);
       }
 
@@ -1260,19 +1271,27 @@ export function creaRenderer({
       if (inBossFinale) {
         const bx = bossPresente ? bossPresente.x : campo.x + campo.larghezza * 0.5;
         const by = bossPresente ? bossPresente.y - 10 : campo.y + campo.altezza * 0.42;
-        disegnaDonnaLucianaBoss(bx, by, tAnim, filiNemici);
+        disegnaDonnaLucianaBoss(bx, by, tAnim, corpi);
+      } else {
+        // Le Mani in alto stanno nel proscenio (coordinate dello schermo): le loro dita vanno portate nelle
+        // coordinate del palco (inverso di translate(sx, sy) + camera.applica) per tirare i fili fino ai corpi.
+        const versoPalco = ([px, py]) => {
+          if (!camera) return [px - sx, py - sy];
+          const cx = W / 2, cy = H / 2, k = camera.scala || 1, sc = camera.scorrimento();
+          return [cx + (px - sx - cx - sc.x) / k, cy + (py - sy - cy - sc.y) / k];
+        };
+        const ditaSx = attacchiMano(410, 44, 1, 0.85, tAnim).attacchi.map(versoPalco);
+        const ditaDx = attacchiMano(870, 44, -1, 0.85, tAnim).attacchi.map(versoPalco);
+        disegnaFiliMarionette(corpi, ditaSx, ditaDx);
       }
       ctx.restore();
 
       // Sopra a tutto (nelle stanze normali, Fucina, Stanza Oggetto e nei Boss dei Piani 1-3):
-      // le Grandi Mani di Marionetta incombono in alto sul proscenio tirando i fili d'oro
-      // SOLO verso i nemici e gli NPC (mai verso Ferruccio!).
+      // le Grandi Mani di Marionetta incombono in alto sul proscenio; i loro fili (due per marionetta, mai verso
+      // Ferruccio) sono già stati tirati nel palco da `disegnaFiliMarionette`.
       if (!inBossFinale) {
-        const tuttiFili = filiNemici.length ? filiNemici : filiHub;
-        const filiSx = tuttiFili.filter((p) => p[0] <= W * 0.5);
-        const filiDx = tuttiFili.filter((p) => p[0] > W * 0.5);
-        disegnaManoMarionettista(410, 44, 1, 0.85, tAnim, filiSx.slice(0, 4));
-        disegnaManoMarionettista(870, 44, -1, 0.85, tAnim, filiDx.slice(0, 4));
+        disegnaManoMarionettista(410, 44, 1, 0.85, tAnim);
+        disegnaManoMarionettista(870, 44, -1, 0.85, tAnim);
       }
 
       disegnaProscenioEMinimappa();

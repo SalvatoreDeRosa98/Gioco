@@ -811,8 +811,12 @@ async function avvia() {
     foglioGiocatore: () => foglioGiocatoreCorrente(),
     feel, // squadra feel (P08)
     squadraOggetti, // --- squadra oggetti (storie P04/P09): crepa, gratis, altare, raggio ---
+    parametri, // resa.fili.*: i due fili d'oro di ogni marionetta del Velo
   });
   ciclo.registra(resa);
+  // Cucitura fra squadre: la Bomba Ferma (nemici) emette `nemico.esplosione`; feel (scossa) e audio (tonfo) ascoltano
+  // `bomba.esplosione`: lo stesso evento con lo stesso payload {x, y, rGiocatore, rNemici}.
+  eventi.on('nemico.esplosione', (p) => eventi.emit('bomba.esplosione', p));
   // --- squadra audio: inizio --- storia P10: audio dinamico minimale (Web Audio API, nessun file). Lo stato di gioco non sa
   // nulla dell'audio: `eventi-audio.js` ascolta il bus e chiama il sintetizzatore; `attori/passi.js` emette `attore.passo`
   // dalla distanza percorsa (Ferruccio e bersagli). Il contesto nasce al primo gesto (tasto/puntatore); `muto` (M) in ogni stato;
