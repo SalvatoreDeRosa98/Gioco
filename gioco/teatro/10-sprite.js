@@ -854,19 +854,39 @@ function disegnaManoMarionettaPittorica() {
 }
 
 // ===========================================================================
-// SPRITE DEL GATTO GRANDE (MODEL SHEET APPROVATO)
+// SISTEMA SPRITE TEATRALI 2D (MODEL SHEET APPROVATI)
 // ===========================================================================
-const SPRITE_GATTO_IMG = {};
-function getGattoImage(posa) {
-  if (!SPRITE_GATTO_IMG[posa]) {
+const SPRITE_TEATRO_CACHE = {};
+function getSpriteTeatro(nome) {
+  if (!SPRITE_TEATRO_CACHE[nome]) {
     const im = new Image();
-    const uri = (window.__risorseTeatro && window.__risorseTeatro[`assets/sprite_teatro/gatto_${posa}.png`])
-      || `assets/sprite_teatro/gatto_${posa}.png`;
+    const uri = (window.__risorseTeatro && window.__risorseTeatro[`assets/sprite_teatro/${nome}.png`])
+      || `assets/sprite_teatro/${nome}.png`;
     im.src = uri;
-    SPRITE_GATTO_IMG[posa] = im;
+    SPRITE_TEATRO_CACHE[nome] = im;
   }
-  const img = SPRITE_GATTO_IMG[posa];
+  const img = SPRITE_TEATRO_CACHE[nome];
   return (img && img.complete && img.naturalWidth > 0) ? img : null;
+}
+
+function getGattoImage(posa) {
+  return getSpriteTeatro(`gatto_${posa}`);
+}
+
+function disegnaMobSprite(ctx, nome, x, y, scaleH, flip = 1, flash = false) {
+  const img = getSpriteTeatro(nome);
+  if (!img) return false;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(flip, 1);
+  const targetH = scaleH;
+  const targetW = targetH * (img.naturalWidth / img.naturalHeight);
+  const drawX = -targetW / 2;
+  const drawY = -targetH;
+  if (flash) ctx.filter = 'brightness(3) contrast(1.5)';
+  ctx.drawImage(img, drawX, drawY, targetW, targetH);
+  ctx.restore();
+  return true;
 }
 
 function disegnaGattoSprite(ctx, posa, x, y, scaleH, flip, flash, isBoss = false) {
@@ -971,6 +991,11 @@ function disegnaNemicoPittorico() {
   // 1. VESPA CIECA / VESPA D'OMBRA (Isaac Attack Fly / Pooter)
   // =========================================================================
   if (tipo === 'vespa_cieca' || tipo === 'vespa') {
+    const hoverY = Math.sin(tick * 0.16) * 3.5 - 6;
+    if (disegnaMobSprite(ctx, 'vespa_cieca', 0, hoverY, 26, flip, isFlash)) {
+      ctx.restore();
+      return;
+    }
     const wingWave = Math.sin(tick * 0.95) * 5.5;
     ctx.scale(flip, 1);
 
@@ -1044,6 +1069,12 @@ function disegnaNemicoPittorico() {
   // =========================================================================
   } else if (tipo === 'bomba_ferma') {
     const isPrimed = state === 'primed';
+    const sprBomba = isPrimed ? 'bomba_ferma_accesa' : 'bomba_ferma_ferma';
+    const targetH = isPrimed ? 32 : 28;
+    if (disegnaMobSprite(ctx, sprBomba, 0, 4, targetH, flip, isFlash)) {
+      ctx.restore();
+      return;
+    }
     const pulse = 1 + Math.sin(tick * (isPrimed ? 0.75 : 0.22)) * (isPrimed ? 0.22 : 0.08);
     ctx.scale(pulse, 1 / (0.6 + pulse * 0.4));
 
@@ -1309,6 +1340,11 @@ function disegnaNemicoPittorico() {
   // 4. MASCHERA D'OSSO / PULCINELLA D'ASSALTO (Isaac Host)
   // =========================================================================
   } else if (tipo === 'maschera') {
+    const sprMask = maskOpen ? 'maschera_aperta' : 'maschera_chiusa';
+    if (disegnaMobSprite(ctx, sprMask, 0, 4, 32, flip, isFlash)) {
+      ctx.restore();
+      return;
+    }
     const openY = maskOpen ? -7 : 0;
 
     // Bavero / collare di velluto scarlatto e oro
@@ -1378,6 +1414,10 @@ function disegnaNemicoPittorico() {
   // 5. STATUA SENTINELLA / CHERUBINO DI MARMO (Isaac Grimace)
   // =========================================================================
   } else if (tipo === 'statua') {
+    if (disegnaMobSprite(ctx, 'statua', 0, 5, 36, flip, isFlash)) {
+      ctx.restore();
+      return;
+    }
     const isCharging = (n.shootCd || 0) < 22;
 
     // Piedistallo barocco a gradoni in pietra e marmo di Caserta
@@ -1440,6 +1480,12 @@ function disegnaNemicoPittorico() {
   // 6. GUARDIA D'ACCIAIO / PREDONE DEI BORBONI (Isaac Knight / Greed Mob)
   // =========================================================================
   } else {
+    const isMoving = Math.abs(n.vx || 0) > 0.1 || Math.abs(n.vy || 0) > 0.1;
+    const sprGuardia = tipo === 'predone' ? 'predone' : isMoving ? 'guardia_carica' : 'guardia_ferma';
+    if (disegnaMobSprite(ctx, sprGuardia, 0, 4, 38, flip, isFlash)) {
+      ctx.restore();
+      return;
+    }
     ctx.scale(flip, 1);
 
     // Gambette articolate e stivali borbonici
@@ -1546,6 +1592,12 @@ function disegnaBossPittorico() {
     ctx.translate(0, floatY);
 
     // --- A: inizio --- tolti i tre fili propri: restano i due di disegnaFiliMarionetta --- A: fine ---
+    const isCasting = (b.castTimer > 0) || (b.state === 'cast') || (b.fase === 2);
+    const sprLuciana = isCasting ? 'donna_luciana_evoca' : 'donna_luciana_ferma';
+    if (disegnaMobSprite(ctx, sprLuciana, 0, 10, 68, flip, isFlash)) {
+      ctx.restore();
+      return;
+    }
 
     // Ampia gonna a crinolina barocca nera e scarlatta con trame dorate
     const dg = ctx.createLinearGradient(0, -28, 0, 10);
@@ -1690,6 +1742,13 @@ function disegnaBossPittorico() {
   // BOSS 3: LA REGINA DELLE VESPE (Isaac Duke of Flies)
   // =========================================================================
   } else if (bossId === 'regina-vespa') {
+    const isLunge = (b.state === 'lunge') || (b.chargeTimer > 0) || Math.hypot(b.vx || 0, b.vy || 0) > 1.8;
+    const sprRegina = isLunge ? 'regina_vespa_attacco' : (Math.sin(tick * 0.2) > 0.3 ? 'regina_vespa_volo' : 'regina_vespa_ferma');
+    const hoverY = Math.sin(tick * 0.12) * 5 - 4;
+    if (disegnaMobSprite(ctx, sprRegina, 0, hoverY, 60, 1, isFlash)) {
+      ctx.restore();
+      return;
+    }
     const wy = Math.sin(tick * 0.6) * 6;
 
     // 4 Ali gigantesche di pizzo e garza diafana
@@ -1731,6 +1790,12 @@ function disegnaBossPittorico() {
   // BOSS 4: IL COLOSSO DI CASERTA (Isaac Gurdy)
   // =========================================================================
   } else if (bossId === 'colosso-statua') {
+    const isOpen = b.apertoCM || b.state === 'open' || (b.timerSparo && b.timerSparo < 30);
+    const sprColosso = isOpen ? 'colosso_statua_aperto' : 'colosso_statua_fermo';
+    if (disegnaMobSprite(ctx, sprColosso, 0, 10, 68, 1, isFlash)) {
+      ctx.restore();
+      return;
+    }
     // Busto titanico di pietra e marmo emergente dalla pedana
     const colG = ctx.createLinearGradient(-24, -38, 24, 6);
     colG.addColorStop(0, isFlash ? '#ffffff' : '#94a3b8');
@@ -1767,9 +1832,48 @@ function disegnaBossPittorico() {
     ctx.fill();
 
   // =========================================================================
+  // BOSS 6: LO SPEZZAFILI D'OTTONE (Isaac Peep)
+  // =========================================================================
+  } else if (bossId === 'maestro-fucina') {
+    const isAttack = (b.scissorTimer > 0) || (b.state === 'attack') || Math.hypot(b.vx || 0, b.vy || 0) > 1.2;
+    const sprFucina = isAttack ? 'maestro_fucina_attacco' : 'maestro_fucina_fermo';
+    if (disegnaMobSprite(ctx, sprFucina, 0, 8, 64, 1, isFlash)) {
+      ctx.restore();
+      return;
+    }
+    // Procedurale per Lo Spezzafili
+    const ironG = ctx.createLinearGradient(-18, -28, 18, 4);
+    ironG.addColorStop(0, isFlash ? '#ffffff' : '#d97706');
+    ironG.addColorStop(0.5, isFlash ? '#fef08a' : '#b45309');
+    ironG.addColorStop(1, '#451a03');
+    ctx.fillStyle = ironG;
+    ctx.strokeStyle = '#f9cb40';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.roundRect(-18, -28, 36, 32, 8);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(-8, -20, 24, 7);
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(6, -16.5, 3.2, 0, TAU);
+    ctx.arc(13, -16.5, 3.2, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = 3.6;
+    ctx.beginPath();
+    ctx.moveTo(8, -8); ctx.lineTo(32, -8); ctx.stroke();
+
+  // =========================================================================
   // BOSS 2: CAPITANO GREGORIO / ARIETE DI PIOMBO (Isaac Chub)
   // =========================================================================
   } else {
+    const isCharge = (b.chargeTimer > 0) || (b.state === 'charge') || Math.hypot(b.vx || 0, b.vy || 0) > 1.4;
+    const sprCap = isCharge ? 'capitano_guardia_carica' : 'capitano_guardia_fermo';
+    if (disegnaMobSprite(ctx, sprCap, 0, 8, 64, 1, isFlash)) {
+      ctx.restore();
+      return;
+    }
     // Juggernaut d'acciaio e ottone in carica
     const ironG = ctx.createLinearGradient(-18, -28, 18, 4);
     ironG.addColorStop(0, isFlash ? '#ffffff' : '#b91c1c');
