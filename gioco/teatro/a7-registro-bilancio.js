@@ -274,7 +274,11 @@ entraInStanza = function (stanza, ...resto) {
   const chiusa = Boolean(stanza && stanza.chiusaA1);
   try { osservaInventarioA7(); } catch (_) { /* idem */ }
   const r = entraInStanzaBaseA7.call(this, stanza, ...resto);
-  try { if (a7.run && chiusa && !stanza.chiusaA1) pianoA7(a7.run).lucchettiAperti++; } catch (_) { /* idem */ }
+  try {
+    if (a7.run && chiusa && !stanza.chiusaA1) pianoA7(a7.run).lucchettiAperti++;
+    const st = statoRun.stanzaCorrente;
+    if (a7.run && st && !st.pulita) st.__daPulireA7 = true; // anche se si ripulisce prima del prossimo tick
+  } catch (_) { /* idem */ }
   return r;
 };
 
@@ -427,6 +431,8 @@ function scaricaA7(testo) {
 // ===========================================================================
 // DISEGNO
 // ===========================================================================
+/** Mezze Maschere in testo: 3 → «1½», 1 → «½». */
+const maschereA7 = (h) => (h <= 0 ? '0' : `${Math.floor(h / 2) || ''}${h % 2 ? '½' : ''}`);
 const tempoA7 = (ms) => { const s = Math.round((ms || 0) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 
 function aCapoA7(parole, maxW, size) {
@@ -479,7 +485,8 @@ function disegnaPergamenaA7() {
     ['Stanze ripulite', String(v.stanzePulite)],
     ['Nemici caduti', String(v.nemiciUccisi)],
     ['Boss battuti', v.boss.length ? v.boss.map((b) => b.nome).join(', ') : 'nessuno'],
-    ['Sangue alle stanze speciali', `${v.sangueHalf / 2} ❤`],
+    ['Maschere perse', `${maschereA7(v.danni.reduce((a, d) => a + d.half, 0))} (${v.danni.length} colpi)`],
+    ['Sangue alle stanze speciali', `${maschereA7(v.sangueHalf)} Maschere`],
   ];
   sx.forEach(([k, val], i) => {
     const y = P.y + 70 + i * 17;
@@ -642,4 +649,5 @@ Object.assign(window.__teatro.interni, {
   }),
   // versioni avvolte per la QA (stessi effetti + registro)
   nuovaRun, avviaPiano, entraInStanza, subisciColpoGiocatore,
+  ...(typeof usaConsumabileA2 === 'function' ? { usaConsumabileA2 } : {}),
 });
