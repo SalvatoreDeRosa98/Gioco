@@ -2662,21 +2662,21 @@ function disegnaManoMarionettaPittorica() {
   // --- PROPOSTA 2: RELIQUIE PROIBITE DEL PATTO D'OMBRA (COSTANO 1 ❤️ MASCHERA MASSIMA, STILE DEVIL DEAL!) ---
   const CATALOGO_PATTO = [
     {
-      id: 'patto_raggio', sprite: 'patto_raggio', nome: 'Raggio Cremisi del Velo (Brimstone)', tier: 'patto',
+      id: 'patto_raggio', sprite: 'patto_raggio', nome: 'Raggio Cremisi del Velo', tier: 'patto',  // D: rif. Isaac: Brimstone
       statsDesc: '[😈 PATTO] DMG x2.1 · +1.5 DMG Up · Proiettili Cremisi Perforanti Giganti',
       lore: 'Stringi il patto col Velo: cedi 1 Maschera di vita per un potere devastante.',
       costoMaxHpHalf: 2,
       mod: { dmgUp: 1.5, dmgMult: 2.1, piercing: true, tipoProiettile: 'cremisi', size: 1.45 },
     },
     {
-      id: 'patto_sacro', sprite: 'patto_sacro', nome: 'Cuore Sacro di San Leucio (Sacred Heart)', tier: 'patto',
+      id: 'patto_sacro', sprite: 'patto_sacro', nome: 'Cuore Sacro di San Leucio', tier: 'patto',  // D: rif. Isaac: Sacred Heart
       statsDesc: '[😈 PATTO] DMG x2.3 · +1.0 Flat DMG · Rigenera tutta la vita rimasta',
       lore: 'Il cuore luminoso nascosto dietro l\'altare del Belvedere.',
       costoMaxHpHalf: 2,
       mod: { flatDmg: 1.0, dmgMult: 2.3, healOnEquip: 12 },
     },
     {
-      id: 'patto_coltello', sprite: 'patto_coltello', nome: 'Lama della Burattinaia (Mom\'s Knife)', tier: 'patto',
+      id: 'patto_coltello', sprite: 'patto_coltello', nome: 'Lama della Burattinaia', tier: 'patto',  // D: rif. Isaac: Mom's Knife
       statsDesc: '[😈 PATTO] Equipa Lama + Proiettili Perforanti · DMG x1.85 · +0.5 Tears Up',
       lore: 'La lama con cui Donna Luciana recide i ricordi superflui.',
       costoMaxHpHalf: 2,
@@ -2694,35 +2694,35 @@ function disegnaManoMarionettaPittorica() {
       mod: { spada: true, flatDmg: 1.0, dmgMult: 1.45 },
     },
     {
-      id: 'piombo', sprite: 'piombo', nome: 'Lacrima di Piombo (Polyphemus)', tier: 'forte',
+      id: 'piombo', sprite: 'piombo', nome: 'Lacrima di Piombo', tier: 'forte',  // D: rif. Isaac: Polyphemus
       statsDesc: '[★ FORTE] +3.8 Flat DMG · DMG x1.9 · Tears x0.48 (Colpi Giganti)',
       lore: 'Pesante come il silenzio di Piazza Dante sotto il Velo.',
       prezzo: 18,
       mod: { flatDmg: 3.8, dmgMult: 1.9, tearsMult: 0.48, tipoProiettile: 'piombo', size: 1.55, overflowPierce: true },
     },
     {
-      id: 'anello', sprite: 'anello', nome: 'Anello Cremisi (Cricket\'s Head)', tier: 'forte',
+      id: 'anello', sprite: 'anello', nome: 'Anello Cremisi', tier: 'forte',  // D: rif. Isaac: Cricket's Head
       statsDesc: '[★ FORTE] +0.8 DMG Up · DMG x1.5 · Proiettili Perforanti',
       lore: 'Anello caduto dal dito di una burattinaia: trapassa ogni marionetta.',
       prezzo: 16,
       mod: { dmgUp: 0.8, dmgMult: 1.5, piercing: true, tipoProiettile: 'cremisi' },
     },
     {
-      id: 'triplo', sprite: 'triplo', nome: 'Triplo Occhio (Inner Eye)', tier: 'forte',
+      id: 'triplo', sprite: 'triplo', nome: 'Triplo Occhio', tier: 'forte',  // D: rif. Isaac: Inner Eye
       statsDesc: '[★ FORTE] Triplo Colpo a ventaglio · +0.4 DMG Up · Tears x0.58',
       lore: 'Tre pupille di vetro che vedono i fili d\'oro nel cielo.',
       prezzo: 15,
       mod: { triplo: true, dmgUp: 0.4, tearsMult: 0.58 },
     },
     {
-      id: 'catena', sprite: 'catena', nome: 'Catena della Chiusa (Jacob\'s Ladder)', tier: 'forte',
+      id: 'catena', sprite: 'catena', nome: 'Catena della Chiusa', tier: 'forte',  // D: rif. Isaac: Jacob's Ladder
       statsDesc: '[★ FORTE] +0.6 Tears Up · Fulmini a catena tra tutti i nemici',
       lore: 'Spezzata dalla chiusa reale: scarica scintille azzurrine a ogni impatto.',
       prezzo: 15,
       mod: { tearsUp: 0.6, chain: true, tipoProiettile: 'elettrico' },
     },
     {
-      id: 'venti', sprite: 'venti', nome: 'Maschera dei 4 Venti (Loki\'s Horns)', tier: 'forte',
+      id: 'venti', sprite: 'venti', nome: 'Maschera dei 4 Venti', tier: 'forte',  // D: rif. Isaac: Loki's Horns
       statsDesc: '[★ FORTE] Spara contemporaneamente nelle 4 direzioni · +0.5 DMG Up',
       lore: 'Quattro volti di Pulcinella che guardano ogni angolo del palco.',
       prezzo: 15,
@@ -2731,35 +2731,35 @@ function disegnaManoMarionettaPittorica() {
 
     // --- OGGETTI BASE (TIER 'base': 1 stanza su 3 gratis, oppure 10🪙 ne La Fucina) ---
     {
-      id: 'chiodo', sprite: 'chiodo', nome: 'Chiodo della Fucina (Blood Clot)', tier: 'base',
+      id: 'chiodo', sprite: 'chiodo', nome: 'Chiodo della Fucina', tier: 'base',  // D: rif. Isaac: Blood Clot
       statsDesc: '[BASE] +0.65 DMG Up · +20 Range',
       lore: 'Un chiodo battuto a mano da Ferruccio prima dell\'incantesimo.',
       prezzo: 10,
       mod: { dmgUp: 0.65, rangeUp: 20 },
     },
     {
-      id: 'fuoco', sprite: 'fuoco', nome: 'Tizzone di Bragia (Fire Mind)', tier: 'base',
+      id: 'fuoco', sprite: 'fuoco', nome: 'Tizzone di Bragia', tier: 'base',  // D: rif. Isaac: Fire Mind
       statsDesc: '[BASE] +0.6 DMG Up · Proiettili Infuocati (Bruciatura DoT)',
       lore: 'Carbone ardente della vecchia fucina di famiglia.',
       prezzo: 10,
       mod: { dmgUp: 0.6, burn: true, tipoProiettile: 'fuoco' },
     },
     {
-      id: 'doppia', sprite: 'doppia', nome: 'Lente di San Leucio (20/20)', tier: 'base',
+      id: 'doppia', sprite: 'doppia', nome: 'Lente di San Leucio', tier: 'base',  // D: rif. Isaac: 20/20
       statsDesc: '[BASE] Doppio Colpo parallelo · DMG x0.80',
       lore: 'Lente da tessitrice usata da Agnese sul telaio reale.',
       prezzo: 10,
       mod: { doppia: true, dmgMult: 0.80 },
     },
     {
-      id: 'mercurio', sprite: 'mercurio', nome: 'Goccia di Mercurio (Sad Onion)', tier: 'base',
+      id: 'mercurio', sprite: 'mercurio', nome: 'Goccia di Mercurio', tier: 'base',  // D: rif. Isaac: Sad Onion
       statsDesc: '[BASE] +0.85 Tears Up (Raffica) · +0.10 Speed',
       lore: 'Argento vivo degli specchi del teatro reale.',
       prezzo: 10,
       mod: { tearsUp: 0.85, speedUp: 0.10 },
     },
     {
-      id: 'cuore', sprite: 'cuore', nome: 'Medaglione di Rosa (<3)', tier: 'base',
+      id: 'cuore', sprite: 'cuore', nome: 'Medaglione di Rosa', tier: 'base',  // D: rif. Isaac: <3
       statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera · +0.2 DMG Up',
       lore: 'Il ricordo della moglie che Tonino ha dimenticato per non soffrire.',
       prezzo: 10,
@@ -2807,7 +2807,7 @@ function disegnaManoMarionettaPittorica() {
     hud: Object.freeze({ lato: 12, passo: 13, righe: 2, xMin: 256, xMax: 566, scala: 1.0 }),
     sviluppatore: Object.freeze({
       piani: Object.freeze([7]),        // piani con la Stanza dello Sviluppatore (7 = ciclo 2, terzo piano)
-      colonne: 8, cellaL: 62, cellaA: 38,
+      colonne: 9, cellaL: 62, cellaA: 34, // D: 62 oggetti in 7 righe (prima 8 × 38: con il catalogo D usciva dallo schermo)
       colore: '#67e8f9',
     }),
   });
@@ -2816,23 +2816,23 @@ function disegnaManoMarionettaPittorica() {
   // la Stanza dello Sviluppatore offre anche oggetti fuori pool. Solo modificatori già gestiti da
   // ricalcolaStatisticheIsaac; i prezzi li fissa ECONOMIA_T3 qui sotto, per tier.
   const OGGETTI_NUOVI_B = [
-    { id: 'corno', sprite: 'corno', nome: 'Corno di Corallo (Magic Mushroom)', tier: 'forte',
+    { id: 'corno', sprite: 'corno', nome: 'Corno di Corallo', tier: 'forte',  // D: rif. Isaac: Magic Mushroom
       statsDesc: '[★ FORTE] +1 Maschera Massima · +0.6 DMG Up · DMG x1.25 · +0.15 Speed · +20 Range',
       lore: 'Il corno rosso appeso alla porta della bottega: tiene lontano il malocchio del Velo.',
       mod: { bonusMaxHp: 2, healOnEquip: 2, dmgUp: 0.6, dmgMult: 1.25, speedUp: 0.15, rangeUp: 20 } },
-    { id: 'campana', sprite: 'campana', nome: 'Campana di San Lorenzo (Pentagram)', tier: 'forte',
+    { id: 'campana', sprite: 'campana', nome: 'Campana di San Lorenzo', tier: 'forte',  // D: rif. Isaac: Pentagram
       statsDesc: '[★ FORTE] +1.0 DMG Up · +0.5 Flat DMG',
       lore: 'Suonava a morto la notte del crollo: ora suona per te.',
       mod: { dmgUp: 1.0, flatDmg: 0.5 } },
-    { id: 'fiaccola', sprite: 'fiaccola', nome: 'Fiaccola del Vesuvio (Fire Mind+)', tier: 'forte',
+    { id: 'fiaccola', sprite: 'fiaccola', nome: 'Fiaccola del Vesuvio', tier: 'forte',  // D: rif. Isaac: Fire Mind+
       statsDesc: '[★ FORTE] Proiettili Infuocati e Perforanti · +0.4 DMG Up',
       lore: 'Accesa al fuoco della montagna, non si spegne nemmeno sotto il Velo.',
       mod: { burn: true, piercing: true, dmgUp: 0.4, tipoProiettile: 'fuoco' } },
-    { id: 'lanterna', sprite: 'lanterna', nome: 'Lanterna Magica (20/20+)', tier: 'forte',
+    { id: 'lanterna', sprite: 'lanterna', nome: 'Lanterna Magica', tier: 'forte',  // D: rif. Isaac: 20/20+
       statsDesc: '[★ FORTE] Doppio Colpo parallelo · +0.5 Tears Up · +0.3 DMG Up',
       lore: 'Proietta due ombre per ogni figura: il pubblico non sa quale sia vera.',
       mod: { doppia: true, tearsUp: 0.5, dmgUp: 0.3 } },
-    { id: 'sole', sprite: 'sole', nome: 'Sole d\'Ottone (Cricket\'s Body)', tier: 'forte',
+    { id: 'sole', sprite: 'sole', nome: 'Sole d\'Ottone', tier: 'forte',  // D: rif. Isaac: Cricket's Body
       statsDesc: '[★ FORTE] Colpi più grandi · +1.5 Flat DMG · +0.3 Tears Up',
       lore: 'Il sole di scena del Teatro: brilla anche quando il sipario è chiuso.',
       mod: { size: 1.35, flatDmg: 1.5, tearsUp: 0.3 } },
@@ -2844,7 +2844,7 @@ function disegnaManoMarionettaPittorica() {
       statsDesc: '[BASE] +40 Range · +0.35 DMG Up',
       lore: 'Cuce i fili strappati: arriva lontano e punge piano.',
       mod: { rangeUp: 40, dmgUp: 0.35 } },
-    { id: 'castagna', sprite: 'castagna', nome: 'Castagna del Ciuccio (Breakfast)', tier: 'base',
+    { id: 'castagna', sprite: 'castagna', nome: 'Castagna del Ciuccio', tier: 'base',  // D: rif. Isaac: Breakfast
       statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera',
       lore: 'Arrostita sul braciere della piazza, sa ancora di casa.',
       mod: { bonusMaxHp: 2, healOnEquip: 2 } },
@@ -2852,7 +2852,7 @@ function disegnaManoMarionettaPittorica() {
       statsDesc: '[BASE] +0.5 DMG Up · +0.10 Speed',
       lore: 'Mai regalato, mai comprato: trovato. Così porta fortuna.',
       mod: { dmgUp: 0.5, speedUp: 0.1 } },
-    { id: 'bottone', sprite: 'bottone', nome: 'Bottone di Madreperla (Sad Onion)', tier: 'base',
+    { id: 'bottone', sprite: 'bottone', nome: 'Bottone di Madreperla', tier: 'base',  // D: rif. Isaac: Sad Onion
       statsDesc: '[BASE] +0.7 Tears Up',
       lore: 'Staccato dalla giacca buona, quella delle feste.',
       mod: { tearsUp: 0.7 } },
@@ -2864,7 +2864,7 @@ function disegnaManoMarionettaPittorica() {
       statsDesc: '[BASE] +0.45 DMG Up · +30 Range',
       lore: 'Fuma pensieri: ogni boccata un ricordo che torna.',
       mod: { dmgUp: 0.45, rangeUp: 30 } },
-    { id: 'pagnotta', sprite: 'pagnotta', nome: 'Pagnotta di Port\'Alba (Dinner)', tier: 'base',
+    { id: 'pagnotta', sprite: 'pagnotta', nome: 'Pagnotta di Port\'Alba', tier: 'base',  // D: rif. Isaac: Dinner
       statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera · +0.05 Speed',
       lore: 'Ancora calda, avvolta in un foglio di giornale del 1839.',
       mod: { bonusMaxHp: 2, healOnEquip: 2, speedUp: 0.05 } },
@@ -2912,6 +2912,207 @@ function disegnaManoMarionettaPittorica() {
       '.kwwwkkwwwk.', '.kwwwwwwwwk.', '.kwkwwwwkwk.', '.kwwwwwwwwk.', '.kkkkkkkkkk.', '............'],
   });
 
+  // --- D: inizio ---
+  // CATALOGO ALLA ISAAC (feedback autore D, production/arte/oggetti-teatro.md §3): 34 oggetti nuovi
+  // (22 positivi meno i 2 «fase 2» elmo/pupara, 8 misti meno matita/malocchio, 8 negativi). `polarita`:
+  // positivo | misto | negativo; i nomi di Isaac stanno SOLO nei commenti (Rif. Isaac). Le meccaniche nuove
+  // (omingForza, rimbalzi, orbitali, famiglio, maledizione…) le legge ricalcolaStatisticheIsaac (blocchi D).
+  const OGGETTI_NUOVI_D = [
+    { id: 'trottola', sprite: 'trottola', nome: 'Trottola di Piazza Mercato', tier: 'base', polarita: 'positivo', // Rif. Isaac: Speed Ball
+      statsDesc: '[BASE] +0.3 Speed · +0.2 Tears Up',
+      lore: 'Gira da sola da quando il Velo è sceso.',
+      mod: { speedUp: 0.3, tearsUp: 0.2 } },
+    { id: 'sfogliatella', sprite: 'sfogliatella', nome: 'Sfogliatella Riccia', tier: 'base', polarita: 'positivo', // Rif. Isaac: Lunch
+      statsDesc: '[BASE] +1 Maschera Massima (vuota)',
+      lore: 'Croccante anche dopo sei anni di incantesimo.',
+      mod: { bonusMaxHp: 2 } },
+    { id: 'pastiera', sprite: 'pastiera', nome: 'Fetta di Pastiera', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Supper/Dessert + Stigmata
+      statsDesc: '[★ FORTE] +1 Maschera Massima · Rigenera 2 Maschere · +0.3 DMG Up',
+      lore: 'La faceva Rosa a Pasqua: il profumo riporta la memoria.',
+      mod: { bonusMaxHp: 2, healOnEquip: 4, dmgUp: 0.3 } },
+    { id: 'cucchiaio', sprite: 'cucchiaio', nome: 'Cucchiaio del Re', tier: 'base', polarita: 'positivo', // Rif. Isaac: Spoon Bender
+      statsDesc: '[BASE] Colpi a ricerca (curvano verso i nemici)',
+      lore: 'Rubato dalla credenza della Reggia: si piega verso i nemici.',
+      mod: { omingForza: 0.06, tipoProiettile: 'viola' } },
+    { id: 'astrolabio', sprite: 'astrolabio', nome: 'Astrolabio della Specola', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Tiny Planet
+      statsDesc: '[★ FORTE] I colpi ti orbitano attorno · +40 Range · +0.4 DMG Up',
+      lore: 'Misurava le stelle sopra la Reggia; ora i tuoi colpi gli girano attorno.',
+      mod: { orbitaleProiettili: true, rangeUp: 40, dmgUp: 0.4 } },
+    { id: 'gomma', sprite: 'gomma', nome: 'Gomma del Burattinaio', tier: 'base', polarita: 'positivo', // Rif. Isaac: Rubber Cement
+      statsDesc: '[BASE] I colpi rimbalzano 2 volte sui muri',
+      lore: 'La colla dei fili: tutto ci rimbalza.',
+      mod: { rimbalzi: 2 } },
+    { id: 'piedigrotta', sprite: 'piedigrotta', nome: 'Razzo di Piedigrotta', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Ipecac
+      statsDesc: '[★ FORTE] Colpi esplosivi · DMG x1.6 · Tears x0.55',
+      lore: 'Fuoco d\'artificio della festa di settembre.',
+      mod: { esplosiva: 42, dmgMult: 1.6, tearsMult: 0.55, tipoProiettile: 'fuoco' } },
+    { id: 'ragno', sprite: 'ragno', nome: 'Ragno della Seta di San Leucio', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Mutant Spider
+      statsDesc: '[★ FORTE] 4 colpi a ventaglio · Tears x0.42',
+      lore: 'Tesse quattro fili per volta.',
+      mod: { quattroColpi: true, tearsMult: 0.42 } },
+    { id: 'velo-madonna', sprite: 'velo-madonna', nome: 'Velo della Madonna dell\'Arco', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Holy Mantle
+      statsDesc: '[★ FORTE] Para il primo colpo di ogni stanza',
+      lore: 'Benedetto in processione: para il primo colpo di ogni stanza.',
+      mod: { scudoStanza: 1 } },
+    { id: 'cuoio', sprite: 'cuoio', nome: 'Maschera di Cuoio', tier: 'base', polarita: 'positivo', // Rif. Isaac: Infamy
+      statsDesc: '[BASE] 25% di parare i proiettili nemici',
+      lore: 'La maschera da scena vera di Pulcinella, dura come uno scudo.',
+      mod: { bloccoProb: 0.25 } },
+    { id: 'gomitolo', sprite: 'gomitolo', nome: 'Gomitolo di Fili d\'Oro', tier: 'base', polarita: 'positivo', // Rif. Isaac: Cube of Meat (liv. 1)
+      statsDesc: '[BASE] Un gomitolo ti orbita attorno: para i colpi e ferisce',
+      lore: 'Fili che non si possono tagliare, avvolti stretti.',
+      mod: { orbitali: 1 } },
+    { id: 'ostia', sprite: 'ostia', nome: 'Ostia della Cappella Palatina', tier: 'forte', polarita: 'positivo', // Rif. Isaac: The Wafer
+      statsDesc: '[★ FORTE] Ogni colpo toglie al massimo ½ Maschera',
+      lore: 'Leggera: ti fa sentire leggero anche il dolore.',
+      mod: { dannoMaxHalf: true } },
+    { id: 'bobby', sprite: 'bobby', nome: 'Burattino di Tonino', tier: 'base', polarita: 'positivo', // Rif. Isaac: Brother Bobby
+      statsDesc: '[BASE] Famiglio: un burattino che spara con te (3.0 DMG)',
+      lore: 'Un pupazzetto che Tonino intagliò per un figlio mai nato.',
+      mod: { famiglio: 'tiratore', famDmg: 3.0, famTears: 0.9 } },
+    { id: 'maggy', sprite: 'maggy', nome: 'Pupattola di Agnese', tier: 'base', polarita: 'positivo', // Rif. Isaac: Sister Maggy
+      statsDesc: '[BASE] Famiglio: una bambola che spara con te (4.5 DMG)',
+      lore: 'Bambola di pezza cucita sul telaio reale.',
+      mod: { famiglio: 'tiratore', famDmg: 4.5, famTears: 0.7 } },
+    { id: 'gatto', sprite: 'gatto', nome: 'Gatto di Vico Lungo', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Guppy's Hairball
+      statsDesc: '[★ FORTE] Famiglio: un gatto che graffia i nemici (3.0 DMG)',
+      lore: 'Il gatto randagio del vicolo: graffia chi ti tocca.',
+      mod: { famiglio: 'contatto', famDmg: 3.0 } },
+    { id: 'diavoletto', sprite: 'diavoletto', nome: 'Diavoletto del Presepe', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Demon Baby
+      statsDesc: '[★ FORTE] Famiglio: spara da solo al nemico più vicino (3.5 DMG)',
+      lore: 'Statuina rossa del presepe di San Gregorio Armeno.',
+      mod: { famiglio: 'tiratore', mira: 'auto', famDmg: 3.5, famTears: 0.8 } },
+    { id: 'pulcinellino', sprite: 'pulcinellino', nome: 'Pulcinellino', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Little Steven
+      statsDesc: '[★ FORTE] Famiglio: colpi a ricerca (3.0 DMG)',
+      lore: 'Un Pulcinella piccolo così: non sbaglia un colpo.',
+      mod: { famiglio: 'tiratore', famDmg: 3.0, famTears: 1.0, famOming: true } },
+    { id: 'campanello', sprite: 'campanello', nome: 'Campanello del Portiere', tier: 'base', polarita: 'positivo', // Rif. Isaac: Wire Coat Hanger
+      statsDesc: '[BASE] +0.5 Tears Up · +20 Range',
+      lore: 'Suona e la porta si apre.',
+      mod: { tearsUp: 0.5, rangeUp: 20 } },
+    { id: 'tarallo', sprite: 'tarallo', nome: 'Tarallo Sugna e Pepe', tier: 'base', polarita: 'positivo', // Rif. Isaac: Steven/Raw Liver
+      statsDesc: '[BASE] +0.4 DMG Up · +1 Maschera Massima',
+      lore: 'Duro come la vita del popolo.',
+      mod: { dmgUp: 0.4, bonusMaxHp: 2 } },
+    { id: 'carta-ventaglio', sprite: 'carta-ventaglio', nome: 'Ventaglio di Carta', tier: 'base', polarita: 'positivo', // Rif. Isaac: Lost Contact
+      statsDesc: '[BASE] I tuoi colpi annullano i proiettili nemici · +0.2 DMG Up',
+      lore: 'Ventaglio della dama del palco reale.',
+      mod: { bloccaProiettili: true, dmgUp: 0.2 } },
+    { id: 'cuore-sacro', sprite: 'cuore-sacro', nome: 'Cuore Sacro di Santa Chiara', tier: 'forte', polarita: 'misto', // Rif. Isaac: Sacred Heart
+      statsDesc: '[◐ MISTO] ★ DMG x2.3 · +1 Maschera · Colpi a ricerca · Tears x0.6',
+      lore: 'Ex voto d\'argento: ti rende lento ma inesorabile.',
+      mod: { dmgMult: 2.3, bonusMaxHp: 2, healOnEquip: 2, omingForza: 0.05, tearsMult: 0.6 } },
+    { id: 'bombarda', sprite: 'bombarda', nome: 'Bombarda di Gaeta', tier: 'forte', polarita: 'misto', // Rif. Isaac: Mega Blast (lento)
+      statsDesc: '[◐ MISTO] ★ DMG x2.6 · Colpi enormi e lenti · Tears x0.3',
+      lore: 'Il cannone della fortezza: un colpo ogni tanto, e la stanza trema.',
+      mod: { dmgMult: 2.6, size: 1.8, tearsMult: 0.3, velocitaColpo: 0.6 } },
+    { id: 'occhio-vetro', sprite: 'occhio-vetro', nome: 'Occhio di Vetro del Ciarlatano', tier: 'forte', polarita: 'misto', // Rif. Isaac: Proptosis
+      statsDesc: '[◐ MISTO] ★ Danno x2 da vicino, cala con la distanza · -60 Range · +0.5 DMG Up',
+      lore: 'Lo vendeva un ciarlatano a Piazza Mercato: vede bene solo da vicino.',
+      mod: { prossimita: true, rangeUp: -60, dmgUp: 0.5 } },
+    { id: 'cappello-mago', sprite: 'cappello-mago', nome: 'Cappello del Mago di Corte', tier: 'base', polarita: 'misto', // Rif. Isaac: The Wiz
+      statsDesc: '[◐ MISTO] I colpi partono in due diagonali · +0.3 Tears Up',
+      lore: 'Il mago della Reggia non tirava mai dritto.',
+      mod: { diagonale: true, tearsUp: 0.3 } },
+    { id: 'sugna', sprite: 'sugna', nome: 'Sugna del Macellaio', tier: 'base', polarita: 'negativo', // Rif. Isaac: Bucket of Lard
+      statsDesc: '[◐ MISTO] +2 Maschere Massime · Rigenera 2 Maschere · -0.25 Speed',
+      lore: 'Ti sazia per una settimana, ma ti appesantisce.',
+      mod: { bonusMaxHp: 4, healOnEquip: 4, speedUp: -0.25 } },
+    { id: 'ranocchio', sprite: 'ranocchio', nome: 'Ranocchio della Fontana', tier: 'base', polarita: 'negativo', // Rif. Isaac: Number One
+      statsDesc: '[◐ MISTO] +1.4 Tears Up · -110 Range',
+      lore: 'Sputa acqua dalla fontana della Reggia: tanto, e corto.',
+      mod: { tearsUp: 1.4, rangeUp: -110 } },
+    { id: 'latte', sprite: 'latte', nome: 'Latte di Mandorla', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: Soy Milk
+      statsDesc: '[✗ NEGATIVO] DMG x0.2 · Tears x5.5 (pioggerella)',
+      lore: 'Dolce e leggero: i colpi diventano una pioggerella.',
+      mod: { dmgMult: 0.2, tearsMult: 5.5 } },
+    { id: 'corda', sprite: 'corda', nome: 'Corda del Campanaro', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: pillola Tears Down
+      statsDesc: '[✗ NEGATIVO] -0.6 Tears',
+      lore: 'Sembra un dono; ti lega le mani.',
+      mod: { tearsUp: -0.6 } },
+    { id: 'zoccoli', sprite: 'zoccoli', nome: 'Zoccoli di Legno', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: pillola Speed Down
+      statsDesc: '[✗ NEGATIVO] -0.25 Speed',
+      lore: 'Rumorosi e pesanti sul selciato.',
+      mod: { speedUp: -0.25 } },
+    { id: 'spillo', sprite: 'spillo', nome: 'Spillo Spuntato', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: pillola Range Down
+      statsDesc: '[✗ NEGATIVO] -50 Range · +0.1 DMG Up',
+      lore: 'Punge, ma non arriva.',
+      mod: { rangeUp: -50, dmgUp: 0.1 } },
+    { id: 'salasso', sprite: 'salasso', nome: 'Ventosa del Barbiere', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: pillola Health Down
+      statsDesc: '[✗ NEGATIVO] -1 Maschera Massima',
+      lore: 'Il barbiere salassatore di Via Mazzini «cura» tutti.',
+      mod: { bonusMaxHp: -2 } },
+    { id: 'nebbia', sprite: 'nebbia', nome: 'Nebbia del Volturno', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: Curse of the Lost
+      statsDesc: '[✗ NEGATIVO] Maledizione: la mappa sparisce fino a fine piano',
+      lore: 'La nebbia sale dal fiume e cancella le strade.',
+      mod: { maledizione: 'mappa' } },
+    { id: 'lume', sprite: 'lume', nome: 'Lume Spento', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: Curse of Darkness
+      statsDesc: '[✗ NEGATIVO] Maledizione: buio attorno a te fino a fine piano',
+      lore: 'Il lume a olio di San Leucio, ormai senza stoppino.',
+      mod: { maledizione: 'buio' } },
+    { id: 'benda', sprite: 'benda', nome: 'Benda del Cieco', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: Curse of the Blind
+      statsDesc: '[✗ NEGATIVO] Maledizione: gli oggetti tornano «???» fino a fine piano',
+      lore: 'Il cieco del sagrato ti presta la sua benda.',
+      mod: { maledizione: 'cieco' } },
+  ];
+  for (const o of CATALOGO_OGGETTI) if (!o.polarita) o.polarita = 'positivo';
+  for (const o of OGGETTI_NUOVI_D) CATALOGO_OGGETTI.push({ prezzo: o.tier === 'forte' ? 7 : o.tier === 'negativo' ? 2 : 5, ...o });
+  // Sprite 12×12 dei nuovi, stessa palette e stile di OGGETTI_NUOVI_B.
+  Object.assign(SPRITE_OGGETTI, {
+    'trottola': ['.....kk.....', '.....km.....', '...kkkkkk...', '..krrwwrrk..', '.kwwrrrrwwk.', '.krrwwwwrrk.', '..kwwrrwwk..', '...krrrrk...', '....kwwk....', '.....kk.....', '.....k......', '............'],
+    'sfogliatella': ['............', '.....kk.....', '....kcsk....', '...kcscsk...', '..kscscsck..', '.kcscscscsk.', '.kscscscsck.', 'kcscscscscsk', 'kssssssssssk', '.kessssssek.', '..kkkkkkkk..', '............'],
+    'pastiera': ['............', 'k...........', 'kkk.........', 'kymkk.......', 'kyyymkk.....', 'kmyymyymkk..', 'kyymyymyyykk', 'kymyymyymyyk', 'kyyyyyyyyyyk', 'kOOOOOOOOOOk', 'kkkkkkkkkkkk', '............'],
+    'cucchiaio': ['.......kkk..', '......kgggk.', '......kgwgk.', '......kgggk.', '.......kgk..', '.......kgk..', '......kgk...', '.....kgk....', '....kgk.....', '...kGk......', '..kGk.......', '..kk........'],
+    'astrolabio': ['....kkkk....', '..kkyyyykk..', '.kyk....kyk.', '.ky..kk..yk.', 'ky..kbbk..yk', 'ky.kbabbk.yk', 'ky.kbbbBk.yk', 'ky..kBBk..yk', '.ky..kk..yk.', '.kyk....kyk.', '..kkyyyykk..', '....kkkk....'],
+    'gomma': ['.....ww.....', '....wccw....', '....wccw....', '.....ww.....', '...kkkkkk...', '..kMMMMMMk..', '..kcccccck..', '..kcsscsck..', '..kcccccck..', '..kcccccck..', '..kkkkkkkk..', '............'],
+    'piedigrotta': ['..........y.', '.........yo.', '........k...', '.....kkk....', '....krrrk...', '...krwrrk...', '..krrrrk....', '.krrrrk.....', '.kRrrk......', 'kooRk.......', 'koyk........', '.kk.........'],
+    'ragno': ['............', '.w........w.', '..w......w..', '...w.kk.w...', '....kddk....', '...kdrrdk...', '..wkddddkw..', '.w.kddddk.w.', 'w...kddk...w', '.....kk.....', '............', '............'],
+    'velo-madonna': ['...yyyyyy...', '..y......y..', '...yyyyyy...', '....kkkk....', '...kaaaak...', '..kaabbaak..', '..kabbbbak..', '.kabbbbbbak.', '.kbbBbbBbbk.', 'kbbBbbbbBbbk', 'kBBBBBBBBBBk', '.kkkkkkkkkk.'],
+    'cuoio': ['............', '............', '.kkkkkkkkkk.', 'kddddddddddk', 'kdkkddddkkdk', 'kdk.kddk.kdk', 'kddkkddkkddk', '.kddddddddk.', '..kkddddkk..', '....kddk....', '.....kk.....', '............'],
+    'gomitolo': ['............', '....kkkk....', '..kkyyoykk..', '.kyoyyyoyyk.', '.kyyoyyyoyk.', 'kyoyyoyyyoyk', 'kyyoyyoyyyyk', '.kyyyoyyoyk.', '.kyoyyyoyyk.', '..kkyyyykky.', '....kkkk...y', '...........y'],
+    'ostia': ['............', '....kkkk....', '..kkwwwwkk..', '.kwwwwgwwwk.', '.kwwwwgwwwk.', 'kwwggggggwwk', 'kwwwwwgwwwwk', '.kwwwwgwwwk.', '.kwwwwgwwwk.', '..kkwwwwkk..', '....kkkk....', '............'],
+    'bobby': ['....kkkk....', '...kBBBBk...', '..kBBBBBBk..', '...kssssk...', '...kskksk...', '...kssssk...', '....kssk....', '..kmmmmmmk..', '.kskmmmmksk.', '...kmmmmk...', '...km..mk...', '...kk..kk...'],
+    'maggy': ['..r......r..', '..rrk..krr..', '...kkcckk...', '...kcccck...', '...kckkck...', '...kcccck...', '....kcck....', '..kpppppk...', '.kcpppppck..', '...kppppk...', '...kc..ck...', '...kk..kk...'],
+    'gatto': ['..k.....k...', '..kk...kk...', '..kdkkkdk...', '..kdydydk...', '..kdddddk...', '...kdddk....', '..kdddddk...', '.kdddddddk..', '.kdddddddk..', '.kdddddddk.k', '..kdkdkdk.k.', '...kkkkkkk..'],
+    'diavoletto': ['.k......y.y.', '.kk..kk.yyy.', '..krrrrk.y..', '..krwrwk.y..', '..krrrrk.y..', '...kRRk..y..', '..krrrrkky..', '.krrrrrrk...', '..krrrrk.y..', '..kr..rk.y..', '..kk..kk....', '............'],
+    'pulcinellino': ['.....kk.....', '.....kwk....', '....kwwk....', '....kwwwk...', '...kwwwwk...', '...kkkkkk...', '...kddddk...', '...kdwdwk...', '....kcck....', '..kwwwwwwk..', '..kwwwwwwk..', '...kk..kk...'],
+    'campanello': ['............', '.....kk.....', '....kyyk....', '.....kk.....', '...kkkkkk...', '..kyywyyyk..', '.kyywyyyyyk.', '.kyyyyyyyyk.', 'kOOOOOOOOOOk', '.kkkkkkkkkk.', '............', '............'],
+    'tarallo': ['............', '...kkkkkk...', '..kssksssk..', '.ksskkkkssk.', '.kskk..kksk.', '.ksk....ksk.', '.ksk....ksk.', '.kskk..kksk.', '.ksskkkkksk.', '..kssskssk..', '...kkkkkk...', '............'],
+    'carta-ventaglio': ['............', '.kkkkkkkkkk.', 'kcscscscscsk', '.kcscscscsk.', '.kscscscsck.', '..kcscscsk..', '..kscscsck..', '...kcscsk...', '....kscsk...', '.....kmk....', '.....kmk....', '......k.....'],
+    'cuore-sacro': ['.....oy.....', '....oyyo....', '.....yo.....', '..kkk..kkk..', '.kgggkkgggk.', 'kgwgggggggGk', 'kggggggggggk', '.kgggggggGk.', '..kgggggGk..', '...kgggGk...', '....kggk....', '.....kk.....'],
+    'bombarda': ['.........y..', '........yo..', '.......k....', '....kkkk....', '..kkddddkk..', '.kddwdddddk.', '.kdwddddddk.', 'kdddddddddDk', '.kddddddDDk.', '.kddddDDDDk.', '..kkDDDDkk..', '....kkkk....'],
+    'occhio-vetro': ['............', '....kkkk....', '..kkwwwwkk..', '.kwwwvvwwwk.', '.kwwvVVvwwk.', 'kwwvVkkVvwwk', 'kwwvVkkVvwwk', '.kwwvVVvwwk.', '.kwwwvvwwwk.', '..kkwwwwkk..', '....kkkk....', '............'],
+    'cappello-mago': ['.....kk.....', '.....kbk....', '....kbbk....', '....kbybk...', '...kbbbbk...', '...kbbbybk..', '..kbybbbbk..', '..kbbbbbbbk.', '.kbbbbybbbk.', 'kkkkkkkkkkkk', 'kBBBBBBBBBBk', '.kkkkkkkkkk.'],
+    'sugna': ['...kkkkkk...', '..k......k..', '.kkkkkkkkkk.', '.kwwwcwwwwk.', '.kwcwwwwcwk.', '.kGGGGGGGGk.', '.kgggggggGk.', '..kgggggGk..', '..kgggggGk..', '..kGGGGGGk..', '...kkkkkk...', '............'],
+    'ranocchio': ['............', '.kk...kk....', 'kwdkkkwdk...', 'kvvvvvvvk...', 'kvvvvvvvvkaa', '.kvVVVVvk.a.', '.kvvvvvvk..a', 'kvVvvvvVvk..', 'kvvkvvkvvk..', 'kVk.kk.kVk..', 'kk......kk..', '............'],
+    'latte': ['............', '..kkkkkkkk..', '..kggggggk..', '..kwwwwwwk..', '..kwwwwwwk..', '..kwwwwwgk..', '...kwwwwk...', '...kwwwgk...', '...kwwwwk...', '...kwwwgk...', '...kkkkkk...', '............'],
+    'corda': ['............', '...kkkkkk...', '..ksesesek..', '.kek....kek.', '.ks..kk..sk.', '.ke.kesk.ek.', '.ks.kske.sk.', '.ke..kk..ek.', '.kek....kek.', '..ksesesek.s', '...kkkkkk.e.', '..........s.'],
+    'zoccoli': ['............', '.....kkkk...', '..kkkmmmmk..', '.kmmmmmmmk..', '.kMMMMMMMk..', '..kk...kk...', '......kkkk..', '...kkkmmmmk.', '..kmmmmmmmk.', '..kMMMMMMMk.', '...kk...kk..', '............'],
+    'spillo': ['............', '...kk.......', '..krrk......', '..krRk......', '...kkk......', '....kgk.....', '.....kgk....', '......kgk...', '......kgk...', '.....kgk....', '....kgk.....', '....kk......'],
+    'salasso': ['.....kk.....', '....kggk....', '...kgaagk...', '..kgaaaagk..', '..kaaaaaak..', '..kaaaaaak..', '..kgaaaagk..', '..kkkkkkkk..', '.....rr.....', '....rrrr....', '....rRRr....', '.....rr.....'],
+    'nebbia': ['............', '............', '....kkk.....', '...kgggk.kk.', '..kgggggkggk', '.kggwggggggk', 'kggggggggGGk', 'kgGggggGgggk', '.kGGGGGGGGk.', '..kkkkkkkk..', '............', '............'],
+    'lume': ['...g........', '....g.......', '...g........', '....k.......', '...kOk......', '..kyyyk.kk..', '.kyyyyykyyk.', 'kyywyyyyyk..', 'kyyyyyyyk...', '.kOOOOOk....', '..kkkkk.....', '............'],
+    'benda': ['............', '............', '............', 'kkkkkkkkkk..', 'kdddddddddk.', 'kdDddddDddkk', 'kdddddddddkd', 'kkkkkkkkkkdk', '.........kdk', '..........kd', '...........k', '............'],
+  });
+  /** Numeri delle meccaniche D (oggetti-teatro.md §2 e §5): clamp, raggi, cadenze; tick a 60 Hz, px logici. */
+  const OGGETTI_D = Object.freeze({
+    clamp: Object.freeze({ rimbalzi: 3, orbitali: 3, scudoStanza: 1, bloccoProb: 0.5, famigli: 4, proiettiliGiocatore: 48, rangeMin: 50 }),
+    oming: Object.freeze({ raggioPx: 160 }),
+    orbitaProiettili: Object.freeze({ raggioPx: 46, radPerTick: 0.09, gittataMult: 1.6 }),
+    orbitali: Object.freeze({ raggioPx: 34, radPerTick: 0.06, danno: 2.0, ogniTick: 10, raggioBlocco: 8 }),
+    prossimita: Object.freeze({ multVicino: 2.0, multLontano: 0.3 }),
+    quattroColpi: Object.freeze([-0.3, -0.1, 0.1, 0.3]),
+    diagonaleRad: Math.PI / 4,
+    famiglio: Object.freeze({ distanzaPx: 28, velocitaColpo: 3.6, gittataPx: 200, raggioColpo: 3.5, contattoOgniTick: 12,
+      velocitaContatto: 1.6, finestraTiroTick: 20, omingForza: 0.06, cadenzaMinTick: 6 }),
+    buio: Object.freeze({ raggioPx: 150 }),
+    pool: Object.freeze({ pesoNegativi: 0.15, probDonoIngannevole: 0.5, probNegativoFucina: 0.35 }),
+    cartiglioTick: 180,
+    diario: Object.freeze({ colonne: 8, cellaL: 66, cellaA: 30 }),
+  });
+  SPRITE_PROIETTILI.viola = ['..kkkk..', '.kppppk.', 'kpwppPPk', 'kppppPPk', 'kpppPPPk', 'kPPPPPPk', '.kPPPPk.', '..kkkk..']; // colpi a ricerca del Cucchiaio
+  // --- D: fine ---
+
   /** Oggetto del catalogo per id (null se non c'è). */
   function trovaOggettoB(id) {
     return CATALOGO_OGGETTI.find((o) => o.id === id) || null;
@@ -2932,7 +3133,12 @@ function disegnaManoMarionettaPittorica() {
    * @param {string|null} escludiId id del passivo iniziale del personaggio
    */
   function inizializzaPoolRunB(escludiId) {
-    const scelti = shuffle(CATALOGO_OGGETTI.filter((o) => o.id !== escludiId)).slice(0, OGGETTI_B.dimensionePool);
+    // --- D: inizio --- pool pesato: round(20 × pesoNegativi) = 3 negativi, il resto positivi/misti
+    const candD = CATALOGO_OGGETTI.filter((o) => o.id !== escludiId);
+    const negD = shuffle(candD.filter((o) => o.polarita === 'negativo')).slice(0, Math.round(OGGETTI_B.dimensionePool * OGGETTI_D.pool.pesoNegativi));
+    const posD = shuffle(candD.filter((o) => o.polarita !== 'negativo')).slice(0, OGGETTI_B.dimensionePool - negD.length);
+    const scelti = posD.concat(negD);
+    // --- D: fine ---
     statoRun.poolRunB = { ids: scelti.map((o) => o.id), rimasti: scelti.map((o) => o.id), estrazioni: 0 };
   }
 
@@ -2946,15 +3152,19 @@ function disegnaManoMarionettaPittorica() {
     if (!statoRun.poolRunB) inizializzaPoolRunB(null);
     const P = statoRun.poolRunB;
     P.estrazioni++;
-    if (P.rimasti.length) {
-      const delTier = P.rimasti.filter((id) => trovaOggettoB(id)?.tier === tier);
-      const lista = delTier.length ? delTier : P.rimasti;
+    // --- D: inizio --- le ricompense normali non pescano mai i negativi (escono solo come trappole, vedi D)
+    const rimastiD = P.rimasti.filter((id) => trovaOggettoB(id)?.polarita !== 'negativo');
+    if (rimastiD.length) {
+      const delTier = rimastiD.filter((id) => trovaOggettoB(id)?.tier === tier);
+      const lista = delTier.length ? delTier : rimastiD;
+      // --- D: fine ---
       const id = lista[Math.floor(rng() * lista.length)];
       P.rimasti.splice(P.rimasti.indexOf(id), 1);
       return { ...trovaOggettoB(id) };
     }
     if (rng() < OGGETTI_B.dopoCap.probCuore) return creaCuoreB();
-    return { ...trovaOggettoB(P.ids[Math.floor(rng() * P.ids.length)]) };
+    const idsD = P.ids.filter((id) => trovaOggettoB(id)?.polarita !== 'negativo'); // --- D ---
+    return { ...trovaOggettoB(idsD[Math.floor(rng() * idsD.length)]) };
   }
 
   /**
@@ -3065,8 +3275,10 @@ function disegnaManoMarionettaPittorica() {
       ctx.strokeStyle = sel ? '#ffffff' : o.tier === 'forte' ? '#f9cb40' : '#57534e';
       ctx.lineWidth = sel ? 2 : 1;
       ctx.strokeRect(c.x, c.y, c.w, c.h);
-      drawPixelSprite(SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI.spada, c.x + c.w / 2, c.y + 13, 1.4);
-      drawTextFit(nomeCorto(o.nome), c.x + c.w / 2, c.y + c.h - 4, c.w - 4, { size: 6.5, color: sel ? '#ffffff' : '#e6d2aa', shadow: false });
+      // --- D: sconosciuti in sagoma scura e «???» (scelta dell'autore per questa stanza) ---
+      const notoD = effettoVisibileD(o);
+      drawPixelSprite(spriteD(o, !notoD), c.x + c.w / 2, c.y + 13, 1.4);
+      drawTextFit(notoD ? nomeCorto(o.nome) : '???', c.x + c.w / 2, c.y + c.h - 4, c.w - 4, { size: 6.5, color: sel ? '#ffffff' : '#e6d2aa', shadow: false });
       if (!pool.includes(o.id)) {
         ctx.fillStyle = S.colore;
         ctx.fillRect(c.x + c.w - 5, c.y + 2, 3, 3); // fuori dal pool di questa run
@@ -3075,9 +3287,10 @@ function disegnaManoMarionettaPittorica() {
     const o = CATALOGO_OGGETTI[p.sel];
     const yD = cellaPannelloB(CATALOGO_OGGETTI.length - 1).y + S.cellaA + 8;
     if (o) {
-      drawTextFit(`${o.nome}${pool.includes(o.id) ? '' : '  · fuori dal pool di questa notte'}`, W / 2, yD, W - 80, { size: 9, color: '#4ade80' });
-      drawTextFit(o.statsDesc, W / 2, yD + 13, W - 80, { size: 8, color: '#67e8f9' });
-      drawTextFit(o.lore || '', W / 2, yD + 25, W - 80, { size: 7.5, color: '#e6d2aa', weight: '', style: 'italic' });
+      const notoD = effettoVisibileD(o); // --- D ---
+      drawTextFit(`${notoD ? o.nome : '???'}${pool.includes(o.id) ? '' : '  · fuori dal pool di questa notte'}`, W / 2, yD, W - 80, { size: 9, color: '#4ade80' });
+      drawTextFit(descD(o), W / 2, yD + 13, W - 80, { size: 8, color: '#67e8f9' });
+      drawTextFit(notoD ? (o.lore || '') : '', W / 2, yD + 25, W - 80, { size: 7.5, color: '#e6d2aa', weight: '', style: 'italic' });
     }
     drawTextFit('Frecce/WASD o click: scegli · E/Invio (o secondo click): prendi · Esc: chiudi · ▪ azzurro = fuori dal pool della notte', W / 2, H - 26, W - 80, { size: 7.5, color: '#9ca3af' });
     ctx.restore();
@@ -3132,7 +3345,7 @@ function disegnaManoMarionettaPittorica() {
   // Obiettivo: 5-8 monete in media al Piano 1. Verifica: `node gioco/teatro/sim-economia.js`, che legge
   // QUESTO blocco dal file (una sola fonte per i numeri) e simula 1000 piani.
   const ECONOMIA_T3 = {
-    prezzi: { cuore: 3, consumabile: 2, base: 5, forte: 7 },
+    prezzi: { cuore: 3, consumabile: 2, base: 5, forte: 7, negativo: 2 }, // D: negativo = 2 (oggetti-teatro.md §1)
     piano1: { probMonetaSegreta: 0.5, probMonetaAltre: 0.35 },
     dorato: { prob3: 0.28, probExtra: 0.45 },
     boss: { prob3: 0.35 },
@@ -3142,6 +3355,9 @@ function disegnaManoMarionettaPittorica() {
     if (ECONOMIA_T3.prezzi[o.tier] != null) o.prezzo = ECONOMIA_T3.prezzi[o.tier];
   }
   // --- T3: fine ---
+  // --- D: inizio --- i negativi (anche i misti «negativi per prezzo», sugna e ranocchio) costano 2
+  for (const o of CATALOGO_OGGETTI) if (o.polarita === 'negativo') o.prezzo = ECONOMIA_T3.prezzi.negativo;
+  // --- D: fine ---
 
   // Pool Boss stile Isaac (Monstro, Chub, Duke of Flies, Gurdy, Gemini/Peep, Mom/Satan)
   /**
@@ -3504,7 +3720,7 @@ function disegnaManoMarionettaPittorica() {
 
     const isaacSpd = Math.max(0.7, Math.min(2.0, (statoRun.baseSpdChar || 1.0) + speedUp));
     statoRun.speed = 2.0 * isaacSpd;
-    statoRun.range = Math.min(320, 170 + rangeUp);
+    statoRun.range = Math.max(OGGETTI_D.clamp.rangeMin, Math.min(320, 170 + rangeUp)); // D: gittata minima 50 px
 
     const nuovoMax = Math.max(2, Math.min(24, statoRun.baseMaxHpHalf + bonusMaxHp));
     statoRun.maxHpHalf = nuovoMax;
@@ -3521,6 +3737,42 @@ function disegnaManoMarionettaPittorica() {
     statoRun.tipoProiettile = tipoProiettile;
     statoRun.projScale = projScale;
     statoRun.sinergieVisive = sinergie;
+    // --- D: inizio --- meccaniche nuove (oggetti-teatro.md §2): si leggono i mod del catalogo, così anche i
+    // doppioni (che in B tengono solo le voci additive) contano: secondo famiglio, secondo gomitolo, cuoio ×2.
+    const C = OGGETTI_D.clamp;
+    const dD = { oming: 0, rimbalzi: 0, orbitaProiettili: false, orbitali: 0, esplosiva: 0, prossimita: false,
+      diagonale: false, quattroColpi: false, scudoStanza: 0, bloccoProb: 0, dannoMaxHalf: false,
+      bloccaProiettili: false, velocitaColpo: 1, famigli: [] };
+    let nonBlocco = 1;
+    for (const item of statoRun.oggettiEquipaggiati) {
+      const m = (trovaOggettoB(item.id) || item).mod || {};
+      if (m.omingForza) dD.oming = Math.max(dD.oming, m.omingForza);
+      if (m.rimbalzi) dD.rimbalzi += m.rimbalzi;
+      if (m.orbitaleProiettili) dD.orbitaProiettili = true;
+      if (m.orbitali) dD.orbitali += m.orbitali;
+      if (m.esplosiva) dD.esplosiva = Math.max(dD.esplosiva, m.esplosiva);
+      if (m.prossimita) dD.prossimita = true;
+      if (m.diagonale) dD.diagonale = true;
+      if (m.quattroColpi) dD.quattroColpi = true;
+      if (m.scudoStanza) dD.scudoStanza = Math.max(dD.scudoStanza, m.scudoStanza);
+      if (m.bloccoProb) nonBlocco *= 1 - m.bloccoProb;
+      if (m.dannoMaxHalf) dD.dannoMaxHalf = true;
+      if (m.bloccaProiettili) dD.bloccaProiettili = true;
+      if (m.velocitaColpo) dD.velocitaColpo *= m.velocitaColpo;
+      if (m.famiglio && dD.famigli.length < C.famigli) {
+        dD.famigli.push({ id: item.id, tipo: m.famiglio, dmg: m.famDmg || 3, tears: m.famTears || 1, auto: m.mira === 'auto', oming: Boolean(m.famOming) });
+      }
+    }
+    dD.rimbalzi = Math.min(C.rimbalzi, dD.rimbalzi);
+    dD.orbitali = Math.min(C.orbitali, dD.orbitali);
+    dD.scudoStanza = Math.min(C.scudoStanza, dD.scudoStanza);
+    dD.bloccoProb = Math.min(C.bloccoProb, 1 - nonBlocco);
+    const vecchiF = statoRun.famigliD || [];
+    statoRun.famigliD = dD.famigli.map((f, i) => ({ ...f, x: vecchiF[i] ? vecchiF[i].x : player.x, y: vecchiF[i] ? vecchiF[i].y : player.y, cd: 0 }));
+    const nuovoScudo = dD.scudoStanza > ((statoRun.statD && statoRun.statD.scudoStanza) || 0);
+    statoRun.statD = dD;
+    if (nuovoScudo) statoRun.scudoStanzaD = dD.scudoStanza; // vale già nella stanza in cui lo raccogli
+    // --- D: fine ---
   }
 
   // Usa l'Oggetto Attivo [Q] (Proposta 5)
@@ -3604,6 +3856,7 @@ function disegnaManoMarionettaPittorica() {
       return;
     }
     ricalcolaStatisticheIsaac();
+    dopoRaccoltaD(nuovoItem); // --- D ---
     if (nuovoItem.mod?.healOnEquip) {
       statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + nuovoItem.mod.healOnEquip);
     }
@@ -3620,6 +3873,10 @@ function disegnaManoMarionettaPittorica() {
     player.targetX = null;
     player.targetY = null;
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+    // --- D: inizio --- Diario degli oggetti: si apre dal menu ESC con O e prende i tasti finché è aperto
+    if (statoRun.diarioD) { tastoDiarioD(e.code); return; }
+    if (statoRun.pausa && e.code === 'KeyO') { apriDiarioD(); return; }
+    // --- D: fine ---
     // --- T4: inizio ---
     if (t4Gancio('tasto', e)) return;
     // --- T4: fine ---
@@ -3844,6 +4101,8 @@ function disegnaManoMarionettaPittorica() {
   }
 
   function tiraOggettoGratisStanza(garantito = false) {
+    // --- D: dono ingannevole: un negativo ancora sconosciuto del pool sul piedistallo, prob. 0.5 ---
+    if (garantito) { const ing = estraiNegativoD(OGGETTI_D.pool.probDonoIngannevole); if (ing) return { ...ing, forteGratis: false }; }
     const roll = rng();
     if (roll < 0.10 + effettiNotteC().bonusForte) { // C: notte 5+ ricompense un po' migliori
       // --- B: inizio --- (a pool esaurito di forti può uscire un base o un cuore: l'etichetta segue l'oggetto)
@@ -4134,7 +4393,7 @@ function disegnaManoMarionettaPittorica() {
         },
       ];
     } else if (s.tipo === 'fucina') {
-      const objBase = estraiOggettoBase();
+      const objBase = estraiNegativoD(OGGETTI_D.pool.probNegativoFucina) || estraiOggettoBase(); // D: negativo a 2🪙
       const objForte = estraiOggettoForte();
       const scontoBase = rng() < 0.22;
       const scontoForte = rng() < 0.12;
@@ -4420,6 +4679,13 @@ function disegnaManoMarionettaPittorica() {
     inizializzaPoolRunB(pInfo.passivoIniziale || null);
     statoRun.pannelloB = null;
     // --- B: fine ---
+    // --- D: inizio ---
+    statoRun.maledizioniD = {};
+    statoRun.cartiglioD = null;
+    if (pInfo.passivoIniziale) segnaConosciutoD(pInfo.passivoIniziale); // il dono iniziale è già conosciuto
+    statoRun.famigliD = [];
+    statoRun.ultimoTiroD = null;
+    // --- D: fine ---
     statoRun.oggettoAttivo = { ...(OGGETTI_ATTIVI[pInfo.attivoIniziale] || OGGETTI_ATTIVI.forbici) };
     statoRun.caricaAttivo = statoRun.oggettoAttivo.maxCarica;
     statoRun.scambioPendente = null;
@@ -4470,10 +4736,14 @@ function disegnaManoMarionettaPittorica() {
     statoRun.graziaIngressoC = ticksDaMs(STANZE_C.graziaIngressoMs);
     statoRun.scudoRosaC = Boolean(statoRun.medaglioneC && statoRun.medaglioneC.scudoStanza); // Benedizione di Rosa
     // --- C: fine ---
+    // --- D: inizio --- lo scudo del Velo si ricarica a ogni stanza; i famigli entrano con te
+    statoRun.scudoStanzaD = (statoRun.statD && statoRun.statD.scudoStanza) || 0;
+    for (const f of statoRun.famigliD || []) { f.x = player.x; f.y = player.y; }
+    // --- D: fine ---
 
     if (stanza.tipo === 'tesoro' && stanza.oggettoPiedistallo && !stanza.oggettoPiedistallo.preso) {
       const o = stanza.oggettoPiedistallo;
-      mostraBanner(`${o.forteGratis ? '★ OGGETTO FORTE GRATIS' : '🎁 OGGETTO GRATIS'}: ${o.nome} — ${o.statsDesc}`, 220);
+      mostraBanner(`${o.forteGratis ? '★ OGGETTO FORTE GRATIS' : '🎁 OGGETTO GRATIS'}: ${nomeD(o)} — ${descD(o)}`, 220); // D: effetto nascosto
     } else if (stanza.tipo === 'fucina') {
       // --- T3: inizio ---
       mostraBanner(`⚒ LA FUCINA DI MASTRO PEPPE: Risparmia i Grani (o cerca la Stanza Segreta ?) per le Reliquie da ${ECONOMIA_T3.prezzi.forte}🪙!`, 210);
@@ -4520,37 +4790,369 @@ function disegnaManoMarionettaPittorica() {
   }
 
   function sparaProiettiliDirezione(dx, dy, dmgScale = 1.0) {
+    // --- D: inizio --- diagonale, quattroColpi, velocità, ricerca, rimbalzi, orbita, esplosione, prossimità;
+    // tetto OGGETTI_D.clamp.proiettiliGiocatore proiettili vivi (performance + leggibilità, §5)
+    const D = statoRun.statD || {};
     const baseAng = Math.atan2(dy, dx);
-    const direzioniBase = statoRun.quadDir
-      ? [0, Math.PI / 2, Math.PI, -Math.PI / 2]
-      : [baseAng];
+    statoRun.ultimoTiroD = { tick, ang: baseAng };
+    let direzioniBase = statoRun.quadDir ? [0, Math.PI / 2, Math.PI, -Math.PI / 2] : [baseAng];
+    if (D.diagonale) direzioniBase = direzioniBase.flatMap((a) => [a - OGGETTI_D.diagonaleRad, a + OGGETTI_D.diagonaleRad]);
+    const vel = 4.2 * (D.velocitaColpo || 1);
+    const OP = OGGETTI_D.orbitaProiettili;
 
     for (const dirAng of direzioniBase) {
-      const angoli = statoRun.triplo ? [-0.20, 0, 0.20] : [0];
-      const offsets = statoRun.doppia && !statoRun.triplo ? [-4, 4] : [0];
+      const angoli = D.quattroColpi ? OGGETTI_D.quattroColpi : statoRun.triplo ? [-0.20, 0, 0.20] : [0];
+      const offsets = statoRun.doppia && !statoRun.triplo && !D.quattroColpi ? [-4, 4] : [0];
       for (const da of angoli) {
         for (const off of offsets) {
+          if (statoRun.proiettili.length >= OGGETTI_D.clamp.proiettiliGiocatore) return;
           const a = dirAng + da;
           const perpX = -Math.sin(a) * off;
           const perpY = Math.cos(a) * off;
           statoRun.proiettili.push({
             x: player.x + Math.cos(a) * 10 + perpX,
             y: player.y - 6 + Math.sin(a) * 10 + perpY,
-            vx: Math.cos(a) * 4.2,
-            vy: Math.sin(a) * 4.2,
+            vx: Math.cos(a) * vel,
+            vy: Math.sin(a) * vel,
             dist: 0,
-            maxDist: statoRun.range,
+            maxDist: statoRun.range * (D.orbitaProiettili ? OP.gittataMult : 1),
             dmg: statoRun.dmg * dmgScale,
             r: 4.5 * statoRun.projScale,
             tipo: statoRun.tipoProiettile,
             piercing: statoRun.piercing,
             overflowPierce: statoRun.overflowPierce,
             hitIds: new Set(),
+            oming: D.oming || 0,
+            rimbalzi: D.rimbalzi || 0,
+            orbitaD: D.orbitaProiettili ? { ang: a, r: 10 } : null,
+            esplosiva: D.esplosiva || 0,
+            prossimita: Boolean(D.prossimita),
+            bloccaProiettili: Boolean(D.bloccaProiettili),
           });
         }
       }
     }
+    // --- D: fine ---
   }
+
+  // --- D: inizio --- funzioni delle meccaniche D (oggetti-teatro.md §2)
+  /** Nemico vivo (a terra) più vicino a (x, y) entro maxPx, oppure null. */
+  function nemicoVicinoD(st, x, y, maxPx = Infinity) {
+    let best = null, bd = maxPx;
+    for (const n of (st && st.nemici) || []) {
+      if (n.hp <= 0 || (n.airZ || 0) > 16) continue;
+      const d = Math.hypot(n.x - x, n.y - 6 - y);
+      if (d < bd) { bd = d; best = n; }
+    }
+    return best;
+  }
+
+  /** Prima del passo: orbita attorno al giocatore oppure curva verso il nemico più vicino. */
+  function aggiornaProiettileD(p, st) {
+    if (p.orbitaD) {
+      const O = OGGETTI_D.orbitaProiettili;
+      p.orbitaD.ang += O.radPerTick;
+      p.orbitaD.r = Math.min(O.raggioPx, p.orbitaD.r + 2);
+      p.vx = player.x + Math.cos(p.orbitaD.ang) * p.orbitaD.r - p.x;
+      p.vy = player.y - 6 + Math.sin(p.orbitaD.ang) * p.orbitaD.r - p.y;
+      return;
+    }
+    if (p.oming > 0) {
+      const n = nemicoVicinoD(st, p.x, p.y, OGGETTI_D.oming.raggioPx);
+      if (!n) return;
+      const v = Math.hypot(p.vx, p.vy);
+      const a = Math.atan2(p.vy, p.vx);
+      let diff = Math.atan2(n.y - 6 - p.y, n.x - p.x) - a;
+      while (diff > Math.PI) diff -= 2 * Math.PI;
+      while (diff < -Math.PI) diff += 2 * Math.PI;
+      const na = a + Math.max(-p.oming, Math.min(p.oming, diff));
+      p.vx = Math.cos(na) * v;
+      p.vy = Math.sin(na) * v;
+    }
+  }
+
+  /** Rimbalzo sul muro: inverte la componente normale. Il timer di gittata (p.dist) NON riparte. */
+  function rimbalzaD(p) {
+    if (p.rimbalzi <= 0) return false;
+    let ok = false;
+    if (p.x < ARENA.x1 - 8 || p.x > ARENA.x2 + 8) { p.vx = -p.vx; p.x = Math.max(ARENA.x1 - 8, Math.min(ARENA.x2 + 8, p.x)); ok = true; }
+    if (p.y < ARENA.y1 - 8 || p.y > ARENA.y2 + 8) { p.vy = -p.vy; p.y = Math.max(ARENA.y1 - 8, Math.min(ARENA.y2 + 8, p.y)); ok = true; }
+    if (ok) { p.rimbalzi--; p.hitIds = new Set(); }
+    return ok;
+  }
+
+  /** Moltiplicatore della prossimità: ×2.0 al lancio, cala fino a ×0.3 a fine gittata. */
+  function moltProssimitaD(p) {
+    if (!p.prossimita) return 1;
+    const P = OGGETTI_D.prossimita;
+    const t = Math.max(0, Math.min(1, p.dist / (p.maxDist || 1)));
+    return P.multVicino + (P.multLontano - P.multVicino) * t;
+  }
+
+  /** Esplosione all'impatto: tutti i nemici nel raggio a danno pieno; NON ferisce il giocatore (decisione §6.1). */
+  function esplodiD(p, st) {
+    if (!p.esplosiva || p.esploso) return;
+    p.esploso = true;
+    statoRun.ondeEsplosione.push({ x: p.x, y: p.y, r: 6, maxR: p.esplosiva, color: '#f97316' });
+    scuoti(FEEL.scossa.bomba);
+    AudioSys.playEsplosione();
+    for (const n of (st && st.nemici) || []) {
+      if (n.hp <= 0 || p.hitIds.has(n.id)) continue;
+      if (Math.hypot(n.x - p.x, n.y - 6 - p.y) <= p.esplosiva + n.r) {
+        const a = Math.atan2(n.y - p.y, n.x - p.x);
+        danneggiaNemico(n, p.dmg, Math.cos(a), Math.sin(a));
+      }
+    }
+  }
+
+  /** Il colpo annulla i proiettili nemici che tocca (Ventaglio di Carta). true se il colpo va rimosso. */
+  function bloccaProiettiliNemiciD(p) {
+    if (!p.bloccaProiettili) return false;
+    for (let j = statoRun.proiettiliNemici.length - 1; j >= 0; j--) {
+      const pr = statoRun.proiettiliNemici[j];
+      if (Math.hypot(pr.x - p.x, pr.y - p.y) < p.r + 4) {
+        statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
+        statoRun.proiettiliNemici.splice(j, 1);
+        if (!p.piercing) return true;
+      }
+    }
+    return false;
+  }
+
+  /** Famigli (tiratore/contatto) e gomitoli orbitanti: un tick di logica nella stanza `st`. */
+  function aggiornaFamigliOrbitaliD(st) {
+    const F = OGGETTI_D.famiglio;
+    let capo = { x: player.x, y: player.y };
+    for (const f of statoRun.famigliD || []) {
+      if (f.cd > 0) f.cd--;
+      if (f.tipo === 'contatto') {
+        const n = nemicoVicinoD(st, f.x, f.y);
+        const tx = n ? n.x : player.x - 22, ty = n ? n.y : player.y + 8;
+        const d = Math.hypot(tx - f.x, ty - f.y);
+        if (d > 2) { const k = Math.min(d, F.velocitaContatto) / d; f.x += (tx - f.x) * k; f.y += (ty - f.y) * k; }
+        if (n && f.cd <= 0 && Math.hypot(n.x - f.x, n.y - f.y) <= n.r + 6) {
+          danneggiaNemico(n, f.dmg, 0, 0);
+          f.cd = F.contattoOgniTick;
+        }
+        continue;
+      }
+      const d = Math.hypot(capo.x - f.x, capo.y - f.y);
+      if (d > F.distanzaPx) { const k = ((d - F.distanzaPx) / d) * 0.25; f.x += (capo.x - f.x) * k; f.y += (capo.y - f.y) * k; }
+      capo = f;
+      if (f.cd > 0) continue;
+      let ang = null;
+      if (f.auto) {
+        const n = nemicoVicinoD(st, f.x, f.y);
+        if (n) ang = Math.atan2(n.y - 6 - (f.y - 6), n.x - f.x);
+      } else if (statoRun.ultimoTiroD && tick - statoRun.ultimoTiroD.tick <= F.finestraTiroTick) {
+        ang = statoRun.ultimoTiroD.ang;
+      }
+      if (ang === null || statoRun.proiettili.length >= OGGETTI_D.clamp.proiettiliGiocatore) continue;
+      statoRun.proiettili.push({
+        x: f.x, y: f.y - 6, vx: Math.cos(ang) * F.velocitaColpo, vy: Math.sin(ang) * F.velocitaColpo,
+        dist: 0, maxDist: F.gittataPx, dmg: f.dmg, r: F.raggioColpo, tipo: f.oming ? 'viola' : 'base',
+        piercing: false, overflowPierce: false, hitIds: new Set(), oming: f.oming ? F.omingForza : 0, rimbalzi: 0, famD: true,
+      });
+      f.cd = Math.max(F.cadenzaMinTick, Math.round(60 / f.tears));
+    }
+    const O = OGGETTI_D.orbitali;
+    const nO = (statoRun.statD && statoRun.statD.orbitali) || 0;
+    statoRun.orbitaliPosD = [];
+    for (let i = 0; i < nO; i++) {
+      const a = tick * O.radPerTick + (i * 2 * Math.PI) / nO;
+      const x = player.x + Math.cos(a) * O.raggioPx, y = player.y - 6 + Math.sin(a) * O.raggioPx;
+      statoRun.orbitaliPosD.push({ x, y });
+      for (let j = statoRun.proiettiliNemici.length - 1; j >= 0; j--) {
+        const pr = statoRun.proiettiliNemici[j];
+        if (Math.hypot(pr.x - x, pr.y - y) <= O.raggioBlocco) {
+          statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
+          statoRun.proiettiliNemici.splice(j, 1);
+        }
+      }
+      if (tick % O.ogniTick === 0) {
+        for (const n of st.nemici) {
+          if (n.hp > 0 && (n.airZ || 0) <= 16 && Math.hypot(n.x - x, n.y - 6 - y) <= n.r + 6) danneggiaNemico(n, O.danno, 0, 0);
+        }
+      }
+    }
+  }
+
+  /** Disegna famigli e gomitoli orbitanti (sprite dell'oggetto, piccoli). */
+  function disegnaFamigliOrbitaliD() {
+    for (const f of statoRun.famigliD || []) {
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(Math.round(f.x - 5), Math.round(f.y + 5), 10, 3);
+      drawPixelSprite(SPRITE_OGGETTI[f.id] || SPRITE_OGGETTI.bobby, f.x, f.y - 6 + Math.sin(tick * 0.12) * 1.5, 1.3);
+    }
+    for (const o of statoRun.orbitaliPosD || []) drawPixelSprite(SPRITE_OGGETTI.gomitolo, o.x, o.y, 1.0);
+  }
+
+  /** La maledizione `k` ('mappa' | 'buio' | 'cieco') è attiva in questo piano? Si toglie da sola al piano dopo. */
+  function maledizioneD(k) {
+    return Boolean(statoRun.maledizioniD && statoRun.maledizioniD[k] === statoRun.piano && statoRun.fase === 'in_gioco');
+  }
+
+  /** Lume Spento: buio oltre OGGETTI_D.buio.raggioPx attorno al giocatore. */
+  function disegnaBuioD() {
+    const R = OGGETTI_D.buio.raggioPx;
+    const g = ctx.createRadialGradient(player.x, player.y - 6, R * 0.55, player.x, player.y - 6, R);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(0,0,0,0.94)');
+    ctx.save();
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  /** Id degli oggetti conosciuti nello slot di salvataggio (flag oggettiConosciuti); senza T3, in memoria. */
+  const conosciutiMemoriaD = [];
+  function conosciutiD() {
+    const sv = window.__teatroT3 && window.__teatroT3.salvataggi;
+    if (!sv) return conosciutiMemoriaD;
+    const v = sv.leggiFlag('oggettiConosciuti');
+    return Array.isArray(v) ? v : [];
+  }
+  function conosciutoD(id) { return conosciutiD().includes(id); }
+
+  /**
+   * Un negativo SCONOSCIUTO ancora nel pool della run, con probabilità `prob` (dono ingannevole o banco della
+   * Fucina). I negativi conosciuti non escono più (§5 Economia: «si ripesca»). null se non esce.
+   */
+  function estraiNegativoD(prob) {
+    const P = statoRun.poolRunB;
+    if (!P) return null;
+    const lista = P.rimasti.filter((id) => trovaOggettoB(id)?.polarita === 'negativo' && !conosciutoD(id));
+    if (!lista.length || rng() >= prob) return null;
+    const id = lista[Math.floor(rng() * lista.length)];
+    P.rimasti.splice(P.rimasti.indexOf(id), 1);
+    return { ...trovaOggettoB(id) };
+  }
+
+  /** Segna l'oggetto come conosciuto nello slot. true se è la prima volta. */
+  function segnaConosciutoD(id) {
+    if (!trovaOggettoB(id) || conosciutoD(id)) return false;
+    const lista = conosciutiD().concat([id]);
+    const sv = window.__teatroT3 && window.__teatroT3.salvataggi;
+    if (sv) sv.impostaFlag('oggettiConosciuti', lista);
+    else conosciutiMemoriaD.push(id);
+    return true;
+  }
+  /** L'effetto di `o` si vede? Solo se conosciuto e senza la Benedizione del Cieco (che vale per il piano). */
+  function effettoVisibileD(o) { return Boolean(o) && conosciutoD(o.id) && !maledizioneD('cieco'); }
+  /** Descrizione come la vede il giocatore: «Effetto: ???» finché non lo raccoglie. */
+  function descD(o) { return effettoVisibileD(o) ? o.statsDesc : 'Effetto: ???'; }
+  /** Nome come lo vede il giocatore (con la Benda del Cieco: «???»). */
+  function nomeD(o) { return maledizioneD('cieco') ? '???' : o.nome; }
+  /** Lore visibile solo a effetto noto. */
+  function loreD(o) { return effettoVisibileD(o) ? (o.lore || '') : 'Lo scoprirai solo raccogliendolo.'; }
+  const sagomeD = new Map();
+  /** Sprite di `o`; sagoma scura con la Benda del Cieco o se `sagoma` (colore della palette `col`). */
+  function spriteD(o, sagoma = false, col = 'D') {
+    const g = SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI.spada;
+    if (!sagoma && !maledizioneD('cieco')) return g;
+    const k = o.sprite + col;
+    if (!sagomeD.has(k)) sagomeD.set(k, g.map((r) => r.replace(/[^.]/g, col)));
+    return sagomeD.get(k);
+  }
+
+  /** Cartiglio al primo raccolto: nome, effetto e lore per OGGETTI_D.cartiglioTick tick. */
+  function disegnaCartiglioD() {
+    const c = statoRun.cartiglioD;
+    if (!c || statoRun.fase !== 'in_gioco') return;
+    const t = tick - c.t0;
+    if (t > OGGETTI_D.cartiglioTick) { statoRun.cartiglioD = null; return; }
+    const o = c.item;
+    const bw = 400, bh = 52, bx = (W - bw) / 2, by = 268;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, t / 10, (OGGETTI_D.cartiglioTick - t) / 15);
+    ctx.fillStyle = '#e6d2aa';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.strokeStyle = '#5c4024';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bx + 3, by + 3, bw - 6, bh - 6);
+    drawPixelSprite(SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI.spada, bx + 24, by + bh / 2, 2);
+    drawTextFit(`✦ Scoperto: ${o.nome}`, bx + bw / 2 + 16, by + 15, bw - 70, { size: 9, color: '#5c1a0c', shadow: false });
+    drawTextFit(o.statsDesc, bx + bw / 2 + 16, by + 29, bw - 70, { size: 7.5, color: '#14532d', shadow: false });
+    drawTextFit(`«${o.lore || ''}»`, bx + bw / 2 + 16, by + 42, bw - 70, { size: 7, color: '#451a03', weight: '', style: 'italic', shadow: false });
+    ctx.restore();
+  }
+
+  // Diario degli oggetti (menu ESC dell'autore): griglia di tutto il catalogo, conosciuti a colori.
+  function apriDiarioD() { statoRun.diarioD = { sel: 0 }; }
+  function cellaDiarioD(i) {
+    const G = OGGETTI_D.diario;
+    const x0 = Math.round((W - G.colonne * G.cellaL) / 2);
+    return { x: x0 + (i % G.colonne) * G.cellaL, y: 46 + Math.floor(i / G.colonne) * G.cellaA, w: G.cellaL - 4, h: G.cellaA - 3 };
+  }
+  /** Tasti del Diario: frecce/WASD muovono, Esc/O/Invio chiudono (si torna al menu ESC). */
+  function tastoDiarioD(code) {
+    const d = statoRun.diarioD;
+    const n = CATALOGO_OGGETTI.length;
+    const C = OGGETTI_D.diario.colonne;
+    if (['ArrowLeft', 'KeyA'].includes(code)) d.sel = (d.sel - 1 + n) % n;
+    else if (['ArrowRight', 'KeyD'].includes(code)) d.sel = (d.sel + 1) % n;
+    else if (['ArrowUp', 'KeyW'].includes(code)) d.sel = (d.sel - C + n * C) % n;
+    else if (['ArrowDown', 'KeyS'].includes(code)) d.sel = (d.sel + C) % n;
+    else if (['Escape', 'KeyO', 'Enter', 'Space'].includes(code)) statoRun.diarioD = null;
+  }
+  /** Click nel Diario: una cella la seleziona; fuori dalla griglia chiude. */
+  function clickDiarioD(mx, my) {
+    for (let i = 0; i < CATALOGO_OGGETTI.length; i++) {
+      const c = cellaDiarioD(i);
+      if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) { statoRun.diarioD.sel = i; return; }
+    }
+    if (my < 30 || my > H - 20) statoRun.diarioD = null;
+  }
+  function disegnaDiarioD() {
+    const d = statoRun.diarioD;
+    if (!d) return;
+    const noti = conosciutiD();
+    ctx.save();
+    ctx.fillStyle = 'rgba(5, 3, 2, 0.94)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#1c130c';
+    ctx.strokeStyle = '#f9cb40';
+    ctx.lineWidth = 2;
+    ctx.fillRect(24, 14, W - 48, H - 24);
+    ctx.strokeRect(24, 14, W - 48, H - 24);
+    const nNoti = CATALOGO_OGGETTI.filter((o) => noti.includes(o.id)).length;
+    drawTextFit(`📖 DIARIO DEGLI OGGETTI — Conosciuti ${nNoti} / ${CATALOGO_OGGETTI.length}`, W / 2, 32, W - 80, { size: 10, color: '#f9cb40' });
+    for (let i = 0; i < CATALOGO_OGGETTI.length; i++) {
+      const o = CATALOGO_OGGETTI[i];
+      const c = cellaDiarioD(i);
+      const noto = noti.includes(o.id);
+      const sel = i === d.sel;
+      ctx.fillStyle = sel ? '#3b2a1a' : noto ? '#2a1d14' : '#4a3a2a';
+      ctx.fillRect(c.x, c.y, c.w, c.h);
+      ctx.strokeStyle = sel ? '#ffffff' : o.polarita === 'negativo' && noto ? '#b91c1c' : o.tier === 'forte' ? '#f9cb40' : '#57534e';
+      ctx.lineWidth = sel ? 2 : 1;
+      ctx.strokeRect(c.x, c.y, c.w, c.h);
+      drawPixelSprite(spriteD(o, !noto, 'k'), c.x + c.w / 2, c.y + 10, 1.2);
+      drawTextFit(noto ? o.nome : '???', c.x + c.w / 2, c.y + c.h - 3, c.w - 4, { size: 6, color: noto ? '#e6d2aa' : '#a8a29e', shadow: false });
+    }
+    const o = CATALOGO_OGGETTI[d.sel];
+    const noto = o && noti.includes(o.id);
+    const yD = cellaDiarioD(CATALOGO_OGGETTI.length - 1).y + OGGETTI_D.diario.cellaA + 6;
+    if (o) {
+      drawTextFit(noto ? o.nome : '???', W / 2, yD, W - 80, { size: 9, color: '#4ade80' });
+      drawTextFit(noto ? o.statsDesc : 'Effetto: ??? — raccoglilo per scoprirlo.', W / 2, yD + 12, W - 80, { size: 8, color: '#67e8f9' });
+      if (noto) drawTextFit(`«${o.lore || ''}»`, W / 2, yD + 23, W - 80, { size: 7.5, color: '#e6d2aa', weight: '', style: 'italic' });
+    }
+    drawTextFit('Frecce/WASD o click: scorri · Esc/O: torna al menu', W / 2, H - 14, W - 80, { size: 7, color: '#9ca3af' });
+    ctx.restore();
+  }
+
+  /** Dopo ogni raccolta di un oggetto del catalogo: conosciuto (cartiglio al primo), maledizioni (fino a fine piano). */
+  function dopoRaccoltaD(item) {
+    const base = trovaOggettoB(item.id);
+    if (base && segnaConosciutoD(base.id)) statoRun.cartiglioD = { item: base, t0: tick };
+    const m = base && base.mod;
+    if (m && m.maledizione) {
+      statoRun.maledizioniD = statoRun.maledizioniD || {};
+      statoRun.maledizioniD[m.maledizione] = statoRun.piano;
+    }
+  }
+  // --- D: fine ---
 
   function spawnaMonetaATerra(st, x, y, valore = 1) {
     if (!st) return;
@@ -4883,7 +5485,7 @@ function disegnaManoMarionettaPittorica() {
 
       if (st.oggettoPiedistallo) {
         const tag = st.oggettoPiedistallo.forteGratis ? '★ OGGETTO FORTE GRATIS (1 su 10)!' : '🎁 OGGETTO GRATIS (1 su 3)!';
-        mostraBanner(`Stanza pulita! È apparso ${tag} → ${st.oggettoPiedistallo.nome} [Click/E]`, 220);
+        mostraBanner(`Stanza pulita! È apparso ${tag} → ${nomeD(st.oggettoPiedistallo)} [Click/E]`, 220); // D
       } else { // --- C: nessun avviso della crepa a stanza pulita ---
         mostraBanner(st.tipo === 'segreta' ? 'Stanza Segreta ripulita! Raccogli tutte le monete a terra!' : 'Stanza ripulita! (+1⚡ Carica Attivo [Q])', 130);
       }
@@ -4975,6 +5577,16 @@ function disegnaManoMarionettaPittorica() {
       statoRun.effettiSplash.push({ x: player.x, y: player.y - 10, tick: 0 });
       return;
     }
+    // --- D: inizio --- Velo della Madonna (scudoStanza) e Ostia (dannoMaxHalf)
+    if (statoRun.fase === 'in_gioco' && statoRun.scudoStanzaD > 0) {
+      statoRun.scudoStanzaD--;
+      if (Number.isFinite(daX) && Number.isFinite(daY)) spingi(player, player.x - daX, player.y - daY, FEEL.iframes.rimbalzoPx);
+      player.invuln = ticksDaMs(FEEL.iframes.durataMs);
+      statoRun.ondeEsplosione.push({ x: player.x, y: player.y - 6, r: 6, maxR: 30, color: '#93c5fd' });
+      return;
+    }
+    if (statoRun.statD && statoRun.statD.dannoMaxHalf) mezzeMaschereDanno = Math.min(1, mezzeMaschereDanno);
+    // --- D: fine ---
     // (bug autore «quando perdo si freeza») fuori dalla run (sequenza di morte, hub, menu) nessun colpo:
     // un secondo colpo letale nello stesso tick non deve riavviare la run sopra la sequenza di morte.
     if (statoRun.fase !== 'in_gioco') return;
@@ -5637,6 +6249,7 @@ function disegnaManoMarionettaPittorica() {
       // --- T3: fine ---
       for (let i = statoRun.proiettili.length - 1; i >= 0; i--) {
         const p = statoRun.proiettili[i];
+        aggiornaProiettileD(p, st); // --- D: orbita / ricerca ---
         p.x += p.vx;
         p.y += p.vy;
         p.dist += Math.hypot(p.vx, p.vy);
@@ -5666,6 +6279,7 @@ function disegnaManoMarionettaPittorica() {
             }
           }
           if (hitOst) {
+            esplodiD(p, st); // --- D ---
             statoRun.proiettili.splice(i, 1);
             continue;
           }
@@ -5684,6 +6298,10 @@ function disegnaManoMarionettaPittorica() {
         // --- T3: inizio ---
         if (spettraliT3) rimuovi = p.dist >= p.maxDist || p.x < 0 || p.x > W || p.y < 0 || p.y > H;
         // --- T3: fine ---
+        // --- D: inizio --- rimbalzi sui muri (gittata non azzerata) e colpi che annullano i proiettili nemici
+        if (rimuovi && p.dist < p.maxDist && p.rimbalzi > 0 && !spettraliT3) rimuovi = !rimbalzaD(p);
+        if (!rimuovi && bloccaProiettiliNemiciD(p)) rimuovi = true;
+        // --- D: fine ---
 
         for (const nem of st.nemici) {
           if (nem.hp <= 0 || (nem.airZ || 0) > 16 || p.hitIds.has(nem.id)) continue;
@@ -5691,7 +6309,7 @@ function disegnaManoMarionettaPittorica() {
             p.hitIds.add(nem.id);
             const hpPrima = nem.hp;
             const l = Math.hypot(p.vx, p.vy) || 1;
-            danneggiaNemico(nem, p.dmg, p.vx / l, p.vy / l);
+            danneggiaNemico(nem, p.dmg * moltProssimitaD(p), p.vx / l, p.vy / l); // D: prossimità
             statoRun.effettiSplash.push({ x: p.x, y: p.y, tick: 0 });
             if (p.piercing) {
               // Continua
@@ -5704,11 +6322,15 @@ function disegnaManoMarionettaPittorica() {
           }
         }
         if (rimuovi) {
+          esplodiD(p, st); // --- D: esplosiva ---
           if (p.dist >= p.maxDist) statoRun.effettiSplash.push({ x: p.x, y: p.y, tick: 0 });
           statoRun.proiettili.splice(i, 1);
         }
       }
 
+      // --- D: inizio ---
+      aggiornaFamigliOrbitaliD(st);
+      // --- D: fine ---
       // Proiettili Nemici
       const dannoBasePiano = statoRun.piano >= 3 ? 2 : 1;
       for (let i = statoRun.proiettiliNemici.length - 1; i >= 0; i--) {
@@ -5736,6 +6358,8 @@ function disegnaManoMarionettaPittorica() {
         if (Math.hypot(player.x - pr.x, (player.y - 6) - pr.y) < 9 && player.invuln <= 0) {
           statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
           statoRun.proiettiliNemici.splice(i, 1);
+          // --- D: Maschera di Cuoio: probabilità di parare il proiettile (1 − Π(1−p), max 0.5) ---
+          if (statoRun.statD && statoRun.statD.bloccoProb > 0 && Math.random() < statoRun.statD.bloccoProb) { statoRun.bloccatiD = (statoRun.bloccatiD || 0) + 1; continue; }
           subisciColpoGiocatore(pr.bossShot ? 2 : dannoBasePiano, 'un proiettile del Velo', pr.x - pr.vx, pr.y - pr.vy);
           if (statoRun.hpHalf <= 0) break;
           continue;
@@ -6339,9 +6963,9 @@ function disegnaManoMarionettaPittorica() {
         drawPixelSprite(spPed, o.x, o.y + 8, 2);
         if (!o.preso) {
           const floatY = Math.round(Math.sin(tick * 0.08) * 3);
-          drawPixelSprite(SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI.spada, o.x, o.y - 12 + floatY, 2);
+          drawPixelSprite(o.cuoreB ? SPRITE_OGGETTI[o.sprite] : spriteD(o), o.x, o.y - 12 + floatY, 2); // D: sagoma col Cieco
           const badge = o.forteGratis ? '★ FORTE GRATIS' : '🎁 OGGETTO GRATIS';
-          drawPillLabel(`${badge}: ${o.nome} [Click/E]`, o.x, o.y - 28, 300, {
+          drawPillLabel(`${badge}: ${o.cuoreB ? o.nome : nomeD(o)} [Click/E]`, o.x, o.y - 28, 300, {
             size: 8,
             color: o.forteGratis ? '#f9cb40' : '#67e8f9',
             border: o.forteGratis ? '#f9cb40' : '#0891b2',
@@ -6354,8 +6978,8 @@ function disegnaManoMarionettaPittorica() {
           ctx.strokeStyle = o.forteGratis ? '#f9cb40' : '#5c4024';
           ctx.lineWidth = 1;
           ctx.strokeRect(px, py, pw, ph);
-          drawTextFit(o.statsDesc, px + pw / 2, py + 12, pw - 12, { size: 8, color: '#4ade80' });
-          drawTextFit(`«${o.lore}»`, px + pw / 2, py + 24, pw - 12, { size: 7.5, style: 'italic', weight: '', color: '#e6d2aa' });
+          drawTextFit(o.cuoreB ? o.statsDesc : descD(o), px + pw / 2, py + 12, pw - 12, { size: 8, color: '#4ade80' }); // D
+          drawTextFit(`«${o.cuoreB ? o.lore : loreD(o)}»`, px + pw / 2, py + 24, pw - 12, { size: 7.5, style: 'italic', weight: '', color: '#e6d2aa' });
         }
       }
 
@@ -6396,8 +7020,8 @@ function disegnaManoMarionettaPittorica() {
               slotVicino = sl;
             }
             const floatY = Math.round(Math.sin(tick * 0.08 + sl.x) * 2);
-            drawPixelSprite(SPRITE_OGGETTI[sl.sprite] || SPRITE_OGGETTI.cuore, sl.x, sl.y - 6 + floatY, 1.75);
-            drawPillLabel(sl.nomeBreve || sl.nome, sl.x, sl.y - 20, 96, {
+            drawPixelSprite(sl.item ? spriteD(sl.item) : (SPRITE_OGGETTI[sl.sprite] || SPRITE_OGGETTI.cuore), sl.x, sl.y - 6 + floatY, 1.75); // D
+            drawPillLabel(sl.item && maledizioneD('cieco') ? '???' : (sl.nomeBreve || sl.nome), sl.x, sl.y - 20, 96, {
               size: 7.5,
               color: sl.tier === 'forte' ? '#f9cb40' : '#ffffff',
               border: sl.tier === 'forte' ? '#f9cb40' : '#5c4024',
@@ -6427,14 +7051,14 @@ function disegnaManoMarionettaPittorica() {
           ctx.lineWidth = 1;
           ctx.strokeRect(bx, by, bw, bh);
           drawTextFit(
-            `${slotVicino.nome} (${slotVicino.prezzo}🪙)`,
+            `${slotVicino.item && maledizioneD('cieco') ? '???' : slotVicino.nome} (${slotVicino.prezzo}🪙)`, // D
             bx + bw / 2,
             by + 11,
             bw - 12,
             { size: 8, color: slotVicino.tier === 'forte' ? '#f9cb40' : '#ffffff' }
           );
           drawTextFit(
-            slotVicino.statsDesc,
+            slotVicino.item ? descD(slotVicino.item) : slotVicino.statsDesc, // D: effetto nascosto
             bx + bw / 2,
             by + 23,
             bw - 12,
@@ -6669,6 +7293,7 @@ function disegnaManoMarionettaPittorica() {
         drawPixelSprite(sp, p.x, p.y, 1.55 * statoRun.projScale);
       }
 
+      disegnaFamigliOrbitaliD(); // --- D ---
       // Proiettili Nemici
       for (const pr of statoRun.proiettiliNemici) {
         drawPixelSprite(SPRITE_PROIETTILI.nemico, pr.x, pr.y, pr.bossShot ? 1.85 : 1.55);
@@ -6711,10 +7336,12 @@ function disegnaManoMarionettaPittorica() {
         // --- A: fine ---
       }
 
+      if (maledizioneD('buio')) disegnaBuioD(); // --- D: Lume Spento ---
       // --- T3: inizio ---
       window.__teatroT3?.disegnaMondo?.(ctx); // raggio cremisi (sotto l'HUD, dentro la scossa)
       // --- T3: fine ---
       disegnaHUDPixelArt(st);
+      disegnaCartiglioD(); // --- D ---
       // --- B: inizio ---
       if (statoRun.pannelloB) disegnaPannelloSviluppatoreB();
       // --- B: fine ---
@@ -6820,7 +7447,7 @@ function disegnaManoMarionettaPittorica() {
 
     // 3. Minimappa ad ESPLORAZIONE in alto a destra:
     const m = statoRun.mappa;
-    if (m) {
+    if (m && !maledizioneD('mappa')) { // D: Nebbia del Volturno nasconde la minimappa
       const cell = 12, x0 = W - 118, y0 = 24;
       const mw = 114, mh = 92;
       ctx.save();
@@ -7045,7 +7672,11 @@ function disegnaManoMarionettaPittorica() {
   function gestisciClickMenuPausa(mx, my) {
     const btnW = 236, btnH = 26;
     const bx = W / 2 - btnW / 2;
-    const my0 = 42;
+    // --- D: inizio --- il menu è salito di 12 px per far posto al Diario
+    if (statoRun.diarioD) { clickDiarioD(mx, my); return true; }
+    const my0 = 30;
+    if (mx >= bx && mx <= bx + btnW && my >= my0 + 230 && my <= my0 + 230 + btnH) { apriDiarioD(); return true; }
+    // --- D: fine ---
     // 1. Riprendi (y: my0 + 60)
     if (mx >= bx && mx <= bx + btnW && my >= my0 + 60 && my <= my0 + 60 + btnH) {
       statoRun.pausa = false;
@@ -7088,7 +7719,7 @@ function disegnaManoMarionettaPittorica() {
     ctx.fillStyle = 'rgba(6, 4, 3, 0.85)';
     ctx.fillRect(0, 0, W, H);
 
-    const mx = 170, my = 42, mw = 300, mh = 276;
+    const mx = 170, my = 30, mw = 300, mh = 318; // D: un bottone in più (Diario)
     ctx.fillStyle = '#140c08';
     ctx.strokeStyle = '#f9cb40';
     ctx.lineWidth = 2;
@@ -7110,7 +7741,8 @@ function disegnaManoMarionettaPittorica() {
       { id: 'audio', testo: AudioSys.attivo ? '🔊 AUDIO: ON' : '🔇 AUDIO: MUTATO', y: my + 94, col: '#22150d' },
       { id: 'fullscreen', testo: document.fullscreenElement ? '⛶ SCHERMO INTERO: ON' : '⛶ SCHERMO INTERO: OFF', y: my + 128, col: '#22150d' },
       { id: 'ricomincia', testo: '🎲 RICOMINCIA NOTTE [R]', y: my + 162, col: '#22150d' },
-      { id: 'menu', testo: '🎭 MENÙ PERSONAGGI', y: my + 196, col: '#22150d' }
+      { id: 'menu', testo: '🎭 MENÙ PERSONAGGI', y: my + 196, col: '#22150d' },
+      { id: 'diario', testo: '📖 DIARIO DEGLI OGGETTI [O]', y: my + 230, col: '#22150d' }, // D
     ];
 
     for (const b of bottoni) {
@@ -7123,13 +7755,14 @@ function disegnaManoMarionettaPittorica() {
     }
 
     ctx.fillStyle = '#26170e';
-    ctx.fillRect(mx + 10, my + 232, mw - 20, 34);
+    ctx.fillRect(mx + 10, my + 266, mw - 20, 34);
     ctx.strokeStyle = '#4a2c14';
-    ctx.strokeRect(mx + 10, my + 232, mw - 20, 34);
-    drawTextFit('WASD: Movimento · Frecce/Mouse: Spara/Attacca', W / 2, my + 245, mw - 28, { size: 7.5, color: '#e6d2aa' });
-    drawTextFit('Q: Attivo · E: Compra/Patto/Raccogli · ESC: Pausa', W / 2, my + 258, mw - 28, { size: 7.5, color: '#e6d2aa' });
+    ctx.strokeRect(mx + 10, my + 266, mw - 20, 34);
+    drawTextFit('WASD: Movimento · Frecce/Mouse: Spara/Attacca', W / 2, my + 279, mw - 28, { size: 7.5, color: '#e6d2aa' });
+    drawTextFit('Q: Attivo · E: Compra/Patto/Raccogli · ESC: Pausa', W / 2, my + 292, mw - 28, { size: 7.5, color: '#e6d2aa' });
 
     ctx.restore();
+    if (statoRun.diarioD) disegnaDiarioD(); // --- D ---
   }
 
   statoRun.fase = 'menu_selezione';
@@ -7206,6 +7839,11 @@ function disegnaManoMarionettaPittorica() {
     scegliOggettoSviluppatoreB, apriPannelloSviluppatoreB, tastoPannelloB,
   });
   // --- B: fine ---
+  // --- D: inizio --- (sonda QA delle meccaniche e del catalogo D)
+  Object.assign(window.__teatro.interni, {
+    OGGETTI_D, ECONOMIA_T3, conosciutiD, descD, apriDiarioD, gestisciClickMenuPausa, estraiNegativoD, sparaProiettiliDirezione, subisciColpoGiocatore, ricalcolaStatisticheIsaac, maledizioneD, trovaOggettoB,
+  });
+  // --- D: fine ---
   adattaRisoluzione(); // (T5) primo dimensionamento del buffer
   requestAnimationFrame(loop);
 })();
