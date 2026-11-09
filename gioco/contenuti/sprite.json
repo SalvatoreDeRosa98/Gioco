@@ -1,5 +1,5 @@
 {
- "_doc": "Manifesto degli sprite (richiesta dell'autore, 2026-11-09): le immagini definitive le genera l'autore con un generatore di immagini; il renderer carica assets/sprite/<nome>.png se esiste, altrimenti usa lo sprite provvisorio. Ogni voce: file atteso, dimensione del SINGOLO fotogramma in px, fotogrammi/pose (foglio con una riga per posa, fotogrammi in orizzontale, verso destra), ancora, descrizione, riferimento. 'stato' passa a 'definitivo' quando il file c'è. Vista 3/4 dall'alto come in The Binding of Isaac, sfondo trasparente, pixel-art dark-fairytale coerente con assets/*.jpg.",
+ "_doc": "Manifesto degli sprite (richiesta dell'autore, 2026-11-09): le immagini definitive le genera l'autore con un generatore di immagini; il renderer carica assets/sprite/<nome>.png se esiste, altrimenti usa lo sprite provvisorio. Ogni voce: file atteso, dimensione del SINGOLO fotogramma in px, fotogrammi/pose (foglio con una riga per posa, fotogrammi in orizzontale, verso destra), ancora, descrizione, riferimento. 'stato' passa a 'definitivo' quando il file c'è. Vista 3/4 dall'alto come in The Binding of Isaac, sfondo trasparente, pixel-art dark-fairytale coerente con assets/*.jpg. 'layout' (aggiunto 2026-11-09 dopo la consegna dei PNG): colonne e righe del foglio misurate dal file e la mappa posa → riga (e 'da' = colonna iniziale quando più pose stanno sulla stessa riga); è ciò che il renderer usa per ritagliare i fotogrammi.",
  "vista": "3/4 dall'alto (Isaac)",
  "verso": "destra (il sinistro lo ribalta il codice)",
  "sfondo": "trasparente",
@@ -15,7 +15,38 @@
    "ancora": "piedi-centro",
    "descrizione": "Ferruccio, burattino di Pulcinella: coppolone bianco piegato in punta, maschera nera col becco, camicione bianco, cintura, sciarpa rossa a due code, stocco; occhio luminoso azzurro nella maschera",
    "riferimento": "https://raw.githubusercontent.com/SalvatoreDeRosa98/Gioco/claude/brave-cannon-ed3d3d/assets/ferruccio.jpg",
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 5,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "cammina",
+      "riga": 1,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "spara",
+      "riga": 2,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "colpito",
+      "riga": 3,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morto",
+      "riga": 4,
+      "fotogrammi": 3
+     }
+    ]
+   }
   },
   {
    "categoria": "personaggio",
@@ -27,7 +58,38 @@
    "ancora": "piedi-centro",
    "descrizione": "Agnese, la tessitrice di San Leucio: cuffia bianca a punta, viso nero con due occhi bianchi tondi, vestito avorio a balze, nastro rosa al collo, spola con filo rosso in mano",
    "riferimento": "https://raw.githubusercontent.com/SalvatoreDeRosa98/Gioco/claude/brave-cannon-ed3d3d/assets/agnese.jpg",
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 5,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "cammina",
+      "riga": 1,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "spara",
+      "riga": 2,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "colpito",
+      "riga": 3,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morto",
+      "riga": 4,
+      "fotogrammi": 3
+     }
+    ]
+   }
   },
   {
    "categoria": "personaggio",
@@ -39,7 +101,38 @@
    "ancora": "piedi-centro",
    "descrizione": "Taddeo, la guardia pentita: elmo di cuoio, giubba rossa borbonica consunta, spada di legno da bambino, postura stanca",
    "riferimento": "https://raw.githubusercontent.com/SalvatoreDeRosa98/Gioco/claude/brave-cannon-ed3d3d/assets/taddeo.jpg",
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 5,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "cammina",
+      "riga": 1,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "spara",
+      "riga": 2,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "colpito",
+      "riga": 3,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morto",
+      "riga": 4,
+      "fotogrammi": 3
+     }
+    ]
+   }
   },
   {
    "categoria": "personaggio",
@@ -51,7 +144,38 @@
    "ancora": "piedi-centro",
    "descrizione": "Pulcinella d'Ombra, lo spettro del Velo: stessa sagoma di Ferruccio ma tutta d'ombra nera con bordi che sfumano, aureola rossa spezzata, occhi rossi, sciarpa nera",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 5,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "cammina",
+      "riga": 1,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "spara",
+      "riga": 2,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "colpito",
+      "riga": 3,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morto",
+      "riga": 4,
+      "fotogrammi": 3
+     }
+    ]
+   }
   },
   {
    "categoria": "personaggio",
@@ -63,7 +187,18 @@
    "ancora": "centro",
    "descrizione": "Solo la testa del personaggio girata nelle quattro direzioni di sparo (come in Isaac): serve per far guardare il burattino dove spara mentre il corpo cammina",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 4
+     }
+    ]
+   }
   },
   {
    "categoria": "nemico",
@@ -75,7 +210,43 @@
    "ancora": "piedi-centro",
    "descrizione": "Gatto d'ombra: gatto nero di legno snodato con fili d'oro, occhi arancio; nell'anticipo si accuccia, nell'attacco balza allungato",
    "riferimento": "https://raw.githubusercontent.com/SalvatoreDeRosa98/Gioco/claude/brave-cannon-ed3d3d/assets/nemici_concept.jpg",
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 6,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "muove",
+      "riga": 1,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "anticipo",
+      "riga": 2,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "attacco",
+      "riga": 3,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "colpito",
+      "riga": 4,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 5,
+      "fotogrammi": 4
+     }
+    ]
+   }
   },
   {
    "categoria": "nemico",
@@ -87,7 +258,33 @@
    "ancora": "piedi-centro",
    "descrizione": "Vespa cieca: insetto meccanico con ali di carta velina strappata, occhi rossi, zampe di filo di ferro; vola dritta contro il giocatore",
    "riferimento": "https://raw.githubusercontent.com/SalvatoreDeRosa98/Gioco/claude/brave-cannon-ed3d3d/assets/nemici_concept.jpg",
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 4,
+    "pose": [
+     {
+      "posa": "vola",
+      "riga": 0,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "carica",
+      "riga": 1,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "colpito",
+      "riga": 2,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 3,
+      "fotogrammi": 3
+     }
+    ]
+   }
   },
   {
    "categoria": "nemico",
@@ -99,7 +296,38 @@
    "ancora": "piedi-centro",
    "descrizione": "Maschera d'osso: maschera teatrale color avorio con lacrime di sangue; chiusa è corazzata, si apre a metà mostrando un cuore nero con due occhi rossi che spara tre colpi",
    "riferimento": "https://raw.githubusercontent.com/SalvatoreDeRosa98/Gioco/claude/brave-cannon-ed3d3d/assets/nemici_concept.jpg",
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 5,
+    "pose": [
+     {
+      "posa": "chiusa",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "si-apre",
+      "riga": 1,
+      "fotogrammi": 3
+     },
+     {
+      "posa": "aperta-spara",
+      "riga": 2,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "colpito",
+      "riga": 3,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 4,
+      "fotogrammi": 4
+     }
+    ]
+   }
   },
   {
    "categoria": "nemico",
@@ -111,7 +339,28 @@
    "ancora": "piedi-centro",
    "descrizione": "Bomba ferma: pupazzo di sacco cucito, pancia che brilla di brace, miccia accesa sulla testa; immobile, esplode in un anello di fuoco",
    "riferimento": "https://raw.githubusercontent.com/SalvatoreDeRosa98/Gioco/claude/brave-cannon-ed3d3d/assets/nemici_concept.jpg",
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 5,
+    "righe": 3,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "miccia",
+      "riga": 1,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "esplode",
+      "riga": 2,
+      "fotogrammi": 5
+     }
+    ]
+   }
   },
   {
    "categoria": "nemico",
@@ -123,7 +372,43 @@
    "ancora": "piedi-centro",
    "descrizione": "Guardia borbonica: elmo e corazza d'acciaio, giubba rossa, moschetto con baionetta; pattuglia e spara doppiette",
    "riferimento": "https://raw.githubusercontent.com/SalvatoreDeRosa98/Gioco/claude/brave-cannon-ed3d3d/assets/nemici_concept.jpg",
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 6,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "muove",
+      "riga": 1,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "anticipo",
+      "riga": 2,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "attacco",
+      "riga": 3,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "colpito",
+      "riga": 4,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 5,
+      "fotogrammi": 4
+     }
+    ]
+   }
   },
   {
    "categoria": "nemico",
@@ -135,7 +420,38 @@
    "ancora": "piedi-centro",
    "descrizione": "Statua torretta di marmo: busto classico incrinato su piedistallo, crepe che si accendono di luce quando spara croci rotanti; linee perfette, mai storte",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 5,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "trema",
+      "riga": 1,
+      "fotogrammi": 3
+     },
+     {
+      "posa": "spara",
+      "riga": 2,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "colpito",
+      "riga": 3,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 4,
+      "fotogrammi": 4
+     }
+    ]
+   }
   },
   {
    "categoria": "nemico",
@@ -147,7 +463,43 @@
    "ancora": "piedi-centro",
    "descrizione": "Predone d'ombra: ladro con mantello nero e lanterna, sagoma umana d'ombra; veloce, ruba e scappa",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 6,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "muove",
+      "riga": 1,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "anticipo",
+      "riga": 2,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "attacco",
+      "riga": 3,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "colpito",
+      "riga": 4,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 5,
+      "fotogrammi": 4
+     }
+    ]
+   }
   },
   {
    "categoria": "nemico",
@@ -159,7 +511,28 @@
    "ancora": "piedi-centro",
    "descrizione": "Mob dorato della stanza segreta: piccolo spirito di luce d'oro a forma di moneta con occhi, lascia monete quando muore",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 3,
+    "pose": [
+     {
+      "posa": "muove",
+      "riga": 0,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "colpito",
+      "riga": 1,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 2,
+      "fotogrammi": 4
+     }
+    ]
+   }
   },
   {
    "categoria": "nemico",
@@ -171,7 +544,25 @@
    "ancora": "centro",
    "descrizione": "Proiettile dei nemici: goccia d'ombra con bordo rosso",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 5,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "volo",
+      "riga": 0,
+      "da": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "impatto",
+      "riga": 0,
+      "da": 2,
+      "fotogrammi": 3
+     }
+    ]
+   }
   },
   {
    "categoria": "boss",
@@ -183,7 +574,43 @@
    "ancora": "piedi-centro",
    "descrizione": "Il Gatto dei Quattro Canti: gatto nero gigante di legno, occhi d'oro, fili d'oro al dorso; balza come Monstro di Isaac",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 6,
+    "righe": 6,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "anticipo",
+      "riga": 1,
+      "fotogrammi": 3
+     },
+     {
+      "posa": "balzo",
+      "riga": 2,
+      "fotogrammi": 3
+     },
+     {
+      "posa": "atterra",
+      "riga": 3,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "colpito",
+      "riga": 4,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 5,
+      "fotogrammi": 6
+     }
+    ]
+   }
   },
   {
    "categoria": "boss",
@@ -195,7 +622,33 @@
    "ancora": "piedi-centro",
    "descrizione": "Il Capitano di Piombo: guardia borbonica enorme con corazza, pennacchio, spadone; carica in linea retta",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 6,
+    "righe": 4,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "carica",
+      "riga": 1,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "colpito",
+      "riga": 2,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 3,
+      "fotogrammi": 6
+     }
+    ]
+   }
   },
   {
    "categoria": "boss",
@@ -207,7 +660,33 @@
    "ancora": "piedi-centro",
    "descrizione": "La Regina delle Vespe: vespa gigante con corona di carta e ali strappate, sciame attorno",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 6,
+    "righe": 4,
+    "pose": [
+     {
+      "posa": "vola",
+      "riga": 0,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "evoca",
+      "riga": 1,
+      "fotogrammi": 3
+     },
+     {
+      "posa": "colpito",
+      "riga": 2,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 3,
+      "fotogrammi": 6
+     }
+    ]
+   }
   },
   {
    "categoria": "boss",
@@ -219,7 +698,38 @@
    "ancora": "piedi-centro",
    "descrizione": "Il Custode di Marmo: colosso di marmo incrinato con crepe di luce, torretta immobile",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 6,
+    "righe": 5,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "trema",
+      "riga": 1,
+      "fotogrammi": 3
+     },
+     {
+      "posa": "spara",
+      "riga": 2,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "colpito",
+      "riga": 3,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 4,
+      "fotogrammi": 6
+     }
+    ]
+   }
   },
   {
    "categoria": "boss",
@@ -231,7 +741,33 @@
    "ancora": "piedi-centro",
    "descrizione": "Lo Spezzafili d'Ottone: automa d'ottone con due lame a forbice, lancia lame rotanti",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 6,
+    "righe": 4,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "lancia",
+      "riga": 1,
+      "fotogrammi": 3
+     },
+     {
+      "posa": "colpito",
+      "riga": 2,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 3,
+      "fotogrammi": 6
+     }
+    ]
+   }
   },
   {
    "categoria": "boss",
@@ -243,7 +779,33 @@
    "ancora": "piedi-centro",
    "descrizione": "Donna Luciana, la Burattinaia del Velo: nobildonna d'ombra con abito nero borbonico, viso di porcellana crepata, dita lunghissime da cui scendono fili d'oro; boss finale",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 8,
+    "righe": 4,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "comanda",
+      "riga": 1,
+      "fotogrammi": 4
+     },
+     {
+      "posa": "colpito",
+      "riga": 2,
+      "fotogrammi": 1
+     },
+     {
+      "posa": "morte",
+      "riga": 3,
+      "fotogrammi": 8
+     }
+    ]
+   }
   },
   {
    "categoria": "boss",
@@ -255,7 +817,28 @@
    "ancora": "centro",
    "descrizione": "Una delle Grandi Mani di legno della Burattinaia, con bilancino e fili d'oro; scende dall'alto e si schianta sul palco",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 3,
+    "righe": 3,
+    "pose": [
+     {
+      "posa": "scende",
+      "riga": 0,
+      "fotogrammi": 3
+     },
+     {
+      "posa": "schianta",
+      "riga": 1,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "risale",
+      "riga": 2,
+      "fotogrammi": 2
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -267,7 +850,18 @@
    "ancora": "centro",
    "descrizione": "Spada di Gaetano: spada da fabbro con elsa di ferro",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -279,7 +873,18 @@
    "ancora": "centro",
    "descrizione": "Lacrima di Piombo: goccia grigia pesante",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -291,7 +896,18 @@
    "ancora": "centro",
    "descrizione": "Anello Cremisi: anello con rubino",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -303,7 +919,18 @@
    "ancora": "centro",
    "descrizione": "Triplo Occhio: tre pupille di vetro",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -315,7 +942,18 @@
    "ancora": "centro",
    "descrizione": "Catena della Chiusa: catena spezzata azzurrina",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -327,7 +965,18 @@
    "ancora": "centro",
    "descrizione": "Maschera dei 4 Venti: quattro volti di Pulcinella",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -339,7 +988,18 @@
    "ancora": "centro",
    "descrizione": "Chiodo della Fucina: chiodo battuto a mano",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -351,7 +1011,18 @@
    "ancora": "centro",
    "descrizione": "Tizzone di Bragia: carbone ardente",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -363,7 +1034,18 @@
    "ancora": "centro",
    "descrizione": "Lente di San Leucio: lente da tessitrice",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -375,7 +1057,18 @@
    "ancora": "centro",
    "descrizione": "Goccia di Mercurio: goccia d'argento vivo",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -387,7 +1080,18 @@
    "ancora": "centro",
    "descrizione": "Medaglione di Rosa: medaglione d'oro aperto con un ritratto",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -399,7 +1103,18 @@
    "ancora": "centro",
    "descrizione": "Sciarpa Rossa di Agnese: sciarpa rossa ripiegata",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "oggetto",
@@ -411,7 +1126,18 @@
    "ancora": "centro",
    "descrizione": "Mantice del Fabbro: mantice di cuoio",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "attivo",
@@ -423,7 +1149,18 @@
    "ancora": "centro",
    "descrizione": "Forbici di Gaetano: forbici da sarto d'acciaio",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "attivo",
@@ -435,7 +1172,18 @@
    "ancora": "centro",
    "descrizione": "Tamburello di Piazza Dante con nastri",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "attivo",
@@ -447,7 +1195,18 @@
    "ancora": "centro",
    "descrizione": "Ampolla di San Gennaro: ampolla di vetro con liquido cremisi",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "patto",
@@ -459,7 +1218,18 @@
    "ancora": "centro",
    "descrizione": "Raggio Cremisi del Velo: occhio rosso in un cerchio di fili",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "patto",
@@ -471,7 +1241,18 @@
    "ancora": "centro",
    "descrizione": "Cuore Sacro di San Leucio: cuore luminoso con corona di spine d'oro",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "patto",
@@ -483,7 +1264,18 @@
    "ancora": "centro",
    "descrizione": "Lama della Burattinaia: coltello nero con manico d'osso",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "raccoglibile",
@@ -495,7 +1287,18 @@
    "ancora": "centro",
    "descrizione": "Cuore raccoglibile: maschera di Pulcinella a goccia, avorio",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "brillio",
+      "riga": 0,
+      "fotogrammi": 4
+     }
+    ]
+   }
   },
   {
    "categoria": "raccoglibile",
@@ -507,7 +1310,18 @@
    "ancora": "centro",
    "descrizione": "Moneta di luce d'oro con il giglio borbonico",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "brillio",
+      "riga": 0,
+      "fotogrammi": 4
+     }
+    ]
+   }
   },
   {
    "categoria": "raccoglibile",
@@ -519,7 +1333,18 @@
    "ancora": "centro",
    "descrizione": "Boccetta d'olio da fabbro",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "brillio",
+      "riga": 0,
+      "fotogrammi": 4
+     }
+    ]
+   }
   },
   {
    "categoria": "raccoglibile",
@@ -531,7 +1356,18 @@
    "ancora": "centro",
    "descrizione": "Pezzuola di lino piegata",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "brillio",
+      "riga": 0,
+      "fotogrammi": 4
+     }
+    ]
+   }
   },
   {
    "categoria": "proiettile",
@@ -543,7 +1379,25 @@
    "ancora": "centro",
    "descrizione": "Proiettile del giocatore: lacrima d'avorio",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 5,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "volo",
+      "riga": 0,
+      "da": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "impatto",
+      "riga": 0,
+      "da": 2,
+      "fotogrammi": 3
+     }
+    ]
+   }
   },
   {
    "categoria": "proiettile",
@@ -555,7 +1409,25 @@
    "ancora": "centro",
    "descrizione": "Proiettile del giocatore: goccia infuocata arancione",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 5,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "volo",
+      "riga": 0,
+      "da": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "impatto",
+      "riga": 0,
+      "da": 2,
+      "fotogrammi": 3
+     }
+    ]
+   }
   },
   {
    "categoria": "proiettile",
@@ -567,7 +1439,25 @@
    "ancora": "centro",
    "descrizione": "Proiettile del giocatore: scintilla azzurra",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 5,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "volo",
+      "riga": 0,
+      "da": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "impatto",
+      "riga": 0,
+      "da": 2,
+      "fotogrammi": 3
+     }
+    ]
+   }
   },
   {
    "categoria": "proiettile",
@@ -579,7 +1469,25 @@
    "ancora": "centro",
    "descrizione": "Proiettile del giocatore: goccia rosso sangue più grande",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 5,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "volo",
+      "riga": 0,
+      "da": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "impatto",
+      "riga": 0,
+      "da": 2,
+      "fotogrammi": 3
+     }
+    ]
+   }
   },
   {
    "categoria": "proiettile",
@@ -591,7 +1499,25 @@
    "ancora": "centro",
    "descrizione": "Proiettile del giocatore: sfera di piombo grigia",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 5,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "volo",
+      "riga": 0,
+      "da": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "impatto",
+      "riga": 0,
+      "da": 2,
+      "fotogrammi": 3
+     }
+    ]
+   }
   },
   {
    "categoria": "proiettile",
@@ -603,7 +1529,25 @@
    "ancora": "centro",
    "descrizione": "Proiettile del giocatore: segmento di raggio laser rosso ripetibile (tile 16×16) più testa del raggio",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 5,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "volo",
+      "riga": 0,
+      "da": 0,
+      "fotogrammi": 2
+     },
+     {
+      "posa": "impatto",
+      "riga": 0,
+      "da": 2,
+      "fotogrammi": 3
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -615,7 +1559,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Piedistallo di pietra della bottega con cono di luce",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -627,7 +1582,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Altare del Patto d'Ombra: tavolo di pietra nera con candele spente e fili d'oro, atmosfera cupa",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -639,7 +1605,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Crepa dorata luminosa sul muro (la stanza segreta): file crepa-dorata-<lato>.png per n/s/e/o",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -651,7 +1628,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Braciere di ferro con brace: fotogrammi riposo×2, acceso×4",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 6,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 6
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -663,7 +1651,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Colonna di pietra della piazza",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -675,7 +1674,18 @@
    "ancora": "centro",
    "descrizione": "Panca di legno",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -687,7 +1697,18 @@
    "ancora": "centro",
    "descrizione": "Banco del banchetto di Tonino: tenda, lanterna, vassoio di mozzarelle, cartiglio «MOZZARELLE»",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -699,7 +1720,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Porta ad arco aperta con soglia d'oro (file per lato n/s/e/o)",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -711,7 +1743,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Porta ad arco chiusa, pannello di legno scuro con cornice (file per lato)",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -723,7 +1766,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Botola di legno con anello di ferro: chiusa×1, aperta×1 (l'uscita verso il piano sotto)",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 2,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 2
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -735,7 +1789,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Lanterna appesa accesa: fiamma×4",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 4,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 4
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -747,7 +1812,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Tassello di pavimento di basolato caldo, ripetibile senza cuciture; varianti: piazza-dante, segreta, boss, patto",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "scena",
@@ -759,7 +1835,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Tassello di muro: faccia nord con cornicione e varianti laterali, ripetibile",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hub",
@@ -771,7 +1858,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Tonino il mozzarellaro: omone d'ombra col grembiule e il vassoio, lanterna accanto",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 2,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     }
+    ]
+   }
   },
   {
    "categoria": "hub",
@@ -783,7 +1881,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Porta della bottega di Gaetano con insegna del fabbro: chiusa×1, aperta×1",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 2,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     }
+    ]
+   }
   },
   {
    "categoria": "hub",
@@ -795,7 +1904,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Finestra accesa di Mariella con una sagoma dentro (mai un personaggio a terra)",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 2,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     }
+    ]
+   }
   },
   {
    "categoria": "hub",
@@ -807,7 +1927,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Luna crema con alone, immobile",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 2,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     }
+    ]
+   }
   },
   {
    "categoria": "hub",
@@ -819,7 +1950,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Agnese seduta sotto il portico che tesse (versione NPC, fermo×2)",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 2,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     }
+    ]
+   }
   },
   {
    "categoria": "hub",
@@ -831,7 +1973,18 @@
    "ancora": "piedi-centro",
    "descrizione": "Taddeo in piedi con la spada di legno (versione NPC, fermo×2)",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 2,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "fermo",
+      "riga": 0,
+      "fotogrammi": 2
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -843,7 +1996,18 @@
    "ancora": "centro",
    "descrizione": "Maschera di Pulcinella a goccia piena, avorio",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -855,7 +2019,18 @@
    "ancora": "centro",
    "descrizione": "Maschera a metà",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -867,7 +2042,18 @@
    "ancora": "centro",
    "descrizione": "Contorno della maschera, vuoto",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -879,7 +2065,18 @@
    "ancora": "centro",
    "descrizione": "Moneta col giglio",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -891,7 +2088,18 @@
    "ancora": "centro",
    "descrizione": "Rombo a quattro punte dorato",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -903,7 +2111,18 @@
    "ancora": "centro",
    "descrizione": "Lama",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -915,7 +2134,18 @@
    "ancora": "centro",
    "descrizione": "Scarpetta con ali",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -927,7 +2157,18 @@
    "ancora": "centro",
    "descrizione": "Lacrima",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -939,7 +2180,18 @@
    "ancora": "centro",
    "descrizione": "Freccia lunga",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -951,7 +2203,18 @@
    "ancora": "centro",
    "descrizione": "Cornice di slot vuoto, legno scuro con bordo oro",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -963,7 +2226,18 @@
    "ancora": "centro",
    "descrizione": "Cornice dello slot dell'attivo con 4 tacche di carica",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -975,7 +2249,18 @@
    "ancora": "centro",
    "descrizione": "Cornice 9-slice dei pannelli: legno scuro, bordo oro, rombi agli angoli",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "hud",
@@ -987,7 +2272,18 @@
    "ancora": "centro",
    "descrizione": "Barra della vita del boss: cornice d'oro, riempimento rosso→oro",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "menu",
@@ -999,7 +2295,18 @@
    "ancora": "centro",
    "descrizione": "Ritratto di Ferruccio per la carta del menu",
    "riferimento": "https://raw.githubusercontent.com/SalvatoreDeRosa98/Gioco/claude/brave-cannon-ed3d3d/assets/ferruccio.jpg",
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "menu",
@@ -1011,7 +2318,18 @@
    "ancora": "centro",
    "descrizione": "Ritratto di Agnese",
    "riferimento": "https://raw.githubusercontent.com/SalvatoreDeRosa98/Gioco/claude/brave-cannon-ed3d3d/assets/agnese.jpg",
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "menu",
@@ -1023,7 +2341,18 @@
    "ancora": "centro",
    "descrizione": "Ritratto di Taddeo",
    "riferimento": "https://raw.githubusercontent.com/SalvatoreDeRosa98/Gioco/claude/brave-cannon-ed3d3d/assets/taddeo.jpg",
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "menu",
@@ -1035,7 +2364,18 @@
    "ancora": "centro",
    "descrizione": "Ritratto di Pulcinella d'Ombra",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "menu",
@@ -1047,7 +2387,18 @@
    "ancora": "angolo",
    "descrizione": "Fondale del menu: sipario rosso di velluto con cornice d'oro e le Grandi Mani di legno in alto; teatro dei burattini, atmosfera dark-fairytale",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "sipario",
@@ -1059,7 +2410,18 @@
    "ancora": "angolo",
    "descrizione": "Illustrazione per il sipario narrativo tra i piani: Piazza Dante di notte, portici, statua di Dante, lampioni, fili d'oro verso la Reggia",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "sipario",
@@ -1071,7 +2433,18 @@
    "ancora": "angolo",
    "descrizione": "Illustrazione per il sipario narrativo tra i piani: Corso Trieste sotto la pioggia, vetrine accese",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "sipario",
@@ -1083,7 +2456,18 @@
    "ancora": "angolo",
    "descrizione": "Illustrazione per il sipario narrativo tra i piani: Villa Comunale con luna verde e lucciole",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   },
   {
    "categoria": "sipario",
@@ -1095,7 +2479,18 @@
    "ancora": "angolo",
    "descrizione": "Illustrazione per il sipario narrativo tra i piani: Cortile d'Onore della Reggia di Caserta, torce dorate",
    "riferimento": null,
-   "stato": "definitivo"
+   "stato": "definitivo",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   }
   }
  ]
 }
