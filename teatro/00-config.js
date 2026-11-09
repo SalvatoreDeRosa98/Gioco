@@ -150,6 +150,128 @@ const PALETTE = {
 // in Isaac; ingresso, tesoro, fucina, boss, segreta e patto sono in aggiunta. Prima il piano 1 ne aveva una.
 const STANZE_COMBATTIMENTO_PER_PIANO = { 1: 6, 2: 7, 3: 8, 4: 9 };
 
+// ===========================================================================
+// IDENTITÀ E QUARTIERI DEI PIANI DALLA BIBBIA NARRATIVA
+// Piano 1: Corso Trieste sotto la pioggia
+// Piano 2: Villa Comunale con le lucciole
+// Piano 3: San Leucio all'alba
+// Piano 4: La Reggia con le torce
+// ===========================================================================
+const QUARTIERI_PIANI = Object.freeze({
+  1: Object.freeze({
+    id: 'corso-trieste',
+    pianoNelCiclo: 1,
+    nome: 'Corso Trieste',
+    atmosfera: 'Sotto la Pioggia',
+    titoloCompleto: 'Corso Trieste sotto la Pioggia',
+    meteo: 'pioggia',
+    coloreTema: '#60a5fa',
+    bordoPillola: '#1d4ed8',
+    coloreSfondo: '#080c14',
+    coloreMuroEsterno: '#101726',
+    coloreMuroInterno: '#161f30',
+    coloreBordoMuro: '#0a0e18',
+    coloriPiastrelle: Object.freeze(['#1b2333', '#161c2b', '#202a3d', '#131926']),
+    coloreFughe: '#0e131d',
+    coloreRiflesso: '#2d3f5e',
+    colorePozzanghera: 'rgba(56, 189, 248, 0.22)',
+    nemiciTipici: Object.freeze(['gatto', 'vespa_cieca', 'bomba_ferma']),
+    bossTipico: 're-gatto',
+    descrizioneSipario: Object.freeze({
+      atto: 'ATTO I · CORSO TRIESTE',
+      titolo: '«CORSO TRIESTE SOTTO LA PIOGGIA»',
+      testo1: 'La pioggia scroscia sui basoli neri dei Quattro Canti.',
+      testo2: 'Gatti d\'Ombra balzano tra i lampioni bagnati mentre l\'odore di ruggine sale dai vicoli.',
+      testo3: 'Trova il passaggio verso la Villa Comunale e scova la Stanza Segreta!',
+    }),
+  }),
+  2: Object.freeze({
+    id: 'villa-comunale',
+    pianoNelCiclo: 2,
+    nome: 'Villa Comunale',
+    atmosfera: 'Con le Lucciole',
+    titoloCompleto: 'Villa Comunale con le Lucciole',
+    meteo: 'lucciole',
+    coloreTema: '#a3e635',
+    bordoPillola: '#4d7c0f',
+    coloreSfondo: '#071007',
+    coloreMuroEsterno: '#132113',
+    coloreMuroInterno: '#1b2d1a',
+    coloreBordoMuro: '#091309',
+    coloriPiastrelle: Object.freeze(['#1e2d1a', '#172414', '#243620', '#131e10']),
+    coloreFughe: '#0d150b',
+    coloreRiflesso: '#365314',
+    coloreMuschio: '#4d7c0f',
+    nemiciTipici: Object.freeze(['statua', 'guardia', 'vespa_cieca']),
+    bossTipico: 'colosso-statua',
+    descrizioneSipario: Object.freeze({
+      atto: 'ATTO II · VILLA COMUNALE',
+      titolo: '«VILLA COMUNALE CON LE LUCCIOLE»',
+      testo1: 'I viali di ghiaia e tufo brillano nel buio trafitti da sciami di lucciole dorate.',
+      testo2: 'Tra le siepi e la fontana silenziosa veglia il Custode di Marmo sui ricordi di Gaetano.',
+      testo3: 'Attento ai colpi pesanti delle statue: conservano il silenzio del lutto borbonico!',
+    }),
+  }),
+  3: Object.freeze({
+    id: 'san-leucio',
+    pianoNelCiclo: 3,
+    nome: 'San Leucio',
+    atmosfera: 'All\'Alba',
+    titoloCompleto: 'San Leucio all\'Alba',
+    meteo: 'alba',
+    coloreTema: '#fb923c',
+    bordoPillola: '#c2410c',
+    coloreSfondo: '#140a08',
+    coloreMuroEsterno: '#291410',
+    coloreMuroInterno: '#381c16',
+    coloreBordoMuro: '#180b08',
+    coloriPiastrelle: Object.freeze(['#47221a', '#3d1b14', '#52281f', '#351610']),
+    coloreFughe: '#220d09',
+    coloreRiflesso: '#7c2d12',
+    coloreSeta: 'rgba(251, 146, 60, 0.22)',
+    nemiciTipici: Object.freeze(['maschera', 'guardia', 'vespa_cieca']),
+    bossTipico: 'maestro-fucina',
+    descrizioneSipario: Object.freeze({
+      atto: 'ATTO III · SAN LEUCIO',
+      titolo: '«SAN LEUCIO ALL\'ALBA»',
+      testo1: 'Il primo raggio radente dell\'aurora dorata penetra tra i telai del setificio reale.',
+      testo2: 'Fili dorati vibrano nell\'aria. Maschere d\'osso e spezzafili sorvegliano i ricordi di Agnese.',
+      testo3: 'Qui ogni colpo subito spezza 1 Maschera intera (-1 ❤️): prepara il tuo attacco prima della Reggia!',
+    }),
+  }),
+  4: Object.freeze({
+    id: 'la-reggia',
+    pianoNelCiclo: 4,
+    nome: 'La Reggia',
+    atmosfera: 'Con le Torce',
+    titoloCompleto: 'La Reggia con le Torce',
+    meteo: 'torce',
+    coloreTema: '#f59e0b',
+    bordoPillola: '#b45309',
+    coloreSfondo: '#0f0c08',
+    coloreMuroEsterno: '#221c16',
+    coloreMuroInterno: '#30271e',
+    coloreBordoMuro: '#120e0a',
+    coloriPiastrelle: Object.freeze(['#cfc5b4', '#1f1b18', '#dfd6c7', '#28231f']),
+    coloreFughe: '#854d0e',
+    coloreOro: '#f9cb40',
+    nemiciTipici: Object.freeze(['guardia', 'statua', 'maschera']),
+    bossTipico: 'donna-luciana',
+    descrizioneSipario: Object.freeze({
+      atto: 'ATTO IV · LA REGGIA BORBONICA',
+      titolo: '«LA REGGIA CON LE TORCE»',
+      testo1: 'I saloni reali risplendono del fuoco vivo di torce dorate e bracieri d\'ottone.',
+      testo2: 'Sulla grande scacchiera di marmo ed ebano, la guardia borbonica protegge la Sala del Trono.',
+      testo3: 'Donna Luciana ti attende: recidi i fili della Burattinaia per restituire la verità a Caserta!',
+    }),
+  }),
+});
+
+function getQuartierePiano(piano) {
+  const p = ((Math.max(1, piano || 1) - 1) % 4) + 1;
+  return QUARTIERI_PIANI[p] || QUARTIERI_PIANI[1];
+}
+
 /** Forma della mappa (generaMappaPiano). Celle della griglia 1..larghezza × 1..altezza (minimappa 7×6). */
 // Prova dei gatti (richiesta dell'autore, 2026-11-09): con attivo = true al Piano 1 le stanze accanto all'ingresso
 // sono sempre il «Vicolo dei Gatti» e il primo boss della run è il Gatto dei Quattro Canti. Rimettere false per il gioco normale.

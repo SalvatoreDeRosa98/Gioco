@@ -279,7 +279,16 @@ function nuovaRun(incrementaNotte = false) {
   }
   const pInfo = PERSONAGGI_GIOCABILI[statoRun.personaggioId] || PERSONAGGI_GIOCABILI.ferruccio;
   statoRun.numeroRun += 1;
-  statoRun.bossOrdine = shuffle(POOL_BOSS);
+  // Boss assegnati coerentemente ai quartieri della Bibbia narrativa:
+  // Piano 1 (Corso Trieste): Il Gatto dei Quattro Canti
+  // Piano 2 (Villa Comunale): Il Custode di Marmo (Madre di Marmo)
+  // Piano 3 (San Leucio): Lo Spezzafili d'Ottone o Capitano di Piombo
+  // Piano 4 (La Reggia): Donna Luciana (gestita direttamente come boss finale)
+  const bossGatto = POOL_BOSS.find((x) => x.id === 're-gatto') || POOL_BOSS[0];
+  const bossStatua = POOL_BOSS.find((x) => x.id === 'colosso-statua') || POOL_BOSS[1];
+  const bossLeucio = POOL_BOSS.find((x) => x.id === 'maestro-fucina') || POOL_BOSS.find((x) => x.id === 'capitano-guardia') || POOL_BOSS[2];
+  const altriBoss = shuffle(POOL_BOSS.filter((x) => x.id !== 're-gatto' && x.id !== 'colosso-statua' && x.id !== bossLeucio.id));
+  statoRun.bossOrdine = [bossGatto, bossStatua, bossLeucio, ...altriBoss];
   if (PLAYTEST_GATTI.attivo && PLAYTEST_GATTI.bossGattoPrimo) { // prova dei gatti: il Gatto dei Quattro Canti per primo
     const g = statoRun.bossOrdine.findIndex((x) => x.id === 're-gatto');
     if (g > 0) statoRun.bossOrdine.unshift(statoRun.bossOrdine.splice(g, 1)[0]);

@@ -365,36 +365,91 @@ function popolaStanzaIsaac(s, piano) {
       });
     }
 
-    // Archetipi con temi coerenti per stanza (densità calibrata: 2 nemici al Piano 1, raramente 3 vespe)
-    const TEMI_STANZA = [
-      {
-        nome: 'Nido di Vespe',
-        getTipi: (p) => Array(p === 1 ? (rng() < 0.5 ? 2 : 3) : Math.min(4, 2 + Math.floor(p * 0.5))).fill('vespa_cieca')
-      },
-      {
-        nome: 'Vicolo dei Gatti',
-        getTipi: (p) => Array(p === 1 ? 2 : Math.min(3, 2 + (p >= 3 ? 1 : 0))).fill('gatto')
-      },
-      {
-        nome: 'Pattuglia di Guardia',
-        getTipi: (p) => (p === 1 ? ['guardia', rng() < 0.35 ? 'vespa_cieca' : null] : ['guardia', 'guardia']).filter(Boolean)
-      },
-      {
-        nome: 'Cripta delle Maschere',
-        getTipi: (p) => (p === 1 ? ['maschera', 'vespa_cieca'] : ['maschera', p >= 3 ? 'maschera' : 'vespa_cieca'])
-      },
-      {
-        nome: 'Deposito di Polvere',
-        getTipi: (p) => (p === 1 ? ['bomba_ferma', 'bomba_ferma'] : ['bomba_ferma', 'bomba_ferma', 'vespa_cieca'])
-      },
-      {
-        nome: 'Chiostro di Pietra',
-        getTipi: (p) => (p === 1 ? ['statua', 'vespa_cieca'] : ['statua', p >= 3 ? 'statua' : 'bomba_ferma'])
-      }
-    ];
+    const pianoNelCiclo = ((piano - 1) % 4) + 1;
+    // Archetipi con temi e nemici tipici per quartiere della Bibbia narrativa:
+    // Piano 1 (Corso Trieste sotto la pioggia): Gatti d'Ombra, Vespe Cieche, Bozzi di polvere
+    // Piano 2 (Villa Comunale con le lucciole): Statue di Marmo, Guardie di ronda, Bozzi nei cespugli
+    // Piano 3 (San Leucio all'alba): Maschere Corazzate d'osso/ottone, Guardie di manifattura, Vespe dei telai
+    // Piano 4 (La Reggia con le torce): Guardie Borboniche scelte, Statue di gala, Maschere di corte
+    const TEMI_PER_PIANO = {
+      1: [
+        {
+          nome: 'Vicolo dei Gatti',
+          getTipi: (p) => Array(p === 1 ? 2 : Math.min(3, 2 + (p >= 3 ? 1 : 0))).fill('gatto')
+        },
+        {
+          nome: 'Ronda sotto la Pioggia',
+          getTipi: (p) => ['gatto', rng() < 0.6 ? 'vespa_cieca' : 'gatto']
+        },
+        {
+          nome: 'Nido dei Quattro Canti',
+          getTipi: (p) => Array(rng() < 0.5 ? 2 : 3).fill('vespa_cieca')
+        },
+        {
+          nome: 'Deposito di Polvere nei Vicoli',
+          getTipi: (p) => ['bomba_ferma', 'bomba_ferma']
+        },
+      ],
+      2: [
+        {
+          nome: 'Chiostro di Pietra',
+          getTipi: (p) => ['statua', rng() < 0.5 ? 'vespa_cieca' : 'bomba_ferma']
+        },
+        {
+          nome: 'Viale delle Statue',
+          getTipi: (p) => (p >= 3 ? ['statua', 'statua'] : ['statua', rng() < 0.4 ? 'statua' : 'vespa_cieca'])
+        },
+        {
+          nome: 'Pattuglia della Villa',
+          getTipi: (p) => ['guardia', rng() < 0.6 ? 'vespa_cieca' : 'guardia']
+        },
+        {
+          nome: 'Boschetto dei Ricordi',
+          getTipi: (p) => ['statua', 'guardia']
+        },
+      ],
+      3: [
+        {
+          nome: 'Manifattura delle Maschere',
+          getTipi: (p) => ['maschera', rng() < 0.5 ? 'vespa_cieca' : 'maschera']
+        },
+        {
+          nome: 'Cripta dei Telai Reali',
+          getTipi: (p) => ['maschera', 'guardia']
+        },
+        {
+          nome: 'Officina dello Spezzafili',
+          getTipi: (p) => ['maschera', 'maschera']
+        },
+        {
+          nome: 'Guardia di San Leucio',
+          getTipi: (p) => ['guardia', 'guardia']
+        },
+      ],
+      4: [
+        {
+          nome: 'Guardia Borbonica Reale',
+          getTipi: (p) => ['guardia', 'guardia', rng() < 0.5 ? 'guardia' : 'maschera']
+        },
+        {
+          nome: 'Galleria delle Statue di Gala',
+          getTipi: (p) => ['statua', 'guardia', 'maschera']
+        },
+        {
+          nome: 'Corte del Velo',
+          getTipi: (p) => ['maschera', 'maschera', 'guardia']
+        },
+        {
+          nome: 'Avamposto del Trono',
+          getTipi: (p) => ['guardia', 'statua']
+        },
+      ],
+    };
+
+    const TEMI_STANZA = TEMI_PER_PIANO[pianoNelCiclo] || TEMI_PER_PIANO[1];
 
     // Prova dei gatti (PLAYTEST_GATTI): al Piano 1 le stanze normali accanto all'ingresso (id 'r0') sono il Vicolo dei Gatti
-    const vicoloGatti = TEMI_STANZA.find((t) => t.nome === 'Vicolo dei Gatti');
+    const vicoloGatti = TEMI_STANZA.find((t) => t.nome === 'Vicolo dei Gatti') || TEMI_PER_PIANO[1][0];
     const vicinaIngresso = Object.values(s.porte || {}).includes('r0');
     const temaScelto = (PLAYTEST_GATTI.attivo && PLAYTEST_GATTI.vicoloAccantoIngresso && piano === 1 && vicinaIngresso && vicoloGatti)
       ? vicoloGatti
@@ -496,7 +551,11 @@ function avviaPiano(piano, mostraSipario = true) {
   statoRun.ciclo = Math.floor((piano - 1) / 4) + 1;
   statoRun.dannoSubitoNelBoss = false;
   if ((piano - 1) % 4 === 0 && piano > 1) {
-    statoRun.bossOrdine = shuffle(POOL_BOSS);
+    const bossGatto = POOL_BOSS.find((x) => x.id === 're-gatto') || POOL_BOSS[0];
+    const bossStatua = POOL_BOSS.find((x) => x.id === 'colosso-statua') || POOL_BOSS[1];
+    const bossLeucio = POOL_BOSS.find((x) => x.id === 'maestro-fucina') || POOL_BOSS.find((x) => x.id === 'capitano-guardia') || POOL_BOSS[2];
+    const altriBoss = shuffle(POOL_BOSS.filter((x) => x.id !== 're-gatto' && x.id !== 'colosso-statua' && x.id !== bossLeucio.id));
+    statoRun.bossOrdine = [bossGatto, bossStatua, bossLeucio, ...altriBoss];
   }
   statoRun.mappa = generaMappaPiano(piano);
   // rete di sicurezza: con un seme sfortunato si ritenta con un seme nuovo (mai una mappa nulla)

@@ -13,7 +13,7 @@ function adattaRisoluzione() {
   const bl = Math.round(W * s), ba = Math.round(H * s);
   if (canvas.width !== bl || canvas.height !== ba) {
     canvas.width = bl; canvas.height = ba; // azzera lo stato del contesto: lo ripristina iniziaFrame()
-    floorCache = null; // il pavimento si ridisegna alla nuova risoluzione
+    floorCachesPerPiano.clear(); // i pavimenti dei quartieri si ridisegnano alla nuova risoluzione
   }
   scalaBase = bl / W;
 }
@@ -191,11 +191,13 @@ function disegnaIconeOggettiB(dy0) {
 // --- B: fine ---
 
 function getRaccontoAtto(piano, ciclo) {
-  const pianoNelCiclo = ((piano - 1) % 4) + 1;
+  const pianoNelCiclo = ((Math.max(1, piano || 1) - 1) % 4) + 1;
   const pInfo = PERSONAGGI_GIOCABILI[statoRun.personaggioId] || PERSONAGGI_GIOCABILI.ferruccio;
+  const q = getQuartierePiano(piano);
+
   if (ciclo > 1 && pianoNelCiclo === 1) {
     return {
-      atto: `CICLO INFINITO ${ciclo} · ATTO I (PIANO ${piano} · ${numeroStanzeCombattimento(piano)} STANZE DI COMBATTIMENTO + SEGRETA)`,
+      atto: `CICLO INFINITO ${ciclo} · ATTO I · ${q.nome.toUpperCase()} (PIANO ${piano} · ${numeroStanzeCombattimento(piano)} STANZE + SEGRETA)`,
       titolo: '«BIS! I FILI SOPRA LA BURATTINAIA»',
       testo1: 'Spezzando Donna Luciana hai scoperto l\'inganno: anche ai suoi polsi erano legati fili d\'oro',
       testo2: 'che salgono ancora più in alto nel buio del Teatro! Una voce invisibile grida: «BIS! DA CAPO!»',
@@ -205,39 +207,37 @@ function getRaccontoAtto(piano, ciclo) {
   if (pianoNelCiclo === 1) {
     const numNotte = statoRun.numeroNotte || 1;
     return {
-      atto: `NOTTE ${numNotte} · ATTO I (PIANO 1 · ${pInfo.nome.toUpperCase()})`,
-      titolo: `«NOTTE ${numNotte} — ${pInfo.titolo.toUpperCase()}»`,
-      testo1: 'I nemici avanzano a gruppi coerenti: Vespe in sciame, Gatti d\'Ombra balzanti, Guardie armate.',
-      testo2: 'Ogni piano contiene 1 Stanza del Tesoro con oggetto gratis e 1 Fucina dove comprare.',
-      testo3: 'Scova la Stanza Segreta (1/3 oggetto, 1/5 molto forte)! Premi [ESC] per il Menù di Pausa.',
+      atto: `NOTTE ${numNotte} · ATTO I · ${q.nome.toUpperCase()} (PIANO 1 · ${pInfo.nome.toUpperCase()})`,
+      titolo: `«${q.titoloCompleto.toUpperCase()}»`,
+      testo1: 'La pioggia battente scroscia sui basoli neri dei Quattro Canti. Ferruccio cerca la verità.',
+      testo2: 'Gatti d\'Ombra balzano tra i lampioni bagnati mentre l\'odore di ruggine sale dai vicoli.',
+      testo3: 'Trova la via per la Villa Comunale e scova la Stanza Segreta! Premi [ESC] per il Menù di Pausa.',
     };
   }
   if (pianoNelCiclo === 2) {
     return {
-      atto: `ATTO II · CORSO TRIESTE E LE OFFICINE (PIANO ${piano} · ${numeroStanzeCombattimento(piano)} STANZE DI COMBATTIMENTO + 1 SEGRETA)`,
-      titolo: '«IL SORRISO DI TONINO E IL TRADIMENTO DI TADDEO»',
-      testo1: 'Sotto il Velo, Tonino ride davanti alla sedia vuota della moglie Rosa senza ricordare il suo nome.',
-      testo2: 'Il tuo amico Taddeo ti ha consegnato alla Burattinaia per guarire le paure della sorella Mariella.',
-      // --- T3: inizio ---
+      atto: `ATTO II · ${q.nome.toUpperCase()} (PIANO ${piano} · ${numeroStanzeCombattimento(piano)} STANZE + 1 SEGRETA)`,
+      titolo: `«${q.titoloCompleto.toUpperCase()}»`,
+      testo1: 'I viali di tufo e muschio brillano nel buio trafitti da sciami di lucciole dorate.',
+      testo2: 'Accanto alla fontana silenziosa, il Custode di Marmo veglia sul registro segreto del crollo del 1839.',
       testo3: `Risparmia le monete e scova la Stanza Segreta per permetterti le Reliquie Forti (${ECONOMIA_T3.prezzi.forte}🪙) della Fucina!`,
-      // --- T3: fine ---
     };
   }
   if (pianoNelCiclo === 3) {
     return {
-      atto: `ATTO III · BELVEDERE DI SAN LEUCIO (PIANO ${piano} · ${numeroStanzeCombattimento(piano)} STANZE DI COMBATTIMENTO + 1 SEGRETA)`,
-      titolo: '«LA SCIARPA ROSSA DI AGNESE»',
-      testo1: 'Ai telai reali di San Leucio, Agnese continua a tessere una sciarpa rossa senza ricordare il tuo volto.',
-      testo2: 'Da questo piano il Velo stringe più forte: ogni colpo subito spezza 1 Maschera intera (come in Isaac!).',
-      testo3: 'Gli oggetti non hanno limite: ognuno cambia il tuo costume e il tuo attacco!',
+      atto: `ATTO III · ${q.nome.toUpperCase()} (PIANO ${piano} · ${numeroStanzeCombattimento(piano)} STANZE + 1 SEGRETA)`,
+      titolo: `«${q.titoloCompleto.toUpperCase()}»`,
+      testo1: 'Il primo raggio radente dell\'aurora dorata penetra tra i mattoni e i telai del setificio reale.',
+      testo2: 'Agnese tesse la sciarpa rossa senza memoria. Maschere d\'osso e Spezzafili sorvegliano i fusi.',
+      testo3: 'Da questo piano il Velo stringe più forte: ogni colpo subito spezza 1 Maschera intera (come in Isaac!).',
     };
   }
   return {
-    atto: `ATTO IV · IL TRONO DEL VELO (PIANO ${piano} · ${numeroStanzeCombattimento(piano)} STANZE DI COMBATTIMENTO + 1 SEGRETA)`,
-    titolo: ciclo > 1 ? `«DONNA LUCIANA ASCESA (CICLO ${ciclo})»` : '«QUANTO VALE LA FELICITÀ?»',
-    testo1: `Nelle ${numeroStanzeCombattimento(piano)} stanze finali, le Grandi Mani di Marionetta caleranno dal cielo per diventare Donna Luciana.`,
-    testo2: 'Spezzarle restituirà a Caserta il dolore, il lutto e la libertà... o svelerà chi tira davvero i suoi fili.',
-    testo3: 'Fai gli ultimi acquisti ne La Fucina prima di varcare la porta del Boss Finale!',
+    atto: `ATTO IV · ${q.nome.toUpperCase()} (PIANO ${piano} · ${numeroStanzeCombattimento(piano)} STANZE + 1 SEGRETA)`,
+    titolo: ciclo > 1 ? `«DONNA LUCIANA ASCESA (CICLO ${ciclo})»` : `«${q.titoloCompleto.toUpperCase()}»`,
+    testo1: 'I saloni reali risplendono del fuoco vivo di torce dorate e bracieri d\'ottone.',
+    testo2: 'Sulla grande scacchiera di marmo ed ebano, la guardia borbonica protegge la Sala del Trono.',
+    testo3: 'Donna Luciana ti attende: recidi i fili della Burattinaia per restituire la verità a Caserta!',
   };
 }
 
@@ -372,72 +372,425 @@ function disegnaFiliMarionetta(corpo, manoS = FEEL.fili.manoSinistra, manoD = FE
 }
 
 // ===========================================================================
-// PAVIMENTO E STANZA PIXEL-ART
 // ===========================================================================
-let floorCache = null;
+// PAVIMENTO DEI QUARTIERI E STANZA PIXEL-ART
+// ===========================================================================
+const floorCachesPerPiano = new Map();
 
-function getFloorTileCanvas() {
-  if (floorCache) return floorCache;
-  floorCache = document.createElement('canvas');
+function getFloorTileCanvas(piano) {
+  const pNelCiclo = ((Math.max(1, piano || statoRun?.piano || 1) - 1) % 4) + 1;
+  if (floorCachesPerPiano.has(pNelCiclo)) return floorCachesPerPiano.get(pNelCiclo);
+
+  const q = getQuartierePiano(pNelCiclo);
+  const fc = document.createElement('canvas');
   // (T5) alla risoluzione del buffer: si disegna in coordinate 640x360 con la stessa scala del palco
-  floorCache.width = Math.round(W * scalaBase);
-  floorCache.height = Math.round(H * scalaBase);
-  const x = floorCache.getContext('2d');
+  fc.width = Math.round(W * scalaBase);
+  fc.height = Math.round(H * scalaBase);
+  const x = fc.getContext('2d');
   x.setTransform(scalaBase, 0, 0, scalaBase, 0, 0);
   x.imageSmoothingEnabled = false;
 
-  x.fillStyle = '#0c0806';
+  // Sfondo scuro del teatro attorno alla pedana della stanza
+  x.fillStyle = q.coloreSfondo;
   x.fillRect(0, 0, W, H);
 
-  x.fillStyle = '#241811';
+  // Pavimento interno della stanza
+  x.fillStyle = q.coloreMuroInterno;
   x.fillRect(48, 52, W - 96, H - 96);
-  x.strokeStyle = '#0a0604';
+  x.strokeStyle = q.coloreBordoMuro;
   x.lineWidth = 2;
   x.strokeRect(48, 52, W - 96, H - 96);
 
+  // Merlatura e perimetro in legno/pietra della parete
   for (let bx = 52; bx < W - 52; bx += 24) {
-    x.fillStyle = '#332218';
+    x.fillStyle = q.coloreMuroEsterno;
     x.fillRect(bx, 56, 20, 12);
     x.fillRect(bx, H - 60, 20, 12);
   }
   for (let by = 68; by < H - 64; by += 20) {
-    x.fillStyle = '#332218';
+    x.fillStyle = q.coloreMuroEsterno;
     x.fillRect(52, by, 12, 16);
     x.fillRect(W - 64, by, 12, 16);
   }
 
-  const tileColors = ['#3d2b1f', '#38261b', '#433022', '#352318'];
-  let seed = 1337;
+  // Generatore deterministico di numeri casuali per la texture del pavimento
+  let seed = 1337 + pNelCiclo * 997;
   const nextR = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return (seed >>> 16) / 65536; };
 
-  for (let ty = 70; ty < 304; ty += 16) {
-    for (let tx = 68; tx < 572; tx += 16) {
-      const c = tileColors[Math.floor(nextR() * tileColors.length)];
-      x.fillStyle = c;
-      x.fillRect(tx, ty, 16, 16);
-      x.fillStyle = '#281a11';
-      x.fillRect(tx, ty + 15, 16, 1);
-      x.fillRect(tx + 15, ty, 1, 16);
-      if (nextR() < 0.28) {
-        x.fillStyle = '#523b2b';
-        x.fillRect(tx + 4, ty + 4, 2, 2);
-      }
-      if (nextR() < 0.16) {
-        x.fillStyle = '#22150d';
-        x.fillRect(tx + 9, ty + 8, 3, 1);
-        x.fillRect(tx + 10, ty + 9, 1, 2);
+  if (pNelCiclo === 1) {
+    // -------------------------------------------------------------------------
+    // PIANO 1: CORSO TRIESTE SOTTO LA PIOGGIA
+    // Basoli vesuviani scuri bagnati, pozzanghere con riflessi lucidi cerulei
+    // -------------------------------------------------------------------------
+    const colors = q.coloriPiastrelle;
+    for (let ty = 70; ty < 304; ty += 16) {
+      for (let tx = 68; tx < 572; tx += 16) {
+        const c = colors[Math.floor(nextR() * colors.length)];
+        x.fillStyle = c;
+        x.fillRect(tx, ty, 16, 16);
+
+        // Fughe bagnate scure
+        x.fillStyle = q.coloreFughe;
+        x.fillRect(tx, ty + 15, 16, 1);
+        x.fillRect(tx + 15, ty, 1, 16);
+
+        // Bordo superiore/sinistro lucido per bagnato
+        if (nextR() < 0.40) {
+          x.fillStyle = q.coloreRiflesso;
+          x.fillRect(tx + 1, ty + 1, 6, 1);
+          x.fillRect(tx + 1, ty + 2, 1, 5);
+        }
+
+        // Pori e scanalature della pietra lavica
+        if (nextR() < 0.22) {
+          x.fillStyle = '#0f141f';
+          x.fillRect(tx + 4, ty + 6, 3, 1);
+          x.fillRect(tx + 10, ty + 11, 2, 1);
+        }
       }
     }
+
+    // Pozzanghere d'acqua piovana con riflessi cerulei e lucentezza
+    const pozzanghere = [
+      { x: 140, y: 110, rx: 32, ry: 16 },
+      { x: 480, y: 120, rx: 36, ry: 18 },
+      { x: 230, y: 220, rx: 42, ry: 19 },
+      { x: 420, y: 240, rx: 38, ry: 17 },
+      { x: 310, y: 160, rx: 48, ry: 20 },
+      { x: 170, y: 250, rx: 28, ry: 14 },
+    ];
+    for (const p of pozzanghere) {
+      x.save();
+      x.fillStyle = q.colorePozzanghera;
+      x.beginPath();
+      x.ellipse(p.x, p.y, p.rx, p.ry, 0, 0, Math.PI * 2);
+      x.fill();
+      // Riflesso specchiato sulla superficie dell'acqua
+      x.fillStyle = 'rgba(224, 242, 254, 0.28)';
+      x.beginPath();
+      x.ellipse(p.x - p.rx * 0.25, p.y - p.ry * 0.25, p.rx * 0.45, p.ry * 0.35, -0.2, 0, Math.PI * 2);
+      x.fill();
+      x.restore();
+    }
+
+  } else if (pNelCiclo === 2) {
+    // -------------------------------------------------------------------------
+    // PIANO 2: VILLA COMUNALE CON LE LUCCIOLE
+    // Viali di ghiaia, tufo umido, ciuffi di muschio verde e foglie d'autunno
+    // -------------------------------------------------------------------------
+    const colors = q.coloriPiastrelle;
+    for (let ty = 70; ty < 304; ty += 16) {
+      for (let tx = 68; tx < 572; tx += 16) {
+        const c = colors[Math.floor(nextR() * colors.length)];
+        x.fillStyle = c;
+        x.fillRect(tx, ty, 16, 16);
+
+        // Fughe terrose
+        x.fillStyle = q.coloreFughe;
+        x.fillRect(tx, ty + 15, 16, 1);
+        x.fillRect(tx + 15, ty, 1, 16);
+
+        // Ciuffi di muschio verde nei giunti e negli angoli
+        if (nextR() < 0.35) {
+          x.fillStyle = nextR() < 0.5 ? '#365314' : q.coloreMuschio;
+          x.fillRect(tx + 2, ty + 13, 4, 2);
+          x.fillRect(tx + 13, ty + 2, 2, 4);
+        }
+
+        // Granelli di tufo e ciottoli
+        if (nextR() < 0.25) {
+          x.fillStyle = '#2b3f24';
+          x.fillRect(tx + 7, ty + 6, 2, 2);
+        }
+
+        // Foglie secche autunnali sparse (ambra, ruggine e castagna)
+        if (nextR() < 0.14) {
+          const leafCols = ['#78350f', '#92400e', '#b45309', '#5c3210'];
+          x.fillStyle = leafCols[Math.floor(nextR() * leafCols.length)];
+          const lx = tx + 3 + Math.floor(nextR() * 9);
+          const ly = ty + 3 + Math.floor(nextR() * 9);
+          x.fillRect(lx, ly, 3, 2);
+          x.fillRect(lx + 1, ly + 1, 2, 1);
+        }
+      }
+    }
+
+  } else if (pNelCiclo === 3) {
+    // -------------------------------------------------------------------------
+    // PIANO 3: SAN LEUCIO ALL'ALBA
+    // Cotto antico della manifattura reale, mattoni rossicci, assi dei telai
+    // -------------------------------------------------------------------------
+    const colors = q.coloriPiastrelle;
+    for (let ty = 70; ty < 304; ty += 16) {
+      for (let tx = 68; tx < 572; tx += 16) {
+        const c = colors[Math.floor(nextR() * colors.length)];
+        x.fillStyle = c;
+        x.fillRect(tx, ty, 16, 16);
+
+        // Fughe di malta rossa antica
+        x.fillStyle = q.coloreFughe;
+        x.fillRect(tx, ty + 15, 16, 1);
+        x.fillRect(tx + 15, ty, 1, 16);
+
+        // Luce calda d'alba sui bordi superiori dei mattoni
+        if (nextR() < 0.42) {
+          x.fillStyle = '#6e3325';
+          x.fillRect(tx + 1, ty + 1, 12, 1);
+        }
+
+        // Texture di cotto e argilla
+        if (nextR() < 0.20) {
+          x.fillStyle = '#29100a';
+          x.fillRect(tx + 5, ty + 8, 3, 1);
+        }
+
+        // Trama di seta dorata/rosata incorporata
+        if (nextR() < 0.16) {
+          x.fillStyle = q.coloreSeta;
+          x.fillRect(tx + 4, ty + 4, 3, 2);
+        }
+      }
+    }
+
+    // Assi e longheroni in legno di castagno dei telai lungo i bordi della stanza
+    x.fillStyle = '#2c140c';
+    x.fillRect(72, 74, 496, 4);
+    x.fillRect(72, 296, 496, 4);
+    x.fillStyle = '#5c2e17';
+    for (let lx = 80; lx < 560; lx += 32) {
+      x.fillRect(lx, 74, 2, 4);
+      x.fillRect(lx, 296, 2, 4);
+    }
+
+  } else {
+    // -------------------------------------------------------------------------
+    // PIANO 4: LA REGGIA CON LE TORCE
+    // Scacchiera regale in marmo avorio ed ebano lucido con intarsi in oro borbonico
+    // -------------------------------------------------------------------------
+    for (let ty = 70; ty < 304; ty += 16) {
+      const row = Math.floor((ty - 70) / 16);
+      for (let tx = 68; tx < 572; tx += 16) {
+        const col = Math.floor((tx - 68) / 16);
+        const isIvory = (row + col) % 2 === 0;
+
+        if (isIvory) {
+          // Marmo avorio borbonico
+          x.fillStyle = nextR() < 0.5 ? '#cfc5b4' : '#dfd6c7';
+          x.fillRect(tx, ty, 16, 16);
+          // Venatura tenue di marmo
+          if (nextR() < 0.35) {
+            x.fillStyle = '#b8aca0';
+            x.fillRect(tx + 3, ty + 4, 4, 1);
+            x.fillRect(tx + 6, ty + 5, 5, 1);
+          }
+        } else {
+          // Marmo nero ebano lucidato
+          x.fillStyle = nextR() < 0.5 ? '#1f1b18' : '#28231f';
+          x.fillRect(tx, ty, 16, 16);
+          // Riflesso lucido a specchio
+          if (nextR() < 0.35) {
+            x.fillStyle = '#3a332c';
+            x.fillRect(tx + 2, ty + 2, 5, 1);
+          }
+        }
+
+        // Bordo tra le lastre
+        x.fillStyle = '#14100c';
+        x.fillRect(tx, ty + 15, 16, 1);
+        x.fillRect(tx + 15, ty, 1, 16);
+      }
+    }
+
+    // Intarsio geometrico regale in oro lungo il perimetro interno
+    x.strokeStyle = q.coloreOro;
+    x.lineWidth = 2;
+    x.strokeRect(96, 94, 448, 186);
+
+    // Rosetta dorata stilizzata al centro della scacchiera della Reggia
+    x.fillStyle = 'rgba(249, 203, 64, 0.40)';
+    x.fillRect(312, 172, 16, 16);
+    x.fillStyle = q.coloreOro;
+    x.fillRect(318, 166, 4, 28);
+    x.fillRect(306, 178, 28, 4);
+    x.fillRect(314, 174, 12, 12);
   }
 
-  x.strokeStyle = '#0a0604';
+  // Bordo perimetrale esterno del pavimento della stanza
+  x.strokeStyle = q.coloreBordoMuro;
   x.lineWidth = 2;
   x.strokeRect(68, 70, 504, 234);
-  return floorCache;
+
+  floorCachesPerPiano.set(pNelCiclo, fc);
+  return fc;
+}
+
+/**
+ * Disegna gli effetti atmosferici, meteo, particellari e la luce tipica del quartiere.
+ */
+function disegnaAtmosferaQuartiere(tick, piano) {
+  const pNelCiclo = ((Math.max(1, piano || statoRun?.piano || 1) - 1) % 4) + 1;
+
+  if (pNelCiclo === 1) {
+    // -------------------------------------------------------------------------
+    // PIANO 1: PIOGGIA NOTTURNA BATTENTE SU CORSO TRIESTE
+    // -------------------------------------------------------------------------
+    ctx.save();
+    // 1. Strie di pioggia diagonale scrosciante
+    ctx.strokeStyle = 'rgba(186, 215, 248, 0.36)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i < 48; i++) {
+      const rx = ((i * 53 + tick * 3.8) % 520) + 60;
+      const ry = ((i * 37 + tick * 9.2) % 250) + 65;
+      ctx.moveTo(rx, ry);
+      ctx.lineTo(rx - 2.5, ry + 11);
+    }
+    ctx.stroke();
+
+    // 2. Cerchi concentrici d'impatto gocce d'acqua (ripple)
+    for (let i = 0; i < 6; i++) {
+      const cx = 110 + ((i * 89) % 420);
+      const cy = 95 + ((i * 67) % 180);
+      const prog = ((tick * 0.35 + i * 9) % 24);
+      const r = prog;
+      const alpha = Math.max(0, 0.40 - prog * 0.016);
+      ctx.strokeStyle = `rgba(186, 215, 248, ${alpha.toFixed(2)})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, r, r * 0.45, 0, 0, TAU);
+      ctx.stroke();
+    }
+
+    // 3. Vignettatura fredda notturna
+    const vg = ctx.createRadialGradient(W / 2, H / 2, 140, W / 2, H / 2, 330);
+    vg.addColorStop(0, 'rgba(8, 12, 20, 0)');
+    vg.addColorStop(1, 'rgba(8, 12, 20, 0.38)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(48, 52, W - 96, H - 96);
+    ctx.restore();
+
+  } else if (pNelCiclo === 2) {
+    // -------------------------------------------------------------------------
+    // PIANO 2: NOTTE INCANTATA CON LE LUCCIOLE ALLA VILLA COMUNALE
+    // -------------------------------------------------------------------------
+    ctx.save();
+    // 1. Lucciole fluttuanti con luce verde/oro pulsante
+    for (let i = 0; i < 18; i++) {
+      const fx = 80 + ((i * 59 + tick * 0.42) % 480) + Math.sin(tick * 0.04 + i) * 18;
+      const fy = 80 + ((i * 47 + tick * 0.25) % 200) + Math.cos(tick * 0.035 + i * 1.8) * 14;
+      const pulse = 0.45 + 0.55 * Math.sin(tick * 0.09 + i * 2.1);
+      const rHalo = Math.max(1, 10 + 6 * pulse);
+
+      // Alone luminoso radiale
+      const g = ctx.createRadialGradient(fx, fy, 1, fx, fy, rHalo);
+      g.addColorStop(0, `rgba(190, 242, 100, ${(0.42 * pulse).toFixed(2)})`);
+      g.addColorStop(0.5, `rgba(163, 230, 53, ${(0.22 * pulse).toFixed(2)})`);
+      g.addColorStop(1, 'rgba(163, 230, 53, 0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(fx, fy, rHalo, 0, TAU);
+      ctx.fill();
+
+      // Cuore brillante della lucciola
+      ctx.fillStyle = pulse > 0.7 ? '#ffffff' : '#fef08a';
+      ctx.fillRect(Math.round(fx) - 1, Math.round(fy) - 1, 2, 2);
+    }
+
+    // 2. Vignettatura boscosa verde cupo
+    const vg = ctx.createRadialGradient(W / 2, H / 2, 130, W / 2, H / 2, 330);
+    vg.addColorStop(0, 'rgba(5, 18, 7, 0)');
+    vg.addColorStop(1, 'rgba(5, 18, 7, 0.35)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(48, 52, W - 96, H - 96);
+    ctx.restore();
+
+  } else if (pNelCiclo === 3) {
+    // -------------------------------------------------------------------------
+    // PIANO 3: LUCE RADENTE DELL'ALBA E PULVISCOLO DI SETA A SAN LEUCIO
+    // -------------------------------------------------------------------------
+    ctx.save();
+    // 1. Fascio di luce radente dell'aurora che fende la sala
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(560, 56);
+    ctx.lineTo(600, 56);
+    ctx.lineTo(240, 310);
+    ctx.lineTo(160, 310);
+    ctx.closePath();
+    const beamGrad = ctx.createLinearGradient(580, 56, 200, 310);
+    beamGrad.addColorStop(0, 'rgba(254, 215, 170, 0.14)');
+    beamGrad.addColorStop(0.6, 'rgba(251, 146, 60, 0.08)');
+    beamGrad.addColorStop(1, 'rgba(244, 114, 182, 0.02)');
+    ctx.fillStyle = beamGrad;
+    ctx.fill();
+    ctx.restore();
+
+    // 2. Pulviscolo di seta e pagliuzze d'oro fluttuanti nell'aria
+    for (let i = 0; i < 20; i++) {
+      const mx = 80 + ((i * 71 + tick * 0.35) % 480);
+      const my = 80 + ((i * 43 + Math.sin(tick * 0.035 + i) * 16 + tick * 0.12) % 200);
+      const glint = 0.3 + 0.7 * Math.sin(tick * 0.12 + i * 1.5);
+      ctx.fillStyle = `rgba(253, 224, 71, ${Math.max(0, glint).toFixed(2)})`;
+      ctx.fillRect(Math.round(mx), Math.round(my), 2, 2);
+      if (glint > 0.8) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fillRect(Math.round(mx), Math.round(my) - 1, 1, 3);
+        ctx.fillRect(Math.round(mx) - 1, Math.round(my), 3, 1);
+      }
+    }
+
+    // 3. Vignettatura calda rosata d'alba
+    const vg = ctx.createRadialGradient(W / 2, H / 2, 140, W / 2, H / 2, 330);
+    vg.addColorStop(0, 'rgba(30, 10, 8, 0)');
+    vg.addColorStop(1, 'rgba(30, 10, 8, 0.32)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(48, 52, W - 96, H - 96);
+    ctx.restore();
+
+  } else {
+    // -------------------------------------------------------------------------
+    // PIANO 4: FIAMME VIVE DELLE TORCE E FAVILLE INCANDESCENTI ALLA REGGIA
+    // -------------------------------------------------------------------------
+    ctx.save();
+    // 1. Bagliore caldo pulsante dai bracieri reali
+    const flicker = Math.sin(tick * 0.20) * 8 + Math.cos(tick * 0.33) * 5;
+    for (const bx of [150, 490]) {
+      const brGrad = ctx.createRadialGradient(bx, 64, 4, bx, 64, 70 + flicker);
+      brGrad.addColorStop(0, 'rgba(249, 115, 22, 0.26)');
+      brGrad.addColorStop(0.5, 'rgba(239, 68, 68, 0.12)');
+      brGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+      ctx.fillStyle = brGrad;
+      ctx.beginPath();
+      ctx.arc(bx, 64, 70 + flicker, 0, TAU);
+      ctx.fill();
+    }
+
+    // 2. Faville e scintille incandescenti che salgono verso l'alto
+    for (let i = 0; i < 24; i++) {
+      const sx = 80 + ((i * 57 + Math.sin(tick * 0.07 + i) * 14) % 480);
+      const distSalita = (i * 39 + tick * 1.7) % 210;
+      const sy = 280 - distSalita;
+      const tNorm = distSalita / 210;
+      const alpha = Math.max(0, 1 - tNorm * 1.1);
+      const col = tNorm < 0.35 ? '#fde047' : tNorm < 0.70 ? '#f97316' : '#ef4444';
+      ctx.fillStyle = col;
+      ctx.globalAlpha = alpha;
+      ctx.fillRect(Math.round(sx), Math.round(sy), 2, 2);
+    }
+    ctx.globalAlpha = 1;
+
+    // 3. Vignettatura regale ambrata e ombre drammatiche
+    const vg = ctx.createRadialGradient(W / 2, H / 2, 130, W / 2, H / 2, 330);
+    vg.addColorStop(0, 'rgba(20, 14, 8, 0)');
+    vg.addColorStop(1, 'rgba(20, 14, 8, 0.40)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(48, 52, W - 96, H - 96);
+    ctx.restore();
+  }
 }
 
 function disegnaStanzaPixelArt(tick, st) {
-  ctx.drawImage(getFloorTileCanvas(), 0, 0, W, H); // (T5) la cache è alla risoluzione del buffer
+  ctx.drawImage(getFloorTileCanvas(statoRun.piano), 0, 0, W, H); // (T5) la cache è alla risoluzione del buffer
 
   if (st.tipo === 'tesoro' || st.tipo === 'fucina' || st.tipo === 'boss' || st.tipo === 'segreta' || st.tipo === 'patto') {
     ctx.fillStyle = st.tipo === 'tesoro'
@@ -547,6 +900,7 @@ function disegnaStanzaPixelArt(tick, st) {
   // --- B: inizio ---
   if (st.tipo === 'sviluppatore') disegnaAltareSviluppatoreB(st, tick);
   // --- B: fine ---
+  disegnaAtmosferaQuartiere(tick, statoRun.piano);
 }
 
 // ===========================================================================
@@ -1350,12 +1704,14 @@ function disegnaHUDPixelArt(st) {
     const nascosta = (s) => (s.tipo === 'segreta' || s.tipo === 'patto') && !s.visitata;
     const nVisitate = statoRun.mappa ? statoRun.mappa.stanze.filter((s) => s.visitata).length : 1;
     const nTot = statoRun.mappa ? statoRun.mappa.stanze.filter((s) => !nascosta(s)).length : 1;
+    const q = getQuartierePiano(statoRun.piano);
+    const cicloTxt = statoRun.ciclo > 1 ? ` (∞${statoRun.ciclo})` : '';
     drawPillLabel(
-      `PIANO ${statoRun.piano} (CICLO ${statoRun.ciclo}) · STANZE ${nVisitate}/${nTot}`,
+      `${q.nome.toUpperCase()} · ${q.atmosfera.toUpperCase()}${cicloTxt} · STANZE ${nVisitate}/${nTot}`,
       W / 2,
       15,
-      210,
-      { size: 8, color: '#f9cb40', border: '#8a5a2b' }
+      280,
+      { size: 8, color: q.coloreTema, border: q.bordoPillola }
     );
   }
 
@@ -1645,8 +2001,9 @@ function disegnaMenuPausa() {
   ctx.strokeRect(mx + 4, my + 4, mw - 8, mh - 8);
 
   const chInfo = getCharCorrente();
+  const qPausa = getQuartierePiano(statoRun.piano);
   drawTextFit(`🌙 NOTTE ${statoRun.numeroNotte || 1} — IN PAUSA`, W / 2, my + 24, mw - 20, { size: 12, color: '#f9cb40', weight: 'bold' });
-  drawTextFit(`${chInfo.nome} · Piano ${statoRun.piano} · Monete: ${statoRun.monete}🪙`, W / 2, my + 42, mw - 20, { size: 8, color: '#c9a679' });
+  drawTextFit(`${chInfo.nome} · ${qPausa.titoloCompleto} · ${statoRun.monete}🪙`, W / 2, my + 42, mw - 20, { size: 8, color: '#c9a679' });
 
   const btnW = 236, btnH = 26;
   const bx = W / 2 - btnW / 2;
