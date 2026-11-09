@@ -134,7 +134,7 @@ if (pref.endsWith('/')) fs.mkdirSync(pref, { recursive: true });
   for (let i = 0; i < 40; i++) {
     await attendi(250);
     const f = await p.evaluate(() => window.__teatro.fase);
-    if (f === 'hub') { tornato = await M(); break; }
+    if (f === 'hub') { await attendi(150); tornato = await M(); break; }
   }
   verifica('ritorno all\'hub: tema hub', tornato && tornato.tema === 'hub', tornato);
 
