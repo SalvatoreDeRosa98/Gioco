@@ -128,6 +128,14 @@ import { collegaEventiAudio } from './audio/eventi-audio.js';
 import { creaPassi } from './attori/passi.js';
 import { creaInterfacciaAudio } from './interfaccia/audio.js';
 // --- squadra audio: fine ---
+// --- squadra oggetti (storie P04/P09): inizio ---
+import { creaAttivi } from './oggetti/attivi.js';
+import { creaSlot } from './oggetti/slot.js';
+import { creaPatto } from './oggetti/patto.js';
+import { creaGratis } from './oggetti/gratis.js';
+import { creaSegreta } from './mondo/segreta.js';
+import { creaInterfacciaOggetti } from './interfaccia/oggetti.js';
+// --- squadra oggetti: fine ---
 
 /** Risoluzione logica della scena (ADR-0001). */
 const RISOLUZIONE = Object.freeze({ larghezza: 1280, altezza: 720 });
@@ -389,11 +397,15 @@ async function avvia() {
     rng: derivato(rng, 'pool'), flag: () => ({ ...narrativa.flag(), ...flagNotte }), restituiti: () => profilo.ricordiRestituiti, eventi,
   });
   pool.preparaPiano(pianoEconomia);
+  // --- squadra oggetti (storia P09): i cinque slot dei doni; ogni acquisizione (piedistallo, banchetto, gratis) passa da `acquisisci` ---
+  const slot = creaSlot({ modificatori, parametri, eventi, ferruccio });
+  const acquisisci = (id, o) => slot.acquisisci(id, o);
+  // --- squadra oggetti: fine ---
   const banchetto = creaBanchetto({
     economia, modificatori, parametri, catalogo: parametri.get('doni').doni, consumabili: parametri.get('consumabili').consumabili,
-    rng: derivato(rng, 'banchetto'), piano: pianoEconomia, ferruccio, input, eventi, pool,
+    rng: derivato(rng, 'banchetto'), piano: pianoEconomia, ferruccio, input, eventi, pool, acquisisci,
   });
-  const piedistalli = creaPiedistalli({ pool, modificatori, parametri, piano: pianoEconomia, ferruccio, input, economia, eventi });
+  const piedistalli = creaPiedistalli({ pool, modificatori, parametri, piano: pianoEconomia, ferruccio, input, economia, eventi, acquisisci });
   collegaGanci({ eventi, modificatori, combattimento });
   // Storia 030: morte → risveglio (sequenza a fasi, poi notte + 1 e azzeramento di doni, pool ed economia).
   const risveglio = creaRisveglio({
@@ -760,6 +772,32 @@ async function avvia() {
     tick: () => { if (hub?.attivo && input.premuto('menu') && !incontri.dialogo()) apriMenu(); },
   }, { stati: ['hub'] });
 
+  // --- squadra oggetti (storie P04/P09): oggetto attivo (Q), Patto d'Ombra (altare dopo il boss), oggetti gratis, Crepa Dorata
+  // della segreta, interfaccia DOM (HUD dell'attivo, modale dei cinque slot, conferma del patto). Numeri da oggetti-attivi.json,
+  // patto.json, economia.json › gratis/monete_segreta; testi da interfaccia.json. ---
+  const tabAttivi = parametri.get('oggetti-attivi');
+  const attivi = creaAttivi({ tabella: tabAttivi, eventi, ferruccio, modificatori, bersagli: () => bersagli, proiettili, input, statistiche: () => statistiche.correnti() });
+  eventi.on('personaggio.scelto', ({ personaggio }) => attivi.equipaggia(tabPersonaggi.personaggi[personaggio]?.attivoIniziale ?? null));
+  const tabPatto = parametri.get('patto');
+  combattimento.impostaRaggio(tabPatto.regole?.raggio ?? null);
+  const patto = creaPatto({ tabella: tabPatto, eventi, statistiche, ferruccio, modificatori, parametri, rng: derivato(rng, 'patto'), notte: () => notte, input });
+  const gratis = creaGratis({ parametri, catalogo: parametri.get('doni').doni, eventi, notte: () => notte, ferruccio, modificatori, acquisisci, input });
+  const segreta = creaSegreta({ eventi, notte: () => notte, combattimento, ferruccio, parametri, economia });
+  ciclo.registra({ tick: () => { if (!notte && !scenaWire) return; attivi.tick(); patto.tick(); gratis.tick(); segreta.tick(); } }, { stati: ['notte'] });
+  eventi.on('piano.discesa', () => { patto.nuovoPiano(); gratis.nuovoPiano(); segreta.nuovoPiano(); });
+  eventi.on('risveglio.fine', () => { patto.nuovaRun(); gratis.nuovaRun(); segreta.nuovoPiano(); attivi.nuovaRun(); slot.annulla(); });
+  eventi.on('hub.partenza', () => { patto.nuovaRun(); gratis.nuovaRun(); segreta.nuovoPiano(); attivi.nuovaRun(); });
+  const interfacciaOggetti = creaInterfacciaOggetti({
+    documento: document, finestra: window, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia, attivi, slot, patto, modificatori,
+    tastoAttivo: () => parametri.get('input.tastiera.attivo')[0], tastoConferma: () => parametri.get('input.tastiera.conferma')[0],
+    tastoIndietro: () => parametri.get('input.tastiera.indietro')[0],
+  });
+  ciclo.registra({ disegna: () => interfacciaOggetti.aggiorna() });
+  const squadraOggetti = { attivi: () => attivi, slot: () => slot, patto: () => patto, gratis: () => gratis, segreta: () => segreta };
+  // `slotDoni`: i cinque slot dei doni (`slot` in `__gioco` resta lo slot del salvataggio, letto da pagina.test.js e dal menu).
+  const debugOggetti = { attivi, slotDoni: slot, patto, gratis, segreta, interfacciaOggetti: () => interfacciaOggetti.stato() };
+  // --- squadra oggetti: fine ---
+
   // Renderer del Teatro (pixel-art) sempre; con `?debug=1&wire=1&diagnostica=1` il disegno diagnostico in fil di ferro.
   const usaDiagnostica = wire && url.searchParams.get('diagnostica') === '1';
   const creaResa = usaDiagnostica ? creaResaDebug : creaRenderer;
@@ -772,6 +810,7 @@ async function avvia() {
     hub: () => hub, ciclo, eventi, motoRidotto,
     foglioGiocatore: () => foglioGiocatoreCorrente(),
     feel, // squadra feel (P08)
+    squadraOggetti, // --- squadra oggetti (storie P04/P09): crepa, gratis, altare, raggio ---
   });
   ciclo.registra(resa);
   // --- squadra audio: inizio --- storia P10: audio dinamico minimale (Web Audio API, nessun file). Lo stato di gioco non sa
@@ -897,6 +936,9 @@ async function avvia() {
         input.sorgenteSu(sorgente(azione));
         return esito;
       },
+      // --- squadra oggetti (storie P04/P09): `attivi`, `slotDoni` (i cinque slot dei doni), `patto`, `gratis`, `segreta`, `interfacciaOggetti()` ---
+      ...debugOggetti,
+      // --- squadra oggetti: fine ---
       imposta: (flag, valore) => (ganci.imposta ? ganci.imposta(flag, valore) : false),
       /** Salta alla stanza `id` del piano (notte.vaiA); false senza piano o con id sconosciuto. */
       vaiA: (stanza) => (ganci.vaiA ? ganci.vaiA(stanza) : false),

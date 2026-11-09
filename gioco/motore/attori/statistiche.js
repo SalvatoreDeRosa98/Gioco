@@ -21,7 +21,7 @@
  */
 
 /** Chiavi booleane di `mod` che diventano flag (Teatro: haSpada, triplo, doppia, quadDir, piercing, overflowPierce, burn, chain). */
-export const FLAG_MOD = Object.freeze(['spada', 'triplo', 'doppia', 'quadDir', 'piercing', 'overflowPierce', 'burn', 'chain']);
+export const FLAG_MOD = Object.freeze(['spada', 'triplo', 'doppia', 'quadDir', 'piercing', 'overflowPierce', 'burn', 'chain', 'raggio', 'spettrale']); // storia P09: raggio continuo e lacrime spettrali del Patto
 
 /** Origine delle voci dei modificatori scritte da `applicaAlModificatori`. */
 export const ORIGINE_PERSONAGGIO = 'personaggio';
@@ -150,6 +150,8 @@ export function creaStatistiche({ tabella, modificatori, patti = [] }) {
     },
     /** Stringe un patto (voce di patto.json) e ricalcola. */
     stringiPatto(patto) { strettiPatti.push(patto); return ricalcola(); },
+    /** Storia P09: nuova run, i patti si sciolgono (il personaggio resta). */
+    azzeraPatti() { strettiPatti = []; if (scelto) ricalcola(); },
     get personaggio() { return tabella.personaggi[idPersonaggio]; },
     get id() { return idPersonaggio; },
     get attive() { return scelto; },

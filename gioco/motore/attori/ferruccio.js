@@ -210,6 +210,9 @@ export function creaFerruccio({ modificatori, tempo, eventi, input, campo, x, y,
    */
   function tick(dt) {
     if (corpo.stato === 'morto') return;
+    // Teatro ~2729: se le maschere massime scendono (Patto d'Ombra, dono perso) le correnti si allineano al tetto.
+    const tetto = val('maschere_max');
+    if (tetto >= 1 && corpo.maschere > tetto) corpo.maschere = tetto;
     tickRicarica();
     if (corpo.invulnTicks > 0) {
       corpo.invulnTicks -= 1;

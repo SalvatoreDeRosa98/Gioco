@@ -43,7 +43,7 @@ export const MOTIVI_RIFIUTO = Object.freeze(['monete', 'maschere_piene', 'vuoto'
  * }} o
  */
 export function creaBanchetto({
-  economia, modificatori, parametri, catalogo, consumabili, rng, piano, ferruccio = null, input = null, eventi = null, esclusi = [], pool = null, log = console,
+  economia, modificatori, parametri, catalogo, consumabili, rng, piano, ferruccio = null, input = null, eventi = null, esclusi = [], pool = null, log = console, acquisisci = null,
 }) {
   if (!economia || !modificatori || !parametri || !Array.isArray(catalogo) || !Array.isArray(consumabili) || typeof rng !== 'function') {
     throw new TypeError('creaBanchetto: dipendenze mancanti');
@@ -116,6 +116,19 @@ export function creaBanchetto({
     if (slot.comprato) return rifiuta('vuoto');
     if (slot.tipo === 'cuore' && ferruccio && ferruccio.maschere >= maschereMax()) return rifiuta('maschere_piene');
     if (economia.monete < slot.prezzo) return rifiuta('monete');
+    // storia P09: il dono passa dai cinque slot; a slot pieni resta PENDENTE e si paga solo alla conferma (Teatro 'fucina')
+    if (slot.tipo === 'dono' && typeof acquisisci === 'function') {
+      const paga = () => {
+        economia.togliMonete(slot.prezzo, 'banchetto');
+        slot.comprato = true;
+        ultimoEsito = { esito: 'comprato', slot: i, prezzo: slot.prezzo, tipo: slot.tipo, id: slot.id };
+        eventi?.emit('banchetto.acquisto', { slot: i, tipo: slot.tipo, id: slot.id, prezzo: slot.prezzo, monete: economia.monete });
+      };
+      const esitoSlot = acquisisci(slot.id, { origine: 'banchetto', suConferma: paga });
+      if (esitoSlot === 'pendente') { ultimoEsito = { esito: 'pendente', slot: i, prezzo: slot.prezzo }; return ultimoEsito; }
+      if (!esitoSlot) return rifiuta('vuoto');
+      return ultimoEsito;
+    }
     if (!economia.togliMonete(slot.prezzo, 'banchetto')) return rifiuta('monete');
     // applicazione nello stesso frame
     if (slot.tipo === 'dono') {

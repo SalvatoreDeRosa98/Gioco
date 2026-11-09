@@ -53,7 +53,7 @@ export function puntiPiedistallo(stanza, n) {
  *   log?: { error: Function }
  * }} o
  */
-export function creaPiedistalli({ pool, modificatori, parametri, piano, ferruccio = null, input = null, economia = null, eventi = null, log = console }) {
+export function creaPiedistalli({ pool, modificatori, parametri, piano, ferruccio = null, input = null, economia = null, eventi = null, log = console, acquisisci = null }) {
   if (!pool || !modificatori || !parametri || !Number.isInteger(piano)) throw new TypeError('creaPiedistalli: pool, modificatori, parametri e piano obbligatori');
   const tab = parametri.get('doni').piedistallo;
   if (!tab) throw new RangeError('creaPiedistalli: manca doni.piedistallo nei parametri');
@@ -154,12 +154,22 @@ export function creaPiedistalli({ pool, modificatori, parametri, piano, ferrucci
       const dono = modificatori.dono(p.id);
       const toccate = (dono?.modificatori ?? []).map((m) => m.statistica);
       const prima = toccate.map((st) => modificatori.valore(st));
-      if (!modificatori.aggiungiDono(p.id)) {
+      // storia P09: con i cinque slot (`acquisisci`) a slot pieni il dono resta PENDENTE sul piedistallo finché il modale
+      // decide; il dono sostituito torna qui (regola del Teatro)
+      if (typeof acquisisci === 'function') {
+        const esitoSlot = acquisisci(p.id, {
+          origine: 'piedistallo',
+          suConferma: () => { pool.raccolto(p.id); },
+          restituisci: (idVecchio) => { p.id = idVecchio; p.stato = 'offerto'; for (const altro of lista) if (altro !== p && altro.stato === 'inerte') altro.stato = 'offerto'; },
+        });
+        if (esitoSlot === 'pendente') return { esito: 'pendente', id: p.id };
+        if (!esitoSlot) return { esito: 'rifiutato', motivo: 'dono' };
+      } else if (!modificatori.aggiungiDono(p.id)) {
         log?.error?.(`[piedistallo] il dono '${p.id}' non si è attivato`);
         return { esito: 'rifiutato', motivo: 'dono' };
       }
       alMassimo = P('avviso_cap') > 0 && toccate.length > 0 && toccate.every((st, k) => modificatori.valore(st) === prima[k]);
-      pool.raccolto(p.id);
+      if (typeof acquisisci !== 'function') pool.raccolto(p.id);
     } else if (p.fallback?.tipo === 'cuore') {
       ferruccio?.impostaMaschere(Math.min(maschereMax(), ferruccio.maschere + p.fallback.valore));
     } else if (p.fallback?.tipo === 'monete') {

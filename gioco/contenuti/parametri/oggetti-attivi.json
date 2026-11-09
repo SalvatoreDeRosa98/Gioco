@@ -1,11 +1,69 @@
 {
   "_descrizione": "Storia P04 (Teatro OGGETTI_ATTIVI ~2381): oggetti attivi a ricarica per stanza, usati con l'azione 'attivo' (Q). 'maxCarica' tacche; +1 tacca a ogni stanza ripulita; parte carico. Gli effetti (Teatro usaOggettoAttivo): forbici = immobilizza tutti i nemici per 'stordisce_ms' e infligge 'danno'; tamburello = distrugge i proiettili nemici e respinge di 'spinta' px/s; ampolla = +'cura' maschere intere.",
   "attivi": {
-    "forbici": { "id": "forbici", "nome": "Forbici di Gaetano", "maxCarica": 3, "descrizione": "Spezza i fili d'oro: immobilizza tutti i nemici per 4 secondi e li ferisce.",
-      "effetto": "forbici", "stordisce_ms": { "base": 4000, "min": 500, "max": 8000 }, "danno": { "base": 4, "min": 0, "max": 40 } },
-    "tamburello": { "id": "tamburello", "nome": "Tamburello di Piazza Dante", "maxCarica": 2, "descrizione": "Onda d'urto sonora: distrugge i proiettili nemici e respinge i mostri.",
-      "effetto": "tamburello", "spinta": { "base": 420, "min": 100, "max": 900 }, "raggio": { "base": 360, "min": 100, "max": 900 } },
-    "ampolla": { "id": "ampolla", "nome": "Ampolla di San Gennaro", "maxCarica": 4, "descrizione": "Miracolo cremisi: rigenera subito una maschera intera.",
-      "effetto": "ampolla", "cura": { "base": 1, "min": 1, "max": 3 } }
+    "forbici": {
+      "id": "forbici",
+      "nome": "Forbici di Gaetano",
+      "maxCarica": 3,
+      "descrizione": "Spezza i fili d'oro: immobilizza tutti i nemici per 4 secondi e li ferisce.",
+      "effetto": "forbici",
+      "stordisce_ms": {
+        "base": 4000,
+        "min": 500,
+        "max": 8000
+      },
+      "danno": {
+        "base": 4,
+        "min": 0,
+        "max": 40
+      }
+    },
+    "tamburello": {
+      "id": "tamburello",
+      "nome": "Tamburello di Piazza Dante",
+      "maxCarica": 2,
+      "descrizione": "Onda d'urto sonora: distrugge i proiettili nemici e respinge i mostri.",
+      "effetto": "tamburello",
+      "spinta": {
+        "base": 420,
+        "min": 100,
+        "max": 900
+      },
+      "raggio": {
+        "base": 360,
+        "min": 100,
+        "max": 900
+      }
+    },
+    "ampolla": {
+      "id": "ampolla",
+      "nome": "Ampolla di San Gennaro",
+      "maxCarica": 4,
+      "descrizione": "Miracolo cremisi: rigenera subito una maschera intera.",
+      "effetto": "ampolla",
+      "cura": {
+        "base": 1,
+        "min": 1,
+        "max": 3
+      }
+    }
+  },
+  "regole": {
+    "_descrizione": "Teatro usaOggettoAttivo (~2760) e verificaStanzaPulita (~3682): +carica_per_stanza tacche a stanza ripulita; usabile solo a carica piena; frazione_dmg = danno dell'effetto in frazione del DMG corrente.",
+    "carica_per_stanza": {
+      "base": 1,
+      "min": 1,
+      "max": 3
+    },
+    "forbici_frazione_dmg": {
+      "base": 1.4,
+      "min": 0.1,
+      "max": 5
+    },
+    "tamburello_frazione_dmg": {
+      "base": 0.9,
+      "min": 0.1,
+      "max": 5
+    }
   }
 }

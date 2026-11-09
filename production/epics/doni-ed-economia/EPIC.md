@@ -4,7 +4,7 @@
 > **GDD**: design/gdd/doni-modificatori.md, design/gdd/economia.md
 > **Architecture Module**: motore/oggetti
 > **Status**: Ready
-> **Stories**: 3 storie (sotto)
+> **Stories**: 5 storie (sotto)
 
 ## Overview
 
@@ -38,3 +38,5 @@ Il contratto dei modificatori su statistiche nominate con ordine e clamp, i ganc
 | 023 | Modificatori: statistiche nominate, ordine, clamp, ganci, sinergie | Logic | Done | ADR-0002 |
 | 024 | Catalogo dei 12 doni MVP, pool, piedistallo, cartiglio del dono | Integration | Done | ADR-0002 |
 | 025 | Monete di luce, drop, scintille, banchetto di Tonino | Logic | Done | ADR-0002 |
+| P04 | Oggetti attivi (Q), cinque slot con sostituzione, Patto d'Ombra (altare dopo il boss), Crepa Dorata della segreta, oggetti gratis, Fucina = banchetto (Teatro) | Integration + UI | Done (riserve: mob dorati, stanza `patto` dedicata) | ADR-0002 |
+| P09 | Economia: scarsità del piano 1 (media 5-8), prezzi dell'autore 3/5/7/2; Patto potentissimo: Raggio Cremisi Continuo, Lacrime Spettrali, −1 maschera permanente | Logic + Visual | Done | ADR-0002 |

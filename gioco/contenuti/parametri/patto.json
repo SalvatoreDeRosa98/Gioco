@@ -1,17 +1,127 @@
 {
-  "_descrizione": "Storia P04 (Teatro CATALOGO_PATTO ~2397): reliquie del Patto d'Ombra. Costano 'costoMaxHpHalf' mezze maschere massime (una maschera intera). 'mod' con le chiavi di ricalcolaStatisticheIsaac (attori/statistiche.js).",
+  "_descrizione": "Storia P04 (Teatro CATALOGO_PATTO ~2397): reliquie del Patto d'Ombra. Costano 'costoMaxHpHalf' mezze maschere massime (una maschera intera). 'mod' con le chiavi di ricalcolaStatisticheIsaac (attori/statistiche.js). Storia P09 (autore 2026-11-08): il Patto deve far paura, quindi le reliquie sono le più forti del gioco (dmgMult >= 2): Raggio Cremisi Continuo (flag raggio: laser tenuto alla Brimstone, regole.raggio) e Lacrime Spettrali (flag spettrale: i proiettili ignorano mura e ostacoli e muoiono al bordo). I patti non occupano i 5 slot dei doni (statistiche.stringiPatto).",
   "patti": [
-    { "id": "patto_raggio", "nome": "Raggio Cremisi del Velo", "tier": "patto", "costoMaxHpHalf": 2,
+    {
+      "id": "patto_raggio",
+      "nome": "Raggio Cremisi del Velo",
+      "tier": "patto",
+      "costoMaxHpHalf": 2,
       "statsDesc": "DMG x2.1 - +1.5 DMG Up - Proiettili cremisi perforanti giganti",
       "lore": "Stringi il patto col Velo: cedi una Maschera di vita per un potere devastante.",
-      "mod": { "dmgUp": 1.5, "dmgMult": 2.1, "piercing": true, "tipoProiettile": "cremisi", "size": 1.45 } },
-    { "id": "patto_sacro", "nome": "Cuore Sacro di San Leucio", "tier": "patto", "costoMaxHpHalf": 2,
+      "mod": {
+        "dmgUp": 1.5,
+        "dmgMult": 2.1,
+        "piercing": true,
+        "tipoProiettile": "cremisi",
+        "size": 1.45
+      }
+    },
+    {
+      "id": "patto_sacro",
+      "nome": "Cuore Sacro di San Leucio",
+      "tier": "patto",
+      "costoMaxHpHalf": 2,
       "statsDesc": "DMG x2.3 - +1.0 Flat DMG - Rigenera tutta la vita rimasta",
       "lore": "Il cuore luminoso nascosto dietro l'altare del Belvedere.",
-      "mod": { "flatDmg": 1.0, "dmgMult": 2.3, "healOnEquip": 12 } },
-    { "id": "patto_coltello", "nome": "Lama della Burattinaia", "tier": "patto", "costoMaxHpHalf": 2,
-      "statsDesc": "Lama e proiettili perforanti - DMG x1.85 - +0.5 Tears Up",
+      "mod": {
+        "flatDmg": 1.0,
+        "dmgMult": 2.3,
+        "healOnEquip": 12
+      }
+    },
+    {
+      "id": "patto_coltello",
+      "nome": "Lama della Burattinaia",
+      "tier": "patto",
+      "costoMaxHpHalf": 2,
+      "statsDesc": "Lama e proiettili perforanti - DMG x2.0 - +0.5 Tears Up",
       "lore": "La lama con cui Donna Luciana recide i ricordi superflui.",
-      "mod": { "spada": true, "piercing": true, "dmgMult": 1.85, "tearsUp": 0.5, "tipoProiettile": "cremisi" } }
-  ]
+      "mod": {
+        "spada": true,
+        "piercing": true,
+        "dmgMult": 2.0,
+        "tearsUp": 0.5,
+        "tipoProiettile": "cremisi"
+      }
+    },
+    {
+      "id": "patto_raggio_continuo",
+      "nome": "Raggio Cremisi Continuo",
+      "tier": "patto",
+      "costoMaxHpHalf": 2,
+      "statsDesc": "RAGGIO continuo: tieni la freccia, breve carica, poi un raggio cremisi che brucia tutto sulla linea - DMG x2.4",
+      "lore": "Il Velo stesso ti presta la sua luce: un filo cremisi che non si spezza finché lo tieni.",
+      "mod": {
+        "raggio": true,
+        "dmgMult": 2.4,
+        "flatDmg": 1.0,
+        "tipoProiettile": "cremisi"
+      }
+    },
+    {
+      "id": "patto_spettrale",
+      "nome": "Lacrime Spettrali",
+      "tier": "patto",
+      "costoMaxHpHalf": 2,
+      "statsDesc": "Proiettili SPETTRALI che attraversano muri e ostacoli - DMG x2.0 - +0.6 Tears Up",
+      "lore": "Lacrime di chi non ha più corpo: nessuna parete le ferma, solo il bordo del palco.",
+      "mod": {
+        "spettrale": true,
+        "piercing": true,
+        "dmgMult": 2.0,
+        "tearsUp": 0.6,
+        "tipoProiettile": "cremisi"
+      }
+    }
+  ],
+  "regole": {
+    "_descrizione": "Teatro verificaStanzaPulita (~3692): dopo il boss l'altare del Patto compare al 100 % senza danni subiti nel boss, al 60 % altrimenti; offre reliquie_per_altare reliquie non ancora strette nella run. raggio: carica_ms poi durata_ms di raggio, danno ogni tick_ms = DMG x frazione_danno_tick a tutto ciò che sta sulla linea (larghezza px, lunghezza = range x molt_portata).",
+    "p_altare_senza_danno": {
+      "base": 1.0,
+      "min": 0,
+      "max": 1
+    },
+    "p_altare_con_danno": {
+      "base": 0.6,
+      "min": 0,
+      "max": 1
+    },
+    "reliquie_per_altare": {
+      "base": 2,
+      "min": 1,
+      "max": 3
+    },
+    "raggio": {
+      "carica_ms": {
+        "base": 250,
+        "min": 0,
+        "max": 2000
+      },
+      "durata_ms": {
+        "base": 1200,
+        "min": 200,
+        "max": 5000
+      },
+      "tick_ms": {
+        "base": 100,
+        "min": 16,
+        "max": 500
+      },
+      "frazione_danno_tick": {
+        "base": 0.35,
+        "min": 0.05,
+        "max": 2
+      },
+      "larghezza": {
+        "base": 28,
+        "min": 8,
+        "max": 120
+      },
+      "molt_portata": {
+        "base": 1.6,
+        "min": 0.5,
+        "max": 4
+      }
+    }
+  }
 }

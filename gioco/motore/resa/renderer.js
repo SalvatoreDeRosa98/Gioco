@@ -43,6 +43,7 @@ export function creaRenderer({
   economia = null, banchetto = null, piedistalli = null, ricordi = null,
   hub = null, ciclo = null, eventi = null, motoRidotto = false, foglioGiocatore = () => null,
   feel = null, // --- squadra feel (P08): scossa contestuale, macchie a terra, lampeggio ---
+  squadraOggetti = null, // --- squadra oggetti (storie P04/P09): getter di segreta, gratis, patto ---
 }) {
   const ctx = canvas.getContext('2d');
   const W = scena.larghezza;
@@ -785,6 +786,89 @@ export function creaRenderer({
     }
   }
 
+  // --- squadra oggetti (storie P04/P09): Crepa Dorata (finestra verso la segreta a stanza pulita), piedistallo dell'oggetto
+  // gratis, altare del Patto con la luce rossa fioca della stanza, raggio cremisi continuo. Regola dell'autore 2026-11-08: nessun
+  // segno a terra che anticipi un attacco nemico (qui si disegnano solo oggetti e il colpo di Ferruccio). Palette P, come il resto. ---
+  function disegnaSquadraOggetti() {
+    if (!squadraOggetti) return;
+    const t = contaTick();
+    const c = squadraOggetti.segreta?.()?.crepa?.();
+    if (c && !c.aperta && c.visibile && c.rett) {
+      const { x, y, w, h } = c.rett;
+      ctx.save();
+      // la cella della finestra è già chiara: la crepa è un'incrinatura d'inchiostro con un alone d'oro che pulsa
+      ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 0.15);
+      ctx.strokeStyle = P.carta;
+      ctx.lineWidth = 6;
+      ctx.strokeRect(x - 3, y - 3, w + 6, h + 6);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = P.ink;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(x + w * 0.5, y);
+      ctx.lineTo(x + w * 0.35, y + h * 0.3);
+      ctx.lineTo(x + w * 0.6, y + h * 0.55);
+      ctx.lineTo(x + w * 0.45, y + h);
+      ctx.moveTo(x + w * 0.6, y + h * 0.55);
+      ctx.lineTo(x + w * 0.8, y + h * 0.7);
+      ctx.stroke();
+      ctx.restore();
+    }
+    const g = squadraOggetti.gratis?.()?.corrente?.();
+    if (g && g.stato === 'offerto') {
+      ctx.save();
+      ctx.fillStyle = P.oroDim;
+      ctx.fillRect(g.x - 18, g.y - 6, 36, 14);
+      ctx.fillStyle = P.oro;
+      ctx.fillRect(g.x - 14, g.y - 10, 28, 6);
+      ctx.fillStyle = g.tier === 'forte' ? P.rosso : P.crema;
+      ctx.beginPath(); ctx.arc(g.x, g.y - 22 + Math.sin(t * 0.1) * 3, 9, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+    const pt = squadraOggetti.patto?.();
+    if (pt?.inStanzaAltare?.()) {
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = P.rossoDeep;
+      ctx.fillRect(campo.x - 8, campo.y - 8, campo.larghezza + 16, campo.altezza + 16);
+      ctx.restore();
+      for (const r of pt.altare?.reliquie ?? []) {
+        if (r.stretto) continue;
+        ctx.save();
+        ctx.fillStyle = P.ink;
+        ctx.fillRect(r.x - 20, r.y - 8, 40, 16);
+        ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 0.12);
+        ctx.strokeStyle = P.rosso;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(r.x, r.y - 22, 11, 0, TAU); ctx.stroke();
+        ctx.fillStyle = P.rosso;
+        ctx.beginPath(); ctx.arc(r.x, r.y - 22, 5, 0, TAU); ctx.fill();
+        ctx.restore();
+      }
+    }
+    const rg = typeof combattimento?.raggio === 'function' ? combattimento.raggio() : null;
+    if (rg && (rg.attivo || rg.carica > 0) && (rg.dx || rg.dy)) {
+      const x0 = rg.x;
+      const y0 = rg.y - 14;
+      const x1 = x0 + rg.dx * rg.lunghezza;
+      const y1 = y0 + rg.dy * rg.lunghezza;
+      ctx.save();
+      ctx.lineCap = 'round';
+      if (rg.attivo) {
+        for (const [colore, larg, alpha] of [[P.rossoDeep, rg.larghezza, 0.75], [P.rosso, rg.larghezza * 0.5, 1], [P.bianco, Math.max(2, rg.larghezza * 0.15), 1]]) {
+          ctx.strokeStyle = colore; ctx.lineWidth = larg; ctx.globalAlpha = alpha;
+          ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+        }
+      } else {
+        ctx.fillStyle = P.rosso;
+        ctx.globalAlpha = 0.5 + 0.5 * rg.carica;
+        ctx.beginPath(); ctx.arc(x0 + rg.dx * 22, y0 + rg.dy * 22, 4 + 8 * rg.carica, 0, TAU); ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+  // --- squadra oggetti: fine ---
+
   function disegnaOggettiEInteragibili() {
     const st = notte?.()?.stanza;
     if (st) {
@@ -1136,6 +1220,7 @@ export function creaRenderer({
       disegnaCampoEMura(tAnim);
       const filiHub = disegnaHubScena(tAnim);
       disegnaOggettiEInteragibili();
+      disegnaSquadraOggetti(); // --- squadra oggetti (storie P04/P09) ---
       disegnaOndeUrto();
 
       // Raccogliamo i punti dei nemici vivi per collegarvi i fili delle Mani di Marionetta
