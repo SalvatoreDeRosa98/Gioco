@@ -974,8 +974,8 @@ function disegnaNemicoPittorico() {
 
   ctx.translate(x, y);
   if (champion) ctx.scale(1.18, 1.18);
-  // Sprite procedurali originali amati (Gatto, Vespa, Bomba, Statua, Guardia, Maschera, Predone)
-  // if (t2Gancio('nemico', ctx, n, tick)) { ctx.restore(); return; }
+  // Foglio sprite animato (t2-sprite.js): camminata, volo, carica, miccia, sparo, balzo, morte
+  if (t2Gancio('nemico', ctx, n, tick)) { ctx.restore(); return; }
 
   const tint = isFlash
     ? '#ffffff'
@@ -991,11 +991,6 @@ function disegnaNemicoPittorico() {
   // 1. VESPA CIECA / VESPA D'OMBRA (Isaac Attack Fly / Pooter)
   // =========================================================================
   if (tipo === 'vespa_cieca' || tipo === 'vespa') {
-    const hoverY = Math.sin(tick * 0.16) * 3.5 - 6;
-    if (disegnaMobSprite(ctx, 'vespa_cieca', 0, hoverY, 26, flip, isFlash)) {
-      ctx.restore();
-      return;
-    }
     const wingWave = Math.sin(tick * 0.95) * 5.5;
     ctx.scale(flip, 1);
 
@@ -1069,12 +1064,6 @@ function disegnaNemicoPittorico() {
   // =========================================================================
   } else if (tipo === 'bomba_ferma') {
     const isPrimed = state === 'primed';
-    const sprBomba = isPrimed ? 'bomba_ferma_accesa' : 'bomba_ferma_ferma';
-    const targetH = isPrimed ? 32 : 28;
-    if (disegnaMobSprite(ctx, sprBomba, 0, 4, targetH, flip, isFlash)) {
-      ctx.restore();
-      return;
-    }
     const pulse = 1 + Math.sin(tick * (isPrimed ? 0.75 : 0.22)) * (isPrimed ? 0.22 : 0.08);
     ctx.scale(pulse, 1 / (0.6 + pulse * 0.4));
 
@@ -1147,8 +1136,6 @@ function disegnaNemicoPittorico() {
     const isMoving = Math.abs(n.vx || 0) > 0.1 || Math.abs(n.vy || 0) > 0.1;
     const posa = isCrouch ? 'accucciato' : isLeap ? 'salto' : isMoving ? 'cammina' : 'fermo';
     const targetH = isCrouch ? 22 : isLeap ? 25 : isMoving ? 24 : 32;
-
-    if (!disegnaGattoSprite(ctx, posa, 0, 4, targetH, flip, isFlash, false)) {
     const walkAnim = isMoving && !isCrouch && !isLeap ? Math.sin(tick * 0.32) : 0;
 
     // Scala Gatto Grande: maestoso, slanciato, fedele al model sheet Ferruccio
@@ -1334,17 +1321,11 @@ function disegnaNemicoPittorico() {
     ctx.fillRect(eyeX - 0.4, eyeY - 1.8, 0.8, 3.6);
     ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(10.2, -11.0, 0.8, 3.0);
-    }
 
   // =========================================================================
   // 4. MASCHERA D'OSSO / PULCINELLA D'ASSALTO (Isaac Host)
   // =========================================================================
   } else if (tipo === 'maschera') {
-    const sprMask = maskOpen ? 'maschera_aperta' : 'maschera_chiusa';
-    if (disegnaMobSprite(ctx, sprMask, 0, 4, 32, flip, isFlash)) {
-      ctx.restore();
-      return;
-    }
     const openY = maskOpen ? -7 : 0;
 
     // Bavero / collare di velluto scarlatto e oro
@@ -1414,10 +1395,6 @@ function disegnaNemicoPittorico() {
   // 5. STATUA SENTINELLA / CHERUBINO DI MARMO (Isaac Grimace)
   // =========================================================================
   } else if (tipo === 'statua') {
-    if (disegnaMobSprite(ctx, 'statua', 0, 5, 36, flip, isFlash)) {
-      ctx.restore();
-      return;
-    }
     const isCharging = (n.shootCd || 0) < 22;
 
     // Piedistallo barocco a gradoni in pietra e marmo di Caserta
@@ -1480,12 +1457,6 @@ function disegnaNemicoPittorico() {
   // 6. GUARDIA D'ACCIAIO / PREDONE DEI BORBONI (Isaac Knight / Greed Mob)
   // =========================================================================
   } else {
-    const isMoving = Math.abs(n.vx || 0) > 0.1 || Math.abs(n.vy || 0) > 0.1;
-    const sprGuardia = tipo === 'predone' ? 'predone' : isMoving ? 'guardia_carica' : 'guardia_ferma';
-    if (disegnaMobSprite(ctx, sprGuardia, 0, 4, 38, flip, isFlash)) {
-      ctx.restore();
-      return;
-    }
     ctx.scale(flip, 1);
 
     // Gambette articolate e stivali borbonici
@@ -1592,12 +1563,6 @@ function disegnaBossPittorico() {
     ctx.translate(0, floatY);
 
     // --- A: inizio --- tolti i tre fili propri: restano i due di disegnaFiliMarionetta --- A: fine ---
-    const isCasting = (b.castTimer > 0) || (b.state === 'cast') || (b.fase === 2);
-    const sprLuciana = isCasting ? 'donna_luciana_evoca' : 'donna_luciana_ferma';
-    if (disegnaMobSprite(ctx, sprLuciana, 0, 10, 68, flip, isFlash)) {
-      ctx.restore();
-      return;
-    }
 
     // Ampia gonna a crinolina barocca nera e scarlatta con trame dorate
     const dg = ctx.createLinearGradient(0, -28, 0, 10);
@@ -1675,10 +1640,43 @@ function disegnaBossPittorico() {
     const isAir = (airZ > 10) || (b.state === 'leap');
     const isCrouch = b.state === 'crouch' || (b.crouchTicks > 0);
     const isMoving = Math.abs(b.vx || 0) > 0.1 || Math.abs(b.vy || 0) > 0.1;
-    const posa = isAir ? 'salto' : isCrouch ? 'accucciato' : isMoving ? 'cammina' : 'fermo';
-    const targetH = isAir ? 68 : isCrouch ? 56 : isMoving ? 62 : 78;
-
-    if (!disegnaGattoSprite(ctx, posa, 0, 8, targetH, flip, isFlash, true)) {
+    const t2 = window.__teatro && window.__teatro.t2;
+    if (t2 && t2.disegnaFotogramma) {
+      let posa = 'fermo';
+      let f = 0;
+      if (isFlash) {
+        posa = 'colpito';
+        f = 0;
+      } else if (isAir) {
+        posa = 'attacco';
+        f = airZ > 30 ? 0 : 1;
+      } else if (isCrouch) {
+        posa = 'anticipo';
+        f = t2.fotogramma('anticipo', tick);
+      } else if (isMoving) {
+        posa = 'muove';
+        f = t2.fotogramma('muove', tick);
+      } else {
+        posa = 'fermo';
+        f = t2.fotogramma('fermo', tick);
+      }
+      const ok = t2.disegnaFotogramma(ctx, 'gatto', posa, f, 8, isFlash ? '#ffffff' : null, isFlash ? 0.6 : 0, 56);
+      if (ok) {
+        // Corona borbonica con rubini sulla testa del Re Gatto
+        ctx.fillStyle = '#f9cb40';
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 1.2;
+        const cx = 10, cy = -44;
+        ctx.beginPath();
+        ctx.moveTo(cx - 9, cy); ctx.lineTo(cx - 7, cy - 10); ctx.lineTo(cx - 3, cy - 4);
+        ctx.lineTo(cx, cy - 12); ctx.lineTo(cx + 3, cy - 4); ctx.lineTo(cx + 7, cy - 10); ctx.lineTo(cx + 9, cy);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath(); ctx.arc(cx, cy - 4, 1.8, 0, TAU); ctx.fill();
+        ctx.restore();
+        return;
+      }
+    }
     // Corpo massiccio scolpito in ebano scuro
     const catG = ctx.createRadialGradient(0, -12, 2, 0, -12, 24);
     catG.addColorStop(0, isFlash ? '#ffffff' : '#3c2415');
@@ -1736,18 +1734,39 @@ function disegnaBossPittorico() {
     ctx.arc(6, -14, 1.5, 0, TAU);
     ctx.arc(14, -13, 1.4, 0, TAU);
     ctx.fill();
-    }
 
   // =========================================================================
   // BOSS 3: LA REGINA DELLE VESPE (Isaac Duke of Flies)
   // =========================================================================
   } else if (bossId === 'regina-vespa') {
     const isLunge = (b.state === 'lunge') || (b.chargeTimer > 0) || Math.hypot(b.vx || 0, b.vy || 0) > 1.8;
-    const sprRegina = isLunge ? 'regina_vespa_attacco' : (Math.sin(tick * 0.2) > 0.3 ? 'regina_vespa_volo' : 'regina_vespa_ferma');
+    const isSummon = (b.state === 'summon') || (b.evocaTimer > 0);
     const hoverY = Math.sin(tick * 0.12) * 5 - 4;
-    if (disegnaMobSprite(ctx, sprRegina, 0, hoverY, 60, 1, isFlash)) {
+    const t2 = window.__teatro && window.__teatro.t2;
+    if (t2 && t2.disegnaFotogramma) {
+      let posa = 'vola';
+      let f = 0;
+      if (isFlash) {
+        posa = 'colpito';
+        f = 0;
+      } else if (isLunge) {
+        posa = 'carica';
+        f = t2.fotogramma('carica', tick);
+      } else if (isSummon) {
+        posa = 'evoca';
+        f = t2.fotogramma('evoca', tick);
+      } else {
+        posa = 'vola';
+        f = t2.fotogramma('vola', tick);
+      }
+      ctx.save();
+      ctx.translate(0, hoverY);
+      const ok = t2.disegnaFotogramma(ctx, 'regina-vespa', posa, f, 0, isFlash ? '#ffffff' : null, isFlash ? 0.6 : 0, 62);
       ctx.restore();
-      return;
+      if (ok) {
+        ctx.restore();
+        return;
+      }
     }
     const wy = Math.sin(tick * 0.6) * 6;
 
@@ -1790,12 +1809,6 @@ function disegnaBossPittorico() {
   // BOSS 4: IL COLOSSO DI CASERTA (Isaac Gurdy)
   // =========================================================================
   } else if (bossId === 'colosso-statua') {
-    const isOpen = b.apertoCM || b.state === 'open' || (b.timerSparo && b.timerSparo < 30);
-    const sprColosso = isOpen ? 'colosso_statua_aperto' : 'colosso_statua_fermo';
-    if (disegnaMobSprite(ctx, sprColosso, 0, 10, 68, 1, isFlash)) {
-      ctx.restore();
-      return;
-    }
     // Busto titanico di pietra e marmo emergente dalla pedana
     const colG = ctx.createLinearGradient(-24, -38, 24, 6);
     colG.addColorStop(0, isFlash ? '#ffffff' : '#94a3b8');
@@ -1835,12 +1848,6 @@ function disegnaBossPittorico() {
   // BOSS 6: LO SPEZZAFILI D'OTTONE (Isaac Peep)
   // =========================================================================
   } else if (bossId === 'maestro-fucina') {
-    const isAttack = (b.scissorTimer > 0) || (b.state === 'attack') || Math.hypot(b.vx || 0, b.vy || 0) > 1.2;
-    const sprFucina = isAttack ? 'maestro_fucina_attacco' : 'maestro_fucina_fermo';
-    if (disegnaMobSprite(ctx, sprFucina, 0, 8, 64, 1, isFlash)) {
-      ctx.restore();
-      return;
-    }
     // Procedurale per Lo Spezzafili
     const ironG = ctx.createLinearGradient(-18, -28, 18, 4);
     ironG.addColorStop(0, isFlash ? '#ffffff' : '#d97706');
@@ -1868,12 +1875,6 @@ function disegnaBossPittorico() {
   // BOSS 2: CAPITANO GREGORIO / ARIETE DI PIOMBO (Isaac Chub)
   // =========================================================================
   } else {
-    const isCharge = (b.chargeTimer > 0) || (b.state === 'charge') || Math.hypot(b.vx || 0, b.vy || 0) > 1.4;
-    const sprCap = isCharge ? 'capitano_guardia_carica' : 'capitano_guardia_fermo';
-    if (disegnaMobSprite(ctx, sprCap, 0, 8, 64, 1, isFlash)) {
-      ctx.restore();
-      return;
-    }
     // Juggernaut d'acciaio e ottone in carica
     const ironG = ctx.createLinearGradient(-18, -28, 18, 4);
     ironG.addColorStop(0, isFlash ? '#ffffff' : '#b91c1c');

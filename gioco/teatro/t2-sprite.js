@@ -36,12 +36,13 @@
     "ombra": {"cella_l": 377, "cella_a": 142, "altezza_rif": 130, "margine": 4, "righe": [["fermo", 2], ["cammina", 4], ["spara", 2], ["colpito", 1], ["morto", 3]]},
     "teste-mira": {"cella_l": 60, "cella_a": 74, "altezza_rif": 64, "margine": 4, "righe": [["tutto", 4]]},
     "gatto": {"cella_l": 422, "cella_a": 136, "altezza_rif": 124, "margine": 4, "righe": [["fermo", 2], ["muove", 4], ["anticipo", 2], ["attacco", 2], ["colpito", 1], ["morte", 4]]},
-    "vespa-cieca": {"cella_l": 237, "cella_a": 142, "altezza_rif": 122, "margine": 4, "righe": [["vola", 4], ["carica", 2], ["colpito", 1], ["morte", 3]]},
-    "maschera": {"cella_l": 207, "cella_a": 153, "altezza_rif": 129, "margine": 4, "righe": [["chiusa", 2], ["si-apre", 3], ["aperta-spara", 2], ["colpito", 1], ["morte", 4]]},
-    "bomba-ferma": {"cella_l": 113, "cella_a": 136, "altezza_rif": 124, "margine": 4, "righe": [["fermo", 2], ["miccia", 4], ["esplode", 5]]},
-    "guardia": {"cella_l": 285, "cella_a": 135, "altezza_rif": 123, "margine": 4, "righe": [["fermo", 2], ["muove", 4], ["anticipo", 2], ["attacco", 2], ["colpito", 1], ["morte", 4]]},
-    "statua": {"cella_l": 269, "cella_a": 171, "altezza_rif": 129, "margine": 4, "righe": [["fermo", 2], ["trema", 3], ["spara", 2], ["colpito", 1], ["morte", 4]]},
-    "predone": {"cella_l": 318, "cella_a": 151, "altezza_rif": 128, "margine": 4, "righe": [["fermo", 2], ["muove", 4], ["anticipo", 2], ["attacco", 2], ["colpito", 1], ["morte", 4]]}
+    "vespa-cieca": {"cella_l": 297, "cella_a": 265, "colonne": 4, "altezza_rif": 257, "margine": 4, "righe": [["vola", 4], ["carica", 2], ["colpito", 1], ["morte", 3]]},
+    "maschera": {"cella_l": 272, "cella_a": 211, "colonne": 4, "altezza_rif": 203, "margine": 4, "righe": [["chiusa", 2], ["si-apre", 3], ["aperta-spara", 2], ["colpito", 1], ["morte", 4]]},
+    "bomba-ferma": {"cella_l": 251, "cella_a": 277, "colonne": 5, "altezza_rif": 269, "margine": 4, "righe": [["fermo", 2], ["miccia", 4], ["esplode", 5]]},
+    "guardia": {"cella_l": 307, "cella_a": 244, "colonne": 4, "altezza_rif": 236, "margine": 4, "righe": [["fermo", 2], ["muove", 4], ["anticipo", 2], ["attacco", 2], ["colpito", 1], ["morte", 2]]},
+    "statua": {"cella_l": 192, "cella_a": 240, "colonne": 4, "altezza_rif": 232, "margine": 4, "righe": [["fermo", 2], ["trema", 3], ["spara", 2], ["colpito", 1], ["morte", 4]]},
+    "predone": {"cella_l": 331, "cella_a": 227, "colonne": 4, "altezza_rif": 219, "margine": 4, "righe": [["fermo", 2], ["muove", 4], ["anticipo", 2], ["attacco", 2], ["colpito", 1], ["morte", 2]]},
+    "regina-vespa": {"cella_l": 328, "cella_a": 292, "colonne": 4, "altezza_rif": 284, "margine": 4, "righe": [["vola", 4], ["carica", 2], ["evoca", 2], ["colpito", 1], ["morte", 2]]}
   };
   /* T2-LAYOUT: fine */
 
@@ -54,6 +55,7 @@
     altezza: Object.freeze({
       ferruccio: 58, agnese: 56, taddeo: 56, ombra: 56,
       gatto: 26, 'vespa-cieca': 26, maschera: 30, 'bomba-ferma': 28, guardia: 40, statua: 42, predone: 38,
+      'regina-vespa': 58,
     }),
     // Dove cadono i piedi rispetto al punto (x, y) dell'entità (il centro dell'ombra a terra).
     piediPersonaggio: 9,
@@ -61,7 +63,7 @@
     piediVespa: -3, // la vespa vola: resta sollevata sopra la sua ombra
     // Tick (60 Hz) per fotogramma, per posa.
     cadenza: Object.freeze({ fermo: 22, cammina: 8, muove: 9, vola: 4, spara: 7, colpito: 1, morto: 9,
-      morte: 7, anticipo: 9, attacco: 6, carica: 5, miccia: 6, esplode: 5, chiusa: 24, 'si-apre': 5,
+      morte: 7, anticipo: 9, attacco: 6, carica: 5, evoca: 8, miccia: 6, esplode: 5, chiusa: 24, 'si-apre': 5,
       'aperta-spara': 7, trema: 4 }),
     colpitoTick: 14,   // dopo un colpo subito, per quanti tick il personaggio mostra la posa «colpito»
     tinta: Object.freeze({ cremisi: '#dc2626', dorato: '#eab308', elettrico: '#0284c7' }),
@@ -98,14 +100,14 @@
    * Disegna un fotogramma con i piedi in (0, piediY) del contesto corrente (già traslato/ribaltato).
    * @returns {boolean} false se il foglio non è pronto o la posa non c'è
    */
-  function disegnaFotogramma(ctx, nome, posa, f, piediY, tinta, tintaAlfa) {
+  function disegnaFotogramma(ctx, nome, posa, f, piediY, tinta, tintaAlfa, customH) {
     if (!pronta(nome)) return false;
     const L = LAYOUT[nome];
     const p = L.indice[posa] || L.indice[L.righe[0][0]];
     if (!p) return false;
     const col = ((f % p.n) + p.n) % p.n;
     const sx = col * L.cella_l, sy = p.riga * L.cella_a;
-    const s = (CONFIG.altezza[nome] || 40) / L.altezza_rif;
+    const s = (customH || CONFIG.altezza[nome] || 40) / L.altezza_rif;
     const dw = L.cella_l * s, dh = L.cella_a * s;
     const dx = -dw / 2, dy = piediY - (L.cella_a - L.margine) * s;
     const liscio = window.__t2Liscio !== undefined ? !!window.__t2Liscio : CONFIG.liscio;
@@ -192,6 +194,7 @@
         if (colpito) return ['colpito', 0];
         if (n.leapTimer > 0) return ['attacco', n.leapTimer > 9 ? 0 : 1];
         if (n.crouchTicks > 0) return ['anticipo', n.crouchTicks > 9 ? 0 : 1];
+        if (Math.abs(n.vx || 0) > 0.1 || Math.abs(n.vy || 0) > 0.1) return ['muove', fotogramma('muove', tick)];
         return ['fermo', fotogramma('fermo', tick)];
       case 'bomba_ferma':
         if (n.fuseTimer > 0) return ['miccia', Math.floor(n.fuseTimer / (n.fuseTimer > 28 ? 3 : 6))];
@@ -260,7 +263,7 @@
     window.__teatro = Object.defineProperties({}, Object.getOwnPropertyDescriptors(window.__teatro));
   }
   window.__teatro.t2 = {
-    personaggio, nemico, dopoNemici,
+    personaggio, nemico, dopoNemici, disegnaFotogramma, fotogramma,
     /** Per la QA: quali fogli sono caricati. */
     get caricati() { return Object.keys(immagini).filter(pronta); },
     LAYOUT, CONFIG,

@@ -62,7 +62,13 @@ window.__teatro = Object.freeze({
   get stanza() { return statoRun.stanzaCorrente ? statoRun.stanzaCorrente.tipo : null; },
 });
 
-function t2Gancio() { return false; }
+// --- T2: inizio ---
+function t2Gancio(nome, ...args) {
+  const g = window.__teatro && window.__teatro.t2;
+  if (!g || typeof g[nome] !== 'function') return false;
+  try { return Boolean(g[nome](...args)); } catch (err) { console.error('[T2]', nome, err); return false; }
+}
+// --- T2: fine ---
 
 // --- T4: inizio ---
 // Passo T4 (hub, storia, morte e risveglio): il codice sta in teatro/t4-hub-storia.js, script classico
