@@ -58,6 +58,24 @@ const foto = (n) => path.join(RADICE, 'production', 'qa', 'evidence', `teatro-d-
       senzaSprite: C.filter((o) => !window.__teatro.interni.SPRITE_OGGETTI[o.sprite]).map((o) => o.id) };
   });
 
+  oss.pool = await p.evaluate(() => {
+    const I = window.__teatro.interni; const P = I.statoRun.poolRunB;
+    const pol = P.ids.map((id) => I.trovaOggettoB(id).polarita);
+    const prezzi = {};
+    for (const o of I.CATALOGO_OGGETTI) prezzi[o.polarita + '/' + o.tier] = o.prezzo;
+    return { dimensione: P.ids.length, negativi: pol.filter((x) => x === 'negativo').length, prezzi, prezzoNegativoEconomia: I.ECONOMIA_T3.prezzi.negativo };
+  });
+  // la Fucina/il dono ingannevole non ripropongono negativi conosciuti
+  oss.negativiConosciuti = await p.evaluate(() => {
+    const I = window.__teatro.interni; const P = I.statoRun.poolRunB;
+    const neg = P.rimasti.filter((id) => I.trovaOggettoB(id).polarita === 'negativo');
+    const prima = I.estraiNegativoD(1);
+    window.__teatroT3.salvataggi.impostaFlag('oggettiConosciuti', I.CATALOGO_OGGETTI.filter((o) => o.polarita === 'negativo').map((o) => o.id));
+    const dopo = I.estraiNegativoD(1);
+    window.__teatroT3.salvataggi.impostaFlag('oggettiConosciuti', []);
+    return { negativiNelPool: neg.length, sconosciutoEsce: prima ? prima.id : null, conosciutoEsce: dopo ? dopo.id : null };
+  });
+
   // --- meccaniche ---
   await stanzaProva();
   await dai(['velo-madonna']);

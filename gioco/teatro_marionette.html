@@ -3133,7 +3133,12 @@ function disegnaManoMarionettaPittorica() {
    * @param {string|null} escludiId id del passivo iniziale del personaggio
    */
   function inizializzaPoolRunB(escludiId) {
-    const scelti = shuffle(CATALOGO_OGGETTI.filter((o) => o.id !== escludiId)).slice(0, OGGETTI_B.dimensionePool);
+    // --- D: inizio --- pool pesato: round(20 × pesoNegativi) = 3 negativi, il resto positivi/misti
+    const candD = CATALOGO_OGGETTI.filter((o) => o.id !== escludiId);
+    const negD = shuffle(candD.filter((o) => o.polarita === 'negativo')).slice(0, Math.round(OGGETTI_B.dimensionePool * OGGETTI_D.pool.pesoNegativi));
+    const posD = shuffle(candD.filter((o) => o.polarita !== 'negativo')).slice(0, OGGETTI_B.dimensionePool - negD.length);
+    const scelti = posD.concat(negD);
+    // --- D: fine ---
     statoRun.poolRunB = { ids: scelti.map((o) => o.id), rimasti: scelti.map((o) => o.id), estrazioni: 0 };
   }
 
@@ -3147,15 +3152,19 @@ function disegnaManoMarionettaPittorica() {
     if (!statoRun.poolRunB) inizializzaPoolRunB(null);
     const P = statoRun.poolRunB;
     P.estrazioni++;
-    if (P.rimasti.length) {
-      const delTier = P.rimasti.filter((id) => trovaOggettoB(id)?.tier === tier);
-      const lista = delTier.length ? delTier : P.rimasti;
+    // --- D: inizio --- le ricompense normali non pescano mai i negativi (escono solo come trappole, vedi D)
+    const rimastiD = P.rimasti.filter((id) => trovaOggettoB(id)?.polarita !== 'negativo');
+    if (rimastiD.length) {
+      const delTier = rimastiD.filter((id) => trovaOggettoB(id)?.tier === tier);
+      const lista = delTier.length ? delTier : rimastiD;
+      // --- D: fine ---
       const id = lista[Math.floor(rng() * lista.length)];
       P.rimasti.splice(P.rimasti.indexOf(id), 1);
       return { ...trovaOggettoB(id) };
     }
     if (rng() < OGGETTI_B.dopoCap.probCuore) return creaCuoreB();
-    return { ...trovaOggettoB(P.ids[Math.floor(rng() * P.ids.length)]) };
+    const idsD = P.ids.filter((id) => trovaOggettoB(id)?.polarita !== 'negativo'); // --- D ---
+    return { ...trovaOggettoB(idsD[Math.floor(rng() * idsD.length)]) };
   }
 
   /**
@@ -3333,7 +3342,7 @@ function disegnaManoMarionettaPittorica() {
   // Obiettivo: 5-8 monete in media al Piano 1. Verifica: `node gioco/teatro/sim-economia.js`, che legge
   // QUESTO blocco dal file (una sola fonte per i numeri) e simula 1000 piani.
   const ECONOMIA_T3 = {
-    prezzi: { cuore: 3, consumabile: 2, base: 5, forte: 7 },
+    prezzi: { cuore: 3, consumabile: 2, base: 5, forte: 7, negativo: 2 }, // D: negativo = 2 (oggetti-teatro.md §1)
     piano1: { probMonetaSegreta: 0.5, probMonetaAltre: 0.35 },
     dorato: { prob3: 0.28, probExtra: 0.45 },
     boss: { prob3: 0.35 },
@@ -3343,6 +3352,9 @@ function disegnaManoMarionettaPittorica() {
     if (ECONOMIA_T3.prezzi[o.tier] != null) o.prezzo = ECONOMIA_T3.prezzi[o.tier];
   }
   // --- T3: fine ---
+  // --- D: inizio --- i negativi (anche i misti «negativi per prezzo», sugna e ranocchio) costano 2
+  for (const o of CATALOGO_OGGETTI) if (o.polarita === 'negativo') o.prezzo = ECONOMIA_T3.prezzi.negativo;
+  // --- D: fine ---
 
   // Pool Boss stile Isaac (Monstro, Chub, Duke of Flies, Gurdy, Gemini/Peep, Mom/Satan)
   /**
@@ -4082,6 +4094,8 @@ function disegnaManoMarionettaPittorica() {
   }
 
   function tiraOggettoGratisStanza(garantito = false) {
+    // --- D: dono ingannevole: un negativo ancora sconosciuto del pool sul piedistallo, prob. 0.5 ---
+    if (garantito) { const ing = estraiNegativoD(OGGETTI_D.pool.probDonoIngannevole); if (ing) return { ...ing, forteGratis: false }; }
     const roll = rng();
     if (roll < 0.10 + effettiNotteC().bonusForte) { // C: notte 5+ ricompense un po' migliori
       // --- B: inizio --- (a pool esaurito di forti può uscire un base o un cuore: l'etichetta segue l'oggetto)
@@ -4372,7 +4386,7 @@ function disegnaManoMarionettaPittorica() {
         },
       ];
     } else if (s.tipo === 'fucina') {
-      const objBase = estraiOggettoBase();
+      const objBase = estraiNegativoD(OGGETTI_D.pool.probNegativoFucina) || estraiOggettoBase(); // D: negativo a 2🪙
       const objForte = estraiOggettoForte();
       const scontoBase = rng() < 0.22;
       const scontoForte = rng() < 0.12;
@@ -4979,6 +4993,30 @@ function disegnaManoMarionettaPittorica() {
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
+  }
+
+  /** Id degli oggetti conosciuti nello slot di salvataggio (flag oggettiConosciuti); senza T3, in memoria. */
+  const conosciutiMemoriaD = [];
+  function conosciutiD() {
+    const sv = window.__teatroT3 && window.__teatroT3.salvataggi;
+    if (!sv) return conosciutiMemoriaD;
+    const v = sv.leggiFlag('oggettiConosciuti');
+    return Array.isArray(v) ? v : [];
+  }
+  function conosciutoD(id) { return conosciutiD().includes(id); }
+
+  /**
+   * Un negativo SCONOSCIUTO ancora nel pool della run, con probabilità `prob` (dono ingannevole o banco della
+   * Fucina). I negativi conosciuti non escono più (§5 Economia: «si ripesca»). null se non esce.
+   */
+  function estraiNegativoD(prob) {
+    const P = statoRun.poolRunB;
+    if (!P) return null;
+    const lista = P.rimasti.filter((id) => trovaOggettoB(id)?.polarita === 'negativo' && !conosciutoD(id));
+    if (!lista.length || rng() >= prob) return null;
+    const id = lista[Math.floor(rng() * lista.length)];
+    P.rimasti.splice(P.rimasti.indexOf(id), 1);
+    return { ...trovaOggettoB(id) };
   }
 
   /** Dopo ogni raccolta di un oggetto del catalogo: maledizioni (fino a fine piano; doppione = rinnovo). */
@@ -7672,7 +7710,7 @@ function disegnaManoMarionettaPittorica() {
   // --- B: fine ---
   // --- D: inizio --- (sonda QA delle meccaniche e del catalogo D)
   Object.assign(window.__teatro.interni, {
-    OGGETTI_D, sparaProiettiliDirezione, subisciColpoGiocatore, ricalcolaStatisticheIsaac, maledizioneD, trovaOggettoB,
+    OGGETTI_D, ECONOMIA_T3, conosciutiD, estraiNegativoD, sparaProiettiliDirezione, subisciColpoGiocatore, ricalcolaStatisticheIsaac, maledizioneD, trovaOggettoB,
   });
   // --- D: fine ---
   adattaRisoluzione(); // (T5) primo dimensionamento del buffer
