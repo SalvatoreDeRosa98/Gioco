@@ -1,9 +1,32 @@
 {
   "_doc": "Testi dell'interfaccia (HUD, La Fucina, doni e cartiglio).",
   "hud": {
+    "_doc": "Storia P13: HUD completo del Teatro in DOM (motore/interfaccia/hud.js). Segnaposto: {piano}, {ciclo}, {correnti}, {max}, {n}, {nome}, {vita}. `stanze` è il tipo della stanza corrente (mondo/notte.js) e `hub` la Piazza tra le notti.",
+    "senza_personaggio": "Ferruccio",
+    "piano": "Piano {piano}",
+    "piano_ciclo": "Piano {piano} · Ciclo ∞{ciclo}",
+    "hub": "Piazza Dante",
+    "stanze": {
+      "hub": "tra le notti",
+      "ingresso": "Ingresso",
+      "normale": "Stanza",
+      "tesoro": "Stanza Oggetto",
+      "banchetto": "La Fucina",
+      "segreta": "Stanza Segreta",
+      "boss": "Stanza del Boss",
+      "ricordo": "Stanza del Ricordo"
+    },
+    "vita": "Maschere",
+    "vita_testo": "{correnti}/{max}",
+    "dmg": "DMG",
+    "tears": "TRS",
+    "spd": "SPD",
+    "range": "RNG",
     "monete": "Monete",
     "scintille": "Scintille",
-    "maschere": "Maschere"
+    "slot_vuoto": "Slot {n} vuoto",
+    "patto": "Patto d'Ombra: {nome}",
+    "boss_vita": "{vita}/{max}"
   },
   "banchetto": {
     "titolo": "La Fucina",

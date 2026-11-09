@@ -142,6 +142,9 @@ import { creaGratis } from './oggetti/gratis.js';
 import { creaSegreta } from './mondo/segreta.js';
 import { creaInterfacciaOggetti } from './interfaccia/oggetti.js';
 // --- squadra oggetti: fine ---
+// --- squadra HUD (storia P13): inizio --- l'HUD completo del Teatro in DOM (scheda, barra del boss, dock degli slot)
+import { creaHud } from './interfaccia/hud.js';
+// --- squadra HUD: fine ---
 // --- storia P06: boss del pool, Donna Luciana, sipario, ciclo ---
 import { creaRun } from './mondo/run.js';
 import { patternPerNome } from './attori/boss/indice.js';
@@ -843,6 +846,29 @@ async function avvia() {
   const debugOggetti = { attivi, slotDoni: slot, patto, gratis, segreta, interfacciaOggetti: () => interfacciaOggetti.stato() };
   // --- squadra oggetti: fine ---
 
+  // --- squadra HUD (storia P13): inizio --- l'HUD completo del Teatro (disegnaHUDPixelArt ~5056) in DOM: scheda in alto a
+  // sinistra (nome e titolo del personaggio, piano e ciclo, tipo della stanza, vita a mezze maschere con i PNG del manifesto,
+  // statistiche alla Isaac con le icone, monete e scintille), barra della vita del boss in alto al centro (l'unica: il
+  // renderer riceve `barraBossNelRenderer: false`), dock in basso al centro (attivo con le tacche e il tasto, i cinque slot
+  // dei doni con le icone `oggetto-<id_teatro>`, le reliquie del Patto). Si nasconde nel menu e a dialogo aperto. Immagini
+  // dal manifesto, testi da interfaccia.json › hud / boss_hud, cifre da resa.json › hud, misure in stile/hud.css.
+  const hudTeatro = creaHud({
+    documento: document, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia,
+    decimali: Object.fromEntries(['dmg', 'tears', 'spd', 'range', 'vita'].map((k) => [k, parametri.get(`resa.hud.decimali_${k}`)])),
+    sprite: (nome) => foglioSprite(nome)?.src ?? null,
+    personaggi: tabPersonaggi.personaggi, statistiche, ferruccio, maschereMax: () => modificatori.valore('ferruccio.maschere_max'), economia,
+    run: () => run, notte: () => notte, hub: () => hub, attivi,
+    doni: () => { const s = slot.stato(); return { attivi: s.attivi, max: s.max }; },
+    dono: (id) => modificatori.dono(id),
+    patti: () => patto.stretti, reliquia: (id) => patto.reliquia(id),
+    boss: () => bersagli.find((b) => b.boss) ?? null,
+    visibile: () => ciclo.stato() !== 'menu' && !menu.aperto,
+    dialogoAperto: () => Boolean(incontri.dialogo()) || sipario.aperto,
+    tastoAttivo: () => parametri.get('input.tastiera.attivo')[0],
+  });
+  ciclo.registra({ disegna: () => hudTeatro.aggiorna() });
+  // --- squadra HUD: fine ---
+
   // Renderer del Teatro (pixel-art) sempre; con `?debug=1&wire=1&diagnostica=1` il disegno diagnostico in fil di ferro.
   const usaDiagnostica = wire && url.searchParams.get('diagnostica') === '1';
   const creaResa = usaDiagnostica ? creaResaDebug : creaRenderer;
@@ -858,6 +884,7 @@ async function avvia() {
     squadraOggetti, // --- squadra oggetti (storie P04/P09): crepa, gratis, altare, raggio ---
     parametri, // resa.fili.*: i due fili d'oro di ogni marionetta del Velo
     run: () => run, testi: testiInterfaccia, // storia P06: piano/ciclo e titolo della barra del boss
+    barraBossNelRenderer: false, // --- squadra HUD (storia P13): la barra del boss la disegna l'HUD DOM, una sola ---
   });
   ciclo.registra(resa);
   // Cucitura fra squadre: la Bomba Ferma (nemici) emette `nemico.esplosione`; feel (scossa) e audio (tonfo) ascoltano
@@ -993,6 +1020,9 @@ async function avvia() {
       // --- squadra oggetti (storie P04/P09): `attivi`, `slotDoni` (i cinque slot dei doni), `patto`, `gratis`, `segreta`, `interfacciaOggetti()` ---
       ...debugOggetti,
       // --- squadra oggetti: fine ---
+      // --- squadra HUD (storia P13): fotografia dell'HUD del Teatro nel DOM (`visibile`, `nome`, `maschere`, `statistiche`, `attivo`, `slot`, `patti`, `boss`) ---
+      hud: () => hudTeatro.stato(),
+      // --- squadra HUD: fine ---
       imposta: (flag, valore) => (ganci.imposta ? ganci.imposta(flag, valore) : false),
       /** Salta alla stanza `id` del piano (notte.vaiA); false senza piano o con id sconosciuto. */
       vaiA: (stanza) => (ganci.vaiA ? ganci.vaiA(stanza) : false),

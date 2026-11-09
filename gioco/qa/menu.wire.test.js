@@ -141,7 +141,7 @@ caso('menu → Agnese con la tastiera, slot 2, inizio → hub con due cuori, Esc
     attive: window.__gioco.statistiche.attive,
     maschere: window.__gioco.ferruccio.maschere,
     maschereMax: window.__gioco.modificatori.valore('ferruccio.maschere_max'),
-    hud: document.querySelector('.hud-maschere .valore')?.textContent,
+    hud: window.__gioco.hud().maschere, // storia P13: HUD del Teatro (maschere piene/massime)
     hubAttivo: window.__gioco.hub?.attivo ?? null,
   }));
   assert.equal(hub.stato, 'hub', 'dopo Invio si è nell\'hub di Piazza Dante');
@@ -151,7 +151,7 @@ caso('menu → Agnese con la tastiera, slot 2, inizio → hub con due cuori, Esc
   assert.ok(hub.attive, 'le statistiche del personaggio sono attive');
   assert.equal(hub.maschereMax, MASCHERE_ATTESE, `maschere massime = ceil(hpHalf/2) = ${MASCHERE_ATTESE}`);
   assert.equal(hub.maschere, MASCHERE_ATTESE, 'si parte a maschere piene');
-  assert.equal(hub.hud, `${MASCHERE_ATTESE}/${MASCHERE_ATTESE}`, 'l\'HUD mostra due cuori (2/2)');
+  assert.deepEqual({ piene: hub.hud.piene, max: hub.hud.max }, { piene: MASCHERE_ATTESE, max: MASCHERE_ATTESE }, 'l\'HUD del Teatro mostra due maschere piene su due');
   assert.equal(hub.hubAttivo, true, 'l\'hub è attivo');
 
   // alla notte 1 nell'hub parte da sola la targa: Esc è ignorato a dialogo aperto (regola della storia P04), quindi
@@ -162,6 +162,8 @@ caso('menu → Agnese con la tastiera, slot 2, inizio → hub con due cuori, Esc
     for (let i = 0; i < 40 && g.dialogo(); i++) { g.tick(attesa); g.premi('avanza', 1); g.tick(2); }
   });
   assert.equal(await pagina.evaluate(() => window.__gioco.dialogo()), null, 'le scene automatiche sono chiuse');
+  // storia P13: a dialogo chiuso l'HUD del Teatro è visibile e nel DOM ci sono due PNG hud-cuore-pieno (l'HUD si aggiorna al frame disegnato)
+  await pagina.waitForFunction((n) => !document.querySelector('#interfaccia .hud-teatro').hidden && document.querySelectorAll('#interfaccia .hud-maschera.pieno').length === n, MASCHERE_ATTESE);
   await pagina.evaluate(() => window.__gioco.premi('menu', 2));
   const dopoEsc = await pagina.evaluate(() => ({ stato: window.__gioco.stato, menu: window.__gioco.menu(), visibile: !document.querySelector('.menu-teatro').hidden }));
   assert.equal(dopoEsc.stato, 'menu', 'Esc dall\'hub riporta il ciclo in menu');

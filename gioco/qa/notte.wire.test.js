@@ -209,7 +209,7 @@ async function main() {
         return {
           stato: g.stato, seme: g.notte?.seme ?? null, stanza: g.stanza?.id ?? null, pianta: g.piano ? g.piano.stanze.map((s) => `${s.id}:${s.modello}:${s.tipo}`) : null,
           maschere: g.ferruccio.maschere, doni: g.modificatori.doniAttivi(), monete: g.economia.monete, pannello: g.ripresa.stato(), hubAttivo: g.hub.attivo,
-          poolRaccolti: g.pool.raccolti(), stanzaEconomia: g.economia.stanzaCorrente, hud: document.querySelectorAll('#interfaccia .hud-doni li.dono').length,
+          poolRaccolti: g.pool.raccolti(), stanzaEconomia: g.economia.stanzaCorrente, hud: g.hud().slot.filter(Boolean).length,
         };
       });
       assert.equal(ripresa.stato, 'notte');
@@ -262,7 +262,7 @@ async function main() {
           piano: g.piano, nottePresente: g.notteSalvata.presente, pannello: g.ripresa.stato(), velo: g.veloMorte(),
           doni: g.modificatori.doniAttivi(), monete: g.economia.monete, scintille: g.profilo.scintille, flag: g.narrativa.flag().taddeo,
           pianoMax: g.narrativa.avanzamento().piano_max, maschere: g.ferruccio.maschere, maschereMax: g.modificatori.valore('ferruccio.maschere_max'),
-          corpo: g.ferruccio.stato, semeNotte2: g.hub.semeNotte(), bersagli: g.bersagli.length, hud: document.querySelectorAll('#interfaccia .hud-doni li.dono').length,
+          corpo: g.ferruccio.stato, semeNotte2: g.hub.semeNotte(), bersagli: g.bersagli.length, hud: g.hud().slot.filter(Boolean).length,
           profiloSalvato: JSON.parse(localStorage.getItem('ferruccio.v3.profilo.1')).dati.avanzamento.notte, notteSalvataSuDisco: localStorage.getItem('ferruccio.v3.notte.1'),
         };
       }, T_MAX_MS);

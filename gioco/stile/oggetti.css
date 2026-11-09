@@ -1,28 +1,7 @@
-/* Storia P04/P09 — squadra oggetti: HUD dell'oggetto attivo, modale di sostituzione dei cinque slot, conferma del Patto.
+/* Storia P04/P09 — squadra oggetti: modale di sostituzione dei cinque slot, conferma del Patto.
    Colori solo dai token (stile/token.css). */
 
-.attivo-hud {
-  position: absolute;
-  left: 2%;
-  bottom: 12%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2em;
-  padding: 0.4em 0.7em;
-  border: 2px solid var(--oro);
-  border-radius: 0.3em;
-  background: color-mix(in srgb, var(--inchiostro) 78%, transparent);
-  color: var(--crema);
-  font-family: var(--font-testo);
-  font-size: 1rem;
-  pointer-events: none;
-}
-.attivo-hud .attivo-nome { font-family: var(--font-titoli); font-size: 0.85rem; color: var(--oro); }
-.attivo-hud .attivo-tacche { display: flex; gap: 0.25em; }
-.attivo-hud .tacca { display: inline-block; width: 0.9em; height: 0.5em; border: 1px solid var(--oro); background: transparent; }
-.attivo-hud .tacca.piena { background: var(--oro); }
-.attivo-hud.carico .tacca.piena { background: var(--carta-luce); box-shadow: 0 0 6px var(--carta-luce); }
-.attivo-hud .attivo-istruzione { font-size: 0.75rem; opacity: 0.85; }
+/* Storia P13: lo slot dell'oggetto attivo con le tacche sta nel dock dell'HUD del Teatro (stile/hud.css). */
 
 .sostituzione,
 .patto-conferma {

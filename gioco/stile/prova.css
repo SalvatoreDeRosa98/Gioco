@@ -8,7 +8,8 @@
   max-width: 80%;
   padding: 1em 1.4em;
   border: 1px solid var(--oro);
-  background: color-mix(in srgb, var(--inchiostro) 88%, transparent);
+  background: var(--inchiostro); /* storia P13: sfondo pieno, centrato sopra il pavimento; sparisce al primo tasto */
+  z-index: 6;
   color: var(--crema);
   font-size: clamp(12px, 1.8vw, 22px);
   text-align: center;

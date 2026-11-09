@@ -54,6 +54,7 @@ export function creaRenderer({
   parametri = null, // resa.fili.* (alpha, spessore, ancoraggio delle spalle, curva): senza parametri niente fili
   run = null, // storia P06: stato della run (piano assoluto, ciclo, piani per ciclo) per la barra del boss
   testi = null, // storia P06: interfaccia.json › boss_hud (titolo della barra del boss)
+  barraBossNelRenderer = true, // storia P13: false quando la barra del boss la disegna l'HUD DOM (interfaccia/hud.js): una sola barra
 }) {
   const ctx = canvas.getContext('2d');
   const W = scena.larghezza;
@@ -1312,7 +1313,7 @@ export function creaRenderer({
       }
 
       disegnaProscenioEMinimappa();
-      if (bossPresente) disegnaBarraVitaBoss(bossPresente, pianoAttuale);
+      if (bossPresente && barraBossNelRenderer) disegnaBarraVitaBoss(bossPresente, pianoAttuale);
     },
   };
 }

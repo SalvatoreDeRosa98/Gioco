@@ -39,7 +39,7 @@ async function main() {
         const g = window.__gioco;
         g.ciclo.ferma();
         const prima = g.attivi.stato();
-        const hudPrima = g.interfacciaOggetti().attivo;
+        const hudPrima = g.hud().attivo; // storia P13: lo slot dell'attivo sta nell'HUD del Teatro
         const usati = [];
         g.eventi.on('attivo.usato', (p) => usati.push(p));
         g.premi('attivo', 1);
@@ -53,7 +53,7 @@ async function main() {
       assert.equal(attivo.usati, 1);
       assert.equal(attivo.dopo.carica, 0);
       await pagina.evaluate(() => window.__gioco.tick(2));
-      await pagina.waitForFunction(() => window.__gioco.interfacciaOggetti().attivo && window.__gioco.interfacciaOggetti().attivo.piene === 0);
+      await pagina.waitForFunction(() => window.__gioco.hud().attivo && window.__gioco.hud().attivo.piene === 0);
       fs.mkdirSync(CARTELLA_EVIDENZE, { recursive: true });
       await pagina.screenshot({ path: path.join(CARTELLA_EVIDENZE, 'attivo-q.png') });
 

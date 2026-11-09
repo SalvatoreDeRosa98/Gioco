@@ -193,17 +193,18 @@ async function main() {
         const evidenza = path.join(CARTELLA_EVIDENZE, `boss-${info.id}.png`);
         await pagina.screenshot({ path: evidenza });
         assert.ok(fs.statSync(evidenza).size > 0);
+        // storia P13: la barra della vita del boss è quella dell'HUD DOM del Teatro (`.hud-boss`, cornice `hud-barra-boss`), una sola
         const barra = await pagina.evaluate(() => {
-          const c = document.getElementById('scena');
-          const ctx = c.getContext('2d');
-          const k = c.width / 1280;
-          // la cornice oro della barra del boss sta a y ≈ 22..62 logici al centro: cerchiamo un pixel oro (R alto, B basso)
-          const d = ctx.getImageData(Math.round(400 * k), Math.round(20 * k), Math.round(480 * k), Math.round(44 * k)).data;
-          let oro = 0;
-          for (let i = 0; i < d.length; i += 4) if (d[i] > 180 && d[i + 1] > 120 && d[i + 2] < 120) oro += 1;
-          return oro;
+          const g = window.__gioco;
+          const e = document.querySelector('#interfaccia .hud-boss');
+          const r = e.getBoundingClientRect();
+          const palco = document.getElementById('palco').getBoundingClientRect();
+          return { hud: g.hud().boss, nascosta: e.hidden, centro: (r.left + r.width / 2 - palco.left) / palco.width, alto: (r.top - palco.top) / palco.height, larghezza: r.width / palco.width, riempimento: e.querySelector('.hud-boss-riempimento').getBoundingClientRect().width };
         });
-        assert.ok(barra > 50, `barra della vita del boss nell'HUD (pixel oro: ${barra})`);
+        assert.equal(barra.nascosta, false, 'barra della vita del boss nell\'HUD');
+        assert.ok(barra.hud && barra.hud.nome === info.nome && barra.hud.quota > 0 && barra.hud.quota <= 1, JSON.stringify(barra.hud));
+        assert.ok(Math.abs(barra.centro - 0.5) < 0.02 && barra.alto < 0.1 && barra.larghezza > 0.25, `in alto al centro: ${JSON.stringify(barra)}`);
+        assert.ok(barra.riempimento > 0, 'riempimento visibile');
         assert.deepEqual(errori, [], `errori in console:\n${errori.join('\n')}`);
         await contesto.close();
       });
