@@ -287,6 +287,37 @@
       "base": 120,
       "min": 0,
       "max": 400
+    },
+    "_descrizione_p08": "Storia P08 (richieste testuali dell'autore). hit_stop_*: congelamento della simulazione in ms (ciclo.congela, 2-3 frame a 60 Hz per il colpo); un solo hit-stop per fendente. Spinta ai nemici: spinta_eff = clamp(spinta / max(peso, peso_min_spinta), spinta_min, spinta_max), zero se peso ≥ peso_inamovibile (vespa peso 0 → vola via; guardia peso 2 → pochi px; statua/boss fermi).",
+    "hit_stop_ms": {
+      "base": 40,
+      "min": 30,
+      "max": 45
+    },
+    "hit_stop_uccisione_ms": {
+      "base": 60,
+      "min": 30,
+      "max": 120
+    },
+    "hit_stop_parata_ms": {
+      "base": 90,
+      "min": 30,
+      "max": 150
+    },
+    "peso_min_spinta": {
+      "base": 0.25,
+      "min": 0.05,
+      "max": 1
+    },
+    "spinta_min": {
+      "base": 20,
+      "min": 0,
+      "max": 100
+    },
+    "spinta_max": {
+      "base": 640,
+      "min": 100,
+      "max": 1200
     }
   }
 }

@@ -27,6 +27,21 @@
 
 import { settoreColpisceCerchio, rettangoloColpisceCerchio, lineaLibera } from '../mondo/fisica.js';
 
+/**
+ * Spinta (px/s) che un colpo imprime a un nemico in proporzione inversa alla massa (storia P08,
+ * richiesta dell'autore): `clamp(spinta / max(peso, pesoMin), spintaMin, spintaMax)`; un peso
+ * ≥ `pesoInamovibile` non si muove (0). La vespa (peso 0) vola via, la guardia arretra di poco,
+ * statue e boss restano fermi. Funzione pura: tutti i numeri arrivano dai parametri.
+ * @param {{ spinta: number, peso: number, pesoInamovibile: number, pesoMin: number, spintaMin: number, spintaMax: number }} o
+ * @returns {number} px/s, 0 se inamovibile o se la spinta base è nulla
+ */
+export function spintaPerPeso({ spinta, peso, pesoInamovibile, pesoMin, spintaMin, spintaMax }) {
+  const p = Number.isFinite(peso) ? peso : 0;
+  if (!(spinta > 0) || p >= pesoInamovibile) return 0;
+  const grezza = spinta / Math.max(p, pesoMin > 0 ? pesoMin : Number.EPSILON);
+  return Math.min(spintaMax, Math.max(spintaMin, grezza));
+}
+
 /** Stati della macchina degli attacchi. */
 export const STATI_ATTACCO = Object.freeze(['pronto', 'fendente', 'carica', 'affondo', 'parata']);
 
@@ -271,10 +286,26 @@ export function creaCombattimento({
     eventi.emit('ferruccio.sparo', { x: ferruccio.x, y: ferruccio.y, direzione: { ...dir }, n: proiettiliFerruccio.length, tipo });
   }
 
+  /**
+   * Vettore di spinta per un bersaglio (storia P08): modulo da `spintaPerPeso` con il peso del
+   * bersaglio, durata `t_spinta_nemico`; `null` se inamovibile o senza spinta.
+   * @param {{ peso?: number }} b
+   * @param {number} dx direzione unitaria
+   * @param {number} dy
+   * @param {number} spinta px/s di base (spinta_f, spinta_affondo)
+   * @returns {{ x: number, y: number, ms: number } | null}
+   */
+  function vettoreSpinta(b, dx, dy, spinta) {
+    const modulo = spintaPerPeso({
+      spinta, peso: b.peso ?? 0, pesoInamovibile: val('peso_inamovibile'), pesoMin: val('feel.peso_min_spinta'),
+      spintaMin: val('feel.spinta_min'), spintaMax: val('feel.spinta_max'),
+    });
+    return modulo > 0 ? { x: dx * modulo, y: dy * modulo, ms: val('t_spinta_nemico') } : null;
+  }
+
   /** Danno a un bersaglio da un proiettile o da un suo effetto, con gli eventi del combattimento. */
   function feriscuBersaglio(b, danno, dx, dy, spinta) {
-    const inamovibile = (b.peso ?? 0) >= val('peso_inamovibile');
-    const vettore = inamovibile || !spinta ? null : { x: dx * spinta, y: dy * spinta, ms: val('t_spinta_nemico') };
+    const vettore = vettoreSpinta(b, dx, dy, spinta);
     b.colpisci(danno, vettore);
     eventi.emit('ferruccio.colpo', { x: b.x, y: b.y, direzione: { x: dx, y: dy }, bersaglio: b, danno });
     if (b.vita <= 0) eventi.emit('ferruccio.uccisione', { x: b.x, y: b.y, direzione: { x: dx, y: dy }, bersaglio: b, danno });
@@ -468,8 +499,7 @@ export function creaCombattimento({
         dx /= d;
         dy /= d;
       }
-      const inamovibile = (b.peso ?? 0) >= val('peso_inamovibile');
-      const vettore = inamovibile ? null : { x: dx * spinta, y: dy * spinta, ms: val('t_spinta_nemico') };
+      const vettore = vettoreSpinta(b, dx, dy, spinta);
       b.colpisci(danno, vettore);
       eventi.emit('ferruccio.colpo', { x: b.x, y: b.y, direzione: { x: dx, y: dy }, bersaglio: b, danno });
       if (b.vita <= 0) {

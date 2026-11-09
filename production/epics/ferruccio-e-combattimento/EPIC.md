@@ -42,5 +42,6 @@ Il corpo e la spada: movimento in otto direzioni, scatto invulnerabile, maschere
 | 009 | Fendente a settore, combo da tre, buffer e cancellazioni | Logic | Done | ADR-0002 |
 | 010 | Affondo caricato | Logic | Done | ADR-0002 |
 | 011 | Parata, stordimento, controcolpo, riflesso | Logic | Done | ADR-0002 |
-| 012 | Hit-stop, scossa, scie, lampi, anima | Visual/Feel | Ready | ADR-0002 |
+| 012 | Hit-stop, scossa, scie, lampi, anima | Visual/Feel | Done tramite P08 (hit-stop, scossa contestuale, lampeggio, macchie; scie/anima restano al renderer del Teatro) | ADR-0002 |
 | 013 | Sagoma di Ferruccio: pezzi, pose, sciarpa, lama orientabile | Visual/Feel | Ready | ADR-0002 |
+| P08 | Game feel (richieste testuali dell'autore): i-frames ≥ 1000 ms con lampeggio semitrasparente e rimbalzo, hit-stop nel ciclo (`congela`), knockback ∝ 1/peso, scossa contestuale, macchie permanenti per stanza — `resa.json`, `resa/feel.js` | Visual/Feel + Logic | Done (`feel.test.mjs` 7/7, `feel.wire.test.js` 3/3 con `feel-iframes.png` e `feel-macchie.png`; tutte le suite verdi) | ADR-0002, ADR-0003 |

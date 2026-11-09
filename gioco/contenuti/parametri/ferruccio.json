@@ -56,9 +56,9 @@
     "max": 12
   },
   "t_invuln": {
-    "base": 800,
-    "min": 500,
-    "max": 1200
+    "base": 1000,
+    "min": 1000,
+    "max": 1400
   },
   "lampeggio_hz": {
     "base": 6,

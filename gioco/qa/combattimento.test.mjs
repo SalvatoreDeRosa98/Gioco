@@ -300,7 +300,7 @@ test('007: mod_velocita 0,5 → velocità 150 px/s (clamp), non 110', async () =
 // Storia 008 — maschere, danno, invulnerabilità, spinta, morte
 // ---------------------------------------------------------------------------------------------
 
-test('008: Colpo con 5 maschere → 4, spinta a 260 px/s decadente in 150 ms, 800 ms di invulnerabilità', async () => {
+test('008: Colpo con 5 maschere → 4, spinta a 260 px/s decadente in 150 ms, t_invuln (≥ 1000 ms, P08) di invulnerabilità', async () => {
   const m = await creaMondo();
   const gatto = m.fantoccio({ x: m.ferruccio.x + 40, y: m.ferruccio.y });
   gatto.attacca();
@@ -327,7 +327,9 @@ test('008: Colpo con 5 maschere → 4, spinta a 260 px/s decadente in 150 ms, 80
   assert.equal(m.ferruccio.maschere, 4);
   const tFine = finche(m, () => !m.ferruccio.invulnerabile());
   const msInvuln = (m.tickCorrente - tImpatto) * m.tempo.passoMs;
-  assert.ok(Math.abs(msInvuln - 800) <= m.tempo.passoMs, `invulnerabile per ${msInvuln.toFixed(1)} ms (${tFine})`);
+  const tInvuln = m.parametri.get('ferruccio.t_invuln'); // storia P08: 1000 ms, letto dal JSON
+  assert.ok(tInvuln >= 1000, `t_invuln ${tInvuln} ≥ 1000 ms (richiesta dell'autore)`);
+  assert.ok(Math.abs(msInvuln - tInvuln) <= m.tempo.passoMs, `invulnerabile per ${msInvuln.toFixed(1)} ms (${tFine})`);
   assert.equal(m.ferruccio.stato, 'fermo');
   assert.equal(m.comb.ricevi({ x: gatto.x, y: gatto.y, attaccante: gatto }), 'danno');
   assert.equal(m.ferruccio.maschere, 3);

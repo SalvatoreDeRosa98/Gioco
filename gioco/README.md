@@ -82,6 +82,13 @@ node gioco/qa/pagina.test.js        # Playwright: avvia un server su porta liber
                                     # e menu-selezione.png (menu)
 node gioco/qa/combattimento.test.mjs      # unitari delle storie 007-011: ciclo simulato a tick fissi,
                                           # un caso per criterio Given-When-Then + prestazioni (20 bersagli)
+node gioco/qa/feel.test.mjs               # storia P08 (game feel): t_invuln ≥ 1000 e alpha del lampeggio dal JSON, rimbalzo di Ferruccio
+                                          # (contatto e proiettile), hit-stop del ciclo (2-3 tick, uno solo per fendente), spinta ∝ 1/peso
+                                          # con tre pesi di nemici.json, macchie per stanza deterministiche, scossa per contesto e moto ridotto
+node gioco/qa/feel.wire.test.js           # Playwright della storia P08: ?debug=1&piano=1&seme=1845 sul renderer pixel-art; colpo subito →
+                                          # alpha < 1 misurato sul pixel più chiaro della sagoma e corpo arretrato; fendente su un nemico vero →
+                                          # tick fermi per hit_stop_ms mentre contaFrame() avanza; nemico morto → macchia e pixel scuri che
+                                          # restano, azzerati al cambio di stanza; screenshot feel-iframes.png e feel-macchie.png
 node gioco/qa/combattimento.wire.test.js  # Playwright: ?debug=1&wire=1, cammina/colpisce/scatta/para,
                                           # salva production/qa/evidence/combattimento-wire.png
 node gioco/qa/mondo.test.mjs              # unitari delle storie 014-018: porte, spawn (200 semi), colonna/panca,
@@ -309,7 +316,8 @@ gioco/
 │   ├── oggetti-attivi.json     storia P04 (Teatro OGGETTI_ATTIVI ~2381): Forbici, Tamburello, Ampolla: maxCarica ed effetti {base,min,max}
 │   ├── patto.json              storia P04 (Teatro CATALOGO_PATTO ~2397): le reliquie del Patto d'Ombra, costo in mezze maschere e `mod`
 │   ├── boss.json               storia P04 (Teatro POOL_BOSS/BOSS_FINALE ~2515): pool dei boss dei piani 1-3 e Donna Luciana al piano 4
-│   └── moto-ridotto.json       sovrascritture applicate con prefers-reduced-motion
+│   ├── resa.json               game feel della resa (storia P08): alpha e semiperiodo del lampeggio, scosse per contesto (px, frame), macchie
+│   └── moto-ridotto.json       sovrascritture applicate con prefers-reduced-motion (anche resa.scossa.*_px → 0)
 ├── contenuti/interfaccia.json  testi di HUD, banchetto, doni, cartiglio, hub e menu (unico posto con le stringhe mostrate; storie 024-025, 027 `incontri`, 029 `hub`, P04 `menu`)
 ├── contenuti/storia.json       la storia in forma macchina (copia di trama/storia.json; storia 026)
 ├── contenuti/narrativa.json    regole dello stato narrativo che storia.json non ha (derivati, finale → mondo, tipi obbligatori e senza attesa)
@@ -343,6 +351,8 @@ gioco/
     ├── boss.wire.test.js            test Playwright della storia P01 (stanza boss, Medaglione, uscita, velo di vittoria, screenshot)
     ├── prova.test.mjs               test della storia P02 (parametri di avvio dalla meta)
     ├── prova.wire.test.js           test Playwright della storia P02 (prova.html, pannello dei tasti, screenshot)
+    ├── feel.test.mjs                game feel della storia P08 (node:test)
+    ├── feel.wire.test.js            Playwright della storia P08 (i-frames, hit-stop, macchie; screenshot feel-*.png)
     └── combattimento.wire.test.js   test Playwright del modo wire
 ```
 
@@ -357,6 +367,27 @@ gioco/
 - `tick(dt)` riceve `dt` in secondi (un passo fisso); i tempi dei GDD in ms si convertono una volta
   con `tempo.ticksDaMs`.
 - L'input è il primo sistema registrato nel ciclo: `inizioTick()` fotografa i fronti prima degli altri.
+
+### Game feel (storia P08, richieste testuali dell'autore)
+
+- **I-frames**: `ferruccio.t_invuln` ≥ 1000 ms (`{1000, 1000, 1400}`); la sagoma lampeggia **semitrasparente** ad alpha
+  `resa.lampeggio.alpha` (0,4) con semiperiodo `resa.lampeggio.semiperiodo_ms`, a partire dal tick del colpo (`resa/feel.js ›
+  alphaSagoma`, applicato dal renderer con `globalAlpha`; `__gioco.resa.ultimoAlphaSagoma()` lo espone alla QA). Il **rimbalzo**
+  all'indietro (`v_spinta`/`t_spinta`) vale per ogni fonte che chiama `subisciDanno({x, y})`: Colpo di contatto, proiettile nemico, pericolo.
+- **Hit-stop**: `ciclo.congela(ms)` salta i tick di simulazione dovuti ai frame ma continua a disegnare (`contaFrame()` avanza,
+  `congelato()` dice quanti tick restano); **non si somma** (vince la durata più lunga), quindi un fendente su più bersagli è un solo
+  hit-stop. `avvio.js` collega `ferruccio.colpo` → `combattimento.feel.hit_stop_ms` (40 = 2 tick), `ferruccio.uccisione` →
+  `hit_stop_uccisione_ms` (60), `ferruccio.parata` → `hit_stop_parata_ms` (90). I tick forzati di debug (`__gioco.tick(n)`) lo ignorano.
+- **Knockback ∝ 1/peso**: `combattimento.js › spintaPerPeso` = `clamp(spinta / max(peso, feel.peso_min_spinta), feel.spinta_min,
+  feel.spinta_max)`, 0 da `peso_inamovibile` in su; vale per fendente, affondo e proiettili di Ferruccio (vespa peso 0 → `spinta_max`,
+  gatto 1 → `spinta_f`, guardia 2 → metà, statua/boss fermi).
+- **Scossa contestuale** (`resa/feel.js`, dati `resa.scossa`): `ferruccio.colpo` 1,5 px × 2 frame, `ferruccio.parata`
+  (`combattimento.feel.scossa_parata_px` × `parata_frame`), `bomba.esplosione` 5,5 px, `boss.atterraggio` (Re-Gatto) e
+  `boss.mani_schianto` (Mani di Donna Luciana) 11 px × 10 frame. **Questi tre nomi di evento sono il contratto per le squadre oggetti e
+  nemici**: basta emetterli sul bus. Nessuna scossa a riposo; con moto ridotto i px sono 0 (`moto-ridotto.json`).
+- **Macchie permanenti**: a `nemico.morto` resta a terra una chiazza d'inchiostro di china (schegge di legno per `statua`, `guardia`,
+  `bomba`), seminata con `derivato(rng, 'fx')`, per stanza (azzerata a `notte.stanza`); `__gioco.feel.macchie()` la espone. Il disegno
+  sta in `resa/feel.js › disegnaMacchie`, chiamato dal renderer dopo gli schizzi dei colpi.
 
 ## Valori provvisori da confermare con il game-designer
 
