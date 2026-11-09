@@ -7,9 +7,13 @@
  * apre quando un proiettile di Ferruccio la colpisce (`ferruccio.colpo_muro` con solido `finestra`, emesso dal
  * combattimento) o quando il settore del fendente la tocca. Aprire = la finestra diventa porta su entrambi i record della
  * pianta (`porte[slot] = segreta`, `segreta.porte[opposto] = stanza`), la stanza è rimontata senza muovere Ferruccio
- * (`notte.vaiA` + `posiziona`), evento `segreta.aperta` {stanza, segreta, slot}. La segreta, alla sua prima pulizia,
- * lascia a terra `economia.monete_segreta` monete piccole attorno al centro (il Teatro: «il modo principale di fare
- * soldi»); i mob dorati veri restano alla squadra nemici (la segreta non combatte, `TIPI_COMBATTIMENTO`).
+ * (`notte.vaiA` + `posiziona`), evento `segreta.aperta` {stanza, segreta, slot}. Storia P15 (Teatro `innescaEsplosioneBomba`
+ * ~3604): anche l'**esplosione della Bomba Ferma** (`nemico.esplosione` {x, y, rCrepa}) apre la crepa se il suo centro è
+ * entro `rCrepa` dal rettangolo della finestra; se la stanza sta ancora combattendo (porte chiuse) l'apertura resta `inAttesa`
+ * e scatta al primo tick in cui la stanza è pulita. La segreta COMBATTE (storia P15, `TIPI_COMBATTIMENTO` di stanza.js: una
+ * ondata di predoni dorati, `stanze.segreta`) e, alla sua prima pulizia, lascia a terra `economia.monete_segreta` monete
+ * piccole attorno al centro come fa il Teatro (`verificaStanzaPulita` ~3718: `spawnaMonetaATerra(st, 320, 165, 3)` oltre al
+ * bottino dorato dei predoni).
  * Nessun numero e nessuna stringa di gioco; nessuna casualità. Dipendenze verso il basso (notte, combattimento, economia).
  */
 
@@ -34,6 +38,7 @@ export function creaSegreta({ eventi, notte, combattimento, ferruccio, parametri
   if (!eventi || typeof notte !== 'function' || !combattimento || !ferruccio || !parametri) throw new TypeError('creaSegreta: dipendenze mancanti');
   const aperte = new Set();      // id delle stanze la cui crepa è aperta
   const pagate = new Set();      // segrete che hanno già lasciato le monete
+  let inAttesa = null;           // storia P15: stanza in cui un'esplosione ha raggiunto la crepa durante il combattimento
 
   /** La crepa della stanza corrente, o null: {slot, lato, rett, x, y, aperta}. */
   function crepa() {
@@ -79,10 +84,18 @@ export function creaSegreta({ eventi, notte, combattimento, ferruccio, parametri
 
   const dentroRett = (px, py, r, rett) => px + r >= rett.x && px - r <= rett.x + rett.w && py + r >= rett.y && py - r <= rett.y + rett.h;
 
-  /** Un tick: proiettili di Ferruccio o fendente sulla crepa visibile la aprono. */
+  /** Distanza di un punto dal rettangolo (0 se dentro). */
+  const distanzaRett = (px, py, rett) => Math.hypot(Math.max(rett.x - px, 0, px - (rett.x + rett.w)), Math.max(rett.y - py, 0, py - (rett.y + rett.h)));
+
+  /** Un tick: proiettili di Ferruccio o fendente sulla crepa visibile la aprono; un'esplosione in attesa la apre appena la stanza è pulita. */
   function tick() {
     const c = crepa();
-    if (!c || c.aperta || !c.visibile) return;
+    if (!c || c.aperta) { inAttesa = null; return; }
+    if (inAttesa !== null) {
+      if (notte()?.stanza?.id !== inAttesa) inAttesa = null; // cambiata stanza: l'esplosione non vale più
+      else if (c.visibile && apri()) { inAttesa = null; return; }
+    }
+    if (!c.visibile) return;
     for (const p of combattimento.proiettiliFerruccio()) {
       if (dentroRett(p.x, p.y, p.r ?? 0, c.rett)) { apri(); return; }
     }
@@ -92,6 +105,16 @@ export function creaSegreta({ eventi, notte, combattimento, ferruccio, parametri
 
   eventi.on('ferruccio.colpo_muro', (p) => {
     if (p?.solido?.id === ID_FINESTRA) { const c = crepa(); if (c && !c.aperta && c.visibile) apri(); }
+  });
+  // storia P15: l'esplosione della Bomba Ferma (Teatro innescaEsplosioneBomba) apre la crepa se la raggiunge (entro `rCrepa`
+  // dal rettangolo della finestra); se la stanza sta ancora combattendo, l'apertura aspetta `pulita` (le porte sono chiuse)
+  eventi.on('nemico.esplosione', (p) => {
+    const c = crepa();
+    const st = notte()?.stanza;
+    if (!p || !c || c.aperta || !st || !Number.isFinite(p.x) || !Number.isFinite(p.y)) return;
+    const raggio = p.rCrepa ?? p.rNemici ?? 0;
+    if (distanzaRett(p.x, p.y, c.rett) > raggio) return;
+    if (c.visibile) apri(); else inAttesa = st.id;
   });
   // la segreta ripulita lascia le monete del Teatro (una volta per segreta)
   eventi.on('stanza.pulita', (p) => {
@@ -112,7 +135,9 @@ export function creaSegreta({ eventi, notte, combattimento, ferruccio, parametri
   return {
     crepa, apri, tick,
     get aperte() { return Array.from(aperte); },
+    /** Storia P15: id della stanza in cui un'esplosione ha raggiunto la crepa e aspetta `pulita`, o null. */
+    get inAttesa() { return inAttesa; },
     /** Nuovo piano o nuova run. */
-    nuovoPiano() { aperte.clear(); pagate.clear(); },
+    nuovoPiano() { aperte.clear(); pagate.clear(); inAttesa = null; },
   };
 }

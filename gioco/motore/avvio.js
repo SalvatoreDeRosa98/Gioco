@@ -918,9 +918,10 @@ async function avvia() {
     });
   }
   // --- squadra disegni: fine ---
-  // Cucitura fra squadre: la Bomba Ferma (nemici) emette `nemico.esplosione`; feel (scossa) e audio (tonfo) ascoltano
-  // `bomba.esplosione`: lo stesso evento con lo stesso payload {x, y, rGiocatore, rNemici}.
-  eventi.on('nemico.esplosione', (p) => eventi.emit('bomba.esplosione', p));
+  // --- squadra cuciture (storia P15): inizio --- Un solo nome di evento per l'esplosione della Bomba Ferma: `nemico.esplosione`
+  // {x, y, rGiocatore, rNemici, rCrepa, schegge}, emesso da attori/nemico.js. Feel (scossa), audio (tonfo) e la Crepa Dorata
+  // (mondo/segreta.js) lo ascoltano direttamente: il ponte verso `bomba.esplosione` non esiste più.
+  // --- squadra cuciture: fine ---
   // --- squadra audio: inizio --- storia P10: audio dinamico minimale (Web Audio API, nessun file). Lo stato di gioco non sa
   // nulla dell'audio: `eventi-audio.js` ascolta il bus e chiama il sintetizzatore; `attori/passi.js` emette `attore.passo`
   // dalla distanza percorsa (Ferruccio e bersagli). Il contesto nasce al primo gesto (tasto/puntatore); `muto` (M) in ogni stato;

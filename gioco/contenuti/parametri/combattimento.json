@@ -319,5 +319,18 @@
       "min": 100,
       "max": 1200
     }
+  },
+  "proiettile": {
+    "_descrizione": "Storia P15: il proiettile di Ferruccio quando il blocco 'isaac' di personaggi.json non è iniettato (test delle storie 007-011, sparaProiettili): prima erano fallback nel codice (3.9, 3, 4, 0.22, 9, 8, scala 2, max(220, portata × 3.4)). Unità del Teatro (px/frame, px dell'arena 640x360) × scala_px.",
+    "scala_px": { "base": 2, "min": 1, "max": 4 },
+    "velocita_px_frame": { "base": 3.9, "min": 1, "max": 12 },
+    "r_base": { "base": 3, "min": 1, "max": 12 },
+    "offset_doppia": { "base": 4, "min": 1, "max": 12 },
+    "angolo_triplo": { "base": 0.22, "min": 0.05, "max": 0.6 },
+    "offset_bocca": { "base": 9, "min": 0, "max": 30 },
+    "alzata": { "base": 8, "min": 0, "max": 20 },
+    "portata_min": { "base": 220, "min": 60, "max": 800 },
+    "molt_portata": { "base": 3.4, "min": 1, "max": 8 },
+    "r_bersaglio_senza_raggio": { "base": 20, "min": 4, "max": 64 }
   }
 }

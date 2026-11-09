@@ -18,6 +18,7 @@ import { creaCombattimento } from '../motore/attori/combattimento.js';
 import { creaFantoccio } from '../motore/attori/bersaglio.js';
 import { creaAttivi, EFFETTI_ATTIVO } from '../motore/oggetti/attivi.js';
 import { creaStatistiche } from '../motore/attori/statistiche.js';
+import { potaSpenti } from '../motore/attori/proiettili-nemici.js';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const RADICE = join(QUI, '..');
@@ -127,12 +128,17 @@ test('A4: tamburello — i proiettili nemici spariscono, i nemici entro raggio s
   const tamb = T.attivi.tamburello;
   const vicino = m.fantoccio('vicino', 80, 0);
   const lontano = m.fantoccio('lontano', tamb.raggio.base + 200, 0);
-  m.proiettili.push({ vivo: true, x: 0, y: 0 }, { vivo: true, x: 1, y: 1 });
+  // storia P15: proiettili nemici veri (nemico: true, cancella()) nella lista condivisa: li spegne cancellaInRaggio
+  const finto = (x, y) => ({ nemico: true, vivo: true, x, y, r: 4, cancella() { this.vivo = false; } });
+  const lontanissimo = finto(m.ferruccio.x + tamb.raggio_proiettili.base + 500, m.ferruccio.y);
+  m.proiettili.push(finto(m.ferruccio.x + 10, m.ferruccio.y), finto(m.ferruccio.x - 200, m.ferruccio.y + 100), lontanissimo);
   const vita0 = vicino.vita;
   const x0 = vicino.x;
   const esito = m.attivi.usa();
   assert.equal(esito.esito, 'usato');
-  assert.equal(m.proiettili.length, 0, 'proiettili nemici distrutti');
+  assert.equal(m.proiettili.filter((p) => p.vivo).length, 1, 'i proiettili nemici entro raggio_proiettili sono spenti');
+  assert.equal(lontanissimo.vivo, true, 'oltre raggio_proiettili resta in volo');
+  assert.equal(m.attivi.ultimoUso.cancellati, 2);
   assert.equal(esito.colpiti, 1);
   assert.ok(Math.abs((vita0 - vicino.vita) - m.statistiche.correnti().dmg * T.regole.tamburello_frazione_dmg.base) < 1e-9);
   assert.equal(lontano.vita, 30, 'fuori raggio: intatto');
@@ -162,4 +168,31 @@ test('regole: attivi.js senza Math.random, senza numeri di gioco e senza stringh
   assert.ok(!/Math\.random/.test(testo));
   const codice = testo.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
   for (const n of ['4000', '240', '420', '360', '1.4', '0.9']) assert.ok(!new RegExp(`[^\\w.']${n.replace('.', '\\.')}(?![\\d.\\w])`).test(codice), `attivi.js contiene ${n}`);
+});
+
+test('P15 tamburello: raggio_proiettili in oggetti-attivi.json copre la scena intera (il Teatro azzera tutti i proiettili nemici); i proiettili spenti escono dalla lista con potaSpenti; i nemici entro raggio sono respinti radialmente, oltre no; attivo.usato porta `cancellati`', async () => {
+  const m = await creaMondoAttivi({ personaggio: 'agnese' });
+  const tamb = T.attivi.tamburello;
+  assert.ok(tamb.raggio_proiettili.base >= Math.hypot(1280, 720), 'copre la diagonale della scena');
+  const usati = [];
+  m.eventi.on('attivo.usato', (p) => usati.push(p));
+  const finto = (x, y) => ({ nemico: true, vivo: true, x, y, r: 4, cancella() { this.vivo = false; } });
+  const agliAngoli = [finto(1, 1), finto(1279, 1), finto(1, 719), finto(1279, 719)];
+  m.proiettili.push(...agliAngoli, { vivo: true, x: m.ferruccio.x, y: m.ferruccio.y, r: 3 }); // l'ultimo non è nemico: resta
+  const sopra = m.fantoccio('sopra', 0, -120);
+  const destra = m.fantoccio('destra', tamb.raggio.base - 20, 0);
+  const oltre = m.fantoccio('oltre', tamb.raggio.base + 40, 0);
+  const prima = { sopra: sopra.y, destra: destra.x, oltre: oltre.x };
+  const esito = m.attivi.usa();
+  assert.equal(esito.esito, 'usato');
+  assert.ok(agliAngoli.every((p) => p.vivo === false), 'tutti i proiettili nemici della scena sono spenti');
+  assert.equal(m.proiettili.filter((p) => p.vivo).length, 1, 'quello che non è nemico resta');
+  assert.equal(usati.at(-1).cancellati, agliAngoli.length);
+  assert.equal(usati.at(-1).colpiti, 2, 'entro raggio: sopra e destra');
+  potaSpenti(m.proiettili);
+  assert.equal(m.proiettili.length, 1);
+  m.tick(6);
+  assert.ok(sopra.y < prima.sopra, 'respinto verso l\'alto (radiale)');
+  assert.ok(destra.x > prima.destra, 'respinto verso destra (radiale)');
+  assert.equal(oltre.x, prima.oltre, 'oltre il raggio: fermo');
 });

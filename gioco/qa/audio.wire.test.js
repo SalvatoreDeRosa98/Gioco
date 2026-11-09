@@ -156,7 +156,7 @@ async function main() {
           const n1 = foto();
           g.eventi.emit('attore.passo', { id: 'ferruccio', tipo: 'ferruccio', x: 0, y: 0 });
           const n2 = foto();
-          g.eventi.emit('esplosione', { x: 0, y: 0 });
+          g.eventi.emit('nemico.esplosione', { x: 0, y: 0 }); // storia P15: un solo nome, quello della Bomba Ferma
           const n3 = foto();
           return { n0, n1, n2, n3, emessi: g.audio.emessi(), suonati: g.audio.suonati(), eccezioni: c.eccezioni };
         });

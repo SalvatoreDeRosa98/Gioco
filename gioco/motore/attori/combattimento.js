@@ -294,7 +294,7 @@ export function creaCombattimento({
     s.mira = dir;
     s.angolo = Math.atan2(dir.y, dir.x);
     const st = stat();
-    const scala = k(null, 'scala_px') ?? 2;
+    const scala = k(null, 'scala_px') ?? val('proiettile.scala_px');
     const baseDmg = st ? st.dmg * frazioneDanno : dannoColpo(1, 1);
     let tipo = 'base';
     let flags = { triplo: false, doppia: false, quadDir: false, piercing: false, overflowPierce: false, burn: false, chain: false, spettrale: false };
@@ -309,13 +309,15 @@ export function creaCombattimento({
       flags.piercing = tipo === 'cremisi';
       flags.triplo = doni.includes('bilancino-spezzato');
     }
-    const velocita = (k('proiettile', 'velocita_px_frame') ?? 3.9) * scala;
-    const rBase = (k('proiettile', 'r_base') ?? 3) * scala * (st?.projScale ?? 1);
-    const offDoppia = (k('proiettile', 'offset_doppia') ?? 4) * scala;
-    const angTriplo = k('proiettile', 'angolo_triplo') ?? 0.22;
-    const bocca = (k('proiettile', 'offset_bocca') ?? 9) * scala;
-    const alzata = (k('proiettile', 'alzata') ?? 8) * scala;
-    const maxDist = st ? st.range : Math.max(220, val('portata') * 3.4);
+    // storia P15: senza il blocco `isaac` i numeri vengono da combattimento.json › proiettile (nessun numero di gioco nel codice)
+    const P = (nome) => k('proiettile', nome) ?? val(`proiettile.${nome}`);
+    const velocita = P('velocita_px_frame') * scala;
+    const rBase = P('r_base') * scala * (st?.projScale ?? 1);
+    const offDoppia = P('offset_doppia') * scala;
+    const angTriplo = P('angolo_triplo');
+    const bocca = P('offset_bocca') * scala;
+    const alzata = P('alzata') * scala;
+    const maxDist = st ? st.range : Math.max(val('proiettile.portata_min'), val('portata') * val('proiettile.molt_portata'));
     const direzioni = flags.quadDir ? [0, Math.PI / 2, Math.PI, -Math.PI / 2].map((a) => s.angolo + a) : [s.angolo];
     const angoli = flags.triplo ? [-angTriplo, 0, angTriplo] : [0];
     const offsets = flags.doppia && !flags.triplo ? [-offDoppia, offDoppia] : [0];
@@ -383,7 +385,7 @@ export function creaCombattimento({
 
   /** Fulmine a catena (Catena della Chiusa): ai vicini del colpito, entro il raggio, una frazione del danno. */
   function catena(b, dannoColpoBase) {
-    const raggio = (k('chain', 'raggio') ?? 0) * (k(null, 'scala_px') ?? 2);
+    const raggio = (k('chain', 'raggio') ?? 0) * (k(null, 'scala_px') ?? val('proiettile.scala_px'));
     const frazione = k('chain', 'frazione_danno') ?? 0;
     if (raggio <= 0 || frazione <= 0) return;
     for (const altro of bersagli()) {
@@ -434,7 +436,7 @@ export function creaCombattimento({
       for (const b of bersagli()) {
         if (!b || b.stato === 'morto' || p.colpiti.has(b)) continue;
         const d = Math.hypot(b.x - p.x, (b.y - 14) - p.y);
-        if (d <= (b.r ?? 20) + p.r) {
+        if (d <= (b.r ?? val('proiettile.r_bersaglio_senza_raggio')) + p.r) { // storia P15: nessun numero nel codice
           p.colpiti.add(b);
           const norm = Math.hypot(p.vx, p.vy) || 1;
           const dx = p.vx / norm;

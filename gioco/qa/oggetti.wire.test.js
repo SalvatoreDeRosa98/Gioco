@@ -121,10 +121,36 @@ async function main() {
       assert.ok(apertura.porte.includes(crepa.c.slot), 'la porta verso la segreta esiste');
       assert.equal(apertura.stato, 'pulita');
       assert.equal(apertura.crepa.aperta, true);
-      const inSegreta = await pagina.evaluate((seg) => { const g = window.__gioco; const ok = g.vaiA(seg); g.tick(2); return { ok, tipo: g.stanza.tipo, monete: g.economia.aTerra(seg).filter((o) => o.tipo === 'moneta').length }; }, crepa.seg);
+      // storia P15: la segreta combatte una ondata di predoni dorati (porte chiuse); ripulita, lascia le monete del Teatro
+      const inSegreta = await pagina.evaluate((seg) => {
+        const g = window.__gioco;
+        const ok = g.vaiA(seg);
+        const chiuse = [];
+        g.eventi.on('stanza.chiusa', (p) => chiuse.push(p.id));
+        for (let i = 0; i < 400 && g.bersagli.filter((b) => b.stato !== 'morto').length < g.stanza.nNemici; i++) g.tick(1);
+        const predoni = g.bersagli.filter((b) => b.archetipo === 'predone');
+        return {
+          ok, tipo: g.stanza.tipo, combatte: g.stanza.combatte, stato: g.stanza.stato, nNemici: g.stanza.nNemici, predoni: predoni.length,
+          dorati: predoni.filter((b) => b.dorato).length, chiuse, porte: g.stanza.porte.map((p) => p.stato),
+        };
+      }, crepa.seg);
       assert.equal(inSegreta.ok, true);
       assert.equal(inSegreta.tipo, 'segreta');
-      assert.ok(inSegreta.monete > 0, 'la segreta lascia le monete');
+      assert.equal(inSegreta.combatte, true, 'la segreta combatte');
+      assert.ok(inSegreta.nNemici >= 1 && inSegreta.predoni === inSegreta.nNemici, `predoni nati ${inSegreta.predoni}/${inSegreta.nNemici}`);
+      assert.equal(inSegreta.dorati, inSegreta.predoni, 'tutti dorati');
+      assert.ok(inSegreta.chiuse.includes(crepa.seg), 'porte chiuse nella segreta');
+      await pagina.screenshot({ path: path.join(CARTELLA_EVIDENZE, 'segreta-predoni.png') });
+      const ripulita = await pagina.evaluate((seg) => {
+        const g = window.__gioco;
+        for (let i = 0; i < 4000 && g.stanza.stato !== 'pulita'; i++) {
+          for (const b of g.bersagli) if (b.stato !== 'morto') b.colpisci(1e6, null);
+          g.tick(1);
+        }
+        return { stato: g.stanza.stato, monete: g.economia.aTerra(seg).filter((o) => o.tipo === 'moneta').length, carica: g.attivi.stato()?.carica ?? null };
+      }, crepa.seg);
+      assert.equal(ripulita.stato, 'pulita');
+      assert.ok(ripulita.monete > 0, 'la segreta lascia le monete');
 
       // 4. il boss: battuto senza danni → altare del Patto → proposta → conferma (−1 maschera massima)
       const patto = await pagina.evaluate(() => {

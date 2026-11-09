@@ -4,7 +4,7 @@
   "dim": "1x1",
   "piani": [1, 2, 3, 4],
   "difficolta": 1,
-  "tag": ["facile", "finestra_accesa"],
+  "tag": ["facile", "finestra_accesa", "predoni_dorati"],
   "peso_base": 1.0,
   "griglia": [
     ".............",
@@ -15,7 +15,12 @@
     ".............",
     "............."
   ],
-  "spawn": [],
-  "tavolozza": [],
+  "spawn": [
+    { "c": 2, "r": 1, "tipo": "T" }, { "c": 10, "r": 1, "tipo": "T" },
+    { "c": 4, "r": 1, "tipo": "T" }, { "c": 8, "r": 1, "tipo": "T" },
+    { "c": 2, "r": 5, "tipo": "T" }, { "c": 10, "r": 5, "tipo": "T" },
+    { "c": 4, "r": 5, "tipo": "T" }, { "c": 8, "r": 5, "tipo": "T" }
+  ],
+  "tavolozza": [{ "tipo": "predone", "peso": 1.0, "min": 0, "max": 8 }],
   "contenuti": [{ "tipo": "scrigno", "c": 6, "r": 3 }]
 }

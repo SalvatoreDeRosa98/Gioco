@@ -298,12 +298,13 @@
         "senza_gettone": { "base": 1, "min": 0, "max": 1 }
       },
       "esplosione": {
-        "_descrizione": "Teatro: raggio 38 (giocatore) e 48 (nemici) → ×1,45; danno ai nemici 12 su vite 14-26 → 4 sulle vite del motore; 6 schegge a 2,15 px/frame",
+        "_descrizione": "Teatro: raggio 38 (giocatore) e 48 (nemici) → ×1,45; danno ai nemici 12 su vite 14-26 → 4 sulle vite del motore; 6 schegge a 2,15 px/frame; 'r_crepa' (storia P15, Teatro innescaEsplosioneBomba ~3604: < 95 px dal centro del muro segreto → ×1,45) è la distanza dalla Crepa Dorata entro cui l'esplosione la apre",
         "r_giocatore": { "base": 55, "min": 20, "max": 150 },
         "r_nemici": { "base": 70, "min": 20, "max": 200 },
         "danno_nemici": { "base": 4, "min": 0, "max": 20 },
         "n_schegge": { "base": 6, "min": 0, "max": 12 },
-        "velocita_fattore": { "base": 1, "min": 0.3, "max": 2 }
+        "velocita_fattore": { "base": 1, "min": 0.3, "max": 2 },
+        "r_crepa": { "base": 138, "min": 40, "max": 300 }
       }
     },
     "predone": {

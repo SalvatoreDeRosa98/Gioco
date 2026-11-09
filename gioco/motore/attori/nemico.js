@@ -79,7 +79,7 @@ const FACOLTATIVE_ATTACCO = Object.freeze({ t_anello: 0, balzo_extra: null, balz
 /** Blocchi facoltativi della scheda (storia P05) con le loro chiavi numeriche. */
 const BLOCCHI_FACOLTATIVI = Object.freeze({
   sparo: Object.freeze(['n_colpi', 'apertura_gradi', 'croce', 'velocita_fattore']),
-  esplosione: Object.freeze(['r_giocatore', 'r_nemici', 'danno_nemici', 'n_schegge', 'velocita_fattore']),
+  esplosione: Object.freeze(['r_giocatore', 'r_nemici', 'danno_nemici', 'n_schegge', 'velocita_fattore', 'r_crepa']),
   corazza: Object.freeze(['frazione_danno']),
 });
 
@@ -334,7 +334,8 @@ export function creaNemico({
       if (Math.hypot(altro.x - corpo.x, altro.y - corpo.y) <= E.r_nemici + (altro.r ?? 0)) altro.colpisci(E.danno_nemici, null);
     }
     for (const d of direzioniRadiali(E.n_schegge, 0)) lanciaProiettile(d, E.velocita_fattore);
-    eventi?.emit('nemico.esplosione', { id, archetipo, boss, x: corpo.x, y: corpo.y, rGiocatore: E.r_giocatore, rNemici: E.r_nemici, schegge: Math.round(E.n_schegge) });
+    // storia P15: UN solo nome di evento; feel (scossa), audio (tonfo) e la Crepa Dorata (`rCrepa`, mondo/segreta.js) lo ascoltano
+    eventi?.emit('nemico.esplosione', { id, archetipo, boss, x: corpo.x, y: corpo.y, rGiocatore: E.r_giocatore, rNemici: E.r_nemici, rCrepa: E.r_crepa, schegge: Math.round(E.n_schegge) });
     if (!corpo.morto) muori();
     return 'esplosione';
   }

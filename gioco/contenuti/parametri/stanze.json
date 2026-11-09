@@ -131,6 +131,13 @@
     "t_attesa": { "base": 600, "min": 0, "max": 2000 }
   },
 
+  "segreta": {
+    "_descrizione": "Storia P15 (Teatro popolaStanzaIsaac 'segreta' ~3291): la Stanza Segreta combatte una sola ondata di predoni dorati: n = n_base + min(n_extra_max, floor(piano × n_per_piano)) → 4 al piano 1, 5 ai piani 2-3, 6 dal piano 4 (tetto: i punti di nascita del modello).",
+    "n_base": { "base": 4, "min": 1, "max": 8 },
+    "n_per_piano": { "base": 0.5, "min": 0, "max": 2 },
+    "n_extra_max": { "base": 2, "min": 0, "max": 6 }
+  },
+
   "camera": {
     "_descrizione": "architettura §4b: la camera inquadra la stanza intera; scala = min(1, L/larghezza, (A − margine_hud)/altezza); transizione a scorrimento nella direzione della porta",
     "t_transizione": { "base": 250, "min": 100, "max": 600 },

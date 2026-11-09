@@ -34,7 +34,7 @@ import {
 import { creaPorta, STATI_PORTA } from '../motore/mondo/porte.js';
 import { creaCamera } from '../motore/mondo/camera.js';
 import {
-  creaStanza, nNemici, quoteOndate, valoreRicompensa, composizione, puntoValido, STATI_STANZA,
+  creaStanza, nNemici, nNemiciSegreta, quoteOndate, valoreRicompensa, composizione, puntoValido, STATI_STANZA, TIPI_COMBATTIMENTO,
 } from '../motore/mondo/stanza.js';
 import {
   generaPiano, validaPianta, punteggioQ, pesoModello, diffTarget, dimensioniPiano, piantaDaRiserva, esplora,
@@ -71,7 +71,7 @@ function modelloColonnaPanca() {
  * Parametri reali (con eventuale ritocco del JSON prima della validazione e override di statistica),
  * catalogo dei 14 modelli, piano di riserva.
  */
-async function caricaContenuti({ override = {}, ritocca = null, conEconomia = false } = {}) {
+async function caricaContenuti({ override = {}, ritocca = null, conEconomia = false, conNemici = false } = {}) {
   const log = logFinto();
   const parametri = creaParametri({ log });
   await parametri.carica({
@@ -80,7 +80,7 @@ async function caricaContenuti({ override = {}, ritocca = null, conEconomia = fa
       if (ritocca) ritocca(nome, j);
       return j;
     },
-    statistiche: ['ferruccio', 'combattimento', 'stanza', 'stanze', 'generazione', ...(conEconomia ? ['economia'] : [])],
+    statistiche: ['ferruccio', 'combattimento', 'stanza', 'stanze', 'generazione', ...(conEconomia ? ['economia'] : []), ...(conNemici ? ['nemici'] : [])],
     tabelle: ['input'],
     override,
   });
@@ -986,4 +986,80 @@ test('018: GIVEN una stanza già pulita, WHEN si rientra (anche rimontandola dal
   m.tick(attesa);
   assert.equal(m.economia.aTerra(premiata.id).filter((o) => o.tipo === 'moneta').length, 0, 'le monete raccolte non ricompaiono');
   assert.ok(Number.isFinite(centro.x));
+});
+
+// ---------------------------------------------------------------------------------------------
+// Storia P15 — cuciture: la Stanza Segreta combatte (predoni dorati), il bottino dorato dell'economia
+// ---------------------------------------------------------------------------------------------
+
+test('P15 segreta: TIPI_COMBATTIMENTO include la segreta; pd-s-01 ha punti di nascita e una tavolozza di soli predoni (dorati in nemici.json); nNemiciSegreta legge stanze.segreta (n_base + min(n_extra_max, floor(p × n_per_piano)))', async () => {
+  const { catalogo, parametri, erroriModelli } = await caricaContenuti();
+  assert.deepEqual(erroriModelli, []);
+  assert.ok(TIPI_COMBATTIMENTO.includes('segreta'));
+  assert.ok(TIPI_COMBATTIMENTO.includes('normale'));
+  const m = catalogo.perId('pd-s-01');
+  assert.equal(m.tipo, 'segreta');
+  assert.ok(m.spawn.length >= 6, 'punti di nascita');
+  assert.ok(m.tavolozza.length > 0 && m.tavolozza.every((v) => v.tipo === 'predone'), 'solo predoni');
+  assert.ok(leggi('contenuti/parametri/nemici.json').archetipi.predone.dorato.base > 0, 'il predone è dorato');
+  const Sg = leggi('contenuti/parametri/stanze.json').segreta;
+  for (const p of [1, 2, 3, 4, 5]) {
+    const atteso = Math.max(1, Sg.n_base.base + Math.min(Sg.n_extra_max.base, Math.floor(p * Sg.n_per_piano.base)));
+    assert.equal(nNemiciSegreta({ parametri, p }), atteso, `piano ${p}`);
+  }
+  assert.ok(nNemiciSegreta({ parametri, p: 4 }) > nNemiciSegreta({ parametri, p: 1 }), 'cresce con il piano (Teatro: 4 + min(2, floor(piano × 0,5)))');
+});
+
+test('P15 segreta: GIVEN la segreta (pd-s-01) montata al piano 1, WHEN Ferruccio entra, THEN annuncio, stanza.chiusa a t_chiusura_porte, UNA ondata di nNemiciSegreta predoni; uccisi tutti → stanza.pulita {combattuta: true} e porte riaperte', async () => {
+  const m = await creaMondo();
+  const modello = m.catalogo.perId('pd-s-01');
+  const record = { id: 's', tipo: 'segreta', dim: '1x1', modello: 'pd-s-01', seme_stanza: 7, cella: [0, 0], celle: [[0, 0]], elite: false, finestre: [], porte: { W: 'n1' } };
+  const stanza = m.monta(record, modello);
+  assert.equal(stanza.combatte, true, 'la segreta combatte');
+  assert.equal(stanza.nNemici, nNemiciSegreta({ parametri: m.parametri, p: 1 }));
+  const arrivo = stanza.puntoArrivo('W');
+  m.ferruccio.posiziona(arrivo.x, arrivo.y);
+  stanza.entra();
+  assert.equal(stanza.stato, 'annuncio');
+  m.tick(m.ticks('stanze.t_chiusura_porte') + 1);
+  assert.ok(m.ricevuti.some((e) => e.nome === 'stanza.chiusa' && e.payload.id === 's'), 'porte chiuse');
+  m.tick(m.ticks('stanze.t_marker') + m.ticks('stanze.t_ritardo_max_spawn') + 2);
+  const nati = m.ricevuti.filter((e) => e.nome === 'nemico.nato');
+  assert.equal(nati.length, stanza.nNemici, 'tutti nella prima e unica ondata');
+  assert.ok(nati.every((e) => e.payload.archetipo === 'predone' && e.payload.ondata === 1), 'predoni, ondata 1');
+  assert.equal(m.ricevuti.filter((e) => e.nome === 'ondata.inizio').length, 1, 'una sola ondata');
+  for (const b of m.bersagli) if (b.stato !== 'morto') b.colpisci(99, null);
+  m.tick(m.ticks('stanze.t_ritardo_apertura') + m.ticks('stanze.t_ricompensa') + 5);
+  const pulita = m.ricevuti.find((e) => e.nome === 'stanza.pulita');
+  assert.ok(pulita, 'stanza.pulita');
+  assert.deepEqual([pulita.payload.tipo, pulita.payload.combattuta], ['segreta', true]);
+  assert.equal(stanza.stato, 'pulita');
+  assert.ok(stanza.porte.every((p) => p.stato === 'aperta' || p.stato === 'aprendo'), 'porte riaperte');
+});
+
+test('P15 economia: GIVEN lo stesso seme, WHEN cade il bottino di un nemico comune e di uno `dorato`, THEN il dorato lascia monete × nemici.drop.molt_monete_dorato (valore della tabella, mai quello del nemico); senza nemici.json il moltiplicatore non c\'è', async () => {
+  const bottino = (dorato) => ({ id: 'n', archetipo: 'predone', x: 900, y: 360, monete: 7, cuore: false, dorato, direzione: { x: 1, y: 0 }, lancio: 0 });
+  const molt = leggi('contenuti/parametri/nemici.json').drop.molt_monete_dorato.base;
+  assert.ok(molt > 1, 'il moltiplicatore dorato vale più di 1');
+  let confronti = 0;
+  for (let seme = 1; seme <= 40 && confronti < 3; seme++) {
+    const a = await creaMondo({ conEconomia: true, conNemici: true, seme });
+    const b = await creaMondo({ conEconomia: true, conNemici: true, seme });
+    a.eventi.emit('notte.stanza', { a: 'n1' });
+    b.eventi.emit('notte.stanza', { a: 'n1' });
+    a.eventi.emit('nemico.bottino', bottino(false));
+    b.eventi.emit('nemico.bottino', bottino(true));
+    const ta = a.economia.aTerra('n1');
+    const tb = b.economia.aTerra('n1');
+    assert.equal(ta.length, tb.length, `seme ${seme}: stesso tiro del drop`);
+    if (ta.length === 0) continue;
+    assert.equal(tb[0].valore, ta[0].valore * molt, `seme ${seme}: dorato × ${molt}`);
+    confronti += 1;
+  }
+  assert.ok(confronti >= 1, 'almeno un bottino caduto');
+  const c = await creaMondo({ conEconomia: true, seme: 3 });
+  c.eventi.emit('notte.stanza', { a: 'n1' });
+  c.eventi.emit('nemico.bottino', bottino(true));
+  const valori = [c.parametri.get('economia.v_moneta_piccola'), c.parametri.get('economia.v_moneta_grande')];
+  assert.ok(c.economia.aTerra('n1').every((o) => valori.includes(o.valore)), 'senza nemici.json: valore della tabella');
 });
