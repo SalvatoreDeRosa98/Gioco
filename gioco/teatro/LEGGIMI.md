@@ -22,6 +22,7 @@ Le dichiarazioni di primo livello (`const`/`let`/`function`) stanno nello scope 
 | `a8-musica.js` | musica procedurale (miglioramento 8): tabella `MUSICA` (temi per hub, piani 1-4, boss, quiete, morte; strumenti; volumi), sequencer 6/8 a lookahead sull'AudioContext di AudioSys (`AudioSys.ctx`), rispetta il muto; sonda `interni.Musica.stato`. QA: `tools/qa-teatro-musica.js` |
 | `a2-consumabili.js` | (miglioramento 2) consumabili sconosciuti: ampolle (colore → effetto rimescolato per run) e carte napoletane, slot HUD [F], drop alla pulizia, slot «consumabile» della Fucina, pagina del Diario (C). Avvolge funzioni globali; agganci: `scalaA2` in 10-sprite.js/60-resa.js e raggio del colpo in 40-combattimento.js. Caricato dopo `t4-hub-storia.js`. QA: `tools/qa-teatro-consumabili.js` |
 | `a3-stanze-speciali.js` | miglioramento 3: stanze Sfida, Sacrificio, dei Rovi (maledetta), Bisca (lotto e Cartomante); tabella `STANZE_SPECIALI_A3`; avvolge `generaMappaPiano`, `entraInStanza`, `verificaStanzaPulita`, `interagisciStanza`, `passoLogico`, `disegnaStanzaPixelArt`, `disegnaHUDPixelArt` (nessuna modifica ai file di base). QA: `tools/qa-teatro-stanze-speciali.js` |
+| `a6-progressione.js` | miglioramento 6: sblocchi di personaggi e oggetti (tabella SBLOCCHI_A6), segni di completamento per boss, notifica «SBLOCCATO», migrazione degli slot; avvolge funzioni di base, nessun gancio; QA `tools/qa-teatro-progressione.js`, interni `sbloccaTutto()`/`azzeraSblocchi()` |
 | `t2-sprite.js`, `sim-economia.js` | non collegati / strumenti |
 
 ## Regole per aggiungere codice
