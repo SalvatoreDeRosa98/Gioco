@@ -77,6 +77,9 @@ const CASI = [
         st.nemici = [{ id: 'qa-bozzo', tipo: 'bomba_ferma', patternMob: 'bomba_ferma', nome: 'Bozzo Esplosivo (Boil)', boss: false,
           x: 360, y: 188, hp: 1, maxHp: 12, speed: 0, r: 11, flash: 0, burnTicks: 0, stunTicks: 0, state: 'idle', stateTimer: 30, shootCd: 999 }];
       }
+      // La stanza è messa a mano (senza entraInStanza): si azzera la grazia d'ingresso di C (700 ms senza danni,
+      // voluta) rimasta dall'ingresso nella prima stanza, altrimenti il colpo preparato cade nella grazia.
+      R.graziaIngressoC = 0;
       st.visitata = true; R.stanzaCorrente = st; R.proiettiliNemici = [];
       R.hpHalf = c.hp; I.player.invuln = 0;
       const n = st.nemici.find((x) => x.hp > 0);
@@ -94,7 +97,7 @@ const CASI = [
       // la rivelazione di Donna Luciana apre un cartiglio all'ingresso: lo si chiude e si muore subito dopo
       for (let i = 0; i < 10 && !(await p.evaluate(() => window.__teatro.t4qa.dialogo)); i++) await p.waitForTimeout(50);
       await chiudi();
-      await p.evaluate(() => { const I = window.__teatro.interni; const b = I.statoRun.stanzaCorrente.nemici[0]; I.player.invuln = 0; I.player.x = b.x + 4; I.player.y = b.y; });
+      await p.evaluate(() => { const I = window.__teatro.interni; const b = I.statoRun.stanzaCorrente.nemici[0]; I.player.invuln = 0; I.statoRun.graziaIngressoC = 0; I.player.x = b.x + 4; I.player.y = b.y; });
     }
     const t0 = Date.now();
     const fasi = [];
