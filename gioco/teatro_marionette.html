@@ -3094,6 +3094,22 @@ function disegnaManoMarionettaPittorica() {
     'lume': ['...g........', '....g.......', '...g........', '....k.......', '...kOk......', '..kyyyk.kk..', '.kyyyyykyyk.', 'kyywyyyyyk..', 'kyyyyyyyk...', '.kOOOOOk....', '..kkkkk.....', '............'],
     'benda': ['............', '............', '............', 'kkkkkkkkkk..', 'kdddddddddk.', 'kdDddddDddkk', 'kdddddddddkd', 'kkkkkkkkkkdk', '.........kdk', '..........kd', '...........k', '............'],
   });
+  /** Numeri delle meccaniche D (oggetti-teatro.md §2 e §5): clamp, raggi, cadenze; tick a 60 Hz, px logici. */
+  const OGGETTI_D = Object.freeze({
+    clamp: Object.freeze({ rimbalzi: 3, orbitali: 3, scudoStanza: 1, bloccoProb: 0.5, famigli: 4, proiettiliGiocatore: 48, rangeMin: 50 }),
+    oming: Object.freeze({ raggioPx: 160 }),
+    orbitaProiettili: Object.freeze({ raggioPx: 46, radPerTick: 0.09, gittataMult: 1.6 }),
+    orbitali: Object.freeze({ raggioPx: 34, radPerTick: 0.06, danno: 2.0, ogniTick: 10, raggioBlocco: 8 }),
+    prossimita: Object.freeze({ multVicino: 2.0, multLontano: 0.3 }),
+    quattroColpi: Object.freeze([-0.3, -0.1, 0.1, 0.3]),
+    diagonaleRad: Math.PI / 4,
+    famiglio: Object.freeze({ distanzaPx: 28, velocitaColpo: 3.6, gittataPx: 200, raggioColpo: 3.5, contattoOgniTick: 12,
+      velocitaContatto: 1.6, finestraTiroTick: 20, omingForza: 0.06, cadenzaMinTick: 6 }),
+    buio: Object.freeze({ raggioPx: 150 }),
+    pool: Object.freeze({ pesoNegativi: 0.15, probDonoIngannevole: 0.5, probNegativoFucina: 0.35 }),
+    cartiglioTick: 180,
+    diario: Object.freeze({ colonne: 8, cellaL: 66, cellaA: 30 }),
+  });
   SPRITE_PROIETTILI.viola = ['..kkkk..', '.kppppk.', 'kpwppPPk', 'kppppPPk', 'kpppPPPk', 'kPPPPPPk', '.kPPPPk.', '..kkkk..']; // colpi a ricerca del Cucchiaio
   // --- D: fine ---
 
@@ -3689,7 +3705,7 @@ function disegnaManoMarionettaPittorica() {
 
     const isaacSpd = Math.max(0.7, Math.min(2.0, (statoRun.baseSpdChar || 1.0) + speedUp));
     statoRun.speed = 2.0 * isaacSpd;
-    statoRun.range = Math.min(320, 170 + rangeUp);
+    statoRun.range = Math.max(OGGETTI_D.clamp.rangeMin, Math.min(320, 170 + rangeUp)); // D: gittata minima 50 px
 
     const nuovoMax = Math.max(2, Math.min(24, statoRun.baseMaxHpHalf + bonusMaxHp));
     statoRun.maxHpHalf = nuovoMax;
@@ -3706,6 +3722,42 @@ function disegnaManoMarionettaPittorica() {
     statoRun.tipoProiettile = tipoProiettile;
     statoRun.projScale = projScale;
     statoRun.sinergieVisive = sinergie;
+    // --- D: inizio --- meccaniche nuove (oggetti-teatro.md §2): si leggono i mod del catalogo, così anche i
+    // doppioni (che in B tengono solo le voci additive) contano: secondo famiglio, secondo gomitolo, cuoio ×2.
+    const C = OGGETTI_D.clamp;
+    const dD = { oming: 0, rimbalzi: 0, orbitaProiettili: false, orbitali: 0, esplosiva: 0, prossimita: false,
+      diagonale: false, quattroColpi: false, scudoStanza: 0, bloccoProb: 0, dannoMaxHalf: false,
+      bloccaProiettili: false, velocitaColpo: 1, famigli: [] };
+    let nonBlocco = 1;
+    for (const item of statoRun.oggettiEquipaggiati) {
+      const m = (trovaOggettoB(item.id) || item).mod || {};
+      if (m.omingForza) dD.oming = Math.max(dD.oming, m.omingForza);
+      if (m.rimbalzi) dD.rimbalzi += m.rimbalzi;
+      if (m.orbitaleProiettili) dD.orbitaProiettili = true;
+      if (m.orbitali) dD.orbitali += m.orbitali;
+      if (m.esplosiva) dD.esplosiva = Math.max(dD.esplosiva, m.esplosiva);
+      if (m.prossimita) dD.prossimita = true;
+      if (m.diagonale) dD.diagonale = true;
+      if (m.quattroColpi) dD.quattroColpi = true;
+      if (m.scudoStanza) dD.scudoStanza = Math.max(dD.scudoStanza, m.scudoStanza);
+      if (m.bloccoProb) nonBlocco *= 1 - m.bloccoProb;
+      if (m.dannoMaxHalf) dD.dannoMaxHalf = true;
+      if (m.bloccaProiettili) dD.bloccaProiettili = true;
+      if (m.velocitaColpo) dD.velocitaColpo *= m.velocitaColpo;
+      if (m.famiglio && dD.famigli.length < C.famigli) {
+        dD.famigli.push({ id: item.id, tipo: m.famiglio, dmg: m.famDmg || 3, tears: m.famTears || 1, auto: m.mira === 'auto', oming: Boolean(m.famOming) });
+      }
+    }
+    dD.rimbalzi = Math.min(C.rimbalzi, dD.rimbalzi);
+    dD.orbitali = Math.min(C.orbitali, dD.orbitali);
+    dD.scudoStanza = Math.min(C.scudoStanza, dD.scudoStanza);
+    dD.bloccoProb = Math.min(C.bloccoProb, 1 - nonBlocco);
+    const vecchiF = statoRun.famigliD || [];
+    statoRun.famigliD = dD.famigli.map((f, i) => ({ ...f, x: vecchiF[i] ? vecchiF[i].x : player.x, y: vecchiF[i] ? vecchiF[i].y : player.y, cd: 0 }));
+    const nuovoScudo = dD.scudoStanza > ((statoRun.statD && statoRun.statD.scudoStanza) || 0);
+    statoRun.statD = dD;
+    if (nuovoScudo) statoRun.scudoStanzaD = dD.scudoStanza; // vale già nella stanza in cui lo raccogli
+    // --- D: fine ---
   }
 
   // Usa l'Oggetto Attivo [Q] (Proposta 5)
@@ -3789,6 +3841,7 @@ function disegnaManoMarionettaPittorica() {
       return;
     }
     ricalcolaStatisticheIsaac();
+    dopoRaccoltaD(nuovoItem); // --- D ---
     if (nuovoItem.mod?.healOnEquip) {
       statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + nuovoItem.mod.healOnEquip);
     }
@@ -4605,6 +4658,11 @@ function disegnaManoMarionettaPittorica() {
     inizializzaPoolRunB(pInfo.passivoIniziale || null);
     statoRun.pannelloB = null;
     // --- B: fine ---
+    // --- D: inizio ---
+    statoRun.maledizioniD = {};
+    statoRun.famigliD = [];
+    statoRun.ultimoTiroD = null;
+    // --- D: fine ---
     statoRun.oggettoAttivo = { ...(OGGETTI_ATTIVI[pInfo.attivoIniziale] || OGGETTI_ATTIVI.forbici) };
     statoRun.caricaAttivo = statoRun.oggettoAttivo.maxCarica;
     statoRun.scambioPendente = null;
@@ -4655,6 +4713,10 @@ function disegnaManoMarionettaPittorica() {
     statoRun.graziaIngressoC = ticksDaMs(STANZE_C.graziaIngressoMs);
     statoRun.scudoRosaC = Boolean(statoRun.medaglioneC && statoRun.medaglioneC.scudoStanza); // Benedizione di Rosa
     // --- C: fine ---
+    // --- D: inizio --- lo scudo del Velo si ricarica a ogni stanza; i famigli entrano con te
+    statoRun.scudoStanzaD = (statoRun.statD && statoRun.statD.scudoStanza) || 0;
+    for (const f of statoRun.famigliD || []) { f.x = player.x; f.y = player.y; }
+    // --- D: fine ---
 
     if (stanza.tipo === 'tesoro' && stanza.oggettoPiedistallo && !stanza.oggettoPiedistallo.preso) {
       const o = stanza.oggettoPiedistallo;
@@ -4705,37 +4767,230 @@ function disegnaManoMarionettaPittorica() {
   }
 
   function sparaProiettiliDirezione(dx, dy, dmgScale = 1.0) {
+    // --- D: inizio --- diagonale, quattroColpi, velocità, ricerca, rimbalzi, orbita, esplosione, prossimità;
+    // tetto OGGETTI_D.clamp.proiettiliGiocatore proiettili vivi (performance + leggibilità, §5)
+    const D = statoRun.statD || {};
     const baseAng = Math.atan2(dy, dx);
-    const direzioniBase = statoRun.quadDir
-      ? [0, Math.PI / 2, Math.PI, -Math.PI / 2]
-      : [baseAng];
+    statoRun.ultimoTiroD = { tick, ang: baseAng };
+    let direzioniBase = statoRun.quadDir ? [0, Math.PI / 2, Math.PI, -Math.PI / 2] : [baseAng];
+    if (D.diagonale) direzioniBase = direzioniBase.flatMap((a) => [a - OGGETTI_D.diagonaleRad, a + OGGETTI_D.diagonaleRad]);
+    const vel = 4.2 * (D.velocitaColpo || 1);
+    const OP = OGGETTI_D.orbitaProiettili;
 
     for (const dirAng of direzioniBase) {
-      const angoli = statoRun.triplo ? [-0.20, 0, 0.20] : [0];
-      const offsets = statoRun.doppia && !statoRun.triplo ? [-4, 4] : [0];
+      const angoli = D.quattroColpi ? OGGETTI_D.quattroColpi : statoRun.triplo ? [-0.20, 0, 0.20] : [0];
+      const offsets = statoRun.doppia && !statoRun.triplo && !D.quattroColpi ? [-4, 4] : [0];
       for (const da of angoli) {
         for (const off of offsets) {
+          if (statoRun.proiettili.length >= OGGETTI_D.clamp.proiettiliGiocatore) return;
           const a = dirAng + da;
           const perpX = -Math.sin(a) * off;
           const perpY = Math.cos(a) * off;
           statoRun.proiettili.push({
             x: player.x + Math.cos(a) * 10 + perpX,
             y: player.y - 6 + Math.sin(a) * 10 + perpY,
-            vx: Math.cos(a) * 4.2,
-            vy: Math.sin(a) * 4.2,
+            vx: Math.cos(a) * vel,
+            vy: Math.sin(a) * vel,
             dist: 0,
-            maxDist: statoRun.range,
+            maxDist: statoRun.range * (D.orbitaProiettili ? OP.gittataMult : 1),
             dmg: statoRun.dmg * dmgScale,
             r: 4.5 * statoRun.projScale,
             tipo: statoRun.tipoProiettile,
             piercing: statoRun.piercing,
             overflowPierce: statoRun.overflowPierce,
             hitIds: new Set(),
+            oming: D.oming || 0,
+            rimbalzi: D.rimbalzi || 0,
+            orbitaD: D.orbitaProiettili ? { ang: a, r: 10 } : null,
+            esplosiva: D.esplosiva || 0,
+            prossimita: Boolean(D.prossimita),
+            bloccaProiettili: Boolean(D.bloccaProiettili),
           });
         }
       }
     }
+    // --- D: fine ---
   }
+
+  // --- D: inizio --- funzioni delle meccaniche D (oggetti-teatro.md §2)
+  /** Nemico vivo (a terra) più vicino a (x, y) entro maxPx, oppure null. */
+  function nemicoVicinoD(st, x, y, maxPx = Infinity) {
+    let best = null, bd = maxPx;
+    for (const n of (st && st.nemici) || []) {
+      if (n.hp <= 0 || (n.airZ || 0) > 16) continue;
+      const d = Math.hypot(n.x - x, n.y - 6 - y);
+      if (d < bd) { bd = d; best = n; }
+    }
+    return best;
+  }
+
+  /** Prima del passo: orbita attorno al giocatore oppure curva verso il nemico più vicino. */
+  function aggiornaProiettileD(p, st) {
+    if (p.orbitaD) {
+      const O = OGGETTI_D.orbitaProiettili;
+      p.orbitaD.ang += O.radPerTick;
+      p.orbitaD.r = Math.min(O.raggioPx, p.orbitaD.r + 2);
+      p.vx = player.x + Math.cos(p.orbitaD.ang) * p.orbitaD.r - p.x;
+      p.vy = player.y - 6 + Math.sin(p.orbitaD.ang) * p.orbitaD.r - p.y;
+      return;
+    }
+    if (p.oming > 0) {
+      const n = nemicoVicinoD(st, p.x, p.y, OGGETTI_D.oming.raggioPx);
+      if (!n) return;
+      const v = Math.hypot(p.vx, p.vy);
+      const a = Math.atan2(p.vy, p.vx);
+      let diff = Math.atan2(n.y - 6 - p.y, n.x - p.x) - a;
+      while (diff > Math.PI) diff -= 2 * Math.PI;
+      while (diff < -Math.PI) diff += 2 * Math.PI;
+      const na = a + Math.max(-p.oming, Math.min(p.oming, diff));
+      p.vx = Math.cos(na) * v;
+      p.vy = Math.sin(na) * v;
+    }
+  }
+
+  /** Rimbalzo sul muro: inverte la componente normale. Il timer di gittata (p.dist) NON riparte. */
+  function rimbalzaD(p) {
+    if (p.rimbalzi <= 0) return false;
+    let ok = false;
+    if (p.x < ARENA.x1 - 8 || p.x > ARENA.x2 + 8) { p.vx = -p.vx; p.x = Math.max(ARENA.x1 - 8, Math.min(ARENA.x2 + 8, p.x)); ok = true; }
+    if (p.y < ARENA.y1 - 8 || p.y > ARENA.y2 + 8) { p.vy = -p.vy; p.y = Math.max(ARENA.y1 - 8, Math.min(ARENA.y2 + 8, p.y)); ok = true; }
+    if (ok) { p.rimbalzi--; p.hitIds = new Set(); }
+    return ok;
+  }
+
+  /** Moltiplicatore della prossimità: ×2.0 al lancio, cala fino a ×0.3 a fine gittata. */
+  function moltProssimitaD(p) {
+    if (!p.prossimita) return 1;
+    const P = OGGETTI_D.prossimita;
+    const t = Math.max(0, Math.min(1, p.dist / (p.maxDist || 1)));
+    return P.multVicino + (P.multLontano - P.multVicino) * t;
+  }
+
+  /** Esplosione all'impatto: tutti i nemici nel raggio a danno pieno; NON ferisce il giocatore (decisione §6.1). */
+  function esplodiD(p, st) {
+    if (!p.esplosiva || p.esploso) return;
+    p.esploso = true;
+    statoRun.ondeEsplosione.push({ x: p.x, y: p.y, r: 6, maxR: p.esplosiva, color: '#f97316' });
+    scuoti(FEEL.scossa.bomba);
+    AudioSys.playEsplosione();
+    for (const n of (st && st.nemici) || []) {
+      if (n.hp <= 0 || p.hitIds.has(n.id)) continue;
+      if (Math.hypot(n.x - p.x, n.y - 6 - p.y) <= p.esplosiva + n.r) {
+        const a = Math.atan2(n.y - p.y, n.x - p.x);
+        danneggiaNemico(n, p.dmg, Math.cos(a), Math.sin(a));
+      }
+    }
+  }
+
+  /** Il colpo annulla i proiettili nemici che tocca (Ventaglio di Carta). true se il colpo va rimosso. */
+  function bloccaProiettiliNemiciD(p) {
+    if (!p.bloccaProiettili) return false;
+    for (let j = statoRun.proiettiliNemici.length - 1; j >= 0; j--) {
+      const pr = statoRun.proiettiliNemici[j];
+      if (Math.hypot(pr.x - p.x, pr.y - p.y) < p.r + 4) {
+        statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
+        statoRun.proiettiliNemici.splice(j, 1);
+        if (!p.piercing) return true;
+      }
+    }
+    return false;
+  }
+
+  /** Famigli (tiratore/contatto) e gomitoli orbitanti: un tick di logica nella stanza `st`. */
+  function aggiornaFamigliOrbitaliD(st) {
+    const F = OGGETTI_D.famiglio;
+    let capo = { x: player.x, y: player.y };
+    for (const f of statoRun.famigliD || []) {
+      if (f.cd > 0) f.cd--;
+      if (f.tipo === 'contatto') {
+        const n = nemicoVicinoD(st, f.x, f.y);
+        const tx = n ? n.x : player.x - 22, ty = n ? n.y : player.y + 8;
+        const d = Math.hypot(tx - f.x, ty - f.y);
+        if (d > 2) { const k = Math.min(d, F.velocitaContatto) / d; f.x += (tx - f.x) * k; f.y += (ty - f.y) * k; }
+        if (n && f.cd <= 0 && Math.hypot(n.x - f.x, n.y - f.y) <= n.r + 6) {
+          danneggiaNemico(n, f.dmg, 0, 0);
+          f.cd = F.contattoOgniTick;
+        }
+        continue;
+      }
+      const d = Math.hypot(capo.x - f.x, capo.y - f.y);
+      if (d > F.distanzaPx) { const k = ((d - F.distanzaPx) / d) * 0.25; f.x += (capo.x - f.x) * k; f.y += (capo.y - f.y) * k; }
+      capo = f;
+      if (f.cd > 0) continue;
+      let ang = null;
+      if (f.auto) {
+        const n = nemicoVicinoD(st, f.x, f.y);
+        if (n) ang = Math.atan2(n.y - 6 - (f.y - 6), n.x - f.x);
+      } else if (statoRun.ultimoTiroD && tick - statoRun.ultimoTiroD.tick <= F.finestraTiroTick) {
+        ang = statoRun.ultimoTiroD.ang;
+      }
+      if (ang === null || statoRun.proiettili.length >= OGGETTI_D.clamp.proiettiliGiocatore) continue;
+      statoRun.proiettili.push({
+        x: f.x, y: f.y - 6, vx: Math.cos(ang) * F.velocitaColpo, vy: Math.sin(ang) * F.velocitaColpo,
+        dist: 0, maxDist: F.gittataPx, dmg: f.dmg, r: F.raggioColpo, tipo: f.oming ? 'viola' : 'base',
+        piercing: false, overflowPierce: false, hitIds: new Set(), oming: f.oming ? F.omingForza : 0, rimbalzi: 0, famD: true,
+      });
+      f.cd = Math.max(F.cadenzaMinTick, Math.round(60 / f.tears));
+    }
+    const O = OGGETTI_D.orbitali;
+    const nO = (statoRun.statD && statoRun.statD.orbitali) || 0;
+    statoRun.orbitaliPosD = [];
+    for (let i = 0; i < nO; i++) {
+      const a = tick * O.radPerTick + (i * 2 * Math.PI) / nO;
+      const x = player.x + Math.cos(a) * O.raggioPx, y = player.y - 6 + Math.sin(a) * O.raggioPx;
+      statoRun.orbitaliPosD.push({ x, y });
+      for (let j = statoRun.proiettiliNemici.length - 1; j >= 0; j--) {
+        const pr = statoRun.proiettiliNemici[j];
+        if (Math.hypot(pr.x - x, pr.y - y) <= O.raggioBlocco) {
+          statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
+          statoRun.proiettiliNemici.splice(j, 1);
+        }
+      }
+      if (tick % O.ogniTick === 0) {
+        for (const n of st.nemici) {
+          if (n.hp > 0 && (n.airZ || 0) <= 16 && Math.hypot(n.x - x, n.y - 6 - y) <= n.r + 6) danneggiaNemico(n, O.danno, 0, 0);
+        }
+      }
+    }
+  }
+
+  /** Disegna famigli e gomitoli orbitanti (sprite dell'oggetto, piccoli). */
+  function disegnaFamigliOrbitaliD() {
+    for (const f of statoRun.famigliD || []) {
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(Math.round(f.x - 5), Math.round(f.y + 5), 10, 3);
+      drawPixelSprite(SPRITE_OGGETTI[f.id] || SPRITE_OGGETTI.bobby, f.x, f.y - 6 + Math.sin(tick * 0.12) * 1.5, 1.3);
+    }
+    for (const o of statoRun.orbitaliPosD || []) drawPixelSprite(SPRITE_OGGETTI.gomitolo, o.x, o.y, 1.0);
+  }
+
+  /** La maledizione `k` ('mappa' | 'buio' | 'cieco') è attiva in questo piano? Si toglie da sola al piano dopo. */
+  function maledizioneD(k) {
+    return Boolean(statoRun.maledizioniD && statoRun.maledizioniD[k] === statoRun.piano && statoRun.fase === 'in_gioco');
+  }
+
+  /** Lume Spento: buio oltre OGGETTI_D.buio.raggioPx attorno al giocatore. */
+  function disegnaBuioD() {
+    const R = OGGETTI_D.buio.raggioPx;
+    const g = ctx.createRadialGradient(player.x, player.y - 6, R * 0.55, player.x, player.y - 6, R);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(0,0,0,0.94)');
+    ctx.save();
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  /** Dopo ogni raccolta di un oggetto del catalogo: maledizioni (fino a fine piano; doppione = rinnovo). */
+  function dopoRaccoltaD(item) {
+    const base = trovaOggettoB(item.id);
+    const m = base && base.mod;
+    if (m && m.maledizione) {
+      statoRun.maledizioniD = statoRun.maledizioniD || {};
+      statoRun.maledizioniD[m.maledizione] = statoRun.piano;
+    }
+  }
+  // --- D: fine ---
 
   function spawnaMonetaATerra(st, x, y, valore = 1) {
     if (!st) return;
@@ -5160,6 +5415,16 @@ function disegnaManoMarionettaPittorica() {
       statoRun.effettiSplash.push({ x: player.x, y: player.y - 10, tick: 0 });
       return;
     }
+    // --- D: inizio --- Velo della Madonna (scudoStanza) e Ostia (dannoMaxHalf)
+    if (statoRun.fase === 'in_gioco' && statoRun.scudoStanzaD > 0) {
+      statoRun.scudoStanzaD--;
+      if (Number.isFinite(daX) && Number.isFinite(daY)) spingi(player, player.x - daX, player.y - daY, FEEL.iframes.rimbalzoPx);
+      player.invuln = ticksDaMs(FEEL.iframes.durataMs);
+      statoRun.ondeEsplosione.push({ x: player.x, y: player.y - 6, r: 6, maxR: 30, color: '#93c5fd' });
+      return;
+    }
+    if (statoRun.statD && statoRun.statD.dannoMaxHalf) mezzeMaschereDanno = Math.min(1, mezzeMaschereDanno);
+    // --- D: fine ---
     // (bug autore «quando perdo si freeza») fuori dalla run (sequenza di morte, hub, menu) nessun colpo:
     // un secondo colpo letale nello stesso tick non deve riavviare la run sopra la sequenza di morte.
     if (statoRun.fase !== 'in_gioco') return;
@@ -5822,6 +6087,7 @@ function disegnaManoMarionettaPittorica() {
       // --- T3: fine ---
       for (let i = statoRun.proiettili.length - 1; i >= 0; i--) {
         const p = statoRun.proiettili[i];
+        aggiornaProiettileD(p, st); // --- D: orbita / ricerca ---
         p.x += p.vx;
         p.y += p.vy;
         p.dist += Math.hypot(p.vx, p.vy);
@@ -5851,6 +6117,7 @@ function disegnaManoMarionettaPittorica() {
             }
           }
           if (hitOst) {
+            esplodiD(p, st); // --- D ---
             statoRun.proiettili.splice(i, 1);
             continue;
           }
@@ -5869,6 +6136,10 @@ function disegnaManoMarionettaPittorica() {
         // --- T3: inizio ---
         if (spettraliT3) rimuovi = p.dist >= p.maxDist || p.x < 0 || p.x > W || p.y < 0 || p.y > H;
         // --- T3: fine ---
+        // --- D: inizio --- rimbalzi sui muri (gittata non azzerata) e colpi che annullano i proiettili nemici
+        if (rimuovi && p.dist < p.maxDist && p.rimbalzi > 0 && !spettraliT3) rimuovi = !rimbalzaD(p);
+        if (!rimuovi && bloccaProiettiliNemiciD(p)) rimuovi = true;
+        // --- D: fine ---
 
         for (const nem of st.nemici) {
           if (nem.hp <= 0 || (nem.airZ || 0) > 16 || p.hitIds.has(nem.id)) continue;
@@ -5876,7 +6147,7 @@ function disegnaManoMarionettaPittorica() {
             p.hitIds.add(nem.id);
             const hpPrima = nem.hp;
             const l = Math.hypot(p.vx, p.vy) || 1;
-            danneggiaNemico(nem, p.dmg, p.vx / l, p.vy / l);
+            danneggiaNemico(nem, p.dmg * moltProssimitaD(p), p.vx / l, p.vy / l); // D: prossimità
             statoRun.effettiSplash.push({ x: p.x, y: p.y, tick: 0 });
             if (p.piercing) {
               // Continua
@@ -5889,11 +6160,15 @@ function disegnaManoMarionettaPittorica() {
           }
         }
         if (rimuovi) {
+          esplodiD(p, st); // --- D: esplosiva ---
           if (p.dist >= p.maxDist) statoRun.effettiSplash.push({ x: p.x, y: p.y, tick: 0 });
           statoRun.proiettili.splice(i, 1);
         }
       }
 
+      // --- D: inizio ---
+      aggiornaFamigliOrbitaliD(st);
+      // --- D: fine ---
       // Proiettili Nemici
       const dannoBasePiano = statoRun.piano >= 3 ? 2 : 1;
       for (let i = statoRun.proiettiliNemici.length - 1; i >= 0; i--) {
@@ -5921,6 +6196,8 @@ function disegnaManoMarionettaPittorica() {
         if (Math.hypot(player.x - pr.x, (player.y - 6) - pr.y) < 9 && player.invuln <= 0) {
           statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
           statoRun.proiettiliNemici.splice(i, 1);
+          // --- D: Maschera di Cuoio: probabilità di parare il proiettile (1 − Π(1−p), max 0.5) ---
+          if (statoRun.statD && statoRun.statD.bloccoProb > 0 && Math.random() < statoRun.statD.bloccoProb) { statoRun.bloccatiD = (statoRun.bloccatiD || 0) + 1; continue; }
           subisciColpoGiocatore(pr.bossShot ? 2 : dannoBasePiano, 'un proiettile del Velo', pr.x - pr.vx, pr.y - pr.vy);
           if (statoRun.hpHalf <= 0) break;
           continue;
@@ -6854,6 +7131,7 @@ function disegnaManoMarionettaPittorica() {
         drawPixelSprite(sp, p.x, p.y, 1.55 * statoRun.projScale);
       }
 
+      disegnaFamigliOrbitaliD(); // --- D ---
       // Proiettili Nemici
       for (const pr of statoRun.proiettiliNemici) {
         drawPixelSprite(SPRITE_PROIETTILI.nemico, pr.x, pr.y, pr.bossShot ? 1.85 : 1.55);
@@ -6896,6 +7174,7 @@ function disegnaManoMarionettaPittorica() {
         // --- A: fine ---
       }
 
+      if (maledizioneD('buio')) disegnaBuioD(); // --- D: Lume Spento ---
       // --- T3: inizio ---
       window.__teatroT3?.disegnaMondo?.(ctx); // raggio cremisi (sotto l'HUD, dentro la scossa)
       // --- T3: fine ---
@@ -7005,7 +7284,7 @@ function disegnaManoMarionettaPittorica() {
 
     // 3. Minimappa ad ESPLORAZIONE in alto a destra:
     const m = statoRun.mappa;
-    if (m) {
+    if (m && !maledizioneD('mappa')) { // D: Nebbia del Volturno nasconde la minimappa
       const cell = 12, x0 = W - 118, y0 = 24;
       const mw = 114, mh = 92;
       ctx.save();
@@ -7391,6 +7670,11 @@ function disegnaManoMarionettaPittorica() {
     scegliOggettoSviluppatoreB, apriPannelloSviluppatoreB, tastoPannelloB,
   });
   // --- B: fine ---
+  // --- D: inizio --- (sonda QA delle meccaniche e del catalogo D)
+  Object.assign(window.__teatro.interni, {
+    OGGETTI_D, sparaProiettiliDirezione, subisciColpoGiocatore, ricalcolaStatisticheIsaac, maledizioneD, trovaOggettoB,
+  });
+  // --- D: fine ---
   adattaRisoluzione(); // (T5) primo dimensionamento del buffer
   requestAnimationFrame(loop);
 })();
