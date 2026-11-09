@@ -1068,91 +1068,190 @@ function disegnaNemicoPittorico() {
   } else if (tipo === 'gatto') {
     const isCrouch = (n.crouchTicks > 0) || state === 'crouch';
     const isLeap = (n.leapTimer > 0) || state === 'leap';
-    // Taglia Gatto Grande: scala proporzionata alla maestosita del burattino Ferruccio
-    ctx.scale(flip * 1.32, (isCrouch ? 0.62 : 1.0) * 1.32);
+    const isMoving = Math.abs(n.vx || 0) > 0.1 || Math.abs(n.vy || 0) > 0.1;
+    const walkAnim = isMoving && !isCrouch && !isLeap ? Math.sin(tick * 0.32) : 0;
 
-    // Corpo intagliato in legno d'ebano scuro con venature
-    const catG = ctx.createLinearGradient(-10, -18, 12, 0);
-    catG.addColorStop(0, tint || '#292524');
-    catG.addColorStop(0.5, tint || '#140e0b');
-    catG.addColorStop(1, '#090706');
-    ctx.fillStyle = catG;
-    ctx.strokeStyle = '#f2c278';
-    ctx.lineWidth = 1.1;
+    // Scala Gatto Grande: maestoso, slanciato, fedele al model sheet Ferruccio
+    ctx.scale(flip * 1.35, 1.35);
 
-    // Coda flessuosa da marionetta con giunti
-    const tailWave = Math.sin(tick * 0.25) * 4;
-    ctx.strokeStyle = '#140e0b';
-    ctx.lineWidth = 2.2;
+    // Traslazione posa
+    if (isCrouch) {
+      ctx.translate(2, 3);
+      ctx.scale(1.12, 0.68);
+    } else if (isLeap) {
+      ctx.translate(6, -2);
+      ctx.scale(1.28, 0.82);
+    }
+
+    // Palette ebano e legno intagliato (fedele al model sheet)
+    const cMain = tint || '#181513';
+    const cDeep = tint || '#0c0a09';
+    const cRim = tint ? '#ffffff' : '#332d28';
+    const cFar = tint || '#100e0c';
+    const cRivetRim = '#44403c';
+    const cRivetPin = '#d97706';
+    const cEyeCol = (isCrouch || isLeap) ? '#ef4444' : '#f59e0b';
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // 1. Zampe del lato opposto (in ombra/secondo piano)
+    ctx.fillStyle = cFar;
+    ctx.strokeStyle = '#050403';
+    ctx.lineWidth = 1.0;
+    // Zampa posteriore lontana
     ctx.beginPath();
-    ctx.moveTo(-9, -6);
-    ctx.bezierCurveTo(-16, -11, -19, -19 + tailWave, -12, -23 + tailWave);
-    ctx.stroke();
+    ctx.moveTo(-10 + walkAnim * 3, -13);
+    ctx.lineTo(-14 + walkAnim * 4, -4);
+    ctx.lineTo(-12 + walkAnim * 4, 1);
+    ctx.lineTo(-8 + walkAnim * 4, 1);
+    ctx.lineTo(-7 + walkAnim * 3, -8);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // Zampa anteriore lontana
+    ctx.beginPath();
+    ctx.moveTo(9 - walkAnim * 3, -12);
+    ctx.lineTo(11 - walkAnim * 4, -3);
+    ctx.lineTo(13 - walkAnim * 4, 1);
+    ctx.lineTo(9 - walkAnim * 4, 1);
+    ctx.lineTo(7 - walkAnim * 3, -7);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
 
-    // Groppa inarcata e zampe posteriori a molla
-    ctx.fillStyle = catG;
-    ctx.strokeStyle = '#090706';
+    // 2. Coda marionetta segmentata a molla inarcata verso l'alto
+    const tailWave = Math.sin(tick * 0.22) * 3.5;
+    ctx.strokeStyle = cDeep;
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    ctx.moveTo(-13, -12);
+    ctx.bezierCurveTo(-19, -18, -22, -26 + tailWave, -15, -30 + tailWave);
+    ctx.bezierCurveTo(-11, -32 + tailWave, -10, -26 + tailWave, -14, -23 + tailWave);
+    ctx.stroke();
+    // Perno anello punta coda
+    ctx.fillStyle = cRivetPin;
+    ctx.beginPath(); ctx.arc(-13.5, -28 + tailWave, 1.1, 0, TAU); ctx.fill();
+
+    // 3. Torso e groppa intagliata
+    const bodyG = ctx.createLinearGradient(-14, -22, 12, 2);
+    bodyG.addColorStop(0, cRim);
+    bodyG.addColorStop(0.35, cMain);
+    bodyG.addColorStop(1, cDeep);
+    ctx.fillStyle = bodyG;
+    ctx.strokeStyle = '#050403';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.moveTo(11, -1);
-    ctx.bezierCurveTo(13, -7, 9, -14, 2, -15);
-    ctx.lineTo(-2, -18); ctx.lineTo(-5, -15);
-    ctx.lineTo(-9, -17); ctx.lineTo(-11, -12);
-    ctx.quadraticCurveTo(-13, -4, -9, -1);
+    ctx.moveTo(-14, -13); // attaccatura coda
+    ctx.bezierCurveTo(-11, -21, -2, -22, 5, -17); // arco groppa
+    ctx.bezierCurveTo(8, -19, 11, -16, 12, -11); // collo
+    ctx.bezierCurveTo(12, -5, 6, -3, 0, -4); // petto e ventre
+    ctx.bezierCurveTo(-6, -4, -12, -7, -14, -13);
     ctx.closePath();
     ctx.fill(); ctx.stroke();
 
-    // Perno d'ottone dell'anca (dettaglio marionetta!)
-    ctx.fillStyle = '#f9cb40';
-    ctx.beginPath(); ctx.arc(-7, -7, 1.4, 0, TAU); ctx.fill();
-
-    // Perno zampa anteriore
-    ctx.fillStyle = '#f9cb40';
-    ctx.beginPath(); ctx.arc(4, -4, 1.2, 0, TAU); ctx.fill();
-
-    // Muso felino sagomato con orecchie a punta erette
+    // 4. Giunto e zampa posteriore primo piano (grande snodo a rivetto)
+    // Coscia posteriore
+    ctx.fillStyle = bodyG;
     ctx.beginPath();
-    ctx.moveTo(5, -9);
-    ctx.lineTo(4, -20); ctx.lineTo(8, -14);
-    ctx.lineTo(12, -20); ctx.lineTo(12, -11);
-    ctx.lineTo(15, -7);
-    ctx.quadraticCurveTo(11, -4, 5, -6);
+    ctx.ellipse(-9, -12, 6.2, 5.0, -0.2, 0, TAU);
+    ctx.fill(); ctx.stroke();
+    // Rivetto anca posteriore
+    ctx.fillStyle = cRivetRim;
+    ctx.beginPath(); ctx.arc(-9, -12, 2.6, 0, TAU); ctx.fill();
+    ctx.fillStyle = cRivetPin;
+    ctx.beginPath(); ctx.arc(-9, -12, 1.2, 0, TAU); ctx.fill();
+    // Gamba posteriore e zampa
+    ctx.beginPath();
+    ctx.moveTo(-9, -8);
+    ctx.lineTo(-13 - walkAnim * 3, -1);
+    ctx.lineTo(-10 - walkAnim * 3, 2);
+    ctx.lineTo(-6 - walkAnim * 3, 2);
+    ctx.lineTo(-5, -6);
     ctx.closePath();
     ctx.fill(); ctx.stroke();
 
-    // Interno orecchie in velluto cremisi/rosa scuro
-    ctx.fillStyle = '#881337';
+    // 5. Giunto e zampa anteriore primo piano
+    // Spalla anteriore
+    ctx.fillStyle = bodyG;
     ctx.beginPath();
-    ctx.moveTo(5.5, -13); ctx.lineTo(5.0, -18); ctx.lineTo(7.5, -14); ctx.fill();
-    ctx.moveTo(10.5, -13); ctx.lineTo(11.5, -18); ctx.lineTo(9.5, -14); ctx.fill();
-
-    // Baffi sottili in fil d'ottone
-    ctx.strokeStyle = 'rgba(253, 224, 71, 0.65)';
-    ctx.lineWidth = 0.7;
+    ctx.ellipse(7, -11, 4.8, 4.2, 0.3, 0, TAU);
+    ctx.fill(); ctx.stroke();
+    // Rivetto spalla
+    ctx.fillStyle = cRivetRim;
+    ctx.beginPath(); ctx.arc(7, -11, 2.2, 0, TAU); ctx.fill();
+    ctx.fillStyle = cRivetPin;
+    ctx.beginPath(); ctx.arc(7, -11, 1.0, 0, TAU); ctx.fill();
+    // Avambraccio e zampa anteriore
     ctx.beginPath();
-    ctx.moveTo(13, -7); ctx.lineTo(19, -9);
-    ctx.moveTo(13, -6); ctx.lineTo(19, -5);
-    ctx.stroke();
+    ctx.moveTo(7, -7);
+    ctx.lineTo(9 + walkAnim * 3, -1);
+    ctx.lineTo(12 + walkAnim * 3, 2);
+    ctx.lineTo(7 + walkAnim * 3, 2);
+    ctx.lineTo(5, -6);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
 
-    // Artigli da balzo (attacco fisico senza proiettili)
+    // Artigli estratti se in salto
     if (isLeap) {
       ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 1.3;
+      ctx.lineWidth = 1.4;
       ctx.beginPath();
-      ctx.moveTo(14, -1); ctx.lineTo(19, 2);
-      ctx.moveTo(13, 2); ctx.lineTo(17, 6);
+      ctx.moveTo(13, 1); ctx.lineTo(18, -1);
+      ctx.moveTo(13, 3); ctx.lineTo(19, 3);
       ctx.stroke();
     }
 
-    // Occhi felini ardenti (oro magnetico, rosso fiammante se crouch/balzo)
-    const colCatEye = (isCrouch || isLeap) ? '#ef4444' : '#fbbf24';
-    const eyeCg = ctx.createRadialGradient(10.5, -9.5, 0.2, 10.5, -9.5, 3.2);
-    eyeCg.addColorStop(0, '#ffffff');
-    eyeCg.addColorStop(0.5, colCatEye);
-    eyeCg.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = eyeCg;
-    ctx.beginPath(); ctx.arc(10.5, -9.5, 3.2, 0, TAU); ctx.fill();
-    // Pupilla a fessura verticale
+    // 6. Testa felina scolpita in legno d'ebano (STESSO COLORE DEL CORPO, NO GIALLO!)
+    const headG = ctx.createLinearGradient(7, -24, 18, -8);
+    headG.addColorStop(0, cRim);
+    headG.addColorStop(0.4, cMain);
+    headG.addColorStop(1, cDeep);
+    ctx.fillStyle = headG;
+    ctx.strokeStyle = '#050403';
+    ctx.lineWidth = 1.2;
+
+    // Cranio e muso felino affusolato
+    ctx.beginPath();
+    ctx.moveTo(8, -14); // gola
+    ctx.lineTo(15, -11); // mandibola
+    ctx.lineTo(18, -13); // mento
+    ctx.lineTo(19, -15); // tartufo/naso
+    ctx.lineTo(14, -18); // fronte
+    ctx.lineTo(12, -24); // orecchio anteriore punta
+    ctx.lineTo(9, -19); // base orecchio
+    ctx.lineTo(7, -23); // orecchio posteriore punta
+    ctx.lineTo(5, -18); // nuca
+    ctx.bezierCurveTo(6, -15, 7, -14, 8, -14);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    // Interno orecchio in velluto scuro bordeaux
+    ctx.fillStyle = '#4c0519';
+    ctx.beginPath();
+    ctx.moveTo(10.5, -18.5); ctx.lineTo(12, -22.5); ctx.lineTo(13.5, -18);
+    ctx.closePath();
+    ctx.fill();
+
+    // Baffi sottili in filo d'ottone dorato
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.7)';
+    ctx.lineWidth = 0.65;
+    ctx.beginPath();
+    ctx.moveTo(16, -13.5); ctx.lineTo(22, -15.5);
+    ctx.moveTo(16, -12.5); ctx.lineTo(22, -12);
+    ctx.stroke();
+
+    // 7. Grande occhio a brace ardente (ovale felino espressivo come nel model sheet)
+    const eyeX = 14.2, eyeY = -15.5;
+    const eyeG = ctx.createRadialGradient(eyeX, eyeY, 0.3, eyeX, eyeY, 3.2);
+    eyeG.addColorStop(0, '#ffffff');
+    eyeG.addColorStop(0.4, cEyeCol);
+    eyeG.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = eyeG;
+    ctx.beginPath();
+    ctx.ellipse(eyeX, eyeY, 3.0, 2.0, 0.15, 0, TAU);
+    ctx.fill();
+    // Pupilla verticale affilata nera
+    ctx.fillStyle = '#050403';
+    ctx.fillRect(eyeX - 0.4, eyeY - 1.8, 0.8, 3.6);
     ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(10.2, -11.0, 0.8, 3.0);
 
