@@ -92,5 +92,11 @@
     "nessuno": "nessuno",
     "istruzioni": "Frecce o 1-4: personaggio - Tab: slot - Spazio/Invio: inizia - nel gioco Esc torna qui",
     "tasto": "[{n}]"
+  },
+  "audio": {
+    "_doc": "storia P10: interruttore del muto (menu) e tasto M; {tasto} è il tasto della mappa di input.json",
+    "acceso": "Audio: acceso ({tasto})",
+    "spento": "Audio: spento ({tasto})",
+    "titolo": "Accende o spegne i suoni del teatro"
   }
 }

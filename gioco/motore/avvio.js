@@ -115,13 +115,20 @@ import { creaInterfacciaRipresa } from './interfaccia/ripresa.js';
 import { creaInterfacciaProva } from './interfaccia/prova.js';
 import { creaMenu } from './interfaccia/menu.js'; // storia P04: menu di selezione (personaggio e slot)
 import { creaStatistiche, calcolaStatistiche } from './attori/statistiche.js'; // storia P04: statistiche alla Isaac
+// --- squadra audio: inizio --- storia P10: sintetizzatore Web Audio, mappa eventi → suoni, passi delle marionette, interruttore del muto
+import { creaSintesi } from './audio/sintesi.js';
+import { collegaEventiAudio } from './audio/eventi-audio.js';
+import { creaPassi } from './attori/passi.js';
+import { creaInterfacciaAudio } from './interfaccia/audio.js';
+// --- squadra audio: fine ---
 
 /** Risoluzione logica della scena (ADR-0001). */
 const RISOLUZIONE = Object.freeze({ larghezza: 1280, altezza: 720 });
 
 /** Cartella dei parametri e file da caricare (nomi di file, non valori di gioco). */
 const CARTELLA_PARAMETRI = 'contenuti/parametri/';
-const FILE_STATISTICHE = ['ferruccio', 'combattimento', 'stanza', 'stanze', 'generazione', 'nemici', 'economia', 'incontri', 'risveglio'];
+const FILE_STATISTICHE = ['ferruccio', 'combattimento', 'stanza', 'stanze', 'generazione', 'nemici', 'economia', 'incontri', 'risveglio',
+  'audio' /* squadra audio, storia P10 */];
 const FILE_TABELLE = ['input', 'doni', 'sinergie', 'consumabili', 'ricordi', 'personaggi', 'oggetti-attivi', 'patto', 'boss'];
 const FILE_MOTO_RIDOTTO = 'moto-ridotto';
 /** Testi dell'interfaccia (storia 025) e slot del profilo salvato (nome di slot, non valore di gioco). */
@@ -728,6 +735,39 @@ async function avvia() {
     hub: () => hub, ciclo, eventi, motoRidotto,
     foglioGiocatore: () => foglioGiocatoreCorrente(),
   }));
+  // --- squadra audio: inizio --- storia P10: audio dinamico minimale (Web Audio API, nessun file). Lo stato di gioco non sa
+  // nulla dell'audio: `eventi-audio.js` ascolta il bus e chiama il sintetizzatore; `attori/passi.js` emette `attore.passo`
+  // dalla distanza percorsa (Ferruccio e bersagli). Il contesto nasce al primo gesto (tasto/puntatore); `muto` (M) in ogni stato;
+  // l'interruttore DOM è visibile nel menu. Niente audio nei test unitari: senza AudioContext il sintetizzatore degrada in silenzio.
+  const sintesi = creaSintesi({ parametri });
+  sintesi.collega({ finestra: window });
+  const eventiAudio = collegaEventiAudio({
+    eventi, sintesi, parametri,
+    eBoss: (p) => Boolean(bersagli.find((b) => b.id === p?.id)?.boss),
+  });
+  const passi = creaPassi({ eventi, parametri, ferruccio, altri: () => bersagli });
+  ciclo.registra({ tick: () => passi.tick() }, { stati: ['notte', 'hub'] });
+  eventi.on('stanza.entrata', () => passi.azzera());
+  ciclo.registra({ tick: () => { if (input.premuto('muto')) sintesi.alternaMuto(); } });
+  const interfacciaAudio = creaInterfacciaAudio({
+    documento: document, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia, sintesi,
+    visibile: () => ciclo.stato() === 'menu', tasto: () => parametri.get('input.tastiera.muto')[0],
+  });
+  ciclo.registra({ disegna: () => interfacciaAudio.aggiorna() });
+  /** Superficie di debug dell'audio (`__gioco.audio`): stato del contesto e del muto, suoni emessi, mappa eventi → suoni. */
+  const superficieAudio = Object.freeze({
+    stato: () => sintesi.stato(),
+    sveglia: () => sintesi.sveglia(),
+    suona: (nome) => sintesi.suona(nome),
+    alternaMuto: () => sintesi.alternaMuto(),
+    emessi: () => sintesi.emessi(),
+    suonati: () => eventiAudio.suonati(),
+    mappa: eventiAudio.mappa,
+    passi: () => passi.passi,
+    interruttore: () => interfacciaAudio.stato(),
+    clicca: () => interfacciaAudio.clicca(),
+  });
+  // --- squadra audio: fine ---
   if (saltaMenu) {
     ciclo.vaiA('hub');
     if (!conHub) ciclo.vaiA('notte');
@@ -749,6 +789,7 @@ async function avvia() {
       ciclo,
       rng,
       motoRidotto,
+      audio: superficieAudio, // --- squadra audio (storia P10): `stato()`, `sveglia()`, `suona(nome)`, `alternaMuto()`, `emessi()`, `suonati()`, `passi()`, `interruttore()` ---
       modificatori,
       campo,
       ferruccio,

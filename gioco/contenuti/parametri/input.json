@@ -1,5 +1,5 @@
 {
-  "_descrizione": "Mappa dei tasti (storia 002; storia P04: le frecce sparano a 4 direzioni come nel Teatro e Q usa l'oggetto attivo). Azioni del contratto: sinistra, destra, su, giu, attacco, parata, scatto, interagisci, avanza, conferma, indietro, menu; aggiunte P04: spara_sinistra, spara_destra, spara_su, spara_giu, attivo. 'tastiera' usa i KeyboardEvent.code, 'mouse' gli indici di MouseEvent.button, 'gamepad.bottoni' gli indici del layout standard (0=A, 1=B, 2=X, 3=Y, 4=LB, 5=RB, 9=Start, 12-15=croce), 'gamepad.assi' gli indici della levetta sinistra.",
+  "_descrizione": "Mappa dei tasti (storia 002; storia P04: le frecce sparano a 4 direzioni come nel Teatro e Q usa l'oggetto attivo). Azioni del contratto: sinistra, destra, su, giu, attacco, parata, scatto, interagisci, avanza, conferma, indietro, menu; aggiunte P04: spara_sinistra, spara_destra, spara_su, spara_giu, attivo. 'tastiera' usa i KeyboardEvent.code, 'mouse' gli indici di MouseEvent.button, 'gamepad.bottoni' gli indici del layout standard (0=A, 1=B, 2=X, 3=Y, 4=LB, 5=RB, 9=Start, 12-15=croce), 'gamepad.assi' gli indici della levetta sinistra. Storia P10: 'muto' (M) accende/spegne l'audio in ogni stato.",
   "tastiera": {
     "sinistra": [
       "KeyA"
@@ -58,6 +58,9 @@
     ],
     "menu": [
       "Escape"
+    ],
+    "muto": [
+      "KeyM"
     ]
   },
   "mouse": {
