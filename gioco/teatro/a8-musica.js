@@ -71,22 +71,22 @@ const MUSICA = Object.freeze({
       accordi: ['i', 'VI', 'III', 'VII', 'i', 'iv', 'v', 'i'],
       melodia: ['4 - - 3 2 3', '2 - - 0 - -', '2 - 4 7 - 6', '6 - - 4 - -', '4 - 5 4 3 2', '3 - - 5 - 3', '4 - 3 1 - -', '0 - - . . .'],
     },
-    piano1: { // Atto I, la Reggia di notte: tarantella lenta
+    piano1: { // Atto I, Corso Trieste sotto la pioggia: tarantella lenta
       bpm: 76, radice: 69, scala: 'armonica', basso: 'X..x..', organetto: '.xx.xx', tamburello: 'X..x..', volume: 1,
       accordi: ['i', 'i', 'iv', 'V', 'i', 'VI', 'iv', 'V'],
       melodia: ['4 . 3 2 . 1', '0 - - 2 . 4', '5 . 4 3 - -', '4 - 6 4 . 1', '2 . 1 0 . 4', '5 - 4 5 . 7', '5 . 3 2 . 1', '6 - - 4 . .'],
     },
-    piano2: { // Atto II, Corso Trieste e le Officine: tarantella moderata, più battuta
+    piano2: { // Atto II, Villa Comunale con le lucciole: tarantella moderata, più battuta
       bpm: 92, radice: 64, scala: 'napoletana', basso: 'X..x..', organetto: '.xx.xx', tamburello: 'X.xX.x', volume: 1,
       accordi: ['i', 'i', 'iv', 'V', 'i', 'VI', 'N', 'V'],
       melodia: ['4 . 4 4 3 2', '3 2 1 0 . .', '3 . 3 3 5 3', '6 . 4 6 . .', '7 . 6 7 . 4', '5 . 4 5 . 7', '8 . 7 5 . 1', '6 - 4 6 - -'],
     },
-    piano3: { // Atto III, Belvedere di San Leucio: telai fermi, più scuro
+    piano3: { // Atto III, San Leucio all'alba: telai fermi, più scuro
       bpm: 70, radice: 60, scala: 'napoletana', basso: 'X.....', organetto: 'tenuto', tamburello: 'x..x..', volume: 1,
       accordi: ['i', 'N', 'V', 'i', 'iv', 'N', 'V', 'i'],
       melodia: ['4 - - 5 4 2', '1 - - 3 - 1', '6 - 4 6 7 6', '7 - - 4 - -', '5 - 3 5 - 7', '8 - 7 5 - 3', '6 - - 4 - -', '0 - - . . .'],
     },
-    piano4: { // Atto IV, il Trono del Velo: rado, bordone dell'organetto, tremolo alto
+    piano4: { // Atto IV, la Reggia con le torce (Trono del Velo): rado, bordone dell'organetto, tremolo alto
       bpm: 54, radice: 57, scala: 'napoletana', basso: 'X.....', organetto: 'tenuto', tamburello: null, volume: 1,
       accordi: ['i', 'N', 'i', 'V', 'iv', 'N', 'V', 'i'],
       melodia: ['7 - - 6 - -', '8 - - - - -', '7 - - 4 - -', '6 - - - . .', '5 - - 3 - -', '5 - - 8 - -', '6 - - 4 - 6', '7 - - - . .'],
