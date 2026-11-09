@@ -243,7 +243,10 @@ node gioco/qa/hub.wire.test.js            # Playwright della storia 029: ?debug=
                                           # taddeo/agnese, Tonino, partenza nella notte con seme derivato; salva hub-wire.png e hub-presenze.png
 node gioco/qa/seme.js 200 [--piano P] [--stampa K]   # genera N piani e riporta violatori e distribuzione dei tipi
 node gioco/qa/pacchetto.test.js           # impacchettatore: pacchetto via http e file://, frammento con CSP, determinismo; con la meta di index.html
-                                          # il pacchetto parte nel piano 1 (stato notte, stanza d'ingresso)
+                                          # il pacchetto parte nel piano 1 (stato notte, stanza d'ingresso); storia P14: il gatto PNG si vede anche nel pacchetto; storia P16 (integrazione):
+                                          # senza parametri il pacchetto apre il MENU con l'HUD nascosto (pacchetto-menu.png) e con
+                                          # ?personaggio=agnese&slot=1&piano=1 mostra la stanza con i fogli PNG (pavimento dal foglio, nessun foglio in errore)
+                                          # e l'HUD DOM del Teatro con il nome di Agnese e le sue immagini caricate (pacchetto-agnese.png)
 node gioco/qa/stati64.js                  # forza i 64 stati narrativi: nessun buco, nessun conflitto
 node gioco/qa/attivi.test.mjs             # storie P04/P09 (node:test): oggetto attivo: iniziale dal personaggio e carico, Q a carica piena / scarico, +1 per
                                           # stanza pulita combattuta con tetto, forbici (stordisci + danno), tamburello (proiettili nemici spenti con cancellaInRaggio entro
@@ -660,6 +663,21 @@ fili si agganciano all'altezza del fotogramma. Le cadenze sono in `resa.json ›
 (`pixel-sprites.js`, forme Canvas) resta **solo come ripiego** quando un PNG manca o non è ancora caricato. Il menu usa `sipario-menu` e il
 sipario narrativo `sipario-<quartiere>` dell'atto (`sprite.json › fondali`, variabili CSS `--fondale-menu`/`--fondale-sipario`). Nel
 pacchetto a file unico i PNG sono data: URI (`fondazione/risorse.js`): `pacchetto.test.js` verifica che il gatto si veda anche lì.
+
+## Fusione delle squadre HUD, sprite e cuciture (storia P16, passo di integrazione)
+
+I tre rami delle storie P13 (HUD DOM del Teatro), P14 (sprite veri ovunque) e P15 (segreta che combatte, esplosione che apre la
+Crepa, Tamburello, un solo evento `nemico.esplosione`) sono fusi in quest'ordine con `git merge --no-ff`. Decisioni di fusione:
+`creaRenderer` riceve **sia** `barraBossNelRenderer: false` (la barra del boss è solo quella dell'HUD DOM) **sia** `sprite`/`catalogo`
+(fogli veri e icone dei doni); `resa.json` ha sia `hud` (cifre decimali) sia `sprite` (cadenze); il ponte `nemico.esplosione →
+bomba.esplosione` di `avvio.js` **non esiste più** (feel, audio e `mondo/segreta.js` ascoltano `nemico.esplosione`, come vuole la P15),
+mentre i fondali DOM del menu e del sipario (`--fondale-menu`/`--fondale-sipario`, P14) restano; il README tiene le voci di tutte e
+tre. `index.html` mostra all'avvio il pannello dei tasti (`interfaccia/prova.js`, P13): le suite che fotografano la scena lo chiudono con
+un `pointerdown` sulla finestra prima dello screenshot (`resa-hub.png`, `segreta-predoni.png`), come farebbe il primo click. Il flusso
+resta menu → hub di Piazza Dante (disegnato dal renderer pixel-art con i fogli `hub-*`) → piano 1 → …; la meta `gioco-avvio` di
+`index.html` e `prova.html` è solo `debug=1`. I due pacchetti si producono con `node tools/impacchetta.js --entrata gioco/index.html
+--frammento --uscita production/build/ferruccio.frammento.html` e `node tools/impacchetta.js --entrata gioco/index.html --uscita
+production/build/ferruccio-prova.html` (cartella ignorata da git); `pacchetto.test.js` li verifica.
 
 ## Valori provvisori da confermare con il game-designer
 

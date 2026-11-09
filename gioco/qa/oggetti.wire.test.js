@@ -140,6 +140,9 @@ async function main() {
       assert.ok(inSegreta.nNemici >= 1 && inSegreta.predoni === inSegreta.nNemici, `predoni nati ${inSegreta.predoni}/${inSegreta.nNemici}`);
       assert.equal(inSegreta.dorati, inSegreta.predoni, 'tutti dorati');
       assert.ok(inSegreta.chiuse.includes(crepa.seg), 'porte chiuse nella segreta');
+      // passo di integrazione (P16): il pannello dei tasti di index.html coprirebbe i predoni: un pointerdown sulla finestra lo chiude
+      await pagina.evaluate(() => { window.dispatchEvent(new PointerEvent('pointerdown')); });
+      await pagina.waitForTimeout(120);
       await pagina.screenshot({ path: path.join(CARTELLA_EVIDENZE, 'segreta-predoni.png') });
       const ripulita = await pagina.evaluate((seg) => {
         const g = window.__gioco;

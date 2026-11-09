@@ -12,6 +12,9 @@
  *    'unsafe-inline'; style-src 'unsafe-inline'; img-src data:`), via http: stesse verifiche;
  *  - determinismo: la pagina originale servita da `gioco/` e il pacchetto, con lo stesso seme, dopo
  *    `__gioco.ciclo.ferma(); __gioco.tick(120)` hanno gli stessi `__gioco.ferruccio.x/y`;
+ *  - passo di integrazione (storia P16): senza parametri il pacchetto apre il MENU (`.menu-teatro`, HUD nascosto; `pacchetto-menu.png`)
+ *    e con `?personaggio=agnese&slot=1&piano=1` mostra la stanza con i fogli PNG (pavimento dal foglio, nessun foglio in errore) e
+ *    l'HUD DOM del Teatro con il nome di Agnese e le sue immagini caricate (`pacchetto-agnese.png`);
  *  - se esiste `gioco/prova.html`, lo impacchetta e lo apre via `file://` (zero errori; se espone `__gioco`, i tick
  *    avanzano); altrimenti stampa `# salto prova.html`.
  */
@@ -265,6 +268,73 @@ async function main() {
         assert.ok(esito.incorporati >= 91, `PNG incorporati: ${esito.incorporati}`);
         assert.ok(esito.pixel >= 40, `pixel del foglio gatto attorno al nemico: ${esito.pixel}`);
         assert.deepEqual(errori, []);
+      } finally {
+        await contesto.close();
+      }
+    });
+
+    // --- passo di integrazione (storia P16, HUD + sprite + cuciture fusi): il pacchetto apre il MENU senza parametri e, scelto un
+    // personaggio come fa il menu (?personaggio=agnese&slot=1&piano=1), mostra gli sprite PNG in stanza e l'HUD DOM del Teatro ---
+    await caso('pacchetto via file:// senza parametri: menu di selezione (.menu-teatro), ciclo in menu, HUD nascosto, zero errori; screenshot', async () => {
+      const { contesto, pagina, errori } = await apri(browser, pathToFileURL(PACCHETTO).href);
+      try {
+        await pagina.waitForFunction(() => window.__gioco && window.__gioco.stato === 'menu' && !document.querySelector('.menu-teatro')?.hidden, null, { timeout: 15000 });
+        await pagina.waitForTimeout(ATTESA_ERRORI_MS);
+        const esito = await pagina.evaluate(() => ({
+          stato: window.__gioco.stato, carte: document.querySelectorAll('.menu-teatro .menu-carta').length,
+          hudNascosto: document.querySelector('#interfaccia .hud-teatro')?.hidden ?? null,
+        }));
+        assert.equal(esito.stato, 'menu');
+        assert.ok(esito.carte >= 4, `carte del menu: ${esito.carte}`);
+        assert.equal(esito.hudNascosto, true, 'l\'HUD del Teatro è nascosto nel menu');
+        await pagina.screenshot({ path: path.join(path.dirname(EVIDENZA), 'pacchetto-menu.png') });
+        assert.deepEqual(errori, [], `errori in console/pagina:\n${errori.join('\n')}`);
+      } finally {
+        await contesto.close();
+      }
+    });
+
+    await caso('pacchetto via file:// con ?personaggio=agnese&slot=1&piano=1: sprite PNG in stanza (nessun foglio in errore, pavimento dal foglio), HUD con il nome di Agnese, zero errori; screenshot', async () => {
+      const url = `${pathToFileURL(PACCHETTO).href}?debug=1&seme=1845&personaggio=agnese&slot=1&piano=1`;
+      const { contesto, pagina, errori } = await apri(browser, url);
+      try {
+        await pagina.waitForFunction(() => window.__gioco && window.__gioco.stato === 'notte' && window.__gioco.stanza, null, { timeout: 15000 });
+        await pagina.waitForFunction(() => { const s = window.__gioco.resa.sprite?.(); return s && s.richiesti > 0 && s.caricamento === 0; }, null, { timeout: 20000 });
+        await pagina.evaluate(() => { window.__gioco.ciclo.ferma(); window.__gioco.tick(6); });
+        await pagina.waitForTimeout(250);
+        const esito = await pagina.evaluate(async () => {
+          const g = window.__gioco;
+          const stato = g.resa.sprite();
+          const voce = g.sprite.voce('scena-pavimento-tile');
+          const img = new Image();
+          await new Promise((ris, rif) => { img.onload = ris; img.onerror = rif; img.src = window.__risorse[voce.file]; });
+          const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+          const x = c.getContext('2d'); x.drawImage(img, 0, 0);
+          const d0 = x.getImageData(0, 0, c.width, c.height).data;
+          const propri = new Set();
+          for (let i = 0; i < d0.length; i += 4) if (d0[i + 3] === 255) propri.add((d0[i] << 16) | (d0[i + 1] << 8) | d0[i + 2]);
+          const scena = document.getElementById('scena');
+          const d = scena.getContext('2d').getImageData(Math.floor(scena.width / 2) - 60, Math.floor(scena.height / 2) + 40, 120, 40).data;
+          let pixel = 0;
+          for (let i = 0; i < d.length; i += 4) if (propri.has((d[i] << 16) | (d[i + 1] << 8) | d[i + 2])) pixel++;
+          const hud = document.querySelector('#interfaccia .hud-teatro');
+          return {
+            stato, pixel, personaggio: g.statistiche?.id ?? null,
+            hudVisibile: hud ? !hud.hidden : null, nome: document.querySelector('#interfaccia .hud-nome')?.textContent ?? null,
+            immaginiHud: Array.from(document.querySelectorAll('#interfaccia .hud-teatro img')).filter((i) => !i.hidden).length,
+            immaginiRotte: Array.from(document.querySelectorAll('#interfaccia .hud-teatro img')).filter((i) => !i.hidden && !(i.complete && i.naturalWidth > 0)).length,
+          };
+        });
+        assert.equal(esito.personaggio, 'agnese');
+        assert.deepEqual(esito.stato.inErrore, [], 'nessun foglio in errore nel pacchetto');
+        assert.ok(esito.stato.caricati > 0, `fogli caricati: ${esito.stato.caricati}`);
+        assert.ok(esito.pixel >= 40, `pixel del foglio del pavimento al centro della stanza: ${esito.pixel}`);
+        assert.equal(esito.hudVisibile, true, 'HUD del Teatro visibile in stanza');
+        assert.ok(esito.nome && /agnese/i.test(esito.nome), `nome nella scheda: ${esito.nome}`);
+        assert.equal(esito.immaginiRotte, 0, `immagini dell'HUD non caricate: ${esito.immaginiRotte} su ${esito.immaginiHud}`);
+        await pagina.screenshot({ path: path.join(path.dirname(EVIDENZA), 'pacchetto-agnese.png') });
+        assert.deepEqual(errori, [], `errori in console/pagina:\n${errori.join('\n')}`);
+        console.log(`  fogli caricati: ${esito.stato.caricati}; pixel del pavimento: ${esito.pixel}; immagini HUD: ${esito.immaginiHud}`);
       } finally {
         await contesto.close();
       }

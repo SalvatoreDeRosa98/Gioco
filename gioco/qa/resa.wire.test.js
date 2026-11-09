@@ -190,12 +190,16 @@ async function main() {
       try {
         await attendiFogli(pagina);
         await pagina.evaluate(() => { window.__gioco.scegli('ferruccio'); window.__gioco.ciclo.ferma(); window.__gioco.tick(4); });
+        // passo di integrazione (P16): index.html mostra il pannello dei tasti (interfaccia/prova.js) che coprirebbe l'hub nello
+        // screenshot: un pointerdown sulla finestra lo chiude come farebbe il primo click (non raggiunge il cartiglio del dialogo)
+        await pagina.evaluate(() => { window.dispatchEvent(new PointerEvent('pointerdown')); });
         await attendiFrame(pagina);
         const st = await pagina.evaluate(() => ({
-          stato: window.__gioco.stato,
+          stato: window.__gioco.stato, pannello: window.__gioco.pannelloProva(),
           presenze: window.__gioco.hub.presenze().filter((p) => p.presente).map((p) => ({ id: p.id, tipo: p.tipo, x: p.x, y: p.y })),
         }));
         assert.equal(st.stato, 'hub');
+        assert.notEqual(st.pannello, true, 'il pannello dei tasti è chiuso prima dello screenshot dell\'hub');
         const tonino = st.presenze.find((p) => p.id === 'tonino');
         assert.ok(tonino, 'Tonino è presente nell\'hub');
         const voce = MANIFESTO.voci.find((v) => v.nome === 'hub-tonino');
