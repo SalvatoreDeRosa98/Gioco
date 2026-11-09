@@ -86,7 +86,7 @@ const clampa = (v, voce) => Math.min(voce.max, Math.max(voce.min, v));
 // Criteri della storia 023
 // ---------------------------------------------------------------------------------------------
 
-test('S023-1: danno base 1, +1 somma e ×1,5 → 3 (prima le somme, poi i moltiplicatori); un terzo dono che porterebbe a 6 dà 5 (clamp)', async () => {
+test('S023-1: danno base 1, +1 somma e ×1,5 → 3 (prima le somme, poi i moltiplicatori); un terzo dono oltre il massimo dà il massimo del JSON (clamp)', async () => {
   const { mod } = await crea();
   assert.equal(mod.valore('combattimento.danno'), 1);
   mod.applica({ statistica: 'combattimento.danno', operazione: 'somma', valore: 1 });
@@ -95,8 +95,10 @@ test('S023-1: danno base 1, +1 somma e ×1,5 → 3 (prima le somme, poi i moltip
   // terzo dono: ×2 porterebbe (1+1)×1,5×2 = 6 → Π cap 2,0 → (1+1)×2 = 4; con una somma +2 in più → (1+1+2)×2 = 8 → clamp 5
   mod.applica({ statistica: 'combattimento.danno', operazione: 'moltiplica', valore: 2 });
   assert.equal(mod.valore('combattimento.danno'), 4, 'Π = 3,0 bloccato al cap 2,0 di danno');
-  const via = mod.applica({ statistica: 'combattimento.danno', operazione: 'somma', valore: 2 });
-  assert.equal(mod.valore('combattimento.danno'), 5, 'clamp al massimo della statistica');
+  // storia P04: il massimo del danno viene dal JSON (il Teatro arriva oltre 30 di danno): si somma fino a superarlo
+  const maxDanno = leggiJson('combattimento').danno.max;
+  const via = mod.applica({ statistica: 'combattimento.danno', operazione: 'somma', valore: maxDanno });
+  assert.equal(mod.valore('combattimento.danno'), maxDanno, 'clamp al massimo della statistica (letto dal JSON)');
   via();
   assert.equal(mod.valore('combattimento.danno'), 4, 'il clamp è sul risultato, non sulla lista');
 });
@@ -241,7 +243,7 @@ test('GDD/Teatro: t_invuln con Sciarpa cremisi, Fazzoletto e Lettera di Mariella
   assert.ok(mod.valore('t_invuln') < voce.max);
 });
 
-test('GDD: t_finestra_p +70 +70 → 300; v_base ×0,5 → 150; tre ×1,3 → 308 (Π bloccato a 1,4)', async () => {
+test('GDD: t_finestra_p +70 +70 → 300; v_base ×0,5 → 150; tre ×1,3 → Π bloccato al cap del JSON', async () => {
   const { mod } = await crea();
   mod.applica({ statistica: 't_finestra_p', operazione: 'somma', valore: 70 });
   mod.applica({ statistica: 't_finestra_p', operazione: 'somma', valore: 70 });
@@ -250,7 +252,10 @@ test('GDD: t_finestra_p +70 +70 → 300; v_base ×0,5 → 150; tre ×1,3 → 308
   assert.equal(mod.valore('v_base'), 150, 'Π = max(0,5; 0,6) = 0,6 → 132 → clamp 150');
   mod.azzera();
   for (let i = 0; i < 3; i++) mod.applica({ statistica: 'v_base', operazione: 'moltiplica', valore: 1.3 });
-  assert.ok(vicino(mod.valore('v_base'), 308), `Π 2,197 → cap 1,4 → 308; ottenuto ${mod.valore('v_base')}`);
+  // storia P04: il cap Π di v_base e il massimo vengono dai JSON (Teatro: speed fino a 2,0)
+  const capV = leggiJson('doni').statistiche.v_base.pi_cap.max;
+  const attesoV = Math.min(leggiJson('ferruccio').v_base.max, 220 * Math.min(capV, 1.3 ** 3));
+  assert.ok(vicino(mod.valore('v_base'), attesoV), `Π 2,197 → cap ${capV} → ${attesoV}; ottenuto ${mod.valore('v_base')}`);
 });
 
 test('GDD/Teatro: Stivali + Martello + Grembiule → v_base = (base + somme) × Π dei moltiplicatori del catalogo (± 0,1); t_recupero_f arrotondato a intero; Martello danno +1; S2 fuoco + ferro', async () => {

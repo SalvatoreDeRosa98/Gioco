@@ -763,3 +763,178 @@ test('011: durante la parata e l\'affondo il corpo è fermo; in carica cammina a
   finche(m, () => m.comb.fase === 'recupero');
   assert.ok(Math.abs(m.comb.modVelocita() - 0.6) < 1e-9);
 });
+
+// ---------------------------------------------------------------------------------------------
+// Storia P04 — frecce che sparano, cadenza, tipi, triplo/doppia/quadDir, perforazione (Teatro)
+// ---------------------------------------------------------------------------------------------
+
+import { creaStatistiche } from '../motore/attori/statistiche.js';
+
+/** Mondo con le statistiche alla Isaac: personaggio scelto e doni equipaggiati (ids del motore). */
+async function creaMondoIsaac({ personaggio = 'ferruccio', doni = [], ferruccioX = null, ferruccioY = null } = {}) {
+  const log = logFinto();
+  const parametri = creaParametri({ log });
+  await parametri.carica({
+    caricatore: (nome) => leggiJson(nome), statistiche: ['ferruccio', 'combattimento', 'stanza'], tabelle: ['input', 'doni', 'sinergie', 'personaggi'],
+  });
+  const tempo = creaTempo();
+  const eventi = creaBus({ log });
+  const input = creaInput(parametri.get('input'));
+  const mod = creaModificatori(parametri, { catalogo: parametri.get('doni'), sinergie: parametri.get('sinergie'), eventi });
+  const campo = creaCampo({
+    colonne: parametri.get('stanza.colonne'), righe: parametri.get('stanza.righe'), cella: parametri.get('stanza.cella'),
+    scenaLarghezza: SCENA.larghezza, scenaAltezza: SCENA.altezza, ostacoli: [],
+  });
+  const centro = { x: campo.x + campo.larghezza / 2, y: campo.y + campo.altezza / 2 };
+  const ferruccio = creaFerruccio({ modificatori: mod, tempo, eventi, input, campo, x: ferruccioX ?? centro.x, y: ferruccioY ?? centro.y });
+  const statistiche = creaStatistiche({ tabella: parametri.get('personaggi'), modificatori: mod });
+  const bersagli = [];
+  const comb = creaCombattimento({
+    modificatori: mod, tempo, eventi, input, campo, ferruccio, bersagli: () => bersagli, proiettiliBase: true,
+    statistiche: () => statistiche.correnti(), isaac: parametri.get('personaggi').isaac,
+  });
+  statistiche.scegli(personaggio);
+  for (const id of doni) mod.aggiungiDono(id);
+  const ricevuti = [];
+  for (const nome of ['ferruccio.colpo', 'ferruccio.uccisione', 'ferruccio.sparo']) eventi.on(nome, (p) => ricevuti.push({ nome, payload: p }));
+  const tasto = (azione) => `t:${parametri.get(`input.tastiera.${azione}`)[0]}`;
+  const mondo = {
+    parametri, tempo, eventi, input, mod, campo, centro, ferruccio, comb, bersagli, ricevuti, statistiche,
+    tick(n = 1) {
+      for (let i = 0; i < n; i++) {
+        input.inizioTick();
+        ferruccio.tick(tempo.passoS);
+        comb.tick(tempo.passoS);
+        for (const b of bersagli) b.tick(tempo.passoS);
+      }
+    },
+    tieni: (azione) => input.sorgenteGiu(tasto(azione)),
+    lascia: (azione) => input.sorgenteSu(tasto(azione)),
+    fantoccio(opzioni) {
+      const f = creaFantoccio({ modificatori: mod, tempo, eventi, campo, bersaglio: comb.comeBersaglio, ...opzioni });
+      bersagli.push(f);
+      return f;
+    },
+    eventiDi: (nome) => ricevuti.filter((e) => e.nome === nome),
+  };
+  return mondo;
+}
+
+test('P04 input: le frecce sono spara_* e non muovono; WASD muove; Q è `attivo`', () => {
+  const input = leggiJson('input');
+  assert.deepEqual(input.tastiera.spara_destra, ['ArrowRight']);
+  assert.deepEqual(input.tastiera.spara_su, ['ArrowUp']);
+  for (const a of ['sinistra', 'destra', 'su', 'giu']) assert.ok(!input.tastiera[a].some((c) => c.startsWith('Arrow')), `${a} senza frecce`);
+  assert.deepEqual(input.tastiera.attivo, ['KeyQ']);
+});
+
+test('P04 frecce: freccia destra tenuta, senza spada → proiettile verso destra alla cadenza cooldownTicks (22 per Ferruccio), Ferruccio non si muove', async () => {
+  const m = await creaMondoIsaac();
+  const x0 = m.ferruccio.x;
+  m.tieni('spara_destra');
+  m.tick(1);
+  const p = m.comb.proiettiliFerruccio();
+  assert.equal(p.length, 1, 'un proiettile al primo tick');
+  assert.ok(p[0].vx > 0 && p[0].vy === 0, 'verso destra');
+  assert.equal(p[0].tipo, 'base');
+  assert.equal(p[0].perforante, false);
+  assert.ok(Math.abs(p[0].danno - 3.5) < 1e-9, 'danno = dmg del personaggio');
+  assert.equal(p[0].maxDist, 340, 'range 170 × 2');
+  assert.equal(m.comb.stato, 'pronto', 'nessun fendente senza spada');
+  m.tick(21);
+  assert.equal(m.eventiDi('ferruccio.sparo').length, 1, 'niente prima della cadenza');
+  m.tick(1);
+  assert.equal(m.eventiDi('ferruccio.sparo').length, 2, 'seconda raffica al tick 23 (cooldown 22)');
+  assert.equal(m.ferruccio.x, x0, 'la freccia non muove');
+  assert.equal(m.ferruccio.stato, 'fermo');
+  m.lascia('spara_destra');
+  m.tick(40);
+  assert.equal(m.eventiDi('ferruccio.sparo').length, 2, 'rilasciata: niente');
+  assert.deepEqual(m.ferruccio.direzioneMira(), { x: 1, y: 0 });
+});
+
+test('P04 frecce: la freccia su mira in alto anche camminando a destra (direzioneMira preferisce la freccia); il proiettile colpisce e uccide un fantoccio', async () => {
+  const m = await creaMondoIsaac();
+  m.tieni('destra');
+  m.tieni('spara_su');
+  m.tick(1);
+  assert.deepEqual(m.ferruccio.direzioneMira(), { x: 0, y: -1 });
+  const p = m.comb.proiettiliFerruccio()[0];
+  assert.ok(p.vy < 0 && Math.abs(p.vx) < 1e-9, 'verso l\'alto');
+  m.lascia('destra'); m.lascia('spara_su');
+  const f = m.fantoccio({ id: 'alto', x: m.ferruccio.x, y: m.ferruccio.y - 120, vita: 3 });
+  m.tieni('spara_su');
+  m.tick(60);
+  assert.ok(m.eventiDi('ferruccio.colpo').length >= 1, 'colpito');
+  assert.ok(f.vita <= 0, 'ucciso: 3.5 ≥ 3');
+  assert.equal(m.eventiDi('ferruccio.uccisione').length, 1);
+});
+
+test('P04 tipi: Agnese spara coppie (doppia); Triplo Occhio dà ventagli di 3; Maschera dei 4 Venti spara in 4 direzioni (×3 con triplo)', async () => {
+  const a = await creaMondoIsaac({ personaggio: 'agnese' });
+  a.tieni('spara_sinistra'); a.tick(1);
+  const pa = a.comb.proiettiliFerruccio();
+  assert.equal(pa.length, 2, 'doppia: due proiettili paralleli');
+  assert.ok(pa.every((p) => p.vx < 0 && Math.abs(p.vy) < 1e-9));
+  assert.ok(Math.abs(pa[0].y - pa[1].y) > 1, 'paralleli, sfalsati');
+  assert.ok(Math.abs(pa[0].danno - 2.56) < 1e-9);
+  const t = await creaMondoIsaac({ doni: ['bilancino-spezzato'] });
+  t.tieni('spara_giu'); t.tick(1);
+  const pt = t.comb.proiettiliFerruccio();
+  assert.equal(pt.length, 3, 'triplo');
+  assert.ok(pt.every((p) => p.vy > 0));
+  assert.ok(pt.some((p) => p.vx < -1) && pt.some((p) => p.vx > 1) && pt.some((p) => Math.abs(p.vx) < 1e-9), 'ventaglio');
+  const q = await creaMondoIsaac({ doni: ['broccato', 'bilancino-spezzato'] });
+  q.tieni('spara_destra'); q.tick(1);
+  assert.equal(q.comb.proiettiliFerruccio().length, 12, 'quadDir × triplo');
+});
+
+test('P04 tipi: Anello → cremisi perforante attraversa due fantocci; Tizzone → fuoco con bruciatura; Catena → elettrico e fulmine al vicino; Piombo → overflow', async () => {
+  const o = await creaMondoIsaac({ personaggio: 'ombra' });
+  const f1 = o.fantoccio({ id: 'a', x: o.ferruccio.x + 90, y: o.ferruccio.y, vita: 50 });
+  const f2 = o.fantoccio({ id: 'b', x: o.ferruccio.x + 170, y: o.ferruccio.y, vita: 50 });
+  o.tieni('spara_destra'); o.tick(1); o.lascia('spara_destra');
+  assert.equal(o.comb.proiettiliFerruccio()[0].tipo, 'cremisi');
+  o.tick(40);
+  assert.ok(f1.vita < 50 && f2.vita < 50, 'perforante: entrambi colpiti');
+  const t = await creaMondoIsaac({ doni: ['tizzone-ardente'] });
+  const ft = t.fantoccio({ id: 'c', x: t.ferruccio.x + 90, y: t.ferruccio.y, vita: 200 });
+  t.tieni('spara_destra'); t.tick(1); t.lascia('spara_destra');
+  assert.equal(t.comb.proiettiliFerruccio()[0].tipo, 'fuoco');
+  t.tick(20);
+  const dopoColpo = ft.vita;
+  assert.ok(t.comb.bruciature().length === 1, 'bruciatura attiva');
+  t.tick(60);
+  assert.ok(ft.vita < dopoColpo, 'la bruciatura continua a ferire');
+  const c = await creaMondoIsaac({ doni: ['catena-della-chiusa'] });
+  const c1 = c.fantoccio({ id: 'd', x: c.ferruccio.x + 90, y: c.ferruccio.y, vita: 200 });
+  const c2 = c.fantoccio({ id: 'e', x: c.ferruccio.x + 90, y: c.ferruccio.y - 100, vita: 200 });
+  c.tieni('spara_destra'); c.tick(1); c.lascia('spara_destra');
+  assert.equal(c.comb.proiettiliFerruccio()[0].tipo, 'elettrico');
+  c.tick(20);
+  assert.ok(c1.vita < 200 && c2.vita < 200, 'catena: anche il vicino entro 144 px');
+  assert.ok(Math.abs((200 - c2.vita) - (200 - c1.vita) * 0.45) < 1e-6, 'il vicino prende il 45 %');
+  const p = await creaMondoIsaac({ doni: ['martello-da-fabbro'] });
+  const p1 = p.fantoccio({ id: 'f', x: p.ferruccio.x + 90, y: p.ferruccio.y, vita: 2 });
+  const p2 = p.fantoccio({ id: 'g', x: p.ferruccio.x + 170, y: p.ferruccio.y, vita: 50 });
+  p.tieni('spara_destra'); p.tick(1); p.lascia('spara_destra');
+  assert.equal(p.comb.proiettiliFerruccio()[0].tipo, 'piombo');
+  p.tick(40);
+  assert.ok(p1.vita <= 0 && p2.vita < 50, 'overflow: l\'eccesso prosegue');
+  assert.ok(Math.abs((50 - p2.vita) - (13.87 - 2)) < 1e-6, 'danno residuo 13.87 − 2');
+});
+
+test('P04 spada: Taddeo con la freccia dà il fendente nella direzione della freccia (nessun proiettile), J continua a funzionare', async () => {
+  const m = await creaMondoIsaac({ personaggio: 'taddeo' });
+  assert.equal(m.comb.haSpada(), true);
+  m.tieni('spara_su'); m.tick(1);
+  assert.equal(m.comb.stato, 'fendente');
+  assert.deepEqual(m.comb.mira, { x: 0, y: -1 });
+  assert.equal(m.comb.proiettiliFerruccio().length, 0, 'spada senza doni speciali: niente proiettili');
+  m.lascia('spara_su');
+  m.tick(60);
+  assert.equal(m.comb.stato, 'pronto');
+  m.tieni('attacco'); m.tick(1); m.lascia('attacco');
+  assert.equal(m.comb.stato, 'fendente');
+  assert.ok(Math.abs(m.mod.valore('combattimento.danno') - 7.395) < 1e-9, 'danno del fendente = dmg di Taddeo');
+});

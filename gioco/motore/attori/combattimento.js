@@ -54,25 +54,53 @@ const MOLT_FENDENTE = Object.freeze(['molt_f1', 'molt_f2', 'molt_f3']);
  *   bersagli: () => { x: number, y: number, r: number, vita: number, peso: number, stato: string, colpisci: Function, stordisci?: Function }[]
  * }} opzioni
  */
-export function creaCombattimento({ modificatori, tempo, eventi, input, campo, ferruccio, bersagli = () => [], proiettiliBase = false }) {
+export function creaCombattimento({
+  modificatori, tempo, eventi, input, campo, ferruccio, bersagli = () => [], proiettiliBase = false, statistiche = null, isaac = null,
+}) {
   if (!modificatori || !tempo || !eventi || !input || !campo || !ferruccio) throw new TypeError('creaCombattimento: dipendenze mancanti');
   const val = (nome) => modificatori.valore(`combattimento.${nome}`);
   const ticks = (nome) => tempo.ticksDaMs(val(nome));
   const proiettiliFerruccio = [];
   const esplosioniProiettili = [];
+  /** Storia P04: fulmini a catena da disegnare {x1,y1,x2,y2,tick} e bruciature attive {bersaglio, ticks, ogni, danno}. */
+  const scintilleFulmine = [];
+  const bruciature = [];
+  /** Costante del blocco `isaac` di personaggi.json (tabella: {base,min,max}); `null` se il blocco non è iniettato. */
+  const k = (gruppo, nome) => {
+    const v = gruppo ? isaac?.[gruppo]?.[nome] : isaac?.[nome];
+    return v && typeof v === 'object' ? v.base : (typeof v === 'number' ? v : null);
+  };
+  /** Statistiche alla Isaac correnti (storia P04) o null senza personaggio. */
+  const stat = () => (typeof statistiche === 'function' ? statistiche() : null);
 
   function haSpada() {
+    const st = stat();
+    if (st) return Boolean(st.flags?.spada);
     if (!proiettiliBase) return true;
     const doni = typeof modificatori.doniAttivi === 'function' ? modificatori.doniAttivi() : [];
     return doni.includes('stocco-d-argento');
   }
 
   function direzione4Vie() {
-    const m = ferruccio.direzioneMira();
+    const m = s.miraForzata ?? ferruccio.direzioneMira();
     if (Math.abs(m.x) >= Math.abs(m.y)) {
       return { x: m.x >= 0 ? 1 : -1, y: 0 };
     }
     return { x: 0, y: m.y >= 0 ? 1 : -1 };
+  }
+
+  /** Azioni di sparo a 4 direzioni (storia P04: le frecce di input.json). La prima tenuta vince. */
+  const AZIONI_SPARO = Object.freeze([
+    ['spara_destra', { x: 1, y: 0 }], ['spara_sinistra', { x: -1, y: 0 }], ['spara_giu', { x: 0, y: 1 }], ['spara_su', { x: 0, y: -1 }],
+  ]);
+  /** Direzione della freccia tenuta, o null. */
+  function direzioneSparo() {
+    for (const [azione, dir] of AZIONI_SPARO) if (input.tenuto(azione)) return { ...dir };
+    return null;
+  }
+  /** Vero se una freccia è stata premuta in questo tick (fronte). */
+  function sparoPremuto() {
+    return AZIONI_SPARO.some(([azione]) => input.premuto(azione));
   }
 
   const s = {
@@ -89,6 +117,8 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
     controcolpoTicks: 0,
     moltControcolpo: 1,    // moltiplicatore consumato dall'attacco corrente
     mira: { x: 1, y: 0 },
+    miraForzata: null,     // storia P04: direzione della freccia che ha chiesto l'attacco (vince su direzioneMira)
+    cooldownSparo: 0,      // storia P04: tick alla prossima raffica senza spada (cooldownTicks delle statistiche)
     angolo: 0,
     /** @type {Set<object>} */
     colpiti: new Set(),
@@ -126,7 +156,7 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
   }
 
   function fissaMira() {
-    s.mira = ferruccio.direzioneMira();
+    s.mira = s.miraForzata ?? direzioneSparo() ?? ferruccio.direzioneMira();
     s.angolo = Math.atan2(s.mira.y, s.mira.x);
   }
 
@@ -178,37 +208,117 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
     }
   }
 
-  function sparaProiettile4Vie() {
+  /**
+   * Spara i proiettili di Ferruccio nella direzione a 4 vie corrente (Teatro `sparaProiettiliDirezione`):
+   * quadDir = quattro direzioni insieme, triplo = ventaglio di tre, doppia (senza triplo) = due paralleli;
+   * tipo, perforazione, overflowPierce, bruciatura e catena dalle statistiche alla Isaac (storia P04).
+   * Senza statistiche (tests delle storie 007-011) vale la regola precedente dell'autore sui doni.
+   * @param {number} frazioneDanno 1 senza spada; `isaac.spada.frazione_danno` con la spada
+   */
+  function sparaProiettili(frazioneDanno = 1) {
     const dir = direzione4Vie();
     s.mira = dir;
     s.angolo = Math.atan2(dir.y, dir.x);
-    const doni = typeof modificatori.doniAttivi === 'function' ? modificatori.doniAttivi() : [];
-    const baseDmg = dannoColpo(1, 1);
-    const tipo = doni.includes('anello-cremisi')
-      ? 'cremisi'
-      : doni.includes('tizzone-ardente') || doni.includes('acciarino-caserta')
-        ? 'fuoco'
-        : doni.includes('catena-chiusa')
-          ? 'elettrico'
-          : 'base';
-    const perforante = tipo === 'cremisi';
-    const angoli = doni.includes('bilancino-spezzato') ? [-0.22, 0, 0.22] : [0];
-    const raggioMax = Math.max(220, val('portata') * 3.4);
-    for (const da of angoli) {
-      const a = s.angolo + da;
-      proiettiliFerruccio.push({
-        x: ferruccio.x + Math.cos(a) * 18,
-        y: ferruccio.y - 16 + Math.sin(a) * 14,
-        vx: Math.cos(a) * 7.8,
-        vy: Math.sin(a) * 7.8,
-        r: Math.min(14, 6 + baseDmg * 0.45),
-        danno: baseDmg,
-        dist: 0,
-        maxDist: raggioMax,
-        tipo,
-        perforante,
-        colpiti: new Set(),
-      });
+    const st = stat();
+    const scala = k(null, 'scala_px') ?? 2;
+    const baseDmg = st ? st.dmg * frazioneDanno : dannoColpo(1, 1);
+    let tipo = 'base';
+    let flags = { triplo: false, doppia: false, quadDir: false, piercing: false, overflowPierce: false, burn: false, chain: false };
+    if (st) {
+      tipo = st.tipoProiettile ?? 'base';
+      flags = { ...flags, ...st.flags };
+    } else {
+      const doni = typeof modificatori.doniAttivi === 'function' ? modificatori.doniAttivi() : [];
+      tipo = doni.includes('anello-cremisi') ? 'cremisi'
+        : doni.includes('tizzone-ardente') || doni.includes('acciarino-caserta') ? 'fuoco'
+          : doni.includes('catena-della-chiusa') ? 'elettrico' : 'base';
+      flags.piercing = tipo === 'cremisi';
+      flags.triplo = doni.includes('bilancino-spezzato');
+    }
+    const velocita = (k('proiettile', 'velocita_px_frame') ?? 3.9) * scala;
+    const rBase = (k('proiettile', 'r_base') ?? 3) * scala * (st?.projScale ?? 1);
+    const offDoppia = (k('proiettile', 'offset_doppia') ?? 4) * scala;
+    const angTriplo = k('proiettile', 'angolo_triplo') ?? 0.22;
+    const bocca = (k('proiettile', 'offset_bocca') ?? 9) * scala;
+    const alzata = (k('proiettile', 'alzata') ?? 8) * scala;
+    const maxDist = st ? st.range : Math.max(220, val('portata') * 3.4);
+    const direzioni = flags.quadDir ? [0, Math.PI / 2, Math.PI, -Math.PI / 2].map((a) => s.angolo + a) : [s.angolo];
+    const angoli = flags.triplo ? [-angTriplo, 0, angTriplo] : [0];
+    const offsets = flags.doppia && !flags.triplo ? [-offDoppia, offDoppia] : [0];
+    for (const dirAng of direzioni) {
+      for (const da of angoli) {
+        for (const off of offsets) {
+          const a = dirAng + da;
+          proiettiliFerruccio.push({
+            x: ferruccio.x + Math.cos(a) * bocca - Math.sin(a) * off,
+            y: ferruccio.y - alzata + Math.sin(a) * bocca + Math.cos(a) * off,
+            vx: Math.cos(a) * velocita,
+            vy: Math.sin(a) * velocita,
+            r: rBase,
+            danno: baseDmg,
+            dist: 0,
+            maxDist,
+            tipo,
+            perforante: Boolean(flags.piercing),
+            overflowPierce: Boolean(flags.overflowPierce),
+            burn: Boolean(flags.burn),
+            chain: Boolean(flags.chain),
+            colpiti: new Set(),
+          });
+        }
+      }
+    }
+    eventi.emit('ferruccio.sparo', { x: ferruccio.x, y: ferruccio.y, direzione: { ...dir }, n: proiettiliFerruccio.length, tipo });
+  }
+
+  /** Danno a un bersaglio da un proiettile o da un suo effetto, con gli eventi del combattimento. */
+  function feriscuBersaglio(b, danno, dx, dy, spinta) {
+    const inamovibile = (b.peso ?? 0) >= val('peso_inamovibile');
+    const vettore = inamovibile || !spinta ? null : { x: dx * spinta, y: dy * spinta, ms: val('t_spinta_nemico') };
+    b.colpisci(danno, vettore);
+    eventi.emit('ferruccio.colpo', { x: b.x, y: b.y, direzione: { x: dx, y: dy }, bersaglio: b, danno });
+    if (b.vita <= 0) eventi.emit('ferruccio.uccisione', { x: b.x, y: b.y, direzione: { x: dx, y: dy }, bersaglio: b, danno });
+  }
+
+  /** Bruciatura (Tizzone): danno a intervalli finché dura; una sola per bersaglio, rinnovata. */
+  function brucia(b, dannoColpoBase) {
+    const durata = k('burn', 'durata_ticks');
+    if (!durata) return;
+    const voce = bruciature.find((v) => v.bersaglio === b);
+    const danno = dannoColpoBase * (k('burn', 'frazione_danno') ?? 0);
+    if (voce) { voce.ticks = durata; voce.danno = Math.max(voce.danno, danno); return; }
+    bruciature.push({ bersaglio: b, ticks: durata, ogni: k('burn', 'ogni_ticks') ?? 1, contatore: 0, danno });
+  }
+
+  /** Fulmine a catena (Catena della Chiusa): ai vicini del colpito, entro il raggio, una frazione del danno. */
+  function catena(b, dannoColpoBase) {
+    const raggio = (k('chain', 'raggio') ?? 0) * (k(null, 'scala_px') ?? 2);
+    const frazione = k('chain', 'frazione_danno') ?? 0;
+    if (raggio <= 0 || frazione <= 0) return;
+    for (const altro of bersagli()) {
+      if (!altro || altro === b || altro.stato === 'morto') continue;
+      if (Math.hypot(altro.x - b.x, altro.y - b.y) > raggio) continue;
+      let dx = altro.x - b.x; let dy = altro.y - b.y;
+      const d = Math.hypot(dx, dy) || 1; dx /= d; dy /= d;
+      feriscuBersaglio(altro, dannoColpoBase * frazione, dx, dy, 0);
+      scintilleFulmine.push({ x1: b.x, y1: b.y, x2: altro.x, y2: altro.y, tick: 0, maxTick: 6 });
+    }
+  }
+
+  function tickBruciature() {
+    for (let i = bruciature.length - 1; i >= 0; i--) {
+      const v = bruciature[i];
+      if (!v.bersaglio || v.bersaglio.stato === 'morto' || v.ticks <= 0) { bruciature.splice(i, 1); continue; }
+      v.ticks -= 1;
+      v.contatore += 1;
+      if (v.contatore >= v.ogni) {
+        v.contatore = 0;
+        feriscuBersaglio(v.bersaglio, v.danno, 0, 0, 0);
+      }
+    }
+    for (let i = scintilleFulmine.length - 1; i >= 0; i--) {
+      scintilleFulmine[i].tick += 1;
+      if (scintilleFulmine[i].tick >= scintilleFulmine[i].maxTick) scintilleFulmine.splice(i, 1);
     }
   }
 
@@ -227,14 +337,16 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
           const norm = Math.hypot(p.vx, p.vy) || 1;
           const dx = p.vx / norm;
           const dy = p.vy / norm;
-          const inamovibile = (b.peso ?? 0) >= val('peso_inamovibile');
-          const vettore = inamovibile ? null : { x: dx * val('spinta_f'), y: dy * val('spinta_f'), ms: val('t_spinta_nemico') };
-          b.colpisci(p.danno, vettore);
-          eventi.emit('ferruccio.colpo', { x: b.x, y: b.y, direzione: { x: dx, y: dy }, bersaglio: b, danno: p.danno });
-          if (b.vita <= 0) {
-            eventi.emit('ferruccio.uccisione', { x: b.x, y: b.y, direzione: { x: dx, y: dy }, bersaglio: b, danno: p.danno });
-          }
+          const vitaPrima = b.vita;
+          feriscuBersaglio(b, p.danno, dx, dy, val('spinta_f'));
+          if (p.burn && b.vita > 0) brucia(b, p.danno);
+          if (p.chain) catena(b, p.danno);
           esplosioniProiettili.push({ x: p.x, y: p.y, tick: 0, maxTick: 12, tipo: p.tipo });
+          // overflowPierce (Lacrima di Piombo): il danno in eccesso sull'ucciso prosegue oltre
+          if (p.overflowPierce && b.vita <= 0 && p.danno > vitaPrima) {
+            p.danno -= vitaPrima;
+            continue;
+          }
           if (!p.perforante) {
             rimuovi = true;
             break;
@@ -264,9 +376,47 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
     consumaControcolpo();
     s.comboTicks = 0;
     if (!haSpada()) {
-      sparaProiettile4Vie();
+      sparaProiettili(1);
+    } else {
+      // Teatro: con la spada i proiettili escono solo se triplo, quadDir, perforanti o di un tipo speciale
+      const st = stat();
+      const f = st?.flags ?? {};
+      if (st && (f.triplo || f.quadDir || f.piercing || (st.tipoProiettile && st.tipoProiettile !== 'base'))) {
+        sparaProiettili(k('spada', 'frazione_danno') ?? 1);
+      }
     }
+    s.miraForzata = null;
     vai('fendente', 'startup', numero > 1 ? 't_startup_combo' : 't_startup_f');
+  }
+
+  /**
+   * Storia P04: lo sparo con le frecce. Senza spada: finché una freccia è tenuta, una raffica ogni
+   * `cooldownTicks` delle statistiche (Teatro: `player.cooldown = cooldownMax`). Con la spada: la freccia
+   * premuta dà il fendente in quella direzione (cadenza della combo come con J).
+   * @returns {boolean} vero se un'azione è partita
+   */
+  function tickSparo() {
+    if (s.cooldownSparo > 0) s.cooldownSparo -= 1;
+    const dir = direzioneSparo();
+    if (!dir) return false;
+    if (haSpada()) {
+      if (sparoPremuto() && puoAttaccare()) {
+        s.miraForzata = dir;
+        s.bufferTicks = 0;
+        avviaFendente();
+        return true;
+      }
+      return false;
+    }
+    if (s.cooldownSparo > 0 || !corpoLibero() || s.stato !== 'pronto') return false;
+    const st = stat();
+    s.miraForzata = dir;
+    fissaMira();
+    consumaControcolpo();
+    sparaProiettili(1);
+    s.miraForzata = null;
+    s.cooldownSparo = st ? st.cooldownTicks : ticks('t_startup_f') + ticks('t_attivo_f') + ticks('t_recupero_f');
+    return true;
   }
 
   function avviaAffondo() {
@@ -477,7 +627,9 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
         s.bufferParataTicks = ticks('t_buffer_parata');
       }
     }
-    if (!parataPartita) {
+    // storia P04: le frecce sparano (o danno il fendente con la spada); la parata resta prioritaria
+    const sparoPartito = !parataPartita && tickSparo();
+    if (!parataPartita && !sparoPartito) {
       if (input.premuto('attacco')) {
         s.tenutoTicks = 0;
         if (puoAttaccare()) {
@@ -510,6 +662,7 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
     }
 
     tickProiettili();
+    tickBruciature();
 
     // contatto passivo: i corpi si separano senza danno (controllo-ferruccio.md regola 6)
     for (const b of bersagli()) {
@@ -604,6 +757,13 @@ export function creaCombattimento({ modificatori, tempo, eventi, input, campo, f
     frameSpada,
     proiettiliFerruccio: () => proiettiliFerruccio,
     esplosioniProiettili: () => esplosioniProiettili,
+    /** Storia P04: fulmini a catena da disegnare, bruciature attive, direzione della freccia tenuta, tick alla prossima raffica. */
+    scintilleFulmine: () => scintilleFulmine,
+    bruciature: () => bruciature.map((v) => ({ bersaglio: v.bersaglio, ticks: v.ticks, danno: v.danno })),
+    direzioneSparo,
+    get cooldownSparo() { return s.cooldownSparo; },
+    /** Statistiche alla Isaac correnti o null (storia P04). */
+    statistiche: () => stat(),
     tick,
     ricevi,
     comeBersaglio,

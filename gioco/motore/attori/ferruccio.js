@@ -105,7 +105,11 @@ export function creaFerruccio({ modificatori, tempo, eventi, input, campo, x, y,
   }
 
   /** Direzione di mira (combattimento.md regola 1): input se presente, altrimenti il verso. */
+  /** Azioni di sparo (storia P04): la freccia tenuta vince sulla direzione del passo. */
+  const MIRA_FRECCE = Object.freeze([['spara_destra', 1, 0], ['spara_sinistra', -1, 0], ['spara_giu', 0, 1], ['spara_su', 0, -1]]);
+
   function direzioneMira() {
+    for (const [azione, x, y] of MIRA_FRECCE) if (input.tenuto(azione)) return { x, y };
     const d = input.direzione();
     if (d.x !== 0 || d.y !== 0) return d;
     return { x: corpo.verso, y: 0 };

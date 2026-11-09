@@ -1,0 +1,59 @@
+{
+  "_descrizione": "Storia P04 (Teatro, 2026-11-08). Tabella dei 4 personaggi giocabili (PERSONAGGI_GIOCABILI del Teatro) e costanti di ricalcolaStatisticheIsaac nel blocco 'isaac' come {base,min,max}. Il Teatro misura in px della sua arena 640x360 e in px/frame a 60 fps: 'scala_px' porta le distanze nella scena 1280x720 del motore; la velocita e un moltiplicatore di ferruccio.v_base (isaacSpd = baseSpd + speedUp, clamp speed_min..speed_max). hpHalf = mezze maschere: il corpo del motore conta maschere intere (maschere_max = ceil(hpHalf/2)); vedi attori/statistiche.js. Nomi, titoli e descrizioni sono testi di contenuto (unico posto).",
+  "ordine": ["ferruccio", "agnese", "taddeo", "ombra"],
+  "predefinito": "ferruccio",
+  "personaggi": {
+    "ferruccio": { "id": "ferruccio", "nome": "Ferruccio", "titolo": "Il Burattino Senza Filo", "descrizione": "Il fabbro di Piazza Dante: equilibrato, tre maschere, le Forbici di Gaetano.",
+      "hpHalf": 6, "baseDmg": 3.5, "baseSpd": 1.0, "attivoIniziale": "forbici", "passivoIniziale": null },
+    "agnese": { "id": "agnese", "nome": "Agnese", "titolo": "La Tessitrice di San Leucio", "descrizione": "Veloce e fragile: due maschere, colpo doppio dalla Lente di San Leucio, il Tamburello.",
+      "hpHalf": 4, "baseDmg": 3.2, "baseSpd": 1.25, "attivoIniziale": "tamburello", "passivoIniziale": "doppia" },
+    "taddeo": { "id": "taddeo", "nome": "Taddeo", "titolo": "La Guardia Pentita", "descrizione": "Lento e corazzato: quattro maschere, la Spada di Gaetano in mano, l'Ampolla di San Gennaro.",
+      "hpHalf": 8, "baseDmg": 4.1, "baseSpd": 0.88, "attivoIniziale": "ampolla", "passivoIniziale": "spada" },
+    "ombra": { "id": "ombra", "nome": "Pulcinella d'Ombra", "titolo": "Lo Spettro del Velo", "descrizione": "Due maschere e il danno piu alto: l'Anello Cremisi perfora ogni marionetta.",
+      "hpHalf": 4, "baseDmg": 5.1, "baseSpd": 1.12, "attivoIniziale": "forbici", "passivoIniziale": "anello" }
+  },
+  "isaac": {
+    "_descrizione": "Costanti di ricalcolaStatisticheIsaac (Teatro ~2652-2700) e dell'attacco a 4 direzioni (~3525-3575).",
+    "scala_px": { "base": 2, "min": 1, "max": 4 },
+    "tick_al_secondo": { "base": 60, "min": 60, "max": 60 },
+    "dmg_k": { "base": 1.2, "min": 0.5, "max": 3 },
+    "dmg_min": { "base": 1.0, "min": 0.1, "max": 5 },
+    "tears_base": { "base": 2.73, "min": 1, "max": 6 },
+    "tears_per_up": { "base": 0.95, "min": 0.1, "max": 3 },
+    "tears_min": { "base": 0.85, "min": 0.1, "max": 3 },
+    "tears_max": { "base": 7.5, "min": 3, "max": 20 },
+    "cooldown_min_ticks": { "base": 7, "min": 1, "max": 30 },
+    "speed_min": { "base": 0.7, "min": 0.1, "max": 1 },
+    "speed_max": { "base": 2.0, "min": 1, "max": 4 },
+    "range_base": { "base": 170, "min": 60, "max": 400 },
+    "range_max": { "base": 320, "min": 100, "max": 800 },
+    "hp_half_min": { "base": 2, "min": 1, "max": 6 },
+    "hp_half_max": { "base": 24, "min": 6, "max": 48 },
+    "proiettile": {
+      "_descrizione": "Proiettile di Ferruccio senza spada (sparaProiettiliDirezione): velocita in px/frame del Teatro, raggio, offset del colpo doppio, angolo del triplo (radianti), scala del raggio per il danno disegnato.",
+      "velocita_px_frame": { "base": 4.2, "min": 1, "max": 12 },
+      "r_base": { "base": 4.5, "min": 2, "max": 12 },
+      "offset_doppia": { "base": 4, "min": 1, "max": 12 },
+      "angolo_triplo": { "base": 0.2, "min": 0.05, "max": 0.6 },
+      "offset_bocca": { "base": 10, "min": 0, "max": 30 },
+      "alzata": { "base": 6, "min": 0, "max": 20 }
+    },
+    "spada": {
+      "_descrizione": "Con la spada (eseguiAttacco4Direzioni): cadenza = max(cooldown_min_ticks, round(cooldownMax * frazione_cadenza)); i proiettili escono anche con la spada se triplo, quadDir, piercing o tipo != base, con frazione_danno.",
+      "frazione_cadenza": { "base": 0.75, "min": 0.25, "max": 1 },
+      "cooldown_min_ticks": { "base": 9, "min": 1, "max": 30 },
+      "frazione_danno": { "base": 0.65, "min": 0.1, "max": 1 }
+    },
+    "burn": {
+      "_descrizione": "Bruciatura (Tizzone): il Teatro mette burnTicks = 120 al bersaglio; qui il danno a intervalli e una frazione del danno del colpo (provvisorio, il Teatro non lo esplicita).",
+      "durata_ticks": { "base": 120, "min": 10, "max": 600 },
+      "ogni_ticks": { "base": 10, "min": 1, "max": 60 },
+      "frazione_danno": { "base": 0.08, "min": 0.01, "max": 1 }
+    },
+    "chain": {
+      "_descrizione": "Fulmine a catena (Catena della Chiusa): ai nemici entro raggio (px del Teatro) una frazione del danno (danneggiaNemico).",
+      "raggio": { "base": 72, "min": 20, "max": 300 },
+      "frazione_danno": { "base": 0.45, "min": 0.05, "max": 1 }
+    }
+  }
+}

@@ -77,8 +77,8 @@ async function main() {
   try {
     browser = await chromium.launch();
 
-    await caso('prova.html: la meta gioco-avvio dà wire e piano 1 (ciclo in notte, stanza d\'ingresso, niente hub), pannello dei tasti visibile, sparisce al primo tasto, zero errori', async () => {
-      const { contesto, pagina, errori } = await apri(browser, `${server.base}/prova.html?debug=1&seme=1845`);
+    await caso('prova.html?piano=1 (storia P04: la meta dà solo debug=1): ciclo in notte, stanza d\'ingresso, niente hub, pannello dei tasti visibile, sparisce al primo tasto, zero errori', async () => {
+      const { contesto, pagina, errori } = await apri(browser, `${server.base}/prova.html?debug=1&seme=1845&piano=1`);
       await pagina.waitForFunction(() => window.__gioco && window.__gioco.parametri.caricato());
       await pagina.waitForFunction(() => window.__gioco.stato === 'notte' && window.__gioco.piano && window.__gioco.stanza);
       const prima = await pagina.evaluate(() => ({
@@ -93,7 +93,7 @@ async function main() {
       }));
       assert.equal(prima.stato, 'notte');
       assert.equal(prima.stanza, 'ingresso');
-      assert.equal(prima.pianoP, 1, 'la meta dà piano=1');
+      assert.equal(prima.pianoP, 1, 'piano=1 dalla query');
       assert.equal(prima.seme, 1845, 'l\'URL vince sulla meta per il seme');
       assert.equal(prima.pannello, true);
       assert.equal(prima.pannelloDom, true);
@@ -116,7 +116,7 @@ async function main() {
       await contesto.close();
     });
 
-    await caso('pagina senza la meta gioco-avvio (index.html servita togliendo la meta al volo): nessun pannello di prova, pannelloProva() è null, stato menu; index.html com\'è (con la meta) mostra il pannello e parte nel piano 1', async () => {
+    await caso('pagina senza la meta gioco-avvio (index.html servita togliendo la meta al volo): nessun pannello di prova, pannelloProva() è null, stato menu; index.html com\'è (con la meta) mostra il pannello e parte nel menu (storia P04)', async () => {
       const contesto = await browser.newContext({ viewport: { width: 1280, height: 720 } });
       const pagina = await contesto.newPage();
       const errori = [];
@@ -136,11 +136,11 @@ async function main() {
       assert.equal(r.stato, 'menu');
       assert.deepEqual(errori, [], `errori in console:\n${errori.join('\n')}`);
       await contesto.close();
-      // index.html com'è: la meta c'è, il pannello si vede e si parte nel piano 1
+      // index.html com'è: la meta c'è, il pannello si vede e si parte nel menu di selezione (storia P04)
       const conMeta = await apri(browser, `${server.base}/?debug=1&seme=1845`);
       await conMeta.pagina.waitForFunction(() => window.__gioco && window.__gioco.parametri.caricato());
       const r2 = await conMeta.pagina.evaluate(() => ({ pannello: window.__gioco.pannelloProva(), stato: window.__gioco.stato }));
-      assert.deepEqual(r2, { pannello: true, stato: 'notte' });
+      assert.deepEqual(r2, { pannello: true, stato: 'menu' });
       assert.deepEqual(conMeta.errori, []);
       await conMeta.contesto.close();
     });

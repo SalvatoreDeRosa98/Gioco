@@ -653,6 +653,20 @@ export function creaRenderer({
       const f = e.tick < 4 ? 'splash0' : e.tick < 8 ? 'splash1' : 'splash2';
       disegnaGrigliaPixel(ctx, SPRITE_PROIETTILI[f], e.x, e.y, 2.8, false, false);
     }
+    // Storia P04: fulmini a catena (Catena della Chiusa) tra il colpito e i vicini
+    const fulmini = typeof combattimento?.scintilleFulmine === 'function' ? combattimento.scintilleFulmine() : [];
+    for (const f of fulmini) {
+      ctx.save();
+      ctx.strokeStyle = P.azzurro;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 1 - f.tick / f.maxTick;
+      ctx.beginPath();
+      ctx.moveTo(f.x1, f.y1 - 8);
+      ctx.lineTo((f.x1 + f.x2) / 2 + 6, (f.y1 + f.y2) / 2 - 14);
+      ctx.lineTo(f.x2, f.y2 - 8);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   function disegnaBersaglioMarionetta(b, tAnim) {
@@ -662,21 +676,17 @@ export function creaRenderer({
 
     ellisseAppoggio(b.x, b.y + b.r * 0.45, b.r * 1.35, b.r * 0.48, 0.45);
 
-    // Segno a terra del balzo / attacco
-    const segno = typeof b.segnoATerra === 'function' ? b.segnoATerra() : null;
-    if (segno) {
-      ctx.save();
-      ctx.strokeStyle = 'rgba(200,48,27,0.65)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([8, 6]);
-      ctx.beginPath();
-      ctx.moveTo(segno.x1, segno.y1);
-      ctx.lineTo(segno.x2, segno.y2);
-      ctx.stroke();
-      ctx.restore();
-    }
+    // Regola dell'autore (2026-11-08): nessun segno a terra, corridoio o anello che anticipi il colpo.
+    // Il nemico si legge solo dal corpo: postura di anticipo (si accuccia) e occhi rossi nel lampo.
+    const inAnticipo = b.stato === 'anticipo';
+    const inLampo = b.stato === 'lampo' || b.lampoAcceso === true;
 
     ctx.save();
+    if (inAnticipo) {
+      ctx.translate(b.x, b.y);
+      ctx.scale(1.08, 0.9);
+      ctx.translate(-b.x, -b.y);
+    }
     ctx.globalAlpha = morto && typeof b.dissoluzione === 'number' ? Math.max(0.15, 1 - b.dissoluzione) : 1;
 
     // Filo d'oro di controllo
@@ -699,17 +709,14 @@ export function creaRenderer({
     }
     ctx.restore();
 
-    // Anello rosso di parata nel lampo
-    if (b.stato === 'lampo' || b.lampoAcceso) {
-      const prog = typeof b.anello === 'number' ? b.anello : 0.3;
-      const rAnello = b.r * (2.2 - 1.0 * prog);
+    // Occhi rossi sulla sagoma nel lampo (come in Isaac): il segnale sta sul corpo, mai a terra
+    if (inLampo && !morto) {
+      const occhio = Math.max(2, b.r * 0.16);
+      const yOcchi = b.y - b.r * (b.boss ? 1.4 : 1.1);
       ctx.save();
-      ctx.strokeStyle = P.rosso;
-      ctx.lineWidth = 2.6;
-      ctx.beginPath(); ctx.arc(b.x, b.y - 6, rAnello, 0, TAU); ctx.stroke();
-      ctx.strokeStyle = P.crema;
-      ctx.lineWidth = 1.1;
-      ctx.beginPath(); ctx.arc(b.x, b.y - 6, rAnello + 3.5, 0, TAU); ctx.stroke();
+      ctx.fillStyle = P.rosso;
+      ctx.fillRect(b.x - b.r * 0.34 - occhio / 2, yOcchi, occhio, occhio);
+      ctx.fillRect(b.x + b.r * 0.34 - occhio / 2, yOcchi, occhio, occhio);
       ctx.restore();
     }
   }
@@ -740,14 +747,24 @@ export function creaRenderer({
     if (st) {
       // Bracieri
       for (const p of st.pericoli) {
+        // Regola dell'autore (2026-11-08): il braciere è un oggetto visibile, senza anelli tratteggiati di anticipo:
+        // in `attivo` la fiamma piena (è il pericolo stesso), in `anticipo` solo le braci che si ravvivano.
         const attivo = p.fase === 'attivo';
         const anticipo = p.fase === 'anticipo';
-        if (attivo || anticipo) {
+        if (attivo) {
           ctx.save();
-          ctx.strokeStyle = attivo ? P.rosso : P.oro;
-          ctx.lineWidth = attivo ? 3 : 2;
-          ctx.setLineDash(attivo ? [4, 3] : [8, 6]);
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.rFiamma, 0, TAU); ctx.stroke();
+          const fiamma = ctx.createRadialGradient(p.x, p.y, 4, p.x, p.y, p.rFiamma);
+          fiamma.addColorStop(0, P.luce);
+          fiamma.addColorStop(0.55, P.rosso);
+          fiamma.addColorStop(1, 'rgba(200,48,27,0)');
+          ctx.fillStyle = fiamma;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.rFiamma, 0, TAU); ctx.fill();
+          ctx.restore();
+        } else if (anticipo) {
+          ctx.save();
+          ctx.fillStyle = P.rosso;
+          ctx.globalAlpha = 0.7;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, TAU); ctx.fill();
           ctx.restore();
         }
         ctx.fillStyle = P.ink;

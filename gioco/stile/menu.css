@@ -1,0 +1,114 @@
+/* Menu di selezione del personaggio e dello slot (storia P04 / 032, Teatro: disegnaMenuSelezionePersonaggio).
+   Sipario rosso con bordo d'oro, quattro carte, cinque slot. Colori solo dai token. */
+#interfaccia .menu-teatro {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6vh;
+  padding: 1.5vh 2vw;
+  box-sizing: border-box;
+  background: var(--inchiostro);
+  color: var(--crema);
+  font-family: var(--font-testo);
+  overflow: hidden;
+}
+#interfaccia .menu-teatro[hidden] { display: none; }
+#interfaccia .menu-sipario {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 7vh;
+  background: var(--rosso);
+  border-bottom: 0.4vh solid var(--oro);
+  box-shadow: 0 0.6vh 2vh var(--inchiostro);
+}
+#interfaccia .menu-teatro::before, #interfaccia .menu-teatro::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2.2vw;
+  background: var(--rosso);
+  border-inline: 0.2vh solid var(--oro);
+  opacity: 0.85;
+}
+#interfaccia .menu-teatro::before { left: 0; }
+#interfaccia .menu-teatro::after { right: 0; }
+#interfaccia .menu-teatro h1 {
+  position: relative;
+  margin: 0;
+  font-family: var(--font-titoli);
+  font-size: clamp(16px, 3.2vh, 40px);
+  color: var(--oro);
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 0.6vh var(--inchiostro);
+}
+#interfaccia .menu-sottotitolo { position: relative; margin: 0; font-size: clamp(11px, 2vh, 20px); color: var(--carta-luce); }
+#interfaccia .menu-carte {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.2vw;
+  width: 90%;
+  margin-top: 1vh;
+}
+#interfaccia .menu-carta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3vh;
+  padding: 1vh 0.6vw;
+  background: var(--bruno);
+  border: 0.25vh solid var(--carta);
+  color: var(--crema);
+  font: inherit;
+  font-size: clamp(10px, 1.7vh, 17px);
+  cursor: pointer;
+  text-align: center;
+}
+#interfaccia .menu-carta.scelta {
+  border-color: var(--oro);
+  outline: 0.2vh solid var(--oro);
+  outline-offset: 0.4vh;
+  background: color-mix(in srgb, var(--bruno) 70%, var(--carta) 30%);
+}
+#interfaccia .menu-carta .menu-tasto { position: absolute; left: 0.5vw; top: 0.5vh; color: var(--oro); font-size: 0.9em; }
+#interfaccia .menu-carta .menu-sprite { width: 10vh; height: 10vh; image-rendering: pixelated; }
+#interfaccia .menu-carta strong { font-family: var(--font-titoli); color: var(--oro); font-size: 1.1em; }
+#interfaccia .menu-carta em { font-size: 0.85em; color: var(--carta-luce); }
+#interfaccia .menu-carta dl { display: grid; grid-template-columns: auto 1fr; gap: 0.1vh 0.6vw; margin: 0.4vh 0 0; width: 100%; text-align: left; font-size: 0.85em; }
+#interfaccia .menu-carta dt { color: var(--carta-luce); }
+#interfaccia .menu-carta dd { margin: 0; }
+#interfaccia .menu-carta dd.menu-cuori { color: var(--rosso); letter-spacing: 0.1em; }
+#interfaccia .menu-carta p { margin: 0.3vh 0 0; font-size: 0.78em; opacity: 0.85; }
+#interfaccia .menu-teatro h2 { margin: 0.8vh 0 0; font-family: var(--font-titoli); font-size: clamp(12px, 2vh, 22px); color: var(--oro); }
+#interfaccia .menu-slot { list-style: none; margin: 0; padding: 0; width: 70%; display: flex; flex-direction: column; gap: 0.3vh; }
+#interfaccia .menu-slot-voce { display: flex; gap: 0.6vw; align-items: stretch; }
+#interfaccia .menu-slot-voce.scelto .menu-slot-scegli { border-color: var(--oro); color: var(--oro); }
+#interfaccia .menu-slot-scegli, #interfaccia .menu-slot-cancella, #interfaccia .menu-inizia,
+#interfaccia .menu-conferma button {
+  font: inherit;
+  font-size: clamp(10px, 1.7vh, 17px);
+  color: var(--crema);
+  background: color-mix(in srgb, var(--inchiostro) 80%, var(--bruno) 20%);
+  border: 0.2vh solid var(--carta);
+  padding: 0.3vh 0.8vw;
+  cursor: pointer;
+  text-align: left;
+}
+#interfaccia .menu-slot-scegli { flex: 1; }
+#interfaccia .menu-slot-cancella { color: var(--rosso); }
+#interfaccia .menu-inizia {
+  margin-top: 0.8vh;
+  padding: 0.8vh 2.5vw;
+  font-family: var(--font-titoli);
+  font-size: clamp(13px, 2.4vh, 26px);
+  color: var(--inchiostro);
+  background: var(--oro);
+  border-color: var(--oro);
+  text-align: center;
+}
+#interfaccia .menu-conferma { display: flex; gap: 0.8vw; align-items: center; padding: 0.4vh 1vw; border: 0.2vh solid var(--rosso); background: color-mix(in srgb, var(--inchiostro) 85%, var(--rosso) 15%); }
+#interfaccia .menu-conferma p { margin: 0; }
+#interfaccia .menu-istruzioni { margin: 0; font-size: clamp(9px, 1.5vh, 15px); color: var(--carta-luce); opacity: 0.8; }

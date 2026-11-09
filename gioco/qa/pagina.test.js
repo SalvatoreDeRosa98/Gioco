@@ -117,7 +117,7 @@ async function main() {
         imposta: window.__gioco.imposta('x', 1),
         vaiA: window.__gioco.vaiA('x'),
       }));
-      assert.equal(superficie.stato, 'notte', 'index.html parte nel piano 1: meta gioco-avvio debug=1&wire=1&piano=1');
+      assert.equal(superficie.stato, 'menu', 'storia P04: index.html parte nel menu di selezione (meta gioco-avvio debug=1)');
       assert.equal(superficie.seme, 1845);
       assert.deepEqual(superficie.tipi, ['function', 'function', 'function', 'function']);
       assert.ok(superficie.haParametri);

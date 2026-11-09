@@ -112,6 +112,8 @@ import { creaNotteSalvata, MOTIVI_CANCELLAZIONE } from './persistenza/notte-salv
 import { creaInterfacciaMorte } from './interfaccia/morte.js';
 import { creaInterfacciaRipresa } from './interfaccia/ripresa.js';
 import { creaInterfacciaProva } from './interfaccia/prova.js';
+import { creaMenu } from './interfaccia/menu.js'; // storia P04: menu di selezione (personaggio e slot)
+import { creaStatistiche, calcolaStatistiche } from './attori/statistiche.js'; // storia P04: statistiche alla Isaac
 
 /** Risoluzione logica della scena (ADR-0001). */
 const RISOLUZIONE = Object.freeze({ larghezza: 1280, altezza: 720 });
@@ -119,11 +121,15 @@ const RISOLUZIONE = Object.freeze({ larghezza: 1280, altezza: 720 });
 /** Cartella dei parametri e file da caricare (nomi di file, non valori di gioco). */
 const CARTELLA_PARAMETRI = 'contenuti/parametri/';
 const FILE_STATISTICHE = ['ferruccio', 'combattimento', 'stanza', 'stanze', 'generazione', 'nemici', 'economia', 'incontri', 'risveglio'];
-const FILE_TABELLE = ['input', 'doni', 'sinergie', 'consumabili', 'ricordi'];
+const FILE_TABELLE = ['input', 'doni', 'sinergie', 'consumabili', 'ricordi', 'personaggi', 'oggetti-attivi', 'patto', 'boss'];
 const FILE_MOTO_RIDOTTO = 'moto-ridotto';
 /** Testi dell'interfaccia (storia 025) e slot del profilo salvato (nome di slot, non valore di gioco). */
 const FILE_INTERFACCIA = 'contenuti/interfaccia.json';
-const SLOT_PROFILO = '1';
+/** Storia P04: i cinque slot del salvataggio (nomi di slot), lo slot predefinito e i parametri dell'URL che saltano il menu. */
+const SLOTS = Object.freeze(['1', '2', '3', '4', '5']);
+const SLOT_PREDEFINITO = '1';
+const PARAM_SLOT = 'slot';
+const PARAM_PERSONAGGIO = 'personaggio';
 /** Contenuti della storia (storie 026-027): nomi di file, non valori di gioco. */
 const FILE_STORIA = 'contenuti/storia.json';
 const FILE_NARRATIVA = 'contenuti/narrativa.json';
@@ -194,27 +200,6 @@ function adattaCanvas(canvas) {
 }
 
 /**
- * Renderer segnaposto (da sostituire con resa/renderer.js, storia 005).
- * @param {HTMLCanvasElement} canvas
- * @param {{ debug: boolean, contaTick: () => number }} opzioni
- */
-function creaSegnaposto(canvas, { debug, contaTick }) {
-  const ctx = canvas.getContext('2d');
-  return {
-    disegna() {
-      ctx.fillStyle = token('--colore-fondo');
-      ctx.fillRect(0, 0, RISOLUZIONE.larghezza, RISOLUZIONE.altezza);
-      if (debug) {
-        ctx.fillStyle = token('--colore-testo');
-        ctx.font = `24px ${token('--font-testo')}`;
-        ctx.textBaseline = 'top';
-        ctx.fillText(`tick ${contaTick()}`, 16, 16);
-      }
-    },
-  };
-}
-
-/**
  * Legge il seme della notte dall'URL (`?seme=`) o lo deriva dall'orologio (mai dal generatore
  * casuale nativo: ADR-0003).
  * @param {URLSearchParams} query
@@ -277,9 +262,15 @@ async function avvia() {
   // corpo, spada, bersagli. Girano solo nello stato `notte`.
   const wire = debug && url.searchParams.get('wire') === '1';
   const pianoRichiesto = Number(url.searchParams.get('piano'));
-  const conPiano = wire && Number.isInteger(pianoRichiesto) && pianoRichiesto >= 1 && pianoRichiesto <= 5;
-  // storia 029: `&hub=1` parte dall'hub di Piazza Dante; la notte (piano 1) comincia attraversando l'ingresso
-  const conHub = wire && !conPiano && url.searchParams.get('hub') === '1';
+  const conPiano = debug && Number.isInteger(pianoRichiesto) && pianoRichiesto >= 1 && pianoRichiesto <= 5;
+  // scena diagnostica dei fantocci: `?debug=1&wire=1` senza piano né hub (storie 007-011, 019-020, 027)
+  const scenaWire = wire && !conPiano && url.searchParams.get('hub') !== '1';
+  // storia 029 + P04: senza piano e senza scena di prova si parte dal menu e poi dall'hub di Piazza Dante;
+  // `&hub=1`, `&piano=N`, `&slot=`/`&personaggio=` (QA) saltano il menu
+  const conHub = !conPiano && !scenaWire;
+  const saltaMenu = conPiano || scenaWire || url.searchParams.get('hub') === '1' || url.searchParams.has(PARAM_SLOT) || url.searchParams.has(PARAM_PERSONAGGIO);
+  const slotUrl = url.searchParams.get(PARAM_SLOT);
+  const slotScelto = slotUrl !== null && SLOTS.includes(slotUrl) ? slotUrl : SLOT_PREDEFINITO;
   // Storia 023: catalogo dei doni e sinergie dai JSON, probabilità dei ganci dal generatore derivato 'doni'.
   const modificatori = creaModificatori(parametri, {
     catalogo: parametri.get('doni'), sinergie: parametri.get('sinergie'), eventi, rng: derivato(rng, 'doni'),
@@ -290,7 +281,7 @@ async function avvia() {
     cella: parametri.get('stanza.cella'),
     scenaLarghezza: RISOLUZIONE.larghezza,
     scenaAltezza: RISOLUZIONE.altezza,
-    ostacoli: wire && !conPiano && !conHub ? SCENA_WIRE.ostacoli : [],
+    ostacoli: scenaWire ? SCENA_WIRE.ostacoli : [],
   });
   const cella = (c, r) => ({ x: campo.x + c * campo.cella, y: campo.y + r * campo.cella });
   const partenza = cella(SCENA_WIRE.ferruccio.colonna, SCENA_WIRE.ferruccio.riga);
@@ -299,6 +290,9 @@ async function avvia() {
   const bersagli = [];
   /** @type {object[]} */
   const proiettili = [];
+  // storia P04: statistiche alla Isaac (personaggi.json); valgono solo dopo la scelta del personaggio (menu o `?personaggio=`)
+  const tabPersonaggi = parametri.get('personaggi');
+  const statistiche = creaStatistiche({ tabella: tabPersonaggi, modificatori });
   const combattimento = creaCombattimento({
     modificatori,
     tempo,
@@ -307,22 +301,24 @@ async function avvia() {
     campo,
     ferruccio,
     bersagli: () => bersagli,
-    proiettiliBase: conPiano || conHub || !wire,
+    proiettiliBase: !scenaWire,
+    statistiche: () => statistiche.correnti(),
+    isaac: tabPersonaggi.isaac,
   });
   // Storia 025: profilo persistente (scintille) ed economia della notte (monete, drop con il generatore
   // derivato 'drop', oggetti a terra, consumabili); il banchetto del piano estrae gli slot dal generatore 'banchetto'.
   const salvataggio = creaSalvataggio();
-  const profilo = creaProfilo({ salvataggio, slot: SLOT_PROFILO, eventi });
+  const profilo = creaProfilo({ salvataggio, slot: slotScelto, eventi });
   const pianoEconomia = conPiano ? pianoRichiesto : 1;
   const economia = creaEconomia({ parametri, eventi, rng: derivato(rng, 'drop'), profilo, ferruccio, modificatori, piano: pianoEconomia });
   const testiInterfaccia = await caricaJson(FILE_INTERFACCIA);
   // Storie 026-027: stato narrativo (profilo nello stesso salvataggio) e incontri per ancoraggio.
   const [storia, regoleNarrativa, ancoraggi, ripetizioni] = await Promise.all([FILE_STORIA, FILE_NARRATIVA, FILE_ANCORAGGI, FILE_RIPETIZIONI].map(caricaJson));
-  const narrativa = creaStatoNarrativo({ storia, regole: regoleNarrativa, ancoraggi, eventi, salvataggio, slot: SLOT_PROFILO });
+  const narrativa = creaStatoNarrativo({ storia, regole: regoleNarrativa, ancoraggi, eventi, salvataggio, slot: slotScelto });
   // Storia 028: i ricordi (dono azzurro con un volto); la scena di scelta si apre solo con il ricordo in mano.
   const ricordi = creaRicordi({
     parametri, catalogo: parametri.get('doni').doni, storia, narrativa, modificatori, profilo, economia, ferruccio, eventi,
-    stanza: conPiano || conHub ? null : STANZA_WIRE,
+    stanza: scenaWire ? STANZA_WIRE : null,
   });
   const incontri = creaIncontri({
     stato: narrativa, storia, ancoraggi, ripetizioni, parametri, eventi, testi: testiInterfaccia.incontri,
@@ -384,23 +380,18 @@ async function avvia() {
   let rngNemici = derivato(rng, 'nemici'); // storia 029: dalla partenza dall'hub deriva dal seme della notte
   let natiNemici = 0;
 
-  /** Pool dei Boss per i Piani 1-3 (estratti senza ripetizione a ogni run) + Boss Finale Donna Luciana al Piano 4. */
-  const POOL_BOSS_PIANI = Object.freeze([
-    Object.freeze({ id: 're-gatto', nome: 'Il Gatto dei Quattro Canti', archetipoBase: 'gatto', scalaRaggio: 1.75, scalaPortata: 1.35, bonusVita: 0 }),
-    Object.freeze({ id: 'capitano-guardia', nome: 'Il Capitano di Piombo', archetipoBase: 'guardia', scalaRaggio: 1.75, scalaPortata: 1.3, bonusVita: 12 }),
-    Object.freeze({ id: 'regina-vespa', nome: 'La Regina delle Vespe', archetipoBase: 'vespa', scalaRaggio: 1.85, scalaPortata: 1.35, bonusVita: -6 }),
-    Object.freeze({ id: 'colosso-statua', nome: 'L\'Automa del Giardino', archetipoBase: 'statua', scalaRaggio: 1.7, scalaPortata: 1.4, bonusVita: 18 }),
-    Object.freeze({ id: 'maestro-fucina', nome: 'Lo Spezzafili d\'Ottone', archetipoBase: 'guardia', scalaRaggio: 1.65, scalaPortata: 1.45, bonusVita: 8 }),
-  ]);
-  const BOSS_FINALE_DONNA_LUCIANA = Object.freeze({
-    id: 'donna-luciana', nome: 'Donna Luciana — La Burattinaia', archetipoBase: 'guardia', scalaRaggio: 2.15, scalaPortata: 1.5, bonusVita: 55,
-  });
+  /** Storia P04: pool dei boss dei piani 1-3 (estratti senza ripetizione a ogni run) e Donna Luciana al piano finale del
+   *  ciclo, da `contenuti/parametri/boss.json` (prima costanti qui). */
+  const tabBoss = parametri.get('boss');
+  const POOL_BOSS_PIANI = tabBoss.pool;
+  const BOSS_FINALE_DONNA_LUCIANA = tabBoss.finale;
+  const PIANI_PER_CICLO = tabBoss.piani_per_ciclo.base;
   let semeRun = seme;
   let usiModelliRun = {};
   let bossRun = mescola(derivato(creaRng(semeRun), 'boss-run'), POOL_BOSS_PIANI);
   const bossDelPiano = (p) => {
-    const pianoNelCiclo = ((p - 1) % 4) + 1;
-    return pianoNelCiclo === 4 ? BOSS_FINALE_DONNA_LUCIANA : bossRun[(p - 1) % bossRun.length];
+    const pianoNelCiclo = ((p - 1) % PIANI_PER_CICLO) + 1;
+    return pianoNelCiclo === tabBoss.piano_finale_nel_ciclo.base ? BOSS_FINALE_DONNA_LUCIANA : bossRun[(p - 1) % bossRun.length];
   };
 
   /** Factory dei nemici delle ondate (iniettata nella stanza): archetipo dalla tavolozza del modello;
@@ -411,7 +402,7 @@ async function avvia() {
     const baseTaglia = boss ? schedaBossProvvisorio({ modificatori, parametri }) : null;
     const schedaBoss = boss && baseTaglia && infoBoss
       ? {
-        vita: Math.max(20, baseTaglia.vita + (pianoCorrente - 1) * 18 + infoBoss.bonusVita),
+        vita: Math.max(tabBoss.vita_min.base, baseTaglia.vita + (pianoCorrente - 1) * tabBoss.vita_per_piano.base + infoBoss.bonusVita),
         scalaRaggio: infoBoss.scalaRaggio,
         scalaPortata: infoBoss.scalaPortata,
       }
@@ -456,8 +447,8 @@ async function avvia() {
    */
   function avviaNotte({ seme: semeNotte, piano, stanza = null }) {
     pianoCorrente = piano;
-    const pianoModello = ((piano - 1) % 4) + 1;
-    const esito = generaPiano({ seme: semeNotte + piano * 131, piano: pianoModello, usiModelli: usiModelliRun, parametri, catalogo: catalogoModelli, riserva: riservaPiano });
+    const pianoModello = ((piano - 1) % PIANI_PER_CICLO) + 1;
+    const esito = generaPiano({ seme: semeNotte + piano * tabBoss.seme_sale.base, piano: pianoModello, usiModelli: usiModelliRun, parametri, catalogo: catalogoModelli, riserva: riservaPiano });
     usiModelliRun = esito.usiModelli;
     rngNemici = derivato(creaRng(semeNotte), `nemici-p${piano}`);
     natiNemici = 0;
@@ -481,7 +472,7 @@ async function avvia() {
   }
   // Storia 030: la notte salvata a ogni cambio di stanza (ADR-0006) e cancellata alla morte; `riprendiNotte` è «Continua».
   const notteSalvata = creaNotteSalvata({
-    salvataggio, slot: SLOT_PROFILO, eventi, notte: () => notte, ferruccio, modificatori, economia, pool,
+    salvataggio, slot: slotScelto, eventi, notte: () => notte, ferruccio, modificatori, economia, pool,
     numeroNotte: () => narrativa.avanzamento()[regoleNarrativa.piani.campo_notte],
   });
   function riprendiNotte() {
@@ -496,7 +487,7 @@ async function avvia() {
     if (ciclo.stato() === 'hub') ciclo.vaiA('notte');
     return true;
   }
-  if (conPiano || conHub) {
+  if (!scenaWire) {
     camera = creaCamera({ parametri, tempo, scena: RISOLUZIONE, eventi });
     await caricaCatalogo();
     // storia 025: il banchetto è attivo (slot posizionati sui banchi del modello) solo nella sua stanza
@@ -516,7 +507,7 @@ async function avvia() {
   // Discesa al piano successivo (1 → 2 → 3 → 4) dopo aver battuto il boss del piano:
   // Ferruccio conserva tutti gli oggetti (doni), le monete e le maschere, mentre la Fucina e la Stanza Oggetto estraggono nuovi oggetti randomici!
   eventi.on('piano.discesa', ({ aPiano }) => {
-    if (!conPiano && !conHub) return;
+    if (scenaWire) return;
     lasciaNotte();
     pool.preparaPiano(aPiano);
     banchetto.rigenera(aPiano);
@@ -528,9 +519,9 @@ async function avvia() {
 
   // Al risveglio (morte o vittoria finale al 4° piano contro Donna Luciana): nuova run con nuovo seme, stanze, boss e oggetti tutti nuovi!
   eventi.on('risveglio.fine', () => {
-    if (conPiano || conHub) lasciaNotte();
+    if (!scenaWire) lasciaNotte();
     if (!url.searchParams.has('seme')) {
-      semeRun = (semeRun + 0x9e3779b9) >>> 0;
+      semeRun = (semeRun + tabBoss.passo_seme_run.base) >>> 0;
     }
     usiModelliRun = {};
     bossRun = mescola(derivato(creaRng(semeRun), 'boss-run'), POOL_BOSS_PIANI);
@@ -552,7 +543,7 @@ async function avvia() {
   // Tonino al banchetto, la porta della bottega, l'ingresso al piano; attraversandolo parte la notte con il
   // seme derivato dal profilo (`hub.partenza`), e all'ingresso del piano partono le scene automatiche.
   let hub = null;
-  if (conHub) {
+  if (conHub) { // storia P04: anche senza `&hub=1` (menu → hub)
     const modelloHub = await caricaJson(`${CARTELLA_MODELLI_HUB}${FILE_MODELLO_HUB}.json`);
     hub = creaHub({
       modello: modelloHub, parametri, eventi, campo, scena: RISOLUZIONE, ferruccio, input, narrativa, incontri,
@@ -573,7 +564,7 @@ async function avvia() {
     });
   }
 
-  if (wire && !conPiano && !conHub) {
+  if (scenaWire) {
     const attaccaAuto = url.searchParams.get('fantoccio') === 'attacca';
     // storia 019: `&nemico=<archetipo>` aggiunge un nemico vero (nemici.json) in alto a sinistra della scena di prova
     const archetipoWire = url.searchParams.get('nemico');
@@ -590,7 +581,7 @@ async function avvia() {
       }));
     }
   }
-  if (conPiano || conHub) {
+  if (!scenaWire) {
     // la notte fa girare lei Ferruccio, combattimento, bersagli, proiettili e stanza (e ignora l'input in transizione);
     // nell'hub (storia 029) gira l'hub: solo Ferruccio, le presenze e l'ingresso
     ciclo.registra({ tick: (dt) => notte?.tick(dt) }, { stati: ['notte'] });
@@ -654,19 +645,64 @@ async function avvia() {
     : null;
   ciclo.registra({ disegna: () => { interfaccia.aggiorna(); interfacciaDoni.aggiorna(); cartiglio.aggiorna(); tableau.aggiorna(); interfacciaHub.aggiorna(); interfacciaMorte.aggiorna(); interfacciaRipresa.aggiorna(); } });
 
-  if (wire) {
-    const usaDiagnostica = url.searchParams.get('diagnostica') === '1';
-    const creaResa = usaDiagnostica ? creaResaDebug : creaRenderer;
-    ciclo.registra(creaResa({
-      canvas, campo, ferruccio, combattimento, bersagli: () => bersagli, proiettili: () => proiettili,
-      token, scena: RISOLUZIONE, contaTick: ciclo.contaTick, notte: () => notte, camera,
-      economia: () => economia, banchetto: () => banchetto, piedistalli: () => piedistalli, ricordi: () => ricordi,
-      hub: () => hub, ciclo, eventi, motoRidotto,
-    }));
+  // storia P04: il menu di selezione (personaggio e slot) e l'applicazione della scelta. Il ciclo parte in `menu`;
+  // dal menu si va all'hub con il personaggio scelto; Esc nell'hub (azione `menu`, a dialogo chiuso) torna al menu.
+  // Cambiare slot ricarica la pagina con `?slot=&personaggio=`: profilo, stato narrativo e notte salvata sono legati allo
+  // slot alla composizione. Le statistiche del personaggio si applicano al corpo unico (il corpo è uno, cambia la scheda).
+  const menu = creaMenu({
+    documento: document, finestra: window, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia,
+    personaggi: tabPersonaggi, attivi: parametri.get('oggetti-attivi').attivi, salvataggio, slots: SLOTS.slice(),
+    nomeDono: (id) => {
+      const doni = parametri.get('doni').doni;
+      const d = doni.find((x) => x.teatro?.id_teatro === id || x.id === id);
+      return d?.nome ?? id;
+    },
+    statistiche: (id) => calcolaStatistiche({ personaggio: tabPersonaggi.personaggi[id], isaac: tabPersonaggi.isaac, catalogo: parametri.get('doni').doni }),
+  });
+  function applicaScelta({ personaggio, slot }) {
+    if (slot !== slotScelto) {
+      const u = new URL(window.location.href);
+      u.searchParams.set(PARAM_SLOT, slot);
+      u.searchParams.set(PARAM_PERSONAGGIO, personaggio);
+      window.location.assign(u.href);
+      return false;
+    }
+    statistiche.scegli(personaggio);
+    ferruccio.impostaMaschere(modificatori.valore('ferruccio.maschere_max'));
+    salvataggio.salva('profilo', slot, { ...(salvataggio.carica('profilo', slot) ?? {}), [PARAM_PERSONAGGIO]: personaggio });
+    eventi.emit('personaggio.scelto', { personaggio, slot, statistiche: statistiche.correnti() });
+    if (hub) {
+      hub.entra();
+      if (ciclo.stato() === 'menu') ciclo.vaiA('hub');
+    }
+    return true;
+  }
+  async function apriMenu() {
+    if (menu.aperto) return null;
+    if (ciclo.stato() === 'hub') {
+      hub?.esci();
+      ciclo.vaiA('menu');
+    }
+    const scelta = await menu.apri({ personaggio: statistiche.id, slot: slotScelto });
+    applicaScelta(scelta);
+    return scelta;
+  }
+  ciclo.registra({
+    tick: () => { if (hub?.attivo && input.premuto('menu') && !incontri.dialogo()) apriMenu(); },
+  }, { stati: ['hub'] });
+
+  // Renderer del Teatro (pixel-art) sempre; con `?debug=1&wire=1&diagnostica=1` il disegno diagnostico in fil di ferro.
+  const usaDiagnostica = wire && url.searchParams.get('diagnostica') === '1';
+  const creaResa = usaDiagnostica ? creaResaDebug : creaRenderer;
+  ciclo.registra(creaResa({
+    canvas, campo, ferruccio, combattimento, bersagli: () => bersagli, proiettili: () => proiettili,
+    token, scena: RISOLUZIONE, contaTick: ciclo.contaTick, notte: () => notte, camera,
+    economia: () => economia, banchetto: () => banchetto, piedistalli: () => piedistalli, ricordi: () => ricordi,
+    hub: () => hub, ciclo, eventi, motoRidotto,
+  }));
+  if (saltaMenu) {
     ciclo.vaiA('hub');
     if (!conHub) ciclo.vaiA('notte');
-  } else {
-    ciclo.registra(creaSegnaposto(canvas, { debug, contaTick: ciclo.contaTick }));
   }
 
   if (debug) {
@@ -709,6 +745,13 @@ async function avvia() {
       veloMorte: () => interfacciaMorte.stato(),
       /** Storia P02 (provvisoria): pannello delle istruzioni iniziali di prova.html (`true` finché è a schermo, `null` senza la meta). */
       pannelloProva: () => (interfacciaProva ? interfacciaProva.visibile() : null),
+      /** Storia P04: statistiche alla Isaac (`correnti()`, `scegli(id)`, `stringiPatto`, `id`), slot del salvataggio in uso, il
+       *  menu DOM (`menu()` = stato o null, `apriMenu()`, `scegli(personaggio, slot)` = applica subito la scelta). */
+      statistiche,
+      slot: slotScelto,
+      menu: () => menu.stato(),
+      apriMenu,
+      scegli: (personaggio, slot = slotScelto) => applicaScelta({ personaggio, slot }),
       /** Storia 019: direttore degli attacchi e factory dei nemici (`creaNemico({archetipo, x, y, id})` aggiunge ai bersagli). */
       direttore,
       creaNemico: (o) => { const n = creaNemico(o); bersagli.push(n); return n; },
@@ -757,10 +800,18 @@ async function avvia() {
   ciclo.avvia();
   eventi.emit('gioco.avviato', { seme, debug });
   // storia 029: nell'hub Ferruccio compare sull'arrivo e partono le scene automatiche del modello (notte 1)
-  if (hub) {
-    hub.entra();
+  if (hub && saltaMenu) {
+    // storia P04: con `?personaggio=` (QA) il personaggio si applica subito; senza, Ferruccio con i valori del GDD
+    const persUrl = url.searchParams.get(PARAM_PERSONAGGIO);
+    if (persUrl && tabPersonaggi.personaggi[persUrl]) applicaScelta({ personaggio: persUrl, slot: slotScelto });
+    else hub.entra();
     // storia 030, strumento di QA: `&continua=1` preme «Continua» da solo se c'è una notte salvata
     if (url.searchParams.get('continua') === '1' && notteSalvata.presente) interfacciaRipresa.continua();
+  } else if (hub) {
+    apriMenu();
+  } else {
+    const persUrl = url.searchParams.get(PARAM_PERSONAGGIO);
+    if (persUrl && tabPersonaggi.personaggi[persUrl]) applicaScelta({ personaggio: persUrl, slot: slotScelto });
   }
   // storia 027, strumento di QA: `?debug=1&wire=1&scena=<id>` fa partire subito quella scena
   const scenaRichiesta = wire ? url.searchParams.get('scena') : null;

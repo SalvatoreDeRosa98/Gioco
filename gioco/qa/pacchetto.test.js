@@ -37,8 +37,8 @@ const SCHELETRO_CSP = path.join(CARTELLA_BUILD, 'prova-csp.html');
 const PACCHETTO_PROVA = path.join(CARTELLA_BUILD, 'prova.html');
 const PAGINA_PROVA = path.join(RADICE_GIOCO, 'prova.html');
 const EVIDENZA = path.join(RADICE, 'production', 'qa', 'evidence', 'pacchetto-file.png');
-/** index.html parte nel piano 1 dalla meta gioco-avvio (debug=1&wire=1&piano=1): ciclo in `notte`, stanza d'ingresso. */
-const QUERY = '?debug=1&wire=1&seme=1845';
+/** Storia P04: la meta di index.html è `debug=1` (menu); la query di QA chiede il piano 1: ciclo in `notte`, stanza d'ingresso. */
+const QUERY = '?debug=1&wire=1&seme=1845&piano=1';
 const ATTESA_ERRORI_MS = 3000;
 
 function portaLibera() {

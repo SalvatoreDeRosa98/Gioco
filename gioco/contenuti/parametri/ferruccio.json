@@ -1,39 +1,129 @@
 {
   "_descrizione": "Statistiche del corpo di Ferruccio. Fonte: design/gdd/controllo-ferruccio.md (Tuning Knobs, Formulas, Game Feel). Ogni voce è {base, min, max}: min/max sono il clamp del valore EFFETTIVO dopo i doni (ADR-0002); dove il GDD dà un intervallo di uscita (v_base, d_scatto) si usa quello, altrimenti il Safe Range dei Tuning Knobs. Tempi in ms, distanze in px, velocità in px/s.",
-
-  "v_base": { "base": 220, "min": 150, "max": 330 },
-  "t_accel": { "base": 60, "min": 0, "max": 120 },
-  "t_decel": { "base": 50, "min": 0, "max": 120 },
-  "r_corpo": { "base": 14, "min": 10, "max": 18 },
-
-  "d_scatto": { "base": 180, "min": 112, "max": 308 },
-  "t_scatto": { "base": 160, "min": 140, "max": 200 },
-  "t_recupero_scatto": { "base": 120, "min": 60, "max": 250 },
-  "t_ricarica_scatto": { "base": 1200, "min": 800, "max": 2000 },
-  "cariche_scatto": { "base": 1, "min": 1, "max": 3 },
-  "inclinazione_scatto_gradi": { "base": 20, "min": 0, "max": 30 },
-
-  "maschere_max": { "base": 5, "min": 3, "max": 8 },
-  "t_invuln": { "base": 800, "min": 500, "max": 1200 },
-  "lampeggio_hz": { "base": 6, "min": 2, "max": 12 },
-  "armatura": { "base": 0, "min": 0, "max": 1 },
-
+  "v_base": {
+    "base": 220,
+    "min": 150,
+    "max": 440
+  },
+  "t_accel": {
+    "base": 60,
+    "min": 0,
+    "max": 120
+  },
+  "t_decel": {
+    "base": 50,
+    "min": 0,
+    "max": 120
+  },
+  "r_corpo": {
+    "base": 14,
+    "min": 10,
+    "max": 18
+  },
+  "d_scatto": {
+    "base": 180,
+    "min": 112,
+    "max": 308
+  },
+  "t_scatto": {
+    "base": 160,
+    "min": 140,
+    "max": 200
+  },
+  "t_recupero_scatto": {
+    "base": 120,
+    "min": 60,
+    "max": 250
+  },
+  "t_ricarica_scatto": {
+    "base": 1200,
+    "min": 800,
+    "max": 2000
+  },
+  "cariche_scatto": {
+    "base": 1,
+    "min": 1,
+    "max": 3
+  },
+  "inclinazione_scatto_gradi": {
+    "base": 20,
+    "min": 0,
+    "max": 30
+  },
+  "maschere_max": {
+    "base": 5,
+    "min": 1,
+    "max": 12
+  },
+  "t_invuln": {
+    "base": 800,
+    "min": 500,
+    "max": 1200
+  },
+  "lampeggio_hz": {
+    "base": 6,
+    "min": 2,
+    "max": 12
+  },
+  "armatura": {
+    "base": 0,
+    "min": 0,
+    "max": 1
+  },
   "danno_subito": {
     "_descrizione": "Maschere tolte da un Colpo nemico (regola 5): comune 1, pesante 2.",
-    "comune": { "base": 1, "min": 1, "max": 2 },
-    "pesante": { "base": 2, "min": 1, "max": 3 }
+    "comune": {
+      "base": 1,
+      "min": 1,
+      "max": 2
+    },
+    "pesante": {
+      "base": 2,
+      "min": 1,
+      "max": 3
+    }
   },
-
-  "v_spinta": { "base": 260, "min": 150, "max": 400 },
-  "t_spinta": { "base": 150, "min": 80, "max": 300 },
-  "mod_input_spinta": { "base": 0.3, "min": 0, "max": 1 },
-
+  "v_spinta": {
+    "base": 260,
+    "min": 150,
+    "max": 400
+  },
+  "t_spinta": {
+    "base": 150,
+    "min": 80,
+    "max": 300
+  },
+  "mod_input_spinta": {
+    "base": 0.3,
+    "min": 0,
+    "max": 1
+  },
   "feel": {
     "_descrizione": "Impact Moments del GDD (tutti 'Configurable? Yes'). moto-ridotto.json porta scossa e scia a zero.",
-    "hs_danno_subito": { "base": 90, "min": 0, "max": 150 },
-    "scossa_px": { "base": 5, "min": 0, "max": 12 },
-    "t_scossa": { "base": 160, "min": 0, "max": 400 },
-    "t_scia": { "base": 160, "min": 0, "max": 400 },
-    "copie_scia": { "base": 3, "min": 0, "max": 6 }
+    "hs_danno_subito": {
+      "base": 90,
+      "min": 0,
+      "max": 150
+    },
+    "scossa_px": {
+      "base": 5,
+      "min": 0,
+      "max": 12
+    },
+    "t_scossa": {
+      "base": 160,
+      "min": 0,
+      "max": 400
+    },
+    "t_scia": {
+      "base": 160,
+      "min": 0,
+      "max": 400
+    },
+    "copie_scia": {
+      "base": 3,
+      "min": 0,
+      "max": 6
+    }
   }
 }

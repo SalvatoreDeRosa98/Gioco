@@ -1,42 +1,122 @@
 {
-  "_descrizione": "Mappa dei tasti (storia 002). Azioni del contratto: sinistra, destra, su, giu, attacco, parata, scatto, interagisci, avanza, conferma, indietro, menu. 'tastiera' usa i KeyboardEvent.code, 'mouse' gli indici di MouseEvent.button, 'gamepad.bottoni' gli indici del layout standard (0=A, 1=B, 2=X, 3=Y, 4=LB, 5=RB, 9=Start, 12-15=croce), 'gamepad.assi' gli indici della levetta sinistra.",
-
+  "_descrizione": "Mappa dei tasti (storia 002; storia P04: le frecce sparano a 4 direzioni come nel Teatro e Q usa l'oggetto attivo). Azioni del contratto: sinistra, destra, su, giu, attacco, parata, scatto, interagisci, avanza, conferma, indietro, menu; aggiunte P04: spara_sinistra, spara_destra, spara_su, spara_giu, attivo. 'tastiera' usa i KeyboardEvent.code, 'mouse' gli indici di MouseEvent.button, 'gamepad.bottoni' gli indici del layout standard (0=A, 1=B, 2=X, 3=Y, 4=LB, 5=RB, 9=Start, 12-15=croce), 'gamepad.assi' gli indici della levetta sinistra.",
   "tastiera": {
-    "sinistra": ["KeyA", "ArrowLeft"],
-    "destra": ["KeyD", "ArrowRight"],
-    "su": ["KeyW", "ArrowUp"],
-    "giu": ["KeyS", "ArrowDown"],
-    "attacco": ["KeyJ", "KeyZ"],
-    "parata": ["KeyK", "KeyX"],
-    "scatto": ["Space", "KeyL", "KeyC"],
-    "interagisci": ["KeyE"],
-    "avanza": ["Space", "Enter"],
-    "conferma": ["Enter", "KeyJ"],
-    "indietro": ["Escape", "Backspace"],
-    "menu": ["Escape"]
+    "sinistra": [
+      "KeyA"
+    ],
+    "destra": [
+      "KeyD"
+    ],
+    "su": [
+      "KeyW"
+    ],
+    "giu": [
+      "KeyS"
+    ],
+    "spara_sinistra": [
+      "ArrowLeft"
+    ],
+    "spara_destra": [
+      "ArrowRight"
+    ],
+    "spara_su": [
+      "ArrowUp"
+    ],
+    "spara_giu": [
+      "ArrowDown"
+    ],
+    "attacco": [
+      "KeyJ",
+      "KeyZ"
+    ],
+    "parata": [
+      "KeyK",
+      "KeyX"
+    ],
+    "scatto": [
+      "Space",
+      "KeyL",
+      "KeyC"
+    ],
+    "interagisci": [
+      "KeyE"
+    ],
+    "attivo": [
+      "KeyQ"
+    ],
+    "avanza": [
+      "Space",
+      "Enter"
+    ],
+    "conferma": [
+      "Enter",
+      "KeyJ"
+    ],
+    "indietro": [
+      "Escape",
+      "Backspace"
+    ],
+    "menu": [
+      "Escape"
+    ]
   },
-
   "mouse": {
-    "attacco": [0],
-    "parata": [2]
+    "attacco": [
+      0
+    ],
+    "parata": [
+      2
+    ]
   },
-
   "gamepad": {
     "zona_morta": 0.2,
-    "assi": { "x": 0, "y": 1 },
+    "assi": {
+      "x": 0,
+      "y": 1
+    },
     "bottoni": {
-      "attacco": [0],
-      "scatto": [1],
-      "parata": [2],
-      "interagisci": [5],
-      "avanza": [0],
-      "conferma": [0],
-      "indietro": [1],
-      "menu": [9],
-      "su": [12],
-      "giu": [13],
-      "sinistra": [14],
-      "destra": [15]
+      "attacco": [
+        0
+      ],
+      "scatto": [
+        1
+      ],
+      "parata": [
+        2
+      ],
+      "interagisci": [
+        5
+      ],
+      "avanza": [
+        0
+      ],
+      "conferma": [
+        0
+      ],
+      "indietro": [
+        1
+      ],
+      "menu": [
+        9
+      ],
+      "su": [
+        12
+      ],
+      "giu": [
+        13
+      ],
+      "sinistra": [
+        14
+      ],
+      "destra": [
+        15
+      ],
+      "attivo": [
+        3
+      ],
+      "spara_destra": [
+        5
+      ]
     }
   }
 }

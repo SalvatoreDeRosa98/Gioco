@@ -67,9 +67,30 @@
   "prova": {
     "titolo": "Ferruccio — Il Teatro delle Marionette (4 Piani stile Isaac)",
     "righe": [
-      "WASD / Frecce: muovi · J: fendente (tieni premuto: affondo) · K: parata · Spazio: scatto · E: raccogli / compra nella Fucina",
-      "Piano 1 (5 stanze) → Piano 2 (7 stanze) → Piano 3 (8 stanze) → Piano 4 (9 stanze, Boss Finale: Donna Luciana)",
-      "Ogni piano ha 1 Stanza Oggetto gratuita, 1 Fucina (Shop) e 1 Boss da battere per scendere. Premi un tasto per iniziare!"
+      "WASD: muovi - Frecce: spara nelle 4 direzioni (con la spada: fendente) - J: fendente - K: parata - Spazio: scatto - Q: oggetto attivo - E: raccogli / compra nella Fucina",
+      "Piano 1 (5 stanze) -> Piano 2 (7 stanze) -> Piano 3 (8 stanze) -> Piano 4 (9 stanze, Boss Finale: Donna Luciana)",
+      "Ogni piano ha 1 Stanza Oggetto gratuita, 1 Fucina (Shop) e 1 Boss da battere per scendere. Esc torna al menu. Premi un tasto per iniziare!"
     ]
+  },
+  "menu": {
+    "titolo": "Teatro delle Marionette d'Ombra",
+    "sottotitolo": "Scegli il tuo burattino per iniziare la commedia",
+    "slot_titolo": "Slot di salvataggio",
+    "slot_nome": "Slot {n}",
+    "slot_vuoto": "vuoto",
+    "slot_riga": "{personaggio} - run {notte} - {scintille} scintille - piano max {piano_max}",
+    "cancella": "Cancella",
+    "conferma_cancella": "Cancellare lo slot {n}? Si perde tutto.",
+    "si": "Si, cancella",
+    "no": "Annulla",
+    "inizia": "Inizia (Spazio / Invio)",
+    "vita": "Vita",
+    "dmg": "DMG",
+    "spd": "SPD",
+    "attivo": "Attivo",
+    "dono": "Dono iniziale",
+    "nessuno": "nessuno",
+    "istruzioni": "Frecce o 1-4: personaggio - Tab: slot - Spazio/Invio: inizia - nel gioco Esc torna qui",
+    "tasto": "[{n}]"
   }
 }
