@@ -2800,6 +2800,23 @@ function disegnaManoMarionettaPittorica() {
   // --- T3: fine ---
 
   // Pool Boss stile Isaac (Monstro, Chub, Duke of Flies, Gurdy, Gemini/Peep, Mom/Satan)
+  /**
+   * Re-Gatto (pattern 'monstro_jump') alla maniera di Monstro in The Binding of Isaac (bug autore «il boss
+   * che salta spara troppi colpi»: prima 84 proiettili in 10 s, 98 in rabbia, una rosa di 14 a ogni salto).
+   * Ogni mossa è seguita da un riposo in cui il gatto si avvicina camminando; mai due mosse che sparano di
+   * fila (dopo un salto alto o uno sputo vengono sempre i saltelli). Caso peggiore: 3 mosse che sparano in
+   * 10 s × 8 colpi = 24 proiettili. Tempi in tick a 60 Hz, velocità in px/tick.
+   */
+  const MONSTRO_REGATTO = Object.freeze({
+    riposoTick: 75,             // pausa fra una mossa e l'altra (cammina verso il giocatore)
+    riposoRabbiaTick: 55,       // in rabbia (vita sotto il 50%)
+    passoRiposo: 0.45,          // frazione della velocità del boss mentre riposa
+    pesoSaltoAlto: 0.5,         // probabilità delle mosse quando può sparare (il resto sono saltelli)
+    pesoSputo: 0.35,
+    saltoAlto: Object.freeze({ durataTick: 56, quotaPx: 95, inseguimento: 0.09, corona: 8, velocita: 1.35 }),
+    sputo: Object.freeze({ caricaTick: 18, colpi: 6, apertura: 0.16, velocita: 1.9 }),
+    saltelli: Object.freeze({ numero: 3, durataTick: 22, quotaPx: 14, passoPx: 26 }), // nessun colpo
+  });
   const POOL_BOSS = [
     { id: 're-gatto', nome: 'Il Gatto dei Quattro Canti (Monstro)', tipo: 'gatto', hpBase: 175, speed: 1.05, pattern: 'monstro_jump' },
     { id: 'capitano-guardia', nome: 'Il Capitano di Piombo (Chub)', tipo: 'guardia', hpBase: 210, speed: 0.92, pattern: 'chub_charge' },
@@ -5174,40 +5191,66 @@ function disegnaManoMarionettaPittorica() {
           const enrage = n.hp < n.maxHp * 0.5;
 
           if (n.bossId === 're-gatto') {
-            // MONSTRO (Re Gatto): saltelli + grande balzo in aria (airZ > 0) con schianto e rosa caotica di 14 colpi
-            if (n.jumpPhase === 'air') {
-              n.jumpTimer--;
-              n.airZ = Math.round(Math.sin((1 - n.jumpTimer / 44) * Math.PI) * 95);
-              n.x += (n.jumpTargetX - n.x) * 0.09;
-              n.y += (n.jumpTargetY - n.y) * 0.09;
-              if (n.jumpTimer <= 0) {
-                n.jumpPhase = 'ground';
+            // MONSTRO (Re Gatto): riposo → una mossa fra salto alto (corona lenta all'atterraggio), sputo a
+            // ventaglio o saltelli senza colpi. Parametri e ritmo in MONSTRO_REGATTO.
+            const M = MONSTRO_REGATTO;
+            if (!n.mossaRG) { n.mossaRG = 'riposo'; n.timerRG = 40; n.ultimaSparoRG = false; }
+            if (n.mossaRG === 'salto') {
+              n.timerRG--;
+              n.airZ = Math.round(Math.sin((1 - n.timerRG / M.saltoAlto.durataTick) * Math.PI) * M.saltoAlto.quotaPx);
+              n.x += (n.jumpTargetX - n.x) * M.saltoAlto.inseguimento;
+              n.y += (n.jumpTargetY - n.y) * M.saltoAlto.inseguimento;
+              if (n.timerRG <= 0) {
                 n.airZ = 0;
                 scuoti(FEEL.scossa.atterraggioReGatto);
                 statoRun.ondeEsplosione.push({ x: n.x, y: n.y, r: 8, maxR: 48, tick: 0 });
-                for (let k = 0; k < 14; k++) {
-                  const a = (TAU * k) / 14 + (rng() - 0.5) * 0.22;
-                  const sp = 1.65 + rng() * 0.95;
-                  statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dist: 0, bossShot: true });
+                const fase0 = rng() * TAU;
+                for (let k = 0; k < M.saltoAlto.corona; k++) {
+                  const a = fase0 + (TAU * k) / M.saltoAlto.corona;
+                  statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(a) * M.saltoAlto.velocita, vy: Math.sin(a) * M.saltoAlto.velocita, dist: 0, bossShot: true });
                 }
-                n.shootCd = enrage ? 42 : 56;
+                n.mossaRG = 'riposo'; n.timerRG = enrage ? M.riposoRabbiaTick : M.riposoTick;
               }
+            } else if (n.mossaRG === 'sputo') {
+              n.timerRG--;
+              n.flash = Math.max(n.flash, n.timerRG % 6 < 3 ? 2 : 0); // si gonfia prima di sputare
+              if (n.timerRG <= 0) {
+                const meta = (M.sputo.colpi - 1) / 2;
+                for (let k = 0; k < M.sputo.colpi; k++) {
+                  const a = ang + (k - meta) * M.sputo.apertura;
+                  statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(a) * M.sputo.velocita, vy: Math.sin(a) * M.sputo.velocita, dist: 0, bossShot: true });
+                }
+                n.mossaRG = 'riposo'; n.timerRG = enrage ? M.riposoRabbiaTick : M.riposoTick;
+              }
+            } else if (n.mossaRG === 'saltelli') {
+              n.timerRG--;
+              const d = M.saltelli.durataTick;
+              const fase = (n.timerRG % d) / d;
+              n.airZ = Math.round(Math.sin((1 - fase) * Math.PI) * M.saltelli.quotaPx);
+              n.x = Math.max(ARENA.x1 + 20, Math.min(ARENA.x2 - 20, n.x + Math.cos(n.dirRG) * (M.saltelli.passoPx / d)));
+              n.y = Math.max(ARENA.y1 + 20, Math.min(ARENA.y2 - 20, n.y + Math.sin(n.dirRG) * (M.saltelli.passoPx / d)));
+              if (n.timerRG % d === 0) n.dirRG = ang + (rng() - 0.5) * 0.8; // ogni saltello punta di nuovo al giocatore
+              if (n.timerRG <= 0) { n.airZ = 0; n.mossaRG = 'riposo'; n.timerRG = enrage ? M.riposoRabbiaTick : M.riposoTick; }
             } else {
-              n.x = Math.max(ARENA.x1 + 20, Math.min(ARENA.x2 - 20, n.x + Math.cos(ang) * n.speed * 0.65));
-              n.y = Math.max(ARENA.y1 + 20, Math.min(ARENA.y2 - 20, n.y + Math.sin(ang) * n.speed * 0.65));
-              n.shootCd--;
-              if (n.shootCd <= 0) {
-                if (n.phaseTick % 2 === 0) {
-                  n.jumpPhase = 'air';
-                  n.jumpTimer = 44;
+              n.airZ = 0;
+              n.x = Math.max(ARENA.x1 + 20, Math.min(ARENA.x2 - 20, n.x + Math.cos(ang) * n.speed * M.passoRiposo));
+              n.y = Math.max(ARENA.y1 + 20, Math.min(ARENA.y2 - 20, n.y + Math.sin(ang) * n.speed * M.passoRiposo));
+              n.timerRG--;
+              if (n.timerRG <= 0) {
+                const r = rng();
+                const mossa = n.ultimaSparoRG ? 'saltelli'
+                  : r < M.pesoSaltoAlto ? 'salto' : r < M.pesoSaltoAlto + M.pesoSputo ? 'sputo' : 'saltelli';
+                n.mossaRG = mossa;
+                n.ultimaSparoRG = mossa !== 'saltelli';
+                if (mossa === 'salto') {
+                  n.timerRG = M.saltoAlto.durataTick;
                   n.jumpTargetX = Math.max(ARENA.x1 + 28, Math.min(ARENA.x2 - 28, player.x));
                   n.jumpTargetY = Math.max(ARENA.y1 + 28, Math.min(ARENA.y2 - 28, player.y));
+                } else if (mossa === 'sputo') {
+                  n.timerRG = M.sputo.caricaTick;
                 } else {
-                  for (let k = -3; k <= 3; k++) {
-                    const a = ang + k * 0.14;
-                    statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(a) * 2.25, vy: Math.sin(a) * 2.25, dist: 0, bossShot: true });
-                  }
-                  n.shootCd = enrage ? 38 : 52;
+                  n.timerRG = M.saltelli.numero * M.saltelli.durataTick;
+                  n.dirRG = ang;
                 }
               }
             }

@@ -62,7 +62,7 @@ const TICK = 600;
     let fotoFatta = false;
     for (;;) {
       const s = await p.evaluate(() => ({ t: window.__teatro.tick - window.__teatro.__qaRG.t0, n: window.__teatro.interni.statoRun.proiettiliNemici.length }));
-      if (!fotoFatta && s.n >= 6 && s.t > 60) { fotoFatta = true; await p.screenshot({ path: foto(caso.id) }); }
+      if (!fotoFatta && s.n >= 6 && s.t > 60) { fotoFatta = true; await p.waitForTimeout(450); await p.screenshot({ path: foto(caso.id) }); }
       if (s.t > TICK) break;
       await p.waitForTimeout(100);
     }
@@ -70,7 +70,7 @@ const TICK = 600;
     // raffiche: gruppi di spawn separati da meno di 2 tick
     const raffiche = [];
     for (const t of r) { const g = raffiche[raffiche.length - 1]; if (g && t - g.fine <= 1) { g.fine = t; g.n++; } else raffiche.push({ inizio: t, fine: t, n: 1 }); }
-    out.push({ caso: caso.id, proiettili10s: r.length, attacchi: raffiche.length, perAttacco: raffiche.map((g) => g.n).join(','), maxGapTick: 0 });
+    out.push({ caso: caso.id, proiettili10s: r.length, attacchi: raffiche.length, perAttacco: raffiche.map((g) => g.n).join(',') });
     await p.close();
   }
   await browser.close();
