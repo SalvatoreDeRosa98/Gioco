@@ -645,6 +645,29 @@
     nomi: Object.freeze({ festaiola: 'Una festaiola' }),
   });
   /** Presenza del NPC nuovo della notte 4 (cella libera della griglia dell'hub). */
+  /**
+   * Effetto passivo permanente del Medaglione di Rosa (scelta di Tonino). Salvato nello slot coi flag
+   * (tonino_ricordo + medaglione_notte_c = notte della scelta); attivo solo dalla notte successiva.
+   *   restituito → Benedizione di Rosa: +1 maschera massima, il primo colpo di ogni stanza non fa danno.
+   *   negato     → Oblio: +0,8 danno, −1 maschera massima.
+   */
+  const MEDAGLIONE_C = Object.freeze({
+    restituito: Object.freeze({ id: 'benedizione', nome: 'Benedizione di Rosa', maxHpHalf: 2, dmg: 0, scudoStanza: true,
+      testo: 'Benedizione di Rosa: +1 maschera massima e il primo colpo di ogni stanza non fa danno' }),
+    negato: Object.freeze({ id: 'oblio', nome: 'Oblio', maxHpHalf: -2, dmg: 0.8, scudoStanza: false,
+      testo: 'Oblio: +0,8 danno e \u22121 maschera massima' }),
+  });
+  /** Effetto del Medaglione attivo stanotte, o null (non scelto, oppure scelto in questa stessa notte). */
+  function effettoMedaglioneC() {
+    const scelta = S.flag && S.flag[DATI.ricordo.flag];
+    const ef = scelta && MEDAGLIONE_C[scelta];
+    if (!ef) return null;
+    const notteScelta = Number(S.flag.medaglione_notte_c);
+    // salvataggi di prima di C senza la notte della scelta: l'effetto vale (la scelta è già passata)
+    if (Number.isFinite(notteScelta) && notteScelta > 0 && notteCorrente() <= notteScelta) return null;
+    return ef;
+  }
+  T.effettoMedaglioneC = effettoMedaglioneC;
   const PRESENZA_NUOVA_C = Object.freeze({ id: 'festaiola', tipo: 'npc', personaggio: 'festaiola', ancoraggio: 'hub:festaiola', c: 10, r: 5 });
   // --- C: fine ---
   const scena = (id) => DATI.scene.find((s) => s.id === id);
@@ -687,6 +710,7 @@
     if (sc.scelta.flag === DATI.ricordo.flag) {
       S.flag.medaglione_in_mano = false; // ceduto o tenuto, il ricordo non è più da consegnare
       if (op.valore === DATI.ricordo.valore_restituzione) S.flag.lettera_agnese = 'vera'; // flag derivato
+      S.flag.medaglione_notte_c = notteCorrente(); // C: l'effetto del Medaglione parte dalla notte dopo
     }
     salvaFlag();
     const esito = DATI.scene
@@ -1353,6 +1377,9 @@
         color: didascalia ? '#c9a679' : '#f3dfc1', align: 'left',
       });
     });
+    // --- C: nel cartiglio di Tonino l'effetto attivo del Medaglione ---
+    const efC = v.chi === 'tonino' ? effettoMedaglioneC() : null;
+    if (efC) I.drawTextFit(`\u2726 ${efC.testo}`, x + 20, y + h - 8, w - 170, { size: 7.5, color: '#67e8f9', align: 'left' });
     const blink = Math.floor(T.tick / 20) % 2 === 0;
     I.drawTextFit(`${blink ? '▶' : '▷'} Spazio / E`, x + w - 16, y + h - 8, 120, { size: 7.5, color: '#f9cb40', align: 'right' });
     ctx.restore();

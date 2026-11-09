@@ -2929,6 +2929,11 @@ function disegnaManoMarionettaPittorica() {
     Object.freeze({ daNotte: 5, bonusForte: 0.05, probMonetaExtra: 0.3 }),
   ]);
   /** Effetti della notte n: unione delle righe di NOTTI_C con daNotte ≤ n (valori neutri se nessuna). */
+  /** Effetto del Medaglione di Rosa attivo stanotte (lo decide t4-hub-storia.js), o null. */
+  function medaglioneC() {
+    const f = window.__teatro && window.__teatro.effettoMedaglioneC;
+    try { return typeof f === 'function' ? f() : null; } catch (_) { return null; }
+  }
   function effettiNotteC(n = getNumeroNotte()) {
     const e = { notte: n, mariellaAllaFinestra: false, lunaPassoC: 0, lunaMaxNotte: 1, battutaTonino: false,
       probNemicoExtra: 0, buioExtra: 0, npcNuovo: null, bonusForte: 0, probMonetaExtra: 0 };
@@ -3086,6 +3091,10 @@ function disegnaManoMarionettaPittorica() {
       if (m.size) projScale = Math.max(projScale, m.size);
     }
 
+    // --- C: effetto passivo del Medaglione (Benedizione di Rosa / Oblio) ---
+    const medC = statoRun.fase === 'in_gioco' ? medaglioneC() : null;
+    if (medC) { flatDmg += medC.dmg; bonusMaxHp += medC.maxHpHalf; }
+    statoRun.medaglioneC = medC;
     const baseD = statoRun.baseDmgChar || 3.50;
     const effDmg = (baseD * Math.sqrt(Math.max(0, totalDmgUps * 1.2 + 1)) + flatDmg) * dmgMult;
     statoRun.dmg = Math.max(1.0, effDmg);
@@ -4040,6 +4049,10 @@ function disegnaManoMarionettaPittorica() {
     statoRun.baseDmgChar = pInfo.baseDmg;
     statoRun.baseSpdChar = pInfo.baseSpd;
     ricalcolaStatisticheIsaac();
+    // --- C: con la Benedizione di Rosa la maschera in più parte piena ---
+    if (statoRun.medaglioneC && statoRun.medaglioneC.maxHpHalf > 0) {
+      statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + statoRun.medaglioneC.maxHpHalf);
+    }
     avviaPiano(1, true);
     mostraBanner(`🌙 NOTTE ${statoRun.numeroNotte} — Sipario alzato!`, 180);
   }
@@ -4067,6 +4080,7 @@ function disegnaManoMarionettaPittorica() {
     // --- C: inizio --- nemici lontani dalle porte e dal punto di entrata; grazia d'ingresso
     allontanaNemiciDallePorteC(stanza, [{ x: player.x, y: player.y }]);
     statoRun.graziaIngressoC = ticksDaMs(STANZE_C.graziaIngressoMs);
+    statoRun.scudoRosaC = Boolean(statoRun.medaglioneC && statoRun.medaglioneC.scudoStanza); // Benedizione di Rosa
     // --- C: fine ---
 
     if (stanza.tipo === 'tesoro' && stanza.oggettoPiedistallo && !stanza.oggettoPiedistallo.preso) {
@@ -4555,6 +4569,14 @@ function disegnaManoMarionettaPittorica() {
   function subisciColpoGiocatore(mezzeMaschereDanno, fonte, daX, daY) {
     if (player.invuln > 0) return;
     if (statoRun.graziaIngressoC > 0) return; // --- C: grazia d'ingresso: nessun danno ---
+    if (statoRun.scudoRosaC && statoRun.fase === 'in_gioco') {
+      // --- C: Benedizione di Rosa: il primo colpo della stanza non fa danno (solo i-frames e rimbalzo) ---
+      statoRun.scudoRosaC = false;
+      if (Number.isFinite(daX) && Number.isFinite(daY)) spingi(player, player.x - daX, player.y - daY, FEEL.iframes.rimbalzoPx);
+      player.invuln = ticksDaMs(FEEL.iframes.durataMs);
+      statoRun.effettiSplash.push({ x: player.x, y: player.y - 10, tick: 0 });
+      return;
+    }
     // (bug autore «quando perdo si freeza») fuori dalla run (sequenza di morte, hub, menu) nessun colpo:
     // un secondo colpo letale nello stesso tick non deve riavviare la run sopra la sequenza di morte.
     if (statoRun.fase !== 'in_gioco') return;
@@ -6301,6 +6323,13 @@ function disegnaManoMarionettaPittorica() {
       }
     }
 
+    // --- C: inizio --- effetto del Medaglione sotto il riquadro HUD di sinistra
+    if (statoRun.medaglioneC) {
+      const mc = statoRun.medaglioneC;
+      const scudo = mc.scudoStanza ? (statoRun.scudoRosaC ? ' \u00b7 scudo pronto' : ' \u00b7 scudo usato') : '';
+      drawTextFit(`\u2726 ${mc.nome}${scudo}`, 8, 67, 170, { size: 7.5, color: mc.id === 'oblio' ? '#c084fc' : '#67e8f9', align: 'left' });
+    }
+    // --- C: fine ---
     // 5. Banner informativo (con auto-fit rigoroso dentro i 500px!)
     if (statoRun.bannerTimer > 0) {
       statoRun.bannerTimer--;
