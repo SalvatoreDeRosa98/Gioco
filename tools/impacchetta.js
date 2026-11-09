@@ -588,6 +588,25 @@ function raccogliContenuti(radicePagina, cartella) {
   return mappa;
 }
 
+/** Tutte le immagini sotto `cartella` (es. `assets/sprite`) come data: URI: chiave relativa alla pagina. Cartella assente → mappa vuota. */
+function raccogliRisorse(radicePagina, cartella) {
+  const mappa = {};
+  const base = path.join(radicePagina, cartella);
+  if (!fs.existsSync(base)) return mappa;
+  const visita = (dir) => {
+    for (const voce of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const p = path.join(dir, voce.name);
+      if (voce.isDirectory()) visita(p);
+      else if (voce.isFile() && MIME[path.extname(voce.name).toLowerCase()]) {
+        const chiave = path.relative(radicePagina, p).split(path.sep).join('/');
+        mappa[chiave] = `data:${MIME[path.extname(voce.name).toLowerCase()]};base64,${fs.readFileSync(p).toString('base64')}`;
+      }
+    }
+  };
+  visita(base);
+  return mappa;
+}
+
 /** Rende un testo sicuro dentro uno <script> inline (chiusura del tag e commenti HTML). */
 function sicuroInScript(testo) {
   return testo.replace(/<\/(script)/gi, '<\\/$1').replace(/<!--/g, '<\\!--');
@@ -597,13 +616,15 @@ function sicuroInScript(testo) {
 // Composizione dello script
 // ---------------------------------------------------------------------------------------------
 
-function componiScript({ ordine, moduli, chiaveIngresso, contenuti }) {
+function componiScript({ ordine, moduli, chiaveIngresso, contenuti, risorse = {} }) {
   const righe = [];
   righe.push(`'use strict';`);
   righe.push(`// Generato da tools/impacchetta.js — NON modificare a mano: rigenera dal sorgente in gioco/.`);
   righe.push(`(function () {`);
   // --- contenuti e fetch
   righe.push(`  var ${NOMI.contenuti} = ${JSON.stringify(contenuti)};`);
+  // --- risorse binarie (PNG degli sprite) come data: URI: il motore le risolve con fondazione/risorse.js
+  righe.push(`  window.__risorse = ${JSON.stringify(risorse)}; // chiave letta da fondazione/risorse.js (non è un identificatore del registro)`);
   righe.push(`  var __fetchOriginale = typeof window.fetch === 'function' ? window.fetch.bind(window) : null;`);
   righe.push(`  function __chiaveContenuto(input) {`);
   righe.push(`    var grezzo = typeof input === 'string' ? input : (input && typeof input.url === 'string') ? input.url : (input && typeof input.href === 'string') ? input.href : null;`);
@@ -682,7 +703,8 @@ function impacchetta(opzioni, log = console) {
 
   const css = pagina.fogli.filter((f) => f.href !== null).map((f) => ({ ...f, testo: inlineaCss(path.resolve(radicePagina, f.href.replace(/[?#].*$/, '')), radicePagina) }));
   const contenuti = raccogliContenuti(radicePagina, 'contenuti');
-  const script = componiScript({ ordine: grafo.ordine, moduli: grafo.moduli, chiaveIngresso, contenuti });
+  const risorse = raccogliRisorse(radicePagina, 'assets/sprite');
+  const script = componiScript({ ordine: grafo.ordine, moduli: grafo.moduli, chiaveIngresso, contenuti, risorse });
 
   const blocchiStile = (f) => `<style>\n/* ${f.href} */\n${f.testo}\n</style>`;
   const blocoScript = `<script>\n${script}\n</script>`;
@@ -720,7 +742,7 @@ function impacchetta(opzioni, log = console) {
 
   const dimensione = Buffer.byteLength(uscita);
   log.log(`impacchetta: ${opzioni.entrata} → ${path.relative(radice, fileUscita)}${opzioni.frammento ? ' (frammento)' : ''}`);
-  log.log(`  moduli: ${grafo.ordine.length}  fogli di stile: ${css.length}  contenuti JSON: ${Object.keys(contenuti).length}  dimensione: ${(dimensione / 1024).toFixed(1)} KiB`);
+  log.log(`  moduli: ${grafo.ordine.length}  fogli di stile: ${css.length}  contenuti JSON: ${Object.keys(contenuti).length}  immagini: ${Object.keys(risorse).length}  dimensione: ${(dimensione / 1024).toFixed(1)} KiB`);
   if (opzioni.dettagli) {
     for (const k of grafo.ordine) log.log(`  modulo ${k}${grafo.moduli.get(k).usaMeta ? ' (import.meta)' : ''}`);
     for (const f of css) log.log(`  stile ${f.href}`);

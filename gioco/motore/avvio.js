@@ -77,6 +77,7 @@ import { creaRng, derivato, mescola } from './fondazione/rng.js';
 import { creaBus } from './fondazione/eventi.js';
 import { creaParametri, leggiOverrideUrl } from './fondazione/parametri.js';
 import { fondiDefault, leggiMetaAvvio } from './fondazione/avvio-url.js';
+import { percorsoRisorsa } from './fondazione/risorse.js';
 import { creaModificatori } from './oggetti/modificatori.js';
 import { creaCampo } from './mondo/fisica.js';
 import { creaFerruccio } from './attori/ferruccio.js';
@@ -125,6 +126,8 @@ const FILE_TABELLE = ['input', 'doni', 'sinergie', 'consumabili', 'ricordi', 'pe
 const FILE_MOTO_RIDOTTO = 'moto-ridotto';
 /** Testi dell'interfaccia (storia 025) e slot del profilo salvato (nome di slot, non valore di gioco). */
 const FILE_INTERFACCIA = 'contenuti/interfaccia.json';
+/** Manifesto degli sprite consegnati dall'autore (ritratti del menu, fogli delle sagome): nomi di file, non valori di gioco. */
+const FILE_SPRITE = 'contenuti/sprite.json';
 /** Storia P04: i cinque slot del salvataggio (nomi di slot), lo slot predefinito e i parametri dell'URL che saltano il menu. */
 const SLOTS = Object.freeze(['1', '2', '3', '4', '5']);
 const SLOT_PREDEFINITO = '1';
@@ -312,6 +315,11 @@ async function avvia() {
   const pianoEconomia = conPiano ? pianoRichiesto : 1;
   const economia = creaEconomia({ parametri, eventi, rng: derivato(rng, 'drop'), profilo, ferruccio, modificatori, piano: pianoEconomia });
   const testiInterfaccia = await caricaJson(FILE_INTERFACCIA);
+  const manifestoSprite = await caricaJson(FILE_SPRITE).catch(() => ({ voci: [] }));
+  /** Percorso dell'immagine di una voce del manifesto (null se non elencata): il DOM prova a caricarla e ripiega sullo sprite provvisorio. */
+  const voceSprite = (nome) => manifestoSprite.voci?.find((v) => v.nome === nome) ?? null;
+  /** Foglio di uno sprite del manifesto pronto per il DOM/canvas (src già risolto per il pacchetto a file unico), o null. */
+  const foglioSprite = (nome) => { const v = voceSprite(nome); return v ? { src: percorsoRisorsa(v.file), larghezza: v.larghezza, altezza: v.altezza, layout: v.layout ?? null } : null; };
   // Storie 026-027: stato narrativo (profilo nello stesso salvataggio) e incontri per ancoraggio.
   const [storia, regoleNarrativa, ancoraggi, ripetizioni] = await Promise.all([FILE_STORIA, FILE_NARRATIVA, FILE_ANCORAGGI, FILE_RIPETIZIONI].map(caricaJson));
   const narrativa = creaStatoNarrativo({ storia, regole: regoleNarrativa, ancoraggi, eventi, salvataggio, slot: slotScelto });
@@ -652,6 +660,7 @@ async function avvia() {
   const menu = creaMenu({
     documento: document, finestra: window, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia,
     personaggi: tabPersonaggi, attivi: parametri.get('oggetti-attivi').attivi, salvataggio, slots: SLOTS.slice(),
+    sprite: (id) => foglioSprite(id),
     nomeDono: (id) => {
       const doni = parametri.get('doni').doni;
       const d = doni.find((x) => x.teatro?.id_teatro === id || x.id === id);

@@ -33,6 +33,10 @@ originale e salva `production/qa/evidence/pacchetto-file.png`).
 
 ## Cosa fa
 
+0. **Immagini → data: URI.** Tutti i file di `assets/sprite/` (PNG degli sprite consegnati dall'autore) vengono
+   incorporati in `window.__risorse` (chiave = percorso relativo, valore = data: URI); il motore li risolve con
+   `fondazione/risorse.js › percorsoRisorsa(percorso)`. Il pacchetto cresce di circa 1,3× il peso dei PNG.
+
 1. **Moduli ES → registro.** Segue il grafo dei moduli dallo `<script type="module" src="motore/avvio.js">`
    e trasforma ogni modulo in una funzione `__moduli['/motore/x.js'] = function (__esporta, __richiedi) {…}`
    con memoizzazione (`__richiedi` restituisce l'oggetto delle esportazioni, anche parziale nei cicli).

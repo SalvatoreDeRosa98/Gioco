@@ -75,7 +75,7 @@
   background: color-mix(in srgb, var(--bruno) 70%, var(--carta) 30%);
 }
 #interfaccia .menu-carta .menu-tasto { position: absolute; left: 0.5vw; top: 0.5vh; color: var(--oro); font-size: 0.9em; }
-#interfaccia .menu-carta .menu-sprite { width: 10vh; height: 10vh; image-rendering: pixelated; }
+#interfaccia .menu-carta .menu-sprite { height: 22vh; width: auto; image-rendering: pixelated; }
 #interfaccia .menu-carta strong { font-family: var(--font-titoli); color: var(--oro); font-size: 1.1em; }
 #interfaccia .menu-carta em { font-size: 0.85em; color: var(--carta-luce); }
 #interfaccia .menu-carta dl { display: grid; grid-template-columns: auto 1fr; gap: 0.1vh 0.6vw; margin: 0.4vh 0 0; width: 100%; text-align: left; font-size: 0.85em; }

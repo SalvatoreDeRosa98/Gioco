@@ -14,6 +14,9 @@
 import { riempi } from './banchetto.js';
 import { disegnaGrigliaPixel, SPRITE_FERRUCCIO } from '../resa/pixel-sprites.js';
 
+/** Ingrandimento del fotogramma di gioco nella carta (fattore di resa, come la scala 3 dello sprite provvisorio). */
+const SCALA_SPRITE_CARTA = 3;
+
 /** Codici dei tasti del menu (tasti dell'interfaccia, non azioni di gioco: la mappa di input.json resta del gioco). */
 const TASTI = Object.freeze({
   sinistra: ['ArrowLeft', 'KeyA'], destra: ['ArrowRight', 'KeyD'], slotSu: ['ArrowUp', 'KeyW'], slotGiu: ['ArrowDown', 'KeyS', 'Tab'],
@@ -28,12 +31,15 @@ const TASTI = Object.freeze({
  *   attivi: Record<string, { nome: string }>,
  *   nomeDono: (id: string) => string,
  *   statistiche: (id: string) => { dmg: number, speed: number, maschereMax: number },
+ *   sprite?: (id: string) => ({ src: string, larghezza: number, altezza: number, layout?: object } | null)  foglio dello sprite DI GIOCO del
+ *     personaggio (manifesto degli sprite, già risolto con percorsoRisorsa): la carta mostra il primo fotogramma «fermo» ingrandito;
+ *     se manca o non si carica resta lo sprite provvisorio di Ferruccio (decisione dell'autore: niente ritratti dipinti)
  *   salvataggio: { carica: (tipo: string, slot: string) => object | null, cancella: (slot: string) => void },
  *   slots: string[],
  *   nomePersonaggio?: (id: string) => string
  * }} o
  */
-export function creaMenu({ documento, finestra, contenitore, testi, personaggi, attivi, nomeDono, statistiche, salvataggio, slots }) {
+export function creaMenu({ documento, finestra, contenitore, testi, personaggi, attivi, nomeDono, statistiche, salvataggio, slots, sprite = () => null }) {
   if (!documento || !contenitore || !testi?.menu || !personaggi?.personaggi || !salvataggio || !Array.isArray(slots)) {
     throw new TypeError('creaMenu: dipendenze mancanti');
   }
@@ -91,12 +97,32 @@ export function creaMenu({ documento, finestra, contenitore, testi, personaggi, 
       const tasto = documento.createElement('span');
       tasto.className = 'menu-tasto';
       tasto.textContent = riempi(T.tasto, { n: i + 1 });
+      // Sprite DI GIOCO del personaggio (richiesta dell'autore: le carte mostrano il burattino com'è in partita):
+      // primo fotogramma della posa «fermo» del foglio di gioco, ingrandito senza sfocatura; finché l'immagine
+      // non è caricata (o se manca) resta lo sprite provvisorio di Ferruccio in pixel-art.
       const tela = documento.createElement('canvas');
       tela.className = 'menu-sprite';
-      tela.width = 80;
-      tela.height = 80;
+      const foglio = sprite(id);
+      const fw = foglio?.larghezza ?? 0;
+      const fh = foglio?.altezza ?? 0;
+      tela.width = fw > 0 ? fw * SCALA_SPRITE_CARTA : 80;
+      tela.height = fh > 0 ? fh * SCALA_SPRITE_CARTA : 80;
       const ctx = tela.getContext?.('2d');
-      if (ctx) disegnaGrigliaPixel(ctx, SPRITE_FERRUCCIO.idle0, 40, 44, 3, false, false);
+      if (ctx) disegnaGrigliaPixel(ctx, SPRITE_FERRUCCIO.idle0, tela.width / 2, tela.height / 2 + 4, 3, false, false);
+      if (foglio && ctx && typeof finestra.Image === 'function') {
+        const img = new finestra.Image();
+        img.decoding = 'async';
+        img.addEventListener('load', () => {
+          const posa = foglio.layout?.pose?.find((q) => q.posa === 'fermo') ?? foglio.layout?.pose?.[0];
+          const riga = posa?.riga ?? 0;
+          const colonna = posa?.da ?? 0;
+          ctx.imageSmoothingEnabled = false;
+          ctx.clearRect(0, 0, tela.width, tela.height);
+          ctx.drawImage(img, colonna * fw, riga * fh, fw, fh, 0, 0, tela.width, tela.height);
+          tela.dataset.sprite = 'gioco';
+        });
+        img.src = foglio.src;
+      }
       const nome = documento.createElement('strong');
       nome.textContent = p.nome;
       const tit = documento.createElement('em');
@@ -108,9 +134,13 @@ export function creaMenu({ documento, finestra, contenitore, testi, personaggi, 
         const dd = documento.createElement('dd'); dd.textContent = v; if (classe) dd.className = classe;
         dl.append(dt, dd);
       };
-      riga(T.vita, cuori(st.maschereMax), 'menu-cuori');
-      riga(T.dmg, st.dmg.toFixed(2));
-      riga(T.spd, st.speed.toFixed(2));
+      // Vita a mezze maschere come nel Teatro (hpHalf), DMG e SPD base del personaggio; fra parentesi il valore
+      // effettivo con il dono iniziale quando differisce.
+      const hpHalf = Number.isFinite(p.hpHalf) ? p.hpHalf : st.maschereMax * 2;
+      riga(T.vita, cuori(Math.floor(hpHalf / 2)) + (hpHalf % 2 ? '½' : ''), 'menu-cuori');
+      const conEffettivo = (base, eff) => (Number.isFinite(base) ? (Math.abs(base - eff) > 0.005 ? `${base.toFixed(2)} (${eff.toFixed(2)})` : base.toFixed(2)) : eff.toFixed(2));
+      riga(T.dmg, conEffettivo(p.baseDmg, st.dmg));
+      riga(T.spd, conEffettivo(p.baseSpd, st.speed));
       riga(T.attivo, attivi?.[p.attivoIniziale]?.nome ?? p.attivoIniziale ?? T.nessuno);
       riga(T.dono, p.passivoIniziale ? nomeDono(p.passivoIniziale) : T.nessuno);
       const desc = documento.createElement('p');
