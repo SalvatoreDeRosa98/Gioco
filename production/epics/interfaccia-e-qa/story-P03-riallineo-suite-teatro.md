@@ -114,6 +114,13 @@ sopra l'hub e continuava a catturare i tasti (`applicaScelta` in `avvio.js` ora 
 
 ## Segnalazioni per i passi successivi (non toccate qui)
 
+- **HUD di gioco (precisazione dell'autore, 2026-11-09)**: con «manca tutto l'hub di gioco, è una parte importante»
+  l'autore intende l'**HUD** in stanza, non Piazza Dante: «dove sta scritto Ferruccio, il piano, la vita, il danno, gli
+  slot occupati, sotto dove stanno gli oggetti». Nel motore l'HUD è ancora quello diagnostico (riga DOM «Monete ·
+  Scintille · Maschere 5/5» e testo di istruzioni, vedi `production/qa/evidence/combattimento-wire.png`); il box
+  pixel-art del Teatro (`disegnaHUDPixelArt`, riga ~5056: nome · Piano · ciclo, maschere intere/mezze, DMG/TEARS/SPD,
+  monete, oggetto attivo con carica per stanza, 5 slot passivi con gli oggetti) non è portato in `resa/renderer.js`.
+  È il primo difetto da chiudere nel passo HUD/disegni, leggendo testi da `interfaccia.json` e colori dai token.
 - `risveglio.js`: `PIANO_FINALE = 4` e `Math.min(900, t_velo)` sono numeri di gioco nel codice; `modificatori.js`
   `Math.min(5, limite('max_slot_doni'))`; `banchetto.js` `rng() < 0.65` (secondo dono della Fucina); `avvio.js`
   `POOL_BOSS_PIANI`/`BOSS_FINALE_DONNA_LUCIANA` hardcoded: vanno in `contenuti/parametri/*.json` quando si porta il Teatro.
