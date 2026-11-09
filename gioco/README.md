@@ -308,8 +308,6 @@ gioco/
 │   │   │                       {personaggio, slot}; non conosce il ciclo, avvio.js applica la scelta
 │   │   ├── audio.js            storia P10: interruttore DOM del muto «Audio: acceso/spento (M)» (testi `interfaccia.json › audio`), visibile nel menu
 │   │   └── oggetti.js          storie P04/P09: HUD dell'attivo con le tacche, modale di sostituzione dei cinque slot, pannello del Patto (stile/oggetti.css)
-│   │   └── menu.js             storia P04: menu DOM di selezione del personaggio e dello slot (Teatro ~4042): `apri()` → Promise
-│   │                           {personaggio, slot}; non conosce il ciclo, avvio.js applica la scelta
 │   ├── mondo/
 │   │   ├── fisica.js           campo a griglia con mura/ostacoli, cerchio contro rettangoli con
 │   │   │                       scivolamento, settore e rettangolo spazzato contro cerchi, linea di
