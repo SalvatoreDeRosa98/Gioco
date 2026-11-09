@@ -5,11 +5,13 @@
  * preinstallato nella sessione; non eseguire mai `playwright install`).
  * Avvia `python3 -m http.server` su una porta libera con radice `gioco/`, apre la pagina in Chromium
  * e verifica: zero errori in console; `window.__gioco` presente con `?debug=1` e assente con `?debug=0` (index.html
- * dichiara la meta gioco-avvio `debug=1&wire=1&piano=1` come default della query: l'URL vince, e la pagina parte nel piano 1);
- * 60 ± 2 tick in 1000 ms di orologio; frame lungo recuperato con al massimo 5 tick; override
+ * dichiara la meta gioco-avvio `debug=1` come default della query: l'URL vince, e la pagina parte nel menu di selezione
+ * del personaggio, storia P04); 60 ± 2 tick in 1000 ms di orologio; frame lungo recuperato con al massimo 5 tick; override
  * `?p.*` solo in debug; `prefers-reduced-motion` che azzera scossa e scie; tastiera diagonale
- * normalizzata; canvas scalato al contenitore senza scroll. Salva uno screenshot in
- * `production/qa/evidence/fondazione-pagina.png` e chiude il server alla fine.
+ * normalizzata (a menu chiuso: il menu cattura i suoi tasti, `__gioco.scegli` lo chiude e porta nell'hub); canvas scalato
+ * al contenitore senza scroll; senza debug il menu è nel DOM con i personaggi di `personaggi.json` e Invio fa partire.
+ * Salva gli screenshot `production/qa/evidence/fondazione-pagina.png` (hub) e `menu-selezione.png` (menu) e chiude il
+ * server alla fine.
  */
 
 'use strict';
@@ -24,6 +26,9 @@ const { chromium } = require('playwright');
 
 const RADICE_GIOCO = path.resolve(__dirname, '..');
 const EVIDENZA = path.resolve(RADICE_GIOCO, '..', 'production', 'qa', 'evidence', 'fondazione-pagina.png');
+const EVIDENZA_MENU = path.resolve(RADICE_GIOCO, '..', 'production', 'qa', 'evidence', 'menu-selezione.png');
+/** I personaggi del menu letti dal JSON (storia P04): il test non ricopia nomi né ordine. */
+const PERSONAGGI = JSON.parse(fs.readFileSync(path.join(RADICE_GIOCO, 'contenuti', 'parametri', 'personaggi.json'), 'utf8'));
 
 /** Porta TCP libera scelta dal sistema. */
 function portaLibera() {
@@ -146,6 +151,18 @@ async function main() {
       });
       assert.ok(recupero.n <= 5 && recupero.dopo <= 5, JSON.stringify(recupero));
 
+      // storia P04: il menu è nel DOM con il personaggio predefinito e lo slot 1; screenshot del menu
+      const statoMenu = await pagina.evaluate(() => window.__gioco.menu());
+      assert.equal(statoMenu?.personaggio, PERSONAGGI.predefinito, 'menu: personaggio predefinito di personaggi.json');
+      assert.equal(statoMenu?.slot, await pagina.evaluate(() => window.__gioco.slot), 'menu: slot in uso');
+      fs.mkdirSync(path.dirname(EVIDENZA_MENU), { recursive: true });
+      await pagina.screenshot({ path: EVIDENZA_MENU });
+      // il menu cattura i suoi tasti (frecce/WASD, Invio) finché è aperto: per provare la tastiera del gioco si chiude
+      // con la scelta del personaggio (`__gioco.scegli`), che porta nell'hub
+      await pagina.evaluate((id) => window.__gioco.scegli(id), PERSONAGGI.predefinito);
+      await pagina.waitForFunction(() => window.__gioco.stato === 'hub' && window.__gioco.menu() === null);
+      assert.equal(await pagina.evaluate(() => window.__gioco.statistiche.id), PERSONAGGI.predefinito);
+
       // tick(n) forzati
       const forzati = await pagina.evaluate(() => {
         const prima = window.__gioco.tick();
@@ -236,20 +253,38 @@ async function main() {
       await contesto.close();
     });
 
-    await caso('senza debug (debug=0 vince sul default della meta gioco-avvio): __gioco assente, override ignorato, nessun errore', async () => {
+    await caso('senza debug (debug=0 vince sul default della meta gioco-avvio): __gioco assente, override ignorato, nessun errore; il menu di selezione (storia P04) è nel DOM con i personaggi di personaggi.json, la pagina ha il fondo dal token, Invio fa partire', async () => {
       const { contesto, pagina, errori } = await apri(browser, `${server.base}/?debug=0&p.combattimento.portata=90`);
-      await pagina.waitForTimeout(500);
+      await pagina.waitForSelector('.menu-teatro:not([hidden]) .menu-carta');
       assert.equal(await pagina.evaluate(() => typeof window.__gioco), 'undefined');
       assert.deepEqual(errori, []);
-      // la pagina gira: il canvas ha il colore di fondo dal token
+      // il menu mostra i personaggi del JSON, nell'ordine del JSON, con il predefinito evidenziato
+      const menu = await pagina.evaluate(() => ({
+        carte: Array.from(document.querySelectorAll('.menu-carta')).map((c) => c.dataset.personaggio),
+        nomi: Array.from(document.querySelectorAll('.menu-carta strong')).map((e) => e.textContent),
+        scelta: document.querySelector('.menu-carta.scelta')?.dataset.personaggio ?? null,
+        slots: document.querySelectorAll('.menu-slot-voce').length,
+      }));
+      assert.deepEqual(menu.carte, PERSONAGGI.ordine);
+      assert.deepEqual(menu.nomi, PERSONAGGI.ordine.map((id) => PERSONAGGI.personaggi[id].nome));
+      assert.equal(menu.scelta, PERSONAGGI.predefinito);
+      assert.ok(menu.slots >= 1, 'almeno uno slot di salvataggio');
+      // la pagina gira: il canvas ha il colore di fondo dal token (base.css) sotto la scena, e la scena è dipinta
+      // (nessun pixel trasparente al centro: il renderer del Teatro copre il fondo, prima lo lasciava vedere)
       const fondo = await pagina.evaluate(() => {
         const c = document.getElementById('scena');
         const px = c.getContext('2d').getImageData(Math.floor(c.width / 2), Math.floor(c.height / 2), 1, 1).data;
         const token = getComputedStyle(document.documentElement).getPropertyValue('--colore-fondo').trim();
-        return { px: Array.from(px).slice(0, 3), token };
+        return { alfa: px[3], token, canvas: getComputedStyle(c).backgroundColor };
       });
       const atteso = [1, 3, 5].map((i) => parseInt(fondo.token.slice(i, i + 2), 16));
-      assert.deepEqual(fondo.px, atteso, `fondo ${JSON.stringify(fondo)}`);
+      assert.equal(fondo.canvas, `rgb(${atteso.join(', ')})`, `fondo ${JSON.stringify(fondo)}`);
+      assert.equal(fondo.alfa, 255, `canvas dipinto ${JSON.stringify(fondo)}`);
+      // Invio fa partire con il personaggio scelto: il menu si nasconde e la pagina resta senza errori
+      await pagina.keyboard.press('Enter');
+      await pagina.waitForSelector('.menu-teatro[hidden]', { state: 'attached' });
+      await pagina.waitForTimeout(300);
+      assert.deepEqual(errori, []);
       await contesto.close();
     });
   } finally {

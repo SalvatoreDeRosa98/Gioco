@@ -18,7 +18,8 @@ Parametri dell'URL:
 
 | Parametro | Effetto |
 |---|---|
-| *(nessun parametro)* | **`index.html` e `prova.html` dichiarano `<meta name="gioco-avvio" content="debug=1&wire=1&piano=1">`** (Teatro, 2026-11-08): senza parametri la pagina parte già nel piano 1 con `__gioco` esposto. La meta riempie solo le chiavi assenti dall'URL (`fondazione/avvio-url.js`), quindi un valore esplicito la annulla: `?debug=0` spegne `__gioco`, `?wire=0` porta al `menu`, **`?piano=0` annulla il piano** (serve per `&hub=1` e per la scena di prova dei fantocci: `?debug=1&wire=1&piano=0&seme=1845`) |
+| *(nessun parametro)* | **`index.html` e `prova.html` dichiarano `<meta name="gioco-avvio" content="debug=1">`** (storia P04, Teatro, 2026-11-09): senza parametri la pagina parte nel **menu di selezione del personaggio e dello slot** (`interfaccia/menu.js`, stile `stile/menu.css`, testi `interfaccia.json › menu`, personaggi da `personaggi.json`) con `__gioco` esposto; dal menu (Invio/Spazio o click) si entra nell'hub di Piazza Dante con il personaggio scelto; nell'hub `Esc` (azione `menu`, a dialogo chiuso) torna al menu. La meta riempie solo le chiavi assenti dall'URL (`fondazione/avvio-url.js`), quindi un valore esplicito la annulla: `?debug=0` spegne `__gioco`. **Saltano il menu** (strumenti di QA): `&piano=N`, `&hub=1`, `&scena=`, `&slot=N`, `&personaggio=id` |
+| `?debug=1&slot=2&personaggio=agnese` | storia P04: slot del salvataggio (`1`-`5`, chiavi del profilo, dello stato narrativo e della notte salvata) e personaggio di `personaggi.json` (`ferruccio`, `agnese`, `taddeo`, `ombra`) scelti dall'URL: il menu è saltato e si parte nell'hub con le statistiche alla Isaac di quel personaggio (`attori/statistiche.js`: maschere da `hpHalf`, DMG, SPD, cadenza, oggetto attivo iniziale, dono iniziale). Cambiare slot dal menu ricarica la pagina con questi due parametri |
 | `?debug=1` | espone `window.__gioco` e scrive il numero di tick sul canvas |
 | `?seme=1845` | seme della notte (senza, deriva dall'orologio) |
 | `?debug=1&p.combattimento.portata=90` | override di un parametro (solo con `debug=1`; fuori range → errore in console e valore riportato nel range) |
@@ -26,7 +27,7 @@ Parametri dell'URL:
 | `?debug=1&wire=1&fantoccio=attacca` | come sopra, con il fantoccio in basso che attacca a ciclo (anticipo 500 → lampo 150 → impatto a +252 ms) per provare la parata |
 | `?debug=1&wire=1&nemico=gatto` | come `wire=1`, più un nemico VERO dell'archetipo dato (`gatto`, `vespa`, `statua`, `guardia`: storia 019) in alto a sinistra: emersione, pattuglia, inseguimento, telegrafo con hitbox del colpo, stordimento, dissoluzione; il gatto (storia 020) è disegnato come sagoma (ellisse bassa, orecchie, coda, occhi), con l'anello rosso che si chiude nel lampo e la striscia tratteggiata del balzo |
 | `?debug=1&wire=1&scena=piazza-dante.tonino-primo-incontro` | storia 027 (strumento di QA): fa partire subito quella scena di `contenuti/storia.json` nel cartiglio dei dialoghi (`ui/cartiglio.js`) o, se `ancoraggi.json` la marca `tableau`, nel tableau (`ui/tableau.js`); il ciclo entra in `pausa` finché il dialogo è aperto; si avanza con `avanza`/`interagisci`/`conferma` o un click (antirimbalzo 160 ms), `indietro` salta una ripetizione; nel piano (`&piano=1`) nella stanza `banchetto` `interagisci` lontano dagli slot parla con Tonino (ancoraggio `banchetto`), mai con nemici vivi |
-| `?debug=1&wire=1&hub=1&seme=1845` | storia 029: parte dall'hub di Piazza Dante (`mondo/hub.js`, modello `contenuti/modelli-stanza/hub/piazza-dante.json`), ciclo in `hub`: mura chiuse tranne l'ingresso al piano 1 (soglia d'oro a destra, etichetta `piano 1`), Tonino al banchetto (cerchio d'inchiostro con alone d'oro, pieno quando `interagisci` risponde), la porta della bottega di Gaetano nel muro in alto (pannello pieno = chiusa finché `fucina_aperta` è falso), la finestra accesa di Mariella (quadrato d'oro, mai un personaggio), la luna (disco crema in alto a sinistra) e i fili d'oro tratteggiati; Taddeo compare solo con `taddeo = perdonato`, Agnese sotto il portico solo con `agnese = risvegliata` (`__gioco.imposta`); alla notte 1 partono da sole risveglio, tutorial e targa; vicino a un NPC `interagisci` apre il suo ancoraggio `hub:<npc>` (nessuna pausa del ciclo); camminando nell'ingresso parte la notte: piano 1 generato con il seme derivato dal profilo e dalla notte (`hub.semeNotte()`, diverso da `?seme=`), ciclo in `notte`, `notte` dell'avanzamento invariata; cartellino DOM in basso a sinistra con la notte e i suggerimenti |
+| `?debug=1&wire=1&hub=1&piano=0&seme=1845` | storia 029: parte dall'hub di Piazza Dante (`mondo/hub.js`, modello `contenuti/modelli-stanza/hub/piazza-dante.json`), ciclo in `hub`: mura chiuse tranne l'ingresso al piano 1 (soglia d'oro a destra, etichetta `piano 1`), Tonino al banchetto (cerchio d'inchiostro con alone d'oro, pieno quando `interagisci` risponde), la porta della bottega di Gaetano nel muro in alto (pannello pieno = chiusa finché `fucina_aperta` è falso), la finestra accesa di Mariella (quadrato d'oro, mai un personaggio), la luna (disco crema in alto a sinistra) e i fili d'oro tratteggiati; Taddeo compare solo con `taddeo = perdonato`, Agnese sotto il portico solo con `agnese = risvegliata` (`__gioco.imposta`); alla notte 1 partono da sole risveglio, tutorial e targa; vicino a un NPC `interagisci` apre il suo ancoraggio `hub:<npc>` (nessuna pausa del ciclo); camminando nell'ingresso parte la notte: piano 1 generato con il seme derivato dal profilo e dalla notte (`hub.semeNotte()`, diverso da `?seme=`), ciclo in `notte`, `notte` dell'avanzamento invariata; cartellino DOM in basso a sinistra con la notte e i suggerimenti |
 | `?debug=1&wire=1&hub=1&seme=1845&continua=1` | storia 030: se nello slot c'è una notte salvata, preme «Continua» da solo all'avvio (strumento di QA). Senza `continua=1`, nell'hub compare il pannello DOM «Continua / Lascia andare» (`interfaccia/ripresa.js`) quando una notte è salvata: «Continua» rigenera il piano dal seme salvato ed entra nella stanza salvata con maschere, doni e monete ripristinati; «Lascia andare» cancella la notte salvata. La notte si salva a ogni `notte.stanza` (`persistenza/notte-salvata.js`, chiave `ferruccio.v3.notte.1`) e si cancella alla morte. Alla morte (`ferruccio.morto`) il ciclo va in `pausa`, il velo DOM (`interfaccia/morte.js`) mostra le quattro fasi di `risveglio.json` (lanterne una a una, fili, maschera, buio; ≤ 5 s) e al `risveglio.fine` si torna nell'hub con `notte + 1`: flag, scintille, `piano_max` e scene viste restano; monete, doni, consumabili e pool della notte spariscono; con `&piano=N` (senza hub) la notte riparte dallo stesso seme |
 | `prova.html?seme=1845` (storia P02, provvisoria) | **build di prova per l'autore**: la pagina dichiara `<meta name="gioco-avvio" content="debug=1&wire=1&hub=1">` e `fondazione/avvio-url.js` fonde quei valori come default della query (l'URL vince sempre: `?seme=` resta tuo); all'avvio compare il pannello dei tasti (`interfaccia/prova.js`, testi in `interfaccia.json › prova`, stile `stile/prova.css`) che sparisce al primo tasto o click. Il gioco è da tastiera (e gamepad): nessun controllo touch, per scelta dell'autore. `__gioco.pannelloProva()` = `true/false` (a schermo o chiuso) o `null` senza la meta. Il file unico pubblicabile si produce con `node tools/impacchetta.js --entrata gioco/prova.html --frammento` (vedi `tools/README-impacchetta.md`) |
 | `?debug=1&wire=1&piano=1&seme=1845` | storie 014-017: genera il piano 1 dal seme (`mondo/generazione.js`, modelli di `contenuti/modelli-stanza/piazza-dante/`), parte dall'ingresso; porte con stato, ostacoli, soglie, segnalini e fantocci segnaposto (`archetipo`) delle ondate, transizione della camera (250 ms), pianta del piano nell'angolo in alto a destra; dalla storia 019 le ondate sono nemici veri per archetipo (`attori/nemico.js`), con direttore dei gettoni per piano; dalla storia 025 monete e cuori a terra (dischi/quadrati), HUD DOM in alto a destra e, nella stanza `banchetto`, i tre slot sui banchi con la lista dei prezzi (tasto `interagisci`); dalla storia 024, nella stanza `tesoro`, il piedistallo (quadrato d'oro, cono di luce tratteggiato `r_anteprima`, tratteggiato spento se inerte), il cartiglio del dono e l'HUD dei doni in DOM (sotto l'HUD dell'economia), le scintille dei ganci in oro; dalla storia 018 i bracieri (modelli `pd-n-04`, `pd-n-05`, `pd-d-02`) con piede pieno e cerchio tratteggiato solo in `anticipo` (largo) e `attivo` (fitto), etichetta con la fase; ogni pericolo di `__gioco.stanza.pericoli` espone `fase`, `progresso`, `sfasamento`; storia P01 (PROVVISORIA, build di prova; la 022 la sostituisce): nella stanza `boss` nasce dal contenuto `boss` di `pd-b-01` un solo gatto con `boss: true` e la taglia di `nemici.json › boss_provvisorio` (vita 60, raggio ×1,6, etichetta «boss (provvisorio)»), porte chiuse come in una stanza normale; alla sua morte `boss.sconfitto` {id: 'gatto', x, y} (cade il Medaglione), stanza svuotata → pulita, bottino del boss dall'economia; l'arco dell'uscita al centro (`stanze.json › uscita`) è tratteggiato finché la stanza non è pulita, poi pieno d'oro: restandoci `t_attesa` parte `piano.completato` {piano} una sola volta → ciclo in `pausa`, velo DOM con `interfaccia.json › fine_piano.velo`, poi lo stesso risveglio della morte con motivo `vittoria` (notte + 1, `piano_max` 2, notte salvata cancellata); senza hub la notte riparte dallo stesso seme |
@@ -64,14 +65,21 @@ Dalla storia 019 anche `direttore` (gettoni: `occupati`, `statistiche`, `impatti
 `creaNemico({archetipo, x, y, id})` (crea un nemico vero e lo aggiunge ai bersagli); ogni nemico espone
 `stato`, `scheda`, `hitbox()`, `direzione`, `gettone`, `dissoluzione`, `puntini`, `forzaStato(stato)`; dalla
 storia 020 anche `progresso` (0→1 nella fase), `anello` (chiusura dell'anello del lampo), `portataColpo`,
-`hitTicks`, `istanteImpatto` (tick dall'inizio del lampo), `segnoATerra()`, `versoOrbita` e, per il gatto, `posa()`.
+`hitTicks`, `istanteImpatto` (tick dall'inizio del lampo), `segnoATerra()` (solo dato per i test: il renderer non lo
+disegna più, regola dell'autore 2026-11-08), `versoOrbita` e, per il gatto, `posa()`.
+Dalla storia P04 anche `statistiche` (`correnti()`, `scegli(id)`, `stringiPatto`, `id`), `slot` (lo slot in uso), `menu()` (stato del
+menu DOM: `{personaggio, slot, daCancellare, slots[]}` o `null` se chiuso), `apriMenu()` e `scegli(personaggio, slot?)` (applica subito la
+scelta: chiude il menu, entra nell'hub; con uno slot diverso ricarica la pagina); `combattimento` espone anche `scintilleFulmine()`,
+`bruciature()`, `miraForzata`, `cooldownSparo` e `statistiche()`.
 
 ## Test
 
 ```sh
 node gioco/qa/fondazione.test.mjs   # unitari, senza browser (node:test)
-node gioco/qa/pagina.test.js        # Playwright: avvia un server su porta libera, apre la pagina,
-                                    # salva production/qa/evidence/fondazione-pagina.png
+node gioco/qa/pagina.test.js        # Playwright: avvia un server su porta libera, apre la pagina (parte nel menu, storia P04: lo chiude con
+                                    # `__gioco.scegli` prima di provare la tastiera; senza debug: menu nel DOM con i personaggi di personaggi.json,
+                                    # fondo del canvas dal token, Invio fa partire); salva production/qa/evidence/fondazione-pagina.png (hub)
+                                    # e menu-selezione.png (menu)
 node gioco/qa/combattimento.test.mjs      # unitari delle storie 007-011: ciclo simulato a tick fissi,
                                           # un caso per criterio Given-When-Then + prestazioni (20 bersagli)
 node gioco/qa/combattimento.wire.test.js  # Playwright: ?debug=1&wire=1, cammina/colpisce/scatta/para,
@@ -156,6 +164,9 @@ node gioco/qa/seme.js 200 [--piano P] [--stampa K]   # genera N piani e riporta 
 node gioco/qa/pacchetto.test.js           # impacchettatore: pacchetto via http e file://, frammento con CSP, determinismo; con la meta di index.html
                                           # il pacchetto parte nel piano 1 (stato notte, stanza d'ingresso)
 node gioco/qa/stati64.js                  # forza i 64 stati narrativi: nessun buco, nessun conflitto
+node gioco/qa/statistiche.test.mjs        # storia P04 (node:test): ricalcolaStatisticheIsaac del Teatro (attori/statistiche.js) per i 4 personaggi
+                                          # di personaggi.json e tre combinazioni di doni (blocco `teatro` di doni.json) e patti (patto.json), contro
+                                          # valori calcolati a mano; applicazione ai modificatori
 ```
 
 > **Storia P03 (2026-11-08, riallineo delle suite al Teatro).** I test non fissano più i valori del GDD vecchio: prezzi,
@@ -174,7 +185,8 @@ gioco/
 ├── stile/
 │   ├── token.css               palette dell'art bible come variabili CSS (unico posto con i colori)
 │   ├── base.css                palco 16:9 senza scroll, canvas e interfaccia sovrapposti
-│   └── prova.css               storia P02: pannello delle istruzioni iniziali di prova.html
+│   ├── prova.css               storia P02: pannello delle istruzioni iniziali di prova.html
+│   └── menu.css                storia P04: menu di selezione (sipario, quattro carte, slot, conferma di cancellazione)
 ├── motore/
 │   ├── avvio.js                radice di composizione: carica i parametri, collega input e ciclo,
 │   │                           compone campo + Ferruccio + combattimento + fantocci, renderer
@@ -227,7 +239,9 @@ gioco/
 │   │   ├── hub.js              storia 029: cartellino DOM dell'hub (notte, suggerimento per parlare/partire)
 │   │   ├── morte.js            storia 030: velo DOM della sequenza di morte (dissolvenza, lanterne, fili, maschera, didascalie)
 │   │   ├── ripresa.js          storia 030: pannello DOM «Continua / Lascia andare» della notte salvata (nell'hub)
-│   │   └── prova.js            storia P02: pannello DOM dei tasti di prova.html (sparisce al primo tasto o click)
+│   │   ├── prova.js            storia P02: pannello DOM dei tasti di prova.html (sparisce al primo tasto o click)
+│   │   └── menu.js             storia P04: menu DOM di selezione del personaggio e dello slot (Teatro ~4042): `apri()` → Promise
+│   │                           {personaggio, slot}; non conosce il ciclo, avvio.js applica la scelta
 │   ├── mondo/
 │   │   ├── fisica.js           campo a griglia con mura/ostacoli, cerchio contro rettangoli con
 │   │   │                       scivolamento, settore e rettangolo spazzato contro cerchi, linea di
@@ -247,6 +261,8 @@ gioco/
 │   │   └── hub.js              storia 029: l'hub come stanza speciale: campo dal modello hub/, presenze risolte sullo stato
 │   │                           narrativo (quando/aperta_se), interagisci sugli NPC, ingresso → hub.partenza con seme derivato
 │   ├── attori/
+│   │   ├── statistiche.js      storia P04: statistiche alla Isaac (ricalcolaStatisticheIsaac del Teatro) dal personaggio, dai doni con blocco
+│   │   │                       `teatro` e dai patti; `creaStatistiche` le applica ai modificatori e al combattimento
 │   │   ├── ferruccio.js        corpo: Fermo/Cammina/Scatta/Recupero scatto/Colpito/Morto, cariche,
 │   │   │                       maschere, invulnerabilità, spinta (storie 007-008)
 │   │   ├── combattimento.js    spada: Pronto/Fendente 1-3/Carica/Affondo/Parata/Controcolpo, buffer,
@@ -286,14 +302,20 @@ gioco/
 │   ├── ricordi.json            storia 028 (tabella): per ricordo persona, flag, scena_scelta, boss, archetipo_boss, valore_restituzione,
 │   │                           effetto_ceduto.scintille; r_raccolta (GDD ricordi-scelta.md)
 │   ├── risveglio.json          storia 030: durate delle quattro fasi della sequenza di morte (somma dei massimi = t_max 5000), lanterne
-│   ├── input.json              mappa dei tasti per le 12 azioni del contratto
+│   ├── input.json              mappa dei tasti per le azioni del contratto (storia P04: frecce = `spara_su/giu/sinistra/destra`, Q = `attivo`,
+│   │                           Esc = `menu`; WASD muove)
+│   ├── personaggi.json         storia P04 (Teatro PERSONAGGI_GIOCABILI ~2360): i 4 personaggi (`ordine`, `predefinito`, hpHalf, baseDmg,
+│   │                           baseSpd, attivo e dono iniziali, testi) e le costanti `isaac` di ricalcolaStatisticheIsaac {base,min,max}
+│   ├── oggetti-attivi.json     storia P04 (Teatro OGGETTI_ATTIVI ~2381): Forbici, Tamburello, Ampolla: maxCarica ed effetti {base,min,max}
+│   ├── patto.json              storia P04 (Teatro CATALOGO_PATTO ~2397): le reliquie del Patto d'Ombra, costo in mezze maschere e `mod`
+│   ├── boss.json               storia P04 (Teatro POOL_BOSS/BOSS_FINALE ~2515): pool dei boss dei piani 1-3 e Donna Luciana al piano 4
 │   └── moto-ridotto.json       sovrascritture applicate con prefers-reduced-motion
-├── contenuti/interfaccia.json  testi di HUD, banchetto, doni, cartiglio e hub (unico posto con le stringhe mostrate; storie 024-025, 027 `incontri`, 029 `hub`)
+├── contenuti/interfaccia.json  testi di HUD, banchetto, doni, cartiglio, hub e menu (unico posto con le stringhe mostrate; storie 024-025, 027 `incontri`, 029 `hub`, P04 `menu`)
 ├── contenuti/storia.json       la storia in forma macchina (copia di trama/storia.json; storia 026)
 ├── contenuti/narrativa.json    regole dello stato narrativo che storia.json non ha (derivati, finale → mondo, tipi obbligatori e senza attesa)
 ├── contenuti/ancoraggi.json    storia 027: ancoraggio (e `tableau`) per scena: tutto piazza-dante + il ricordo di Gaetano
 ├── contenuti/ripetizioni.json  storia 027: battute di ripetizione di Tonino per ogni stato di tonino_ricordo (canon Provisional)
-├── contenuti/modelli-stanza/piazza-dante/   14 modelli JSON del piano 1 + indice.json (storia 017)
+├── contenuti/modelli-stanza/piazza-dante/   21 modelli JSON dei piani 1-4 + indice.json (storia 017, Teatro: pd-b-02..04, pd-n-07..10)
 ├── contenuti/modelli-stanza/hub/piazza-dante.json   storia 029: modello dell'hub (griglia, arrivo, ingresso, presenze con quando/aperta_se, automatiche)
 ├── contenuti/piani/piazza-dante-riserva.json piano di riserva disegnato a mano (esempio del GDD, Q = 100)
 └── qa/

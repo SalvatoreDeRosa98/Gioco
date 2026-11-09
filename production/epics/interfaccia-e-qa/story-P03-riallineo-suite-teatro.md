@@ -44,7 +44,7 @@ Suite (prima → dopo):
 | Suite | Prima | Dopo |
 |---|---|---|
 | `boss-provvisorio.test.mjs` | 3/5 | 5/5 |
-| `combattimento.test.mjs` | 32/32 | 32/32 |
+| `combattimento.test.mjs` | 32/32 | 32/32 (38/38 con i 6 casi della P04) |
 | `condizioni.test.mjs` | 37/37 | 37/37 |
 | `doni.integrazione.test.mjs` | 6/9 | 9/9 |
 | `doni.test.mjs` | 14/27 | 27/27 |
@@ -57,7 +57,7 @@ Suite (prima → dopo):
 | `prova.test.mjs` | 3/3 | 3/3 |
 | `ricordi.test.mjs` | 9/9 | 9/9 |
 | `parametri.test.js` | 2/4 | 4/4 |
-| `pagina.test.js` | 3/5 | 5/5 |
+| `pagina.test.js` | 3/5 | 5/5 (riscritti 2 casi dopo la P04, vedi nota) |
 | `boss.wire.test.js` | 0/1 | 1/1 |
 | `cartiglio.wire.test.js` | 2/2 | 2/2 |
 | `combattimento.wire.test.js` | 0/2 | 2/2 |
@@ -100,6 +100,17 @@ Screenshot rigenerati dalle suite in `production/qa/evidence/` (deviceScaleFacto
   a 80 (il cartiglio DOM va a capo). I nomi restano ≤ 28.
 - **Budget dei ganci** (doni 16): con `max_slot_doni` 5 del Teatro il budget si prova con il suo minimo (3), così
   budget + 2 doni stanno negli slot; il caso resta identico nella sostanza.
+
+## Nota (2026-11-09, chiusura del passo 0)
+
+La seconda tranche del porting (storia P04: menu di selezione, statistiche alla Isaac, frecce che sparano, meta
+`gioco-avvio` ridotta a `debug=1`) ha rimesso in rosso 2 casi di `pagina.test.js`: la pagina parte nel menu, che
+cattura per sé W/A/S/D e Invio, e il centro del canvas non mostra più il fondo. I due casi sono stati riscritti (il
+primo chiude il menu con `__gioco.scegli` prima di provare la tastiera e salva `menu-selezione.png`; il secondo verifica
+il menu nel DOM con i personaggi letti da `personaggi.json`, il fondo del canvas dal token e la partenza con Invio).
+Nel farlo è emerso un difetto vero: `__gioco.scegli` applicava la scelta senza chiudere il menu, che restava a schermo
+sopra l'hub e continuava a catturare i tasti (`applicaScelta` in `avvio.js` ora lo chiude). Stato finale: 14 suite
+`node:test` 257/257, `parametri.test.js` 4/4, 12 suite Playwright verdi.
 
 ## Segnalazioni per i passi successivi (non toccate qui)
 

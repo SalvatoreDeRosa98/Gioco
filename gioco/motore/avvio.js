@@ -667,6 +667,9 @@ async function avvia() {
       window.location.assign(u.href);
       return false;
     }
+    // la scelta può arrivare anche da `__gioco.scegli` (QA) mentre il menu è aperto: va chiuso qui, altrimenti resta a
+    // schermo e continua a catturare i suoi tasti (frecce/WASD, Invio) sopra l'hub
+    if (menu.aperto) menu.chiudi();
     statistiche.scegli(personaggio);
     ferruccio.impostaMaschere(modificatori.valore('ferruccio.maschere_max'));
     salvataggio.salva('profilo', slot, { ...(salvataggio.carica('profilo', slot) ?? {}), [PARAM_PERSONAGGIO]: personaggio });

@@ -39,4 +39,5 @@ HUD a proscenio (maschere, scatto, monete, doni, nome della stanza), menu con tr
 | 031 | HUD a proscenio | UI | Ready | ADR-0001 |
 | 032 | Menu, tre slot, Continua, opzioni minime | UI | Ready | ADR-0001 |
 | 033 | Percorso Playwright: seme fisso, bot, evidenze, 64 stati | Logic | Ready | ADR-0001 |
+| P04 | Menu di selezione del personaggio e dello slot, statistiche alla Isaac, sparo a 4 direzioni con le frecce, tabelle del Teatro in JSON (personaggi, oggetti attivi, patto, boss) — meta `gioco-avvio` = `debug=1` | UI + Logic | In Progress (menu, statistiche e frecce fatti e testati: `statistiche.test.mjs` 11/11, `combattimento.test.mjs` 38/38, `pagina.test.js` 5/5 con `menu-selezione.png`; mancano l'uso di Q, il Patto in gioco, i boss del pool come nemici veri) | ADR-0001, ADR-0002 |
 | P03 | Riallineo delle suite al Teatro — i test leggono i valori dai JSON (prezzi, drop, vite, catalogo a 25, 21 modelli, 5/7/8/9 stanze, discesa tra i piani, meta `gioco-avvio` di index.html) | Logic | Done (13 suite node:test 241/241, `parametri.test.js` 4/4, 9 suite Playwright verdi, `stati64`, `seme 200`) | ADR-0002, ADR-0003 |

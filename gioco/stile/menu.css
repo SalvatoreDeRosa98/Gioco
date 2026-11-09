@@ -44,7 +44,8 @@
   letter-spacing: 0.08em;
   text-shadow: 0 0 0.6vh var(--inchiostro);
 }
-#interfaccia .menu-sottotitolo { position: relative; margin: 0; font-size: clamp(11px, 2vh, 20px); color: var(--carta-luce); }
+/* il sottotitolo sta sotto il sipario (alto 7vh + bordo), non a cavallo del suo bordo d'oro */
+#interfaccia .menu-sottotitolo { position: relative; margin: 2.2vh 0 0; font-size: clamp(11px, 2vh, 20px); color: var(--carta-luce); }
 #interfaccia .menu-carte {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -110,5 +111,7 @@
   text-align: center;
 }
 #interfaccia .menu-conferma { display: flex; gap: 0.8vw; align-items: center; padding: 0.4vh 1vw; border: 0.2vh solid var(--rosso); background: color-mix(in srgb, var(--inchiostro) 85%, var(--rosso) 15%); }
+/* `hidden` deve vincere sul display: flex, altrimenti resta una striscia rossa vuota sotto gli slot */
+#interfaccia .menu-conferma[hidden] { display: none; }
 #interfaccia .menu-conferma p { margin: 0; }
 #interfaccia .menu-istruzioni { margin: 0; font-size: clamp(9px, 1.5vh, 15px); color: var(--carta-luce); opacity: 0.8; }
