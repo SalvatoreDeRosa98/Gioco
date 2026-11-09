@@ -636,6 +636,10 @@ export function creaRenderer({
 
     ellisseAppoggio(px, py + 12, 20, 8, 0.5);
 
+    const conSpada = typeof combattimento?.haSpada === 'function' ? combattimento.haSpada() : false;
+    const inFendente = combattimento.stato === 'fendente';
+    const angMira = Math.atan2(mira.y, mira.x);
+
     // Sprite DI GIOCO del personaggio scelto (manifesto degli sprite consegnato dall'autore): se il foglio è
     // caricato si disegna il fotogramma della posa, ancorato ai piedi, ribaltato verso sinistra se serve;
     // altrimenti resta il disegno procedurale di Ferruccio qui sotto.
@@ -651,8 +655,7 @@ export function creaRenderer({
       if (verso < 0) ctx.scale(-1, 1);
       ctx.drawImage(foglio.img, colonna * fw, riga * fh, fw, fh, -fw / 2, -fh, fw, fh);
       ctx.restore();
-      return;
-    }
+    } else {
 
     // Ferruccio NON ha il filo: è l'unico burattino che ha spezzato i propri fili;
     // solo tutti gli altri personaggi e nemici hanno i fili collegati alle Mani in alto.
@@ -660,9 +663,6 @@ export function creaRenderer({
     // Disegno pittorico dark-fairytale di Ferruccio fedele all'immagine di riferimento:
     // cappuccio conico in stoffa crema, cavità ovale nera col volto e due occhi bianchi luminosi,
     // sciarpa rossa a due code svolazzanti, mantello a campana crema, gambe sottili scure e stocco.
-    const conSpada = typeof combattimento?.haSpada === 'function' ? combattimento.haSpada() : false;
-    const inFendente = combattimento.stato === 'fendente';
-    const angMira = Math.atan2(mira.y, mira.x);
 
     ctx.save();
     ctx.translate(px, py);
@@ -855,6 +855,7 @@ export function creaRenderer({
       ctx.fill();
     }
     ctx.restore();
+    }
 
     // Fendente luminoso a mezzaluna (quando attacca con lo stocco)
     if (conSpada && inFendente) {
