@@ -5,7 +5,7 @@ Engine: Web (browser): Canvas 2D, ES modules
 
 | Epic | Layer | GDD | Status | Stories |
 |------|-------|-----|--------|---------|
-| [Fondazione del motore](fondazione/EPIC.md) | Foundation | design/gdd/controllo-ferruccio.md (regola 1) | Ready | 7 stories |
+| [Fondazione del motore](fondazione/EPIC.md) | Foundation | design/gdd/controllo-ferruccio.md (regola 1) | Ready | 9 stories |
 | [Ferruccio e combattimento](ferruccio-e-combattimento/EPIC.md) | Core | design/gdd/controllo-ferruccio.md | Ready | 7 stories |
 | [Stanze e piano 1](stanze-e-piano-1/EPIC.md) | Core | design/gdd/stanze-porte.md | Ready | 5 stories |
 | [Nemici e Gatto dei Quattro Canti](nemici-e-gatto/EPIC.md) | Feature | design/gdd/nemici.md | Ready | 4 stories |

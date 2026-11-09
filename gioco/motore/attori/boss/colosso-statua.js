@@ -13,33 +13,33 @@ export const PATTERN_GURDY = 'gurdy_turret';
 /** Archetipo generato (chiave di `nemici.archetipi`). */
 export const ARCHETIPO_GENERATO = 'bomba';
 
-/** @param {object} ctx contesto fornito dalla fabbrica dei nemici */
-export function creaPatternColosso(ctx) {
-  const macchina = creaMacchinaBoss(ctx);
-  const B = ctx.B;
+/** @param {object} contesto contesto fornito dalla fabbrica dei nemici */
+export function creaPatternColosso(contesto) {
+  const macchina = creaMacchinaBoss(contesto);
+  const B = contesto.B;
   let direzione = { x: -1, y: 0 };
 
-  const bombeVive = () => ctx.altri().filter((a) => a && a.archetipo === ARCHETIPO_GENERATO && a.stato !== 'morto' && (a.vita ?? 1) > 0).length;
+  const bombeVive = () => contesto.altri().filter((a) => a && a.archetipo === ARCHETIPO_GENERATO && a.stato !== 'morto' && (a.vita ?? 1) > 0).length;
 
   function salva() {
     macchina.attacca({
       tick: () => {
-        anello(ctx, B('n_anello'), B('v_anello'), rad(B('rotazione_gradi')) * macchina.salve);
+        anello(contesto, B('n_anello'), B('v_anello'), rad(B('rotazione_gradi')) * macchina.salve);
         if (macchina.salve % Math.max(1, Math.round(B('ogni_salve_bomba'))) === 0 && bombeVive() < B('max_bombe')) {
-          const a = ctx.rng() * Math.PI * 2;
-          const d = B('d_bomba_min') + ctx.rng() * (B('d_bomba_max') - B('d_bomba_min'));
-          const p = ctx.dentroCampo(ctx.corpo.x + Math.cos(a) * d, ctx.corpo.y + Math.sin(a) * d, B('margine'));
-          ctx.genera(ARCHETIPO_GENERATO, p.x, p.y);
+          const a = contesto.rng() * Math.PI * 2;
+          const d = B('d_bomba_min') + contesto.rng() * (B('d_bomba_max') - B('d_bomba_min'));
+          const p = contesto.dentroCampo(contesto.corpo.x + Math.cos(a) * d, contesto.corpo.y + Math.sin(a) * d, B('margine'));
+          contesto.genera(ARCHETIPO_GENERATO, p.x, p.y);
         }
         return true;
       },
-      cdMs: cdMs(ctx, 't_cd'),
+      cdMs: cdMs(contesto, 't_cd'),
     });
   }
 
   function tick(dt) {
-    const b = ctx.bersaglio();
-    if (b && b.x !== ctx.corpo.x) direzione = { x: Math.sign(b.x - ctx.corpo.x), y: 0 };
+    const b = contesto.bersaglio();
+    if (b && b.x !== contesto.corpo.x) direzione = { x: Math.sign(b.x - contesto.corpo.x), y: 0 };
     if (macchina.tick(dt, null)) salva();
   }
 

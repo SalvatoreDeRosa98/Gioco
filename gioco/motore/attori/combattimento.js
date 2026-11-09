@@ -76,9 +76,9 @@ export function creaCombattimento({
   const val = (nome) => modificatori.valore(`combattimento.${nome}`);
   const ticks = (nome) => tempo.ticksDaMs(val(nome));
   const proiettiliFerruccio = [];
-  const esplosioniProiettili = [];
-  /** Storia P04: fulmini a catena da disegnare {x1,y1,x2,y2,tick} e bruciature attive {bersaglio, ticks, ogni, danno}. */
-  const scintilleFulmine = [];
+  /** Storia P04: bruciature attive {bersaglio, ticks, ogni, danno}. Gli effetti solo visivi (splash dei proiettili, fulmini a
+   *  catena, fotogramma dello stocco) NON stanno qui (storia P12): lo stato emette `ferruccio.proiettile_spento` {x, y, tipo, causa}
+   *  e `ferruccio.fulmine` {x1, y1, x2, y2} ed espone `stato`/`fase`/`faseTicks`; `resa/impatti.js` ne deriva i fotogrammi. */
   const bruciature = [];
   // --- squadra oggetti (storia P09): raggio cremisi continuo del Patto (configurazione da patto.json › regole.raggio) ---
   let cfgRaggio = null;
@@ -392,7 +392,7 @@ export function creaCombattimento({
       let dx = altro.x - b.x; let dy = altro.y - b.y;
       const d = Math.hypot(dx, dy) || 1; dx /= d; dy /= d;
       feriscuBersaglio(altro, dannoColpoBase * frazione, dx, dy, 0);
-      scintilleFulmine.push({ x1: b.x, y1: b.y, x2: altro.x, y2: altro.y, tick: 0, maxTick: 6 });
+      eventi.emit('ferruccio.fulmine', { x1: b.x, y1: b.y, x2: altro.x, y2: altro.y });
     }
   }
 
@@ -406,10 +406,6 @@ export function creaCombattimento({
         v.contatore = 0;
         feriscuBersaglio(v.bersaglio, v.danno, 0, 0, 0);
       }
-    }
-    for (let i = scintilleFulmine.length - 1; i >= 0; i--) {
-      scintilleFulmine[i].tick += 1;
-      if (scintilleFulmine[i].tick >= scintilleFulmine[i].maxTick) scintilleFulmine.splice(i, 1);
     }
   }
 
@@ -428,7 +424,7 @@ export function creaCombattimento({
           const sol = solidoSulPunto(p.x, p.y);
           if (sol) {
             eventi.emit('ferruccio.colpo_muro', { x: p.x, y: p.y, solido: sol, tipo: p.tipo });
-            esplosioniProiettili.push({ x: p.x, y: p.y, tick: 0, maxTick: 12, tipo: p.tipo });
+            eventi.emit('ferruccio.proiettile_spento', { x: p.x, y: p.y, tipo: p.tipo, causa: 'muro' });
             proiettiliFerruccio.splice(i, 1);
             continue;
           }
@@ -447,7 +443,7 @@ export function creaCombattimento({
           feriscuBersaglio(b, p.danno, dx, dy, val('spinta_f'));
           if (p.burn && b.vita > 0) brucia(b, p.danno);
           if (p.chain) catena(b, p.danno);
-          esplosioniProiettili.push({ x: p.x, y: p.y, tick: 0, maxTick: 12, tipo: p.tipo });
+          eventi.emit('ferruccio.proiettile_spento', { x: p.x, y: p.y, tipo: p.tipo, causa: 'bersaglio' });
           // overflowPierce (Lacrima di Piombo): il danno in eccesso sull'ucciso prosegue oltre
           if (p.overflowPierce && b.vita <= 0 && p.danno > vitaPrima) {
             p.danno -= vitaPrima;
@@ -461,15 +457,9 @@ export function creaCombattimento({
       }
       if (rimuovi) {
         if (p.dist >= p.maxDist) {
-          esplosioniProiettili.push({ x: p.x, y: p.y, tick: 0, maxTick: 12, tipo: p.tipo });
+          eventi.emit('ferruccio.proiettile_spento', { x: p.x, y: p.y, tipo: p.tipo, causa: 'portata' });
         }
         proiettiliFerruccio.splice(i, 1);
-      }
-    }
-    for (let i = esplosioniProiettili.length - 1; i >= 0; i--) {
-      esplosioniProiettili[i].tick += 1;
-      if (esplosioniProiettili[i].tick >= esplosioniProiettili[i].maxTick) {
-        esplosioniProiettili.splice(i, 1);
       }
     }
   }
@@ -853,27 +843,19 @@ export function creaCombattimento({
   });
   ferruccio.collegaVincoli({ puoScattare, modVelocita });
 
-  function frameSpada() {
-    if (s.stato !== 'fendente') return 0;
-    if (s.fase === 'startup') return s.faseTicks > 2 ? 0 : 1;
-    if (s.fase === 'attivo') return s.faseTicks > 2 ? 2 : 3;
-    return s.faseTicks > 3 ? 4 : 5;
-  }
-
   return {
     get stato() { return s.controcolpoTicks > 0 && s.stato === 'pronto' ? 'controcolpo' : s.stato; },
     get fase() { return s.fase; },
+    /** Tick residui della fase corrente (numero dello stato: `resa/impatti.js › frameSpada` ne deriva il fotogramma). */
+    get faseTicks() { return s.faseTicks; },
     get numero() { return s.numero; },
     get mira() { return { ...s.mira }; },
     get caricaCompleta() { return s.stato === 'carica' && s.tenutoTicks >= ticks('t_carica'); },
     get controcolpoAttivo() { return s.controcolpoTicks > 0; },
     get bufferAttivo() { return s.bufferTicks > 0; },
     haSpada,
-    frameSpada,
     proiettiliFerruccio: () => proiettiliFerruccio,
-    esplosioniProiettili: () => esplosioniProiettili,
-    /** Storia P04: fulmini a catena da disegnare, bruciature attive, direzione della freccia tenuta, tick alla prossima raffica. */
-    scintilleFulmine: () => scintilleFulmine,
+    /** Storia P04: bruciature attive, direzione della freccia tenuta, tick alla prossima raffica. */
     bruciature: () => bruciature.map((v) => ({ bersaglio: v.bersaglio, ticks: v.ticks, danno: v.danno })),
     direzioneSparo,
     get cooldownSparo() { return s.cooldownSparo; },

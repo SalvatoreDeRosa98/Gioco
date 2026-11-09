@@ -8,8 +8,9 @@
  * (250 ms) nella direzione della porta: la nuova stanza entra dal lato verso cui si va. Durante la
  * transizione `inTransizione` è vero e la notte ignora l'input (notte.js).
  *
- * Modulo di logica pura (conta i tick, non disegna): `applica(ctx)` imposta solo la trasformazione
- * del contesto per chi disegna la stanza. Nessun numero di gioco: `stanze.camera.*`.
+ * Modulo di logica pura (conta i tick, non disegna): espone solo numeri (`scala`, `scorrimento()`, `progresso()`);
+ * la trasformazione del contesto Canvas la applica `resa/trasformazioni.js › applicaCamera` (storia P12: lo stato non
+ * disegna). Nessun numero di gioco: `stanze.camera.*`.
  */
 
 import { VERSO_LATO } from './modelli.js';
@@ -83,20 +84,6 @@ export function creaCamera({ parametri, tempo, scena, eventi = null }) {
     return { x: v.x * scena.larghezza * k, y: v.y * scena.altezza * k };
   }
 
-  /**
-   * Imposta sul contesto la trasformazione della stanza: scorrimento, poi scala attorno al centro
-   * della scena. Chi chiama fa `save`/`restore`.
-   * @param {CanvasRenderingContext2D} ctx
-   */
-  function applica(ctx) {
-    const cx = scena.larghezza / 2;
-    const cy = scena.altezza / 2;
-    const s = scorrimento();
-    ctx.translate(cx + s.x, cy + s.y);
-    ctx.scale(c.scala, c.scala);
-    ctx.translate(-cx, -cy);
-  }
-
   return {
     get scala() { return c.scala; },
     get lato() { return c.lato; },
@@ -107,6 +94,5 @@ export function creaCamera({ parametri, tempo, scena, eventi = null }) {
     tick,
     progresso,
     scorrimento,
-    applica,
   };
 }

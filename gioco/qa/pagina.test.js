@@ -10,6 +10,9 @@
  * `?p.*` solo in debug; `prefers-reduced-motion` che azzera scossa e scie; tastiera diagonale
  * normalizzata (a menu chiuso: il menu cattura i suoi tasti, `__gioco.scegli` lo chiude e porta nell'hub); canvas scalato
  * al contenitore senza scroll; senza debug il menu è nel DOM con i personaggi di `personaggi.json` e Invio fa partire.
+ * Storia P12 (passo fisso): con un `requestAnimationFrame` finto installato prima degli script (`__orologio.avanza(dtMs, n)`),
+ * 1 s a 120 Hz (120 frame da 8,33 ms) e 1 s a 60 Hz (60 frame) in `?debug=1&piano=1&seme=1845` con `destra` tenuta danno gli
+ * stessi tick e la stessa posizione di Ferruccio; screenshot `fondazione-passo-fisso.png` (pagina a 120 Hz).
  * Salva gli screenshot `production/qa/evidence/fondazione-pagina.png` (hub) e `menu-selezione.png` (menu) e chiude il
  * server alla fine.
  */
@@ -27,6 +30,9 @@ const { chromium } = require('playwright');
 const RADICE_GIOCO = path.resolve(__dirname, '..');
 const EVIDENZA = path.resolve(RADICE_GIOCO, '..', 'production', 'qa', 'evidence', 'fondazione-pagina.png');
 const EVIDENZA_MENU = path.resolve(RADICE_GIOCO, '..', 'production', 'qa', 'evidence', 'menu-selezione.png');
+const EVIDENZA_PASSO = path.resolve(RADICE_GIOCO, '..', 'production', 'qa', 'evidence', 'fondazione-passo-fisso.png');
+/** Tasto di `destra` letto da input.json (il test non ricopia la mappa). */
+const TASTO_DESTRA = JSON.parse(fs.readFileSync(path.join(RADICE_GIOCO, 'contenuti', 'parametri', 'input.json'), 'utf8')).tastiera.destra[0];
 /** I personaggi del menu letti dal JSON (storia P04): il test non ricopia nomi né ordine. */
 const PERSONAGGI = JSON.parse(fs.readFileSync(path.join(RADICE_GIOCO, 'contenuti', 'parametri', 'personaggi.json'), 'utf8'));
 
@@ -220,6 +226,68 @@ async function main() {
       assert.ok(fs.statSync(EVIDENZA).size > 0);
       assert.deepEqual(errori, []);
       await contesto.close();
+    });
+
+    await caso('passo fisso (storia P12): 1 s a 120 Hz simulati (rAF finto ogni 8,33 ms) dà gli stessi tick e la stessa posizione di Ferruccio di 1 s a 60 Hz', async () => {
+      // rAF virtuale installato prima degli script della pagina: i frame scattano solo da `__orologio.avanza(dtMs, n)`
+      // (performance.now resta vero: il ciclo usa il timestamp del frame, non l'orologio).
+      const orologio = `(() => {
+        let ora = 0; let id = 0; const coda = [];
+        window.requestAnimationFrame = (fn) => { coda.push({ id: ++id, fn }); return id; };
+        window.cancelAnimationFrame = (i) => { const k = coda.findIndex((c) => c.id === i); if (k >= 0) coda.splice(k, 1); };
+        window.__orologio = {
+          avanza(dtMs, n) { for (let i = 0; i < n; i++) { ora += dtMs; for (const c of coda.splice(0)) c.fn(ora); } return ora; },
+          ora: () => ora,
+        };
+      })();`;
+      /** Apre la notte del piano 1 con il seme fisso, scalda 5 frame a 60 Hz, tiene `destra` e simula 1 s a `hz` frame al secondo. */
+      async function simula(hz, salvaIn = null) {
+        const contesto = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+        await contesto.addInitScript(orologio);
+        const pagina = await contesto.newPage();
+        const errori = [];
+        pagina.on('console', (m) => { if (m.type() === 'error') errori.push(m.text()); });
+        pagina.on('pageerror', (e) => errori.push(String(e)));
+        await pagina.goto(`${server.base}/?debug=1&piano=1&seme=1845`, { waitUntil: 'load' });
+        // polling a intervalli: quello di default usa il rAF della pagina, che qui è finto
+        await pagina.waitForFunction(() => window.__gioco && window.__gioco.parametri.caricato() && window.__gioco.piano, null, { polling: 25 });
+        const avvio = await pagina.evaluate(() => {
+          window.__orologio.avanza(1000 / 60, 5);
+          return { stato: window.__gioco.stato, tick: window.__gioco.ciclo.contaTick(), frame: window.__gioco.ciclo.contaFrame() };
+        });
+        assert.equal(avvio.stato, 'notte', JSON.stringify(avvio));
+        assert.equal(avvio.frame, 5, 'cinque frame disegnati dal rAF finto');
+        await pagina.keyboard.down(TASTO_DESTRA);
+        const esito = await pagina.evaluate(({ hz, prima }) => {
+          const x0 = window.__gioco.ferruccio.x;
+          const t0 = window.__gioco.ciclo.contaTick();
+          window.__orologio.avanza(1000 / hz, hz);
+          return {
+            tick: window.__gioco.ciclo.contaTick() - t0, frame: window.__gioco.ciclo.contaFrame() - prima.frame,
+            x: window.__gioco.ferruccio.x, y: window.__gioco.ferruccio.y, spostamento: window.__gioco.ferruccio.x - x0,
+            stato: window.__gioco.stato,
+          };
+        }, { hz, prima: avvio });
+        await pagina.keyboard.up(TASTO_DESTRA);
+        if (salvaIn) {
+          fs.mkdirSync(path.dirname(salvaIn), { recursive: true });
+          await pagina.screenshot({ path: salvaIn });
+        }
+        assert.deepEqual(errori, [], `errori in console a ${hz} Hz:\n${errori.join('\n')}`);
+        await contesto.close();
+        return esito;
+      }
+      const a60 = await simula(60);
+      const a120 = await simula(120, EVIDENZA_PASSO);
+      console.log(`  60 Hz: ${JSON.stringify(a60)}\n  120 Hz: ${JSON.stringify(a120)}`);
+      assert.equal(a60.frame, 60);
+      assert.equal(a120.frame, 120, 'il rAF finto ha disegnato 120 frame');
+      assert.equal(a60.tick, 60, '1 s = 60 tick a 60 Hz');
+      assert.equal(a120.tick, 60, '1 s = 60 tick anche a 120 Hz: il doppio dei frame non raddoppia la simulazione');
+      assert.ok(a60.spostamento > 0, 'Ferruccio ha camminato a destra');
+      assert.equal(a120.x, a60.x, 'stessa x dopo 1 s');
+      assert.equal(a120.y, a60.y, 'stessa y dopo 1 s');
+      assert.ok(fs.statSync(EVIDENZA_PASSO).size > 0);
     });
 
     await caso('debug: override ?p.combattimento.portata=90 vale 90', async () => {

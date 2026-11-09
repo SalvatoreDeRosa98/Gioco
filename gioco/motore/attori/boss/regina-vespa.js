@@ -13,32 +13,32 @@ export const PATTERN_DUKE = 'duke_flies';
 /** Archetipo evocato (chiave di `nemici.archetipi`). */
 export const ARCHETIPO_EVOCATO = 'vespa';
 
-/** @param {object} ctx contesto fornito dalla fabbrica dei nemici */
-export function creaPatternRegina(ctx) {
-  const macchina = creaMacchinaBoss(ctx);
-  const B = ctx.B;
-  let vx = B('vx') * ctx.moltVel * (ctx.rng() < 0.5 ? -1 : 1);
-  let vy = B('vy') * ctx.moltVel * (ctx.rng() < 0.5 ? -1 : 1);
+/** @param {object} contesto contesto fornito dalla fabbrica dei nemici */
+export function creaPatternRegina(contesto) {
+  const macchina = creaMacchinaBoss(contesto);
+  const B = contesto.B;
+  let vx = B('vx') * contesto.moltVel * (contesto.rng() < 0.5 ? -1 : 1);
+  let vy = B('vy') * contesto.moltVel * (contesto.rng() < 0.5 ? -1 : 1);
 
   /** Un passo di rimbalzo: ogni asse separato, così l'urto inverte solo la sua componente. */
   function rimbalza(dt) {
-    if (ctx.muovi(vx * dt, 0, true)) vx = -vx;
-    if (ctx.muovi(0, vy * dt, true)) vy = -vy;
+    if (contesto.muovi(vx * dt, 0, true)) vx = -vx;
+    if (contesto.muovi(0, vy * dt, true)) vy = -vy;
   }
 
-  const comuniVivi = () => ctx.altri().filter((a) => a && !a.boss && a.stato !== 'morto' && (a.vita ?? 1) > 0).length;
+  const comuniVivi = () => contesto.altri().filter((a) => a && !a.boss && a.stato !== 'morto' && (a.vita ?? 1) > 0).length;
 
   function salva() {
     macchina.attacca({
       tick: () => {
         if (comuniVivi() < B('max_vespe')) {
           const s = B('scarto_evocazione');
-          ctx.genera(ARCHETIPO_EVOCATO, ctx.corpo.x + (ctx.rng() - 0.5) * s, ctx.corpo.y + (ctx.rng() - 0.5) * s);
+          contesto.genera(ARCHETIPO_EVOCATO, contesto.corpo.x + (contesto.rng() - 0.5) * s, contesto.corpo.y + (contesto.rng() - 0.5) * s);
         }
-        anello(ctx, B('n_anello'), B('v_anello'), rad(B('rotazione_gradi')) * macchina.salve);
+        anello(contesto, B('n_anello'), B('v_anello'), rad(B('rotazione_gradi')) * macchina.salve);
         return true;
       },
-      cdMs: cdMs(ctx, 't_cd'),
+      cdMs: cdMs(contesto, 't_cd'),
     });
   }
 

@@ -50,7 +50,7 @@ export function normalizzaGancio(g) {
 /**
  * Valida un modificatore `{statistica, operazione, valore}` contro il registro e i parametri.
  * @param {object} m
- * @param {{ registro: object, parametri: { ha: (k: string) => boolean, statistica: (k: string) => object }, dove: string }} ctx
+ * @param {{ registro: object, parametri: { ha: (k: string) => boolean, statistica: (k: string) => object }, dove: string }} contesto
  * @returns {string[]} errori
  */
 export function validaModificatore(m, { registro, parametri, dove }) {
@@ -95,7 +95,7 @@ export function validaModificatore(m, { registro, parametri, dove }) {
 /**
  * Valida un'iscrizione a un gancio (già normalizzata o no).
  * @param {object} g
- * @param {{ ganci: string[], libreria: Map<string, { obbligatori: string[], predefiniti: object }>, registro: object, parametri: object, dove: string }} ctx
+ * @param {{ ganci: string[], libreria: Map<string, { obbligatori: string[], predefiniti: object }>, registro: object, parametri: object, dove: string }} contesto
  * @returns {string[]} errori
  */
 export function validaGancio(g, { ganci, libreria, registro, parametri, dove }) {
@@ -130,7 +130,7 @@ export function validaGancio(g, { ganci, libreria, registro, parametri, dove }) 
 /**
  * Valida il catalogo (il JSON intero di doni.json) e indicizza i doni validi per id.
  * @param {object} catalogo contenuto di doni.json
- * @param {{ parametri: object, libreria: Map<string, object> }} ctx
+ * @param {{ parametri: object, libreria: Map<string, object> }} contesto
  * @returns {{ errori: string[], indice: Map<string, object>, esclusi: string[] }}
  */
 export function validaCatalogo(catalogo, { parametri, libreria }) {
@@ -188,7 +188,7 @@ export function validaCatalogo(catalogo, { parametri, libreria }) {
 /**
  * Valida il file delle sinergie: due tag diversi del vocabolario, effetto con sole chiavi note.
  * @param {object} file contenuto di sinergie.json
- * @param {{ catalogo: object, parametri: object, libreria: Map<string, object> }} ctx
+ * @param {{ catalogo: object, parametri: object, libreria: Map<string, object> }} contesto
  * @returns {{ errori: string[], valide: object[] }}
  */
 export function validaSinergie(file, { catalogo, parametri, libreria }) {

@@ -798,7 +798,7 @@ async function creaMondoIsaac({ personaggio = 'ferruccio', doni = [], ferruccioX
   statistiche.scegli(personaggio);
   for (const id of doni) mod.aggiungiDono(id);
   const ricevuti = [];
-  for (const nome of ['ferruccio.colpo', 'ferruccio.uccisione', 'ferruccio.sparo']) eventi.on(nome, (p) => ricevuti.push({ nome, payload: p }));
+  for (const nome of ['ferruccio.colpo', 'ferruccio.uccisione', 'ferruccio.sparo', 'ferruccio.proiettile_spento']) eventi.on(nome, (p) => ricevuti.push({ nome, payload: p }));
   const tasto = (azione) => `t:${parametri.get(`input.tastiera.${azione}`)[0]}`;
   const mondo = {
     parametri, tempo, eventi, input, mod, campo, centro, ferruccio, comb, bersagli, ricevuti, statistiche,
@@ -870,6 +870,13 @@ test('P04 frecce: la freccia su mira in alto anche camminando a destra (direzion
   assert.ok(m.eventiDi('ferruccio.colpo').length >= 1, 'colpito');
   assert.ok(f.vita <= 0, 'ucciso: 3.5 ≥ 3');
   assert.equal(m.eventiDi('ferruccio.uccisione').length, 1);
+  // storia P12: lo stato non tiene fotogrammi: l'impatto è un evento con numeri (la resa ne deriva lo splash)
+  const spenti = m.eventiDi('ferruccio.proiettile_spento');
+  assert.ok(spenti.length >= 1, 'proiettile spento sul bersaglio');
+  assert.equal(spenti[0].payload.causa, 'bersaglio');
+  assert.ok(Number.isFinite(spenti[0].payload.x) && Number.isFinite(spenti[0].payload.y) && typeof spenti[0].payload.tipo === 'string');
+  assert.equal(typeof m.comb.faseTicks, 'number', 'lo stato espone i tick della fase');
+  for (const visivo of ['frameSpada', 'esplosioniProiettili', 'scintilleFulmine']) assert.equal(visivo in m.comb, false, `${visivo} non sta nello stato`);
 });
 
 test('P04 tipi: Agnese spara coppie (doppia); Triplo Occhio dà ventagli di 3; Maschera dei 4 Venti spara in 4 direzioni (×3 con triplo)', async () => {

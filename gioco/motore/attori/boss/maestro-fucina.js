@@ -11,30 +11,30 @@ import { creaMacchinaBoss, versoBersaglio, cdMs, insegui, anello, ventaglio, esp
 
 export const PATTERN_SCISSOR = 'scissor_blades';
 
-/** @param {object} ctx contesto fornito dalla fabbrica dei nemici */
-export function creaPatternMaestro(ctx) {
-  const macchina = creaMacchinaBoss(ctx);
-  const B = ctx.B;
+/** @param {object} contesto contesto fornito dalla fabbrica dei nemici */
+export function creaPatternMaestro(contesto) {
+  const macchina = creaMacchinaBoss(contesto);
+  const B = contesto.B;
   let direzione = { x: -1, y: 0 };
 
   function forbici() {
     macchina.attacca({
       tick: () => {
-        const v = versoBersaglio(ctx);
+        const v = versoBersaglio(contesto);
         if (!v) return true;
         for (const segno of [-1, 1]) {
-          ventaglio(ctx, v.angolo + segno * rad(B('scarto_forbice_gradi')), B('n_lama'), rad(B('passo_lama_gradi')), B('v_lama'));
+          ventaglio(contesto, v.angolo + segno * rad(B('scarto_forbice_gradi')), B('n_lama'), rad(B('passo_lama_gradi')), B('v_lama'));
         }
-        if (ctx.furia()) anello(ctx, B('n_anello_furia'), B('v_anello'), v.angolo);
+        if (contesto.furia()) anello(contesto, B('n_anello_furia'), B('v_anello'), v.angolo);
         return true;
       },
-      cdMs: cdMs(ctx, 't_cd'),
+      cdMs: cdMs(contesto, 't_cd'),
     });
   }
 
   function tick(dt) {
-    const pronto = macchina.tick(dt, (d) => { const v = insegui(ctx, d); if (v && v.x !== 0) direzione = { x: Math.sign(v.x), y: 0 }; });
-    if (pronto && versoBersaglio(ctx)) forbici();
+    const pronto = macchina.tick(dt, (d) => { const v = insegui(contesto, d); if (v && v.x !== 0) direzione = { x: Math.sign(v.x), y: 0 }; });
+    if (pronto && versoBersaglio(contesto)) forbici();
   }
 
   return esponiPattern({ nome: PATTERN_SCISSOR, macchina, tick, direzione: () => direzione });

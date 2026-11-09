@@ -12,39 +12,39 @@ import { creaMacchinaBoss, cdMs, insegui, anello, ventaglio, esponiPattern, rad 
 
 export const PATTERN_QUEEN = 'marionette_queen';
 
-/** @param {object} ctx contesto fornito dalla fabbrica dei nemici */
-export function creaPatternDonnaLuciana(ctx) {
-  const macchina = creaMacchinaBoss(ctx);
-  const B = ctx.B;
+/** @param {object} contesto contesto fornito dalla fabbrica dei nemici */
+export function creaPatternDonnaLuciana(contesto) {
+  const macchina = creaMacchinaBoss(contesto);
+  const B = contesto.B;
   let direzione = { x: -1, y: 0 };
 
   /** Le origini dei colpi delle due Mani (sinistra e destra) nelle coordinate del palco. */
   function mani() {
-    return [-1, 1].map((lato) => ({ x: ctx.corpo.x + lato * B('scarto_mano_x'), y: ctx.corpo.y - B('scarto_mano_y'), lato }));
+    return [-1, 1].map((lato) => ({ x: contesto.corpo.x + lato * B('scarto_mano_x'), y: contesto.corpo.y - B('scarto_mano_y'), lato }));
   }
 
   function salva() {
     macchina.attacca({
       tick: () => {
-        const b = ctx.bersaglio();
+        const b = contesto.bersaglio();
         if (!b) return true;
         for (const mano of mani()) {
           const a = Math.atan2(b.y - mano.y, b.x - mano.x);
-          ventaglio(ctx, a, B('n_ventaglio_mano'), rad(B('passo_ventaglio_gradi')), B('v_ventaglio'), mano);
+          ventaglio(contesto, a, B('n_ventaglio_mano'), rad(B('passo_ventaglio_gradi')), B('v_ventaglio'), mano);
         }
-        if (ctx.furia() || macchina.salve % 2 === 0) {
-          ctx.emit('boss.mani_schianto', { x: ctx.corpo.x, y: ctx.corpo.y, mani: mani().map(({ x, y }) => ({ x, y })) });
-          anello(ctx, B('n_anello'), B('v_anello'), rad(B('rotazione_gradi')) * macchina.salve);
+        if (contesto.furia() || macchina.salve % 2 === 0) {
+          contesto.emit('boss.mani_schianto', { x: contesto.corpo.x, y: contesto.corpo.y, mani: mani().map(({ x, y }) => ({ x, y })) });
+          anello(contesto, B('n_anello'), B('v_anello'), rad(B('rotazione_gradi')) * macchina.salve);
         }
         return true;
       },
-      cdMs: cdMs(ctx, 't_cd'),
+      cdMs: cdMs(contesto, 't_cd'),
     });
   }
 
   function tick(dt) {
-    const pronto = macchina.tick(dt, (d) => { const v = insegui(ctx, d); if (v && v.x !== 0) direzione = { x: Math.sign(v.x), y: 0 }; });
-    if (pronto && ctx.bersaglio()) salva();
+    const pronto = macchina.tick(dt, (d) => { const v = insegui(contesto, d); if (v && v.x !== 0) direzione = { x: Math.sign(v.x), y: 0 }; });
+    if (pronto && contesto.bersaglio()) salva();
   }
 
   return esponiPattern({ nome: PATTERN_QUEEN, macchina, tick, direzione: () => direzione, extra: { mani } });

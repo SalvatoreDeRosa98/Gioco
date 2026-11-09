@@ -11,7 +11,7 @@ import { creaPatternColosso, PATTERN_GURDY } from './colosso-statua.js';
 import { creaPatternMaestro, PATTERN_SCISSOR } from './maestro-fucina.js';
 import { creaPatternDonnaLuciana, PATTERN_QUEEN } from './donna-luciana.js';
 
-/** Nome del pattern → factory `(ctx) => pattern`. */
+/** Nome del pattern → factory `(contesto) => pattern`. */
 export const PATTERN_BOSS = Object.freeze({
   [PATTERN_MONSTRO]: creaPatternReGatto,
   [PATTERN_CHUB]: creaPatternCapitano,

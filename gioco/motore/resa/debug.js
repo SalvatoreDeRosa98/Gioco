@@ -29,6 +29,8 @@
  * non testi di gioco. Nessun numero di gioco: geometrie e raggi arrivano dai moduli di logica.
  */
 
+import { applicaCamera } from './trasformazioni.js'; // storia P12: la camera espone numeri, la resa trasforma
+
 /**
  * @param {{
  *   canvas: HTMLCanvasElement,
@@ -743,7 +745,7 @@ export function creaResaDebug({
       ctx.fillStyle = c.fondo;
       ctx.fillRect(0, 0, scena.larghezza, scena.altezza);
       ctx.save();
-      if (camera) camera.applica(ctx);
+      applicaCamera(ctx, camera, scena);
       disegnaCampo(c);
       disegnaHub(c);
       disegnaStanza(c);

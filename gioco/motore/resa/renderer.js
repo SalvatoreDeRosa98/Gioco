@@ -26,6 +26,11 @@ import {
   SPRITE_BOSS,
 } from './pixel-sprites.js';
 import { creaFili } from './fili.js'; // fili d'oro del Velo: due per marionetta (regola dell'autore 2026-11-09)
+import { creaImpatti } from './impatti.js'; // storia P12: splash, fulmini e fotogramma dello stocco derivati dagli eventi
+import { applicaCamera } from './trasformazioni.js'; // storia P12: la camera espone numeri, la resa applica la trasformazione
+
+/** Fotogrammi dello splash dei proiettili in `SPRITE_PROIETTILI`, in ordine di età. */
+const SPLASH = Object.freeze(['splash0', 'splash1', 'splash2']);
 
 const TAU = Math.PI * 2;
 
@@ -63,6 +68,8 @@ export function creaRenderer({
   };
   /** Disegnatore dei fili d'oro (resa/fili.js): ogni marionetta del Velo ne ha due, uno per Mano. */
   const fili = parametri ? creaFili({ parametri, colore: P.oro }) : null;
+  /** Storia P12: effetti transitori del combattimento (splash, fulmini, stocco) derivati dagli eventi, non dallo stato. */
+  const impatti = parametri ? creaImpatti({ parametri, eventi, contaTick, nSplash: SPLASH.length }) : null;
   /** Conteggio dell'ultimo frame (lettura di QA): marionette con i fili e fili disegnati (= 2 × marionette). */
   let ultimiFili = { marionette: 0, fili: 0 };
 
@@ -694,7 +701,7 @@ export function creaRenderer({
 
     // Fendente luminoso a mezzaluna (quando attacca con lo stocco)
     if (conSpada && inFendente) {
-      const idxFrame = typeof combattimento.frameSpada === 'function' ? combattimento.frameSpada() : 0;
+      const idxFrame = impatti ? impatti.frameSpada(combattimento) : 0;
       const sx = px + Math.cos(angMira) * 26;
       const sy = (py - 14) + Math.sin(angMira) * 26;
       disegnaGrigliaPixel(ctx, SPRITE_SPADA_FRAMES[idxFrame] || SPRITE_SPADA_FRAMES[0], sx, sy, 3, false, false, angMira);
@@ -708,18 +715,15 @@ export function creaRenderer({
       const scalaP = p.r > 9 ? 3.2 : 2.5;
       disegnaGrigliaPixel(ctx, sp, p.x, p.y, scalaP, false, false);
     }
-    const esplosioniF = typeof combattimento?.esplosioniProiettili === 'function' ? combattimento.esplosioniProiettili() : [];
-    for (const e of esplosioniF) {
-      const f = e.tick < 4 ? 'splash0' : e.tick < 8 ? 'splash1' : 'splash2';
-      disegnaGrigliaPixel(ctx, SPRITE_PROIETTILI[f], e.x, e.y, 2.8, false, false);
+    for (const e of impatti ? impatti.splash() : []) {
+      disegnaGrigliaPixel(ctx, SPRITE_PROIETTILI[SPLASH[e.frame]], e.x, e.y, 2.8, false, false);
     }
     // Storia P04: fulmini a catena (Catena della Chiusa) tra il colpito e i vicini
-    const fulmini = typeof combattimento?.scintilleFulmine === 'function' ? combattimento.scintilleFulmine() : [];
-    for (const f of fulmini) {
+    for (const f of impatti ? impatti.fulmini() : []) {
       ctx.save();
       ctx.strokeStyle = P.azzurro;
       ctx.lineWidth = 2;
-      ctx.globalAlpha = 1 - f.tick / f.maxTick;
+      ctx.globalAlpha = f.alpha;
       ctx.beginPath();
       ctx.moveTo(f.x1, f.y1 - 8);
       ctx.lineTo((f.x1 + f.x2) / 2 + 6, (f.y1 + f.y2) / 2 - 14);
@@ -1218,6 +1222,8 @@ export function creaRenderer({
     ultimoAlphaSagoma: () => ultimoAlphaSagoma,
     /** Fili dell'ultimo frame (QA): {marionette, fili} più i valori di resa.fili in uso. */
     fili: () => ({ ...ultimiFili, ...(fili ? fili.valori() : {}) }),
+    /** Storia P12 (QA): effetti transitori nel registro della resa {splash, fulmini}, o null senza parametri. */
+    impatti: () => (impatti ? impatti.conteggio() : null),
     disegna() {
       const tAnim = contaTick() / 60;
       if (scossa > 0.1) scossa *= 0.82;
@@ -1236,7 +1242,7 @@ export function creaRenderer({
 
       ctx.save();
       ctx.translate(sx, sy);
-      if (camera) camera.applica(ctx);
+      applicaCamera(ctx, camera, scena);
 
       disegnaCampoEMura(tAnim);
       const corpiHub = disegnaHubScena(tAnim);
@@ -1285,7 +1291,7 @@ export function creaRenderer({
         disegnaDonnaLucianaBoss(bx, by, tAnim, corpi);
       } else {
         // Le Mani in alto stanno nel proscenio (coordinate dello schermo): le loro dita vanno portate nelle
-        // coordinate del palco (inverso di translate(sx, sy) + camera.applica) per tirare i fili fino ai corpi.
+        // coordinate del palco (inverso di translate(sx, sy) + applicaCamera) per tirare i fili fino ai corpi.
         const versoPalco = ([px, py]) => {
           if (!camera) return [px - sx, py - sy];
           const cx = W / 2, cy = H / 2, k = camera.scala || 1, sc = camera.scorrimento();

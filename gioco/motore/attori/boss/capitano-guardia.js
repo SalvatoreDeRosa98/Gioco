@@ -11,37 +11,37 @@ import { creaMacchinaBoss, versoBersaglio, cdMs, insegui, anello, esponiPattern 
 
 export const PATTERN_CHUB = 'chub_charge';
 
-/** @param {object} ctx contesto fornito dalla fabbrica dei nemici */
-export function creaPatternCapitano(ctx) {
-  const macchina = creaMacchinaBoss(ctx);
-  const B = ctx.B;
+/** @param {object} contesto contesto fornito dalla fabbrica dei nemici */
+export function creaPatternCapitano(contesto) {
+  const macchina = creaMacchinaBoss(contesto);
+  const B = contesto.B;
   let direzione = { x: -1, y: 0 };
 
   function carica() {
-    const b = ctx.bersaglio();
-    const dx = b ? b.x - ctx.corpo.x : direzione.x;
-    const dy = b ? b.y - ctx.corpo.y : 0;
+    const b = contesto.bersaglio();
+    const dx = b ? b.x - contesto.corpo.x : direzione.x;
+    const dy = b ? b.y - contesto.corpo.y : 0;
     const orizzontale = Math.abs(dx) >= Math.abs(dy);
     const dir = orizzontale ? { x: Math.sign(dx) || 1, y: 0 } : { x: 0, y: Math.sign(dy) || 1 };
     if (dir.x !== 0) direzione = { x: dir.x, y: 0 };
-    const v = (ctx.furia() ? B('v_carica_furia') : B('v_carica')) * ctx.moltVel;
-    const durata = Math.max(1, ctx.ticks(B('t_carica')));
+    const v = (contesto.furia() ? B('v_carica_furia') : B('v_carica')) * contesto.moltVel;
+    const durata = Math.max(1, contesto.ticks(B('t_carica')));
     macchina.attacca({
       tick: (t, dt) => {
-        const urto = ctx.muovi(dir.x * v * dt, dir.y * v * dt);
+        const urto = contesto.muovi(dir.x * v * dt, dir.y * v * dt);
         return urto || t >= durata;
       },
       fine: () => {
-        ctx.emit('boss.atterraggio', { x: ctx.corpo.x, y: ctx.corpo.y });
-        anello(ctx, B('n_anello'), B('v_anello'), 0);
+        contesto.emit('boss.atterraggio', { x: contesto.corpo.x, y: contesto.corpo.y });
+        anello(contesto, B('n_anello'), B('v_anello'), 0);
       },
-      cdMs: cdMs(ctx, 't_cd'),
+      cdMs: cdMs(contesto, 't_cd'),
     });
   }
 
   function tick(dt) {
-    const pronto = macchina.tick(dt, (d) => { const v = insegui(ctx, d); if (v && v.x !== 0) direzione = { x: Math.sign(v.x), y: 0 }; });
-    if (pronto && versoBersaglio(ctx)) carica();
+    const pronto = macchina.tick(dt, (d) => { const v = insegui(contesto, d); if (v && v.x !== 0) direzione = { x: Math.sign(v.x), y: 0 }; });
+    if (pronto && versoBersaglio(contesto)) carica();
   }
 
   return esponiPattern({ nome: PATTERN_CHUB, macchina, tick, direzione: () => direzione });

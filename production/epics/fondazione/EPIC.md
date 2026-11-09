@@ -4,7 +4,7 @@
 > **GDD**: design/gdd/controllo-ferruccio.md (regola 1), docs/architecture/architecture.md §1-4
 > **Architecture Module**: motore/fondazione, motore/resa
 > **Status**: Ready
-> **Stories**: 7 storie (sotto)
+> **Stories**: 9 storie (sotto)
 
 ## Overview
 
@@ -46,3 +46,4 @@ La cornice su cui tutto gira: pagina, ciclo a passo fisso, input, rng seminato, 
 | P02 | Pagina di prova e parametri di avvio dalla pagina — provvisoria per la build di prova; niente touch per decisione dell'autore | UI | Done (`gioco/qa/prova.test.mjs` 3/3, `gioco/qa/prova.wire.test.js` 2/2, `production/qa/evidence/prova-pagina.png`) | ADR-0001 |
 | 005 | Renderer: stanza 13×7, pavimento, mura, luci, passate | Visual/Feel | Ready | ADR-0001 |
 | 006 | Cutout a pezzi da JSON: pose, ellisse d'appoggio, ombra portata | Visual/Feel | Ready | ADR-0001 |
+| P12 | Audit di architettura (passo F4): «lo stato non disegna, la resa non muta» (impatti e camera nella resa, `contesto` dell'IA), passo fisso e tetto verificati a 120 Hz | Logic | Done (`gioco/qa/architettura.test.mjs` 6/6, `gioco/qa/impatti.test.mjs` 6/6, `fondazione.test.mjs` 29/29, `pagina.test.js` 6/6, `production/qa/evidence/fondazione-passo-fisso.png`) | ADR-0003 |

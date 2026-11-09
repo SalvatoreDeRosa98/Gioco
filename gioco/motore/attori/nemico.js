@@ -45,7 +45,7 @@
  * (predone della segreta): monete × `drop.molt_monete_dorato`, `dorato` nei payload;
  * `attacco.senza_gettone`: non chiede il gettone al direttore (statua e bomba).
  *
- * Storia P06 (boss del pool e Donna Luciana): opzioni `pattern` (factory `(ctx) => pattern`, `attori/boss/*.js`),
+ * Storia P06 (boss del pool e Donna Luciana): opzioni `pattern` (factory `(contesto) => pattern`, `attori/boss/*.js`),
  * `bossId` (chiave di `nemici.json › boss.<id>`), `genera(archetipo, x, y)` (evoca un nemico comune nella stanza) e
  * `moltVelocita` (fattore di velocità per piano, `mondo/run.js`). Con un pattern, fuori da emersione e stordimento il
  * `tick` fa girare il pattern al posto dell'IA base: il pattern muove il corpo (`muovi`, anche in volo) e attacca

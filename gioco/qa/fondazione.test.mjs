@@ -265,6 +265,39 @@ test('ciclo: un frame lungo 200 ms esegue al massimo 5 tick', () => {
   assert.equal(ciclo.contaTick(), MAX_TICK_PER_FRAME);
 });
 
+test('ciclo (storia P12): a 120 Hz simulati (frame ogni 8,33 ms) 1 s dà gli stessi 60 tick e la stessa posizione che a 60 Hz; il tetto limita il dt reale', () => {
+  /** Simula `durataMs` di orologio finto a `hz` frame al secondo con un corpo che integra x += v·dt a ogni tick. */
+  function simula(hz, durataMs) {
+    const { ciclo, pompa } = cicloFinto();
+    const corpo = { x: 0, v: 220 };
+    const alpha = [];
+    ciclo.registra({ tick: (dt) => { corpo.x += corpo.v * dt; }, disegna: (a) => alpha.push(a) });
+    ciclo.avvia();
+    const passo = 1000 / hz;
+    const n = Math.round(durataMs / passo);
+    for (let i = 0; i <= n; i++) pompa(i * passo); // il primo frame ha dt = 0
+    return { tick: ciclo.contaTick(), x: corpo.x, frame: ciclo.contaFrame(), alphaMax: Math.max(...alpha) };
+  }
+  const a60 = simula(60, 1000);
+  const a120 = simula(120, 1000);
+  const a144 = simula(144, 1000);
+  assert.equal(a60.tick, 60);
+  assert.equal(a120.tick, 60, 'il doppio dei frame non raddoppia i tick');
+  assert.equal(a120.x, a60.x, 'stessa posizione dopo 1 s: la simulazione non dipende dal refresh');
+  assert.ok(Math.abs(a144.tick - 60) <= 1 && Math.abs(a144.x - a60.x) <= 220 * PASSO_MS / 1000 + 1e-9, JSON.stringify(a144));
+  assert.equal(a60.frame, 61);
+  assert.equal(a120.frame, 121, 'si disegna una volta per frame, anche nei frame senza tick');
+  assert.ok(a60.alphaMax < 1 && a120.alphaMax < 1, 'alpha di interpolazione in [0,1)');
+  // tetto: 1000 ms in un frame solo non sono 60 tick ma MAX_TICK_PER_FRAME, e il resto si scarta
+  const { ciclo, pompa } = cicloFinto();
+  ciclo.avvia();
+  pompa(0);
+  pompa(1000);
+  assert.equal(ciclo.contaTick(), MAX_TICK_PER_FRAME);
+  pompa(1000 + PASSO_MS / 2);
+  assert.equal(ciclo.contaTick(), MAX_TICK_PER_FRAME, 'il tempo scartato non si recupera');
+});
+
 test('ciclo: tick(n) forza n tick e i sistemi filtrati per stato girano solo lì', () => {
   const { ciclo } = cicloFinto('hub');
   let tuttiGliStati = 0;

@@ -2,11 +2,11 @@
  * motore/attori/boss/base.js — Attrezzi comuni dei pattern dei boss (storia P06).
  *
  * Un pattern è un oggetto `{ tick(dt), stato, lampoAcceso, inTelegrafo, direzione, quota, salve, nome }` creato da
- * una factory `(ctx) => pattern` che la fabbrica dei nemici (`attori/nemico.js`, opzione `pattern`) chiama e fa
+ * una factory `(contesto) => pattern` che la fabbrica dei nemici (`attori/nemico.js`, opzione `pattern`) chiama e fa
  * girare al posto dell'IA base: il nemico resta un nemico (vita, colpi, stordimento della parata con
  * `t_stordito_boss`/`t_immunita_boss`, morte e bottino), il pattern decide solo movimento e attacchi.
  *
- * Il contesto `ctx` che la fabbrica fornisce: `corpo` {x, y, r} (lettura), `muovi(dx, dy, volo?)` → urto, `bersaglio()`
+ * Il contesto `contesto` che la fabbrica fornisce: `corpo` {x, y, r} (lettura), `muovi(dx, dy, volo?)` → urto, `bersaglio()`
  * (Ferruccio o null), `campo`, `rng` (derivato dal seme: mai casualità nativa), `ticks(ms)`, `B(chiave)` (la scheda
  * del boss in `nemici.json › boss.<id>`), `comune(chiave)` (`nemici.json › boss.comuni`), `lancia(dir, fattore, origine?)`
  * (un proiettile nemico del boss), `genera(archetipo, x, y)` (evoca un nemico comune nella stanza), `altri()`,
@@ -27,11 +27,11 @@ export const rad = (gradi) => (gradi * Math.PI) / 180;
 /**
  * La macchina a fasi di un boss: insegue (cooldown) → anticipo → lampo → colpo (l'azione) → recupero → insegue.
  * `tick(dt, insegui)` ritorna true quando il boss è pronto ad attaccare (fase `insegue` a cooldown finito).
- * @param {object} ctx contesto del pattern
+ * @param {object} contesto contesto del pattern
  */
-export function creaMacchinaBoss(ctx) {
-  const C = (k) => ctx.comune(k);
-  const s = { fase: 'insegue', ticks: 0, cd: Math.max(0, ctx.ticks(C('t_cd_iniziale'))), salve: 0, azione: null };
+export function creaMacchinaBoss(contesto) {
+  const C = (k) => contesto.comune(k);
+  const s = { fase: 'insegue', ticks: 0, cd: Math.max(0, contesto.ticks(C('t_cd_iniziale'))), salve: 0, azione: null };
 
   /**
    * Avvia un attacco: `azione` = { inizio?(), tick?(t, dt) → true a fine colpo, fine?(), cdMs }.
@@ -42,7 +42,7 @@ export function creaMacchinaBoss(ctx) {
     s.fase = 'anticipo';
     s.ticks = 0;
     s.azione = azione;
-    ctx.emit('boss.anticipo', { x: ctx.corpo.x, y: ctx.corpo.y, salve: s.salve });
+    contesto.emit('boss.anticipo', { x: contesto.corpo.x, y: contesto.corpo.y, salve: s.salve });
     return true;
   }
 
@@ -54,10 +54,10 @@ export function creaMacchinaBoss(ctx) {
         insegui?.(dt);
         return s.cd <= 0;
       case 'anticipo':
-        if (s.ticks >= ctx.ticks(C('t_anticipo'))) { s.fase = 'lampo'; s.ticks = 0; }
+        if (s.ticks >= contesto.ticks(C('t_anticipo'))) { s.fase = 'lampo'; s.ticks = 0; }
         return false;
       case 'lampo':
-        if (s.ticks >= ctx.ticks(C('t_lampo'))) {
+        if (s.ticks >= contesto.ticks(C('t_lampo'))) {
           s.fase = 'colpo';
           s.ticks = 0;
           s.salve += 1;
@@ -74,10 +74,10 @@ export function creaMacchinaBoss(ctx) {
         return false;
       }
       case 'recupero':
-        if (s.ticks >= ctx.ticks(C('t_recupero'))) {
+        if (s.ticks >= contesto.ticks(C('t_recupero'))) {
           s.fase = 'insegue';
           s.ticks = 0;
-          s.cd = Math.max(0, ctx.ticks(s.azione?.cdMs ?? 0));
+          s.cd = Math.max(0, contesto.ticks(s.azione?.cdMs ?? 0));
           s.azione = null;
         }
         return false;
@@ -98,31 +98,31 @@ export function creaMacchinaBoss(ctx) {
 }
 
 /** Vettore verso Ferruccio (null senza bersaglio): {x, y} unitario, `d` distanza, `angolo`. */
-export function versoBersaglio(ctx) {
-  const b = ctx.bersaglio();
+export function versoBersaglio(contesto) {
+  const b = contesto.bersaglio();
   if (!b) return null;
-  const dx = b.x - ctx.corpo.x;
-  const dy = b.y - ctx.corpo.y;
+  const dx = b.x - contesto.corpo.x;
+  const dy = b.y - contesto.corpo.y;
   const d = Math.hypot(dx, dy);
   const angolo = Math.atan2(dy, dx);
   return d > 0 ? { x: dx / d, y: dy / d, d, angolo } : { x: Math.cos(angolo), y: 0, d: 0, angolo };
 }
 
 /** Cooldown in ms di una chiave della scheda, nella variante `_furia` sotto la soglia. */
-export function cdMs(ctx, chiave) {
-  return ctx.furia() ? ctx.B(`${chiave}_furia`) : ctx.B(chiave);
+export function cdMs(contesto, chiave) {
+  return contesto.furia() ? contesto.B(`${chiave}_furia`) : contesto.B(chiave);
 }
 
 /**
  * Insegue Ferruccio a `velocita × fattore_insegue × moltVel` px/s; ritorna la direzione del passo (per il verso della sagoma).
- * @param {object} ctx
+ * @param {object} contesto
  * @param {number} dt secondi
  */
-export function insegui(ctx, dt) {
-  const v = versoBersaglio(ctx);
+export function insegui(contesto, dt) {
+  const v = versoBersaglio(contesto);
   if (!v || v.d <= 0) return null;
-  const passo = ctx.B('velocita') * ctx.B('fattore_insegue') * ctx.moltVel * dt;
-  ctx.muovi(v.x * passo, v.y * passo);
+  const passo = contesto.B('velocita') * contesto.B('fattore_insegue') * contesto.moltVel * dt;
+  contesto.muovi(v.x * passo, v.y * passo);
   return v;
 }
 
@@ -130,12 +130,12 @@ export function insegui(ctx, dt) {
  * Anello di `n` proiettili a passo uniforme ruotato di `rotazione` radianti (Teatro: `TAU·k/n + fase`).
  * @returns {number} proiettili lanciati davvero
  */
-export function anello(ctx, n, fattore, rotazione = 0, origine = null) {
+export function anello(contesto, n, fattore, rotazione = 0, origine = null) {
   let lanciati = 0;
   const q = Math.max(0, Math.round(n));
   for (let k = 0; k < q; k++) {
     const a = (TAU * k) / q + rotazione;
-    if (ctx.lancia({ x: Math.cos(a), y: Math.sin(a) }, fattore, origine)) lanciati += 1;
+    if (contesto.lancia({ x: Math.cos(a), y: Math.sin(a) }, fattore, origine)) lanciati += 1;
   }
   return lanciati;
 }
@@ -144,13 +144,13 @@ export function anello(ctx, n, fattore, rotazione = 0, origine = null) {
  * Ventaglio di `n` proiettili centrato su `angolo`, a `passo` radianti l'uno dall'altro (Teatro: `ang + k·0,14`).
  * @returns {number} proiettili lanciati davvero
  */
-export function ventaglio(ctx, angolo, n, passo, fattore, origine = null) {
+export function ventaglio(contesto, angolo, n, passo, fattore, origine = null) {
   let lanciati = 0;
   const q = Math.max(1, Math.round(n));
   const meta = (q - 1) / 2;
   for (let k = 0; k < q; k++) {
     const a = angolo + (k - meta) * passo;
-    if (ctx.lancia({ x: Math.cos(a), y: Math.sin(a) }, fattore, origine)) lanciati += 1;
+    if (contesto.lancia({ x: Math.cos(a), y: Math.sin(a) }, fattore, origine)) lanciati += 1;
   }
   return lanciati;
 }

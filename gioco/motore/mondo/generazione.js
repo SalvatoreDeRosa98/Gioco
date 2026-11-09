@@ -168,7 +168,7 @@ function celleDa(cella, dim, celle = null) {
  * profondità, d_boss, semi di stanza, scena_id, ricompense pre-estratte con riparazione (regola 13),
  * cammino (se assente, il più breve ingresso→boss), punteggio Q. Muta e restituisce la pianta.
  * @param {object} pianta
- * @param {{ piano: number, parametri: { get: Function }, catalogo: { perId: Function }, rngPiano: { seme: number } }} ctx
+ * @param {{ piano: number, parametri: { get: Function }, catalogo: { perId: Function }, rngPiano: { seme: number } }} contesto
  */
 export function completaPianta(pianta, { piano, parametri, catalogo, rngPiano }) {
   const G = (k) => parametri.get(`generazione.${k}`);
@@ -637,10 +637,10 @@ function tentativo({ rng, rngPiano, piano, nStanze, L, parametri, catalogo, usi 
 /**
  * Trasforma il JSON del piano di riserva (`contenuti/piani/`) in una pianta completa.
  * @param {object} riserva
- * @param {{ piano: number, parametri: { get: Function }, catalogo: { perId: Function }, rngPiano: { seme: number } }} ctx
+ * @param {{ piano: number, parametri: { get: Function }, catalogo: { perId: Function }, rngPiano: { seme: number } }} contesto
  */
-export function piantaDaRiserva(riserva, ctx) {
-  const G = (k) => ctx.parametri.get(`generazione.${k}`);
+export function piantaDaRiserva(riserva, contesto) {
+  const G = (k) => contesto.parametri.get(`generazione.${k}`);
   const stanze = riserva.stanze.map((s) => ({
     id: s.id, tipo: s.tipo, cella: [s.cella[0], s.cella[1]], celle: celleDa(s.cella, s.dim, s.celle), dim: s.dim, modello: s.modello,
     elite: Boolean(s.elite), finestre: [], porte: { ...s.porte }, indice_cammino: riserva.cammino ? riserva.cammino.indexOf(s.id) : null,
@@ -659,12 +659,12 @@ export function piantaDaRiserva(riserva, ctx) {
     stanze.push(record);
   }
   const pianta = {
-    p: riserva.p ?? ctx.piano, griglia: { w: G('griglia_w'), h: G('griglia_h') }, n_stanze: riserva.stanze.length,
+    p: riserva.p ?? contesto.piano, griglia: { w: G('griglia_w'), h: G('griglia_h') }, n_stanze: riserva.stanze.length,
     L: riserva.cammino ? riserva.cammino.length - 1 : null, cammino: riserva.cammino ?? null, stanze,
     segreta: riserva.segreta ? { id: riserva.segreta.id ?? 's', cella: riserva.segreta.cella, modello: riserva.segreta.modello, finestre: riserva.segreta.finestre ?? [] } : null,
     riserva: true,
   };
-  completaPianta(pianta, ctx);
+  completaPianta(pianta, contesto);
   if (pianta.L === null) pianta.L = pianta.d_boss;
   return pianta;
 }

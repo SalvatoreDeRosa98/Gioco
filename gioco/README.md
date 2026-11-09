@@ -78,8 +78,9 @@ anticipo → recupero), `esplosa`, `dorato`, `sparati`; i proiettili nemici stan
 `proiettile.spento` {motivo}.
 Dalla storia P04 anche `statistiche` (`correnti()`, `scegli(id)`, `stringiPatto`, `id`), `slot` (lo slot in uso), `menu()` (stato del
 menu DOM: `{personaggio, slot, daCancellare, slots[]}` o `null` se chiuso), `apriMenu()` e `scegli(personaggio, slot?)` (applica subito la
-scelta: chiude il menu, entra nell'hub; con uno slot diverso ricarica la pagina); `combattimento` espone anche `scintilleFulmine()`,
-`bruciature()`, `miraForzata`, `cooldownSparo` e `statistiche()`.
+scelta: chiude il menu, entra nell'hub; con uno slot diverso ricarica la pagina); `combattimento` espone anche `bruciature()`,
+`miraForzata`, `cooldownSparo`, `statistiche()` e `faseTicks` (storia P12: `frameSpada`, `esplosioniProiettili` e `scintilleFulmine` non
+stanno più nello stato: `__gioco.resa.impatti()` conta gli splash e i fulmini nel registro della resa).
 Dalle storie P04/P09 (squadra oggetti) anche `attivi` (`stato()`, `usa()`, `equipaggia(id)`, `carica`, `carico`, `nuovaRun()`), `slotDoni` (i cinque slot dei doni: `acquisisci(id, {origine, restituisci, suConferma})`,
 `conferma(i)`, `annulla()`, `pendente`, `stato()`), `patto` (`altare`, `pendente`, `stretti`, `proponi(i)`, `conferma()`, `annulla()`, `posaAltare(stanza)`, `reliquia(id)`,
 `inStanzaAltare()`, `nuovaRun()`), `gratis` (`corrente()`, `vicino()`, `raccogli()`, `stati()`), `segreta` (`crepa()`, `apri()`, `aperte`) e `interfacciaOggetti()` (stato DOM di HUD
@@ -88,8 +89,16 @@ dell'attivo, modale di sostituzione e pannello del patto); `combattimento.raggio
 ## Test
 
 ```sh
-node gioco/qa/fondazione.test.mjs   # unitari, senza browser (node:test)
+node gioco/qa/fondazione.test.mjs   # unitari, senza browser (node:test); storia P12: ciclo con orologio finto a 60, 120 e 144 Hz per 1 s →
+                                    # stessi 60 tick e stessa posizione, un frame di 1000 ms = 5 tick
+node gioco/qa/architettura.test.mjs # storia P12: audit «lo stato non disegna, la resa non muta» (grep programmatico senza commenti: niente
+                                    # Canvas/colori/DOM/sprite in attori|mondo|oggetti|storia|persistenza; resa/ senza import dello stato,
+                                    # tick( o orologio reale; zero Math.random; PASSO_MS e tetto di 5 tick)
+node gioco/qa/impatti.test.mjs      # storia P12: resa/impatti.js (frameSpada, splash, fulmini dagli eventi con i tick del ciclo) e
+                                    # resa/trasformazioni.js (applicaCamera) su contesto e bus finti, valori da resa.json › impatti
 node gioco/qa/pagina.test.js        # Playwright: avvia un server su porta libera, apre la pagina (parte nel menu, storia P04: lo chiude con
+                                    # storia P12: rAF finto (`__orologio.avanza`) → 1 s a 120 Hz = 1 s a 60 Hz (tick e posizione di Ferruccio
+                                    # identici), screenshot fondazione-passo-fisso.png;
                                     # `__gioco.scegli` prima di provare la tastiera; senza debug: menu nel DOM con i personaggi di personaggi.json,
                                     # fondo del canvas dal token, Invio fa partire); salva production/qa/evidence/fondazione-pagina.png (hub)
                                     # e menu-selezione.png (menu)
@@ -343,7 +352,8 @@ gioco/
 │   │   │                       dispersione e `puntoSicuro` (storia 018)
 │   │   ├── generazione.js      generaPiano puro dal seme: cammino, anelli, rami, foglie, doppie, modelli
 │   │   │                       pesati, segreta, ricompense, H1-H10, Q, tentativi, riserva (storia 016)
-│   │   ├── camera.js           scala min(1, L/larg, (A−hud)/alt), transizione 250 ms, inTransizione (015)
+│   │   ├── camera.js           scala min(1, L/larg, (A−hud)/alt), transizione 250 ms, inTransizione (015); solo numeri:
+│   │   │                       la trasformazione Canvas la applica resa/trasformazioni.js (P12)
 │   │   └── notte.js            piano + stanza corrente + passaggi; input ignorato in transizione; vaiA;
 │   │                           salvataggio() = {seme, piano, stanza}
 │   │   ├── segreta.js          storie P04/P09: la Crepa Dorata (finestra verso la segreta → porta a colpo) e le monete della segreta
@@ -355,7 +365,8 @@ gioco/
 │   │   ├── ferruccio.js        corpo: Fermo/Cammina/Scatta/Recupero scatto/Colpito/Morto, cariche,
 │   │   │                       maschere, invulnerabilità, spinta (storie 007-008)
 │   │   ├── combattimento.js    spada: Pronto/Fendente 1-3/Carica/Affondo/Parata/Controcolpo, buffer,
-│   │   │                       combo, cancellazioni, danno decimale, ricevi(attacco) (storie 009-011)
+│   │   │                       combo, cancellazioni, danno decimale, ricevi(attacco) (storie 009-011); P12: niente
+│   │   │                       fotogrammi: eventi ferruccio.proiettile_spento {x,y,tipo,causa} e ferruccio.fulmine, faseTicks
 │   │   ├── bersaglio.js        contratto minimo dei bersagli, nemico FANTOCCIO con telegrafo in tre
 │   │   │                       tempi (resta per i test del combattimento) e proiettile minimo
 │   │   ├── nemico.js           fabbrica generica dei nemici per archetipo (nemici.json): scheda scalata per
@@ -394,6 +405,9 @@ gioco/
 │       ├── pixel-sprites.js    sprite provvisori in griglia di pixel
 │       ├── feel.js             storia P08: lampeggio, scossa contestuale, macchie
 │       ├── fili.js             storia P11: i due fili d'oro di ogni marionetta del Velo (uno per Mano, spalle, curva, 1 px) da resa.fili
+│       ├── impatti.js          storia P12: splash dei proiettili, fulmini a catena e fotogramma dello stocco derivati dagli eventi e dai
+│       │                       numeri dello stato con l'orologio dei tick (resa.json › impatti)
+│       ├── trasformazioni.js   storia P12: applicaCamera(ctx, camera, scena): i numeri della camera diventano translate/scale
 │       └── debug.js            disegno diagnostico in fil di ferro, solo con ?debug=1&wire=1
 ├── contenuti/parametri/
 │   ├── ferruccio.json          statistiche del corpo (GDD controllo-ferruccio.md)
@@ -438,8 +452,10 @@ gioco/
     ├── mondo.test.mjs / mondo.wire.test.js / seme.js   storie 014-017
     ├── vetrina-stanze.html          storia 017: vetrina di QA dei 14 modelli del piano 1 in fil di ferro (griglia, filtro grigi)
     ├── vetrina.test.js              test Playwright della vetrina (sagome nere, conteggi, screenshot in scala di grigi)
-    ├── fondazione.test.mjs          test unitari della fondazione
-    ├── pagina.test.js               test Playwright della pagina
+    ├── fondazione.test.mjs          test unitari della fondazione (P12: 60/120/144 Hz simulati → stessi tick e posizione)
+    ├── architettura.test.mjs        storia P12: audit programmatico stato/resa, Math.random, passo fisso
+    ├── impatti.test.mjs             storia P12: resa/impatti.js e resa/trasformazioni.js su finti
+    ├── pagina.test.js               test Playwright della pagina (P12: 120 Hz con rAF finto, fondazione-passo-fisso.png)
     ├── combattimento.test.mjs       test unitari delle storie 007-011
     ├── nemici.test.mjs              test unitari delle storie 019, 020 e P05 (nemici alla Isaac, proiettili nemici, bot misto)
     ├── nemici.wire.test.js          test Playwright della storia P05 (un nemico per archetipo nel piano 1, screenshot nel lampo)
@@ -480,6 +496,39 @@ gioco/
 - `tick(dt)` riceve `dt` in secondi (un passo fisso); i tempi dei GDD in ms si convertono una volta
   con `tempo.ticksDaMs`.
 - L'input è il primo sistema registrato nel ciclo: `inizioTick()` fotografa i fronti prima degli altri.
+
+### «Lo stato non disegna, la resa non muta» (storia P12, audit del passo F4)
+
+Due lati, un contratto. Il **lato dello stato** manipola solo numeri ed eventi (x, y, vx, vy, vita, tick, fasi) e non sa che
+esiste un canvas: `attori/` (`ferruccio.js`, `combattimento.js`, `nemico.js`, `ia/*`, `boss/*`, `gatto.js`, `bersaglio.js`,
+`proiettili-nemici.js`, `passi.js`, `statistiche.js`, `effetti-doni.js`), `mondo/` (`fisica.js`, `stanza.js`, `porte.js`,
+`generazione.js`, `modelli.js`, `camera.js`, `notte.js`, `hub.js`, `run.js`, `segreta.js`), `oggetti/*`, `storia/*`,
+`persistenza/*`. Il **lato della resa** legge quei numeri e li traduce in pixel, senza mai assegnare un campo dello stato né
+chiamare un `tick(`: `resa/` (`renderer.js`, `pixel-sprites.js`, `feel.js`, `fili.js`, `impatti.js`, `trasformazioni.js`,
+`debug.js`), con accanto `ui/` e `interfaccia/` (DOM) e `audio/` (suoni dagli eventi). `fondazione/` e `avvio.js` sono la
+cornice neutra. Conseguenze pratiche:
+
+- ciò che è **solo visivo** (fotogrammi, durate di uno splash, curve, colori, sprite) nasce nella resa da un evento o da un
+  numero dello stato: il fendente espone `stato`/`fase`/`faseTicks` e `resa/impatti.js › frameSpada` sceglie il fotogramma; il
+  proiettile spento emette `ferruccio.proiettile_spento` {x, y, tipo, causa: muro|bersaglio|portata} e la resa anima lo splash;
+  la Catena della Chiusa emette `ferruccio.fulmine` {x1, y1, x2, y2}; la camera espone `scala` e `scorrimento()` e
+  `resa/trasformazioni.js › applicaCamera` fa `translate`/`scale`;
+- l'**orologio della resa è il contatore dei tick** (`contaTick`), mai `performance.now`/`Date.now`: le animazioni seguono la
+  simulazione (hit-stop compreso) e non il refresh dello schermo; le sole grandezze «per frame disegnato» sono le scosse di
+  `resa.scossa` (storia P08), volute così dall'autore;
+- `gioco/qa/architettura.test.mjs` fa rispettare il contratto con un grep programmatico (commenti esclusi): un `getContext`,
+  `fillStyle`, `Path2D`, `ctx.`, un colore esadecimale o un `document.` in un file di stato è rosso; un import dello stato, un
+  `.tick(` o un `performance.now` in `resa/` è rosso. Il contesto dell'IA dei nemici e dei boss si chiama `contesto`, non `ctx`.
+
+### Passo fisso e tetto dei tick (verifica del passo F4)
+
+`fondazione/tempo.js`: `PASSO_MS` = 1000/60, accumulatore, **`MAX_TICK_PER_FRAME` = 5** (un frame di 1000 ms esegue 5 tick e
+scarta il resto: niente spirale della morte, dt reale limitato a 83 ms). `fondazione/ciclo.js` versa il timestamp del
+`requestAnimationFrame` nell'accumulatore, esegue i tick dovuti e disegna **una volta per frame** con `alpha` in [0, 1). Il
+renderer non interpola (disegna lo stato dell'ultimo tick) ma non dipende dal refresh: a 120 Hz metà dei frame non ha tick e
+ridisegna la stessa scena. Prova: `fondazione.test.mjs` (orologio finto a 60, 120 e 144 Hz: 60 tick e stessa posizione dopo 1 s)
+e `pagina.test.js` (rAF finto nella pagina vera: 120 frame da 8,33 ms e 60 da 16,67 ms danno gli stessi tick e la stessa x/y di
+Ferruccio con `destra` tenuta).
 
 ### Game feel (storia P08, richieste testuali dell'autore)
 

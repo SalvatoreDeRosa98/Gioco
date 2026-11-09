@@ -104,18 +104,18 @@ export const STATI_TELEGRAFO = Object.freeze(['anticipo', 'lampo', 'colpo']);
  *   id?: string,
  *   ferito?: () => boolean,
  *   dentroHitbox?: Function
- * }} ctx
+ * }} contesto
  */
-export function creaIaBase(ctx) {
-  const { scheda, corpo, campo, rng, muovi, lineaLibera, colpisci } = ctx;
+export function creaIaBase(contesto) {
+  const { scheda, corpo, campo, rng, muovi, lineaLibera, colpisci } = contesto;
   if (!scheda || !corpo || !campo || typeof rng !== 'function' || typeof muovi !== 'function' || typeof lineaLibera !== 'function' || typeof colpisci !== 'function') {
     throw new TypeError('creaIaBase: contesto incompleto');
   }
-  const emit = ctx.emit ?? (() => {});
-  const direttore = ctx.direttore ?? null;
-  const chiave = () => ctx.chiave ?? corpo; // pigro: la facciata del nemico nasce dopo l'IA
-  const id = ctx.id ?? 'nemico';
-  const ferito = ctx.ferito ?? (() => false);
+  const emit = contesto.emit ?? (() => {});
+  const direttore = contesto.direttore ?? null;
+  const chiave = () => contesto.chiave ?? corpo; // pigro: la facciata del nemico nasce dopo l'IA
+  const id = contesto.id ?? 'nemico';
+  const ferito = contesto.ferito ?? (() => false);
   const A = scheda.attacco;
   const hitDal = Math.min(1, Math.max(0, A.hitDal ?? 0));
   const balzoExtra = Number.isFinite(A.balzoExtra) ? A.balzoExtra : null;
@@ -153,7 +153,7 @@ export function creaIaBase(ctx) {
 
   // --- utilità -------------------------------------------------------------------------------
 
-  const bersaglio = () => ctx.bersaglio ?? null;
+  const bersaglio = () => contesto.bersaglio ?? null;
   const bersaglioVivo = () => {
     const b = bersaglio();
     return Boolean(b) && b.stato !== 'morto';
