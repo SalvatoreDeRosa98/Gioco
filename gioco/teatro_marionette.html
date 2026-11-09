@@ -1384,27 +1384,7 @@ function disegnaManoMarionettaPittorica() {
       ctx.fillText('✂', x - 4, y - 24);
     }
 
-    // Telegrafo a terra per il Gatto d'Ombra quando prepara il balzo
-    if (tipo === 'gatto' && (state === 'crouch' || (n.crouchTicks && n.crouchTicks > 0))) {
-      ctx.save();
-      ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
-      ctx.lineWidth = 1.6;
-      ctx.setLineDash([5, 4]);
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(n.leapTargetX ?? player.x, n.leapTargetY ?? player.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      // Bersaglio d'atterraggio
-      const tx = n.leapTargetX ?? player.x;
-      const ty = n.leapTargetY ?? player.y;
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.arc(tx, ty, 11, 0, TAU);
-      ctx.stroke();
-      ctx.restore();
-    }
+    // (T1) Nessun segno a terra degli attacchi nemici: il balzo del Gatto si legge dalla posa accucciata.
 
     ctx.translate(x, y);
     if (champion) ctx.scale(1.18, 1.18);
@@ -3065,7 +3045,7 @@ function disegnaManoMarionettaPittorica() {
     }
     const st = statoRun.stanzaCorrente;
     statoRun.caricaAttivo = 0;
-    statoRun.scossa = 5;
+    scuoti(FEEL.scossa.evento);
 
     if (att.id === 'forbici') {
       statoRun.ondeEsplosione.push({ x: player.x, y: player.y, r: 8, maxR: 180, color: '#67e8f9' });
@@ -3409,7 +3389,7 @@ function disegnaManoMarionettaPittorica() {
       st.porte[st.muroSegreto.lato] = seg.id;
       seg.porte[st.muroSegreto.opposto] = st.id;
     }
-    statoRun.scossa = 5;
+    scuoti(FEEL.scossa.evento);
     mostraBanner('🔓 PASSAGGIO SEGRETO APERTO! Entra nella Stanza Segreta (?) coi Mob d\'Oro per fare soldi!', 220);
   }
 
@@ -3815,6 +3795,8 @@ function disegnaManoMarionettaPittorica() {
 
   function entraInStanza(stanza, daLato) {
     statoRun.stanzaCorrente = stanza;
+    macchieStanza = [];
+    player.kbx = 0; player.kby = 0;
     if (stanza.tipo !== 'patto') stanza.visitata = true;
     statoRun.proiettili = [];
     statoRun.proiettiliNemici = [];
@@ -4073,8 +4055,8 @@ function disegnaManoMarionettaPittorica() {
   // danneggia i nemici vicini, spara 6 proiettili radiali, può colpire il giocatore e apre il Muro Segreto!
   function innescaEsplosioneBomba(st, bx, by) {
     if (!st) return;
-    statoRun.scossa = 7.5;
-    statoRun.hitStopTicks = 4;
+    scuoti(FEEL.scossa.bomba);
+    congela(FEEL.hitstop.uccisioneMs);
     AudioSys.playEsplosione();
     statoRun.ondeEsplosione.push({ x: bx, y: by, r: 6, maxR: 48, color: '#fb923c' });
     // Macchia da bruciatura e schegge permanenti sul palco
@@ -4109,7 +4091,7 @@ function disegnaManoMarionettaPittorica() {
       }
     }
     if (Math.hypot(player.x - bx, player.y - by) < 38 && player.invuln <= 0) {
-      subisciColpoGiocatore(2, 'un Bozzo Esplosivo');
+      subisciColpoGiocatore(2, 'un Bozzo Esplosivo', bx, by);
     }
   }
 
@@ -4127,11 +4109,15 @@ function disegnaManoMarionettaPittorica() {
     nem.hp -= dmg;
     nem.flash = 6;
     if (statoRun.burn) nem.burnTicks = 120;
-    const isStun = (nem.patternMob || nem.tipo) === 'bomba_ferma' || (nem.patternMob || nem.tipo) === 'statua';
-    const mult = nem.boss ? 1.5 : isStun ? 0.5 : 5.0;
-    nem.x = Math.max(ARENA.x1 + 16, Math.min(ARENA.x2 - 16, nem.x + knockX * mult));
-    nem.y = Math.max(ARENA.y1 + 16, Math.min(ARENA.y2 - 16, nem.y + knockY * mult));
-    statoRun.scossa = 2.5;
+    // (T1) Spinta inversamente proporzionale alla massa (FEEL.knockback): la vespa vola via, la guardia
+    // arretra di 2 px, statua e boss restano fermi. Solo i colpi con direzione (non bruciature né Forbici)
+    // danno hit-stop e scossa.
+    const forzaColpo = Math.hypot(knockX, knockY);
+    if (forzaColpo > 0) {
+      spingi(nem, knockX, knockY, (FEEL.knockback.impulsoPx * forzaColpo) / massaNemico(nem));
+      congela(nem.hp <= 0 ? FEEL.hitstop.uccisioneMs : FEEL.hitstop.colpoMs);
+      scuoti(FEEL.scossa.colpo);
+    }
 
     if (statoRun.chain && statoRun.stanzaCorrente) {
       for (const altro of statoRun.stanzaCorrente.nemici) {
@@ -4145,6 +4131,7 @@ function disegnaManoMarionettaPittorica() {
 
     if (nem.hp <= 0) {
       const st = statoRun.stanzaCorrente;
+      if (!nem.macchiaLasciata) { nem.macchiaLasciata = true; lasciaMacchia(nem); }
       // Se muore un Bozzo Esplosivo ('bomba_ferma'), esplode alla morte!
       if ((nem.patternMob || nem.tipo) === 'bomba_ferma' && !nem.exploded) {
         nem.exploded = true;
@@ -4297,13 +4284,20 @@ function disegnaManoMarionettaPittorica() {
     }
   }
 
-  function subisciColpoGiocatore(mezzeMaschereDanno, fonte) {
+  /**
+   * Il giocatore subisce un colpo: i-frames FEEL.iframes.durataMs e rimbalzo all'indietro, lontano da (daX, daY).
+   * @param {number} mezzeMaschereDanno @param {string} fonte @param {number} [daX] @param {number} [daY]
+   */
+  function subisciColpoGiocatore(mezzeMaschereDanno, fonte, daX, daY) {
     if (player.invuln > 0) return;
+    if (Number.isFinite(daX) && Number.isFinite(daY)) {
+      spingi(player, player.x - daX, player.y - daY, FEEL.iframes.rimbalzoPx);
+    }
     AudioSys.playDannoGiocatore();
     if (statoRun.stanzaCorrente?.tipo === 'boss') statoRun.dannoSubitoNelBoss = true;
     statoRun.hpHalf = Math.max(0, statoRun.hpHalf - mezzeMaschereDanno);
-    player.invuln = 52;
-    statoRun.scossa = 5;
+    player.invuln = ticksDaMs(FEEL.iframes.durataMs);
+    scuoti(FEEL.scossa.ferita);
     if (statoRun.hpHalf <= 0) {
       mostraBanner(`Le tue maschere si sono spezzate contro ${fonte}... Nuova Run al Piano 1!`, 200);
       nuovaRun();
@@ -4750,22 +4744,41 @@ function disegnaManoMarionettaPittorica() {
   // LOOP DI GIOCO E IA DIFFERENZIATA NEMICI/BOSS IN STILE THE BINDING OF ISAAC
   // ===========================================================================
   let tick = 0;
-  function loop() {
-    tick++;
-
-    if (statoRun.fase === 'menu_selezione') {
-      disegnaMenuSelezionePersonaggio(tick);
-      requestAnimationFrame(loop);
-      return;
+  // (T1) Passo fisso a FEEL.passo.hz con accumulatore e tetto di tick per frame: a 120 Hz il gioco va
+  // alla stessa velocità che a 60 Hz. Come motore/fondazione/ciclo.js.
+  let ultimoFrameMs = null;
+  let accumuloMs = 0;
+  function loop(oraMs) {
+    const ora = Number.isFinite(oraMs) ? oraMs : performance.now();
+    if (ultimoFrameMs === null) ultimoFrameMs = ora - MS_PER_TICK;
+    const dtMs = Math.min(FEEL.passo.maxDeltaMs, Math.max(0, ora - ultimoFrameMs));
+    ultimoFrameMs = ora;
+    accumuloMs += dtMs;
+    let passi = 0;
+    while (accumuloMs >= MS_PER_TICK && passi < FEEL.passo.maxTickPerFrame) {
+      passoLogico();
+      accumuloMs -= MS_PER_TICK;
+      passi++;
     }
+    if (passi >= FEEL.passo.maxTickPerFrame) accumuloMs = Math.min(accumuloMs, MS_PER_TICK);
+    disegnaFrame(dtMs);
+    requestAnimationFrame(loop);
+  }
+
+  /** Un tick di logica (1/60 s). Durante l'hit-stop la logica è ferma ma il tempo delle animazioni scorre. */
+  function passoLogico() {
+    tick++;
+    if (statoRun.fase === 'menu_selezione') return;
 
     const st = statoRun.stanzaCorrente;
     const inPausaUI = Boolean(statoRun.scambioPendente || statoRun.siparioAttivo);
 
-    // 1. GAME JUICE: HIT-STOP (Micro-congelamento logico di 2-5 frame mantenendo la resa a video)
-    if (statoRun.hitStopTicks > 0) {
-      statoRun.hitStopTicks--;
+    // 1. HIT-STOP (FEEL.hitstop): la logica si ferma, la resa continua
+    if (ticksCongelati > 0) {
+      ticksCongelati--;
     } else if (st && !inPausaUI) {
+      applicaSpinta(player, 0);
+      for (const nk of st.nemici) if (nk.hp > 0) applicaSpinta(nk, 16);
       let mx = 0, my = 0;
       if (keys.KeyA) mx -= 1;
       if (keys.KeyD) mx += 1;
@@ -4822,7 +4835,7 @@ function disegnaManoMarionettaPittorica() {
           }
           // Danno a chi ci cammina sopra
           if (Math.hypot(player.x - fz.x, player.y - fz.y) < fz.r && player.invuln <= 0) {
-            subisciColpoGiocatore(1, 'le fiamme del braciere');
+            subisciColpoGiocatore(1, 'le fiamme del braciere', fz.x, fz.y);
           }
           for (const nem of st.nemici) {
             if (Math.hypot(nem.x - fz.x, nem.y - fz.y) < fz.r + nem.r) {
@@ -4878,7 +4891,7 @@ function disegnaManoMarionettaPittorica() {
             for (const o of st.ostacoli) {
               if (o.tipo === 'braciere' && o.acceso && Math.hypot(hx - o.x, hy - o.y) <= reach + o.r) {
                 o.acceso = false;
-                statoRun.scossa = 5.0;
+                scuoti(FEEL.scossa.bomba);
                 AudioSys.playEsplosione();
                 if (!st.pozzanghereFuoco) st.pozzanghereFuoco = [];
                 st.pozzanghereFuoco.push({ x: o.x, y: o.y, r: 26, tick: 360 });
@@ -4934,7 +4947,7 @@ function disegnaManoMarionettaPittorica() {
               if (Math.hypot(p.x - o.x, p.y - o.y) < o.r + p.r) {
                 hitOst = true;
                 o.acceso = false;
-                statoRun.scossa = 5.0;
+                scuoti(FEEL.scossa.bomba);
                 AudioSys.playEsplosione();
                 if (!st.pozzanghereFuoco) st.pozzanghereFuoco = [];
                 st.pozzanghereFuoco.push({ x: o.x, y: o.y, r: 26, tick: 360 });
@@ -5012,7 +5025,7 @@ function disegnaManoMarionettaPittorica() {
         if (Math.hypot(player.x - pr.x, (player.y - 6) - pr.y) < 9 && player.invuln <= 0) {
           statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
           statoRun.proiettiliNemici.splice(i, 1);
-          subisciColpoGiocatore(pr.bossShot ? 2 : dannoBasePiano, 'un proiettile del Velo');
+          subisciColpoGiocatore(pr.bossShot ? 2 : dannoBasePiano, 'un proiettile del Velo', pr.x - pr.vx, pr.y - pr.vy);
           if (statoRun.hpHalf <= 0) break;
           continue;
         }
@@ -5069,7 +5082,7 @@ function disegnaManoMarionettaPittorica() {
               if (n.jumpTimer <= 0) {
                 n.jumpPhase = 'ground';
                 n.airZ = 0;
-                statoRun.scossa = 8;
+                scuoti(FEEL.scossa.atterraggioReGatto);
                 statoRun.ondeEsplosione.push({ x: n.x, y: n.y, r: 8, maxR: 48, tick: 0 });
                 for (let k = 0; k < 14; k++) {
                   const a = (TAU * k) / 14 + (rng() - 0.5) * 0.22;
@@ -5105,7 +5118,7 @@ function disegnaManoMarionettaPittorica() {
               n.y = Math.max(ARENA.y1 + 18, Math.min(ARENA.y2 - 18, n.y + n.vy));
               if (n.x <= ARENA.x1 + 19 || n.x >= ARENA.x2 - 19 || n.y <= ARENA.y1 + 19 || n.y >= ARENA.y2 - 19 || n.chargeTimer <= 0) {
                 n.charging = false;
-                statoRun.scossa = 6;
+                scuoti(FEEL.scossa.schiantoCapitano);
                 for (let k = 0; k < 8; k++) {
                   const a = (TAU * k) / 8;
                   statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2, dist: 0, bossShot: true });
@@ -5312,22 +5325,30 @@ function disegnaManoMarionettaPittorica() {
 
         // Danno da contatto (solo se il boss non è in volo alto airZ > 20)
         if ((n.airZ || 0) < 20 && Math.hypot(player.x - n.x, player.y - n.y) < n.r + 9 && player.invuln <= 0) {
-          subisciColpoGiocatore(n.boss ? 2 : dannoBasePiano, n.nome);
+          subisciColpoGiocatore(n.boss ? 2 : dannoBasePiano, n.nome, n.x, n.y);
           if (statoRun.hpHalf <= 0) break;
         }
       }
     }
 
+  }
+
+  /**
+   * Disegna un frame (a qualunque refresh). La scossa si consuma a tempo reale.
+   * @param {number} dtMs tempo reale dal frame precedente
+   */
+  function disegnaFrame(dtMs) {
+    if (statoRun.fase === 'menu_selezione') {
+      disegnaMenuSelezionePersonaggio(tick);
+      return;
+    }
+    const st = statoRun.stanzaCorrente;
     // =========================================================================
     // RENDERING PITTORICO DARK-FAIRYTALE DELLA SCENA
     // =========================================================================
-    if (statoRun.scossa > 0.2) statoRun.scossa *= 0.8;
-    else statoRun.scossa = 0;
-
+    const scossa = offsetScossa(dtMs);
     ctx.save();
-    if (statoRun.scossa > 0) {
-      ctx.translate(Math.round(Math.sin(tick * 2.3) * statoRun.scossa), Math.round(Math.cos(tick * 2.9) * statoRun.scossa));
-    }
+    if (scossa.x || scossa.y) ctx.translate(scossa.x, scossa.y);
 
     if (st) {
       disegnaStanzaPixelArt(tick, st);
@@ -5345,6 +5366,7 @@ function disegnaManoMarionettaPittorica() {
           ctx.fill();
         }
       }
+      disegnaMacchie(); // (T1) china o schegge dei nemici caduti, finché si resta nella stanza
 
       // 2. Pozzanghere di fuoco attivo dai bracieri rovesciati
       if (st.pozzanghereFuoco && st.pozzanghereFuoco.length > 0) {
@@ -5620,7 +5642,7 @@ function disegnaManoMarionettaPittorica() {
       for (const n of st.nemici) {
         if (n.hp <= 0) continue;
         const airOffset = n.airZ || 0;
-        fili.push([n.x, n.y - 18 - airOffset]);
+        fili.push([n.x, n.y - 18 - airOffset, n.boss ? 18 : 9]);
 
         if (n.boss) {
           disegnaBossPittorico(ctx, n, tick);
@@ -5652,7 +5674,11 @@ function disegnaManoMarionettaPittorica() {
       }
 
       // Ferruccio Pittorico Dark-Fairytale fedele all'immagine di riferimento (SENZA ALCUN FILO!)
-      const pFlash = player.invuln > 0 && (tick % 4 < 2);
+      // (T1) I-frames: lampeggio ad alpha FEEL.iframes.alpha a semionde di FEEL.iframes.semiperiodoMs
+      const pSpento = player.invuln > 0 && Math.floor((tick * MS_PER_TICK) / FEEL.iframes.semiperiodoMs) % 2 === 1;
+      const pFlash = false;
+      ctx.save();
+      if (pSpento) ctx.globalAlpha = FEEL.iframes.alpha;
       disegnaFerruccioPittorico(ctx, player.x, player.y, {
         scale: 1.0,
         flipX: player.flipX,
@@ -5667,6 +5693,7 @@ function disegnaManoMarionettaPittorica() {
         charInfo: getCharCorrente(),
         sinergie: statoRun.sinergieVisive,
       });
+      ctx.restore();
 
       if (player.pickupTimer > 0 && player.pickupItem) {
         drawPixelSprite(SPRITE_OGGETTI[player.pickupItem.sprite] || SPRITE_OGGETTI.spada, player.x, player.y - 38, 2);
@@ -5712,14 +5739,9 @@ function disegnaManoMarionettaPittorica() {
       const pianoNelCiclo = ((statoRun.piano - 1) % 4) + 1;
       const inBossFinale = st.tipo === 'boss' && pianoNelCiclo === 4 && st.nemici.some((n) => n.hp > 0);
       if (!inBossFinale) {
-        ctx.strokeStyle = 'rgba(249, 203, 64, 0.58)';
-        ctx.lineWidth = 1.2;
-        for (const [tx, ty] of fili) {
-          const hx = tx <= W / 2 ? 216 : 424;
-          ctx.beginPath();
-          ctx.moveTo(hx, 36);
-          ctx.lineTo(Math.round(tx), Math.round(ty));
-          ctx.stroke();
+        // (T1) Due fili d'oro per marionetta, uno per Mano, 1 px al 30% (FEEL.fili)
+        for (const [tx, ty, mezza] of fili) {
+          disegnaFiliMarionetta({ x: tx, piedi: ty, altezza: 0, mezza: mezza || 10 });
         }
         disegnaManoMarionettaPittorica(ctx, 216, 25, 0.95, false, false, tick);
         disegnaManoMarionettaPittorica(ctx, 424, 25, 0.95, true, false, tick + 12);
@@ -5730,8 +5752,6 @@ function disegnaManoMarionettaPittorica() {
       if (statoRun.siparioAttivo) disegnaSiparioNarrativo(statoRun.siparioAttivo);
     }
     ctx.restore();
-
-    requestAnimationFrame(loop);
   }
 
   // ===========================================================================
@@ -6101,6 +6121,13 @@ function disegnaManoMarionettaPittorica() {
   }
 
   statoRun.fase = 'menu_selezione';
+  // Sonda di sola lettura per la QA automatica (Playwright): non cambia nulla del gioco.
+  window.__teatro = Object.freeze({
+    get tick() { return tick; },
+    get fase() { return statoRun.fase; },
+    get player() { return { x: player.x, y: player.y, invuln: player.invuln }; },
+    get stanza() { return statoRun.stanzaCorrente ? statoRun.stanzaCorrente.tipo : null; },
+  });
   requestAnimationFrame(loop);
 })();
 </script>
