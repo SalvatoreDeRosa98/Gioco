@@ -259,7 +259,7 @@ test('A07: esplosione e colpo di un boss → tonfo: rumore passa-basso in caduta
   const bersagli = [{ id: 'boss', boss: true }, { id: 'guardia', boss: false }];
   const { ctx, eventi, daQui, nuovi, collegamento } = await scena({ eBoss: (p) => Boolean(bersagli.find((b) => b.id === p?.id)?.boss) });
   let da = daQui();
-  eventi.emit('esplosione', { x: 0, y: 0 });
+  eventi.emit('nemico.esplosione', { x: 0, y: 0 });
   let n = nuovi(da);
   const f = filtri(n);
   assert.equal(f.length, 1);
@@ -284,7 +284,7 @@ test('A07: esplosione e colpo di un boss → tonfo: rumore passa-basso in caduta
   assert.equal(nuovi(da).filter((x) => x.tipo === 'convolver').length, 1);
   ctx.currentTime += 1;
   da = daQui();
-  eventi.emit('bomba.esplosione', {});
+  eventi.emit('nemico.esplosione', { x: 1, y: 1 });
   assert.equal(nuovi(da).filter((x) => x.tipo === 'convolver').length, 1);
   assert.deepEqual(collegamento.suonati(), { tonfo: 3 });
 });

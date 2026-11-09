@@ -276,7 +276,7 @@ test('(d) scossa contestuale: zero a riposo, px e frame dal JSON per colpo, bomb
   assert.deepEqual(feel.offsetScossa(), { x: 0, y: 0 }, 'dopo i frame previsti si ferma');
   assert.deepEqual(feel.offsetScossa(), { x: 0, y: 0 });
 
-  eventi.emit('bomba.esplosione', { x: 0, y: 0 });
+  eventi.emit('nemico.esplosione', { x: 0, y: 0 });
   assert.equal(feel.statoScossa().px, parametri.get('resa.scossa.bomba_px'));
   eventi.emit('ferruccio.colpo', { x: 0, y: 0 });
   assert.equal(feel.statoScossa().px, parametri.get('resa.scossa.bomba_px'), 'un colpo durante la bomba non la riduce né la somma');
@@ -295,7 +295,7 @@ test('(d) scossa contestuale: zero a riposo, px e frame dal JSON per colpo, bomb
   const ridotti = await caricaParametri({ sovrascritture: ['moto-ridotto'] });
   const eventi2 = creaBus({ log });
   const feel2 = creaFeel({ parametri: ridotti, eventi: eventi2, rng: creaRng(1), tempo: creaTempo() });
-  for (const nome of ['ferruccio.colpo', 'bomba.esplosione', 'boss.atterraggio', 'boss.mani_schianto', 'ferruccio.parata']) eventi2.emit(nome, {});
+  for (const nome of ['ferruccio.colpo', 'nemico.esplosione', 'boss.atterraggio', 'boss.mani_schianto', 'ferruccio.parata']) eventi2.emit(nome, {});
   assert.deepEqual(feel2.statoScossa(), { px: 0, frame: 0 });
   assert.deepEqual(feel2.offsetScossa(), { x: 0, y: 0 });
 });

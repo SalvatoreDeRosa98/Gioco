@@ -309,7 +309,9 @@ export function creaEconomia({ parametri, eventi = null, rng, profilo, ferruccio
       return;
     }
     const v = estraiMoneta({ rng, pDrop: E('p_drop_moneta'), qGrande: E('q_moneta_grande'), vPiccola: E('v_moneta_piccola'), vGrande: E('v_moneta_grande') });
-    if (v > 0) lasciaMoneta({ x: p.x, y: p.y, direzione: p.direzione, lancio: p.lancio, valore: v });
+    // storia P15: il mob dorato della segreta (flag `dorato` del payload, Teatro mobSoldi) lascia monete × nemici.drop.molt_monete_dorato
+    const molt = p.dorato && typeof parametri.ha === 'function' && parametri.ha('nemici.drop.molt_monete_dorato') ? parametri.get('nemici.drop.molt_monete_dorato') : 1;
+    if (v > 0) lasciaMoneta({ x: p.x, y: p.y, direzione: p.direzione, lancio: p.lancio, valore: v * molt });
   }
 
   /**

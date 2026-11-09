@@ -62,8 +62,10 @@ export const TRANSIZIONI_STANZA = Object.freeze({
   pulita: Object.freeze([]),
 });
 
-/** Tipi che combattono con le ondate della tavolozza. */
-export const TIPI_COMBATTIMENTO = Object.freeze(['normale']);
+/** Tipi che combattono con le ondate della tavolozza (storia P15: anche la segreta, con i predoni dorati del Teatro). */
+export const TIPI_COMBATTIMENTO = Object.freeze(['normale', 'segreta']);
+/** Tipo della Stanza Segreta: una sola ondata, quanti predoni dice `stanze.segreta` (storia P15). */
+const TIPO_SEGRETA_COMBATTE = 'segreta';
 
 /** Storia P01: tipo della stanza del boss e tipi dei contenuti del modello che la stanza gestisce. */
 export const TIPO_BOSS = 'boss';
@@ -104,6 +106,16 @@ export function nNemici({ parametri, p, d, dBoss, diff, dim, variazione = 0 }) {
   n = clamp(n, 1, cap);
   if (d <= 1) n = Math.min(n, S(`n_cap_ingresso.p${p}`));
   return n;
+}
+
+/**
+ * Storia P15 (Teatro popolaStanzaIsaac 'segreta' ~3291: `nMobSoldi = 4 + min(2, floor(piano × 0,5))`): i predoni dorati della
+ * Stanza Segreta, `n = n_base + min(n_extra_max, floor(p × n_per_piano))` da `stanze.segreta`, almeno 1.
+ * @param {{ parametri: { get: Function }, p: number }} o piano
+ */
+export function nNemiciSegreta({ parametri, p }) {
+  const S = (k) => parametri.get(`stanze.segreta.${k}`);
+  return Math.max(1, Math.round(S('n_base') + Math.min(S('n_extra_max'), Math.floor(p * S('n_per_piano')))));
 }
 
 /**
@@ -479,9 +491,15 @@ export function creaStanza({
     quote = [1];
     ondateArchetipi = [[puntoBoss.archetipo]];
   } else if (combatte) {
-    const variazione = estraiVariazione(parametri, rngComp);
-    totale = nNemici({ parametri, p: piano, d: record.profondita, dBoss: record.d_boss, diff: modello.difficolta, dim: modello.dim, variazione });
-    quote = quoteOndate({ parametri, p: piano, n: totale });
+    if (record.tipo === TIPO_SEGRETA_COMBATTE) {
+      // storia P15 (Teatro): la segreta è una sola ondata di predoni dorati, mai più dei punti di nascita del modello
+      totale = Math.min(nNemiciSegreta({ parametri, p: piano }), spawnPunti.length);
+      quote = [totale];
+    } else {
+      const variazione = estraiVariazione(parametri, rngComp);
+      totale = nNemici({ parametri, p: piano, d: record.profondita, dBoss: record.d_boss, diff: modello.difficolta, dim: modello.dim, variazione });
+      quote = quoteOndate({ parametri, p: piano, n: totale });
+    }
     const tutti = composizione({ tavolozza: modello.tavolozza, n: totale, rng: rngComp });
     let i = 0;
     ondateArchetipi = quote.map((q) => tutti.slice(i, (i += q)));

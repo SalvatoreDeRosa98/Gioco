@@ -238,14 +238,19 @@ test('Z1: segreta — nella stanza confinante la Crepa Dorata (finestra verso la
   assert.ok(notte.stanza.porte.some((p) => p.slot === c.slot), 'la porta esiste nella stanza montata');
   assert.deepEqual([m.ferruccio.x, m.ferruccio.y], [pos.x, pos.y], 'Ferruccio non si muove');
   assert.equal(segreta.crepa().aperta, true);
-  // nella segreta: pulita alla prima visita, monete_segreta monete a terra
+  // nella segreta (storia P15: combatte una ondata di predoni dorati): monete_segreta monete a terra alla pulizia
   const monete = [];
   m.eventi.on('segreta.monete', (p) => monete.push(p));
   notte.vaiA(seg.id);
+  assert.equal(notte.stanza.combatte, true, 'la segreta combatte (P15)');
+  assert.equal(notte.stanza.stato, 'annuncio');
+  assert.equal(monete.length, 0, 'niente monete prima della pulizia');
+  for (let i = 0; i < 4000 && notte.stanza.stato !== 'pulita'; i++) { m.input.inizioTick(); for (const b of m.bersagli) b.colpisci(1e6, null); notte.tick(1 / 60); }
   assert.equal(notte.stanza.stato, 'pulita');
   assert.equal(monete.length, 1);
   const aTerra = economia.aTerra(seg.id).filter((o) => o.tipo === 'moneta');
-  assert.equal(aTerra.length, m.parametri.get('economia.monete_segreta'));
+  assert.equal(monete[0].n, m.parametri.get('economia.monete_segreta'), 'le monete della segreta del Teatro');
+  assert.ok(aTerra.length >= m.parametri.get('economia.monete_segreta'), 'monete_segreta più il bottino dei predoni (storia P15)');
   notte.vaiA(vicina.id);
   notte.vaiA(seg.id);
   assert.equal(monete.length, 1, 'una volta sola');

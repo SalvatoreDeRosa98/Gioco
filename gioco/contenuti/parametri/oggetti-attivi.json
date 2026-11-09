@@ -33,6 +33,12 @@
         "base": 360,
         "min": 100,
         "max": 900
+      },
+      "raggio_proiettili": {
+        "_descrizione": "Storia P15: raggio di cancellaInRaggio sui proiettili nemici (il Teatro li azzera tutti: la base copre l'intera scena 1280x720, diagonale 1469).",
+        "base": 1500,
+        "min": 100,
+        "max": 3000
       }
     },
     "ampolla": {

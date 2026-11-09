@@ -42,6 +42,9 @@ import { creaDirettore } from '../motore/attori/ia/direttore.js';
 import { STATI_NEMICO, TRANSIZIONI_NEMICO } from '../motore/attori/ia/base.js';
 import { creaStanza } from '../motore/mondo/stanza.js';
 import { caricaModelli, creaCatalogo, regoleDaParametri } from '../motore/mondo/modelli.js';
+import { creaSegreta } from '../motore/mondo/segreta.js';
+import { creaRun } from '../motore/mondo/run.js';
+import { patternPerNome } from '../motore/attori/boss/indice.js';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const RADICE = join(QUI, '..');
@@ -1296,4 +1299,120 @@ test('prestazioni: 12 nemici con separazione e direttore in Insegue ≤ 1,0 ms p
   m.gira(n);
   const perTick = (performance.now() - t0) / n;
   assert.ok(perTick < 1.0, `${perTick.toFixed(3)} ms per tick`);
+});
+
+// ---------------------------------------------------------------------------------------------
+// Storia P15 — cuciture: l'esplosione apre la Crepa Dorata; gli eventi dei boss per il feel; `aperta` e `riflesso` leggibili
+// ---------------------------------------------------------------------------------------------
+
+/** Notte finta per la Crepa Dorata: la stanza `a` con la finestra verso la segreta `s` nel muro E (rettangolo dentro il campo). */
+function notteFintaConCrepa(m, { stato = 'pulita' } = {}) {
+  const record = { id: 'a', tipo: 'normale', porte: { W: 'b' }, finestre: ['E'] };
+  const seg = { id: 's', tipo: 'segreta', porte: {}, finestre: ['W'] };
+  const w = 16;
+  const h = 96;
+  const finestra = { slot: 'E', lato: 'E', x: m.campo.x + m.campo.larghezza - w, y: m.centro.y - h / 2, w, h };
+  const stanza = { id: 'a', record, finestre: [finestra], porte: [], stato, origine: { x: m.campo.x, y: m.campo.y }, geo: { colonne: 13, righe: 7 }, cella: 64 };
+  const andate = [];
+  return { stanza, pianta: { stanze: [record, seg] }, vaiA: (id) => andate.push(id), andate, finestra, record, seg };
+}
+
+const combattimentoMuto = { proiettiliFerruccio: () => [], hitboxCorrente: () => null };
+
+test('P15 esplosione → Crepa Dorata: GIVEN la stanza pulita con la crepa, WHEN una bomba esplode entro r_crepa dalla finestra, THEN la crepa si apre (porte su entrambi i record, segreta.aperta, rCrepa nel payload); lontana no; durante il combattimento aspetta `pulita`', async () => {
+  const m = await creaMondo();
+  const E = NEMICI_JSON.archetipi.bomba.esplosione;
+  const n = notteFintaConCrepa(m);
+  const aperture = [];
+  m.eventi.on('segreta.aperta', (p) => aperture.push(p));
+  const segreta = creaSegreta({ eventi: m.eventi, notte: () => n, combattimento: combattimentoMuto, ferruccio: m.ferruccio, parametri: m.parametri });
+  assert.equal(segreta.crepa().visibile, true);
+  // lontana: oltre r_crepa dal rettangolo della finestra
+  const lontana = m.nemico('bomba', { x: n.finestra.x - E.r_crepa.base - 120, y: m.centro.y });
+  inInsegue(m, lontana);
+  lontana.colpisci(99, null);
+  assert.equal(m.eventiDi('nemico.esplosione').length, 1);
+  assert.equal(m.eventiDi('nemico.esplosione')[0].payload.rCrepa, E.r_crepa.base, 'rCrepa nel payload');
+  segreta.tick();
+  assert.deepEqual(aperture, [], 'troppo lontana: la crepa resta chiusa');
+  assert.equal(n.record.porte.E, undefined);
+  // vicina: entro r_crepa → apre subito (stanza pulita)
+  const { x: fx, y: fy } = m.ferruccio;
+  const vicina = m.nemico('bomba', { x: n.finestra.x - E.r_crepa.base + 30, y: m.centro.y });
+  inInsegue(m, vicina);
+  vicina.colpisci(99, null);
+  assert.equal(aperture.length, 1, 'segreta.aperta');
+  assert.deepEqual([aperture[0].stanza, aperture[0].segreta, aperture[0].slot], ['a', 's', 'E']);
+  assert.equal(n.record.porte.E, 's');
+  assert.equal(n.seg.porte.W, 'a');
+  assert.deepEqual(n.andate, ['a'], 'la stanza è rimontata');
+  assert.deepEqual([m.ferruccio.x, m.ferruccio.y], [fx, fy], 'senza muovere Ferruccio');
+  assert.equal(segreta.crepa().aperta, true);
+  // durante il combattimento: l'apertura aspetta `pulita` (le porte sono chiuse)
+  const m2 = await creaMondo();
+  const n2 = notteFintaConCrepa(m2, { stato: 'ondata' });
+  const aperture2 = [];
+  m2.eventi.on('segreta.aperta', (p) => aperture2.push(p));
+  const segreta2 = creaSegreta({ eventi: m2.eventi, notte: () => n2, combattimento: combattimentoMuto, ferruccio: m2.ferruccio, parametri: m2.parametri });
+  const b2 = m2.nemico('bomba', { x: n2.finestra.x - 40, y: m2.centro.y });
+  inInsegue(m2, b2);
+  b2.colpisci(99, null);
+  segreta2.tick();
+  assert.equal(aperture2.length, 0, 'porte chiuse: non ancora');
+  assert.equal(segreta2.inAttesa, 'a');
+  n2.stanza.stato = 'pulita';
+  segreta2.tick();
+  assert.equal(aperture2.length, 1, 'aperta al primo tick da pulita');
+  assert.equal(segreta2.inAttesa, null);
+  assert.equal(n2.record.porte.E, 's');
+});
+
+test('P15 feel dei boss: il Re-Gatto emette boss.atterraggio {x, y} quando atterra dal balzo; le Mani di Donna Luciana emettono boss.mani_schianto {x, y, mani[]} allo schianto (i nomi che resa/feel.js ascolta per la scossa)', async () => {
+  const BOSS = leggiJson('boss');
+  const bossProva = async (id) => {
+    const m = await creaMondo();
+    const run = creaRun({ tabella: BOSS, seme: SEME });
+    const info = [...BOSS.pool, BOSS.finale].find((b) => b.id === id);
+    const visti = [];
+    for (const nome of ['boss.atterraggio', 'boss.mani_schianto']) m.eventi.on(nome, (p) => visti.push({ nome, ...p }));
+    const fermo = { x: m.centro.x - 250, y: m.centro.y, r: 14, stato: 'in_piedi', colpisci: () => 'danno' }; // Ferruccio finto: non muore
+    const fabbrica = info.archetipoBase === ARCHETIPO_GATTO ? creaGatto : creaNemico;
+    const n = fabbrica({
+      modificatori: m.mod, parametri: m.parametri, tempo: m.tempo, eventi: m.eventi, campo: m.campo, bersaglio: fermo, altri: () => m.bersagli,
+      rng: derivato(creaRng(SEME), id), archetipo: info.archetipoBase, piano: 1, x: m.centro.x + 250, y: m.centro.y, id, boss: true,
+      schedaBoss: { vita: run.vitaBoss(1, info), scalaRaggio: info.scalaRaggio, scalaPortata: info.scalaPortata },
+      proiettili: m.proiettili, pattern: patternPerNome(info.pattern), bossId: id, moltVelocita: run.moltVelocita(1),
+      genera: (archetipo, gx, gy) => ({ archetipo, x: gx, y: gy, r: 12, peso: 0, volante: false, stato: 'in_piedi', vita: 1, boss: false }),
+    });
+    m.bersagli.push(n);
+    m.gira(m.ticks(15000));
+    return { n, visti };
+  };
+  const gatto = await bossProva('re-gatto');
+  const atterraggi = gatto.visti.filter((e) => e.nome === 'boss.atterraggio');
+  assert.ok(atterraggi.length >= 1, 'boss.atterraggio emesso');
+  assert.ok(atterraggi.every((e) => Number.isFinite(e.x) && Number.isFinite(e.y)), 'payload {x, y}');
+  assert.equal(gatto.visti.filter((e) => e.nome === 'boss.mani_schianto').length, 0, 'il Re-Gatto non ha Mani');
+  const luciana = await bossProva(BOSS.finale.id);
+  const schianti = luciana.visti.filter((e) => e.nome === 'boss.mani_schianto');
+  assert.ok(schianti.length >= 1, 'boss.mani_schianto emesso');
+  assert.ok(schianti.every((e) => Number.isFinite(e.x) && Number.isFinite(e.y) && Array.isArray(e.mani) && e.mani.length > 0
+    && e.mani.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y))), 'payload {x, y, mani[]}');
+});
+
+test('P15 contratto per il renderer: la maschera espone `aperta` (booleano, chiusa a riposo, aperta nell\'anticipo); il proiettile nemico espone `riflesso` (falso in volo, vero dopo rifletti, stato riflesso)', async () => {
+  const m = await creaMondo();
+  const maschera = m.nemico('maschera', { x: m.centro.x + 200, y: m.centro.y });
+  assert.equal(typeof maschera.aperta, 'boolean');
+  assert.equal(maschera.aperta, false, 'chiusa a riposo');
+  inInsegue(m, maschera);
+  maschera.forzaStato('anticipo');
+  assert.equal(maschera.aperta, true, 'aperta nell\'anticipo');
+  const base = schedaProiettiliNemici({ modificatori: m.mod, parametri: m.parametri, piano: 1 });
+  const p = creaProiettileNemico({ x: m.centro.x, y: m.centro.y, direzione: { x: 1, y: 0 }, velocita: base.velocita, r: base.r, gittata: base.gittata, danno: base.danno, campo: m.campo });
+  assert.equal(p.riflesso, false);
+  assert.equal(p.stato, 'in_volo');
+  p.rifletti(m.parametri.get('combattimento.danno_riflesso'), m.parametri.get('combattimento.v_riflesso'));
+  assert.equal(p.riflesso, true);
+  assert.equal(p.stato, 'riflesso');
 });

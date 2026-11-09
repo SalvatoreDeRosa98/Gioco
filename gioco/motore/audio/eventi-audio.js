@@ -16,8 +16,7 @@ export const MAPPA_EVENTI = Object.freeze({
   'ferruccio.fendente': 'sibilo',
   'ferruccio.affondo': 'sibilo',
   'ferruccio.sparo': 'sibilo',
-  'esplosione': 'tonfo',
-  'bomba.esplosione': 'tonfo',
+  'nemico.esplosione': 'tonfo', // storia P15: un solo nome, quello che emette la Bomba Ferma (attori/nemico.js)
   'nemico.colpo': (p, { eBoss }) => (eBoss(p) ? 'tonfo' : null),
   'stanza.entrata': 'campana',
   'ferruccio.colpo': 'colpo_a_segno',

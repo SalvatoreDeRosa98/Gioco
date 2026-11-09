@@ -947,3 +947,46 @@ test('P04 spada: Taddeo con la freccia dà il fendente nella direzione della fre
   assert.equal(m.comb.stato, 'fendente');
   assert.ok(Math.abs(m.mod.valore('combattimento.danno') - 7.395) < 1e-9, 'danno del fendente = dmg di Taddeo');
 });
+
+// ---------------------------------------------------------------------------------------------
+// Storia P15 — nessun numero di gioco in sparaProiettili: i fallback stanno in combattimento.json › proiettile
+// ---------------------------------------------------------------------------------------------
+
+test('P15 sparaProiettili: il sorgente non contiene più i letterali 3.9, 3, 4, 0.22, 9, 8, 2 come fallback `??` né max(220, … × 3.4); senza il blocco isaac il proiettile usa combattimento.json › proiettile (velocità, raggio, portata)', async () => {
+  const testo = readFileSync(new URL('../motore/attori/combattimento.js', import.meta.url), 'utf8');
+  const codice = testo.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
+  assert.ok(!/\?\?\s*(?:3\.9|0\.22|220|3\.4|[23489])\b/.test(codice), 'nessun fallback numerico `?? n` nel codice');
+  assert.ok(!/Math\.max\(\s*220/.test(codice), 'niente max(220, …)');
+  assert.ok(!/\*\s*3\.4\b/.test(codice), 'niente × 3.4');
+  const J = leggiJson('combattimento').proiettile;
+  for (const k of ['scala_px', 'velocita_px_frame', 'r_base', 'offset_doppia', 'angolo_triplo', 'offset_bocca', 'alzata', 'portata_min', 'molt_portata']) {
+    assert.ok(J[k] && typeof J[k].base === 'number', `combattimento.proiettile.${k}`);
+  }
+  // senza `isaac` né statistiche (storie 007-011, proiettiliBase): i numeri del JSON, non costanti del codice
+  const log = logFinto();
+  const parametri = creaParametri({ log });
+  await parametri.carica({ caricatore: (nome) => leggiJson(nome), statistiche: ['ferruccio', 'combattimento', 'stanza'], tabelle: ['input'] });
+  const tempo = creaTempo();
+  const eventi = creaBus({ log });
+  const input = creaInput(parametri.get('input'));
+  const mod = creaModificatori(parametri);
+  const campo = creaCampo({
+    colonne: parametri.get('stanza.colonne'), righe: parametri.get('stanza.righe'), cella: parametri.get('stanza.cella'),
+    scenaLarghezza: SCENA.larghezza, scenaAltezza: SCENA.altezza, ostacoli: [],
+  });
+  const ferruccio = creaFerruccio({ modificatori: mod, tempo, eventi, input, campo, x: campo.x + campo.larghezza / 2, y: campo.y + campo.altezza / 2 });
+  const comb = creaCombattimento({ modificatori: mod, tempo, eventi, input, campo, ferruccio, bersagli: () => [], proiettiliBase: true });
+  input.sorgenteGiu(`t:${parametri.get('input.tastiera.spara_destra')[0]}`);
+  const dt = tempo.passoMs / 1000;
+  input.inizioTick();
+  ferruccio.tick(dt);
+  comb.tick(dt);
+  const p = comb.proiettiliFerruccio();
+  assert.equal(p.length, 1, 'un proiettile base');
+  const scala = parametri.get('combattimento.proiettile.scala_px');
+  assert.ok(Math.abs(Math.hypot(p[0].vx, p[0].vy) - J.velocita_px_frame.base * scala) < 1e-9, 'velocità = velocita_px_frame × scala_px');
+  assert.ok(Math.abs(p[0].r - J.r_base.base * scala) < 1e-9, 'raggio = r_base × scala_px');
+  const portata = mod.valore('combattimento.portata');
+  assert.ok(Math.abs(p[0].maxDist - Math.max(J.portata_min.base, portata * J.molt_portata.base)) < 1e-9, 'portata = max(portata_min, portata × molt_portata)');
+  assert.deepEqual(log.voci, [], 'nessun parametro mancante');
+});

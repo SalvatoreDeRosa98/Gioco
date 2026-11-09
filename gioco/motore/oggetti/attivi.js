@@ -7,14 +7,17 @@
  *  - `maxCarica` tacche; a ogni `stanza.pulita` combattuta +`regole.carica_per_stanza`; si usa solo a carica piena e
  *    la carica torna a zero;
  *  - `forbici`: tutti i nemici vivi stordiati per `stordisce_ms` e feriti di DMG × `forbici_frazione_dmg` (minimo `danno`);
- *  - `tamburello`: i proiettili nemici spariscono, i nemici entro `raggio` subiscono DMG × `tamburello_frazione_dmg` e
- *    una spinta radiale di `spinta` px/s;
+ *  - `tamburello`: i proiettili nemici entro `raggio_proiettili` si spengono (`cancellaInRaggio` di attori/proiettili-nemici.js,
+ *    storia P15: il Teatro li azzera tutti, la base copre la scena intera), i nemici entro `raggio` subiscono
+ *    DMG × `tamburello_frazione_dmg` e una spinta radiale di `spinta` px/s;
  *  - `ampolla`: +`cura` maschere intere (tetto `ferruccio.maschere_max`).
- * Eventi: `attivo.equipaggiato` {id}, `attivo.carica` {id, carica, max}, `attivo.usato` {id, effetto, colpiti},
+ * Eventi: `attivo.equipaggiato` {id}, `attivo.carica` {id, carica, max}, `attivo.usato` {id, effetto, colpiti, cancellati},
  * `attivo.scarico` {id, carica, max} (Q premuto senza carica). Il DMG è quello delle statistiche alla Isaac
  * (`statistiche()`), altrimenti `combattimento.danno` dei modificatori. Nessun numero e nessuna stringa di gioco qui;
  * nessuna casualità. Dipendenze: solo verso il basso (modificatori, ferruccio, bersagli, proiettili).
  */
+
+import { cancellaInRaggio } from '../attori/proiettili-nemici.js';
 
 /** Effetti conosciuti (chiave `effetto` di oggetti-attivi.json). */
 export const EFFETTI_ATTIVO = Object.freeze(['forbici', 'tamburello', 'ampolla']);
@@ -41,6 +44,7 @@ export function creaAttivi({ tabella, eventi, ferruccio, modificatori, bersagli,
   let attivo = null;
   let carica = 0;
   let ultimoUso = null;
+  let cancellati = 0; // storia P15: proiettili nemici spenti dall'ultimo Tamburello
 
   const dmg = () => {
     const st = typeof statistiche === 'function' ? statistiche() : null;
@@ -79,7 +83,10 @@ export function creaAttivi({ tabella, eventi, ferruccio, modificatori, bersagli,
 
   function effettoTamburello(def) {
     let colpiti = 0;
-    if (Array.isArray(proiettili)) proiettili.length = 0;
+    // storia P15: i proiettili nemici vivi entro `raggio_proiettili` si spengono (il fendente li cancella allo stesso modo)
+    cancellati = Array.isArray(proiettili)
+      ? cancellaInRaggio(proiettili, { x: ferruccio.x, y: ferruccio.y, raggio: base(def.raggio_proiettili) ?? base(def.raggio) })
+      : 0;
     const raggio = base(def.raggio);
     const spinta = base(def.spinta);
     const danno = dmg() * R('tamburello_frazione_dmg');
@@ -114,12 +121,13 @@ export function creaAttivi({ tabella, eventi, ferruccio, modificatori, bersagli,
       return { esito: 'scarico', id: attivo.id };
     }
     const effetto = attivo.effetto;
+    cancellati = 0;
     const colpiti = effetto === 'forbici' ? effettoForbici(attivo)
       : effetto === 'tamburello' ? effettoTamburello(attivo)
         : effetto === 'ampolla' ? effettoAmpolla(attivo) : 0;
     carica = 0;
-    ultimoUso = { id: attivo.id, effetto, colpiti };
-    eventi.emit('attivo.usato', { id: attivo.id, effetto, colpiti, x: ferruccio.x, y: ferruccio.y });
+    ultimoUso = { id: attivo.id, effetto, colpiti, cancellati };
+    eventi.emit('attivo.usato', { id: attivo.id, effetto, colpiti, cancellati, x: ferruccio.x, y: ferruccio.y });
     eventi.emit('attivo.carica', { id: attivo.id, carica, max: attivo.maxCarica });
     return { esito: 'usato', id: attivo.id, colpiti };
   }

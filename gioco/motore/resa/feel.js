@@ -9,8 +9,8 @@
  *    frame disegnati (il più ampio vince, non si somma); `offsetScossa()` è letto una volta per frame dal
  *    renderer e torna a {0, 0} a fine corsa: nessuna scossa costante, con moto ridotto i px sono 0 dai
  *    parametri (`moto-ridotto.json`). Gli eventi ascoltati: `ferruccio.colpo` (colpo a segno),
- *    `ferruccio.parata`, `bomba.esplosione`, `boss.atterraggio` (Re-Gatto), `boss.mani_schianto` (Mani di
- *    Donna Luciana): le ultime tre sono i nomi che le squadre oggetti/nemici devono emettere;
+ *    `ferruccio.parata`, `nemico.esplosione` (la Bomba Ferma, storia P15: un solo nome, quello di attori/nemico.js),
+ *    `boss.atterraggio` (Re-Gatto), `boss.mani_schianto` (Mani di Donna Luciana): i tre nomi emessi dalle squadre nemici;
  *  - **macchie permanenti**: a `nemico.morto` resta a terra una chiazza d'inchiostro di china (o schegge
  *    di legno per `statua`, `guardia`, `bomba` e per gli archetipi elencati in `pezzi`/`legno`), seminata con
  *    `derivato(rng, 'fx')` e identica a ogni replay; il buffer è per stanza e si azzera a `notte.stanza`.
@@ -167,7 +167,7 @@ export function creaFeel({ parametri, eventi = null, rng = null, tempo = null, t
   if (eventi) {
     eventi.on('ferruccio.colpo', () => scuoti(R('scossa.colpo_px'), R('scossa.colpo_frame')));
     eventi.on('ferruccio.parata', () => scuoti(parametri.get('combattimento.feel.scossa_parata_px'), R('scossa.parata_frame')));
-    eventi.on('bomba.esplosione', () => scuoti(R('scossa.bomba_px'), R('scossa.bomba_frame')));
+    eventi.on('nemico.esplosione', () => scuoti(R('scossa.bomba_px'), R('scossa.bomba_frame')));
     eventi.on('boss.atterraggio', () => scuoti(R('scossa.boss_atterraggio_px'), R('scossa.boss_atterraggio_frame')));
     eventi.on('boss.mani_schianto', () => scuoti(R('scossa.mani_schianto_px'), R('scossa.mani_schianto_frame')));
     eventi.on('nemico.morto', (ev) => { if (ev && Number.isFinite(ev.x) && Number.isFinite(ev.y)) aggiungiMacchia(ev); });
