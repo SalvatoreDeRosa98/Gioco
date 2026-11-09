@@ -2662,21 +2662,21 @@ function disegnaManoMarionettaPittorica() {
   // --- PROPOSTA 2: RELIQUIE PROIBITE DEL PATTO D'OMBRA (COSTANO 1 ❤️ MASCHERA MASSIMA, STILE DEVIL DEAL!) ---
   const CATALOGO_PATTO = [
     {
-      id: 'patto_raggio', sprite: 'patto_raggio', nome: 'Raggio Cremisi del Velo (Brimstone)', tier: 'patto',
+      id: 'patto_raggio', sprite: 'patto_raggio', nome: 'Raggio Cremisi del Velo', tier: 'patto',  // D: rif. Isaac: Brimstone
       statsDesc: '[😈 PATTO] DMG x2.1 · +1.5 DMG Up · Proiettili Cremisi Perforanti Giganti',
       lore: 'Stringi il patto col Velo: cedi 1 Maschera di vita per un potere devastante.',
       costoMaxHpHalf: 2,
       mod: { dmgUp: 1.5, dmgMult: 2.1, piercing: true, tipoProiettile: 'cremisi', size: 1.45 },
     },
     {
-      id: 'patto_sacro', sprite: 'patto_sacro', nome: 'Cuore Sacro di San Leucio (Sacred Heart)', tier: 'patto',
+      id: 'patto_sacro', sprite: 'patto_sacro', nome: 'Cuore Sacro di San Leucio', tier: 'patto',  // D: rif. Isaac: Sacred Heart
       statsDesc: '[😈 PATTO] DMG x2.3 · +1.0 Flat DMG · Rigenera tutta la vita rimasta',
       lore: 'Il cuore luminoso nascosto dietro l\'altare del Belvedere.',
       costoMaxHpHalf: 2,
       mod: { flatDmg: 1.0, dmgMult: 2.3, healOnEquip: 12 },
     },
     {
-      id: 'patto_coltello', sprite: 'patto_coltello', nome: 'Lama della Burattinaia (Mom\'s Knife)', tier: 'patto',
+      id: 'patto_coltello', sprite: 'patto_coltello', nome: 'Lama della Burattinaia', tier: 'patto',  // D: rif. Isaac: Mom's Knife
       statsDesc: '[😈 PATTO] Equipa Lama + Proiettili Perforanti · DMG x1.85 · +0.5 Tears Up',
       lore: 'La lama con cui Donna Luciana recide i ricordi superflui.',
       costoMaxHpHalf: 2,
@@ -2694,35 +2694,35 @@ function disegnaManoMarionettaPittorica() {
       mod: { spada: true, flatDmg: 1.0, dmgMult: 1.45 },
     },
     {
-      id: 'piombo', sprite: 'piombo', nome: 'Lacrima di Piombo (Polyphemus)', tier: 'forte',
+      id: 'piombo', sprite: 'piombo', nome: 'Lacrima di Piombo', tier: 'forte',  // D: rif. Isaac: Polyphemus
       statsDesc: '[★ FORTE] +3.8 Flat DMG · DMG x1.9 · Tears x0.48 (Colpi Giganti)',
       lore: 'Pesante come il silenzio di Piazza Dante sotto il Velo.',
       prezzo: 18,
       mod: { flatDmg: 3.8, dmgMult: 1.9, tearsMult: 0.48, tipoProiettile: 'piombo', size: 1.55, overflowPierce: true },
     },
     {
-      id: 'anello', sprite: 'anello', nome: 'Anello Cremisi (Cricket\'s Head)', tier: 'forte',
+      id: 'anello', sprite: 'anello', nome: 'Anello Cremisi', tier: 'forte',  // D: rif. Isaac: Cricket's Head
       statsDesc: '[★ FORTE] +0.8 DMG Up · DMG x1.5 · Proiettili Perforanti',
       lore: 'Anello caduto dal dito di una burattinaia: trapassa ogni marionetta.',
       prezzo: 16,
       mod: { dmgUp: 0.8, dmgMult: 1.5, piercing: true, tipoProiettile: 'cremisi' },
     },
     {
-      id: 'triplo', sprite: 'triplo', nome: 'Triplo Occhio (Inner Eye)', tier: 'forte',
+      id: 'triplo', sprite: 'triplo', nome: 'Triplo Occhio', tier: 'forte',  // D: rif. Isaac: Inner Eye
       statsDesc: '[★ FORTE] Triplo Colpo a ventaglio · +0.4 DMG Up · Tears x0.58',
       lore: 'Tre pupille di vetro che vedono i fili d\'oro nel cielo.',
       prezzo: 15,
       mod: { triplo: true, dmgUp: 0.4, tearsMult: 0.58 },
     },
     {
-      id: 'catena', sprite: 'catena', nome: 'Catena della Chiusa (Jacob\'s Ladder)', tier: 'forte',
+      id: 'catena', sprite: 'catena', nome: 'Catena della Chiusa', tier: 'forte',  // D: rif. Isaac: Jacob's Ladder
       statsDesc: '[★ FORTE] +0.6 Tears Up · Fulmini a catena tra tutti i nemici',
       lore: 'Spezzata dalla chiusa reale: scarica scintille azzurrine a ogni impatto.',
       prezzo: 15,
       mod: { tearsUp: 0.6, chain: true, tipoProiettile: 'elettrico' },
     },
     {
-      id: 'venti', sprite: 'venti', nome: 'Maschera dei 4 Venti (Loki\'s Horns)', tier: 'forte',
+      id: 'venti', sprite: 'venti', nome: 'Maschera dei 4 Venti', tier: 'forte',  // D: rif. Isaac: Loki's Horns
       statsDesc: '[★ FORTE] Spara contemporaneamente nelle 4 direzioni · +0.5 DMG Up',
       lore: 'Quattro volti di Pulcinella che guardano ogni angolo del palco.',
       prezzo: 15,
@@ -2731,35 +2731,35 @@ function disegnaManoMarionettaPittorica() {
 
     // --- OGGETTI BASE (TIER 'base': 1 stanza su 3 gratis, oppure 10🪙 ne La Fucina) ---
     {
-      id: 'chiodo', sprite: 'chiodo', nome: 'Chiodo della Fucina (Blood Clot)', tier: 'base',
+      id: 'chiodo', sprite: 'chiodo', nome: 'Chiodo della Fucina', tier: 'base',  // D: rif. Isaac: Blood Clot
       statsDesc: '[BASE] +0.65 DMG Up · +20 Range',
       lore: 'Un chiodo battuto a mano da Ferruccio prima dell\'incantesimo.',
       prezzo: 10,
       mod: { dmgUp: 0.65, rangeUp: 20 },
     },
     {
-      id: 'fuoco', sprite: 'fuoco', nome: 'Tizzone di Bragia (Fire Mind)', tier: 'base',
+      id: 'fuoco', sprite: 'fuoco', nome: 'Tizzone di Bragia', tier: 'base',  // D: rif. Isaac: Fire Mind
       statsDesc: '[BASE] +0.6 DMG Up · Proiettili Infuocati (Bruciatura DoT)',
       lore: 'Carbone ardente della vecchia fucina di famiglia.',
       prezzo: 10,
       mod: { dmgUp: 0.6, burn: true, tipoProiettile: 'fuoco' },
     },
     {
-      id: 'doppia', sprite: 'doppia', nome: 'Lente di San Leucio (20/20)', tier: 'base',
+      id: 'doppia', sprite: 'doppia', nome: 'Lente di San Leucio', tier: 'base',  // D: rif. Isaac: 20/20
       statsDesc: '[BASE] Doppio Colpo parallelo · DMG x0.80',
       lore: 'Lente da tessitrice usata da Agnese sul telaio reale.',
       prezzo: 10,
       mod: { doppia: true, dmgMult: 0.80 },
     },
     {
-      id: 'mercurio', sprite: 'mercurio', nome: 'Goccia di Mercurio (Sad Onion)', tier: 'base',
+      id: 'mercurio', sprite: 'mercurio', nome: 'Goccia di Mercurio', tier: 'base',  // D: rif. Isaac: Sad Onion
       statsDesc: '[BASE] +0.85 Tears Up (Raffica) · +0.10 Speed',
       lore: 'Argento vivo degli specchi del teatro reale.',
       prezzo: 10,
       mod: { tearsUp: 0.85, speedUp: 0.10 },
     },
     {
-      id: 'cuore', sprite: 'cuore', nome: 'Medaglione di Rosa (<3)', tier: 'base',
+      id: 'cuore', sprite: 'cuore', nome: 'Medaglione di Rosa', tier: 'base',  // D: rif. Isaac: <3
       statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera · +0.2 DMG Up',
       lore: 'Il ricordo della moglie che Tonino ha dimenticato per non soffrire.',
       prezzo: 10,
@@ -2816,23 +2816,23 @@ function disegnaManoMarionettaPittorica() {
   // la Stanza dello Sviluppatore offre anche oggetti fuori pool. Solo modificatori già gestiti da
   // ricalcolaStatisticheIsaac; i prezzi li fissa ECONOMIA_T3 qui sotto, per tier.
   const OGGETTI_NUOVI_B = [
-    { id: 'corno', sprite: 'corno', nome: 'Corno di Corallo (Magic Mushroom)', tier: 'forte',
+    { id: 'corno', sprite: 'corno', nome: 'Corno di Corallo', tier: 'forte',  // D: rif. Isaac: Magic Mushroom
       statsDesc: '[★ FORTE] +1 Maschera Massima · +0.6 DMG Up · DMG x1.25 · +0.15 Speed · +20 Range',
       lore: 'Il corno rosso appeso alla porta della bottega: tiene lontano il malocchio del Velo.',
       mod: { bonusMaxHp: 2, healOnEquip: 2, dmgUp: 0.6, dmgMult: 1.25, speedUp: 0.15, rangeUp: 20 } },
-    { id: 'campana', sprite: 'campana', nome: 'Campana di San Lorenzo (Pentagram)', tier: 'forte',
+    { id: 'campana', sprite: 'campana', nome: 'Campana di San Lorenzo', tier: 'forte',  // D: rif. Isaac: Pentagram
       statsDesc: '[★ FORTE] +1.0 DMG Up · +0.5 Flat DMG',
       lore: 'Suonava a morto la notte del crollo: ora suona per te.',
       mod: { dmgUp: 1.0, flatDmg: 0.5 } },
-    { id: 'fiaccola', sprite: 'fiaccola', nome: 'Fiaccola del Vesuvio (Fire Mind+)', tier: 'forte',
+    { id: 'fiaccola', sprite: 'fiaccola', nome: 'Fiaccola del Vesuvio', tier: 'forte',  // D: rif. Isaac: Fire Mind+
       statsDesc: '[★ FORTE] Proiettili Infuocati e Perforanti · +0.4 DMG Up',
       lore: 'Accesa al fuoco della montagna, non si spegne nemmeno sotto il Velo.',
       mod: { burn: true, piercing: true, dmgUp: 0.4, tipoProiettile: 'fuoco' } },
-    { id: 'lanterna', sprite: 'lanterna', nome: 'Lanterna Magica (20/20+)', tier: 'forte',
+    { id: 'lanterna', sprite: 'lanterna', nome: 'Lanterna Magica', tier: 'forte',  // D: rif. Isaac: 20/20+
       statsDesc: '[★ FORTE] Doppio Colpo parallelo · +0.5 Tears Up · +0.3 DMG Up',
       lore: 'Proietta due ombre per ogni figura: il pubblico non sa quale sia vera.',
       mod: { doppia: true, tearsUp: 0.5, dmgUp: 0.3 } },
-    { id: 'sole', sprite: 'sole', nome: 'Sole d\'Ottone (Cricket\'s Body)', tier: 'forte',
+    { id: 'sole', sprite: 'sole', nome: 'Sole d\'Ottone', tier: 'forte',  // D: rif. Isaac: Cricket's Body
       statsDesc: '[★ FORTE] Colpi più grandi · +1.5 Flat DMG · +0.3 Tears Up',
       lore: 'Il sole di scena del Teatro: brilla anche quando il sipario è chiuso.',
       mod: { size: 1.35, flatDmg: 1.5, tearsUp: 0.3 } },
@@ -2844,7 +2844,7 @@ function disegnaManoMarionettaPittorica() {
       statsDesc: '[BASE] +40 Range · +0.35 DMG Up',
       lore: 'Cuce i fili strappati: arriva lontano e punge piano.',
       mod: { rangeUp: 40, dmgUp: 0.35 } },
-    { id: 'castagna', sprite: 'castagna', nome: 'Castagna del Ciuccio (Breakfast)', tier: 'base',
+    { id: 'castagna', sprite: 'castagna', nome: 'Castagna del Ciuccio', tier: 'base',  // D: rif. Isaac: Breakfast
       statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera',
       lore: 'Arrostita sul braciere della piazza, sa ancora di casa.',
       mod: { bonusMaxHp: 2, healOnEquip: 2 } },
@@ -2852,7 +2852,7 @@ function disegnaManoMarionettaPittorica() {
       statsDesc: '[BASE] +0.5 DMG Up · +0.10 Speed',
       lore: 'Mai regalato, mai comprato: trovato. Così porta fortuna.',
       mod: { dmgUp: 0.5, speedUp: 0.1 } },
-    { id: 'bottone', sprite: 'bottone', nome: 'Bottone di Madreperla (Sad Onion)', tier: 'base',
+    { id: 'bottone', sprite: 'bottone', nome: 'Bottone di Madreperla', tier: 'base',  // D: rif. Isaac: Sad Onion
       statsDesc: '[BASE] +0.7 Tears Up',
       lore: 'Staccato dalla giacca buona, quella delle feste.',
       mod: { tearsUp: 0.7 } },
@@ -2864,7 +2864,7 @@ function disegnaManoMarionettaPittorica() {
       statsDesc: '[BASE] +0.45 DMG Up · +30 Range',
       lore: 'Fuma pensieri: ogni boccata un ricordo che torna.',
       mod: { dmgUp: 0.45, rangeUp: 30 } },
-    { id: 'pagnotta', sprite: 'pagnotta', nome: 'Pagnotta di Port\'Alba (Dinner)', tier: 'base',
+    { id: 'pagnotta', sprite: 'pagnotta', nome: 'Pagnotta di Port\'Alba', tier: 'base',  // D: rif. Isaac: Dinner
       statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera · +0.05 Speed',
       lore: 'Ancora calda, avvolta in un foglio di giornale del 1839.',
       mod: { bonusMaxHp: 2, healOnEquip: 2, speedUp: 0.05 } },
@@ -2911,6 +2911,191 @@ function disegnaManoMarionettaPittorica() {
     dado: ['............', '.kkkkkkkkkk.', '.kwwwwwwwwk.', '.kwkwwwwkwk.', '.kwwwwwwwwk.', '.kwwwkkwwwk.',
       '.kwwwkkwwwk.', '.kwwwwwwwwk.', '.kwkwwwwkwk.', '.kwwwwwwwwk.', '.kkkkkkkkkk.', '............'],
   });
+
+  // --- D: inizio ---
+  // CATALOGO ALLA ISAAC (feedback autore D, production/arte/oggetti-teatro.md §3): 34 oggetti nuovi
+  // (22 positivi meno i 2 «fase 2» elmo/pupara, 8 misti meno matita/malocchio, 8 negativi). `polarita`:
+  // positivo | misto | negativo; i nomi di Isaac stanno SOLO nei commenti (Rif. Isaac). Le meccaniche nuove
+  // (omingForza, rimbalzi, orbitali, famiglio, maledizione…) le legge ricalcolaStatisticheIsaac (blocchi D).
+  const OGGETTI_NUOVI_D = [
+    { id: 'trottola', sprite: 'trottola', nome: 'Trottola di Piazza Mercato', tier: 'base', polarita: 'positivo', // Rif. Isaac: Speed Ball
+      statsDesc: '[BASE] +0.3 Speed · +0.2 Tears Up',
+      lore: 'Gira da sola da quando il Velo è sceso.',
+      mod: { speedUp: 0.3, tearsUp: 0.2 } },
+    { id: 'sfogliatella', sprite: 'sfogliatella', nome: 'Sfogliatella Riccia', tier: 'base', polarita: 'positivo', // Rif. Isaac: Lunch
+      statsDesc: '[BASE] +1 Maschera Massima (vuota)',
+      lore: 'Croccante anche dopo sei anni di incantesimo.',
+      mod: { bonusMaxHp: 2 } },
+    { id: 'pastiera', sprite: 'pastiera', nome: 'Fetta di Pastiera', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Supper/Dessert + Stigmata
+      statsDesc: '[★ FORTE] +1 Maschera Massima · Rigenera 2 Maschere · +0.3 DMG Up',
+      lore: 'La faceva Rosa a Pasqua: il profumo riporta la memoria.',
+      mod: { bonusMaxHp: 2, healOnEquip: 4, dmgUp: 0.3 } },
+    { id: 'cucchiaio', sprite: 'cucchiaio', nome: 'Cucchiaio del Re', tier: 'base', polarita: 'positivo', // Rif. Isaac: Spoon Bender
+      statsDesc: '[BASE] Colpi a ricerca (curvano verso i nemici)',
+      lore: 'Rubato dalla credenza della Reggia: si piega verso i nemici.',
+      mod: { omingForza: 0.06, tipoProiettile: 'viola' } },
+    { id: 'astrolabio', sprite: 'astrolabio', nome: 'Astrolabio della Specola', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Tiny Planet
+      statsDesc: '[★ FORTE] I colpi ti orbitano attorno · +40 Range · +0.4 DMG Up',
+      lore: 'Misurava le stelle sopra la Reggia; ora i tuoi colpi gli girano attorno.',
+      mod: { orbitaleProiettili: true, rangeUp: 40, dmgUp: 0.4 } },
+    { id: 'gomma', sprite: 'gomma', nome: 'Gomma del Burattinaio', tier: 'base', polarita: 'positivo', // Rif. Isaac: Rubber Cement
+      statsDesc: '[BASE] I colpi rimbalzano 2 volte sui muri',
+      lore: 'La colla dei fili: tutto ci rimbalza.',
+      mod: { rimbalzi: 2 } },
+    { id: 'piedigrotta', sprite: 'piedigrotta', nome: 'Razzo di Piedigrotta', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Ipecac
+      statsDesc: '[★ FORTE] Colpi esplosivi · DMG x1.6 · Tears x0.55',
+      lore: 'Fuoco d\'artificio della festa di settembre.',
+      mod: { esplosiva: 42, dmgMult: 1.6, tearsMult: 0.55, tipoProiettile: 'fuoco' } },
+    { id: 'ragno', sprite: 'ragno', nome: 'Ragno della Seta di San Leucio', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Mutant Spider
+      statsDesc: '[★ FORTE] 4 colpi a ventaglio · Tears x0.42',
+      lore: 'Tesse quattro fili per volta.',
+      mod: { quattroColpi: true, tearsMult: 0.42 } },
+    { id: 'velo-madonna', sprite: 'velo-madonna', nome: 'Velo della Madonna dell\'Arco', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Holy Mantle
+      statsDesc: '[★ FORTE] Para il primo colpo di ogni stanza',
+      lore: 'Benedetto in processione: para il primo colpo di ogni stanza.',
+      mod: { scudoStanza: 1 } },
+    { id: 'cuoio', sprite: 'cuoio', nome: 'Maschera di Cuoio', tier: 'base', polarita: 'positivo', // Rif. Isaac: Infamy
+      statsDesc: '[BASE] 25% di parare i proiettili nemici',
+      lore: 'La maschera da scena vera di Pulcinella, dura come uno scudo.',
+      mod: { bloccoProb: 0.25 } },
+    { id: 'gomitolo', sprite: 'gomitolo', nome: 'Gomitolo di Fili d\'Oro', tier: 'base', polarita: 'positivo', // Rif. Isaac: Cube of Meat (liv. 1)
+      statsDesc: '[BASE] Un gomitolo ti orbita attorno: para i colpi e ferisce',
+      lore: 'Fili che non si possono tagliare, avvolti stretti.',
+      mod: { orbitali: 1 } },
+    { id: 'ostia', sprite: 'ostia', nome: 'Ostia della Cappella Palatina', tier: 'forte', polarita: 'positivo', // Rif. Isaac: The Wafer
+      statsDesc: '[★ FORTE] Ogni colpo toglie al massimo ½ Maschera',
+      lore: 'Leggera: ti fa sentire leggero anche il dolore.',
+      mod: { dannoMaxHalf: true } },
+    { id: 'bobby', sprite: 'bobby', nome: 'Burattino di Tonino', tier: 'base', polarita: 'positivo', // Rif. Isaac: Brother Bobby
+      statsDesc: '[BASE] Famiglio: un burattino che spara con te (3.0 DMG)',
+      lore: 'Un pupazzetto che Tonino intagliò per un figlio mai nato.',
+      mod: { famiglio: 'tiratore', famDmg: 3.0, famTears: 0.9 } },
+    { id: 'maggy', sprite: 'maggy', nome: 'Pupattola di Agnese', tier: 'base', polarita: 'positivo', // Rif. Isaac: Sister Maggy
+      statsDesc: '[BASE] Famiglio: una bambola che spara con te (4.5 DMG)',
+      lore: 'Bambola di pezza cucita sul telaio reale.',
+      mod: { famiglio: 'tiratore', famDmg: 4.5, famTears: 0.7 } },
+    { id: 'gatto', sprite: 'gatto', nome: 'Gatto di Vico Lungo', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Guppy's Hairball
+      statsDesc: '[★ FORTE] Famiglio: un gatto che graffia i nemici (3.0 DMG)',
+      lore: 'Il gatto randagio del vicolo: graffia chi ti tocca.',
+      mod: { famiglio: 'contatto', famDmg: 3.0 } },
+    { id: 'diavoletto', sprite: 'diavoletto', nome: 'Diavoletto del Presepe', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Demon Baby
+      statsDesc: '[★ FORTE] Famiglio: spara da solo al nemico più vicino (3.5 DMG)',
+      lore: 'Statuina rossa del presepe di San Gregorio Armeno.',
+      mod: { famiglio: 'tiratore', mira: 'auto', famDmg: 3.5, famTears: 0.8 } },
+    { id: 'pulcinellino', sprite: 'pulcinellino', nome: 'Pulcinellino', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Little Steven
+      statsDesc: '[★ FORTE] Famiglio: colpi a ricerca (3.0 DMG)',
+      lore: 'Un Pulcinella piccolo così: non sbaglia un colpo.',
+      mod: { famiglio: 'tiratore', famDmg: 3.0, famTears: 1.0, famOming: true } },
+    { id: 'campanello', sprite: 'campanello', nome: 'Campanello del Portiere', tier: 'base', polarita: 'positivo', // Rif. Isaac: Wire Coat Hanger
+      statsDesc: '[BASE] +0.5 Tears Up · +20 Range',
+      lore: 'Suona e la porta si apre.',
+      mod: { tearsUp: 0.5, rangeUp: 20 } },
+    { id: 'tarallo', sprite: 'tarallo', nome: 'Tarallo Sugna e Pepe', tier: 'base', polarita: 'positivo', // Rif. Isaac: Steven/Raw Liver
+      statsDesc: '[BASE] +0.4 DMG Up · +1 Maschera Massima',
+      lore: 'Duro come la vita del popolo.',
+      mod: { dmgUp: 0.4, bonusMaxHp: 2 } },
+    { id: 'carta-ventaglio', sprite: 'carta-ventaglio', nome: 'Ventaglio di Carta', tier: 'base', polarita: 'positivo', // Rif. Isaac: Lost Contact
+      statsDesc: '[BASE] I tuoi colpi annullano i proiettili nemici · +0.2 DMG Up',
+      lore: 'Ventaglio della dama del palco reale.',
+      mod: { bloccaProiettili: true, dmgUp: 0.2 } },
+    { id: 'cuore-sacro', sprite: 'cuore-sacro', nome: 'Cuore Sacro di Santa Chiara', tier: 'forte', polarita: 'misto', // Rif. Isaac: Sacred Heart
+      statsDesc: '[◐ MISTO] ★ DMG x2.3 · +1 Maschera · Colpi a ricerca · Tears x0.6',
+      lore: 'Ex voto d\'argento: ti rende lento ma inesorabile.',
+      mod: { dmgMult: 2.3, bonusMaxHp: 2, healOnEquip: 2, omingForza: 0.05, tearsMult: 0.6 } },
+    { id: 'bombarda', sprite: 'bombarda', nome: 'Bombarda di Gaeta', tier: 'forte', polarita: 'misto', // Rif. Isaac: Mega Blast (lento)
+      statsDesc: '[◐ MISTO] ★ DMG x2.6 · Colpi enormi e lenti · Tears x0.3',
+      lore: 'Il cannone della fortezza: un colpo ogni tanto, e la stanza trema.',
+      mod: { dmgMult: 2.6, size: 1.8, tearsMult: 0.3, velocitaColpo: 0.6 } },
+    { id: 'occhio-vetro', sprite: 'occhio-vetro', nome: 'Occhio di Vetro del Ciarlatano', tier: 'forte', polarita: 'misto', // Rif. Isaac: Proptosis
+      statsDesc: '[◐ MISTO] ★ Danno x2 da vicino, cala con la distanza · -60 Range · +0.5 DMG Up',
+      lore: 'Lo vendeva un ciarlatano a Piazza Mercato: vede bene solo da vicino.',
+      mod: { prossimita: true, rangeUp: -60, dmgUp: 0.5 } },
+    { id: 'cappello-mago', sprite: 'cappello-mago', nome: 'Cappello del Mago di Corte', tier: 'base', polarita: 'misto', // Rif. Isaac: The Wiz
+      statsDesc: '[◐ MISTO] I colpi partono in due diagonali · +0.3 Tears Up',
+      lore: 'Il mago della Reggia non tirava mai dritto.',
+      mod: { diagonale: true, tearsUp: 0.3 } },
+    { id: 'sugna', sprite: 'sugna', nome: 'Sugna del Macellaio', tier: 'base', polarita: 'negativo', // Rif. Isaac: Bucket of Lard
+      statsDesc: '[◐ MISTO] +2 Maschere Massime · Rigenera 2 Maschere · -0.25 Speed',
+      lore: 'Ti sazia per una settimana, ma ti appesantisce.',
+      mod: { bonusMaxHp: 4, healOnEquip: 4, speedUp: -0.25 } },
+    { id: 'ranocchio', sprite: 'ranocchio', nome: 'Ranocchio della Fontana', tier: 'base', polarita: 'negativo', // Rif. Isaac: Number One
+      statsDesc: '[◐ MISTO] +1.4 Tears Up · -110 Range',
+      lore: 'Sputa acqua dalla fontana della Reggia: tanto, e corto.',
+      mod: { tearsUp: 1.4, rangeUp: -110 } },
+    { id: 'latte', sprite: 'latte', nome: 'Latte di Mandorla', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: Soy Milk
+      statsDesc: '[✗ NEGATIVO] DMG x0.2 · Tears x5.5 (pioggerella)',
+      lore: 'Dolce e leggero: i colpi diventano una pioggerella.',
+      mod: { dmgMult: 0.2, tearsMult: 5.5 } },
+    { id: 'corda', sprite: 'corda', nome: 'Corda del Campanaro', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: pillola Tears Down
+      statsDesc: '[✗ NEGATIVO] -0.6 Tears',
+      lore: 'Sembra un dono; ti lega le mani.',
+      mod: { tearsUp: -0.6 } },
+    { id: 'zoccoli', sprite: 'zoccoli', nome: 'Zoccoli di Legno', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: pillola Speed Down
+      statsDesc: '[✗ NEGATIVO] -0.25 Speed',
+      lore: 'Rumorosi e pesanti sul selciato.',
+      mod: { speedUp: -0.25 } },
+    { id: 'spillo', sprite: 'spillo', nome: 'Spillo Spuntato', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: pillola Range Down
+      statsDesc: '[✗ NEGATIVO] -50 Range · +0.1 DMG Up',
+      lore: 'Punge, ma non arriva.',
+      mod: { rangeUp: -50, dmgUp: 0.1 } },
+    { id: 'salasso', sprite: 'salasso', nome: 'Ventosa del Barbiere', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: pillola Health Down
+      statsDesc: '[✗ NEGATIVO] -1 Maschera Massima',
+      lore: 'Il barbiere salassatore di Via Mazzini «cura» tutti.',
+      mod: { bonusMaxHp: -2 } },
+    { id: 'nebbia', sprite: 'nebbia', nome: 'Nebbia del Volturno', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: Curse of the Lost
+      statsDesc: '[✗ NEGATIVO] Maledizione: la mappa sparisce fino a fine piano',
+      lore: 'La nebbia sale dal fiume e cancella le strade.',
+      mod: { maledizione: 'mappa' } },
+    { id: 'lume', sprite: 'lume', nome: 'Lume Spento', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: Curse of Darkness
+      statsDesc: '[✗ NEGATIVO] Maledizione: buio attorno a te fino a fine piano',
+      lore: 'Il lume a olio di San Leucio, ormai senza stoppino.',
+      mod: { maledizione: 'buio' } },
+    { id: 'benda', sprite: 'benda', nome: 'Benda del Cieco', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: Curse of the Blind
+      statsDesc: '[✗ NEGATIVO] Maledizione: gli oggetti tornano «???» fino a fine piano',
+      lore: 'Il cieco del sagrato ti presta la sua benda.',
+      mod: { maledizione: 'cieco' } },
+  ];
+  for (const o of CATALOGO_OGGETTI) if (!o.polarita) o.polarita = 'positivo';
+  for (const o of OGGETTI_NUOVI_D) CATALOGO_OGGETTI.push({ prezzo: o.tier === 'forte' ? 7 : o.tier === 'negativo' ? 2 : 5, ...o });
+  // Sprite 12×12 dei nuovi, stessa palette e stile di OGGETTI_NUOVI_B.
+  Object.assign(SPRITE_OGGETTI, {
+    'trottola': ['.....kk.....', '.....km.....', '...kkkkkk...', '..krrwwrrk..', '.kwwrrrrwwk.', '.krrwwwwrrk.', '..kwwrrwwk..', '...krrrrk...', '....kwwk....', '.....kk.....', '.....k......', '............'],
+    'sfogliatella': ['............', '.....kk.....', '....kcsk....', '...kcscsk...', '..kscscsck..', '.kcscscscsk.', '.kscscscsck.', 'kcscscscscsk', 'kssssssssssk', '.kessssssek.', '..kkkkkkkk..', '............'],
+    'pastiera': ['............', 'k...........', 'kkk.........', 'kymkk.......', 'kyyymkk.....', 'kmyymyymkk..', 'kyymyymyyykk', 'kymyymyymyyk', 'kyyyyyyyyyyk', 'kOOOOOOOOOOk', 'kkkkkkkkkkkk', '............'],
+    'cucchiaio': ['.......kkk..', '......kgggk.', '......kgwgk.', '......kgggk.', '.......kgk..', '.......kgk..', '......kgk...', '.....kgk....', '....kgk.....', '...kGk......', '..kGk.......', '..kk........'],
+    'astrolabio': ['....kkkk....', '..kkyyyykk..', '.kyk....kyk.', '.ky..kk..yk.', 'ky..kbbk..yk', 'ky.kbabbk.yk', 'ky.kbbbBk.yk', 'ky..kBBk..yk', '.ky..kk..yk.', '.kyk....kyk.', '..kkyyyykk..', '....kkkk....'],
+    'gomma': ['.....ww.....', '....wccw....', '....wccw....', '.....ww.....', '...kkkkkk...', '..kMMMMMMk..', '..kcccccck..', '..kcsscsck..', '..kcccccck..', '..kcccccck..', '..kkkkkkkk..', '............'],
+    'piedigrotta': ['..........y.', '.........yo.', '........k...', '.....kkk....', '....krrrk...', '...krwrrk...', '..krrrrk....', '.krrrrk.....', '.kRrrk......', 'kooRk.......', 'koyk........', '.kk.........'],
+    'ragno': ['............', '.w........w.', '..w......w..', '...w.kk.w...', '....kddk....', '...kdrrdk...', '..wkddddkw..', '.w.kddddk.w.', 'w...kddk...w', '.....kk.....', '............', '............'],
+    'velo-madonna': ['...yyyyyy...', '..y......y..', '...yyyyyy...', '....kkkk....', '...kaaaak...', '..kaabbaak..', '..kabbbbak..', '.kabbbbbbak.', '.kbbBbbBbbk.', 'kbbBbbbbBbbk', 'kBBBBBBBBBBk', '.kkkkkkkkkk.'],
+    'cuoio': ['............', '............', '.kkkkkkkkkk.', 'kddddddddddk', 'kdkkddddkkdk', 'kdk.kddk.kdk', 'kddkkddkkddk', '.kddddddddk.', '..kkddddkk..', '....kddk....', '.....kk.....', '............'],
+    'gomitolo': ['............', '....kkkk....', '..kkyyoykk..', '.kyoyyyoyyk.', '.kyyoyyyoyk.', 'kyoyyoyyyoyk', 'kyyoyyoyyyyk', '.kyyyoyyoyk.', '.kyoyyyoyyk.', '..kkyyyykky.', '....kkkk...y', '...........y'],
+    'ostia': ['............', '....kkkk....', '..kkwwwwkk..', '.kwwwwgwwwk.', '.kwwwwgwwwk.', 'kwwggggggwwk', 'kwwwwwgwwwwk', '.kwwwwgwwwk.', '.kwwwwgwwwk.', '..kkwwwwkk..', '....kkkk....', '............'],
+    'bobby': ['....kkkk....', '...kBBBBk...', '..kBBBBBBk..', '...kssssk...', '...kskksk...', '...kssssk...', '....kssk....', '..kmmmmmmk..', '.kskmmmmksk.', '...kmmmmk...', '...km..mk...', '...kk..kk...'],
+    'maggy': ['..r......r..', '..rrk..krr..', '...kkcckk...', '...kcccck...', '...kckkck...', '...kcccck...', '....kcck....', '..kpppppk...', '.kcpppppck..', '...kppppk...', '...kc..ck...', '...kk..kk...'],
+    'gatto': ['..k.....k...', '..kk...kk...', '..kdkkkdk...', '..kdydydk...', '..kdddddk...', '...kdddk....', '..kdddddk...', '.kdddddddk..', '.kdddddddk..', '.kdddddddk.k', '..kdkdkdk.k.', '...kkkkkkk..'],
+    'diavoletto': ['.k......y.y.', '.kk..kk.yyy.', '..krrrrk.y..', '..krwrwk.y..', '..krrrrk.y..', '...kRRk..y..', '..krrrrkky..', '.krrrrrrk...', '..krrrrk.y..', '..kr..rk.y..', '..kk..kk....', '............'],
+    'pulcinellino': ['.....kk.....', '.....kwk....', '....kwwk....', '....kwwwk...', '...kwwwwk...', '...kkkkkk...', '...kddddk...', '...kdwdwk...', '....kcck....', '..kwwwwwwk..', '..kwwwwwwk..', '...kk..kk...'],
+    'campanello': ['............', '.....kk.....', '....kyyk....', '.....kk.....', '...kkkkkk...', '..kyywyyyk..', '.kyywyyyyyk.', '.kyyyyyyyyk.', 'kOOOOOOOOOOk', '.kkkkkkkkkk.', '............', '............'],
+    'tarallo': ['............', '...kkkkkk...', '..kssksssk..', '.ksskkkkssk.', '.kskk..kksk.', '.ksk....ksk.', '.ksk....ksk.', '.kskk..kksk.', '.ksskkkkksk.', '..kssskssk..', '...kkkkkk...', '............'],
+    'carta-ventaglio': ['............', '.kkkkkkkkkk.', 'kcscscscscsk', '.kcscscscsk.', '.kscscscsck.', '..kcscscsk..', '..kscscsck..', '...kcscsk...', '....kscsk...', '.....kmk....', '.....kmk....', '......k.....'],
+    'cuore-sacro': ['.....oy.....', '....oyyo....', '.....yo.....', '..kkk..kkk..', '.kgggkkgggk.', 'kgwgggggggGk', 'kggggggggggk', '.kgggggggGk.', '..kgggggGk..', '...kgggGk...', '....kggk....', '.....kk.....'],
+    'bombarda': ['.........y..', '........yo..', '.......k....', '....kkkk....', '..kkddddkk..', '.kddwdddddk.', '.kdwddddddk.', 'kdddddddddDk', '.kddddddDDk.', '.kddddDDDDk.', '..kkDDDDkk..', '....kkkk....'],
+    'occhio-vetro': ['............', '....kkkk....', '..kkwwwwkk..', '.kwwwvvwwwk.', '.kwwvVVvwwk.', 'kwwvVkkVvwwk', 'kwwvVkkVvwwk', '.kwwvVVvwwk.', '.kwwwvvwwwk.', '..kkwwwwkk..', '....kkkk....', '............'],
+    'cappello-mago': ['.....kk.....', '.....kbk....', '....kbbk....', '....kbybk...', '...kbbbbk...', '...kbbbybk..', '..kbybbbbk..', '..kbbbbbbbk.', '.kbbbbybbbk.', 'kkkkkkkkkkkk', 'kBBBBBBBBBBk', '.kkkkkkkkkk.'],
+    'sugna': ['...kkkkkk...', '..k......k..', '.kkkkkkkkkk.', '.kwwwcwwwwk.', '.kwcwwwwcwk.', '.kGGGGGGGGk.', '.kgggggggGk.', '..kgggggGk..', '..kgggggGk..', '..kGGGGGGk..', '...kkkkkk...', '............'],
+    'ranocchio': ['............', '.kk...kk....', 'kwdkkkwdk...', 'kvvvvvvvk...', 'kvvvvvvvvkaa', '.kvVVVVvk.a.', '.kvvvvvvk..a', 'kvVvvvvVvk..', 'kvvkvvkvvk..', 'kVk.kk.kVk..', 'kk......kk..', '............'],
+    'latte': ['............', '..kkkkkkkk..', '..kggggggk..', '..kwwwwwwk..', '..kwwwwwwk..', '..kwwwwwgk..', '...kwwwwk...', '...kwwwgk...', '...kwwwwk...', '...kwwwgk...', '...kkkkkk...', '............'],
+    'corda': ['............', '...kkkkkk...', '..ksesesek..', '.kek....kek.', '.ks..kk..sk.', '.ke.kesk.ek.', '.ks.kske.sk.', '.ke..kk..ek.', '.kek....kek.', '..ksesesek.s', '...kkkkkk.e.', '..........s.'],
+    'zoccoli': ['............', '.....kkkk...', '..kkkmmmmk..', '.kmmmmmmmk..', '.kMMMMMMMk..', '..kk...kk...', '......kkkk..', '...kkkmmmmk.', '..kmmmmmmmk.', '..kMMMMMMMk.', '...kk...kk..', '............'],
+    'spillo': ['............', '...kk.......', '..krrk......', '..krRk......', '...kkk......', '....kgk.....', '.....kgk....', '......kgk...', '......kgk...', '.....kgk....', '....kgk.....', '....kk......'],
+    'salasso': ['.....kk.....', '....kggk....', '...kgaagk...', '..kgaaaagk..', '..kaaaaaak..', '..kaaaaaak..', '..kgaaaagk..', '..kkkkkkkk..', '.....rr.....', '....rrrr....', '....rRRr....', '.....rr.....'],
+    'nebbia': ['............', '............', '....kkk.....', '...kgggk.kk.', '..kgggggkggk', '.kggwggggggk', 'kggggggggGGk', 'kgGggggGgggk', '.kGGGGGGGGk.', '..kkkkkkkk..', '............', '............'],
+    'lume': ['...g........', '....g.......', '...g........', '....k.......', '...kOk......', '..kyyyk.kk..', '.kyyyyykyyk.', 'kyywyyyyyk..', 'kyyyyyyyk...', '.kOOOOOk....', '..kkkkk.....', '............'],
+    'benda': ['............', '............', '............', 'kkkkkkkkkk..', 'kdddddddddk.', 'kdDddddDddkk', 'kdddddddddkd', 'kkkkkkkkkkdk', '.........kdk', '..........kd', '...........k', '............'],
+  });
+  SPRITE_PROIETTILI.viola = ['..kkkk..', '.kppppk.', 'kpwppPPk', 'kppppPPk', 'kpppPPPk', 'kPPPPPPk', '.kPPPPk.', '..kkkk..']; // colpi a ricerca del Cucchiaio
+  // --- D: fine ---
 
   /** Oggetto del catalogo per id (null se non c'è). */
   function trovaOggettoB(id) {
