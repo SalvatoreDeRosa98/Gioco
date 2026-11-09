@@ -343,7 +343,7 @@
    },
    "interfaccia": {
     "hub": {
-     "notte": "Run {n}",
+     "notte": "Notte {n}",
      "parla": "Premi {tasto} per parlare con {nome}",
      "parti": "L'ingresso al piano {piano}: avanti per partire"
     },

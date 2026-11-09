@@ -52,3 +52,9 @@ Teatro); danno decimale; camera a scala ridotta senza scorrimento; stanza-ricord
 Fonte: autore, commit f1f42c2 e conferma in chat («scelta mia perché non mi piacevano i disegni»). Il Teatro carica
 solo `teatro/t3-economia-salvataggi.js`; `t2-sprite.js` e `t4-hub-storia.js` restano in `gioco/teatro/` (adattati alla
 risoluzione alta) ma non sono collegati. I personaggi usano gli sprite originali del Teatro.
+
+## 2026-11-09 — Teatro: hub e storia (T4) riattivati su richiesta dell'autore
+
+Fonte: autore in chat («sì riattivali quelli»). T4 (hub di Piazza Dante, dialoghi, Voce/Donna Luciana, Medaglione,
+morte e risveglio) di nuovo collegato sulla versione f1f42c2 dell'autore: menu ESC dell'autore anche nell'hub, un solo
+contatore delle notti (quello dell'autore). T2 (sprite dai fogli) resta scollegato.
