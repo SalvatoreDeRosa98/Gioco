@@ -81,7 +81,9 @@ const STANZE_SPECIALI_A3 = Object.freeze({
     costo: 1,                  // 🪙 a giocata al banco del lotto
     giocateMax: 8,             // poi Don Gennaro chiude il banco
     banco: Object.freeze({ x: 250, y: 170, raggioUso: 44, raggioCorpo: 18 }),
-    premi: Object.freeze({ niente: 0.45, monete: 0.3, mezzaMaschera: 0.12, cuore: 0.08, oggetto: 0.05 }),
+    // (bilancio 7) prima niente 0,45 / monete 0,3 / ½ 0,12 / cuore 0,08 / oggetto 0,05: una giocata da 1🪙 valeva ~1,42🪙
+    // (cure al prezzo della Fucina, oggetto al prezzo base): il banco era una fonte netta di valore. Ora ~1,15🪙.
+    premi: Object.freeze({ niente: 0.54, monete: 0.28, mezzaMaschera: 0.1, cuore: 0.05, oggetto: 0.03 }),
     moneteMin: 2, moneteMax: 3,
     probCartomante: 0.5,
     cartomante: Object.freeze({
