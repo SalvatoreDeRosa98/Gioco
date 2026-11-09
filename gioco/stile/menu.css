@@ -11,6 +11,10 @@
   padding: 1.5vh 2vw;
   box-sizing: border-box;
   background: var(--inchiostro);
+  /* storia P14: fondale sipario-menu.png dal manifesto (avvio.js imposta --fondale-menu su #interfaccia) */
+  background-image: var(--fondale-menu, none);
+  background-size: cover;
+  background-position: center;
   color: var(--crema);
   font-family: var(--font-testo);
   overflow: hidden;

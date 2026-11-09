@@ -2492,5 +2492,15 @@
     ]
    }
   }
- ]
+ ],
+ "fondali": {
+  "_doc": "Storia P14: fondali DOM presi dal manifesto: il menu di selezione usa sipario-menu; il sipario narrativo fra i piani usa il sipario del quartiere dell'atto (chiave = piano nel ciclo).",
+  "menu": "sipario-menu",
+  "atti": {
+   "1": "sipario-piazza-dante",
+   "2": "sipario-corso-trieste",
+   "3": "sipario-villa-comunale",
+   "4": "sipario-reggia"
+  }
+ }
 }

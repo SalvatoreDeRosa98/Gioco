@@ -1,5 +1,5 @@
 {
-  "_descrizione": "Parametri della resa a video del game feel (storia P08, richieste testuali dell'autore). Ogni voce è {base, min, max}. lampeggio: la sagoma di Ferruccio colpito lampeggia semitrasparente (alpha) con semiperiodo in ms. scossa: spostamenti della camera in px per un numero di frame disegnati, per contesto (colpo a segno, esplosione della Bomba Ferma, atterraggio del Re-Gatto, schianto delle Mani di Donna Luciana; la parata usa combattimento.feel.scossa_parata_px): mai una scossa costante; moto-ridotto.json porta i px a 0. macchie: chiazze d'inchiostro di china (o schegge di legno per statua, guardia e bomba) lasciate a terra alla morte di un nemico, che restano per tutta la permanenza nella stanza. fili: i due fili d'oro di ogni marionetta del Velo (regola dell'autore 2026-11-09: uno dalla Mano sinistra e uno dalla destra, mai su Ferruccio e i giocabili), linea di `spessore` px, oro ad `alpha` di opacità, attaccati alle spalle (ancoraggio_y dell'altezza del corpo dai piedi, scostate di scarto_x della mezza larghezza), con una leggera curva verso il basso di curva_px. impatti (storia P12): effetti transitori del combattimento derivati dagli eventi in resa/impatti.js: lo splash di un proiettile spento mostra i suoi fotogrammi per splash_frame_ticks tick ciascuno; il fulmine a catena sfuma in fulmine_ticks tick; il fotogramma dello stocco cambia quando i tick residui della fase scendono sotto spada_startup_ticks / spada_attivo_ticks / spada_recupero_ticks.",
+  "_descrizione": "Parametri della resa a video del game feel (storia P08, richieste testuali dell'autore). Ogni voce è {base, min, max}. lampeggio: la sagoma di Ferruccio colpito lampeggia semitrasparente (alpha) con semiperiodo in ms. scossa: spostamenti della camera in px per un numero di frame disegnati, per contesto (colpo a segno, esplosione della Bomba Ferma, atterraggio del Re-Gatto, schianto delle Mani di Donna Luciana; la parata usa combattimento.feel.scossa_parata_px): mai una scossa costante; moto-ridotto.json porta i px a 0. macchie: chiazze d'inchiostro di china (o schegge di legno per statua, guardia e bomba) lasciate a terra alla morte di un nemico, che restano per tutta la permanenza nella stanza. fili: i due fili d'oro di ogni marionetta del Velo (regola dell'autore 2026-11-09: uno dalla Mano sinistra e uno dalla destra, mai su Ferruccio e i giocabili), linea di `spessore` px, oro ad `alpha` di opacità, attaccati alle spalle (ancoraggio_y dell'altezza del corpo dai piedi, scostate di scarto_x della mezza larghezza), con una leggera curva verso il basso di curva_px. impatti (storia P12): effetti transitori del combattimento derivati dagli eventi in resa/impatti.js: lo splash di un proiettile spento mostra i suoi fotogrammi per splash_frame_ticks tick ciascuno; il fulmine a catena sfuma in fulmine_ticks tick; il fotogramma dello stocco cambia quando i tick residui della fase scendono sotto spada_startup_ticks / spada_attivo_ticks / spada_recupero_ticks. sprite (storia P14): cadenze delle animazioni dei fogli di sprite veri (resa/sprite.js), in tick del ciclo per fotogramma: ticks_fermo (respiro lento), ticks_muove (cammina/vola), ticks_attacco (anticipo, attacco, spara, carica), ticks_morte (la posa di morte si ferma sull'ultimo fotogramma), ticks_oggetto (brillio di monete e oggetti), ticks_scena (braciere, lanterna, Mani).",
   "lampeggio": {
     "alpha": {
       "base": 0.4,
@@ -143,6 +143,38 @@
       "base": 3,
       "min": 0,
       "max": 10
+    }
+  },
+  "sprite": {
+    "ticks_fermo": {
+      "base": 20,
+      "min": 4,
+      "max": 60
+    },
+    "ticks_muove": {
+      "base": 8,
+      "min": 2,
+      "max": 30
+    },
+    "ticks_attacco": {
+      "base": 6,
+      "min": 1,
+      "max": 30
+    },
+    "ticks_morte": {
+      "base": 10,
+      "min": 2,
+      "max": 40
+    },
+    "ticks_oggetto": {
+      "base": 10,
+      "min": 2,
+      "max": 40
+    },
+    "ticks_scena": {
+      "base": 12,
+      "min": 2,
+      "max": 40
     }
   }
 }
