@@ -19,8 +19,8 @@ export const TIPI_STANZA = Object.freeze(['ingresso', 'normale', 'tesoro', 'banc
 /** Dimensioni ammesse (regola 1). */
 export const DIMENSIONI = Object.freeze(['1x1', '2x1']);
 
-/** Tipi di nemico ammessi nell'MVP (regola 19; nemici.md). */
-export const ARCHETIPI = Object.freeze(['gatto', 'vespa', 'statua', 'guardia']);
+/** Tipi di nemico ammessi nelle tavolozze (regola 19; nemici.md; storia P05: maschera, bomba e predone del Teatro). */
+export const ARCHETIPI = Object.freeze(['gatto', 'vespa', 'statua', 'guardia', 'maschera', 'bomba', 'predone']);
 
 /** Tag di difficoltà richiesto a ogni modello (storia 017): il nome per `difficolta` 1..5. */
 export const TAG_DIFFICOLTA = Object.freeze({ 1: 'facile', 2: 'media', 3: 'dura', 4: 'durissima', 5: 'picco' });

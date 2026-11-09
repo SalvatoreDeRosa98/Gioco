@@ -25,6 +25,8 @@
   "tavolozza": [
     { "tipo": "statua", "peso": 0.8, "min": 1, "max": 2 },
     { "tipo": "guardia", "peso": 0.8, "min": 1, "max": 3 },
-    { "tipo": "vespa", "peso": 0.6, "min": 0, "max": 3 }
+    { "tipo": "vespa", "peso": 0.6, "min": 0, "max": 3 },
+    { "tipo": "maschera", "peso": 0.6, "min": 0, "max": 2 },
+    { "tipo": "bomba", "peso": 0.4, "min": 0, "max": 2 }
   ]
 }

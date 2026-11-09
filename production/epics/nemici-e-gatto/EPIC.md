@@ -39,6 +39,7 @@ L'IA a stati con il telegrafo in tre tempi (anticipo, lampo, colpo), la separazi
 |---|-------|------|--------|-----|
 | 019 | IA a stati, separazione, telegrafo in tre tempi, stordimento, anima | Logic | Done (`gioco/qa/nemici.test.mjs`, 19/19) | ADR-0002 |
 | 020 | Gatto d'ombra | Integration | Ready — logica e wire fatti (`gioco/qa/nemici.test.mjs`, 24/24; bot 100% parate, stanza media 6,6 s ma 3,8-12,2 per stanza); mancano sagoma vera + sign-off e screenshot | ADR-0002 |
-| 021 | Vespa dorata, statua animata, guardia del Velo | Integration | Ready | ADR-0002 |
+| 021 | Vespa dorata, statua animata, guardia del Velo | Integration | Done tramite P05 (la statua e la guardia del Teatro sono tiratori; la vespa resta quella della 019; `gioco/qa/nemici.test.mjs` 32/32) | ADR-0002 |
+| P05 | Nemici alla Isaac del Teatro e proiettili nemici — maschera, bomba, predone, statua a croci, guardia a doppietta, `attori/proiettili-nemici.js`, telegrafo solo sul corpo | Integration | Done (`gioco/qa/nemici.test.mjs` 32/32, `gioco/qa/nemici.wire.test.js` 7/7, `production/qa/evidence/nemici-<archetipo>.png`) | ADR-0002, ADR-0003 |
 | 022 | Boss: il Gatto dei Quattro Canti | Integration | Ready | ADR-0002 |
 | P01 | Boss provvisorio e uscita del piano — provvisoria per la build di prova; la 022 la sostituisce | Integration | Done (`gioco/qa/boss-provvisorio.test.mjs` 5/5, `gioco/qa/boss.wire.test.js` 1/1, `production/qa/evidence/boss-provvisorio.png`) | ADR-0002, ADR-0006 |
