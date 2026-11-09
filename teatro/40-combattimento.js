@@ -922,7 +922,7 @@ function passoLogico() {
           continue;
         }
       }
-      if (Math.hypot(player.x - pr.x, (player.y - 6) - pr.y) < 9 && player.invuln <= 0) {
+      if (Math.hypot(player.x - pr.x, (player.y - 6) - pr.y) < 9 * (player.scalaA2 || 1) && player.invuln <= 0) {
         statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
         statoRun.proiettiliNemici.splice(i, 1);
         // --- D: Maschera di Cuoio: probabilità di parare il proiettile (1 − Π(1−p), max 0.5) ---
@@ -1394,7 +1394,7 @@ function passoLogico() {
 
       // Danno da contatto (solo se il boss non è in volo alto airZ > 20)
       // --- A: inizio --- Donna Luciana non fa danno a contatto (lo fanno solo le sue Mani) --- A: fine ---
-      if (n.bossId !== 'donna-luciana' && (n.airZ || 0) < 20 && Math.hypot(player.x - n.x, player.y - n.y) < n.r + 9 && player.invuln <= 0) {
+      if (n.bossId !== 'donna-luciana' && (n.airZ || 0) < 20 && Math.hypot(player.x - n.x, player.y - n.y) < n.r + 9 * (player.scalaA2 || 1) && player.invuln <= 0) {
         subisciColpoGiocatore(n.boss ? 2 : dannoBasePiano, n.nome, n.x, n.y);
         if (statoRun.hpHalf <= 0) break;
       }

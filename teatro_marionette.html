@@ -76,14 +76,33 @@
 <script src="teatro/t3-economia-salvataggi.js"></script>
 <!-- --- T4: inizio --- -->
 <script src="teatro/t4-hub-storia.js"></script>
+<script src="teatro/a1-bombe-chiavi.js"></script>
+<script src="teatro/a8-musica.js"></script>
+<script src="teatro/a2-consumabili.js"></script>
+<script src="teatro/a3-stanze-speciali.js"></script>
+<script src="teatro/a6-progressione.js"></script>
+<script src="teatro/a7-registro-bilancio.js"></script>
 <script>
 // --- ponte T3/T4: i flag della trama di T4 vivono nello slot di salvataggio di T3 ---
 (function () {
   var sv = window.__teatroT3 && window.__teatroT3.salvataggi;
   var T = window.__teatro;
   if (!sv || !T || Object.isFrozen(T)) return;
-  T.caricaFlag = function () { var d = sv.leggi(sv.slotAttivo); return (d && d.flag) ? Object.assign({}, d.flag) : {}; };
-  T.salvaFlag = function (flag) { Object.keys(flag || {}).forEach(function (k) { sv.impostaFlag(k, flag[k]); }); };
+  // T4 tiene una copia dei flag: al salvataggio si scrivono solo le chiavi che T4 ha cambiato rispetto a
+  // quanto aveva letto, così non si sovrascrivono flag scritti nel frattempo da altri (oggettiConosciuti, progressione6).
+  var visti = {};
+  var j = function (v) { try { return JSON.stringify(v); } catch (e) { return String(v); } };
+  T.caricaFlag = function () {
+    var d = sv.leggi(sv.slotAttivo); var f = (d && d.flag) ? Object.assign({}, d.flag) : {};
+    visti = {}; Object.keys(f).forEach(function (k) { visti[k] = j(f[k]); });
+    return f;
+  };
+  T.salvaFlag = function (flag) {
+    Object.keys(flag || {}).forEach(function (k) {
+      var v = j(flag[k]); if (visti[k] === v) return;
+      visti[k] = v; sv.impostaFlag(k, flag[k]);
+    });
+  };
 })();
 </script>
 <!-- --- T4: fine --- -->

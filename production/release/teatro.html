@@ -654,11 +654,13 @@ const OGGETTI_D = Object.freeze({
 
 // --- T3: inizio ---
 // ECONOMIA DELL'AUTORE (roadmap «Novità nel Teatro», passo T3): prezzi della Fucina e drop di monete.
-// Obiettivo: 5-8 monete in media al Piano 1. Verifica: `node gioco/teatro/sim-economia.js`, che legge
-// QUESTO blocco dal file (una sola fonte per i numeri) e simula 1000 piani.
+// Obiettivo: 5-8 monete in media al Piano 1. Verifica: `node gioco/teatro/sim-economia.js` (→ tools/sim-bilancio-teatro.js),
+// che genera i piani e i drop col codice del gioco: i numeri restano solo QUI.
 const ECONOMIA_T3 = {
   prezzi: { cuore: 3, consumabile: 2, base: 5, forte: 7, negativo: 2 }, // D: negativo = 2 (oggetti-teatro.md §1)
-  piano1: { probMonetaSegreta: 0.5, probMonetaAltre: 0.35 },
+  // (bilancio 7) probMonetaAltre 0,35 → 0,5: con 6 stanze di combattimento la media del piano 1 era 5,3 (p10 = 1),
+  // al bordo basso di 5-8; ora ~6,1 + rovi e carte ≈ 6,5 (tools/sim-bilancio-teatro.js, production/bilancio-teatro.md).
+  piano1: { probMonetaSegreta: 0.5, probMonetaAltre: 0.5 },
   dorato: { prob3: 0.28, probExtra: 0.45 },
   boss: { prob3: 0.35 },
   pulizia: { probMoneta: 0.25, probCura: 0.40, valoreSegreta: 3 },
@@ -981,6 +983,7 @@ function disegnaFerruccioPittorico() {
   ctx.restore();
 
   ctx.translate(px, py + bob);
+  if (opts.scalaA2 && opts.scalaA2 !== 1) ctx.scale(opts.scalaA2, opts.scalaA2); // A2: consumabili (a2-consumabili.js)
   if (flipX) ctx.scale(-1, 1);
   // Sprite procedurale originale coerente (nessuno sparo disegnato sul corpo, solo proiettili dinamici)
   // if (t2Gancio('personaggio', ctx, charId, px, py, opts)) { ctx.restore(); return; }
@@ -3099,6 +3102,7 @@ const AudioSys = (() => {
   return {
     get attivo() { return abilitato; },
     set attivo(v) { abilitato = Boolean(v); },
+    get ctx() { return audioCtx; }, // (8) contesto condiviso con la musica (a8-musica.js); null prima del primo gesto
     toggle() {
       abilitato = !abilitato;
       if (abilitato) getCtx();
@@ -5123,7 +5127,7 @@ function passoLogico() {
           continue;
         }
       }
-      if (Math.hypot(player.x - pr.x, (player.y - 6) - pr.y) < 9 && player.invuln <= 0) {
+      if (Math.hypot(player.x - pr.x, (player.y - 6) - pr.y) < 9 * (player.scalaA2 || 1) && player.invuln <= 0) {
         statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
         statoRun.proiettiliNemici.splice(i, 1);
         // --- D: Maschera di Cuoio: probabilità di parare il proiettile (1 − Π(1−p), max 0.5) ---
@@ -5595,7 +5599,7 @@ function passoLogico() {
 
       // Danno da contatto (solo se il boss non è in volo alto airZ > 20)
       // --- A: inizio --- Donna Luciana non fa danno a contatto (lo fanno solo le sue Mani) --- A: fine ---
-      if (n.bossId !== 'donna-luciana' && (n.airZ || 0) < 20 && Math.hypot(player.x - n.x, player.y - n.y) < n.r + 9 && player.invuln <= 0) {
+      if (n.bossId !== 'donna-luciana' && (n.airZ || 0) < 20 && Math.hypot(player.x - n.x, player.y - n.y) < n.r + 9 * (player.scalaA2 || 1) && player.invuln <= 0) {
         subisciColpoGiocatore(n.boss ? 2 : dannoBasePiano, n.nome, n.x, n.y);
         if (statoRun.hpHalf <= 0) break;
       }
@@ -7111,7 +7115,7 @@ function disegnaFrame(dtMs) {
     ctx.save();
     if (pSpento) ctx.globalAlpha = FEEL.iframes.alpha;
     disegnaFerruccioPittorico(ctx, player.x, player.y, {
-      scale: 1.0,
+      scale: 1.0, scalaA2: player.scalaA2, // A2: elisir del Gigante e della Pulce (10-sprite.js)
       flipX: player.flipX,
       tick,
       moving: player.moving,
@@ -7247,7 +7251,7 @@ function disegnaHUDPixelArt(st) {
     { size: 8, color: '#f9cb40', align: 'left' }
   );
   drawTextFit(
-    `🪙${statoRun.monete} · 🥾SPD:${(statoRun.speed / 2).toFixed(2)} · Ogg:${statoRun.oggettiEquipaggiati.length}`,
+    `🪙${statoRun.monete}${typeof testoInventarioA1 === 'function' ? testoInventarioA1() : ''} · 🥾SPD:${(statoRun.speed / 2).toFixed(2)} · Ogg:${statoRun.oggettiEquipaggiati.length}`,
     hx + 6,
     hy + 47,
     hw - 12,
@@ -10119,13 +10123,3778 @@ requestAnimationFrame(loop);
 
 </script>
 <script>
+/* teatro/a1-bombe-chiavi.js (incorporato da tools/teatro-release.js) */
+/*
+ * teatro/a1-bombe-chiavi.js — Miglioramento 1: bombe, chiavi, forzieri e porte chiuse a lucchetto.
+ * Ispirazione: bombe/chiavi/forzieri/porte chiuse di The Binding of Isaac (solo come riferimento nei
+ * commenti: nel gioco nomi e testi sono del Teatro, Caserta 1845).
+ *
+ * Script classico caricato dopo t4-hub-storia.js. Costruisce sopra il gioco senza duplicarlo:
+ * - avvolge (riassegnando le `function` globali) generaMappaPiano, avviaPiano, entraInStanza,
+ *   verificaStanzaPulita, interagisciStanza, passoLogico, disegnaStanzaPixelArt;
+ * - i raccoglibili bomba/chiave stanno in st.oggettiATerra (disegnati dal ciclo esistente con
+ *   SPRITE_OGGETTI.bombaA1 / chiaveA1), i forzieri in st.forzieriA1, le bombe accese in statoRun.bombeA1;
+ * - l'inventario è statoRun.bombe / statoRun.chiavi (azzerato a ogni run nuova, valori in tabella).
+ * Unici agganci nei file di base: il contatore nell'HUD (60-resa.js, testoInventarioA1) e lo <script> nell'HTML.
+ *
+ * Tasto: E piazza una bomba quando non c'è niente con cui interagire vicino (in Isaac E è la bomba);
+ * con un piedistallo, uno slot della Fucina/del Patto o l'uscita del boss vicini E fa quello che faceva prima.
+ */
+
+// ===========================================================================
+// TABELLA DEI VALORI (data-driven: si tara da qui)
+// ===========================================================================
+const BOMBE_CHIAVI_A1 = Object.freeze({
+  inizio: Object.freeze({ bombe: 1, chiavi: 1 }),     // dotazione a inizio run
+  massimo: Object.freeze({ bombe: 99, chiavi: 99 }),
+  bomba: Object.freeze({
+    miccaMs: 1500,            // miccia (Isaac ~1,5 s)
+    raggio: 56,               // px: nemici, colonne, bracieri
+    raggioGiocatore: 40,      // px: la propria bomba ferisce anche te
+    raggioMuroSegreto: 95,    // px dal centro della porta murata
+    dannoBase: 30,            // al piano 1 (lacrime base ~3,5): un Bozzo o una Vespa muoiono, una Guardia quasi
+    dannoPerPiano: 6,
+    dannoGiocatoreHalf: 2,    // mezze maschere
+    cooldownMs: 450,          // fra due bombe (anche col tasto tenuto premuto)
+    rompeColonne: true,
+    ritardoCatenaTick: 6,     // un'altra bomba nel raggio esplode quasi subito
+  }),
+  raccolta: Object.freeze({ raggio: 20 }),
+  forziere: Object.freeze({ raggioTocco: 20, spargimentoPx: 22 }),
+  // Una sola estrazione a stanza di combattimento ripulita (oltre a monete/cure già esistenti).
+  // Probabilità cumulate in quest'ordine; il resto (0,60) è niente.
+  // (bilancio 7) chiave 0,09 → 0,16: con 2 lucchetti a piano (tesoro e Fucina) dal piano 2 un piano su 4-5 lasciava
+  // una delle due porte chiusa (21-31%); ora 7-13% (tools/sim-bilancio-teatro.js, production/bilancio-teatro.md).
+  drop: Object.freeze({ bomba: 0.12, chiave: 0.16, forziereComune: 0.08, forziereChiuso: 0.04 }),
+  posizioneDrop: Object.freeze({ x: 360, y: 214 }),
+  contenuto: Object.freeze({
+    comune: Object.freeze({ pezziMin: 1, pezziMax: 2, probOggetto: 0,
+      pesi: Object.freeze({ moneta: 40, mezzaCura: 20, bomba: 20, chiave: 20 }) }),
+    chiuso: Object.freeze({ pezziMin: 2, pezziMax: 3, probOggetto: 0.25,
+      pesi: Object.freeze({ monetaTripla: 30, moneta: 15, curaIntera: 20, bomba: 18, chiave: 17 }) }),
+  }),
+  lucchetti: Object.freeze({
+    pianoMin: 2,                                   // dal piano 2 in poi
+    tipi: Object.freeze(['tesoro', 'fucina']),      // stanze foglia con la porta chiusa a chiave
+    spintaPx: 16,                                  // senza chiave la porta ti respinge di tanto
+  }),
+  chiaveGarantita: Object.freeze({ attiva: true, posizione: Object.freeze({ x: 290, y: 214 }) }),
+  avvisoTick: 100,            // un avviso uguale non si ripete prima di tanti tick
+});
+
+/** Pezzi che possono uscire da un forziere: come entrano in st.oggettiATerra. */
+const PEZZI_A1 = Object.freeze({
+  moneta: { tipo: 'moneta', valore: 1, sprite: 'moneta1' },
+  monetaTripla: { tipo: 'moneta', valore: 3, sprite: 'moneta3' },
+  mezzaCura: { tipo: 'cura', valore: 1, sprite: 'mezzaMaschera' },
+  curaIntera: { tipo: 'cura', valore: 2, sprite: 'cuore' },
+  bomba: { tipo: 'bomba', valore: 1, sprite: 'bombaA1' },
+  chiave: { tipo: 'chiave', valore: 1, sprite: 'chiaveA1' },
+});
+
+// Sprite dei raccoglibili (12×12, palette di 00-config.js)
+Object.assign(SPRITE_OGGETTI, {
+  bombaA1: [
+    '........y...', '.......yo...', '......kk....', '....kkkkkk..', '...kddddddk.', '..kddwdddddk',
+    '..kdwddddddk', '..kdddddddDk', '..kddddddDDk', '...kddDDDDk.', '....kkkkkk..', '............'],
+  chiaveA1: [
+    '............', '............', '.kkkk.......', 'kyyyyk......', 'kykkykkkkkk.', 'kyk.kyyyyyyk',
+    'kykkykkykyk.', 'kyyyyk.kk.k.', '.kkkk.......', '............', '............', '............'],
+});
+
+// ===========================================================================
+// INVENTARIO
+// ===========================================================================
+let inventarioRunA1 = null; // numeroRun per cui l'inventario è già stato preparato
+let ultimoAvvisoA1 = { testo: '', tick: -Infinity };
+let prossimaBombaTickA1 = 0;
+/** Altri controlli «c'è qualcosa con cui interagire qui?» (stanze nuove di altre squadre). */
+const interazioniVicineA1 = [];
+
+function preparaInventarioA1() {
+  statoRun.bombe = BOMBE_CHIAVI_A1.inizio.bombe;
+  statoRun.chiavi = BOMBE_CHIAVI_A1.inizio.chiavi;
+  statoRun.bombeA1 = [];
+  inventarioRunA1 = statoRun.numeroRun;
+}
+
+/** Aggiunge (o toglie, se negativo) n bombe; ritorna il nuovo totale. */
+function aggiungiBombe(n = 1) {
+  statoRun.bombe = Math.max(0, Math.min(BOMBE_CHIAVI_A1.massimo.bombe, (statoRun.bombe || 0) + Math.trunc(n)));
+  return statoRun.bombe;
+}
+
+/** Aggiunge (o toglie, se negativo) n chiavi; ritorna il nuovo totale. */
+function aggiungiChiavi(n = 1) {
+  statoRun.chiavi = Math.max(0, Math.min(BOMBE_CHIAVI_A1.massimo.chiavi, (statoRun.chiavi || 0) + Math.trunc(n)));
+  return statoRun.chiavi;
+}
+
+/** Testo dell'HUD accanto alle monete (agganciato in 60-resa.js). */
+function testoInventarioA1() {
+  return ` 💣${statoRun.bombe || 0} 🗝${statoRun.chiavi || 0}`;
+}
+
+function avvisoA1(testo, durata = 140) {
+  if (ultimoAvvisoA1.testo === testo && tick - ultimoAvvisoA1.tick < BOMBE_CHIAVI_A1.avvisoTick) return;
+  ultimoAvvisoA1 = { testo, tick };
+  mostraBanner(testo, durata);
+}
+
+// ===========================================================================
+// FORZIERI E RACCOGLIBILI
+// ===========================================================================
+const limitaArenaA1 = (x, y, m = 20) => ({
+  x: Math.max(ARENA.x1 + m, Math.min(ARENA.x2 - m, x)),
+  y: Math.max(ARENA.y1 + m, Math.min(ARENA.y2 - m, y)),
+});
+
+/** Mette a terra un pezzo di PEZZI_A1 (niente filtro del piano 1: è un drop già deciso). */
+function spargiPezzoA1(st, chiave, x, y) {
+  const base = PEZZI_A1[chiave];
+  if (!st || !base) return null;
+  const p = limitaArenaA1(x, y);
+  const pk = { ...base, x: p.x, y: p.y };
+  st.oggettiATerra.push(pk);
+  return pk;
+}
+
+/**
+ * Crea un forziere nella stanza (corrente, se non indicata).
+ * @param {'comune'|'chiuso'} tipo @param {number} x @param {number} y @param {object} [stanza]
+ */
+function generaForziere(tipo = 'comune', x = 320, y = 200, stanza = statoRun.stanzaCorrente) {
+  if (!stanza) return null;
+  const t = tipo === 'chiuso' ? 'chiuso' : 'comune';
+  if (!stanza.forzieriA1) stanza.forzieriA1 = [];
+  const p = limitaArenaA1(x, y, 24);
+  const f = { tipo: t, x: p.x, y: p.y, aperto: false, oggetto: false };
+  stanza.forzieriA1.push(f);
+  return f;
+}
+
+function estraiPesatoA1(pesi) {
+  const voci = Object.entries(pesi);
+  const tot = voci.reduce((s, [, w]) => s + w, 0);
+  let r = rng() * tot;
+  for (const [k, w] of voci) { r -= w; if (r < 0) return k; }
+  return voci[voci.length - 1][0];
+}
+
+/** Apre un forziere: un oggetto sul piedistallo (solo chiuso, a volte) oppure qualche pezzo sparso. */
+function apriForziereA1(st, f) {
+  if (!f || f.aperto) return;
+  f.aperto = true;
+  const C = BOMBE_CHIAVI_A1.contenuto[f.tipo];
+  AudioSys.playMoneta();
+  scuoti(FEEL.scossa.colpo);
+  const pedLibero = !st.oggettoPiedistallo || st.oggettoPiedistallo.preso;
+  if (C.probOggetto > 0 && pedLibero && rng() < C.probOggetto) {
+    const obj = estraiOggettoBase();
+    if (obj) {
+      st.oggettoPiedistallo = { ...obj, x: f.x, y: f.y, preso: false };
+      f.oggetto = true;
+      mostraBanner(`Il forziere custodiva un oggetto: ${nomeD(st.oggettoPiedistallo)} [Click/E]`, 200);
+      return;
+    }
+  }
+  const n = C.pezziMin + Math.floor(rng() * (C.pezziMax - C.pezziMin + 1));
+  const R = BOMBE_CHIAVI_A1.forziere.spargimentoPx;
+  for (let k = 0; k < n; k++) {
+    const a = (TAU * k) / n + 0.6;
+    spargiPezzoA1(st, estraiPesatoA1(C.pesi), f.x + Math.cos(a) * R, f.y + 8 + Math.sin(a) * R * 0.6);
+  }
+}
+
+/** Drop alla pulizia di una stanza di combattimento (chiave garantita, poi una estrazione dalla tabella). */
+function dropPuliziaA1(st) {
+  const T = BOMBE_CHIAVI_A1;
+  if (st.chiaveGarantitaA1) {
+    st.chiaveGarantitaA1 = false;
+    spargiPezzoA1(st, 'chiave', T.chiaveGarantita.posizione.x, T.chiaveGarantita.posizione.y);
+  }
+  const r = rng();
+  const { x, y } = T.posizioneDrop;
+  let soglia = 0;
+  if (r < (soglia += T.drop.bomba)) spargiPezzoA1(st, 'bomba', x, y);
+  else if (r < (soglia += T.drop.chiave)) spargiPezzoA1(st, 'chiave', x, y);
+  else if (r < (soglia += T.drop.forziereComune)) generaForziere('comune', x, y, st);
+  else if (r < (soglia += T.drop.forziereChiuso)) generaForziere('chiuso', x, y, st);
+}
+
+/** Raccolta di bombe/chiavi a terra e tocco dei forzieri (un tick di logica). */
+function raccoltaA1(st) {
+  const R = BOMBE_CHIAVI_A1.raccolta.raggio;
+  for (let i = st.oggettiATerra.length - 1; i >= 0; i--) {
+    const pk = st.oggettiATerra[i];
+    if (pk.tipo !== 'bomba' && pk.tipo !== 'chiave') continue;
+    if (Math.hypot(player.x - pk.x, player.y - pk.y) >= R) continue;
+    if (pk.tipo === 'bomba') aggiungiBombe(pk.valore || 1); else aggiungiChiavi(pk.valore || 1);
+    AudioSys.playMoneta();
+    st.oggettiATerra.splice(i, 1);
+  }
+  for (const f of st.forzieriA1 || []) {
+    if (f.aperto || Math.hypot(player.x - f.x, player.y - f.y) >= BOMBE_CHIAVI_A1.forziere.raggioTocco) continue;
+    if (f.tipo === 'comune') apriForziereA1(st, f);
+    else if ((statoRun.chiavi || 0) > 0) { aggiungiChiavi(-1); apriForziereA1(st, f); }
+    else avvisoA1('🔒 Forziere chiuso: serve una chiave 🗝');
+  }
+}
+
+// ===========================================================================
+// BOMBE
+// ===========================================================================
+/** Piazza una bomba ai piedi del giocatore. Ritorna true se l'ha piazzata. */
+function piazzaBombaA1() {
+  const st = statoRun.stanzaCorrente;
+  if (statoRun.fase !== 'in_gioco' || !st || statoRun.pausa || statoRun.siparioAttivo) return false;
+  if (tick < prossimaBombaTickA1) return false;
+  if ((statoRun.bombe || 0) <= 0) { avvisoA1('Niente bombe 💣'); return false; }
+  const B = BOMBE_CHIAVI_A1.bomba;
+  aggiungiBombe(-1);
+  prossimaBombaTickA1 = tick + ticksDaMs(B.cooldownMs);
+  if (!statoRun.bombeA1) statoRun.bombeA1 = [];
+  const tot = ticksDaMs(B.miccaMs);
+  statoRun.bombeA1.push({ x: player.x, y: player.y + 4, miccia: tot, tot });
+  AudioSys.playPasso();
+  return true;
+}
+
+/** Centro della porta murata della stanza segreta (come in innescaEsplosioneBomba). */
+function posMuroSegretoA1(lato) {
+  return { N: [320, ARENA.y1], S: [320, ARENA.y2], W: [ARENA.x1, 188], E: [ARENA.x2, 188] }[lato] || null;
+}
+
+function esplodiBombaA1(st, b) {
+  const B = BOMBE_CHIAVI_A1.bomba;
+  scuoti(FEEL.scossa.bomba);
+  congela(FEEL.hitstop.uccisioneMs);
+  AudioSys.playEsplosione();
+  statoRun.ondeEsplosione.push({ x: b.x, y: b.y, r: 6, maxR: B.raggio, color: '#fb923c' });
+  if (!st.macchie) st.macchie = [];
+  const rm = rngMacchia(Math.round(b.x) * 73856093 ^ Math.round(b.y) * 19349663);
+  for (let k = 0; k < 8; k++) {
+    st.macchie.push({ x: b.x + (rm() - 0.5) * 40, y: b.y + (rm() - 0.5) * 28, r: 3.5 + rm() * 4.5,
+      col: rm() < 0.7 ? '#050302' : '#450a0a', tipo: 'bruciatura' });
+  }
+  // Nemici: il danno passa anche la maschera chiusa (in Isaac la bomba apre gli Host)
+  const danno = B.dannoBase + (statoRun.piano - 1) * B.dannoPerPiano;
+  for (const nem of st.nemici) {
+    if (nem.hp <= 0 || (nem.airZ || 0) > 16) continue;
+    const dx = nem.x - b.x, dy = nem.y - b.y, d = Math.hypot(dx, dy);
+    if (d >= B.raggio + (nem.r || 0)) continue;
+    const eraChiusa = (nem.patternMob || nem.tipo) === 'maschera' && !nem.maskOpen;
+    if (eraChiusa) nem.maskOpen = true;
+    danneggiaNemico(nem, danno, d > 0 ? dx / d : 0, d > 0 ? dy / d : 0);
+    if (eraChiusa && nem.hp > 0) nem.maskOpen = false;
+  }
+  // Ostacoli: le colonne crollano, i bracieri si rovesciano (come col fendente)
+  for (let i = st.ostacoli.length - 1; i >= 0; i--) {
+    const o = st.ostacoli[i];
+    if (Math.hypot(o.x - b.x, o.y - b.y) >= B.raggio + (o.r || 0)) continue;
+    if (o.tipo === 'colonna' && B.rompeColonne) {
+      st.ostacoli.splice(i, 1);
+      for (let k = 0; k < 5; k++) {
+        st.macchie.push({ x: o.x + (rm() - 0.5) * 30, y: o.y + (rm() - 0.5) * 18, r: 2 + rm() * 3, col: '#64748b', tipo: 'scheggia' });
+      }
+      statoRun.effettiSplash.push({ x: o.x, y: o.y - 8, tick: 0 });
+    } else if (o.tipo === 'braciere' && o.acceso) {
+      o.acceso = false;
+      if (!st.pozzanghereFuoco) st.pozzanghereFuoco = [];
+      st.pozzanghereFuoco.push({ x: o.x, y: o.y, r: 26, tick: 360 });
+      statoRun.ondeEsplosione.push({ x: o.x, y: o.y, r: 6, maxR: 32, color: '#f97316' });
+    }
+  }
+  // Muro della stanza segreta
+  if (st.muroSegreto && !st.muroSegreto.aperto) {
+    const pm = posMuroSegretoA1(st.muroSegreto.lato);
+    if (pm && Math.hypot(b.x - pm[0], b.y - pm[1]) < B.raggioMuroSegreto) apriMuroSegreto(st);
+  }
+  // Altre bombe nel raggio: esplosione a catena
+  for (const altra of statoRun.bombeA1 || []) {
+    if (altra !== b && Math.hypot(altra.x - b.x, altra.y - b.y) < B.raggio) altra.miccia = Math.min(altra.miccia, B.ritardoCatenaTick);
+  }
+  // La propria bomba ferisce anche Ferruccio (subisciColpoGiocatore rispetta i-frames e grazia)
+  if (Math.hypot(player.x - b.x, player.y - b.y) < B.raggioGiocatore) {
+    subisciColpoGiocatore(B.dannoGiocatoreHalf, 'la tua bomba', b.x, b.y);
+  }
+}
+
+function aggiornaBombeA1(st) {
+  const lista = statoRun.bombeA1;
+  if (!lista || !lista.length) return;
+  for (let i = lista.length - 1; i >= 0; i--) {
+    const b = lista[i];
+    if (--b.miccia > 0) continue;
+    lista.splice(i, 1);
+    esplodiBombaA1(st, b);
+  }
+}
+
+// ===========================================================================
+// PORTE CHIUSE A CHIAVE
+// ===========================================================================
+/** Id delle stanze sul percorso più breve ingresso → boss (BFS sulle porte). */
+function percorsoBossA1(m) {
+  const ing = m.stanze.find((s) => s.tipo === 'ingresso');
+  const boss = m.stanze.find((s) => s.tipo === 'boss');
+  const sul = new Set();
+  if (!ing || !boss) return sul;
+  const prec = new Map([[ing.id, null]]);
+  const coda = [ing];
+  while (coda.length) {
+    const s = coda.shift();
+    for (const id of Object.values(s.porte)) {
+      if (prec.has(id)) continue;
+      prec.set(id, s.id);
+      coda.push(m.perId.get(id));
+    }
+  }
+  for (let id = boss.id; id; id = prec.get(id)) sul.add(id);
+  return sul;
+}
+
+/**
+ * Chiude a chiave tesoro e Fucina dal piano L.pianoMin: solo se sono foglie (una porta) e fuori dal
+ * percorso per il boss, così una porta chiusa non blocca mai la run.
+ */
+function applicaLucchettiA1(m, piano) {
+  const L = BOMBE_CHIAVI_A1.lucchetti;
+  if (!m || piano < L.pianoMin) return m;
+  const percorso = percorsoBossA1(m);
+  for (const s of m.stanze) {
+    if (!L.tipi.includes(s.tipo)) continue;
+    if (Object.keys(s.porte).length !== 1 || percorso.has(s.id)) continue;
+    s.chiusaA1 = true;
+  }
+  return m;
+}
+
+/** Senza chiavi a inizio piano e con porte chiuse: la prima stanza di combattimento lascia una chiave. */
+function garantisciChiaveA1(m) {
+  if (!BOMBE_CHIAVI_A1.chiaveGarantita.attiva || !m) return;
+  if ((statoRun.chiavi || 0) > 0 || !m.stanze.some((s) => s.chiusaA1)) return;
+  const s = m.stanze.find((x) => x.tipo === 'normale' && !x.pulita);
+  if (s) s.chiaveGarantitaA1 = true;
+}
+
+function latoVersoA1(da, idDest) {
+  return Object.keys(da?.porte || {}).find((l) => da.porte[l] === idDest) || null;
+}
+
+function respingiDallaPortaA1(lato) {
+  const s = BOMBE_CHIAVI_A1.lucchetti.spintaPx;
+  if (lato === 'N') player.y = Math.max(player.y, ARENA.y1 + 5 + s);
+  else if (lato === 'S') player.y = Math.min(player.y, ARENA.y2 - 5 - s);
+  else if (lato === 'W') player.x = Math.max(player.x, ARENA.x1 + 5 + s);
+  else if (lato === 'E') player.x = Math.min(player.x, ARENA.x2 - 5 - s);
+  player.targetX = null;
+  player.targetY = null;
+  player.kbx = 0; player.kby = 0;
+}
+
+// ===========================================================================
+// DISEGNO
+// ===========================================================================
+function disegnaLucchettoA1(x, y, t) {
+  ctx.save();
+  ctx.strokeStyle = '#64748b';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); // catene incrociate sulla porta
+  ctx.moveTo(x - 12, y - 7); ctx.lineTo(x + 12, y + 7);
+  ctx.moveTo(x + 12, y - 7); ctx.lineTo(x - 12, y + 7);
+  ctx.stroke();
+  const dy = Math.round(Math.sin(t * 0.08) * 0.8);
+  ctx.strokeStyle = '#0a0604';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(x, y - 3 + dy, 4.5, Math.PI, 0); ctx.stroke();
+  ctx.strokeStyle = '#f9cb40';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(x, y - 3 + dy, 4.5, Math.PI, 0); ctx.stroke();
+  ctx.fillStyle = '#0a0604';
+  ctx.fillRect(x - 7, y - 4 + dy, 14, 11);
+  ctx.fillStyle = '#d4a017';
+  ctx.fillRect(x - 6, y - 3 + dy, 12, 9);
+  ctx.fillStyle = '#f9cb40';
+  ctx.fillRect(x - 6, y - 3 + dy, 12, 2);
+  ctx.fillStyle = '#0a0604';
+  ctx.beginPath(); ctx.arc(x, y + 1 + dy, 1.6, 0, TAU); ctx.fill();
+  ctx.fillRect(x - 0.8, y + 1 + dy, 1.6, 3.5);
+  ctx.restore();
+}
+
+function disegnaForziereA1(f) {
+  if (f.aperto && f.oggetto) return; // al suo posto c'è il piedistallo
+  const chiuso = f.tipo === 'chiuso';
+  const x = Math.round(f.x), y = Math.round(f.y);
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath(); ctx.ellipse(x, y + 7, 14, 4, 0, 0, TAU); ctx.fill();
+  const legno = chiuso ? '#475569' : '#8b5a2b';
+  const scuro = chiuso ? '#1e293b' : '#4a2c12';
+  const bordo = chiuso ? '#cbd5e1' : '#f9cb40';
+  ctx.fillStyle = '#0a0604';
+  ctx.fillRect(x - 12, y - 6, 24, 13);
+  ctx.fillStyle = legno;
+  ctx.fillRect(x - 11, y - 5, 22, 11);
+  ctx.fillStyle = scuro;
+  ctx.fillRect(x - 11, y + 2, 22, 4);
+  ctx.fillStyle = bordo;
+  ctx.fillRect(x - 11, y - 5, 2, 11);
+  ctx.fillRect(x + 9, y - 5, 2, 11);
+  if (f.aperto) {
+    ctx.fillStyle = '#050302'; // coperchio alzato, interno vuoto
+    ctx.fillRect(x - 10, y - 5, 20, 3);
+    ctx.fillStyle = '#0a0604';
+    ctx.fillRect(x - 12, y - 15, 24, 9);
+    ctx.fillStyle = legno;
+    ctx.fillRect(x - 11, y - 14, 22, 7);
+  } else {
+    ctx.fillStyle = '#0a0604';
+    ctx.fillRect(x - 12, y - 12, 24, 7);
+    ctx.fillStyle = legno;
+    ctx.fillRect(x - 11, y - 11, 22, 5);
+    ctx.fillStyle = bordo;
+    ctx.fillRect(x - 11, y - 11, 22, 1);
+    ctx.fillRect(x - 2, y - 7, 4, 5); // borchia / serratura
+    if (chiuso) { ctx.fillStyle = '#0a0604'; ctx.fillRect(x - 0.5, y - 6, 1, 3); }
+  }
+  ctx.restore();
+}
+
+function disegnaBombaAccesaA1(b, t) {
+  const fine = b.miccia / b.tot < 0.4;
+  const lampo = fine ? Math.floor(t / 3) % 2 === 0 : Math.floor(t / 10) % 2 === 0 && b.miccia / b.tot < 0.7;
+  const gonfia = fine ? 1.8 + 0.15 * Math.sin(t * 0.9) : 1.8;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath(); ctx.ellipse(b.x, b.y + 9, 10, 3.5, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+  drawPixelSprite(SPRITE_OGGETTI.bombaA1, b.x, b.y, gonfia, false, lampo);
+  ctx.save();
+  ctx.fillStyle = t % 4 < 2 ? '#fef08a' : '#f97316'; // scintilla della miccia
+  ctx.beginPath(); ctx.arc(b.x + 4, b.y - 11, 1.5 + (t % 3) * 0.5, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+function disegnaA1(t, st) {
+  const porte = PORTE_C;
+  for (const [lato, idDest] of Object.entries(st.porte || {})) {
+    const dest = statoRun.mappa?.perId.get(idDest);
+    if (dest?.chiusaA1 && porte[lato]) disegnaLucchettoA1(porte[lato].x, porte[lato].y, t);
+  }
+  for (const f of st.forzieriA1 || []) disegnaForziereA1(f);
+  for (const b of statoRun.bombeA1 || []) disegnaBombaAccesaA1(b, t);
+}
+
+// ===========================================================================
+// INTERAZIONE CONTESTUALE (E): interagire se c'è qualcosa vicino, altrimenti bomba
+// ===========================================================================
+/** Stesse distanze di interagisciStanza (40-combattimento.js). */
+function interazioneVicinaA1(st) {
+  if (!st) return false;
+  const d = (x, y) => Math.hypot(player.x - x, player.y - y);
+  if (st.tipo === 'sviluppatore') return true;
+  const o = st.oggettoPiedistallo;
+  if (st.pulita && o && !o.preso && d(o.x, o.y) < 52) return true;
+  if (st.tipo === 'patto') {
+    if ((st.slotPatto || []).some((sl) => !sl.comprato && d(sl.x, sl.y) < 44)) return true;
+    if (d(320, 252) < 46) return true;
+  }
+  if (st.tipo === 'fucina' && (st.slotFucina || []).some((sl) => !sl.comprato && d(sl.x, sl.y) < 42)) return true;
+  if (st.tipo === 'boss' && ((st.portaPattoAperta && d(430, 190) < 42) || st.uscitaAperta)) return true;
+  return interazioniVicineA1.some((fn) => { try { return Boolean(fn(st, player)); } catch (_) { return false; } });
+}
+
+// ===========================================================================
+// AGGANCI (funzioni globali avvolte)
+// ===========================================================================
+const origGeneraMappaA1 = generaMappaPiano;
+generaMappaPiano = function (piano, ...resto) {
+  return applicaLucchettiA1(origGeneraMappaA1.call(this, piano, ...resto), piano);
+};
+
+const origAvviaPianoA1 = avviaPiano;
+avviaPiano = function (...args) {
+  if (inventarioRunA1 !== statoRun.numeroRun) preparaInventarioA1();
+  statoRun.bombeA1 = [];
+  const r = origAvviaPianoA1.apply(this, args);
+  garantisciChiaveA1(statoRun.mappa);
+  return r;
+};
+
+const origEntraInStanzaA1 = entraInStanza;
+entraInStanza = function (stanza, daLato, ...resto) {
+  const da = statoRun.stanzaCorrente;
+  if (stanza && stanza.chiusaA1) {
+    const lato = latoVersoA1(da, stanza.id);
+    if (daLato != null && lato && statoRun.fase === 'in_gioco') {
+      if ((statoRun.chiavi || 0) <= 0) {
+        respingiDallaPortaA1(lato);
+        avvisoA1('🔒 La porta è chiusa a chiave: serve una chiave 🗝');
+        return undefined;
+      }
+      aggiungiChiavi(-1);
+      AudioSys.playMoneta();
+      scuoti(FEEL.scossa.colpo);
+      mostraBanner('🗝 Lucchetto aperto!', 110);
+    }
+    stanza.chiusaA1 = false; // aperta con la chiave, o raggiunta da un pulsante di prova
+  }
+  statoRun.bombeA1 = [];
+  return origEntraInStanzaA1.call(this, stanza, daLato, ...resto);
+};
+
+const origVerificaPulitaA1 = verificaStanzaPulita;
+verificaStanzaPulita = function (...args) {
+  const st = statoRun.stanzaCorrente;
+  const prima = Boolean(st && st.pulita);
+  const r = origVerificaPulitaA1.apply(this, args);
+  if (st && !prima && st.pulita && st.tipo === 'normale') dropPuliziaA1(st);
+  return r;
+};
+
+const origInteragisciA1 = interagisciStanza;
+interagisciStanza = function (...args) {
+  if (statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo) return origInteragisciA1.apply(this, args);
+  if (statoRun.fase !== 'in_gioco' || interazioneVicinaA1(statoRun.stanzaCorrente)) return origInteragisciA1.apply(this, args);
+  piazzaBombaA1();
+  return undefined;
+};
+
+const origPassoLogicoA1 = passoLogico;
+passoLogico = function (...args) {
+  // stesse condizioni del passo originale: niente bombe durante hit-stop, pause, pannelli, hub e morte
+  const congelato = ticksCongelati > 0;
+  const r = origPassoLogicoA1.apply(this, args);
+  const st = statoRun.stanzaCorrente;
+  const inPausa = Boolean(statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo || statoRun.pausa);
+  if (!congelato && !inPausa && st && statoRun.fase === 'in_gioco' && statoRun.hpHalf > 0) {
+    raccoltaA1(st);
+    aggiornaBombeA1(st);
+  }
+  return r;
+};
+
+const origDisegnaStanzaA1 = disegnaStanzaPixelArt;
+disegnaStanzaPixelArt = function (t, st, ...resto) {
+  const r = origDisegnaStanzaA1.call(this, t, st, ...resto);
+  if (st && statoRun.fase === 'in_gioco') disegnaA1(t, st);
+  return r;
+};
+
+// ===========================================================================
+// ESPOSIZIONE (altre squadre e QA)
+// ===========================================================================
+if (window.__teatro && !Object.isFrozen(window.__teatro)) {
+  Object.assign(window.__teatro.interni, {
+    BOMBE_CHIAVI_A1, aggiungiChiavi, aggiungiBombe, generaForziere,
+    piazzaBombaA1, esplodiBombaA1, apriForziereA1, applicaLucchettiA1, garantisciChiaveA1, percorsoBossA1,
+    interazioniVicineA1, testoInventarioA1,
+    // le versioni avvolte sostituiscono quelle catturate da 80-ciclo.js (superinsieme: stessi effetti + A1)
+    avviaPiano, entraInStanza,
+    entraInStanzaA1: entraInStanza, verificaStanzaPulitaA1: verificaStanzaPulita, interagisciStanzaA1: interagisciStanza,
+  });
+}
+
+</script>
+<script>
+/* teatro/a8-musica.js (incorporato da tools/teatro-release.js) */
+/*
+ * teatro/a8-musica.js — Miglioramento 8: musica procedurale con Web Audio, senza file audio.
+ *
+ * Un sequencer a pattern in 6/8 (tarantella lenta, barcarola) con lookahead scheduling: un setTimeout ogni
+ * MUSICA.periodoMs pianifica sul clock dell'AudioContext (ctx.currentTime) le note dei prossimi
+ * MUSICA.anticipoSec secondi. Strumenti sintetizzati: mandolino pizzicato (dente di sega filtrato, inviluppo
+ * breve; tremolo sulle note lunghe), organetto (onde quadre filtrate), basso, tamburello (rumore filtrato) e,
+ * per lo strato di combattimento, una tammorra (seno con caduta di altezza).
+ *
+ * Tema scelto da temaCorrente() leggendo lo stato del gioco: hub (anche il menu), un tema per piano del
+ * ciclo (Atto I Reggia, II Corso Trieste e le Officine, III Belvedere di San Leucio, IV Trono del Velo: più
+ * cupo salendo), boss, «quiete» (tesoro, Fucina, patto, sviluppatore, boss già vinto: variante calma nella
+ * tonalità del piano) e morte (cadenza breve, non ripetuta). I cambi di tema sono dissolvenze incrociate.
+ * Strato ritmico in più finché nella stanza ci sono nemici vivi.
+ *
+ * Usa l'AudioContext di AudioSys (getter AudioSys.ctx, gancio in 15-audio.js) e rispetta il muto
+ * (AudioSys.attivo, tasto M di t3/70-input): da muto il guadagno principale scende a 0 e non si pianifica
+ * nulla. L'AudioContext nasce solo al primo gesto (ascoltatori di AudioSys), quindi la musica parte dopo
+ * un tasto o un click. Ogni voce libera i suoi nodi (disconnect su onended); inviluppi a rampa: niente click.
+ *
+ * Pattern originali composti per questo gioco (forme tradizionali: tarantella, barcarola; scala minore
+ * napoletana con il secondo grado abbassato). Nessuna melodia esistente.
+ * Script classico: legge statoRun/AudioSys dallo scope globale condiviso (teatro/LEGGIMI.md).
+ */
+
+// ===========================================================================
+// TABELLA DATI (tutto ciò che si accorda sta qui)
+// ===========================================================================
+const MUSICA = Object.freeze({
+  volume: 0.11,            // guadagno principale della musica (gli effetti di AudioSys arrivano a 0.1-0.3)
+  volumePausa: 0.45,       // fattore col menu di pausa aperto
+  dissolvenzaSec: 0.8,     // dissolvenza incrociata fra temi
+  rampaMutoSec: 0.15,      // durata della rampa del guadagno principale (muto, pausa)
+  rampaStratoSec: 0.5,     // entrata/uscita dello strato di combattimento
+  anticipoSec: 0.15,       // finestra di lookahead
+  periodoMs: 25,           // passo del pianificatore
+  ritardoAvvioSec: 0.06,   // margine fra «adesso» e la prima nota pianificata
+
+  strumenti: {
+    mandolino: { onda: 'sawtooth', stonatura: 7, filtroDa: 3200, filtroA: 800, attacco: 0.004, decadimento: 0.32, volume: 0.22,
+      tremoloPassiMin: 3, tremoloHz: 12.5, tremoloProfondita: 0.45, rilascio: 0.12 },
+    organetto: { onda: 'square', filtro: 1100, q: 0.7, attacco: 0.06, rilascio: 0.18, volume: 0.035, colpoFrazione: 0.7 },
+    basso: { onda: 'triangle', attacco: 0.008, decadimento: 0.45, volume: 0.26 },
+    tamburello: { filtro: 7200, q: 1.2, decadimento: 0.07, volume: 0.10, accento: 1.7 },
+    tammorra: { freqDa: 120, freqA: 52, caduta: 0.12, decadimento: 0.28, volume: 0.30, accento: 1.5 },
+  },
+
+  /** Strato ritmico di combattimento (passi da 6 per battuta): tammorra e tamburello fitto. */
+  strato: { tammorra: 'X..x..', tamburello: 'x.xx.x', volume: 0.9 },
+
+  scale: {
+    minore: [0, 2, 3, 5, 7, 8, 10],
+    armonica: [0, 2, 3, 5, 7, 8, 11],
+    napoletana: [0, 1, 3, 5, 7, 8, 11], // minore napoletana: secondo grado abbassato
+  },
+  /** Accordi in semitoni dalla tonica. N = sesta napoletana (II abbassato maggiore). */
+  accordi: {
+    i: [0, 3, 7], iv: [5, 8, 12], v: [7, 10, 14], V: [7, 11, 14], N: [1, 5, 8],
+    III: [3, 7, 10], VI: [8, 12, 15], VII: [10, 14, 17],
+  },
+
+  /*
+   * Temi. bpm = semiminime puntate al minuto (3 crome per tempo, 6 crome per battuta).
+   * melodia: una stringa per battuta, 6 passi: grado della scala (0 = tonica, 7 = ottava sopra,
+   * negativi sotto), '-' prolunga la nota precedente, '.' pausa. radice: nota MIDI della tonica del mandolino.
+   * basso: X tonica, x quinta. organetto: 'tenuto' o pattern di colpi. tamburello: X accento, x colpo.
+   */
+  temi: {
+    hub: { // barcarola notturna di Piazza Dante
+      bpm: 52, radice: 62, scala: 'minore', basso: 'X..x..', organetto: 'tenuto', tamburello: null, volume: 0.9,
+      accordi: ['i', 'VI', 'III', 'VII', 'i', 'iv', 'v', 'i'],
+      melodia: ['4 - - 3 2 3', '2 - - 0 - -', '2 - 4 7 - 6', '6 - - 4 - -', '4 - 5 4 3 2', '3 - - 5 - 3', '4 - 3 1 - -', '0 - - . . .'],
+    },
+    piano1: { // Atto I, la Reggia di notte: tarantella lenta
+      bpm: 76, radice: 69, scala: 'armonica', basso: 'X..x..', organetto: '.xx.xx', tamburello: 'X..x..', volume: 1,
+      accordi: ['i', 'i', 'iv', 'V', 'i', 'VI', 'iv', 'V'],
+      melodia: ['4 . 3 2 . 1', '0 - - 2 . 4', '5 . 4 3 - -', '4 - 6 4 . 1', '2 . 1 0 . 4', '5 - 4 5 . 7', '5 . 3 2 . 1', '6 - - 4 . .'],
+    },
+    piano2: { // Atto II, Corso Trieste e le Officine: tarantella moderata, più battuta
+      bpm: 92, radice: 64, scala: 'napoletana', basso: 'X..x..', organetto: '.xx.xx', tamburello: 'X.xX.x', volume: 1,
+      accordi: ['i', 'i', 'iv', 'V', 'i', 'VI', 'N', 'V'],
+      melodia: ['4 . 4 4 3 2', '3 2 1 0 . .', '3 . 3 3 5 3', '6 . 4 6 . .', '7 . 6 7 . 4', '5 . 4 5 . 7', '8 . 7 5 . 1', '6 - 4 6 - -'],
+    },
+    piano3: { // Atto III, Belvedere di San Leucio: telai fermi, più scuro
+      bpm: 70, radice: 60, scala: 'napoletana', basso: 'X.....', organetto: 'tenuto', tamburello: 'x..x..', volume: 1,
+      accordi: ['i', 'N', 'V', 'i', 'iv', 'N', 'V', 'i'],
+      melodia: ['4 - - 5 4 2', '1 - - 3 - 1', '6 - 4 6 7 6', '7 - - 4 - -', '5 - 3 5 - 7', '8 - 7 5 - 3', '6 - - 4 - -', '0 - - . . .'],
+    },
+    piano4: { // Atto IV, il Trono del Velo: rado, bordone dell'organetto, tremolo alto
+      bpm: 54, radice: 57, scala: 'napoletana', basso: 'X.....', organetto: 'tenuto', tamburello: null, volume: 1,
+      accordi: ['i', 'N', 'i', 'V', 'iv', 'N', 'V', 'i'],
+      melodia: ['7 - - 6 - -', '8 - - - - -', '7 - - 4 - -', '6 - - - . .', '5 - - 3 - -', '5 - - 8 - -', '6 - - 4 - 6', '7 - - - . .'],
+    },
+    boss: { // tarantella veloce, strato ritmico sempre acceso
+      bpm: 120, radice: 62, scala: 'napoletana', basso: 'X..x..', organetto: '.xx.xx', tamburello: 'XxxXxx', strato: true, volume: 1,
+      accordi: ['i', 'i', 'V', 'V', 'i', 'iv', 'N', 'V'],
+      melodia: ['7 6 7 4 . 4', '2 3 4 0 . .', '6 4 6 7 . 6', '4 3 2 1 . .', '0 2 4 7 . 7', '8 7 5 3 . 3', '8 . 8 7 5 3', '6 - 4 6 - -'],
+    },
+    quiete: { // tesoro, Fucina, patto: arpeggi lenti nella tonalità del piano (radice sostituita)
+      bpm: 46, radice: 69, scala: 'armonica', basso: 'X.....', organetto: 'tenuto', tamburello: null, volume: 0.75,
+      accordi: ['i', 'iv', 'V', 'i', 'VI', 'iv', 'V', 'i'],
+      melodia: ['0 2 4 7 4 2', '3 5 7 10 7 5', '4 6 8 11 8 6', '0 2 4 7 - -', '5 7 9 12 9 7', '3 5 7 10 7 5', '4 6 8 11 8 6', '7 - - . . .'],
+    },
+    morte: { // cadenza breve iv - V - i, non si ripete
+      bpm: 34, radice: 57, scala: 'armonica', basso: 'X.....', organetto: 'tenuto', tamburello: null, ciclo: false, volume: 0.9,
+      accordi: ['iv', 'V', 'i'],
+      melodia: ['5 - - 3 - -', '4 - - 6 - -', '7 - - - - -'],
+    },
+  },
+  /** Tema per piano del ciclo (statoRun.piano 1..4, poi si ripete). */
+  temaPerPiano: { 1: 'piano1', 2: 'piano2', 3: 'piano3', 4: 'piano4' },
+  /** Stanze con la variante calma. */
+  stanzeQuiete: ['tesoro', 'fucina', 'patto', 'sviluppatore'],
+});
+
+// ===========================================================================
+// MUSICA: scelta del tema (logica pura) + sequencer Web Audio
+// ===========================================================================
+const Musica = (() => {
+  const PASSI = 6; // crome per battuta (6/8)
+  const cacheEventi = {};
+
+  /** Melodia in eventi per passo: { grado, passi } o null. Calcolata una volta per tema. */
+  function eventiTema(nome) {
+    if (cacheEventi[nome]) return cacheEventi[nome];
+    const tok = MUSICA.temi[nome].melodia.join(' ').trim().split(/\s+/);
+    const ev = tok.map(() => null);
+    for (let i = 0; i < tok.length; i++) {
+      if (tok[i] === '-' || tok[i] === '.') continue;
+      let n = 1;
+      while (i + n < tok.length && tok[i + n] === '-') n++;
+      ev[i] = { grado: Number(tok[i]), passi: n };
+    }
+    cacheEventi[nome] = ev;
+    return ev;
+  }
+
+  function nemiciVivi(st) {
+    return Boolean(st && !st.pulita && Array.isArray(st.nemici) && st.nemici.some((n) => n && n.hp > 0));
+  }
+
+  /**
+   * Tema richiesto dallo stato del gioco (nessun effetto collaterale).
+   * @returns {{ id: string, base: string, radice: number, combattimento: boolean }}
+   */
+  function temaCorrente(sr = statoRun) {
+    const pianoNelCiclo = (((sr.piano || 1) - 1) % 4) + 1;
+    const nomePiano = MUSICA.temaPerPiano[pianoNelCiclo] || 'piano1';
+    const tema = (base, radice, combattimento = false) =>
+      ({ id: base === 'quiete' ? `quiete-${nomePiano}` : base, base, radice: radice ?? MUSICA.temi[base].radice, combattimento });
+    if (sr.fase === 'morte') return tema('morte');
+    if (sr.fase !== 'in_gioco') return tema('hub'); // hub, menu di selezione
+    const st = sr.stanzaCorrente;
+    const tipo = st ? st.tipo : null;
+    const vivi = nemiciVivi(st);
+    if (tipo === 'boss' && vivi) return tema('boss', null, true);
+    if (MUSICA.stanzeQuiete.includes(tipo) || (tipo === 'boss' && !vivi)) {
+      return tema('quiete', MUSICA.temi[nomePiano].radice);
+    }
+    return tema(nomePiano, null, vivi);
+  }
+
+  // --- stato del sequencer ---
+  const S = {
+    tema: null,          // ultimo tema richiesto (oggetto di temaCorrente)
+    cambiTema: 0,
+    suona: false,        // true se in questo momento si pianificano note (contesto vivo e non muto)
+    obiettivoMaster: 0,  // guadagno a cui tende il master
+    obiettivoStrato: 0,
+    fineRampaStrato: 0,  // fino a quando lo strato in uscita suona ancora (sfuma invece di tagliarsi)
+    noteStrato: 0,
+    passo: 0,            // indice del passo nel tema
+    prossimaNota: 0,     // tempo AudioContext del prossimo passo
+    finito: false,       // tema non ciclico arrivato in fondo
+    vociVive: 0,
+    notePianificate: 0,
+  };
+  let ac = null;
+  let master = null;
+  let busStrato = null;
+  let busTema = null;
+  let rumore = null;
+  let timer = null;
+
+  const freq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+
+  /** Collega i nodi della voce e li libera alla fine della sorgente principale. */
+  function voce(sorgente, nodi) {
+    S.vociVive++;
+    sorgente.onended = () => {
+      S.vociVive--;
+      for (const n of nodi) { try { n.disconnect(); } catch (_) { /* già scollegato */ } }
+    };
+  }
+
+  function creaGrafo(nuovoAc) {
+    ac = nuovoAc;
+    master = ac.createGain();
+    master.gain.value = 0;
+    master.connect(ac.destination);
+    busStrato = ac.createGain();
+    busStrato.gain.value = 0;
+    busStrato.connect(master);
+    // rumore bianco deterministico, 1 s, condiviso da tutti i colpi di tamburello
+    rumore = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+    const d = rumore.getChannelData(0);
+    let x = 12345;
+    for (let i = 0; i < d.length; i++) { x = (x * 1103515245 + 12345) >>> 0; d[i] = (x / 4294967296) * 2 - 1; }
+    busTema = null;
+    S.obiettivoMaster = 0;
+    S.obiettivoStrato = 0;
+    S.fineRampaStrato = 0;
+  }
+
+  /** Rampa lineare dal valore attuale (tenuto anche a metà di una rampa precedente): niente click. */
+  function rampa(param, valore, ora, durata) {
+    if (typeof param.cancelAndHoldAtTime === 'function') param.cancelAndHoldAtTime(ora);
+    else { param.cancelScheduledValues(ora); param.setValueAtTime(param.value, ora); }
+    param.linearRampToValueAtTime(valore, ora + durata);
+  }
+
+  /** Nuovo bus del tema con dissolvenza in entrata; il vecchio sfuma e viene scollegato. */
+  function avviaBusTema() {
+    const ora = ac.currentTime;
+    const D = MUSICA.dissolvenzaSec;
+    if (busTema) {
+      const vecchio = busTema;
+      rampa(vecchio.gain, 0, ora, D);
+      setTimeout(() => { try { vecchio.disconnect(); } catch (_) { /* già scollegato */ } }, (D + 0.6) * 1000);
+    }
+    busTema = ac.createGain();
+    busTema.gain.setValueAtTime(0, ora);
+    busTema.gain.linearRampToValueAtTime(MUSICA.temi[S.tema.base].volume, ora + D);
+    busTema.connect(master);
+    S.passo = 0;
+    S.finito = false;
+    S.prossimaNota = ora + MUSICA.ritardoAvvioSec;
+  }
+
+  // --- strumenti ---
+  function mandolino(t, f, durSec, vel, tremolo) {
+    const M = MUSICA.strumenti.mandolino;
+    const o1 = ac.createOscillator();
+    const fl = ac.createBiquadFilter();
+    const g = ac.createGain();
+    o1.type = M.onda; o1.frequency.setValueAtTime(f, t);
+    fl.type = 'lowpass';
+    fl.frequency.setValueAtTime(M.filtroDa, t);
+    fl.frequency.exponentialRampToValueAtTime(M.filtroA, t + M.decadimento);
+    o1.connect(fl);
+    const nodi = [o1, fl, g];
+    let fine;
+    if (tremolo) {
+      // nota lunga: tremolo di plettro come modulazione d'ampiezza (5 nodi invece di decine di pizzichi)
+      const trem = ac.createGain();
+      const lfo = ac.createOscillator();
+      const prof = ac.createGain();
+      trem.gain.value = 1 - M.tremoloProfondita;
+      lfo.type = 'triangle'; lfo.frequency.value = M.tremoloHz;
+      prof.gain.value = M.tremoloProfondita;
+      lfo.connect(prof); prof.connect(trem.gain);
+      fl.connect(trem); trem.connect(g);
+      fine = t + durSec + M.rilascio;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(M.volume * vel * 0.8, t + M.attacco);
+      g.gain.setValueAtTime(M.volume * vel * 0.8, t + durSec);
+      g.gain.exponentialRampToValueAtTime(0.0001, fine);
+      lfo.start(t); lfo.stop(fine + 0.02);
+      nodi.push(trem, lfo, prof);
+    } else {
+      const o2 = ac.createOscillator(); // seconda corda della coppia, appena stonata
+      o2.type = M.onda; o2.frequency.setValueAtTime(f, t); o2.detune.setValueAtTime(M.stonatura, t);
+      o2.connect(fl); fl.connect(g);
+      fine = t + Math.min(M.decadimento, durSec + M.rilascio);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(M.volume * vel, t + M.attacco);
+      g.gain.exponentialRampToValueAtTime(0.0001, fine);
+      o2.start(t); o2.stop(fine + 0.02);
+      nodi.push(o2);
+    }
+    g.connect(busTema);
+    o1.start(t); o1.stop(fine + 0.02);
+    voce(o1, nodi);
+  }
+
+  function organetto(t, midiNote, durSec) {
+    const O = MUSICA.strumenti.organetto;
+    const fl = ac.createBiquadFilter();
+    const g = ac.createGain();
+    fl.type = 'lowpass'; fl.frequency.value = O.filtro; fl.Q.value = O.q;
+    fl.connect(g); g.connect(busTema);
+    const fine = t + durSec + O.rilascio;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(O.volume, t + O.attacco);
+    g.gain.setValueAtTime(O.volume, t + Math.max(O.attacco, durSec));
+    g.gain.exponentialRampToValueAtTime(0.0001, fine);
+    const nodi = [fl, g];
+    let prima = null;
+    for (const m of midiNote) {
+      const o = ac.createOscillator();
+      o.type = O.onda; o.frequency.setValueAtTime(freq(m), t);
+      o.connect(fl); o.start(t); o.stop(fine + 0.02);
+      nodi.push(o);
+      if (!prima) prima = o;
+    }
+    voce(prima, nodi);
+  }
+
+  function basso(t, m, durSec) {
+    const B = MUSICA.strumenti.basso;
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = B.onda; o.frequency.setValueAtTime(freq(m), t);
+    const fine = t + Math.min(B.decadimento, durSec);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(B.volume, t + B.attacco);
+    g.gain.exponentialRampToValueAtTime(0.0001, fine);
+    o.connect(g); g.connect(busTema);
+    o.start(t); o.stop(fine + 0.02);
+    voce(o, [o, g]);
+  }
+
+  function tamburello(t, accento, uscita, scala = 1) {
+    const T = MUSICA.strumenti.tamburello;
+    const s = ac.createBufferSource();
+    const fl = ac.createBiquadFilter();
+    const g = ac.createGain();
+    s.buffer = rumore;
+    fl.type = 'bandpass'; fl.frequency.value = T.filtro; fl.Q.value = T.q;
+    const v = T.volume * scala * (accento ? T.accento : 1);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(v, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + T.decadimento);
+    s.connect(fl); fl.connect(g); g.connect(uscita);
+    const offs = (S.notePianificate * 0.137) % 0.8; // punto diverso del rumore a ogni colpo
+    s.start(t, offs); s.stop(t + T.decadimento + 0.02);
+    voce(s, [s, fl, g]);
+  }
+
+  function tammorra(t, accento, uscita, scala = 1) {
+    const T = MUSICA.strumenti.tammorra;
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(T.freqDa, t);
+    o.frequency.exponentialRampToValueAtTime(T.freqA, t + T.caduta);
+    const v = T.volume * scala * (accento ? T.accento : 1);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(v, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + T.decadimento);
+    o.connect(g); g.connect(uscita);
+    o.start(t); o.stop(t + T.decadimento + 0.02);
+    voce(o, [o, g]);
+  }
+
+  /** Pianifica tutte le note del passo corrente del tema al tempo t. */
+  function pianificaPasso(t) {
+    const nome = S.tema.base;
+    const tema = MUSICA.temi[nome];
+    const ev = eventiTema(nome);
+    const passoSec = 60 / tema.bpm / 3;
+    const iBattuta = Math.floor(S.passo / PASSI) % tema.accordi.length;
+    const p = S.passo % PASSI;
+    const radice = S.tema.radice;
+    const scala = MUSICA.scale[tema.scala];
+    const accordo = MUSICA.accordi[tema.accordi[iBattuta]];
+
+    const e = ev[S.passo % ev.length];
+    if (e) {
+      const k = ((e.grado % 7) + 7) % 7;
+      const m = radice + scala[k] + 12 * Math.floor(e.grado / 7);
+      const vel = p === 0 || p === 3 ? 1 : 0.8;
+      mandolino(t, freq(m), e.passi * passoSec, vel, e.passi >= MUSICA.strumenti.mandolino.tremoloPassiMin);
+      S.notePianificate++;
+    }
+    const cb = tema.basso[p];
+    if (cb === 'X' || cb === 'x') basso(t, radice - 24 + (cb === 'X' ? accordo[0] : accordo[2]), 3 * passoSec);
+    if (tema.organetto === 'tenuto') {
+      if (p === 0) organetto(t, accordo.map((s) => radice - 12 + s), PASSI * passoSec);
+    } else if (tema.organetto[p] === 'x') {
+      organetto(t, accordo.map((s) => radice - 12 + s), passoSec * MUSICA.strumenti.organetto.colpoFrazione);
+    }
+    if (tema.tamburello) {
+      const c = tema.tamburello[p];
+      if (c === 'X' || c === 'x') tamburello(t, c === 'X', busTema);
+    }
+    // strato ritmico: sempre nel boss (sul bus del tema), altrimenti sul bus dello strato finché serve
+    const strato = tema.strato || S.obiettivoStrato > 0 || t < S.fineRampaStrato;
+    if (strato) {
+      const uscita = tema.strato ? busTema : busStrato;
+      const L = MUSICA.strato;
+      if (L.tammorra[p] !== '.') tammorra(t, L.tammorra[p] === 'X', uscita, L.volume);
+      S.noteStrato++;
+      if (L.tamburello[p] !== '.') tamburello(t, L.tamburello[p] === 'X', uscita, L.volume * 0.7);
+    }
+
+    S.prossimaNota += passoSec;
+    S.passo++;
+    if (tema.ciclo === false && S.passo >= tema.accordi.length * PASSI) S.finito = true;
+  }
+
+  /** Un giro del pianificatore: segue lo stato, regola i guadagni, pianifica le note in anticipo. */
+  function giro() {
+    const voluto = temaCorrente();
+    const cambiato = !S.tema || S.tema.id !== voluto.id;
+    if (cambiato) S.cambiTema++;
+    S.tema = voluto;
+
+    const nuovoAc = AudioSys.ctx;
+    if (!nuovoAc) { S.suona = false; return; }
+    if (nuovoAc !== ac) { creaGrafo(nuovoAc); avviaBusTema(); }
+    else if (cambiato) avviaBusTema();
+    const ora = ac.currentTime;
+
+    const obMaster = AudioSys.attivo ? MUSICA.volume * (statoRun.pausa ? MUSICA.volumePausa : 1) : 0;
+    if (obMaster !== S.obiettivoMaster) { S.obiettivoMaster = obMaster; rampa(master.gain, obMaster, ora, MUSICA.rampaMutoSec); }
+    const obStrato = voluto.combattimento && !MUSICA.temi[voluto.base].strato ? 1 : 0;
+    if (obStrato !== S.obiettivoStrato) { S.obiettivoStrato = obStrato; S.fineRampaStrato = ora + MUSICA.rampaStratoSec; rampa(busStrato.gain, obStrato, ora, MUSICA.rampaStratoSec); }
+
+    S.suona = AudioSys.attivo && ac.state === 'running' && !S.finito;
+    if (!S.suona) { S.prossimaNota = Math.max(S.prossimaNota, ora + MUSICA.ritardoAvvioSec); return; }
+    // scheda in background o contesto ripreso: si riparte da adesso invece di recuperare a raffica
+    if (S.prossimaNota < ora) S.prossimaNota = ora + MUSICA.ritardoAvvioSec;
+    while (S.prossimaNota < ora + MUSICA.anticipoSec && !S.finito) pianificaPasso(S.prossimaNota);
+  }
+
+  function ciclo() {
+    try { giro(); } catch (err) { console.error('[musica]', err); }
+    timer = setTimeout(ciclo, MUSICA.periodoMs);
+  }
+
+  return {
+    temaCorrente,
+    eventiTema,
+    avvia() { if (timer === null) ciclo(); },
+    /** Istantanea per la QA (sola lettura). */
+    get stato() {
+      return {
+        tema: S.tema ? S.tema.id : null, base: S.tema ? S.tema.base : null, combattimento: S.tema ? S.tema.combattimento : false,
+        cambiTema: S.cambiTema, suona: S.suona, finito: S.finito,
+        obiettivoMaster: S.obiettivoMaster, obiettivoStrato: S.obiettivoStrato, noteStrato: S.noteStrato,
+        guadagnoMaster: master ? master.gain.value : null, guadagnoStrato: busStrato ? busStrato.gain.value : null,
+        guadagnoTema: busTema ? busTema.gain.value : null,
+        ctx: ac ? ac.state : null, vociVive: S.vociVive, notePianificate: S.notePianificate,
+      };
+    },
+  };
+})();
+
+Musica.avvia();
+if (window.__teatro && window.__teatro.interni && !Object.isFrozen(window.__teatro)) {
+  Object.assign(window.__teatro.interni, { Musica, MUSICA });
+}
+
+</script>
+<script>
+/* teatro/a2-consumabili.js (incorporato da tools/teatro-release.js) */
+/*
+ * teatro/a2-consumabili.js — Consumabili con effetto sconosciuto (miglioramento 2): AMPOLLE di speziale e
+ * carte NAPOLETANE. Ispirazione: pillole e carte di un noto roguelike a stanze (solo ispirazione, nessun nome).
+ *
+ * - Uno slot consumabile nell'HUD (a sinistra dell'oggetto attivo), tasto d'uso CONS_A2.tasto (F) o click.
+ * - Ampolle: il colore è visibile, l'effetto no. La corrispondenza colore → effetto si rimescola a ogni run
+ *   con un generatore derivato dal seme della run (non consuma lo stream rng() della mappa).
+ * - Carte: il nome è visibile, l'effetto è ignoto finché non la usi la prima volta.
+ * - Identificazione: al primo uso cartiglio «Scoperto» (statoRun.cartiglioD) e banner; l'ampolla resta nota
+ *   per la run, la carta per sempre. La conoscenza sta nel flag oggettiConosciuti dello slot di salvataggio
+ *   (ids con prefisso «a2:»), accanto agli oggetti del catalogo; pagina «Consumabili» nel Diario (tasto C).
+ * - Raccolta camminandoci sopra; con lo slot pieno il vecchio resta a terra (va scavalcato per riprenderlo).
+ * - Drop alla pulizia di una stanza (CONS_A2.drop); nella Fucina prende lo slot «consumabile» (½ Maschera),
+ *   allo stesso prezzo ECONOMIA_T3.prezzi.consumabile.
+ * Deviazione dal GDD economia.md §5 (consumabile applicato all'acquisto, niente tasti nuovi): richiesta
+ * esplicita del miglioramento 2, da riallineare nel GDD.
+ *
+ * Script classico: avvolge funzioni globali di primo livello (passoLogico, disegnaHUDPixelArt, ...) senza
+ * toccare i file di base, salvo tre agganci di una riga per la scala di Ferruccio (vedi LEGGIMI.md).
+ */
+
+// ===========================================================================
+// TABELLA DEI VALORI (data-driven)
+// ===========================================================================
+const CONS_A2 = Object.freeze({
+  tasto: 'KeyF',              // tasto d'uso (Q è l'oggetto attivo, E interagisci, Space attacco)
+  tastoDiario: 'KeyC',        // nel Diario: pagina oggetti ↔ pagina consumabili
+  raggioRaccolta: 20,         // px, come le monete
+  raggioSblocco: 30,          // px: il consumabile appena lasciato si riprende solo dopo essersene allontanati
+  durataStanze: 3,            // effetti a tempo delle ampolle: stanze di combattimento ripulite
+  drop: Object.freeze({
+    probPulizia: 0.16,        // probabilità di un consumabile a terra quando ripulisci una stanza di combattimento
+    probAmpolla: 0.55,        // altrimenti carta
+    tipiEsclusi: Object.freeze(['boss', 'segreta']),
+    x: 344, y: 168,
+  }),
+  fucina: Object.freeze({ sostituisce: 'mezzaMaschera' }), // sprite dello slot «consumabile» di base che prende il posto
+  hud: Object.freeze({ x: 141, lato: 26 }),
+  effettiStanza: Object.freeze({ dannoForza: 2 }),
+});
+
+/**
+ * AMPOLLE: effetti (12 per run, su CONS_A2_COLORI). polarita: positivo | negativo | neutro.
+ * mod: voci di ricalcolaStatisticheIsaac sommate finché l'effetto dura (CONS_A2.durataStanze stanze ripulite).
+ * Testi: da approvare dall'autore.
+ */
+const CONS_A2_AMPOLLE = Object.freeze([
+  { id: 'passo', nome: 'Passo di Tarantella', polarita: 'positivo', mod: { speedUp: 0.3 }, desc: '+Velocità per 3 stanze' },
+  { id: 'piombo', nome: 'Piedi di Piombo', polarita: 'negativo', mod: { speedUp: -0.25 }, desc: '−Velocità per 3 stanze' },
+  { id: 'sangue', nome: 'Sangue Caldo', polarita: 'positivo', mod: { flatDmg: 1.0 }, desc: '+1 Danno per 3 stanze' },
+  { id: 'polso', nome: 'Polso Molle', polarita: 'negativo', mod: { flatDmg: -0.8 }, desc: '−0,8 Danno per 3 stanze' },
+  { id: 'occhio', nome: 'Occhio Lungo', polarita: 'positivo', mod: { rangeUp: 60 }, desc: '+Gittata per 3 stanze' },
+  { id: 'vista', nome: 'Vista Corta', polarita: 'negativo', mod: { rangeUp: -50 }, desc: '−Gittata per 3 stanze' },
+  { id: 'lesta', nome: 'Mano Lesta', polarita: 'positivo', mod: { tearsUp: 0.7 }, desc: '+Cadenza per 3 stanze' },
+  { id: 'fiato', nome: 'Fiato Corto', polarita: 'negativo', mod: { tearsUp: -0.5 }, desc: '−Cadenza per 3 stanze' },
+  { id: 'sanita', nome: 'Acqua della Sanità', polarita: 'positivo', curaHalf: 2, desc: 'Rigenera 1 Maschera' },
+  { id: 'veleno', nome: 'Veleno di Speziale', polarita: 'negativo', ferisciHalf: 1, desc: '−½ Maschera (mai l\'ultima)' },
+  { id: 'capogiro', nome: 'Capogiro', polarita: 'negativo', confusioneMs: 6000, desc: 'Comandi invertiti per 6 s' },
+  { id: 'gigante', nome: 'Elisir del Gigante', polarita: 'misto', scala: 1.35, mod: { flatDmg: 0.6 }, desc: 'Più grande (bersaglio più largo), +0,6 Danno, 3 stanze' },
+  { id: 'pulce', nome: 'Elisir della Pulce', polarita: 'misto', scala: 0.7, mod: { speedUp: 0.15, flatDmg: -0.3 }, desc: 'Più piccolo (bersaglio più stretto), +Velocità, −0,3 Danno, 3 stanze' },
+  { id: 'fontana', nome: 'Acqua di Fontana', polarita: 'neutro', desc: 'Sa di pozzo. Nient\'altro.' },
+]);
+
+/** Colori delle ampolle: X = vetro chiaro, Y = fondo scuro (caratteri di PALETTE). */
+const CONS_A2_COLORI = Object.freeze([
+  { id: 'rossa', X: 'r', Y: 'R' }, { id: 'blu', X: 'b', Y: 'B' }, { id: 'celeste', X: 'a', Y: 'A' },
+  { id: 'gialla', X: 'y', Y: 'o' }, { id: 'aranciata', X: 'o', Y: 'O' }, { id: 'viola', X: 'p', Y: 'P' },
+  { id: 'verde', X: 'v', Y: 'V' }, { id: 'grigia', X: 'g', Y: 'G' }, { id: 'lattea', X: 'c', Y: 's' },
+  { id: 'nera', X: 'D', Y: 'k' }, { id: 'bruna', X: 'm', Y: 'M' }, { id: 'ambrata', X: 'e', Y: 'm' },
+]);
+
+/** CARTE NAPOLETANE: nome visibile, effetto ignoto fino al primo uso. Testi: da approvare dall'autore. */
+const CONS_A2_CARTE = Object.freeze([
+  { id: 'cavallo_bastoni', nome: 'Cavallo di Bastoni', seme: 'bastoni', effetto: 'teletrasporto', desc: 'Ti porta in una stanza a caso del piano' },
+  { id: 're_coppe', nome: 'Re di Coppe', seme: 'coppe', effetto: 'mappa', desc: 'Rivela la mappa del piano' },
+  { id: 'fante_spade', nome: 'Fante di Spade', seme: 'spade', effetto: 'segreta', desc: 'Apre il passaggio della Stanza Segreta' },
+  { id: 'asso_coppe', nome: 'Asso di Coppe', seme: 'coppe', effetto: 'curaTutto', desc: 'Rigenera tutte le Maschere' },
+  { id: 'tre_denari', nome: 'Tre di Denari', seme: 'denari', effetto: 'monete', monete: 3, desc: '+3 monete' },
+  { id: 're_spade', nome: 'Re di Spade', seme: 'spade', effetto: 'dannoTutti', dannoMult: 2.5, dannoMin: 8, desc: 'Ferisce tutti i nemici della stanza' },
+  { id: 'asso_bastoni', nome: 'Asso di Bastoni', seme: 'bastoni', effetto: 'scudo', scudoMs: 5000, desc: 'Intoccabile per 5 s' },
+  { id: 'cavallo_denari', nome: 'Cavallo di Denari', seme: 'denari', effetto: 'fucina', desc: 'Ti porta alla Fucina' },
+  { id: 're_bastoni', nome: 'Re di Bastoni', seme: 'bastoni', effetto: 'forza', desc: '+2 Danno finché resti nella stanza' },
+  { id: 'asso_spade', nome: 'Asso di Spade', seme: 'spade', effetto: 'stordisci', stordisciMs: 3000, desc: 'Spazza i colpi nemici e stordisce tutti per 3 s' },
+  { id: 'fante_coppe', nome: 'Fante di Coppe', seme: 'coppe', effetto: 'ricarica', desc: 'Ricarica del tutto l\'oggetto attivo' },
+  { id: 'fante_denari', nome: 'Fante di Denari', seme: 'denari', effetto: 'scorte', monete: 2, desc: '+1 chiave e +1 bomba (o +2 monete)' },
+  { id: 'matta', nome: 'La Matta', seme: 'matta', effetto: 'matta', desc: 'Fa da un\'altra carta a caso' },
+]);
+
+/** Testi brevi per il giocatore (da approvare dall'autore). */
+const CONS_A2_TESTI = Object.freeze({
+  scoperto: 'Scoperto',
+  loreAmpolla: 'Boccetta di speziale di Toledo: il colore cambia da una notte all\'altra.',
+  loreCarta: 'Carta napoletana del mazzo di Mastro Peppe: una volta letta, non la scordi.',
+  slotVuoto: 'nessuno',
+  raccolta: (n) => `Raccolto: ${n} [F per usarlo]`,
+  lasciato: (n) => `${n} resta a terra.`,
+  nienteSegreta: 'Il Fante di Spade non trova passaggi da aprire.',
+  nienteFucina: 'Il Cavallo di Denari non trova la Fucina.',
+  nienteStanza: 'Il Cavallo di Bastoni scalpita, ma non c\'è dove andare.',
+  diarioTitolo: 'DIARIO DEI CONSUMABILI',
+  diarioPiede: 'C: oggetti · Esc/O: torna al menu',
+  diarioAmpolle: 'Ampolle (il colore cambia ogni notte)',
+  diarioCarte: 'Carte napoletane',
+});
+
+// ===========================================================================
+// SPRITE (registrati in SPRITE_OGGETTI: pavimento, Fucina, HUD e cartiglio li disegnano già)
+// ===========================================================================
+const SAGOMA_AMPOLLA_A2 = ['....kkkk....', '....kmmk....', '....kkkk....', '...kwccwk...', '..kwXXXXwk..',
+  '.kwXXXXXXwk.', '.kXXwXXXXXk.', '.kXXXXXXXYk.', '..kYYYYYYk..', '...kkkkkk...', '............', '............'];
+const SAGOMA_CARTA_A2 = ['..kkkkkkkk..', '..kccccccsk.', '..kcZZZZcsk.', '..kcZccZcsk.', '..kccZZccsk.', '..kcZccZcsk.',
+  '..kcZZZZcsk.', '..kccccccsk.', '..kcyccycsk.', '..ksssssssk.', '..kkkkkkkk..', '............'];
+const SEMI_A2 = Object.freeze({ coppe: 'r', denari: 'y', spade: 'B', bastoni: 'V', matta: 'P' });
+
+for (const c of CONS_A2_COLORI) {
+  SPRITE_OGGETTI[`ampollaA2_${c.id}`] = SAGOMA_AMPOLLA_A2.map((r) => r.replace(/X/g, c.X).replace(/Y/g, c.Y));
+}
+for (const [seme, ch] of Object.entries(SEMI_A2)) {
+  SPRITE_OGGETTI[`cartaA2_${seme}`] = SAGOMA_CARTA_A2.map((r) => r.replace(/Z/g, ch));
+}
+
+// ===========================================================================
+// STATO DELLA RUN
+// ===========================================================================
+/** Generatore indipendente (mulberry32) per non spostare lo stream rng() della mappa. */
+function creaRngA2(seme) {
+  let s = seme >>> 0;
+  return () => {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Stato dei consumabili della run corrente (si azzera quando cambia statoRun.numeroRun).
+ * @param {number} [seme] seme forzato (QA); di norma deriva da runSeed al primo accesso della run
+ */
+function statoA2(seme) {
+  let S = statoRun.consumabiliA2;
+  if (S && S.run === statoRun.numeroRun && seme === undefined) return S;
+  const sm = (seme !== undefined ? seme : (runSeed ^ 0xA2C0FFEE)) >>> 0;
+  const r = creaRngA2(sm);
+  const eff = CONS_A2_AMPOLLE.map((e) => e.id);
+  for (let i = eff.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [eff[i], eff[j]] = [eff[j], eff[i]]; }
+  const mappa = {};
+  CONS_A2_COLORI.forEach((c, i) => { mappa[c.id] = eff[i]; });
+  S = { run: statoRun.numeroRun, seme: sm, rnd: r, mappa, notiRun: {}, slot: null, effetti: [], confusione: 0, forzaStanza: 0, rivelata: null };
+  statoRun.consumabiliA2 = S;
+  player.scalaA2 = 1;
+  return S;
+}
+
+const conosciutiMemoriaA2 = [];
+
+/** Id dei consumabili conosciuti (flag oggettiConosciuti dello slot, prefisso «a2:»). */
+function conosciutiA2() {
+  const sv = window.__teatroT3 && window.__teatroT3.salvataggi;
+  if (!sv) return conosciutiMemoriaA2;
+  const v = sv.leggiFlag('oggettiConosciuti');
+  return Array.isArray(v) ? v : [];
+}
+
+function segnaConosciutoA2(chiave) {
+  const id = `a2:${chiave}`;
+  if (conosciutiA2().includes(id)) return;
+  const sv = window.__teatroT3 && window.__teatroT3.salvataggi;
+  if (sv) sv.impostaFlag('oggettiConosciuti', conosciutiA2().concat([id]));
+  else conosciutiMemoriaA2.push(id);
+}
+
+const trovaAmpollaA2 = (id) => CONS_A2_AMPOLLE.find((e) => e.id === id) || null;
+const trovaCartaA2 = (id) => CONS_A2_CARTE.find((c) => c.id === id) || null;
+
+/** Crea un consumabile: { fam: 'ampolla', colore } o { fam: 'carta', id }. */
+function creaConsumabileA2(fam, chiave) {
+  return fam === 'ampolla' ? { fam, colore: chiave } : { fam: 'carta', id: chiave };
+}
+
+/** Un consumabile a caso (generatore della run). */
+function estraiConsumabileA2() {
+  const S = statoA2();
+  if (S.rnd() < CONS_A2.drop.probAmpolla) return creaConsumabileA2('ampolla', CONS_A2_COLORI[Math.floor(S.rnd() * CONS_A2_COLORI.length)].id);
+  return creaConsumabileA2('carta', CONS_A2_CARTE[Math.floor(S.rnd() * CONS_A2_CARTE.length)].id);
+}
+
+/** Effetto (riga di tabella) del consumabile. */
+function effettoA2(c) {
+  return c.fam === 'ampolla' ? trovaAmpollaA2(statoA2().mappa[c.colore]) : trovaCartaA2(c.id);
+}
+
+/** L'effetto è noto al giocatore? Ampolla: identificata in questa run. Carta: usata almeno una volta. */
+function notoA2(c) {
+  if (c.fam === 'ampolla') return Boolean(statoA2().notiRun[c.colore]);
+  return conosciutiA2().includes(`a2:carta:${c.id}`);
+}
+
+function nomeA2(c) { return c.fam === 'ampolla' ? `Ampolla ${c.colore}` : trovaCartaA2(c.id).nome; }
+
+function spriteA2(c) { return c.fam === 'ampolla' ? `ampollaA2_${c.colore}` : `cartaA2_${trovaCartaA2(c.id).seme}`; }
+
+/** Riga d'effetto come la vede il giocatore. */
+function descA2(c) {
+  if (!notoA2(c)) return 'Effetto: ???';
+  const e = effettoA2(c);
+  return c.fam === 'ampolla' ? `${e.nome}: ${e.desc}` : e.desc;
+}
+
+// ===========================================================================
+// RACCOLTA E SLOT
+// ===========================================================================
+/** Mette `c` nello slot; se era pieno il vecchio resta a terra sotto Ferruccio (da scavalcare). */
+function prendiConsumabileA2(c) {
+  const S = statoA2();
+  const vecchio = S.slot;
+  S.slot = c;
+  const st = statoRun.stanzaCorrente;
+  if (vecchio && st) {
+    st.oggettiATerra.push({ tipo: 'consumabileA2', cons: vecchio, sprite: spriteA2(vecchio), x: player.x, y: player.y, bloccoA2: true });
+    mostraBanner(`${CONS_A2_TESTI.raccolta(nomeA2(c))} · ${CONS_A2_TESTI.lasciato(nomeA2(vecchio))}`, 150);
+  } else {
+    mostraBanner(CONS_A2_TESTI.raccolta(nomeA2(c)), 130);
+  }
+}
+
+/** Lascia un consumabile a terra nella stanza. */
+function lasciaConsumabileA2(st, c, x, y) {
+  st.oggettiATerra.push({ tipo: 'consumabileA2', cons: c, sprite: spriteA2(c), x, y });
+}
+
+// ===========================================================================
+// USO E IDENTIFICAZIONE
+// ===========================================================================
+/** Usa il consumabile dello slot. true se usato. */
+function usaConsumabileA2() {
+  if (statoRun.fase !== 'in_gioco' || statoRun.pausa || statoRun.scambioPendente || statoRun.pannelloB
+    || statoRun.siparioAttivo || statoRun.diarioD) return false;
+  const S = statoA2();
+  const c = S.slot;
+  if (!c) return false;
+  S.slot = null;
+  const primaVolta = !notoA2(c);
+  const e = effettoA2(c);
+  const esito = c.fam === 'ampolla' ? applicaAmpollaA2(e) : applicaCartaA2(e);
+  if (c.fam === 'ampolla') { S.notiRun[c.colore] = true; segnaConosciutoA2(`ampolla:${e.id}`); }
+  else segnaConosciutoA2(`carta:${c.id}`);
+  const titolo = c.fam === 'ampolla' ? `${nomeA2(c)}: ${e.nome}` : e.nome;
+  if (primaVolta) {
+    statoRun.cartiglioD = {
+      item: { sprite: spriteA2(c), nome: titolo, statsDesc: e.desc, lore: c.fam === 'ampolla' ? CONS_A2_TESTI.loreAmpolla : CONS_A2_TESTI.loreCarta },
+      t0: tick,
+    };
+  }
+  mostraBanner(esito || `${titolo} — ${e.desc}`, 170);
+  scuoti(FEEL.scossa.evento);
+  statoRun.ondeEsplosione.push({ x: player.x, y: player.y, r: 6, maxR: 60, color: e.polarita === 'negativo' ? '#a855f7' : '#f9cb40' });
+  return true;
+}
+
+/** Effetto di un'ampolla. Ritorna un testo di banner diverso dal default, o null. */
+function applicaAmpollaA2(e) {
+  const S = statoA2();
+  if (e.curaHalf) statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + e.curaHalf);
+  if (e.ferisciHalf) statoRun.hpHalf = Math.max(1, statoRun.hpHalf - e.ferisciHalf); // non uccide mai
+  if (e.confusioneMs) S.confusione = ticksDaMs(e.confusioneMs);
+  if (e.mod || e.scala) {
+    // stesso effetto due volte: la durata si rinnova, non si somma (economia.md §5)
+    const gia = S.effetti.find((x) => x.id === e.id);
+    if (gia) gia.stanze = CONS_A2.durataStanze;
+    else S.effetti.push({ id: e.id, stanze: CONS_A2.durataStanze });
+    aggiornaScalaA2();
+    ricalcolaStatisticheIsaac();
+  }
+  return null;
+}
+
+function aggiornaScalaA2() {
+  const S = statoA2();
+  let k = 1;
+  for (const x of S.effetti) { const e = trovaAmpollaA2(x.id); if (e && e.scala) k *= e.scala; }
+  player.scalaA2 = k;
+}
+
+/** Stanza a caso per il teletrasporto: non la corrente, non il patto, non la segreta ancora chiusa. */
+function stanzaACasoA2() {
+  const m = statoRun.mappa;
+  if (!m) return null;
+  const segretaAperta = (s) => m.stanze.some((g) => g.muroSegreto && g.muroSegreto.idDest === s.id && g.muroSegreto.aperto);
+  const lista = m.stanze.filter((s) => s !== statoRun.stanzaCorrente && s.tipo !== 'patto' && (s.tipo !== 'segreta' || segretaAperta(s)));
+  return lista.length ? lista[Math.floor(statoA2().rnd() * lista.length)] : null;
+}
+
+/** Aggiunge monete col tetto del gioco (99). */
+function moneteA2(n) { statoRun.monete = Math.min(99, statoRun.monete + n); AudioSys.playMoneta(); }
+
+/** Effetto di una carta. Ritorna un testo di banner diverso dal default, o null. */
+function applicaCartaA2(e) {
+  const S = statoA2();
+  const st = statoRun.stanzaCorrente;
+  switch (e.effetto) {
+    case 'teletrasporto': {
+      const s = stanzaACasoA2();
+      if (!s) return CONS_A2_TESTI.nienteStanza;
+      entraInStanza(s, null);
+      return null;
+    }
+    case 'mappa':
+      S.rivelata = statoRun.mappa;
+      return null;
+    case 'segreta': {
+      const gen = statoRun.mappa && statoRun.mappa.stanze.find((g) => g.muroSegreto && !g.muroSegreto.aperto);
+      if (!gen) return CONS_A2_TESTI.nienteSegreta;
+      apriMuroSegreto(gen);
+      S.rivelata = S.rivelata || { soloSegreta: true };
+      S.segretaRivelata = gen.muroSegreto.idDest;
+      return null;
+    }
+    case 'curaTutto':
+      statoRun.hpHalf = statoRun.maxHpHalf;
+      return null;
+    case 'monete':
+      moneteA2(e.monete);
+      return null;
+    case 'dannoTutti':
+      if (st) for (const n of st.nemici) if (n.hp > 0) danneggiaNemico(n, Math.max(e.dannoMin, statoRun.dmg * e.dannoMult), 0, 0);
+      return null;
+    case 'scudo':
+      player.invuln = Math.max(player.invuln, ticksDaMs(e.scudoMs));
+      return null;
+    case 'fucina': {
+      const f = statoRun.mappa && statoRun.mappa.stanze.find((s) => s.tipo === 'fucina');
+      if (!f || f === st) return CONS_A2_TESTI.nienteFucina;
+      entraInStanza(f, null);
+      return null;
+    }
+    case 'forza':
+      S.forzaStanza = CONS_A2.effettiStanza.dannoForza;
+      ricalcolaStatisticheIsaac();
+      return null;
+    case 'stordisci':
+      statoRun.proiettiliNemici = [];
+      if (st) for (const n of st.nemici) if (n.hp > 0) n.stunTicks = Math.max(n.stunTicks || 0, ticksDaMs(e.stordisciMs));
+      return null;
+    case 'ricarica':
+      if (statoRun.oggettoAttivo) statoRun.caricaAttivo = statoRun.oggettoAttivo.maxCarica;
+      return null;
+    case 'scorte': {
+      // coordinamento con a1 (bombe/chiavi): solo se le funzioni esistono, altrimenti monete
+      const I = window.__teatro && window.__teatro.interni;
+      const k = I && typeof I.aggiungiChiavi === 'function';
+      const b = I && typeof I.aggiungiBombe === 'function';
+      if (k) I.aggiungiChiavi(1);
+      if (b) I.aggiungiBombe(1);
+      if (!k && !b) { moneteA2(e.monete); return `${e.nome} — +${e.monete} monete`; }
+      return null;
+    }
+    case 'matta': {
+      const altre = CONS_A2_CARTE.filter((c) => c.effetto !== 'matta');
+      const scelta = altre[Math.floor(S.rnd() * altre.length)];
+      const t = applicaCartaA2(scelta);
+      return `${e.nome} fa da ${scelta.nome}: ${t || scelta.desc}`;
+    }
+    default:
+      return null;
+  }
+}
+
+// ===========================================================================
+// AGGANCI (funzioni globali avvolte)
+// ===========================================================================
+/** Statistiche: gli effetti a tempo entrano come un oggetto fittizio, così valgono clamp e formule di base. */
+const ricalcolaOrigA2 = ricalcolaStatisticheIsaac;
+ricalcolaStatisticheIsaac = function ricalcolaStatisticheIsaacA2(...args) {
+  const S = statoRun.fase === 'in_gioco' ? statoA2() : null;
+  const mod = {};
+  if (S) {
+    for (const x of S.effetti) {
+      const e = trovaAmpollaA2(x.id);
+      for (const [k, v] of Object.entries((e && e.mod) || {})) mod[k] = (mod[k] || 0) + v;
+    }
+    if (S.forzaStanza) mod.flatDmg = (mod.flatDmg || 0) + S.forzaStanza;
+  }
+  if (!Object.keys(mod).length) return ricalcolaOrigA2.apply(this, args);
+  const lista = statoRun.oggettiEquipaggiati;
+  const finto = { id: 'effettiA2', mod };
+  lista.push(finto);
+  try { return ricalcolaOrigA2.apply(this, args); } finally {
+    const i = lista.indexOf(finto);
+    if (i >= 0) lista.splice(i, 1);
+  }
+};
+
+/** Cambio stanza: finisce la forza «finché resti nella stanza». */
+const entraInStanzaOrigA2 = entraInStanza;
+entraInStanza = function entraInStanzaA2(...args) {
+  const r = entraInStanzaOrigA2.apply(this, args);
+  const S = statoRun.consumabiliA2;
+  if (S && S.forzaStanza) { S.forzaStanza = 0; ricalcolaStatisticheIsaac(); }
+  return r;
+};
+
+/** Pulizia di una stanza di combattimento: scalano le durate e può cadere un consumabile. */
+const verificaOrigA2 = verificaStanzaPulita;
+verificaStanzaPulita = function verificaStanzaPulitaA2(...args) {
+  const st = statoRun.stanzaCorrente;
+  const prima = st ? st.pulita : true;
+  const r = verificaOrigA2.apply(this, args);
+  if (st && !prima && st.pulita) dopoPuliziaA2(st);
+  return r;
+};
+
+function dopoPuliziaA2(st) {
+  const S = statoA2();
+  if (S.effetti.length) {
+    for (const x of S.effetti) x.stanze--;
+    S.effetti = S.effetti.filter((x) => x.stanze > 0);
+    aggiornaScalaA2();
+    ricalcolaStatisticheIsaac();
+  }
+  if (!CONS_A2.drop.tipiEsclusi.includes(st.tipo) && S.rnd() < CONS_A2.drop.probPulizia) {
+    lasciaConsumabileA2(st, estraiConsumabileA2(), CONS_A2.drop.x, CONS_A2.drop.y);
+  }
+}
+
+/**
+ * Fucina: lo slot «consumabile» di base (½ Maschera a ECONOMIA_T3.prezzi.consumabile) diventa un consumabile
+ * A2 allo stesso prezzo e nella stessa posizione (economia.md §5: dono, cuore, consumabile).
+ */
+const popolaOrigA2 = popolaStanzaIsaac;
+popolaStanzaIsaac = function popolaStanzaIsaacA2(s, ...resto) {
+  const r = popolaOrigA2.call(this, s, ...resto);
+  if (s.tipo === 'fucina' && Array.isArray(s.slotFucina) && !s.slotFucina.some((x) => x.tipo === 'consumabileA2')) {
+    const i = s.slotFucina.findIndex((x) => x.tipo === 'cura' && x.sprite === CONS_A2.fucina.sostituisce);
+    const nuovo = creaSlotFucinaA2(estraiConsumabileA2());
+    if (i >= 0) { nuovo.x = s.slotFucina[i].x; nuovo.y = s.slotFucina[i].y; s.slotFucina[i] = nuovo; }
+  }
+  return r;
+};
+
+function creaSlotFucinaA2(c) {
+  const sl = {
+    tipo: 'consumabileA2', cons: c, prezzo: ECONOMIA_T3.prezzi.consumabile, inSaldo: false,
+    sprite: spriteA2(c), tier: 'base', x: 158, y: 196, comprato: false,
+  };
+  Object.defineProperties(sl, {
+    nome: { get: () => nomeA2(c), enumerable: true },
+    nomeBreve: { get: () => nomeA2(c), enumerable: true },
+    statsDesc: { get: () => descA2(c), enumerable: true },
+  });
+  return sl;
+}
+
+/** Interagisci davanti allo slot consumabile della Fucina: compra (il vecchio resta a terra). */
+const interagisciOrigA2 = interagisciStanza;
+interagisciStanza = function interagisciStanzaA2(...args) {
+  const st = statoRun.stanzaCorrente;
+  if (st && st.tipo === 'fucina' && !statoRun.scambioPendente && !statoRun.pannelloB && !statoRun.siparioAttivo) {
+    const sl = (st.slotFucina || []).find((x) => x.tipo === 'consumabileA2' && !x.comprato
+      && Math.hypot(player.x - x.x, player.y - x.y) < 42);
+    if (sl) {
+      if (statoRun.monete < sl.prezzo) {
+        mostraBanner(`Grani insufficienti! Servono ${sl.prezzo}🪙 (hai ${statoRun.monete}🪙).`, 140);
+        return undefined;
+      }
+      statoRun.monete -= sl.prezzo;
+      sl.comprato = true;
+      prendiConsumabileA2(sl.cons);
+      return undefined;
+    }
+  }
+  return interagisciOrigA2.apply(this, args);
+};
+
+/** Logica: comandi invertiti durante il Capogiro; raccolta dei consumabili a terra. */
+const SCAMBI_A2 = Object.freeze([['KeyA', 'KeyD'], ['KeyW', 'KeyS']]);
+const passoOrigA2 = passoLogico;
+passoLogico = function passoLogicoA2(...args) {
+  const S = statoRun.fase === 'in_gioco' ? statoA2() : null;
+  const libero = S && !(statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo || statoRun.pausa);
+  const confuso = libero && S.confusione > 0;
+  const scambia = () => { for (const [a, b] of SCAMBI_A2) { const t = keys[a]; keys[a] = keys[b]; keys[b] = t; } };
+  if (confuso) scambia();
+  let r;
+  try { r = passoOrigA2.apply(this, args); } finally { if (confuso) scambia(); }
+  if (confuso) S.confusione--;
+  if (libero && statoRun.fase === 'in_gioco') raccogliA2();
+  return r;
+};
+
+function raccogliA2() {
+  const st = statoRun.stanzaCorrente;
+  if (!st || !st.oggettiATerra) return;
+  for (let i = st.oggettiATerra.length - 1; i >= 0; i--) {
+    const pk = st.oggettiATerra[i];
+    if (pk.tipo !== 'consumabileA2') continue;
+    const d = Math.hypot(player.x - pk.x, player.y - pk.y);
+    if (pk.bloccoA2) { if (d > CONS_A2.raggioSblocco) pk.bloccoA2 = false; continue; }
+    if (d < CONS_A2.raggioRaccolta) {
+      st.oggettiATerra.splice(i, 1);
+      prendiConsumabileA2(pk.cons);
+      return; // uno per tick: quello lasciato è bloccato
+    }
+  }
+}
+
+/** Nuova run: lo stato si rifà (nuova corrispondenza colori). Copre anche il T4, che chiama interni.nuovaRun. */
+const nuovaRunOrigA2 = nuovaRun;
+nuovaRun = function nuovaRunA2(...args) {
+  const r = nuovaRunOrigA2.apply(this, args);
+  statoA2();
+  return r;
+};
+
+// ===========================================================================
+// RESA: slot nell'HUD, effetti attivi, minimappa rivelata, Diario
+// ===========================================================================
+const hudOrigA2 = disegnaHUDPixelArt;
+disegnaHUDPixelArt = function disegnaHUDPixelArtA2(st, ...resto) {
+  const r = hudOrigA2.call(this, st, ...resto);
+  if (statoRun.fase === 'in_gioco') {
+    disegnaMappaRivelataA2(st);
+    disegnaSlotA2();
+  }
+  return r;
+};
+
+/** Rettangolo dello slot nell'HUD (anche per il click). */
+function rettSlotA2() {
+  const L = CONS_A2.hud.lato;
+  return { x: CONS_A2.hud.x, y: H - 34, w: L, h: L };
+}
+
+function disegnaSlotA2() {
+  const S = statoA2();
+  const R = rettSlotA2();
+  const c = S.slot;
+  ctx.save();
+  ctx.fillStyle = 'rgba(15, 12, 10, 0.94)';
+  ctx.fillRect(R.x, R.y, R.w, R.h);
+  ctx.strokeStyle = c ? '#e6d2aa' : '#57534e';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(R.x, R.y, R.w, R.h);
+  if (c) drawPixelSprite(SPRITE_OGGETTI[spriteA2(c)], R.x + R.w / 2, R.y + R.h / 2 + 1, 1.55);
+  drawTextFit('F', R.x + 3, R.y + 8, 10, { size: 7, color: '#e6d2aa', align: 'left', shadow: false });
+  // nome e riga a sinistra dello slot
+  const tx = R.x - 4, tw = R.x - 12;
+  ctx.fillStyle = 'rgba(10, 6, 4, 0.85)';
+  ctx.fillRect(8, R.y, tw, R.h);
+  drawTextFit(c ? nomeA2(c) : `Consumabile: ${CONS_A2_TESTI.slotVuoto}`, tx, R.y + 10, tw - 4, { size: 7, color: '#ffffff', align: 'right' });
+  if (c) drawTextFit(descA2(c), tx, R.y + 21, tw - 4, { size: 6.5, color: notoA2(c) ? '#4ade80' : '#a8a29e', align: 'right' });
+  // effetti a tempo sopra lo slot
+  let y = R.y - 6;
+  const righe = S.effetti.map((x) => `⏳ ${trovaAmpollaA2(x.id).nome} (${x.stanze})`);
+  if (S.confusione > 0) righe.push(`⏳ Capogiro (${Math.ceil(S.confusione * MS_PER_TICK / 1000)} s)`);
+  if (S.forzaStanza) righe.push('⏳ Re di Bastoni (stanza)');
+  for (const t of righe) {
+    drawTextFit(t, 8, y, 160, { size: 6.5, color: '#f9cb40', align: 'left' });
+    y -= 9;
+  }
+  ctx.restore();
+}
+
+/** Minimappa: le stanze rivelate da una carta, non ancora visitate, come sagome tenui. */
+function disegnaMappaRivelataA2(st) {
+  const S = statoA2();
+  const m = statoRun.mappa;
+  if (!m || !S.rivelata || maledizioneD('mappa')) return;
+  const tutta = S.rivelata === m;
+  const cell = 12, x0 = W - 118, y0 = 24;
+  ctx.save();
+  for (const s of m.stanze) {
+    if (s.visitata || s.tipo === 'patto') continue;
+    if (s.tipo === 'segreta' ? S.segretaRivelata !== s.id : !tutta) continue;
+    const px = x0 + (s.cx - 1) * cell;
+    const py = y0 + (s.cy - 1) * cell;
+    ctx.strokeStyle = s.tipo === 'boss' ? '#b91c1c' : s.tipo === 'fucina' ? '#ea8626' : s.tipo === 'tesoro' ? '#f9cb40' : '#a8a29e';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(px + 1.5, py + 1.5, cell - 3, cell - 3);
+  }
+  ctx.restore();
+}
+
+/** Diario: con C si passa alla pagina dei consumabili (statoRun.diarioD.paginaA2). */
+const tastoDiarioOrigA2 = tastoDiarioD;
+tastoDiarioD = function tastoDiarioDA2(code, ...resto) {
+  const d = statoRun.diarioD;
+  if (d && code === CONS_A2.tastoDiario) { d.paginaA2 = !d.paginaA2; return undefined; }
+  if (d && d.paginaA2) {
+    if (['Escape', 'KeyO', 'Enter', 'Space'].includes(code)) statoRun.diarioD = null;
+    return undefined;
+  }
+  return tastoDiarioOrigA2.call(this, code, ...resto);
+};
+
+const clickDiarioOrigA2 = clickDiarioD;
+clickDiarioD = function clickDiarioDA2(mx, my, ...resto) {
+  const d = statoRun.diarioD;
+  if (d && d.paginaA2) { if (my < 30 || my > H - 20) statoRun.diarioD = null; return undefined; }
+  return clickDiarioOrigA2.call(this, mx, my, ...resto);
+};
+
+const disegnaDiarioOrigA2 = disegnaDiarioD;
+disegnaDiarioD = function disegnaDiarioDA2(...args) {
+  const d = statoRun.diarioD;
+  if (!d) return undefined;
+  if (!d.paginaA2) {
+    const r = disegnaDiarioOrigA2.apply(this, args);
+    drawTextFit('C: consumabili', W - 40, H - 14, 70, { size: 7, color: '#f9cb40', align: 'right' });
+    return r;
+  }
+  disegnaDiarioConsumabiliA2();
+  return undefined;
+};
+
+function disegnaDiarioConsumabiliA2() {
+  const noti = conosciutiA2();
+  const S = statoRun.fase === 'in_gioco' ? statoA2() : null;
+  ctx.save();
+  ctx.fillStyle = 'rgba(5, 3, 2, 0.94)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#1c130c';
+  ctx.strokeStyle = '#f9cb40';
+  ctx.lineWidth = 2;
+  ctx.fillRect(24, 14, W - 48, H - 24);
+  ctx.strokeRect(24, 14, W - 48, H - 24);
+  const nA = CONS_A2_AMPOLLE.filter((e) => noti.includes(`a2:ampolla:${e.id}`)).length;
+  const nC = CONS_A2_CARTE.filter((c) => noti.includes(`a2:carta:${c.id}`)).length;
+  const tot = CONS_A2_AMPOLLE.length + CONS_A2_CARTE.length;
+  drawTextFit(`📖 ${CONS_A2_TESTI.diarioTitolo} — Conosciuti ${nA + nC} / ${tot}`, W / 2, 32, W - 80, { size: 10, color: '#f9cb40' });
+  const colonna = (x0, titolo, righe) => {
+    drawTextFit(titolo, x0, 48, 280, { size: 8, color: '#67e8f9', align: 'left' });
+    righe.forEach((rg, i) => {
+      const y = 62 + i * 19;
+      if (rg.sprite) drawPixelSprite(SPRITE_OGGETTI[rg.sprite], x0 + 6, y - 2, 1.1);
+      drawTextFit(rg.nome, x0 + 16, y - 3, 266, { size: 7.5, color: rg.noto ? '#e6d2aa' : '#a8a29e', align: 'left', shadow: false });
+      drawTextFit(rg.desc, x0 + 16, y + 6, 266, { size: 6.5, color: rg.noto ? '#4ade80' : '#78716c', align: 'left', shadow: false });
+    });
+  };
+  colonna(36, CONS_A2_TESTI.diarioAmpolle, CONS_A2_AMPOLLE.map((e) => {
+    const noto = noti.includes(`a2:ampolla:${e.id}`);
+    const col = S && Object.keys(S.mappa).find((k) => S.mappa[k] === e.id && S.notiRun[k]);
+    return {
+      noto, sprite: col ? `ampollaA2_${col}` : null,
+      nome: noto ? `${e.nome}${col ? ` — stanotte: ${col}` : ''}` : '???', desc: noto ? e.desc : 'Bevila per scoprirla.',
+    };
+  }));
+  colonna(328, CONS_A2_TESTI.diarioCarte, CONS_A2_CARTE.map((c) => {
+    const noto = noti.includes(`a2:carta:${c.id}`);
+    return { noto, sprite: `cartaA2_${c.seme}`, nome: c.nome, desc: noto ? c.desc : 'Effetto: ??? — giocala per scoprirlo.' };
+  }));
+  drawTextFit(CONS_A2_TESTI.diarioPiede, W / 2, H - 14, W - 80, { size: 7, color: '#9ca3af' });
+  ctx.restore();
+}
+
+// ===========================================================================
+// INPUT (fase di cattura: prima dei gestori di 70-input.js, dopo quelli del T3)
+// ===========================================================================
+window.addEventListener('keydown', (e) => {
+  if (e.code !== CONS_A2.tasto || e.repeat) return;
+  if (usaConsumabileA2()) e.preventDefault();
+}, true);
+
+canvas.addEventListener('mousedown', (e) => {
+  if (statoRun.fase !== 'in_gioco' || statoRun.pausa || statoRun.siparioAttivo || statoRun.pannelloB) return;
+  const r = canvas.getBoundingClientRect();
+  const mx = (e.clientX - r.left) * (W / r.width);
+  const my = (e.clientY - r.top) * (H / r.height);
+  const R = rettSlotA2();
+  if (mx >= R.x && mx <= R.x + R.w && my >= R.y && my <= R.y + R.h) {
+    usaConsumabileA2();
+    e.stopImmediatePropagation();
+  }
+}, true);
+
+// ===========================================================================
+// SONDA QA
+// ===========================================================================
+Object.assign(window.__teatro.interni, {
+  CONS_A2, CONS_A2_AMPOLLE, CONS_A2_CARTE, CONS_A2_COLORI, statoA2, creaConsumabileA2, prendiConsumabileA2,
+  usaConsumabileA2, lasciaConsumabileA2, estraiConsumabileA2, effettoA2, notoA2, descA2, nomeA2, conosciutiA2,
+  // gli interni esposti in 80-ciclo.js puntano alle versioni non avvolte: si aggiornano
+  nuovaRun, entraInStanza, interagisciStanza, ricalcolaStatisticheIsaac, tastoDiarioD,
+});
+
+</script>
+<script>
+/* teatro/a3-stanze-speciali.js (incorporato da tools/teatro-release.js) */
+/*
+ * teatro/a3-stanze-speciali.js — Miglioramento 3: stanze speciali in più (ispirate alle stanze della
+ * Sfida, del Sacrificio, Maledetta e dell'Arcade di un noto roguelike a stanze; nomi, testi e oggetti
+ * sono del Teatro: Caserta 1845, marionette e lotto napoletano).
+ *
+ *   sfida      — porta d'acciaio ⚔; dentro un piedistallo col premio. Toccandolo le porte si sbarrano e
+ *                arrivano 2-3 ondate di comprimari; finite le ondate il premio si raccoglie. Si entra solo
+ *                con tutte le Maschere (STANZE_SPECIALI_A3.sfida.soloSalutePiena).
+ *   sacrificio — il Ceppo dei Chiodi †: salirci costa ½ Maschera; più sacrifici, premi migliori.
+ *   maledetta  — porta di rovi ✷: ogni passaggio (entrata o uscita) costa ½ Maschera; dentro un premio,
+ *                a volte custodito da nemici.
+ *   bisca      — dal piano 2: il Banco del Lotto (1🪙 a giocata, numero estratto con la smorfia) e, a volte,
+ *                la Cartomante che legge la sorte per un grano.
+ *
+ * Integrazione senza toccare i file di base: si avvolgono le funzioni di primo livello generaMappaPiano
+ * (le stanze nuove si appendono come foglie a una stanza di combattimento, mai accanto al boss, al massimo
+ * una per tipo), entraInStanza (costi e divieti alle porte, avvisi), verificaStanzaPulita (ondate),
+ * interagisciStanza (tasto E), passoLogico (tocchi e attese), disegnaStanzaPixelArt (arredi e segni sulle
+ * porte) e disegnaHUDPixelArt (icone sulla minimappa). Verifica: tools/qa-teatro-stanze-speciali.js.
+ * Script classico: le dichiarazioni di primo livello stanno nello scope globale condiviso (teatro/LEGGIMI.md).
+ */
+
+/** Tabella dei valori di gioco delle stanze speciali (miglioramento 3). Tutto si accorda da qui. */
+const STANZE_SPECIALI_A3 = Object.freeze({
+  /** Ordine di piazzamento (il primo ha più celle libere fra cui scegliere). */
+  ordine: Object.freeze(['sfida', 'sacrificio', 'maledetta', 'bisca']),
+  /**
+   * Probabilità che il tipo compaia nel piano (chiave: piano, oltre l'ultima chiave vale l'ultima: dal ciclo 2
+   * in poi valgono i valori del piano 4). Al massimo una stanza per tipo per piano.
+   */
+  probPerPiano: Object.freeze({
+    sfida: Object.freeze({ 1: 0.35, 2: 0.45, 3: 0.5, 4: 0.5 }),
+    sacrificio: Object.freeze({ 1: 0.25, 2: 0.3, 3: 0.35, 4: 0.35 }),
+    maledetta: Object.freeze({ 1: 0.2, 2: 0.35, 3: 0.4, 4: 0.45 }),
+    bisca: Object.freeze({ 1: 0, 2: 0.5, 3: 0.5, 4: 0.5 }),
+  }),
+  /** Tipi di stanza a cui una stanza speciale può attaccarsi (vicolo cieco con una sola porta). */
+  genitori: Object.freeze(['normale']),
+  /** Aspetto: cornice della porta, fondo della stanza, colore e icona sulla minimappa. */
+  aspetto: Object.freeze({
+    sfida: Object.freeze({ cornice: '#cbd5e1', fondo: '#1c2633', minimappa: '#334155', icona: '⚔' }),
+    sacrificio: Object.freeze({ cornice: '#b91c1c', fondo: '#2a0d0a', minimappa: '#5b1a12', icona: '†' }),
+    maledetta: Object.freeze({ cornice: '#4d7c0f', fondo: '#1a0f1f', minimappa: '#3b0d3f', icona: '✷', spine: '#7f1d1d' }),
+    bisca: Object.freeze({ cornice: '#16a34a', fondo: '#0f2a1a', minimappa: '#14532d', icona: '🎲' }),
+  }),
+  sfida: Object.freeze({
+    soloSalutePiena: true,     // si entra solo con tutte le Maschere (come nell'originale)
+    ondateMin: 2, ondateMax: 3,
+    pausaFraOndateMs: 900,     // respiro fra un'ondata e l'altra
+    raggioTocco: 22,           // px dal piedistallo per far partire la sfida
+    piedistallo: Object.freeze({ x: 320, y: 186 }),
+    probPremioForte: 0.15,     // il premio è un oggetto; a volte forte
+  }),
+  sacrificio: Object.freeze({
+    costoHalf: 1,              // ½ Maschera a sacrificio
+    letale: false,             // false: il ceppo non prende l'ultima mezza Maschera
+    maxSacrifici: 6,           // poi il ceppo è sazio
+    raggio: 18,                // px dal ceppo
+    ceppo: Object.freeze({ x: 320, y: 176 }),
+    /** Pesi dei premi per il sacrificio n (riga n-1; oltre l'ultima vale l'ultima). */
+    premi: Object.freeze([
+      Object.freeze({ niente: 0.5, monete: 0.5, cuore: 0, oggetto: 0 }),
+      Object.freeze({ niente: 0.4, monete: 0.4, cuore: 0.2, oggetto: 0 }),
+      Object.freeze({ niente: 0.3, monete: 0.3, cuore: 0.25, oggetto: 0.15 }),
+      Object.freeze({ niente: 0.25, monete: 0.25, cuore: 0.2, oggetto: 0.3 }),
+      Object.freeze({ niente: 0.2, monete: 0.2, cuore: 0.2, oggetto: 0.4 }),
+    ]),
+    moneteMin: 1, moneteMax: 3,
+    cuoreHalf: 2,              // una Maschera intera
+  }),
+  maledetta: Object.freeze({
+    costoHalf: 1,              // ½ Maschera a ogni passaggio dalle porte di rovi
+    letale: false,             // false: non si entra se costerebbe l'ultima mezza Maschera; si esce gratis
+    contenuto: Object.freeze({ forziere: 0.2, monete: 0.35, oggetto: 0.25, nemici: 0.2 }),
+    moneteMin: 3, moneteMax: 5,
+    moneteNemici: 3,           // monete in più quando i nemici custodi sono sconfitti
+    probOggettoNemici: 0.5,    // ... e a volte anche un oggetto
+  }),
+  bisca: Object.freeze({
+    daPiano: 2,
+    costo: 1,                  // 🪙 a giocata al banco del lotto
+    giocateMax: 8,             // poi Don Gennaro chiude il banco
+    banco: Object.freeze({ x: 250, y: 170, raggioUso: 44, raggioCorpo: 18 }),
+    // (bilancio 7) prima niente 0,45 / monete 0,3 / ½ 0,12 / cuore 0,08 / oggetto 0,05: una giocata da 1🪙 valeva ~1,42🪙
+    // (cure al prezzo della Fucina, oggetto al prezzo base): il banco era una fonte netta di valore. Ora ~1,15🪙.
+    premi: Object.freeze({ niente: 0.54, monete: 0.28, mezzaMaschera: 0.1, cuore: 0.05, oggetto: 0.03 }),
+    moneteMin: 2, moneteMax: 3,
+    probCartomante: 0.5,
+    cartomante: Object.freeze({
+      x: 400, y: 170, raggioUso: 44, raggioCorpo: 14,
+      costo: 1, probBase: 0.12, probPerMoneta: 0.08, // probabilità del dono: base + (grani dati - 1) × passo
+      premi: Object.freeze({ cuore: 0.5, oggetto: 0.3, monete: 0.2 }),
+      moneteDono: 4,
+    }),
+  }),
+  /** Avvisi ripetuti (porta sbarrata, ceppo che rifiuta) non più spesso di così. */
+  intervalloAvvisiMs: 1500,
+  /** Spinta all'indietro quando una porta rifiuta il passaggio. */
+  respintaPx: 30,
+});
+
+/** Smorfia napoletana (solo numeri dal senso innocuo): il resto esce col solo numero. */
+const SMORFIA_A3 = Object.freeze({
+  3: "'a jatta", 4: "'o puorco", 5: "'a mano", 7: "'o vasetto", 8: "'a Maronna", 9: "'a figliata",
+  10: "'e fasule", 11: "'e suricille", 13: "Sant'Antonio", 17: "'a disgrazia", 18: "'o sanghe", 22: "'o pazzo",
+  33: "ll'anne 'e Cristo", 34: "'a capa", 37: "'o monaco", 47: "'o muorto", 48: "'o muorto che parla",
+  55: "'a museca", 77: "'e diavule", 82: "'a tavula 'mbandita", 90: "'a paura",
+});
+
+/** Frasi della Cartomante quando la sorte non dà ancora nulla (da approvare dall'autore). */
+const FRASI_CARTOMANTE_A3 = Object.freeze([
+  'Vedo una porta che non sai ancora aprire...',
+  "Il Re di Denari ti guarda storto. Un altro grano, figlio mio.",
+  'La notte è lunga e i fili sono corti.',
+  'Una donna alla finestra pensa a te. Oppure al bucato.',
+  'Le carte sono timide stasera: pagale ancora.',
+]);
+
+const TIPI_A3 = new Set(STANZE_SPECIALI_A3.ordine);
+const DIREZIONI_A3 = Object.freeze([
+  Object.freeze({ lato: 'N', opposto: 'S', dx: 0, dy: -1 }),
+  Object.freeze({ lato: 'E', opposto: 'W', dx: 1, dy: 0 }),
+  Object.freeze({ lato: 'S', opposto: 'N', dx: 0, dy: 1 }),
+  Object.freeze({ lato: 'W', opposto: 'E', dx: -1, dy: 0 }),
+]);
+const OPPOSTO_A3 = Object.freeze({ N: 'S', S: 'N', E: 'W', W: 'E' });
+let ultimoAvvisoA3 = { testo: '', ms: -Infinity };
+
+// ===========================================================================
+// UTILITÀ
+// ===========================================================================
+
+/** Probabilità del tipo nel piano (oltre l'ultima chiave vale l'ultima). */
+function probStanzaA3(tipo, piano) {
+  const tab = STANZE_SPECIALI_A3.probPerPiano[tipo] || {};
+  const chiavi = Object.keys(tab).map(Number).sort((a, b) => a - b);
+  if (!chiavi.length) return 0;
+  const k = chiavi.filter((c) => c <= piano).pop() ?? chiavi[0];
+  return tab[Math.min(k, chiavi[chiavi.length - 1])] || 0;
+}
+
+/** Estrazione pesata: {chiave: peso} → chiave. Usa il rng del seme. */
+function estraiPesataA3(pesi) {
+  const voci = Object.entries(pesi).filter(([, p]) => p > 0);
+  const tot = voci.reduce((a, [, p]) => a + p, 0);
+  if (!tot) return voci.length ? voci[0][0] : null;
+  let r = rng() * tot;
+  for (const [k, p] of voci) { r -= p; if (r < 0) return k; }
+  return voci[voci.length - 1][0];
+}
+
+const interoFraA3 = (min, max) => min + Math.floor(rng() * (max - min + 1));
+
+/** Avviso con banner, non ripetuto entro intervalloAvvisiMs. */
+function avvisaA3(testo, durata = 150) {
+  const ora = performance.now();
+  if (ultimoAvvisoA3.testo === testo && ora - ultimoAvvisoA3.ms < STANZE_SPECIALI_A3.intervalloAvvisiMs) return;
+  ultimoAvvisoA3 = { testo, ms: ora };
+  mostraBanner(testo, durata);
+}
+
+/** Monete a terra senza il filtro di rarità del piano 1 (sono un premio promesso, non un drop). */
+function daiMoneteA3(st, n, x, y) {
+  for (let i = 0; i < n; i++) {
+    st.oggettiATerra.push({
+      tipo: 'moneta', valore: 1, sprite: 'moneta1',
+      x: Math.max(ARENA.x1 + 20, Math.min(ARENA.x2 - 20, x + (rng() - 0.5) * 40)),
+      y: Math.max(ARENA.y1 + 20, Math.min(ARENA.y2 - 20, y + (rng() - 0.5) * 24)),
+    });
+  }
+}
+
+function daiCuraA3(st, half, x, y) {
+  st.oggettiATerra.push({ tipo: 'cura', valore: half, sprite: half >= 2 ? 'cuore' : 'mezzaMaschera', x, y });
+}
+
+/** Oggetto su un piedistallo (gestito dal codice di base). Se ce n'è già uno da prendere, false. */
+function daiOggettoA3(st, x, y, forte = false) {
+  if (st.oggettoPiedistallo && !st.oggettoPiedistallo.preso) return null;
+  const o = forte ? estraiOggettoForte() : estraiOggettoBase();
+  if (!o) return null;
+  st.oggettoPiedistallo = { ...o, x, y, preso: false, forteGratis: Boolean(forte && o.tier === 'forte') };
+  return st.oggettoPiedistallo;
+}
+
+/** Forziere della squadra a1, se c'è (firma: generaForziere(tipo, x, y, stanza)). */
+function daiForziereA3(st, x, y) {
+  const I = window.__teatro && window.__teatro.interni;
+  if (!I || typeof I.generaForziere !== 'function') return false;
+  try { I.generaForziere('comune', x, y, st); return true; } catch (err) { console.error('[A3] generaForziere', err); return false; }
+}
+
+/**
+ * Prezzo di sangue (sacrificio, rovi): toglie costoHalf senza scudi né i-frame (è un prezzo, non un colpo).
+ * Se costerebbe l'ultima Maschera: con `letale` passa dal colpo normale (morte e risveglio), altrimenti rifiuta.
+ * @returns {boolean} true se il prezzo è stato pagato
+ */
+function pagaSangueA3(costoHalf, letale, fonte) {
+  if (statoRun.hpHalf > costoHalf) {
+    statoRun.hpHalf -= costoHalf;
+    player.invuln = Math.max(player.invuln, ticksDaMs(FEEL.iframes.durataMs));
+    AudioSys.playDannoGiocatore();
+    scuoti(FEEL.scossa.ferita);
+    return true;
+  }
+  if (!letale) return false;
+  player.invuln = 0; statoRun.graziaIngressoC = 0; statoRun.scudoRosaC = false; statoRun.scudoStanzaD = 0;
+  subisciColpoGiocatore(costoHalf, fonte);
+  return true;
+}
+
+/** Respinge il giocatore dentro la stanza corrente, lontano dalla porta del lato `latoUscita`. */
+function respingiDallaPortaA3(latoUscita) {
+  const d = STANZE_SPECIALI_A3.respintaPx;
+  if (latoUscita === 'N') player.y = ARENA.y1 + d;
+  else if (latoUscita === 'S') player.y = ARENA.y2 - d;
+  else if (latoUscita === 'W') player.x = ARENA.x1 + d;
+  else if (latoUscita === 'E') player.x = ARENA.x2 - d;
+  player.targetX = null; player.targetY = null;
+}
+
+/** Comprimari di un'ondata: gli stessi temi delle stanze di combattimento del piano. */
+function generaOndataA3(st, k) {
+  const finta = { id: `${st.id}-o${k}`, tipo: 'normale', porte: {}, nemici: [], ostacoli: [], oggettiATerra: [] };
+  popolaStanzaIsaac(finta, statoRun.piano);
+  return finta.nemici;
+}
+
+// ===========================================================================
+// GENERAZIONE (avvolge generaMappaPiano)
+// ===========================================================================
+
+/** Stanza vuota con gli stessi campi di quelle di generaMappaPiano. */
+function creaStanzaA3(id, tipo, cx, cy) {
+  return {
+    id, tipo, cx, cy, porte: {}, muroSegreto: null, pulita: true, visitata: false,
+    nemici: [], ostacoli: [], oggettiATerra: [], oggettoPiedistallo: null, ricompensaOggetto: null,
+    slotFucina: [], slotPatto: [], uscitaAperta: false, portaPattoAperta: false,
+  };
+}
+
+/**
+ * Appende alla mappa le stanze speciali del piano: foglie con una sola porta, attaccate a una stanza di
+ * combattimento, in una cella libera che non tocca altre stanze né il boss (regola dei vicoli ciechi di
+ * generaMappaPiano). Se non c'è posto il tipo salta questo piano (mai una mappa rifiutata per colpa sua).
+ */
+function aggiungiStanzeSpecialiA3(m, piano) {
+  const G = MAPPA_PIANO;
+  const key = (x, y) => `${x},${y}`;
+  const griglia = new Map(m.stanze.filter((s) => s.cx >= 1 && s.cy >= 1).map((s) => [key(s.cx, s.cy), s]));
+  const dentro = (x, y) => x >= 1 && x <= G.larghezza && y >= 1 && y <= G.altezza;
+  const vicini = (x, y) => DIREZIONI_A3.map((d) => griglia.get(key(x + d.dx, y + d.dy))).filter(Boolean);
+  for (const tipo of STANZE_SPECIALI_A3.ordine) {
+    if (tipo === 'bisca' && piano < STANZE_SPECIALI_A3.bisca.daPiano) continue;
+    if (!(rng() < probStanzaA3(tipo, piano))) continue;
+    let posta = null;
+    for (const g of shuffle(m.stanze.filter((s) => STANZE_SPECIALI_A3.genitori.includes(s.tipo)))) {
+      for (const d of shuffle(DIREZIONI_A3)) {
+        const nx = g.cx + d.dx, ny = g.cy + d.dy;
+        if (!dentro(nx, ny) || griglia.has(key(nx, ny))) continue;
+        if (g.porte[d.lato] || (g.muroSegreto && g.muroSegreto.lato === d.lato)) continue;
+        const v = vicini(nx, ny);
+        if (v.length !== 1 || v[0] !== g) continue;
+        if (DIREZIONI_A3.some((d2) => griglia.get(key(nx + d2.dx, ny + d2.dy))?.tipo === 'boss')) continue;
+        posta = creaStanzaA3(`r${m.stanze.length}`, tipo, nx, ny);
+        g.porte[d.lato] = posta.id;
+        posta.porte[d.opposto] = g.id;
+        break;
+      }
+      if (posta) break;
+    }
+    if (!posta) continue;
+    m.stanze.push(posta);
+    m.perId.set(posta.id, posta);
+    griglia.set(key(posta.cx, posta.cy), posta);
+    popolaStanzaA3(posta, piano);
+  }
+  return m;
+}
+
+/** Contenuto delle stanze speciali (chiamato una volta, alla generazione). */
+function popolaStanzaA3(s, piano) {
+  const T = STANZE_SPECIALI_A3;
+  if (s.tipo === 'sfida') {
+    const forte = rng() < T.sfida.probPremioForte;
+    const o = forte ? estraiOggettoForte() : estraiOggettoBase();
+    s.sfidaA3 = {
+      ondateTot: interoFraA3(T.sfida.ondateMin, T.sfida.ondateMax), ondata: 0,
+      avviata: false, attiva: false, finita: false, attesa: 0,
+      premio: { ...o, x: T.sfida.piedistallo.x, y: T.sfida.piedistallo.y, preso: false, forteGratis: Boolean(forte && o.tier === 'forte') },
+    };
+  } else if (s.tipo === 'sacrificio') {
+    s.sacrificioA3 = { fatti: 0, armato: true };
+  } else if (s.tipo === 'maledetta') {
+    const contenuto = estraiPesataA3(T.maledetta.contenuto);
+    s.maledettaA3 = { contenuto, consegnato: false };
+    if (contenuto === 'monete') {
+      daiMoneteA3(s, interoFraA3(T.maledetta.moneteMin, T.maledetta.moneteMax), 320, 186);
+      s.maledettaA3.consegnato = true;
+    } else if (contenuto === 'oggetto') {
+      daiOggettoA3(s, 320, 192);
+      s.maledettaA3.consegnato = true;
+    } else if (contenuto === 'nemici') {
+      s.nemici = generaOndataPianoA3(s, piano);
+      s.pulita = false;
+    } // forziere: al primo ingresso (la funzione della squadra a1 può non esserci ancora)
+  } else if (s.tipo === 'bisca') {
+    s.biscaA3 = {
+      giocate: 0, chiuso: false,
+      cartomante: rng() < T.bisca.probCartomante ? { grani: 0, andata: false } : null,
+    };
+  }
+}
+
+/** Come generaOndataA3 ma col piano esplicito (alla generazione statoRun.piano può essere quello vecchio). */
+function generaOndataPianoA3(st, piano) {
+  const finta = { id: `${st.id}-c`, tipo: 'normale', porte: {}, nemici: [], ostacoli: [], oggettiATerra: [] };
+  popolaStanzaIsaac(finta, piano);
+  return finta.nemici;
+}
+
+// ===========================================================================
+// LOGICA (avvolge entraInStanza, verificaStanzaPulita, interagisciStanza, passoLogico)
+// ===========================================================================
+
+/** Prima di attraversare una porta: divieto della Sfida e prezzo dei rovi. false = passaggio rifiutato. */
+function primaDellaPortaA3(dest, daLato) {
+  const T = STANZE_SPECIALI_A3;
+  const da = statoRun.stanzaCorrente;
+  if (!daLato || !da || !dest || statoRun.fase !== 'in_gioco') return true;
+  const latoUscita = OPPOSTO_A3[daLato];
+  if (dest.tipo === 'sfida' && T.sfida.soloSalutePiena && !dest.sfidaA3?.finita && statoRun.hpHalf < statoRun.maxHpHalf) {
+    respingiDallaPortaA3(latoUscita);
+    avvisaA3('⚔ La porta della Sfida resta sbarrata: entra solo chi ha tutte le Maschere intatte.', 170);
+    return false;
+  }
+  if (dest.tipo === 'maledetta' || da.tipo === 'maledetta') {
+    const entrando = dest.tipo === 'maledetta';
+    if (pagaSangueA3(T.maledetta.costoHalf, T.maledetta.letale, 'i rovi della porta')) {
+      if (statoRun.fase !== 'in_gioco') return false; // morto sui rovi (solo con letale)
+      avvisaA3('✷ I rovi della porta ti graffiano: -½ ❤️', 120);
+    } else if (entrando) {
+      respingiDallaPortaA3(latoUscita);
+      avvisaA3('✷ I rovi ti ucciderebbero: torna quando avrai più Maschere.', 170);
+      return false;
+    } else {
+      avvisaA3('✷ I rovi ti risparmiano: sei allo stremo.', 140);
+    }
+  }
+  return true;
+}
+
+/** Dopo l'ingresso: avvisi e premi consegnati al primo ingresso. */
+function dopoIngressoA3(st) {
+  const T = STANZE_SPECIALI_A3;
+  if (!TIPI_A3.has(st.tipo)) return;
+  if (st.tipo === 'sfida') {
+    const S = st.sfidaA3;
+    if (!S.avviata) mostraBanner('⚔ STANZA DELLA SFIDA: tocca il piedistallo, le porte si sbarrano e arrivano le ondate. Reggi e il premio è tuo!', 230);
+  } else if (st.tipo === 'sacrificio') {
+    if (st.sacrificioA3.fatti < T.sacrificio.maxSacrifici) mostraBanner('† IL CEPPO DEI CHIODI: dagli ½ ❤️ del tuo sangue, e forse il Teatro ti ripagherà.', 220);
+  } else if (st.tipo === 'maledetta') {
+    const M = st.maledettaA3;
+    if (!M.consegnato && M.contenuto === 'forziere') {
+      if (!daiForziereA3(st, 320, 186)) daiMoneteA3(st, interoFraA3(T.maledetta.moneteMin, T.maledetta.moneteMax), 320, 186);
+      M.consegnato = true;
+    }
+    mostraBanner(st.pulita
+      ? '✷ STANZA DEI ROVI: il bottino è tuo, ma anche uscire costa ½ ❤️.'
+      : '✷ STANZA DEI ROVI: i custodi del bottino ti aspettavano!', 200);
+  } else if (st.tipo === 'bisca') {
+    mostraBanner(st.biscaA3.cartomante && !st.biscaA3.cartomante.andata
+      ? `🎲 LA BISCA: ${T.bisca.costo}🪙 a giocata al Banco del Lotto di Don Gennaro, e la Cartomante legge la sorte per un grano. [E]`
+      : `🎲 LA BISCA: ${T.bisca.costo}🪙 a giocata al Banco del Lotto di Don Gennaro. [E]`, 230);
+  }
+}
+
+/** Ondata k della Sfida (k da 1): sostituisce i nemici caduti, lontano dalle porte e dal giocatore. */
+function lanciaOndataA3(st) {
+  const S = st.sfidaA3;
+  S.ondata++;
+  st.nemici = generaOndataA3(st, S.ondata);
+  allontanaNemiciDallePorteC(st, [{ x: player.x, y: player.y }]);
+  scuoti(FEEL.scossa.evento);
+  AudioSys.playCampana();
+  mostraBanner(S.ondata === 1
+    ? `⚔ SI ALZA IL SIPARIO DELLA SFIDA! Ondata 1 di ${S.ondateTot}: le porte sono sbarrate!`
+    : `⚔ Ondata ${S.ondata} di ${S.ondateTot}!`, 150);
+}
+
+/** Il giocatore tocca il piedistallo della Sfida. */
+function avviaSfidaA3(st) {
+  const S = st.sfidaA3;
+  if (!S || S.avviata) return;
+  S.avviata = true; S.attiva = true;
+  st.pulita = false;
+  lanciaOndataA3(st);
+}
+
+/** Fine della Sfida (dopo verificaStanzaPulita di base): il premio passa al piedistallo raccoglibile. */
+function chiudiSfidaA3(st) {
+  const S = st.sfidaA3;
+  S.attiva = false; S.finita = true;
+  if (!st.oggettoPiedistallo || st.oggettoPiedistallo.preso) st.oggettoPiedistallo = S.premio;
+  mostraBanner(`⚔ SFIDA VINTA! Il premio è tuo: ${nomeD(S.premio)} [Click/E]`, 230);
+}
+
+/** Bottino dei custodi della Stanza dei Rovi. */
+function premioCustodiA3(st) {
+  const T = STANZE_SPECIALI_A3.maledetta;
+  const M = st.maledettaA3;
+  if (M.consegnato) return;
+  M.consegnato = true;
+  daiMoneteA3(st, T.moneteNemici, 300, 200);
+  if (rng() < T.probOggettoNemici) daiOggettoA3(st, 320, 192);
+  mostraBanner('✷ I custodi dei rovi sono caduti: il bottino è tuo!', 170);
+}
+
+/** Un sacrificio sul ceppo. */
+function sacrificaA3(st) {
+  const T = STANZE_SPECIALI_A3.sacrificio;
+  const S = st.sacrificioA3;
+  if (S.fatti >= T.maxSacrifici) { avvisaA3('† Il ceppo è sazio: non accetta più sangue.', 130); return null; }
+  if (!pagaSangueA3(T.costoHalf, T.letale, 'il ceppo dei chiodi')) {
+    avvisaA3("† Il ceppo non prende l'ultima mezza Maschera.", 140);
+    return null;
+  }
+  if (statoRun.fase !== 'in_gioco') return null;
+  S.fatti++;
+  const riga = T.premi[Math.min(S.fatti, T.premi.length) - 1];
+  let esito = estraiPesataA3(riga);
+  const { x, y } = T.ceppo;
+  if (esito === 'oggetto' && !daiOggettoA3(st, x, y + 62)) esito = 'monete';
+  if (esito === 'monete') {
+    const n = interoFraA3(T.moneteMin, T.moneteMax);
+    daiMoneteA3(st, n, x, y + 40);
+    mostraBanner(`† Il ceppo beve il sangue e restituisce ${n}🪙.`, 140);
+  } else if (esito === 'cuore') {
+    daiCuraA3(st, T.cuoreHalf, x + 30, y + 40);
+    mostraBanner('† Dal ceppo cade una Maschera intera!', 140);
+  } else if (esito === 'oggetto') {
+    mostraBanner(`† Il ceppo ti offre una reliquia: ${nomeD(st.oggettoPiedistallo)} [Click/E]`, 190);
+  } else {
+    mostraBanner('† Il ceppo beve il sangue... e tace.', 120);
+  }
+  if (S.fatti >= T.maxSacrifici) S.sazio = true;
+  return esito;
+}
+
+/** Una giocata al Banco del Lotto. */
+function giocaLottoA3(st) {
+  const T = STANZE_SPECIALI_A3.bisca;
+  const B = st.biscaA3;
+  if (B.chiuso) { avvisaA3('🎲 Don Gennaro ha chiuso il banco: per stanotte basta.', 130); return null; }
+  if (statoRun.monete < T.costo) { avvisaA3(`🎲 Senza ${T.costo}🪙 non si gioca, guagliò.`, 130); return null; }
+  statoRun.monete -= T.costo;
+  B.giocate++;
+  const numero = 1 + Math.floor(rng() * 90);
+  const detto = SMORFIA_A3[numero] ? ` (${SMORFIA_A3[numero]})` : '';
+  let esito = estraiPesataA3(T.premi);
+  const px = T.banco.x, py = T.banco.y + 46;
+  if (esito === 'oggetto' && !daiOggettoA3(st, 320, 236)) esito = 'monete';
+  let testo;
+  if (esito === 'monete') {
+    const n = interoFraA3(T.moneteMin, T.moneteMax);
+    daiMoneteA3(st, n, px, py);
+    testo = `vinci ${n}🪙!`;
+  } else if (esito === 'mezzaMaschera') {
+    daiCuraA3(st, 1, px, py); testo = 'vinci ½ Maschera!';
+  } else if (esito === 'cuore') {
+    daiCuraA3(st, 2, px, py); testo = 'vinci una Maschera intera!';
+  } else if (esito === 'oggetto') {
+    testo = `TERNO SECCO! Una reliquia: ${nomeD(st.oggettoPiedistallo)} [Click/E]`;
+  } else {
+    testo = 'niente, ritenta!';
+  }
+  B.ultimo = { numero, esito };
+  AudioSys.playMoneta();
+  if (B.giocate >= T.giocateMax) B.chiuso = true;
+  mostraBanner(`🎲 Esce il ${numero}${detto}: ${testo}${B.chiuso ? ' — Don Gennaro chiude il banco.' : ''}`, 170);
+  return esito;
+}
+
+/** Un grano alla Cartomante: a volte un dono, poi se ne va. */
+function pagaCartomanteA3(st) {
+  const T = STANZE_SPECIALI_A3.bisca.cartomante;
+  const C = st.biscaA3.cartomante;
+  if (!C || C.andata) return null;
+  if (statoRun.monete < T.costo) { avvisaA3('🔮 «Senza un grano le carte non parlano.»', 130); return null; }
+  statoRun.monete -= T.costo;
+  C.grani++;
+  AudioSys.playMoneta();
+  if (rng() >= T.probBase + (C.grani - 1) * T.probPerMoneta) {
+    mostraBanner(`🔮 «${FRASI_CARTOMANTE_A3[Math.floor(rng() * FRASI_CARTOMANTE_A3.length)]}»`, 160);
+    return 'niente';
+  }
+  let dono = estraiPesataA3(T.premi);
+  if (dono === 'oggetto' && !daiOggettoA3(st, T.x, T.y + 66)) dono = 'monete';
+  if (dono === 'cuore') daiCuraA3(st, 2, T.x, T.y + 42);
+  else if (dono === 'monete') daiMoneteA3(st, T.moneteDono, T.x, T.y + 42);
+  C.andata = true;
+  mostraBanner(dono === 'oggetto'
+    ? `🔮 «Le carte hanno parlato.» La Cartomante lascia una reliquia e svanisce: ${nomeD(st.oggettoPiedistallo)}`
+    : '🔮 «Le carte hanno parlato.» La Cartomante lascia un dono e svanisce nel buio.', 200);
+  return dono;
+}
+
+/** Tasto E (e click vicino) nelle stanze nuove. true = gestito. */
+function interagisciA3(st) {
+  if (!st || st.tipo !== 'bisca') return false;
+  const T = STANZE_SPECIALI_A3.bisca;
+  // il piedistallo (premio del lotto o della cartomante) ha la precedenza, come nel codice di base
+  if (st.oggettoPiedistallo && !st.oggettoPiedistallo.preso
+    && Math.hypot(player.x - st.oggettoPiedistallo.x, player.y - st.oggettoPiedistallo.y) < 52) return false;
+  if (Math.hypot(player.x - T.banco.x, player.y - T.banco.y) < T.banco.raggioUso) { giocaLottoA3(st); return true; }
+  const C = st.biscaA3.cartomante;
+  if (C && !C.andata && Math.hypot(player.x - T.cartomante.x, player.y - T.cartomante.y) < T.cartomante.raggioUso) {
+    pagaCartomanteA3(st); return true;
+  }
+  return false;
+}
+
+/** Un tick delle stanze nuove (dopo passoLogico di base). */
+function passoStanzeSpecialiA3() {
+  if (statoRun.fase !== 'in_gioco' || statoRun.pausa || statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo) return;
+  if (ticksCongelati > 0) return;
+  const st = statoRun.stanzaCorrente;
+  if (!st || !TIPI_A3.has(st.tipo)) return;
+  const T = STANZE_SPECIALI_A3;
+  if (st.tipo === 'sfida') {
+    const S = st.sfidaA3;
+    if (!S.avviata) {
+      if (Math.hypot(player.x - T.sfida.piedistallo.x, player.y - T.sfida.piedistallo.y) < T.sfida.raggioTocco) avviaSfidaA3(st);
+    } else if (S.attiva) {
+      if (S.attesa > 0) {
+        if (--S.attesa === 0) lanciaOndataA3(st);
+      } else if (st.nemici.every((n) => n.hp <= 0)) {
+        verificaStanzaPulita(); // anche per i nemici morti senza colpo (fuoco)
+      }
+    }
+  } else if (st.tipo === 'sacrificio') {
+    const S = st.sacrificioA3;
+    const d = Math.hypot(player.x - T.sacrificio.ceppo.x, player.y - T.sacrificio.ceppo.y);
+    if (d > T.sacrificio.raggio + 12) S.armato = true;
+    else if (d < T.sacrificio.raggio && S.armato && player.invuln <= 0) { S.armato = false; sacrificaA3(st); }
+  } else if (st.tipo === 'bisca') {
+    // banco e cartomante sono corpi solidi
+    const corpi = [T.bisca.banco];
+    if (st.biscaA3.cartomante && !st.biscaA3.cartomante.andata) corpi.push(T.bisca.cartomante);
+    for (const c of corpi) {
+      const dx = player.x - c.x, dy = player.y - c.y;
+      const d = Math.hypot(dx, dy), rMin = c.raggioCorpo + 9;
+      if (d < rMin && d > 0.01) { player.x = c.x + (dx / d) * rMin; player.y = c.y + (dy / d) * rMin; }
+    }
+  } else if (st.tipo === 'maledetta' && !st.pulita && st.nemici.every((n) => n.hp <= 0)) {
+    verificaStanzaPulita();
+  }
+}
+
+const generaMappaPianoBaseA3 = generaMappaPiano;
+generaMappaPiano = function generaMappaPianoA3(piano) {
+  const m = generaMappaPianoBaseA3(piano);
+  return m ? aggiungiStanzeSpecialiA3(m, piano) : m;
+};
+
+const entraInStanzaBaseA3 = entraInStanza;
+entraInStanza = function entraInStanzaA3(stanza, daLato) {
+  if (!primaDellaPortaA3(stanza, daLato)) return;
+  entraInStanzaBaseA3(stanza, daLato);
+  if (stanza) dopoIngressoA3(stanza);
+};
+
+const verificaStanzaPulitaBaseA3 = verificaStanzaPulita;
+verificaStanzaPulita = function verificaStanzaPulitaA3() {
+  const st = statoRun.stanzaCorrente;
+  const S = st && st.tipo === 'sfida' ? st.sfidaA3 : null;
+  if (S && S.attiva && !st.pulita) {
+    if (!st.nemici.every((n) => n.hp <= 0)) return;
+    if (S.ondata < S.ondateTot) {
+      if (!S.attesa) S.attesa = ticksDaMs(STANZE_SPECIALI_A3.sfida.pausaFraOndateMs);
+      return;
+    }
+  }
+  const eraPulita = !st || st.pulita;
+  verificaStanzaPulitaBaseA3();
+  if (eraPulita || !st.pulita) return;
+  if (S && S.attiva) chiudiSfidaA3(st);
+  else if (st.tipo === 'maledetta') premioCustodiA3(st);
+};
+
+const interagisciStanzaBaseA3 = interagisciStanza;
+interagisciStanza = function interagisciStanzaA3() {
+  if (!statoRun.scambioPendente && !statoRun.pannelloB && !statoRun.siparioAttivo && interagisciA3(statoRun.stanzaCorrente)) return;
+  interagisciStanzaBaseA3();
+};
+
+const passoLogicoBaseA3 = passoLogico;
+passoLogico = function passoLogicoA3() {
+  passoLogicoBaseA3();
+  passoStanzeSpecialiA3();
+};
+
+// click sul banco o sulla cartomante quando sei vicino: come il tasto E
+canvas.addEventListener('mousedown', (e) => {
+  const st = statoRun.stanzaCorrente;
+  if (statoRun.fase !== 'in_gioco' || !st || st.tipo !== 'bisca') return;
+  const r = canvas.getBoundingClientRect();
+  const mx = (e.clientX - r.left) * (W / r.width), my = (e.clientY - r.top) * (H / r.height);
+  const T = STANZE_SPECIALI_A3.bisca;
+  for (const c of [T.banco, T.cartomante]) {
+    if (Math.hypot(mx - c.x, my - c.y) < 26 && Math.hypot(player.x - c.x, player.y - c.y) < c.raggioUso) {
+      interagisciStanza();
+      player.targetX = null; player.targetY = null;
+      return;
+    }
+  }
+});
+
+// ===========================================================================
+// RESA (avvolge disegnaStanzaPixelArt e disegnaHUDPixelArt)
+// ===========================================================================
+
+const PORTE_A3 = Object.freeze({
+  N: { x: 320, y: 61, w: 36, h: 18 }, S: { x: 320, y: 313, w: 36, h: 18 },
+  W: { x: 59, y: 187, w: 18, h: 36 }, E: { x: 581, y: 187, w: 18, h: 36 },
+});
+
+/** Spine dei rovi attorno a una porta. */
+function disegnaRoviA3(p, tick) {
+  const A = STANZE_SPECIALI_A3.aspetto.maledetta;
+  ctx.save();
+  ctx.strokeStyle = A.cornice; ctx.lineWidth = 2;
+  ctx.strokeRect(p.x - p.w / 2 - 4, p.y - p.h / 2 - 4, p.w + 8, p.h + 8);
+  ctx.fillStyle = A.spine;
+  const orizz = p.w > p.h;
+  const n = 6;
+  for (let i = 0; i < n; i++) {
+    const t = (i + 0.5) / n;
+    const vib = Math.sin(tick * 0.05 + i) * 0.6;
+    for (const lato of [-1, 1]) {
+      ctx.beginPath();
+      if (orizz) {
+        const x = p.x - p.w / 2 - 4 + t * (p.w + 8), y = p.y + lato * (p.h / 2 + 4);
+        ctx.moveTo(x - 3, y); ctx.lineTo(x + 3, y); ctx.lineTo(x + vib, y + lato * 5);
+      } else {
+        const y = p.y - p.h / 2 - 4 + t * (p.h + 8), x = p.x + lato * (p.w / 2 + 4);
+        ctx.moveTo(x, y - 3); ctx.lineTo(x, y + 3); ctx.lineTo(x + lato * 5, y + vib);
+      }
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+/** Segno sulla porta verso una stanza nuova (e i rovi su tutte le porte della Stanza dei Rovi). */
+function disegnaPorteA3(st, tick) {
+  if (!statoRun.mappa) return;
+  const chiuse = !st.pulita;
+  for (const [lato, id] of Object.entries(st.porte)) {
+    const dest = statoRun.mappa.perId.get(id);
+    const p = PORTE_A3[lato];
+    if (!p) continue;
+    if (dest && TIPI_A3.has(dest.tipo)) {
+      const A = STANZE_SPECIALI_A3.aspetto[dest.tipo];
+      ctx.fillStyle = A.cornice;
+      ctx.fillRect(p.x - p.w / 2, p.y - p.h / 2, p.w, 3);
+      ctx.fillRect(p.x - p.w / 2, p.y + p.h / 2 - 3, p.w, 3);
+      ctx.fillRect(p.x - p.w / 2, p.y - p.h / 2, 3, p.h);
+      ctx.fillRect(p.x + p.w / 2 - 3, p.y - p.h / 2, 3, p.h);
+      const sbarrata = dest.tipo === 'sfida' && STANZE_SPECIALI_A3.sfida.soloSalutePiena && !dest.sfidaA3?.finita
+        && statoRun.hpHalf < statoRun.maxHpHalf;
+      if (sbarrata && !chiuse) {
+        ctx.fillStyle = A.cornice;
+        ctx.fillRect(p.x - 6, p.y - p.h / 2 + 3, 2, p.h - 6);
+        ctx.fillRect(p.x + 4, p.y - p.h / 2 + 3, 2, p.h - 6);
+      } else if (!chiuse) {
+        drawTextFit(A.icona, p.x, p.y + 3, p.w - 4, { size: 9, color: '#ffffff' });
+      }
+      if (dest.tipo === 'maledetta') disegnaRoviA3(p, tick);
+    }
+    if (st.tipo === 'maledetta') disegnaRoviA3(p, tick);
+  }
+}
+
+/** Fondo e arredi delle stanze nuove (sotto le entità). */
+function disegnaArrediA3(st, tick) {
+  const T = STANZE_SPECIALI_A3;
+  const A = T.aspetto[st.tipo];
+  ctx.save();
+  ctx.fillStyle = A.fondo;
+  ctx.globalAlpha = 0.85;
+  ctx.fillRect(170, 128, 300, 118);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = A.cornice; ctx.lineWidth = 2;
+  ctx.strokeRect(172, 130, 296, 114);
+  ctx.restore();
+
+  if (st.tipo === 'sfida') {
+    const S = st.sfidaA3;
+    const { x, y } = T.sfida.piedistallo;
+    if (!S.finita) {
+      drawPixelSprite(S.premio.forteGratis ? SPRITE_SCENA.piedistalloOro : SPRITE_SCENA.piedistallo, x, y + 8, 2);
+      const floatY = Math.round(Math.sin(tick * 0.08) * 3);
+      drawPixelSprite(spriteD(S.premio), x, y - 12 + floatY, 2);
+      drawPillLabel(S.attiva ? `⚔ ONDATA ${S.ondata} DI ${S.ondateTot}` : '⚔ SFIDA: TOCCA IL PIEDISTALLO', x, y - 30, 220, {
+        size: 8, color: '#e2e8f0', border: '#94a3b8',
+      });
+    }
+  } else if (st.tipo === 'sacrificio') {
+    const S = st.sacrificioA3;
+    const { x, y } = T.sacrificio.ceppo;
+    ctx.fillStyle = 'rgba(8,5,3,0.6)';
+    ctx.beginPath(); ctx.ellipse(x, y + 10, 24, 7, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#4a2c17'; ctx.strokeStyle = '#1c0f07'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.ellipse(x, y + 4, 20, 7, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.fillRect(x - 20, y - 6, 40, 10); ctx.strokeRect(x - 20, y - 6, 40, 10);
+    ctx.fillStyle = '#7c4a26';
+    ctx.beginPath(); ctx.ellipse(x, y - 6, 20, 7, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    // macchie di sangue, una per sacrificio
+    ctx.fillStyle = '#7f1d1d';
+    for (let i = 0; i < S.fatti; i++) {
+      ctx.beginPath(); ctx.arc(x - 12 + (i * 37) % 24, y - 7 + ((i * 13) % 6) - 3, 2.5, 0, TAU); ctx.fill();
+    }
+    // chiodi
+    for (const [cx, cy] of [[-10, -8], [0, -10], [10, -7], [-4, -4], [6, -3]]) {
+      ctx.fillStyle = '#9ca3af'; ctx.fillRect(x + cx - 1, y + cy - 6, 2, 6);
+      ctx.fillStyle = '#d1d5db'; ctx.fillRect(x + cx - 2, y + cy - 7, 4, 2);
+    }
+    drawPillLabel(S.fatti >= T.sacrificio.maxSacrifici ? '† IL CEPPO È SAZIO' : '† SALI SUL CEPPO: -½ ❤️', x, y - 30, 180, {
+      size: 8, color: '#fca5a5', border: '#b91c1c',
+    });
+  } else if (st.tipo === 'bisca') {
+    const B = st.biscaA3;
+    const { x, y } = T.bisca.banco;
+    // banco di legno con l'urna dei numeri
+    ctx.fillStyle = 'rgba(8,5,3,0.6)';
+    ctx.beginPath(); ctx.ellipse(x, y + 14, 26, 7, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#5b3416'; ctx.strokeStyle = '#1c0f07'; ctx.lineWidth = 1.5;
+    ctx.fillRect(x - 24, y - 4, 48, 18); ctx.strokeRect(x - 24, y - 4, 48, 18);
+    ctx.fillStyle = '#14532d'; ctx.fillRect(x - 22, y - 6, 44, 4);
+    const rot = B.chiuso ? 0 : Math.sin(tick * 0.05) * 0.25;
+    drawPixelSprite(SPRITE_SCENA.urna, x, y - 14, 1.6, false, false, rot);
+    drawPixelSprite(SPRITE_OGGETTI.dado, x + 16, y - 8, 1);
+    if (B.ultimo) drawTextFit(String(B.ultimo.numero), x - 14, y + 6, 20, { size: 8, color: '#fde68a' });
+    drawPillLabel(B.chiuso ? '🎲 BANCO CHIUSO' : `🎲 LOTTO: ${T.bisca.costo}🪙 [E]`, x, y - 34, 130, {
+      size: 7.5, color: B.chiuso ? '#9ca3af' : '#86efac', border: B.chiuso ? '#4b5563' : '#16a34a',
+    });
+    const C = B.cartomante;
+    if (C && !C.andata) {
+      const c = T.bisca.cartomante;
+      ctx.fillStyle = 'rgba(8,5,3,0.6)';
+      ctx.beginPath(); ctx.ellipse(c.x, c.y + 14, 16, 5, 0, 0, TAU); ctx.fill();
+      // sagoma d'ombra: scialle a campana, testa velata, candela
+      const osc = Math.sin(tick * 0.04) * 1.2;
+      ctx.fillStyle = '#120a10';
+      ctx.beginPath();
+      ctx.moveTo(c.x - 13, c.y + 14); ctx.quadraticCurveTo(c.x - 9, c.y - 10, c.x + osc, c.y - 14);
+      ctx.quadraticCurveTo(c.x + 9, c.y - 10, c.x + 13, c.y + 14); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.arc(c.x + osc, c.y - 18, 6, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#6b2142';
+      ctx.fillRect(c.x - 10, c.y + 2, 20, 2);
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath(); ctx.arc(c.x + 12, c.y - 2 + Math.sin(tick * 0.3), 1.8, 0, TAU); ctx.fill();
+      drawPillLabel(`🔮 CARTOMANTE: ${c.costo}🪙 [E]`, c.x, c.y - 34, 130, { size: 7.5, color: '#f5d0fe', border: '#a21caf' });
+    }
+  } else if (st.tipo === 'maledetta') {
+    // rovi lungo il fondo della stanza
+    ctx.save();
+    ctx.strokeStyle = '#3f6212'; ctx.lineWidth = 1.5;
+    for (let i = 0; i < 9; i++) {
+      const bx = 180 + i * 35;
+      ctx.beginPath();
+      ctx.moveTo(bx, 244); ctx.quadraticCurveTo(bx + 10, 226 + Math.sin(i) * 6, bx + 22, 240); ctx.stroke();
+      ctx.fillStyle = STANZE_SPECIALI_A3.aspetto.maledetta.spine;
+      ctx.fillRect(bx + 9, 233 + Math.sin(i) * 3, 2, 3);
+    }
+    ctx.restore();
+  }
+}
+
+const disegnaStanzaPixelArtBaseA3 = disegnaStanzaPixelArt;
+disegnaStanzaPixelArt = function disegnaStanzaPixelArtA3(tickR, st) {
+  disegnaStanzaPixelArtBaseA3(tickR, st);
+  if (!st) return;
+  try {
+    if (TIPI_A3.has(st.tipo)) disegnaArrediA3(st, tickR);
+    disegnaPorteA3(st, tickR);
+  } catch (err) { console.error('[A3] resa stanza', err); }
+};
+
+/** Icone sulla minimappa (stessa geometria della minimappa di disegnaHUDPixelArt). */
+function disegnaMinimappaA3(st) {
+  const m = statoRun.mappa;
+  if (!m || !st || maledizioneD('mappa')) return;
+  const cell = 12, x0 = W - 118, y0 = 24, mw = 114, mh = 92;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0 - 5, y0 - 15, mw - 2, mh - 2); ctx.clip();
+  for (const s of m.stanze) {
+    if (!s.visitata || !TIPI_A3.has(s.tipo)) continue;
+    const A = STANZE_SPECIALI_A3.aspetto[s.tipo];
+    const px = x0 + (s.cx - 1) * cell, py = y0 + (s.cy - 1) * cell;
+    const corr = st.id === s.id;
+    ctx.fillStyle = corr ? '#f9cb40' : A.minimappa;
+    ctx.fillRect(px + 1, py + 1, cell - 2, cell - 2);
+    drawTextFit(A.icona, px + cell / 2, py + cell - 3, cell - 2, { size: 6.5, color: corr ? '#0a0604' : '#ffffff', shadow: false });
+  }
+  ctx.restore();
+}
+
+const disegnaHUDPixelArtBaseA3 = disegnaHUDPixelArt;
+disegnaHUDPixelArt = function disegnaHUDPixelArtA3(st, ...resto) {
+  const r = disegnaHUDPixelArtBaseA3(st, ...resto);
+  try { disegnaMinimappaA3(st); } catch (err) { console.error('[A3] minimappa', err); }
+  return r;
+};
+
+// --- sonda QA (tools/qa-teatro-stanze-speciali.js) ---
+if (window.__teatro && window.__teatro.interni) {
+  Object.assign(window.__teatro.interni, {
+    STANZE_SPECIALI_A3, probStanzaA3, aggiungiStanzeSpecialiA3, passoStanzeSpecialiA3, sacrificaA3,
+    giocaLottoA3, pagaCartomanteA3, avviaSfidaA3,
+    // gli interni di 80-ciclo.js puntano alle funzioni di base: qui le versioni avvolte (stesso comportamento del gioco)
+    entraInStanza: (...a) => entraInStanza(...a), interagisciStanza: (...a) => interagisciStanza(...a),
+    verificaStanzaPulita: () => verificaStanzaPulita(),
+    disegnaStanzaPixelArt: (...a) => disegnaStanzaPixelArt(...a),
+  });
+}
+
+</script>
+<script>
+/* teatro/a6-progressione.js (incorporato da tools/teatro-release.js) */
+/*
+ * teatro/a6-progressione.js — Miglioramento 6: progressione fra una run e l'altra, legata alla storia.
+ *
+ *   - SBLOCCHI: Agnese, Taddeo e Pulcinella d'Ombra partono bloccati (silhouette nel menu con la condizione
+ *     scritta) e si sbloccano con eventi della storia o del gioco; alcuni oggetti entrano nel pool della run
+ *     solo dopo il loro sblocco. Ferruccio è sempre disponibile.
+ *   - Notifica «SBLOCCATO: …» in un cartiglio di pergamena (stesso aspetto del cartiglio del primo raccolto, D).
+ *   - SEGNI DI COMPLETAMENTO: per ogni boss battuto con un personaggio un piccolo segno nella sua scheda.
+ *   - Salvataggio per slot nei flag di T3 (window.__teatroT3.salvataggi, chiave CONFIG_A6.chiaveFlag).
+ *   - Migrazione: uno slot che ha già giocato con un personaggio lo considera sbloccato.
+ *   - QA/sviluppo: window.__teatro.interni.sbloccaTutto() e azzeraSblocchi().
+ *
+ * Nessun gancio nei file di base: si avvolgono le function di primo livello disegnaMenuSelezionePersonaggio,
+ * disegnaFrame, selezionaPersonaggio, avviaPartitaConPersonaggio, nuovaRun, inizializzaPoolRunB e t4Gancio.
+ * Script classico caricato dopo teatro/t4-hub-storia.js. Regole: teatro/LEGGIMI.md.
+ * Ispirazione: gli sblocchi dei personaggi e i segni di completamento di un roguelike a stanze (nomi nostri).
+ */
+
+// ===========================================================================
+// CONFIGURAZIONE (numeri e testi del miglioramento 6)
+// ===========================================================================
+const CONFIG_A6 = Object.freeze({
+  chiaveFlag: 'progressione6',              // flag dello slot T3 che contiene lo stato della progressione
+  chiaveTutto: 'ferruccio.teatro.sbloccaTutto', // localStorage: '1' = tutto sbloccato in ogni slot (QA/sviluppo)
+  versione: 1,
+  controlloOgniMs: 200,                     // ogni quanto si valutano le condizioni (nell'hub e in gioco)
+  notifica: Object.freeze({ durataMs: 4200, entrataMs: 250, uscitaMs: 400, w: 400, h: 44, yGioco: 268, yHub: 270, scalaSagoma: 0.45 }),
+  // geometria delle schede del menu (60-resa.js › disegnaMenuSelezionePersonaggio)
+  scheda: Object.freeze({ ids: ['ferruccio', 'agnese', 'taddeo', 'ombra'], w: 132, h: 226, y: 56, gap: 14, x0: 35 }),
+  segni: Object.freeze({ y: 186, passo: 16, scala: 1, spento: 0.3 }),
+  avvisoBloccatoMs: 1800,
+});
+
+/**
+ * Segni di completamento: uno per boss, con l'icona (sprite di SPRITE_OGGETTI) e il nome breve.
+ * L'ordine è quello in cui compaiono nella scheda.
+ */
+const SEGNI_A6 = Object.freeze([
+  Object.freeze({ boss: 're-gatto', sprite: 'gatto', nome: 'Gatto dei Quattro Canti' }),
+  Object.freeze({ boss: 'capitano-guardia', sprite: 'chiave', nome: 'Capitano di Piombo' }),
+  Object.freeze({ boss: 'regina-vespa', sprite: 'ago', nome: 'Regina delle Vespe' }),
+  Object.freeze({ boss: 'colosso-statua', sprite: 'campana', nome: 'Custode di Marmo' }),
+  Object.freeze({ boss: 'maestro-fucina', sprite: 'forbici', nome: 'Spezzafili d\'Ottone' }),
+  Object.freeze({ boss: 'donna-luciana', sprite: 'cuoio', nome: 'Donna Luciana' }),
+]);
+
+/**
+ * SBLOCCHI. Condizione: lista di alternative (basta una), ciascuna di tipo
+ *   { boss: id }            boss sconfitto in questo slot (con qualunque personaggio)
+ *   { piano: n }            piano n raggiunto in questo slot
+ *   { notte: n }            notte n raggiunta (contatore delle notti del file principale)
+ *   { parla: npc }          parlato con il personaggio nell'hub in questo slot
+ *   { flag, valore }        flag della trama (T4); valore '*' = qualunque decisione presa
+ *   { sblocco: id }         un altro sblocco già ottenuto
+ * cosa: { personaggio: id } oppure { oggetto: id } (entra nel pool della run).
+ * TESTI DA APPROVARE DALL'AUTORE: condizione (scritta nella silhouette) e testo (nel cartiglio).
+ */
+const SBLOCCHI_A6 = Object.freeze([
+  Object.freeze({
+    id: 'agnese', cosa: { personaggio: 'agnese' },
+    quando: [{ flag: 'tonino_ricordo', valore: 'restituito' }, { piano: 3 }],
+    condizione: 'Restituisci a Tonino il ricordo di Rosa, oppure arriva al Piano 3',
+    testo: 'Agnese, la Tessitrice di San Leucio. Una lettera ritrovata porta il suo nome.',
+  }),
+  Object.freeze({
+    id: 'taddeo', cosa: { personaggio: 'taddeo' },
+    quando: [{ boss: 'capitano-guardia' }],
+    condizione: 'Sconfiggi il Capitano di Piombo',
+    testo: 'Taddeo, la Guardia Pentita. Sotto il piombo delle guardie batte ancora un cuore.',
+  }),
+  Object.freeze({
+    id: 'ombra', cosa: { personaggio: 'ombra' },
+    quando: [{ boss: 'donna-luciana' }],
+    condizione: 'Sconfiggi Donna Luciana, la Burattinaia del Velo',
+    testo: 'Pulcinella d\'Ombra. Spezzati i fili, la tua ombra cammina da sola.',
+  }),
+  Object.freeze({
+    id: 'ogg-burattino-tonino', cosa: { oggetto: 'bobby' },
+    quando: [{ parla: 'tonino' }],
+    condizione: 'Parla con Tonino in Piazza Dante',
+    testo: 'Burattino di Tonino. Ora può comparire nel Teatro.',
+  }),
+  Object.freeze({
+    id: 'ogg-gatto-vico', cosa: { oggetto: 'gatto' },
+    quando: [{ boss: 're-gatto' }],
+    condizione: 'Sconfiggi il Gatto dei Quattro Canti',
+    testo: 'Gatto di Vico Lungo. Ora può comparire nel Teatro.',
+  }),
+  Object.freeze({
+    id: 'ogg-astrolabio', cosa: { oggetto: 'astrolabio' },
+    quando: [{ notte: 3 }],
+    condizione: 'Arriva alla Notte 3',
+    testo: 'Astrolabio della Specola. La luna cammina: ora può comparire nel Teatro.',
+  }),
+  Object.freeze({
+    id: 'ogg-sciarpa-agnese', cosa: { oggetto: 'stivali' },
+    quando: [{ sblocco: 'agnese' }],
+    condizione: 'Sblocca Agnese',
+    testo: 'Sciarpa Rossa di Agnese. «Dicono che il rosso protegga dal malocchio.»',
+  }),
+  Object.freeze({
+    id: 'ogg-ostia', cosa: { oggetto: 'ostia' },
+    quando: [{ piano: 4 }],
+    condizione: 'Arriva al Piano 4',
+    testo: 'Ostia della Cappella Palatina. Ora può comparire nel Teatro.',
+  }),
+]);
+
+const TESTI_A6 = Object.freeze({
+  sbloccato: 'SBLOCCATO',
+  bloccato: 'DIETRO LE QUINTE',
+  silhouetteNome: (nome) => nome.toUpperCase(),
+  bottoneBloccato: (nome) => `🔒 ${nome.toUpperCase()} È ANCORA DIETRO LE QUINTE`,
+  bottoneAiuto: 'Scegli un burattino già in scena per iniziare',
+  avvisoBloccato: (nome, cond) => `${nome} non è ancora in scena: ${cond}`,
+  segni: 'Segni:',
+});
+
+// ===========================================================================
+// STATO PER SLOT (flag T3)
+// ===========================================================================
+const a6 = {
+  ultimoSlot: null,
+  ultimoControlloMs: 0,
+  coda: [],            // notifiche in attesa: { testo, nome }
+  notifica: null,      // { testo, nome, ms }
+  avviso: null,        // { testo, finoMs } nel menu
+  oggettiAppenaFiltrati: 0,
+};
+
+function salvataggiA6() {
+  return (window.__teatroT3 && window.__teatroT3.salvataggi) || null;
+}
+
+function tuttoSbloccatoA6() {
+  try { return localStorage.getItem(CONFIG_A6.chiaveTutto) === '1'; } catch (_) { return false; }
+}
+
+function vuotoA6() {
+  return { versione: CONFIG_A6.versione, migrato: false, sbloccati: {}, segni: {}, boss: [], parlato: {}, pianoMax: 1 };
+}
+
+/** Stato della progressione dello slot attivo (copia normalizzata). */
+function statoA6() {
+  const sv = salvataggiA6();
+  let d = null;
+  try { d = sv ? sv.leggiFlag(CONFIG_A6.chiaveFlag) : null; } catch (_) { d = null; }
+  const s = vuotoA6();
+  if (d && typeof d === 'object') {
+    s.migrato = Boolean(d.migrato);
+    if (d.sbloccati && typeof d.sbloccati === 'object') s.sbloccati = { ...d.sbloccati };
+    if (d.segni && typeof d.segni === 'object') {
+      for (const [k, v] of Object.entries(d.segni)) if (Array.isArray(v)) s.segni[k] = v.slice();
+    }
+    if (Array.isArray(d.boss)) s.boss = d.boss.slice();
+    if (d.parlato && typeof d.parlato === 'object') s.parlato = { ...d.parlato };
+    s.pianoMax = Math.max(1, Math.floor(Number(d.pianoMax) || 1));
+  }
+  return s;
+}
+
+function scriviA6(s) {
+  const sv = salvataggiA6();
+  if (sv) { try { sv.impostaFlag(CONFIG_A6.chiaveFlag, JSON.parse(JSON.stringify(s))); } catch (err) { console.warn('[A6] salvataggio', err); } }
+}
+
+function sbloccoPersonaggioA6(charId) {
+  return SBLOCCHI_A6.find((s) => s.cosa.personaggio === charId) || null;
+}
+
+/** true se il personaggio si può giocare nello slot attivo. Ferruccio sempre. */
+function personaggioSbloccatoA6(charId) {
+  if (charId === 'ferruccio' || tuttoSbloccatoA6()) return true;
+  const sb = sbloccoPersonaggioA6(charId);
+  if (!sb) return true; // personaggio senza regola di sblocco: libero
+  return Boolean(statoA6().sbloccati[sb.id]);
+}
+
+function oggettoSbloccatoA6(idOgg) {
+  const sb = SBLOCCHI_A6.find((s) => s.cosa.oggetto === idOgg);
+  if (!sb || tuttoSbloccatoA6()) return true;
+  return Boolean(statoA6().sbloccati[sb.id]);
+}
+
+// ===========================================================================
+// MIGRAZIONE: chi ha già giocato con un personaggio lo ritrova sbloccato
+// ===========================================================================
+function migraSlotA6() {
+  const sv = salvataggiA6();
+  if (!sv) return;
+  const dati = sv.leggi(sv.slotAttivo);
+  if (!dati) return; // slot vuoto: niente da migrare (si parte puliti)
+  const s = statoA6();
+  if (s.migrato) return;
+  s.migrato = true;
+  const sb = sbloccoPersonaggioA6(dati.personaggio);
+  if (sb) s.sbloccati[sb.id] = true;
+  s.pianoMax = Math.max(s.pianoMax, dati.pianoMassimo || 1);
+  scriviA6(s);
+}
+
+/**
+ * Il ponte T3/T4 (script inline dell'HTML) carica in T4 tutti i flag dello slot e li riscrive interi a ogni
+ * salvataggio: senza protezione riscriverebbe una copia vecchia della progressione. Si avvolge
+ * window.__teatro.salvaFlag (definita dopo questo file) perché non tocchi la chiave della progressione.
+ */
+function proteggiFlagA6() {
+  const T = window.__teatro;
+  if (!T || typeof T.salvaFlag !== 'function' || T.salvaFlag.__a6) return;
+  const base = T.salvaFlag;
+  const avvolta = function (flag) {
+    const copia = { ...(flag || {}) };
+    delete copia[CONFIG_A6.chiaveFlag];
+    return base.call(this, copia);
+  };
+  avvolta.__a6 = true;
+  T.salvaFlag = avvolta;
+}
+setTimeout(proteggiFlagA6, 0); // appena dopo lo script inline del ponte
+
+// ===========================================================================
+// CONDIZIONI E SBLOCCO
+// ===========================================================================
+function flagTramaA6() {
+  try { return (window.__teatro.t4qa && window.__teatro.t4qa.flag) || {}; } catch (_) { return {}; }
+}
+
+function alternativaVeraA6(c, s, ft) {
+  if (c.boss) return s.boss.includes(c.boss);
+  if (c.piano) return s.pianoMax >= c.piano;
+  if (c.notte) return getNumeroNotte() >= c.notte;
+  if (c.parla) return Boolean(s.parlato[c.parla]);
+  if (c.sblocco) return Boolean(s.sbloccati[c.sblocco]);
+  if (c.flag) {
+    const v = ft[c.flag];
+    if (c.valore === '*') return v !== null && v !== undefined;
+    return v === c.valore;
+  }
+  return false;
+}
+
+/** Valuta tutte le condizioni; sblocca e accoda le notifiche. Rende la lista degli id sbloccati ora. */
+function valutaSblocchiA6(s = statoA6()) {
+  const ft = flagTramaA6();
+  const nuovi = [];
+  let cambiato = true;
+  while (cambiato) { // più passate: uno sblocco può dipendere da un altro (Sciarpa ← Agnese)
+    cambiato = false;
+    for (const sb of SBLOCCHI_A6) {
+      if (s.sbloccati[sb.id]) continue;
+      if (sb.quando.some((c) => alternativaVeraA6(c, s, ft))) {
+        s.sbloccati[sb.id] = true;
+        nuovi.push(sb.id);
+        cambiato = true;
+      }
+    }
+  }
+  return nuovi;
+}
+
+function notificaA6(sb) {
+  const nome = sb.cosa.personaggio ? (PERSONAGGI_GIOCABILI[sb.cosa.personaggio] || {}).nome
+    : (trovaOggettoB(sb.cosa.oggetto) || {}).nome;
+  a6.coda.push({ testo: sb.testo, nome: nome || sb.id, sprite: sb.cosa.oggetto ? (trovaOggettoB(sb.cosa.oggetto) || {}).sprite : null, personaggio: sb.cosa.personaggio || null });
+}
+
+/** Osserva la partita (hub e run): piano raggiunto, parlato con un NPC, poi valuta gli sblocchi. */
+function controllaA6(forza = false) {
+  proteggiFlagA6();
+  const sv = salvataggiA6();
+  if (!sv) return [];
+  if (a6.ultimoSlot !== sv.slotAttivo) { a6.ultimoSlot = sv.slotAttivo; migraSlotA6(); }
+  const ora = performance.now();
+  if (!forza && ora - a6.ultimoControlloMs < CONFIG_A6.controlloOgniMs) return [];
+  a6.ultimoControlloMs = ora;
+  if (statoRun.fase !== 'in_gioco' && statoRun.fase !== 'hub') return [];
+  const s = statoA6();
+  let cambiato = false;
+  if (statoRun.fase === 'in_gioco' && statoRun.piano > s.pianoMax) { s.pianoMax = statoRun.piano; cambiato = true; }
+  // chi gioca un personaggio in una run lo ha in scena (vale anche per sbloccaTutto/QA)
+  const sbP = sbloccoPersonaggioA6(statoRun.personaggioId);
+  if (statoRun.fase === 'in_gioco' && sbP && !s.sbloccati[sbP.id]) { s.sbloccati[sbP.id] = true; cambiato = true; }
+  if (statoRun.fase === 'hub') {
+    const d = window.__teatro.t4qa && window.__teatro.t4qa.dialogo;
+    if (d && d.chi && d.chi !== 'didascalia' && d.chi !== 'voce' && d.chi !== 'luciana' && !s.parlato[d.chi]) {
+      s.parlato[d.chi] = true; cambiato = true;
+    }
+  }
+  const nuovi = valutaSblocchiA6(s);
+  if (nuovi.length || cambiato) scriviA6(s);
+  for (const id of nuovi) notificaA6(SBLOCCHI_A6.find((x) => x.id === id));
+  return nuovi;
+}
+
+/** Boss sconfitto (dal gancio T4 'bossSconfitto'): segno per il personaggio e fatto dello slot. */
+function bossSconfittoA6(st) {
+  const b = st && st.nemici && (st.nemici.find((n) => n.boss) || st.nemici[0]);
+  if (!b || !b.bossId) return;
+  const s = statoA6();
+  const pid = statoRun.personaggioId || 'ferruccio';
+  if (!s.boss.includes(b.bossId)) s.boss.push(b.bossId);
+  const segni = s.segni[pid] || (s.segni[pid] = []);
+  if (!segni.includes(b.bossId)) segni.push(b.bossId);
+  const nuovi = valutaSblocchiA6(s);
+  scriviA6(s);
+  for (const id of nuovi) notificaA6(SBLOCCHI_A6.find((x) => x.id === id));
+}
+
+// ===========================================================================
+// AVVOLGIMENTI DELLE FUNZIONI DI BASE
+// ===========================================================================
+const t4GancioBaseA6 = t4Gancio;
+t4Gancio = function (nome, ...args) {
+  if (nome === 'bossSconfitto') { try { bossSconfittoA6(args[0]); } catch (err) { console.error('[A6] boss', err); } }
+  return t4GancioBaseA6(nome, ...args);
+};
+
+const selezionaPersonaggioBaseA6 = selezionaPersonaggio;
+/** Nel menu si può scegliere anche una scheda bloccata (per leggerne la condizione); fuori dal menu no. */
+selezionaPersonaggio = function (charId) {
+  if (statoRun.fase !== 'menu_selezione' && !personaggioSbloccatoA6(charId)) { avvisaBloccatoA6(charId); return; }
+  return selezionaPersonaggioBaseA6(charId);
+};
+
+const avviaPartitaConPersonaggioBaseA6 = avviaPartitaConPersonaggio;
+avviaPartitaConPersonaggio = function (charId) {
+  const id = charId || statoRun.personaggioId;
+  if (!personaggioSbloccatoA6(id)) { avvisaBloccatoA6(id); return; }
+  return avviaPartitaConPersonaggioBaseA6(charId);
+};
+
+const nuovaRunBaseA6 = nuovaRun;
+/** Rete di sicurezza: una run non parte mai con un personaggio bloccato (si torna a Ferruccio). */
+nuovaRun = function (...args) {
+  if (!personaggioSbloccatoA6(statoRun.personaggioId)) selezionaPersonaggioBaseA6('ferruccio');
+  return nuovaRunBaseA6(...args);
+};
+
+const inizializzaPoolRunBBaseA6 = inizializzaPoolRunB;
+/** Gli oggetti bloccati non entrano nel pool: al loro posto uno sbloccato della stessa polarità non scelto. */
+inizializzaPoolRunB = function (escludiId) {
+  inizializzaPoolRunBBaseA6(escludiId);
+  const P = statoRun.poolRunB;
+  if (!P || tuttoSbloccatoA6()) return;
+  const neg = (o) => o && o.polarita === 'negativo';
+  let tolti = 0;
+  for (let i = 0; i < P.ids.length; i++) {
+    const id = P.ids[i];
+    if (oggettoSbloccatoA6(id)) continue;
+    const o = trovaOggettoB(id);
+    const cand = CATALOGO_OGGETTI.filter((c) => c.id !== escludiId && !P.ids.includes(c.id) && neg(c) === neg(o) && oggettoSbloccatoA6(c.id));
+    const nuovo = cand.length ? cand[Math.floor(rng() * cand.length)].id : null;
+    const j = P.rimasti.indexOf(id);
+    if (nuovo) { P.ids[i] = nuovo; if (j >= 0) P.rimasti[j] = nuovo; } else { P.ids.splice(i, 1); if (j >= 0) P.rimasti.splice(j, 1); i--; }
+    tolti++;
+  }
+  a6.oggettiAppenaFiltrati = tolti;
+};
+
+function avvisaBloccatoA6(charId) {
+  const p = PERSONAGGI_GIOCABILI[charId];
+  const sb = sbloccoPersonaggioA6(charId);
+  const testo = TESTI_A6.avvisoBloccato(p ? p.nome : charId, sb ? sb.condizione : '');
+  a6.avviso = { testo, finoMs: performance.now() + CONFIG_A6.avvisoBloccatoMs };
+  if (statoRun.fase !== 'menu_selezione') mostraBanner(testo, 150);
+}
+
+// ===========================================================================
+// MENU: silhouette, condizione, segni di completamento, bottone
+// ===========================================================================
+function disegnaSegniA6(cx, charId, s) {
+  const S = CONFIG_A6.scheda;
+  const G = CONFIG_A6.segni;
+  const avuti = s.segni[charId] || [];
+  const y = S.y + G.y;
+  const largh = (SEGNI_A6.length - 1) * G.passo;
+  const x0 = cx + S.w / 2 - largh / 2;
+  ctx.save();
+  for (let i = 0; i < SEGNI_A6.length; i++) {
+    const sg = SEGNI_A6[i];
+    const x = x0 + i * G.passo;
+    const preso = avuti.includes(sg.boss);
+    ctx.globalAlpha = preso ? 1 : G.spento;
+    if (preso) {
+      ctx.fillStyle = 'rgba(249, 203, 64, 0.22)';
+      ctx.beginPath(); ctx.arc(x, y, 7, 0, TAU); ctx.fill();
+    }
+    drawPixelSprite(SPRITE_OGGETTI[sg.sprite] || SPRITE_OGGETTI.spada, x, y, G.scala);
+  }
+  ctx.restore();
+}
+
+function aCapoA6(testo, maxW, size) {
+  ctx.save();
+  ctx.font = `bold ${size}px Georgia, serif`;
+  const righe = [];
+  let riga = '';
+  for (const parola of testo.split(' ')) {
+    const prova = riga ? `${riga} ${parola}` : parola;
+    if (ctx.measureText(prova).width > maxW && riga) { righe.push(riga); riga = parola; } else riga = prova;
+  }
+  if (riga) righe.push(riga);
+  ctx.restore();
+  return righe;
+}
+
+function disegnaSchedaBloccataA6(cx, charId, selezionata) {
+  const S = CONFIG_A6.scheda;
+  const p = PERSONAGGI_GIOCABILI[charId];
+  const sb = sbloccoPersonaggioA6(charId);
+  const pedX = cx + S.w / 2, pedY = S.y + 68;
+  ctx.save();
+  // fondale della scheda: carta scura, la lanterna dietro il telo accende un ovale caldo
+  ctx.fillStyle = selezionata ? '#1d120a' : '#0f0906';
+  ctx.fillRect(cx + 2, S.y + 2, S.w - 4, S.h - 4);
+  const g = ctx.createRadialGradient(pedX, pedY - 18, 4, pedX, pedY - 18, 46);
+  g.addColorStop(0, 'rgba(240, 196, 120, 0.55)');
+  g.addColorStop(1, 'rgba(240, 196, 120, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(cx + 2, S.y + 2, S.w - 4, 100);
+  // silhouette: il burattino disegnato in nero (teatro d'ombre)
+  ctx.filter = 'brightness(0)';
+  ctx.globalAlpha = 0.92;
+  try {
+    disegnaFerruccioPittorico(pedX, pedY, { charId, charInfo: p, flipX: false, moving: false, tick: 0, haSpada: charId === 'taddeo', sinergie: {} });
+  } finally { ctx.filter = 'none'; ctx.globalAlpha = 1; }
+  drawPillLabel('🔒', cx + S.w - 16, S.y + 12, 22, { size: 7, color: '#a8a29e', border: '#4b5563' });
+  drawTextFit(TESTI_A6.silhouetteNome(p.nome), pedX, S.y + 95, S.w - 10, { size: 8.5, color: '#a8a29e', weight: 'bold' });
+  drawTextFit(TESTI_A6.bloccato, pedX, S.y + 109, S.w - 12, { size: 7, color: '#f9cb40' });
+  const righe = aCapoA6(sb ? sb.condizione : '', S.w - 18, 7.5);
+  righe.slice(0, 5).forEach((r, i) => drawTextFit(r, pedX, S.y + 128 + i * 12, S.w - 14, { size: 7.5, color: '#f3dfc1', weight: '' }));
+  ctx.restore();
+}
+
+function disegnaBottoneBloccatoA6(charId) {
+  const p = PERSONAGGI_GIOCABILI[charId];
+  const btnW = 320, btnH = 34, btnX = (W - btnW) / 2, btnY = 302;
+  ctx.save();
+  ctx.fillStyle = '#1c140e';
+  ctx.fillRect(btnX, btnY, btnW, btnH);
+  ctx.strokeStyle = '#57534e';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(btnX, btnY, btnW, btnH);
+  drawTextFit(TESTI_A6.bottoneBloccato(p.nome), W / 2, btnY + 16, btnW - 16, { size: 9, color: '#a8a29e', weight: 'bold' });
+  drawTextFit(TESTI_A6.bottoneAiuto, W / 2, btnY + 27, btnW - 16, { size: 7.5, color: '#78716c' });
+  ctx.restore();
+}
+
+const disegnaMenuSelezionePersonaggioBaseA6 = disegnaMenuSelezionePersonaggio;
+disegnaMenuSelezionePersonaggio = function (t) {
+  disegnaMenuSelezionePersonaggioBaseA6(t);
+  try {
+    controllaA6(); // cambio di slot → migrazione
+    const S = CONFIG_A6.scheda;
+    const s = statoA6();
+    S.ids.forEach((id, i) => {
+      const cx = S.x0 + i * (S.w + S.gap);
+      const sel = statoRun.personaggioId === id;
+      if (!personaggioSbloccatoA6(id)) disegnaSchedaBloccataA6(cx, id, sel);
+      else disegnaSegniA6(cx, id, s);
+    });
+    if (!personaggioSbloccatoA6(statoRun.personaggioId)) disegnaBottoneBloccatoA6(statoRun.personaggioId);
+    if (a6.avviso && performance.now() < a6.avviso.finoMs) drawPillLabel(a6.avviso.testo, W / 2, 50, 460, { size: 7.5 });
+    else a6.avviso = null;
+  } catch (err) { console.error('[A6] menu', err); }
+};
+
+// ===========================================================================
+// NOTIFICA «SBLOCCATO: …» (cartiglio di pergamena come quello del primo raccolto)
+// ===========================================================================
+function disegnaNotificaA6(dtMs) {
+  if (statoRun.fase !== 'in_gioco' && statoRun.fase !== 'hub') return;
+  const N = CONFIG_A6.notifica;
+  if (!a6.notifica) {
+    if (!a6.coda.length || statoRun.cartiglioD || statoRun.siparioAttivo) return;
+    a6.notifica = { ...a6.coda.shift(), ms: 0 };
+    try { AudioSys.playCampana(); } catch (_) { /* audio facoltativo */ }
+  }
+  const n = a6.notifica;
+  if (!statoRun.pausa) n.ms += Math.max(0, Math.min(100, dtMs || 0));
+  if (n.ms > N.durataMs) { a6.notifica = null; return; }
+  const bw = N.w, bh = N.h, bx = (W - bw) / 2, by = statoRun.fase === 'hub' ? N.yHub : N.yGioco;
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, n.ms / N.entrataMs, (N.durataMs - n.ms) / N.uscitaMs));
+  ctx.fillStyle = '#e6d2aa';
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.strokeStyle = '#5c4024';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(bx + 3, by + 3, bw - 6, bh - 6);
+  if (n.personaggio) {
+    ctx.save();
+    ctx.beginPath(); ctx.rect(bx + 4, by + 4, 44, bh - 8); ctx.clip();
+    ctx.translate(bx + 26, by + bh - 9);
+    ctx.scale(N.scalaSagoma, N.scalaSagoma);
+    ctx.filter = 'brightness(0)';
+    try { disegnaFerruccioPittorico(0, 0, { charId: n.personaggio, charInfo: PERSONAGGI_GIOCABILI[n.personaggio], tick: 0, sinergie: {} }); } catch (_) { /* solo decorazione */ }
+    ctx.restore();
+  } else if (n.sprite) {
+    drawPixelSprite(SPRITE_OGGETTI[n.sprite] || SPRITE_OGGETTI.spada, bx + 24, by + bh / 2, 2);
+  }
+  drawTextFit(`✦ ${TESTI_A6.sbloccato}: ${n.nome}`, bx + bw / 2 + 16, by + 16, bw - 70, { size: 9, color: '#5c1a0c', shadow: false });
+  drawTextFit(n.testo, bx + bw / 2 + 16, by + 32, bw - 70, { size: 7.5, color: '#451a03', weight: '', style: 'italic', shadow: false });
+  ctx.restore();
+}
+
+const disegnaFrameBaseA6 = disegnaFrame;
+disegnaFrame = function (dtMs) {
+  const r = disegnaFrameBaseA6(dtMs);
+  try { controllaA6(); disegnaNotificaA6(dtMs); } catch (err) { console.error('[A6] frame', err); }
+  return r;
+};
+
+// ===========================================================================
+// SONDA QA / SVILUPPO
+// ===========================================================================
+Object.assign(window.__teatro.interni, {
+  SBLOCCHI_A6, SEGNI_A6, CONFIG_A6,
+  /** Sviluppo/QA: tutto sbloccato in ogni slot (finché non si chiama azzeraSblocchi). */
+  sbloccaTutto() { try { localStorage.setItem(CONFIG_A6.chiaveTutto, '1'); } catch (_) { /* memoria piena o negata */ } },
+  /** Sviluppo/QA: toglie il «tutto sbloccato» e azzera la progressione dello slot attivo (Ferruccio resta). */
+  azzeraSblocchi() {
+    try { localStorage.removeItem(CONFIG_A6.chiaveTutto); } catch (_) { /* idem */ }
+    const s = vuotoA6();
+    s.migrato = true; // azzerato apposta: nessuna migrazione dal personaggio dello slot
+    scriviA6(s);
+    a6.coda = []; a6.notifica = null;
+    if (!personaggioSbloccatoA6(statoRun.personaggioId)) selezionaPersonaggioBaseA6('ferruccio');
+  },
+  progressione: Object.freeze({
+    get stato() { return statoA6(); },
+    get notifica() { return a6.notifica ? { nome: a6.notifica.nome, testo: a6.notifica.testo } : null; },
+    get coda() { return a6.coda.map((n) => n.nome); },
+    get oggettiFiltrati() { return a6.oggettiAppenaFiltrati; },
+    personaggioSbloccato: personaggioSbloccatoA6,
+    oggettoSbloccato: oggettoSbloccatoA6,
+    controlla: () => controllaA6(true),
+    bossSconfitto: bossSconfittoA6,
+  }),
+});
+
+</script>
+<script>
+/* teatro/a7-registro-bilancio.js (incorporato da tools/teatro-release.js) */
+/*
+ * teatro/a7-registro-bilancio.js — Miglioramento 7: REGISTRO DI FINE RUN e Registro delle notti.
+ *
+ *   - Durante la run si contano: tempo di gioco (tick di logica fuori pausa), stanze ripulite, nemici caduti,
+ *     oggetti presi (nome; «?» se raccolti sotto la Benda del Cieco; ✦ = scoperto ora), monete/bombe/chiavi
+ *     prese e spese (differenze dell'inventario a ogni tick, per piano), consumabili usati, danni subiti per
+ *     fonte (l'ultima fonte è la causa della morte), sangue dato alle stanze speciali (ceppo, rovi), lucchetti.
+ *   - Alla morte (gancio T4 'morte') la run si chiude e si salva; la pergamena del riepilogo compare appena
+ *     la sequenza di morte riporta in Piazza Dante (così la sequenza, il watchdog e il ritorno all'hub restano
+ *     quelli di t4-hub-storia.js). Alla vittoria su Donna Luciana la pergamena si apre in scena (la run
+ *     continua dopo averla chiusa). Un tasto qualunque o un click la chiude.
+ *   - Registro per slot di salvataggio (ultime CONFIG_A7.maxRun run) in localStorage, chiave dedicata
+ *     CONFIG_A7.prefisso + slot (non gonfia lo slot T3). Abbandoni (Ricomincia notte, menu, pagina chiusa)
+ *     restano registrati con l'esito corrispondente.
+ *   - Menu ESC: «Registro delle notti» [L] con le ultime run e le statistiche; [X] esporta il JSON.
+ *   - window.__teatro.interni.registroRun() e esportaRegistro() (JSON da copiare), runInCorsoA7().
+ *
+ * Nessun gancio nei file di base: si avvolgono le function di primo livello nuovaRun, passoLogico,
+ * subisciColpoGiocatore, pagaSangueA3, dopoRaccoltaD, usaConsumabileA2, entraInStanza, avviaPiano,
+ * disegnaMenuPausa, gestisciClickMenuPausa e t4Gancio ('morte', 'ricomincia', 'bossSconfitto', 'sopra').
+ * Script classico caricato dopo teatro/a6-progressione.js. Regole: teatro/LEGGIMI.md.
+ * Ispirazione: il riepilogo di fine partita dei roguelike a stanze (nomi e testi nostri).
+ */
+
+// ===========================================================================
+// CONFIGURAZIONE (numeri e testi del miglioramento 7)
+// ===========================================================================
+const CONFIG_A7 = Object.freeze({
+  prefisso: 'ferruccio.teatro.registro.',   // localStorage: + numero dello slot T3
+  versione: 1,
+  maxRun: 50,                               // run conservate per slot (le più vecchie escono)
+  maxDanniPerRun: 60,                       // voci del diario dei colpi tenute per run
+  righeRegistro: 9,                         // run mostrate nella pagina del Registro delle notti
+  causeMostrate: 6,
+  tastoRegistro: 'KeyL',                    // dal menu ESC
+  tastoEsporta: 'KeyX',                     // nel Registro: esporta il JSON
+  raggioFonteProiettilePx: 14,              // un colpo si attribuisce al proiettile più vicino del tick prima
+  bossFinale: 'donna-luciana',
+  pergamena: Object.freeze({ x: 50, y: 22, w: 540, h: 316 }),
+  bottonePausa: Object.freeze({ w: 236, h: 15, y: 332 }), // sotto il menu ESC dell'autore (60-resa.js)
+});
+
+/** Testi per il giocatore. DA APPROVARE DALL'AUTORE. */
+const TESTI_A7 = Object.freeze({
+  titoloMorte: (n) => `REGISTRO DELLA NOTTE ${n}`,
+  titoloVittoria: (n) => `NOTTE ${n}: I FILI SONO SPEZZATI`,
+  causa: (f) => `Caduto contro ${f}`,
+  vittoria: 'Donna Luciana è sconfitta. Il Teatro continua: chiudi la pergamena e prosegui.',
+  chiudi: 'Un tasto o un click per chiudere · Registro delle notti: Esc, poi L',
+  registro: 'REGISTRO DELLE NOTTI',
+  vuoto: 'Nessuna notte registrata in questo slot.',
+  piedeRegistro: 'X: esporta il registro (JSON) · Esc / L: torna al menu',
+  esportato: 'Registro copiato negli appunti (o scaricato come file).',
+  bottone: '📜 REGISTRO DELLE NOTTI [L]',
+  esiti: Object.freeze({ morte: 'morte', vittoria: 'vittoria', abbandono: 'abbandonata', interrotta: 'interrotta', 'in corso': 'in corso' }),
+  stanze: Object.freeze({
+    ingresso: 'ingresso', normale: 'di combattimento', boss: 'del boss', tesoro: 'del tesoro', fucina: 'la Fucina',
+    segreta: 'segreta', patto: 'del Patto', sviluppatore: 'dello Sviluppatore', sfida: 'della Sfida',
+    sacrificio: 'del Sacrificio', maledetta: 'dei Rovi', bisca: 'la Bisca',
+  }),
+});
+
+// ===========================================================================
+// STATO
+// ===========================================================================
+const a7 = {
+  run: null,              // run in corso (oggetto serializzabile)
+  inv: null,              // ultimo inventario visto { monete, bombe, chiavi }
+  stanza: null,           // stanza corrente vista dall'ultimo tick
+  proiettili: [],         // istantanea { x, y, fonte } dei proiettili nemici al tick prima
+  inSangue: false, sangueRegistrato: false,
+  pergamena: null,        // { voce, tipo: 'morte'|'vittoria' } da mostrare
+  inAttesaHub: null,      // pergamena che aspetta il ritorno in Piazza Dante
+  registroAperto: false,
+  avviso: null,           // { testo, finoMs }
+};
+
+function slotA7() {
+  const sv = window.__teatroT3 && window.__teatroT3.salvataggi;
+  return sv ? sv.slotAttivo : 0;
+}
+
+/** Elenco delle run registrate nello slot attivo (dalla più vecchia alla più recente). */
+function leggiRegistroA7(slot = slotA7()) {
+  try {
+    const d = JSON.parse(localStorage.getItem(CONFIG_A7.prefisso + slot) || 'null');
+    return d && Array.isArray(d.run) ? d.run : [];
+  } catch (_) { return []; }
+}
+
+function scriviRegistroA7(lista, slot = slotA7()) {
+  try {
+    localStorage.setItem(CONFIG_A7.prefisso + slot, JSON.stringify({ versione: CONFIG_A7.versione, slot, run: lista.slice(-CONFIG_A7.maxRun) }));
+  } catch (err) { console.warn('[A7] registro non salvato', err); }
+}
+
+/** Inserisce o aggiorna (stesso id) la voce della run nel registro dello slot. */
+function salvaVoceA7(voce) {
+  const lista = leggiRegistroA7(voce.slot);
+  const i = lista.findIndex((v) => v.id === voce.id);
+  if (i >= 0) lista[i] = voce; else lista.push(voce);
+  scriviRegistroA7(lista, voce.slot);
+}
+
+const pulisciNomeA7 = (s) => String(s || '').replace(/\s*\(.*?\)/g, '').trim(); // via i riferimenti fra parentesi
+
+// ===========================================================================
+// RUN IN CORSO
+// ===========================================================================
+function nuovaVoceA7() {
+  const ch = getCharCorrente();
+  return {
+    id: `${Date.now().toString(36)}-${statoRun.numeroRun}`,
+    slot: slotA7(), data: new Date().toISOString(),
+    personaggio: statoRun.personaggioId, nomePersonaggio: ch.nome,
+    notte: statoRun.numeroNotte || getNumeroNotte(),
+    esito: 'in corso', vittoria: false, causa: null,
+    piano: statoRun.piano || 1, stanza: null, stanzeVisitatePiano: 0,
+    tick: 0, tempoMs: 0,
+    stanzePulite: 0, nemiciUccisi: 0, boss: [],
+    oggetti: [], consumabili: [],
+    monete: { prese: 0, spese: 0 }, bombe: { prese: 0, spese: 0 }, chiavi: { prese: 0, spese: 0 },
+    perPiano: {},              // piano → { monete, moneteSpese, bombe, chiavi, chiaviSpese, lucchetti, lucchettiAperti, dannoHalf, stanze, tempoMs }
+    danni: [],                 // { fonte, half, piano, stanza }
+    sangueHalf: 0,             // dato al ceppo e ai rovi (costo delle stanze speciali)
+    stanzeSpeciali: {},        // tipo → visite
+    hpFine: null, maxHpFine: null, moneteFine: 0,
+  };
+}
+
+function pianoA7(r, p = statoRun.piano || 1) {
+  return r.perPiano[p] || (r.perPiano[p] = { monete: 0, moneteSpese: 0, bombe: 0, chiavi: 0, chiaviSpese: 0, lucchetti: 0, lucchettiAperti: 0, dannoHalf: 0, stanze: 0, tempoMs: 0 });
+}
+
+function inventarioA7() {
+  return { monete: statoRun.monete || 0, bombe: statoRun.bombe || 0, chiavi: statoRun.chiavi || 0 };
+}
+
+function iniziaRunA7() {
+  if (a7.run && a7.run.esito === 'in corso') chiudiRunA7('abbandono', null);
+  a7.run = nuovaVoceA7();
+  a7.inv = inventarioA7();
+  a7.stanza = null;
+  a7.proiettili = [];
+  contaLucchettiA7();
+}
+
+/** Differenze dell'inventario: crescite = prese, cali = spese (Fucina, lucchetti, bombe, lotto...). */
+function osservaInventarioA7() {
+  const r = a7.run;
+  if (!r || !a7.inv) return;
+  const ora = inventarioA7();
+  const pp = pianoA7(r);
+  for (const k of ['monete', 'bombe', 'chiavi']) {
+    const d = ora[k] - a7.inv[k];
+    if (d > 0) { r[k].prese += d; pp[k === 'monete' ? 'monete' : k] += d; }
+    if (d < 0) { r[k].spese -= d; if (k === 'monete') pp.moneteSpese -= d; if (k === 'chiavi') pp.chiaviSpese -= d; }
+  }
+  a7.inv = ora;
+}
+
+/** Un tick in run: tempo, stanza, uccisioni, pulizie, inventario, istantanea dei proiettili. */
+function osservaTickA7() {
+  const r = a7.run;
+  if (!r || r.esito !== 'in corso' || statoRun.fase !== 'in_gioco') return;
+  if (!statoRun.pausa) { r.tick++; pianoA7(r).tempoMs += MS_PER_TICK; }
+  r.tempoMs = Math.round(r.tick * MS_PER_TICK);
+  if (statoRun.piano > r.piano) { r.piano = statoRun.piano; r.stanzeVisitatePiano = 0; }
+  const st = statoRun.stanzaCorrente;
+  if (st && st !== a7.stanza) {
+    a7.stanza = st;
+    if (!st.__vistaA7) {
+      st.__vistaA7 = true;
+      r.stanzeVisitatePiano++;
+      pianoA7(r).stanze++;
+      if (['sfida', 'sacrificio', 'maledetta', 'bisca'].includes(st.tipo)) r.stanzeSpeciali[st.tipo] = (r.stanzeSpeciali[st.tipo] || 0) + 1;
+    }
+    if (!st.pulita) st.__daPulireA7 = true;
+  }
+  if (st) {
+    r.stanza = { tipo: st.tipo, id: st.id, boss: st.tipo === 'boss' ? pulisciNomeA7((st.nemici.find((n) => n.boss) || {}).nome) : null };
+    for (const n of st.nemici) {
+      if (n.hp <= 0 && !n.__mortoA7) { n.__mortoA7 = true; r.nemiciUccisi++; }
+    }
+    if (!st.pulita && st.nemici.some((n) => n.hp > 0)) st.__daPulireA7 = true;
+    if (st.__daPulireA7 && st.pulita) { st.__daPulireA7 = false; r.stanzePulite++; }
+  }
+  osservaInventarioA7();
+  a7.proiettili = (statoRun.proiettiliNemici || []).map((p) => ({ x: p.x, y: p.y, fonte: p.fonteA7 || fonteProiettileA7(p, st) }));
+}
+
+/** Chi ha sparato: il nemico vivo più vicino alla nascita del proiettile (il nome resta sul proiettile). */
+function fonteProiettileA7(p, st) {
+  if (p.fonteA7) return p.fonteA7;
+  let best = null, dBest = Infinity;
+  for (const n of (st && st.nemici) || []) {
+    if (n.hp <= 0 && !n.boss) continue;
+    const d = Math.hypot(n.x - p.x, n.y - 6 - p.y);
+    if (d < dBest) { dBest = d; best = n; }
+  }
+  p.fonteA7 = best ? `un colpo di ${pulisciNomeA7(best.nome)}` : 'un proiettile del Velo';
+  return p.fonteA7;
+}
+
+function registraDannoA7(fonte, half, sangue) {
+  const r = a7.run;
+  if (!r || half <= 0) return;
+  const st = statoRun.stanzaCorrente;
+  const f = pulisciNomeA7(fonte) || 'le ombre';
+  r.causa = f;
+  pianoA7(r).dannoHalf += half;
+  if (sangue) r.sangueHalf += half;
+  r.danni.push({ fonte: f, half, piano: statoRun.piano, stanza: st ? st.tipo : null });
+  if (r.danni.length > CONFIG_A7.maxDanniPerRun) r.danni.shift();
+}
+
+/** Fonte del colpo: per i proiettili generici, il tiratore del proiettile più vicino al punto d'origine. */
+function risolviFonteA7(fonte, daX, daY) {
+  if (fonte !== 'un proiettile del Velo' || !Number.isFinite(daX)) return fonte;
+  let best = null, dBest = CONFIG_A7.raggioFonteProiettilePx;
+  for (const p of a7.proiettili) {
+    const d = Math.hypot(p.x - daX, p.y - daY);
+    if (d < dBest) { dBest = d; best = p; }
+  }
+  if (best) return best.fonte;
+  const st = statoRun.stanzaCorrente;
+  const boss = st && st.tipo === 'boss' && st.nemici.find((n) => n.boss);
+  return boss ? `un colpo di ${pulisciNomeA7(boss.nome)}` : fonte;
+}
+
+function contaLucchettiA7() {
+  const r = a7.run;
+  const m = statoRun.mappa;
+  if (!r || !m || m.__lucchettiA7) return;
+  m.__lucchettiA7 = true;
+  pianoA7(r, m.piano || statoRun.piano).lucchetti += m.stanze.filter((s) => s.chiusaA1).length;
+}
+
+/** Fotografia finale della run e salvataggio nel registro. */
+function chiudiRunA7(esito, causa) {
+  const r = a7.run;
+  if (!r) return null;
+  osservaInventarioA7();
+  if (r.esito === 'in corso' || r.esito === 'vittoria') r.esito = r.vittoria && esito !== 'vittoria' ? `vittoria, poi ${TESTI_A7.esiti[esito] || esito}` : esito;
+  if (causa) r.causa = pulisciNomeA7(causa);
+  r.piano = Math.max(r.piano, statoRun.piano || 1);
+  r.hpFine = statoRun.hpHalf; r.maxHpFine = statoRun.maxHpHalf; r.moneteFine = statoRun.monete || 0;
+  r.fine = new Date().toISOString();
+  salvaVoceA7(r);
+  if (esito !== 'vittoria') a7.run = null; // la vittoria non chiude la run: si continua
+  return r;
+}
+
+// ===========================================================================
+// AVVOLGIMENTI
+// ===========================================================================
+const nuovaRunBaseA7 = nuovaRun;
+nuovaRun = function (...args) {
+  const r = nuovaRunBaseA7.apply(this, args);
+  try { iniziaRunA7(); } catch (err) { console.error('[A7] nuova run', err); }
+  return r;
+};
+
+const avviaPianoBaseA7 = avviaPiano;
+avviaPiano = function (...args) {
+  try { osservaInventarioA7(); } catch (_) { /* osservazione facoltativa */ }
+  const r = avviaPianoBaseA7.apply(this, args);
+  try { if (a7.run) { a7.inv = inventarioA7(); contaLucchettiA7(); } } catch (err) { console.error('[A7] piano', err); }
+  return r;
+};
+
+const entraInStanzaBaseA7 = entraInStanza;
+entraInStanza = function (stanza, ...resto) {
+  const chiusa = Boolean(stanza && stanza.chiusaA1);
+  try { osservaInventarioA7(); } catch (_) { /* idem */ }
+  const r = entraInStanzaBaseA7.call(this, stanza, ...resto);
+  try {
+    if (a7.run && chiusa && !stanza.chiusaA1) pianoA7(a7.run).lucchettiAperti++;
+    const st = statoRun.stanzaCorrente;
+    if (a7.run && st && !st.pulita) st.__daPulireA7 = true; // anche se si ripulisce prima del prossimo tick
+  } catch (_) { /* idem */ }
+  return r;
+};
+
+const passoLogicoBaseA7 = passoLogico;
+passoLogico = function (...args) {
+  const r = passoLogicoBaseA7.apply(this, args);
+  try { osservaTickA7(); } catch (err) { console.error('[A7] tick', err); }
+  return r;
+};
+
+const subisciBaseA7 = subisciColpoGiocatore;
+subisciColpoGiocatore = function (half, fonte, daX, daY, ...resto) {
+  const prima = statoRun.hpHalf;
+  const vera = risolviFonteA7(fonte, daX, daY);
+  if (a7.run && statoRun.fase === 'in_gioco') a7.run.causa = pulisciNomeA7(vera); // vale anche per il colpo letale
+  const r = subisciBaseA7.call(this, half, fonte, daX, daY, ...resto);
+  const tolto = prima - statoRun.hpHalf;
+  if (tolto > 0 || (prima > 0 && statoRun.fase === 'morte')) {
+    registraDannoA7(vera, Math.max(tolto, prima), a7.inSangue);
+    if (a7.inSangue) a7.sangueRegistrato = true;
+  }
+  return r;
+};
+
+if (typeof pagaSangueA3 === 'function') {
+  const pagaSangueBaseA7 = pagaSangueA3;
+  pagaSangueA3 = function (costoHalf, letale, fonte, ...resto) {
+    const prima = statoRun.hpHalf;
+    a7.inSangue = true; a7.sangueRegistrato = false;
+    try {
+      const r = pagaSangueBaseA7.call(this, costoHalf, letale, fonte, ...resto);
+      if (!a7.sangueRegistrato && prima > statoRun.hpHalf) registraDannoA7(fonte, prima - statoRun.hpHalf, true);
+      return r;
+    } finally { a7.inSangue = false; }
+  };
+}
+
+const dopoRaccoltaBaseA7 = dopoRaccoltaD;
+dopoRaccoltaD = function (item, ...resto) {
+  try {
+    const base = trovaOggettoB(item && item.id);
+    if (a7.run && base) {
+      a7.run.oggetti.push({
+        id: base.id, nome: maledizioneD('cieco') ? '?' : base.nome, tier: base.tier || null,
+        polarita: base.polarita || null, scoperto: !conosciutoD(base.id), piano: statoRun.piano,
+      });
+    }
+  } catch (err) { console.error('[A7] oggetto', err); }
+  return dopoRaccoltaBaseA7.call(this, item, ...resto);
+};
+
+if (typeof usaConsumabileA2 === 'function') {
+  const usaConsBaseA7 = usaConsumabileA2;
+  usaConsumabileA2 = function (...args) {
+    const S = statoRun.consumabiliA2;
+    if (a7.pergamena && statoRun.fase === 'in_gioco') return false; // la pergamena prende i tasti
+    const c = S && S.run === statoRun.numeroRun ? S.slot : null;
+    const r = usaConsBaseA7.apply(this, args);
+    try {
+      if (r && c && a7.run) {
+        const e = effettoA2(c);
+        a7.run.consumabili.push({ fam: c.fam, nome: nomeA2(c), effetto: e ? e.nome : '?', id: c.fam === 'ampolla' ? `ampolla:${e && e.id}` : `carta:${c.id}`, piano: statoRun.piano });
+      }
+    } catch (err) { console.error('[A7] consumabile', err); }
+    return r;
+  };
+}
+
+const t4GancioBaseA7 = t4Gancio;
+t4Gancio = function (nome, ...args) {
+  if (nome === 'morte' && statoRun.fase === 'in_gioco' && a7.run) {
+    try {
+      osservaTickA7();
+      const v = chiudiRunA7('morte', a7.run.causa || args[0]);
+      a7.inAttesaHub = { voce: v, tipo: 'morte' };
+    } catch (err) { console.error('[A7] morte', err); }
+  } else if (nome === 'ricomincia' && a7.run && statoRun.fase === 'in_gioco') {
+    try { chiudiRunA7('abbandono', null); } catch (err) { console.error('[A7] abbandono', err); }
+  } else if (nome === 'bossSconfitto' && a7.run) {
+    try { bossSconfittoA7(args[0]); } catch (err) { console.error('[A7] boss', err); }
+  }
+  const r = t4GancioBaseA7(nome, ...args);
+  if (nome === 'sopra') { try { sopraA7(); } catch (err) { console.error('[A7] disegno', err); } }
+  return r;
+};
+
+function bossSconfittoA7(st) {
+  const b = st && st.nemici && (st.nemici.find((n) => n.boss) || st.nemici[0]);
+  if (!b) return;
+  const r = a7.run;
+  r.boss.push({ id: b.bossId || null, nome: pulisciNomeA7(b.nome), piano: statoRun.piano });
+  if (b.bossId === CONFIG_A7.bossFinale && !r.vittoria) {
+    r.vittoria = true;
+    osservaInventarioA7();
+    r.esito = 'vittoria';
+    salvaVoceA7(r);
+    a7.pergamena = { voce: JSON.parse(JSON.stringify(r)), tipo: 'vittoria' };
+  }
+}
+
+/** Run lasciata senza morte: menu personaggi dal menu ESC, oppure pagina chiusa. */
+function controllaAbbandonoA7() {
+  if (a7.run && a7.run.esito !== 'morte' && statoRun.fase === 'menu_selezione') chiudiRunA7('abbandono', null);
+  if (a7.inAttesaHub && statoRun.fase === 'hub') { a7.pergamena = a7.inAttesaHub; a7.inAttesaHub = null; }
+  if (a7.inAttesaHub && statoRun.fase === 'menu_selezione') a7.inAttesaHub = null;
+}
+window.addEventListener('pagehide', () => { try { if (a7.run) chiudiRunA7('interrotta', null); } catch (_) { /* uscita */ } });
+
+// ===========================================================================
+// STATISTICHE
+// ===========================================================================
+function statisticheA7(lista = leggiRegistroA7()) {
+  const chiuse = lista.filter((v) => v.esito !== 'in corso');
+  const morti = chiuse.filter((v) => /morte/.test(v.esito));
+  const cause = {};
+  for (const v of morti) { const c = v.causa || 'ignota'; cause[c] = (cause[c] || 0) + 1; }
+  const media = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
+  const p1 = chiuse.map((v) => v.perPiano && v.perPiano[1] && v.perPiano[2] ? v.perPiano[1].monete : null).filter((x) => x !== null);
+  return {
+    run: chiuse.length, morti: morti.length, vittorie: chiuse.filter((v) => v.vittoria).length,
+    pianoMedio: media(chiuse.map((v) => v.piano || 1)), pianoMax: chiuse.reduce((m, v) => Math.max(m, v.piano || 1), 0),
+    tempoMedioMs: media(chiuse.map((v) => v.tempoMs || 0)),
+    moneteMediePiano1: p1.length ? media(p1) : null, // solo run che hanno finito il piano 1
+    causeMorte: Object.entries(cause).sort((a, b) => b[1] - a[1]).map(([causa, n]) => ({ causa, n })),
+  };
+}
+
+function esportaRegistroA7() {
+  return JSON.stringify({ gioco: 'Ferruccio — Teatro delle Marionette', registro: 'a7', versione: CONFIG_A7.versione,
+    slot: slotA7(), esportato: new Date().toISOString(), statistiche: statisticheA7(), run: leggiRegistroA7() }, null, 1);
+}
+
+function esportaVersoUtenteA7() {
+  const testo = esportaRegistroA7();
+  let fatto = false;
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(testo).catch(() => scaricaA7(testo)); fatto = true; } } catch (_) { fatto = false; }
+  if (!fatto) scaricaA7(testo);
+  a7.avviso = { testo: TESTI_A7.esportato, finoMs: performance.now() + 2500 };
+}
+
+function scaricaA7(testo) {
+  try {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([testo], { type: 'application/json' }));
+    a.download = `registro-notti-slot${slotA7()}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+  } catch (err) { console.warn('[A7] esportazione', err); }
+}
+
+// ===========================================================================
+// DISEGNO
+// ===========================================================================
+/** Mezze Maschere in testo: 3 → «1½», 1 → «½». */
+const maschereA7 = (h) => (h <= 0 ? '0' : `${Math.floor(h / 2) || ''}${h % 2 ? '½' : ''}`);
+const tempoA7 = (ms) => { const s = Math.round((ms || 0) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+
+function aCapoA7(parole, maxW, size) {
+  ctx.save();
+  ctx.font = `bold ${size}px Georgia, serif`;
+  const righe = [];
+  let riga = '';
+  for (const p of parole) {
+    const prova = riga ? `${riga}, ${p}` : p;
+    if (ctx.measureText(prova).width > maxW && riga) { righe.push(`${riga},`); riga = p; } else riga = prova;
+  }
+  if (riga) righe.push(riga);
+  ctx.restore();
+  return righe;
+}
+
+function fondoPergamenaA7(x, y, w, h) {
+  ctx.fillStyle = 'rgba(4, 2, 1, 0.78)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#e6d2aa';
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = 'rgba(120, 80, 40, 0.18)';
+  ctx.fillRect(x, y, w, 8); ctx.fillRect(x, y + h - 8, w, 8);
+  ctx.strokeStyle = '#5c4024';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 4, y + 4, w - 8, h - 8);
+  ctx.strokeStyle = 'rgba(92, 64, 36, 0.5)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 8, y + 8, w - 16, h - 16);
+}
+
+function disegnaPergamenaA7() {
+  const { voce: v, tipo } = a7.pergamena;
+  const P = CONFIG_A7.pergamena;
+  const ink = '#3b2210', rosso = '#7f1d1d';
+  const T = (t, x, y, w, o = {}) => drawTextFit(t, x, y, w, { size: 8, color: ink, shadow: false, align: 'left', ...o });
+  ctx.save();
+  fondoPergamenaA7(P.x, P.y, P.w, P.h);
+  const cx = P.x + P.w / 2;
+  T(tipo === 'vittoria' ? TESTI_A7.titoloVittoria(v.notte) : TESTI_A7.titoloMorte(v.notte), cx, P.y + 26, P.w - 40, { size: 14, color: rosso, align: 'center' });
+  T(tipo === 'vittoria' ? TESTI_A7.vittoria : TESTI_A7.causa(v.causa || 'le ombre'), cx, P.y + 44, P.w - 40, { size: 9, style: 'italic', align: 'center' });
+  const xs = P.x + 26, xd = P.x + P.w / 2 + 10, lw = P.w / 2 - 36;
+  const stanza = v.stanza ? `${TESTI_A7.stanze[v.stanza.tipo] || v.stanza.tipo}${v.stanza.boss ? ` (${v.stanza.boss})` : ''}` : '—';
+  const sx = [
+    ['Personaggio', v.nomePersonaggio],
+    ['Notte', String(v.notte)],
+    ['Piano raggiunto', `${v.piano} · stanza ${stanza}`],
+    ['Stanze visitate nel piano', String(v.stanzeVisitatePiano)],
+    ['Tempo', tempoA7(v.tempoMs)],
+    ['Stanze ripulite', String(v.stanzePulite)],
+    ['Nemici caduti', String(v.nemiciUccisi)],
+    ['Boss battuti', v.boss.length ? v.boss.map((b) => b.nome).join(', ') : 'nessuno'],
+    ['Maschere perse', `${maschereA7(v.danni.reduce((a, d) => a + d.half, 0))} (${v.danni.length} colpi)`],
+    ['Sangue alle stanze speciali', `${maschereA7(v.sangueHalf)} Maschere`],
+  ];
+  sx.forEach(([k, val], i) => {
+    const y = P.y + 70 + i * 17;
+    T(`${k}:`, xs, y, 120, { size: 7.5, color: '#6b4423' });
+    T(val, xs + 124, y, lw - 124, { size: 8 });
+  });
+  const dx = [
+    ['Monete', `prese ${v.monete.prese} · spese ${v.monete.spese} · in tasca ${v.moneteFine}`],
+    ['Bombe', `prese ${v.bombe.prese} · usate ${v.bombe.spese}`],
+    ['Chiavi', `prese ${v.chiavi.prese} · usate ${v.chiavi.spese}`],
+  ];
+  dx.forEach(([k, val], i) => {
+    const y = P.y + 70 + i * 17;
+    T(`${k}:`, xd, y, 60, { size: 7.5, color: '#6b4423' });
+    T(val, xd + 60, y, lw - 60, { size: 8 });
+  });
+  let y = P.y + 70 + 3 * 17 + 4;
+  T(`Consumabili usati (${v.consumabili.length}):`, xd, y, lw, { size: 7.5, color: '#6b4423' });
+  const cons = v.consumabili.length ? aCapoA7(v.consumabili.map((c) => (c.fam === 'ampolla' ? `${c.nome} (${c.effetto})` : c.nome)), lw, 7.5) : ['nessuno'];
+  for (const riga of cons.slice(0, 3)) { y += 12; T(riga, xd, y, lw, { size: 7.5 }); }
+  y += 17;
+  T(`Oggetti presi (${v.oggetti.length}):`, xd, y, lw, { size: 7.5, color: '#6b4423' });
+  const ogg = v.oggetti.length ? aCapoA7(v.oggetti.map((o) => `${o.scoperto && o.nome !== '?' ? '✦' : ''}${o.nome}`), lw, 7.5) : ['nessuno'];
+  const maxR = 6;
+  ogg.slice(0, maxR).forEach((riga, i) => T(i === maxR - 1 && ogg.length > maxR ? `${riga} …` : riga, xd, y + 12 + i * 12, lw, { size: 7.5 }));
+  T(TESTI_A7.chiudi, cx, P.y + P.h - 16, P.w - 40, { size: 7, color: '#6b4423', align: 'center', style: 'italic' });
+  ctx.restore();
+}
+
+function disegnaRegistroA7() {
+  const lista = leggiRegistroA7();
+  const s = statisticheA7(lista);
+  const P = CONFIG_A7.pergamena;
+  const ink = '#3b2210';
+  const T = (t, x, y, w, o = {}) => drawTextFit(t, x, y, w, { size: 7.5, color: ink, shadow: false, align: 'left', ...o });
+  ctx.save();
+  fondoPergamenaA7(P.x, P.y, P.w, P.h);
+  T(`📜 ${TESTI_A7.registro} — slot ${slotA7()}`, P.x + P.w / 2, P.y + 24, P.w - 40, { size: 13, color: '#7f1d1d', align: 'center' });
+  T(`Run ${s.run} · morti ${s.morti} · vittorie ${s.vittorie} · piano medio ${s.pianoMedio.toFixed(1)} · piano massimo ${s.pianoMax} · tempo medio ${tempoA7(s.tempoMedioMs)}${s.moneteMediePiano1 !== null ? ` · monete al piano 1: ${s.moneteMediePiano1.toFixed(1)}` : ''}`,
+    P.x + P.w / 2, P.y + 41, P.w - 40, { size: 7.5, align: 'center' });
+  const cause = s.causeMorte.slice(0, CONFIG_A7.causeMostrate).map((c) => `${c.causa} ×${c.n}`).join(' · ') || '—';
+  T(`Morti per causa: ${cause}`, P.x + P.w / 2, P.y + 55, P.w - 40, { size: 7, align: 'center', style: 'italic' });
+  const col = [P.x + 20, P.x + 102, P.x + 178, P.x + 212, P.x + 246, P.x + 432, P.x + 478];
+  const tit = ['Data', 'Personaggio', 'Notte', 'Piano', 'Esito e causa', 'Tempo', 'Monete'];
+  tit.forEach((t, i) => T(t, col[i], P.y + 74, 90, { size: 7, color: '#6b4423' }));
+  ctx.fillStyle = 'rgba(92, 64, 36, 0.5)';
+  ctx.fillRect(P.x + 18, P.y + 79, P.w - 36, 1);
+  const ultime = lista.slice(-CONFIG_A7.righeRegistro).reverse();
+  if (!ultime.length) T(TESTI_A7.vuoto, P.x + P.w / 2, P.y + 110, P.w - 40, { align: 'center', style: 'italic' });
+  ultime.forEach((v, i) => {
+    const y = P.y + 94 + i * 21;
+    const d = new Date(v.data);
+    T(`${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`, col[0], y, 78);
+    T(v.nomePersonaggio || v.personaggio, col[1], y, 72);
+    T(String(v.notte), col[2], y, 30);
+    T(String(v.piano), col[3], y, 30);
+    T(`${v.vittoria ? '★ ' : ''}${TESTI_A7.esiti[v.esito] || v.esito}${v.causa && /morte/.test(v.esito) ? `: ${v.causa}` : ''}`, col[4], y, 182);
+    T(tempoA7(v.tempoMs), col[5], y, 42);
+    T(`+${v.monete.prese} −${v.monete.spese}`, col[6], y, 54);
+    T(`${v.stanzePulite} stanze · ${v.nemiciUccisi} nemici · ${v.oggetti.length} oggetti · ${v.consumabili.length} consumabili · bombe ${v.bombe.spese} · chiavi ${v.chiavi.spese}`, col[1], y + 9, P.w - 140, { size: 6.5, color: '#6b4423', weight: '' });
+  });
+  T(TESTI_A7.piedeRegistro, P.x + P.w / 2, P.y + P.h - 16, P.w - 40, { size: 7, color: '#6b4423', align: 'center', style: 'italic' });
+  if (a7.avviso && performance.now() < a7.avviso.finoMs) drawPillLabel(a7.avviso.testo, W / 2, P.y + P.h - 34, 360, { size: 7.5 });
+  ctx.restore();
+}
+
+function rettBottonePausaA7() {
+  const B = CONFIG_A7.bottonePausa;
+  return { x: W / 2 - B.w / 2, y: B.y, w: B.w, h: B.h };
+}
+
+const disegnaMenuPausaBaseA7 = disegnaMenuPausa;
+disegnaMenuPausa = function (...args) {
+  const r = disegnaMenuPausaBaseA7.apply(this, args);
+  try {
+    if (!statoRun.diarioD) {
+      const R = rettBottonePausaA7();
+      ctx.save();
+      ctx.fillStyle = '#22150d';
+      ctx.fillRect(R.x, R.y, R.w, R.h);
+      ctx.strokeStyle = '#7c5227';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(R.x, R.y, R.w, R.h);
+      drawTextFit(TESTI_A7.bottone, W / 2, R.y + 10.5, R.w - 12, { size: 7.5, color: '#f9cb40', weight: 'bold' });
+      ctx.restore();
+    }
+  } catch (err) { console.error('[A7] menu', err); }
+  return r;
+};
+
+const clickMenuPausaBaseA7 = gestisciClickMenuPausa;
+gestisciClickMenuPausa = function (mx, my, ...resto) {
+  if (a7.registroAperto) { a7.registroAperto = false; return true; }
+  const R = rettBottonePausaA7();
+  if (!statoRun.diarioD && mx >= R.x && mx <= R.x + R.w && my >= R.y && my <= R.y + R.h) { a7.registroAperto = true; return true; }
+  return clickMenuPausaBaseA7.call(this, mx, my, ...resto);
+};
+
+/** Disegno sopra tutto (dopo il gancio 'sopra' del T4: sequenza di morte, cartigli, menu nell'hub). */
+function sopraA7() {
+  controllaAbbandonoA7();
+  if (a7.registroAperto && !statoRun.pausa) a7.registroAperto = false;
+  if (a7.registroAperto) disegnaRegistroA7();
+  else if (a7.pergamena && (statoRun.fase === 'hub' || statoRun.fase === 'in_gioco')) disegnaPergamenaA7();
+}
+
+// ===========================================================================
+// INPUT (fase di cattura: la pergamena e il registro prendono i tasti finché sono aperti)
+// ===========================================================================
+const MODIFICATORI_A7 = new Set(['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight']);
+function bloccaA7(e) { e.preventDefault(); e.stopImmediatePropagation(); }
+
+window.addEventListener('keydown', (e) => {
+  if (a7.registroAperto) {
+    if (e.code === CONFIG_A7.tastoEsporta && !e.repeat) esportaVersoUtenteA7();
+    else if (['Escape', CONFIG_A7.tastoRegistro, 'Enter', 'Space'].includes(e.code)) a7.registroAperto = false;
+    bloccaA7(e);
+    return;
+  }
+  if (a7.pergamena && (statoRun.fase === 'hub' || statoRun.fase === 'in_gioco') && !statoRun.pausa) {
+    if (MODIFICATORI_A7.has(e.code) || e.repeat) return;
+    a7.pergamena = null;
+    bloccaA7(e);
+    return;
+  }
+  if (statoRun.pausa && !statoRun.diarioD && e.code === CONFIG_A7.tastoRegistro) { a7.registroAperto = true; bloccaA7(e); }
+}, true);
+
+window.addEventListener('mousedown', (e) => {
+  if (a7.pergamena && !a7.registroAperto && !statoRun.pausa && (statoRun.fase === 'hub' || statoRun.fase === 'in_gioco')) {
+    a7.pergamena = null;
+    bloccaA7(e);
+  }
+}, true);
+
+/** Con la pergamena della vittoria aperta in scena la logica della stanza aspetta. */
+const passoLogicoPausaA7 = passoLogico;
+passoLogico = function (...args) {
+  if (a7.pergamena && statoRun.fase === 'in_gioco') { tick++; return undefined; }
+  return passoLogicoPausaA7.apply(this, args);
+};
+
+// ===========================================================================
+// SONDA QA / ESPORTAZIONE
+// ===========================================================================
+Object.assign(window.__teatro.interni, {
+  CONFIG_A7,
+  /** Registro dello slot attivo: elenco delle run (copia). */
+  registroRun: () => JSON.parse(JSON.stringify(leggiRegistroA7())),
+  /** JSON da copiare e mandare (statistiche + run). */
+  esportaRegistro: esportaRegistroA7,
+  statisticheRegistro: () => statisticheA7(),
+  runInCorsoA7: () => (a7.run ? JSON.parse(JSON.stringify(a7.run)) : null),
+  registroA7: Object.freeze({
+    get pergamena() { return a7.pergamena ? { tipo: a7.pergamena.tipo, causa: a7.pergamena.voce.causa } : null; },
+    get aperto() { return a7.registroAperto; },
+    apri() { a7.registroAperto = true; },
+    chiudi() { a7.registroAperto = false; a7.pergamena = null; },
+    azzera() { scriviRegistroA7([]); },
+  }),
+  // versioni avvolte per la QA (stessi effetti + registro)
+  nuovaRun, avviaPiano, entraInStanza, subisciColpoGiocatore,
+  ...(typeof usaConsumabileA2 === 'function' ? { usaConsumabileA2 } : {}),
+});
+
+</script>
+<script>
 // --- ponte T3/T4: i flag della trama di T4 vivono nello slot di salvataggio di T3 ---
 (function () {
   var sv = window.__teatroT3 && window.__teatroT3.salvataggi;
   var T = window.__teatro;
   if (!sv || !T || Object.isFrozen(T)) return;
-  T.caricaFlag = function () { var d = sv.leggi(sv.slotAttivo); return (d && d.flag) ? Object.assign({}, d.flag) : {}; };
-  T.salvaFlag = function (flag) { Object.keys(flag || {}).forEach(function (k) { sv.impostaFlag(k, flag[k]); }); };
+  // T4 tiene una copia dei flag: al salvataggio si scrivono solo le chiavi che T4 ha cambiato rispetto a
+  // quanto aveva letto, così non si sovrascrivono flag scritti nel frattempo da altri (oggettiConosciuti, progressione6).
+  var visti = {};
+  var j = function (v) { try { return JSON.stringify(v); } catch (e) { return String(v); } };
+  T.caricaFlag = function () {
+    var d = sv.leggi(sv.slotAttivo); var f = (d && d.flag) ? Object.assign({}, d.flag) : {};
+    visti = {}; Object.keys(f).forEach(function (k) { visti[k] = j(f[k]); });
+    return f;
+  };
+  T.salvaFlag = function (flag) {
+    Object.keys(flag || {}).forEach(function (k) {
+      var v = j(flag[k]); if (visti[k] === v) return;
+      visti[k] = v; sv.impostaFlag(k, flag[k]);
+    });
+  };
 })();
 </script>
 <!-- --- T4: fine --- -->

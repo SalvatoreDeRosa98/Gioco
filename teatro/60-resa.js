@@ -1180,7 +1180,7 @@ function disegnaFrame(dtMs) {
     ctx.save();
     if (pSpento) ctx.globalAlpha = FEEL.iframes.alpha;
     disegnaFerruccioPittorico(ctx, player.x, player.y, {
-      scale: 1.0,
+      scale: 1.0, scalaA2: player.scalaA2, // A2: elisir del Gigante e della Pulce (10-sprite.js)
       flipX: player.flipX,
       tick,
       moving: player.moving,
@@ -1316,7 +1316,7 @@ function disegnaHUDPixelArt(st) {
     { size: 8, color: '#f9cb40', align: 'left' }
   );
   drawTextFit(
-    `🪙${statoRun.monete} · 🥾SPD:${(statoRun.speed / 2).toFixed(2)} · Ogg:${statoRun.oggettiEquipaggiati.length}`,
+    `🪙${statoRun.monete}${typeof testoInventarioA1 === 'function' ? testoInventarioA1() : ''} · 🥾SPD:${(statoRun.speed / 2).toFixed(2)} · Ogg:${statoRun.oggettiEquipaggiati.length}`,
     hx + 6,
     hy + 47,
     hw - 12,

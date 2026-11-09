@@ -583,11 +583,13 @@ const OGGETTI_D = Object.freeze({
 
 // --- T3: inizio ---
 // ECONOMIA DELL'AUTORE (roadmap «Novità nel Teatro», passo T3): prezzi della Fucina e drop di monete.
-// Obiettivo: 5-8 monete in media al Piano 1. Verifica: `node gioco/teatro/sim-economia.js`, che legge
-// QUESTO blocco dal file (una sola fonte per i numeri) e simula 1000 piani.
+// Obiettivo: 5-8 monete in media al Piano 1. Verifica: `node gioco/teatro/sim-economia.js` (→ tools/sim-bilancio-teatro.js),
+// che genera i piani e i drop col codice del gioco: i numeri restano solo QUI.
 const ECONOMIA_T3 = {
   prezzi: { cuore: 3, consumabile: 2, base: 5, forte: 7, negativo: 2 }, // D: negativo = 2 (oggetti-teatro.md §1)
-  piano1: { probMonetaSegreta: 0.5, probMonetaAltre: 0.35 },
+  // (bilancio 7) probMonetaAltre 0,35 → 0,5: con 6 stanze di combattimento la media del piano 1 era 5,3 (p10 = 1),
+  // al bordo basso di 5-8; ora ~6,1 + rovi e carte ≈ 6,5 (tools/sim-bilancio-teatro.js, production/bilancio-teatro.md).
+  piano1: { probMonetaSegreta: 0.5, probMonetaAltre: 0.5 },
   dorato: { prob3: 0.28, probExtra: 0.45 },
   boss: { prob3: 0.35 },
   pulizia: { probMoneta: 0.25, probCura: 0.40, valoreSegreta: 3 },
