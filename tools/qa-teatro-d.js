@@ -170,6 +170,55 @@ const foto = (n) => path.join(RADICE, 'production', 'qa', 'evidence', `teatro-d-
     return { mappa: I.maledizioneD('mappa'), buio: I.maledizioneD('buio') };
   });
 
+  // --- effetti nascosti, conosciuti, cartiglio, diario, Sviluppatore ---
+  await p.evaluate(() => { window.__teatroT3.salvataggi.impostaFlag('oggettiConosciuti', []); window.__teatro.interni.selezionaPersonaggio('ombra'); });
+  await avvia();
+  await stanzaProva();
+  oss.nascosti = await p.evaluate(() => {
+    const I = window.__teatro.interni; const S = I.statoRun;
+    const iniziale = I.statoRun.oggettiEquipaggiati[0] ? I.statoRun.oggettiEquipaggiati[0].id : null;
+    const o = I.trovaOggettoB('gomma');
+    const st = S.stanzaCorrente;
+    st.tipo = 'tesoro'; st.pulita = true;
+    st.oggettoPiedistallo = { ...o, x: 320, y: 192, preso: false, forteGratis: false };
+    I.player.x = 320; I.player.y = 250;
+    return { inizialeConosciuto: I.conosciutiD().includes(iniziale), iniziale, descPrima: I.descD(o) };
+  });
+  await p.waitForTimeout(200);
+  await p.screenshot({ path: foto('04-piedistallo-sconosciuto') });
+  await p.evaluate(() => { const I = window.__teatro.interni; I.player.x = 320; I.player.y = 200; I.interagisciStanza(); });
+  await p.waitForTimeout(400);
+  oss.nascosti.descDopo = await p.evaluate(() => window.__teatro.interni.descD(window.__teatro.interni.trovaOggettoB('gomma')));
+  oss.nascosti.cartiglio = await p.evaluate(() => Boolean(window.__teatro.interni.statoRun.cartiglioD));
+  await p.screenshot({ path: foto('05-cartiglio-primo-raccolto') });
+  await p.reload();
+  await p.waitForTimeout(600);
+  oss.nascosti.dopoReload = await p.evaluate(() => window.__teatro.interni.conosciutiD().includes('gomma'));
+  await avvia();
+  // diario dal menu ESC (tasto Escape, poi click sul bottone)
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(150);
+  await p.screenshot({ path: foto('06-menu-esc') });
+  const box = await p.evaluate(() => { const c = document.querySelector('canvas').getBoundingClientRect(); return { x: c.left, y: c.top, w: c.width, h: c.height }; });
+  await p.mouse.click(box.x + box.w * (320 / 640), box.y + box.h * ((30 + 230 + 13) / 360));
+  await p.waitForTimeout(150);
+  oss.diario = await p.evaluate(() => ({ aperto: Boolean(window.__teatro.interni.statoRun.diarioD), pausa: window.__teatro.interni.statoRun.pausa }));
+  await p.keyboard.press('ArrowRight');
+  await p.waitForTimeout(100);
+  await p.screenshot({ path: foto('07-diario') });
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(100);
+  oss.diario.chiusoTornaMenu = await p.evaluate(() => ({ diario: Boolean(window.__teatro.interni.statoRun.diarioD), pausa: window.__teatro.interni.statoRun.pausa }));
+  await p.keyboard.press('Escape');
+  // Stanza dello Sviluppatore con sconosciuti «???»
+  await p.evaluate(() => {
+    const I = window.__teatro.interni; const st = I.statoRun.stanzaCorrente;
+    st.tipo = 'sviluppatore'; st.sceltaFattaB = false; I.apriPannelloSviluppatoreB(st);
+  });
+  await p.waitForTimeout(150);
+  await p.screenshot({ path: foto('08-sviluppatore') });
+  await p.evaluate(() => { window.__teatro.interni.statoRun.pannelloB = null; });
+
   oss.errori = errori;
   console.log(JSON.stringify(oss, null, 1));
   await browser.close();

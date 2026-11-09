@@ -2807,7 +2807,7 @@ function disegnaManoMarionettaPittorica() {
     hud: Object.freeze({ lato: 12, passo: 13, righe: 2, xMin: 256, xMax: 566, scala: 1.0 }),
     sviluppatore: Object.freeze({
       piani: Object.freeze([7]),        // piani con la Stanza dello Sviluppatore (7 = ciclo 2, terzo piano)
-      colonne: 8, cellaL: 62, cellaA: 38,
+      colonne: 9, cellaL: 62, cellaA: 34, // D: 62 oggetti in 7 righe (prima 8 × 38: con il catalogo D usciva dallo schermo)
       colore: '#67e8f9',
     }),
   });
@@ -3275,8 +3275,10 @@ function disegnaManoMarionettaPittorica() {
       ctx.strokeStyle = sel ? '#ffffff' : o.tier === 'forte' ? '#f9cb40' : '#57534e';
       ctx.lineWidth = sel ? 2 : 1;
       ctx.strokeRect(c.x, c.y, c.w, c.h);
-      drawPixelSprite(SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI.spada, c.x + c.w / 2, c.y + 13, 1.4);
-      drawTextFit(nomeCorto(o.nome), c.x + c.w / 2, c.y + c.h - 4, c.w - 4, { size: 6.5, color: sel ? '#ffffff' : '#e6d2aa', shadow: false });
+      // --- D: sconosciuti in sagoma scura e «???» (scelta dell'autore per questa stanza) ---
+      const notoD = effettoVisibileD(o);
+      drawPixelSprite(spriteD(o, !notoD), c.x + c.w / 2, c.y + 13, 1.4);
+      drawTextFit(notoD ? nomeCorto(o.nome) : '???', c.x + c.w / 2, c.y + c.h - 4, c.w - 4, { size: 6.5, color: sel ? '#ffffff' : '#e6d2aa', shadow: false });
       if (!pool.includes(o.id)) {
         ctx.fillStyle = S.colore;
         ctx.fillRect(c.x + c.w - 5, c.y + 2, 3, 3); // fuori dal pool di questa run
@@ -3285,9 +3287,10 @@ function disegnaManoMarionettaPittorica() {
     const o = CATALOGO_OGGETTI[p.sel];
     const yD = cellaPannelloB(CATALOGO_OGGETTI.length - 1).y + S.cellaA + 8;
     if (o) {
-      drawTextFit(`${o.nome}${pool.includes(o.id) ? '' : '  · fuori dal pool di questa notte'}`, W / 2, yD, W - 80, { size: 9, color: '#4ade80' });
-      drawTextFit(o.statsDesc, W / 2, yD + 13, W - 80, { size: 8, color: '#67e8f9' });
-      drawTextFit(o.lore || '', W / 2, yD + 25, W - 80, { size: 7.5, color: '#e6d2aa', weight: '', style: 'italic' });
+      const notoD = effettoVisibileD(o); // --- D ---
+      drawTextFit(`${notoD ? o.nome : '???'}${pool.includes(o.id) ? '' : '  · fuori dal pool di questa notte'}`, W / 2, yD, W - 80, { size: 9, color: '#4ade80' });
+      drawTextFit(descD(o), W / 2, yD + 13, W - 80, { size: 8, color: '#67e8f9' });
+      drawTextFit(notoD ? (o.lore || '') : '', W / 2, yD + 25, W - 80, { size: 7.5, color: '#e6d2aa', weight: '', style: 'italic' });
     }
     drawTextFit('Frecce/WASD o click: scegli · E/Invio (o secondo click): prendi · Esc: chiudi · ▪ azzurro = fuori dal pool della notte', W / 2, H - 26, W - 80, { size: 7.5, color: '#9ca3af' });
     ctx.restore();
@@ -3870,6 +3873,10 @@ function disegnaManoMarionettaPittorica() {
     player.targetX = null;
     player.targetY = null;
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+    // --- D: inizio --- Diario degli oggetti: si apre dal menu ESC con O e prende i tasti finché è aperto
+    if (statoRun.diarioD) { tastoDiarioD(e.code); return; }
+    if (statoRun.pausa && e.code === 'KeyO') { apriDiarioD(); return; }
+    // --- D: fine ---
     // --- T4: inizio ---
     if (t4Gancio('tasto', e)) return;
     // --- T4: fine ---
@@ -4674,6 +4681,8 @@ function disegnaManoMarionettaPittorica() {
     // --- B: fine ---
     // --- D: inizio ---
     statoRun.maledizioniD = {};
+    statoRun.cartiglioD = null;
+    if (pInfo.passivoIniziale) segnaConosciutoD(pInfo.passivoIniziale); // il dono iniziale è già conosciuto
     statoRun.famigliD = [];
     statoRun.ultimoTiroD = null;
     // --- D: fine ---
@@ -4734,7 +4743,7 @@ function disegnaManoMarionettaPittorica() {
 
     if (stanza.tipo === 'tesoro' && stanza.oggettoPiedistallo && !stanza.oggettoPiedistallo.preso) {
       const o = stanza.oggettoPiedistallo;
-      mostraBanner(`${o.forteGratis ? '★ OGGETTO FORTE GRATIS' : '🎁 OGGETTO GRATIS'}: ${o.nome} — ${o.statsDesc}`, 220);
+      mostraBanner(`${o.forteGratis ? '★ OGGETTO FORTE GRATIS' : '🎁 OGGETTO GRATIS'}: ${nomeD(o)} — ${descD(o)}`, 220); // D: effetto nascosto
     } else if (stanza.tipo === 'fucina') {
       // --- T3: inizio ---
       mostraBanner(`⚒ LA FUCINA DI MASTRO PEPPE: Risparmia i Grani (o cerca la Stanza Segreta ?) per le Reliquie da ${ECONOMIA_T3.prezzi.forte}🪙!`, 210);
@@ -5019,9 +5028,124 @@ function disegnaManoMarionettaPittorica() {
     return { ...trovaOggettoB(id) };
   }
 
-  /** Dopo ogni raccolta di un oggetto del catalogo: maledizioni (fino a fine piano; doppione = rinnovo). */
+  /** Segna l'oggetto come conosciuto nello slot. true se è la prima volta. */
+  function segnaConosciutoD(id) {
+    if (!trovaOggettoB(id) || conosciutoD(id)) return false;
+    const lista = conosciutiD().concat([id]);
+    const sv = window.__teatroT3 && window.__teatroT3.salvataggi;
+    if (sv) sv.impostaFlag('oggettiConosciuti', lista);
+    else conosciutiMemoriaD.push(id);
+    return true;
+  }
+  /** L'effetto di `o` si vede? Solo se conosciuto e senza la Benedizione del Cieco (che vale per il piano). */
+  function effettoVisibileD(o) { return Boolean(o) && conosciutoD(o.id) && !maledizioneD('cieco'); }
+  /** Descrizione come la vede il giocatore: «Effetto: ???» finché non lo raccoglie. */
+  function descD(o) { return effettoVisibileD(o) ? o.statsDesc : 'Effetto: ???'; }
+  /** Nome come lo vede il giocatore (con la Benda del Cieco: «???»). */
+  function nomeD(o) { return maledizioneD('cieco') ? '???' : o.nome; }
+  /** Lore visibile solo a effetto noto. */
+  function loreD(o) { return effettoVisibileD(o) ? (o.lore || '') : 'Lo scoprirai solo raccogliendolo.'; }
+  const sagomeD = new Map();
+  /** Sprite di `o`; sagoma scura con la Benda del Cieco o se `sagoma` (colore della palette `col`). */
+  function spriteD(o, sagoma = false, col = 'D') {
+    const g = SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI.spada;
+    if (!sagoma && !maledizioneD('cieco')) return g;
+    const k = o.sprite + col;
+    if (!sagomeD.has(k)) sagomeD.set(k, g.map((r) => r.replace(/[^.]/g, col)));
+    return sagomeD.get(k);
+  }
+
+  /** Cartiglio al primo raccolto: nome, effetto e lore per OGGETTI_D.cartiglioTick tick. */
+  function disegnaCartiglioD() {
+    const c = statoRun.cartiglioD;
+    if (!c || statoRun.fase !== 'in_gioco') return;
+    const t = tick - c.t0;
+    if (t > OGGETTI_D.cartiglioTick) { statoRun.cartiglioD = null; return; }
+    const o = c.item;
+    const bw = 400, bh = 52, bx = (W - bw) / 2, by = 268;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, t / 10, (OGGETTI_D.cartiglioTick - t) / 15);
+    ctx.fillStyle = '#e6d2aa';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.strokeStyle = '#5c4024';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bx + 3, by + 3, bw - 6, bh - 6);
+    drawPixelSprite(SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI.spada, bx + 24, by + bh / 2, 2);
+    drawTextFit(`✦ Scoperto: ${o.nome}`, bx + bw / 2 + 16, by + 15, bw - 70, { size: 9, color: '#5c1a0c', shadow: false });
+    drawTextFit(o.statsDesc, bx + bw / 2 + 16, by + 29, bw - 70, { size: 7.5, color: '#14532d', shadow: false });
+    drawTextFit(`«${o.lore || ''}»`, bx + bw / 2 + 16, by + 42, bw - 70, { size: 7, color: '#451a03', weight: '', style: 'italic', shadow: false });
+    ctx.restore();
+  }
+
+  // Diario degli oggetti (menu ESC dell'autore): griglia di tutto il catalogo, conosciuti a colori.
+  function apriDiarioD() { statoRun.diarioD = { sel: 0 }; }
+  function cellaDiarioD(i) {
+    const G = OGGETTI_D.diario;
+    const x0 = Math.round((W - G.colonne * G.cellaL) / 2);
+    return { x: x0 + (i % G.colonne) * G.cellaL, y: 46 + Math.floor(i / G.colonne) * G.cellaA, w: G.cellaL - 4, h: G.cellaA - 3 };
+  }
+  /** Tasti del Diario: frecce/WASD muovono, Esc/O/Invio chiudono (si torna al menu ESC). */
+  function tastoDiarioD(code) {
+    const d = statoRun.diarioD;
+    const n = CATALOGO_OGGETTI.length;
+    const C = OGGETTI_D.diario.colonne;
+    if (['ArrowLeft', 'KeyA'].includes(code)) d.sel = (d.sel - 1 + n) % n;
+    else if (['ArrowRight', 'KeyD'].includes(code)) d.sel = (d.sel + 1) % n;
+    else if (['ArrowUp', 'KeyW'].includes(code)) d.sel = (d.sel - C + n * C) % n;
+    else if (['ArrowDown', 'KeyS'].includes(code)) d.sel = (d.sel + C) % n;
+    else if (['Escape', 'KeyO', 'Enter', 'Space'].includes(code)) statoRun.diarioD = null;
+  }
+  /** Click nel Diario: una cella la seleziona; fuori dalla griglia chiude. */
+  function clickDiarioD(mx, my) {
+    for (let i = 0; i < CATALOGO_OGGETTI.length; i++) {
+      const c = cellaDiarioD(i);
+      if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) { statoRun.diarioD.sel = i; return; }
+    }
+    if (my < 30 || my > H - 20) statoRun.diarioD = null;
+  }
+  function disegnaDiarioD() {
+    const d = statoRun.diarioD;
+    if (!d) return;
+    const noti = conosciutiD();
+    ctx.save();
+    ctx.fillStyle = 'rgba(5, 3, 2, 0.94)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#1c130c';
+    ctx.strokeStyle = '#f9cb40';
+    ctx.lineWidth = 2;
+    ctx.fillRect(24, 14, W - 48, H - 24);
+    ctx.strokeRect(24, 14, W - 48, H - 24);
+    const nNoti = CATALOGO_OGGETTI.filter((o) => noti.includes(o.id)).length;
+    drawTextFit(`📖 DIARIO DEGLI OGGETTI — Conosciuti ${nNoti} / ${CATALOGO_OGGETTI.length}`, W / 2, 32, W - 80, { size: 10, color: '#f9cb40' });
+    for (let i = 0; i < CATALOGO_OGGETTI.length; i++) {
+      const o = CATALOGO_OGGETTI[i];
+      const c = cellaDiarioD(i);
+      const noto = noti.includes(o.id);
+      const sel = i === d.sel;
+      ctx.fillStyle = sel ? '#3b2a1a' : noto ? '#2a1d14' : '#4a3a2a';
+      ctx.fillRect(c.x, c.y, c.w, c.h);
+      ctx.strokeStyle = sel ? '#ffffff' : o.polarita === 'negativo' && noto ? '#b91c1c' : o.tier === 'forte' ? '#f9cb40' : '#57534e';
+      ctx.lineWidth = sel ? 2 : 1;
+      ctx.strokeRect(c.x, c.y, c.w, c.h);
+      drawPixelSprite(spriteD(o, !noto, 'k'), c.x + c.w / 2, c.y + 10, 1.2);
+      drawTextFit(noto ? o.nome : '???', c.x + c.w / 2, c.y + c.h - 3, c.w - 4, { size: 6, color: noto ? '#e6d2aa' : '#a8a29e', shadow: false });
+    }
+    const o = CATALOGO_OGGETTI[d.sel];
+    const noto = o && noti.includes(o.id);
+    const yD = cellaDiarioD(CATALOGO_OGGETTI.length - 1).y + OGGETTI_D.diario.cellaA + 6;
+    if (o) {
+      drawTextFit(noto ? o.nome : '???', W / 2, yD, W - 80, { size: 9, color: '#4ade80' });
+      drawTextFit(noto ? o.statsDesc : 'Effetto: ??? — raccoglilo per scoprirlo.', W / 2, yD + 12, W - 80, { size: 8, color: '#67e8f9' });
+      if (noto) drawTextFit(`«${o.lore || ''}»`, W / 2, yD + 23, W - 80, { size: 7.5, color: '#e6d2aa', weight: '', style: 'italic' });
+    }
+    drawTextFit('Frecce/WASD o click: scorri · Esc/O: torna al menu', W / 2, H - 14, W - 80, { size: 7, color: '#9ca3af' });
+    ctx.restore();
+  }
+
+  /** Dopo ogni raccolta di un oggetto del catalogo: conosciuto (cartiglio al primo), maledizioni (fino a fine piano). */
   function dopoRaccoltaD(item) {
     const base = trovaOggettoB(item.id);
+    if (base && segnaConosciutoD(base.id)) statoRun.cartiglioD = { item: base, t0: tick };
     const m = base && base.mod;
     if (m && m.maledizione) {
       statoRun.maledizioniD = statoRun.maledizioniD || {};
@@ -5361,7 +5485,7 @@ function disegnaManoMarionettaPittorica() {
 
       if (st.oggettoPiedistallo) {
         const tag = st.oggettoPiedistallo.forteGratis ? '★ OGGETTO FORTE GRATIS (1 su 10)!' : '🎁 OGGETTO GRATIS (1 su 3)!';
-        mostraBanner(`Stanza pulita! È apparso ${tag} → ${st.oggettoPiedistallo.nome} [Click/E]`, 220);
+        mostraBanner(`Stanza pulita! È apparso ${tag} → ${nomeD(st.oggettoPiedistallo)} [Click/E]`, 220); // D
       } else { // --- C: nessun avviso della crepa a stanza pulita ---
         mostraBanner(st.tipo === 'segreta' ? 'Stanza Segreta ripulita! Raccogli tutte le monete a terra!' : 'Stanza ripulita! (+1⚡ Carica Attivo [Q])', 130);
       }
@@ -6839,9 +6963,9 @@ function disegnaManoMarionettaPittorica() {
         drawPixelSprite(spPed, o.x, o.y + 8, 2);
         if (!o.preso) {
           const floatY = Math.round(Math.sin(tick * 0.08) * 3);
-          drawPixelSprite(SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI.spada, o.x, o.y - 12 + floatY, 2);
+          drawPixelSprite(o.cuoreB ? SPRITE_OGGETTI[o.sprite] : spriteD(o), o.x, o.y - 12 + floatY, 2); // D: sagoma col Cieco
           const badge = o.forteGratis ? '★ FORTE GRATIS' : '🎁 OGGETTO GRATIS';
-          drawPillLabel(`${badge}: ${o.nome} [Click/E]`, o.x, o.y - 28, 300, {
+          drawPillLabel(`${badge}: ${o.cuoreB ? o.nome : nomeD(o)} [Click/E]`, o.x, o.y - 28, 300, {
             size: 8,
             color: o.forteGratis ? '#f9cb40' : '#67e8f9',
             border: o.forteGratis ? '#f9cb40' : '#0891b2',
@@ -6854,8 +6978,8 @@ function disegnaManoMarionettaPittorica() {
           ctx.strokeStyle = o.forteGratis ? '#f9cb40' : '#5c4024';
           ctx.lineWidth = 1;
           ctx.strokeRect(px, py, pw, ph);
-          drawTextFit(o.statsDesc, px + pw / 2, py + 12, pw - 12, { size: 8, color: '#4ade80' });
-          drawTextFit(`«${o.lore}»`, px + pw / 2, py + 24, pw - 12, { size: 7.5, style: 'italic', weight: '', color: '#e6d2aa' });
+          drawTextFit(o.cuoreB ? o.statsDesc : descD(o), px + pw / 2, py + 12, pw - 12, { size: 8, color: '#4ade80' }); // D
+          drawTextFit(`«${o.cuoreB ? o.lore : loreD(o)}»`, px + pw / 2, py + 24, pw - 12, { size: 7.5, style: 'italic', weight: '', color: '#e6d2aa' });
         }
       }
 
@@ -6896,8 +7020,8 @@ function disegnaManoMarionettaPittorica() {
               slotVicino = sl;
             }
             const floatY = Math.round(Math.sin(tick * 0.08 + sl.x) * 2);
-            drawPixelSprite(SPRITE_OGGETTI[sl.sprite] || SPRITE_OGGETTI.cuore, sl.x, sl.y - 6 + floatY, 1.75);
-            drawPillLabel(sl.nomeBreve || sl.nome, sl.x, sl.y - 20, 96, {
+            drawPixelSprite(sl.item ? spriteD(sl.item) : (SPRITE_OGGETTI[sl.sprite] || SPRITE_OGGETTI.cuore), sl.x, sl.y - 6 + floatY, 1.75); // D
+            drawPillLabel(sl.item && maledizioneD('cieco') ? '???' : (sl.nomeBreve || sl.nome), sl.x, sl.y - 20, 96, {
               size: 7.5,
               color: sl.tier === 'forte' ? '#f9cb40' : '#ffffff',
               border: sl.tier === 'forte' ? '#f9cb40' : '#5c4024',
@@ -6927,14 +7051,14 @@ function disegnaManoMarionettaPittorica() {
           ctx.lineWidth = 1;
           ctx.strokeRect(bx, by, bw, bh);
           drawTextFit(
-            `${slotVicino.nome} (${slotVicino.prezzo}🪙)`,
+            `${slotVicino.item && maledizioneD('cieco') ? '???' : slotVicino.nome} (${slotVicino.prezzo}🪙)`, // D
             bx + bw / 2,
             by + 11,
             bw - 12,
             { size: 8, color: slotVicino.tier === 'forte' ? '#f9cb40' : '#ffffff' }
           );
           drawTextFit(
-            slotVicino.statsDesc,
+            slotVicino.item ? descD(slotVicino.item) : slotVicino.statsDesc, // D: effetto nascosto
             bx + bw / 2,
             by + 23,
             bw - 12,
@@ -7217,6 +7341,7 @@ function disegnaManoMarionettaPittorica() {
       window.__teatroT3?.disegnaMondo?.(ctx); // raggio cremisi (sotto l'HUD, dentro la scossa)
       // --- T3: fine ---
       disegnaHUDPixelArt(st);
+      disegnaCartiglioD(); // --- D ---
       // --- B: inizio ---
       if (statoRun.pannelloB) disegnaPannelloSviluppatoreB();
       // --- B: fine ---
@@ -7547,7 +7672,11 @@ function disegnaManoMarionettaPittorica() {
   function gestisciClickMenuPausa(mx, my) {
     const btnW = 236, btnH = 26;
     const bx = W / 2 - btnW / 2;
-    const my0 = 42;
+    // --- D: inizio --- il menu è salito di 12 px per far posto al Diario
+    if (statoRun.diarioD) { clickDiarioD(mx, my); return true; }
+    const my0 = 30;
+    if (mx >= bx && mx <= bx + btnW && my >= my0 + 230 && my <= my0 + 230 + btnH) { apriDiarioD(); return true; }
+    // --- D: fine ---
     // 1. Riprendi (y: my0 + 60)
     if (mx >= bx && mx <= bx + btnW && my >= my0 + 60 && my <= my0 + 60 + btnH) {
       statoRun.pausa = false;
@@ -7590,7 +7719,7 @@ function disegnaManoMarionettaPittorica() {
     ctx.fillStyle = 'rgba(6, 4, 3, 0.85)';
     ctx.fillRect(0, 0, W, H);
 
-    const mx = 170, my = 42, mw = 300, mh = 276;
+    const mx = 170, my = 30, mw = 300, mh = 318; // D: un bottone in più (Diario)
     ctx.fillStyle = '#140c08';
     ctx.strokeStyle = '#f9cb40';
     ctx.lineWidth = 2;
@@ -7612,7 +7741,8 @@ function disegnaManoMarionettaPittorica() {
       { id: 'audio', testo: AudioSys.attivo ? '🔊 AUDIO: ON' : '🔇 AUDIO: MUTATO', y: my + 94, col: '#22150d' },
       { id: 'fullscreen', testo: document.fullscreenElement ? '⛶ SCHERMO INTERO: ON' : '⛶ SCHERMO INTERO: OFF', y: my + 128, col: '#22150d' },
       { id: 'ricomincia', testo: '🎲 RICOMINCIA NOTTE [R]', y: my + 162, col: '#22150d' },
-      { id: 'menu', testo: '🎭 MENÙ PERSONAGGI', y: my + 196, col: '#22150d' }
+      { id: 'menu', testo: '🎭 MENÙ PERSONAGGI', y: my + 196, col: '#22150d' },
+      { id: 'diario', testo: '📖 DIARIO DEGLI OGGETTI [O]', y: my + 230, col: '#22150d' }, // D
     ];
 
     for (const b of bottoni) {
@@ -7625,13 +7755,14 @@ function disegnaManoMarionettaPittorica() {
     }
 
     ctx.fillStyle = '#26170e';
-    ctx.fillRect(mx + 10, my + 232, mw - 20, 34);
+    ctx.fillRect(mx + 10, my + 266, mw - 20, 34);
     ctx.strokeStyle = '#4a2c14';
-    ctx.strokeRect(mx + 10, my + 232, mw - 20, 34);
-    drawTextFit('WASD: Movimento · Frecce/Mouse: Spara/Attacca', W / 2, my + 245, mw - 28, { size: 7.5, color: '#e6d2aa' });
-    drawTextFit('Q: Attivo · E: Compra/Patto/Raccogli · ESC: Pausa', W / 2, my + 258, mw - 28, { size: 7.5, color: '#e6d2aa' });
+    ctx.strokeRect(mx + 10, my + 266, mw - 20, 34);
+    drawTextFit('WASD: Movimento · Frecce/Mouse: Spara/Attacca', W / 2, my + 279, mw - 28, { size: 7.5, color: '#e6d2aa' });
+    drawTextFit('Q: Attivo · E: Compra/Patto/Raccogli · ESC: Pausa', W / 2, my + 292, mw - 28, { size: 7.5, color: '#e6d2aa' });
 
     ctx.restore();
+    if (statoRun.diarioD) disegnaDiarioD(); // --- D ---
   }
 
   statoRun.fase = 'menu_selezione';
@@ -7710,7 +7841,7 @@ function disegnaManoMarionettaPittorica() {
   // --- B: fine ---
   // --- D: inizio --- (sonda QA delle meccaniche e del catalogo D)
   Object.assign(window.__teatro.interni, {
-    OGGETTI_D, ECONOMIA_T3, conosciutiD, estraiNegativoD, sparaProiettiliDirezione, subisciColpoGiocatore, ricalcolaStatisticheIsaac, maledizioneD, trovaOggettoB,
+    OGGETTI_D, ECONOMIA_T3, conosciutiD, descD, apriDiarioD, gestisciClickMenuPausa, estraiNegativoD, sparaProiettiliDirezione, subisciColpoGiocatore, ricalcolaStatisticheIsaac, maledizioneD, trovaOggettoB,
   });
   // --- D: fine ---
   adattaRisoluzione(); // (T5) primo dimensionamento del buffer
