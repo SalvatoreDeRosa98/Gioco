@@ -30,6 +30,7 @@ Parametri dell'URL:
 | `?debug=1&wire=1&hub=1&piano=0&seme=1845` | storia 029: parte dall'hub di Piazza Dante (`mondo/hub.js`, modello `contenuti/modelli-stanza/hub/piazza-dante.json`), ciclo in `hub`: mura chiuse tranne l'ingresso al piano 1 (soglia d'oro a destra, etichetta `piano 1`), Tonino al banchetto (cerchio d'inchiostro con alone d'oro, pieno quando `interagisci` risponde), la porta della bottega di Gaetano nel muro in alto (pannello pieno = chiusa finché `fucina_aperta` è falso), la finestra accesa di Mariella (quadrato d'oro, mai un personaggio), la luna (disco crema in alto a sinistra) e i fili d'oro tratteggiati; Taddeo compare solo con `taddeo = perdonato`, Agnese sotto il portico solo con `agnese = risvegliata` (`__gioco.imposta`); alla notte 1 partono da sole risveglio, tutorial e targa; vicino a un NPC `interagisci` apre il suo ancoraggio `hub:<npc>` (nessuna pausa del ciclo); camminando nell'ingresso parte la notte: piano 1 generato con il seme derivato dal profilo e dalla notte (`hub.semeNotte()`, diverso da `?seme=`), ciclo in `notte`, `notte` dell'avanzamento invariata; cartellino DOM in basso a sinistra con la notte e i suggerimenti |
 | `?debug=1&wire=1&hub=1&seme=1845&continua=1` | storia 030: se nello slot c'è una notte salvata, preme «Continua» da solo all'avvio (strumento di QA). Senza `continua=1`, nell'hub compare il pannello DOM «Continua / Lascia andare» (`interfaccia/ripresa.js`) quando una notte è salvata: «Continua» rigenera il piano dal seme salvato ed entra nella stanza salvata con maschere, doni e monete ripristinati; «Lascia andare» cancella la notte salvata. La notte si salva a ogni `notte.stanza` (`persistenza/notte-salvata.js`, chiave `ferruccio.v3.notte.1`) e si cancella alla morte. Alla morte (`ferruccio.morto`) il ciclo va in `pausa`, il velo DOM (`interfaccia/morte.js`) mostra le quattro fasi di `risveglio.json` (lanterne una a una, fili, maschera, buio; ≤ 5 s) e al `risveglio.fine` si torna nell'hub con `notte + 1`: flag, scintille, `piano_max` e scene viste restano; monete, doni, consumabili e pool della notte spariscono; con `&piano=N` (senza hub) la notte riparte dallo stesso seme |
 | `prova.html?seme=1845` (storia P02, provvisoria) | **build di prova per l'autore**: la pagina dichiara `<meta name="gioco-avvio" content="debug=1&wire=1&hub=1">` e `fondazione/avvio-url.js` fonde quei valori come default della query (l'URL vince sempre: `?seme=` resta tuo); all'avvio compare il pannello dei tasti (`interfaccia/prova.js`, testi in `interfaccia.json › prova`, stile `stile/prova.css`) che sparisce al primo tasto o click. Il gioco è da tastiera (e gamepad): nessun controllo touch, per scelta dell'autore. `__gioco.pannelloProva()` = `true/false` (a schermo o chiuso) o `null` senza la meta. Il file unico pubblicabile si produce con `node tools/impacchetta.js --entrata gioco/prova.html --frammento` (vedi `tools/README-impacchetta.md`) |
+| `?debug=1&piano=1&seme=1845&personaggio=ferruccio` | **storie P04/P09 (squadra oggetti)**: oggetto ATTIVO del personaggio (`oggetti/attivi.js`, Q = azione `attivo`, carico all'inizio, +1 tacca a stanza pulita, HUD DOM in basso a sinistra con le tacche); cinque slot dei doni (`oggetti/slot.js`, `doni.limiti.max_slot_doni`): al sesto compare il modale DOM di sostituzione (1-5 sostituisce, Esc/Q rinuncia; il vecchio torna sul piedistallo o si perde se comprato); dopo il boss l'altare del **Patto d'Ombra** (`oggetti/patto.js`, `patto.json`: 100 % senza danni nel boss, 60 % con danni, 2 reliquie) con la stanza velata di rosso: `interagisci` vicino a una reliquia apre il pannello «−1 Maschera massima per sempre», `conferma`/`indietro`; la **Crepa Dorata** (`mondo/segreta.js`): a stanza pulita la finestra verso la segreta è una crepa che un proiettile o un fendente apre (porta sui record, stanza rimontata, `segreta.aperta`), la segreta pulita lascia `monete_segreta` monete; **oggetti gratis** (`oggetti/gratis.js`, `economia.json › gratis`): a stanza normale pulita 1 su 10 forte, 1 su 3 base, dal `seme_stanza`, al centro, `interagisci` raccoglie; prezzi dell'autore (cuore 3, base 5, forte 7, consumabile 2) nel banchetto («La Fucina» nel titolo, Tonino resta); reliquie **Raggio Cremisi Continuo** (freccia tenuta: carica, poi laser con danno a tick sulla linea, `combattimento.raggio()`) e **Lacrime Spettrali** (i proiettili attraversano mura e ostacoli; gli altri ora si fermano sui solidi `ferma_colpi` con `ferruccio.colpo_muro`) |
 | `?debug=1&wire=1&piano=1&seme=1845` | storie 014-017: genera il piano 1 dal seme (`mondo/generazione.js`, modelli di `contenuti/modelli-stanza/piazza-dante/`), parte dall'ingresso; porte con stato, ostacoli, soglie, segnalini e fantocci segnaposto (`archetipo`) delle ondate, transizione della camera (250 ms), pianta del piano nell'angolo in alto a destra; dalla storia 019 le ondate sono nemici veri per archetipo (`attori/nemico.js`), con direttore dei gettoni per piano; dalla storia 025 monete e cuori a terra (dischi/quadrati), HUD DOM in alto a destra e, nella stanza `banchetto`, i tre slot sui banchi con la lista dei prezzi (tasto `interagisci`); dalla storia 024, nella stanza `tesoro`, il piedistallo (quadrato d'oro, cono di luce tratteggiato `r_anteprima`, tratteggiato spento se inerte), il cartiglio del dono e l'HUD dei doni in DOM (sotto l'HUD dell'economia), le scintille dei ganci in oro; dalla storia 018 i bracieri (modelli `pd-n-04`, `pd-n-05`, `pd-d-02`) con piede pieno e cerchio tratteggiato solo in `anticipo` (largo) e `attivo` (fitto), etichetta con la fase; ogni pericolo di `__gioco.stanza.pericoli` espone `fase`, `progresso`, `sfasamento`; storia P01 (PROVVISORIA, build di prova; la 022 la sostituisce): nella stanza `boss` nasce dal contenuto `boss` di `pd-b-01` un solo gatto con `boss: true` e la taglia di `nemici.json › boss_provvisorio` (vita 60, raggio ×1,6, etichetta «boss (provvisorio)»), porte chiuse come in una stanza normale; alla sua morte `boss.sconfitto` {id: 'gatto', x, y} (cade il Medaglione), stanza svuotata → pulita, bottino del boss dall'economia; l'arco dell'uscita al centro (`stanze.json › uscita`) è tratteggiato finché la stanza non è pulita, poi pieno d'oro: restandoci `t_attesa` parte `piano.completato` {piano} una sola volta → ciclo in `pausa`, velo DOM con `interfaccia.json › fine_piano.velo`, poi lo stesso risveglio della morte con motivo `vittoria` (notte + 1, `piano_max` 2, notte salvata cancellata); senza hub la notte riparte dallo stesso seme |
 
 `window.__gioco` (solo debug): `stato`, `tick(n)` (forza n tick, ritorna il contatore), `seme`,
@@ -71,6 +72,10 @@ Dalla storia P04 anche `statistiche` (`correnti()`, `scegli(id)`, `stringiPatto`
 menu DOM: `{personaggio, slot, daCancellare, slots[]}` o `null` se chiuso), `apriMenu()` e `scegli(personaggio, slot?)` (applica subito la
 scelta: chiude il menu, entra nell'hub; con uno slot diverso ricarica la pagina); `combattimento` espone anche `scintilleFulmine()`,
 `bruciature()`, `miraForzata`, `cooldownSparo` e `statistiche()`.
+Dalle storie P04/P09 (squadra oggetti) anche `attivi` (`stato()`, `usa()`, `equipaggia(id)`, `carica`, `carico`, `nuovaRun()`), `slot` (`acquisisci(id, {origine, restituisci, suConferma})`,
+`conferma(i)`, `annulla()`, `pendente`, `stato()`), `patto` (`altare`, `pendente`, `stretti`, `proponi(i)`, `conferma()`, `annulla()`, `posaAltare(stanza)`, `reliquia(id)`,
+`inStanzaAltare()`, `nuovaRun()`), `gratis` (`corrente()`, `vicino()`, `raccogli()`, `stati()`), `segreta` (`crepa()`, `apri()`, `aperte`) e `interfacciaOggetti()` (stato DOM di HUD
+dell'attivo, modale di sostituzione e pannello del patto); `combattimento.raggio()` e `combattimento.impostaRaggio(cfg)`.
 
 ## Test
 
@@ -164,6 +169,18 @@ node gioco/qa/seme.js 200 [--piano P] [--stampa K]   # genera N piani e riporta 
 node gioco/qa/pacchetto.test.js           # impacchettatore: pacchetto via http e file://, frammento con CSP, determinismo; con la meta di index.html
                                           # il pacchetto parte nel piano 1 (stato notte, stanza d'ingresso)
 node gioco/qa/stati64.js                  # forza i 64 stati narrativi: nessun buco, nessun conflitto
+node gioco/qa/attivi.test.mjs             # storie P04/P09 (node:test): oggetto attivo: iniziale dal personaggio e carico, Q a carica piena / scarico, +1 per
+                                          # stanza pulita combattuta con tetto, forbici (stordisci + danno), tamburello (proiettili via, danno e spinta nel raggio), ampolla;
+                                          # esporta la fixture `creaMondoAttivi` usata da patto.test.mjs e oggetti.test.mjs
+node gioco/qa/patto.test.mjs              # storie P04/P09: patto.json (5 reliquie, costo 2, dmgMult ≥ 2 e ≥ del miglior dono), altare dopo il boss (100 %/60 %),
+                                          # proposta/rifiuto/conferma con −1 maschera massima permanente (stanza e piano), maschere insufficienti, nuova run;
+                                          # raggio continuo (carica, danno a tick sulla linea, nessuno fuori/dietro, rilascio, durata), spettrale vs ostacolo
+node gioco/qa/oggetti.test.mjs            # storie P04/P09: cinque slot (pendente, conferma, annulla, restituisci), piedistallo via acquisisci, tiraTier e oggetti gratis su
+                                          # una notte vera (determinismo, tier, centro, raccolta), Crepa Dorata (visibile solo a stanza pulita, apertura con proiettile,
+                                          # porte sui record, Ferruccio fermo, monete della segreta una volta), regole del codice
+node gioco/qa/oggetti.wire.test.js        # Playwright: ?debug=1&piano=1&seme=1845&personaggio=ferruccio, Q con carica, 6 doni → modale → sostituzione, crepa aperta con un
+                                          # proiettile, boss → altare → patto pagato; salva attivo-q.png, slot-sostituzione.png, segreta-crepa.png, patto.png
+node gioco/qa/patto.wire.test.js          # Playwright: boss → pannello del Patto (patto-conferma.png), raggio continuo acceso sulla linea (patto-raggio.png)
 node gioco/qa/statistiche.test.mjs        # storia P04 (node:test): ricalcolaStatisticheIsaac del Teatro (attori/statistiche.js) per i 4 personaggi
                                           # di personaggi.json e tre combinazioni di doni (blocco `teatro` di doni.json) e patti (patto.json), contro
                                           # valori calcolati a mano; applicazione ai modificatori
@@ -213,6 +230,10 @@ gioco/
 │   │   │                       raccolti, offerti nel piano), estrazione a due stadi W_r(p), probabilita(), fallback
 │   │   ├── piedistallo.js      storia 024: piedistalli della bottega (1; 2 dal piano 3), interagisci entro r_interagisci,
 │   │   │                       anteprima entro r_anteprima, preso/inerte, stato per stanza, puntiPiedistallo
+│   │   ├── attivi.js           storie P04/P09: oggetto attivo a ricarica per stanza (forbici, tamburello, ampolla; oggetti-attivi.json)
+│   │   ├── slot.js             storie P04/P09: cinque slot dei doni con acquisizione pendente e sostituzione (Teatro ~2788)
+│   │   ├── patto.js            storie P04/P09: altare del Patto d'Ombra dopo il boss, reliquie di patto.json, −1 maschera massima permanente
+│   │   ├── gratis.js           storie P04/P09: oggetto gratis a stanza pulita (1/10 forte, 1/3 base) dal seme_stanza
 │   │   └── ricordi.js          storia 028: ricordi (dono azzurro + persona, flag, scena_scelta, bonus_tenuto, effetto_ceduto):
 │   │                           caduta a `boss.sconfitto`, raccolta a terra, `puoAprire` per la scelta, cessione/tenuta alla
 │   │                           decisione, perdita a morte e fine notte
@@ -240,6 +261,7 @@ gioco/
 │   │   ├── morte.js            storia 030: velo DOM della sequenza di morte (dissolvenza, lanterne, fili, maschera, didascalie)
 │   │   ├── ripresa.js          storia 030: pannello DOM «Continua / Lascia andare» della notte salvata (nell'hub)
 │   │   ├── prova.js            storia P02: pannello DOM dei tasti di prova.html (sparisce al primo tasto o click)
+│   │   ├── oggetti.js          storie P04/P09: HUD dell'attivo con le tacche, modale di sostituzione dei cinque slot, pannello del Patto (stile/oggetti.css)
 │   │   └── menu.js             storia P04: menu DOM di selezione del personaggio e dello slot (Teatro ~4042): `apri()` → Promise
 │   │                           {personaggio, slot}; non conosce il ciclo, avvio.js applica la scelta
 │   ├── mondo/
@@ -258,6 +280,7 @@ gioco/
 │   │   ├── camera.js           scala min(1, L/larg, (A−hud)/alt), transizione 250 ms, inTransizione (015)
 │   │   └── notte.js            piano + stanza corrente + passaggi; input ignorato in transizione; vaiA;
 │   │                           salvataggio() = {seme, piano, stanza}
+│   │   ├── segreta.js          storie P04/P09: la Crepa Dorata (finestra verso la segreta → porta a colpo) e le monete della segreta
 │   │   └── hub.js              storia 029: l'hub come stanza speciale: campo dal modello hub/, presenze risolte sullo stato
 │   │                           narrativo (quando/aperta_se), interagisci sugli NPC, ingresso → hub.partenza con seme derivato
 │   ├── attori/
@@ -423,5 +446,11 @@ gioco/
   morte (`notte` non cresce); la busta del profilo è una sola e `stato-narrativo.js` e `profilo.js` ora la scrivono unendo i campi (prima si
   sovrascrivevano a vicenda: flag persi o scintille perse alla riapertura); il velo di morte è una dissolvenza DOM segnaposto (la sequenza
   vera, art bible §2, aspetta il renderer); l'economia e il pool restano al piano 1 anche dopo il risveglio (unico piano dell'MVP).
+- Storie P04/P09 (squadra oggetti), decisioni e valori da confermare: `economia.json` tarato per la scarsità dell'autore (media 7,16 monete al piano 1 su 1000 piani
+  simulati: `monete_segreta` 2, `monete_boss.s0` 0 → 1 moneta al piano 1, drop 0,12 invariato; le ricompense pre-estratte di `stanze.json` pesano ~4 e sono della squadra
+  mondo); prezzi dell'autore 3/5/7/2 via `rar_pct` 140 % (la tabella `teatro.prezzo` di doni.json è storica, non letta); `patto.json › regole.raggio` (250/1200/100 ms, 35 % DMG
+  per tick, 28 px, portata ×1,6) e `regole` dell'altare (100 %/60 %, 2 reliquie) dal Teatro; l'altare del Patto sta nella stanza del boss (nessuna stanza `patto` nel
+  generatore); i patti non occupano i 5 slot; i proiettili di Ferruccio ora si fermano sui solidi `ferma_colpi` (prima li ignoravano); la segreta non combatte ancora (i
+  mob dorati spettano alla squadra nemici) e lascia le monete alla pulizia.
 - Rampa di accelerazione: `v_eff / t_accel` lineare (regola 2). Con 60 ms la diagonale di 1 s da
   fermo dà 215,1 px: dentro i 220 ± 5 del criterio per 0,1 px. Se `t_accel` sale, il criterio salta.

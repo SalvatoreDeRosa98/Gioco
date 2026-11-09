@@ -29,8 +29,9 @@ test('contenuti: 4 personaggi del Teatro con hpHalf/baseDmg/baseSpd, 13 doni con
   assert.equal(conTeatro.length, 13, 'CATALOGO_OGGETTI del Teatro: 6 forti + 7 base');
   assert.equal(conTeatro.filter((d) => d.teatro.tier === 'forte').length, 6);
   assert.ok(conTeatro.every((d) => d.teatro.prezzo >= 10 && d.teatro.prezzo <= 18));
-  assert.equal(patti.length, 3);
+  assert.ok(patti.length >= 3, 'i 3 patti del Teatro più quelli della storia P09 (raggio continuo, lacrime spettrali)');
   assert.ok(patti.every((p) => p.costoMaxHpHalf === 2));
+  assert.ok(patti.every((p) => (p.mod.dmgMult ?? 1) >= 2), 'storia P09: i moltiplicatori di danno dei patti sono i più alti del gioco (≥ ×2)');
   const boss = leggi('boss');
   assert.equal(boss.pool.length, 5);
   assert.equal(boss.finale.id, 'donna-luciana');

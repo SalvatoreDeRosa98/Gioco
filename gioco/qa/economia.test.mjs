@@ -37,6 +37,9 @@ import {
   moneteAtteseStanza, redditoPiano, estraiMoneta, pesiRarita, estraiDono, PCT,
 } from '../motore/oggetti/economia.js';
 import { creaBanchetto, puntiSlot, TIPI_SLOT } from '../motore/oggetti/banchetto.js';
+// storia P09: simulazione della scarsità del piano 1
+import { nNemici, estraiVariazione } from '../motore/mondo/stanza.js';
+import { estraiMoneta as estraiMonetaP09 } from '../motore/oggetti/economia.js';
 import { riempi } from '../motore/interfaccia/banchetto.js';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
@@ -165,10 +168,21 @@ async function creaMondo({ override = {}, seme = SEME, memoria = memoriaInRam(),
 // Contenuti e regole del codice
 // ---------------------------------------------------------------------------------------------
 
-/** Prezzi del Teatro (stile The Binding of Isaac, economia.json › prezzi): costanti sui piani (inc_pct 0). */
-const PREZZI_TEATRO = Object.freeze({ cuore: 3, consumabile: 5, comune: 10, raro: 15, prezioso: 20 });
+/** Prezzi dell'AUTORE (2026-11-08, storia P09: cuore 3, dono base 5, dono forte 7, consumabile 2; sostituiscono i 10/15-18 del
+ *  Teatro), LETTI da economia.json con la formula intera a inc_pct 0 e sconto 0: cambiare un prezzo nel JSON non rompe il test. */
+const ECO_JSON = leggi('contenuti/parametri/economia.json');
+const prezzoJson = (base, rarPct) => Math.floor((base * rarPct * PCT * PCT + (PCT * PCT * PCT) / 2) / (PCT * PCT * PCT));
+const PREZZI_TEATRO = Object.freeze({
+  cuore: ECO_JSON.prezzi.base_cuore.base,
+  consumabile: ECO_JSON.prezzi.base_consumabile.base,
+  comune: prezzoJson(ECO_JSON.prezzi.base_dono.base, ECO_JSON.prezzi.rar_pct.comune.base),
+  raro: prezzoJson(ECO_JSON.prezzi.base_dono.base, ECO_JSON.prezzi.rar_pct.raro.base),
+  prezioso: prezzoJson(ECO_JSON.prezzi.base_dono.base, ECO_JSON.prezzi.rar_pct.prezioso.base),
+});
 
-test('contenuti: economia.json è una statistica valida con i valori del Teatro (prezzi 3/5/10/15/20 costanti sui piani, p_drop_moneta 0,12); consumabili e testi coerenti', async () => {
+test('contenuti: economia.json è una statistica valida con i prezzi dell\'autore (cuore 3, base 5, forte 7, consumabile 2, costanti sui piani) e p_drop_moneta del Teatro; consumabili e testi coerenti', async () => {
+  // storia P09: la decisione dell'autore del 2026-11-08 sui prezzi (il dilemma «compro la vita o risparmio per l'oggetto»)
+  assert.deepEqual([PREZZI_TEATRO.cuore, PREZZI_TEATRO.comune, PREZZI_TEATRO.raro, PREZZI_TEATRO.prezioso, PREZZI_TEATRO.consumabile], [3, 5, 7, 7, 2], 'prezzi dell\'autore: cuore 3, base 5, forte 7, consumabile 2');
   const { errori } = validaStatistiche('economia', leggi('contenuti/parametri/economia.json'));
   assert.deepEqual(errori, []);
   const { parametri } = await caricaParametri();
@@ -209,7 +223,7 @@ test('regole: nessun Math.random, nessun numero di gioco e nessuna stringa di gi
 // Formule (GDD Formulas e Acceptance Criteria)
 // ---------------------------------------------------------------------------------------------
 
-test('prezzo: tabella del Teatro (cuore 3, consumabile 5, dono 10/15/20) uguale sui piani 1-5 in aritmetica intera; sconti, minimo e tetto con la formula', async () => {
+test('prezzo: tabella dell\'autore (cuore 3, consumabile 2, dono base 5 / forte 7, da economia.json) uguale sui piani 1-5 in aritmetica intera; sconti, minimo e tetto con la formula', async () => {
   const { parametri } = await caricaParametri();
   const P = (k) => parametri.get(`economia.prezzi.${k}`);
   const cinque = (v) => Array(5).fill(v);
@@ -235,7 +249,7 @@ test('formule: monete_boss = s0 + k × p (Teatro: 2 al piano 1), scintille_boss 
   const { parametri } = await caricaParametri();
   const E = (k) => parametri.get(`economia.${k}`);
   assert.deepEqual([1, 2, 3, 4, 5].map((p) => moneteBoss({ s0: E('monete_boss.s0'), k: E('monete_boss.k'), piano: p })), [1, 2, 3, 4, 5].map((p) => E('monete_boss.s0') + E('monete_boss.k') * p));
-  assert.equal(moneteBoss({ s0: E('monete_boss.s0'), k: E('monete_boss.k'), piano: 1 }), 2, 'Teatro: il boss del piano 1 lascia 2 monete');
+  assert.equal(moneteBoss({ s0: E('monete_boss.s0'), k: E('monete_boss.k'), piano: 1 }), E('monete_boss.s0') + E('monete_boss.k'), 'il boss del piano 1 lascia s0 + k monete (storia P09: 1, per la scarsità dell\'autore; il Teatro ne dava 2)');
   assert.deepEqual([1, 2, 3, 4, 5].map((p) => scintilleBoss({ s0: E('scintille.s0'), ds: E('scintille.ds'), piano: p })), [3, 5, 7, 9, 11]);
   assert.equal(scintilleBoss({ s0: E('scintille.s0'), ds: E('scintille.ds'), piano: 3, bonus: 1 }), 8);
   const pc = (m) => pCuore({ m, k: E('p_cuore.k'), max: E('p_cuore.max') });
@@ -585,4 +599,41 @@ test('prestazioni: drop e prezzo sotto 0,05 ms per evento; il tick dell\'economi
   const t1 = performance.now();
   for (let i = 0; i < 10000; i++) m.economia.tick();
   assert.ok((performance.now() - t1) / 10000 < 0.01);
+});
+
+// ---------------------------------------------------------------------------------------------
+// Storia P09 — scarsità (richiesta dell'autore): al piano 1 si raccolgono in media 5-8 monete IN TUTTO
+// ---------------------------------------------------------------------------------------------
+
+test('P09: 1000 piani 1 completi simulati (tutte le stanze normali pulite con i loro nemici, ricompense pre-estratte, segreta, boss) danno in media tra 5 e 8 monete; tutto letto dai JSON', async () => {
+  const { parametri } = await caricaParametri();
+  const E = (k) => parametri.get(`economia.${k}`);
+  const indice = leggi('contenuti/modelli-stanza/piazza-dante/indice.json');
+  const { modelli } = await caricaModelli({ caricatore: async (n) => leggi(`contenuti/modelli-stanza/piazza-dante/${n}.json`), indice, regole: regoleDaParametri(parametri) });
+  const catalogo = creaCatalogo(modelli);
+  const riserva = leggi('contenuti/piani/piazza-dante-riserva.json');
+  const N = 1000;
+  let totale = 0;
+  let conSegreta = 0;
+  const t0 = performance.now();
+  for (let i = 0; i < N; i++) {
+    const seme = (1845 + i * 7919) >>> 0;
+    const { pianta } = generaPiano({ seme, piano: 1, parametri, catalogo, riserva, log: { error() {} } });
+    const rng = derivato(creaRng(seme), 'drop');
+    let monete = 0;
+    for (const st of pianta.stanze) {
+      if (st.tipo === 'normale') {
+        const n = nNemici({ parametri, p: 1, d: st.profondita, dBoss: pianta.d_boss, diff: st.difficolta, dim: st.dim, variazione: estraiVariazione(parametri, rng) });
+        for (let k = 0; k < n; k++) monete += estraiMonetaP09({ rng, pDrop: E('p_drop_moneta'), qGrande: E('q_moneta_grande'), vPiccola: E('v_moneta_piccola'), vGrande: E('v_moneta_grande') });
+        monete += E('bonus_stanza') * E('v_moneta_piccola');
+      }
+      for (const o of st.ricompensa?.oggetti ?? []) if (o.tipo === 'moneta') monete += E('v_moneta_piccola');
+      if (st.tipo === 'segreta') { conSegreta += 1; monete += E('monete_segreta') * E('v_moneta_piccola'); }
+      if (st.tipo === 'boss') monete += moneteBoss({ s0: E('monete_boss.s0'), k: E('monete_boss.k'), piano: 1 });
+    }
+    totale += monete;
+  }
+  const media = totale / N;
+  console.log(`# scarsità piano 1: media ${media.toFixed(2)} monete su ${N} piani (${conSegreta} con la segreta) in ${(performance.now() - t0).toFixed(0)} ms`);
+  assert.ok(media >= 5 && media <= 8, `media ${media.toFixed(2)} fuori da [5, 8]`);
 });

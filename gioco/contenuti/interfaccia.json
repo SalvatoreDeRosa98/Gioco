@@ -92,5 +92,34 @@
     "nessuno": "nessuno",
     "istruzioni": "Frecce o 1-4: personaggio - Tab: slot - Spazio/Invio: inizia - nel gioco Esc torna qui",
     "tasto": "[{n}]"
+  },
+  "attivi": {
+    "titolo": "Oggetto attivo",
+    "istruzione": "{tasto}: usa l'oggetto attivo (carica {carica}/{max})",
+    "scarico": "Si ricarica ripulendo le stanze",
+    "usato": "{nome}!"
+  },
+  "sostituzione": {
+    "titolo": "I cinque slot sono pieni",
+    "nuovo": "Nuovo oggetto: {nome}",
+    "istruzione": "Premi 1-5 per scegliere l'oggetto da sostituire, Esc o Q per rinunciare",
+    "rinuncia": "Rinuncia"
+  },
+  "patto": {
+    "titolo": "Patto d'Ombra",
+    "costo": "−1 Maschera massima per sempre",
+    "istruzione": "{conferma}: stringi il patto · {indietro}: rifiuta",
+    "rifiutato_maschere": "Non hai abbastanza maschere per questo patto",
+    "stretto": "Patto stretto: {nome}",
+    "altare": "L'altare del Patto d'Ombra: avvicinati e premi {tasto}"
+  },
+  "segreta": {
+    "crepa": "Una Crepa Dorata sul muro: colpiscila",
+    "aperta": "Passaggio segreto aperto"
+  },
+  "gratis": {
+    "base": "Oggetto gratis",
+    "forte": "Oggetto forte gratis",
+    "istruzione": "Premi {tasto} per raccogliere {nome}"
   }
 }

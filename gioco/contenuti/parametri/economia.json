@@ -1,82 +1,269 @@
 {
   "_descrizione": "Economia della notte e del profilo. Fonte: design/gdd/economia.md (Core Rules 2-6, Formulas, Tuning Knobs). Ogni voce è {base, min, max}: min/max sono il Safe Range del GDD (clamp del valore effettivo, ADR-0002). Distanze in px, probabilità 0-1, percentuali intere (la formula del prezzo è in aritmetica intera: prezzo = floor((base × rar_pct × (100 + inc_pct × piano) × (100 − sconto_pct) + 500000) / 1000000)). Storia 025. 'banchetto.peso_rarita' e 'deriva_rarita_pct' sono i pesi W0_r e le derive d_r del pool di doni-modificatori.md (W_r(p) = max(0, W0 × (1 + d × (p − 1)))): la storia 024 (pool e piedistallo) li sposterà nel suo modulo; qui servono allo slot dono del banchetto. 'sconto_pct' è 0 finché la Fucina (sconto al banchetto I e II) non lo alza.",
-
-  "p_drop_moneta": { "base": 0.12, "min": 0.05, "max": 0.55 },
-  "q_moneta_grande": { "base": 0.08, "min": 0.0, "max": 0.5 },
-  "v_moneta_piccola": { "base": 1, "min": 1, "max": 2 },
-  "v_moneta_grande": { "base": 3, "min": 2, "max": 10 },
-  "bonus_stanza": { "base": 0, "min": 0, "max": 4 },
-  "monete_segreta": { "base": 7, "min": 5, "max": 20 },
-  "p_segreta": { "base": 1.0, "min": 0.0, "max": 1.0 },
-  "monete_boss": {
-    "_descrizione": "monete_boss(p) = s0 + k × p",
-    "s0": { "base": 1, "min": 1, "max": 8 },
-    "k": { "base": 1, "min": 1, "max": 3 }
+  "p_drop_moneta": {
+    "base": 0.12,
+    "min": 0.05,
+    "max": 0.55
   },
-  "tetto_monete": { "base": 99, "min": 50, "max": 199 },
-  "tetto_scintille": { "base": 99999, "min": 999, "max": 999999 },
-  "r_raccolta_moneta": { "base": 24, "min": 18, "max": 40 },
-  "r_interagisci": { "base": 56, "min": 40, "max": 96 },
-  "lancio_bonus_stanza": { "base": 20, "min": 0, "max": 48 },
-
+  "q_moneta_grande": {
+    "base": 0.08,
+    "min": 0.0,
+    "max": 0.5
+  },
+  "v_moneta_piccola": {
+    "base": 1,
+    "min": 1,
+    "max": 2
+  },
+  "v_moneta_grande": {
+    "base": 3,
+    "min": 2,
+    "max": 10
+  },
+  "bonus_stanza": {
+    "base": 0,
+    "min": 0,
+    "max": 4
+  },
+  "monete_segreta": {
+    "base": 2,
+    "min": 1,
+    "max": 20
+  },
+  "p_segreta": {
+    "base": 1.0,
+    "min": 0.0,
+    "max": 1.0
+  },
+  "monete_boss": {
+    "_descrizione": "monete_boss(p) = s0 + k × p. Storia P09 (scarsità dell'autore): s0 = 0 → 1 moneta al piano 1 (il Teatro ne dava 2): con le ricompense pre-estratte delle stanze la media del piano 1 resta in [5, 8].",
+    "s0": {
+      "base": 0,
+      "min": 0,
+      "max": 8
+    },
+    "k": {
+      "base": 1,
+      "min": 1,
+      "max": 3
+    }
+  },
+  "tetto_monete": {
+    "base": 99,
+    "min": 50,
+    "max": 199
+  },
+  "tetto_scintille": {
+    "base": 99999,
+    "min": 999,
+    "max": 999999
+  },
+  "r_raccolta_moneta": {
+    "base": 24,
+    "min": 18,
+    "max": 40
+  },
+  "r_interagisci": {
+    "base": 56,
+    "min": 40,
+    "max": 96
+  },
+  "lancio_bonus_stanza": {
+    "base": 20,
+    "min": 0,
+    "max": 48
+  },
   "p_cuore": {
     "_descrizione": "p_cuore = (m = 0) ? 0 : min(max, k × m) con m = maschere mancanti",
-    "k": { "base": 0.08, "min": 0.04, "max": 0.12 },
-    "max": { "base": 0.40, "min": 0.25, "max": 0.50 }
+    "k": {
+      "base": 0.08,
+      "min": 0.04,
+      "max": 0.12
+    },
+    "max": {
+      "base": 0.4,
+      "min": 0.25,
+      "max": 0.5
+    }
   },
-
   "scintille": {
     "_descrizione": "scintille_boss(p) = s0 + ds × (p − 1) + bonus_boss; residuo di notte = floor(stanze_ripulite / stanze_per_scintilla), spento con 0",
-    "s0": { "base": 3, "min": 2, "max": 5 },
-    "ds": { "base": 2, "min": 1, "max": 3 },
-    "bonus_boss": { "base": 0, "min": 0, "max": 1 },
-    "ricordo": { "base": 2, "min": 1, "max": 4 },
-    "p_ricordo": { "base": 0.5, "min": 0.3, "max": 1.0 },
-    "stanze_per_scintilla": { "base": 4, "min": 0, "max": 8 }
-  },
-
-  "prezzi": {
-    "_descrizione": "formula prezzo stile The Binding of Isaac: Cuore 3¢, Consumabile 5¢, Dono Base 10¢, Dono Raro 15¢, Dono Forte/Prezioso 20¢",
-    "base_dono": { "base": 10, "min": 7, "max": 25 },
-    "base_cuore": { "base": 3, "min": 2, "max": 15 },
-    "base_consumabile": { "base": 5, "min": 3, "max": 12 },
-    "rar_pct": {
-      "comune": { "base": 100, "min": 100, "max": 100 },
-      "raro": { "base": 150, "min": 130, "max": 220 },
-      "prezioso": { "base": 200, "min": 150, "max": 400 }
+    "s0": {
+      "base": 3,
+      "min": 2,
+      "max": 5
     },
-    "inc_pct": { "base": 0, "min": 0, "max": 25 },
-    "sconto_pct": { "base": 0, "min": 0, "max": 50 },
-    "sconto_max": { "base": 50, "min": 10, "max": 50 },
-    "prezzo_min": { "base": 1, "min": 1, "max": 5 }
+    "ds": {
+      "base": 2,
+      "min": 1,
+      "max": 3
+    },
+    "bonus_boss": {
+      "base": 0,
+      "min": 0,
+      "max": 1
+    },
+    "ricordo": {
+      "base": 2,
+      "min": 1,
+      "max": 4
+    },
+    "p_ricordo": {
+      "base": 0.5,
+      "min": 0.3,
+      "max": 1.0
+    },
+    "stanze_per_scintilla": {
+      "base": 4,
+      "min": 0,
+      "max": 8
+    }
   },
-
+  "prezzi": {
+    "_descrizione": "Prezzi dell'AUTORE (2026-11-08, sostituiscono i 10/15-18 del Teatro): Cuore 3, Dono base (comune) 5, Dono forte (raro/prezioso) 7, Consumabile 2: il dilemma «compro la vita o risparmio per l'oggetto». Formula intera invariata; rar_pct raro/prezioso = 140 % di 5 = 7.",
+    "base_dono": {
+      "base": 5,
+      "min": 3,
+      "max": 25
+    },
+    "base_cuore": {
+      "base": 3,
+      "min": 2,
+      "max": 15
+    },
+    "base_consumabile": {
+      "base": 2,
+      "min": 1,
+      "max": 12
+    },
+    "rar_pct": {
+      "comune": {
+        "base": 100,
+        "min": 100,
+        "max": 100
+      },
+      "raro": {
+        "base": 140,
+        "min": 100,
+        "max": 220
+      },
+      "prezioso": {
+        "base": 140,
+        "min": 100,
+        "max": 400
+      }
+    },
+    "inc_pct": {
+      "base": 0,
+      "min": 0,
+      "max": 25
+    },
+    "sconto_pct": {
+      "base": 0,
+      "min": 0,
+      "max": 50
+    },
+    "sconto_max": {
+      "base": 50,
+      "min": 10,
+      "max": 50
+    },
+    "prezzo_min": {
+      "base": 1,
+      "min": 1,
+      "max": 5
+    }
+  },
   "fucina": {
     "_descrizione": "costo_sblocco(k) = min(costo_max, floor(c0 × g^k + 0,5))",
-    "c0": { "base": 4, "min": 3, "max": 6 },
-    "g": { "base": 1.25, "min": 1.15, "max": 1.35 },
-    "costo_max": { "base": 60, "min": 40, "max": 100 }
+    "c0": {
+      "base": 4,
+      "min": 3,
+      "max": 6
+    },
+    "g": {
+      "base": 1.25,
+      "min": 1.15,
+      "max": 1.35
+    },
+    "costo_max": {
+      "base": 60,
+      "min": 40,
+      "max": 100
+    }
   },
-
   "banchetto": {
     "_descrizione": "tre slot: dono, cuore, consumabile; pesi di rarità W0_r (doni-modificatori.md) e derive per piano in percento",
     "peso_rarita": {
-      "comune": { "base": 60, "min": 0, "max": 100 },
-      "raro": { "base": 30, "min": 0, "max": 100 },
-      "prezioso": { "base": 10, "min": 0, "max": 100 }
+      "comune": {
+        "base": 60,
+        "min": 0,
+        "max": 100
+      },
+      "raro": {
+        "base": 30,
+        "min": 0,
+        "max": 100
+      },
+      "prezioso": {
+        "base": 10,
+        "min": 0,
+        "max": 100
+      }
     },
     "deriva_rarita_pct": {
-      "comune": { "base": -10, "min": -20, "max": 0 },
-      "raro": { "base": 10, "min": 0, "max": 20 },
-      "prezioso": { "base": 30, "min": 0, "max": 50 }
+      "comune": {
+        "base": -10,
+        "min": -20,
+        "max": 0
+      },
+      "raro": {
+        "base": 10,
+        "min": 0,
+        "max": 20
+      },
+      "prezioso": {
+        "base": 30,
+        "min": 0,
+        "max": 50
+      }
     },
-    "fallback_monete": { "base": 10, "min": 5, "max": 20 }
+    "fallback_monete": {
+      "base": 10,
+      "min": 5,
+      "max": 20
+    }
   },
-
   "bilancio": {
     "_descrizione": "segnaposto del GDD per le formule di reddito (n_nem = 4 + p, N_comb, ρ): strumenti di bilanciamento, non letti dal gioco",
-    "n_nem_base": { "base": 4, "min": 3, "max": 6 },
-    "n_comb": { "base": 6, "min": 4, "max": 8 },
-    "rho": { "base": 0.85, "min": 0.6, "max": 1.0 }
+    "n_nem_base": {
+      "base": 4,
+      "min": 3,
+      "max": 6
+    },
+    "n_comb": {
+      "base": 6,
+      "min": 4,
+      "max": 8
+    },
+    "rho": {
+      "base": 0.85,
+      "min": 0.6,
+      "max": 1.0
+    }
+  },
+  "_scarsita": "Storia P09 (autore 2026-11-08): al piano 1 si raccolgono in media 5-8 monete in tutto (drop + segreta + ricompense + boss); economia.test.mjs lo verifica con 1000 piani simulati.",
+  "gratis": {
+    "_descrizione": "Storia P04/P09 (Teatro tiraOggettoGratisStanza ~3078): a stanza pulita, p_forte -> oggetto forte gratis, poi p_base -> oggetto base gratis (seminato dal seme della stanza).",
+    "p_forte": {
+      "base": 0.1,
+      "min": 0,
+      "max": 0.5
+    },
+    "p_base": {
+      "base": 0.3333,
+      "min": 0,
+      "max": 1
+    }
   }
 }

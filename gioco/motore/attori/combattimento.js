@@ -65,6 +65,65 @@ export function creaCombattimento({
   /** Storia P04: fulmini a catena da disegnare {x1,y1,x2,y2,tick} e bruciature attive {bersaglio, ticks, ogni, danno}. */
   const scintilleFulmine = [];
   const bruciature = [];
+  // --- squadra oggetti (storia P09): raggio cremisi continuo del Patto (configurazione da patto.json › regole.raggio) ---
+  let cfgRaggio = null;
+  const raggio = { carica: 0, durata: 0, attivo: false, dir: null, tickDanno: 0 };
+  const cfgR = (nome) => { const v = cfgRaggio?.[nome]; return v && typeof v === 'object' ? v.base : (typeof v === 'number' ? v : 0); };
+  function azzeraRaggio() {
+    if (raggio.attivo) eventi.emit('ferruccio.raggio_fine', { x: ferruccio.x, y: ferruccio.y });
+    raggio.carica = 0; raggio.durata = 0; raggio.attivo = false; raggio.dir = null; raggio.tickDanno = 0;
+  }
+  /** Lunghezza del raggio: portata delle statistiche × molt_portata. */
+  function lunghezzaRaggio(st) { return (st?.range ?? val('portata')) * (cfgR('molt_portata') || 1); }
+  /** Danno a tutti i bersagli vivi sulla linea del raggio (distanza dall'asse ≤ larghezza/2 + r, davanti, entro la lunghezza). */
+  function dannoRaggio(st) {
+    const dir = raggio.dir;
+    const lung = lunghezzaRaggio(st);
+    const mezza = cfgR('larghezza') / 2;
+    const danno = (st?.dmg ?? val('danno')) * cfgR('frazione_danno_tick');
+    const colpiti = [];
+    for (const b of bersagli()) {
+      if (!b || b.stato === 'morto') continue;
+      const rx = b.x - ferruccio.x;
+      const ry = b.y - ferruccio.y;
+      const lungo = rx * dir.x + ry * dir.y;
+      if (lungo < 0 || lungo > lung) continue;
+      const trasv = Math.abs(rx * dir.y - ry * dir.x);
+      if (trasv > mezza + (b.r ?? 0)) continue;
+      feriscuBersaglio(b, danno, dir.x, dir.y, 0);
+      colpiti.push(b);
+    }
+    if (colpiti.length) eventi.emit('ferruccio.raggio_colpo', { n: colpiti.length, danno });
+  }
+  /** Un tick con la freccia tenuta e il flag `raggio`: carica, poi raggio per `durata_ms`, poi di nuovo carica. */
+  function tickRaggio(dir, st) {
+    s.mira = dir;
+    s.angolo = Math.atan2(dir.y, dir.x);
+    if (raggio.dir && (raggio.dir.x !== dir.x || raggio.dir.y !== dir.y)) azzeraRaggio();
+    raggio.dir = dir;
+    if (!raggio.attivo) {
+      raggio.carica += 1;
+      if (raggio.carica < tempo.ticksDaMs(cfgR('carica_ms'))) return true;
+      raggio.attivo = true;
+      raggio.durata = 0;
+      raggio.tickDanno = tempo.ticksDaMs(cfgR('tick_ms')); // il primo tick ferisce subito
+      eventi.emit('ferruccio.raggio', { x: ferruccio.x, y: ferruccio.y, direzione: { ...dir } });
+    }
+    raggio.durata += 1;
+    raggio.tickDanno += 1;
+    if (raggio.tickDanno >= tempo.ticksDaMs(cfgR('tick_ms'))) { raggio.tickDanno = 0; dannoRaggio(st); }
+    if (raggio.durata >= tempo.ticksDaMs(cfgR('durata_ms'))) azzeraRaggio();
+    return true;
+  }
+  /** Solido con `ferma_colpi` sul punto, o null (mura, finestre, ostacoli). */
+  function solidoSulPunto(x, y) {
+    for (const sol of campo.solidi ?? []) {
+      if (sol.ferma_colpi && x >= sol.x && x <= sol.x + sol.w && y >= sol.y && y <= sol.y + sol.h) return sol;
+    }
+    return null;
+  }
+  const fuoriCampo = (x, y) => x < campo.x || x > campo.x + campo.larghezza || y < campo.y || y > campo.y + campo.altezza;
+  // --- squadra oggetti: fine ---
   /** Costante del blocco `isaac` di personaggi.json (tabella: {base,min,max}); `null` se il blocco non è iniettato. */
   const k = (gruppo, nome) => {
     const v = gruppo ? isaac?.[gruppo]?.[nome] : isaac?.[nome];
@@ -223,7 +282,7 @@ export function creaCombattimento({
     const scala = k(null, 'scala_px') ?? 2;
     const baseDmg = st ? st.dmg * frazioneDanno : dannoColpo(1, 1);
     let tipo = 'base';
-    let flags = { triplo: false, doppia: false, quadDir: false, piercing: false, overflowPierce: false, burn: false, chain: false };
+    let flags = { triplo: false, doppia: false, quadDir: false, piercing: false, overflowPierce: false, burn: false, chain: false, spettrale: false };
     if (st) {
       tipo = st.tipoProiettile ?? 'base';
       flags = { ...flags, ...st.flags };
@@ -263,6 +322,7 @@ export function creaCombattimento({
             overflowPierce: Boolean(flags.overflowPierce),
             burn: Boolean(flags.burn),
             chain: Boolean(flags.chain),
+            spettrale: Boolean(flags.spettrale), // storia P09: ignora mura e ostacoli, muore al bordo del campo
             colpiti: new Set(),
           });
         }
@@ -329,6 +389,21 @@ export function creaCombattimento({
       p.y += p.vy;
       p.dist += Math.hypot(p.vx, p.vy);
       let rimuovi = p.dist >= p.maxDist;
+      // --- squadra oggetti (storia P09): mura e ostacoli fermano il proiettile (la Crepa Dorata lo ascolta), salvo spettrale ---
+      if (!rimuovi) {
+        if (p.spettrale) {
+          if (fuoriCampo(p.x, p.y)) rimuovi = true;
+        } else {
+          const sol = solidoSulPunto(p.x, p.y);
+          if (sol) {
+            eventi.emit('ferruccio.colpo_muro', { x: p.x, y: p.y, solido: sol, tipo: p.tipo });
+            esplosioniProiettili.push({ x: p.x, y: p.y, tick: 0, maxTick: 12, tipo: p.tipo });
+            proiettiliFerruccio.splice(i, 1);
+            continue;
+          }
+        }
+      }
+      // --- squadra oggetti: fine ---
       for (const b of bersagli()) {
         if (!b || b.stato === 'morto' || p.colpiti.has(b)) continue;
         const d = Math.hypot(b.x - p.x, (b.y - 14) - p.y);
@@ -398,7 +473,14 @@ export function creaCombattimento({
   function tickSparo() {
     if (s.cooldownSparo > 0) s.cooldownSparo -= 1;
     const dir = direzioneSparo();
-    if (!dir) return false;
+    if (!dir) { if (raggio.dir) azzeraRaggio(); return false; }
+    // --- squadra oggetti (storia P09): con il Raggio Cremisi Continuo la freccia tenuta è un laser, non una raffica ---
+    const stR = stat();
+    if (stR?.flags?.raggio && cfgRaggio && !haSpada()) {
+      if (!corpoLibero()) { azzeraRaggio(); return false; }
+      return tickRaggio(dir, stR);
+    }
+    // --- squadra oggetti: fine ---
     if (haSpada()) {
       if (sparoPremuto() && puoAttaccare()) {
         s.miraForzata = dir;
@@ -762,6 +844,20 @@ export function creaCombattimento({
     bruciature: () => bruciature.map((v) => ({ bersaglio: v.bersaglio, ticks: v.ticks, danno: v.danno })),
     direzioneSparo,
     get cooldownSparo() { return s.cooldownSparo; },
+    // --- squadra oggetti (storia P09): raggio continuo del Patto ---
+    /** Imposta la configurazione del raggio (patto.json › regole.raggio); senza, il flag `raggio` non fa nulla. */
+    impostaRaggio: (cfg) => { cfgRaggio = cfg ?? null; },
+    /** Stato del raggio per renderer e test: {attivo, carica 0..1, x, y, dx, dy, lunghezza, larghezza}. */
+    raggio: () => {
+      const st = stat();
+      const caricaTicks = tempo.ticksDaMs(cfgR('carica_ms'));
+      return {
+        attivo: raggio.attivo, carica: caricaTicks > 0 ? Math.min(1, raggio.carica / caricaTicks) : (raggio.dir ? 1 : 0),
+        x: ferruccio.x, y: ferruccio.y, dx: raggio.dir?.x ?? 0, dy: raggio.dir?.y ?? 0,
+        lunghezza: raggio.dir ? lunghezzaRaggio(st) : 0, larghezza: cfgR('larghezza'),
+      };
+    },
+    // --- squadra oggetti: fine ---
     /** Statistiche alla Isaac correnti o null (storia P04). */
     statistiche: () => stat(),
     tick,
