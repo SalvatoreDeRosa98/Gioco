@@ -225,6 +225,51 @@ async function main() {
       console.log(`  ferruccio: ${JSON.stringify(originale)}`);
     });
 
+    // --- storia P14: gli sprite veri (PNG incorporati come data: URI) si vedono anche nel pacchetto a file unico ---
+    await caso('pacchetto via file:// con ?nemico=gatto: il canvas contiene i pixel del foglio gatto.png attorno al nemico', async () => {
+      const url = `${pathToFileURL(PACCHETTO).href}${QUERY}&nemico=gatto`;
+      const { contesto, pagina, errori } = await apri(browser, url);
+      try {
+        await pagina.waitForFunction(() => Boolean(window.__gioco), null, { timeout: 15000 });
+        await pagina.waitForFunction(() => { const s = window.__gioco.resa.sprite?.(); return s && s.richiesti > 0 && s.caricamento === 0; }, null, { timeout: 20000 });
+        await pagina.evaluate(() => { window.__gioco.ciclo.ferma(); window.__gioco.tick(6); });
+        await pagina.waitForTimeout(250);
+        const esito = await pagina.evaluate(async () => {
+          const g = window.__gioco;
+          const stato = g.resa.sprite();
+          const b = g.bersagli.find((x) => x.id === 'nemico-prova');
+          if (!b) return { stato, nemico: false };
+          const colori = async (nome) => {
+            const voce = g.sprite.voce(nome);
+            const img = new Image();
+            await new Promise((ris, rif) => { img.onload = ris; img.onerror = rif; img.src = window.__risorse[voce.file]; });
+            const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+            const x = c.getContext('2d'); x.drawImage(img, 0, 0);
+            const d = x.getImageData(0, 0, c.width, c.height).data;
+            const s = new Set();
+            for (let i = 0; i < d.length; i += 4) if (d[i + 3] === 255) s.add((d[i] << 16) | (d[i + 1] << 8) | d[i + 2]);
+            return s;
+          };
+          const propri = await colori('gatto');
+          for (const k of await colori('scena-pavimento-tile')) propri.delete(k);
+          const v = g.sprite.voce('gatto');
+          const ctx = document.getElementById('scena').getContext('2d');
+          const x0 = Math.floor(b.x - v.larghezza / 2 - 24), y0 = Math.floor(b.y + b.r * 0.5 - v.altezza - 24);
+          const d = ctx.getImageData(x0, y0, v.larghezza + 48, v.altezza + 48).data;
+          let n = 0;
+          for (let i = 0; i < d.length; i += 4) if (propri.has((d[i] << 16) | (d[i + 1] << 8) | d[i + 2])) n++;
+          return { stato, nemico: true, pixel: n, incorporati: Object.keys(window.__risorse ?? {}).length };
+        });
+        assert.ok(esito.nemico, 'il nemico di prova esiste nel pacchetto');
+        assert.deepEqual(esito.stato.inErrore, [], 'nessun foglio in errore nel pacchetto');
+        assert.ok(esito.incorporati >= 91, `PNG incorporati: ${esito.incorporati}`);
+        assert.ok(esito.pixel >= 40, `pixel del foglio gatto attorno al nemico: ${esito.pixel}`);
+        assert.deepEqual(errori, []);
+      } finally {
+        await contesto.close();
+      }
+    });
+
     if (fs.existsSync(PAGINA_PROVA)) {
       await caso('prova.html: impacchettata e aperta via file:// senza errori', async () => {
         eseguiTool(['--entrata', path.relative(RADICE, PAGINA_PROVA), '--uscita', path.relative(RADICE, PACCHETTO_PROVA)]);

@@ -55,6 +55,8 @@ export function creaRenderer({
   run = null, // storia P06: stato della run (piano assoluto, ciclo, piani per ciclo) per la barra del boss
   testi = null, // storia P06: interfaccia.json › boss_hud (titolo della barra del boss)
   barraBossNelRenderer = true, // storia P13: false quando la barra del boss la disegna l'HUD DOM (interfaccia/hud.js): una sola barra
+  sprite = null, // --- squadra disegni (storia P14): gestore dei fogli di sprite veri (resa/sprite.js); null → solo sprite provvisori ---
+  catalogo = null, // --- squadra disegni (storia P14): doni.json › doni, per l'icona `oggetto-<teatro.id_teatro>` di un dono dal suo id ---
 }) {
   const ctx = canvas.getContext('2d');
   const W = scena.larghezza;
@@ -73,6 +75,94 @@ export function creaRenderer({
   const impatti = parametri ? creaImpatti({ parametri, eventi, contaTick, nSplash: SPLASH.length }) : null;
   /** Conteggio dell'ultimo frame (lettura di QA): marionette con i fili e fili disegnati (= 2 × marionette). */
   let ultimiFili = { marionette: 0, fili: 0 };
+
+  // --- squadra disegni (storia P14): inizio --- sprite veri dal manifesto (resa/sprite.js). Ogni `sp(...)` torna false se il PNG
+  // manca o non è ancora caricato: in quel caso resta il disegno provvisorio che segue (pixel-art o forme). Le pose sono i nomi
+  // del manifesto; gli stati del motore (IA dei nemici, fasi dei boss, pericoli, porte) si traducono qui.
+  const S = sprite;
+  const spriteOk = (nome) => Boolean(S && S.pronto(nome));
+  /** Indice del fotogramma al tick corrente con la cadenza `tipo` (resa.sprite.ticks_<tipo>); `o.ferma`/`o.da` come in sprite.js. */
+  const idx = (nome, posa, tipo, o = {}) => (S ? S.indice(nome, posa, contaTick(), tipo, o) : 0);
+  /** Disegna il fotogramma animato di `posa`; false → ripiego. `o` accetta verso, alpha, ancora, scala, rotazione, ferma, da, indice. */
+  const sp = (nome, posa, tipo, x, y, o = {}) => Boolean(S && S.disegna(ctx, nome, posa, o.indice ?? idx(nome, posa, tipo, o), x, y, o));
+  /** Dimensioni del fotogramma di una voce del manifesto (null se non elencata). */
+  const dimSprite = (nome) => { const v = S?.voce(nome); return v ? { sw: v.larghezza, sh: v.altezza } : null; };
+  /** Rotazione di uno sprite di muro per il lato della stanza (N è il verso del foglio). */
+  const ROT_LATO = { N: 0, E: Math.PI / 2, S: Math.PI, W: -Math.PI / 2 };
+  const rotLato = (lato) => ROT_LATO[lato] ?? 0;
+  /** Nome del foglio di un nemico comune dal suo archetipo (il dorato ha il suo foglio). */
+  const NOME_ARCHETIPO = { gatto: 'gatto', vespa: 'vespa-cieca', maschera: 'maschera', bomba: 'bomba-ferma', guardia: 'guardia', statua: 'statua', predone: 'predone' };
+  const nomeNemico = (b) => (b.dorato && b.archetipo !== 'predone' && S?.voce('mob-dorato') ? 'mob-dorato' : (NOME_ARCHETIPO[b.archetipo] ?? b.archetipo));
+  /** Pose dei boss per fase del pattern: `base` (insegue/recupero), `anticipo` (anticipo/lampo), `colpo`, `atterra` (Re Gatto a terra). */
+  const POSE_BOSS = {
+    're-gatto': { base: 'fermo', anticipo: 'anticipo', colpo: 'balzo', atterra: 'atterra' },
+    'capitano-guardia': { base: 'fermo', anticipo: 'fermo', colpo: 'carica' },
+    'regina-vespa': { base: 'vola', anticipo: 'evoca', colpo: 'evoca' },
+    'colosso-statua': { base: 'fermo', anticipo: 'trema', colpo: 'spara' },
+    'maestro-fucina': { base: 'fermo', anticipo: 'lancia', colpo: 'lancia' },
+    'donna-luciana': { base: 'fermo', anticipo: 'comanda', colpo: 'comanda' },
+  };
+  const IN_ANTICIPO = (s) => s === 'anticipo' || s === 'lampo';
+  const IN_COLPO = (s) => s === 'colpo';
+  /**
+   * Posa e cadenza di un bersaglio dal suo stato: {posa, tipo, ferma, da}. La morte si ferma sull'ultimo fotogramma seguendo
+   * `dissoluzione` (0→1); il colpito (flash) mostra la posa `colpito`; il lampo è già nel fotogramma d'attacco del foglio.
+   */
+  function posaBersaglio(b, nome, inFlash) {
+    const s = b.stato;
+    if (s === 'morto') return { posa: nome === 'bomba-ferma' ? 'esplode' : 'morte', tipo: 'morte', ferma: true, dissoluzione: b.dissoluzione };
+    if (inFlash || s === 'stordito') return { posa: 'colpito', tipo: 'attacco' };
+    if (b.boss && b.bossId && POSE_BOSS[b.bossId]) {
+      const P = POSE_BOSS[b.bossId];
+      if (IN_ANTICIPO(s)) return { posa: P.anticipo, tipo: 'attacco' };
+      if (IN_COLPO(s)) return { posa: (P.atterra && !(b.quota > 0)) ? P.atterra : P.colpo, tipo: 'attacco' };
+      return { posa: P.base, tipo: s === 'insegue' ? 'muove' : 'fermo' };
+    }
+    if (nome === 'maschera') {
+      if (IN_ANTICIPO(s)) return { posa: 'si-apre', tipo: 'attacco', ferma: true };
+      if (IN_COLPO(s) || (b.aperta && s === 'recupero')) return { posa: 'aperta-spara', tipo: 'attacco' };
+      return { posa: 'chiusa', tipo: 'fermo' };
+    }
+    if (nome === 'bomba-ferma') {
+      if (b.esplosa) return { posa: 'esplode', tipo: 'morte', ferma: true, dissoluzione: b.dissoluzione };
+      return { posa: IN_ANTICIPO(s) || IN_COLPO(s) ? 'miccia' : 'fermo', tipo: IN_ANTICIPO(s) ? 'attacco' : 'fermo' };
+    }
+    if (nome === 'statua') {
+      if (IN_ANTICIPO(s)) return { posa: 'trema', tipo: 'attacco' };
+      if (IN_COLPO(s)) return { posa: 'spara', tipo: 'attacco' };
+      return { posa: 'fermo', tipo: 'fermo' };
+    }
+    if (nome === 'vespa-cieca') return { posa: IN_ANTICIPO(s) || IN_COLPO(s) ? 'carica' : 'vola', tipo: IN_ANTICIPO(s) || IN_COLPO(s) ? 'attacco' : 'muove' };
+    if (IN_ANTICIPO(s)) return { posa: 'anticipo', tipo: 'attacco' };
+    if (IN_COLPO(s)) return { posa: 'attacco', tipo: 'attacco' };
+    if (s === 'pattuglia' || s === 'insegue') return { posa: 'muove', tipo: 'muove' };
+    return { posa: 'fermo', tipo: 'fermo' };
+  }
+  /** Indice di una posa che segue la dissoluzione (0→1) invece del tick: l'ultimo fotogramma a dissoluzione piena. */
+  function indicePerDissoluzione(nome, posa, d) {
+    const n = S ? S.conta(nome, posa) : 1;
+    return Math.min(n - 1, Math.floor(Math.max(0, Math.min(1, d ?? 0)) * n));
+  }
+  /** Mappa id del dono → nome dello sprite (`oggetto-<teatro.id_teatro>`), solo per i doni che hanno un foglio nel manifesto. */
+  const spriteDono = new Map();
+  for (const d of catalogo ?? []) {
+    const nome = d?.teatro?.id_teatro ? `oggetto-${d.teatro.id_teatro}` : null;
+    if (nome && S?.voce(nome)) spriteDono.set(d.id, nome);
+  }
+  /** Sprite di una reliquia del Patto dal suo id (`patto_raggio` → `patto-raggio`; le varianti ripiegano sul capostipite). */
+  const spritePatto = (id) => {
+    const base = `patto-${String(id ?? '').replace(/^patto[_-]/, '').split('_')[0]}`;
+    return S?.voce(base) ? base : null;
+  };
+  /** Sprite di uno slot del banchetto o di un oggetto a terra ({tipo, id}). */
+  const spriteRaccoglibile = (o) => {
+    if (o.tipo === 'dono') return spriteDono.get(o.id) ?? null;
+    if (o.tipo === 'cuore') return 'raccoglibile-cuore-pieno';
+    if (o.tipo === 'moneta') return 'raccoglibile-moneta';
+    if (o.tipo === 'consumabile' && S?.voce(`raccoglibile-${o.id}`)) return `raccoglibile-${o.id}`;
+    return null;
+  };
+  // --- squadra disegni (storia P14): fine ---
 
   // Stato visivo per il feedback dei colpi alla Isaac (flash, schizzi, onde d'urto, scossa)
   const schizziStanza = [];
@@ -233,10 +323,21 @@ export function creaRenderer({
   }
 
   /** Disegna una Grande Mano (senza fili: i fili li disegna `disegnaFiliMarionette`, due per marionetta). */
-  function disegnaManoMarionettista(cx, cy, lato, scala, tAnim) {
+  function disegnaManoMarionettista(cx, cy, lato, scala, tAnim, posa = null) {
     const { mx, my } = attacchiMano(cx, cy, lato, scala, tAnim);
+    // storia P14: foglio `mano-marionetta` (scende/schianta/risale); senza posa le Mani tengono i fili (primo fotogramma)
+    if (sp('mano-marionetta', posa ?? 'scende', 'scena', mx, my + 26 * scala, { verso: lato < 0 ? -1 : 1, ancora: 'centro', scala: Math.max(0.6, scala), indice: posa ? undefined : 0 })) return;
     const frameIdx = Math.floor(contaTick() / 16) % SPRITE_MANO_MARIONETTA.length;
     disegnaGrigliaPixel(ctx, SPRITE_MANO_MARIONETTA[frameIdx], mx, my, Math.max(3, Math.round(4 * scala)), lato < 0, false);
+  }
+
+  /** Posa delle Mani di Donna Luciana dalla fase del boss: scendono nell'anticipo, schiantano nel colpo, risalgono nel recupero. */
+  function posaMani(boss) {
+    const s = boss?.stato;
+    if (IN_ANTICIPO(s)) return 'scende';
+    if (IN_COLPO(s)) return 'schianta';
+    if (s === 'recupero') return 'risale';
+    return null;
   }
 
   /**
@@ -254,38 +355,49 @@ export function creaRenderer({
     ultimiFili = { marionette: corpi.length, fili: n };
   }
 
-  function disegnaDonnaLucianaBoss(cx, cy, tAnim, corpi) {
+  function disegnaDonnaLucianaBoss(cx, cy, tAnim, corpi, boss = null) {
     const floatY = Math.sin(tAnim * 2.2) * 4;
-    disegnaGrigliaPixel(ctx, SPRITE_BOSS['donna-luciana'], cx, cy - 32 + floatY, 4.5, false, false);
+    // storia P14: foglio `donna-luciana` (fermo/comanda/colpito/morte) ancorato ai piedi del boss; ripiego sulla griglia di pixel
+    const inFlash = boss ? (flashBersagli.get(boss.id) ?? 0) > contaTick() : false;
+    const pb = boss ? posaBersaglio(boss, 'donna-luciana', inFlash) : { posa: 'fermo', tipo: 'fermo' };
+    const oL = pb.ferma ? { indice: indicePerDissoluzione('donna-luciana', pb.posa, pb.dissoluzione) } : {};
+    if (!sp('donna-luciana', pb.posa, pb.tipo, cx, cy + (boss ? boss.r * 0.5 : 40) + floatY, { verso: (boss?.direzione?.x ?? -1) < 0 ? -1 : 1, ...oL })) {
+      disegnaGrigliaPixel(ctx, SPRITE_BOSS['donna-luciana'], cx, cy - 32 + floatY, 4.5, false, false);
+    }
     const sx = attacchiMano(cx - 135, cy - 75, 1, 0.88, tAnim).attacchi;
     const dx = attacchiMano(cx + 135, cy - 75, -1, 0.88, tAnim).attacchi;
     disegnaFiliMarionette(corpi, sx, dx);
-    disegnaManoMarionettista(cx - 135, cy - 75, 1, 0.88, tAnim);
-    disegnaManoMarionettista(cx + 135, cy - 75, -1, 0.88, tAnim);
+    const posa = posaMani(boss);
+    disegnaManoMarionettista(cx - 135, cy - 75, 1, 0.88, tAnim, posa);
+    disegnaManoMarionettista(cx + 135, cy - 75, -1, 0.88, tAnim, posa);
   }
 
   function disegnaCampoEMura(tAnim) {
     const { x: fx, y: fy, larghezza: fw, altezza: fh, cella } = campo;
     const fr = fx + fw, fb = fy + fh;
 
-    // Pavimento caldo con gradiente, basolato e rosone centrale
-    const pg = ctx.createRadialGradient(fx + fw * 0.5, fy + fh * 0.45, 20, fx + fw * 0.5, fy + fh * 0.5, fw * 0.65);
-    pg.addColorStop(0, '#b57835');
-    pg.addColorStop(0.55, '#9a6428');
-    pg.addColorStop(1, '#6b3e16');
-    ctx.fillStyle = pg;
-    ctx.fillRect(fx, fy, fw, fh);
+    // storia P14: pavimento a tile (`scena-pavimento-tile` ripetuto); ripiego: gradiente caldo con basolato
+    const pavimentoATile = Boolean(S && S.disegnaPattern(ctx, 'scena-pavimento-tile', fx, fy, fw, fh));
+    if (!pavimentoATile) {
+      // Pavimento caldo con gradiente, basolato e rosone centrale
+      const pg = ctx.createRadialGradient(fx + fw * 0.5, fy + fh * 0.45, 20, fx + fw * 0.5, fy + fh * 0.5, fw * 0.65);
+      pg.addColorStop(0, '#b57835');
+      pg.addColorStop(0.55, '#9a6428');
+      pg.addColorStop(1, '#6b3e16');
+      ctx.fillStyle = pg;
+      ctx.fillRect(fx, fy, fw, fh);
+    }
 
-    // Griglia prospettica leggera del basolato
+    // Griglia prospettica leggera del basolato (solo senza tile)
     ctx.strokeStyle = 'rgba(42,18,6,0.18)';
     ctx.lineWidth = 1;
-    for (let i = 0; i <= campo.colonne; i++) {
+    for (let i = 0; pavimentoATile ? false : i <= campo.colonne; i++) {
       ctx.beginPath();
       ctx.moveTo(fx + i * cella, fy);
       ctx.lineTo(fx + i * cella, fb);
       ctx.stroke();
     }
-    for (let j = 0; j <= campo.righe; j++) {
+    for (let j = 0; pavimentoATile ? false : j <= campo.righe; j++) {
       ctx.beginPath();
       ctx.moveTo(fx, fy + j * cella);
       ctx.lineTo(fr, fy + j * cella);
@@ -311,16 +423,23 @@ export function creaRenderer({
       ctx.beginPath(); ctx.arc(lx, fy + fh * 0.42, 180, 0, TAU); ctx.fill();
     }
 
-    // Muro nord con archi ciechi e bordo di carta chiara
+    // Muro nord con archi ciechi e bordo di carta chiara; storia P14: tile `scena-muro-tile` sulla fascia e sulle mura del campo
     const wallH = 38;
-    const wg = ctx.createLinearGradient(0, fy - wallH, 0, fy);
-    wg.addColorStop(0, '#0d0603');
-    wg.addColorStop(1, '#3b1c0a');
-    ctx.fillStyle = wg;
-    ctx.fillRect(fx - 24, fy - wallH, fw + 48, wallH);
+    const muroATile = Boolean(S && S.disegnaPattern(ctx, 'scena-muro-tile', fx - 24, fy - wallH, fw + 48, wallH));
+    if (muroATile) {
+      for (const s of campo.solidi) if (s.id === 'muro') S.disegnaPattern(ctx, 'scena-muro-tile', s.x, s.y, s.w, s.h);
+    } else {
+      const wg = ctx.createLinearGradient(0, fy - wallH, 0, fy);
+      wg.addColorStop(0, '#0d0603');
+      wg.addColorStop(1, '#3b1c0a');
+      ctx.fillStyle = wg;
+      ctx.fillRect(fx - 24, fy - wallH, fw + 48, wallH);
+    }
     ctx.strokeStyle = 'rgba(242,194,120,0.65)';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(fx, fy, fw, fh);
+    // storia P14: due lanterne animate sul muro nord (ai piedi delle pozze di luce)
+    for (const lx of [fx + fw * 0.25, fx + fw * 0.75]) sp('scena-lanterna', 'tutto', 'scena', lx, fy - 2);
 
     // Schizzi d'inchiostro rimasti sul pavimento dai colpi alla Isaac
     for (const sp of schizziStanza) {
@@ -345,6 +464,8 @@ export function creaRenderer({
         const porta = notte?.()?.stanza?.portaIn(s.slot);
         const stato = porta?.stato ?? 'aperta';
         const chiusa = stato === 'chiusa' || stato === 'chiudendo';
+        // storia P14: foglio della porta per lato (aperta/chiusa), ruotato sul muro giusto, centrato sulla cella
+        if (sp(chiusa ? 'scena-porta-chiusa' : 'scena-porta-aperta', 'tutto', 'scena', s.x + s.w / 2, s.y + s.h / 2, { ancora: 'centro', rotazione: rotLato(s.lato ?? porta?.lato) })) continue;
         ctx.fillStyle = chiusa ? P.ink : P.oro;
         ctx.fillRect(s.x, s.y, s.w, s.h);
         ctx.strokeStyle = P.oro;
@@ -357,7 +478,9 @@ export function creaRenderer({
         ctx.fillRect(s.x + 4, s.y + 4, s.w - 8, s.h - 8);
         continue;
       }
-      // Ostacoli interni (colonne barocche, panche, telai)
+      // Ostacoli interni (colonne barocche, panche, telai); storia P14: colonna (alta) o panca (larga) dai fogli di scena
+      const nomeOstacolo = (String(s.id ?? '').includes('colonna') || s.h > s.w) ? 'scena-colonna' : 'scena-panca';
+      if (nomeOstacolo === 'scena-colonna' ? sp('scena-colonna', 'tutto', 'scena', s.x + s.w / 2, s.y + s.h) : sp('scena-panca', 'tutto', 'scena', s.x + s.w / 2, s.y + s.h / 2, { ancora: 'centro' })) continue;
       ctx.fillStyle = P.ink;
       ctx.fillRect(s.x, s.y, s.w, s.h);
       ctx.strokeStyle = 'rgba(242,194,120,0.55)';
@@ -374,6 +497,36 @@ export function creaRenderer({
 
     for (const p of h.presenze()) {
       if (!p.presente) continue;
+      // storia P14: fogli dell'hub (hub-tonino, hub-taddeo-npc, hub-agnese-npc, hub-gaetano-porta, hub-mariella-finestra, hub-luna)
+      if (p.tipo === 'scenografia') {
+        if (p.forma === 'luna') sp('hub-luna', 'fermo', 'fermo', p.x, p.y, { ancora: 'centro' });
+        continue;
+      }
+      if (p.tipo === 'finestra' && sp('hub-mariella-finestra', 'fermo', 'fermo', p.x, p.y + 18)) continue;
+      if (p.tipo === 'porta' && S?.voce('hub-gaetano-porta')) {
+        if (sp('hub-gaetano-porta', 'fermo', 'fermo', p.x, p.y + 26, { indice: p.stato === 'chiusa' ? 0 : 1 })) continue;
+      }
+      if (p.tipo === 'npc') {
+        const nomeNpc = p.id.includes('tonino') ? 'hub-tonino' : p.id.includes('taddeo') ? 'hub-taddeo-npc' : p.id.includes('agnese') ? 'hub-agnese-npc' : null;
+        const dim = nomeNpc ? dimSprite(nomeNpc) : null;
+        if (nomeNpc && dim && spriteOk(nomeNpc)) {
+          ellisseAppoggio(p.x, p.y + 10, 22, 8, 0.5);
+          if (vicino?.id === p.id) {
+            const ag = ctx.createRadialGradient(p.x, p.y - 12, 2, p.x, p.y - 12, 48);
+            ag.addColorStop(0, 'rgba(243,193,75,0.5)');
+            ag.addColorStop(1, 'rgba(243,193,75,0)');
+            ctx.fillStyle = ag;
+            ctx.beginPath(); ctx.arc(p.x, p.y - 12, 48, 0, TAU); ctx.fill();
+          }
+          sp(nomeNpc, 'fermo', 'fermo', p.x, p.y + 6);
+          corpi.push({ x: p.x, piedi: p.y + 6, altezza: dim.sh, mezzaLarghezza: dim.sw * 0.3 });
+          ctx.fillStyle = P.crema;
+          ctx.font = '11px Georgia, serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(p.personaggio ?? p.id, p.x, p.y + 26);
+          continue;
+        }
+      }
       if (p.tipo === 'finestra') {
         ctx.fillStyle = p.accesa ? P.oro : '#241207';
         ctx.strokeStyle = P.oro;
@@ -443,8 +596,11 @@ export function creaRenderer({
       ig.addColorStop(1, 'rgba(243,193,75,0)');
       ctx.fillStyle = ig;
       ctx.beginPath(); ctx.arc(i.x + i.w / 2, i.y + i.h / 2, 54, 0, TAU); ctx.fill();
-      ctx.fillStyle = P.oro;
-      ctx.fillRect(i.x, i.y, i.w, i.h);
+      // storia P14: la soglia verso il piano è la porta aperta del foglio di scena, ruotata sul suo lato
+      if (!sp('scena-porta-aperta', 'tutto', 'scena', i.x + i.w / 2, i.y + i.h / 2, { ancora: 'centro', rotazione: rotLato(i.lato) })) {
+        ctx.fillStyle = P.oro;
+        ctx.fillRect(i.x, i.y, i.w, i.h);
+      }
       ctx.fillStyle = P.crema;
       ctx.font = 'bold 12px Georgia, serif';
       ctx.textAlign = 'center';
@@ -712,11 +868,16 @@ export function creaRenderer({
     const proiettiliF = typeof combattimento?.proiettiliFerruccio === 'function' ? combattimento.proiettiliFerruccio() : [];
     for (const p of proiettiliF) {
       ellisseAppoggio(p.x, p.y + 14, 8, 3.5, 0.35);
-      const sp = SPRITE_PROIETTILI[p.tipo] || SPRITE_PROIETTILI.base;
+      // storia P14: foglio `proiettile-<tipo>` (volo×2); ripiego sulla griglia di pixel
+      const nomeP = S?.voce(`proiettile-${p.tipo}`) ? `proiettile-${p.tipo}` : 'proiettile-base';
+      if (sp(nomeP, 'volo', 'muove', p.x, p.y, { scala: p.r > 9 ? 1.6 : 1.25 })) continue;
+      const spP = SPRITE_PROIETTILI[p.tipo] || SPRITE_PROIETTILI.base;
       const scalaP = p.r > 9 ? 3.2 : 2.5;
-      disegnaGrigliaPixel(ctx, sp, p.x, p.y, scalaP, false, false);
+      disegnaGrigliaPixel(ctx, spP, p.x, p.y, scalaP, false, false);
     }
     for (const e of impatti ? impatti.splash() : []) {
+      const nomeS = S?.voce(`proiettile-${e.tipo}`) ? `proiettile-${e.tipo}` : 'proiettile-base';
+      if (sp(nomeS, 'impatto', 'attacco', e.x, e.y, { indice: e.frame, scala: 1.4 })) continue;
       disegnaGrigliaPixel(ctx, SPRITE_PROIETTILI[SPLASH[e.frame]], e.x, e.y, 2.8, false, false);
     }
     // Storia P04: fulmini a catena (Catena della Chiusa) tra il colpito e i vicini
@@ -760,8 +921,19 @@ export function creaRenderer({
 
     // I fili non si disegnano qui: `disegnaFiliMarionette` ne tira due per marionetta dalle Mani (sinistra e destra).
 
+    // storia P14: foglio vero del nemico/boss (archetipo → nome del manifesto, stato → posa), ancorato ai piedi (b.y + r/2);
+    // la hitbox non cambia. Donna Luciana la disegna `disegnaDonnaLucianaBoss` con le Mani.
+    const nomeFoglio = b.boss && b.bossId ? b.bossId : nomeNemico(b);
+    let conFoglio = false;
+    if (b.bossId !== 'donna-luciana' && S?.voce(nomeFoglio)) {
+      const pb = posaBersaglio(b, nomeFoglio, inFlash);
+      const oF = pb.ferma ? { indice: indicePerDissoluzione(nomeFoglio, pb.posa, pb.dissoluzione) } : {};
+      conFoglio = sp(nomeFoglio, pb.posa, pb.tipo, b.x, b.y + b.r * 0.5, { verso: dir, ...oF });
+    }
     const frame = Math.floor(contaTick() / 8) % 2;
-    if (b.boss && b.bossId && SPRITE_BOSS[b.bossId]) {
+    if (conFoglio) {
+      // niente da aggiungere: il lampo è nel fotogramma d'attacco del foglio (regola dell'autore 2026-11-08)
+    } else if (b.boss && b.bossId && SPRITE_BOSS[b.bossId]) {
       if (b.bossId !== 'donna-luciana') {
         disegnaGrigliaPixel(ctx, SPRITE_BOSS[b.bossId], b.x, b.y - 12, 4, dir < 0, inFlash);
       }
@@ -772,8 +944,8 @@ export function creaRenderer({
     }
     ctx.restore();
 
-    // Occhi rossi sulla sagoma nel lampo (come in Isaac): il segnale sta sul corpo, mai a terra
-    if (inLampo && !morto) {
+    // Occhi rossi sulla sagoma nel lampo (come in Isaac): il segnale sta sul corpo, mai a terra (solo per lo sprite provvisorio)
+    if (inLampo && !morto && !conFoglio) {
       const occhio = Math.max(2, b.r * 0.16);
       const yOcchi = b.y - quota - b.r * (b.boss ? 1.4 : 1.1);
       ctx.save();
@@ -814,6 +986,10 @@ export function creaRenderer({
     const c = squadraOggetti.segreta?.()?.crepa?.();
     if (c && !c.aperta && c.visibile && c.rett) {
       const { x, y, w, h } = c.rett;
+      // storia P14: la Crepa Dorata del foglio di scena, ruotata sul muro giusto (ripiego: incrinatura d'inchiostro)
+      if (sp('scena-crepa-dorata', 'tutto', 'scena', x + w / 2, y + h / 2, { ancora: 'centro', rotazione: rotLato(c.lato), alpha: 0.75 + 0.25 * Math.sin(t * 0.15) })) {
+        // il foglio basta
+      } else {
       ctx.save();
       // la cella della finestra è già chiara: la crepa è un'incrinatura d'inchiostro con un alone d'oro che pulsa
       ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 0.15);
@@ -832,9 +1008,19 @@ export function creaRenderer({
       ctx.lineTo(x + w * 0.8, y + h * 0.7);
       ctx.stroke();
       ctx.restore();
+      }
     }
     const g = squadraOggetti.gratis?.()?.corrente?.();
-    if (g && g.stato === 'offerto') {
+    if (g && g.stato === 'offerto' && sp('scena-piedistallo', 'tutto', 'scena', g.x, g.y + 14)) {
+      // storia P14: piedistallo di scena con l'icona del dono (oggetto-<id_teatro>) che galleggia
+      const icona = spriteDono.get(g.id);
+      if (!icona || !sp(icona, 'tutto', 'oggetto', g.x, g.y - 24 + Math.sin(t * 0.1) * 3)) {
+        ctx.save();
+        ctx.fillStyle = g.tier === 'forte' ? P.rosso : P.crema;
+        ctx.beginPath(); ctx.arc(g.x, g.y - 22 + Math.sin(t * 0.1) * 3, 9, 0, TAU); ctx.fill();
+        ctx.restore();
+      }
+    } else if (g && g.stato === 'offerto') {
       ctx.save();
       ctx.fillStyle = P.oroDim;
       ctx.fillRect(g.x - 18, g.y - 6, 36, 14);
@@ -853,6 +1039,12 @@ export function creaRenderer({
       ctx.restore();
       for (const r of pt.altare?.reliquie ?? []) {
         if (r.stretto) continue;
+        // storia P14: altare del Patto dal foglio di scena e icona della reliquia (patto-<id>) che pulsa
+        if (sp('scena-altare-patto', 'tutto', 'scena', r.x, r.y + 16)) {
+          const ic = spritePatto(r.id);
+          if (ic) sp(ic, 'tutto', 'oggetto', r.x, r.y - 30, { alpha: 0.7 + 0.3 * Math.sin(t * 0.12) });
+          continue;
+        }
         ctx.save();
         ctx.fillStyle = P.ink;
         ctx.fillRect(r.x - 20, r.y - 8, 40, 16);
@@ -873,7 +1065,16 @@ export function creaRenderer({
       const y1 = y0 + rg.dy * rg.lunghezza;
       ctx.save();
       ctx.lineCap = 'round';
-      if (rg.attivo) {
+      // storia P14: raggio continuo come tile `proiettile-raggio-cremisi` ripetuto lungo la linea (ogni fotogramma `volo` è un tratto)
+      const dimR = dimSprite('proiettile-raggio-cremisi');
+      if (rg.attivo && dimR && spriteOk('proiettile-raggio-cremisi')) {
+        const ang = Math.atan2(rg.dy, rg.dx);
+        const scalaR = Math.max(1, rg.larghezza / dimR.sh);
+        const passo = dimR.sw * scalaR;
+        for (let d = passo / 2; d < rg.lunghezza; d += passo) {
+          sp('proiettile-raggio-cremisi', 'volo', 'muove', x0 + rg.dx * d, y0 + rg.dy * d, { ancora: 'centro', rotazione: ang, scala: scalaR });
+        }
+      } else if (rg.attivo) {
         for (const [colore, larg, alpha] of [[P.rossoDeep, rg.larghezza, 0.75], [P.rosso, rg.larghezza * 0.5, 1], [P.bianco, Math.max(2, rg.larghezza * 0.15), 1]]) {
           ctx.strokeStyle = colore; ctx.lineWidth = larg; ctx.globalAlpha = alpha;
           ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
@@ -897,6 +1098,12 @@ export function creaRenderer({
         // in `attivo` la fiamma piena (è il pericolo stesso), in `anticipo` solo le braci che si ravvivano.
         const attivo = p.fase === 'attivo';
         const anticipo = p.fase === 'anticipo';
+        // storia P14: foglio `scena-braciere` (6 fotogrammi): riposo = 0, braci = 1, acceso = 2..5 animati; ripiego: forme
+        if (S?.voce('scena-braciere')) {
+          const n = S.conta('scena-braciere', 'tutto');
+          const iB = attivo ? Math.min(n - 1, 2 + idx('scena-braciere', 'tutto', 'scena') % Math.max(1, n - 2)) : anticipo ? Math.min(n - 1, 1) : 0;
+          if (sp('scena-braciere', 'tutto', 'scena', p.x, p.y + 18, { indice: iB })) continue;
+        }
         if (attivo) {
           ctx.save();
           const fiamma = ctx.createRadialGradient(p.x, p.y, 4, p.x, p.y, p.rFiamma);
@@ -920,7 +1127,18 @@ export function creaRenderer({
       }
       // Botola / Uscita del piano nella stanza boss (si apre dopo aver battuto il boss)
       const u = st.uscita;
-      if (u) {
+      // storia P14: botola del foglio di scena (chiusa = 0, aperta = 1) centrata sull'uscita; sopra resta la scritta del piano
+      if (u && S?.voce('scena-botola-uscita') && sp('scena-botola-uscita', 'tutto', 'scena', u.x, u.y, { ancora: 'centro', indice: u.attiva ? 1 : 0 })) {
+        if (u.attiva) {
+          ctx.save();
+          ctx.fillStyle = P.oro;
+          ctx.font = 'bold 12px Georgia, serif';
+          ctx.textAlign = 'center';
+          const nPiano = notte?.()?.piano ?? 1;
+          ctx.fillText(nPiano < 4 ? `▼ SCENDI AL PIANO ${nPiano + 1} ▼` : '★ VITTORIA FINALE ★', u.x, u.y - u.raggio - 10);
+          ctx.restore();
+        }
+      } else if (u) {
         ctx.save();
         if (u.attiva) {
           const glow = ctx.createRadialGradient(u.x, u.y, 4, u.x, u.y, u.raggio * 1.45);
@@ -967,6 +1185,9 @@ export function creaRenderer({
     const eco = economia?.();
     if (eco) {
       for (const o of eco.aTerra()) {
+        // storia P14: raccoglibili del manifesto (moneta animata `brillio`, cuore pieno); ripiego: dischi
+        const nomeR = spriteRaccoglibile(o);
+        if (nomeR && sp(nomeR, 'brillio', 'oggetto', o.x, o.y, { scala: o.grande ? 1.4 : 1 })) continue;
         ctx.save();
         ctx.translate(o.x, o.y);
         if (o.tipo === 'moneta') {
@@ -1011,16 +1232,23 @@ export function creaRenderer({
           ctx.fillStyle = cg;
           ctx.beginPath(); ctx.arc(p.x, p.y - 12, 58, 0, TAU); ctx.fill();
         }
-        ctx.fillStyle = P.ink;
-        ctx.strokeStyle = offerto ? P.oro : P.bruno;
-        ctx.lineWidth = 2.2;
-        ctx.fillRect(p.x - 18, p.y - 8, 36, 22);
-        ctx.strokeRect(p.x - 18, p.y - 8, 36, 22);
+        // storia P14: piedistallo di scena e icona del dono (oggetto-<id_teatro>; ripiego: disco d'oro)
+        const conPiedistallo = sp('scena-piedistallo', 'tutto', 'scena', p.x, p.y + 14);
+        if (!conPiedistallo) {
+          ctx.fillStyle = P.ink;
+          ctx.strokeStyle = offerto ? P.oro : P.bruno;
+          ctx.lineWidth = 2.2;
+          ctx.fillRect(p.x - 18, p.y - 8, 36, 22);
+          ctx.strokeRect(p.x - 18, p.y - 8, 36, 22);
+        }
         if (offerto) {
-          ctx.fillStyle = P.oro;
-          ctx.strokeStyle = P.bianco;
-          ctx.lineWidth = 1.6;
-          ctx.beginPath(); ctx.arc(p.x, p.y - 24, 11, 0, TAU); ctx.fill(); ctx.stroke();
+          const icona = p.dono?.id ? spriteDono.get(p.dono.id) : null;
+          if (!icona || !sp(icona, 'tutto', 'oggetto', p.x, p.y - 26 + Math.sin(contaTick() * 0.1) * 3)) {
+            ctx.fillStyle = P.oro;
+            ctx.strokeStyle = P.bianco;
+            ctx.lineWidth = 1.6;
+            ctx.beginPath(); ctx.arc(p.x, p.y - 24, 11, 0, TAU); ctx.fill(); ctx.stroke();
+          }
           ctx.fillStyle = P.crema;
           ctx.font = 'bold 12px Georgia, serif';
           ctx.textAlign = 'center';
@@ -1045,9 +1273,28 @@ export function creaRenderer({
       ctx.textAlign = 'center';
       ctx.fillText('⚒ LA FUCINA — BOTTEGA DEGLI OGGETTI ⚒', cxFucina, cyFucina);
       ctx.restore();
+      // storia P14: il banchetto di Tonino È la Fucina del Teatro: banco di scena con Tonino dietro (stesso personaggio dell'hub)
+      const dimBanco = dimSprite('scena-banco-tonino');
+      if (dimBanco && spriteOk('scena-banco-tonino')) {
+        const yBanco = cyFucina + 14 + dimBanco.sh / 2;
+        sp('hub-tonino', 'fermo', 'fermo', cxFucina, yBanco - dimBanco.sh * 0.35);
+        sp('scena-banco-tonino', 'tutto', 'scena', cxFucina, yBanco, { ancora: 'centro' });
+      }
 
       for (const sl of b.slots()) {
         if (!sl.posizione || sl.comprato) continue;
+        // storia P14: l'icona vera dello slot (dono, cuore, consumabile) sopra la targa del prezzo
+        const nomeSlot = spriteRaccoglibile(sl);
+        if (nomeSlot && spriteOk(nomeSlot)) {
+          ctx.save();
+          sp(nomeSlot, 'tutto', 'oggetto', sl.posizione.x, sl.posizione.y - 2 + Math.sin(contaTick() * 0.08) * 2, { scala: sl.tipo === 'dono' ? 1 : 1.2 });
+          ctx.fillStyle = sl.accessibile ? P.oro : '#ff7b6b';
+          ctx.font = 'bold 12px Georgia, serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${sl.prezzo} monete`, sl.posizione.x, sl.posizione.y + 30);
+          ctx.restore();
+          continue;
+        }
         ctx.save();
         const g = ctx.createRadialGradient(sl.posizione.x, sl.posizione.y, 2, sl.posizione.x, sl.posizione.y, 34);
         g.addColorStop(0, 'rgba(255,156,66,0.45)');
@@ -1225,6 +1472,8 @@ export function creaRenderer({
     fili: () => ({ ...ultimiFili, ...(fili ? fili.valori() : {}) }),
     /** Storia P12 (QA): effetti transitori nel registro della resa {splash, fulmini}, o null senza parametri. */
     impatti: () => (impatti ? impatti.conteggio() : null),
+    /** Storia P14 (QA): stato dei fogli di sprite veri {voci, richiesti, caricati, caricamento, errori, inErrore}, o null senza gestore. */
+    sprite: () => (S ? S.stato() : null),
     disegna() {
       const tAnim = contaTick() / 60;
       if (scossa > 0.1) scossa *= 0.82;
@@ -1259,13 +1508,22 @@ export function creaRenderer({
       for (const b of listaBersagli) {
         if (!b) continue;
         if (b.boss && b.stato !== 'morto') bossPresente = b;
-        if (b.stato !== 'morto' && b.bossId !== 'donna-luciana') corpi.push({ x: b.x, piedi: b.y + b.r - (b.quota || 0), altezza: b.r * 2, mezzaLarghezza: b.r });
+        if (b.stato !== 'morto' && b.bossId !== 'donna-luciana') {
+          // storia P14: con il foglio vero i fili si agganciano alle spalle del fotogramma (altezza del fotogramma, spalle a ~3/4)
+          const dimB = (b.boss && b.bossId ? dimSprite(b.bossId) : dimSprite(nomeNemico(b)));
+          const conFoglio = dimB && spriteOk(b.boss && b.bossId ? b.bossId : nomeNemico(b));
+          corpi.push(conFoglio
+            ? { x: b.x, piedi: b.y + b.r * 0.5 - (b.quota || 0), altezza: dimB.sh, mezzaLarghezza: dimB.sw * 0.3 }
+            : { x: b.x, piedi: b.y + b.r - (b.quota || 0), altezza: b.r * 2, mezzaLarghezza: b.r });
+        }
         disegnaBersaglioMarionetta(b, tAnim);
       }
 
       // Proiettili
       for (const pr of proiettili()) {
         if (!pr?.vivo) continue;
+        // storia P14: foglio `proiettile-nemico` (volo×2); il riflesso dalla parata prende il colpo di Ferruccio (proiettile-elettrico)
+        if (sp(pr.riflesso ? 'proiettile-elettrico' : 'proiettile-nemico', 'volo', 'muove', pr.x, pr.y, { scala: Math.max(1, (pr.r + 2) / 7) })) continue;
         ctx.fillStyle = pr.scintilla ? P.oro : pr.riflesso ? P.azzurro : P.rosso;
         ctx.beginPath(); ctx.arc(pr.x, pr.y, pr.r + 2, 0, TAU); ctx.fill();
       }
@@ -1289,7 +1547,7 @@ export function creaRenderer({
       if (inBossFinale) {
         const bx = bossPresente ? bossPresente.x : campo.x + campo.larghezza * 0.5;
         const by = bossPresente ? bossPresente.y - 10 : campo.y + campo.altezza * 0.42;
-        disegnaDonnaLucianaBoss(bx, by, tAnim, corpi);
+        disegnaDonnaLucianaBoss(bx, by, tAnim, corpi, bossPresente?.bossId === 'donna-luciana' ? bossPresente : null);
       } else {
         // Le Mani in alto stanno nel proscenio (coordinate dello schermo): le loro dita vanno portate nelle
         // coordinate del palco (inverso di translate(sx, sy) + applicaCamera) per tirare i fili fino ai corpi.

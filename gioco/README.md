@@ -61,6 +61,8 @@ moduli dello stato narrativo e delle stanze non si registrano con `estendi(nome,
 deterministico: `__gioco.ciclo.ferma()` e poi solo `tick`/`premi`. Con `?piano=N` (storie 014-017)
 anche `piano` (la pianta), `stanza` (la stanza corrente: `stato`, `porte`, `segnalini`, `puntoArrivo`),
 `notte` (`salvataggio()` = {seme, piano, stanza}, `statoDi(id)`), `camera` e `vaiA(id_stanza)` vero.
+Storia P14 (sprite veri): `sprite` è il gestore dei fogli (`voce(nome)`, `pronto(nome)`, `fotogramma(nome, posa, i)`, `conta`,
+`indice`, `stato()`) e `resa.sprite()` lo stato dei fogli `{voci, richiesti, caricati, caricamento, errori, inErrore}`.
 Dalla storia 025 anche `economia` (`monete`, `scintille`, `aTerra()`, `aggiungiMonete(n)`, `togliMonete(n)`, `lascia(stanza, oggetto)`,
 `stato()`), `banchetto` (`slots()`, `compra(i)`, `vicino()`, `attivo`), `profilo` (scintille persistenti) e `salvataggio`.
 Dalla storia 024 anche `pool` (`eleggibili`, `probabilita`, `estrai`, `raccolti`, `offertiIn`), `piedistalli` (`elenco`, `vicino`, `anteprima`, `raccogli`, `attivo`),
@@ -116,6 +118,12 @@ node gioco/qa/architettura.test.mjs # storia P12: audit «lo stato non disegna, 
                                     # tick( o orologio reale; zero Math.random; PASSO_MS e tetto di 5 tick)
 node gioco/qa/impatti.test.mjs      # storia P12: resa/impatti.js (frameSpada, splash, fulmini dagli eventi con i tick del ciclo) e
                                     # resa/trasformazioni.js (applicaCamera) su contesto e bus finti, valori da resa.json › impatti
+node gioco/qa/sprite.test.mjs       # storia P14: manifesto sprite.json ↔ 91 PNG su disco (dimensioni del foglio = colonne×righe), layout
+                                    # coerente, fotogramma() con clamp e ripiego, indiceAnimazione, cache/stati di caricamento, disegna
+                                    # (smoothing spento, ancore, verso) e disegnaPattern su Image e contesto finti
+node gioco/qa/resa.wire.test.js     # Playwright della storia P14: ?debug=1&piano=1&seme=1845&nemico=<archetipo> per i 7 archetipi, hub,
+                                    # stanza tesoro e boss re-gatto: tutti i fogli caricati, pixel del PNG atteso attorno al soggetto;
+                                    # screenshot resa-<archetipo>.png, resa-hub.png, resa-bottega.png, resa-boss.png
 node gioco/qa/pagina.test.js        # Playwright: avvia un server su porta libera, apre la pagina (parte nel menu, storia P04: lo chiude con
                                     # storia P12: rAF finto (`__orologio.avanza`) → 1 s a 120 Hz = 1 s a 60 Hz (tick e posizione di Ferruccio
                                     # identici), screenshot fondazione-passo-fisso.png;
@@ -433,9 +441,11 @@ gioco/
 │   │   │                       nemico, cancellato dal fendente attivo, si spegne su solidi e a fine gittata), cancellaInRaggio
 │   │   │                       (Tamburello), potaSpenti (lista condivisa)
 │   └── resa/
-│       ├── renderer.js         renderer pixel-art del Teatro (Mani, palco, hub, minimappa); `fili()` espone i fili dell'ultimo frame alla QA; la barra del
-│       │                       boss è dell'HUD DOM (P13: `barraBossNelRenderer: false`)
-│       ├── pixel-sprites.js    sprite provvisori in griglia di pixel
+│       ├── renderer.js         renderer pixel-art del Teatro (Mani, palco, hub, minimappa); `fili()` espone i fili dell'ultimo frame alla QA;
+│       │                       storia P14: fogli veri per nemici, boss, NPC, oggetti, proiettili e scena (stato → posa del manifesto);
+│       │                       la barra del boss è dell'HUD DOM (P13: `barraBossNelRenderer: false`)
+│       ├── sprite.js           storia P14: fogli di sprite veri dal manifesto (cache, fotogramma, cadenze di resa.sprite, disegna, pattern)
+│       ├── pixel-sprites.js    sprite provvisori in griglia di pixel (ripiego quando un PNG manca o non è ancora caricato)
 │       ├── feel.js             storia P08: lampeggio, scossa contestuale, macchie
 │       ├── fili.js             storia P11: i due fili d'oro di ogni marionetta del Velo (uno per Mano, spalle, curva, 1 px) da resa.fili
 │       ├── impatti.js          storia P12: splash dei proiettili, fulmini a catena e fotogramma dello stocco derivati dagli eventi e dai
@@ -488,6 +498,8 @@ gioco/
     ├── fondazione.test.mjs          test unitari della fondazione (P12: 60/120/144 Hz simulati → stessi tick e posizione)
     ├── architettura.test.mjs        storia P12: audit programmatico stato/resa, Math.random, passo fisso
     ├── impatti.test.mjs             storia P12: resa/impatti.js e resa/trasformazioni.js su finti
+    ├── sprite.test.mjs              storia P14: manifesto ↔ PNG, resa/sprite.js su Image e contesto finti
+    ├── resa.wire.test.js            Playwright della storia P14 (sprite veri a schermo: resa-<archetipo>.png, resa-hub.png, resa-bottega.png, resa-boss.png)
     ├── pagina.test.js               test Playwright della pagina (P12: 120 Hz con rAF finto, fondazione-passo-fisso.png)
     ├── combattimento.test.mjs       test unitari delle storie 007-011
     ├── nemici.test.mjs              test unitari delle storie 019, 020 e P05 (nemici alla Isaac, proiettili nemici, bot misto)
@@ -621,6 +633,22 @@ dal proscenio al palco (inverso di scossa + camera) e li tira prima di disegnare
   alza: l'hub e le scene automatiche dell'ingresso fanno da atto I (decisione da confermare con l'autore).
 - **HUD**: barra della vita del boss in alto al centro nell'HUD DOM del Teatro (`interfaccia/hud.js`, storia P13; titolo da `interfaccia.json › boss_hud` con
   piano e ciclo, cornice `hud-barra-boss`); `renderer.js › disegnaBarraVitaBoss` resta dietro l'opzione `barraBossNelRenderer` (false da `avvio.js`).
+
+## Sprite veri (storia P14)
+
+I 91 PNG dell'autore (`assets/sprite/`, manifesto `contenuti/sprite.json` con `layout`) sono disegnati da `resa/sprite.js` e usati dal
+renderer per **tutto**: nemici (archetipo → foglio: `vespa` → `vespa-cieca`, `bomba` → `bomba-ferma`, `dorato` → `mob-dorato`; stato
+dell'IA → posa: `pattuglia/insegue` → `muove`, `anticipo/lampo` → `anticipo`, `colpo` → `attacco`, flash → `colpito`, `morto` → `morte`
+che segue `dissoluzione`; maschera `chiusa/si-apre/aperta-spara`, bomba `fermo/miccia/esplode`, statua `fermo/trema/spara`, vespa
+`vola/carica`), boss (`re-gatto` fermo/anticipo/balzo/atterra, `capitano-guardia` carica, `regina-vespa` vola/evoca, `colosso-statua`
+trema/spara, `maestro-fucina` lancia, `donna-luciana` fermo/comanda con le Mani `mano-marionetta` scende/schianta/risale), proiettili
+(`proiettile-<tipo>` volo/impatto, `proiettile-nemico`, raggio cremisi a tile), scena (pavimento e muro a pattern, lanterne, porte per
+lato, colonne, panche, crepa dorata, bracieri, botola, piedistalli, altare del Patto, banco di Tonino), oggetti (`oggetto-<teatro.id_teatro>`,
+`attivo-*`, `patto-*`, raccoglibili) e hub (`hub-*`). Il fotogramma è ancorato ai piedi (`b.y + r/2`) a scala 1:1: la hitbox non cambia; i
+fili si agganciano all'altezza del fotogramma. Le cadenze sono in `resa.json › sprite` (tick per fotogramma). Lo sprite provvisorio
+(`pixel-sprites.js`, forme Canvas) resta **solo come ripiego** quando un PNG manca o non è ancora caricato. Il menu usa `sipario-menu` e il
+sipario narrativo `sipario-<quartiere>` dell'atto (`sprite.json › fondali`, variabili CSS `--fondale-menu`/`--fondale-sipario`). Nel
+pacchetto a file unico i PNG sono data: URI (`fondazione/risorse.js`): `pacchetto.test.js` verifica che il gatto si veda anche lì.
 
 ## Valori provvisori da confermare con il game-designer
 

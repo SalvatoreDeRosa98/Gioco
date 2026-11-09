@@ -11,6 +11,10 @@
   align-items: center;
   justify-content: center;
   background: color-mix(in srgb, var(--inchiostro) 88%, transparent);
+  /* storia P14: fondale sipario-<quartiere>.png dell'atto (avvio.js imposta --fondale-sipario a piano.discesa), velato d'inchiostro */
+  background-image: linear-gradient(color-mix(in srgb, var(--inchiostro) 55%, transparent), color-mix(in srgb, var(--inchiostro) 55%, transparent)), var(--fondale-sipario, none);
+  background-size: cover;
+  background-position: center;
   color: var(--crema);
   font-family: var(--font-testo);
   text-align: center;

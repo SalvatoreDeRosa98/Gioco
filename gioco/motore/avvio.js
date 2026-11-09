@@ -100,6 +100,7 @@ const ID_NEMICO_PROVA = 'nemico-prova';
 // --- squadra nemici: fine ---
 import { creaResaDebug } from './resa/debug.js';
 import { creaRenderer } from './resa/renderer.js';
+import { creaSprite } from './resa/sprite.js'; // --- squadra disegni (storia P14): fogli di sprite veri dal manifesto ---
 import { creaFeel } from './resa/feel.js'; // --- squadra feel (P08) ---
 import { caricaModelli, creaCatalogo, regoleDaParametri, validaParametriGenerazione } from './mondo/modelli.js';
 import { generaPiano } from './mondo/generazione.js';
@@ -380,6 +381,22 @@ async function avvia() {
     immaginiFogli.set(nome, voce);
     return voce;
   };
+  // --- squadra disegni (storia P14): inizio --- gestore dei fogli di sprite veri (resa/sprite.js): cache per nome, fotogrammi dal
+  // `layout` del manifesto, cadenze da resa.json › sprite; i PNG partono subito (precarica) così la prima stanza ha già i fogli.
+  const gestoreSprite = creaSprite({
+    manifesto: manifestoSprite, percorso: percorsoRisorsa, parametri,
+    creaImmagine: typeof Image === 'function' ? () => new Image() : null,
+  });
+  gestoreSprite.precarica();
+  /** Fondali DOM dal manifesto (`fondali`): `url("…")` del foglio (data: URI nel pacchetto) o `none`. */
+  const urlFondale = (nome) => {
+    const f = nome ? foglioSprite(nome) : null;
+    if (!f) return 'none';
+    // un `url()` relativo dentro una variabile CSS si risolve rispetto al foglio di stile che la usa: va reso assoluto
+    const src = f.src.startsWith('data:') ? f.src : new URL(f.src, document.baseURI).href;
+    return `url("${src}")`;
+  };
+  // --- squadra disegni: fine ---
   // Storie 026-027: stato narrativo (profilo nello stesso salvataggio) e incontri per ancoraggio.
   const [storia, regoleNarrativa, ancoraggi, ripetizioni] = await Promise.all([FILE_STORIA, FILE_NARRATIVA, FILE_ANCORAGGI, FILE_RIPETIZIONI].map(caricaJson));
   const narrativa = creaStatoNarrativo({ storia, regole: regoleNarrativa, ancoraggi, eventi, salvataggio, slot: slotScelto });
@@ -885,8 +902,22 @@ async function avvia() {
     parametri, // resa.fili.*: i due fili d'oro di ogni marionetta del Velo
     run: () => run, testi: testiInterfaccia, // storia P06: piano/ciclo e titolo della barra del boss
     barraBossNelRenderer: false, // --- squadra HUD (storia P13): la barra del boss la disegna l'HUD DOM, una sola ---
+    // --- squadra disegni (storia P14): fogli di sprite veri e catalogo dei doni per le icone `oggetto-<id_teatro>` ---
+    sprite: gestoreSprite, catalogo: parametri.get('doni').doni,
+    // --- squadra disegni: fine ---
   });
   ciclo.registra(resa);
+  // --- squadra disegni (storia P14): inizio --- fondali DOM dal manifesto: il menu usa `fondali.menu` (sipario-menu), il sipario
+  // narrativo il quartiere dell'atto (`fondali.atti[piano nel ciclo]`); le regole CSS leggono --fondale-menu / --fondale-sipario.
+  const fondali = manifestoSprite.fondali ?? null;
+  const contenitoreInterfaccia = document.getElementById('interfaccia');
+  if (fondali && contenitoreInterfaccia) {
+    contenitoreInterfaccia.style.setProperty('--fondale-menu', urlFondale(fondali.menu));
+    eventi.on('piano.discesa', ({ aPiano }) => {
+      contenitoreInterfaccia.style.setProperty('--fondale-sipario', urlFondale(fondali.atti?.[String(run.pianoNelCiclo(aPiano))]));
+    });
+  }
+  // --- squadra disegni: fine ---
   // Cucitura fra squadre: la Bomba Ferma (nemici) emette `nemico.esplosione`; feel (scossa) e audio (tonfo) ascoltano
   // `bomba.esplosione`: lo stesso evento con lo stesso payload {x, y, rGiocatore, rNemici}.
   eventi.on('nemico.esplosione', (p) => eventi.emit('bomba.esplosione', p));
@@ -949,6 +980,9 @@ async function avvia() {
       /** Squadra feel (P08): scossa, macchie e lampeggio (`feel.macchie()`, `feel.statoScossa()`); `resa` è il renderer (`ultimoAlphaSagoma()`). */
       feel,
       resa,
+      // --- squadra disegni (storia P14): gestore dei fogli di sprite veri (`stato()`, `pronto(nome)`, `fotogramma(nome, posa, i)`, `voce(nome)`) ---
+      sprite: gestoreSprite,
+      // --- squadra disegni: fine ---
       campo,
       ferruccio,
       combattimento,
