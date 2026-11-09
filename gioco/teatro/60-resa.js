@@ -1316,7 +1316,7 @@ function disegnaHUDPixelArt(st) {
     { size: 8, color: '#f9cb40', align: 'left' }
   );
   drawTextFit(
-    `🪙${statoRun.monete} · 🥾SPD:${(statoRun.speed / 2).toFixed(2)} · Ogg:${statoRun.oggettiEquipaggiati.length}`,
+    `🪙${statoRun.monete}${typeof testoInventarioA1 === 'function' ? testoInventarioA1() : ''} · 🥾SPD:${(statoRun.speed / 2).toFixed(2)} · Ogg:${statoRun.oggettiEquipaggiati.length}`,
     hx + 6,
     hy + 47,
     hw - 12,
