@@ -66,7 +66,6 @@
 <script>
 (() => {
   const W = 640, H = 360, TAU = Math.PI * 2;
-  const MAX_SLOT_OGGETTI = 5;
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -2793,6 +2792,352 @@ function disegnaManoMarionettaPittorica() {
     },
   ];
 
+  // --- B: inizio ---
+  // OGGETTI INFINITI ALLA MANIERA DI ISAAC (feedback autore B, 2026-11-09):
+  //  1. niente più limite di 5 slot: gli oggetti passivi si accumulano senza fine (HUD a icone piccole);
+  //  2. pool della run: a inizio run si estraggono `dimensionePool` oggetti DIVERSI da CATALOGO_OGGETTI
+  //     (base + forti; il dono iniziale del personaggio resta fuori); tesoro, Fucina, segreta e ricompense
+  //     pescano solo da lì senza ripetizioni; esauriti (cap raggiunto) ogni ricompensa è un oggetto a caso dei
+  //     20 (anche già preso: doppione) oppure un Cuore di Cera. Il patto ha il suo pool a parte (CATALOGO_PATTO).
+  //  3. Stanza dello Sviluppatore ai piani `sviluppatore.piani`: un pannello con TUTTO il catalogo, se ne sceglie uno.
+  // Doppioni: si sommano solo le voci additive di `stack.chiaviSommabili` (DMG Up, Tears Up, Speed, Range,
+  // vita…); moltiplicatori ed effetti on/off non si ripetono. Se l'oggetto non ha voci additive (es. la Lente
+  // 20/20) il doppione vale `stack.bonusGenerico` (+0.3 DMG Up, +0.2 Tears Up).
+  const OGGETTI_B = Object.freeze({
+    dimensionePool: 20,                 // oggetti diversi per run (cap)
+    dopoCap: Object.freeze({
+      probCuore: 0.35,                  // dopo il cap: probabilità che la ricompensa sia un cuore invece di uno dei 20
+      curaCuoreHalf: 2,                 // il Cuore di Cera rigenera 1 maschera intera
+    }),
+    stack: Object.freeze({
+      chiaviSommabili: Object.freeze(['dmgUp', 'flatDmg', 'tearsUp', 'speedUp', 'rangeUp', 'bonusMaxHp', 'healOnEquip']),
+      fattore: 1.0,                     // un doppione somma il 100% delle voci additive
+      bonusGenerico: Object.freeze({ dmgUp: 0.3, tearsUp: 0.2 }),
+      descGenerico: '+0.3 DMG Up · +0.2 Tears Up',
+    }),
+    hud: Object.freeze({ lato: 12, passo: 13, righe: 2, xMin: 256, xMax: 566, scala: 1.0 }),
+    sviluppatore: Object.freeze({
+      piani: Object.freeze([7]),        // piani con la Stanza dello Sviluppatore (7 = ciclo 2, terzo piano)
+      colonne: 8, cellaL: 62, cellaA: 38,
+      colore: '#67e8f9',
+    }),
+  });
+
+  // Catalogo esteso (B): 15 oggetti nuovi, così il pool di 20 è un vero sottoinsieme del catalogo (28 oggetti) e
+  // la Stanza dello Sviluppatore offre anche oggetti fuori pool. Solo modificatori già gestiti da
+  // ricalcolaStatisticheIsaac; i prezzi li fissa ECONOMIA_T3 qui sotto, per tier.
+  const OGGETTI_NUOVI_B = [
+    { id: 'corno', sprite: 'corno', nome: 'Corno di Corallo (Magic Mushroom)', tier: 'forte',
+      statsDesc: '[★ FORTE] +1 Maschera Massima · +0.6 DMG Up · DMG x1.25 · +0.15 Speed · +20 Range',
+      lore: 'Il corno rosso appeso alla porta della bottega: tiene lontano il malocchio del Velo.',
+      mod: { bonusMaxHp: 2, healOnEquip: 2, dmgUp: 0.6, dmgMult: 1.25, speedUp: 0.15, rangeUp: 20 } },
+    { id: 'campana', sprite: 'campana', nome: 'Campana di San Lorenzo (Pentagram)', tier: 'forte',
+      statsDesc: '[★ FORTE] +1.0 DMG Up · +0.5 Flat DMG',
+      lore: 'Suonava a morto la notte del crollo: ora suona per te.',
+      mod: { dmgUp: 1.0, flatDmg: 0.5 } },
+    { id: 'fiaccola', sprite: 'fiaccola', nome: 'Fiaccola del Vesuvio (Fire Mind+)', tier: 'forte',
+      statsDesc: '[★ FORTE] Proiettili Infuocati e Perforanti · +0.4 DMG Up',
+      lore: 'Accesa al fuoco della montagna, non si spegne nemmeno sotto il Velo.',
+      mod: { burn: true, piercing: true, dmgUp: 0.4, tipoProiettile: 'fuoco' } },
+    { id: 'lanterna', sprite: 'lanterna', nome: 'Lanterna Magica (20/20+)', tier: 'forte',
+      statsDesc: '[★ FORTE] Doppio Colpo parallelo · +0.5 Tears Up · +0.3 DMG Up',
+      lore: 'Proietta due ombre per ogni figura: il pubblico non sa quale sia vera.',
+      mod: { doppia: true, tearsUp: 0.5, dmgUp: 0.3 } },
+    { id: 'sole', sprite: 'sole', nome: 'Sole d\'Ottone (Cricket\'s Body)', tier: 'forte',
+      statsDesc: '[★ FORTE] Colpi più grandi · +1.5 Flat DMG · +0.3 Tears Up',
+      lore: 'Il sole di scena del Teatro: brilla anche quando il sipario è chiuso.',
+      mod: { size: 1.35, flatDmg: 1.5, tearsUp: 0.3 } },
+    { id: 'nastro', sprite: 'nastro', nome: 'Nastro del Sipario', tier: 'base',
+      statsDesc: '[BASE] +0.20 Speed Up · +0.4 Tears Up',
+      lore: 'Il nastro rosso che lega il sipario a riposo.',
+      mod: { speedUp: 0.2, tearsUp: 0.4 } },
+    { id: 'ago', sprite: 'ago', nome: 'Ago di Agnese', tier: 'base',
+      statsDesc: '[BASE] +40 Range · +0.35 DMG Up',
+      lore: 'Cuce i fili strappati: arriva lontano e punge piano.',
+      mod: { rangeUp: 40, dmgUp: 0.35 } },
+    { id: 'castagna', sprite: 'castagna', nome: 'Castagna del Ciuccio (Breakfast)', tier: 'base',
+      statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera',
+      lore: 'Arrostita sul braciere della piazza, sa ancora di casa.',
+      mod: { bonusMaxHp: 2, healOnEquip: 2 } },
+    { id: 'cornetto', sprite: 'cornetto', nome: 'Cornetto Portafortuna', tier: 'base',
+      statsDesc: '[BASE] +0.5 DMG Up · +0.10 Speed',
+      lore: 'Mai regalato, mai comprato: trovato. Così porta fortuna.',
+      mod: { dmgUp: 0.5, speedUp: 0.1 } },
+    { id: 'bottone', sprite: 'bottone', nome: 'Bottone di Madreperla (Sad Onion)', tier: 'base',
+      statsDesc: '[BASE] +0.7 Tears Up',
+      lore: 'Staccato dalla giacca buona, quella delle feste.',
+      mod: { tearsUp: 0.7 } },
+    { id: 'pettine', sprite: 'pettine', nome: 'Pettine di Tartaruga', tier: 'base',
+      statsDesc: '[BASE] +0.35 Tears Up · +25 Range · +0.10 Speed',
+      lore: 'Pettina i fili d\'oro senza spezzarli.',
+      mod: { tearsUp: 0.35, rangeUp: 25, speedUp: 0.1 } },
+    { id: 'pipa', sprite: 'pipa', nome: 'Pipa di Pulcinella', tier: 'base',
+      statsDesc: '[BASE] +0.45 DMG Up · +30 Range',
+      lore: 'Fuma pensieri: ogni boccata un ricordo che torna.',
+      mod: { dmgUp: 0.45, rangeUp: 30 } },
+    { id: 'pagnotta', sprite: 'pagnotta', nome: 'Pagnotta di Port\'Alba (Dinner)', tier: 'base',
+      statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera · +0.05 Speed',
+      lore: 'Ancora calda, avvolta in un foglio di giornale del 1839.',
+      mod: { bonusMaxHp: 2, healOnEquip: 2, speedUp: 0.05 } },
+    { id: 'chiave', sprite: 'chiave', nome: 'Chiave del Camerino', tier: 'base',
+      statsDesc: '[BASE] +0.3 DMG Up · +0.3 Tears Up · +0.10 Speed · +15 Range',
+      lore: 'Apre il camerino dove le marionette si tolgono il trucco.',
+      mod: { dmgUp: 0.3, tearsUp: 0.3, speedUp: 0.1, rangeUp: 15 } },
+    { id: 'dado', sprite: 'dado', nome: 'Dado della Bisca', tier: 'base',
+      statsDesc: '[BASE] +0.8 Flat DMG',
+      lore: 'Truccato, ma solo un poco.',
+      mod: { flatDmg: 0.8 } },
+  ];
+  for (const o of OGGETTI_NUOVI_B) CATALOGO_OGGETTI.push({ prezzo: o.tier === 'forte' ? 15 : 10, ...o });
+
+  Object.assign(SPRITE_OGGETTI, {
+    corno: ['.........kk.', '........krk.', '.......krrk.', '......krrRk.', '.....krrRk..', '....krrrRk..',
+      '...krrrRk...', '..krrrRk....', '.krrrRk.....', '.kyyyk......', 'kyyyk.......', '.kkk........'],
+    campana: ['.....kk.....', '....kyyk....', '...kyyyyk...', '..kyywyyyk..', '..kyywyyyk..', '..kyyyyyyk..',
+      '.kyyyyyyyyk.', 'kyyyyyyyyyyk', 'kOOOOOOOOOOk', '.kkkkkkkkkk.', '.....kOk....', '......k.....'],
+    fiaccola: ['.....ro.....', '....roor....', '....oyyo....', '...royyor...', '....oyyo....', '....kmmk....',
+      '....kmMk....', '....kmMk....', '....kmMk....', '....kmMk....', '....kMMk....', '.....kk.....'],
+    lanterna: ['.....kk.....', '....k..k....', '...kkkkkk...', '..kGaaaaGk..', '..kGawwaGk..', '..kGaaaaGk..',
+      '..kGaaaaGk..', '..kGaaaaGk..', '...kkkkkk...', '....kGGk....', '.....kk.....', '............'],
+    sole: ['.....yy.....', '..y..yy..y..', '...yyyyyy...', '..yyoooooy..', 'yyyoyyyyoyyy', 'yyyoywwyoyyy',
+      '..yoyyyyoy..', '..yyoooooy..', '...yyyyyy...', '..y..yy..y..', '.....yy.....', '............'],
+    nastro: ['............', '.kk......kk.', 'krrk....krrk', 'krrrk..krrrk', '.krrrkkrrrk.', '..krrRRrrk..',
+      '..krrRRrrk..', '.krrrkkrrrk.', 'krrk.kk.krrk', 'kRk..kk..kRk', '.k........k.', '............'],
+    ago: ['..........kk', '.........kwk', '........kgk.', '.......kgk..', '......kgk...', '.....kgk....',
+      '....kgk.....', '...kgk..rr..', '..kgk..r..r.', '.kgk..r.....', 'kGk..r......', '.k...r......'],
+    castagna: ['.....kk.....', '....kwwk....', '...kmmmmk...', '..kmmmmmmk..', '.kmmMmmmmmk.', '.kmMmmmmmmk.',
+      '.kmmmmmmmmk.', '.kmmmmmmmMk.', '..kmmmmmMk..', '...kccccck..', '....kkkkk...', '............'],
+    cornetto: ['............', '..kk........', '.kyyk.......', '.kyyk.......', '..krrk......', '..krrrk.....',
+      '...krrrk....', '....krrrk...', '.....krrRk..', '......krRk..', '.......kRk..', '........k...'],
+    bottone: ['............', '....kkkk....', '..kkcccckk..', '.kccwccccck.', '.kcwcccccck.', '.kcckcckcck.',
+      '.kcccccccck.', '.kcckcckcck.', '.kcccccccck.', '..kkcccckk..', '....kkkk....', '............'],
+    pettine: ['............', '............', 'kkkkkkkkkkkk', 'kmmmmmmmmmmk', 'kmMmMmMmMmMk', 'kkkkkkkkkkkk',
+      'kmkmkmkmkmk.', 'kmkmkmkmkmk.', 'kmkmkmkmkmk.', 'k.k.k.k.k.k.', '............', '............'],
+    pipa: ['..........w.', '.........w..', '..........w.', '.kkkk.......', 'kmmmmk......', 'kmMMmk......',
+      'kmMMmkkkkkk.', 'kmmmmmmmmmmk', '.kmmmkkkkkk.', '..kkk.......', '............', '............'],
+    pagnotta: ['............', '............', '...kkkkkk...', '..kooooook..', '.koooooooook', 'kocooocoooOk',
+      'kooooooooOOk', 'koooooooOOOk', '.kOOOOOOOOk.', '..kkkkkkkk..', '............', '............'],
+    chiave: ['............', '..kkkk......', '.kyyyyk.....', 'kyykkyyk....', 'kyk..kyk....', 'kyykkyyk....',
+      '.kyyyykkkkk.', '..kkkkyyyyyk', '......kykyk.', '......kykyk.', '.......k.k..', '............'],
+    dado: ['............', '.kkkkkkkkkk.', '.kwwwwwwwwk.', '.kwkwwwwkwk.', '.kwwwwwwwwk.', '.kwwwkkwwwk.',
+      '.kwwwkkwwwk.', '.kwwwwwwwwk.', '.kwkwwwwkwk.', '.kwwwwwwwwk.', '.kkkkkkkkkk.', '............'],
+  });
+
+  /** Oggetto del catalogo per id (null se non c'è). */
+  function trovaOggettoB(id) {
+    return CATALOGO_OGGETTI.find((o) => o.id === id) || null;
+  }
+
+  /** Ricompensa «cuore» dopo il cap: rigenera OGGETTI_B.dopoCap.curaCuoreHalf mezze maschere, non occupa l'HUD. */
+  function creaCuoreB() {
+    return {
+      id: 'cuore_cera_b', sprite: 'cuore', nome: 'Cuore di Cera', tier: 'cura', cuoreB: true,
+      statsDesc: `Rigenera +${OGGETTI_B.dopoCap.curaCuoreHalf / 2} ❤️ Maschera`,
+      lore: 'Il pool della notte è esaurito: il Teatro ti offre un po\' di vita.',
+      prezzo: ECONOMIA_T3.prezzi.cuore, mod: {},
+    };
+  }
+
+  /**
+   * Estrae il pool della run: OGGETTI_B.dimensionePool oggetti diversi del catalogo, escluso il dono iniziale.
+   * @param {string|null} escludiId id del passivo iniziale del personaggio
+   */
+  function inizializzaPoolRunB(escludiId) {
+    const scelti = shuffle(CATALOGO_OGGETTI.filter((o) => o.id !== escludiId)).slice(0, OGGETTI_B.dimensionePool);
+    statoRun.poolRunB = { ids: scelti.map((o) => o.id), rimasti: scelti.map((o) => o.id), estrazioni: 0 };
+  }
+
+  /**
+   * Una ricompensa dal pool della run. Finché restano oggetti non usciti ne esce uno (del tier chiesto se
+   * c'è, altrimenti di qualunque tier) e non esce più; a pool esaurito: Cuore di Cera con probabilità
+   * OGGETTI_B.dopoCap.probCuore, altrimenti uno dei 20 a caso (anche già preso).
+   * @param {'base'|'forte'} tier
+   */
+  function estraiDaPoolRunB(tier) {
+    if (!statoRun.poolRunB) inizializzaPoolRunB(null);
+    const P = statoRun.poolRunB;
+    P.estrazioni++;
+    if (P.rimasti.length) {
+      const delTier = P.rimasti.filter((id) => trovaOggettoB(id)?.tier === tier);
+      const lista = delTier.length ? delTier : P.rimasti;
+      const id = lista[Math.floor(rng() * lista.length)];
+      P.rimasti.splice(P.rimasti.indexOf(id), 1);
+      return { ...trovaOggettoB(id) };
+    }
+    if (rng() < OGGETTI_B.dopoCap.probCuore) return creaCuoreB();
+    return { ...trovaOggettoB(P.ids[Math.floor(rng() * P.ids.length)]) };
+  }
+
+  /**
+   * Versione da equipaggiare: l'oggetto com'è se è nuovo; se lo hai già, un doppione che somma solo le voci
+   * additive (OGGETTI_B.stack) o, se non ne ha, il bonus generico.
+   */
+  function versioneStackB(item) {
+    const copie = statoRun.oggettiEquipaggiati.filter((o) => o && o.id === item.id).length;
+    if (!copie) return item;
+    const S = OGGETTI_B.stack;
+    const mod = {};
+    for (const k of S.chiaviSommabili) if (item.mod && item.mod[k]) mod[k] = item.mod[k] * S.fattore;
+    const generico = !Object.keys(mod).length;
+    return {
+      ...item, doppioneB: copie + 1, mod: generico ? { ...S.bonusGenerico } : mod,
+      statsDesc: `[DOPPIONE ×${copie + 1}] ${generico ? S.descGenerico : 'si sommano le statistiche additive'}`,
+    };
+  }
+
+  // Stanza dello Sviluppatore: pannello con tutto il catalogo, una sola scelta, poi la stanza si chiude.
+  /** Apre il pannello di scelta nella Stanza dello Sviluppatore (se non già usata). */
+  function apriPannelloSviluppatoreB(st) {
+    if (!st || st.tipo !== 'sviluppatore' || st.sceltaFattaB) return false;
+    statoRun.pannelloB = { sel: statoRun.pannelloB ? statoRun.pannelloB.sel : 0 };
+    return true;
+  }
+
+  /** Il giocatore prende l'oggetto `idx` del catalogo: va nell'HUD, il pannello si chiude, la porta si mura. */
+  function scegliOggettoSviluppatoreB(idx) {
+    const st = statoRun.stanzaCorrente;
+    const item = CATALOGO_OGGETTI[idx];
+    if (!st || st.tipo !== 'sviluppatore' || st.sceltaFattaB || !item) return false;
+    st.sceltaFattaB = true;
+    statoRun.pannelloB = null;
+    const P = statoRun.poolRunB;
+    if (P && P.rimasti.includes(item.id)) P.rimasti.splice(P.rimasti.indexOf(item.id), 1); // non riesce dal pool
+    acquisisciOggettoConLimite5Slot({ ...item }, 'sviluppatore', null);
+    const g = st.genitoreB && statoRun.mappa?.perId.get(st.genitoreB.id);
+    if (g) {
+      delete g.porte[st.genitoreB.lato]; // la stanza si chiude alle tue spalle
+      st.porte = {};
+      st.visitata = false;
+      entraInStanza(g, st.genitoreB.lato);
+    }
+    mostraBanner(`✎ Lo Sviluppatore ti dona ${item.nome}: la sua stanza si chiude alle tue spalle.`, 240);
+    return true;
+  }
+
+  /** Tasti del pannello: frecce/WASD per muovere, E/Invio/Spazio per scegliere, Esc per chiudere. */
+  function tastoPannelloB(code) {
+    const p = statoRun.pannelloB;
+    if (!p) return false;
+    const n = CATALOGO_OGGETTI.length;
+    const C = OGGETTI_B.sviluppatore.colonne;
+    if (['ArrowLeft', 'KeyA'].includes(code)) p.sel = (p.sel - 1 + n) % n;
+    else if (['ArrowRight', 'KeyD'].includes(code)) p.sel = (p.sel + 1) % n;
+    else if (['ArrowUp', 'KeyW'].includes(code)) p.sel = (p.sel - C + n * C) % n;
+    else if (['ArrowDown', 'KeyS'].includes(code)) p.sel = (p.sel + C) % n;
+    else if (['KeyE', 'Enter', 'Space'].includes(code)) scegliOggettoSviluppatoreB(p.sel);
+    else if (code === 'Escape') statoRun.pannelloB = null;
+    return true;
+  }
+
+  /** Geometria della cella `i` del pannello (coordinate logiche 640×360). */
+  function cellaPannelloB(i) {
+    const S = OGGETTI_B.sviluppatore;
+    const x0 = Math.round((W - S.colonne * S.cellaL) / 2);
+    return { x: x0 + (i % S.colonne) * S.cellaL, y: 50 + Math.floor(i / S.colonne) * S.cellaA, w: S.cellaL - 4, h: S.cellaA - 4 };
+  }
+
+  /** Click nel pannello: una cella la seleziona, un secondo click sulla stessa la sceglie. */
+  function clickPannelloB(mx, my) {
+    const p = statoRun.pannelloB;
+    if (!p) return false;
+    for (let i = 0; i < CATALOGO_OGGETTI.length; i++) {
+      const c = cellaPannelloB(i);
+      if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
+        if (p.sel === i) scegliOggettoSviluppatoreB(i);
+        else p.sel = i;
+        return true;
+      }
+    }
+    return true;
+  }
+
+  /** Disegna il pannello: griglia con icona e nome di tutti gli oggetti, sotto la descrizione di quello scelto. */
+  function disegnaPannelloSviluppatoreB() {
+    const p = statoRun.pannelloB;
+    if (!p) return;
+    const S = OGGETTI_B.sviluppatore;
+    const nomeCorto = (s) => s.replace(/\s*\(.*?\)/g, '');
+    ctx.save();
+    ctx.fillStyle = 'rgba(5, 3, 2, 0.9)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#0d1418';
+    ctx.strokeStyle = S.colore;
+    ctx.lineWidth = 2;
+    ctx.fillRect(28, 22, W - 56, H - 40);
+    ctx.strokeRect(28, 22, W - 56, H - 40);
+    drawTextFit('✎ STANZA DELLO SVILUPPATORE — SCEGLI UN OGGETTO TRA TUTTI ✎', W / 2, 38, W - 80, { size: 10, color: S.colore });
+    const pool = statoRun.poolRunB ? statoRun.poolRunB.ids : [];
+    for (let i = 0; i < CATALOGO_OGGETTI.length; i++) {
+      const o = CATALOGO_OGGETTI[i];
+      const c = cellaPannelloB(i);
+      const sel = i === p.sel;
+      ctx.fillStyle = sel ? '#1f3a44' : '#17100b';
+      ctx.fillRect(c.x, c.y, c.w, c.h);
+      ctx.strokeStyle = sel ? '#ffffff' : o.tier === 'forte' ? '#f9cb40' : '#57534e';
+      ctx.lineWidth = sel ? 2 : 1;
+      ctx.strokeRect(c.x, c.y, c.w, c.h);
+      drawPixelSprite(SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI.spada, c.x + c.w / 2, c.y + 13, 1.4);
+      drawTextFit(nomeCorto(o.nome), c.x + c.w / 2, c.y + c.h - 4, c.w - 4, { size: 6.5, color: sel ? '#ffffff' : '#e6d2aa', shadow: false });
+      if (!pool.includes(o.id)) {
+        ctx.fillStyle = S.colore;
+        ctx.fillRect(c.x + c.w - 5, c.y + 2, 3, 3); // fuori dal pool di questa run
+      }
+    }
+    const o = CATALOGO_OGGETTI[p.sel];
+    const yD = cellaPannelloB(CATALOGO_OGGETTI.length - 1).y + S.cellaA + 8;
+    if (o) {
+      drawTextFit(`${o.nome}${pool.includes(o.id) ? '' : '  · fuori dal pool di questa notte'}`, W / 2, yD, W - 80, { size: 9, color: '#4ade80' });
+      drawTextFit(o.statsDesc, W / 2, yD + 13, W - 80, { size: 8, color: '#67e8f9' });
+      drawTextFit(o.lore || '', W / 2, yD + 25, W - 80, { size: 7.5, color: '#e6d2aa', weight: '', style: 'italic' });
+    }
+    drawTextFit('Frecce/WASD o click: scegli · E/Invio (o secondo click): prendi · Esc: chiudi · ▪ azzurro = fuori dal pool della notte', W / 2, H - 26, W - 80, { size: 7.5, color: '#9ca3af' });
+    ctx.restore();
+  }
+
+  /** Disegna l'altare della Stanza dello Sviluppatore. */
+  function disegnaAltareSviluppatoreB(st, tick) {
+    const S = OGGETTI_B.sviluppatore;
+    ctx.save();
+    ctx.fillStyle = '#0b2a30';
+    ctx.fillRect(210, 130, 220, 114);
+    ctx.strokeStyle = S.colore;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(212, 132, 216, 110);
+    drawPixelSprite(SPRITE_SCENA.piedistalloOro, 320, 202, 1.8);
+    if (!st.sceltaFattaB) {
+      const k = Math.floor(tick / 20) % CATALOGO_OGGETTI.length;
+      const o = CATALOGO_OGGETTI[k];
+      drawPixelSprite(SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI.spada, 320, 172 + Math.sin(tick * 0.08) * 3, 2);
+      drawPillLabel('✎ STANZA DELLO SVILUPPATORE [E]', 320, 120, 220, { size: 7.5, color: S.colore, border: S.colore });
+    }
+    ctx.restore();
+  }
+
+  /** HUD degli oggetti passivi: icone piccole su OGGETTI_B.hud.righe righe, il passo si stringe se non entrano. */
+  function disegnaIconeOggettiB(dy0) {
+    const Hd = OGGETTI_B.hud;
+    const lista = statoRun.oggettiEquipaggiati;
+    const n = lista.length;
+    const larg = Hd.xMax - Hd.xMin;
+    const perRiga = Math.max(1, Math.ceil(n / Hd.righe));
+    const passo = Math.min(Hd.passo, perRiga > 1 ? (larg - Hd.lato) / (perRiga - 1) : Hd.passo);
+    ctx.save();
+    ctx.fillStyle = 'rgba(15, 12, 10, 0.85)';
+    ctx.fillRect(Hd.xMin - 3, dy0 - 1, Math.min(larg, (Math.min(n, perRiga) - 1) * passo + Hd.lato) + 6 + (n ? 0 : 40), 28);
+    if (!n) drawTextFit('nessun oggetto', Hd.xMin + 20, dy0 + 16, 50, { size: 6.5, color: '#57534e', shadow: false });
+    for (let i = 0; i < n; i++) {
+      const it = lista[i];
+      const r = Math.floor(i / perRiga);
+      const c = i % perRiga;
+      const x = Hd.xMin + c * passo + Hd.lato / 2;
+      const y = dy0 + r * (Hd.lato + 2) + Hd.lato / 2 + 1;
+      drawPixelSprite(SPRITE_OGGETTI[it.sprite] || SPRITE_OGGETTI.spada, x, y, Hd.scala);
+      if (it.doppioneB) { ctx.fillStyle = '#f9cb40'; ctx.fillRect(x + 4, y - 6, 2, 2); }
+    }
+    ctx.restore();
+  }
+  // --- B: fine ---
+
   // --- T3: inizio ---
   // ECONOMIA DELL'AUTORE (roadmap «Novità nel Teatro», passo T3): prezzi della Fucina e drop di monete.
   // Obiettivo: 5-8 monete in media al Piano 1. Verifica: `node gioco/teatro/sim-economia.js`, che legge
@@ -2852,7 +3197,7 @@ function disegnaManoMarionettaPittorica() {
         titolo: '«BIS! I FILI SOPRA LA BURATTINAIA»',
         testo1: 'Spezzando Donna Luciana hai scoperto l\'inganno: anche ai suoi polsi erano legati fili d\'oro',
         testo2: 'che salgono ancora più in alto nel buio del Teatro! Una voce invisibile grida: «BIS! DA CAPO!»',
-        testo3: `Il palco si ricuce più feroce (+${Math.round((ciclo - 1) * 45)}% Vita/Vel). Conservi i tuoi 5 oggetti e le monete!`,
+        testo3: `Il palco si ricuce più feroce (+${Math.round((ciclo - 1) * 45)}% Vita/Vel). Conservi i tuoi oggetti e le monete!`,
       };
     }
     if (pianoNelCiclo === 1) {
@@ -2882,7 +3227,7 @@ function disegnaManoMarionettaPittorica() {
         titolo: '«LA SCIARPA ROSSA DI AGNESE»',
         testo1: 'Ai telai reali di San Leucio, Agnese continua a tessere una sciarpa rossa senza ricordare il tuo volto.',
         testo2: 'Da questo piano il Velo stringe più forte: ogni colpo subito spezza 1 Maschera intera (come in Isaac!).',
-        testo3: 'Ogni oggetto equipaggiato nei 5 slot cambia visivamente il tuo costume e il tuo attacco!',
+        testo3: 'Gli oggetti non hanno limite: ognuno cambia il tuo costume e il tuo attacco!',
       };
     }
     return {
@@ -2939,7 +3284,7 @@ function disegnaManoMarionettaPittorica() {
     poolOggettiBase: [],
     poolOggettiForti: [],
     poolPatto: [],
-    oggettiEquipaggiati: [], // MAX 5 OGGETTI PASSIVI!
+    oggettiEquipaggiati: [], // (B) oggetti passivi senza limite
     sinergieVisive: {},
     // Oggetto Attivo (Proposta 5: [Q])
     oggettoAttivo: { ...OGGETTI_ATTIVI.forbici },
@@ -2973,6 +3318,10 @@ function disegnaManoMarionettaPittorica() {
     scintilleFulmine: [],
     ondeEsplosione: [],
     scambioPendente: null,
+    // --- B: inizio ---
+    pannelloB: null,        // pannello aperto della Stanza dello Sviluppatore ({ sel })
+    poolRunB: null,         // pool della run: { ids (20), rimasti, estrazioni }
+    // --- B: fine ---
     siparioAttivo: null,
     banner: '',
     bannerTimer: 0,
@@ -3075,8 +3424,10 @@ function disegnaManoMarionettaPittorica() {
 
   // Usa l'Oggetto Attivo [Q] (Proposta 5)
   function usaOggettoAttivo() {
-    if (statoRun.scambioPendente || statoRun.siparioAttivo) return;
+    // --- B: inizio ---
+    if (statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo) return;
     const att = statoRun.oggettoAttivo;
+    // --- B: fine ---
     if (!att) return;
     if (statoRun.caricaAttivo < att.maxCarica) {
       mostraBanner(`⚡ ${att.nome}: carica ${statoRun.caricaAttivo}/${att.maxCarica} (pulisci stanze per ricaricare!)`, 130);
@@ -3128,60 +3479,38 @@ function disegnaManoMarionettaPittorica() {
       // --- T3: fine ---
     }
 
-    if (statoRun.oggettiEquipaggiati.length < MAX_SLOT_OGGETTI) {
-      statoRun.oggettiEquipaggiati.push(nuovoItem);
-      if (origine === 'piedistallo' && refSlot) refSlot.preso = true;
-      if (origine === 'fucina' && refSlot) {
-        statoRun.monete -= refSlot.prezzo;
-        refSlot.comprato = true;
+    // --- B: inizio --- (oggetti infiniti: niente limite di 5 slot né modale di sostituzione)
+    if (nuovoItem.cuoreB) {
+      if (statoRun.hpHalf >= statoRun.maxHpHalf) {
+        mostraBanner('Hai già tutte le Maschere piene: il Cuore di Cera resta qui.', 120);
+        return;
       }
-      if (origine === 'patto' && refSlot) {
-        statoRun.baseMaxHpHalf = Math.max(2, statoRun.baseMaxHpHalf - (refSlot.costoMaxHpHalf || 2));
-        refSlot.comprato = true;
-      }
-      ricalcolaStatisticheIsaac();
-      if (nuovoItem.mod?.healOnEquip) {
-        statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + nuovoItem.mod.healOnEquip);
-      }
-      player.pickupTimer = 55;
-      player.pickupItem = nuovoItem;
-      mostraBanner(`★ ${nuovoItem.nome} [${statoRun.oggettiEquipaggiati.length}/5]: ${nuovoItem.statsDesc}`, 210);
+      statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + OGGETTI_B.dopoCap.curaCuoreHalf);
+    } else {
+      statoRun.oggettiEquipaggiati.push(versioneStackB(nuovoItem));
+    }
+    if (origine === 'piedistallo' && refSlot) refSlot.preso = true;
+    if (origine === 'fucina' && refSlot) {
+      statoRun.monete -= refSlot.prezzo;
+      refSlot.comprato = true;
+    }
+    if (origine === 'patto' && refSlot) {
+      statoRun.baseMaxHpHalf = Math.max(2, statoRun.baseMaxHpHalf - (refSlot.costoMaxHpHalf || 2));
+      refSlot.comprato = true;
+    }
+    if (nuovoItem.cuoreB) {
+      mostraBanner(`❤ ${nuovoItem.nome}: ${nuovoItem.statsDesc}`, 160);
       return;
     }
-
-    statoRun.scambioPendente = { nuovoItem, origine, refSlot };
-  }
-
-  function confermaSostituzioneSlot(idxSlot) {
-    const sc = statoRun.scambioPendente;
-    if (!sc || idxSlot < 0 || idxSlot >= MAX_SLOT_OGGETTI) return;
-    const vecchioItem = statoRun.oggettiEquipaggiati[idxSlot];
-    statoRun.oggettiEquipaggiati[idxSlot] = sc.nuovoItem;
-
-    if (sc.origine === 'piedistallo' && sc.refSlot) {
-      sc.refSlot.id = vecchioItem.id;
-      sc.refSlot.sprite = vecchioItem.sprite;
-      sc.refSlot.nome = vecchioItem.nome;
-      sc.refSlot.statsDesc = vecchioItem.statsDesc;
-      sc.refSlot.lore = vecchioItem.lore;
-      sc.refSlot.mod = vecchioItem.mod;
-      sc.refSlot.preso = false;
-    } else if (sc.origine === 'fucina' && sc.refSlot) {
-      statoRun.monete -= sc.refSlot.prezzo;
-      sc.refSlot.comprato = true;
-    } else if (sc.origine === 'patto' && sc.refSlot) {
-      statoRun.baseMaxHpHalf = Math.max(2, statoRun.baseMaxHpHalf - (sc.refSlot.costoMaxHpHalf || 2));
-      sc.refSlot.comprato = true;
-    }
-
-    statoRun.scambioPendente = null;
     ricalcolaStatisticheIsaac();
-    if (sc.nuovoItem.mod?.healOnEquip) {
-      statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + sc.nuovoItem.mod.healOnEquip);
+    if (nuovoItem.mod?.healOnEquip) {
+      statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + nuovoItem.mod.healOnEquip);
     }
     player.pickupTimer = 55;
-    player.pickupItem = sc.nuovoItem;
-    mostraBanner(`🔄 Sostituito [${vecchioItem.nome}] con [${sc.nuovoItem.nome}]!`, 200);
+    player.pickupItem = nuovoItem;
+    const ultimo = statoRun.oggettiEquipaggiati[statoRun.oggettiEquipaggiati.length - 1];
+    mostraBanner(`★ ${nuovoItem.nome} [${statoRun.oggettiEquipaggiati.length} oggetti]: ${ultimo.statsDesc}`, 210);
+    // --- B: fine ---
   }
 
   const keys = {};
@@ -3214,6 +3543,9 @@ function disegnaManoMarionettaPittorica() {
       return;
     }
 
+    // --- B: inizio --- (pannello della Stanza dello Sviluppatore: prende tutti i tasti, Esc compreso)
+    if (statoRun.pannelloB && statoRun.fase === 'in_gioco' && !statoRun.pausa) { tastoPannelloB(e.code); return; }
+    // --- B: fine ---
     if (e.code === 'Escape') {
       // --- T4: inizio --- (il menu ESC dell'autore vale anche nell'hub di Piazza Dante)
       if (statoRun.fase === 'in_gioco' || statoRun.fase === 'hub') {
@@ -3244,16 +3576,6 @@ function disegnaManoMarionettaPittorica() {
         return;
       }
       // Se premi WASD o Frecce, il sipario si alza e il movimento prosegue istantaneamente senza freeze!
-    }
-
-    if (statoRun.scambioPendente) {
-      if (e.code === 'Digit1') confermaSostituzioneSlot(0);
-      else if (e.code === 'Digit2') confermaSostituzioneSlot(1);
-      else if (e.code === 'Digit3') confermaSostituzioneSlot(2);
-      else if (e.code === 'Digit4') confermaSostituzioneSlot(3);
-      else if (e.code === 'Digit5') confermaSostituzioneSlot(4);
-      else if (e.code === 'Escape' || e.code === 'KeyQ') statoRun.scambioPendente = null;
-      return;
     }
 
     if (e.code === 'KeyQ') usaOggettoAttivo();
@@ -3306,20 +3628,9 @@ function disegnaManoMarionettaPittorica() {
       return;
     }
 
-    if (statoRun.scambioPendente) {
-      for (let i = 0; i < MAX_SLOT_OGGETTI; i++) {
-        const bx = 118 + i * 84;
-        const by = 162;
-        if (mx >= bx && mx <= bx + 74 && my >= by && my <= by + 82) {
-          confermaSostituzioneSlot(i);
-          return;
-        }
-      }
-      if (mx >= 250 && mx <= 390 && my >= 262 && my <= 290) {
-        statoRun.scambioPendente = null;
-      }
-      return;
-    }
+    // --- B: inizio ---
+    if (statoRun.pannelloB) { clickPannelloB(mx, my); return; }
+    // --- B: fine ---
 
     // Click sullo Slot Oggetto Attivo [Q] in basso a sinistra nella dock
     if (mx >= 214 && mx <= 246 && my >= H - 36 && my <= H - 6) {
@@ -3420,19 +3731,15 @@ function disegnaManoMarionettaPittorica() {
     statoRun.bannerTimer = durata;
   }
 
+  // --- B: inizio --- (base e forti pescano dal pool di 20 della run, vedi estraiDaPoolRunB)
   function estraiOggettoBase() {
-    if (!statoRun.poolOggettiBase.length) {
-      statoRun.poolOggettiBase = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'base'));
-    }
-    return { ...statoRun.poolOggettiBase.pop() };
+    return estraiDaPoolRunB('base');
   }
 
   function estraiOggettoForte() {
-    if (!statoRun.poolOggettiForti.length) {
-      statoRun.poolOggettiForti = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'forte'));
-    }
-    return { ...statoRun.poolOggettiForti.pop() };
+    return estraiDaPoolRunB('forte');
   }
+  // --- B: fine ---
 
   function estraiOggettoPatto() {
     if (!statoRun.poolPatto.length) {
@@ -3444,7 +3751,10 @@ function disegnaManoMarionettaPittorica() {
   function tiraOggettoGratisStanza(garantito = false) {
     const roll = rng();
     if (roll < 0.10) {
-      return { ...estraiOggettoForte(), forteGratis: true };
+      // --- B: inizio --- (a pool esaurito di forti può uscire un base o un cuore: l'etichetta segue l'oggetto)
+      const o = estraiOggettoForte();
+      return { ...o, forteGratis: o.tier === 'forte' };
+      // --- B: fine ---
     }
     if (garantito || roll < 0.10 + (1 / 3)) {
       return { ...estraiOggettoBase(), forteGratis: false };
@@ -3608,6 +3918,23 @@ function disegnaManoMarionettaPittorica() {
       }
       if (!segretaOk) continue;
 
+      // --- B: inizio --- (Stanza dello Sviluppatore: vicolo cieco attaccato a una stanza di combattimento)
+      if (OGGETTI_B.sviluppatore.piani.includes(piano)) {
+        let svOk = false;
+        for (const g of shuffle(stanze.filter((x) => x.tipo === 'normale'))) {
+          const c = cellaLibera(g, true);
+          if (!c) continue;
+          const sv = aggiungi('sviluppatore', c.nx, c.ny);
+          sv.pulita = true;
+          sv.sceltaFattaB = false;
+          sv.genitoreB = { id: g.id, lato: c.d.lato };
+          collega(g, sv, c.d);
+          svOk = true;
+          break;
+        }
+        if (!svOk) continue;
+      }
+      // --- B: fine ---
       // Aggiunge la Stanza del Patto d'Ombra (Proposta 2: accessibile dopo aver sconfitto il Boss!)
       aggiungi('patto', 0, 0);
 
@@ -3926,6 +4253,10 @@ function disegnaManoMarionettaPittorica() {
       const initItem = CATALOGO_OGGETTI.find((x) => x.id === pInfo.passivoIniziale);
       if (initItem) statoRun.oggettiEquipaggiati.push({ ...initItem });
     }
+    // --- B: inizio ---
+    inizializzaPoolRunB(pInfo.passivoIniziale || null);
+    statoRun.pannelloB = null;
+    // --- B: fine ---
     statoRun.oggettoAttivo = { ...(OGGETTI_ATTIVI[pInfo.attivoIniziale] || OGGETTI_ATTIVI.forbici) };
     statoRun.caricaAttivo = statoRun.oggettoAttivo.maxCarica;
     statoRun.scambioPendente = null;
@@ -3950,6 +4281,13 @@ function disegnaManoMarionettaPittorica() {
     statoRun.effettiSplash = [];
     statoRun.ondeEsplosione = [];
     statoRun.scambioPendente = null;
+    // --- B: inizio ---
+    statoRun.pannelloB = null;
+    if (stanza.tipo === 'sviluppatore' && !stanza.sceltaFattaB) {
+      apriPannelloSviluppatoreB(stanza);
+      mostraBanner('✎ STANZA DELLO SVILUPPATORE: scegli un solo oggetto fra tutti quelli del Teatro!', 220);
+    }
+    // --- B: fine ---
     // --- T3: inizio ---
     AudioSys.playCampana(); // rintocco di campana a ogni ingresso in stanza (T3)
     // --- T3: fine ---
@@ -3987,7 +4325,9 @@ function disegnaManoMarionettaPittorica() {
   }
 
   function eseguiAttacco4Direzioni(dx, dy) {
-    if (player.cooldown > 0 || statoRun.scambioPendente || statoRun.siparioAttivo) return;
+    // --- B: inizio ---
+    if (player.cooldown > 0 || statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo) return;
+    // --- B: fine ---
     player.dirX = dx;
     player.dirY = dy;
     if (dx !== 0) player.flipX = dx < 0;
@@ -4378,9 +4718,14 @@ function disegnaManoMarionettaPittorica() {
   }
 
   function interagisciStanza() {
-    if (statoRun.scambioPendente || statoRun.siparioAttivo) return;
+    // --- B: inizio ---
+    if (statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo) return;
+    // --- B: fine ---
     const st = statoRun.stanzaCorrente;
     if (!st) return;
+    // --- B: inizio ---
+    if (st.tipo === 'sviluppatore') { apriPannelloSviluppatoreB(st); return; }
+    // --- B: fine ---
 
     if (st.pulita && st.muroSegreto && !st.muroSegreto.aperto) {
       apriMuroSegreto(st);
@@ -4647,7 +4992,9 @@ function disegnaManoMarionettaPittorica() {
     for (const [lato, idDest] of Object.entries(st.porte)) {
       const dest = statoRun.mappa.perId.get(idDest);
       const p = porte[lato];
-      const colCornice = dest?.tipo === 'tesoro'
+      // --- B: inizio --- (porta speciale della Stanza dello Sviluppatore)
+      const colCornice = dest?.tipo === 'sviluppatore' ? OGGETTI_B.sviluppatore.colore : dest?.tipo === 'tesoro'
+      // --- B: fine ---
         ? '#f9cb40'
         : dest?.tipo === 'fucina'
           ? '#ea8626'
@@ -4672,7 +5019,9 @@ function disegnaManoMarionettaPittorica() {
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 9px ui-monospace, monospace';
         ctx.textAlign = 'center';
-        const tag = dest.tipo === 'tesoro'
+        // --- B: inizio ---
+        const tag = dest.tipo === 'sviluppatore' ? '✎' : dest.tipo === 'tesoro'
+        // --- B: fine ---
           ? '★'
           : dest.tipo === 'fucina'
             ? '⚒'
@@ -4683,7 +5032,20 @@ function disegnaManoMarionettaPittorica() {
                 : '';
         if (tag) ctx.fillText(tag, p.x, p.y + 3);
       }
+      // --- B: inizio --- (cornice pulsante: la porta dello Sviluppatore si riconosce da lontano)
+      if (dest?.tipo === 'sviluppatore') {
+        ctx.save();
+        ctx.strokeStyle = OGGETTI_B.sviluppatore.colore;
+        ctx.globalAlpha = 0.5 + 0.5 * Math.sin(tick * 0.12);
+        ctx.lineWidth = 2;
+        ctx.strokeRect(p.x - p.w / 2 - 5, p.y - p.h / 2 - 5, p.w + 10, p.h + 10);
+        ctx.restore();
+      }
+      // --- B: fine ---
     }
+    // --- B: inizio ---
+    if (st.tipo === 'sviluppatore') disegnaAltareSviluppatoreB(st, tick);
+    // --- B: fine ---
   }
 
   // ===========================================================================
@@ -4929,7 +5291,9 @@ function disegnaManoMarionettaPittorica() {
     // --- T4: fine ---
 
     const st = statoRun.stanzaCorrente;
-    const inPausaUI = Boolean(statoRun.scambioPendente || statoRun.siparioAttivo || statoRun.pausa);
+    // --- B: inizio ---
+    const inPausaUI = Boolean(statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo || statoRun.pausa);
+    // --- B: fine ---
 
     // 1. HIT-STOP (FEEL.hitstop): la logica si ferma, la resa continua
     if (ticksCongelati > 0) {
@@ -5693,7 +6057,7 @@ function disegnaManoMarionettaPittorica() {
         drawPixelSprite(brFrame, 430, 142, 1.7);
 
         drawPillLabel(
-          `⚒ LA FUCINA DI MASTRO PEPPE · SLOT EQUIPAGGIATI ${statoRun.oggettiEquipaggiati.length}/5 ⚒`,
+          `⚒ LA FUCINA DI MASTRO PEPPE · OGGETTI ${statoRun.oggettiEquipaggiati.length} ⚒`,
           320,
           112,
           376,
@@ -5960,7 +6324,9 @@ function disegnaManoMarionettaPittorica() {
       window.__teatroT3?.disegnaMondo?.(ctx); // raggio cremisi (sotto l'HUD, dentro la scossa)
       // --- T3: fine ---
       disegnaHUDPixelArt(st);
-      if (statoRun.scambioPendente) disegnaModalSostituzione5Slot();
+      // --- B: inizio ---
+      if (statoRun.pannelloB) disegnaPannelloSviluppatoreB();
+      // --- B: fine ---
       if (statoRun.siparioAttivo) disegnaSiparioNarrativo(statoRun.siparioAttivo);
       if (statoRun.pausa) disegnaMenuPausa();
     }
@@ -6018,7 +6384,7 @@ function disegnaManoMarionettaPittorica() {
       { size: 8, color: '#f9cb40', align: 'left' }
     );
     drawTextFit(
-      `🪙${statoRun.monete} · 🥾SPD:${(statoRun.speed / 2).toFixed(2)} · Slot:${statoRun.oggettiEquipaggiati.length}/5`,
+      `🪙${statoRun.monete} · 🥾SPD:${(statoRun.speed / 2).toFixed(2)} · Ogg:${statoRun.oggettiEquipaggiati.length}`,
       hx + 6,
       hy + 47,
       hw - 12,
@@ -6097,6 +6463,9 @@ function disegnaManoMarionettaPittorica() {
             ? '#7f1d1d'
             : s.tipo === 'tesoro'
               ? '#713f12'
+              // --- B: inizio ---
+              : s.tipo === 'sviluppatore' ? '#0e7490'
+              // --- B: fine ---
               : s.tipo === 'fucina'
                 ? '#7c2d12'
                 : s.tipo === 'segreta'
@@ -6110,7 +6479,9 @@ function disegnaManoMarionettaPittorica() {
         if (s.porte.W) ctx.fillRect(px - 1, py + 5, 2, 2);
         if (s.porte.E) ctx.fillRect(px + cell - 1, py + 5, 2, 2);
 
-        const ic = s.tipo === 'tesoro'
+        // --- B: inizio ---
+        const ic = s.tipo === 'sviluppatore' ? '✎' : s.tipo === 'tesoro'
+        // --- B: fine ---
           ? '★'
           : s.tipo === 'fucina'
             ? '⚒'
@@ -6133,8 +6504,10 @@ function disegnaManoMarionettaPittorica() {
     // 4. IN BASSO AL CENTRO: DOCK CON ARMA + I 5 SLOT MASSIMI (1..5) + SLOT ATTIVO [Q] CON CARICHE!
     const slotSize = 26;
     const gap = 5;
-    const totBoxes = 1 + MAX_SLOT_OGGETTI;
-    const dockW = totBoxes * (slotSize + gap) + 12;
+    // --- B: inizio --- (dock: arma + icone piccole di tutti gli oggetti; la posizione resta quella del vecchio dock)
+    const totBoxes = 1;
+    const dockW = 6 * (slotSize + gap) + 12;
+    // --- B: fine ---
     const dx0 = Math.round((W - dockW) / 2);
     const dy0 = H - 34;
 
@@ -6182,20 +6555,11 @@ function disegnaManoMarionettaPittorica() {
         } else {
           drawPixelSprite(SPRITE_PROIETTILI[statoRun.tipoProiettile] || SPRITE_PROIETTILI.base, sx + slotSize / 2, dy0 + slotSize / 2, 2.0);
         }
-      } else {
-        const slotIdx = i - 1;
-        const item = statoRun.oggettiEquipaggiati[slotIdx];
-        ctx.strokeStyle = item ? '#f9cb40' : '#44403c';
-        ctx.lineWidth = item ? 1.6 : 1;
-        ctx.strokeRect(sx, dy0, slotSize, slotSize);
-        if (item) {
-          drawPixelSprite(SPRITE_OGGETTI[item.sprite] || SPRITE_OGGETTI.spada, sx + slotSize / 2, dy0 + slotSize / 2, 1.6);
-        }
-        drawTextFit(`${slotIdx + 1}`, sx + 3, dy0 + 8, 10, {
-          size: 7, color: '#9ca3af', align: 'left', shadow: false,
-        });
       }
     }
+    // --- B: inizio ---
+    disegnaIconeOggettiB(dy0);
+    // --- B: fine ---
 
     // 5. Banner informativo (con auto-fit rigoroso dentro i 500px!)
     if (statoRun.bannerTimer > 0) {
@@ -6215,74 +6579,8 @@ function disegnaManoMarionettaPittorica() {
     }
   }
 
-  // ===========================================================================
-  // MODAL DI SOSTITUZIONE QUANDO HAI GIÀ 5 OGGETTI E NE PRENDI/COMPRI UN 6°
-  // ===========================================================================
-  function disegnaModalSostituzione5Slot() {
-    const sc = statoRun.scambioPendente;
-    if (!sc) return;
-
-    ctx.save();
-    ctx.fillStyle = 'rgba(5, 3, 2, 0.88)';
-    ctx.fillRect(0, 0, W, H);
-
-    const mx = 84, my = 56, mw = 472, mh = 244;
-    ctx.fillStyle = '#17100b';
-    ctx.strokeStyle = '#f9cb40';
-    ctx.lineWidth = 2;
-    ctx.fillRect(mx, my, mw, mh);
-    ctx.strokeRect(mx, my, mw, mh);
-    ctx.beginPath();
-    ctx.rect(mx + 4, my + 4, mw - 8, mh - 8);
-    ctx.clip();
-
-    drawTextFit('⚠ SLOT OGGETTI PIENI (5/5) — SCEGLI QUALE SOSTITUIRE ⚠', W / 2, 78, mw - 24, {
-      size: 10, color: '#f9cb40',
-    });
-
-    drawPixelSprite(SPRITE_OGGETTI[sc.nuovoItem.sprite] || SPRITE_OGGETTI.spada, W / 2, 104, 2.1);
-    drawTextFit(`NUOVO: ${sc.nuovoItem.nome}`, W / 2, 126, mw - 24, {
-      size: 9, color: '#4ade80',
-    });
-    drawTextFit(sc.nuovoItem.statsDesc, W / 2, 138, mw - 24, {
-      size: 8, color: '#67e8f9',
-    });
-    drawTextFit('Clicca su uno dei 5 slot qui sotto (o premi i tasti 1-5) per sostituirlo:', W / 2, 152, mw - 24, {
-      size: 8, color: '#e6d2aa', weight: '',
-    });
-
-    for (let i = 0; i < MAX_SLOT_OGGETTI; i++) {
-      const it = statoRun.oggettiEquipaggiati[i];
-      const bx = 118 + i * 84;
-      const by = 162;
-      const bw = 74, bh = 84;
-      ctx.save();
-      ctx.fillStyle = '#26180f';
-      ctx.strokeStyle = '#f9cb40';
-      ctx.lineWidth = 1.5;
-      ctx.fillRect(bx, by, bw, bh);
-      ctx.strokeRect(bx, by, bw, bh);
-      ctx.beginPath();
-      ctx.rect(bx + 2, by + 2, bw - 4, bh - 4);
-      ctx.clip();
-
-      drawTextFit(`SLOT [${i + 1}]`, bx + bw / 2, by + 13, bw - 8, { size: 8.5, color: '#f9cb40' });
-      if (it) {
-        drawPixelSprite(SPRITE_OGGETTI[it.sprite] || SPRITE_OGGETTI.spada, bx + bw / 2, by + 37, 1.9);
-        const nomeCorto = it.nome.replace(/\s*\(.*?\)/g, '');
-        drawTextFit(nomeCorto, bx + bw / 2, by + 63, bw - 8, { size: 7.5, color: '#ffffff' });
-        drawTextFit('SOSTITUISCI', bx + bw / 2, by + 76, bw - 8, { size: 7, color: '#f87171' });
-      }
-      ctx.restore();
-    }
-
-    ctx.fillStyle = '#451a14';
-    ctx.strokeStyle = '#e53222';
-    ctx.fillRect(250, 264, 140, 24);
-    ctx.strokeRect(250, 264, 140, 24);
-    drawTextFit('ANNULLA [ESC / Click]', 320, 279, 128, { size: 8.5, color: '#ffffff' });
-    ctx.restore();
-  }
+  // --- B: inizio --- (il modale di sostituzione a 5 slot non esiste più: oggetti infiniti)
+  // --- B: fine ---
 
   // ===========================================================================
   // SIPARIO NARRATIVO DEGLI ATTI (CON AUTO-FIT E CLIP RIGOROSO DENTRO LA CORNICE!)
@@ -6482,7 +6780,14 @@ function disegnaManoMarionettaPittorica() {
         statoRun.poolOggettiBase = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'base'));
         statoRun.poolOggettiForti = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'forte'));
         statoRun.poolPatto = shuffle(CATALOGO_PATTO);
+        // --- B: inizio ---
+        const salvatoPoolB = statoRun.poolRunB;
+        statoRun.poolRunB = null;
+        // --- B: fine ---
         try { return generaMappaPiano(piano); } finally {
+          // --- B: inizio ---
+          statoRun.poolRunB = salvatoPoolB;
+          // --- B: fine ---
           runSeed = salvato;
           [statoRun.poolOggettiBase, statoRun.poolOggettiForti, statoRun.poolPatto, statoRun.bossOrdine] = salvatiPool;
         }
@@ -6490,6 +6795,13 @@ function disegnaManoMarionettaPittorica() {
       MAPPA_PIANO, STANZE_COMBATTIMENTO_PER_PIANO,
     }),
   });
+  // --- B: inizio --- (sonda QA degli oggetti infiniti, del pool della run e della Stanza dello Sviluppatore)
+  Object.assign(window.__teatro.interni, {
+    OGGETTI_B, CATALOGO_OGGETTI, acquisisciOggetto: acquisisciOggettoConLimite5Slot, estraiOggettoBase,
+    estraiOggettoForte, tiraOggettoGratisStanza, avviaPiano, entraInStanza, interagisciStanza,
+    scegliOggettoSviluppatoreB, apriPannelloSviluppatoreB, tastoPannelloB,
+  });
+  // --- B: fine ---
   adattaRisoluzione(); // (T5) primo dimensionamento del buffer
   requestAnimationFrame(loop);
 })();
