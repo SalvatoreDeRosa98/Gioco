@@ -24,10 +24,10 @@ const CONFIG_A6 = Object.freeze({
   chiaveTutto: 'ferruccio.teatro.sbloccaTutto', // localStorage: '1' = tutto sbloccato in ogni slot (QA/sviluppo)
   versione: 1,
   controlloOgniMs: 200,                     // ogni quanto si valutano le condizioni (nell'hub e in gioco)
-  notifica: Object.freeze({ durataMs: 4200, entrataMs: 250, uscitaMs: 400, w: 400, h: 44, yGioco: 268, yHub: 270 }),
+  notifica: Object.freeze({ durataMs: 4200, entrataMs: 250, uscitaMs: 400, w: 400, h: 44, yGioco: 268, yHub: 270, scalaSagoma: 0.45 }),
   // geometria delle schede del menu (60-resa.js › disegnaMenuSelezionePersonaggio)
   scheda: Object.freeze({ ids: ['ferruccio', 'agnese', 'taddeo', 'ombra'], w: 132, h: 226, y: 56, gap: 14, x0: 35 }),
-  segni: Object.freeze({ y: 186, passo: 16, scala: 1, spento: 0.18 }),
+  segni: Object.freeze({ y: 186, passo: 16, scala: 1, spento: 0.3 }),
   avvisoBloccatoMs: 1800,
 });
 
@@ -199,6 +199,25 @@ function migraSlotA6() {
   scriviA6(s);
 }
 
+/**
+ * Il ponte T3/T4 (script inline dell'HTML) carica in T4 tutti i flag dello slot e li riscrive interi a ogni
+ * salvataggio: senza protezione riscriverebbe una copia vecchia della progressione. Si avvolge
+ * window.__teatro.salvaFlag (definita dopo questo file) perché non tocchi la chiave della progressione.
+ */
+function proteggiFlagA6() {
+  const T = window.__teatro;
+  if (!T || typeof T.salvaFlag !== 'function' || T.salvaFlag.__a6) return;
+  const base = T.salvaFlag;
+  const avvolta = function (flag) {
+    const copia = { ...(flag || {}) };
+    delete copia[CONFIG_A6.chiaveFlag];
+    return base.call(this, copia);
+  };
+  avvolta.__a6 = true;
+  T.salvaFlag = avvolta;
+}
+setTimeout(proteggiFlagA6, 0); // appena dopo lo script inline del ponte
+
 // ===========================================================================
 // CONDIZIONI E SBLOCCO
 // ===========================================================================
@@ -247,6 +266,7 @@ function notificaA6(sb) {
 
 /** Osserva la partita (hub e run): piano raggiunto, parlato con un NPC, poi valuta gli sblocchi. */
 function controllaA6(forza = false) {
+  proteggiFlagA6();
   const sv = salvataggiA6();
   if (!sv) return [];
   if (a6.ultimoSlot !== sv.slotAttivo) { a6.ultimoSlot = sv.slotAttivo; migraSlotA6(); }
@@ -469,8 +489,11 @@ function disegnaNotificaA6(dtMs) {
   ctx.strokeRect(bx + 3, by + 3, bw - 6, bh - 6);
   if (n.personaggio) {
     ctx.save();
+    ctx.beginPath(); ctx.rect(bx + 4, by + 4, 44, bh - 8); ctx.clip();
+    ctx.translate(bx + 26, by + bh - 9);
+    ctx.scale(N.scalaSagoma, N.scalaSagoma);
     ctx.filter = 'brightness(0)';
-    try { disegnaFerruccioPittorico(bx + 24, by + bh - 8, { charId: n.personaggio, charInfo: PERSONAGGI_GIOCABILI[n.personaggio], tick: 0, scale: 0.5, sinergie: {} }); } catch (_) { /* solo decorazione */ }
+    try { disegnaFerruccioPittorico(0, 0, { charId: n.personaggio, charInfo: PERSONAGGI_GIOCABILI[n.personaggio], tick: 0, sinergie: {} }); } catch (_) { /* solo decorazione */ }
     ctx.restore();
   } else if (n.sprite) {
     drawPixelSprite(SPRITE_OGGETTI[n.sprite] || SPRITE_OGGETTI.spada, bx + 24, by + bh / 2, 2);
