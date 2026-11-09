@@ -61,10 +61,13 @@ async function main() {
       const slotEsito = await pagina.evaluate((max) => {
         const g = window.__gioco;
         const ids = g.modificatori.catalogo().filter((id) => !g.modificatori.dono(id).ricordo).slice(0, max + 1);
-        const esiti = ids.map((id) => g.slot.acquisisci(id, { origine: 'qa' }));
+        const esiti = ids.map((id) => g.slotDoni.acquisisci(id, { origine: 'qa' }));
         g.tick(2);
-        return { ids, esiti, pendente: g.slot.pendente, attivi: g.modificatori.doniAttivi(), hud: g.interfacciaOggetti().sostituzione };
+        // `slot` resta lo slot del salvataggio (pagina.test.js), `slotDoni` i cinque slot dei doni
+        return { ids, esiti, pendente: g.slotDoni.pendente, attivi: g.modificatori.doniAttivi(), hud: g.interfacciaOggetti().sostituzione, slotSalvataggio: g.slot, maxSlot: g.slotDoni.max };
       }, MAX_SLOT);
+      assert.equal(typeof slotEsito.slotSalvataggio, 'string', '__gioco.slot è lo slot del salvataggio, non i cinque slot');
+      assert.equal(slotEsito.maxSlot, MAX_SLOT);
       assert.deepEqual(slotEsito.esiti.slice(0, MAX_SLOT), Array(MAX_SLOT).fill('aggiunto'));
       assert.equal(slotEsito.esiti[MAX_SLOT], 'pendente');
       assert.equal(slotEsito.pendente.id, slotEsito.ids[MAX_SLOT]);
@@ -73,9 +76,9 @@ async function main() {
       await pagina.screenshot({ path: path.join(CARTELLA_EVIDENZE, 'slot-sostituzione.png') });
       const dopoScambio = await pagina.evaluate(() => {
         const g = window.__gioco;
-        g.slot.conferma(1);
+        g.slotDoni.conferma(1);
         g.tick(2);
-        return { attivi: g.modificatori.doniAttivi(), pendente: g.slot.pendente, hud: g.interfacciaOggetti().sostituzione };
+        return { attivi: g.modificatori.doniAttivi(), pendente: g.slotDoni.pendente, hud: g.interfacciaOggetti().sostituzione };
       });
       assert.equal(dopoScambio.pendente, null);
       assert.equal(dopoScambio.hud, null, 'il modale si chiude');

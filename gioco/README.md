@@ -72,7 +72,7 @@ Dalla storia P04 anche `statistiche` (`correnti()`, `scegli(id)`, `stringiPatto`
 menu DOM: `{personaggio, slot, daCancellare, slots[]}` o `null` se chiuso), `apriMenu()` e `scegli(personaggio, slot?)` (applica subito la
 scelta: chiude il menu, entra nell'hub; con uno slot diverso ricarica la pagina); `combattimento` espone anche `scintilleFulmine()`,
 `bruciature()`, `miraForzata`, `cooldownSparo` e `statistiche()`.
-Dalle storie P04/P09 (squadra oggetti) anche `attivi` (`stato()`, `usa()`, `equipaggia(id)`, `carica`, `carico`, `nuovaRun()`), `slot` (`acquisisci(id, {origine, restituisci, suConferma})`,
+Dalle storie P04/P09 (squadra oggetti) anche `attivi` (`stato()`, `usa()`, `equipaggia(id)`, `carica`, `carico`, `nuovaRun()`), `slotDoni` (i cinque slot dei doni: `acquisisci(id, {origine, restituisci, suConferma})`,
 `conferma(i)`, `annulla()`, `pendente`, `stato()`), `patto` (`altare`, `pendente`, `stretti`, `proponi(i)`, `conferma()`, `annulla()`, `posaAltare(stanza)`, `reliquia(id)`,
 `inStanzaAltare()`, `nuovaRun()`), `gratis` (`corrente()`, `vicino()`, `raccogli()`, `stati()`), `segreta` (`crepa()`, `apri()`, `aperte`) e `interfacciaOggetti()` (stato DOM di HUD
 dell'attivo, modale di sostituzione e pannello del patto); `combattimento.raggio()` e `combattimento.impostaRaggio(cfg)`.
@@ -175,6 +175,7 @@ node gioco/qa/attivi.test.mjs             # storie P04/P09 (node:test): oggetto 
 node gioco/qa/patto.test.mjs              # storie P04/P09: patto.json (5 reliquie, costo 2, dmgMult ≥ 2 e ≥ del miglior dono), altare dopo il boss (100 %/60 %),
                                           # proposta/rifiuto/conferma con −1 maschera massima permanente (stanza e piano), maschere insufficienti, nuova run;
                                           # raggio continuo (carica, danno a tick sulla linea, nessuno fuori/dietro, rilascio, durata), spettrale vs ostacolo
+                                          # P2b: se il massimo scende fuori da patto.conferma (stringiPatto diretto) Ferruccio allinea le correnti al tick (Teatro ~2729)
 node gioco/qa/oggetti.test.mjs            # storie P04/P09: cinque slot (pendente, conferma, annulla, restituisci), piedistallo via acquisisci, tiraTier e oggetti gratis su
                                           # una notte vera (determinismo, tier, centro, raccolta), Crepa Dorata (visibile solo a stanza pulita, apertura con proiettile,
                                           # porte sui record, Ferruccio fermo, monete della segreta una volta), regole del codice

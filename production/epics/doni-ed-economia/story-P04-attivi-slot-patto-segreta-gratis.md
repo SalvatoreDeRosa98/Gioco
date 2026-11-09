@@ -39,7 +39,8 @@ apriMuroSegreto ~3089, popolaStanzaIsaac ~3229, verificaStanzaPulita ~3682, dise
 - `production/qa/evidence/slot-sostituzione.png` — modale «I cinque slot sono pieni» con i 5 doni e il nuovo.
 - `production/qa/evidence/segreta-crepa.png` — stanza pulita con la Crepa Dorata sul muro verso la segreta.
 - `production/qa/evidence/patto.png` — stanza del boss cupa (luce rossa) con il pannello del Patto.
-- Suite verdi: `attivi.test.mjs` (7), `patto.test.mjs` (13 con la fixture condivisa), `oggetti.test.mjs` (13), `economia.test.mjs` (14), `statistiche.test.mjs` (11), `oggetti.wire.test.js`, `patto.wire.test.js`, più tutte le suite precedenti.
+- `production/qa/evidence/patto-raggio.png` — Raggio Cremisi Continuo sulla linea; HUD «Maschere 2/2» dopo il −1 permanente (correnti allineate al tetto).
+- Suite verdi: `attivi.test.mjs` (7), `patto.test.mjs` (14 con la fixture condivisa), `oggetti.test.mjs` (13), `economia.test.mjs` (14), `statistiche.test.mjs` (11), `oggetti.wire.test.js`, `patto.wire.test.js`, più tutte le suite precedenti.
 
 ## Decisioni
 
@@ -49,3 +50,4 @@ apriMuroSegreto ~3089, popolaStanzaIsaac ~3229, verificaStanzaPulita ~3682, dise
 4. **Proiettili e mura**: prima i proiettili di Ferruccio ignoravano gli ostacoli; ora i solidi con `ferma_colpi` li fermano (`ferruccio.colpo_muro`), necessario per la Crepa Dorata e per dare senso alle Lacrime Spettrali.
 5. **Attivo e tastiera**: Q è l'azione `attivo` di `input.json`; il modale legge 1-5/Esc/Q dal DOM in cattura come il menu; il pannello del Patto usa le azioni `conferma`/`indietro`.
 6. **«La Fucina»**: il titolo del pannello del banchetto era già «La Fucina» (`interfaccia.json`); resta, con Tonino come personaggio.
+7. **Verifica indipendente (2026-11-09)**: in `window.__gioco` i cinque slot dei doni si chiamano `slotDoni`, perché `slot` è lo slot del salvataggio letto da `pagina.test.js` e dal menu (lo spread `...debugOggetti` lo sovrascriveva: caso 1 di `pagina.test.js` rosso, ora 5/5; `oggetti.wire.test.js` controlla che `__gioco.slot` resti una stringa). Le maschere correnti non restano sopra il massimo quando il massimo scende fuori da `patto.conferma` (es. `statistiche.stringiPatto` diretto): Ferruccio le allinea al tetto al tick successivo, come il Teatro (~2729); test P2b e `patto-raggio.png` («Maschere 2/2», prima «3/2»). I wire della squadra chiudono con «N/N casi superati» come gli altri.

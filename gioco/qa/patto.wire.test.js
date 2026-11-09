@@ -69,7 +69,7 @@ async function caso(nome, fn) {
 }
 function riepilogo() {
   const falliti = esiti.filter((e) => !e.ok).length;
-  console.log(`# ${esiti.length - falliti}/${esiti.length} casi ok`);
+  console.log(`\n${esiti.length - falliti}/${esiti.length} casi superati`);
   if (falliti) process.exitCode = 1;
 }
 

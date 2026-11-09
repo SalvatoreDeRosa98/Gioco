@@ -728,7 +728,8 @@ async function avvia() {
   });
   ciclo.registra({ disegna: () => interfacciaOggetti.aggiorna() });
   const squadraOggetti = { attivi: () => attivi, slot: () => slot, patto: () => patto, gratis: () => gratis, segreta: () => segreta };
-  const debugOggetti = { attivi, slot, patto, gratis, segreta, interfacciaOggetti: () => interfacciaOggetti.stato() };
+  // `slotDoni`: i cinque slot dei doni (`slot` in `__gioco` resta lo slot del salvataggio, letto da pagina.test.js e dal menu).
+  const debugOggetti = { attivi, slotDoni: slot, patto, gratis, segreta, interfacciaOggetti: () => interfacciaOggetti.stato() };
   // --- squadra oggetti: fine ---
 
   // Renderer del Teatro (pixel-art) sempre; con `?debug=1&wire=1&diagnostica=1` il disegno diagnostico in fil di ferro.
@@ -827,7 +828,7 @@ async function avvia() {
         input.sorgenteSu(sorgente(azione));
         return esito;
       },
-      // --- squadra oggetti (storie P04/P09): `attivi`, `slot`, `patto`, `gratis`, `segreta`, `interfacciaOggetti()` ---
+      // --- squadra oggetti (storie P04/P09): `attivi`, `slotDoni` (i cinque slot dei doni), `patto`, `gratis`, `segreta`, `interfacciaOggetti()` ---
       ...debugOggetti,
       // --- squadra oggetti: fine ---
       imposta: (flag, valore) => (ganci.imposta ? ganci.imposta(flag, valore) : false),

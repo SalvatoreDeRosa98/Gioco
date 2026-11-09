@@ -75,6 +75,19 @@ test('P1: dopo il boss (boss.sconfitto nella stanza corrente) senza danni l\'alt
   assert.ok(m3.patto.altare, 'con danni e rng 0,3 < 0,60 l\'altare compare');
 });
 
+test('P2b: le maschere correnti non restano sopra il massimo quando il massimo scende fuori da patto.conferma (statistiche.stringiPatto diretto, strumento di QA): al tick successivo Ferruccio le allinea al tetto (Teatro ~2729)', async () => {
+  const m = await creaMondoPatto();
+  const maxPrima = m.modificatori.valore('ferruccio.maschere_max');
+  m.ferruccio.impostaMaschere(maxPrima);
+  m.statistiche.stringiPatto(reliquia('patto_raggio_continuo'));
+  const maxDopo = m.modificatori.valore('ferruccio.maschere_max');
+  assert.equal(maxDopo, maxPrima - 1);
+  assert.equal(m.ferruccio.maschere, maxPrima, 'prima del tick le correnti sono ancora quelle di prima');
+  m.tick(1);
+  assert.equal(m.ferruccio.maschere, maxDopo, 'dopo un tick le correnti non superano il nuovo massimo');
+  assert.equal(m.ferruccio.stato !== 'morto', true);
+});
+
 test('P2: interagisci vicino a una reliquia la PROPONE (pannello), indietro rifiuta, conferma la stringe: −1 maschera massima PERMANENTE (sopravvive a stanza e piano), DMG ≥ ×2, flag applicati; la stessa reliquia non si ripropone; a maschere insufficienti rifiutato', async () => {
   const m = await creaMondoPatto({ rngValori: [0, 0, 0] });
   m.eventi.emit('stanza.entrata', { id: 'boss1', tipo: 'boss' });
