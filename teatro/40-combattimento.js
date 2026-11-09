@@ -626,6 +626,10 @@ function subisciColpoGiocatore(mezzeMaschereDanno, fonte, daX, daY) {
   player.invuln = ticksDaMs(FEEL.iframes.durataMs);
   scuoti(FEEL.scossa.ferita);
   if (statoRun.hpHalf <= 0) {
+    // --- T4: inizio ---
+    // Sequenza di morte e risveglio nell'hub: la notte successiva la conta T4 con incrementaNumeroNotte().
+    if (t4Gancio('morte', fonte)) return;
+    // --- T4: fine ---
     const proxNotte = incrementaNumeroNotte();
     statoRun.numeroNotte = proxNotte;
     mostraBanner(`🌙 NOTTE ${proxNotte} — Maschere spezzate contro ${fonte}... Risveglio!`, 220);

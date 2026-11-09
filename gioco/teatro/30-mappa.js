@@ -393,7 +393,12 @@ function popolaStanzaIsaac(s, piano) {
       }
     ];
 
-    const temaScelto = TEMI_STANZA[Math.floor(rng() * TEMI_STANZA.length)];
+    // Prova dei gatti (PLAYTEST_GATTI): al Piano 1 le stanze normali accanto all'ingresso (id 'r0') sono il Vicolo dei Gatti
+    const vicoloGatti = TEMI_STANZA.find((t) => t.nome === 'Vicolo dei Gatti');
+    const vicinaIngresso = Object.values(s.porte || {}).includes('r0');
+    const temaScelto = (PLAYTEST_GATTI.attivo && PLAYTEST_GATTI.vicoloAccantoIngresso && piano === 1 && vicinaIngresso && vicoloGatti)
+      ? vicoloGatti
+      : TEMI_STANZA[Math.floor(rng() * TEMI_STANZA.length)];
     const tipiGenerati = temaScelto.getTipi(piano);
     // --- C: dalla notte 3 a volte una Vespa in più (NOTTI_C.probNemicoExtra) ---
     if (rng() < effettiNotteC().probNemicoExtra) tipiGenerati.push('vespa_cieca');
@@ -440,7 +445,7 @@ function popolaStanzaIsaac(s, piano) {
         hp: hpMax,
         maxHp: hpMax,
         speed: baseSpdMap[t] * moltVel * multSpdChamp,
-        r: t === 'statua' ? 13 : 11,
+        r: t === 'statua' ? 13 : t === 'gatto' ? 14 : 11, // gatto grande (sprite scalato 1,32)
         flash: 0,
         burnTicks: 0,
         stunTicks: 0,

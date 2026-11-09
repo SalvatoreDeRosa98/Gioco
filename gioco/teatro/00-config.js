@@ -151,6 +151,10 @@ const PALETTE = {
 const STANZE_COMBATTIMENTO_PER_PIANO = { 1: 6, 2: 7, 3: 8, 4: 9 };
 
 /** Forma della mappa (generaMappaPiano). Celle della griglia 1..larghezza × 1..altezza (minimappa 7×6). */
+// Prova dei gatti (richiesta dell'autore, 2026-11-09): con attivo = true al Piano 1 le stanze accanto all'ingresso
+// sono sempre il «Vicolo dei Gatti» e il primo boss della run è il Gatto dei Quattro Canti. Rimettere false per il gioco normale.
+const PLAYTEST_GATTI = Object.freeze({ attivo: true, bossGattoPrimo: true, vicoloAccantoIngresso: true });
+
 const MAPPA_PIANO = Object.freeze({
   larghezza: 7, altezza: 6,
   catenaMin: 4,            // stanze di combattimento minime fra ingresso e boss

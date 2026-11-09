@@ -280,6 +280,10 @@ function nuovaRun(incrementaNotte = false) {
   const pInfo = PERSONAGGI_GIOCABILI[statoRun.personaggioId] || PERSONAGGI_GIOCABILI.ferruccio;
   statoRun.numeroRun += 1;
   statoRun.bossOrdine = shuffle(POOL_BOSS);
+  if (PLAYTEST_GATTI.attivo && PLAYTEST_GATTI.bossGattoPrimo) { // prova dei gatti: il Gatto dei Quattro Canti per primo
+    const g = statoRun.bossOrdine.findIndex((x) => x.id === 're-gatto');
+    if (g > 0) statoRun.bossOrdine.unshift(statoRun.bossOrdine.splice(g, 1)[0]);
+  }
   statoRun.poolOggettiBase = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'base'));
   statoRun.poolOggettiForti = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'forte'));
   statoRun.poolPatto = shuffle(CATALOGO_PATTO);

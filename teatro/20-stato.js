@@ -247,17 +247,23 @@ function selezionaPersonaggio(charId) {
 
 function avviaPartitaConPersonaggio(charId) {
   if (charId) selezionaPersonaggio(charId);
-  // Avvio diretto sul Palco del Teatro (senza deviazione su Piazza Dante)
+  // --- T4: inizio ---
+  if (t4Gancio('avvio', charId)) return; // il menu porta all'hub di Piazza Dante
+  // --- T4: fine ---
   statoRun.fase = 'in_gioco';
   nuovaRun(false);
 }
 
 /**
- * «Ricomincia notte» (menu ESC: tasto R o pulsante).
+ * «Ricomincia notte» (menu ESC: tasto R o pulsante). Con il T4 la notte nuova comincia nell'hub di
+ * Piazza Dante (bug autore: si ripartiva direttamente nel piano); senza T4 il ramo dell'autore.
  */
 
 function ricominciaNotte() {
   statoRun.pausa = false;
+  // --- T4: inizio ---
+  if (t4Gancio('ricomincia')) return;
+  // --- T4: fine ---
   statoRun.fase = 'in_gioco';
   nuovaRun(true);
 }
@@ -273,9 +279,11 @@ function nuovaRun(incrementaNotte = false) {
   }
   const pInfo = PERSONAGGI_GIOCABILI[statoRun.personaggioId] || PERSONAGGI_GIOCABILI.ferruccio;
   statoRun.numeroRun += 1;
-  const bossAltri = POOL_BOSS.filter((x) => x.id !== 're-gatto');
-  const bossGatto = POOL_BOSS.find((x) => x.id === 're-gatto') || POOL_BOSS[0];
-  statoRun.bossOrdine = [bossGatto, ...shuffle(bossAltri)];
+  statoRun.bossOrdine = shuffle(POOL_BOSS);
+  if (PLAYTEST_GATTI.attivo && PLAYTEST_GATTI.bossGattoPrimo) { // prova dei gatti: il Gatto dei Quattro Canti per primo
+    const g = statoRun.bossOrdine.findIndex((x) => x.id === 're-gatto');
+    if (g > 0) statoRun.bossOrdine.unshift(statoRun.bossOrdine.splice(g, 1)[0]);
+  }
   statoRun.poolOggettiBase = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'base'));
   statoRun.poolOggettiForti = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'forte'));
   statoRun.poolPatto = shuffle(CATALOGO_PATTO);
