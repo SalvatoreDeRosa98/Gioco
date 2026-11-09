@@ -536,7 +536,12 @@
       sprite: 'medaglioneRosa',
     }),
     bossFinale: 'donna-luciana',
-    cartiglio: Object.freeze({ x: 36, y: 268, w: 568, h: 84 }),
+    // --- C: inizio --- cartiglio in alto, appena sotto la porta nord (y 70): la porta sud (y ≥ 304) resta
+    // visibile. La scelta si apre verso il basso (sceltaH) invece che sopra il cartiglio.
+    cartiglio: Object.freeze({ x: 36, y: 80, w: 568, h: 84, sceltaH: 134 }),
+    lanterneMorteY: 40,      // la fila di lanterne della morte sta in alto, non sulla porta sud
+    fasciaMorteY: 78,        // fascia del messaggio di morte (alta 86) sotto le lanterne
+    // --- C: fine ---
     nomeVoce: 'La Voce',
     nomeLuciana: 'Donna Luciana',
   });
@@ -620,8 +625,51 @@
   };
 
   const nome = (chi) => (chi === 'voce' ? (S.flag.rivelazione_vista ? CONFIG.nomeLuciana : CONFIG.nomeVoce)
-    : chi === 'luciana' ? CONFIG.nomeLuciana : DATI.personaggi[chi] || chi);
+    : chi === 'luciana' ? CONFIG.nomeLuciana : DATI.personaggi[chi] || TESTI_NOTTI_C.nomi[chi] || chi);
   const voce = (chi, testo) => ({ chi, testo });
+  // --- C: inizio ---
+  /** Effetti della notte corrente (tabella NOTTI_C del file principale); neutri se manca. */
+  const notteC = () => (typeof I.effettiNotteC === 'function' ? I.effettiNotteC(notteCorrente()) : {});
+  /**
+   * Testi delle novità delle notti (NOTTI_C). Coerenti con la bibbia: la luna del Velo, Rosa nel ricordo
+   * di Tonino, la festa del 1845 durante la quale Caserta si è addormentata.
+   */
+  const TESTI_NOTTI_C = Object.freeze({
+    tonino: Object.freeze([
+      voce('tonino', "Stanotte 'a luna sta cchiù 'a llà, uagliò. Rosa diceva ca quanno 'a luna cammina, quaccheduno se ricorda."),
+    ]),
+    festaiola: Object.freeze([
+      voce('festaiola', "Che bella festa, giovanotto! 'A Reggia è fernuta... nun s'ha da piangere cchiù."),
+      voce('didascalia', "Porta ancora la coccarda della festa del 1845. Sorride, e non sbatte mai le ciglia."),
+    ]),
+    nomi: Object.freeze({ festaiola: 'Una festaiola' }),
+  });
+  /** Presenza del NPC nuovo della notte 4 (cella libera della griglia dell'hub). */
+  /**
+   * Effetto passivo permanente del Medaglione di Rosa (scelta di Tonino). Salvato nello slot coi flag
+   * (tonino_ricordo + medaglione_notte_c = notte della scelta); attivo solo dalla notte successiva.
+   *   restituito → Benedizione di Rosa: +1 maschera massima, il primo colpo di ogni stanza non fa danno.
+   *   negato     → Oblio: +0,8 danno, −1 maschera massima.
+   */
+  const MEDAGLIONE_C = Object.freeze({
+    restituito: Object.freeze({ id: 'benedizione', nome: 'Benedizione di Rosa', maxHpHalf: 2, dmg: 0, scudoStanza: true,
+      testo: 'Benedizione di Rosa: +1 maschera massima e il primo colpo di ogni stanza non fa danno' }),
+    negato: Object.freeze({ id: 'oblio', nome: 'Oblio', maxHpHalf: -2, dmg: 0.8, scudoStanza: false,
+      testo: 'Oblio: +0,8 danno e \u22121 maschera massima' }),
+  });
+  /** Effetto del Medaglione attivo stanotte, o null (non scelto, oppure scelto in questa stessa notte). */
+  function effettoMedaglioneC() {
+    const scelta = S.flag && S.flag[DATI.ricordo.flag];
+    const ef = scelta && MEDAGLIONE_C[scelta];
+    if (!ef) return null;
+    const notteScelta = Number(S.flag.medaglione_notte_c);
+    // salvataggi di prima di C senza la notte della scelta: l'effetto vale (la scelta è già passata)
+    if (Number.isFinite(notteScelta) && notteScelta > 0 && notteCorrente() <= notteScelta) return null;
+    return ef;
+  }
+  T.effettoMedaglioneC = effettoMedaglioneC;
+  const PRESENZA_NUOVA_C = Object.freeze({ id: 'festaiola', tipo: 'npc', personaggio: 'festaiola', ancoraggio: 'hub:festaiola', c: 10, r: 5 });
+  // --- C: fine ---
   const scena = (id) => DATI.scene.find((s) => s.id === id);
 
   // ===========================================================================
@@ -662,6 +710,7 @@
     if (sc.scelta.flag === DATI.ricordo.flag) {
       S.flag.medaglione_in_mano = false; // ceduto o tenuto, il ricordo non è più da consegnare
       if (op.valore === DATI.ricordo.valore_restituzione) S.flag.lettera_agnese = 'vera'; // flag derivato
+      S.flag.medaglione_notte_c = notteCorrente(); // C: l'effetto del Medaglione parte dalla notte dopo
     }
     salvaFlag();
     const esito = DATI.scene
@@ -695,6 +744,14 @@
       apriDialogo(s.battute.map((b) => voce(b.chi, b.testo)), { scene: [s.id], scelta: s.scelta ? s : null });
       return;
     }
+    // --- C: inizio --- novità delle notti: la festaiola (notte 4) e la battuta nuova di Tonino (notte 3)
+    if (npc === 'festaiola') { apriDialogo(TESTI_NOTTI_C.festaiola.slice()); return; }
+    if (npc === 'tonino' && notteC().battutaTonino && S.battutaNotteC !== notteCorrente()) {
+      S.battutaNotteC = notteCorrente(); // una volta per notte, poi le ripetizioni di sempre
+      apriDialogo(TESTI_NOTTI_C.tonino.slice());
+      return;
+    }
+    // --- C: fine ---
     const righe = (DATI.ripetizioni.npc[npc] || []).filter((r) => valuta(r.quando, S.flag));
     if (righe.length) {
       const i = (S.ripetIdx[npc] || 0) % righe.length;
@@ -728,7 +785,9 @@
 
   /** Presenze del modello risolte contro i flag (motore/mondo/hub.js › presenze()). */
   function presenze() {
-    return DATI.modelloHub.presenze.map((p) => ({
+    // --- C: dalla notte 4 un NPC nuovo (NOTTI_C.npcNuovo) ---
+    const base = notteC().npcNuovo === PRESENZA_NUOVA_C.id ? DATI.modelloHub.presenze.concat([PRESENZA_NUOVA_C]) : DATI.modelloHub.presenze;
+    return base.map((p) => ({
       ...p, ...pos(p.c, p.r),
       presente: valuta(p.quando, S.flag),
       aperta: p.tipo === 'porta' ? valuta(p.aperta_se, S.flag) : undefined,
@@ -906,10 +965,10 @@
     ctx.fillRect(0, 0, W, H);
     for (let i = 0; i < n; i++) {
       const x = 120 + (i * (W - 240)) / (n - 1);
-      disegnaLanterna(x, 312, i >= spente, 1.0);
+      disegnaLanterna(x, CONFIG.lanterneMorteY, i >= spente, 1.0); // C: lanterne in alto
       if (i === spente - 1 && f === 'lanterne') { // filo di fumo della lanterna appena spenta
         ctx.fillStyle = 'rgba(203, 213, 225, 0.35)';
-        for (let k = 0; k < 4; k++) ctx.fillRect(x - 1 + Math.sin(m.t * 0.3 + k) * 2, 294 - k * 6, 2, 4);
+        for (let k = 0; k < 4; k++) ctx.fillRect(x - 1 + Math.sin(m.t * 0.3 + k) * 2, CONFIG.lanterneMorteY - 18 - k * 6, 2, 4);
       }
     }
     // Fili d'oro che si spezzano e ricadono
@@ -952,12 +1011,15 @@
     ctx.save();
     ctx.globalAlpha = entrata;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-    ctx.fillRect(0, 120, W, 86);
-    I.drawTextFit(CONFIG.morte.titolo, W / 2, 152, 560, { size: 22, color: '#ef4444' });
+    // --- C: inizio --- fascia del messaggio spostata in alto (CONFIG.fasciaMorteY)
+    const fy = CONFIG.fasciaMorteY;
+    ctx.fillRect(0, fy, W, 86);
+    I.drawTextFit(CONFIG.morte.titolo, W / 2, fy + 32, 560, { size: 22, color: '#ef4444' });
+    // --- C: fine ---
     const causa = CONFIG.morte.causa.replace('{fonte}', m.fonte).replace('{notte}', String(m.notte));
-    I.drawTextFit(causa, W / 2, 174, 520, { size: 10, weight: '', color: '#f5e6c8' });
+    I.drawTextFit(causa, W / 2, fy + 54, 520, { size: 10, weight: '', color: '#f5e6c8' });
     const didascalia = DATI.interfaccia.morte[f === 'fine' ? 'buio' : f];
-    if (didascalia) I.drawTextFit(didascalia, W / 2, 194, 520, { size: 9, weight: '', style: 'italic', color: '#c9a679' });
+    if (didascalia) I.drawTextFit(didascalia, W / 2, fy + 74, 520, { size: 9, weight: '', style: 'italic', color: '#c9a679' });
     ctx.restore();
   }
 
@@ -982,7 +1044,10 @@
     // la luna immobile del Velo
     const luna = DATI.modelloHub.presenze.find((p) => p.forma === 'luna');
     if (luna) {
-      const lp = pos(luna.c, luna.r);
+      // --- C: dalla notte 2 la luna si sposta (NOTTI_C.lunaPassoC celle per notte, fino a lunaMaxNotte) ---
+      const nc = notteC();
+      const passi = Math.max(0, Math.min(nc.notte || 1, nc.lunaMaxNotte || 1) - 1);
+      const lp = pos(luna.c + passi * (nc.lunaPassoC || 0), luna.r - passi * 0.12);
       const ly = Math.max(14, lp.y);
       const gl = ctx.createRadialGradient(lp.x, ly, 2, lp.x, ly, 26);
       gl.addColorStop(0, 'rgba(243, 223, 193, 0.5)');
@@ -1121,6 +1186,38 @@
     ctx.restore();
   }
 
+  // --- C: inizio ---
+  /** Notte 2+: la sagoma di Mariella dietro la finestra illuminata (bibbia IX), ferma, appena inclinata. */
+  function disegnaMariellaC(x, y, t) {
+    const sway = Math.round(Math.sin(t * 0.02) * 1);
+    ctx.fillStyle = '#0a0604';
+    ctx.fillRect(x - 3 + sway, y - 10, 6, 6);   // testa
+    ctx.fillRect(x - 5 + sway, y - 5, 10, 11);  // spalle e busto
+    ctx.fillRect(x - 6 + sway, y - 11, 3, 8);   // capelli raccolti
+  }
+  /** Notte 4+: una festaiola del 1845 addormentata dal Velo (gonna larga, coccarda, ventaglio). */
+  function disegnaFestaiolaC(x, y, t) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(8, 5, 3, 0.6)';
+    ctx.beginPath(); ctx.ellipse(x, y + 10, 13, 4, 0, 0, TAU); ctx.fill();
+    ctx.translate(Math.round(x), Math.round(y));
+    ctx.fillStyle = '#0a0604';
+    ctx.fillRect(-12, -6, 24, 16);   // gonna
+    ctx.fillRect(-6, -20, 12, 15);   // busto
+    ctx.fillRect(-6, -32, 12, 12);   // testa
+    ctx.fillRect(-8, -35, 16, 4);    // acconciatura
+    ctx.fillStyle = '#3b0d2a';
+    ctx.fillRect(-10, -4, 20, 12);
+    ctx.fillStyle = '#c9a679';
+    ctx.fillRect(-4, -29, 8, 7);     // volto
+    ctx.fillStyle = '#f9cb40';
+    ctx.fillRect(-2, -17, 4, 4);     // coccarda della festa
+    ctx.fillStyle = '#0a0604';
+    ctx.fillRect(8, -16 + Math.round(Math.sin(t * 0.06) * 1), 7, 5); // ventaglio
+    ctx.restore();
+  }
+  // --- C: fine ---
+
   function disegnaColonna(c) {
     ctx.fillStyle = 'rgba(8, 5, 3, 0.65)';
     ctx.beginPath(); ctx.ellipse(c.x, c.y + 8, 14, 5, 0, 0, TAU); ctx.fill();
@@ -1174,11 +1271,12 @@
     ctx.drawImage(I.getFloorTileCanvas(), 0, 0, W, H); // (T5) la cache è alla risoluzione del buffer
     disegnaCielo(t);
     // velo notturno sul selciato
-    ctx.fillStyle = 'rgba(10, 14, 30, 0.28)';
+    ctx.fillStyle = `rgba(10, 14, 30, ${(0.28 + (notteC().buioExtra || 0)).toFixed(2)})`; // C: notte 4 più buio
     ctx.fillRect(48, 52, W - 96, H - 96);
     const pr = presenze();
     for (const p of pr) {
       if (p.tipo === 'finestra') disegnaFinestra(p.x, 60, p.accesa, t);
+      if (p.tipo === 'finestra' && p.personaggio === 'mariella' && notteC().mariellaAllaFinestra) disegnaMariellaC(p.x, 60, t); // C
       if (p.tipo === 'porta') disegnaPortaBottega(p);
     }
     disegnaIngresso(t);
@@ -1190,6 +1288,7 @@
     for (const p of pr) {
       if (p.tipo !== 'npc') continue;
       if (p.personaggio === 'tonino') cose.push({ y: p.y + 10, d: () => disegnaTonino(p.x, p.y, t) });
+      else if (p.personaggio === 'festaiola') cose.push({ y: p.y + 10, d: () => disegnaFestaiolaC(p.x, p.y, t) }); // C
       else if (I.PERSONAGGI_GIOCABILI[p.personaggio]) {
         cose.push({ y: p.y + 10, d: () => I.disegnaFerruccioPittorico(ctx, p.x, p.y, { scale: 0.9, tick: t, charInfo: I.PERSONAGGI_GIOCABILI[p.personaggio], flipX: p.x > 320, sinergie: {} }) });
       }
@@ -1278,13 +1377,16 @@
         color: didascalia ? '#c9a679' : '#f3dfc1', align: 'left',
       });
     });
+    // --- C: nel cartiglio di Tonino l'effetto attivo del Medaglione ---
+    const efC = v.chi === 'tonino' ? effettoMedaglioneC() : null;
+    if (efC) I.drawTextFit(`\u2726 ${efC.testo}`, x + 20, y + h - 8, w - 170, { size: 7.5, color: '#67e8f9', align: 'left' });
     const blink = Math.floor(T.tick / 20) % 2 === 0;
     I.drawTextFit(`${blink ? '▶' : '▷'} Spazio / E`, x + w - 16, y + h - 8, 120, { size: 7.5, color: '#f9cb40', align: 'right' });
     ctx.restore();
   }
   function rettOpzione(i) {
     const { x, y, w } = CONFIG.cartiglio;
-    return { x: x + 16, y: y - 96 + i * 34, w: w - 32, h: 28 };
+    return { x: x + 16, y: y + 14 + i * 34, w: w - 32, h: 28 }; // C: opzioni dentro il riquadro, verso il basso
   }
   function disegnaScelta(d) {
     const sc = d.scelta.scelta;
@@ -1292,9 +1394,12 @@
     ctx.fillStyle = '#140c08';
     ctx.strokeStyle = '#f9cb40';
     ctx.lineWidth = 2;
-    ctx.fillRect(x, y - 110, w, h + 110 - 50);
-    ctx.strokeRect(x, y - 110, w, h + 110 - 50);
-    I.drawTextFit(DATI.interfaccia.incontri.scegli, x + w / 2, y - 98 + 0, w - 40, { size: 9, color: '#f9cb40' });
+    // --- C: inizio --- riquadro della scelta che parte dal cartiglio e scende (sceltaH), lontano dalla porta sud
+    const sh = CONFIG.cartiglio.sceltaH;
+    ctx.fillRect(x, y, w, sh);
+    ctx.strokeRect(x, y, w, sh);
+    I.drawTextFit(DATI.interfaccia.incontri.scegli, x + w / 2, y + 12, w - 40, { size: 9, color: '#f9cb40' });
+    // --- C: fine ---
     sc.opzioni.forEach((op, i) => {
       const r = rettOpzione(i);
       const attiva = i === d.sel;
@@ -1305,7 +1410,7 @@
       I.drawTextFit(`${i + 1}. ${op.etichetta}`, r.x + 12, r.y + 24, r.w - 24, { size: 10, color: attiva ? '#ffffff' : '#c9a679', align: 'left' });
     });
     // (cosa_sacrifica di storia.json è una nota di design, non testo per il giocatore: non si mostra)
-    I.drawTextFit(`↑↓ / 1-2 · ${DATI.interfaccia.incontri.conferma}: Spazio / E`, x + w - 16, y + h - 58, 260, { size: 7.5, color: '#f9cb40', align: 'right' });
+    I.drawTextFit(`↑↓ / 1-2 · ${DATI.interfaccia.incontri.conferma}: Spazio / E`, x + w - 16, y + CONFIG.cartiglio.sceltaH - 6, 260, { size: 7.5, color: '#f9cb40', align: 'right' });
   }
 
   // ===========================================================================
@@ -1470,6 +1575,8 @@
     morteForzata() { statoRun.hpHalf = 0; return avviaMorte(); },
     /** QA del watchdog: la sequenza in corso non finirebbe mai da sola (simula una logica bloccata). */
     bloccaMorte() { if (S.morte) S.morte.totale = Number.MAX_SAFE_INTEGER; return Boolean(S.morte); },
+    // --- C: QA: apre un cartiglio di prova nella fase corrente (verifica che la porta sud resti visibile) ---
+    apriDialogoC(chi, testo) { apriDialogo([voce(chi, testo)]); },
   };
 
   Object.assign(window.__teatro ||= {}, { t4, t4qa: qa });
