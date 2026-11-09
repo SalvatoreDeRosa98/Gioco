@@ -1,0 +1,374 @@
+{
+ "ferruccio": {
+  "cella_l": 305,
+  "cella_a": 136,
+  "colonne": 4,
+  "scala": 0.5494,
+  "altezza_rif": 128,
+  "margine": 4,
+  "righe": [
+   {
+    "posa": "fermo",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "cammina",
+    "fotogrammi": 4
+   },
+   {
+    "posa": "spara",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "colpito",
+    "fotogrammi": 1
+   },
+   {
+    "posa": "morto",
+    "fotogrammi": 3
+   }
+  ]
+ },
+ "agnese": {
+  "cella_l": 212,
+  "cella_a": 138,
+  "colonne": 4,
+  "scala": 0.4904,
+  "altezza_rif": 127,
+  "margine": 4,
+  "righe": [
+   {
+    "posa": "fermo",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "cammina",
+    "fotogrammi": 4
+   },
+   {
+    "posa": "spara",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "colpito",
+    "fotogrammi": 1
+   },
+   {
+    "posa": "morto",
+    "fotogrammi": 3
+   }
+  ],
+  "note": [
+   "righe del foglio [2, 4, 3, 3] ridistribuite secondo il manifesto [2, 4, 2, 1, 3]"
+  ]
+ },
+ "taddeo": {
+  "cella_l": 188,
+  "cella_a": 132,
+  "colonne": 4,
+  "scala": 0.5702,
+  "altezza_rif": 123,
+  "margine": 4,
+  "righe": [
+   {
+    "posa": "fermo",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "cammina",
+    "fotogrammi": 4
+   },
+   {
+    "posa": "spara",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "colpito",
+    "fotogrammi": 1
+   },
+   {
+    "posa": "morto",
+    "fotogrammi": 3
+   }
+  ],
+  "note": [
+   "scacchiera finta rimossa (742261 px, 69% del foglio)"
+  ]
+ },
+ "ombra": {
+  "cella_l": 377,
+  "cella_a": 142,
+  "colonne": 4,
+  "scala": 0.5766,
+  "altezza_rif": 130,
+  "margine": 4,
+  "righe": [
+   {
+    "posa": "fermo",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "cammina",
+    "fotogrammi": 4
+   },
+   {
+    "posa": "spara",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "colpito",
+    "fotogrammi": 1
+   },
+   {
+    "posa": "morto",
+    "fotogrammi": 3
+   }
+  ],
+  "note": [
+   "linee guida rimosse (21059 px)"
+  ]
+ },
+ "teste-mira": {
+  "cella_l": 60,
+  "cella_a": 74,
+  "colonne": 4,
+  "scala": 0.1693,
+  "altezza_rif": 64,
+  "margine": 4,
+  "righe": [
+   {
+    "posa": "tutto",
+    "fotogrammi": 4
+   }
+  ]
+ },
+ "gatto": {
+  "cella_l": 422,
+  "cella_a": 136,
+  "colonne": 4,
+  "scala": 0.7356,
+  "altezza_rif": 124,
+  "margine": 4,
+  "righe": [
+   {
+    "posa": "fermo",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "muove",
+    "fotogrammi": 4
+   },
+   {
+    "posa": "anticipo",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "attacco",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "colpito",
+    "fotogrammi": 1
+   },
+   {
+    "posa": "morte",
+    "fotogrammi": 4
+   }
+  ]
+ },
+ "vespa-cieca": {
+  "cella_l": 237,
+  "cella_a": 142,
+  "colonne": 4,
+  "scala": 0.5664,
+  "altezza_rif": 122,
+  "margine": 4,
+  "righe": [
+   {
+    "posa": "vola",
+    "fotogrammi": 4
+   },
+   {
+    "posa": "carica",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "colpito",
+    "fotogrammi": 1
+   },
+   {
+    "posa": "morte",
+    "fotogrammi": 3
+   }
+  ],
+  "note": [
+   "scritte rimosse (38 lettere)"
+  ]
+ },
+ "maschera": {
+  "cella_l": 207,
+  "cella_a": 153,
+  "colonne": 4,
+  "scala": 0.7758,
+  "altezza_rif": 129,
+  "margine": 4,
+  "righe": [
+   {
+    "posa": "chiusa",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "si-apre",
+    "fotogrammi": 3
+   },
+   {
+    "posa": "aperta-spara",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "colpito",
+    "fotogrammi": 1
+   },
+   {
+    "posa": "morte",
+    "fotogrammi": 4
+   }
+  ],
+  "note": [
+   "scritte rimosse (3 lettere)"
+  ]
+ },
+ "bomba-ferma": {
+  "cella_l": 113,
+  "cella_a": 136,
+  "colonne": 5,
+  "scala": 0.4491,
+  "altezza_rif": 124,
+  "margine": 4,
+  "righe": [
+   {
+    "posa": "fermo",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "miccia",
+    "fotogrammi": 4
+   },
+   {
+    "posa": "esplode",
+    "fotogrammi": 5
+   }
+  ]
+ },
+ "guardia": {
+  "cella_l": 285,
+  "cella_a": 135,
+  "colonne": 4,
+  "scala": 0.6184,
+  "altezza_rif": 123,
+  "margine": 4,
+  "righe": [
+   {
+    "posa": "fermo",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "muove",
+    "fotogrammi": 4
+   },
+   {
+    "posa": "anticipo",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "attacco",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "colpito",
+    "fotogrammi": 1
+   },
+   {
+    "posa": "morte",
+    "fotogrammi": 4
+   }
+  ]
+ },
+ "statua": {
+  "cella_l": 269,
+  "cella_a": 171,
+  "colonne": 4,
+  "scala": 0.6305,
+  "altezza_rif": 129,
+  "margine": 4,
+  "righe": [
+   {
+    "posa": "fermo",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "trema",
+    "fotogrammi": 3
+   },
+   {
+    "posa": "spara",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "colpito",
+    "fotogrammi": 1
+   },
+   {
+    "posa": "morte",
+    "fotogrammi": 4
+   }
+  ],
+  "note": [
+   "linee guida rimosse (122 px)",
+   "scritte rimosse (53 lettere)",
+   "2 frammenti isolati scartati"
+  ]
+ },
+ "predone": {
+  "cella_l": 318,
+  "cella_a": 151,
+  "colonne": 4,
+  "scala": 0.7171,
+  "altezza_rif": 128,
+  "margine": 4,
+  "righe": [
+   {
+    "posa": "fermo",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "muove",
+    "fotogrammi": 4
+   },
+   {
+    "posa": "anticipo",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "attacco",
+    "fotogrammi": 2
+   },
+   {
+    "posa": "colpito",
+    "fotogrammi": 1
+   },
+   {
+    "posa": "morte",
+    "fotogrammi": 4
+   }
+  ],
+  "note": [
+   "linee guida rimosse (12774 px)",
+   "scritte rimosse (48 lettere)",
+   "riga 0: una figura larga tagliata in 2 lungo cuciture di alfa minima",
+   "riga 1: una figura larga tagliata in 4 lungo cuciture di alfa minima",
+   "riga 2: una figura larga tagliata in 2 lungo cuciture di alfa minima",
+   "riga 3: una figura larga tagliata in 2 lungo cuciture di alfa minima"
+  ]
+ }
+}

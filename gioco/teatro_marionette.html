@@ -632,6 +632,9 @@
 
     ctx.translate(px, py + bob);
     if (flipX) ctx.scale(-1, 1);
+    // --- T2: inizio ---
+    if (t2Gancio('personaggio', ctx, charId, px, py, opts)) { ctx.restore(); return; }
+    // --- T2: fine ---
 
     // =========================================================================
     // CASO 1: AGNESE — LA TESSITRICE DI SAN LEUCIO (Fedele all\'artwork agnese.jpg)
@@ -1388,6 +1391,9 @@ function disegnaManoMarionettaPittorica() {
 
     ctx.translate(x, y);
     if (champion) ctx.scale(1.18, 1.18);
+    // --- T2: inizio ---
+    if (t2Gancio('nemico', ctx, n, tick)) { ctx.restore(); return; }
+    // --- T2: fine ---
 
     const tint = isFlash
       ? '#ffffff'
@@ -5753,6 +5759,9 @@ function disegnaManoMarionettaPittorica() {
           }
         }
       }
+      // --- T2: inizio ---
+      t2Gancio('dopoNemici', ctx, st, tick); // pose di morte dei nemici appena abbattuti
+      // --- T2: fine ---
 
       // Ferruccio Pittorico Dark-Fairytale fedele all'immagine di riferimento (SENZA ALCUN FILO!)
       // (T1) I-frames: lampeggio ad alpha FEEL.iframes.alpha a semionde di FEEL.iframes.semiperiodoMs
@@ -6230,6 +6239,16 @@ function disegnaManoMarionettaPittorica() {
   // caricato dopo questo. Qui solo i ganci: t4Gancio(nome, ...) chiama window.__teatro.t4[nome] se c'è
   // (true = il T4 ha gestito l'evento). La sonda sopra è congelata: la si ricopia (getter compresi) in un
   // oggetto estendibile, così T3 e T4 vi aggiungono proprietà con Object.assign senza sovrascriversi.
+  // --- T2: inizio ---
+  // Passo T2 (sprite dei fogli dell'autore): il codice sta in teatro/t2-sprite.js, script classico caricato
+  // dopo questo. t2Gancio(nome, ...) chiama window.__teatro.t2[nome] se c'è; true = sprite disegnato,
+  // altrimenti resta il disegno pittorico esistente (fallback).
+  function t2Gancio(nome, ...args) {
+    const g = window.__teatro && window.__teatro.t2;
+    if (!g || typeof g[nome] !== 'function') return false;
+    try { return Boolean(g[nome](...args)); } catch (err) { console.error('[T2]', nome, err); return false; }
+  }
+  // --- T2: fine ---
   function t4Gancio(nome, ...args) {
     const g = window.__teatro && window.__teatro.t4;
     if (!g || typeof g[nome] !== 'function') return false;
@@ -6254,6 +6273,9 @@ function disegnaManoMarionettaPittorica() {
 <!-- --- T4: inizio --- -->
 <script src="teatro/t4-hub-storia.js"></script>
 <!-- --- T4: fine --- -->
+<!-- --- T2: inizio --- -->
+<script src="teatro/t2-sprite.js"></script>
+<!-- --- T2: fine --- -->
 <script>
 // --- ponte T3/T4: i flag della trama di T4 vivono nello slot di salvataggio di T3 ---
 (function () {
