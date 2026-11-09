@@ -3633,6 +3633,56 @@ function disegnaManoMarionettaPittorica() {
     return null;
   }
 
+  // --- C: inizio ---
+  /** Centri delle porte (come in disegnaStanza) e punti di entrata del giocatore (come in entraInStanza). */
+  const PORTE_C = Object.freeze({ N: { x: 320, y: 61 }, S: { x: 320, y: 313 }, W: { x: 59, y: 187 }, E: { x: 581, y: 187 } });
+  const ENTRATE_C = Object.freeze({
+    N: { x: 320, y: ARENA.y1 + 18 }, S: { x: 320, y: ARENA.y2 - 18 },
+    W: { x: ARENA.x1 + 22, y: 188 }, E: { x: ARENA.x2 - 22, y: 188 }, inizio: { x: 260, y: 225 },
+  });
+  /** Porte di una stanza da cui stare lontani: quelle aperte e il muro segreto (anche se chiuso). */
+  function porteVietateC(s) {
+    const lati = new Set(Object.keys(s?.porte || {}));
+    if (s?.muroSegreto) lati.add(s.muroSegreto.lato);
+    return [...lati].map((l) => PORTE_C[l]).filter(Boolean);
+  }
+  /**
+   * Punto più vicino a (x, y) a STANZE_C.distanzaPorte px da ogni punto vietato e ad almeno 26 px dagli
+   * altri nemici. Ricerca a griglia deterministica (nessun rng): se nulla è libero, rinuncia allo spazio
+   * fra nemici ma mai alla distanza dalle porte.
+   * @param {number} x @param {number} y @param {{x:number,y:number}[]} vietati @param {{x:number,y:number}[]} [altri]
+   */
+  function puntoLontanoDallePorteC(x, y, vietati, altri = []) {
+    const D = STANZE_C.distanzaPorte;
+    const lontano = (px, py) => vietati.every((p) => Math.hypot(px - p.x, py - p.y) >= D);
+    const spazio = (px, py) => altri.every((o) => Math.hypot(px - o.x, py - o.y) >= 26);
+    if (lontano(x, y) && spazio(x, y)) return { x, y };
+    for (const conSpazio of [true, false]) {
+      let best = null, bd = Infinity;
+      for (let gy = ARENA.y1 + 24; gy <= ARENA.y2 - 24; gy += 6) {
+        for (let gx = ARENA.x1 + 24; gx <= ARENA.x2 - 24; gx += 6) {
+          if (!lontano(gx, gy) || (conSpazio && !spazio(gx, gy))) continue;
+          const d = Math.hypot(gx - x, gy - y);
+          if (d < bd) { bd = d; best = { x: gx, y: gy }; }
+        }
+      }
+      if (best) return best;
+    }
+    return { x, y };
+  }
+  /** Allontana i nemici vivi della stanza dalle porte e dai punti vietati (ingresso, spawn a metà lotta). */
+  function allontanaNemiciDallePorteC(s, extra = []) {
+    const vietati = [...porteVietateC(s), ...extra];
+    const posti = [];
+    for (const n of s.nemici || []) {
+      if (n.hp <= 0) continue;
+      const p = puntoLontanoDallePorteC(n.x, n.y, vietati, posti);
+      n.x = p.x; n.y = p.y;
+      posti.push(p);
+    }
+  }
+  // --- C: fine ---
+
   function popolaStanzaIsaac(s, piano) {
     const ciclo = Math.floor((piano - 1) / 4) + 1;
     const moltCiclo = Math.pow(1.45, ciclo - 1);
@@ -3832,6 +3882,7 @@ function disegnaManoMarionettaPittorica() {
           shootCd: 40 + Math.floor(rng() * 45),
         });
       }
+      allontanaNemiciDallePorteC(s); // --- C: nemici mai vicino alle porte ---
     } else if (s.tipo === 'boss') {
       const pianoNelCiclo = ((piano - 1) % 4) + 1;
       const bossInfo = pianoNelCiclo === 4
@@ -3845,8 +3896,9 @@ function disegnaManoMarionettaPittorica() {
         tipo: bossInfo.tipo,
         pattern: bossInfo.pattern,
         boss: true,
-        x: 320,
-        y: 162,
+        // --- C: inizio --- il boss parte lontano dalle porte (prima a 320,162: a 101 px dalla porta nord)
+        ...puntoLontanoDallePorteC(320, 162, porteVietateC(s)),
+        // --- C: fine ---
         vx: 1.35,
         vy: 1.05,
         airZ: 0,
@@ -3976,6 +4028,10 @@ function disegnaManoMarionettaPittorica() {
     else if (daLato === 'W') { player.x = ARENA.x1 + 22; player.y = 188; }
     else if (daLato === 'E') { player.x = ARENA.x2 - 22; player.y = 188; }
     else { player.x = 260; player.y = 225; }
+    // --- C: inizio --- nemici lontani dalle porte e dal punto di entrata; grazia d'ingresso
+    allontanaNemiciDallePorteC(stanza, [{ x: player.x, y: player.y }]);
+    statoRun.graziaIngressoC = ticksDaMs(STANZE_C.graziaIngressoMs);
+    // --- C: fine ---
 
     if (stanza.tipo === 'tesoro' && stanza.oggettoPiedistallo && !stanza.oggettoPiedistallo.preso) {
       const o = stanza.oggettoPiedistallo;
@@ -4467,6 +4523,7 @@ function disegnaManoMarionettaPittorica() {
    */
   function subisciColpoGiocatore(mezzeMaschereDanno, fonte, daX, daY) {
     if (player.invuln > 0) return;
+    if (statoRun.graziaIngressoC > 0) return; // --- C: grazia d'ingresso: nessun danno ---
     // (bug autore «quando perdo si freeza») fuori dalla run (sequenza di morte, hub, menu) nessun colpo:
     // un secondo colpo letale nello stesso tick non deve riavviare la run sopra la sequenza di morte.
     if (statoRun.fase !== 'in_gioco') return;
@@ -5024,6 +5081,7 @@ function disegnaManoMarionettaPittorica() {
       if (player.shootAnimTimer > 0) player.shootAnimTimer--;
       if (player.pickupTimer > 0) player.pickupTimer--;
       if (player.invuln > 0) player.invuln--;
+      if (statoRun.graziaIngressoC > 0) statoRun.graziaIngressoC--; // --- C: grazia d'ingresso ---
 
       if (st.oggettiATerra && st.oggettiATerra.length > 0) {
         for (let i = st.oggettiATerra.length - 1; i >= 0; i--) {
@@ -5239,6 +5297,7 @@ function disegnaManoMarionettaPittorica() {
       for (const n of st.nemici) {
         if (n.hp <= 0) continue;
         if (n.flash > 0) n.flash--;
+        if (statoRun.graziaIngressoC > 0) continue; // --- C: grazia d'ingresso: niente attacchi né contatto ---
         if (n.burnTicks > 0) {
           n.burnTicks--;
           if (n.burnTicks % 20 === 0) {
@@ -5404,8 +5463,9 @@ function disegnaManoMarionettaPittorica() {
                   tipo: 'bomba_ferma',
                   nome: 'Bozzolo di Polvere',
                   comportamento: 'bomba_ferma',
-                  x: 160 + rng() * 320,
-                  y: 120 + rng() * 130,
+                  // --- C: inizio --- anche gli spawn del boss stanno lontani dalle porte
+                  ...puntoLontanoDallePorteC(160 + rng() * 320, 120 + rng() * 130, porteVietateC(st).concat([{ x: player.x, y: player.y }])),
+                  // --- C: fine ---
                   vx: 0, vy: 0,
                   r: 12,
                   hp: 10, maxHp: 10,
