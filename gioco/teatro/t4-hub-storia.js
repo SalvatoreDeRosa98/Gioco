@@ -1118,7 +1118,7 @@
   function disegnaHub() {
     const t = T.tick;
     ctx.save();
-    ctx.drawImage(I.getFloorTileCanvas(), 0, 0, W, H); // (T5) la cache è alla risoluzione del buffer
+    ctx.drawImage(I.getFloorTileCanvas(), 0, 0);
     disegnaCielo(t);
     // velo notturno sul selciato
     ctx.fillStyle = 'rgba(10, 14, 30, 0.28)';

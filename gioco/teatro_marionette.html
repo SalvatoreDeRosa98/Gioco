@@ -7,51 +7,43 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
   html, body {
-    background: #050302;
+    background: transparent;
     color: #f6e7c4;
     font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace;
     overflow: hidden;
-    width: 100%;
-    height: 100%;
   }
-  /* (T5) Il palco riempie la finestra: la scheda occupa tutta la viewport e il palco (16:9) prende il
-     minimo tra larghezza e altezza disponibili (calcolato in JS da adattaPalco()). */
   .game-card {
     background: #0b0806;
-    padding: 3px;
+    border: 2px solid #4a3520;
+    border-radius: 10px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 3px;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
+    gap: 5px;
+    max-width: 744px;
+    margin: 0 auto;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.75);
   }
   .toolbar {
     display: flex;
-    flex-wrap: nowrap;
-    gap: 3px;
+    flex-wrap: wrap;
+    gap: 4px;
     justify-content: center;
     align-items: center;
     background: #16100b;
     border: 1px solid #5c4024;
-    border-radius: 4px;
-    padding: 2px 4px;
-    max-width: 100%;
-    overflow: hidden;
-    flex: 0 0 auto;
+    border-radius: 6px;
+    padding: 4px 6px;
+    width: 100%;
   }
-  /* (T5) durante la partita la barra pulsanti è nascosta; torna nel menu, nell'hub o con il tasto B */
-  body.barra-nascosta .toolbar { display: none; }
   .toolbar button {
     background: #261a10;
     color: #f6e7c4;
     border: 1px solid #8a5a2b;
-    border-radius: 3px;
-    padding: 1px 5px;
-    font: 700 11px/1.25 ui-monospace, monospace;
-    white-space: nowrap;
+    border-radius: 4px;
+    padding: 3px 6px;
+    font: 700 12px/1.2 ui-monospace, monospace;
     cursor: pointer;
     transition: all 0.12s ease;
   }
@@ -64,52 +56,44 @@
   }
   .toolbar .sep {
     width: 1px;
-    height: 14px;
+    height: 16px;
     background: #4b3219;
     margin: 0 1px;
-    flex: 0 0 auto;
   }
   .palco-wrap {
     position: relative;
-    flex: 0 0 auto;
+    width: 100%;
+    max-width: 712px;
+    aspect-ratio: 16 / 9;
     background: #0d0907;
-    border: 1px solid #7c5227;
+    border: 2px solid #7c5227;
+    border-radius: 6px;
     overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.85);
     outline: none;
   }
   .palco-wrap:focus { border-color: #f7c844; }
-  /* (T5) schermo intero sul solo palco: nero attorno, palco 16:9 centrato */
-  .palco-wrap:fullscreen {
-    width: 100vw; height: 100vh; border: 0; background: #000;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .palco-wrap:-webkit-full-screen {
-    width: 100vw; height: 100vh; border: 0; background: #000;
-    display: flex; align-items: center; justify-content: center;
-  }
   canvas {
+    width: 100%;
+    height: 100%;
     display: block;
-    flex: 0 0 auto;
-    /* il buffer è alla risoluzione reale (o appena sopra): il browser deve solo ridurre, in modo liscio */
-    image-rendering: auto;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
     cursor: crosshair;
   }
   .statusbar {
     display: flex;
-    flex-wrap: nowrap;
-    justify-content: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
     align-items: center;
     gap: 6px;
-    font: 11px/1.2 ui-monospace, monospace;
+    font: 12px/1.3 ui-monospace, monospace;
     color: #e6d2aa;
+    width: 100%;
     background: #140e0a;
     border: 1px solid #3d2814;
-    border-radius: 4px;
-    padding: 1px 8px;
-    max-width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    flex: 0 0 auto;
+    border-radius: 5px;
+    padding: 4px 8px;
   }
   .statusbar b { color: #f7c844; }
 </style>
@@ -145,7 +129,7 @@
 
   <div class="statusbar">
     <div>
-      <b>WASD</b> muovi · <b>Frecce/Click</b> mira e attacca · <b>Q</b> Usa Attivo · <b>E/Click</b> raccogli/compra/patto · <b>ESC</b> Menù · <b>F</b> schermo intero · <b>B</b> barra pulsanti
+      <b>WASD</b> muovi · <b>Frecce/Click</b> mira e attacca · <b>Q</b> Usa Attivo · <b>E/Click</b> raccogli/compra/patto · <b>ESC</b> Menù Personaggi
     </div>
   </div>
 </div>
@@ -158,99 +142,6 @@
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   const wrap = document.getElementById('wrap');
-
-  // ===========================================================================
-  // (T5) PALCO A TUTTO SCHERMO E RISOLUZIONE INTERNA ALTA
-  // La logica ragiona sempre in 640x360 (W, H). Il buffer del canvas è la dimensione a schermo per
-  // devicePixelRatio, arrotondata in su al multiplo intero di 640 (scala intera: la pixel-art resta a
-  // griglia regolare), con tetto SCHERMO.bufferMax. Ogni frame parte da ctx.setTransform(scalaBase…).
-  // ===========================================================================
-  const SCHERMO = Object.freeze({
-    bufferMaxL: 3840,   // tetto di sicurezza del buffer (3840x2160)
-    bufferMaxA: 2160,
-    scalaIntera: true,  // arrotonda la scala del buffer all'intero superiore (pixel netti, nessun «pixel doppio» irregolare)
-    fasiConBarra: Object.freeze(['menu_selezione', 'hub']), // fasi in cui la barra pulsanti è visibile
-  });
-  let scalaBase = 1;
-  let barraForzata = false; // tasto B: mostra la barra anche in partita
-  /**
-   * Ricalcola la dimensione a schermo del palco (16:9, il massimo che entra) e il buffer del canvas.
-   * Chiamata al resize, al cambio di schermo intero e quando la barra pulsanti compare o sparisce.
-   */
-  function adattaPalco() {
-    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
-    const inFs = fsEl === wrap;
-    const vw = window.innerWidth, vh = window.innerHeight;
-    let dispL, dispA;
-    if (inFs) {
-      wrap.style.width = ''; wrap.style.height = '';
-      dispL = vw; dispA = vh;
-    } else {
-      const card = wrap.parentElement;
-      const cs = getComputedStyle(card);
-      const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
-      const gap = parseFloat(cs.rowGap) || 0;
-      let altri = 0, n = 0;
-      for (const el of card.children) {
-        if (el === wrap || el.offsetParent === null) continue;
-        altri += el.offsetHeight; n++;
-      }
-      const bordo = 2; // bordo 1px del palco
-      dispL = vw - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0) - bordo;
-      dispA = vh - pad - altri - gap * n - bordo;
-    }
-    const cssL = Math.max(64, Math.floor(Math.min(dispL, dispA * W / H)));
-    const cssA = Math.floor(cssL * H / W);
-    canvas.style.width = cssL + 'px';
-    canvas.style.height = cssA + 'px';
-    if (!inFs) { wrap.style.width = (cssL + 2) + 'px'; wrap.style.height = (cssA + 2) + 'px'; }
-    const dpr = window.devicePixelRatio || 1;
-    let s = (cssL * dpr) / W;
-    if (SCHERMO.scalaIntera) s = Math.ceil(s - 1e-6);
-    s = Math.max(1, Math.min(s, SCHERMO.bufferMaxL / W, SCHERMO.bufferMaxA / H));
-    const bl = Math.round(W * s), ba = Math.round(H * s);
-    if (canvas.width !== bl || canvas.height !== ba) {
-      canvas.width = bl; canvas.height = ba; // azzera lo stato del contesto: lo ripristina iniziaFrame()
-      floorCache = null; // il pavimento si ridisegna alla nuova risoluzione
-    }
-    scalaBase = bl / W;
-  }
-  /** Stato base del contesto a inizio frame: scala 640x360 → buffer, pixel-art netta. */
-  function iniziaFrame() {
-    ctx.setTransform(scalaBase, 0, 0, scalaBase, 0, 0);
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.imageSmoothingEnabled = false;
-  }
-  /** Barra pulsanti: visibile nel menu e nell'hub, o in partita se forzata con B. */
-  function aggiornaBarra() {
-    const vis = barraForzata || SCHERMO.fasiConBarra.includes(statoRun.fase);
-    const nascosta = document.body.classList.contains('barra-nascosta');
-    if (vis === nascosta) {
-      document.body.classList.toggle('barra-nascosta', !vis);
-      adattaPalco();
-    }
-  }
-  /** Tasto F: schermo intero sul palco; il rifiuto del browser è segnalato senza errori. */
-  function alternaSchermoIntero() {
-    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
-    try {
-      if (fsEl) {
-        const p = (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-        if (p && p.catch) p.catch(() => {});
-        return;
-      }
-      const req = wrap.requestFullscreen || wrap.webkitRequestFullscreen;
-      if (!req) { mostraBanner('Schermo intero non disponibile in questo browser', 140); return; }
-      const p = req.call(wrap);
-      if (p && p.catch) p.catch(() => mostraBanner('Schermo intero rifiutato dal browser', 140));
-    } catch (_) {
-      mostraBanner('Schermo intero rifiutato dal browser', 140);
-    }
-  }
-  window.addEventListener('resize', adattaPalco);
-  document.addEventListener('fullscreenchange', adattaPalco);
-  document.addEventListener('webkitfullscreenchange', adattaPalco);
 
   // ===========================================================================
   // FEEL (roadmap «Novità nel Teatro», passo T1): tutti i numeri nuovi di passo fisso, colpi, scossa,
@@ -3284,9 +3175,6 @@ function disegnaManoMarionettaPittorica() {
     player.targetX = null;
     player.targetY = null;
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
-    // (T5) tasti dello schermo: valgono in ogni fase e non arrivano al gioco
-    if (e.code === 'KeyF' && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) { keys[e.code] = false; alternaSchermoIntero(); return; }
-    if (e.code === 'KeyB' && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) { keys[e.code] = false; barraForzata = !barraForzata; aggiornaBarra(); return; }
     // --- T4: inizio ---
     if (t4Gancio('tasto', e)) return;
     // --- T4: fine ---
@@ -4552,11 +4440,9 @@ function disegnaManoMarionettaPittorica() {
   function getFloorTileCanvas() {
     if (floorCache) return floorCache;
     floorCache = document.createElement('canvas');
-    // (T5) alla risoluzione del buffer: si disegna in coordinate 640x360 con la stessa scala del palco
-    floorCache.width = Math.round(W * scalaBase);
-    floorCache.height = Math.round(H * scalaBase);
+    floorCache.width = W;
+    floorCache.height = H;
     const x = floorCache.getContext('2d');
-    x.setTransform(scalaBase, 0, 0, scalaBase, 0, 0);
     x.imageSmoothingEnabled = false;
 
     x.fillStyle = '#0c0806';
@@ -4610,7 +4496,7 @@ function disegnaManoMarionettaPittorica() {
   }
 
   function disegnaStanzaPixelArt(tick, st) {
-    ctx.drawImage(getFloorTileCanvas(), 0, 0, W, H);
+    ctx.drawImage(getFloorTileCanvas(), 0, 0);
 
     if (st.tipo === 'tesoro' || st.tipo === 'fucina' || st.tipo === 'boss' || st.tipo === 'segreta' || st.tipo === 'patto') {
       ctx.fillStyle = st.tipo === 'tesoro'
@@ -4934,8 +4820,6 @@ function disegnaManoMarionettaPittorica() {
       passi++;
     }
     if (passi >= FEEL.passo.maxTickPerFrame) accumuloMs = Math.min(accumuloMs, MS_PER_TICK);
-    aggiornaBarra();
-    iniziaFrame(); // (T5) scala base 640x360 → buffer: ogni save/restore del frame torna qui, mai all'identità
     disegnaFrame(dtMs);
     // --- T4: inizio ---
     t4Gancio('sopra', dtMs);
@@ -6382,8 +6266,6 @@ function disegnaManoMarionettaPittorica() {
     }),
   });
   // --- T4: fine ---
-  adattaPalco();
-  aggiornaBarra();
   requestAnimationFrame(loop);
 })();
 </script>
