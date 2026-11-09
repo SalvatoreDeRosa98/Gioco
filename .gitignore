@@ -174,3 +174,7 @@ $RECYCLE.BIN/
 
 # Worktree temporanei degli agenti
 .claude/worktrees/
+
+# cartelle create da vecchie esecuzioni QA con prefisso assoluto
+production/qa/evidence/teatro-bug-avvio-/
+production/qa/evidence/teatro-bug-morte-/

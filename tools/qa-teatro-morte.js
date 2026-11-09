@@ -18,7 +18,9 @@ const { chromium } = require('playwright');
 const RADICE = path.resolve(__dirname, '..');
 const file = path.resolve(RADICE, process.argv[2] || 'gioco/teatro_marionette.html');
 const prefisso = process.argv[3] ? process.argv[3] + '-' : '';
-const foto = (n) => path.join(RADICE, 'production', 'qa', 'evidence', `teatro-bug-morte-${prefisso}${n}.png`);
+// un prefisso assoluto (es. cartella scratchpad) scrive lì, fuori dal repo
+const foto = (n) => (path.isAbsolute(process.argv[3] || '') ? process.argv[3] + '-' + n + '.png'
+  : path.join(RADICE, 'production', 'qa', 'evidence', `teatro-bug-morte-${prefisso}${n}.png`));
 
 /** Casi: stanza, maschere iniziali, come arriva il colpo. */
 const CASI = [
