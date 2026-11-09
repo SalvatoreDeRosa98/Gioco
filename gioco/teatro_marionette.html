@@ -2843,6 +2843,21 @@ function disegnaManoMarionettaPittorica() {
       spirale: Object.freeze({ colpi: 10, colpiRabbia: 12, velocita: 2.0, passo: 0.3 }),
       mirato: Object.freeze({ colpi: 3, intervalloTick: 8, velocita: 2.8 }),
     }),
+    // spezzafili: Lo Spezzafili d'Ottone cammina verso il giocatore lanciando forbici rotanti che tornano
+    //   indietro come boomerang; poi mira (linea rossa) e carica in linea retta. Sotto il 50% (fase 2) è più
+    //   veloce, lancia due forbici a ventaglio e all'ingresso in fase 2 ne lancia una croce di quattro.
+    spezzafili: Object.freeze({
+      passo: 0.62, ondeggio: 0.5,          // camminata verso il giocatore (frazione velocità, serpeggio rad)
+      camminaTick: 150, camminaFase2Tick: 105,
+      miraTick: 36, caricaTick: 40, velCarica: 4.0, velCaricaFase2: 4.8, storditoTick: 34,
+      cdForbiciTick: 62, cdForbiciFase2Tick: 46,
+      forbici: Object.freeze({
+        velocita: 3.4, frenata: 0.965, velMinima: 0.35, andataMaxTick: 70,
+        velRitorno: 3.6, accelRitorno: 0.12, raggio: 9, vitaMaxTick: 420, rotazione: 0.38,
+        aperturaFase2: 0.32, crocePerFase2: 4,
+      }),
+      moltVelFase2: 1.35,
+    }),
   });
   // --- A: fine ---
   const POOL_BOSS = [
@@ -5494,6 +5509,71 @@ function disegnaManoMarionettaPittorica() {
               }
             }
             // --- A: fine ---
+          } else if (n.bossId === 'maestro-fucina') {
+            // --- A: inizio ---
+            // LO SPEZZAFILI D'OTTONE: cammina → mira → carica → stordito, lanciando forbici a boomerang (BOSS_A.spezzafili)
+            const P = BOSS_A.spezzafili;
+            const FB = P.forbici;
+            const fase2 = enrage;
+            const mv = fase2 ? P.moltVelFase2 : 1;
+            if (!n.statoSF) { n.statoSF = 'cammina'; n.timerSF = P.camminaFase2Tick; n.forbiciA = []; n.cdForbiciA = 40; n.fase2SF = false; }
+            const lanciaForbice = (a) => n.forbiciA.push({ x: n.x, y: n.y - 4, vx: Math.cos(a) * FB.velocita * mv, vy: Math.sin(a) * FB.velocita * mv, t: 0, rot: 0, ritorno: false });
+            if (fase2 && !n.fase2SF) {
+              n.fase2SF = true;
+              n.flash = 12;
+              scuoti(FEEL.scossa.schiantoCapitano);
+              for (let k = 0; k < FB.crocePerFase2; k++) lanciaForbice((TAU * k) / FB.crocePerFase2 + Math.PI / 4);
+            }
+            if (n.statoSF === 'cammina') {
+              const ond = Math.sin(n.phaseTick * 0.05) * P.ondeggio;
+              n.x = Math.max(ARENA.x1 + 18, Math.min(ARENA.x2 - 18, n.x + Math.cos(ang + ond) * n.speed * P.passo * mv));
+              n.y = Math.max(ARENA.y1 + 18, Math.min(ARENA.y2 - 18, n.y + Math.sin(ang + ond) * n.speed * P.passo * mv));
+              if (--n.cdForbiciA <= 0) {
+                n.cdForbiciA = fase2 ? P.cdForbiciFase2Tick : P.cdForbiciTick;
+                if (fase2) { lanciaForbice(ang - FB.aperturaFase2); lanciaForbice(ang + FB.aperturaFase2); } else lanciaForbice(ang);
+              }
+              if (--n.timerSF <= 0) { n.statoSF = 'mira'; n.timerSF = P.miraTick; }
+            } else if (n.statoSF === 'mira') {
+              n.angSF = ang;
+              if (n.timerSF % 8 === 0) n.flash = 3;
+              if (--n.timerSF <= 0) {
+                n.statoSF = 'carica'; n.timerSF = P.caricaTick;
+                const v = fase2 ? P.velCaricaFase2 : P.velCarica;
+                n.vx = Math.cos(n.angSF) * v; n.vy = Math.sin(n.angSF) * v;
+              }
+            } else if (n.statoSF === 'carica') {
+              n.x = Math.max(ARENA.x1 + 18, Math.min(ARENA.x2 - 18, n.x + n.vx));
+              n.y = Math.max(ARENA.y1 + 18, Math.min(ARENA.y2 - 18, n.y + n.vy));
+              const muro = n.x <= ARENA.x1 + 19 || n.x >= ARENA.x2 - 19 || n.y <= ARENA.y1 + 19 || n.y >= ARENA.y2 - 19;
+              if (--n.timerSF <= 0 || muro) {
+                if (muro) scuoti(FEEL.scossa.schiantoCapitano);
+                n.statoSF = 'stordito'; n.timerSF = P.storditoTick;
+              }
+            } else if (--n.timerSF <= 0) {
+              n.statoSF = 'cammina'; n.timerSF = fase2 ? P.camminaFase2Tick : P.camminaTick;
+            }
+            // Forbici rotanti a boomerang: frenano, poi tornano al boss; danno a contatto, non si consumano
+            for (let k = n.forbiciA.length - 1; k >= 0; k--) {
+              const f = n.forbiciA[k];
+              f.t++;
+              f.rot += FB.rotazione;
+              if (!f.ritorno) {
+                f.vx *= FB.frenata; f.vy *= FB.frenata;
+                if (f.x + f.vx < ARENA.x1 + 6 || f.x + f.vx > ARENA.x2 - 6) f.vx = -f.vx;
+                if (f.y + f.vy < ARENA.y1 + 6 || f.y + f.vy > ARENA.y2 - 6) f.vy = -f.vy;
+                if (Math.hypot(f.vx, f.vy) < FB.velMinima || f.t > FB.andataMaxTick) f.ritorno = true;
+              } else {
+                const ar = Math.atan2(n.y - 4 - f.y, n.x - f.x);
+                f.vx += (Math.cos(ar) * FB.velRitorno * mv - f.vx) * FB.accelRitorno;
+                f.vy += (Math.sin(ar) * FB.velRitorno * mv - f.vy) * FB.accelRitorno;
+              }
+              f.x += f.vx; f.y += f.vy;
+              if ((f.ritorno && Math.hypot(n.x - f.x, n.y - 4 - f.y) < 14) || f.t > FB.vitaMaxTick) { n.forbiciA.splice(k, 1); continue; }
+              if (player.invuln <= 0 && statoRun.hpHalf > 0 && Math.hypot(player.x - f.x, (player.y - 6) - f.y) < FB.raggio + 4) {
+                subisciColpoGiocatore(2, 'le Forbici dello Spezzafili', f.x, f.y);
+              }
+            }
+            // --- A: fine ---
           }
         } else {
           // IA DIFFERENZIATA DEI NEMICI COMUNI IN STILE THE BINDING OF ISAAC:
@@ -5937,6 +6017,42 @@ function disegnaManoMarionettaPittorica() {
             disegnaManoMarionettaPittorica(mani[1].x, mani[1].y, -1, LA.scala, tick + 12, false);
             // --- A: fine ---
           }
+          // --- A: inizio --- Spezzafili d'Ottone: linea di mira della carica e forbici rotanti a boomerang
+          if (n.bossId === 'maestro-fucina') {
+            if (n.statoSF === 'mira') {
+              ctx.save();
+              ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
+              ctx.lineWidth = 2;
+              ctx.setLineDash([6, 5]);
+              ctx.beginPath();
+              ctx.moveTo(n.x, n.y - 6);
+              ctx.lineTo(n.x + Math.cos(n.angSF || 0) * 140, n.y - 6 + Math.sin(n.angSF || 0) * 140);
+              ctx.stroke();
+              ctx.restore();
+            }
+            for (const f of n.forbiciA || []) {
+              const apre = 0.35 + Math.abs(Math.sin(f.t * 0.3)) * 0.35;
+              ctx.save();
+              ctx.translate(f.x, f.y);
+              ctx.rotate(f.rot);
+              ctx.fillStyle = '#e8c35a';
+              ctx.strokeStyle = '#3b1d0b';
+              ctx.lineWidth = 1.1;
+              for (const sg of [-1, 1]) {
+                ctx.save();
+                ctx.rotate(sg * apre);
+                ctx.beginPath();
+                ctx.moveTo(0, 0); ctx.quadraticCurveTo(7, -2.2, 13, 0); ctx.quadraticCurveTo(7, 2.2, 0, 0);
+                ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(-5, 0, 3, 0, TAU); ctx.stroke();
+                ctx.restore();
+              }
+              ctx.fillStyle = '#f9cb40';
+              ctx.beginPath(); ctx.arc(0, 0, 1.6, 0, TAU); ctx.fill();
+              ctx.restore();
+            }
+          }
+          // --- A: fine ---
         } else {
           disegnaNemicoPittorico(ctx, n, tick);
           if (n.mobSoldi) {
