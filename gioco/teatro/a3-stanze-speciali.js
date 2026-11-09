@@ -181,11 +181,11 @@ function daiOggettoA3(st, x, y, forte = false) {
   return st.oggettoPiedistallo;
 }
 
-/** Forziere della squadra a1, se c'è (firma presunta: generaForziere(stanza, x, y)). */
+/** Forziere della squadra a1, se c'è (firma: generaForziere(tipo, x, y, stanza)). */
 function daiForziereA3(st, x, y) {
   const I = window.__teatro && window.__teatro.interni;
   if (!I || typeof I.generaForziere !== 'function') return false;
-  try { I.generaForziere(st, x, y); return true; } catch (err) { console.error('[A3] generaForziere', err); return false; }
+  try { I.generaForziere('comune', x, y, st); return true; } catch (err) { console.error('[A3] generaForziere', err); return false; }
 }
 
 /**
