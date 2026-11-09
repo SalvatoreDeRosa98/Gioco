@@ -46,3 +46,9 @@ Una voce per decisione. **Fonte** `autore` = detto o scritto dall'autore (nel Te
 Registrate nel `PASSAGGIO-CONSEGNE.md` della v3 (storia di git, commit `48adbd4`) e nelle storie 001-030: motore web senza build al
 posto di Godot; `modes.rigor: standard`; il contatto passivo non ferisce (superata: ora il corpo dei boss ferisce al contatto come nel
 Teatro); danno decimale; camera a scala ridotta senza scorrimento; stanza-ricordo del piano 2 = `corso-trieste.finestra-mariella`.
+
+## 2026-11-09 — Teatro: sprite dai fogli (T2) e hub/storia (T4) disattivati dall'autore
+
+Fonte: autore, commit f1f42c2 e conferma in chat («scelta mia perché non mi piacevano i disegni»). Il Teatro carica
+solo `teatro/t3-economia-salvataggi.js`; `t2-sprite.js` e `t4-hub-storia.js` restano in `gioco/teatro/` (adattati alla
+risoluzione alta) ma non sono collegati. I personaggi usano gli sprite originali del Teatro.
