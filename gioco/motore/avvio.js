@@ -320,6 +320,19 @@ async function avvia() {
   const voceSprite = (nome) => manifestoSprite.voci?.find((v) => v.nome === nome) ?? null;
   /** Foglio di uno sprite del manifesto pronto per il DOM/canvas (src già risolto per il pacchetto a file unico), o null. */
   const foglioSprite = (nome) => { const v = voceSprite(nome); return v ? { src: percorsoRisorsa(v.file), larghezza: v.larghezza, altezza: v.altezza, layout: v.layout ?? null } : null; };
+  /** Fogli di gioco già aperti (Image per nome), così il renderer non ricarica a ogni frame. */
+  const immaginiFogli = new Map();
+  const foglioConImmagine = (nome) => {
+    if (immaginiFogli.has(nome)) return immaginiFogli.get(nome);
+    const f = foglioSprite(nome);
+    if (!f || typeof Image !== 'function') { immaginiFogli.set(nome, null); return null; }
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = f.src;
+    const voce = { ...f, img };
+    immaginiFogli.set(nome, voce);
+    return voce;
+  };
   // Storie 026-027: stato narrativo (profilo nello stesso salvataggio) e incontri per ancoraggio.
   const [storia, regoleNarrativa, ancoraggi, ripetizioni] = await Promise.all([FILE_STORIA, FILE_NARRATIVA, FILE_ANCORAGGI, FILE_RIPETIZIONI].map(caricaJson));
   const narrativa = creaStatoNarrativo({ storia, regole: regoleNarrativa, ancoraggi, eventi, salvataggio, slot: slotScelto });
@@ -706,11 +719,14 @@ async function avvia() {
   // Renderer del Teatro (pixel-art) sempre; con `?debug=1&wire=1&diagnostica=1` il disegno diagnostico in fil di ferro.
   const usaDiagnostica = wire && url.searchParams.get('diagnostica') === '1';
   const creaResa = usaDiagnostica ? creaResaDebug : creaRenderer;
+  /** Foglio di gioco del personaggio scelto (statistiche.id), o null prima della scelta / senza manifesto. */
+  function foglioGiocatoreCorrente() { const id = statistiche?.id; return id ? foglioConImmagine(id) : null; }
   ciclo.registra(creaResa({
     canvas, campo, ferruccio, combattimento, bersagli: () => bersagli, proiettili: () => proiettili,
     token, scena: RISOLUZIONE, contaTick: ciclo.contaTick, notte: () => notte, camera,
     economia: () => economia, banchetto: () => banchetto, piedistalli: () => piedistalli, ricordi: () => ricordi,
     hub: () => hub, ciclo, eventi, motoRidotto,
+    foglioGiocatore: () => foglioGiocatoreCorrente(),
   }));
   if (saltaMenu) {
     ciclo.vaiA('hub');

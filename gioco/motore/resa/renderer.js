@@ -41,7 +41,7 @@ export function creaRenderer({
   canvas, campo, ferruccio, combattimento, bersagli, proiettili = () => [],
   token, scena, contaTick = () => 0, notte = null, camera = null,
   economia = null, banchetto = null, piedistalli = null, ricordi = null,
-  hub = null, ciclo = null, eventi = null, motoRidotto = false,
+  hub = null, ciclo = null, eventi = null, motoRidotto = false, foglioGiocatore = () => null,
 }) {
   const ctx = canvas.getContext('2d');
   const W = scena.larghezza;
@@ -419,6 +419,22 @@ export function creaRenderer({
     return puntiFili;
   }
 
+  /** Fotogramma del foglio di gioco per lo stato del corpo: posa e indice (animazione a cadenza fissa di resa). */
+  function fotogrammaGiocatore(foglio, stato, tick) {
+    const pose = foglio.layout?.pose ?? [];
+    const trova = (nome) => pose.find((q) => q.posa === nome) ?? null;
+    let posa = null;
+    let cadenza = 20;
+    if (stato === 'cammina' || stato === 'scatta') { posa = trova('cammina'); cadenza = 8; }
+    else if (stato === 'colpito') { posa = trova('colpito'); cadenza = 1; }
+    else if (stato === 'morto') { posa = trova('morto'); cadenza = 12; }
+    if (!posa) posa = trova('fermo') ?? pose[0] ?? { riga: 0, da: 0, fotogrammi: 1 };
+    const n = Math.max(1, posa.fotogrammi ?? 1);
+    let i = Math.floor(tick / cadenza) % n;
+    if (stato === 'morto') i = Math.min(n - 1, Math.floor(tick / cadenza) % (n * 4)); // la posa di morte si ferma sull'ultimo
+    return { colonna: (posa.da ?? 0) + i, riga: posa.riga ?? 0 };
+  }
+
   function disegnaFerruccioAttore(tAnim) {
     const px = ferruccio.x;
     const py = ferruccio.y;
@@ -429,6 +445,24 @@ export function creaRenderer({
     const flash = ferruccio.invulnerabile() && (tick % 4 < 2);
 
     ellisseAppoggio(px, py + 12, 20, 8, 0.5);
+
+    // Sprite DI GIOCO del personaggio scelto (manifesto degli sprite consegnato dall'autore): se il foglio è
+    // caricato si disegna il fotogramma della posa, ancorato ai piedi, ribaltato verso sinistra se serve;
+    // altrimenti resta il disegno procedurale di Ferruccio qui sotto.
+    const foglio = foglioGiocatore();
+    if (foglio && foglio.img && foglio.img.complete && foglio.img.naturalWidth > 0) {
+      const { colonna, riga } = fotogrammaGiocatore(foglio, ferruccio.stato, tick);
+      const fw = foglio.larghezza;
+      const fh = foglio.altezza;
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      if (flash) ctx.globalAlpha = 0.4; // invulnerabile: lampeggio semitrasparente (la squadra feel lo porta a parametro)
+      ctx.translate(px, py + 12);
+      if (verso < 0) ctx.scale(-1, 1);
+      ctx.drawImage(foglio.img, colonna * fw, riga * fh, fw, fh, -fw / 2, -fh, fw, fh);
+      ctx.restore();
+      return;
+    }
 
     // Ferruccio NON ha il filo: è l'unico burattino che ha spezzato i propri fili;
     // solo tutti gli altri personaggi e nemici hanno i fili collegati alle Mani in alto.
