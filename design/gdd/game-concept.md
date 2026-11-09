@@ -1,8 +1,44 @@
 # Game Concept: Ferruccio — La Notte Immobile
 
 *Creato: 2026-11-07*
-*Stato: Approvato dall'autore nella direzione («vorrei farlo come Isaac»); dettagli in bozza*
+*Stato: Approvato dall'autore nella direzione («vorrei farlo come Isaac»); dettagli in bozza, rivisti dall'autore il 2026-11-08 con il Teatro (sezione in testa)*
 *Fonte narrativa: `trama/ferruccio-bibbia.md`, `trama/inizio-memoria-e-doni.md`, `trama/storia.json`*
+
+---
+
+## Revisione dell'autore (2026-11-08)
+
+> **Questa sezione prevale su tutto ciò che segue.** Il resto del documento è la bozza del 2026-11-07 (roguelike alla Isaac in
+> presepe d'ombre): la struttura a stanze, i pilastri e la trama restano; i dettagli sotto elencati sono cambiati per decisione
+> dell'autore e il **prototipo di riferimento è il Teatro**, `gioco/teatro_marionette.html` (copia identica alla radice del
+> repository), che l'autore ha scritto da solo in un unico file. Nel dubbio su una regola o un numero vince il Teatro; il motore
+> `gioco/motore/` ne è la versione modulare di produzione (`gioco/README.md › Due programmi`).
+
+Il design nuovo, in breve:
+
+- **Stile**: pixel-art dark-fairytale (illustrazioni e 91 sprite sheets in `gioco/assets/sprite/`), non più il presepe d'ombre;
+  vedi la nota in testa a `design/art/art-bible.md`.
+- **Flusso**: menu di selezione (slot + personaggio) → **hub di Piazza Dante** tra le notti (Tonino al banchetto, bottega di Gaetano,
+  finestra di Mariella, Taddeo e Agnese secondo i flag, dialoghi, «Continua») → piano 1 → … L'hub è obbligatorio e centrale: non si salta.
+- **Quattro personaggi giocabili** (Ferruccio, Agnese, Taddeo, Ombra) con statistiche alla Isaac (maschere a mezze unità, danno,
+  velocità, cadenza, oggetto attivo e dono iniziali): `personaggi.json`.
+- **Controlli**: WASD muove, le **frecce sparano in 4 direzioni** (proiettili; con la spada in mano la freccia dà il fendente),
+  **Q** usa l'oggetto attivo (ricarica per stanza). Tastiera e gamepad, niente touch.
+- **Oggetti**: 5 slot di passivi con sostituzione (catalogo a 25), oggetti attivi, consumabili, **Patto d'Ombra** (reliquie che costano
+  una maschera massima, altare dopo il boss), **Fucina** = banchetto di Tonino (cuore 3 / base 5 / forte 7 / consumabile 2),
+  **stanza segreta** che si apre sparando alla crepa dorata, oggetti gratis a stanza pulita.
+- **Economia alla Isaac**: 5-8 monete al piano 1, drop del Teatro; scarsità voluta.
+- **Nemici alla Isaac**: vespa cieca, gatto che balza, maschera d'osso corazzata che si apre per sparare, bomba ferma, guardia a
+  doppiette, statua torretta a croci, predone dorato. **Nessun segno a terra**: il colpo si legge solo dal corpo (postura d'anticipo,
+  occhi o lampo rosso), mai da zone, corridoi, cunei o cerchi; vale anche per i boss e per l'HUD.
+- **Piani**: 4 per ciclo (5/7/8/9 stanze), **ciclo infinito** con moltiplicatori di vita e velocità; **pool di 5 boss** estratti senza
+  ripetizione e **Donna Luciana** (al posto di Violante) boss finale sul 4° piano; dopo di lei il «BIS». **Sipario narrativo** tra i piani.
+- **Game feel**: i-frames di 1 s con lampeggio e rimbalzo, hit-stop, knockback ∝ 1/peso, scossa contestuale, macchie per stanza.
+- **Audio** sintetizzato a eventi (Web Audio), nessun file.
+- **Fili**: ogni marionetta del Velo pende da due fili, uno per Mano, poco visibili; Ferruccio e i giocabili li hanno spezzati.
+
+Le sezioni che seguono vanno rilette con questa lente; i GDD di sistema in `design/gdd/` sono della bozza precedente e le regole
+nuove vivono oggi nei JSON di `gioco/contenuti/parametri/` e nelle storie `production/epics/*/story-P*.md`.
 
 ---
 

@@ -3,6 +3,22 @@
 Pagina web statica: HTML, Canvas 2D, CSS, JavaScript a moduli ES, nessun build e nessuna
 dipendenza. Architettura in `docs/architecture/architecture.md`; decisioni in ADR-0001/0002/0003.
 
+## Due programmi
+
+In questa cartella convivono **due programmi** con ruoli distinti (decisione dell'autore, 2026-11-08):
+
+- **`gioco/teatro_marionette.html`** è il **prototipo dell'autore**, scritto da lui in un unico file (5423 righe: tabelle ~2349-2535,
+  stato della run e statistiche ~2601-2745, input ~2853, generazione ~3101-3424, attacco ~3525-3680, nemici in `loop()` ~4248-5052,
+  HUD ~5056, disegni ~268-2349 e 3881-4244). È la **fonte delle regole e dei numeri**: nel dubbio su una regola vince il Teatro.
+  **Non si modifica.** Il file `teatro_marionette.html` alla radice del repository è una **copia identica** (verificata con `cmp`)
+  e nemmeno quello si tocca.
+- **`gioco/motore/`** (con `index.html`, `prova.html`, `contenuti/`, `stile/`, `qa/`) è la **versione modulare di produzione**: moduli
+  ES, nessun build, rng seminato, numeri nei JSON di `contenuti/parametri/`, stringhe in `contenuti/interfaccia.json`. Nel dubbio su
+  dove mettere una cosa vince la sua architettura (`docs/architecture/architecture.md`, ADR-0001..0006). Conserva ciò che il Teatro
+  non ha: hub di Piazza Dante, dialoghi con cartiglio, stato narrativo e flag, Medaglione, notte salvata, profilo. Il porting del
+  Teatro è raccontato nelle storie `production/epics/*/story-P*.md`; ciò che manca ancora (sprite PNG di nemici/boss/oggetti, HUD
+  pixel-art con le mezze maschere, palette nei token) è in `PASSAGGIO-CONSEGNE.md`.
+
 ## Avvio
 
 Serve la cartella con un server statico (i moduli ES e `fetch` non funzionano da `file://`):

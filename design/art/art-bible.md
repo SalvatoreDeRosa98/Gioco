@@ -2,8 +2,20 @@
 
 > **Status**: Draft
 > **Owned By**: art-director
-> **Last Updated**: 2026-11-07
+> **Last Updated**: 2026-11-09 (nota sul cambio di direzione; sezioni 1-4 del 2026-11-07)
 > **Art Director Sign-Off (AD-ART-BIBLE)**: SKIPPED 2026-11-07 — solo mode (sezioni 1–4 redatte dall'agente art-director; sezioni 5–9 non redatte in questa sessione: fuori dallo scopo richiesto dal tier `standard`)
+
+> **Cambio di direzione (2026-11-08, autore).** Il gioco è passato dal presepe d'ombre alla **pixel-art dark-fairytale**: le
+> illustrazioni e i 91 sprite sheets definitivi consegnati dall'autore stanno in `gioco/assets/sprite/` (catalogo
+> `gioco/contenuti/sprite.json`) e il riferimento visivo è il prototipo `gioco/teatro_marionette.html` con il renderer
+> `gioco/motore/resa/renderer.js` e `pixel-sprites.js`. Le **sezioni 1-4 qui sotto descrivono la direzione precedente** (sagome
+> nere su carta accesa, vista 3/4) e non vanno più usate come guida di produzione; restano come storia e per i principi che
+> sopravvivono (leggibilità al buio, il colore appartiene a chi ha un nome, il diorama ricorda). Due regole dell'autore prevalgono
+> su tutto il documento: (1) **niente segni a terra** che anticipino un attacco di nemici o boss — nessuna zona tratteggiata, corridoio
+> del balzo, cuneo, linea o cerchio, né nel renderer né nell'HUD; il telegrafo è solo sul corpo (postura di anticipo, occhi o lampo
+> rosso), e il §3 «segno a terra» è superato; i bracieri restano visibili come oggetti senza anelli di anticipo; (2) ogni marionetta
+> del Velo pende da **due fili**, uno dalla Mano sinistra e uno dalla destra, poco visibili (1 px, oro al 30 %), mai su Ferruccio e
+> i giocabili. Le sezioni 5-9 della pixel-art non sono scritte: si scrivono con l'autore quando sceglie di farlo.
 
 `/art-bible` writes these nine sections in this order and replaces each
 section's `[To be designed]` line as that section is approved. A section still

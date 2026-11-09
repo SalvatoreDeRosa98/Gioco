@@ -1,82 +1,138 @@
-# Ferruccio — La Notte Immobile · passaggio di consegne (v3, roguelike)
+# Ferruccio — La Notte Immobile · passaggio di consegne (v4, porting del Teatro sul motore)
 
-Aggiornato: 2026-11-08 · Branch: `claude/brave-cannon-ed3d3d` · Modello di lavoro: autonomo, review mode solo.
+Aggiornato: 2026-11-09 · Branch: `claude/brave-cannon-ed3d3d` (nessun push dagli agenti) · Modello di lavoro: autonomo,
+l'autore prova da solo (sua richiesta: **nessun playtest automatico**).
 
-## Dove siamo
+## Dove siamo: da due programmi a uno
 
-Il progetto è ripartito da zero due volte nella stessa giornata per decisione dell'autore: prima come
-avventura narrativa a teatro delle ombre (archiviata), poi come **roguelike d'azione a stanze alla
-The Binding of Isaac** («vorrei farlo come Isaac»), sempre con la grafica a **teatro delle ombre** in
-vista 3/4 («presepe d'ombre») e la **trama della bibbia** come fondamento. Stadio: **Pre-produzione, logica MVP
-completa in fil di ferro, grafica definitiva in attesa dell'autore** (tier `standard`; `project.stage`
-dice ancora `Concept` perché nessun `/gate-check` l'ha avanzato).
+Il 2026-11-08 l'autore ha consegnato un **prototipo completo del design nuovo, scritto da solo in un unico file**:
+`gioco/teatro_marionette.html` (5423 righe; copia identica alla radice, `teatro_marionette.html`; **nessuna delle due si
+tocca**). È un roguelike alla *The Binding of Isaac* in **pixel-art**, con menu di selezione di 4 personaggi, sparo a 4 direzioni
+con le frecce, oggetti attivi con Q, 5 slot di passivi, Patto d'Ombra, Fucina, stanza segreta, nemici e boss alla Isaac, piani 1-4
+in ciclo infinito, Donna Luciana boss finale, sipario narrativo, economia alla Isaac. Il suo comando: «porta tutto sul nuovo
+motore, tutte le implementazioni».
+
+Oggi i programmi sono **due**, con ruoli distinti e scritti in `gioco/README.md › Due programmi`:
+
+- **il Teatro** (`gioco/teatro_marionette.html`) è il prototipo dell'autore e la **fonte delle regole e dei numeri**: nel dubbio
+  su una regola vince lui;
+- **il motore** (`gioco/motore/`, moduli ES, nessun build) è la **versione modulare di produzione**: nel dubbio su dove mettere
+  una cosa vince la sua architettura (`docs/architecture/architecture.md`, ADR-0001..0006). Conserva ciò che il Teatro non ha:
+  hub di Piazza Dante, dialoghi con cartiglio, stato narrativo e flag, Medaglione di Rosa, notte salvata, profilo.
+
+Il porting è avvenuto in otto passi su rami di lavoro poi fusi (S1 personaggi e menu → F3 audio → F1 game feel → S3 nemici →
+S2 oggetti → integrazione e fili → P4 boss → F4 audit), commit da `bb48f43` a `b810b5e`. Il flusso completo gira nel motore:
+**menu (slot + personaggio) → hub di Piazza Dante → piano 1 → … → boss → sipario → piano successivo → Donna Luciana al 4° →
+«BIS» e ciclo 2**, con morte e discesa finale che riportano all'hub. Stadio: **pre-produzione, logica del ciclo completo nel
+motore con renderer pixel-art; grafica dei nemici/boss/oggetti ancora procedurale** (tier `standard`; `project.stage` dice ancora
+`Concept` perché nessun `/gate-check` l'ha avanzato).
+
+## Cosa è portato dal Teatro (e dove sta nel motore)
+
+| Area del Teatro | Nel motore | Storia |
+|---|---|---|
+| Menu di selezione (4 personaggi, 5 slot, cancella con conferma) | `interfaccia/menu.js`, `stile/menu.css`, `personaggi.json`; meta `gioco-avvio` = `debug=1` sola, in `index.html` e `prova.html` | P03, P04, P05 (interfaccia) |
+| Statistiche alla Isaac (`ricalcolaStatisticheIsaac`) | `attori/statistiche.js` applicate al corpo unico via modificatori | P04 (interfaccia) |
+| Sparo a 4 direzioni con le frecce, proiettili senza spada | `attori/combattimento.js`, `input.json › spara_*` | P04 |
+| Oggetti attivi con Q, ricarica per stanza | `oggetti/attivi.js`, `oggetti-attivi.json`, HUD DOM | P04 (doni) |
+| 5 slot di passivi con sostituzione | `oggetti/slot.js` (modale DOM), `doni.json` a 25 voci | P04 (doni) |
+| Patto d'Ombra (−1 maschera massima) | `oggetti/patto.js`, `patto.json`; **altare nella stanza del boss** dopo `boss.sconfitto`, 2 reliquie (Raggio Cremisi Continuo, Lacrime Spettrali) | P04, P09 |
+| Fucina (negozio) | **è il banchetto di Tonino** (`oggetti/banchetto.js`): prezzi dell'autore cuore 3 / base 5 / forte 7 / consumabile 2 | P04, P09 |
+| Stanza segreta e crepa dorata | `mondo/segreta.js`: finestra a stanza pulita, un colpo la apre, `monete_segreta` | P04 (doni) |
+| Economia Isaac (5-8 monete al piano 1, drop, oggetti gratis) | `economia.json`, `oggetti/gratis.js` | P09 |
+| Nemici alla Isaac (vespa, gatto, maschera d'osso, bomba, guardia a doppietta, statua a croci, predone dorato) | `nemici.json`, `attori/nemico.js`, `attori/ia/sparo.js`, `attori/proiettili-nemici.js` (parabili → riflessi) | P05 (nemici) |
+| Pool di 5 boss + Donna Luciana, piani 5/7/8/9 in ciclo, formule di vita e velocità | `mondo/run.js`, `boss.json`, `attori/boss/<id>.js`, barra della vita in `renderer.js` | P06 |
+| Sipario narrativo tra i piani (`getRaccontoAtto`) | `interfaccia/sipario.js`, testi in `interfaccia.json › sipario` | P06 |
+| Renderer pixel-art (palco, Mani, hub, nemici, boss, HUD del boss) | `resa/renderer.js`, `resa/pixel-sprites.js` (portato dall'autore stesso); l'hub è disegnato dal renderer (`disegnaHubScena`, evidenza `fili-hub.png`) | — |
+| Game feel (i-frames, hit-stop, knockback, scossa, macchie) | `resa/feel.js`, `ciclo.congela`, `resa.json`, `combattimento.json › feel` | P08 |
+| Audio (il Teatro non ne ha: richiesta testuale) | `audio/sintesi.js`, `audio/eventi-audio.js`, `audio.json`; `M` muto | P10 |
+| Fili delle marionette (richiesta 2026-11-09) | `resa/fili.js`: due fili per marionetta, uno per Mano, 1 px, oro al 30 % | P11 |
+| Audit «lo stato non disegna, la resa non muta», passo fisso a 120 Hz | `qa/architettura.test.mjs`, `resa/impatti.js`, `resa/trasformazioni.js` | P12 |
+
+Regole del codice rispettate nel porting: nessun `Math.random` (rng seminato), numeri in `contenuti/parametri/*.json` come
+`{base,min,max}` o tabelle, stringhe in `interfaccia.json` e nei JSON dei contenuti, telegrafo **solo sul corpo**.
+
+## Cosa manca o diverge dal Teatro (con onestà)
+
+1. **Sprite PNG dei nemici, boss, oggetti, HUD e scena.** I 91 fogli definitivi stanno in `gioco/assets/sprite/` con il catalogo
+   `contenuti/sprite.json`, ma oggi li usano solo il personaggio giocabile (foglio di gioco) e i ritratti del menu: nemici, boss,
+   NPC e oggetti sono ancora disegnati proceduralmente da `pixel-sprites.js`. Serve un modulo `resa/sprite.js` che li carichi e li
+   animi dal catalogo.
+2. **HUD pixel-art del Teatro nel canvas** (nome · piano, maschere a mezzi cuori, danno, slot degli oggetti). Nel motore l'HUD è in
+   DOM (economia, doni, attivo) più la barra del boss nel canvas; le **mezze maschere non si vedono** (il corpo conta maschere intere,
+   `ceil(hpHalf/2)`). La storia P04 di `interfaccia-e-qa` resta **In Progress** per questo.
+3. **Colori**: la palette `P` di `resa/renderer.js` è ancora in esadecimale nel codice invece che dai token di `stile/token.css`.
+4. **Fallback numerici** residui in `attori/combattimento.js` da spostare nei JSON (segnalati dall'audit F4).
+5. **Spezzafili d'Ottone**: nel `loop()` del Teatro non ha un ramo (resterebbe fermo); il pattern `scissor_blades` è scritto dal
+   nome. La mappatura `idStoria` di `capitano-guardia` e `maestro-fucina` (senza boss corrispondente in `storia.json`) è da confermare.
+6. **Sipario al piano 1 di una run**: non si alza (l'hub e le scene automatiche fanno da atto I). Decisione da confermare.
+7. **Riserve della P04 (doni)**: niente stanza `patto` dedicata (è un altare nella stanza del boss); mob dorati solo come predone.
+8. **Opzioni** (volume, moto ridotto, rimappatura) fuori dal menu; la 032 è chiusa tramite P03/P04/P05 con questa nota.
+9. **Ritmo dei duelli con i boss**: i tempi sono quelli del Teatro più il telegrafo sul corpo; **nessun playtest a mano**: lo fa l'autore.
+10. Le storie visive del presepe d'ombre (000, 005, 006, 013, tavola A/B/C) sono superate dalla direzione pixel-art e non vanno riprese così.
+
+## Decisioni dell'autore registrate (2026-11-08/09)
+
+Una voce per decisione, con fonte e luogo, in `production/session-logs/decision-log.md`. In sintesi:
+
+- **Donna Luciana** al posto di Violante come boss finale, al 4° piano di ogni ciclo (chiude la domanda aperta della v3).
+- **Pixel-art dark-fairytale** al posto del presepe d'ombre; 91 sprite sheets in `gioco/assets/sprite/`.
+- **Sparo a 4 direzioni con le frecce**; WASD muove; la spada (Taddeo, o dopo il Medaglione) sostituisce il proiettile con il fendente.
+- **Niente segni a terra degli attacchi**: nessuna zona tratteggiata, corridoio, cuneo o cerchio che anticipi un colpo; il nemico si
+  legge dal corpo (postura, occhi o lampo rosso). Prevale sull'art bible §3 e sui GDD. I bracieri restano visibili senza anelli di anticipo.
+- **4 piani (5/7/8/9 stanze) in ciclo infinito** con **pool di 5 boss** estratti senza ripetizione; dopo Donna Luciana il «BIS».
+- **4 personaggi selezionabili** e 5 slot nel menu, che precede l'hub; l'**hub di Piazza Dante è obbligatorio e centrale**, mai saltato.
+- **Economia alla Isaac**: 5-8 monete al piano 1, prezzi 3/5/7/2, drop del Teatro, oggetti gratis.
+- **Oggetti attivi con Q** a ricarica per stanza, 5 slot con sostituzione, Patto d'Ombra, Fucina = banchetto di Tonino, segreta via crepa dorata.
+- **Game feel**: i-frames ≥ 1 s con lampeggio e rimbalzo, hit-stop, knockback ∝ 1/peso, scossa contestuale, macchie per stanza.
+- **Audio sintetizzato** a eventi con Web Audio, nessun file audio; `M` muto.
+- **Due fili per marionetta**, uno dalla Mano sinistra e uno dalla destra, meno visibili (1 px, oro al 30 %); mai su Ferruccio e i giocabili.
+- **Niente touch**: tastiera e gamepad.
+- **Nessun playtest automatico**: l'autore prova da solo.
+
+## Domande aperte per l'autore
+
+1. **Mezze maschere nell'HUD**: le vuoi a mezzi cuori come nel Teatro (serve l'HUD pixel-art nel canvas) o bastano le maschere intere?
+2. **Sipario al piano 1**: deve alzarsi anche alla prima discesa dall'hub, o l'hub fa da atto I?
+3. **Spezzafili d'Ottone**: confermi il pattern a forbici scritto dal nome, visto che il Teatro non ne ha uno?
+4. **Patto d'Ombra**: altare nella stanza del boss (come ora) o stanza dedicata?
+5. **Scatto**: sempre disponibile dall'inizio o legato alla sciarpa di Agnese (decisione del 10/10)? I GDD assumono scatto base.
+6. **Fucina del Ricordo** (bottega di Gaetano nell'hub): si apre la prima volta che si raggiunge il piano 2?
+7. **Ordine della grafica**: prima gli sprite PNG dei nemici e dei boss, o prima l'HUD pixel-art?
+
+## Prossimi passi consigliati
+
+1. `resa/sprite.js`: caricare e animare i 91 PNG dal catalogo per nemici, boss, NPC, oggetti, HUD e scena (storia nuova, Visual).
+2. HUD pixel-art del Teatro nel canvas con le mezze maschere; chiudere la P04 di `interfaccia-e-qa`.
+3. Palette `P` → token CSS; fallback numerici → JSON (chiude le riserve dell'audit F4).
+4. Playtest dell'autore sul ciclo completo e sui duelli; raccogliere le risposte alle domande aperte.
+5. `/review-all-gdds` e `/balance-check` sui GDD, ormai in ritardo rispetto al Teatro (le regole nuove vivono nei JSON e nelle storie P).
+6. `/gate-check` per avanzare `project.stage`.
+
+## Come si verifica (tutte verdi al commit `b810b5e`)
+
+- 23 suite unitarie `node gioco/qa/*.test.mjs` (node:test, senza browser) e `node gioco/qa/parametri.test.js`;
+- 19 suite Playwright: `pagina.test.js`, 16 `*.wire.test.js`, `vetrina.test.js`, `pacchetto.test.js` (avviano da sole
+  `python3 -m http.server` su una porta libera; Chromium preinstallato, mai `playwright install`);
+- `node gioco/qa/stati64.js` (64/64) e `node gioco/qa/seme.js 200` (200 piani, 0 violatori);
+- `grep -rn "Math.random" gioco/motore` vuoto;
+- tutto insieme: `bash gioco/qa/suite-completa.sh`.
+- Evidenze (55 screenshot a deviceScaleFactor 1) in `production/qa/evidence/`.
 
 ## Cosa esiste (in ordine di lettura)
 
-1. `trama/` — bibbia, decisioni dell'autore, `storia.json` (81 scene, 259 battute verbatim, 6 flag), `mappa-scene.md`, archivio v1/v2.
-2. `design/gdd/game-concept.md` — pitch, pilastri, MDA, core loop, MVP (un piano), scale, rischi.
-3. `design/art/art-bible.md` — sezioni 1-4 (regola sovrana, mood, forme e telegrafi, colore). 5-9 non scritte (non richieste al tier).
-4. `design/gdd/systems-index.md` — 26 sistemi, dipendenze, priorità, ordine di design, rischi.
-5. GDD (tutti Draft, autore "Solo mode: rivedere prima della produzione"): `controllo-ferruccio`, `combattimento`, `stanze-porte`, `generazione-piani`, `nemici`, `boss`, `doni-modificatori`, `economia`, `stato-narrativo`, `incontri-dialoghi`, `ricordi-scelta`.
-6. `docs/architecture/architecture.md` + `adr-0001..0006` (Proposed): web senza build, Canvas 2D, parametri JSON, determinismo, stato narrativo, renderer, salvataggio.
-7. `prototypes/stanza-gatti-concept/` — prototipo giocabile del nucleo (tre gatti, fendente, parata, scatto); pubblicato: https://claude.ai/artifact/PsSXdSgrt9dg8jZ9JPTXTF. Verdetto di feel NOT ASSESSED finché l'autore non gioca.
-8. Mockup visivo approvato (vista laterale, v2): `design/mockup/`.
-9. `production/epics/` — 7 epiche, 34 storie (000-033), `index.md`. Storia 000 = tavola della qualità visiva.
-10. `prototypes/tavola-presepe/` — tavola di stile in vista 3/4, varianti A/B/C via `?variante=`; evidenze
-    `production/qa/evidence/tavola-presepe-*.png`. **L'autore deve scegliere A, B o C** (consigliata C).
-11. `gioco/` — il motore vero (HTML + Canvas 2D + DOM, moduli ES, nessun build). Leggere `gioco/README.md`:
-    struttura, parametri URL (`?debug=1`, `&wire=1`, `&piano=1&seme=N`, `&nemico=gatto`), superficie
-    `window.__gioco`, comandi di test.
-
-### Stato delle storie (2026-11-08)
-
-Chiuse o verdi in fil di ferro: 001-004 (fondazione), 007-011 (controllo, combattimento), 014-016 (stanze,
-porte, camera, generazione), 017-020 (modelli, pericoli, IA nemici, gatto d'ombra), 023-026 (modificatori,
-pool e piedistallo, economia e banchetto, stato narrativo), 027-030 (cartiglio e incontri, Medaglione di
-Rosa, hub, morte e risveglio). Ogni storia è stata verificata da un agente indipendente che ha rilanciato
-tutte le suite. Commit `48adbd4`.
-
-Aperte, tutte visive e bloccate dalla scelta A/B/C: 000 (tavola), 005-006 (renderer e sprite d'ombra),
-012 (feedback del colpo alla Isaac: lampo bianco, squash, schizzi d'inchiostro, hit-stop, shake, con
-sign-off dell'autore), 013, 020-visiva (sagoma vera del gatto), 021-022 (Gatto boss), 031 HUD, 032 menu,
-033 QA del percorso completo.
-
-Suite: 12 unitarie (`node gioco/qa/*.test.mjs`, `parametri.test.js`), 9 Playwright (`pagina.test.js`,
-`*.wire.test.js`, `vetrina.test.js`), `stati64.js` (64/64), `seme.js` (200 piani, 0 violatori). Tutte verdi.
-
-## Decisioni prese in autonomia (registrate in `production/session-logs/decision-log.md`)
-
-- Motore web (Canvas 2D, moduli ES, nessun build), Godot abbandonato; `engine.name: Web` aggiunto allo schema del framework.
-- `modes.rigor: standard` perché le skill producano indice e GDD.
-- Il contatto passivo con i nemici non ferisce: solo i Colpi telegrafati (pilastro 1).
-- Danno decimale senza arrotondamento (`danno_min` 0,5).
-- Camera: stanze doppie e arene dei boss si inquadrano riducendo la scala, mai con lo scorrimento.
-- Stanza-ricordo del piano 2 = `corso-trieste.finestra-mariella`; Taddeo si incontra dopo la Regina.
-- Dalle storie 019-030 (elencate in ciascuna storia e in `gioco/README.md`, «Valori provvisori»): finestra
-  di parata del gatto 190-370 ms dal lampo (il GDD dice 100-280: o si aggiorna il GDD o `hit_dal` torna a 0);
-  un nemico sotto `d_min` arretra fino alla banda d'attesa; `d_max` 230 supera la portata del balzo (170);
-  stanza QA a 2 gatti; allarme di stanza contato dalla fine dell'emersione; mondo uccisa→A, risparmiata→B.
-
-## Domande aperte per l'autore (non bloccanti, ma da decidere prima del vertical slice)
-
-1. **Violante o Donna Luciana?** La bibbia dice Violante; la v1 l'aveva rinominata. Qui si usa Violante.
-2. **Scatto**: sempre disponibile dall'inizio, con la sciarpa di Agnese come miglioria? La decisione del 10/10 lo legava alla sciarpa. I GDD assumono scatto base sempre disponibile.
-3. **Fucina del Ricordo**: si apre la prima volta che si raggiunge il piano 2?
-4. La Spada di legno come ricordo di Taddeo e il "Filo dei ricordi" di Agnese sono proposte (canon Provisional).
-
-## Prossimi passi
-
-1. **L'autore sceglie la tavola A, B o C** (`prototypes/tavola-presepe/`, evidenze in `production/qa/evidence/`).
-   Feedback dell'autore sul prototipo: «la grafica non si può guardare così» e il colpo «deve essere marcato
-   come in Isaac». È qui che va speso il tempo.
-2. Con la tavola scelta: storie 005, 006, 012 (feedback del colpo, con GIF e sign-off), 013, 020-visiva,
-   021-022 (Gatto boss), 031, 032, 033. Ogni storia visiva chiude con screenshot conservati e sign-off.
-3. `/review-all-gdds` + `/balance-check`: durate dei boss (92-144 s), prezzi, `armatura` duplicata in due
-   JSON, `p_doppia` che produce solo 3/600 stanze doppie, finestra di parata del gatto.
-4. `/gate-check` per avanzare `project.stage`.
+1. `gioco/teatro_marionette.html` — il Teatro, prototipo dell'autore e fonte delle regole (tabelle ~2349-2535, stato e statistiche
+   ~2601-2745, input ~2853, generazione ~3101-3424, attacco ~3525-3680, nemici in `loop()` ~4248-5052, HUD ~5056).
+2. `gioco/README.md` — il motore: due programmi, avvio, parametri URL, `window.__gioco`, test, struttura, regole del codice.
+3. `trama/` — bibbia, decisioni dell'autore, `storia.json` (Donna Luciana aggiunta fra i boss).
+4. `design/gdd/game-concept.md` — con la «Revisione dell'autore (2026-11-08)» in testa; i GDD di sistema sono della v3 e vanno riletti.
+5. `design/art/art-bible.md` — nota in testa sul cambio di direzione; le sezioni 1-4 descrivono il presepe d'ombre precedente.
+6. `docs/architecture/architecture.md` + ADR-0001..0006 — l'architettura del motore (valida).
+7. `production/epics/` — 7 epiche, storie 000-033 e P01-P12 (`index.md`).
+8. `production/session-logs/decision-log.md` — registro delle decisioni.
 
 ## Note operative
 
-- Sessione cloud: Playwright preinstallato; i sotto-agenti possono fermarsi per limite di utilizzo del modello: lavorare a lotti piccoli.
-- Commit in Conventional Commits con riga `Design:`; push su `claude/brave-cannon-ed3d3d`.
-- Il framework CCGS non conosce "Web": le skill con passi specifici di motore dichiarano NOT SOURCEABLE.
+- Sessione cloud: Playwright preinstallato; gli agenti lavorano a lotti piccoli con budget di chiamate.
+- Commit in Conventional Commits in italiano con il footer `Co-Authored-By` / `Claude-Session`; nessun push dagli agenti.
+- Il framework CCGS non conosce «Web»: le skill con passi specifici di motore dichiarano NOT SOURCEABLE.
