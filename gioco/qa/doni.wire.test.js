@@ -111,7 +111,7 @@ async function main() {
           vaiA, id: tesoro.id, attivo: g.piedistalli.attivo, stanza: g.stanza.tipo, piedistalli: el.map((p) => ({ id: p.id, stato: p.stato, x: p.x, y: p.y, nome: p.dono?.nome, riga: p.dono?.cartiglio, tipo: p.dono?.sagoma?.tipo })),
           offerti: g.pool.offertiIn(1), rAnteprima: g.piedistalli.rAnteprima(), eventi: eventi.map((e) => e.nome),
           contenuti: g.stanza.contenuti.filter((c) => c.tipo === 'piedistallo').map((c) => ({ x: c.x, y: c.y })),
-          doniAttivi: g.modificatori.doniAttivi(), hudNascosto: document.querySelector('#interfaccia .hud-doni').hidden,
+          doniAttivi: g.modificatori.doniAttivi(), hudSlotPieni: g.hud().slot.filter(Boolean).length,
           cartiglioNascosto: document.querySelector('#interfaccia .cartiglio').hidden,
         };
       });
@@ -127,7 +127,7 @@ async function main() {
       assert.ok(bottega.offerti.includes(p.id));
       assert.ok(bottega.eventi.includes('piedistallo.posato'));
       assert.deepEqual(bottega.doniAttivi, []);
-      assert.equal(bottega.hudNascosto, true, 'HUD dei doni vuoto: nascosto');
+      assert.equal(bottega.hudSlotPieni, 0, 'HUD del Teatro (storia P13): nessuno slot pieno');
 
       // anteprima: Ferruccio a 50 px, fermo; il cartiglio tratteggiato mostra nome e riga; nessun dono raccolto
       const anteprima = await pagina.evaluate(({ x, y }) => {
@@ -150,11 +150,10 @@ async function main() {
         const t0 = g.tick();
         g.premi('interagisci', 1);
         const c = document.querySelector('#interfaccia .cartiglio');
-        const hud = document.querySelector('#interfaccia .hud-doni');
         return {
           tick: g.tick() - t0, doni: g.modificatori.doniAttivi(), stato: g.piedistalli.elenco()[0].stato, raccolti: g.pool.raccolti(),
           cartiglio: { nascosto: c.hidden, classe: c.className, nome: c.querySelector('.nome').textContent, riga: c.querySelector('.riga').textContent },
-          hud: { nascosto: hud.hidden, voci: Array.from(hud.querySelectorAll('li')).map((li) => ({ id: li.dataset.id, classe: li.className, testo: li.textContent })) },
+          hud: { nascosto: document.querySelector('#interfaccia .hud-teatro').hidden, voci: g.hud().slot.filter(Boolean), dom: Array.from(document.querySelectorAll('#interfaccia .hud-slot.pieno')).map((li) => ({ id: li.dataset.id, classe: li.className })) },
           eventi: window.__eventiDoni.map((e) => e.nome), statoGioco: g.stato,
         };
       });
@@ -167,9 +166,10 @@ async function main() {
       assert.equal(raccolta.cartiglio.nome, p.nome);
       assert.equal(raccolta.cartiglio.riga, p.riga);
       assert.equal(raccolta.hud.nascosto, false);
-      assert.equal(raccolta.hud.voci.length, 1);
+      assert.equal(raccolta.hud.voci.length, 1, 'storia P13: il dono occupa uno dei cinque slot dell\'HUD del Teatro');
       assert.equal(raccolta.hud.voci[0].id, p.id);
-      assert.ok(raccolta.hud.voci[0].classe.includes('oro'));
+      assert.equal(raccolta.hud.voci[0].azzurro, false);
+      assert.deepEqual(raccolta.hud.dom.map((d) => d.id), [p.id]);
       assert.ok(raccolta.eventi.includes('doni.aggiunto') && raccolta.eventi.includes('piedistallo.raccolto'));
       assert.equal(raccolta.statoGioco, 'notte', 'il cartiglio non mette in pausa');
 
@@ -223,12 +223,12 @@ async function main() {
         }
         if (typeof via === 'function') via();
         const dopo = window.__eventiDoni.filter((e) => e.nome === 'doni.scintilla').length;
-        return { colpi, scintille: dopo - prima, proiettili: g.proiettili.filter((p) => p.scintilla).length, doni: g.modificatori.doniAttivi(), hud: document.querySelectorAll('#interfaccia .hud-doni li').length };
+        return { colpi, scintille: dopo - prima, proiettili: g.proiettili.filter((p) => p.scintilla).length, doni: g.modificatori.doniAttivi(), hud: g.hud().slot.filter(Boolean).length };
       });
       assert.ok(scintilla.colpi >= 1, 'il fendente colpisce il nemico vero');
       assert.ok(scintilla.scintille >= 1, `su_colpo collegato: ${scintilla.scintille} scintille su ${scintilla.colpi} colpi`);
       assert.equal(scintilla.doni.length, 2);
-      assert.equal(scintilla.hud, 2, 'l\'HUD elenca anche il dono preso fuori dal piedistallo');
+      assert.equal(scintilla.hud, 2, 'l\'HUD del Teatro mostra nei suoi slot anche il dono preso fuori dal piedistallo');
 
       assert.deepEqual(errori, [], `errori in console:\n${errori.join('\n')}`);
       await contesto.close();

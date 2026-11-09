@@ -1,11 +1,10 @@
 /**
- * motore/interfaccia/doni.js — Interfaccia DOM MINIMALE dei doni: HUD dei doni raccolti e cartiglio
- * del dono (GDD doni-modificatori.md regole 10-11). Storia 024.
+ * motore/interfaccia/doni.js — Interfaccia DOM MINIMALE dei doni: il cartiglio del dono (GDD doni-modificatori.md
+ * regole 10-11). Storia 024. Dalla storia P13 la fila dei doni raccolti sta nei cinque slot dell'HUD del Teatro
+ * (`interfaccia/hud.js`).
  *
  * Non è grafica definitiva (il renderer vero aspetta l'approvazione dell'autore): elementi in
  * `#interfaccia` con classi semantiche e stile in `stile/interfaccia.css` (colori solo dai token).
- * - HUD: una fila di sagome (`<li class="dono oro|azzurro">`) in ordine di raccolta, con la forma della
- *   sagoma come testo provvisorio; i ricordi hanno la classe `azzurro` (alone).
  * - Cartiglio: a ogni `doni.aggiunto` mostra nome e la riga del catalogo per `tCartiglioMs()` di tempo
  *   di gioco (`tick(dt)`), senza fermare il ciclo; un secondo cartiglio sostituisce il primo e riparte
  *   il timer; se `piedistallo.raccolto` dice `alMassimo`, sotto compare la riga «già al massimo»; un
@@ -33,15 +32,7 @@ export function creaInterfacciaDoni({ documento, contenitore, testi, modificator
     throw new TypeError('creaInterfacciaDoni: dipendenze mancanti');
   }
   const T = testi.doni ?? {};
-
-  const hud = documento.createElement('section');
-  hud.className = 'hud-doni';
-  hud.hidden = true; // compare con il primo dono
-  const titolo = documento.createElement('h2');
-  titolo.textContent = T.titolo ?? '';
-  const lista = documento.createElement('ol');
-  hud.append(titolo, lista);
-  contenitore.append(hud);
+  // storia P13: la fila dei doni raccolti non sta più qui: i cinque slot dell'HUD del Teatro (`interfaccia/hud.js`) la sostituiscono
 
   const cartiglio = documento.createElement('aside');
   cartiglio.className = 'cartiglio';
@@ -57,7 +48,6 @@ export function creaInterfacciaDoni({ documento, contenitore, testi, modificator
 
   /** Stato del cartiglio: null, oppure { tipo: 'raccolto'|'anteprima', id, nome, riga, avviso, azzurro, restanteMs }. */
   let corrente = null;
-  let firmaHud = '';
   let firmaCartiglio = '';
 
   const eAzzurro = (dono) => dono?.sagoma?.tipo === 'profilo';
@@ -96,24 +86,8 @@ export function creaInterfacciaDoni({ documento, contenitore, testi, modificator
     if (corrente.restanteMs <= 0) corrente = null;
   }
 
-  /** Riscrive HUD e cartiglio se qualcosa è cambiato (una volta per frame). */
+  /** Riscrive il cartiglio se qualcosa è cambiato (una volta per frame). */
   function aggiorna() {
-    const attivi = modificatori.doniAttivi();
-    const firma = attivi.join('|');
-    if (firma !== firmaHud) {
-      firmaHud = firma;
-      lista.replaceChildren();
-      for (const id of attivi) {
-        const dono = modificatori.dono(id);
-        const li = documento.createElement('li');
-        li.className = `dono ${eAzzurro(dono) ? 'azzurro' : 'oro'}`;
-        li.dataset.id = id;
-        li.title = dono ? `${dono.nome} — ${dono.cartiglio}` : id;
-        li.textContent = dono?.sagoma?.forma ?? id;
-        lista.append(li);
-      }
-      hud.hidden = attivi.length === 0;
-    }
     // anteprima: solo se nessun cartiglio di raccolta è acceso
     if (!corrente || corrente.tipo === 'anteprima') {
       const p = piedistalli?.()?.anteprima() ?? null;
@@ -145,6 +119,6 @@ export function creaInterfacciaDoni({ documento, contenitore, testi, modificator
     disegna: aggiorna,
     /** Stato del cartiglio per debug e test (copia) o null. */
     cartiglio: () => (corrente ? { ...corrente } : null),
-    elementi: { hud, lista, cartiglio, nome, riga, avviso },
+    elementi: { cartiglio, nome, riga, avviso },
   };
 }

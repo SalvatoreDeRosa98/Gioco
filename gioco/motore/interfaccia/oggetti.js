@@ -1,6 +1,5 @@
 /**
- * motore/interfaccia/oggetti.js — Interfaccia DOM della squadra oggetti (storia P04/P09): lo slot dell'oggetto ATTIVO con le
- * tacche di carica (Teatro HUD ~5056), il MODALE di sostituzione dei cinque slot (Teatro disegnaModalSostituzione5Slot
+ * motore/interfaccia/oggetti.js — Interfaccia DOM della squadra oggetti (storia P04/P09): il MODALE di sostituzione dei cinque slot (Teatro disegnaModalSostituzione5Slot
  * ~5297: 1-5 sceglie lo slot, Esc/Q rinuncia) e il PANNELLO di conferma del Patto d'Ombra («−1 Maschera massima per
  * sempre»; le azioni `conferma`/`indietro` le legge `oggetti/patto.js` dall'input). Testi da `contenuti/interfaccia.json ›
  * attivi | sostituzione | patto`; stile in `stile/oggetti.css` (colori dai token). Il modale legge i tasti dal DOM in
@@ -16,7 +15,7 @@ const TASTI_MODALE = Object.freeze({ cifra: /^Digit[1-5]$/, rinuncia: ['Escape',
  * @param {{
  *   documento: Document, finestra?: Window | null, contenitore: HTMLElement,
  *   testi: object,
- *   attivi: { stato: () => object | null },
+ *   attivi: { stato: () => object | null },   (storia P13: lo slot dell'attivo è nell'HUD del Teatro, qui non è letto)
  *   slot: { stato: () => object, conferma: Function, annulla: Function },
  *   patto: { pendente: object | null },
  *   modificatori: { dono: (id: string) => object | null },
@@ -25,17 +24,11 @@ const TASTI_MODALE = Object.freeze({ cifra: /^Digit[1-5]$/, rinuncia: ['Escape',
  */
 export function creaInterfacciaOggetti({ documento, finestra = null, contenitore, testi, attivi, slot, patto, modificatori, tastoAttivo, tastoConferma, tastoIndietro }) {
   if (!documento || !contenitore || !testi || !attivi || !slot || !patto || !modificatori) throw new TypeError('creaInterfacciaOggetti: dipendenze mancanti');
-  const T = testi.attivi ?? {};
   const TS = testi.sostituzione ?? {};
   const TP = testi.patto ?? {};
   const el = (tag, classe, padre) => { const e = documento.createElement(tag); if (classe) e.className = classe; padre.appendChild(e); return e; };
 
-  // HUD dell'attivo
-  const hud = el('div', 'attivo-hud', contenitore);
-  hud.hidden = true;
-  const hudNome = el('span', 'attivo-nome', hud);
-  const hudTacche = el('span', 'attivo-tacche', hud);
-  const hudIstruzione = el('span', 'attivo-istruzione', hud);
+  // storia P13: lo slot dell'attivo con le tacche sta nel dock dell'HUD del Teatro (`interfaccia/hud.js`)
 
   // modale di sostituzione
   const modale = el('div', 'sostituzione', contenitore);
@@ -58,7 +51,6 @@ export function creaInterfacciaOggetti({ documento, finestra = null, contenitore
   const pCosto = el('p', 'patto-costo', pannello);
   const pIstruzione = el('p', 'patto-istruzione', pannello);
 
-  let firmaHud = '';
   let firmaModale = '';
   let firmaPatto = '';
 
@@ -71,23 +63,6 @@ export function creaInterfacciaOggetti({ documento, finestra = null, contenitore
     e.stopPropagation();
   }
   finestra?.addEventListener('keydown', suTasto, true);
-
-  function aggiornaHud() {
-    const st = attivi.stato();
-    const firma = st ? `${st.id}|${st.carica}|${st.maxCarica}` : '';
-    if (firma === firmaHud) return;
-    firmaHud = firma;
-    hud.hidden = !st;
-    if (!st) return;
-    hudNome.textContent = st.nome;
-    hudTacche.textContent = '';
-    for (let i = 0; i < st.maxCarica; i++) {
-      const t = el('i', `tacca${i < st.carica ? ' piena' : ''}`, hudTacche);
-      t.setAttribute('aria-hidden', 'true');
-    }
-    hud.classList.toggle('carico', st.carico);
-    hudIstruzione.textContent = riempi(T.istruzione ?? '', { tasto: tastoAttivo(), carica: st.carica, max: st.maxCarica });
-  }
 
   function aggiornaModale() {
     const st = slot.stato();
@@ -126,11 +101,10 @@ export function creaInterfacciaOggetti({ documento, finestra = null, contenitore
   }
 
   return {
-    aggiorna() { aggiornaHud(); aggiornaModale(); aggiornaPatto(); },
+    aggiorna() { aggiornaModale(); aggiornaPatto(); },
     /** Stato del DOM per i test. */
     stato() {
       return {
-        attivo: hud.hidden ? null : { nome: hudNome.textContent, tacche: hudTacche.children.length, piene: hudTacche.querySelectorAll('.piena').length, carico: hud.classList.contains('carico') },
         sostituzione: modale.hidden ? null : { titolo: modTitolo.textContent, nuovo: modNuovo.textContent, voci: Array.from(modLista.children, (li) => li.textContent) },
         patto: pannello.hidden ? null : { nome: pNome.textContent, costo: pCosto.textContent, istruzione: pIstruzione.textContent },
       };

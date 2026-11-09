@@ -1,6 +1,7 @@
 /**
- * motore/interfaccia/banchetto.js — Interfaccia DOM MINIMALE dell'economia: HUD (monete, scintille,
- * maschere) e lista del banchetto con i prezzi. Storia 025.
+ * motore/interfaccia/banchetto.js — Interfaccia DOM MINIMALE dell'economia: la lista del banchetto con i prezzi.
+ * Storia 025. Dalla storia P13 monete, scintille e maschere stanno nell'HUD del Teatro (`interfaccia/hud.js`):
+ * `ferruccio` e `maschereMax` restano accettati per compatibilità ma non sono più letti qui.
  *
  * Non è grafica definitiva (il renderer vero aspetta l'approvazione dell'autore): è una lista in
  * `#interfaccia` con classi semantiche, stile in `stile/interfaccia.css`. Tutti i testi vengono da
@@ -35,23 +36,7 @@ export function riempi(testo, valori) {
 export function creaInterfacciaEconomia({ documento, contenitore, testi, economia, ferruccio, maschereMax, banchetto, nomeDono, tastoInteragisci }) {
   if (!documento || !contenitore || !testi || !economia || !ferruccio) throw new TypeError('creaInterfacciaEconomia: dipendenze mancanti');
   const T = testi;
-
-  const hud = documento.createElement('div');
-  hud.className = 'hud';
-  const voci = {};
-  for (const k of ['monete', 'scintille', 'maschere']) {
-    const voce = documento.createElement('span');
-    voce.className = `hud-${k}`;
-    const etichetta = documento.createElement('span');
-    etichetta.className = 'etichetta';
-    etichetta.textContent = T.hud?.[k] ?? k;
-    const valore = documento.createElement('span');
-    valore.className = 'valore';
-    voce.append(etichetta, ' ', valore);
-    hud.append(voce);
-    voci[k] = valore;
-  }
-  contenitore.append(hud);
+  // storia P13: monete, scintille e maschere stanno nell'HUD del Teatro (`interfaccia/hud.js`); qui resta la lista del banchetto
 
   const sezione = documento.createElement('section');
   sezione.className = 'banchetto';
@@ -85,11 +70,8 @@ export function creaInterfacciaEconomia({ documento, contenitore, testi, economi
 
   let firma = '';
 
-  /** Aggiorna HUD e banchetto (una volta per frame). */
+  /** Aggiorna la lista del banchetto (una volta per frame). */
   function aggiorna() {
-    voci.monete.textContent = String(economia.monete);
-    voci.scintille.textContent = String(economia.scintille);
-    voci.maschere.textContent = `${ferruccio.maschere}/${maschereMax()}`;
     const b = banchetto?.();
     if (!b || !b.attivo) {
       if (!sezione.hidden) sezione.hidden = true;
@@ -128,5 +110,5 @@ export function creaInterfacciaEconomia({ documento, contenitore, testi, economi
     esito.textContent = testoEsito(b.ultimoEsito, slots);
   }
 
-  return { aggiorna, disegna: aggiorna, elementi: { hud, sezione, lista, esito } };
+  return { aggiorna, disegna: aggiorna, elementi: { sezione, lista, esito } };
 }

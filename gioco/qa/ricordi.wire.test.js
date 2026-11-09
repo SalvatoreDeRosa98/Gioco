@@ -124,10 +124,10 @@ async function main() {
         while (t < 240 && g.ricordi.aTerra().length > 0) { g.tick(1); t++; }
         g.lascia('destra');
         g.tick(2);
-        const li = Array.from(document.querySelectorAll('#interfaccia .hud-doni li.dono'));
+        const li = Array.from(document.querySelectorAll('#interfaccia .hud-slot.pieno')); // storia P13: slot pieni dell'HUD del Teatro
         return {
           flagPrima, dannoPrima, aTerra, inManoPrima, t, inMano: g.ricordi.inMano(), danno: g.modificatori.valore('combattimento.danno'),
-          hud: li.map((x) => ({ classe: x.className, id: x.dataset.id })), hudNascosto: document.querySelector('#interfaccia .hud-doni').hidden,
+          hud: li.map((x) => ({ classe: x.className, id: x.dataset.id })), hudNascosto: document.querySelector('#interfaccia .hud-teatro').hidden,
           cartiglio: g.cartiglio(), eventi: eventi.map((e) => e.n), stato: g.stato, stanza: g.ricordi.stanzaCorrente,
         };
       });
@@ -139,7 +139,7 @@ async function main() {
       assert.ok(caduta.t > 0 && caduta.t < 240, `raccolto camminando in ${caduta.t} tick`);
       assert.deepEqual(caduta.inMano, ['medaglione-di-rosa']);
       assert.equal(caduta.danno, caduta.dannoPrima + 1, '+1 danno finché tenuto');
-      assert.deepEqual(caduta.hud, [{ classe: 'dono azzurro', id: 'medaglione-di-rosa' }], 'goccia azzurra nell\'HUD');
+      assert.deepEqual(caduta.hud, [{ classe: 'hud-slot pieno azzurro' /* storia P13: slot azzurro dell'HUD del Teatro */, id: 'medaglione-di-rosa' }], 'goccia azzurra nell\'HUD');
       assert.equal(caduta.hudNascosto, false);
       assert.equal(caduta.cartiglio?.azzurro, true);
       assert.deepEqual(caduta.eventi, ['ricordi.caduto', 'doni.aggiunto', 'ricordi.raccolto']);
@@ -190,7 +190,7 @@ async function main() {
         return {
           flag: g.narrativa.flag().tonino_ricordo, fase: d?.fase, esito: d?.esito, battuta: el.querySelector('.battuta').textContent,
           inMano: g.ricordi.inMano(), danno: g.modificatori.valore('combattimento.danno'), scintille: g.profilo.scintille - scintillePrima,
-          restituiti: g.profilo.ricordiRestituiti, hud: document.querySelectorAll('#interfaccia .hud-doni li.dono').length,
+          restituiti: g.profilo.ricordiRestituiti, hud: document.querySelectorAll('#interfaccia .hud-slot.pieno').length,
           eventi: window.__eventiRicordi.map((e) => e.n), eleggibiliBoss: g.pool.eleggibili({ piano: 1, canale: 'boss' }).map((x) => x.id),
         };
       });
@@ -233,7 +233,7 @@ async function main() {
         const inMano = g.ricordi.inMano().slice();
         g.eventi.emit('ferruccio.morto', { x: g.ferruccio.x, y: g.ferruccio.y, direzione: { x: 0, y: 1 } });
         g.tick(1);
-        const dopoMorte = { inMano: g.ricordi.inMano(), flag: g.narrativa.flag().tonino_ricordo, hud: document.querySelectorAll('#interfaccia .hud-doni li.dono').length, persi: persi.map((p) => p.ids) };
+        const dopoMorte = { inMano: g.ricordi.inMano(), flag: g.narrativa.flag().tonino_ricordo, hud: document.querySelectorAll('#interfaccia .hud-slot.pieno').length, persi: persi.map((p) => p.ids) };
         g.eventi.emit('boss.sconfitto', { id: 'gatto', x: g.ferruccio.x + 200, y: g.ferruccio.y });
         g.tick(1);
         return { inMano, dopoMorte, aTerra: g.ricordi.aTerra().map((o) => o.id) };

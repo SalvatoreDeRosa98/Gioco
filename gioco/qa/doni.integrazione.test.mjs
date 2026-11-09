@@ -34,6 +34,7 @@ import { creaPool } from '../motore/oggetti/pool.js';
 import { creaPiedistalli, puntiPiedistallo } from '../motore/oggetti/piedistallo.js';
 import { collegaEffettiDoni, collegaGanci } from '../motore/attori/effetti-doni.js';
 import { creaInterfacciaDoni } from '../motore/interfaccia/doni.js';
+import { creaHud } from '../motore/interfaccia/hud.js'; // storia P13: i doni raccolti stanno nei cinque slot dell'HUD del Teatro
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const RADICE = join(QUI, '..');
@@ -108,6 +109,12 @@ async function creaMondo({ seme = 1845, piano = 1, ritocca = null, flag = {} } =
     documento, contenitore, testi, modificatori: mod, eventi, piedistalli: () => piedistalli,
     tCartiglioMs: () => parametri.get('doni').piedistallo.t_cartiglio.base, tastoInteragisci: () => parametri.get('input.tastiera.interagisci')[0],
   });
+  const RESA = leggi('contenuti/parametri/resa.json');
+  const hud = creaHud({
+    documento, contenitore, testi, decimali: Object.fromEntries(['dmg', 'tears', 'spd', 'range', 'vita'].map((k) => [k, RESA.hud[`decimali_${k}`].base])),
+    sprite: () => null, personaggi: {}, statistiche: { id: null, correnti: () => null }, ferruccio, maschereMax: () => mod.valore('ferruccio.maschere_max'), economia,
+    doni: () => ({ attivi: mod.doniAttivi(), max: parametri.get('doni.limiti.max_slot_doni') }), dono: (id) => mod.dono(id),
+  });
   const ricevuti = [];
   for (const nome of ['doni.aggiunto', 'doni.scintilla', 'doni.catena', 'doni.onda', 'doni.cura', 'piedistallo.posato', 'piedistallo.raccolto', 'pool.offerto']) {
     eventi.on(nome, (p) => ricevuti.push({ nome, payload: p }));
@@ -135,6 +142,7 @@ async function creaMondo({ seme = 1845, piano = 1, ritocca = null, flag = {} } =
         piedistalli.tick();
         interfaccia.tick(tempo.passoS);
         interfaccia.aggiorna();
+        hud.aggiorna();
       }
     },
     premi(azione, n = 1) { input.sorgenteGiu(tasto(azione)); m.tick(n); input.sorgenteSu(tasto(azione)); },
@@ -147,7 +155,8 @@ async function creaMondo({ seme = 1845, piano = 1, ritocca = null, flag = {} } =
     },
     eventiDi: (nome) => ricevuti.filter((e) => e.nome === nome),
     cartiglio: () => interfaccia.cartiglio(),
-    dom: () => ({ cartiglio: interfaccia.elementi.cartiglio, hud: interfaccia.elementi.hud, lista: interfaccia.elementi.lista }),
+    dom: () => ({ cartiglio: interfaccia.elementi.cartiglio, hud: hud.elementi.radice, slot: hud.elementi.slot }),
+    hud,
   };
   return m;
 }
@@ -203,11 +212,16 @@ test('S024-2: nella stanza del tesoro, interagisci a 50 px in Cammina raccoglie 
   assert.equal(m.dom().cartiglio.children[0].textContent, p.dono.nome);
   assert.equal(m.dom().cartiglio.children[1].textContent, p.dono.cartiglio);
   assert.ok(m.dom().cartiglio.className.includes('raccolto') && m.dom().cartiglio.className.includes('oro'));
-  // HUD: una sagoma per dono raccolto, in ordine
+  // HUD del Teatro (storia P13): il dono raccolto occupa il primo dei cinque slot, in ordine; gli altri restano vuoti e visibili
+  m.hud.aggiorna();
   assert.equal(m.dom().hud.hidden, false);
-  assert.equal(m.dom().lista.children.length, 1);
-  assert.equal(m.dom().lista.children[0].dataset.id, p.id);
-  assert.ok(m.dom().lista.children[0].className.includes('oro'));
+  const slotHud = m.hud.stato().slot;
+  assert.equal(slotHud.length, leggi('contenuti/parametri/doni.json').limiti.max_slot_doni.base, 'cinque slot, anche vuoti');
+  assert.equal(slotHud.filter(Boolean).length, 1);
+  assert.equal(slotHud[0].id, p.id);
+  assert.equal(slotHud[0].azzurro, false, 'un dono d\'oro non è azzurro');
+  assert.ok(m.dom().slot[0].li.className.includes('pieno'));
+  assert.ok(m.dom().slot[1].li.className.includes('vuoto'));
   // il gioco non è in pausa: Ferruccio cammina mentre il cartiglio è acceso
   m.tick(10);
   assert.ok(m.ferruccio.x > x0 + 20, `Ferruccio si muove (${m.ferruccio.x - x0} px)`);
@@ -241,7 +255,8 @@ test('S024-2b: un secondo cartiglio sostituisce il primo e riparte il timer; il 
   assert.equal(c.id, 'medaglione-di-rosa');
   assert.equal(c.azzurro, true, 'un ricordo ha il cartiglio azzurro');
   assert.ok(m.dom().cartiglio.className.includes('azzurro'));
-  assert.ok(m.dom().lista.children[1].className.includes('azzurro'), 'nell\'HUD il ricordo ha l\'alone azzurro');
+  m.hud.aggiorna();
+  assert.ok(m.dom().slot[1].li.className.includes('azzurro'), 'nell\'HUD del Teatro (storia P13) lo slot del ricordo ha l\'alone azzurro');
   m.tick(m.ticks(2900));
   assert.equal(m.cartiglio()?.id, 'medaglione-di-rosa', 'ancora acceso a 2,9 s dalla seconda raccolta');
   m.tick(m.ticks(200));

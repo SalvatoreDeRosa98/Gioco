@@ -32,6 +32,7 @@ import { crea as creaStato } from '../motore/storia/stato-narrativo.js';
 import { creaIncontri, FASI, RIFIUTI } from '../motore/storia/incontri.js';
 import { creaCartiglio } from '../motore/ui/cartiglio.js';
 import { creaInterfacciaDoni } from '../motore/interfaccia/doni.js';
+import { creaHud } from '../motore/interfaccia/hud.js'; // storia P13: i doni (e i ricordi) raccolti stanno nei cinque slot dell'HUD del Teatro
 import { creaRicordi, validaRicordi, modelloRicordo, EVENTI_RICORDI, MOTIVI_RICORDI } from '../motore/oggetti/ricordi.js';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
@@ -45,6 +46,7 @@ const RIPETIZIONI = leggi('contenuti/ripetizioni.json');
 const TESTI = leggi('contenuti/interfaccia.json');
 const RICORDI = leggi('contenuti/parametri/ricordi.json');
 const DONI = leggi('contenuti/parametri/doni.json');
+const RESA = leggi('contenuti/parametri/resa.json'); // storia P13: cifre dell'HUD del Teatro
 const STATISTICHE = ['ferruccio', 'combattimento', 'stanza', 'stanze', 'generazione', 'economia', 'incontri'];
 const TABELLE = ['input', 'doni', 'sinergie', 'consumabili', 'ricordi'];
 const RARITA = ['comune', 'raro', 'prezioso'];
@@ -128,13 +130,18 @@ async function creaMondo({ seme = 1845, piano = 1 } = {}) {
     tCartiglioMs: () => parametri.get('doni').piedistallo.t_cartiglio.base, tastoInteragisci: () => parametri.get('input.tastiera.interagisci')[0],
   });
   const cartiglio = creaCartiglio({ documento, contenitore, testi: TESTI, input, incontri, antirimbalzoMs: () => parametri.get('incontri.antirimbalzo') });
+  const hudTeatro = creaHud({
+    documento, contenitore, testi: TESTI, decimali: Object.fromEntries(['dmg', 'tears', 'spd', 'range', 'vita'].map((k) => [k, RESA.hud[`decimali_${k}`].base])),
+    sprite: () => null, personaggi: {}, statistiche: { id: null, correnti: () => null }, ferruccio, maschereMax: () => mod.valore('ferruccio.maschere_max'), economia,
+    doni: () => ({ attivi: mod.doniAttivi(), max: parametri.get('doni.limiti.max_slot_doni') }), dono: (id) => mod.dono(id),
+  });
   const ricevuti = [];
   for (const n of [...Object.values(EVENTI_RICORDI), 'doni.aggiunto', 'doni.rimosso', 'economia.scintille', 'incontri.avvio', 'incontri.scelta', 'incontri.fine', 'incontri.rifiutato', 'narrativa.decisione', 'profilo.ricordo']) {
     eventi.on(n, (p) => ricevuti.push({ nome: n, ...p }));
   }
   const tasto = (azione) => `t:${parametri.get(`input.tastiera.${azione}`)[0]}`;
   const m = {
-    parametri, log, tempo, eventi, input, mod, campo, ferruccio, profilo, economia, narrativa, pool, ricordi, incontri, hud, cartiglio, contenitore, ricevuti,
+    parametri, log, tempo, eventi, input, mod, campo, ferruccio, profilo, economia, narrativa, pool, ricordi, incontri, hud, hudTeatro, cartiglio, contenitore, ricevuti,
     ticksAntirimbalzo: tempo.ticksDaMs(parametri.get('incontri.antirimbalzo')) + 1,
     danno: () => mod.valore('combattimento.danno'),
     dannoBase: () => parametri.statistica('combattimento.danno').base,
@@ -148,6 +155,7 @@ async function creaMondo({ seme = 1845, piano = 1 } = {}) {
         hud.tick(tempo.passoS);
         cartiglio.tick(tempo.passoS);
         hud.aggiorna();
+        hudTeatro.aggiorna();
         cartiglio.aggiorna();
       }
     },
@@ -244,10 +252,11 @@ test('S028-1: GIVEN tonino_ricordo = null WHEN il Gatto si dissolve THEN lascia 
   assert.equal(m.eventiDi('doni.aggiunto').length, 1);
   // HUD: una goccia azzurra con il profilo del medaglione; il cartiglio del dono è azzurro
   m.tick(1);
-  const gocce = perClasse(m.hud.elementi.lista, 'azzurro');
+  const gocce = perClasse(m.hudTeatro.elementi.lista, 'azzurro'); // storia P13: slot `azzurro` dell'HUD del Teatro
   assert.equal(gocce.length, 1);
   assert.equal(gocce[0].dataset.id, MEDAGLIONE);
-  assert.equal(m.hud.elementi.hud.hidden, false);
+  assert.equal(m.hudTeatro.stato().slot.filter(Boolean).length, 1);
+  assert.equal(m.hudTeatro.elementi.radice.hidden, false);
   assert.equal(m.hud.cartiglio().azzurro, true);
   assert.equal(m.hud.cartiglio().nome, DONI.doni.find((d) => d.id === MEDAGLIONE).nome);
   // un secondo Gatto nella stessa notte: niente (è già in mano)

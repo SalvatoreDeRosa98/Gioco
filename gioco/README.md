@@ -16,8 +16,8 @@ In questa cartella convivono **due programmi** con ruoli distinti (decisione del
   ES, nessun build, rng seminato, numeri nei JSON di `contenuti/parametri/`, stringhe in `contenuti/interfaccia.json`. Nel dubbio su
   dove mettere una cosa vince la sua architettura (`docs/architecture/architecture.md`, ADR-0001..0006). Conserva ciò che il Teatro
   non ha: hub di Piazza Dante, dialoghi con cartiglio, stato narrativo e flag, Medaglione, notte salvata, profilo. Il porting del
-  Teatro è raccontato nelle storie `production/epics/*/story-P*.md`; ciò che manca ancora (sprite PNG di nemici/boss/oggetti, HUD
-  pixel-art con le mezze maschere, palette nei token) è in `PASSAGGIO-CONSEGNE.md`.
+  Teatro è raccontato nelle storie `production/epics/*/story-P*.md`; ciò che manca ancora (palette nei token) è in `PASSAGGIO-CONSEGNE.md`; l'HUD
+  del Teatro con le mezze maschere è la storia P13 (`interfaccia/hud.js`).
 
 ## Avvio
 
@@ -49,6 +49,7 @@ Parametri dell'URL:
 | `?debug=1&wire=1&hub=1&seme=1845&continua=1` | storia 030: se nello slot c'è una notte salvata, preme «Continua» da solo all'avvio (strumento di QA). Senza `continua=1`, nell'hub compare il pannello DOM «Continua / Lascia andare» (`interfaccia/ripresa.js`) quando una notte è salvata: «Continua» rigenera il piano dal seme salvato ed entra nella stanza salvata con maschere, doni e monete ripristinati; «Lascia andare» cancella la notte salvata. La notte si salva a ogni `notte.stanza` (`persistenza/notte-salvata.js`, chiave `ferruccio.v3.notte.1`) e si cancella alla morte. Alla morte (`ferruccio.morto`) il ciclo va in `pausa`, il velo DOM (`interfaccia/morte.js`) mostra le quattro fasi di `risveglio.json` (lanterne una a una, fili, maschera, buio; ≤ 5 s) e al `risveglio.fine` si torna nell'hub con `notte + 1`: flag, scintille, `piano_max` e scene viste restano; monete, doni, consumabili e pool della notte spariscono; con `&piano=N` (senza hub) la notte riparte dallo stesso seme |
 | `prova.html?seme=1845` (storia P02, provvisoria) | **build di prova per l'autore**: la pagina dichiara `<meta name="gioco-avvio" content="debug=1&wire=1&hub=1">` e `fondazione/avvio-url.js` fonde quei valori come default della query (l'URL vince sempre: `?seme=` resta tuo); all'avvio compare il pannello dei tasti (`interfaccia/prova.js`, testi in `interfaccia.json › prova`, stile `stile/prova.css`) che sparisce al primo tasto o click. Il gioco è da tastiera (e gamepad): nessun controllo touch, per scelta dell'autore. `__gioco.pannelloProva()` = `true/false` (a schermo o chiuso) o `null` senza la meta. Il file unico pubblicabile si produce con `node tools/impacchetta.js --entrata gioco/prova.html --frammento` (vedi `tools/README-impacchetta.md`) |
 | `?debug=1&piano=1&seme=1845&personaggio=ferruccio` | **storie P04/P09 (squadra oggetti)**: oggetto ATTIVO del personaggio (`oggetti/attivi.js`, Q = azione `attivo`, carico all'inizio, +1 tacca a stanza pulita, HUD DOM in basso a sinistra con le tacche); cinque slot dei doni (`oggetti/slot.js`, `doni.limiti.max_slot_doni`): al sesto compare il modale DOM di sostituzione (1-5 sostituisce, Esc/Q rinuncia; il vecchio torna sul piedistallo o si perde se comprato); dopo il boss l'altare del **Patto d'Ombra** (`oggetti/patto.js`, `patto.json`: 100 % senza danni nel boss, 60 % con danni, 2 reliquie) con la stanza velata di rosso: `interagisci` vicino a una reliquia apre il pannello «−1 Maschera massima per sempre», `conferma`/`indietro`; la **Crepa Dorata** (`mondo/segreta.js`): a stanza pulita la finestra verso la segreta è una crepa che un proiettile o un fendente apre (porta sui record, stanza rimontata, `segreta.aperta`), la segreta pulita lascia `monete_segreta` monete; **oggetti gratis** (`oggetti/gratis.js`, `economia.json › gratis`): a stanza normale pulita 1 su 10 forte, 1 su 3 base, dal `seme_stanza`, al centro, `interagisci` raccoglie; prezzi dell'autore (cuore 3, base 5, forte 7, consumabile 2) nel banchetto («La Fucina» nel titolo, Tonino resta); reliquie **Raggio Cremisi Continuo** (freccia tenuta: carica, poi laser con danno a tick sulla linea, `combattimento.raggio()`) e **Lacrime Spettrali** (i proiettili attraversano mura e ostacoli; gli altri ora si fermano sui solidi `ferma_colpi` con `ferruccio.colpo_muro`) |
+| `?debug=1&piano=1&seme=1845&personaggio=agnese&slot=1` | **storia P13 (HUD completo del Teatro in DOM, `interfaccia/hud.js` + `stile/hud.css`; Teatro `disegnaHUDPixelArt` ~5056)**: in alto a sinistra la scheda con nome e titolo del personaggio (`personaggi.json`), «Piano N» (· «Ciclo ∞C» dal ciclo 2, da `mondo/run.js`), il tipo della stanza in piccolo (`interfaccia.json › hud.stanze`), la vita a mezze maschere con i PNG `hud-cuore-pieno/mezzo/vuoto` del manifesto (le massime vuote visibili), DMG/TRS/SPD/RNG con le icone PNG e i valori di `statistiche.correnti()` (cifre da `resa.json › hud`), monete e scintille; in alto al centro la barra della vita del boss (`hud-barra-boss`, titolo da `boss_hud`, HP numerici: l'unica, il renderer riceve `barraBossNelRenderer: false`); in basso al centro il dock: slot dell'attivo (`hud-slot-attivo`, icona `attivo-<id>`, tacche, lettera del tasto), i cinque slot dei doni (`hud-slot-vuoto`, icona `oggetto-<id_teatro>`, nome nel `title` e nella didascalia al passaggio del puntatore, ricordi `azzurro`), le reliquie del Patto (`patto-<id>`); la minimappa resta quella del renderer. Si nasconde nel menu, col sipario e a dialogo aperto; nell'hub mostra «Piazza Dante». Gli HUD precedenti (`.hud` dell'economia, `.hud-doni`, `.attivo-hud`) non esistono più. `prova.css` è ora anche in `index.html` (pannello centrato con sfondo pieno, via al primo tasto). Provato in `hud.test.mjs` e `hud.wire.test.js` |
 | `?debug=1&wire=1&piano=1&seme=1845` | storie 014-017: genera il piano 1 dal seme (`mondo/generazione.js`, modelli di `contenuti/modelli-stanza/piazza-dante/`), parte dall'ingresso; porte con stato, ostacoli, soglie, segnalini e fantocci segnaposto (`archetipo`) delle ondate, transizione della camera (250 ms), pianta del piano nell'angolo in alto a destra; dalla storia 019 le ondate sono nemici veri per archetipo (`attori/nemico.js`), con direttore dei gettoni per piano; dalla storia 025 monete e cuori a terra (dischi/quadrati), HUD DOM in alto a destra e, nella stanza `banchetto`, i tre slot sui banchi con la lista dei prezzi (tasto `interagisci`); dalla storia 024, nella stanza `tesoro`, il piedistallo (quadrato d'oro, cono di luce tratteggiato `r_anteprima`, tratteggiato spento se inerte), il cartiglio del dono e l'HUD dei doni in DOM (sotto l'HUD dell'economia), le scintille dei ganci in oro; dalla storia 018 i bracieri (modelli `pd-n-04`, `pd-n-05`, `pd-d-02`) con piede pieno e cerchio tratteggiato solo in `anticipo` (largo) e `attivo` (fitto), etichetta con la fase; ogni pericolo di `__gioco.stanza.pericoli` espone `fase`, `progresso`, `sfasamento`; storia P01 (PROVVISORIA, build di prova; la 022 la sostituisce): nella stanza `boss` nasce dal contenuto `boss` di `pd-b-01` un solo gatto con `boss: true` e la taglia di `nemici.json › boss_provvisorio` (vita 60, raggio ×1,6, etichetta «boss (provvisorio)»), porte chiuse come in una stanza normale; alla sua morte `boss.sconfitto` {id: 'gatto', x, y} (cade il Medaglione), stanza svuotata → pulita, bottino del boss dall'economia; l'arco dell'uscita al centro (`stanze.json › uscita`) è tratteggiato finché la stanza non è pulita, poi pieno d'oro: restandoci `t_attesa` parte `piano.completato` {piano} una sola volta → ciclo in `pausa`, velo DOM con `interfaccia.json › fine_piano.velo`, poi lo stesso risveglio della morte con motivo `vittoria` (notte + 1, `piano_max` 2, notte salvata cancellata); senza hub la notte riparte dallo stesso seme |
 
 `window.__gioco` (solo debug): `stato`, `tick(n)` (forza n tick, ritorna il contatore), `seme`,
@@ -101,6 +102,9 @@ Dalle storie P04/P09 (squadra oggetti) anche `attivi` (`stato()`, `usa()`, `equi
 `conferma(i)`, `annulla()`, `pendente`, `stato()`), `patto` (`altare`, `pendente`, `stretti`, `proponi(i)`, `conferma()`, `annulla()`, `posaAltare(stanza)`, `reliquia(id)`,
 `inStanzaAltare()`, `nuovaRun()`), `gratis` (`corrente()`, `vicino()`, `raccogli()`, `stati()`), `segreta` (`crepa()`, `apri()`, `aperte`) e `interfacciaOggetti()` (stato DOM di HUD
 dell'attivo, modale di sostituzione e pannello del patto); `combattimento.raggio()` e `combattimento.impostaRaggio(cfg)`.
+Dalla storia P13 anche `hud()` (fotografia dell'HUD del Teatro nel DOM: `visibile`, `nome`, `titolo`, `piano`, `ciclo`, `pianoTesto`, `stanza`, `stanzaTesto`,
+`maschere` {correnti, max, piene, mezza, vuote}, `statistiche` {dmg, tears, spd, range} o null, `monete`, `scintille`, `attivo` {id, nome, tacche, piene, carico, icona, tasto} o null,
+`slot[]` ({indice, id, nome, azzurro, icona, sagoma} o null per ogni slot), `patti[]`, `boss` {nome, titolo, vita, max, quota} o null); `interfacciaOggetti()` tiene solo `sostituzione` e `patto`.
 
 ## Test
 
@@ -252,6 +256,14 @@ node gioco/qa/menu.wire.test.js           # storia P05 (Playwright): index.html 
                                           # destra tenuta spara proiettili (vx > 0) senza muovere Ferruccio; salva menu-selezione.png e menu-slot.png
 bash gioco/qa/suite-completa.sh           # storia P05: esegue tutte le suite qui sopra una dopo l'altra (node:test, Playwright, stati64, seme 200,
                                           # grep Math.random) e riassume l'esito; esce con 1 se una è rossa
+node gioco/qa/hud.test.mjs                # storia P13 (node:test, DOM finto): HUD del Teatro: scheda (nome/titolo da personaggi.json, piano e ciclo, tipo della
+                                          # stanza, maschere piene/mezze/vuote, statistiche con le cifre di resa.json, monete), barra del boss (titolo da boss_hud,
+                                          # quota, da morto sparisce, una sola), dock (attivo con tacche e tasto, cinque slot con icona PNG o sagoma, ricordo azzurro,
+                                          # didascalia al passaggio, patti), nascosto nel menu e a dialogo aperto, manifesto completo, regole del codice
+node gioco/qa/hud.wire.test.js            # Playwright della storia P13 (deviceScaleFactor 1): ?debug=1&piano=1&seme=1845&personaggio=agnese&slot=1 → scheda, dock,
+                                          # PNG caricati, impaginazione del Teatro (hud.png); dono via __gioco.slotDoni.acquisisci → icona nello slot (hud-slot-pieno.png);
+                                          # stanza boss → barra DOM, una sola (hud-boss.png); dialogo → HUD nascosto; 400 px senza scroll (hud-400.png); il Teatro
+                                          # dell'autore in gioco (teatro-hud-riferimento.png); menu → HUD nascosto
 node gioco/qa/audio.test.mjs              # storia P10 (node:test, AudioContext FINTO che registra i nodi): audio.json valido e mappa completa; senza
                                           # AudioContext nessun errore; ogni evento → grafo di nodi atteso con i numeri del JSON (campana 3 seni
                                           # inarmonici, toc triangolo + rumore passa-basso, sibilo passa-banda, tonfo passa-basso + convolver, toni);
@@ -280,7 +292,8 @@ gioco/
 │   ├── base.css                palco 16:9 senza scroll, canvas e interfaccia sovrapposti
 │   ├── prova.css               storia P02: pannello delle istruzioni iniziali di prova.html
 │   ├── menu.css                storia P04: menu di selezione (sipario, quattro carte, slot, conferma di cancellazione)
-│   └── audio.css               storia P10: interruttore del muto nell'angolo del palco (visibile nel menu)
+│   ├── audio.css               storia P10: interruttore del muto nell'angolo del palco (visibile nel menu)
+│   └── hud.css                 storia P13: l'HUD del Teatro (scheda, barra del boss, dock) in pixel logici del palco (`--u` = 1/1280 di #interfaccia)
 ├── motore/
 │   ├── audio/                  storia P10: audio dinamico minimale (Web Audio API, nessun file audio). Lo stato di gioco non lo conosce: solo eventi
 │   │   ├── sintesi.js          ricette di suoni (oscillatori e rumore seminato con inviluppi, convolver sintetico) con i numeri di audio.json;
@@ -339,8 +352,11 @@ gioco/
 │   │   └── notte-salvata.js    storia 030: la notte in corso {seme, piano, stanza, notte, maschere, doni, monete} salvata a ogni
 │   │                           notte.stanza, cancellata alla morte, ripresa con `riprendi({avvia})`
 │   ├── interfaccia/
-│   │   ├── banchetto.js        storia 025: HUD e lista DOM minimale del banchetto (testi da contenuti/interfaccia.json)
-│   │   └── doni.js             storia 024: HUD dei doni raccolti e cartiglio del dono (nome, riga, avviso, anteprima) in DOM
+│   │   ├── banchetto.js        storia 025: lista DOM minimale del banchetto (testi da contenuti/interfaccia.json); dalla P13 niente HUD qui
+│   │   ├── doni.js             storia 024: cartiglio del dono (nome, riga, avviso, anteprima) in DOM; dalla P13 la fila dei doni è negli slot dell'HUD
+│   │   ├── hud.js              storia P13: l'HUD completo del Teatro (disegnaHUDPixelArt ~5056) in DOM: scheda (nome, titolo, piano/ciclo, stanza,
+│   │   │                       mezze maschere PNG, statistiche con icone, monete, scintille), barra del boss (hud-barra-boss, una sola), dock (attivo
+│   │   │                       con tacche, cinque slot con le icone oggetto-<id_teatro>, patti); immagini dal manifesto, testi da interfaccia.json › hud
 │   │   ├── hub.js              storia 029: cartellino DOM dell'hub (notte, suggerimento per parlare/partire)
 │   │   ├── morte.js            storia 030: velo DOM della sequenza di morte (dissolvenza, lanterne, fili, maschera, didascalie)
 │   │   ├── sipario.js          storia P06: il sipario narrativo degli atti fra i piani (DOM; Teatro getRaccontoAtto ~2535): atto,
@@ -351,7 +367,7 @@ gioco/
 │   │   ├── menu.js             storia P04: menu DOM di selezione del personaggio e dello slot (Teatro ~4042): `apri()` → Promise
 │   │   │                       {personaggio, slot}; non conosce il ciclo, avvio.js applica la scelta
 │   │   ├── audio.js            storia P10: interruttore DOM del muto «Audio: acceso/spento (M)» (testi `interfaccia.json › audio`), visibile nel menu
-│   │   └── oggetti.js          storie P04/P09: HUD dell'attivo con le tacche, modale di sostituzione dei cinque slot, pannello del Patto (stile/oggetti.css)
+│   │   └── oggetti.js          storie P04/P09: modale di sostituzione dei cinque slot e pannello del Patto (stile/oggetti.css); l'attivo è nell'HUD (P13)
 │   ├── mondo/
 │   │   ├── run.js              storia P06: lo stato della run (seme, piano, ciclo, boss estratti senza ripetizione da boss.json con il
 │   │   │                       generatore `boss-run`, usi dei modelli) e le formule del Teatro: pianoNelCiclo, cicloDi, moltCiclo,
@@ -417,7 +433,8 @@ gioco/
 │   │   │                       nemico, cancellato dal fendente attivo, si spegne su solidi e a fine gittata), cancellaInRaggio
 │   │   │                       (Tamburello), potaSpenti (lista condivisa)
 │   └── resa/
-│       ├── renderer.js         renderer pixel-art del Teatro (Mani, palco, hub, HUD); `fili()` espone i fili dell'ultimo frame alla QA
+│       ├── renderer.js         renderer pixel-art del Teatro (Mani, palco, hub, minimappa); `fili()` espone i fili dell'ultimo frame alla QA; la barra del
+│       │                       boss è dell'HUD DOM (P13: `barraBossNelRenderer: false`)
 │       ├── pixel-sprites.js    sprite provvisori in griglia di pixel
 │       ├── feel.js             storia P08: lampeggio, scossa contestuale, macchie
 │       ├── fili.js             storia P11: i due fili d'oro di ogni marionetta del Velo (uno per Mano, spalle, curva, 1 px) da resa.fili
@@ -454,9 +471,9 @@ gioco/
 │   ├── audio.json              storia P10: master.volume, rumore (seme, buffer, decadimento del riverbero), passi (lunghezza_px), e per ogni suono
 │   │                           (passo, passo_nemico, sibilo, tonfo, campana, colpo_a_segno, colpo_subito, moneta, porta_chiusa, attivo) frequenze,
 │   │                           durate, inviluppi, filtri, volume e gap_min_ms, tutti {base,min,max}
-│   ├── resa.json               game feel della resa (storia P08): alpha e semiperiodo del lampeggio, scosse per contesto (px, frame), macchie
+│   ├── resa.json               game feel della resa (storia P08): alpha e semiperiodo del lampeggio, scosse per contesto (px, frame), macchie; `hud` (P13): cifre decimali
 │   └── moto-ridotto.json       sovrascritture applicate con prefers-reduced-motion (anche resa.scossa.*_px → 0); `fili` (storia P11): alpha, spessore, ancoraggio_y, scarto_x, curva_px
-├── contenuti/interfaccia.json  testi di HUD, banchetto, doni, cartiglio, hub e menu (unico posto con le stringhe mostrate; storie 024-025, 027 `incontri`, 029 `hub`, P04 `menu`)
+├── contenuti/interfaccia.json  testi di HUD, banchetto, doni, cartiglio, hub e menu (unico posto con le stringhe mostrate; storie 024-025, 027 `incontri`, 029 `hub`, P04 `menu`, P13 `hud`)
 ├── contenuti/storia.json       la storia in forma macchina (copia di trama/storia.json; storia 026)
 ├── contenuti/narrativa.json    regole dello stato narrativo che storia.json non ha (derivati, finale → mondo, tipi obbligatori e senza attesa)
 ├── contenuti/ancoraggi.json    storia 027: ancoraggio (e `tableau`) per scena: tutto piazza-dante + il ricordo di Gaetano
@@ -498,6 +515,8 @@ gioco/
     ├── feel.wire.test.js            Playwright della storia P08 (i-frames, hit-stop, macchie; screenshot feel-*.png)
     ├── fili.test.mjs                storia P11 (node:test): resa.fili e resa/fili.js su un contesto finto
     ├── fili.wire.test.js            Playwright della storia P11 (fili = 2 × marionette nell'hub e nel piano 1; fili-hub.png, fili-marionette.png)
+    ├── hud.test.mjs                 storia P13 (node:test): l'HUD del Teatro su un DOM finto
+    ├── hud.wire.test.js             Playwright della storia P13 (hud.png, hud-slot-pieno.png, hud-boss.png, hud-400.png, teatro-hud-riferimento.png)
     └── combattimento.wire.test.js   test Playwright del modo wire
 ```
 
@@ -600,7 +619,8 @@ dal proscenio al palco (inverso di scossa + camera) e li tira prima di disegnare
   piano nuovo, con il ciclo in `pausa`; atto per piano nel ciclo (I-IV), «BIS» al piano 1 dei cicli successivi con il bonus del ciclo,
   titolo dell'atto IV dal ciclo 2; si alza con `conferma`/`scatto`, click o `__gioco.sipario.chiudi()`. Al piano 1 di una run non si
   alza: l'hub e le scene automatiche dell'ingresso fanno da atto I (decisione da confermare con l'autore).
-- **HUD**: barra della vita del boss in alto (`renderer.js › disegnaBarraVitaBoss`, titolo da `interfaccia.json › boss_hud` con piano e ciclo).
+- **HUD**: barra della vita del boss in alto al centro nell'HUD DOM del Teatro (`interfaccia/hud.js`, storia P13; titolo da `interfaccia.json › boss_hud` con
+  piano e ciclo, cornice `hud-barra-boss`); `renderer.js › disegnaBarraVitaBoss` resta dietro l'opzione `barraBossNelRenderer` (false da `avvio.js`).
 
 ## Valori provvisori da confermare con il game-designer
 

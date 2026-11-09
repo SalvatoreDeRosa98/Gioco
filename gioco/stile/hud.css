@@ -1,0 +1,180 @@
+/* Storia P13 — HUD completo del Teatro (motore/interfaccia/hud.js), impaginato come disegnaHUDPixelArt del prototipo
+   dell'autore (canvas 640×360 → qui 1280×720 logici): scheda in alto a sinistra, barra del boss in alto al centro,
+   dock degli slot in basso al centro. Le misure sono in "pixel logici" del palco (`--u` = 1/1280 della larghezza di
+   #interfaccia, che è un contenitore di query), così l'HUD scala con il palco e a 400 px non c'è scroll orizzontale.
+   Colori solo dai token (stile/token.css); le immagini vengono dal manifesto degli sprite e restano pixel-art. */
+
+#interfaccia { container-type: size; }
+
+#interfaccia .hud-teatro {
+  --u: calc(100cqw / 1280);                 /* un pixel logico del palco */
+  --hud-fondo: color-mix(in srgb, var(--inchiostro) 92%, transparent);
+  --hud-testo: calc(13 * var(--u));
+  --hud-testo-piccolo: calc(11 * var(--u));
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--crema);
+  font-family: var(--font-testo);
+  font-size: max(7px, var(--hud-testo));
+  line-height: 1.2;
+  text-shadow: 0 0 calc(2 * var(--u)) var(--inchiostro);
+}
+#interfaccia .hud-teatro[hidden] { display: none; }
+#interfaccia .hud-teatro [hidden] { display: none; }
+
+#interfaccia .hud-teatro img,
+#interfaccia .hud-teatro .hud-slot,
+#interfaccia .hud-teatro .hud-attivo,
+#interfaccia .hud-teatro .hud-boss-barra {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+#interfaccia .hud-teatro img { display: inline-block; vertical-align: middle; user-select: none; }
+
+/* 1. Scheda: Teatro (6,5) 172×52 su 640 → (12,10) 344×104 */
+#interfaccia .hud-scheda {
+  position: absolute;
+  left: calc(12 * var(--u));
+  top: calc(10 * var(--u));
+  min-width: calc(344 * var(--u));
+  padding: calc(6 * var(--u)) calc(10 * var(--u));
+  border: calc(2 * var(--u)) solid var(--oro);
+  background: var(--hud-fondo);
+  display: flex;
+  flex-direction: column;
+  gap: calc(3 * var(--u));
+}
+#interfaccia .hud-intesta { display: flex; align-items: baseline; gap: calc(8 * var(--u)); }
+#interfaccia .hud-nome { font-family: var(--font-titoli); font-size: max(8px, calc(15 * var(--u))); color: var(--crema); }
+#interfaccia .hud-titolo { font-style: italic; font-size: max(7px, var(--hud-testo-piccolo)); color: var(--carta-luce); opacity: 0.9; }
+#interfaccia .hud-piano-riga { display: flex; align-items: baseline; gap: calc(10 * var(--u)); }
+#interfaccia .hud-piano { font-family: var(--font-titoli); color: var(--oro); font-size: max(7px, var(--hud-testo)); }
+#interfaccia .hud-stanza { font-size: max(7px, var(--hud-testo-piccolo)); color: var(--carta); text-transform: uppercase; letter-spacing: 0.06em; }
+#interfaccia .hud-stanza[data-tipo="boss"] { color: var(--rosso); }
+#interfaccia .hud-stanza[data-tipo="segreta"] { color: var(--azzurro); }
+
+#interfaccia .hud-vita { display: flex; align-items: center; flex-wrap: wrap; gap: calc(2 * var(--u)); min-height: calc(24 * var(--u)); }
+#interfaccia .hud-maschera { width: calc(24 * var(--u)); height: calc(24 * var(--u)); }
+#interfaccia .hud-maschera.vuoto { opacity: 0.55; }
+#interfaccia .hud-vita-testo { margin-left: calc(6 * var(--u)); font-size: max(7px, var(--hud-testo-piccolo)); color: var(--crema); }
+
+#interfaccia .hud-statistiche,
+#interfaccia .hud-risorse { display: flex; align-items: center; gap: calc(12 * var(--u)); }
+#interfaccia .hud-stat,
+#interfaccia .hud-monete,
+#interfaccia .hud-scintille { display: inline-flex; align-items: center; gap: calc(3 * var(--u)); white-space: nowrap; }
+#interfaccia .hud-icona { width: calc(20 * var(--u)); height: calc(20 * var(--u)); }
+#interfaccia .hud-etichetta { color: var(--oro); font-size: max(7px, var(--hud-testo-piccolo)); }
+#interfaccia .hud-stat .hud-valore { color: var(--crema); }
+#interfaccia .hud-monete .hud-valore { color: var(--oro); font-family: var(--font-titoli); }
+#interfaccia .hud-scintille .hud-valore { color: var(--carta-luce); font-family: var(--font-titoli); }
+
+/* 2. Barra del boss: Teatro 204×8 a y 17 su 640 → 420 di larghezza, in alto al centro */
+#interfaccia .hud-boss {
+  position: absolute;
+  left: 50%;
+  top: calc(8 * var(--u));
+  transform: translateX(-50%);
+  width: calc(432 * var(--u));
+  padding: calc(4 * var(--u)) calc(6 * var(--u));
+  border: calc(2 * var(--u)) solid var(--rosso);
+  background: var(--hud-fondo);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(2 * var(--u));
+}
+#interfaccia .hud-boss-nome { font-family: var(--font-titoli); font-size: max(7px, var(--hud-testo)); color: var(--oro); letter-spacing: 0.05em; white-space: nowrap; }
+#interfaccia .hud-boss-barra {
+  position: relative;
+  width: calc(384 * var(--u));
+  height: calc(24 * var(--u));           /* la cornice PNG è 256×24: scalata senza sfocatura */
+  background-color: var(--inchiostro);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  overflow: hidden;
+}
+#interfaccia .hud-boss-riempimento {
+  position: absolute;
+  left: calc(4 * var(--u));
+  top: calc(4 * var(--u));
+  bottom: calc(4 * var(--u));
+  max-width: calc(100% - 8 * var(--u));
+  background: linear-gradient(90deg, var(--rosso), color-mix(in srgb, var(--rosso) 55%, var(--oro)));
+  transition: width 120ms linear;
+}
+#interfaccia .hud-boss-vita { font-size: max(7px, var(--hud-testo-piccolo)); color: var(--crema); }
+
+/* 3. Dock: Teatro slot 26 + gap 5 a H−34 su 360 → qui slot 40 (la cornice PNG), 16 px dal fondo */
+#interfaccia .hud-dock {
+  position: absolute;
+  left: 50%;
+  bottom: calc(16 * var(--u));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  gap: calc(14 * var(--u));
+  pointer-events: auto;                   /* per la didascalia al passaggio del puntatore */
+}
+#interfaccia .hud-attivo {
+  position: relative;
+  width: calc(48 * var(--u));
+  height: calc(48 * var(--u));
+  background-color: var(--hud-fondo);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  outline: calc(1 * var(--u)) solid var(--azzurro);
+}
+#interfaccia .hud-attivo.carico { outline-color: var(--carta-luce); box-shadow: 0 0 calc(8 * var(--u)) var(--carta-luce); }
+#interfaccia .hud-attivo-tasto {
+  position: absolute; left: calc(3 * var(--u)); top: calc(1 * var(--u));
+  font-family: var(--font-titoli); font-size: max(7px, var(--hud-testo-piccolo)); color: var(--azzurro);
+}
+#interfaccia .hud-attivo.carico .hud-attivo-tasto { color: var(--carta-luce); }
+#interfaccia .hud-attivo-icona { position: absolute; left: 50%; top: 50%; width: calc(32 * var(--u)); height: calc(32 * var(--u)); transform: translate(-50%, -50%); }
+#interfaccia .hud-tacche {
+  position: absolute; right: calc(-9 * var(--u)); bottom: 0;
+  display: flex; flex-direction: column-reverse; gap: calc(1 * var(--u));
+}
+#interfaccia .hud-tacche .tacca { display: block; width: calc(6 * var(--u)); height: calc(10 * var(--u)); border: calc(1 * var(--u)) solid var(--inchiostro); background: var(--bruno); }
+#interfaccia .hud-tacche .tacca.piena { background: var(--azzurro); }
+#interfaccia .hud-attivo.carico .tacca.piena { background: var(--carta-luce); }
+
+#interfaccia .hud-slot-lista { margin: 0; padding: 0; list-style: none; display: flex; gap: calc(8 * var(--u)); }
+#interfaccia .hud-slot {
+  position: relative;
+  width: calc(40 * var(--u));
+  height: calc(40 * var(--u));
+  background-color: var(--hud-fondo);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+#interfaccia .hud-slot.vuoto { opacity: 0.7; }
+#interfaccia .hud-slot.pieno { outline: calc(1 * var(--u)) solid var(--oro); }
+#interfaccia .hud-slot.azzurro { outline-color: var(--azzurro); box-shadow: 0 0 calc(6 * var(--u)) var(--azzurro); }
+#interfaccia .hud-slot-numero { position: absolute; left: calc(3 * var(--u)); top: calc(1 * var(--u)); font-size: max(6px, calc(9 * var(--u))); color: var(--carta); }
+#interfaccia .hud-slot-icona { position: absolute; left: 50%; top: 50%; width: calc(32 * var(--u)); height: calc(32 * var(--u)); transform: translate(-50%, -50%); }
+#interfaccia .hud-slot-sagoma { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: max(6px, calc(8 * var(--u))); color: var(--oro); text-align: center; }
+#interfaccia .hud-slot.azzurro .hud-slot-sagoma { color: var(--azzurro); }
+
+#interfaccia .hud-patti { display: flex; gap: calc(6 * var(--u)); }
+#interfaccia .hud-patto {
+  position: relative; width: calc(32 * var(--u)); height: calc(32 * var(--u));
+  border: calc(1 * var(--u)) solid var(--rosso); background: var(--hud-fondo);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+#interfaccia .hud-patto-icona { width: calc(28 * var(--u)); height: calc(28 * var(--u)); }
+#interfaccia .hud-patto-sigla { font-family: var(--font-titoli); color: var(--rosso); font-size: max(7px, var(--hud-testo)); }
+
+#interfaccia .hud-didascalia {
+  position: absolute;
+  left: 50%;
+  bottom: calc(66 * var(--u));
+  transform: translateX(-50%);
+  margin: 0;
+  min-height: 1.2em;
+  font-size: max(7px, var(--hud-testo-piccolo));
+  color: var(--carta-luce);
+  white-space: nowrap;
+}
