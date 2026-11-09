@@ -3573,23 +3573,17 @@ function selezionaPersonaggio(charId) {
 
 function avviaPartitaConPersonaggio(charId) {
   if (charId) selezionaPersonaggio(charId);
-  // --- T4: inizio ---
-  if (t4Gancio('avvio', charId)) return; // il menu porta all'hub di Piazza Dante
-  // --- T4: fine ---
+  // Avvio diretto sul Palco del Teatro (senza deviazione su Piazza Dante)
   statoRun.fase = 'in_gioco';
   nuovaRun(false);
 }
 
 /**
- * «Ricomincia notte» (menu ESC: tasto R o pulsante). Con il T4 la notte nuova comincia nell'hub di
- * Piazza Dante (bug autore: si ripartiva direttamente nel piano); senza T4 il ramo dell'autore.
+ * «Ricomincia notte» (menu ESC: tasto R o pulsante).
  */
 
 function ricominciaNotte() {
   statoRun.pausa = false;
-  // --- T4: inizio ---
-  if (t4Gancio('ricomincia')) return;
-  // --- T4: fine ---
   statoRun.fase = 'in_gioco';
   nuovaRun(true);
 }
@@ -4043,8 +4037,9 @@ function popolaStanzaIsaac(s, piano) {
       }
     ];
 
-    // Nella prima stanza normale del Piano 1 garantiamo sempre Vicolo dei Gatti per il playtest immediato
-    const temaScelto = (piano === 1 && s.id === 's1')
+    // Al Piano 1 qualsiasi stanza normale confinante con l'ingresso ha SEMPRE i Gatti d'Ombra per il playtest
+    const vicinaIngresso = Object.values(s.porte || {}).some((p) => p.aStanzaId === 's0');
+    const temaScelto = (piano === 1 && (vicinaIngresso || s.id === 's1'))
       ? TEMI_STANZA[1]
       : TEMI_STANZA[Math.floor(rng() * TEMI_STANZA.length)];
     const tipiGenerati = temaScelto.getTipi(piano);
@@ -4851,10 +4846,6 @@ function subisciColpoGiocatore(mezzeMaschereDanno, fonte, daX, daY) {
   player.invuln = ticksDaMs(FEEL.iframes.durataMs);
   scuoti(FEEL.scossa.ferita);
   if (statoRun.hpHalf <= 0) {
-    // --- T4: inizio ---
-    // Sequenza di morte e risveglio nell'hub: la notte successiva la conta T4 con incrementaNumeroNotte().
-    if (t4Gancio('morte', fonte)) return;
-    // --- T4: fine ---
     const proxNotte = incrementaNumeroNotte();
     statoRun.numeroNotte = proxNotte;
     mostraBanner(`🌙 NOTTE ${proxNotte} — Maschere spezzate contro ${fonte}... Risveglio!`, 220);

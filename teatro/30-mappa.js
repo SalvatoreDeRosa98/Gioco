@@ -393,8 +393,9 @@ function popolaStanzaIsaac(s, piano) {
       }
     ];
 
-    // Nella prima stanza normale del Piano 1 garantiamo sempre Vicolo dei Gatti per il playtest immediato
-    const temaScelto = (piano === 1 && s.id === 's1')
+    // Al Piano 1 qualsiasi stanza normale confinante con l'ingresso ha SEMPRE i Gatti d'Ombra per il playtest
+    const vicinaIngresso = Object.values(s.porte || {}).some((p) => p.aStanzaId === 's0');
+    const temaScelto = (piano === 1 && (vicinaIngresso || s.id === 's1'))
       ? TEMI_STANZA[1]
       : TEMI_STANZA[Math.floor(rng() * TEMI_STANZA.length)];
     const tipiGenerati = temaScelto.getTipi(piano);

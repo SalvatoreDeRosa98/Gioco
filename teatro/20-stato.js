@@ -247,23 +247,17 @@ function selezionaPersonaggio(charId) {
 
 function avviaPartitaConPersonaggio(charId) {
   if (charId) selezionaPersonaggio(charId);
-  // --- T4: inizio ---
-  if (t4Gancio('avvio', charId)) return; // il menu porta all'hub di Piazza Dante
-  // --- T4: fine ---
+  // Avvio diretto sul Palco del Teatro (senza deviazione su Piazza Dante)
   statoRun.fase = 'in_gioco';
   nuovaRun(false);
 }
 
 /**
- * «Ricomincia notte» (menu ESC: tasto R o pulsante). Con il T4 la notte nuova comincia nell'hub di
- * Piazza Dante (bug autore: si ripartiva direttamente nel piano); senza T4 il ramo dell'autore.
+ * «Ricomincia notte» (menu ESC: tasto R o pulsante).
  */
 
 function ricominciaNotte() {
   statoRun.pausa = false;
-  // --- T4: inizio ---
-  if (t4Gancio('ricomincia')) return;
-  // --- T4: fine ---
   statoRun.fase = 'in_gioco';
   nuovaRun(true);
 }
