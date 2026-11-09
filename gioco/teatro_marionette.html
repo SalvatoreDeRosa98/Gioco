@@ -2807,6 +2807,22 @@ function disegnaManoMarionettaPittorica() {
     },
   ];
 
+  // --- T3: inizio ---
+  // ECONOMIA DELL'AUTORE (roadmap «Novità nel Teatro», passo T3): prezzi della Fucina e drop di monete.
+  // Obiettivo: 5-8 monete in media al Piano 1. Verifica: `node gioco/teatro/sim-economia.js`, che legge
+  // QUESTO blocco dal file (una sola fonte per i numeri) e simula 1000 piani.
+  const ECONOMIA_T3 = {
+    prezzi: { cuore: 3, consumabile: 2, base: 5, forte: 7 },
+    piano1: { probMonetaSegreta: 0.5, probMonetaAltre: 0.35 },
+    dorato: { prob3: 0.28, probExtra: 0.45 },
+    boss: { prob3: 0.35 },
+    pulizia: { probMoneta: 0.25, probCura: 0.40, valoreSegreta: 3 },
+  };
+  for (const o of CATALOGO_OGGETTI) {
+    if (ECONOMIA_T3.prezzi[o.tier] != null) o.prezzo = ECONOMIA_T3.prezzi[o.tier];
+  }
+  // --- T3: fine ---
+
   // Pool Boss stile Isaac (Monstro, Chub, Duke of Flies, Gurdy, Gemini/Peep, Mom/Satan)
   const POOL_BOSS = [
     { id: 're-gatto', nome: 'Il Gatto dei Quattro Canti (Monstro)', tipo: 'gatto', hpBase: 175, speed: 1.05, pattern: 'monstro_jump' },
@@ -2851,7 +2867,9 @@ function disegnaManoMarionettaPittorica() {
         titolo: '«IL SORRISO DI TONINO E IL TRADIMENTO DI TADDEO»',
         testo1: 'Sotto il Velo, Tonino ride davanti alla sedia vuota della moglie Rosa senza ricordare il suo nome.',
         testo2: 'Il tuo amico Taddeo ti ha consegnato alla Burattinaia per guarire le paure della sorella Mariella.',
-        testo3: 'Risparmia le monete e scova la Stanza Segreta per permetterti le Reliquie Forti (15-18🪙) della Fucina!',
+        // --- T3: inizio ---
+        testo3: `Risparmia le monete e scova la Stanza Segreta per permetterti le Reliquie Forti (${ECONOMIA_T3.prezzi.forte}🪙) della Fucina!`,
+        // --- T3: fine ---
       };
     }
     if (pianoNelCiclo === 3) {
@@ -3084,6 +3102,9 @@ function disegnaManoMarionettaPittorica() {
         mostraBanner('⚠ Non hai abbastanza Maschere Massime per stringere questo Patto d\'Ombra!', 160);
         return;
       }
+      // --- T3: inizio ---
+      if (window.__teatroT3?.chiediConfermaPatto?.(nuovoItem, refSlot)) return; // «−1 maschera massima per sempre»
+      // --- T3: fine ---
     }
 
     if (statoRun.oggettiEquipaggiati.length < MAX_SLOT_OGGETTI) {
@@ -3562,13 +3583,19 @@ function disegnaManoMarionettaPittorica() {
       s.slotFucina = [
         {
           tipo: 'cura', curaHalf: 1, nome: '½ Maschera di Cera', nomeBreve: '½ Maschera',
-          statsDesc: 'Rigenera +½ ❤️ Maschera (Prezzo Isaac: 3🪙)',
-          prezzo: 3, inSaldo: false, sprite: 'mezzaMaschera', tier: 'cura', x: 158, y: 196, comprato: false,
+          // --- T3: inizio ---
+          statsDesc: `Rigenera +½ ❤️ Maschera (consumabile: ${ECONOMIA_T3.prezzi.consumabile}🪙)`,
+          prezzo: ECONOMIA_T3.prezzi.consumabile, inSaldo: false,
+          sprite: 'mezzaMaschera', tier: 'cura', x: 158, y: 196, comprato: false,
+          // --- T3: fine ---
         },
         {
           tipo: 'cura', curaHalf: 2, nome: 'Maschera Intera', nomeBreve: '1 Maschera',
-          statsDesc: 'Rigenera +1 ❤️ Maschera intera (Prezzo Isaac: 5🪙)',
-          prezzo: 5, inSaldo: false, sprite: 'cuore', tier: 'cura', x: 266, y: 196, comprato: false,
+          // --- T3: inizio ---
+          statsDesc: `Rigenera +1 ❤️ Maschera intera (cuore: ${ECONOMIA_T3.prezzi.cuore}🪙)`,
+          prezzo: ECONOMIA_T3.prezzi.cuore, inSaldo: false,
+          sprite: 'cuore', tier: 'cura', x: 266, y: 196, comprato: false,
+          // --- T3: fine ---
         },
         {
           tipo: 'oggetto', item: objBase, nome: objBase.nome, nomeBreve: nomeCorto(objBase.nome),
@@ -3803,6 +3830,9 @@ function disegnaManoMarionettaPittorica() {
     statoRun.effettiSplash = [];
     statoRun.ondeEsplosione = [];
     statoRun.scambioPendente = null;
+    // --- T3: inizio ---
+    AudioSys.playCampana(); // rintocco di campana a ogni ingresso in stanza (T3)
+    // --- T3: fine ---
     player.targetX = null;
     player.targetY = null;
     if (daLato === 'N') { player.x = 320; player.y = ARENA.y1 + 18; }
@@ -3815,7 +3845,9 @@ function disegnaManoMarionettaPittorica() {
       const o = stanza.oggettoPiedistallo;
       mostraBanner(`${o.forteGratis ? '★ OGGETTO FORTE GRATIS' : '🎁 OGGETTO GRATIS'}: ${o.nome} — ${o.statsDesc}`, 220);
     } else if (stanza.tipo === 'fucina') {
-      mostraBanner('⚒ LA FUCINA DI MASTRO PEPPE: Risparmia i Grani (o cerca la Stanza Segreta ?) per le Reliquie da 15-18🪙!', 210);
+      // --- T3: inizio ---
+      mostraBanner(`⚒ LA FUCINA DI MASTRO PEPPE: Risparmia i Grani (o cerca la Stanza Segreta ?) per le Reliquie da ${ECONOMIA_T3.prezzi.forte}🪙!`, 210);
+      // --- T3: fine ---
     } else if (stanza.tipo === 'patto') {
       mostraBanner('😈 STANZA DEL PATTO D\'OMBRA: Cedi 1 ❤️ Maschera Massima per una Reliquia Proibita del Velo!', 230);
     } else if (stanza.tipo === 'segreta' && !stanza.pulita) {
@@ -3893,7 +3925,9 @@ function disegnaManoMarionettaPittorica() {
   function spawnaMonetaATerra(st, x, y, valore = 1) {
     if (!st) return;
     // Calibrazione Isaac: monete scarse al Piano 1 (~30% di drop per raccogliere 5-8 monete in tutto il piano)
-    if (st.tipo !== 'segreta' && statoRun.piano === 1 && rng() > 0.35) return;
+    // --- T3: inizio ---
+    if (statoRun.piano === 1 && rng() > (st.tipo === 'segreta' ? ECONOMIA_T3.piano1.probMonetaSegreta : ECONOMIA_T3.piano1.probMonetaAltre)) return;
+    // --- T3: fine ---
     st.oggettiATerra.push({
       tipo: 'moneta',
       valore,
@@ -4150,11 +4184,13 @@ function disegnaManoMarionettaPittorica() {
         }
       }
       if ((nem.mobSoldi || nem.champion === 'dorato') && st) {
-        spawnaMonetaATerra(st, nem.x, nem.y, rng() < 0.28 ? 3 : 1);
-        if (rng() < 0.45) spawnaMonetaATerra(st, nem.x, nem.y, 1);
+        // --- T3: inizio ---
+        spawnaMonetaATerra(st, nem.x, nem.y, rng() < ECONOMIA_T3.dorato.prob3 ? 3 : 1);
+        if (rng() < ECONOMIA_T3.dorato.probExtra) spawnaMonetaATerra(st, nem.x, nem.y, 1);
       } else if (nem.boss && st) {
         spawnaMonetaATerra(st, nem.x - 16, nem.y, 1);
-        spawnaMonetaATerra(st, nem.x + 16, nem.y, rng() < 0.35 ? 3 : 1);
+        spawnaMonetaATerra(st, nem.x + 16, nem.y, rng() < ECONOMIA_T3.boss.prob3 ? 3 : 1);
+        // --- T3: fine ---
       }
       statoRun.effettiSplash.push({ x: nem.x, y: nem.y - 8, tick: 0 });
     }
@@ -4197,11 +4233,13 @@ function disegnaManoMarionettaPittorica() {
       }
 
       const rPick = rng();
+      // --- T3: inizio ---
       if (st.tipo === 'segreta') {
-        spawnaMonetaATerra(st, 320, 165, 3);
-      } else if (rPick < 0.25) {
+        spawnaMonetaATerra(st, 320, 165, ECONOMIA_T3.pulizia.valoreSegreta);
+      } else if (rPick < ECONOMIA_T3.pulizia.probMoneta) {
         spawnaMonetaATerra(st, 320, 165, 1);
-      } else if (rPick < 0.40 && statoRun.hpHalf < statoRun.maxHpHalf) {
+      } else if (rPick < ECONOMIA_T3.pulizia.probCura && statoRun.hpHalf < statoRun.maxHpHalf) {
+        // --- T3: fine ---
         st.oggettiATerra.push({ tipo: 'cura', valore: 1, sprite: 'mezzaMaschera', x: 320, y: 165 });
       }
 
@@ -4867,6 +4905,9 @@ function disegnaManoMarionettaPittorica() {
         }
       }
 
+      // --- T3: inizio ---
+      window.__teatroT3?.aggiornaRaggio?.(st); // raggio cremisi continuo del patto (blocca le lacrime finché è acceso)
+      // --- T3: fine ---
       if (keys.ArrowRight || keys.KeyL) eseguiAttacco4Direzioni(1, 0);
       else if (keys.ArrowLeft || keys.KeyJ) eseguiAttacco4Direzioni(-1, 0);
       else if (keys.ArrowUp || keys.KeyI) eseguiAttacco4Direzioni(0, -1);
@@ -4926,6 +4967,9 @@ function disegnaManoMarionettaPittorica() {
       }
 
       // Proiettili di Ferruccio
+      // --- T3: inizio ---
+      const spettraliT3 = window.__teatroT3?.spettrali?.() === true; // lacrime che passano colonne e muri
+      // --- T3: fine ---
       for (let i = statoRun.proiettili.length - 1; i >= 0; i--) {
         const p = statoRun.proiettili[i];
         p.x += p.vx;
@@ -4933,7 +4977,7 @@ function disegnaManoMarionettaPittorica() {
         p.dist += Math.hypot(p.vx, p.vy);
 
         // Collisione con Colonne di Caserta (blocco lacrime) e Bracieri (esplosione fiamme)
-        if (st.ostacoli && st.ostacoli.length > 0) {
+        if (st.ostacoli && st.ostacoli.length > 0 && !spettraliT3) { // T3: le spettrali passano
           let hitOst = false;
           for (const o of st.ostacoli) {
             if (o.tipo === 'colonna') {
@@ -4973,6 +5017,9 @@ function disegnaManoMarionettaPittorica() {
         }
 
         let rimuovi = p.dist >= p.maxDist || p.x < ARENA.x1 - 8 || p.x > ARENA.x2 + 8 || p.y < ARENA.y1 - 8 || p.y > ARENA.y2 + 8;
+        // --- T3: inizio ---
+        if (spettraliT3) rimuovi = p.dist >= p.maxDist || p.x < 0 || p.x > W || p.y < 0 || p.y > H;
+        // --- T3: fine ---
 
         for (const nem of st.nemici) {
           if (nem.hp <= 0 || (nem.airZ || 0) > 16 || p.hitIds.has(nem.id)) continue;
@@ -5340,6 +5387,9 @@ function disegnaManoMarionettaPittorica() {
   function disegnaFrame(dtMs) {
     if (statoRun.fase === 'menu_selezione') {
       disegnaMenuSelezionePersonaggio(tick);
+      // --- T3: inizio ---
+      window.__teatroT3?.disegnaMenu?.(ctx); // riga «Slot 1-5» e conferma di cancellazione
+      // --- T3: fine ---
       return;
     }
     const st = statoRun.stanzaCorrente;
@@ -5483,6 +5533,10 @@ function disegnaManoMarionettaPittorica() {
         const peppeFrame = Math.floor(tick / 14) % 2 === 0 ? SPRITE_SCENA.mercante : SPRITE_SCENA.mercante1;
         drawPixelSprite(peppeFrame, 320, 138, 1.9);
         drawPixelSprite(SPRITE_SCENA.incudine, 282, 146, 1.6);
+        // --- T3: inizio ---
+        // brFrame era definito solo in disegnaStanzaPixelArt: qui lanciava ReferenceError e fermava il loop nella Fucina.
+        const brFrame = Math.floor(tick / 8) % 2 === 0 ? SPRITE_SCENA.braciere0 : SPRITE_SCENA.braciere1;
+        // --- T3: fine ---
         drawPixelSprite(brFrame, 210, 142, 1.7);
         drawPixelSprite(brFrame, 430, 142, 1.7);
 
@@ -5747,11 +5801,17 @@ function disegnaManoMarionettaPittorica() {
         disegnaManoMarionettaPittorica(ctx, 424, 25, 0.95, true, false, tick + 12);
       }
 
+      // --- T3: inizio ---
+      window.__teatroT3?.disegnaMondo?.(ctx); // raggio cremisi (sotto l'HUD, dentro la scossa)
+      // --- T3: fine ---
       disegnaHUDPixelArt(st);
       if (statoRun.scambioPendente) disegnaModalSostituzione5Slot();
       if (statoRun.siparioAttivo) disegnaSiparioNarrativo(statoRun.siparioAttivo);
     }
     ctx.restore();
+    // --- T3: inizio ---
+    window.__teatroT3?.disegnaSopra?.(ctx); // conferma del patto
+    // --- T3: fine ---
   }
 
   // ===========================================================================
@@ -6121,6 +6181,16 @@ function disegnaManoMarionettaPittorica() {
   }
 
   statoRun.fase = 'menu_selezione';
+  // --- T3: inizio ---
+  // Unico punto di esposizione degli interni per gioco/teatro/t3-economia-salvataggi.js (script classico
+  // caricato subito dopo questo). Riferimenti vivi, non copie: lo script T3 li legge e li modifica.
+  window.__teatroInterno = {
+    W, H, ARENA, ctx, canvas, statoRun, player, keys, AudioSys, CATALOGO_PATTO, CATALOGO_OGGETTI, ECONOMIA_T3,
+    PERSONAGGI_GIOCABILI, drawTextFit, drawPillLabel, mostraBanner, danneggiaNemico, apriMuroSegreto,
+    acquisisciOggettoConLimite5Slot, selezionaPersonaggio,
+    get tick() { return tick; },
+  };
+  // --- T3: fine ---
   // Sonda di sola lettura per la QA automatica (Playwright): non cambia nulla del gioco.
   window.__teatro = Object.freeze({
     get tick() { return tick; },
@@ -6131,5 +6201,6 @@ function disegnaManoMarionettaPittorica() {
   requestAnimationFrame(loop);
 })();
 </script>
+<script src="teatro/t3-economia-salvataggi.js"></script>
 </body>
 </html>
