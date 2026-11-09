@@ -853,6 +853,51 @@ function disegnaManoMarionettaPittorica() {
   ctx.restore();
 }
 
+// ===========================================================================
+// SPRITE DEL GATTO GRANDE (MODEL SHEET APPROVATO)
+// ===========================================================================
+const SPRITE_GATTO_IMG = {};
+function getGattoImage(posa) {
+  if (!SPRITE_GATTO_IMG[posa]) {
+    const im = new Image();
+    const uri = (window.__risorseTeatro && window.__risorseTeatro[`assets/sprite_teatro/gatto_${posa}.png`])
+      || `assets/sprite_teatro/gatto_${posa}.png`;
+    im.src = uri;
+    SPRITE_GATTO_IMG[posa] = im;
+  }
+  const img = SPRITE_GATTO_IMG[posa];
+  return (img && img.complete && img.naturalWidth > 0) ? img : null;
+}
+
+function disegnaGattoSprite(ctx, posa, x, y, scaleH, flip, flash, isBoss = false) {
+  const img = getGattoImage(posa);
+  if (!img) return false;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(flip, 1);
+  const targetH = scaleH;
+  const targetW = targetH * (img.naturalWidth / img.naturalHeight);
+  // Ancorato ai piedi in basso al centro
+  const drawX = -targetW / 2;
+  const drawY = -targetH;
+  if (flash) ctx.filter = 'brightness(3) contrast(1.5)';
+  ctx.drawImage(img, drawX, drawY, targetW, targetH);
+  if (isBoss) {
+    // Corona borbonica sulla testa del Re Gatto
+    ctx.fillStyle = '#f9cb40';
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 1.0;
+    const cx = targetW * 0.22, cy = drawY + targetH * 0.16;
+    ctx.beginPath();
+    ctx.moveTo(cx - 7, cy); ctx.lineTo(cx - 5, cy - 8); ctx.lineTo(cx, cy - 3); ctx.lineTo(cx + 5, cy - 8); ctx.lineTo(cx + 7, cy);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath(); ctx.arc(cx, cy - 3, 1.6, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+  return true;
+}
+
 // Disegno pittorico differenziato per ogni archetipo di Nemico stile The Binding of Isaac!
 function disegnaNemicoPittorico() {
   const args = Array.from(arguments);
@@ -1069,6 +1114,10 @@ function disegnaNemicoPittorico() {
     const isCrouch = (n.crouchTicks > 0) || state === 'crouch';
     const isLeap = (n.leapTimer > 0) || state === 'leap';
     const isMoving = Math.abs(n.vx || 0) > 0.1 || Math.abs(n.vy || 0) > 0.1;
+    const posa = isCrouch ? 'accucciato' : isLeap ? 'salto' : isMoving ? 'cammina' : 'fermo';
+    const targetH = isCrouch ? 22 : isLeap ? 25 : isMoving ? 24 : 32;
+
+    if (!disegnaGattoSprite(ctx, posa, 0, 4, targetH, flip, isFlash, false)) {
     const walkAnim = isMoving && !isCrouch && !isLeap ? Math.sin(tick * 0.32) : 0;
 
     // Scala Gatto Grande: maestoso, slanciato, fedele al model sheet Ferruccio
@@ -1254,6 +1303,7 @@ function disegnaNemicoPittorico() {
     ctx.fillRect(eyeX - 0.4, eyeY - 1.8, 0.8, 3.6);
     ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(10.2, -11.0, 0.8, 3.0);
+    }
 
   // =========================================================================
   // 4. MASCHERA D'OSSO / PULCINELLA D'ASSALTO (Isaac Host)
@@ -1570,6 +1620,13 @@ function disegnaBossPittorico() {
   // BOSS 1: RE GATTO DEI QUATTRO CANTI (Isaac Monstro)
   // =========================================================================
   if (bossId === 're-gatto') {
+    const isAir = (airZ > 10) || (b.state === 'leap');
+    const isCrouch = b.state === 'crouch' || (b.crouchTicks > 0);
+    const isMoving = Math.abs(b.vx || 0) > 0.1 || Math.abs(b.vy || 0) > 0.1;
+    const posa = isAir ? 'salto' : isCrouch ? 'accucciato' : isMoving ? 'cammina' : 'fermo';
+    const targetH = isAir ? 68 : isCrouch ? 56 : isMoving ? 62 : 78;
+
+    if (!disegnaGattoSprite(ctx, posa, 0, 8, targetH, flip, isFlash, true)) {
     // Corpo massiccio scolpito in ebano scuro
     const catG = ctx.createRadialGradient(0, -12, 2, 0, -12, 24);
     catG.addColorStop(0, isFlash ? '#ffffff' : '#3c2415');
@@ -1627,6 +1684,7 @@ function disegnaBossPittorico() {
     ctx.arc(6, -14, 1.5, 0, TAU);
     ctx.arc(14, -13, 1.4, 0, TAU);
     ctx.fill();
+    }
 
   // =========================================================================
   // BOSS 3: LA REGINA DELLE VESPE (Isaac Duke of Flies)
