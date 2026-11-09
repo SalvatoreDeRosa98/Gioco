@@ -59,7 +59,7 @@ async function attendiServer(url) {
 async function avviaServer() {
   const porta = await portaLibera();
   const proc = spawn('python3', ['-m', 'http.server', String(porta), '--bind', '127.0.0.1', '--directory', RADICE_GIOCO], {
-    stdio: ['ignore', 'ignore', 'pipe'],
+    stdio: ['ignore', 'ignore', 'pipe'], // stderr incanalato e letto sotto (così il log delle richieste non blocca il server)
   });
   let stderr = '';
   proc.stderr.on('data', (d) => { stderr += d; });

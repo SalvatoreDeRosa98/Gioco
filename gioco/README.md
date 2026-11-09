@@ -29,6 +29,7 @@ Parametri dell'URL:
 | `?debug=1&wire=1&scena=piazza-dante.tonino-primo-incontro` | storia 027 (strumento di QA): fa partire subito quella scena di `contenuti/storia.json` nel cartiglio dei dialoghi (`ui/cartiglio.js`) o, se `ancoraggi.json` la marca `tableau`, nel tableau (`ui/tableau.js`); il ciclo entra in `pausa` finché il dialogo è aperto; si avanza con `avanza`/`interagisci`/`conferma` o un click (antirimbalzo 160 ms), `indietro` salta una ripetizione; nel piano (`&piano=1`) nella stanza `banchetto` `interagisci` lontano dagli slot parla con Tonino (ancoraggio `banchetto`), mai con nemici vivi |
 | `?debug=1&wire=1&hub=1&piano=0&seme=1845` | storia 029: parte dall'hub di Piazza Dante (`mondo/hub.js`, modello `contenuti/modelli-stanza/hub/piazza-dante.json`), ciclo in `hub`: mura chiuse tranne l'ingresso al piano 1 (soglia d'oro a destra, etichetta `piano 1`), Tonino al banchetto (cerchio d'inchiostro con alone d'oro, pieno quando `interagisci` risponde), la porta della bottega di Gaetano nel muro in alto (pannello pieno = chiusa finché `fucina_aperta` è falso), la finestra accesa di Mariella (quadrato d'oro, mai un personaggio), la luna (disco crema in alto a sinistra) e i fili d'oro tratteggiati; Taddeo compare solo con `taddeo = perdonato`, Agnese sotto il portico solo con `agnese = risvegliata` (`__gioco.imposta`); alla notte 1 partono da sole risveglio, tutorial e targa; vicino a un NPC `interagisci` apre il suo ancoraggio `hub:<npc>` (nessuna pausa del ciclo); camminando nell'ingresso parte la notte: piano 1 generato con il seme derivato dal profilo e dalla notte (`hub.semeNotte()`, diverso da `?seme=`), ciclo in `notte`, `notte` dell'avanzamento invariata; cartellino DOM in basso a sinistra con la notte e i suggerimenti |
 | `?debug=1&piano=1&seme=1845&nemico=<archetipo>` | storia P05 (nemici alla Isaac del Teatro, renderer pixel-art): oltre al piano, un nemico vero dell'archetipo dato (`gatto`, `vespa`, `statua`, `guardia`, `maschera`, `bomba`, `predone`: le schede di `nemici.json`) nasce nella stanza d'ingresso con id `nemico-prova`. Comportamenti del Teatro trascritti nel JSON: la **statua** è una torretta ferma che spara croci di 4 colpi alternando `+` e `×` (senza gettone), la **guardia** avanza a passo lento e spara doppiette mirate tenendo `d_attesa`, la **maschera** (Host) è immobile e corazzata finché chiusa (12% del danno, nessuna spinta), si apre nell'anticipo, spara un ventaglio di 3 e si richiude dopo il recupero, la **bomba** (Bozzo Esplosivo) è ferma e, con Ferruccio entro `d_max`, accende la miccia (anticipo + lampo) ed esplode: danno pesante entro `r_giocatore`, `danno_nemici` ai nemici entro `r_nemici`, 6 schegge, evento `nemico.esplosione` (anche se uccisa prima); il **predone** è la guardia dorata della segreta (monete ×2); il gatto ha il cooldown del Teatro. I **proiettili nemici** (`attori/proiettili-nemici.js`) feriscono di `proiettili_nemici.danno.p<piano>` maschere (1 ai piani 1-2, 2 dal 3; boss 2), sono parabili (riflessi contro i nemici), cancellati dal fendente attivo, spenti su muri/ostacoli e a fine gittata. **Telegrafo solo sul corpo** (regola dell'autore 2026-11-08): postura d'anticipo e occhi rossi nel lampo; nessun segno a terra nel renderer (`segnoATerra()` resta solo come dato per il fil di ferro diagnostico) |
+| `?debug=1&piano=1&seme=1845&boss=<id>` | **storia P06 (boss del pool, Donna Luciana, sipario, ciclo)**: forza il boss di ogni piano (`re-gatto`, `capitano-guardia`, `regina-vespa`, `colosso-statua`, `maestro-fucina`, `donna-luciana`: id di `boss.json`); senza, il boss del piano è quello estratto dalla run (`mondo/run.js`, generatore `boss-run` dal seme) e Donna Luciana sta sul 4° piano di ogni ciclo. `&sipario=0` salta il sipario narrativo fra i piani (`interfaccia/sipario.js`). Provato in `boss.wire.test.js` |
 | `?debug=1&wire=1&hub=1&seme=1845&continua=1` | storia 030: se nello slot c'è una notte salvata, preme «Continua» da solo all'avvio (strumento di QA). Senza `continua=1`, nell'hub compare il pannello DOM «Continua / Lascia andare» (`interfaccia/ripresa.js`) quando una notte è salvata: «Continua» rigenera il piano dal seme salvato ed entra nella stanza salvata con maschere, doni e monete ripristinati; «Lascia andare» cancella la notte salvata. La notte si salva a ogni `notte.stanza` (`persistenza/notte-salvata.js`, chiave `ferruccio.v3.notte.1`) e si cancella alla morte. Alla morte (`ferruccio.morto`) il ciclo va in `pausa`, il velo DOM (`interfaccia/morte.js`) mostra le quattro fasi di `risveglio.json` (lanterne una a una, fili, maschera, buio; ≤ 5 s) e al `risveglio.fine` si torna nell'hub con `notte + 1`: flag, scintille, `piano_max` e scene viste restano; monete, doni, consumabili e pool della notte spariscono; con `&piano=N` (senza hub) la notte riparte dallo stesso seme |
 | `prova.html?seme=1845` (storia P02, provvisoria) | **build di prova per l'autore**: la pagina dichiara `<meta name="gioco-avvio" content="debug=1&wire=1&hub=1">` e `fondazione/avvio-url.js` fonde quei valori come default della query (l'URL vince sempre: `?seme=` resta tuo); all'avvio compare il pannello dei tasti (`interfaccia/prova.js`, testi in `interfaccia.json › prova`, stile `stile/prova.css`) che sparisce al primo tasto o click. Il gioco è da tastiera (e gamepad): nessun controllo touch, per scelta dell'autore. `__gioco.pannelloProva()` = `true/false` (a schermo o chiuso) o `null` senza la meta. Il file unico pubblicabile si produce con `node tools/impacchetta.js --entrata gioco/prova.html --frammento` (vedi `tools/README-impacchetta.md`) |
 | `?debug=1&piano=1&seme=1845&personaggio=ferruccio` | **storie P04/P09 (squadra oggetti)**: oggetto ATTIVO del personaggio (`oggetti/attivi.js`, Q = azione `attivo`, carico all'inizio, +1 tacca a stanza pulita, HUD DOM in basso a sinistra con le tacche); cinque slot dei doni (`oggetti/slot.js`, `doni.limiti.max_slot_doni`): al sesto compare il modale DOM di sostituzione (1-5 sostituisce, Esc/Q rinuncia; il vecchio torna sul piedistallo o si perde se comprato); dopo il boss l'altare del **Patto d'Ombra** (`oggetti/patto.js`, `patto.json`: 100 % senza danni nel boss, 60 % con danni, 2 reliquie) con la stanza velata di rosso: `interagisci` vicino a una reliquia apre il pannello «−1 Maschera massima per sempre», `conferma`/`indietro`; la **Crepa Dorata** (`mondo/segreta.js`): a stanza pulita la finestra verso la segreta è una crepa che un proiettile o un fendente apre (porta sui record, stanza rimontata, `segreta.aperta`), la segreta pulita lascia `monete_segreta` monete; **oggetti gratis** (`oggetti/gratis.js`, `economia.json › gratis`): a stanza normale pulita 1 su 10 forte, 1 su 3 base, dal `seme_stanza`, al centro, `interagisci` raccoglie; prezzi dell'autore (cuore 3, base 5, forte 7, consumabile 2) nel banchetto («La Fucina» nel titolo, Tonino resta); reliquie **Raggio Cremisi Continuo** (freccia tenuta: carica, poi laser con danno a tick sulla linea, `combattimento.raggio()`) e **Lacrime Spettrali** (i proiettili attraversano mura e ostacoli; gli altri ora si fermano sui solidi `ferma_colpi` con `ferruccio.colpo_muro`) |
@@ -60,6 +61,7 @@ narrativo più gli override di `__gioco.flag`.
 Dalla storia 029 anche `hub` (con `&hub=1`: `presenze()`, `vicino()`, `semeNotte()`, `notte()`, `ingresso`, `cella`, `attivo`, `partito`, `entra()`, `esci()`),
 `cartellinoHub()` (stato del DOM o null) e `notte` come getter (null finché la notte non parte).
 Storia P01 (provvisoria): `stanza.combatteBoss`, `stanza.boss` (il boss vivo o null), `stanza.uscita` (`{x, y, raggio, attiva, progresso, attraversata}` o null), `risveglio.motivo` (`morte` | `vittoria` | null), `risveglio.pianoProssimo`, `risveglio.completaPiano(piano)`, `risveglio.durataMs(motivo?)`; `veloMorte()` porta anche `motivo`; `creaNemico({…, boss: true})` applica la taglia del boss provvisorio.
+Storia P06: `run` (lo stato della run: `seme`, `piano`, `ciclo`, `pianiPerCiclo`, `bossEstratti`, `forzato`, `pianoNelCiclo(p)`, `cicloDi(p)`, `moltCiclo(p)`, `moltVelocita(p)`, `bossDelPiano(p)`, `vitaBoss(p)`, `forzaBoss(id)`, `idStoriaDi(id)`, `nuova(seme)`), `sipario` (`stato()` = {aperto, piano, ciclo, pianoNelCiclo, atto, titolo, righe, mostrati, visibile}, `chiudi()`, `racconto(info)`, `aperto`); ogni bersaglio boss espone `bossId`, `pattern`, `quota` (altezza in volo), `salve`, `faseBoss`, `nomeBoss`; eventi `run.nuova`, `run.piano`, `boss.anticipo`, `boss.atterraggio`, `boss.mani_schianto`, `boss.finale_sconfitto`, `profilo.vittoria`, `narrativa.boss`.
 Dalla storia 030 anche `risveglio` (`attivo`, `fase`, `indice`, `progresso()`, `progressoFase()`, `lanterneSpente()`, `durataMs()`, `morti`, `stato()`),
 `notteSalvata` (`presente`, `fotografa()`, `salva()`, `carica()`, `cancella(motivo)`, `riprendi({avvia})`), `ripresa` (`continua()`, `lascia()`, `stato()`
 del pannello DOM) e `veloMorte()` (stato del velo DOM o null); `ferruccio.risveglia()` ed `economia.nuovaNotte()`.
@@ -181,9 +183,17 @@ node gioco/qa/boss-provvisorio.test.mjs   # storia P01 (node:test, provvisoria):
                                           # una sola volta, velo di una fase `discesa` e `piano.discesa` {daPiano, aPiano} SENZA risveglio (Teatro: la run
                                           # continua al piano 2 con doni, flag, scintille e pool addosso; notte invariata; piano_max 2; notte salvata
                                           # cancellata; il residuo dell'economia è accreditato una volta); contenuti e scheda boss; regole del codice
-node gioco/qa/boss.wire.test.js           # Playwright della storia P01: ?debug=1&wire=1&piano=1&seme=1845, vaiA(stanza boss), boss nato e ucciso,
-                                          # Medaglione a terra e raccolto, uscita attiva → piano.completato, velo di discesa (fine_piano.discesa), piano 2
-                                          # (7 stanze) nella stessa run con il Medaglione addosso, notte 1, nessun risveglio.fine; salva boss-provvisorio.png
+node gioco/qa/boss.test.mjs               # storia P06 (node:test): formule della run dal Teatro (piano nel ciclo, ciclo, moltCiclo 1,45^(c−1), moltVel,
+                                          # vita del boss per piano/ciclo, Donna Luciana ai piani 4 e 8, estrazione senza ripetizione e deterministica,
+                                          # forzaBoss, idStoria); per ogni pattern fasi anticipo → lampo → colpo (mai segnoATerra), proiettili danno_boss;
+                                          # balzo e immunità in volo del Re Gatto, carica rettilinea del Capitano, rimbalzo ed evocazioni della Regina,
+                                          # Custode immobile con bombe, forbici del Maestro, Mani e schianto di Donna Luciana; contatto del corpo
+                                          # (pesante, parabile → stordito + immune), furia (cooldown _furia), racconto del sipario (atti, BIS, ciclo), regole
+node gioco/qa/boss.wire.test.js           # Playwright della storia P06 (pixel-art): per ogni boss ?debug=1&piano=1&seme=1845&boss=<id> → nasce con vita
+                                          # della formula, agisce (fasi, proiettili/moto), barra della vita nell'HUD, salva boss-<id>.png; flusso con
+                                          # re-gatto: boss.sconfitto {id re-gatto, archetipo gatto}, boss_battuti, Medaglione, uscita → velo di discesa →
+                                          # SIPARIO dell'atto II (sipario.png) → chiudi → piano 2 (7 stanze) della stessa run; Donna Luciana con
+                                          # &sipario=0: boss.finale_sconfitto, profilo.vittorie, boss_battuti, discesa al piano 2 (il ciclo continua)
 node gioco/qa/prova.test.mjs              # storia P02: fondiDefault/leggiMetaAvvio (la meta riempie solo le chiavi assenti, l'URL vince)
 node gioco/qa/prova.wire.test.js          # Playwright della storia P02: prova.html?debug=1&seme=1845 parte nel piano 1 (stanza d'ingresso) dalla meta,
                                           # pannello dei tasti visibile che sparisce al primo tasto, nessun controllo touch; index.html servita SENZA la
@@ -308,6 +318,9 @@ gioco/
 │   │   └── doni.js             storia 024: HUD dei doni raccolti e cartiglio del dono (nome, riga, avviso, anteprima) in DOM
 │   │   ├── hub.js              storia 029: cartellino DOM dell'hub (notte, suggerimento per parlare/partire)
 │   │   ├── morte.js            storia 030: velo DOM della sequenza di morte (dissolvenza, lanterne, fili, maschera, didascalie)
+│   │   ├── sipario.js          storia P06: il sipario narrativo degli atti fra i piani (DOM; Teatro getRaccontoAtto ~2535): atto,
+│   │   │                       titolo, tre righe e «Alza il sipario» da interfaccia.json › sipario; BIS al piano 1 dei cicli ≥ 2;
+│   │   │                       si alza con conferma/scatto, click o chiudi(); tiene il ciclo in `pausa`
 │   │   ├── ripresa.js          storia 030: pannello DOM «Continua / Lascia andare» della notte salvata (nell'hub)
 │   │   ├── prova.js            storia P02: pannello DOM dei tasti di prova.html (sparisce al primo tasto o click)
 │   │   ├── menu.js             storia P04: menu DOM di selezione del personaggio e dello slot (Teatro ~4042): `apri()` → Promise
@@ -315,6 +328,9 @@ gioco/
 │   │   ├── audio.js            storia P10: interruttore DOM del muto «Audio: acceso/spento (M)» (testi `interfaccia.json › audio`), visibile nel menu
 │   │   └── oggetti.js          storie P04/P09: HUD dell'attivo con le tacche, modale di sostituzione dei cinque slot, pannello del Patto (stile/oggetti.css)
 │   ├── mondo/
+│   │   ├── run.js              storia P06: lo stato della run (seme, piano, ciclo, boss estratti senza ripetizione da boss.json con il
+│   │   │                       generatore `boss-run`, usi dei modelli) e le formule del Teatro: pianoNelCiclo, cicloDi, moltCiclo,
+│   │   │                       moltVelocita, vitaBoss, bossDelPiano (Donna Luciana sul piano finale del ciclo), forzaBoss (QA)
 │   │   ├── fisica.js           campo a griglia con mura/ostacoli, cerchio contro rettangoli con
 │   │   │                       scivolamento, settore e rettangolo spazzato contro cerchi, linea di
 │   │   │                       colpo, separazione dei cerchi (funzioni pure)
@@ -343,6 +359,16 @@ gioco/
 │   │   ├── bersaglio.js        contratto minimo dei bersagli, nemico FANTOCCIO con telegrafo in tre
 │   │   │                       tempi (resta per i test del combattimento) e proiettile minimo
 │   │   ├── nemico.js           fabbrica generica dei nemici per archetipo (nemici.json): scheda scalata per
+│   │   ├── boss/               storia P06: i pattern dei boss sopra la fabbrica dei nemici (opzione `pattern`; numeri in nemici.json › boss)
+│   │   │   ├── base.js         macchina a fasi insegue → anticipo → lampo → colpo → recupero (telegrafo solo sul corpo), insegui,
+│   │   │   │                   anello, ventaglio, cooldown di furia, `esponiPattern`
+│   │   │   ├── re-gatto.js     monstro_jump: balzo in aria (quota, immune in volo) con schianto e rosa caotica; ventaglio di 7
+│   │   │   ├── capitano-guardia.js chub_charge: carica rettilinea fino al muro, anello di 8
+│   │   │   ├── regina-vespa.js duke_flies: rimbalza in diagonale, evoca vespe (max 4 comuni vivi), anello ruotato
+│   │   │   ├── colosso-statua.js gurdy_turret: immobile, spirale, genera bombe (max 2) ogni 3 salve
+│   │   │   ├── maestro-fucina.js scissor_blades: forbici (due ventagli specchiati), anello in furia
+│   │   │   ├── donna-luciana.js marionette_queen: le due Mani sparano ventagli, schianto delle Mani con anello di 10
+│   │   │   └── indice.js       nome del pattern → factory (`patternPerNome`)
 │   │   │                       piano (F1-F3), corpo, separazione (§8.5), contratto del combattimento, hitbox
 │   │   │                       del Colpo via comeBersaglio, morte → anima (dissoluzione) e bottino (storia 019);
 │   │   │                       hitbox da hit_dal, segno a terra, gancio posa (storia 020)
@@ -394,7 +420,7 @@ gioco/
 │   │                           baseSpd, attivo e dono iniziali, testi) e le costanti `isaac` di ricalcolaStatisticheIsaac {base,min,max}
 │   ├── oggetti-attivi.json     storia P04 (Teatro OGGETTI_ATTIVI ~2381): Forbici, Tamburello, Ampolla: maxCarica ed effetti {base,min,max}
 │   ├── patto.json              storia P04 (Teatro CATALOGO_PATTO ~2397): le reliquie del Patto d'Ombra, costo in mezze maschere e `mod`
-│   ├── boss.json               storia P04 (Teatro POOL_BOSS/BOSS_FINALE ~2515): pool dei boss dei piani 1-3 e Donna Luciana al piano 4
+│   ├── boss.json               storie P04/P06 (Teatro POOL_BOSS/BOSS_FINALE ~2515, formule ~3231/~3395): pool dei boss con pattern e idStoria, Donna Luciana, piani per ciclo, molt_ciclo, molt_vel, vita_per_piano_ciclo; pool dei boss dei piani 1-3 e Donna Luciana al piano 4
 │   ├── audio.json              storia P10: master.volume, rumore (seme, buffer, decadimento del riverbero), passi (lunghezza_px), e per ogni suono
 │   │                           (passo, passo_nemico, sibilo, tonfo, campana, colpo_a_segno, colpo_subito, moneta, porta_chiusa, attivo) frequenze,
 │   │                           durate, inviluppi, filtri, volume e gap_min_ms, tutti {base,min,max}
@@ -487,6 +513,29 @@ spezzato i fili; Donna Luciana è la Marionettista e non pende. Il filo è una l
 sul nemico. `resa/fili.js` calcola e disegna; il renderer raccoglie i corpi (`disegnaFiliMarionette`), porta le dita delle Mani
 dal proscenio al palco (inverso di scossa + camera) e li tira prima di disegnare Ferruccio. `__gioco.resa.fili()` espone
 `{marionette, fili, alpha, spessore, ancoraggio_y, scarto_x, curva_px}` dell'ultimo frame alla QA.
+
+## Boss del pool, Donna Luciana, sipario e ciclo (storia P06, Teatro)
+
+- **La run** (`mondo/run.js`): seme, piano, ciclo e i boss estratti senza ripetizione da `boss.json › pool` con il generatore derivato
+  `boss-run` (stesso seme → stessi boss). Formule del Teatro: `pianoNelCiclo = ((p−1) mod 4)+1`, `ciclo = ⌊(p−1)/4⌋+1`,
+  `moltCiclo = 1,45^(ciclo−1)`, `moltVelocita = min(1,55, 1+(p−1)×0,045)`, `vitaBoss = max(20, round((hpBaseTeatro + (pianoNelCiclo−1)×45) × moltCiclo))`
+  (175/210/165/235/195, Donna Luciana 480: il danno di Ferruccio è quello del Teatro). Il boss del piano è `estratti[(p−1) mod 5]`,
+  Donna Luciana sul 4° piano di ogni ciclo; **dopo di lei il ciclo continua** (piano 5 = ciclo 2, sipario del «BIS»), come nel Teatro.
+- **I pattern** (`attori/boss/<id>.js`, numeri in `nemici.json › boss`): girano al posto dell'IA base dentro la fabbrica dei nemici
+  (`pattern`), che resta padrona di vita, colpi, parata → stordimento (`t_stordito_boss`, poi `t_immunita_boss`), morte e bottino.
+  Telegrafo SOLO sul corpo (regola dell'autore 2026-11-08): ogni attacco passa per `anticipo` (postura) e `lampo` (occhi rossi) dai
+  tempi di `boss.comuni`, mai un segno a terra. Il corpo del boss ferisce al contatto (Teatro ~4705: `contatto_pesante`, parabile),
+  non in volo; in volo oltre `quota_immune` i colpi gli passano sotto (Teatro ~3623). Furia sotto il 50 % di vita: cooldown `_furia`.
+  Lo Spezzafili d'Ottone non ha un ramo nel `loop()` del Teatro (resterebbe fermo): il pattern è scritto dal nome (forbici).
+- **Fine del boss**: `boss.sconfitto` {id: id di boss.json, archetipo, pattern, x, y}; il Medaglione di Rosa cade per l'archetipo
+  `gatto` con `tonino_ricordo` null (regola del motore conservata); `boss_battuti` riceve l'`idStoria` (storia.json: Donna Luciana vi è
+  stata aggiunta fra i boss, copia identica in `trama/storia.json`); la vittoria su Donna Luciana va nel profilo (`vittorie`, `ciclo_max`,
+  evento `boss.finale_sconfitto`); `piano_max` lo registra il risveglio a `piano.completato`.
+- **Il sipario** (`interfaccia/sipario.js`, testi `interfaccia.json › sipario`): a ogni `piano.discesa`, dopo il velo e la generazione del
+  piano nuovo, con il ciclo in `pausa`; atto per piano nel ciclo (I-IV), «BIS» al piano 1 dei cicli successivi con il bonus del ciclo,
+  titolo dell'atto IV dal ciclo 2; si alza con `conferma`/`scatto`, click o `__gioco.sipario.chiudi()`. Al piano 1 di una run non si
+  alza: l'hub e le scene automatiche dell'ingresso fanno da atto I (decisione da confermare con l'autore).
+- **HUD**: barra della vita del boss in alto (`renderer.js › disegnaBarraVitaBoss`, titolo da `interfaccia.json › boss_hud` con piano e ciclo).
 
 ## Valori provvisori da confermare con il game-designer
 

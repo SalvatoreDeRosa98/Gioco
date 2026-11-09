@@ -1,0 +1,82 @@
+/* Storia P06: il sipario narrativo degli atti fra un piano e l'altro (DOM, `interfaccia/sipario.js`).
+   Riferimento: il Teatro (`disegnaSiparioNarrativo`): velo scuro, due quinte rosse, cartellone bordato d'oro con
+   atto in oro, titolo in crema, tre righe di racconto e il bottone «Alza il sipario». Colori SOLO dai token. */
+
+#interfaccia .sipario[hidden] { display: none; }
+
+#interfaccia .sipario {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--inchiostro) 88%, transparent);
+  color: var(--crema);
+  font-family: var(--font-testo);
+  text-align: center;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 30;
+}
+
+#interfaccia .sipario-quinta {
+  position: absolute;
+  top: 6%;
+  bottom: 6%;
+  width: 3.5%;
+  background: color-mix(in srgb, var(--rosso) 70%, var(--inchiostro));
+  border-left: 1px solid color-mix(in srgb, var(--oro) 45%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--oro) 45%, transparent);
+}
+#interfaccia .sipario-quinta-sinistra { left: 9%; }
+#interfaccia .sipario-quinta-destra { right: 9%; }
+
+#interfaccia .sipario-cornice {
+  position: relative;
+  width: 70%;
+  max-width: 920px;
+  box-sizing: border-box;
+  padding: 2em 2.4em 1.6em;
+  border: 2px solid var(--oro);
+  outline: 1px solid color-mix(in srgb, var(--oro) 40%, transparent);
+  outline-offset: -8px;
+  background: color-mix(in srgb, var(--inchiostro) 94%, var(--bruno));
+}
+
+#interfaccia .sipario-atto {
+  margin: 0 0 0.4em;
+  font-family: var(--font-titoli);
+  font-size: clamp(12px, 1.6vw, 22px);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--oro);
+}
+
+#interfaccia .sipario-titolo {
+  margin: 0 0 0.8em;
+  font-family: var(--font-titoli);
+  font-weight: normal;
+  font-size: clamp(16px, 2.4vw, 34px);
+  color: var(--crema);
+}
+
+#interfaccia .sipario-righe p {
+  margin: 0.25em 0;
+  font-size: clamp(13px, 1.7vw, 24px);
+  line-height: 1.3;
+  color: var(--crema);
+}
+#interfaccia .sipario-righe p:last-child { color: var(--carta-luce); }
+
+#interfaccia .sipario-alza {
+  margin-top: 1.4em;
+  padding: 0.5em 1.4em;
+  font-family: var(--font-titoli);
+  font-size: clamp(12px, 1.5vw, 20px);
+  color: var(--crema);
+  background: color-mix(in srgb, var(--rosso) 75%, var(--inchiostro));
+  border: 1px solid var(--oro);
+  cursor: pointer;
+}
+#interfaccia .sipario-alza:hover,
+#interfaccia .sipario-alza:focus-visible { background: var(--rosso); outline: none; }

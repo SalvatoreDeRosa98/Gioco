@@ -172,7 +172,8 @@ export function creaRisveglio({
     s.indice = -1;
     s.motivo = null;
     s.pianoCompletato = null;
-    if (motivo === MOTIVI_RISVEGLIO.discesa && Number.isInteger(piano) && piano < PIANO_FINALE) {
+    // storia P06 (Teatro): il ciclo è infinito, anche dopo Donna Luciana al piano PIANO_FINALE si scende (piano 5 = ciclo 2)
+    if (motivo === MOTIVI_RISVEGLIO.discesa && Number.isInteger(piano)) {
       combattimento?.interrompi?.();
       eventi.emit('piano.discesa', { daPiano: piano, aPiano: piano + 1 });
       return;

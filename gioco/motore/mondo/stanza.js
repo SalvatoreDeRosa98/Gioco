@@ -679,7 +679,11 @@ export function creaStanza({
           s.tSvuotata = s.t;
           if (s.boss) {
             // storia P01: il boss provvisorio è caduto: chi ascolta fa cadere il ricordo (ricordi.js) nel punto della morte
-            eventi.emit('boss.sconfitto', { id: s.boss.archetipo, stanza: record.id, x: s.boss.x, y: s.boss.y });
+            // storia P06: l'id vero del boss (boss.json) e il suo archetipo (il Medaglione cade per l'archetipo `gatto`)
+            eventi.emit('boss.sconfitto', {
+              id: s.boss.bossId ?? s.boss.archetipo, archetipo: s.boss.archetipo, pattern: s.boss.pattern ?? null,
+              stanza: record.id, x: s.boss.x, y: s.boss.y,
+            });
             s.boss = null;
           }
           eventi.emit('stanza.svuotata', { id: record.id });

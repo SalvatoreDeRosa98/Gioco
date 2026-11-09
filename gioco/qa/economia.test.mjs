@@ -545,7 +545,7 @@ test('025.3: alla morte le monete della notte si perdono (34 → 0) e le scintil
   for (let i = 0; i < 11; i++) m0.eventi.emit('stanza.pulita', { id: 'x', tipo: 'normale', combattuta: true });
   assert.equal(m0.economia.fineNotte(), 0);
   // profilo corrotto o assente → predefiniti
-  assert.deepEqual(normalizzaProfilo(null), { scintille: 0, sblocchi: [], ricordi_restituiti: [] });
+  assert.deepEqual(normalizzaProfilo(null), { scintille: 0, sblocchi: [], ricordi_restituiti: [], vittorie: 0, ciclo_max: 0 }); // storia P06: vittorie su Donna Luciana e ciclo massimo
   assert.equal(normalizzaProfilo({ scintille: -4 }).scintille, 0);
 });
 

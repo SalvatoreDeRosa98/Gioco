@@ -251,7 +251,12 @@ export function creaRicordi({ parametri, catalogo, storia = null, narrativa, mod
   }
 
   const disiscrizioni = [
-    eventi.on('boss.sconfitto', (p) => { if (p && typeof p.id === 'string') cade(p.id, p); }),
+    // storia P06: l'id è quello di boss.json (es. `re-gatto`); se il modello del ricordo non lo conosce vale l'archetipo (`gatto`)
+    eventi.on('boss.sconfitto', (p) => {
+      if (!p || typeof p.id !== 'string') return;
+      const id = !perBoss.has(p.id) && typeof p.archetipo === 'string' && perBoss.has(p.archetipo) ? p.archetipo : p.id;
+      cade(id, p);
+    }),
     eventi.on('narrativa.decisione', suDecisione),
     eventi.on('ferruccio.morto', () => perdi(MOTIVI_RICORDI.morte)),
     eventi.on('economia.fine_notte', () => perdi(MOTIVI_RICORDI.fineNotte)),

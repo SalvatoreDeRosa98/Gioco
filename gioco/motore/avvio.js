@@ -63,6 +63,12 @@
  *    `<meta name="gioco-avvio" content="debug=1&wire=1&hub=1">` (`fondazione/avvio-url.js`; l'URL vince sempre) e, se la
  *    meta c'è, all'avvio compare il pannello dei tasti (`interfaccia/prova.js`) che sparisce al primo tasto o click.
  *    Il gioco è pensato per la tastiera (e il gamepad): nessun controllo touch, per scelta dell'autore;
+ *  - storia P06 (boss del pool, Donna Luciana, sipario, ciclo): lo stato della run è in `mondo/run.js` (seme, piano, ciclo,
+ *    boss estratti da `boss.json`, usi dei modelli); nella stanza `boss` la factory crea il boss del piano con il suo
+ *    pattern (`attori/boss/<id>.js`, numeri in `nemici.json › boss`), la vita della formula del Teatro e la velocità per
+ *    piano; `boss.sconfitto` porta l'id vero (il Medaglione cade per l'archetipo `gatto`), registra `boss_battuti` e, per
+ *    Donna Luciana, la vittoria nel profilo; a `piano.discesa` si alza il sipario narrativo (`interfaccia/sipario.js`) e
+ *    il ciclo continua all'infinito (piano 5 = ciclo 2); `?boss=<id>` forza il boss, `?sipario=0` salta il sipario (QA);
  *  - la superficie di debug `window.__gioco`, presente SOLO con `?debug=1` (ADR-0003).
  *
  * La risoluzione logica è un vincolo del motore (ADR-0001), non un valore di gioco.
@@ -73,7 +79,7 @@
 import { creaTempo } from './fondazione/tempo.js';
 import { creaCiclo } from './fondazione/ciclo.js';
 import { creaInput, collega as collegaInput } from './fondazione/input.js';
-import { creaRng, derivato, mescola } from './fondazione/rng.js';
+import { creaRng, derivato } from './fondazione/rng.js';
 import { creaBus } from './fondazione/eventi.js';
 import { creaParametri, leggiOverrideUrl } from './fondazione/parametri.js';
 import { fondiDefault, leggiMetaAvvio } from './fondazione/avvio-url.js';
@@ -83,7 +89,7 @@ import { creaCampo } from './mondo/fisica.js';
 import { creaFerruccio } from './attori/ferruccio.js';
 import { creaCombattimento } from './attori/combattimento.js';
 import { creaFantoccio } from './attori/bersaglio.js';
-import { creaNemico as creaNemicoArchetipo, schedaBossProvvisorio } from './attori/nemico.js';
+import { creaNemico as creaNemicoArchetipo } from './attori/nemico.js';
 import { creaGatto, ARCHETIPO_GATTO } from './attori/gatto.js'; // storia 020: il gatto d'ombra con la posa
 import { creaDirettore } from './attori/ia/direttore.js';
 // --- squadra nemici: inizio --- (storia P05)
@@ -136,6 +142,10 @@ import { creaGratis } from './oggetti/gratis.js';
 import { creaSegreta } from './mondo/segreta.js';
 import { creaInterfacciaOggetti } from './interfaccia/oggetti.js';
 // --- squadra oggetti: fine ---
+// --- storia P06: boss del pool, Donna Luciana, sipario, ciclo ---
+import { creaRun } from './mondo/run.js';
+import { patternPerNome } from './attori/boss/indice.js';
+import { creaSipario } from './interfaccia/sipario.js';
 
 /** Risoluzione logica della scena (ADR-0001). */
 const RISOLUZIONE = Object.freeze({ larghezza: 1280, altezza: 720 });
@@ -155,6 +165,10 @@ const SLOTS = Object.freeze(['1', '2', '3', '4', '5']);
 const SLOT_PREDEFINITO = '1';
 const PARAM_SLOT = 'slot';
 const PARAM_PERSONAGGIO = 'personaggio';
+/** Storia P06 (QA): `?boss=<id>` forza il boss di ogni piano; `?sipario=0` salta il sipario narrativo. */
+const PARAM_BOSS = 'boss';
+const PARAM_SIPARIO = 'sipario';
+const ID_EVOCATO = 'evocato';
 /** Contenuti della storia (storie 026-027): nomi di file, non valori di gioco. */
 const FILE_STORIA = 'contenuti/storia.json';
 const FILE_NARRATIVA = 'contenuti/narrativa.json';
@@ -435,33 +449,22 @@ async function avvia() {
   let rngNemici = derivato(rng, 'nemici'); // storia 029: dalla partenza dall'hub deriva dal seme della notte
   let natiNemici = 0;
 
-  /** Storia P04: pool dei boss dei piani 1-3 (estratti senza ripetizione a ogni run) e Donna Luciana al piano finale del
-   *  ciclo, da `contenuti/parametri/boss.json` (prima costanti qui). */
+  /** Storia P06: lo stato della run (`mondo/run.js`): seme, piano, ciclo, boss estratti senza ripetizione da `boss.json`
+   *  (generatore derivato `boss-run`), usi dei modelli. `?boss=<id>` (QA) forza il boss di ogni piano. */
   const tabBoss = parametri.get('boss');
-  const POOL_BOSS_PIANI = tabBoss.pool;
-  const BOSS_FINALE_DONNA_LUCIANA = tabBoss.finale;
-  const PIANI_PER_CICLO = tabBoss.piani_per_ciclo.base;
-  let semeRun = seme;
-  let usiModelliRun = {};
-  let bossRun = mescola(derivato(creaRng(semeRun), 'boss-run'), POOL_BOSS_PIANI);
-  const bossDelPiano = (p) => {
-    const pianoNelCiclo = ((p - 1) % PIANI_PER_CICLO) + 1;
-    return pianoNelCiclo === tabBoss.piano_finale_nel_ciclo.base ? BOSS_FINALE_DONNA_LUCIANA : bossRun[(p - 1) % bossRun.length];
-  };
+  const run = creaRun({ tabella: tabBoss, seme, eventi });
+  const bossForzato = debug ? url.searchParams.get(PARAM_BOSS) : null;
+  if (bossForzato && !run.forzaBoss(bossForzato)) console.error(`[avvio] ?boss=${bossForzato} sconosciuto: resta il boss della run`);
 
-  /** Factory dei nemici delle ondate (iniettata nella stanza): archetipo dalla tavolozza del modello;
-   *  con `boss: true` seleziona il boss randomico della run per i piani 1-3 e Donna Luciana al piano 4. */
+  /** Factory dei nemici delle ondate (iniettata nella stanza): archetipo dalla tavolozza del modello; con `boss: true` crea
+   *  il boss del piano (archetipo base, vita della formula del Teatro, pattern `attori/boss/<id>.js`, velocità per piano);
+   *  `genera` permette ai boss di evocare nemici comuni (Regina: vespe; Custode: bombe) che entrano fra i bersagli. */
   const creaNemico = ({ archetipo, x, y, id, boss = false }) => {
-    const infoBoss = boss ? bossDelPiano(pianoCorrente) : null;
+    const infoBoss = boss ? run.bossDelPiano(pianoCorrente) : null;
     const archEffettivo = infoBoss ? infoBoss.archetipoBase : archetipo;
-    const baseTaglia = boss ? schedaBossProvvisorio({ modificatori, parametri }) : null;
-    const schedaBoss = boss && baseTaglia && infoBoss
-      ? {
-        vita: Math.max(tabBoss.vita_min.base, baseTaglia.vita + (pianoCorrente - 1) * tabBoss.vita_per_piano.base + infoBoss.bonusVita),
-        scalaRaggio: infoBoss.scalaRaggio,
-        scalaPortata: infoBoss.scalaPortata,
-      }
-      : baseTaglia;
+    const schedaBoss = infoBoss
+      ? { vita: run.vitaBoss(pianoCorrente, infoBoss), scalaRaggio: infoBoss.scalaRaggio, scalaPortata: infoBoss.scalaPortata }
+      : null;
     const attore = (archEffettivo === ARCHETIPO_GATTO ? creaGatto : creaNemicoArchetipo)({
       modificatori, parametri, tempo, eventi, campo, bersaglio: combattimento.comeBersaglio, altri: () => bersagli, direttore,
       rng: derivato(rngNemici, `${id}#${natiNemici++}`), archetipo: archEffettivo, piano: pianoCorrente, x, y, id,
@@ -470,13 +473,32 @@ async function avvia() {
       // --- squadra nemici: inizio --- (storia P05: lista dei proiettili nemici e hitbox della spada che li cancella)
       proiettili, spada: () => combattimento.hitboxCorrente(),
       // --- squadra nemici: fine ---
+      // storia P06: il pattern del boss, la sua scheda (nemici.json › boss.<id>) e la velocità del piano; le evocazioni
+      pattern: infoBoss ? patternPerNome(infoBoss.pattern) : null,
+      bossId: infoBoss?.id ?? null,
+      moltVelocita: run.moltVelocita(pianoCorrente),
+      genera: (arch, gx, gy) => {
+        if (!parametri.ha(`nemici.archetipi.${arch}`)) return null;
+        const n = creaNemico({ archetipo: arch, x: gx, y: gy, id: `${id}-${ID_EVOCATO}-${natiNemici}` });
+        bersagli.push(n);
+        eventi.emit('nemico.nato', { id: n.id, archetipo: arch, x: gx, y: gy, ondata: null, boss: false, evocato: true, da: id });
+        return n;
+      },
     });
-    if (infoBoss) {
-      attore.bossId = infoBoss.id;
-      attore.nomeBoss = infoBoss.nome;
-    }
+    if (infoBoss) attore.nomeBoss = infoBoss.nome;
     return attore;
   };
+  // storia P06: il boss battuto entra in `boss_battuti` (id di storia.json da boss.json › idStoria); la vittoria su Donna
+  // Luciana va nel profilo (`vittorie`, `ciclo_max`); `piano_max` lo registra già il risveglio a `piano.completato`
+  eventi.on('boss.sconfitto', ({ id }) => {
+    const idStoria = run.idStoriaDi(id);
+    if (idStoria) narrativa.registraBoss(idStoria);
+    if (id === run.finale.id) {
+      const cicloVinto = run.cicloDi(pianoCorrente);
+      profilo.registraVittoria({ ciclo: cicloVinto, piano: pianoCorrente });
+      eventi.emit('boss.finale_sconfitto', { id, piano: pianoCorrente, ciclo: cicloVinto });
+    }
+  });
 
   // Piano generato dal seme (storie 014-017): modelli, catalogo, pianta, camera e notte. Dalla storia 029 la
   // notte può partire anche dopo, dall'hub (`avviaNotte` con il seme derivato dal profilo): `notte` è riassegnata
@@ -505,9 +527,11 @@ async function avvia() {
    */
   function avviaNotte({ seme: semeNotte, piano, stanza = null }) {
     pianoCorrente = piano;
-    const pianoModello = ((piano - 1) % PIANI_PER_CICLO) + 1;
-    const esito = generaPiano({ seme: semeNotte + piano * tabBoss.seme_sale.base, piano: pianoModello, usiModelli: usiModelliRun, parametri, catalogo: catalogoModelli, riserva: riservaPiano });
-    usiModelliRun = esito.usiModelli;
+    if (run.seme !== (semeNotte >>> 0)) run.nuova(semeNotte); // ripresa di una notte salvata: la run è quella del suo seme
+    const pianoModello = run.pianoNelCiclo(piano);
+    run.vaiAlPiano(piano);
+    const esito = generaPiano({ seme: run.semeStanze(piano), piano: pianoModello, usiModelli: run.usiModelli, parametri, catalogo: catalogoModelli, riserva: riservaPiano });
+    run.usiModelli = esito.usiModelli;
     rngNemici = derivato(creaRng(semeNotte), `nemici-p${piano}`);
     natiNemici = 0;
     notte = creaNotte({
@@ -570,19 +594,35 @@ async function avvia() {
     pool.preparaPiano(aPiano);
     banchetto.rigenera(aPiano);
     piedistalli.impostaPiano(aPiano);
-    avviaNotte({ seme: semeRun, piano: aPiano });
-    if (ciclo.stato() === 'pausa') ciclo.vaiA('notte');
-    incontri.automatiche(`${ANCORAGGIO_INGRESSO_PIANO}${aPiano}`);
+    avviaNotte({ seme: run.seme, piano: aPiano });
+    // storia P06: il sipario narrativo dell'atto (Teatro avviaPiano → disegnaSiparioNarrativo) tiene il ciclo in `pausa`
+    // finché non si alza; poi la notte riparte e partono le scene automatiche dell'ingresso del piano
+    const riprendi = () => {
+      if (ciclo.stato() === 'pausa') ciclo.vaiA('notte');
+      incontri.automatiche(`${ANCORAGGIO_INGRESSO_PIANO}${aPiano}`);
+    };
+    if (sipario && !senzaSipario) {
+      if (ciclo.stato() === 'notte') ciclo.vaiA('pausa');
+      sipario.mostra(infoSipario(aPiano), riprendi); // ripresa sincrona alla chiusura (anche a tick forzati di QA)
+    } else {
+      riprendi();
+    }
   });
+  /** Storia P06: i dati del racconto dell'atto per il sipario (piano, ciclo, personaggio scelto, stanze del piano, bonus del ciclo). */
+  const infoSipario = (p) => {
+    const pers = tabPersonaggi.personaggi[statistiche.id] ?? null;
+    return {
+      piano: p, ciclo: run.cicloDi(p), pianoNelCiclo: run.pianoNelCiclo(p),
+      personaggio: pers?.nome ?? '', titoloPersonaggio: pers?.titolo ?? '',
+      stanze: parametri.get(`generazione.piani.p${run.pianoNelCiclo(p)}.n_min`), bonus: run.bonusCicloPct(p),
+    };
+  };
 
   // Al risveglio (morte o vittoria finale al 4° piano contro Donna Luciana): nuova run con nuovo seme, stanze, boss e oggetti tutti nuovi!
   eventi.on('risveglio.fine', () => {
     if (!scenaWire) lasciaNotte();
-    if (!url.searchParams.has('seme')) {
-      semeRun = (semeRun + tabBoss.passo_seme_run.base) >>> 0;
-    }
-    usiModelliRun = {};
-    bossRun = mescola(derivato(creaRng(semeRun), 'boss-run'), POOL_BOSS_PIANI);
+    // storia P06: run nuova (seme successivo senza `?seme=`), boss riestratti, modelli liberi
+    run.nuova(url.searchParams.has('seme') ? run.seme : run.prossimoSeme());
     if (hub) {
       hub.entra();
       camera?.inquadra(campo);
@@ -592,7 +632,7 @@ async function avvia() {
         pool.preparaPiano(1);
         banchetto.rigenera(1);
         piedistalli.impostaPiano(1);
-        avviaNotte({ seme: semeRun, piano: 1 });
+        avviaNotte({ seme: run.seme, piano: 1 });
       }
       if (ciclo.stato() === 'pausa') ciclo.vaiA('notte');
     }
@@ -610,9 +650,7 @@ async function avvia() {
     eventi.on('hub.partenza', ({ seme: semeNotte, piano }) => {
       if (notteSalvata.presente) notteSalvata.cancella(MOTIVI_CANCELLAZIONE.lasciata); // storia 030: una partenza nuova lascia la notte salvata
       hub.esci();
-      semeRun = semeNotte;
-      usiModelliRun = {};
-      bossRun = mescola(derivato(creaRng(semeRun), 'boss-run'), POOL_BOSS_PIANI);
+      run.nuova(semeNotte); // storia P06: la run parte dal seme della notte
       pool.preparaPiano(piano);
       banchetto.rigenera(piano);
       piedistalli.impostaPiano(piano);
@@ -710,6 +748,13 @@ async function avvia() {
     documento: document, contenitore: document.getElementById('interfaccia'), input, incontri, tMinMs: () => parametri.get('incontri.tableau.t_min'),
   });
   ciclo.registra({ tick: (dt) => { cartiglio.tick(dt); tableau.tick(dt); } }, { stati: ['notte', 'pausa', 'hub'] });
+  // storia P06: il sipario narrativo degli atti (DOM), vivo in `pausa`; `?sipario=0` (QA) lo salta
+  const senzaSipario = debug && url.searchParams.get(PARAM_SIPARIO) === '0';
+  const sipario = creaSipario({
+    documento: document, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia, input,
+    tasto: () => parametri.get('input.tastiera.conferma')[0],
+  });
+  ciclo.registra({ tick: () => sipario.tick() }, { stati: ['pausa'] });
   // storia 030: velo della sequenza di morte e pannello «Continua» (solo nell'hub, se c'è una notte salvata)
   const interfacciaMorte = creaInterfacciaMorte({ documento: document, contenitore: document.getElementById('interfaccia'), testi: testiInterfaccia, risveglio: () => risveglio });
   const interfacciaRipresa = creaInterfacciaRipresa({
@@ -812,6 +857,7 @@ async function avvia() {
     feel, // squadra feel (P08)
     squadraOggetti, // --- squadra oggetti (storie P04/P09): crepa, gratis, altare, raggio ---
     parametri, // resa.fili.*: i due fili d'oro di ogni marionetta del Velo
+    run: () => run, testi: testiInterfaccia, // storia P06: piano/ciclo e titolo della barra del boss
   });
   ciclo.registra(resa);
   // Cucitura fra squadre: la Bomba Ferma (nemici) emette `nemico.esplosione`; feel (scossa) e audio (tonfo) ascoltano
@@ -906,6 +952,10 @@ async function avvia() {
       menu: () => menu.stato(),
       apriMenu,
       scegli: (personaggio, slot = slotScelto) => applicaScelta({ personaggio, slot }),
+      /** Storia P06: lo stato della run (`seme`, `piano`, `ciclo`, `bossEstratti`, `bossDelPiano(p)`, `vitaBoss(p)`, `forzaBoss(id)`) e il
+       *  sipario narrativo (`stato()`, `chiudi()`, `racconto(info)`). */
+      run,
+      sipario: { stato: () => sipario.stato(), chiudi: () => sipario.chiudi(), racconto: (info) => sipario.racconto(info), get aperto() { return sipario.aperto; } },
       /** Storia 019: direttore degli attacchi e factory dei nemici (`creaNemico({archetipo, x, y, id})` aggiunge ai bersagli). */
       direttore,
       creaNemico: (o) => { const n = creaNemico(o); bersagli.push(n); return n; },

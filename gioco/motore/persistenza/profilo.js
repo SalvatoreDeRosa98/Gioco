@@ -11,7 +11,7 @@
 
 /** Dati vuoti di un profilo nuovo. */
 export function profiloVuoto() {
-  return { scintille: 0, sblocchi: [], ricordi_restituiti: [] };
+  return { scintille: 0, sblocchi: [], ricordi_restituiti: [], vittorie: 0, ciclo_max: 0 };
 }
 
 /**
@@ -25,6 +25,8 @@ export function normalizzaProfilo(dati) {
   if (Number.isInteger(d.scintille) && d.scintille >= 0) base.scintille = d.scintille;
   if (Array.isArray(d.sblocchi)) base.sblocchi = d.sblocchi.filter((s) => typeof s === 'string');
   if (Array.isArray(d.ricordi_restituiti)) base.ricordi_restituiti = d.ricordi_restituiti.filter((s) => typeof s === 'string');
+  if (Number.isInteger(d.vittorie) && d.vittorie >= 0) base.vittorie = d.vittorie;
+  if (Number.isInteger(d.ciclo_max) && d.ciclo_max >= 0) base.ciclo_max = d.ciclo_max;
   return base;
 }
 
@@ -96,9 +98,25 @@ export function creaProfilo({ salvataggio, slot, eventi = null }) {
     return true;
   }
 
+  /**
+   * Storia P06: una vittoria su Donna Luciana (il boss finale del ciclo). Conta le vittorie e il ciclo più alto
+   * completato; salva subito; emette `profilo.vittoria`.
+   * @param {{ ciclo?: number, piano?: number }} [o]
+   */
+  function registraVittoria({ ciclo = 1, piano = null } = {}) {
+    dati.vittorie += 1;
+    if (Number.isInteger(ciclo) && ciclo > dati.ciclo_max) dati.ciclo_max = ciclo;
+    salva();
+    eventi?.emit('profilo.vittoria', { vittorie: dati.vittorie, ciclo_max: dati.ciclo_max, ciclo, piano });
+    return dati.vittorie;
+  }
+
   return {
     get slot() { return slot; },
     get scintille() { return dati.scintille; },
+    get vittorie() { return dati.vittorie; },
+    get cicloMax() { return dati.ciclo_max; },
+    registraVittoria,
     get sblocchi() { return dati.sblocchi.slice(); },
     get ricordiRestituiti() { return dati.ricordi_restituiti.slice(); },
     /** Copia dei dati (per i test e il debug). */

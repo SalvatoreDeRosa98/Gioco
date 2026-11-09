@@ -45,6 +45,16 @@
  * (predone della segreta): monete × `drop.molt_monete_dorato`, `dorato` nei payload;
  * `attacco.senza_gettone`: non chiede il gettone al direttore (statua e bomba).
  *
+ * Storia P06 (boss del pool e Donna Luciana): opzioni `pattern` (factory `(ctx) => pattern`, `attori/boss/*.js`),
+ * `bossId` (chiave di `nemici.json › boss.<id>`), `genera(archetipo, x, y)` (evoca un nemico comune nella stanza) e
+ * `moltVelocita` (fattore di velocità per piano, `mondo/run.js`). Con un pattern, fuori da emersione e stordimento il
+ * `tick` fa girare il pattern al posto dell'IA base: il pattern muove il corpo (`muovi`, anche in volo) e attacca
+ * (`lancia`, `genera`); il corpo del boss ferisce **al contatto** (`boss.comuni.contatto_*`, Teatro ~4705) quando la sua
+ * `quota` è sotto `quota_contatto`, e sopra `quota_immune` i colpi gli passano sotto (Teatro ~3623). `stato`,
+ * `lampoAcceso`, `inTelegrafo`, `direzione` e `quota` vengono dal pattern (fasi con i nomi degli stati dell'IA, così il
+ * renderer mostra la postura di anticipo e gli occhi rossi del lampo: telegrafo solo sul corpo). Parata e stordimento
+ * restano quelli del boss (`t_stordito_boss`, `t_immunita_boss`).
+ *
  * Nessun numero di gioco qui; nessuna casualità nativa: `rng` è un generatore derivato (pattuglia,
  * verso di separazione, verso dell'orbita, bottino).
  */
@@ -258,6 +268,7 @@ export function creaNemico({
   modificatori, parametri, tempo, eventi = null, campo, bersaglio = null, altri = () => [], direttore = null, rng,
   archetipo, piano = 1, x, y, id = archetipo, boss = false, elite = false, ferito = () => false, posa = null, schedaBoss = null,
   proiettili = null, spada = null,
+  pattern = null, bossId = null, genera = null, moltVelocita = 1,
 }) {
   if (!modificatori || !parametri || !tempo || !campo || typeof rng !== 'function') throw new TypeError('creaNemico: dipendenze mancanti');
   const schedaBase = schedaArchetipo({ modificatori, parametri, archetipo, piano });
@@ -281,12 +292,13 @@ export function creaNemico({
 
   // --- storia P05: tiratori ed esplosioni ---------------------------------------------------------
 
-  /** Mette in volo un proiettile nemico dal bordo del corpo lungo `dir` (niente lista: nessun proiettile). */
-  function lanciaProiettile(dir, fattoreVelocita) {
+  /** Mette in volo un proiettile nemico dal bordo del corpo (o da `origine`, storia P06: le Mani) lungo `dir` (niente lista: nessun proiettile). */
+  function lanciaProiettile(dir, fattoreVelocita, origine = null) {
     const base = schedaProiettiliNemici({ modificatori, parametri, piano, boss });
     if (!proiettili || !base) return null;
+    const o = origine ?? corpo;
     const p = creaProiettileNemico({
-      x: corpo.x + dir.x * (corpo.r + base.r + 1), y: corpo.y + dir.y * (corpo.r + base.r + 1), direzione: dir,
+      x: o.x + dir.x * (corpo.r + base.r + 1), y: o.y + dir.y * (corpo.r + base.r + 1), direzione: dir,
       velocita: base.velocita * fattoreVelocita, r: base.r, gittata: base.gittata, danno: base.danno,
       campo, bersaglio, nemici: altri, origine: facciata, spada, eventi, boss, id: `${id}-p${corpo.sparati++}`,
     });
@@ -341,6 +353,17 @@ export function creaNemico({
 
   function muovi(dx, dy) {
     const e = muoviCerchio(campoDi(), corpo.x, corpo.y, corpo.r, dx, dy);
+    corpo.x = e.x;
+    corpo.y = e.y;
+    return e.urto;
+  }
+  /** Storia P06: passo in volo (balzo del boss): sorvola gli ostacoli, mai i muri. */
+  function muoviInVolo(dx, dy) {
+    if (cacheSolidi !== campo.solidi) {
+      cacheSolidi = campo.solidi;
+      campoVolo = { ...campo, solidi: campo.solidi.filter((s) => s.id === 'muro') };
+    }
+    const e = muoviCerchio(campoVolo, corpo.x, corpo.y, corpo.r, dx, dy);
     corpo.x = e.x;
     corpo.y = e.y;
     return e.urto;
@@ -483,8 +506,33 @@ export function creaNemico({
     }
     if (corpo.immunitaTicks > 0) corpo.immunitaTicks -= 1;
     tickSpinta(dt);
-    ia.tick(dt);
+    if (patternAttivo()) {
+      // storia P06: il pattern del boss guida corpo e attacchi; il corpo ferisce al contatto se non è in volo
+      patternBoss.tick(dt);
+      if (!corpo.morto && (patternBoss.quota ?? 0) < C('quota_contatto')) contattoCorpo();
+    } else {
+      ia.tick(dt);
+    }
     if (!corpo.morto && ia.stato !== 'emersione') separa();
+  }
+
+  /** Storia P06: vero quando il pattern del boss ha il comando (non in emersione, non stordito, vivo). */
+  function patternAttivo() {
+    return Boolean(patternBoss) && !corpo.morto && ia.stato !== 'emersione' && ia.stato !== 'stordito';
+  }
+  /** Vero nel telegrafo (anticipo, lampo, colpo) dell'IA base o del pattern. */
+  function inTelegrafo() {
+    return patternAttivo() ? patternBoss.inTelegrafo : ia.inTelegrafo;
+  }
+  /** Storia P06 (Teatro ~4705): il corpo del boss a contatto con Ferruccio lo colpisce (la facciata decide parata o danno). */
+  function contattoCorpo() {
+    if (!bersaglio || bersaglio.stato === 'morto') return null;
+    if (Math.hypot(bersaglio.x - corpo.x, bersaglio.y - corpo.y) > corpo.r + bersaglio.r) return null;
+    const esito = bersaglio.colpisci({
+      danno: undefined, pesante: C('contatto_pesante') > 0, x: corpo.x, y: corpo.y, imparabile: C('contatto_imparabile') > 0, attaccante: facciata,
+    });
+    if (esito === 'danno' || esito === 'parata') corpo.impatti.push(esito);
+    return esito;
   }
 
   /**
@@ -494,11 +542,12 @@ export function creaNemico({
    */
   function colpisci(danno, spinta) {
     if (corpo.morto || ia.stato === 'emersione') return; // emersione invulnerabile (§7)
+    if (patternBoss && (patternBoss.quota ?? 0) > C('quota_immune')) return; // storia P06 (Teatro ~3623): in volo i colpi passano sotto
     const chiusa = Boolean(scheda.corazza) && !aperta(); // storia P05: la maschera chiusa è corazzata
     const dannoEffettivo = chiusa ? danno * scheda.corazza.frazione_danno : danno;
     corpo.vita -= dannoEffettivo;
     corpo.danniSubiti.push(dannoEffettivo);
-    if (spinta && !ia.inTelegrafo && !chiusa) { // armatura del telegrafo: la spinta non sposta chi sta attaccando
+    if (spinta && !inTelegrafo() && !chiusa) { // armatura del telegrafo: la spinta non sposta chi sta attaccando
       corpo.spinteSubite.push({ x: spinta.x, y: spinta.y });
       const n = tempo.ticksDaMs(spinta.ms);
       corpo.spinta = { vx: spinta.x, vy: spinta.y, ticks: n, totale: n };
@@ -560,13 +609,19 @@ export function creaNemico({
     get vitaMax() { return corpo.vitaMax; },
     get peso() { return corpo.peso; },
     get volante() { return corpo.volante; },
-    get imparabile() { return A.imparabile > 0 && STATI_TELEGRAFO.includes(ia.stato); },
-    get pesante() { return A.pesante > 0; },
-    get stato() { return corpo.morto ? 'morto' : ia.stato; },
-    get lampoAcceso() { return ia.lampoAcceso; },
-    get direzione() { return ia.direzione; },
+    get imparabile() { return patternBoss ? C('contatto_imparabile') > 0 && inTelegrafo() : A.imparabile > 0 && STATI_TELEGRAFO.includes(ia.stato); },
+    get pesante() { return patternBoss ? C('contatto_pesante') > 0 : A.pesante > 0; },
+    get stato() { return corpo.morto ? 'morto' : patternAttivo() ? patternBoss.stato : ia.stato; },
+    get lampoAcceso() { return patternAttivo() ? patternBoss.lampoAcceso : ia.lampoAcceso; },
+    get direzione() { return patternBoss?.direzione ?? ia.direzione; },
     get gettone() { return ia.gettone; },
-    get inTelegrafo() { return ia.inTelegrafo; },
+    get inTelegrafo() { return inTelegrafo(); },
+    /** Storia P06: id del boss (`boss.json`), nome del pattern, altezza in volo (px) e salve fatte; null/0 per i nemici comuni. */
+    get bossId() { return bossId; },
+    get pattern() { return patternBoss?.nome ?? null; },
+    get quota() { return patternBoss?.quota ?? 0; },
+    get salve() { return patternBoss?.salve ?? 0; },
+    get faseBoss() { return patternBoss?.stato ?? null; },
     get stordimentoMs() { return corpo.stordimentoMs; },
     get immune() { return corpo.immunitaTicks > 0; },
     /** 0 → 1 durante la dissoluzione; 0 da vivo. */
@@ -608,5 +663,31 @@ export function creaNemico({
     /** Debug e test: forza lo stato dell'IA (es. 'insegue'). */
     forzaStato: (stato) => ia.forza(stato),
   };
+
+  // --- storia P06: il pattern del boss (dopo la facciata: il contesto la passa come `attaccante`) ---
+  const C = (k) => modificatori.valore(`nemici.boss.comuni.${k}`);
+  const contestoPattern = pattern ? Object.freeze({
+    id,
+    bossId,
+    corpo: { get x() { return corpo.x; }, get y() { return corpo.y; }, get r() { return corpo.r; } },
+    muovi: (dx, dy, volo = false) => (volo ? muoviInVolo(dx, dy) : muovi(dx, dy)),
+    bersaglio: () => (bersaglio && bersaglio.stato !== 'morto' ? bersaglio : null),
+    campo, rng, ticks,
+    B: (k) => modificatori.valore(`nemici.boss.${bossId}.${k}`),
+    comune: C,
+    lancia: lanciaProiettile,
+    genera: (arch, gx, gy) => (typeof genera === 'function' ? genera(arch, gx, gy) : null),
+    altri,
+    emit: (nome, payload) => eventi?.emit(nome, { id, bossId, archetipo, boss, ...payload }),
+    vita: () => corpo.vita,
+    vitaMax: () => corpo.vitaMax,
+    furia: () => corpo.vita < corpo.vitaMax * C('soglia_furia'),
+    moltVel: moltVelocita,
+    dentroCampo: (px, py, margine) => ({
+      x: clamp(px, campo.x + margine, campo.x + campo.larghezza - margine),
+      y: clamp(py, campo.y + margine, campo.y + campo.altezza - margine),
+    }),
+  }) : null;
+  const patternBoss = contestoPattern ? pattern(contestoPattern) : null;
   return facciata;
 }

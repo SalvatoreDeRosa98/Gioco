@@ -47,6 +47,8 @@ export function creaRenderer({
   feel = null, // --- squadra feel (P08): scossa contestuale, macchie a terra, lampeggio ---
   squadraOggetti = null, // --- squadra oggetti (storie P04/P09): getter di segreta, gratis, patto ---
   parametri = null, // resa.fili.* (alpha, spessore, ancoraggio delle spalle, curva): senza parametri niente fili
+  run = null, // storia P06: stato della run (piano assoluto, ciclo, piani per ciclo) per la barra del boss
+  testi = null, // storia P06: interfaccia.json › boss_hud (titolo della barra del boss)
 }) {
   const ctx = canvas.getContext('2d');
   const W = scena.larghezza;
@@ -732,7 +734,10 @@ export function creaRenderer({
     const inFlash = (flashBersagli.get(b.id) ?? 0) > contaTick();
     const dir = (b.direzione?.x ?? -1) < 0 ? -1 : 1;
 
-    ellisseAppoggio(b.x, b.y + b.r * 0.45, b.r * 1.35, b.r * 0.48, 0.45);
+    // storia P06: il boss in volo (balzo del Re Gatto) sale di `quota` px; l'ombra resta a terra e si restringe
+    const quota = Number.isFinite(b.quota) ? b.quota : 0;
+    const kOmbra = Math.max(0.35, 1 - quota / Math.max(1, b.r * 6));
+    ellisseAppoggio(b.x, b.y + b.r * 0.45, b.r * 1.35 * kOmbra, b.r * 0.48 * kOmbra, 0.45);
 
     // Regola dell'autore (2026-11-08): nessun segno a terra, corridoio o anello che anticipi il colpo.
     // Il nemico si legge solo dal corpo: postura di anticipo (si accuccia) e occhi rossi nel lampo.
@@ -740,6 +745,7 @@ export function creaRenderer({
     const inLampo = b.stato === 'lampo' || b.lampoAcceso === true;
 
     ctx.save();
+    if (quota > 0) ctx.translate(0, -quota);
     if (inAnticipo) {
       ctx.translate(b.x, b.y);
       ctx.scale(1.08, 0.9);
@@ -764,7 +770,7 @@ export function creaRenderer({
     // Occhi rossi sulla sagoma nel lampo (come in Isaac): il segnale sta sul corpo, mai a terra
     if (inLampo && !morto) {
       const occhio = Math.max(2, b.r * 0.16);
-      const yOcchi = b.y - b.r * (b.boss ? 1.4 : 1.1);
+      const yOcchi = b.y - quota - b.r * (b.boss ? 1.4 : 1.1);
       ctx.save();
       ctx.fillStyle = P.rosso;
       ctx.fillRect(b.x - b.r * 0.34 - occhio / 2, yOcchi, occhio, occhio);
@@ -1183,9 +1189,14 @@ export function creaRenderer({
     ctx.fillStyle = P.oro;
     ctx.font = 'bold 13px Georgia, serif';
     ctx.textAlign = 'center';
-    const titolo = boss.nomeBoss
-      ? `PIANO ${piano}/4 — ${boss.nomeBoss.toUpperCase()}`
-      : `BOSS DEL PIANO ${piano}`;
+    // storia P06: piano assoluto e ciclo dalla run; testi da interfaccia.json › boss_hud (ripiego: il piano del modello)
+    const r = typeof run === 'function' ? run() : run;
+    const dati = { piano: r?.piano || piano, piani: r?.pianiPerCiclo ?? '', ciclo: r?.ciclo ?? 1, nome: (boss.nomeBoss ?? '').toUpperCase() };
+    const H = testi?.boss_hud;
+    const compila = (t) => String(t).replace(/\{(\w+)\}/g, (m, k) => (dati[k] !== undefined ? String(dati[k]) : m));
+    const titolo = H
+      ? compila(boss.nomeBoss ? (dati.ciclo > 1 ? H.titolo_ciclo : H.titolo) : H.senza_nome).toUpperCase()
+      : (boss.nomeBoss ? `PIANO ${dati.piano} — ${dati.nome}` : `BOSS DEL PIANO ${dati.piano}`);
     ctx.fillText(titolo, W / 2, by - 8, bw);
 
     ctx.fillStyle = '#260b08';
@@ -1241,7 +1252,7 @@ export function creaRenderer({
       for (const b of listaBersagli) {
         if (!b) continue;
         if (b.boss && b.stato !== 'morto') bossPresente = b;
-        if (b.stato !== 'morto' && b.bossId !== 'donna-luciana') corpi.push({ x: b.x, piedi: b.y + b.r, altezza: b.r * 2, mezzaLarghezza: b.r });
+        if (b.stato !== 'morto' && b.bossId !== 'donna-luciana') corpi.push({ x: b.x, piedi: b.y + b.r - (b.quota || 0), altezza: b.r * 2, mezzaLarghezza: b.r });
         disegnaBersaglioMarionetta(b, tAnim);
       }
 

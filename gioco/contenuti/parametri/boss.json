@@ -1,17 +1,127 @@
 {
-  "_descrizione": "Storia P04: pool dei boss dei piani 1-3 (POOL_BOSS del Teatro ~2515, estratti senza ripetizione a ogni run con il generatore derivato 'boss-run') e Donna Luciana al piano 4 del ciclo (BOSS_FINALE). Prima erano costanti in avvio.js. nemici.json ammette solo {base,min,max} (niente stringhe), per questo il pool vive in questa tabella. 'vita' del boss = max(vita_min, boss_provvisorio.vita + (piano-1) * vita_per_piano + bonusVita); 'seme_sale' e il sale del seme per piano (generaPiano: seme + piano * seme_sale); 'passo_seme_run' e il passo del seme tra una run e l'altra senza ?seme= (0x9e3779b9).",
+  "_descrizione": "Storie P04/P06: pool dei boss dei piani non finali (POOL_BOSS del Teatro ~2515, estratti senza ripetizione a ogni run con il generatore derivato 'boss-run') e Donna Luciana sul piano finale di ogni ciclo (BOSS_FINALE ~2527). Lo stato della run (mondo/run.js) legge qui le formule del Teatro: pianoNelCiclo = ((piano−1) mod piani_per_ciclo)+1; ciclo = ⌊(piano−1)/piani_per_ciclo⌋+1; moltCiclo = molt_ciclo^(ciclo−1) (Teatro 1,45); moltVelocita = min(molt_vel_max, 1+(piano−1)×molt_vel_per_piano) (Teatro 1,55 e 0,045); vita del boss = max(vita_min, round((hpBaseTeatro×scala_vita_teatro + (pianoNelCiclo−1)×vita_per_piano_ciclo)×moltCiclo)) (Teatro ~3395: +45 per piano nel ciclo; scala_vita_teatro = 1 perché il danno di Ferruccio è quello di ricalcolaStatisticheIsaac). 'pattern' è il nome del modulo attori/boss/*.js (indice.js); 'idStoria' è l'id del boss in storia.json per boss_battuti (null se la storia non lo conosce); 'archetipoBase' è la scheda di nemici.json da cui il boss eredita corpo, raggio (× scalaRaggio) e portata (× scalaPortata); 'bonusVita' resta per le note (la vita è la formula del Teatro). 'seme_sale' è il sale del seme per piano (generaPiano: seme + piano × seme_sale); 'passo_seme_run' il passo del seme tra una run e l'altra senza ?seme= (0x9e3779b9). nemici.json ammette solo {base,min,max}: per questo i nomi stanno qui (tabella).",
   "pool": [
-    { "id": "re-gatto", "nome": "Il Gatto dei Quattro Canti", "archetipoBase": "gatto", "scalaRaggio": 1.75, "scalaPortata": 1.35, "bonusVita": 0, "hpBaseTeatro": 175 },
-    { "id": "capitano-guardia", "nome": "Il Capitano di Piombo", "archetipoBase": "guardia", "scalaRaggio": 1.75, "scalaPortata": 1.3, "bonusVita": 12, "hpBaseTeatro": 210 },
-    { "id": "regina-vespa", "nome": "La Regina delle Vespe", "archetipoBase": "vespa", "scalaRaggio": 1.85, "scalaPortata": 1.35, "bonusVita": -6, "hpBaseTeatro": 165 },
-    { "id": "colosso-statua", "nome": "Il Custode di Marmo", "archetipoBase": "statua", "scalaRaggio": 1.7, "scalaPortata": 1.4, "bonusVita": 18, "hpBaseTeatro": 235 },
-    { "id": "maestro-fucina", "nome": "Lo Spezzafili d'Ottone", "archetipoBase": "guardia", "scalaRaggio": 1.65, "scalaPortata": 1.45, "bonusVita": 8, "hpBaseTeatro": 195 }
+    {
+      "id": "re-gatto",
+      "nome": "Il Gatto dei Quattro Canti",
+      "pattern": "monstro_jump",
+      "idStoria": "gatto-dei-quattro-canti",
+      "archetipoBase": "gatto",
+      "scalaRaggio": 1.75,
+      "scalaPortata": 1.35,
+      "bonusVita": 0,
+      "hpBaseTeatro": 175,
+      "speedTeatro": 1.05
+    },
+    {
+      "id": "capitano-guardia",
+      "nome": "Il Capitano di Piombo",
+      "pattern": "chub_charge",
+      "idStoria": null,
+      "archetipoBase": "guardia",
+      "scalaRaggio": 1.75,
+      "scalaPortata": 1.3,
+      "bonusVita": 12,
+      "hpBaseTeatro": 210,
+      "speedTeatro": 0.92
+    },
+    {
+      "id": "regina-vespa",
+      "nome": "La Regina delle Vespe",
+      "pattern": "duke_flies",
+      "idStoria": "regina-dei-debiti",
+      "archetipoBase": "vespa",
+      "scalaRaggio": 1.85,
+      "scalaPortata": 1.35,
+      "bonusVita": -6,
+      "hpBaseTeatro": 165,
+      "speedTeatro": 1.15
+    },
+    {
+      "id": "colosso-statua",
+      "nome": "Il Custode di Marmo",
+      "pattern": "gurdy_turret",
+      "idStoria": "madre-di-marmo",
+      "archetipoBase": "statua",
+      "scalaRaggio": 1.7,
+      "scalaPortata": 1.4,
+      "bonusVita": 18,
+      "hpBaseTeatro": 235,
+      "speedTeatro": 0.4
+    },
+    {
+      "id": "maestro-fucina",
+      "nome": "Lo Spezzafili d'Ottone",
+      "pattern": "scissor_blades",
+      "idStoria": null,
+      "archetipoBase": "guardia",
+      "scalaRaggio": 1.65,
+      "scalaPortata": 1.45,
+      "bonusVita": 8,
+      "hpBaseTeatro": 195,
+      "speedTeatro": 1.05
+    }
   ],
-  "finale": { "id": "donna-luciana", "nome": "Donna Luciana - La Burattinaia del Velo", "archetipoBase": "guardia", "scalaRaggio": 2.15, "scalaPortata": 1.5, "bonusVita": 55, "hpBaseTeatro": 480 },
-  "piani_per_ciclo": { "base": 4, "min": 1, "max": 8 },
-  "piano_finale_nel_ciclo": { "base": 4, "min": 1, "max": 8 },
-  "vita_min": { "base": 20, "min": 1, "max": 200 },
-  "vita_per_piano": { "base": 18, "min": 0, "max": 100 },
-  "seme_sale": { "base": 131, "min": 1, "max": 100000 },
-  "passo_seme_run": { "base": 2654435769, "min": 1, "max": 4294967295 }
+  "finale": {
+    "id": "donna-luciana",
+    "nome": "Donna Luciana — La Burattinaia del Velo",
+    "pattern": "marionette_queen",
+    "idStoria": "donna-luciana",
+    "archetipoBase": "guardia",
+    "scalaRaggio": 2.15,
+    "scalaPortata": 1.5,
+    "bonusVita": 55,
+    "hpBaseTeatro": 480,
+    "speedTeatro": 0.92
+  },
+  "piani_per_ciclo": {
+    "base": 4,
+    "min": 1,
+    "max": 8
+  },
+  "piano_finale_nel_ciclo": {
+    "base": 4,
+    "min": 1,
+    "max": 8
+  },
+  "scala_vita_teatro": {
+    "base": 1,
+    "min": 0.25,
+    "max": 2
+  },
+  "vita_per_piano_ciclo": {
+    "base": 45,
+    "min": 0,
+    "max": 200
+  },
+  "vita_min": {
+    "base": 20,
+    "min": 1,
+    "max": 200
+  },
+  "molt_ciclo": {
+    "base": 1.45,
+    "min": 1,
+    "max": 3
+  },
+  "molt_vel_per_piano": {
+    "base": 0.045,
+    "min": 0,
+    "max": 0.2
+  },
+  "molt_vel_max": {
+    "base": 1.55,
+    "min": 1,
+    "max": 3
+  },
+  "seme_sale": {
+    "base": 131,
+    "min": 1,
+    "max": 100000
+  },
+  "passo_seme_run": {
+    "base": 2654435769,
+    "min": 1,
+    "max": 4294967295
+  }
 }

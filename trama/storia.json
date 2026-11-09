@@ -2566,6 +2566,15 @@
   ],
   "boss": [
     {
+      "id": "donna-luciana",
+      "capitolo": "trono-del-velo",
+      "nome": "Donna Luciana — La Burattinaia del Velo",
+      "origine": "Le Grandi Mani di Marionetta che calano dal cielo e diventano la Burattinaia (Teatro, BOSS_FINALE).",
+      "rivelazione": "Spezzandola si scopre che anche ai suoi polsi sono legati fili d'oro che salgono più in alto nel buio del Teatro: «BIS! DA CAPO!».",
+      "comportamento_demo": "Boss finale del piano 4 di ogni ciclo (storia P06, pattern marionette_queen): insegue, le due Mani sparano ventagli, schianti con anelli di colpi.",
+      "canon": "Established"
+    },
+    {
       "id": "gatto-dei-quattro-canti",
       "capitolo": "piazza-dante",
       "nome": "Gatto dei Quattro Canti",

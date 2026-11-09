@@ -62,7 +62,7 @@
   },
   "fine_piano": {
     "discesa": "Boss del piano sconfitto! Discesa al Piano {piano}...",
-    "velo": "Donna Luciana è sconfitta! Le mani del marionettista crollano e Ferruccio è finalmente libero."
+    "velo": "Donna Luciana è sconfitta! Ma ai suoi polsi altri fili salgono nel buio: «BIS! DA CAPO!»"
   },
   "prova": {
     "titolo": "Ferruccio — Il Teatro delle Marionette (4 Piani stile Isaac)",
@@ -127,5 +127,64 @@
     "base": "Oggetto gratis",
     "forte": "Oggetto forte gratis",
     "istruzione": "Premi {tasto} per raccogliere {nome}"
+  },
+  "sipario": {
+    "_doc": "Storia P06: il sipario narrativo degli atti fra un piano e l'altro (Teatro getRaccontoAtto ~2535, disegnaSiparioNarrativo ~5366). Segnaposto: {piano}, {ciclo}, {personaggio}, {titolo_personaggio}, {stanze}, {bonus}, {tasto}. Le chiavi di 'atti' sono il piano nel ciclo; 'bis' vale al piano 1 dei cicli successivi; 'titolo_finale_ciclo' sostituisce il titolo dell'atto IV dal ciclo 2.",
+    "alza": "Alza il sipario ({tasto} / click)",
+    "stanze": "{stanze} stanze + segreta",
+    "atti": {
+      "1": {
+        "atto": "Atto I · Piazza Dante (Piano {piano} · {personaggio})",
+        "titolo": "«{titolo_personaggio}»",
+        "righe": [
+          "I nemici si comportano come in Isaac: Vespe Cieche che volano contro di te senza sparare,",
+          "Bozzi Esplosivi fermi che esplodono se ti avvicini, Gatti che balzano, Maschere corazzate e Campioni!",
+          "Premi [Q] per usare il tuo Oggetto Attivo! Batti il Boss per aprire anche la Stanza del Patto d'Ombra!"
+        ]
+      },
+      "2": {
+        "atto": "Atto II · Corso Trieste e le Officine (Piano {piano} · {stanze})",
+        "titolo": "«Il sorriso di Tonino e il tradimento di Taddeo»",
+        "righe": [
+          "Sotto il Velo, Tonino ride davanti alla sedia vuota della moglie Rosa senza ricordare il suo nome.",
+          "Il tuo amico Taddeo ti ha consegnato alla Burattinaia per guarire le paure della sorella Mariella.",
+          "Risparmia le monete e scova la Stanza Segreta per permetterti le Reliquie Forti della Fucina!"
+        ]
+      },
+      "3": {
+        "atto": "Atto III · Belvedere di San Leucio (Piano {piano} · {stanze})",
+        "titolo": "«La sciarpa rossa di Agnese»",
+        "righe": [
+          "Ai telai reali di San Leucio, Agnese continua a tessere una sciarpa rossa senza ricordare il tuo volto.",
+          "Da questo piano il Velo stringe più forte: ogni colpo subito spezza 1 Maschera intera (come in Isaac!).",
+          "Ogni oggetto equipaggiato nei 5 slot cambia visivamente il tuo costume e il tuo attacco!"
+        ]
+      },
+      "4": {
+        "atto": "Atto IV · Il Trono del Velo (Piano {piano} · {stanze})",
+        "titolo": "«Quanto vale la felicità?»",
+        "righe": [
+          "Nelle stanze finali, le Grandi Mani di Marionetta caleranno dal cielo per diventare Donna Luciana.",
+          "Spezzarle restituirà a Caserta il dolore, il lutto e la libertà... o svelerà chi tira davvero i suoi fili.",
+          "Fai gli ultimi acquisti ne La Fucina prima di varcare la porta del Boss Finale!"
+        ]
+      }
+    },
+    "titolo_finale_ciclo": "«Donna Luciana ascesa (Ciclo {ciclo})»",
+    "bis": {
+      "atto": "Ciclo infinito {ciclo} · Atto I (Piano {piano} · {stanze})",
+      "titolo": "«Bis! I fili sopra la Burattinaia»",
+      "righe": [
+        "Spezzando Donna Luciana hai scoperto l'inganno: anche ai suoi polsi erano legati fili d'oro",
+        "che salgono ancora più in alto nel buio del Teatro! Una voce invisibile grida: «BIS! DA CAPO!»",
+        "Il palco si ricuce più feroce (+{bonus}% Vita/Vel). Conservi i tuoi 5 oggetti e le monete!"
+      ]
+    }
+  },
+  "boss_hud": {
+    "_doc": "Storia P06: titolo della barra della vita del boss nell'HUD del renderer. Segnaposto: {piano}, {piani}, {ciclo}, {nome}.",
+    "titolo": "Piano {piano}/{piani} — {nome}",
+    "titolo_ciclo": "Piano {piano}/{piani} · Ciclo {ciclo} — {nome}",
+    "senza_nome": "Boss del piano {piano}"
   }
 }

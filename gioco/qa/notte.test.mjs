@@ -407,7 +407,7 @@ test('S04: la busta del profilo è una sola: flag e avanzamento (stato narrativo
   assert.equal(r.profilo.scintille, 7);
   assert.equal(r.stato.flag().taddeo, 'perdonato', 'i flag non sono stati sovrascritti dalle scintille');
   const busta = JSON.parse(memoria.getItem(`ferruccio.v3.profilo.${SLOT}`));
-  assert.deepEqual(Object.keys(busta.dati).sort(), ['avanzamento', 'flag', 'ricordi_restituiti', 'sblocchi', 'scintille']);
+  assert.deepEqual(Object.keys(busta.dati).sort(), ['avanzamento', 'ciclo_max', 'flag', 'ricordi_restituiti', 'sblocchi', 'scintille', 'vittorie']); // storia P06: vittorie e ciclo_max nel profilo
   assert.deepEqual(p.log.voci.concat(q.log.voci, r.log.voci), []);
 });
 

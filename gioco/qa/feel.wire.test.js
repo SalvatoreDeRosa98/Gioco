@@ -54,7 +54,7 @@ async function attendiServer(url) {
 async function avviaServer() {
   const porta = await portaLibera();
   const proc = spawn('python3', ['-m', 'http.server', String(porta), '--bind', '127.0.0.1', '--directory', RADICE_GIOCO], {
-    stdio: ['ignore', 'ignore', 'pipe'],
+    stdio: ['ignore', 'ignore', 'ignore'], // stderr ignorato: il log delle richieste (sprite) riempirebbe il pipe e bloccherebbe il server
   });
   const base = `http://127.0.0.1:${porta}`;
   await attendiServer(`${base}/index.html`);
