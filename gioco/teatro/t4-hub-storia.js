@@ -524,6 +524,12 @@
       lanterne: 4,
       fasiMs: Object.freeze({ lanterne: 1600, fili: 600, maschera: 900, buio: 500 }),
       tMaxMs: 4000,
+      // (bug autore «quando perdo si freeza») Rete di sicurezza a tempo reale: se la fase 'morte' dura
+      // oltre watchdogMs (logica ferma, eccezione, tab in secondo piano…) il ritorno all'hub è forzato.
+      watchdogMs: 6000,
+      velo: 0.45,              // opacità minima del velo scuro fin dal primo frame: il palco si ferma, si vede
+      titolo: 'LE MASCHERE SI SPEZZANO',
+      causa: 'Caduto contro {fonte} \u2014 la Notte {notte} finisce qui.',
     }),
     ricordo: Object.freeze({
       bossTeatro: 're-gatto',          // id del Gatto dei Quattro Canti nel POOL_BOSS del Teatro
@@ -605,7 +611,7 @@
   const S = {
     flag: FLAG_VUOTI(),
     dialogo: null,       // { voci, idx, scelta, sel, scene, poi }
-    morte: null,         // { t, totale, px, py }
+    morte: null,         // { t, totale, px, py, fonte, notte, avvioMs }
     alba: 0,             // tick rimanenti della dissolvenza dal buio
     nuoviStanotte: {},   // npc → true se ha già mostrato una scena nuova in questa notte (incontri regola 3)
     ripetIdx: {},
@@ -823,29 +829,53 @@
     }
     return { f: 'fine', p: 1 };
   }
-  function avviaMorte() {
+  function avviaMorte(fonte) {
+    // Più colpi letali nello stesso tick (proiettile + contatto + bomba): la sequenza parte una volta sola.
+    if (statoRun.fase === 'morte') return true;
     if (statoRun.fase !== 'in_gioco') return false;
     S.ultimoPiano = statoRun.piano;
     S.flag.piano_max = Math.max(S.flag.piano_max || 1, statoRun.piano);
     statoRun.fase = 'morte';
     statoRun.siparioAttivo = null;
     statoRun.scambioPendente = null;
+    statoRun.pausa = false;       // un menu ESC aperto nello stesso istante non deve congelare la sequenza
+    statoRun.banner = null;       // il banner «Sipario alzato» non copre il messaggio di morte
+    statoRun.bannerTimer = 0;
     S.dialogo = null;
-    S.morte = { t: 0, totale: FASI.reduce((a, b) => a + b.t, 0), px: player.x, py: player.y };
-    salvaFlag();
+    S.morte = {
+      t: 0, totale: FASI.reduce((a, b) => a + b.t, 0), px: player.x, py: player.y,
+      fonte: String(fonte || 'le ombre').replace(/\s*\(.*?\)/g, ''), notte: statoRun.numeroNotte || 1,
+      avvioMs: performance.now(),
+    };
+    try { salvaFlag(); } catch (err) { console.warn('[T4] salvataggio alla morte non riuscito', err); }
     return true;
   }
   function aggiornaMorte() {
     S.morte.t++;
     if (S.morte.t < S.morte.totale) return;
-    // Risveglio: una notte in più; flag e scene viste restano (una decisione presa non va perduta).
+    concludiMorte();
+  }
+  /** Risveglio: una notte in più; flag e scene viste restano (una decisione presa non va perduta). */
+  function concludiMorte() {
     S.morte = null;
-    statoRun.numeroNotte = typeof I.incrementaNumeroNotte === 'function'
-      ? I.incrementaNumeroNotte() : (statoRun.numeroNotte || 1) + 1;
-    S.flag.morti = (S.flag.morti || 0) + 1;
-    S.nuoviStanotte = {};
-    salvaFlag();
-    entraHub('risveglio');
+    try {
+      statoRun.numeroNotte = typeof I.incrementaNumeroNotte === 'function'
+        ? I.incrementaNumeroNotte() : (statoRun.numeroNotte || 1) + 1;
+      S.flag.morti = (S.flag.morti || 0) + 1;
+      S.nuoviStanotte = {};
+      salvaFlag();
+    } finally {
+      entraHub('risveglio'); // qualunque cosa accada sopra, si torna in piazza
+    }
+  }
+  /** Watchdog a tempo reale (chiamato a ogni frame, anche se la logica è ferma). */
+  function sorvegliaMorte() {
+    if (statoRun.fase !== 'morte') return;
+    if (!S.morte) { console.warn('[T4] fase morte senza sequenza: ritorno all\'hub'); concludiMorte(); return; }
+    if (performance.now() - S.morte.avvioMs > CONFIG.morte.watchdogMs) {
+      console.warn('[T4] la sequenza di morte supera', CONFIG.morte.watchdogMs, 'ms: ritorno all\'hub forzato');
+      concludiMorte();
+    }
   }
 
   function disegnaLanterna(x, y, accesa, scala = 1) {
@@ -872,7 +902,7 @@
     const n = CONFIG.morte.lanterne;
     const spente = f === 'lanterne' ? Math.floor(p * (n + 0.999)) : n;
     // Il palco si scurisce con ogni lanterna spenta
-    ctx.fillStyle = `rgba(4, 2, 1, ${Math.min(0.92, 0.18 + (spente / n) * 0.62 + (f === 'buio' ? p * 0.08 : 0) + (f === 'fine' ? 1 : 0))})`;
+    ctx.fillStyle = `rgba(4, 2, 1, ${Math.min(0.92, CONFIG.morte.velo + (spente / n) * 0.4 + (f === 'buio' ? p * 0.08 : 0) + (f === 'fine' ? 1 : 0))})`;
     ctx.fillRect(0, 0, W, H);
     for (let i = 0; i < n; i++) {
       const x = 120 + (i * (W - 240)) / (n - 1);
@@ -912,12 +942,23 @@
       }
     }
     // didascalia della fase (contenuti/interfaccia.json › morte); il buio tace: il risveglio porta all'hub
-    const didascalia = f !== 'buio' && f !== 'fine' ? DATI.interfaccia.morte[f] : null;
-    if (didascalia) I.drawTextFit(didascalia, W / 2, 182, 420, { size: 9, weight: '', style: 'italic', color: '#c9a679' });
     if (f === 'buio' || f === 'fine') {
       ctx.fillStyle = `rgba(0, 0, 0, ${f === 'fine' ? 1 : p})`;
       ctx.fillRect(0, 0, W, H);
     }
+    // Il messaggio di morte resta leggibile per tutta la sequenza, buio compreso (bug autore: «non esce
+    // che sono morto»): titolo, causa e didascalia della fase (contenuti/interfaccia.json › morte).
+    const entrata = Math.min(1, m.t / 12);
+    ctx.save();
+    ctx.globalAlpha = entrata;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fillRect(0, 120, W, 86);
+    I.drawTextFit(CONFIG.morte.titolo, W / 2, 152, 560, { size: 22, color: '#ef4444' });
+    const causa = CONFIG.morte.causa.replace('{fonte}', m.fonte).replace('{notte}', String(m.notte));
+    I.drawTextFit(causa, W / 2, 174, 520, { size: 10, weight: '', color: '#f5e6c8' });
+    const didascalia = DATI.interfaccia.morte[f === 'fine' ? 'buio' : f];
+    if (didascalia) I.drawTextFit(didascalia, W / 2, 194, 520, { size: 9, weight: '', style: 'italic', color: '#c9a679' });
+    ctx.restore();
   }
 
   // ===========================================================================
@@ -1329,7 +1370,7 @@
       // La rivelazione di Luciana è una per run, anche per le run nuove avviate dal menu ESC.
       if (statoRun.numeroRun !== S.runCorrente) { S.runCorrente = statoRun.numeroRun; S.rivelazioneRun = false; }
       if (statoRun.fase === 'hub') { if (!statoRun.pausa) aggiornaHub(); return true; }
-      if (statoRun.fase === 'morte') { if (S.morte) aggiornaMorte(); return true; }
+      if (statoRun.fase === 'morte') { if (S.morte) aggiornaMorte(); else concludiMorte(); return true; }
       if (statoRun.fase !== 'in_gioco') return false;
       if (S.dialogo) return true; // il cartiglio ferma la logica della stanza
       // La Voce si rivela: all'ingresso della stanza di Donna Luciana, una volta per run.
@@ -1349,6 +1390,7 @@
       return false;
     },
     sopra() {
+      sorvegliaMorte();
       if (statoRun.fase === 'morte' && S.morte) disegnaMorte();
       if (statoRun.fase === 'hub' && S.alba > 0) {
         ctx.fillStyle = `rgba(0, 0, 0, ${(S.alba / CONFIG.hub.tickAlba).toFixed(3)})`;
@@ -1359,7 +1401,7 @@
       if (statoRun.fase === 'hub' && statoRun.pausa && typeof I.disegnaMenuPausa === 'function') I.disegnaMenuPausa();
       return false;
     },
-    morte() { return avviaMorte(); },
+    morte(fonte) { return avviaMorte(fonte); },
     bossSconfitto(st) {
       const b = st.nemici.find((n) => n.boss) || st.nemici[0];
       if (!b) return false;
@@ -1404,6 +1446,8 @@
     azzeraFlag() { S.flag = FLAG_VUOTI(); salvaFlag(); },
     impostaFlag(parz) { Object.assign(S.flag, parz); salvaFlag(); },
     morteForzata() { statoRun.hpHalf = 0; return avviaMorte(); },
+    /** QA del watchdog: la sequenza in corso non finirebbe mai da sola (simula una logica bloccata). */
+    bloccaMorte() { if (S.morte) S.morte.totale = Number.MAX_SAFE_INTEGER; return Boolean(S.morte); },
   };
 
   Object.assign(window.__teatro ||= {}, { t4, t4qa: qa });

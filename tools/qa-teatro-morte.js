@@ -1,0 +1,122 @@
+#!/usr/bin/env node
+/*
+ * tools/qa-teatro-morte.js — verifica Playwright del bug autore «quando perdo si freeza, non esce che sono morto».
+ *
+ * Uso: node tools/qa-teatro-morte.js <file html> [prefisso screenshot]
+ * Da file://, 1280x720. Per ogni caso: menu → hub → piano 1, poi la morte arriva davvero dalla logica del gioco
+ * (contatto, proiettile di nemico comune, colpo del boss Re-Gatto, esplosione di un Bozzo colpito da un
+ * proiettile del giocatore, due colpi letali nello stesso tick, a mezza maschera e a maschere piene, con il menu
+ * ESC o un cartiglio appena chiusi). Si controlla che la fase passi per 'morte' (con il messaggio) e torni
+ * all'hub entro 6 s, poi il watchdog: una sequenza bloccata a forza deve tornare all'hub entro ~6 s.
+ * Screenshot in production/qa/evidence/teatro-bug-morte-[<prefisso>-]*.png. Esce con codice 1 se un caso fallisce.
+ * Chromium preinstallato nella sessione: non lanciare `playwright install`.
+ */
+'use strict';
+const path = require('path');
+const { chromium } = require('playwright');
+
+const RADICE = path.resolve(__dirname, '..');
+const file = path.resolve(RADICE, process.argv[2] || 'gioco/teatro_marionette.html');
+const prefisso = process.argv[3] ? process.argv[3] + '-' : '';
+const foto = (n) => path.join(RADICE, 'production', 'qa', 'evidence', `teatro-bug-morte-${prefisso}${n}.png`);
+
+/** Casi: stanza, maschere iniziali, come arriva il colpo. */
+const CASI = [
+  { id: 'contatto-mezza', stanza: 'normale', hp: 1, come: 'contatto' },
+  { id: 'contatto-zero-piene', stanza: 'normale', hp: 6, come: 'contatto' },
+  { id: 'proiettile', stanza: 'normale', hp: 1, come: 'proiettile' },
+  { id: 'doppio-colpo', stanza: 'normale', hp: 1, come: 'doppio' },
+  { id: 'bomba', stanza: 'normale', hp: 2, come: 'bomba' },
+  { id: 'boss-regatto', stanza: 'boss', hp: 2, come: 'boss' },
+  { id: 'esc-chiuso', stanza: 'normale', hp: 1, come: 'proiettile', prima: 'esc' },
+  { id: 'cartiglio-chiuso', stanza: 'boss', hp: 2, come: 'boss', prima: 'cartiglio', boss: 'donna-luciana' },
+  { id: 'watchdog', stanza: 'normale', hp: 1, come: 'proiettile', blocca: true },
+];
+
+(async () => {
+  const browser = await chromium.launch();
+  const esiti = [];
+  let errori = [];
+  for (const caso of CASI) {
+    const p = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    const err = [];
+    p.on('console', (m) => { if (m.type() === 'error') err.push(m.text()); });
+    p.on('pageerror', (e) => err.push(String(e)));
+    await p.goto('file://' + file);
+    await p.evaluate(() => localStorage.clear());
+    await p.reload();
+    await p.waitForTimeout(400);
+    await p.keyboard.press('Space'); // menu → hub
+    await p.waitForTimeout(300);
+    const chiudi = async () => {
+      for (let i = 0; i < 40; i++) {
+        const d = await p.evaluate(() => window.__teatro.t4qa.dialogo);
+        if (!d) return;
+        await p.keyboard.press(d.scelta ? 'Digit1' : 'Space');
+        await p.waitForTimeout(50);
+      }
+    };
+    await chiudi();
+    const ing = await p.evaluate(() => window.__teatro.t4qa.ingresso);
+    await p.evaluate((g) => { const P = window.__teatro.interni.player; P.x = g.x - 40; P.y = g.y; }, ing);
+    await p.keyboard.down('KeyD'); await p.waitForTimeout(900); await p.keyboard.up('KeyD');
+    await p.keyboard.press('Space'); // alza il sipario
+    await p.waitForTimeout(150);
+    // Prepara la stanza: il colpo letale lo dà la logica del gioco al tick successivo.
+    await p.evaluate((c) => {
+      const I = window.__teatro.interni; const R = I.statoRun;
+      R.siparioAttivo = null;
+      const st = R.mappa.stanze.find((s) => s.tipo === c.stanza);
+      if (c.stanza === 'boss') {
+        const b = st.nemici[0];
+        const id = c.boss || 're-gatto';
+        b.bossId = id; b.airZ = 0;
+        if (id === 're-gatto') { b.pattern = 'monstro_jump'; b.nome = 'Il Gatto dei Quattro Canti (Monstro)'; b.tipo = 'gatto'; }
+      }
+      if (c.come === 'bomba') {
+        st.nemici = [{ id: 'qa-bozzo', tipo: 'bomba_ferma', patternMob: 'bomba_ferma', nome: 'Bozzo Esplosivo (Boil)', boss: false,
+          x: 360, y: 188, hp: 1, maxHp: 12, speed: 0, r: 11, flash: 0, burnTicks: 0, stunTicks: 0, state: 'idle', stateTimer: 30, shootCd: 999 }];
+      }
+      st.visitata = true; R.stanzaCorrente = st; R.proiettiliNemici = [];
+      R.hpHalf = c.hp; I.player.invuln = 0;
+      const n = st.nemici.find((x) => x.hp > 0);
+      if (c.come === 'contatto' || c.come === 'boss') { I.player.x = n.x + 4; I.player.y = n.y; }
+      if (c.come === 'proiettile' || c.come === 'doppio') {
+        I.player.x = 200; I.player.y = 250;
+        R.proiettiliNemici.push({ x: 200, y: 244, vx: 0.01, vy: 0, dist: 0 });
+        if (c.come === 'doppio') { R.proiettiliNemici.push({ x: 200, y: 244, vx: -0.01, vy: 0, dist: 0, bossShot: true }); I.player.x = n.x + 2; I.player.y = n.y; R.proiettiliNemici.forEach((q) => { q.x = n.x + 2; q.y = n.y - 6; }); }
+      }
+      if (c.come === 'bomba') { I.player.x = 336; I.player.y = 188; I.player.dirX = 1; I.player.dirY = 0; }
+    }, caso);
+    if (caso.prima === 'esc') { await p.keyboard.press('Escape'); await p.waitForTimeout(80); await p.keyboard.press('Escape'); }
+    if (caso.come === 'bomba') await p.keyboard.press('Space'); // il colpo fa esplodere il Bozzo addosso al giocatore
+    if (caso.prima === 'cartiglio') {
+      // la rivelazione di Donna Luciana apre un cartiglio all'ingresso: lo si chiude e si muore subito dopo
+      for (let i = 0; i < 10 && !(await p.evaluate(() => window.__teatro.t4qa.dialogo)); i++) await p.waitForTimeout(50);
+      await chiudi();
+      await p.evaluate(() => { const I = window.__teatro.interni; const b = I.statoRun.stanzaCorrente.nemici[0]; I.player.invuln = 0; I.player.x = b.x + 4; I.player.y = b.y; });
+    }
+    const t0 = Date.now();
+    const fasi = [];
+    let messaggio = null; let fotoFatta = false; let bloccata = false; let tMorte = null;
+    while (Date.now() - t0 < 20000) {
+      const s = await p.evaluate(() => ({ f: window.__teatro.fase, m: window.__teatro.t4qa.morte }));
+      if (s.f === 'morte' && tMorte === null) tMorte = Date.now();
+      if (fasi[fasi.length - 1] !== s.f) fasi.push(s.f);
+      if (s.f === 'morte' && caso.blocca && !bloccata) bloccata = await p.evaluate(() => window.__teatro.t4qa.bloccaMorte());
+      if (s.f === 'morte' && s.m && s.m.f === 'fili' && !fotoFatta) { fotoFatta = true; messaggio = s.m; await p.screenshot({ path: foto(caso.id) }); }
+      if (s.f === 'hub') break;
+      await p.waitForTimeout(100);
+    }
+    const ms = tMorte === null ? null : Date.now() - tMorte; // durata della sequenza, fino all'hub
+    const fasiOk = fasi.includes('morte') && fasi[fasi.length - 1] === 'hub' && !fasi.slice(fasi.indexOf('morte')).includes('in_gioco');
+    const ok = fasiOk && ms !== null && (caso.blocca ? ms < 7500 : ms < 6000) && !err.length;
+    esiti.push({ caso: caso.id, ok, fasi: fasi.join('>'), ms, fotoFase: messaggio && messaggio.f, errori: err });
+    errori = errori.concat(err);
+    if (caso.id === 'proiettile') { await p.waitForTimeout(900); await p.screenshot({ path: foto('ritorno-hub') }); }
+    await p.close();
+  }
+  await browser.close();
+  console.log(JSON.stringify({ file: path.relative(RADICE, file), esiti, erroriConsole: errori.length }, null, 1));
+  process.exit(esiti.every((e) => e.ok) ? 0 : 1);
+})();

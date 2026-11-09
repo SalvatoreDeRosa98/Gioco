@@ -4382,6 +4382,9 @@ function disegnaManoMarionettaPittorica() {
    */
   function subisciColpoGiocatore(mezzeMaschereDanno, fonte, daX, daY) {
     if (player.invuln > 0) return;
+    // (bug autore «quando perdo si freeza») fuori dalla run (sequenza di morte, hub, menu) nessun colpo:
+    // un secondo colpo letale nello stesso tick non deve riavviare la run sopra la sequenza di morte.
+    if (statoRun.fase !== 'in_gioco') return;
     if (Number.isFinite(daX) && Number.isFinite(daY)) {
       spingi(player, player.x - daX, player.y - daY, FEEL.iframes.rimbalzoPx);
     }
