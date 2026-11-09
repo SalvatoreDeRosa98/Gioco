@@ -5,5 +5,9 @@
   "ferruccio.feel.copie_scia": 0,
   "ferruccio.feel.t_scia": 0,
   "combattimento.feel.scossa_parata_px": 0,
-  "combattimento.feel.t_scia_lama": 0
+  "combattimento.feel.t_scia_lama": 0,
+  "resa.scossa.colpo_px": 0,
+  "resa.scossa.bomba_px": 0,
+  "resa.scossa.boss_atterraggio_px": 0,
+  "resa.scossa.mani_schianto_px": 0
 }

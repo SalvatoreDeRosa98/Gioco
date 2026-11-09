@@ -42,6 +42,7 @@ export function creaRenderer({
   token, scena, contaTick = () => 0, notte = null, camera = null,
   economia = null, banchetto = null, piedistalli = null, ricordi = null,
   hub = null, ciclo = null, eventi = null, motoRidotto = false, foglioGiocatore = () => null,
+  feel = null, // --- squadra feel (P08): scossa contestuale, macchie a terra, lampeggio ---
 }) {
   const ctx = canvas.getContext('2d');
   const W = scena.larghezza;
@@ -61,6 +62,7 @@ export function creaRenderer({
   const flashBersagli = new Map();
   let scossa = 0;
   let ultimaStanzaId = null;
+  let ultimoAlphaSagoma = 1; // squadra feel: alpha usato nell'ultimo frame per la sagoma di Ferruccio (QA)
 
   if (eventi) {
     eventi.on('ferruccio.colpo', (ev) => {
@@ -83,15 +85,18 @@ export function creaRenderer({
         });
       }
       if (schizziStanza.length > 90) schizziStanza.splice(0, schizziStanza.length - 90);
-      if (!motoRidotto) scossa = Math.min(9, scossa + (ev?.critico ? 7 : 4.5));
+      // --- squadra feel: inizio --- la scossa contestuale la decide feel.js dai parametri (resa.json)
+      if (!feel && !motoRidotto) scossa = Math.min(9, scossa + (ev?.critico ? 7 : 4.5));
+      // --- squadra feel: fine ---
     });
     eventi.on('ferruccio.parata', () => {
       ondeUrto.push({ x: ferruccio.x, y: ferruccio.y, tick0: contaTick(), durata: 18, parata: true });
-      if (!motoRidotto) scossa = Math.min(10, scossa + 6);
+      if (!feel && !motoRidotto) scossa = Math.min(10, scossa + 6); // squadra feel: con feel.js la scossa è sua
     });
-    eventi.on('notte.stanza', ({ id }) => {
-      if (id !== ultimaStanzaId) {
-        ultimaStanzaId = id;
+    eventi.on('notte.stanza', ({ id, a }) => {
+      const nuova = a ?? id; // squadra feel: il payload di notte.js è {da, a, lato, tipo}
+      if (nuova !== ultimaStanzaId) {
+        ultimaStanzaId = nuova;
         schizziStanza.length = 0;
         ondeUrto.length = 0;
       }
@@ -303,6 +308,10 @@ export function creaRenderer({
       ctx.fill();
       ctx.restore();
     }
+
+    // --- squadra feel: inizio --- macchie permanenti dei nemici morti (china o schegge), per stanza
+    feel?.disegnaMacchie(ctx);
+    // --- squadra feel: fine ---
 
     // Solidi: porte, finestre, colonne, panche
     for (const s of campo.solidi) {
@@ -1102,12 +1111,17 @@ export function creaRenderer({
   }
 
   return {
+    /** Alpha della sagoma di Ferruccio nell'ultimo frame disegnato (squadra feel, lettura di QA). */
+    ultimoAlphaSagoma: () => ultimoAlphaSagoma,
     disegna() {
       const tAnim = contaTick() / 60;
       if (scossa > 0.1) scossa *= 0.82;
       else scossa = 0;
-      const sx = scossa > 0 ? Math.sin(contaTick() * 2.7) * scossa : 0;
-      const sy = scossa > 0 ? Math.cos(contaTick() * 3.3) * scossa : 0;
+      // --- squadra feel: inizio --- scossa contestuale per frame (0 a riposo; moto ridotto → px 0 dai parametri)
+      const offScossa = feel ? feel.offsetScossa() : null;
+      const sx = offScossa ? offScossa.x : (scossa > 0 ? Math.sin(contaTick() * 2.7) * scossa : 0);
+      const sy = offScossa ? offScossa.y : (scossa > 0 ? Math.cos(contaTick() * 3.3) * scossa : 0);
+      // --- squadra feel: fine ---
 
       ctx.fillStyle = '#070402';
       ctx.fillRect(0, 0, W, H);
@@ -1142,7 +1156,14 @@ export function creaRenderer({
         ctx.beginPath(); ctx.arc(pr.x, pr.y, pr.r + 2, 0, TAU); ctx.fill();
       }
 
+      // --- squadra feel: inizio --- i-frames: sagoma semitrasparente (resa.lampeggio.alpha) a semionde
+      const alphaSagoma = feel ? feel.alphaSagoma(ferruccio, contaTick()) : 1;
+      ultimoAlphaSagoma = alphaSagoma;
+      ctx.save();
+      ctx.globalAlpha = alphaSagoma;
       disegnaFerruccioAttore(tAnim);
+      ctx.restore();
+      // --- squadra feel: fine ---
 
       // Al 4° Piano (Boss Finale), nella stanza Boss le Mani di Marionetta scendono nel palco e diventano Donna Luciana!
       const nCorrente = notte?.();

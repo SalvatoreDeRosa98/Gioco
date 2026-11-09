@@ -1,7 +1,7 @@
 # Story 012: Feedback dei colpi «come in Isaac»: hit-stop, flash, schizzi d'inchiostro, squash, scossa, anima
 
 > **Epic**: Ferruccio e combattimento
-> **Status**: Ready
+> **Status**: Done tramite P08 (2026-11-09: hit-stop, scossa, lampeggio e macchie in `story-P08-game-feel.md`; i numeri di questa storia sono superati dalle richieste testuali dell'autore)
 > **Layer**: Core
 > **Type**: Visual/Feel
 > **Estimate**: M

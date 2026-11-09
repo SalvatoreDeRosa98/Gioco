@@ -7,6 +7,12 @@
  * (menu | hub | notte | pausa) sono una macchina minima con tabella esplicita delle transizioni;
  * il cambio di stato è annunciato sul bus con l'evento `ciclo.stato` {da, a}. Storia 001.
  *
+ * Hit-stop (storia P08, game feel): `congela(ms)` salta i prossimi tick di simulazione dovuti ai frame
+ * (il mondo resta fermo) ma il disegno continua a ogni frame; una seconda richiesta mentre il
+ * congelamento è in corso NON si somma (vince la durata più lunga), così un fendente che colpisce più
+ * bersagli nello stesso tick produce un solo hit-stop. I tick forzati (`tick(n)`, strumento di debug)
+ * ignorano il congelamento. `contaFrame()` conta i frame disegnati.
+ *
  * Dipendenze: solo verso il basso (tempo.js, eventi.js iniettati). `requestAnimationFrame` e
  * `performance.now` sono iniettabili, così il ciclo si prova in Node senza DOM.
  */
@@ -57,6 +63,8 @@ export function creaCiclo({
   let idFrame = 0;
   let ultimoFrame = null;
   let contatoreTick = 0;
+  let contatoreFrame = 0;
+  let ticksCongelati = 0;
 
   /**
    * Registra un sistema. L'ordine di registrazione è l'ordine di esecuzione.
@@ -98,21 +106,44 @@ export function creaCiclo({
   /** Chiama `disegna(alpha)` su tutti i sistemi. */
   function disegnaTutti(alpha) {
     for (const { sistema } of sistemi.slice()) sistema.disegna?.(alpha);
+    contatoreFrame++;
+  }
+
+  /**
+   * Hit-stop: congela la simulazione per `ms` (convertiti in tick con `tempo.ticksDaMs`, almeno 1 per
+   * durate positive) mantenendo il disegno. Non si accumula: resta la durata residua più lunga.
+   * @param {number} ms
+   * @returns {number} tick di congelamento residui
+   */
+  function congela(ms) {
+    const n = tempo.ticksDaMs(ms);
+    if (n > ticksCongelati) ticksCongelati = n;
+    return ticksCongelati;
+  }
+
+  /** @returns {number} tick di simulazione ancora congelati (0 = la simulazione scorre). */
+  function congelato() {
+    return ticksCongelati;
   }
 
   /**
    * Elabora un frame: calcola il dt dall'ultimo frame, esegue i tick dovuti, disegna.
    * Pubblico per i test e per chi guida il ciclo a mano.
    * @param {number} oraMs timestamp in millisecondi
-   * @returns {number} tick eseguiti in questo frame
+   * @returns {number} tick eseguiti in questo frame (quelli saltati dall'hit-stop non contano)
    */
   function frame(oraMs) {
     const dt = ultimoFrame === null ? 0 : oraMs - ultimoFrame;
     ultimoFrame = oraMs;
     const n = tempo.avanza(dt);
-    for (let i = 0; i < n; i++) unTick();
+    let eseguiti = 0;
+    for (let i = 0; i < n; i++) {
+      if (ticksCongelati > 0) { ticksCongelati--; continue; } // hit-stop: il frame passa, il mondo no
+      unTick();
+      eseguiti++;
+    }
     disegnaTutti(tempo.alpha());
-    return n;
+    return eseguiti;
   }
 
   function frameAnimazione(oraMs) {
@@ -155,6 +186,11 @@ export function creaCiclo({
     return contatoreTick;
   }
 
+  /** Numero totale di frame disegnati (avanza anche durante l'hit-stop). */
+  function contaFrame() {
+    return contatoreFrame;
+  }
+
   /** Stato corrente della macchina. */
   function stato() {
     return statoCorrente;
@@ -192,6 +228,9 @@ export function creaCiclo({
     frame,
     tick,
     contaTick,
+    contaFrame,
+    congela,
+    congelato,
     stato,
     puoAndareA,
     vaiA,

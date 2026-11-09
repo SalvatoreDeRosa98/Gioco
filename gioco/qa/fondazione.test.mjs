@@ -518,11 +518,11 @@ test('parametri: senza debug gli override dell\'URL non toccano i valori', async
 test('contenuti: i JSON di statistiche sono validi e la mappa dei tasti copre le 12 azioni', () => {
   const cartella = join(RADICE_GIOCO, 'contenuti', 'parametri');
   const leggi = (nome) => JSON.parse(readFileSync(join(cartella, `${nome}.json`), 'utf8'));
-  for (const nome of ['ferruccio', 'combattimento']) {
+  for (const nome of ['ferruccio', 'combattimento', 'resa']) { // storia P08: resa.json
     const { errori } = validaStatistiche(nome, leggi(nome));
     assert.deepEqual(errori, [], `${nome}.json: ${errori.join('; ')}`);
   }
-  const radice = { ferruccio: leggi('ferruccio'), combattimento: leggi('combattimento') };
+  const radice = { ferruccio: leggi('ferruccio'), combattimento: leggi('combattimento'), resa: leggi('resa') };
   assert.deepEqual(applicaOverride(radice, leggi('moto-ridotto'), 'moto-ridotto'), []);
   assert.equal(radice.ferruccio.feel.scossa_px.base, 0);
 

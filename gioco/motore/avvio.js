@@ -88,6 +88,7 @@ import { creaGatto, ARCHETIPO_GATTO } from './attori/gatto.js'; // storia 020: i
 import { creaDirettore } from './attori/ia/direttore.js';
 import { creaResaDebug } from './resa/debug.js';
 import { creaRenderer } from './resa/renderer.js';
+import { creaFeel } from './resa/feel.js'; // --- squadra feel (P08) ---
 import { caricaModelli, creaCatalogo, regoleDaParametri, validaParametriGenerazione } from './mondo/modelli.js';
 import { generaPiano } from './mondo/generazione.js';
 import { creaCamera } from './mondo/camera.js';
@@ -128,7 +129,7 @@ const RISOLUZIONE = Object.freeze({ larghezza: 1280, altezza: 720 });
 /** Cartella dei parametri e file da caricare (nomi di file, non valori di gioco). */
 const CARTELLA_PARAMETRI = 'contenuti/parametri/';
 const FILE_STATISTICHE = ['ferruccio', 'combattimento', 'stanza', 'stanze', 'generazione', 'nemici', 'economia', 'incontri', 'risveglio',
-  'audio' /* squadra audio, storia P10 */];
+  'audio' /* squadra audio, storia P10 */, 'resa' /* squadra feel, storia P08 */];
 const FILE_TABELLE = ['input', 'doni', 'sinergie', 'consumabili', 'ricordi', 'personaggi', 'oggetti-attivi', 'patto', 'boss'];
 const FILE_MOTO_RIDOTTO = 'moto-ridotto';
 /** Testi dell'interfaccia (storia 025) e slot del profilo salvato (nome di slot, non valore di gioco). */
@@ -254,6 +255,14 @@ async function avvia() {
   const ciclo = creaCiclo({ tempo, eventi });
   const seme = semeIniziale(url.searchParams);
   const rng = creaRng(seme);
+
+  // --- squadra feel: inizio --- (storia P08) hit-stop dal ciclo e feel della resa (scossa, macchie, lampeggio)
+  const feel = creaFeel({ parametri, eventi, rng, tempo, token });
+  const hitStop = (chiave) => ciclo.congela(parametri.get(`combattimento.feel.${chiave}`));
+  eventi.on('ferruccio.colpo', () => hitStop('hit_stop_ms')); // un solo congelamento per fendente: congela() non si somma
+  eventi.on('ferruccio.uccisione', () => hitStop('hit_stop_uccisione_ms'));
+  eventi.on('ferruccio.parata', () => hitStop('hit_stop_parata_ms'));
+  // --- squadra feel: fine ---
 
   const input = creaInput(parametri.get('input'));
   collegaInput(input, {
@@ -728,13 +737,15 @@ async function avvia() {
   const creaResa = usaDiagnostica ? creaResaDebug : creaRenderer;
   /** Foglio di gioco del personaggio scelto (statistiche.id), o null prima della scelta / senza manifesto. */
   function foglioGiocatoreCorrente() { const id = statistiche?.id; return id ? foglioConImmagine(id) : null; }
-  ciclo.registra(creaResa({
+  const resa = creaResa({ // squadra feel: tenuto in una variabile per esporlo in __gioco.resa
     canvas, campo, ferruccio, combattimento, bersagli: () => bersagli, proiettili: () => proiettili,
     token, scena: RISOLUZIONE, contaTick: ciclo.contaTick, notte: () => notte, camera,
     economia: () => economia, banchetto: () => banchetto, piedistalli: () => piedistalli, ricordi: () => ricordi,
     hub: () => hub, ciclo, eventi, motoRidotto,
     foglioGiocatore: () => foglioGiocatoreCorrente(),
-  }));
+    feel, // squadra feel (P08)
+  });
+  ciclo.registra(resa);
   // --- squadra audio: inizio --- storia P10: audio dinamico minimale (Web Audio API, nessun file). Lo stato di gioco non sa
   // nulla dell'audio: `eventi-audio.js` ascolta il bus e chiama il sintetizzatore; `attori/passi.js` emette `attore.passo`
   // dalla distanza percorsa (Ferruccio e bersagli). Il contesto nasce al primo gesto (tasto/puntatore); `muto` (M) in ogni stato;
@@ -791,6 +802,9 @@ async function avvia() {
       motoRidotto,
       audio: superficieAudio, // --- squadra audio (storia P10): `stato()`, `sveglia()`, `suona(nome)`, `alternaMuto()`, `emessi()`, `suonati()`, `passi()`, `interruttore()` ---
       modificatori,
+      /** Squadra feel (P08): scossa, macchie e lampeggio (`feel.macchie()`, `feel.statoScossa()`); `resa` è il renderer (`ultimoAlphaSagoma()`). */
+      feel,
+      resa,
       campo,
       ferruccio,
       combattimento,
