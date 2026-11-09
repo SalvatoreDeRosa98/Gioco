@@ -18,6 +18,7 @@ Le dichiarazioni di primo livello (`const`/`let`/`function`) stanno nello scope 
 | `70-input.js` | tastiera, mouse, bottoni della pagina |
 | `80-ciclo.js` | loop a passo fisso, esposizione `window.__teatroInterno` / `window.__teatro.interni`, avvio (`requestAnimationFrame(loop)`) |
 | `t3-economia-salvataggi.js`, `t4-hub-storia.js` | economia/salvataggi e hub/storia; leggono lo stato via `window.__teatroInterno` |
+| `a6-progressione.js` | miglioramento 6: sblocchi di personaggi e oggetti (tabella SBLOCCHI_A6), segni di completamento per boss, notifica «SBLOCCATO», migrazione degli slot; avvolge funzioni di base, nessun gancio; QA `tools/qa-teatro-progressione.js`, interni `sbloccaTutto()`/`azzeraSblocchi()` |
 | `t2-sprite.js`, `sim-economia.js` | non collegati / strumenti |
 
 ## Regole per aggiungere codice

@@ -63,6 +63,8 @@ const foto = (n) => path.join(RADICE, 'production', 'qa', 'evidence', `teatro-bu
 
   await p.goto('file://' + file);
   await p.evaluate(() => localStorage.clear());
+  // (miglioramento 6) qui si provano i modi di partire con ogni burattino: tutti sbloccati (QA)
+  await p.evaluate(() => window.__teatro.interni.sbloccaTutto?.());
   await p.reload();
   await p.waitForTimeout(500);
   await p.screenshot({ path: foto('01-menu-slot-vuoto') });
