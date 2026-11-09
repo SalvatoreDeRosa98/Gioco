@@ -177,11 +177,11 @@
   ]
  },
  "vespa-cieca": {
-  "cella_l": 231,
+  "cella_l": 237,
   "cella_a": 142,
   "colonne": 4,
-  "scala": 0.5529,
-  "altezza_rif": 134,
+  "scala": 0.5664,
+  "altezza_rif": 122,
   "margine": 4,
   "righe": [
    {
@@ -202,7 +202,7 @@
    }
   ],
   "note": [
-   "scritte rimosse (28 lettere)"
+   "scritte rimosse (38 lettere)"
   ]
  },
  "maschera": {
@@ -233,6 +233,9 @@
     "posa": "morte",
     "fotogrammi": 4
    }
+  ],
+  "note": [
+   "scritte rimosse (3 lettere)"
   ]
  },
  "bomba-ferma": {
@@ -322,16 +325,16 @@
   ],
   "note": [
    "linee guida rimosse (122 px)",
-   "scritte rimosse (33 lettere)",
-   "4 frammenti isolati scartati"
+   "scritte rimosse (53 lettere)",
+   "2 frammenti isolati scartati"
   ]
  },
  "predone": {
-  "cella_l": 298,
-  "cella_a": 143,
+  "cella_l": 318,
+  "cella_a": 151,
   "colonne": 4,
-  "scala": 0.6737,
-  "altezza_rif": 135,
+  "scala": 0.7171,
+  "altezza_rif": 128,
   "margine": 4,
   "righe": [
    {
@@ -361,7 +364,7 @@
   ],
   "note": [
    "linee guida rimosse (12774 px)",
-   "scritte rimosse (41 lettere)",
+   "scritte rimosse (48 lettere)",
    "riga 0: una figura larga tagliata in 2 lungo cuciture di alfa minima",
    "riga 1: una figura larga tagliata in 4 lungo cuciture di alfa minima",
    "riga 2: una figura larga tagliata in 2 lungo cuciture di alfa minima",

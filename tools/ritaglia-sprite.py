@@ -217,10 +217,10 @@ def togli_linee(mask: np.ndarray, cfg: dict, note: list[str]) -> np.ndarray:
     return mask & ~linea
 
 
-def trova_testo(stats: np.ndarray, vivi: list[int], cfg: dict) -> set[int]:
-    """Lettere: componenti piccole, basse, allineate in riga a gruppi di almeno 3."""
+def trova_testo(stats: np.ndarray, vivi: list[int], cfg: dict, sat_comp: np.ndarray) -> set[int]:
+    """Lettere: componenti piccole, basse, grigie (senza colore), allineate in riga a gruppi di almeno 3."""
     piccole = [i for i in vivi
-               if stats[i, 4] - stats[i, 2] <= cfg["testo_alt_max"] and stats[i, 0] <= cfg["testo_area_max"]
+               if sat_comp[i] < 0.08 and stats[i, 4] - stats[i, 2] <= cfg["testo_alt_max"] and stats[i, 0] <= cfg["testo_area_max"]
                and stats[i, 3] - stats[i, 1] <= 2.2 * cfg["testo_alt_max"]]
     if not piccole:
         return set()
@@ -246,7 +246,7 @@ def trova_testo(stats: np.ndarray, vivi: list[int], cfg: dict) -> set[int]:
             continue
         x0 = min(stats[i, 1] for i in membri); x1 = max(stats[i, 3] for i in membri)
         y0 = min(stats[i, 2] for i in membri); y1 = max(stats[i, 4] for i in membri)
-        if (x1 - x0) >= 1.8 * (y1 - y0):
+        if (x1 - x0) >= 1.0 * (y1 - y0):
             testo.update(membri)
     return testo
 
@@ -317,7 +317,10 @@ def elabora(nome: str, voce: dict):
     lab, n, st = etichetta(mask)
     vivi = [i for i in range(n) if st[i, 0] >= cfg["area_min"]]
     spuri = n - len(vivi)
-    testo = trova_testo(st, vivi, cfg)
+    rgbf = rgba[..., :3].astype(np.float32)
+    satpx = (rgbf.max(axis=2) - rgbf.min(axis=2)) / 255.0  # croma assoluta: il nero del testo non ha colore
+    sat_comp = np.bincount(lab.ravel(), weights=satpx.ravel(), minlength=n + 1)[1:] / np.maximum(st[:, 0], 1)
+    testo = trova_testo(st, [i for i in range(n) if st[i, 0] >= 10], cfg, sat_comp)
     vivi = [i for i in vivi if i not in testo]
     testo_mask = dilata(np.isin(lab, [i + 1 for i in testo]), 6) if testo else np.zeros(lab.shape, bool)
     if testo:
@@ -390,7 +393,8 @@ def elabora(nome: str, voce: dict):
         x0, y0 = max(0, x0 - b), max(0, y0 - b)
         x1, y1 = min(lab.shape[1], x1 + b), min(lab.shape[0], y1 + b)
         m = np.isin(lab[y0:y1, x0:x1], [i + 1 for i in f["membri"]])
-        m = dilata(m, b) & (alfa[y0:y1, x0:x1] > 0) & ~testo_mask[y0:y1, x0:x1]
+        altri = (lab[y0:y1, x0:x1] > 0) & ~m  # pixel di altre componenti (figure vicine, spuri, scritte)
+        m = dilata(m, b) & (alfa[y0:y1, x0:x1] > 0) & ~testo_mask[y0:y1, x0:x1] & ~altri
         f["riq"], f["m"] = [x0, y0, x1, y1], m
 
     # Righe: sovrapposizione verticale (sul riquadro del nucleo principale, più stabile delle armi).
