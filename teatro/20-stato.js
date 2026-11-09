@@ -279,7 +279,9 @@ function nuovaRun(incrementaNotte = false) {
   }
   const pInfo = PERSONAGGI_GIOCABILI[statoRun.personaggioId] || PERSONAGGI_GIOCABILI.ferruccio;
   statoRun.numeroRun += 1;
-  statoRun.bossOrdine = shuffle(POOL_BOSS);
+  const bossAltri = POOL_BOSS.filter((x) => x.id !== 're-gatto');
+  const bossGatto = POOL_BOSS.find((x) => x.id === 're-gatto') || POOL_BOSS[0];
+  statoRun.bossOrdine = [bossGatto, ...shuffle(bossAltri)];
   statoRun.poolOggettiBase = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'base'));
   statoRun.poolOggettiForti = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'forte'));
   statoRun.poolPatto = shuffle(CATALOGO_PATTO);

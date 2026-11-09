@@ -393,7 +393,10 @@ function popolaStanzaIsaac(s, piano) {
       }
     ];
 
-    const temaScelto = TEMI_STANZA[Math.floor(rng() * TEMI_STANZA.length)];
+    // Nella prima stanza normale del Piano 1 garantiamo sempre Vicolo dei Gatti per il playtest immediato
+    const temaScelto = (piano === 1 && s.id === 's1')
+      ? TEMI_STANZA[1]
+      : TEMI_STANZA[Math.floor(rng() * TEMI_STANZA.length)];
     const tipiGenerati = temaScelto.getTipi(piano);
     // --- C: dalla notte 3 a volte una Vespa in più (NOTTI_C.probNemicoExtra) ---
     if (rng() < effettiNotteC().probNemicoExtra) tipiGenerati.push('vespa_cieca');
