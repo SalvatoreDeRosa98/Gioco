@@ -20,6 +20,7 @@ Le dichiarazioni di primo livello (`const`/`let`/`function`) stanno nello scope 
 | `t3-economia-salvataggi.js`, `t4-hub-storia.js` | economia/salvataggi e hub/storia; leggono lo stato via `window.__teatroInterno` |
 | `a1-bombe-chiavi.js` | (miglioramento 1) bombe [E se non c'è niente da usare vicino], chiavi, forzieri, porte chiuse a lucchetto su tesoro/Fucina dal piano 2; tabella `BOMBE_CHIAVI_A1`; avvolge generaMappaPiano/avviaPiano/entraInStanza/verificaStanzaPulita/interagisciStanza/passoLogico/disegnaStanzaPixelArt; espone `aggiungiBombe`, `aggiungiChiavi`, `generaForziere`, `interazioniVicineA1`. QA: `tools/qa-teatro-bombe.js` |
 | `a8-musica.js` | musica procedurale (miglioramento 8): tabella `MUSICA` (temi per hub, piani 1-4, boss, quiete, morte; strumenti; volumi), sequencer 6/8 a lookahead sull'AudioContext di AudioSys (`AudioSys.ctx`), rispetta il muto; sonda `interni.Musica.stato`. QA: `tools/qa-teatro-musica.js` |
+| `a2-consumabili.js` | (miglioramento 2) consumabili sconosciuti: ampolle (colore → effetto rimescolato per run) e carte napoletane, slot HUD [F], drop alla pulizia, slot «consumabile» della Fucina, pagina del Diario (C). Avvolge funzioni globali; agganci: `scalaA2` in 10-sprite.js/60-resa.js e raggio del colpo in 40-combattimento.js. Caricato dopo `t4-hub-storia.js`. QA: `tools/qa-teatro-consumabili.js` |
 | `t2-sprite.js`, `sim-economia.js` | non collegati / strumenti |
 
 ## Regole per aggiungere codice

@@ -1180,7 +1180,7 @@ function disegnaFrame(dtMs) {
     ctx.save();
     if (pSpento) ctx.globalAlpha = FEEL.iframes.alpha;
     disegnaFerruccioPittorico(ctx, player.x, player.y, {
-      scale: 1.0,
+      scale: 1.0, scalaA2: player.scalaA2, // A2: elisir del Gigante e della Pulce (10-sprite.js)
       flipX: player.flipX,
       tick,
       moving: player.moving,

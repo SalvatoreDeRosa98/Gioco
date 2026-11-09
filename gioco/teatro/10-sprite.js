@@ -151,6 +151,7 @@ function disegnaFerruccioPittorico() {
   ctx.restore();
 
   ctx.translate(px, py + bob);
+  if (opts.scalaA2 && opts.scalaA2 !== 1) ctx.scale(opts.scalaA2, opts.scalaA2); // A2: consumabili (a2-consumabili.js)
   if (flipX) ctx.scale(-1, 1);
   // Sprite procedurale originale coerente (nessuno sparo disegnato sul corpo, solo proiettili dinamici)
   // if (t2Gancio('personaggio', ctx, charId, px, py, opts)) { ctx.restore(); return; }
