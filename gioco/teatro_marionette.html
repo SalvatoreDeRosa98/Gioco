@@ -2908,8 +2908,34 @@ function disegnaManoMarionettaPittorica() {
     banner: Object.freeze({ x: 184, y: 33, w: 332, h: 17 }),
     distanzaPorte: 110,
     graziaIngressoMs: 700,
-    segreta: Object.freeze({ raggioCrepa: 70, colpiMuro: 3, raggioEsplosione: 90 }),
+    segreta: Object.freeze({ raggioCrepa: 70, colpiMuro: 3, raggioEsplosione: 95 }),
   });
+
+  /**
+   * NOTTI_C — ogni notte (contatore dell'autore getNumeroNotte) cambia qualcosa. Le righe sono cumulative:
+   * alla notte n valgono tutte quelle con daNotte ≤ n. Cambi visibili nell'hub, moderati nel gioco.
+   *   notte 2: la sagoma di Mariella alla finestra illuminata (bibbia IX: «una finestra illuminata… una
+   *            breve sagoma»); la luna si sposta di lunaPassoC celle per notte (fino a lunaMaxNotte).
+   *   notte 3: una battuta nuova di Tonino; probNemicoExtra = probabilità di una Vespa in più per stanza.
+   *   notte 4: hub più buio (buioExtra sull'opacità del velo notturno) e un NPC nuovo, una festaiola della
+   *            festa del 1845 addormentata dal Velo (bibbia «La notte dell'inizio»).
+   *   notte 5+: ricompense un po' migliori: bonusForte sulla probabilità di oggetto forte gratis,
+   *            probMonetaExtra = probabilità di un grano in più a stanza pulita.
+   */
+  const NOTTI_C = Object.freeze([
+    Object.freeze({ daNotte: 2, mariellaAllaFinestra: true, lunaPassoC: 0.8, lunaMaxNotte: 6 }),
+    Object.freeze({ daNotte: 3, battutaTonino: true, probNemicoExtra: 0.35 }),
+    Object.freeze({ daNotte: 4, buioExtra: 0.16, npcNuovo: 'festaiola' }),
+    Object.freeze({ daNotte: 5, bonusForte: 0.05, probMonetaExtra: 0.3 }),
+  ]);
+  /** Effetti della notte n: unione delle righe di NOTTI_C con daNotte ≤ n (valori neutri se nessuna). */
+  function effettiNotteC(n = getNumeroNotte()) {
+    const e = { notte: n, mariellaAllaFinestra: false, lunaPassoC: 0, lunaMaxNotte: 1, battutaTonino: false,
+      probNemicoExtra: 0, buioExtra: 0, npcNuovo: null, bonusForte: 0, probMonetaExtra: 0 };
+    for (const riga of NOTTI_C) if (n >= riga.daNotte) Object.assign(e, riga);
+    delete e.daNotte;
+    return e;
+  }
   // --- C: fine ---
 
   let runSeed = Date.now() >>> 0;
@@ -3453,7 +3479,7 @@ function disegnaManoMarionettaPittorica() {
 
   function tiraOggettoGratisStanza(garantito = false) {
     const roll = rng();
-    if (roll < 0.10) {
+    if (roll < 0.10 + effettiNotteC().bonusForte) { // C: notte 5+ ricompense un po' migliori
       return { ...estraiOggettoForte(), forteGratis: true };
     }
     if (garantito || roll < 0.10 + (1 / 3)) {
@@ -3837,6 +3863,8 @@ function disegnaManoMarionettaPittorica() {
 
       const temaScelto = TEMI_STANZA[Math.floor(rng() * TEMI_STANZA.length)];
       const tipiGenerati = temaScelto.getTipi(piano);
+      // --- C: dalla notte 3 a volte una Vespa in più (NOTTI_C.probNemicoExtra) ---
+      if (rng() < effettiNotteC().probNemicoExtra) tipiGenerati.push('vespa_cieca');
 
       const nomiNem = {
         vespa_cieca: 'Vespa Cieca (Attack Fly)',
@@ -4433,6 +4461,8 @@ function disegnaManoMarionettaPittorica() {
         };
       }
 
+      // --- C: dalla notte 5 un grano in più a stanza pulita (NOTTI_C.probMonetaExtra) ---
+      if (st.tipo !== 'segreta' && rng() < effettiNotteC().probMonetaExtra) spawnaMonetaATerra(st, 300, 172, 1);
       const rPick = rng();
       // --- T3: inizio ---
       if (st.tipo === 'segreta') {
@@ -6550,6 +6580,7 @@ function disegnaManoMarionettaPittorica() {
       selezionaPersonaggio, nuovaRun, mostraBanner, scuoti, rng,
       // (T4) un solo contatore delle notti, quello dell'autore; menu ESC dell'autore disegnato anche nell'hub
       getNumeroNotte, incrementaNumeroNotte, disegnaMenuPausa,
+      NOTTI_C, effettiNotteC, STANZE_C, // C
       // (QA generatore) mappa di un piano con un seme dato; non tocca la run in corso
       mappaConSeme(piano, seme) {
         const salvato = runSeed;

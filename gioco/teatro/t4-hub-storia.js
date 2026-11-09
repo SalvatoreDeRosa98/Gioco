@@ -625,8 +625,28 @@
   };
 
   const nome = (chi) => (chi === 'voce' ? (S.flag.rivelazione_vista ? CONFIG.nomeLuciana : CONFIG.nomeVoce)
-    : chi === 'luciana' ? CONFIG.nomeLuciana : DATI.personaggi[chi] || chi);
+    : chi === 'luciana' ? CONFIG.nomeLuciana : DATI.personaggi[chi] || TESTI_NOTTI_C.nomi[chi] || chi);
   const voce = (chi, testo) => ({ chi, testo });
+  // --- C: inizio ---
+  /** Effetti della notte corrente (tabella NOTTI_C del file principale); neutri se manca. */
+  const notteC = () => (typeof I.effettiNotteC === 'function' ? I.effettiNotteC(notteCorrente()) : {});
+  /**
+   * Testi delle novità delle notti (NOTTI_C). Coerenti con la bibbia: la luna del Velo, Rosa nel ricordo
+   * di Tonino, la festa del 1845 durante la quale Caserta si è addormentata.
+   */
+  const TESTI_NOTTI_C = Object.freeze({
+    tonino: Object.freeze([
+      voce('tonino', "Stanotte 'a luna sta cchiù 'a llà, uagliò. Rosa diceva ca quanno 'a luna cammina, quaccheduno se ricorda."),
+    ]),
+    festaiola: Object.freeze([
+      voce('festaiola', "Che bella festa, giovanotto! 'A Reggia è fernuta... nun s'ha da piangere cchiù."),
+      voce('didascalia', "Porta ancora la coccarda della festa del 1845. Sorride, e non sbatte mai le ciglia."),
+    ]),
+    nomi: Object.freeze({ festaiola: 'Una festaiola' }),
+  });
+  /** Presenza del NPC nuovo della notte 4 (cella libera della griglia dell'hub). */
+  const PRESENZA_NUOVA_C = Object.freeze({ id: 'festaiola', tipo: 'npc', personaggio: 'festaiola', ancoraggio: 'hub:festaiola', c: 10, r: 5 });
+  // --- C: fine ---
   const scena = (id) => DATI.scene.find((s) => s.id === id);
 
   // ===========================================================================
@@ -700,6 +720,14 @@
       apriDialogo(s.battute.map((b) => voce(b.chi, b.testo)), { scene: [s.id], scelta: s.scelta ? s : null });
       return;
     }
+    // --- C: inizio --- novità delle notti: la festaiola (notte 4) e la battuta nuova di Tonino (notte 3)
+    if (npc === 'festaiola') { apriDialogo(TESTI_NOTTI_C.festaiola.slice()); return; }
+    if (npc === 'tonino' && notteC().battutaTonino && S.battutaNotteC !== notteCorrente()) {
+      S.battutaNotteC = notteCorrente(); // una volta per notte, poi le ripetizioni di sempre
+      apriDialogo(TESTI_NOTTI_C.tonino.slice());
+      return;
+    }
+    // --- C: fine ---
     const righe = (DATI.ripetizioni.npc[npc] || []).filter((r) => valuta(r.quando, S.flag));
     if (righe.length) {
       const i = (S.ripetIdx[npc] || 0) % righe.length;
@@ -733,7 +761,9 @@
 
   /** Presenze del modello risolte contro i flag (motore/mondo/hub.js › presenze()). */
   function presenze() {
-    return DATI.modelloHub.presenze.map((p) => ({
+    // --- C: dalla notte 4 un NPC nuovo (NOTTI_C.npcNuovo) ---
+    const base = notteC().npcNuovo === PRESENZA_NUOVA_C.id ? DATI.modelloHub.presenze.concat([PRESENZA_NUOVA_C]) : DATI.modelloHub.presenze;
+    return base.map((p) => ({
       ...p, ...pos(p.c, p.r),
       presente: valuta(p.quando, S.flag),
       aperta: p.tipo === 'porta' ? valuta(p.aperta_se, S.flag) : undefined,
@@ -990,7 +1020,10 @@
     // la luna immobile del Velo
     const luna = DATI.modelloHub.presenze.find((p) => p.forma === 'luna');
     if (luna) {
-      const lp = pos(luna.c, luna.r);
+      // --- C: dalla notte 2 la luna si sposta (NOTTI_C.lunaPassoC celle per notte, fino a lunaMaxNotte) ---
+      const nc = notteC();
+      const passi = Math.max(0, Math.min(nc.notte || 1, nc.lunaMaxNotte || 1) - 1);
+      const lp = pos(luna.c + passi * (nc.lunaPassoC || 0), luna.r - passi * 0.12);
       const ly = Math.max(14, lp.y);
       const gl = ctx.createRadialGradient(lp.x, ly, 2, lp.x, ly, 26);
       gl.addColorStop(0, 'rgba(243, 223, 193, 0.5)');
@@ -1129,6 +1162,38 @@
     ctx.restore();
   }
 
+  // --- C: inizio ---
+  /** Notte 2+: la sagoma di Mariella dietro la finestra illuminata (bibbia IX), ferma, appena inclinata. */
+  function disegnaMariellaC(x, y, t) {
+    const sway = Math.round(Math.sin(t * 0.02) * 1);
+    ctx.fillStyle = '#0a0604';
+    ctx.fillRect(x - 3 + sway, y - 10, 6, 6);   // testa
+    ctx.fillRect(x - 5 + sway, y - 5, 10, 11);  // spalle e busto
+    ctx.fillRect(x - 6 + sway, y - 11, 3, 8);   // capelli raccolti
+  }
+  /** Notte 4+: una festaiola del 1845 addormentata dal Velo (gonna larga, coccarda, ventaglio). */
+  function disegnaFestaiolaC(x, y, t) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(8, 5, 3, 0.6)';
+    ctx.beginPath(); ctx.ellipse(x, y + 10, 13, 4, 0, 0, TAU); ctx.fill();
+    ctx.translate(Math.round(x), Math.round(y));
+    ctx.fillStyle = '#0a0604';
+    ctx.fillRect(-12, -6, 24, 16);   // gonna
+    ctx.fillRect(-6, -20, 12, 15);   // busto
+    ctx.fillRect(-6, -32, 12, 12);   // testa
+    ctx.fillRect(-8, -35, 16, 4);    // acconciatura
+    ctx.fillStyle = '#3b0d2a';
+    ctx.fillRect(-10, -4, 20, 12);
+    ctx.fillStyle = '#c9a679';
+    ctx.fillRect(-4, -29, 8, 7);     // volto
+    ctx.fillStyle = '#f9cb40';
+    ctx.fillRect(-2, -17, 4, 4);     // coccarda della festa
+    ctx.fillStyle = '#0a0604';
+    ctx.fillRect(8, -16 + Math.round(Math.sin(t * 0.06) * 1), 7, 5); // ventaglio
+    ctx.restore();
+  }
+  // --- C: fine ---
+
   function disegnaColonna(c) {
     ctx.fillStyle = 'rgba(8, 5, 3, 0.65)';
     ctx.beginPath(); ctx.ellipse(c.x, c.y + 8, 14, 5, 0, 0, TAU); ctx.fill();
@@ -1182,11 +1247,12 @@
     ctx.drawImage(I.getFloorTileCanvas(), 0, 0, W, H); // (T5) la cache è alla risoluzione del buffer
     disegnaCielo(t);
     // velo notturno sul selciato
-    ctx.fillStyle = 'rgba(10, 14, 30, 0.28)';
+    ctx.fillStyle = `rgba(10, 14, 30, ${(0.28 + (notteC().buioExtra || 0)).toFixed(2)})`; // C: notte 4 più buio
     ctx.fillRect(48, 52, W - 96, H - 96);
     const pr = presenze();
     for (const p of pr) {
       if (p.tipo === 'finestra') disegnaFinestra(p.x, 60, p.accesa, t);
+      if (p.tipo === 'finestra' && p.personaggio === 'mariella' && notteC().mariellaAllaFinestra) disegnaMariellaC(p.x, 60, t); // C
       if (p.tipo === 'porta') disegnaPortaBottega(p);
     }
     disegnaIngresso(t);
@@ -1198,6 +1264,7 @@
     for (const p of pr) {
       if (p.tipo !== 'npc') continue;
       if (p.personaggio === 'tonino') cose.push({ y: p.y + 10, d: () => disegnaTonino(p.x, p.y, t) });
+      else if (p.personaggio === 'festaiola') cose.push({ y: p.y + 10, d: () => disegnaFestaiolaC(p.x, p.y, t) }); // C
       else if (I.PERSONAGGI_GIOCABILI[p.personaggio]) {
         cose.push({ y: p.y + 10, d: () => I.disegnaFerruccioPittorico(ctx, p.x, p.y, { scale: 0.9, tick: t, charInfo: I.PERSONAGGI_GIOCABILI[p.personaggio], flipX: p.x > 320, sinergie: {} }) });
       }
