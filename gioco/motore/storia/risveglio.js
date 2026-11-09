@@ -161,7 +161,10 @@ export function creaRisveglio({
     eventi.emit(nome, { fase: s.fase, indice: i, durata_ms: durateMsDi(s.motivo)[i], motivo: s.motivo });
   }
 
-  /** Il risveglio: per morte o vittoria finale azzera la run; per discesa passa al piano successivo conservando oggetti, monete e maschere. */
+  /**
+   * Il risveglio: per morte o vittoria finale chiude la notte dell'economia (`fineNotte`, idempotente: alla morte è già
+   * chiusa) e azzera la run; per discesa passa al piano successivo conservando oggetti, ricordi, monete e maschere.
+   */
   function risveglia() {
     const motivo = s.motivo ?? MOTIVI_RISVEGLIO.morte;
     const piano = s.pianoCompletato;
@@ -174,6 +177,7 @@ export function creaRisveglio({
       eventi.emit('piano.discesa', { daPiano: piano, aPiano: piano + 1 });
       return;
     }
+    economia?.fineNotte?.();
     const notte = narrativa.nuovaNotte();
     modificatori.azzera();
     pool?.azzera?.();

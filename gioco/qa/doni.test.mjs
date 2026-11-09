@@ -69,6 +69,19 @@ async function crea({ seme = 1845, senzaCatalogo = false, catalogo = null, siner
 
 const vicino = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
 
+// Valori del Teatro letti dai JSON reali (mai ricopiati come costanti): un dono cambia nel catalogo, il test segue.
+const CATALOGO_REALE = leggiJson('doni');
+const FERRUCCIO = leggiJson('ferruccio');
+const COMBATTIMENTO = leggiJson('combattimento');
+const SINERGIE = leggiJson('sinergie');
+const donoReale = (id) => CATALOGO_REALE.doni.find((d) => d.id === id);
+const sinergiaReale = (id) => SINERGIE.sinergie.find((s) => s.id === id);
+/** Somma dei modificatori `somma` dei doni dati su una statistica. */
+const sommaSu = (ids, statistica) => ids.reduce((a, id) => a + donoReale(id).modificatori.filter((m) => m.statistica === statistica && m.operazione === 'somma').reduce((s, m) => s + m.valore, 0), 0);
+/** Prodotto dei modificatori `moltiplica` dei doni dati su una statistica. */
+const prodottoSu = (ids, statistica) => ids.reduce((a, id) => a * donoReale(id).modificatori.filter((m) => m.statistica === statistica && m.operazione === 'moltiplica').reduce((s, m) => s * m.valore, 1), 1);
+const clampa = (v, voce) => Math.min(voce.max, Math.max(voce.min, v));
+
 // ---------------------------------------------------------------------------------------------
 // Criteri della storia 023
 // ---------------------------------------------------------------------------------------------
@@ -189,7 +202,7 @@ test('S023-5: il catalogo reale passa il validatore (il resto è in qa/parametri
   const libreria = creaLibreria(catalogo.effetti).voci;
   const esito = validaCatalogo(catalogo, { parametri, libreria });
   assert.deepEqual(esito.errori, []);
-  assert.equal(esito.indice.size, 20);
+  assert.equal(esito.indice.size, catalogo.doni.length, 'nessun dono del Teatro escluso');
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -207,16 +220,25 @@ test('GDD: senza doni danno 1,0, v_base 220, t_finestra_p 180; Medaglione + ×1,
   assert.deepEqual(mod.doniAttivi(), ['medaglione-di-rosa']);
 });
 
-test('GDD: t_invuln con Seta grezza, Fazzoletto, Lettera di Mariella e S3 → 1200 (non 1350); togliere il Fazzoletto → 1150', async () => {
+test('GDD/Teatro: t_invuln con Sciarpa cremisi, Fazzoletto e Lettera di Mariella (valori di doni.json) supera il tetto → clamp a t_invuln.max; con S3 resta al tetto; togliendo doni scende senza eccedenza accumulata', async () => {
   const { mod } = await crea();
-  for (const id of ['seta-grezza', 'fazzoletto-col-giglio', 'lettera-di-mariella']) assert.ok(mod.aggiungiDono(id));
+  const voce = FERRUCCIO.t_invuln;
+  const s3 = sinergiaReale('S3').effetto.modificatori[0].valore;
+  const attesa = (ids, conS3) => clampa(voce.base + sommaSu(ids, 't_invuln') + (conS3 ? s3 : 0), voce);
+  const tre = ['seta-grezza', 'fazzoletto-col-giglio', 'lettera-di-mariella'];
+  for (const id of tre) assert.ok(mod.aggiungiDono(id));
   assert.deepEqual(mod.sinergieAttive(), [], 'nessun filo: S3 non attiva');
-  assert.equal(mod.valore('t_invuln'), 1200, '800 + 450 = 1250 → clamp 1200');
+  assert.ok(voce.base + sommaSu(tre, 't_invuln') > voce.max, 'il caso prova davvero il tetto');
+  assert.equal(mod.valore('t_invuln'), voce.max, 'oltre il tetto → clamp');
   assert.ok(mod.aggiungiDono('filo-teso'));
   assert.ok(mod.sinergieAttive().includes('S3'));
-  assert.equal(mod.valore('t_invuln'), 1200, '800 + 550 = 1350 → clamp 1200');
+  assert.equal(mod.valore('t_invuln'), attesa([...tre, 'filo-teso'], true));
   assert.ok(mod.rimuoviDono('fazzoletto-col-giglio'));
-  assert.equal(mod.valore('t_invuln'), 1150, 'l\'eccedenza non si accumula');
+  assert.equal(mod.valore('t_invuln'), attesa(['seta-grezza', 'lettera-di-mariella'], true));
+  assert.ok(mod.rimuoviDono('seta-grezza'));
+  assert.ok(!mod.sinergieAttive().includes('S3'), 'senza seta S3 cade');
+  assert.equal(mod.valore('t_invuln'), attesa(['lettera-di-mariella'], false), 'l\'eccedenza non si accumula');
+  assert.ok(mod.valore('t_invuln') < voce.max);
 });
 
 test('GDD: t_finestra_p +70 +70 → 300; v_base ×0,5 → 150; tre ×1,3 → 308 (Π bloccato a 1,4)', async () => {
@@ -231,16 +253,21 @@ test('GDD: t_finestra_p +70 +70 → 300; v_base ×0,5 → 150; tre ×1,3 → 308
   assert.ok(vicino(mod.valore('v_base'), 308), `Π 2,197 → cap 1,4 → 308; ottenuto ${mod.valore('v_base')}`);
 });
 
-test('GDD: Pantofole + Martello + Grembiule → v_base 210,7 ± 0,1; t_recupero_f arrotondato a intero', async () => {
+test('GDD/Teatro: Stivali + Martello + Grembiule → v_base = (base + somme) × Π dei moltiplicatori del catalogo (± 0,1); t_recupero_f arrotondato a intero; Martello danno +1; S2 fuoco + ferro', async () => {
   const { mod } = await crea();
-  for (const id of ['pantofole-di-seta', 'martello-da-fabbro', 'grembiule-di-cuoio']) assert.ok(mod.aggiungiDono(id));
-  assert.ok(Math.abs(mod.valore('v_base') - 210.7) <= 0.1, `${mod.valore('v_base')}`);
-  assert.equal(mod.valore('t_recupero_f'), 176, '160 × 1,10 = 176');
+  const tre = ['pantofole-di-seta', 'martello-da-fabbro', 'grembiule-di-cuoio'];
+  for (const id of tre) assert.ok(mod.aggiungiDono(id));
+  const vAtteso = clampa((FERRUCCIO.v_base.base + sommaSu(tre, 'v_base')) * prodottoSu(tre, 'v_base'), FERRUCCIO.v_base);
+  assert.ok(Math.abs(mod.valore('v_base') - vAtteso) <= 0.1, `${mod.valore('v_base')} ≠ ${vAtteso}`);
+  const tRec = (ids) => Math.round(clampa((COMBATTIMENTO.t_recupero_f.base + sommaSu(ids, 't_recupero_f')) * prodottoSu(ids, 't_recupero_f'), COMBATTIMENTO.t_recupero_f));
+  assert.equal(mod.valore('t_recupero_f'), tRec(tre));
   assert.ok(mod.aggiungiDono('mantice'));
-  assert.equal(mod.valore('t_recupero_f'), 155, '160 × 0,968 = 154,88 → 155 (ms arrotondati)');
-  assert.equal(mod.valore('danno'), 2);
+  assert.equal(mod.valore('t_recupero_f'), tRec([...tre, 'mantice']), 'ms arrotondati a intero');
+  assert.equal(mod.valore('t_recupero_f'), Math.round(mod.valore('t_recupero_f')));
+  assert.ok(mod.valore('t_recupero_f') < tRec(tre), 'il Mantice accorcia il recupero');
+  assert.equal(mod.valore('danno'), COMBATTIMENTO.danno.base + sommaSu([...tre, 'mantice'], 'danno'), 'Martello: danno +1');
   assert.ok(mod.sinergieAttive().includes('S2'), 'fuoco (Mantice) + ferro (Martello)');
-  assert.ok(vicino(mod.valore('molt_f3'), 1.7), 'S2: molt_f3 +0,2');
+  assert.ok(vicino(mod.valore('molt_f3'), COMBATTIMENTO.molt_f3.base + sinergiaReale('S2').effetto.modificatori[0].valore), 'S2: molt_f3 +0,2');
 });
 
 test('GDD: il catalogo rifiuta un dono fuori intervallo (×0,5 su v_base) e lo esclude senza rompere il resto', async () => {
@@ -266,7 +293,7 @@ test('GDD: il catalogo rifiuta un dono fuori intervallo (×0,5 su v_base) e lo e
   assert.ok(errori.some((e) => e.includes('scelta')));
   assert.equal(mod.aggiungiDono('piombo'), false);
   assert.ok(log.voci.some((v) => v.includes('piombo')));
-  assert.equal(mod.catalogo().length, 20, 'gli altri 20 restano validi');
+  assert.equal(mod.catalogo().length, CATALOGO_REALE.doni.length, 'gli altri doni del catalogo restano validi');
   assert.ok(mod.aggiungiDono('lima'));
 });
 
@@ -282,7 +309,7 @@ test('ADR-0002: senza catalogo il modulo resta quello minimo (valore/applica) e 
 // Ganci: probabilità seminata, ricarica, tetto per stanza, profondità 1, budget per frame, bonus
 // ---------------------------------------------------------------------------------------------
 
-test('GDD: Acciarino (p 0,20, ricarica 400) su 10 000 colpi distanziati 500 ms → 2000 ± 130 scintille, identico con lo stesso seme', async () => {
+test('GDD/Teatro: Acciarino (p e ricarica da doni.json, ricarica < 500 ms) su 10 000 colpi distanziati 500 ms → 10 000 × p scintille (± 4σ), identico con lo stesso seme', async () => {
   const conta = async () => {
     const { mod } = await crea({ seme: 7 });
     mod.aggiungiDono('acciarino');
@@ -296,7 +323,11 @@ test('GDD: Acciarino (p 0,20, ricarica 400) su 10 000 colpi distanziati 500 ms �
   const a = await conta();
   const b = await conta();
   assert.equal(a, b, 'deterministico con lo stesso seme');
-  assert.ok(Math.abs(a - 2000) <= 130, `scintille: ${a}`);
+  const g = donoReale('acciarino').ganci[0];
+  assert.ok(g.ricarica_ms < 500, 'la ricarica non blocca colpi distanziati 500 ms');
+  const attese = 10000 * g.probabilita;
+  const sigma = Math.sqrt(10000 * g.probabilita * (1 - g.probabilita));
+  assert.ok(Math.abs(a - attese) <= 4 * sigma, `scintille: ${a} (attese ${attese} ± ${(4 * sigma).toFixed(0)})`);
 });
 
 test('GDD: sei colpi nello stesso frame con l\'Acciarino → al più 1 scintilla (la ricarica blocca le altre)', async () => {
@@ -329,7 +360,10 @@ test('GDD: profondità 1: un evento con origine gancio non attiva ganci; max_per
 
 test('GDD: budget max_effetti_gancio_frame: gli ultimi iscritti sono scartati per primi; tick azzera il budget', async () => {
   const catalogo = leggiJson('doni');
+  // Teatro: al massimo max_slot_doni (5) passivi addosso; il budget si prova con il suo minimo (3) così budget + 2 doni stanno negli slot
+  catalogo.limiti.max_effetti_gancio_frame = { ...catalogo.limiti.max_effetti_gancio_frame, base: catalogo.limiti.max_effetti_gancio_frame.min };
   const budget = catalogo.limiti.max_effetti_gancio_frame.base;
+  assert.ok(budget + 2 <= catalogo.limiti.max_slot_doni.base, 'i doni di prova stanno nei 5 slot del Teatro');
   for (let i = 0; i < budget + 2; i++) {
     catalogo.doni.push({
       id: `cura-${i}`, nome: `Cura ${i}`, categoria: 'seta', rarita: 'comune', mvp: false, modificatori: [],
@@ -349,23 +383,27 @@ test('GDD: budget max_effetti_gancio_frame: gli ultimi iscritti sono scartati pe
   assert.equal(ricevuti.filter((r) => r.nome === 'doni.cura').length, budget * 2);
 });
 
-test('GDD: Matassa d\'oro: bonus_temporaneo v_base ×1,20 per 2000 ms; rinnova, non si somma; scade con tick; sparisce togliendo il dono', async () => {
+test('GDD/Teatro: Matassa d\'oro: bonus_temporaneo v_base × valore per durata_ms (doni.json: ×1,25 per 2500 ms); rinnova, non si somma; scade con tick; sparisce togliendo il dono', async () => {
   const { mod } = await crea();
+  const bonus = donoReale('matassa-d-oro').ganci[0].parametri;
+  const base = FERRUCCIO.v_base.base;
+  const conBonus = clampa(base * bonus.valore, FERRUCCIO.v_base);
+  const durata = bonus.durata_ms / 1000;
   mod.aggiungiDono('matassa-d-oro');
-  assert.equal(mod.valore('v_base'), 220);
+  assert.equal(mod.valore('v_base'), base);
   mod.ganci.emetti('su_uccisione', { bersaglio: { x: 0, y: 0 } });
-  assert.ok(vicino(mod.valore('v_base'), 264), '220 × 1,2');
-  mod.tick(1.5);
+  assert.ok(vicino(mod.valore('v_base'), conBonus), `${base} × ${bonus.valore}`);
+  mod.tick(durata * 0.6);
   mod.ganci.emetti('su_uccisione', { bersaglio: { x: 0, y: 0 } });
-  assert.ok(vicino(mod.valore('v_base'), 264), 'rinnovato, non 220 × 1,44');
-  mod.tick(1.9);
-  assert.ok(vicino(mod.valore('v_base'), 264), 'a 3,4 s il bonus rinnovato a 1,5 s dura fino a 3,5 s');
+  assert.ok(vicino(mod.valore('v_base'), conBonus), 'rinnovato, non moltiplicato due volte');
+  mod.tick(durata - 0.1);
+  assert.ok(vicino(mod.valore('v_base'), conBonus), 'il bonus rinnovato dura `durata` dal rinnovo');
   mod.tick(0.2);
-  assert.equal(mod.valore('v_base'), 220, 'scaduto');
+  assert.equal(mod.valore('v_base'), base, 'scaduto');
   mod.ganci.emetti('su_uccisione', { bersaglio: { x: 0, y: 0 } });
-  assert.ok(vicino(mod.valore('v_base'), 264));
+  assert.ok(vicino(mod.valore('v_base'), conBonus));
   mod.rimuoviDono('matassa-d-oro');
-  assert.equal(mod.valore('v_base'), 220, 'i bonus nati dal dono sono cancellati con lui');
+  assert.equal(mod.valore('v_base'), base, 'i bonus nati dal dono sono cancellati con lui');
   assert.deepEqual(mod.ganci.iscrizioni('su_uccisione'), []);
 });
 
@@ -374,13 +412,14 @@ test('GDD: S4 Scintille calde somma danno +1 ai parametri di ogni scintilla poss
   mod.aggiungiDono('acciarino');
   mod.aggiungiDono('mantice');
   assert.deepEqual(mod.sinergieAttive(), ['S4']);
-  assert.equal(mod.ganci.iscrizioni('su_colpo')[0].parametri.danno, 2);
+  assert.equal(mod.ganci.iscrizioni('su_colpo')[0].parametri.danno, donoReale('acciarino').ganci[0].parametri.danno + sinergiaReale('S4').effetto.param_extra.scintilla.danno);
   mod.aggiungiDono('filo-teso');
   mod.aggiungiDono('pantofole-di-seta');
   assert.ok(mod.sinergieAttive().includes('S5'));
   assert.ok(mod.sinergieAttive().includes('S3'), 'filo (Filo teso) + seta (Pantofole)');
-  assert.ok(vicino(mod.valore('d_scatto'), 180 * 1.15 * 1.1), `${mod.valore('d_scatto')}`);
-  assert.equal(mod.valore('t_invuln'), 900);
+  const dScatto = clampa(FERRUCCIO.d_scatto.base * prodottoSu(['filo-teso'], 'd_scatto') * sinergiaReale('S5').effetto.modificatori[0].valore, FERRUCCIO.d_scatto);
+  assert.ok(vicino(mod.valore('d_scatto'), dScatto), `${mod.valore('d_scatto')} ≠ ${dScatto}`);
+  assert.equal(mod.valore('t_invuln'), FERRUCCIO.t_invuln.base + sinergiaReale('S3').effetto.modificatori[0].valore);
 });
 
 test('GDD: doppia raccolta rifiutata; rimozione di un dono non attivo → false; azzera svuota tutto', async () => {
@@ -389,10 +428,10 @@ test('GDD: doppia raccolta rifiutata; rimozione di un dono non attivo → false;
   assert.equal(mod.aggiungiDono('lima'), false);
   assert.ok(log.voci.some((v) => v.includes('già attivo')));
   assert.equal(mod.rimuoviDono('mantice'), false);
-  assert.equal(mod.valore('portata'), 76);
+  assert.equal(mod.valore('portata'), COMBATTIMENTO.portata.base + sommaSu(['lima'], 'portata'), 'Lima: portata dal catalogo (Teatro +10)');
   mod.azzera();
   assert.deepEqual(mod.doniAttivi(), []);
-  assert.equal(mod.valore('portata'), 70);
+  assert.equal(mod.valore('portata'), COMBATTIMENTO.portata.base);
 });
 
 test('GDD prestazioni: ricalcolo di tutte le statistiche del registro < 0,05 ms per lettura in cache; il ricalcolo avviene solo al cambio della lista', async () => {
@@ -438,20 +477,22 @@ function creaPoolProva({ seme = 1845, flag = () => ({}), soloMvp = true, sblocch
 
 const pct = (x) => Math.round(x * 10000) / 100;
 
-test('S024-1: doni.json contiene i 12 doni MVP del GDD con modificatori validi (registro, intervalli, ganci, sagome)', async () => {
+test('S024-1/Teatro: doni.json: i 20 doni d\'oro sono tutti MVP (pool unico stile Isaac) più il Medaglione = 21; modificatori validi (registro, intervalli, ganci, sagome)', async () => {
   const { parametri, mod } = await crea();
   const catalogo = leggiJson('doni');
   const mvp = catalogo.doni.filter((d) => d.mvp);
-  assert.equal(mvp.length, 12);
-  const attesi = ['mantice', 'lima', 'acciarino', 'catena-della-chiusa', 'grembiule-di-cuoio', 'martello-da-fabbro', 'filo-teso', 'matassa-d-oro',
-    'spola-del-telaio', 'pantofole-di-seta', 'seta-grezza', 'medaglione-di-rosa'];
+  const oro = catalogo.doni.filter((d) => d.categoria !== 'ricordi');
+  assert.equal(oro.length, 20, 'Teatro: 20 doni d\'oro');
+  assert.equal(mvp.length, oro.length + 1);
+  const attesi = [...oro.map((d) => d.id), 'medaglione-di-rosa'];
   assert.deepEqual(mvp.map((d) => d.id).sort(), attesi.sort());
   const esito = validaCatalogo(catalogo, { parametri, libreria: creaLibreria(catalogo.effetti).voci });
   assert.deepEqual(esito.errori, []);
   for (const d of mvp) {
     assert.ok(esito.indice.has(d.id), `${d.id} valido`);
     assert.ok(typeof d.nome === 'string' && d.nome.length > 0 && d.nome.length <= 28, `${d.id}: nome ≤ 28`);
-    assert.ok(typeof d.cartiglio === 'string' && d.cartiglio.length > 0 && d.cartiglio.length <= 60, `${d.id}: una riga di cartiglio`);
+    // il Teatro descrive gli oggetti con frasi fino a ~75 caratteri; il cartiglio DOM va a capo
+    assert.ok(typeof d.cartiglio === 'string' && d.cartiglio.length > 0 && d.cartiglio.length <= 80, `${d.id}: cartiglio breve (${d.cartiglio.length})`);
     assert.ok(d.modificatori.length + d.ganci.length >= 1, `${d.id}: fa qualcosa`);
     for (const m of d.modificatori) assert.ok(m.statistica in catalogo.statistiche, `${d.id}: statistica ${m.statistica} nel registro`);
     assert.equal(d.sblocco, null, `${d.id}: nell'MVP non c'è la Fucina`);
@@ -480,35 +521,56 @@ test('S024-3: sagome: un ricordo (azzurro) ha il profilo dell\'oggetto, un dono 
   }
 });
 
-test('GDD pool: al piano 1 ogni comune 10,0 %, ogni raro 7,5 %, il Martello 10,0 %, somma 100 %; dopo il Mantice i comuni 12,0 %', () => {
+/** Probabilità attesa di ogni dono: W_r(p) = max(0, W0_r × (1 + d_r/100 × (p − 1))) sulle classi non vuote, poi `peso` dentro la classe. */
+function probabilitaAttese(eleggibili, piano) {
+  const { pesi, derivePct } = pesiEconomia();
+  const W = (r) => Math.max(0, pesi[r] * (1 + (derivePct[r] / 100) * (piano - 1)));
+  const classi = [...new Set(eleggibili.map((d) => d.rarita))];
+  const totale = classi.reduce((a, r) => a + W(r), 0);
+  const attese = new Map();
+  for (const r of classi) {
+    const della = eleggibili.filter((d) => d.rarita === r);
+    const pesoClasse = della.reduce((a, d) => a + d.peso, 0);
+    for (const d of della) attese.set(d.id, (W(r) / totale) * (d.peso / pesoClasse));
+  }
+  return attese;
+}
+
+test('GDD pool (Teatro: 20 doni d\'oro eleggibili al piano 1): P(dono) = W_r(1)/ΣW × peso/Σpeso della classe (60/30/10 al piano 1), somma 100 %; dopo il Mantice i comuni si ridistribuiscono', () => {
   const pool = creaPoolProva();
   const p1 = pool.probabilita({ piano: 1, canale: 'piedistallo' });
   const eleggibili = pool.eleggibili({ piano: 1, canale: 'piedistallo' });
-  assert.equal(eleggibili.length, 11, 'pool MVP: 6 comuni, 4 rari, 1 prezioso (il Medaglione è unico)');
+  const attesiIds = CATALOGO_REALE.doni.filter((d) => d.mvp && d.rarita !== 'unico' && d.canale.includes('piedistallo') && d.sblocco === null && d.piano_min <= 1).map((d) => d.id).sort();
+  assert.deepEqual(eleggibili.map((d) => d.id).sort(), attesiIds, 'pool MVP del Teatro: tutti i doni d\'oro (il Medaglione è unico)');
+  assert.equal(eleggibili.length, 20);
   assert.ok(eleggibili.every((d) => d.rarita !== 'unico'));
-  for (const d of eleggibili) {
-    const atteso = d.rarita === 'comune' ? 10 : d.rarita === 'raro' ? 7.5 : 10;
-    assert.equal(pct(p1.get(d.id)), atteso, `${d.id} (${d.rarita})`);
-  }
+  const attese = probabilitaAttese(eleggibili, 1);
+  for (const d of eleggibili) assert.ok(vicino(p1.get(d.id), attese.get(d.id)), `${d.id} (${d.rarita}): ${pct(p1.get(d.id))} ≠ ${pct(attese.get(d.id))}`);
   assert.ok(vicino(Array.from(p1.values()).reduce((a, b) => a + b, 0), 1), 'somma 100 %');
   assert.ok(pool.raccolto('mantice'));
   const dopo = pool.probabilita({ piano: 1, canale: 'piedistallo' });
   assert.equal(dopo.has('mantice'), false);
-  for (const d of eleggibili.filter((x) => x.rarita === 'comune' && x.id !== 'mantice')) assert.equal(pct(dopo.get(d.id)), 12, d.id);
+  const atteseDopo = probabilitaAttese(eleggibili.filter((d) => d.id !== 'mantice'), 1);
+  for (const d of eleggibili.filter((x) => x.rarita === 'comune' && x.id !== 'mantice')) {
+    assert.ok(vicino(dopo.get(d.id), atteseDopo.get(d.id)), d.id);
+    assert.ok(dopo.get(d.id) > p1.get(d.id), `${d.id}: la quota dei comuni cresce`);
+  }
 });
 
-test('GDD pool: build piena al piano 5 (7/6/2): P(Broccato) = 11,0 % e le tre classi sommano a W = 100', () => {
+test('GDD pool: build piena al piano 5: le classi contano i doni d\'oro del catalogo (Teatro 8/9/3), W(5) somma 100 e P(dono) segue W_r(5) × peso/Σpeso (Broccato e Anello preziosi con pesi 1 e 0,9)', () => {
   const pool = creaPoolProva({ soloMvp: false, sblocchi: () => true });
   const el = pool.eleggibili({ piano: 5, canale: 'piedistallo' });
   const conta = (r) => el.filter((d) => d.rarita === r).length;
-  assert.deepEqual([conta('comune'), conta('raro'), conta('prezioso')], [7, 6, 2]);
+  const contaCatalogo = (r) => CATALOGO_REALE.doni.filter((d) => d.rarita === r && d.canale.includes('piedistallo')).length;
+  assert.deepEqual([conta('comune'), conta('raro'), conta('prezioso')], ['comune', 'raro', 'prezioso'].map(contaCatalogo));
+  assert.deepEqual([conta('comune'), conta('raro'), conta('prezioso')], [8, 9, 3], 'Teatro: 8 comuni, 9 rari, 3 preziosi');
   const w = pool.pesiAl(5);
   assert.ok(vicino(w.comune + w.raro + w.prezioso, 100), JSON.stringify(w));
   const p5 = pool.probabilita({ piano: 5, canale: 'piedistallo' });
-  assert.equal(pct(p5.get('broccato')), 11);
-  assert.equal(pct(p5.get('mantice')), 5.14);
-  assert.equal(pct(p5.get('acciarino')), 7);
-  // senza sblocchi della Fucina i doni con `sblocco` restano fuori anche in build piena
+  const attese = probabilitaAttese(el, 5);
+  for (const d of el) assert.ok(vicino(p5.get(d.id), attese.get(d.id)), `${d.id}: ${pct(p5.get(d.id))} ≠ ${pct(attese.get(d.id))}`);
+  assert.ok(p5.get('broccato') > p5.get('anello-cremisi'), 'peso 1 contro 0,9 nella stessa classe');
+  // senza sblocchi della Fucina i doni con `sblocco` restano fuori anche in build piena (nel catalogo del Teatro nessuno ne ha: il controllo resta per quando la Fucina tornerà a venderne)
   const chiuso = creaPoolProva({ soloMvp: false });
   assert.ok(chiuso.eleggibili({ piano: 5, canale: 'piedistallo' }).every((d) => d.sblocco === null));
 });
@@ -528,10 +590,12 @@ test('GDD pool: un dono raccolto non compare in 1000 estrazioni con semi diversi
   // estrazione deterministica con lo stesso seme, distinte senza reinserimento fino a esaurire il pool
   const a = creaPoolProva({ seme: 9 });
   const b = creaPoolProva({ seme: 9 });
+  const n = a.eleggibili({ piano: 1, canale: 'piedistallo' }).length;
+  assert.equal(n, 20, 'Teatro: 20 doni d\'oro al piano 1');
   const ida = []; const idb = [];
-  for (let i = 0; i < 11; i++) { ida.push(a.estrai({ piano: 1 })?.id); idb.push(b.estrai({ piano: 1 })?.id); }
+  for (let i = 0; i < n; i++) { ida.push(a.estrai({ piano: 1 })?.id); idb.push(b.estrai({ piano: 1 })?.id); }
   assert.deepEqual(ida, idb);
-  assert.equal(new Set(ida).size, 11, 'undici doni distinti');
+  assert.equal(new Set(ida).size, n, 'tutti doni distinti');
   assert.equal(a.estrai({ piano: 1 }), null, 'pool del piano esaurito');
   assert.deepEqual(a.fallback({ maschere: 3, maschereMax: 5 }), { tipo: 'cuore', valore: 1 });
   assert.deepEqual(a.fallback({ maschere: 5, maschereMax: 5 }), { tipo: 'monete', valore: pesiEconomia().fallbackMonete });

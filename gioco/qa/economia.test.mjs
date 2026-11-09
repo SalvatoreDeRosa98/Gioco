@@ -165,14 +165,22 @@ async function creaMondo({ override = {}, seme = SEME, memoria = memoriaInRam(),
 // Contenuti e regole del codice
 // ---------------------------------------------------------------------------------------------
 
-test('contenuti: economia.json è una statistica valida con i valori del GDD; consumabili e testi coerenti', async () => {
+/** Prezzi del Teatro (stile The Binding of Isaac, economia.json › prezzi): costanti sui piani (inc_pct 0). */
+const PREZZI_TEATRO = Object.freeze({ cuore: 3, consumabile: 5, comune: 10, raro: 15, prezioso: 20 });
+
+test('contenuti: economia.json è una statistica valida con i valori del Teatro (prezzi 3/5/10/15/20 costanti sui piani, p_drop_moneta 0,12); consumabili e testi coerenti', async () => {
   const { errori } = validaStatistiche('economia', leggi('contenuti/parametri/economia.json'));
   assert.deepEqual(errori, []);
   const { parametri } = await caricaParametri();
-  assert.equal(parametri.get('economia.p_drop_moneta'), 0.4);
+  const pDrop = parametri.get('economia.p_drop_moneta');
+  assert.ok(pDrop > 0 && pDrop < 1, `p_drop_moneta è una probabilità (${pDrop})`);
+  assert.equal(pDrop, leggi('contenuti/parametri/economia.json').p_drop_moneta.base, 'il valore effettivo è il base (dentro il Safe Range)');
   assert.equal(parametri.get('economia.tetto_monete'), 99);
   assert.equal(parametri.get('economia.r_raccolta_moneta'), 24);
-  assert.equal(parametri.get('economia.prezzi.base_dono'), 15);
+  assert.equal(parametri.get('economia.prezzi.base_dono'), PREZZI_TEATRO.comune);
+  assert.equal(parametri.get('economia.prezzi.base_cuore'), PREZZI_TEATRO.cuore);
+  assert.equal(parametri.get('economia.prezzi.base_consumabile'), PREZZI_TEATRO.consumabile);
+  assert.equal(parametri.get('economia.prezzi.inc_pct'), 0, 'Teatro: i prezzi non crescono con il piano');
   const consumabili = parametri.get('consumabili').consumabili;
   const testi = leggi('contenuti/interfaccia.json');
   assert.equal(consumabili.length, 2);
@@ -201,11 +209,12 @@ test('regole: nessun Math.random, nessun numero di gioco e nessuna stringa di gi
 // Formule (GDD Formulas e Acceptance Criteria)
 // ---------------------------------------------------------------------------------------------
 
-test('prezzo: tabella del GDD per i piani 1-5 (comune, raro, prezioso, cuore, consumabile) in aritmetica intera', async () => {
+test('prezzo: tabella del Teatro (cuore 3, consumabile 5, dono 10/15/20) uguale sui piani 1-5 in aritmetica intera; sconti, minimo e tetto con la formula', async () => {
   const { parametri } = await caricaParametri();
   const P = (k) => parametri.get(`economia.prezzi.${k}`);
+  const cinque = (v) => Array(5).fill(v);
   const attesi = {
-    comune: [17, 20, 22, 24, 26], raro: [31, 35, 39, 43, 47], prezioso: [52, 59, 65, 72, 79], cuore: [12, 13, 15, 16, 18], consumabile: [9, 10, 12, 13, 14],
+    comune: cinque(PREZZI_TEATRO.comune), raro: cinque(PREZZI_TEATRO.raro), prezioso: cinque(PREZZI_TEATRO.prezioso), cuore: cinque(PREZZI_TEATRO.cuore), consumabile: cinque(PREZZI_TEATRO.consumabile),
   };
   for (let p = 1; p <= 5; p++) {
     for (const r of ['comune', 'raro', 'prezioso']) {
@@ -222,10 +231,11 @@ test('prezzo: tabella del GDD per i piani 1-5 (comune, raro, prezioso, cuore, co
   assert.ok(prezzo({ base: 15, rarPct: 300, incPct: 15, piano: 8 }) <= parametri.get('economia.tetto_monete'));
 });
 
-test('formule: monete_boss, scintille_boss (3,5,7,9,11; +1 con la miglioria), p_cuore, residuo, costo_sblocco, E_stanza, T(3)', async () => {
+test('formule: monete_boss = s0 + k × p (Teatro: 2 al piano 1), scintille_boss (3,5,7,9,11; +1 con la miglioria), p_cuore, residuo, costo_sblocco, E_stanza e T(3) dai valori di economia.json', async () => {
   const { parametri } = await caricaParametri();
   const E = (k) => parametri.get(`economia.${k}`);
-  assert.deepEqual([1, 2, 3, 4, 5].map((p) => moneteBoss({ s0: E('monete_boss.s0'), k: E('monete_boss.k'), piano: p })), [8, 10, 12, 14, 16]);
+  assert.deepEqual([1, 2, 3, 4, 5].map((p) => moneteBoss({ s0: E('monete_boss.s0'), k: E('monete_boss.k'), piano: p })), [1, 2, 3, 4, 5].map((p) => E('monete_boss.s0') + E('monete_boss.k') * p));
+  assert.equal(moneteBoss({ s0: E('monete_boss.s0'), k: E('monete_boss.k'), piano: 1 }), 2, 'Teatro: il boss del piano 1 lascia 2 monete');
   assert.deepEqual([1, 2, 3, 4, 5].map((p) => scintilleBoss({ s0: E('scintille.s0'), ds: E('scintille.ds'), piano: p })), [3, 5, 7, 9, 11]);
   assert.equal(scintilleBoss({ s0: E('scintille.s0'), ds: E('scintille.ds'), piano: 3, bonus: 1 }), 8);
   const pc = (m) => pCuore({ m, k: E('p_cuore.k'), max: E('p_cuore.max') });
@@ -237,15 +247,18 @@ test('formule: monete_boss, scintille_boss (3,5,7,9,11; +1 con la miglioria), p_
   assert.deepEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(costo), [4, 5, 6, 8, 10, 12, 15, 19, 24, 30, 37, 47]);
   assert.equal(costo(20), 60);
   const vMedio = valoreMedioMoneta({ qGrande: E('q_moneta_grande'), vPiccola: E('v_moneta_piccola'), vGrande: E('v_moneta_grande') });
-  assert.ok(Math.abs(vMedio - 1.4) < 1e-12);
+  const vMedioAtteso = (1 - E('q_moneta_grande')) * E('v_moneta_piccola') + E('q_moneta_grande') * E('v_moneta_grande');
+  assert.ok(Math.abs(vMedio - vMedioAtteso) < 1e-12, `v_medio ${vMedio}`);
   const eStanza = (p) => moneteAtteseStanza({ nNem: E('bilancio.n_nem_base') + p, pDrop: E('p_drop_moneta'), vMedio, bonus: E('bonus_stanza') });
-  assert.ok(Math.abs(eStanza(1) - 4.8) < 1e-9);
-  assert.ok(Math.abs(eStanza(3) - 5.92) < 1e-9);
+  const eAttesa = (p) => (E('bilancio.n_nem_base') + p) * E('p_drop_moneta') * vMedioAtteso + E('bonus_stanza');
+  assert.ok(Math.abs(eStanza(1) - eAttesa(1)) < 1e-9, `E_stanza(1) = ${eStanza(1)}`);
+  assert.ok(Math.abs(eStanza(3) - eAttesa(3)) < 1e-9);
   const t3 = redditoPiano({ rho: E('bilancio.rho'), nComb: E('bilancio.n_comb'), eStanza: eStanza(3), pSegreta: E('p_segreta'), moneteSegreta: E('monete_segreta'), moneteBoss: moneteBoss({ s0: E('monete_boss.s0'), k: E('monete_boss.k'), piano: 3 }) });
-  assert.ok(Math.abs(t3 - 47.19) <= 0.05, `T(3) = ${t3}`);
+  const t3Atteso = E('bilancio.rho') * E('bilancio.n_comb') * eAttesa(3) + E('p_segreta') * E('monete_segreta') + (E('monete_boss.s0') + E('monete_boss.k') * 3);
+  assert.ok(Math.abs(t3 - t3Atteso) <= 1e-9, `T(3) = ${t3} ≠ ${t3Atteso}`);
 });
 
-test('drop: 10 000 stanze simulate al piano 1 con 5 nemici danno 4,80 ± 0,10 monete; 10 000 stanze con m = 3 danno 2400 ± 130 cuori; determinismo dal seme', async () => {
+test('drop: 10 000 stanze simulate al piano 1 con 5 nemici danno E = 5 × p_drop × v_medio + bonus_stanza (Teatro ≈ 0,70) ± 0,05 monete; 10 000 stanze con m = 3 danno 2400 ± 130 cuori; determinismo dal seme', async () => {
   const { parametri } = await caricaParametri();
   const E = (k) => parametri.get(`economia.${k}`);
   const rng = derivato(creaRng(SEME), 'drop');
@@ -256,7 +269,9 @@ test('drop: 10 000 stanze simulate al piano 1 con 5 nemici danno 4,80 ± 0,10 mo
     totale += stanza;
   }
   const media = totale / 10000;
-  assert.ok(Math.abs(media - 4.8) <= 0.1, `media ${media}`);
+  const vMedio = (1 - E('q_moneta_grande')) * E('v_moneta_piccola') + E('q_moneta_grande') * E('v_moneta_grande');
+  const attesa = 5 * E('p_drop_moneta') * vMedio + E('bonus_stanza');
+  assert.ok(Math.abs(media - attesa) <= 0.05, `media ${media} (attesa ${attesa.toFixed(3)})`);
   const pc = pCuore({ m: 3, k: E('p_cuore.k'), max: E('p_cuore.max') });
   let cuori = 0;
   for (let i = 0; i < 10000; i++) if (rng() < pc) cuori += 1;
@@ -301,22 +316,26 @@ test('pool del banchetto: pesi di rarità per piano (60/30/10 al piano 1, somma 
 // Criteri della storia (Given-When-Then)
 // ---------------------------------------------------------------------------------------------
 
-test('025.1: nemico morto → drop dalla tabella con il generatore `drop`; monete raccolte passandoci sopra; tetto 99 (la moneta resta a terra)', async () => {
+test('025.1: nemico morto → drop dalla tabella (p_drop_moneta del Teatro, 0,12; monete piccola/grande di economia.json) con il generatore `drop`; monete raccolte passandoci sopra; tetto 99 (la moneta resta a terra)', async () => {
   const m = await creaMondo();
   await m.avviaNotte();
   const stanza = m.notte.stanza.id;
   assert.equal(m.economia.stanzaCorrente, stanza);
-  // 200 bottini sintetici di nemici comuni: la tabella dà ≈ 40 % di monete, tra 1 e 5
+  // N bottini sintetici di nemici comuni: la tabella dà p_drop_moneta monete (± 4σ binomiali), piccole o grandi
+  const N_BOTTINI = 1000;
+  const pDrop = m.E('p_drop_moneta');
+  const sigma = Math.sqrt(N_BOTTINI * pDrop * (1 - pDrop));
+  const [vPiccola, vGrande] = [m.E('v_moneta_piccola'), m.E('v_moneta_grande')];
   const lontano = { x: m.ferruccio.x + 300, y: m.ferruccio.y };
-  for (let i = 0; i < 200; i++) m.eventi.emit('nemico.bottino', { id: `n${i}`, archetipo: 'gatto', ...lontano, monete: 7, cuore: false, direzione: { x: 1, y: 0 }, lancio: 0 });
+  for (let i = 0; i < N_BOTTINI; i++) m.eventi.emit('nemico.bottino', { id: `n${i}`, archetipo: 'gatto', ...lontano, monete: 7, cuore: false, direzione: { x: 1, y: 0 }, lancio: 0 });
   const aTerra = m.economia.aTerra(stanza);
-  assert.ok(aTerra.length >= 60 && aTerra.length <= 100, `monete cadute ${aTerra.length} su 200`);
-  assert.ok(aTerra.every((o) => o.tipo === 'moneta' && (o.valore === 1 || o.valore === 5)), 'valori della tabella, non quelli del nemico (7)');
-  assert.ok(aTerra.some((o) => o.valore === 5), 'qualche moneta grande');
+  assert.ok(Math.abs(aTerra.length - N_BOTTINI * pDrop) <= 4 * sigma, `monete cadute ${aTerra.length} su ${N_BOTTINI} (attese ${N_BOTTINI * pDrop} ± ${(4 * sigma).toFixed(0)})`);
+  assert.ok(aTerra.every((o) => o.tipo === 'moneta' && (o.valore === vPiccola || o.valore === vGrande)), 'valori della tabella, non quelli del nemico (7)');
+  assert.ok(aTerra.some((o) => o.valore === vGrande), 'qualche moneta grande');
   // determinismo: un secondo mondo con lo stesso seme cade uguale
   const m2 = await creaMondo();
   await m2.avviaNotte();
-  for (let i = 0; i < 200; i++) m2.eventi.emit('nemico.bottino', { id: `n${i}`, archetipo: 'gatto', ...lontano, monete: 7, cuore: false, direzione: { x: 1, y: 0 }, lancio: 0 });
+  for (let i = 0; i < N_BOTTINI; i++) m2.eventi.emit('nemico.bottino', { id: `n${i}`, archetipo: 'gatto', ...lontano, monete: 7, cuore: false, direzione: { x: 1, y: 0 }, lancio: 0 });
   assert.deepEqual(m2.economia.aTerra(stanza).map((o) => o.valore), aTerra.map((o) => o.valore));
   // raccolta passandoci sopra: nessun tasto; una moneta a 1 px dentro il raggio e una appena fuori
   const prima = m.economia.monete;
@@ -385,10 +404,10 @@ test('025.2: banchetto con tre slot (dono, cuore, consumabile) e prezzi dalla fo
   assert.deepEqual(slots.map((s) => s.tipo), TIPI_SLOT);
   assert.ok(m.catalogoDoni.some((d) => d.id === slots[0].id), 'il dono viene dal catalogo');
   assert.equal(slots[0].prezzo, m.economia.prezzoDi({ tipo: 'dono', rarita: slots[0].rarita, piano: 1 }));
-  assert.equal(slots[1].prezzo, 12);
-  assert.equal(slots[2].prezzo, 9);
+  assert.equal(slots[1].prezzo, PREZZI_TEATRO.cuore);
+  assert.equal(slots[2].prezzo, PREZZI_TEATRO.consumabile);
   assert.ok(m.consumabili.some((c) => c.id === slots[2].id));
-  assert.equal(slots[0].prezzo, { comune: 17, raro: 31, prezioso: 52 }[slots[0].rarita]);
+  assert.equal(slots[0].prezzo, PREZZI_TEATRO[slots[0].rarita]);
   // monete 0: tutto non accessibile (prezzo barrato), acquisto rifiutato senza cambiamenti
   assert.ok(slots.every((s) => s.accessibile === false));
   const esito = m.banchetto.compra(0);
@@ -419,20 +438,23 @@ test('025.2: banchetto con tre slot (dono, cuore, consumabile) e prezzi dalla fo
   m.ferruccio.impostaMaschere(1);
   assert.equal(m.banchetto.compra(1).esito, 'comprato');
   assert.equal(m.ferruccio.maschere, 2);
-  assert.equal(m.economia.monete, 50 - 12);
+  assert.equal(m.economia.monete, 50 - PREZZI_TEATRO.cuore);
   // consumabile: applicato subito, dura N stanze ripulite, il riacquisto rinnova
   const def = m.consumabili.find((c) => c.id === m.banchetto.slots()[2].id);
   const statistica = m.parametri.get('doni').statistiche[def.statistica].parametro;
   const prima = m.mod.valore(statistica);
+  // il valore effettivo resta nel Safe Range della statistica (ADR-0002): con un dono già addosso la somma può toccare il tetto
+  const tetto = m.parametri.statistica(statistica).max;
+  const conConsumabile = Math.min(tetto, prima + def.valore);
   assert.equal(m.banchetto.compra(2).esito, 'comprato');
-  assert.equal(m.mod.valore(statistica), prima + def.valore);
+  assert.equal(m.mod.valore(statistica), conConsumabile);
   assert.deepEqual(m.economia.consumabili(), [{ id: def.id, restanti: def.durata_stanze }]);
   for (let i = 0; i < def.durata_stanze - 1; i++) m.eventi.emit('stanza.pulita', { id: 'x', tipo: 'normale', combattuta: true });
   assert.equal(m.economia.consumabili()[0].restanti, 1);
   const rinnovo = m.economia.applicaConsumabile(def);
   assert.equal(rinnovo.rinnovato, true);
   assert.equal(m.economia.consumabili()[0].restanti, def.durata_stanze, 'la durata si rinnova, non si somma');
-  assert.equal(m.mod.valore(statistica), prima + def.valore, 'l\'effetto non si somma');
+  assert.equal(m.mod.valore(statistica), conConsumabile, 'l\'effetto non si somma');
   for (let i = 0; i < def.durata_stanze; i++) m.eventi.emit('stanza.pulita', { id: 'x', tipo: 'normale', combattuta: true });
   assert.deepEqual(m.economia.consumabili(), []);
   assert.equal(m.mod.valore(statistica), prima);
@@ -459,7 +481,7 @@ test('025.2b: nella stanza del banchetto gli slot hanno una posizione; `interagi
   m.premi('interagisci');
   assert.equal(m.eventiDi('banchetto.acquisto').length, 1);
   assert.equal(m.eventiDi('banchetto.acquisto')[0].payload.tipo, 'consumabile');
-  assert.equal(m.economia.monete, 99 - 9);
+  assert.equal(m.economia.monete, 99 - PREZZI_TEATRO.consumabile);
   // uscita e rientro: lo slot comprato resta vuoto, gli altri uguali
   const primaUscita = m.banchetto.slots().map((s) => [s.tipo, s.id, s.prezzo, s.comprato]);
   m.banchetto.attiva(false);
@@ -513,15 +535,16 @@ test('025.3: alla morte le monete della notte si perdono (34 → 0) e le scintil
   assert.equal(normalizzaProfilo({ scintille: -4 }).scintille, 0);
 });
 
-test('025.4: boss battuto → cadono le scintille del piano (3 al piano 1, 7 al piano 3; 8 con la miglioria) subito nel profilo e le monete del boss (8, 12) a terra; un solo pagamento per piano', async () => {
+test('025.4: boss battuto → cadono le scintille del piano (3 al piano 1, 7 al piano 3; 8 con la miglioria) subito nel profilo e le monete del boss (s0 + k × p: Teatro 2 e 4) a terra; un solo pagamento per piano', async () => {
   const m = await creaMondo();
+  const mb = (p) => m.E('monete_boss.s0') + m.E('monete_boss.k') * p;
   m.economia.entraIn('b');
   const bottino = { id: 'boss', archetipo: 'guardia', boss: true, x: 100, y: 100, monete: 0, cuore: false, direzione: { x: 0, y: 1 }, lancio: 40 };
   m.eventi.emit('nemico.bottino', bottino);
   assert.equal(m.profilo.scintille, 3);
   assert.equal(m.eventiDi('economia.scintille')[0].payload.motivo, 'boss');
   const monete = m.economia.aTerra('b').filter((o) => o.tipo === 'moneta');
-  assert.equal(monete.reduce((a, o) => a + o.valore, 0), 8);
+  assert.equal(monete.reduce((a, o) => a + o.valore, 0), mb(1));
   assert.deepEqual([monete[0].x, monete[0].y], [100, 140], 'lanciata nella direzione del bottino');
   m.eventi.emit('nemico.bottino', bottino);
   assert.equal(m.profilo.scintille, 3, 'un solo pagamento per piano');
@@ -530,7 +553,7 @@ test('025.4: boss battuto → cadono le scintille del piano (3 al piano 1, 7 al 
   m3.economia.entraIn('b');
   m3.eventi.emit('nemico.bottino', bottino);
   assert.equal(m3.profilo.scintille, 7);
-  assert.equal(m3.economia.aTerra('b').reduce((a, o) => a + o.valore, 0), 12);
+  assert.equal(m3.economia.aTerra('b').reduce((a, o) => a + o.valore, 0), mb(3));
   const m3b = await creaMondo({ piano: 3, override: { 'economia.scintille.bonus_boss': 1 } });
   m3b.economia.entraIn('b');
   m3b.eventi.emit('nemico.bottino', bottino);

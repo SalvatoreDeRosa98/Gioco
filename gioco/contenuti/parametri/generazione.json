@@ -1,5 +1,5 @@
 {
-  "_descrizione": "Parametri del generatore dei piani (4 piani stile Isaac: Piano 1 = 5 stanze, Piano 2 = 7 stanze, Piano 3 = 8 stanze, Piano 4 = 9 stanze con Boss Finale Donna Luciana). Ogni piano ha 1 Ingresso, 1 Stanza Oggetto (Tesoro), 1 Fucina (Shop), 1 Stanza Boss e le restanti stanze di combattimento.",
+  "_descrizione": "Parametri del generatore dei piani (4 piani stile Isaac: Piano 1 = 5 stanze, Piano 2 = 7 stanze, Piano 3 = 8 stanze, Piano 4 = 9 stanze con Boss Finale Donna Luciana). Ogni piano ha 1 Ingresso, 1 Stanza Oggetto (Tesoro), 1 Fucina (Shop), 1 Stanza Boss e le restanti stanze di combattimento. Invariante verificato al caricamento (modelli.js → validaParametriGenerazione): L_min ≤ n_min − 3 per ogni piano (ingresso + cammino di L porte fino al boss, più le due foglie fisse Stanza Oggetto e Fucina; la stanza-ricordo non è più nel piano). Al piano 1: n_min 5, L_min 2 → 2 ≤ 2.",
 
   "griglia_w": { "base": 9, "min": 7, "max": 11 },
   "griglia_h": { "base": 8, "min": 7, "max": 10 },

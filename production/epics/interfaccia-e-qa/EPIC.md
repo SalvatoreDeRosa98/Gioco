@@ -4,7 +4,7 @@
 > **GDD**: design/ux/hud.md (da scrivere), design/gdd/systems-index.md righe 20, 22, 25
 > **Architecture Module**: motore/ui, gioco/qa
 > **Status**: Ready
-> **Stories**: 3 storie (sotto)
+> **Stories**: 4 storie (sotto)
 
 ## Overview
 
@@ -39,3 +39,4 @@ HUD a proscenio (maschere, scatto, monete, doni, nome della stanza), menu con tr
 | 031 | HUD a proscenio | UI | Ready | ADR-0001 |
 | 032 | Menu, tre slot, Continua, opzioni minime | UI | Ready | ADR-0001 |
 | 033 | Percorso Playwright: seme fisso, bot, evidenze, 64 stati | Logic | Ready | ADR-0001 |
+| P03 | Riallineo delle suite al Teatro — i test leggono i valori dai JSON (prezzi, drop, vite, catalogo a 25, 21 modelli, 5/7/8/9 stanze, discesa tra i piani, meta `gioco-avvio` di index.html) | Logic | Done (13 suite node:test 241/241, `parametri.test.js` 4/4, 9 suite Playwright verdi, `stati64`, `seme 200`) | ADR-0002, ADR-0003 |

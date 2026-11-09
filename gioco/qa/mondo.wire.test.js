@@ -24,6 +24,8 @@ const fs = require('node:fs');
 const { chromium } = require('playwright');
 
 const RADICE_GIOCO = path.resolve(__dirname, '..');
+/** Teatro: il piano 1 ha n_min stanze (5), letto da generazione.json. */
+const N_STANZE_P1 = JSON.parse(fs.readFileSync(path.join(RADICE_GIOCO, 'contenuti', 'parametri', 'generazione.json'), 'utf8')).piani.p1.n_min.base;
 const CARTELLA_EVIDENZE = path.resolve(RADICE_GIOCO, '..', 'production', 'qa', 'evidence');
 const EVIDENZA_WIRE = path.join(CARTELLA_EVIDENZE, 'mondo-wire.png');
 const EVIDENZA_PIANTA = path.join(CARTELLA_EVIDENZE, 'mondo-pianta.png');
@@ -116,8 +118,9 @@ async function main() {
       assert.equal(iniziale.riserva, false);
       assert.deepEqual(iniziale.erroriContenuto, []);
       const nonSegrete = iniziale.stanze.filter((s) => s.tipo !== 'segreta');
-      assert.equal(nonSegrete.length, 8);
-      for (const tipo of ['ingresso', 'boss', 'tesoro', 'banchetto', 'ricordo']) assert.equal(iniziale.stanze.filter((s) => s.tipo === tipo).length, 1, tipo);
+      assert.equal(nonSegrete.length, N_STANZE_P1, 'Teatro: piano 1 = 5 stanze (generazione.json)');
+      for (const tipo of ['ingresso', 'boss', 'tesoro', 'banchetto']) assert.equal(iniziale.stanze.filter((s) => s.tipo === tipo).length, 1, tipo);
+      assert.equal(iniziale.stanze.filter((s) => s.tipo === 'ricordo').length, 0, 'Teatro: niente stanza-ricordo nel piano');
       assert.equal(iniziale.corrente.tipo, 'ingresso');
       assert.equal(iniziale.corrente.stato, 'pulita');
       assert.ok(iniziale.corrente.porte.length >= 2 && iniziale.corrente.porte.every(([, st]) => st === 'aperta'));
@@ -246,13 +249,13 @@ async function main() {
       await contesto.close();
     });
 
-    await caso('senza ?piano: la scena di prova delle storie 007-011 resta identica (4 fantocci, piano null, vaiA false)', async () => {
+    await caso('con piano=0 (annulla il piano=1 della meta gioco-avvio): la scena di prova delle storie 007-011 resta identica (4 fantocci, piano null, vaiA false)', async () => {
       const contesto = await browser.newContext({ viewport: { width: 1280, height: 720 } });
       const pagina = await contesto.newPage();
       const errori = [];
       pagina.on('console', (m) => { if (m.type() === 'error') errori.push(m.text()); });
       pagina.on('pageerror', (e) => errori.push(String(e)));
-      await pagina.goto(`${server.base}/?debug=1&wire=1&seme=1845`, { waitUntil: 'load' });
+      await pagina.goto(`${server.base}/?debug=1&wire=1&piano=0&seme=1845`, { waitUntil: 'load' });
       await pagina.waitForFunction(() => window.__gioco && window.__gioco.parametri.caricato());
       const v = await pagina.evaluate(() => ({ piano: window.__gioco.piano, stanza: window.__gioco.stanza, bersagli: window.__gioco.bersagli.length, vaiA: window.__gioco.vaiA('r1') }));
       assert.deepEqual(v, { piano: null, stanza: null, bersagli: 4, vaiA: false });

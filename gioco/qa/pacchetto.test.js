@@ -5,8 +5,8 @@
  * eseguire mai `playwright install`). Esegue il tool su `gioco/index.html` (→ `production/build/ferruccio-prova.html`
  * e, con `--frammento`, `ferruccio-prova.frammento.html`), poi apre il pacchetto:
  *  - via http (server statico `python3 -m http.server` su `production/build/`) e via `file://`, con
- *    `?debug=1&wire=1&hub=1&seme=1845`: zero errori di console/eccezioni in 3 s, `window.__gioco` presente,
- *    `__gioco.tick(60)` avanza di 60, stato del ciclo `hub`, `__gioco.hub.presenze()` risponde;
+ *    `?debug=1&wire=1&seme=1845` (la meta gioco-avvio di index.html aggiunge `piano=1`): zero errori di console/eccezioni
+ *    in 3 s, `window.__gioco` presente, `__gioco.tick(60)` avanza di 60, stato del ciclo `notte`, stanza d'ingresso del piano 1;
  *    screenshot `production/qa/evidence/pacchetto-file.png` dalla versione `file://`;
  *  - il frammento avvolto in uno scheletro con CSP «solo inline e data:» (`default-src 'none'; script-src
  *    'unsafe-inline'; style-src 'unsafe-inline'; img-src data:`), via http: stesse verifiche;
@@ -37,7 +37,8 @@ const SCHELETRO_CSP = path.join(CARTELLA_BUILD, 'prova-csp.html');
 const PACCHETTO_PROVA = path.join(CARTELLA_BUILD, 'prova.html');
 const PAGINA_PROVA = path.join(RADICE_GIOCO, 'prova.html');
 const EVIDENZA = path.join(RADICE, 'production', 'qa', 'evidence', 'pacchetto-file.png');
-const QUERY = '?debug=1&wire=1&hub=1&seme=1845';
+/** index.html parte nel piano 1 dalla meta gioco-avvio (debug=1&wire=1&piano=1): ciclo in `notte`, stanza d'ingresso. */
+const QUERY = '?debug=1&wire=1&seme=1845';
 const ATTESA_ERRORI_MS = 3000;
 
 function portaLibera() {
@@ -96,7 +97,7 @@ async function apri(browser, url) {
   return { contesto, pagina, errori };
 }
 
-/** Verifiche comuni sul pacchetto aperto con QUERY: zero errori in 3 s, __gioco, tick, stato hub, presenze. */
+/** Verifiche comuni sul pacchetto aperto con QUERY: zero errori in 3 s, __gioco, tick, stato notte, stanza d'ingresso del piano 1. */
 async function verificaPacchetto(browser, url) {
   const { contesto, pagina, errori } = await apri(browser, url);
   await pagina.waitForTimeout(ATTESA_ERRORI_MS);
@@ -110,7 +111,8 @@ async function verificaPacchetto(browser, url) {
       gioco: true,
       stato: g.stato,
       avanzati: g.tick() - t0,
-      presenze: g.hub ? g.hub.presenze().map((p) => p.id) : null,
+      stanza: g.stanza ? g.stanza.tipo : null,
+      stanze: g.piano ? g.piano.stanze.length : 0,
       caricato: g.parametri.caricato(),
       moduleScript: document.querySelectorAll('script[type="module"], script[src]').length,
     };
@@ -118,8 +120,9 @@ async function verificaPacchetto(browser, url) {
   assert.equal(esito.gioco, true, 'window.__gioco assente');
   assert.equal(esito.caricato, true, 'parametri non caricati');
   assert.equal(esito.avanzati, 60, `tick(60) ha avanzato di ${esito.avanzati}`);
-  assert.equal(esito.stato, 'hub');
-  assert.ok(Array.isArray(esito.presenze) && esito.presenze.length > 0, `hub.presenze(): ${JSON.stringify(esito.presenze)}`);
+  assert.equal(esito.stato, 'notte');
+  assert.equal(esito.stanza, 'ingresso');
+  assert.ok(esito.stanze >= 5, `piano 1 generato (${esito.stanze} stanze)`);
   assert.equal(esito.moduleScript, 0, 'il pacchetto contiene ancora <script type="module"> o <script src>');
   assert.deepEqual(errori, [], `errori dopo le verifiche:\n${errori.join('\n')}`);
   return { contesto, pagina, errori, esito };
@@ -128,12 +131,12 @@ async function verificaPacchetto(browser, url) {
 /** Posizione di Ferruccio dopo `ferma(); tick(120)` con lo stesso seme. */
 async function posizioneDeterministica(browser, url) {
   const { contesto, pagina, errori } = await apri(browser, url);
-  await pagina.waitForFunction(() => window.__gioco && window.__gioco.parametri.caricato() && window.__gioco.hub && window.__gioco.hub.attivo);
+  await pagina.waitForFunction(() => window.__gioco && window.__gioco.parametri.caricato() && window.__gioco.piano && window.__gioco.stanza);
   const esito = await pagina.evaluate(() => {
     const g = window.__gioco;
     g.ciclo.ferma();
     g.tick(120);
-    return { x: g.ferruccio.x, y: g.ferruccio.y, stato: g.stato, seme: g.seme, semeNotte: g.hub.semeNotte() };
+    return { x: g.ferruccio.x, y: g.ferruccio.y, stato: g.stato, seme: g.seme, stanza: g.stanza.id, stanze: g.piano.stanze.map((s) => s.id) };
   });
   assert.deepEqual(errori, [], `errori (${url}):\n${errori.join('\n')}`);
   await contesto.close();
@@ -195,12 +198,12 @@ async function main() {
     serverBuild = await avviaServer(CARTELLA_BUILD, path.basename(PACCHETTO));
     serverGioco = await avviaServer(RADICE_GIOCO, 'index.html');
 
-    await caso('pacchetto via http: zero errori in 3 s, __gioco, tick(60), stato hub, presenze', async () => {
+    await caso('pacchetto via http: zero errori in 3 s, __gioco, tick(60), stato notte, stanza d\'ingresso del piano 1', async () => {
       const { contesto } = await verificaPacchetto(browser, `${serverBuild.base}/${path.basename(PACCHETTO)}${QUERY}`);
       await contesto.close();
     });
 
-    await caso('pacchetto via file://: zero errori in 3 s, __gioco, tick(60), stato hub, presenze; screenshot', async () => {
+    await caso('pacchetto via file://: zero errori in 3 s, __gioco, tick(60), stato notte, stanza d\'ingresso del piano 1; screenshot', async () => {
       const url = `${pathToFileURL(PACCHETTO).href}${QUERY}`;
       const { contesto, pagina, errori } = await verificaPacchetto(browser, url);
       fs.mkdirSync(path.dirname(EVIDENZA), { recursive: true });
@@ -210,7 +213,7 @@ async function main() {
       await contesto.close();
     });
 
-    await caso('frammento dentro uno scheletro con CSP (solo inline e data:) via http: zero errori, gioco in hub', async () => {
+    await caso('frammento dentro uno scheletro con CSP (solo inline e data:) via http: zero errori, gioco nel piano 1', async () => {
       const { contesto } = await verificaPacchetto(browser, `${serverBuild.base}/${path.basename(SCHELETRO_CSP)}${QUERY}`);
       await contesto.close();
     });

@@ -190,7 +190,7 @@ const DIST = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 // Contenuti (storia 017 e parametri)
 // ---------------------------------------------------------------------------------------------
 
-test('contenuti: stanze.json e generazione.json sono statistiche valide e rispettano L_min ≤ n_min − 4', async () => {
+test('contenuti: stanze.json e generazione.json sono statistiche valide e rispettano L_min ≤ n_min − 3 (Teatro: piano 1 = 5 stanze: ingresso + cammino + boss, tesoro e fucina come foglie)', async () => {
   for (const nome of ['stanze', 'generazione']) {
     const { errori } = validaStatistiche(nome, leggi(`contenuti/parametri/${nome}.json`));
     assert.deepEqual(errori, [], `${nome}.json: ${errori.join('; ')}`);
@@ -199,19 +199,20 @@ test('contenuti: stanze.json e generazione.json sono statistiche valide e rispet
   assert.deepEqual(validaParametriGenerazione(parametri), []);
   assert.equal(parametri.get('stanze.t_chiusura_porte'), 500);
   assert.equal(parametri.get('stanze.r_sicurezza'), 160);
-  assert.equal(parametri.get('generazione.piani.p1.n_min'), 8);
-  // il validatore dei parametri trova l'incoerenza con il nome del parametro
+  assert.equal(parametri.get('generazione.piani.p1.n_min'), 5, 'Teatro: STANZE_PER_PIANO_CICLO[0] = 5');
+  assert.deepEqual([1, 2, 3, 4].map((p) => parametri.get(`generazione.piani.p${p}.n_min`)), [5, 7, 8, 9], 'Teatro: 5/7/8/9 stanze sui piani 1-4');
+  // il validatore dei parametri trova l'incoerenza con il nome del parametro (L_min 5 > n_min − 3 = 2)
   const rotti = await caricaContenuti({ ritocca: (nome, j) => { if (nome === 'generazione') j.piani.p1.L_min.base = 5; } });
   assert.match(validaParametriGenerazione(rotti.parametri)[0], /generazione\.piani\.p1\.L_min/);
 });
 
-test('017: i 14 modelli si caricano senza errori di contenuto: 6 normali 1x1, 2 doppie 2x1, ingresso, ricordo, boss, tesoro, banchetto, segreta; tutti con tag di difficoltà e spawn validi', async () => {
+test('017/Teatro: i 21 modelli si caricano senza errori di contenuto: 10 normali 1x1, 2 doppie 2x1, ingresso, ricordo, 4 boss, tesoro, banchetto, segreta; tutti con tag di difficoltà e spawn validi', async () => {
   const { catalogo, modelli, erroriModelli, indice, parametri } = await caricaContenuti();
   assert.deepEqual(erroriModelli, []);
-  assert.equal(indice.modelli.length, 14);
-  assert.equal(modelli.length, 14);
+  assert.equal(indice.modelli.length, 21);
+  assert.equal(modelli.length, 21);
   assert.deepEqual(catalogo.conteggi(), {
-    'ingresso/1x1': 1, 'normale/1x1': 6, 'normale/2x1': 2, 'ricordo/1x1': 1, 'boss/1x1': 1, 'tesoro/1x1': 1, 'banchetto/1x1': 1, 'segreta/1x1': 1,
+    'ingresso/1x1': 1, 'normale/1x1': 10, 'normale/2x1': 2, 'ricordo/1x1': 1, 'boss/1x1': 4, 'tesoro/1x1': 1, 'banchetto/1x1': 1, 'segreta/1x1': 1,
   });
   const regole = regoleDaParametri(parametri);
   for (const m of modelli) {
@@ -242,7 +243,7 @@ test('017: i 14 modelli si caricano senza errori di contenuto: 6 normali 1x1, 2 
 // Formule dei GDD
 // ---------------------------------------------------------------------------------------------
 
-test('formule: n_nemici (piano 3 → 4; piano 1 d=1 ≤ 2), ondate (6 → 3+3), valore_ricompensa (→ 5), peso_modello (0,114 / 0,02), diff_target, dimensioni (11, 6)', async () => {
+test('formule: n_nemici (piano 3 → 4; piano 1 d=1 ≤ 2), ondate (6 → 3+3), valore_ricompensa (→ 5), peso_modello (dai parametri peso.*), diff_target, dimensioni (Teatro: piano 3 → 8 stanze, L 4; piano 1 → 5, L 2)', async () => {
   const { parametri } = await caricaContenuti();
   assert.equal(nNemici({ parametri, p: 3, d: 3, dBoss: 6, diff: 3, dim: '1x1' }), 4);
   assert.equal(nNemici({ parametri, p: 1, d: 1, dBoss: 4, diff: 1, dim: '1x1', variazione: 1 }), 2);
@@ -255,13 +256,20 @@ test('formule: n_nemici (piano 3 → 4; piano 1 d=1 ≤ 2), ondate (6 → 3+3), 
   assert.equal(valoreRicompensa({ parametri, p: 3, prof: 0.5, diff: 4, molt: 1.5, rng: () => 0.71 }), 0, 'p_ricompensa = 0,7');
   assert.equal(valoreRicompensa({ parametri, p: 1, prof: 0.25, diff: 3, molt: 1, rng: () => 0 }), 2);
   const m = { difficolta: 2, peso_base: 1 };
-  assert.ok(Math.abs(pesoModello({ parametri, modello: m, usi: 1, vicinoUsa: false, diffTarget: 3, combattimento: true }) - 0.114) < 0.001);
-  assert.equal(pesoModello({ parametri, modello: m, usi: 1, vicinoUsa: true, diffTarget: 3, combattimento: true }), 0.02);
+  const W = (k) => parametri.get(`generazione.peso.${k}`);
+  const attesoPeso = Math.exp(-1 / (2 * W('sigma') ** 2)) * W('k_rip'); // g(Δ = 1) × k_rip^1
+  assert.ok(Math.abs(pesoModello({ parametri, modello: m, usi: 1, vicinoUsa: false, diffTarget: 3, combattimento: true }) - attesoPeso) < 1e-9);
+  assert.ok(attesoPeso * W('k_adj') < W('f_min'), 'il caso del vicino scende sotto f_min');
+  assert.equal(pesoModello({ parametri, modello: m, usi: 1, vicinoUsa: true, diffTarget: 3, combattimento: true }), W('f_min'));
   assert.equal(pesoModello({ parametri, modello: { difficolta: 3, peso_base: 1 }, usi: 0, vicinoUsa: false, diffTarget: 3, combattimento: true }), 1);
-  assert.equal(diffTarget({ parametri, piano: 4, prof: 0.5 }), 4);
+  // diff_target = clamp(diff_base + ⌊k_dt × prof⌋, 1, 5): Teatro, piano 4 (Donna Luciana) con diff_base 4 → 5
+  const diffAttesa = (piano, prof) => Math.min(5, Math.max(1, parametri.get(`generazione.piani.p${piano}.diff_base`) + Math.floor(parametri.get('generazione.k_dt') * prof)));
+  assert.equal(diffTarget({ parametri, piano: 4, prof: 0.5 }), diffAttesa(4, 0.5));
+  assert.equal(diffAttesa(4, 0.5), 5, 'Teatro: il piano 4 è il più duro');
   assert.equal(diffTarget({ parametri, piano: 1, prof: 0.25 }), 1);
-  assert.deepEqual(dimensioniPiano({ parametri, piano: 3, u: 0.62, u2: 0.3 }), { nStanze: 11, L: 6, nExtra: 1 });
-  assert.deepEqual(dimensioniPiano({ parametri, piano: 1, u: 0.99, u2: 0.99 }), { nStanze: 8, L: 4, nExtra: 0 });
+  // Teatro: n_var 0 → n = n_min; L = min(L_min + ⌊u2 (L_var + 1)⌋, n − 3); extra = n − (L + 1) − 2 (tesoro e fucina sono le due foglie fisse)
+  assert.deepEqual(dimensioniPiano({ parametri, piano: 3, u: 0.62, u2: 0.3 }), { nStanze: 8, L: 4, nExtra: 1 });
+  assert.deepEqual(dimensioniPiano({ parametri, piano: 1, u: 0.99, u2: 0.99 }), { nStanze: 5, L: 2, nExtra: 0 });
   const comp = composizione({ tavolozza: [{ tipo: 'gatto', peso: 1, min: 1, max: 2 }, { tipo: 'vespa', peso: 1, min: 1, max: 1 }], n: 5, rng: creaRng(3) });
   assert.deepEqual(comp.slice(0, 2), ['gatto', 'vespa']);
   assert.equal(comp.length, 3, 'i massimi limitano la composizione');
@@ -269,16 +277,16 @@ test('formule: n_nemici (piano 3 → 4; piano 1 d=1 ≤ 2), ondate (6 → 3+3), 
   assert.equal(puntoValido({ punto: { x: 288, y: 160 }, ferruccio: { x: 200, y: 224 }, r: 160, porte: [], dPortaMin: 128, scelti: [], dMinSpawn: 48 }), false);
 });
 
-test('formule: il piano di riserva (esempio del GDD) rispetta H1-H10 e totalizza Q = 100', async () => {
+test('formule: il piano di riserva (Teatro: 5 stanze, senza segreta né stanza-ricordo) rispetta H1-H10 e totalizza Q = 100', async () => {
   const { parametri, catalogo, riserva } = await caricaContenuti();
   const rngPiano = creaRng(1);
   const pianta = piantaDaRiserva(riserva, { piano: 1, parametri, catalogo, rngPiano });
   assert.deepEqual(validaPianta(pianta, { parametri, catalogo }), []);
   assert.equal(punteggioQ(pianta, { parametri, piano: 1 }), 100);
-  assert.equal(pianta.d_boss, 4);
-  assert.equal(pianta.stanze.find((s) => s.tipo === 'ricordo').scena_id, 'piazza-dante.targa-commemorativa');
-  assert.deepEqual(pianta.stanze.find((s) => s.id === 'r1').finestre, ['E']);
-  assert.deepEqual(pianta.stanze.find((s) => s.id === 's').finestre.sort(), ['N', 'W']);
+  assert.equal(pianta.d_boss, riserva.cammino.length - 1, 'il boss chiude il cammino della riserva (2 porte dall\'ingresso)');
+  assert.equal(pianta.stanze.length, riserva.stanze.length, 'segreta nulla: nessuna stanza aggiunta');
+  assert.deepEqual(pianta.stanze.map((s) => s.tipo).sort(), ['banchetto', 'boss', 'ingresso', 'normale', 'tesoro'], 'Teatro: ingresso, 1 normale, boss, fucina (banchetto), stanza oggetto (tesoro)');
+  assert.ok(pianta.stanze.every((s) => s.finestre.length === 0), 'senza segreta nessuna finestra');
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -297,8 +305,10 @@ test('016: GIVEN il seme 1845, WHEN si genera il piano 1 due volte, THEN le due 
   assert.ok(a.pianta.stanze.every((s) => Number.isInteger(s.seme_stanza)));
 });
 
-test('016: GIVEN 200 semi, WHEN si generano, THEN 1 ingresso, 1 boss, 1 tesoro, 1 banchetto, 1 ricordo (grado 1), boss non adiacente all\'ingresso, ricordo a distanza 1, nessuna stanza vuota; violatori zero', async () => {
+test('016/Teatro: GIVEN 200 semi, WHEN si generano, THEN n_min stanze (5), 1 ingresso, 1 boss, 1 tesoro, 1 banchetto (grado 1), nessuna stanza-ricordo, boss non adiacente all\'ingresso e a d ≥ L_min, nessuna stanza vuota; violatori zero', async () => {
   const { parametri, catalogo, riserva } = await caricaContenuti();
+  const PP = (k) => parametri.get(`generazione.piani.p1.${k}`);
+  assert.equal(PP('n_var'), 0, 'il Teatro fissa il numero di stanze per piano');
   let violatori = 0;
   let riserve = 0;
   const t0 = performance.now();
@@ -309,19 +319,17 @@ test('016: GIVEN 200 semi, WHEN si generano, THEN 1 ingresso, 1 boss, 1 tesoro, 
     const v = validaPianta(p, { parametri, catalogo });
     if (v.length) violatori += 1;
     const conta = (tipo) => p.stanze.filter((s) => s.tipo === tipo).length;
-    assert.deepEqual([conta('ingresso'), conta('boss'), conta('tesoro'), conta('banchetto'), conta('ricordo')], [1, 1, 1, 1, 1], `seme ${seme}`);
+    assert.deepEqual([conta('ingresso'), conta('boss'), conta('tesoro'), conta('banchetto'), conta('ricordo')], [1, 1, 1, 1, 0], `seme ${seme} (Teatro: niente stanza-ricordo nel piano)`);
     const { distanze } = esplora(p, p.stanze.find((s) => s.tipo === 'ingresso').id);
     const ingresso = p.stanze.find((s) => s.tipo === 'ingresso');
     const boss = p.stanze.find((s) => s.tipo === 'boss');
     assert.ok(Math.abs(boss.cella[0] - ingresso.cella[0]) + Math.abs(boss.cella[1] - ingresso.cella[1]) > 1, `seme ${seme}: boss adiacente all'ingresso`);
-    assert.ok(distanze.get(boss.id) >= 4, `seme ${seme}: d_boss ${distanze.get(boss.id)}`);
-    for (const tipo of ['boss', 'tesoro', 'banchetto', 'ricordo']) {
+    assert.ok(distanze.get(boss.id) >= PP('L_min'), `seme ${seme}: d_boss ${distanze.get(boss.id)} < L_min ${PP('L_min')}`);
+    for (const tipo of ['boss', 'tesoro', 'banchetto']) {
       const s = p.stanze.find((x) => x.tipo === tipo);
       assert.equal(Object.keys(s.porte).length, 1, `seme ${seme}: ${tipo} di grado ${Object.keys(s.porte).length}`);
     }
-    assert.equal(distanze.get(p.stanze.find((s) => s.tipo === 'ricordo').id), 1, `seme ${seme}: ricordo non a distanza 1`);
-    assert.equal(p.stanze.find((s) => s.tipo === 'ricordo').scena_id, 'piazza-dante.targa-commemorativa');
-    assert.equal(p.stanze.filter((s) => s.tipo !== 'segreta').length, 8, `seme ${seme}: n_stanze`);
+    assert.equal(p.stanze.filter((s) => s.tipo !== 'segreta').length, PP('n_min'), `seme ${seme}: n_stanze`);
     for (const s of p.stanze) {
       const m = catalogo.perId(s.modello);
       assert.ok(m && m.tipo === s.tipo && m.dim === s.dim, `seme ${seme}: ${s.id} senza modello compatibile`);
@@ -346,15 +354,16 @@ test('016: GIVEN 200 semi, WHEN si generano, THEN 1 ingresso, 1 boss, 1 tesoro, 
   assert.ok(ms / 200 < 100, 'un piano in meno di 100 ms');
 });
 
-test('016: GIVEN un piano sotto soglia_Q, WHEN si rigenera, THEN al massimo max_tentativi volte (poi il migliore); senza tentativi validi il piano di riserva con errore QA', async () => {
-  // soglia irraggiungibile: tutti i 12 tentativi vengono provati e si tiene il migliore
+test('016: GIVEN un piano sotto soglia_Q, WHEN si rigenera, THEN al massimo max_tentativi volte (generazione.json; Teatro 20, poi il migliore); senza tentativi validi il piano di riserva (5 stanze) con errore QA', async () => {
+  // soglia irraggiungibile: tutti i max_tentativi tentativi vengono provati e si tiene il migliore
   const alta = await caricaContenuti({ ritocca: (nome, j) => { if (nome === 'generazione') j.piani.p1.soglia_Q = { base: 101, min: 0, max: 200 }; } });
+  const maxTentativi = alta.parametri.get('generazione.max_tentativi');
+  assert.ok(maxTentativi >= 6, 'almeno i 6 tentativi del Safe Range');
   const esito = generaPiano({ seme: SEME, piano: 1, parametri: alta.parametri, catalogo: alta.catalogo, riserva: alta.riserva, log: logFinto() });
-  assert.equal(esito.tentativi, alta.parametri.get('generazione.max_tentativi'));
-  assert.equal(esito.tentativi, 12);
+  assert.equal(esito.tentativi, maxTentativi);
   assert.equal(esito.origine, 'migliore');
   assert.ok(esito.pianta.Q <= 100);
-  assert.equal(esito.errori.filter((e) => /Q .* < soglia/.test(e)).length + esito.errori.filter((e) => !/Q .* < soglia/.test(e)).length, 12);
+  assert.equal(esito.errori.filter((e) => /Q .* < soglia/.test(e)).length + esito.errori.filter((e) => !/Q .* < soglia/.test(e)).length, maxTentativi);
   assert.deepEqual(validaPianta(esito.pianta, { parametri: alta.parametri, catalogo: alta.catalogo }), []);
   // nessun modello di banchetto: ogni tentativo fallisce (H7) → piano di riserva, errore per il QA
   const { parametri, catalogo, modelli, riserva } = await caricaContenuti();
@@ -362,9 +371,9 @@ test('016: GIVEN un piano sotto soglia_Q, WHEN si rigenera, THEN al massimo max_
   const log = logFinto();
   const r = generaPiano({ seme: SEME, piano: 1, parametri, catalogo: senzaBanchetto, riserva, log });
   assert.equal(r.origine, 'riserva');
-  assert.equal(r.tentativi, 12);
+  assert.equal(r.tentativi, parametri.get('generazione.max_tentativi'));
   assert.equal(r.pianta.riserva, true);
-  assert.equal(r.pianta.stanze.filter((s) => s.tipo !== 'segreta').length, 8);
+  assert.equal(r.pianta.stanze.filter((s) => s.tipo !== 'segreta').length, riserva.stanze.length, 'la riserva del Teatro ha 5 stanze');
   assert.equal(log.voci.length, 1);
   assert.match(String(log.voci[0][0]), /piano di riserva/);
   assert.deepEqual(validaPianta(r.pianta, { parametri, catalogo }), [], 'la riserva è valida con il catalogo completo');
@@ -593,11 +602,11 @@ test('014: GIVEN una stanza pulita, WHEN si rientra, THEN resta pulita e senza n
   assert.equal(m.bersagli.length, 0, 'non nasce mai più un nemico');
   assert.equal(m.eventiDi('stanza.pulita').length, pulite, 'nessuna nuova chiusura');
   assert.equal(notte.vaiA('inesistente'), false);
-  // una stanza senza nemici è pulita alla prima visita
-  const ricordo = notte.pianta.stanze.find((s) => s.tipo === 'ricordo');
-  notte.vaiA(ricordo.id);
+  // una stanza senza nemici è pulita alla prima visita (Teatro: la stanza oggetto; la stanza-ricordo non è più nel piano)
+  const tesoro = notte.pianta.stanze.find((s) => s.tipo === 'tesoro');
+  notte.vaiA(tesoro.id);
   assert.equal(notte.stanza.stato, 'pulita');
-  assert.ok(notte.stanza.contenuti.some((c) => c.tipo === 'reperto'));
+  assert.ok(notte.stanza.contenuti.some((c) => c.tipo === 'piedistallo'));
 });
 
 // ---------------------------------------------------------------------------------------------

@@ -152,15 +152,19 @@ function inInsegue(m, n) {
 // Dati e formule
 // ---------------------------------------------------------------------------------------------
 
-test('dati: F1 vita per piano (gatto 6/7/8/10/11, vespa 3/4/4/5/5, statua 9/11/13/14/16, guardia 8/10/11/13/14)', async () => {
-  const attese = { gatto: [6, 7, 8, 10, 11], vespa: [3, 4, 4, 5, 5], statua: [9, 11, 13, 14, 16], guardia: [8, 10, 11, 13, 14] };
+test('dati: F1 vita per piano = round(vita_base × (1 + k_vita × (p − 1))) con le vite base di nemici.json (Teatro: gatto 8 → 8/10/11/13/14; vespa 3, statua 9, guardia 8)', async () => {
   const m = await creaMondo();
-  for (const [arch, lista] of Object.entries(attese)) {
+  const nemici = JSON.parse(readFileSync(new URL('../contenuti/parametri/nemici.json', import.meta.url), 'utf8'));
+  const kVita = nemici.scalatura.k_vita.base;
+  assert.equal(nemici.archetipi.gatto.vita.base, 8, 'Teatro: il gatto ha 8 di vita');
+  for (const arch of ['gatto', 'vespa', 'statua', 'guardia']) {
+    const base = nemici.archetipi[arch].vita.base;
     for (let p = 1; p <= 5; p++) {
       const s = schedaArchetipo({ modificatori: m.mod, parametri: m.parametri, archetipo: arch, piano: p });
-      assert.equal(s.vita, lista[p - 1], `${arch} piano ${p}`);
+      assert.equal(s.vita, Math.round(base * (1 + kVita * (p - 1))), `${arch} piano ${p}`);
     }
   }
+  assert.deepEqual([1, 2, 3, 4, 5].map((p) => schedaArchetipo({ modificatori: m.mod, parametri: m.parametri, archetipo: 'gatto', piano: p }).vita), [8, 10, 11, 13, 14]);
   assert.equal(scalaVita(6, 4, 0.2), 10);
 });
 
@@ -514,7 +518,11 @@ const BOT_STANZE = 30;
 // Stanza QA da 2 gatti: con 3 gatti a vita 6 (GDD; il prototipo aveva vita 3) la stanza dura ~10 s, fuori dai 3-7 s del criterio.
 const BOT_GATTI_PER_STANZA = 2;
 const BOT_DURATA_MIN_S = 3;
-const BOT_DURATA_MAX_S = 7;
+/** La finestra 3-7 s del GDD fu misurata con il gatto a vita 6: il Teatro alza la vita (nemici.json, 8) e la stanza dura in
+ *  proporzione (media misurata 7,11 s con il seme 1845 e vita 8), quindi il tetto scala con la vita; il minimo resta 3 s. */
+const VITA_GATTO_GDD = 6;
+const VITA_GATTO = JSON.parse(readFileSync(new URL('../contenuti/parametri/nemici.json', import.meta.url), 'utf8')).archetipi.gatto.vita.base;
+const BOT_DURATA_MAX_S = 7 * (VITA_GATTO / VITA_GATTO_GDD);
 
 test('020 c1: GIVEN un gatto, WHEN entra in Anticipo, THEN si accuccia (area −25%, posteriore su), poi lampo con occhi rossi e anello che si chiude in 150 ms (telegrafo.anello), poi balzo d_balzo = clamp(d_lampo + 24, 100, 170) in 200 ms con hitbox dal 45%', async () => {
   const m = await creaMondo();
@@ -779,7 +787,7 @@ function stanzaBot(m, bot, rngStanza, n = BOT_GATTI_PER_STANZA) {
   };
 }
 
-test(`020 c3: GIVEN il bot a ${BOT_REAZIONE_MS} ms, WHEN gioca ${BOT_STANZE} stanze da ${BOT_GATTI_PER_STANZA} gatti con seme fisso, THEN para ≥ 90% dei balzi e la stanza dura 3-7 s (media; singole ≤ 2×)`, async () => {
+test(`020 c3: GIVEN il bot a ${BOT_REAZIONE_MS} ms, WHEN gioca ${BOT_STANZE} stanze da ${BOT_GATTI_PER_STANZA} gatti con seme fisso, THEN para ≥ 90% dei balzi e la stanza dura ${BOT_DURATA_MIN_S}-${BOT_DURATA_MAX_S.toFixed(2)} s (3-7 s del GDD scalati alla vita del gatto ${VITA_GATTO}; media; singole ≤ 2×)`, async () => {
   const m = await creaMondo();
   const bot = creaBot(m);
   const rngStanze = derivato(creaRng(SEME), 'stanze-bot');

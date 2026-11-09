@@ -276,8 +276,9 @@ test('S024-2b: un secondo cartiglio sostituisce il primo e riparte il timer; il 
   assert.equal(m2.cartiglio().avviso, m2.testi.doni.gia_al_massimo);
 });
 
-test('GDD regola 8: al piano 3 due piedistalli con doni distinti; preso uno l\'altro è inerte; a pari distanza vince il più a sinistra; niente raccolta in Scatta', async () => {
-  const m = await creaMondo({ piano: 3 });
+test('GDD regola 8 / Teatro: dal piano piano_doppio (doni.json, 4) due piedistalli con doni distinti; preso uno l\'altro è inerte; a pari distanza vince il più a sinistra; niente raccolta in Scatta', async () => {
+  const pianoDoppio = leggi('contenuti/parametri/doni.json').piedistallo.piano_doppio.base;
+  const m = await creaMondo({ piano: pianoDoppio });
   const x = m.ferruccio.x;
   const y = m.ferruccio.y;
   const stanza = m.tesoro('t3', [{ x: x - 40, y }, { x: x + 40, y }]);
@@ -286,7 +287,7 @@ test('GDD regola 8: al piano 3 due piedistalli con doni distinti; preso uno l\'a
   assert.equal(el.length, 2);
   assert.notEqual(el[0].id, el[1].id);
   assert.ok(el.every((p) => p.stato === 'offerto' && p.dono.rarita !== 'unico'));
-  assert.deepEqual(m.pool.offertiIn(3).sort(), [el[0].id, el[1].id].sort());
+  assert.deepEqual(m.pool.offertiIn(pianoDoppio).sort(), [el[0].id, el[1].id].sort());
   // pari distanza (40 px): il più a sinistra
   assert.equal(m.piedistalli.vicino(56), 0);
   // in Scatta la pressione è ignorata
@@ -311,8 +312,8 @@ test('GDD regola 8: al piano 3 due piedistalli con doni distinti; preso uno l\'a
   assert.equal(m.piedistalli.vicino(1000), -1);
   assert.equal(m.cartiglio()?.id, preso.id);
   // un solo eleggibile per il piedistallo doppio → un solo piedistallo, non uno inerte
-  const m2 = await creaMondo({ piano: 3 });
-  for (const d of m2.pool.eleggibili({ piano: 3 })) if (d.id !== 'spola-del-telaio') m2.pool.raccolto(d.id);
+  const m2 = await creaMondo({ piano: pianoDoppio });
+  for (const d of m2.pool.eleggibili({ piano: pianoDoppio })) if (d.id !== 'spola-del-telaio') m2.pool.raccolto(d.id);
   m2.piedistalli.attiva(m2.tesoro('t', [{ x, y }]));
   assert.equal(m2.piedistalli.elenco().length, 1);
   assert.equal(m2.piedistalli.elenco()[0].id, 'spola-del-telaio');
@@ -364,24 +365,29 @@ test('banchetto sul pool: lo slot dono è estratto dal pool con il canale banche
 // Ganci collegati agli eventi ed effetti eseguiti dagli attori
 // ---------------------------------------------------------------------------------------------
 
-test('ganci: colpo → su_colpo (Acciarino p=1) → doni.scintilla → la scintilla d\'oro vola dal bersaglio e ferisce il fantoccio dietro, non quello d\'origine', async () => {
+test('ganci: colpo → su_colpo (Acciarino p=1) → doni.scintilla → le n scintille d\'oro del gancio (Teatro: 2) volano dal bersaglio e feriscono il fantoccio dietro, non quello d\'origine', async () => {
   const m = await creaMondo({ ritocca: (nome, j) => { if (nome === 'doni') j.doni.find((d) => d.id === 'acciarino').ganci[0].probabilita = 1.0; } });
   assert.ok(m.mod.aggiungiDono('acciarino'));
   const a = m.fantoccio('a', m.ferruccio.x + 60, m.ferruccio.y);
-  const b = m.fantoccio('b', m.ferruccio.x + 170, m.ferruccio.y);
+  // le n scintille partono da A a ventaglio (ventaglio_gradi attorno alla direzione del colpo): B sta sul raggio più basso del ventaglio
+  const effetti = m.parametri.get('doni').effetti.scintilla.predefiniti;
+  const acciarino = m.parametri.get('doni').doni.find((d) => d.id === 'acciarino').ganci[0].parametri;
+  const mezzoVentaglio = (acciarino.n > 1 ? (acciarino.ventaglio_gradi ?? effetti.ventaglio_gradi) / 2 : 0) * (Math.PI / 180);
+  const b = m.fantoccio('b', m.ferruccio.x + 60 + 110 * Math.cos(mezzoVentaglio), m.ferruccio.y + 110 * Math.sin(mezzoVentaglio));
   const vitaA = a.vita;
   const vitaB = b.vita;
   m.premi('attacco');
   m.tick(m.ticks(m.parametri.get('combattimento.t_startup_f')) + m.ticks(m.parametri.get('combattimento.t_attivo_f')) + 1);
   assert.ok(a.vita < vitaA, 'il fendente colpisce A');
   assert.equal(m.eventiDi('doni.scintilla').length, 1);
+  const gancio = m.parametri.get('doni').doni.find((d) => d.id === 'acciarino').ganci[0].parametri;
   const sc = m.proiettili.filter((p) => p.scintilla);
-  assert.equal(sc.length, 1);
-  assert.equal(sc[0].danno, 1, 'il danno della scintilla è quello dei parametri');
+  assert.equal(sc.length, gancio.n, 'una scintilla per ogni n del gancio');
+  assert.ok(sc.every((p) => p.danno === gancio.danno), 'il danno della scintilla è quello dei parametri');
   assert.equal(a.vita, vitaA - m.mod.valore('danno'), 'il bersaglio d\'origine non è colpito dalla scintilla');
   m.tick(m.ticks(600));
-  assert.equal(b.vita, vitaB - 1, 'la scintilla ferisce B');
-  assert.equal(sc[0].vivo, false, 'senza rimbalzi si spegne');
+  assert.ok(vitaB - b.vita >= gancio.danno && vitaB - b.vita <= gancio.danno * gancio.n, `almeno una scintilla ferisce B (${vitaB - b.vita} danni)`);
+  assert.ok(sc.some((p) => !p.vivo), 'la scintilla che colpisce si spegne (senza rimbalzi)');
   assert.ok(m.eventiDi('doni.scintilla')[0].payload.dono === 'acciarino');
 });
 
@@ -389,11 +395,11 @@ test('ganci: catena e onda eseguite dagli attori (danno ai vicini entro il raggi
   const m = await creaMondo();
   assert.ok(m.mod.aggiungiDono('catena-della-chiusa'));
   const a = m.fantoccio('a', 400, 360);
+  const cat = m.mod.ganci.iscrizioni('su_uccisione')[0].parametri;
   const b = m.fantoccio('b', 480, 360);
-  const c = m.fantoccio('c', 560, 360);
+  const c = m.fantoccio('c', 400 + cat.raggio_px - 10, 360); // dentro il raggio della catena (Teatro: 140 px, 2 bersagli)
   const lontano = m.fantoccio('d', 1100, 360);
   const [vb, vc, vd] = [b.vita, c.vita, lontano.vita];
-  const cat = m.mod.ganci.iscrizioni('su_uccisione')[0].parametri;
   m.eventi.emit('ferruccio.uccisione', { x: a.x, y: a.y, direzione: { x: 1, y: 0 }, bersaglio: a, danno: 9 });
   assert.equal(m.eventiDi('doni.catena').length, 1);
   assert.equal(b.vita, vb - cat.danno, 'il più vicino prende il danno della catena');

@@ -1,8 +1,9 @@
 /**
  * gioco/qa/prova.wire.test.js — Pagina di prova (storia P02, PROVVISORIA). Playwright: avvia un server statico su
  * una porta libera con radice `gioco/`, apre `prova.html?debug=1&seme=1845` (la meta `gioco-avvio` deve dare da sola
- * wire e hub), verifica zero errori, `__gioco` presente, ciclo in `hub`, pannello dei tasti visibile che sparisce al
- * primo tasto; poi che `index.html` senza parametri non mostri il pannello. Salva
+ * wire e piano 1), verifica zero errori, `__gioco` presente, ciclo in `notte` nella stanza d'ingresso, pannello dei tasti
+ * visibile che sparisce al primo tasto; poi che una pagina SENZA la meta (index.html servita togliendo la meta al volo)
+ * non mostri il pannello e parta nel menu, mentre index.html com'è (con la meta) lo mostra. Salva
  * `production/qa/evidence/prova-pagina.png`. Esecuzione: `node gioco/qa/prova.wire.test.js`.
  */
 
@@ -76,10 +77,10 @@ async function main() {
   try {
     browser = await chromium.launch();
 
-    await caso('prova.html: la meta gioco-avvio dà wire e hub, pannello dei tasti visibile, sparisce al primo tasto, zero errori', async () => {
+    await caso('prova.html: la meta gioco-avvio dà wire e piano 1 (ciclo in notte, stanza d\'ingresso, niente hub), pannello dei tasti visibile, sparisce al primo tasto, zero errori', async () => {
       const { contesto, pagina, errori } = await apri(browser, `${server.base}/prova.html?debug=1&seme=1845`);
       await pagina.waitForFunction(() => window.__gioco && window.__gioco.parametri.caricato());
-      await pagina.waitForFunction(() => window.__gioco.stato === 'hub');
+      await pagina.waitForFunction(() => window.__gioco.stato === 'notte' && window.__gioco.piano && window.__gioco.stanza);
       const prima = await pagina.evaluate(() => ({
         stato: window.__gioco.stato,
         seme: window.__gioco.seme,
@@ -87,14 +88,18 @@ async function main() {
         pannelloDom: Boolean(document.querySelector('#interfaccia .prova')),
         righe: Array.from(document.querySelectorAll('#interfaccia .prova-riga')).map((e) => e.textContent),
         hub: Boolean(window.__gioco.hub && window.__gioco.hub.attivo),
+        stanza: window.__gioco.stanza.tipo,
+        pianoP: window.__gioco.piano.p,
       }));
-      assert.equal(prima.stato, 'hub');
+      assert.equal(prima.stato, 'notte');
+      assert.equal(prima.stanza, 'ingresso');
+      assert.equal(prima.pianoP, 1, 'la meta dà piano=1');
       assert.equal(prima.seme, 1845, 'l\'URL vince sulla meta per il seme');
       assert.equal(prima.pannello, true);
       assert.equal(prima.pannelloDom, true);
       assert.ok(prima.righe.length >= 3, 'righe delle istruzioni');
       assert.ok(prima.righe.join(' ').includes('fendente'), 'le istruzioni nominano il fendente');
-      assert.equal(prima.hub, true);
+      assert.equal(prima.hub, false, 'con piano=1 l\'hub non c\'è');
       await pagina.waitForTimeout(300);
       await pagina.screenshot({ path: EVIDENZA });
       await pagina.keyboard.press('KeyD');
@@ -111,15 +116,33 @@ async function main() {
       await contesto.close();
     });
 
-    await caso('index.html senza meta: nessun pannello di prova, pannelloProva() è null', async () => {
-      const { contesto, pagina, errori } = await apri(browser, `${server.base}/?debug=1&seme=1845`);
+    await caso('pagina senza la meta gioco-avvio (index.html servita togliendo la meta al volo): nessun pannello di prova, pannelloProva() è null, stato menu; index.html com\'è (con la meta) mostra il pannello e parte nel piano 1', async () => {
+      const contesto = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+      const pagina = await contesto.newPage();
+      const errori = [];
+      pagina.on('console', (m) => { if (m.type() === 'error') errori.push(m.text()); });
+      pagina.on('pageerror', (e) => errori.push(String(e)));
+      await pagina.route('**/index.html*', async (route) => {
+        const risposta = await route.fetch();
+        const html = (await risposta.text()).replace(/<meta name="gioco-avvio"[^>]*>\s*/, '');
+        assert.ok(!html.includes('gioco-avvio'), 'meta tolta dalla risposta');
+        await route.fulfill({ response: risposta, body: html, headers: { ...risposta.headers(), 'content-type': 'text/html; charset=utf-8' } });
+      });
+      await pagina.goto(`${server.base}/index.html?debug=1&seme=1845`, { waitUntil: 'load' });
       await pagina.waitForFunction(() => window.__gioco && window.__gioco.parametri.caricato());
       const r = await pagina.evaluate(() => ({ pannello: window.__gioco.pannelloProva(), dom: Boolean(document.querySelector('#interfaccia .prova')), stato: window.__gioco.stato }));
       assert.equal(r.pannello, null);
       assert.equal(r.dom, false);
       assert.equal(r.stato, 'menu');
-      assert.deepEqual(errori, []);
+      assert.deepEqual(errori, [], `errori in console:\n${errori.join('\n')}`);
       await contesto.close();
+      // index.html com'è: la meta c'è, il pannello si vede e si parte nel piano 1
+      const conMeta = await apri(browser, `${server.base}/?debug=1&seme=1845`);
+      await conMeta.pagina.waitForFunction(() => window.__gioco && window.__gioco.parametri.caricato());
+      const r2 = await conMeta.pagina.evaluate(() => ({ pannello: window.__gioco.pannelloProva(), stato: window.__gioco.stato }));
+      assert.deepEqual(r2, { pannello: true, stato: 'notte' });
+      assert.deepEqual(conMeta.errori, []);
+      await conMeta.contesto.close();
     });
   } finally {
     if (browser) await browser.close();

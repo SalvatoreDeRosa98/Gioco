@@ -32,7 +32,8 @@ const EVIDENZE = {
   risveglio: path.join(CARTELLA_EVIDENZE, 'notte-risveglio.png'),
 };
 const SEME = 1845;
-const URL_HUB = `/?debug=1&wire=1&hub=1&seme=${SEME}`;
+/** piano=0 annulla il piano=1 della meta gioco-avvio di index.html: l'hub vale solo senza piano. */
+const URL_HUB = `/?debug=1&wire=1&hub=1&piano=0&seme=${SEME}`;
 /** Limite del criterio: la sequenza di morte dura al più 5 s. */
 const T_MAX_MS = 5000;
 const SCENA_TONINO = 'piazza-dante.tonino-primo-incontro';

@@ -37,7 +37,7 @@ import { creaEconomia } from '../motore/oggetti/economia.js';
 import { creaSalvataggio, memoriaInRam } from '../motore/persistenza/salvataggio.js';
 import { creaProfilo } from '../motore/persistenza/profilo.js';
 import { crea as creaStato } from '../motore/storia/stato-narrativo.js';
-import { creaRisveglio, MOTIVI_RISVEGLIO, FASI_FINE_PIANO, INATTIVO } from '../motore/storia/risveglio.js';
+import { creaRisveglio, MOTIVI_RISVEGLIO, FASI_DISCESA_PIANO, PIANO_FINALE, INATTIVO } from '../motore/storia/risveglio.js';
 import { creaNotteSalvata, MOTIVI_CANCELLAZIONE } from '../motore/persistenza/notte-salvata.js';
 import { schedaBossProvvisorio, applicaSchedaBoss, schedaArchetipo } from '../motore/attori/nemico.js';
 
@@ -55,6 +55,7 @@ const PIANO = 1;
 const MODELLO_BOSS = 'pd-b-01';
 const FLAG_PROVA = ['taddeo', 'perdonato'];
 const SCINTILLE_PROVA = 7;
+const DONO_PROVA = 'lima';
 const GUARDIA_TICK = 100000;
 
 function logFinto() {
@@ -128,7 +129,7 @@ async function creaMondo({ memoria = memoriaInRam() } = {}) {
     numeroNotte: () => stato.avanzamento()[REGOLE.piani.campo_notte], log,
   });
   const ricevuti = [];
-  for (const nome of ['nemico.nato', 'stanza.chiusa', 'stanza.svuotata', 'stanza.pulita', 'boss.sconfitto', 'piano.completato',
+  for (const nome of ['nemico.nato', 'stanza.chiusa', 'stanza.svuotata', 'stanza.pulita', 'boss.sconfitto', 'piano.completato', 'piano.discesa',
     'fine_piano.avvio', 'fine_piano.fase', 'risveglio.fine', 'notte.cancellata', 'economia.fine_notte', 'morte.avvio']) {
     eventi.on(nome, (p) => ricevuti.push({ nome, ...p }));
   }
@@ -306,35 +307,39 @@ test('P01 (d): GIVEN la stanza boss pulita, WHEN Ferruccio resta sull\'uscita pe
 // (e): notte + 1, flag/scintille/piano_max conservati, notte salvata cancellata
 // ---------------------------------------------------------------------------------------------
 
-test('P01 (e): GIVEN flag, scintille e una notte salvata, WHEN il piano è completato, THEN velo di una fase (fine_piano), notte salvata cancellata con motivo vittoria, poi risveglio.fine {motivo: vittoria}: notte + 1, piano_max 2, flag e scintille restano, morti fermo', async () => {
+test('P01/Teatro (e): GIVEN flag, scintille, un dono e una notte salvata, WHEN il piano 1 (< PIANO_FINALE) è completato, THEN velo di una fase `discesa`, notte salvata cancellata con motivo vittoria, poi piano.discesa {daPiano 1, aPiano 2} SENZA risveglio.fine né economia.fine_notte: notte invariata, piano_max 2, flag, scintille, doni, pool ed economia restano, morti fermo', async () => {
   const m = await creaMondo();
   assert.equal(m.stato.imposta(FLAG_PROVA[0], FLAG_PROVA[1]).ok, true);
   m.economia.aggiungiScintille(SCINTILLE_PROVA, 'test');
+  assert.ok(m.modificatori.aggiungiDono(DONO_PROVA));
   const st = m.montaBoss();
   assert.equal(m.notteSalvata.presente, true, 'la notte è salvata all\'ingresso nella stanza');
   m.inAngolo();
   m.tick(m.ticks('stanze.t_marker') + 1);
   m.uccidiBoss();
   const notte0 = m.stato.avanzamento()[REGOLE.piani.campo_notte];
-  const durataVelo = m.risveglio.durataMs(MOTIVI_RISVEGLIO.vittoria);
-  assert.equal(durataVelo, FASI_FINE_PIANO.reduce((a, f) => a + m.parametri.get(`risveglio.fine_piano.t_${f}`), 0));
+  assert.ok(PIANO < PIANO_FINALE, 'il piano 1 non è l\'ultimo: si scende, non si vince');
+  const durataVelo = m.risveglio.durataMs(MOTIVI_RISVEGLIO.discesa);
+  assert.ok(durataVelo > 0 && durataVelo <= m.parametri.get('risveglio.fine_piano.t_velo'), `il velo della discesa è breve (${durataVelo} ms), mai oltre t_velo`);
   m.ferruccio.posiziona(st.uscita.x, st.uscita.y);
   m.tick(m.ticks('stanze.uscita.t_attesa') + 1);
   assert.equal(m.eventiDi('piano.completato').length, 1);
-  // sequenza di vittoria: una fase, motivo, piano prossimo, niente lanterne; notte salvata già cancellata
+  // sequenza di discesa: una fase, motivo, piano prossimo, niente lanterne; notte salvata già cancellata
   assert.equal(m.risveglio.attivo, true);
-  assert.equal(m.risveglio.motivo, MOTIVI_RISVEGLIO.vittoria);
-  assert.equal(m.risveglio.fase, FASI_FINE_PIANO[0]);
+  assert.equal(m.risveglio.motivo, MOTIVI_RISVEGLIO.discesa);
+  assert.equal(m.risveglio.fase, FASI_DISCESA_PIANO[0]);
   assert.equal(m.risveglio.pianoProssimo, PIANO + 1);
   assert.equal(m.risveglio.lanterneSpente(), 0);
   assert.equal(m.eventiDi('fine_piano.avvio').length, 1);
   assert.equal(m.eventiDi('fine_piano.avvio')[0].durata_ms, durataVelo);
+  assert.equal(m.eventiDi('fine_piano.avvio')[0].motivo, MOTIVI_RISVEGLIO.discesa);
+  assert.deepEqual(m.eventiDi('fine_piano.avvio')[0].fasi, FASI_DISCESA_PIANO);
   assert.equal(m.eventiDi('morte.avvio').length, 0);
   assert.equal(m.notteSalvata.presente, false, 'notte salvata cancellata');
   const cancellazioni = m.eventiDi('notte.cancellata');
   assert.equal(cancellazioni.length, 1);
   assert.equal(cancellazioni[0].motivo, MOTIVI_CANCELLAZIONE.vittoria);
-  assert.equal(m.eventiDi('economia.fine_notte').length, 1, 'l\'economia chiude la notte (residuo accreditato)');
+  assert.equal(m.eventiDi('economia.fine_notte').length, 0, 'l\'economia NON chiude la notte scendendo: residuo e consumabili restano');
   assert.equal(m.stato.avanzamento()[REGOLE.piani.campo_piano_max], PIANO + 1, 'piano_max registrato subito');
   let ticks = 0;
   for (; ticks < GUARDIA_TICK && m.risveglio.attivo; ticks++) m.tick(1);
@@ -342,22 +347,20 @@ test('P01 (e): GIVEN flag, scintille e una notte salvata, WHEN il piano è compl
   assert.ok(ticks <= tVelo && ticks >= tVelo - 3, `il velo dura t_velo (${ticks} tick, attesi ~${tVelo}: il completamento scatta a metà dell'ultimo blocco di tick)`);
   assert.equal(m.risveglio.fase, INATTIVO);
   assert.equal(m.risveglio.motivo, null);
-  // risveglio: notte + 1 con motivo vittoria; flag, scintille e piano_max restano; morti fermo
-  const fine = m.eventiDi('risveglio.fine');
-  assert.equal(fine.length, 1);
-  assert.equal(fine[0].motivo, MOTIVI_RISVEGLIO.vittoria);
-  assert.equal(fine[0].piano, PIANO);
-  assert.equal(fine[0].notte, notte0 + 1);
-  assert.equal(m.stato.avanzamento()[REGOLE.piani.campo_notte], notte0 + 1);
+  // discesa: nessun risveglio; la run continua al piano 2 con doni, flag, scintille e pool addosso; la notte non avanza
+  assert.equal(m.eventiDi('risveglio.fine').length, 0, 'nessun risveglio: si scende');
+  const discese = m.eventiDi('piano.discesa');
+  assert.equal(discese.length, 1);
+  assert.deepEqual(discese[0], { nome: 'piano.discesa', daPiano: PIANO, aPiano: PIANO + 1 });
+  assert.equal(m.stato.avanzamento()[REGOLE.piani.campo_notte], notte0, 'la notte non avanza scendendo');
   assert.equal(m.stato.avanzamento()[REGOLE.piani.campo_piano_max], PIANO + 1);
   assert.equal(m.stato.flag()[FLAG_PROVA[0]], FLAG_PROVA[1]);
   assert.equal(m.profilo.scintille, SCINTILLE_PROVA);
+  assert.deepEqual(m.modificatori.doniAttivi(), [DONO_PROVA], 'i doni restano addosso');
+  assert.equal(m.pool.azzerato, 0, 'il pool della run non si azzera');
   assert.equal(m.risveglio.morti, 0);
-  assert.equal(m.ferruccio.stato, 'fermo');
-  assert.equal(m.ferruccio.maschere, m.modificatori.valore('ferruccio.maschere_max'));
-  assert.equal(m.pool.azzerato, 1);
-  assert.equal(m.economia.conclusa, false);
-  assert.equal(m.salvataggio.carica('profilo', SLOT).avanzamento[REGOLE.piani.campo_notte], notte0 + 1);
+  assert.equal(m.economia.conclusa, false, 'la notte dell\'economia resta aperta fra i piani');
+  assert.equal(m.salvataggio.carica('profilo', SLOT).avanzamento[REGOLE.piani.campo_notte], notte0);
   assert.equal(m.notteSalvata.presente, false);
   assert.deepEqual(m.log.voci, []);
 });
@@ -366,10 +369,11 @@ test('P01 (e): GIVEN flag, scintille e una notte salvata, WHEN il piano è compl
 // Regole del codice
 // ---------------------------------------------------------------------------------------------
 
-test('P01 regole: nessun Math.random nel motore; le stringhe mostrate vengono da interfaccia.json (fine_piano.velo con {piano})', () => {
+test('P01 regole: nessun Math.random nel motore; le stringhe mostrate vengono da interfaccia.json (fine_piano.discesa con {piano}, fine_piano.velo per la vittoria finale)', () => {
   const testi = leggi('contenuti/interfaccia.json');
-  assert.equal(typeof testi.fine_piano?.velo, 'string');
-  assert.ok(testi.fine_piano.velo.includes('{piano}'));
+  assert.equal(typeof testi.fine_piano?.velo, 'string', 'velo: vittoria finale su Donna Luciana');
+  assert.equal(typeof testi.fine_piano?.discesa, 'string', 'discesa: boss del piano sconfitto');
+  assert.ok(testi.fine_piano.discesa.includes('{piano}'), 'la didascalia della discesa nomina il piano prossimo');
   for (const f of ['mondo/stanza.js', 'storia/risveglio.js', 'attori/nemico.js', 'interfaccia/morte.js', 'resa/debug.js']) {
     const src = readFileSync(join(RADICE, 'motore', f), 'utf8');
     assert.ok(!src.includes('Math.random'), `${f} senza Math.random`);

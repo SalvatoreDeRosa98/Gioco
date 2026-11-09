@@ -6,7 +6,8 @@
  * sinergie, bonus temporanei) esiste nei parametri come `{base, min, max}` con min/max numerici; ogni
  * effetto citato esiste nella libreria `oggetti/effetti.js` con i parametri obbligatori; i limiti del
  * registro (per dono, Π cap) sono rispettati; il validatore non esclude nessun dono; il catalogo è
- * quello del GDD (20 doni, 15 d'oro, 5 ricordi, 12 MVP, forme d'oro uniche e non vietate). File
+ * quello del Teatro (25 doni: 20 d'oro + 5 ricordi; 21 MVP = tutti i doni d'oro più il Medaglione, pool
+ * unico stile Isaac; forme d'oro uniche e non vietate). File
  * CommonJS (nessun package.json): i moduli ES del motore si caricano con `import()`.
  */
 
@@ -103,28 +104,30 @@ test('il validatore accetta tutto il catalogo e tutte le sinergie (nessun dono e
   const c = validaCatalogo(catalogo, { parametri, libreria });
   assert.deepEqual(c.errori, [], c.errori.join('\n'));
   assert.deepEqual(c.esclusi, []);
-  assert.equal(c.indice.size, 20);
+  assert.equal(c.indice.size, catalogo.doni.length, 'tutto il catalogo del Teatro (25 doni) è nell\'indice');
   const s = validaSinergie(leggiJson('sinergie'), { catalogo, parametri, libreria });
   assert.deepEqual(s.errori, [], s.errori.join('\n'));
   assert.equal(s.valide.length, 6);
 });
 
-test('il catalogo è quello del GDD: 20 doni, 15 d\'oro, 5 ricordi, 12 MVP, forme d\'oro uniche e lecite', () => {
+test('il catalogo è quello del Teatro: 25 doni, 20 d\'oro, 5 ricordi, 21 MVP (tutti i doni d\'oro + Medaglione), forme d\'oro uniche e lecite', () => {
   const catalogo = leggiJson('doni');
   const doni = catalogo.doni;
-  assert.equal(doni.length, 20);
+  assert.equal(doni.length, 25, 'Teatro: 20 doni d\'oro (CATALOGO_OGGETTI) + 5 ricordi');
   const oro = doni.filter((d) => d.categoria !== 'ricordi');
   const ricordi = doni.filter((d) => d.categoria === 'ricordi');
-  assert.equal(oro.length, 15);
+  assert.equal(oro.length, 20);
   assert.equal(ricordi.length, 5);
-  assert.equal(doni.filter((d) => d.mvp).length, 12);
-  assert.equal(new Set(doni.map((d) => d.id)).size, 20, 'id unici');
+  assert.equal(doni.filter((d) => d.mvp).length, 21);
+  assert.deepEqual(doni.filter((d) => d.mvp).map((d) => d.id).sort(), [...oro.map((d) => d.id), 'medaglione-di-rosa'].sort(),
+    'MVP = tutti i doni d\'oro più il Medaglione (pool unico stile Isaac, niente sblocchi della Fucina)');
+  assert.equal(new Set(doni.map((d) => d.id)).size, 25, 'id unici');
   for (const d of oro) {
     assert.equal(d.scelta, null, `${d.id}: un dono d'oro non ha scelta`);
     assert.equal(d.sagoma.tipo, 'geometrica');
     assert.ok(!catalogo.sagome.vietate_oro.includes(d.sagoma.forma), `${d.id}: forma vietata`);
   }
-  assert.equal(new Set(oro.map((d) => d.sagoma.forma)).size, 15, 'le forme d\'oro non si ripetono');
+  assert.equal(new Set(oro.map((d) => d.sagoma.forma)).size, 20, 'le forme d\'oro non si ripetono');
   for (const r of ricordi) {
     assert.equal(r.rarita, 'unico');
     assert.equal(r.sagoma.tipo, 'profilo');

@@ -4,7 +4,8 @@
  * Esecuzione: `node gioco/qa/pagina.test.js` dalla radice del repository (Playwright è
  * preinstallato nella sessione; non eseguire mai `playwright install`).
  * Avvia `python3 -m http.server` su una porta libera con radice `gioco/`, apre la pagina in Chromium
- * e verifica: zero errori in console; `window.__gioco` presente con `?debug=1` e assente senza;
+ * e verifica: zero errori in console; `window.__gioco` presente con `?debug=1` e assente con `?debug=0` (index.html
+ * dichiara la meta gioco-avvio `debug=1&wire=1&piano=1` come default della query: l'URL vince, e la pagina parte nel piano 1);
  * 60 ± 2 tick in 1000 ms di orologio; frame lungo recuperato con al massimo 5 tick; override
  * `?p.*` solo in debug; `prefers-reduced-motion` che azzera scossa e scie; tastiera diagonale
  * normalizzata; canvas scalato al contenitore senza scroll. Salva uno screenshot in
@@ -116,7 +117,7 @@ async function main() {
         imposta: window.__gioco.imposta('x', 1),
         vaiA: window.__gioco.vaiA('x'),
       }));
-      assert.equal(superficie.stato, 'menu');
+      assert.equal(superficie.stato, 'notte', 'index.html parte nel piano 1: meta gioco-avvio debug=1&wire=1&piano=1');
       assert.equal(superficie.seme, 1845);
       assert.deepEqual(superficie.tipi, ['function', 'function', 'function', 'function']);
       assert.ok(superficie.haParametri);
@@ -235,8 +236,8 @@ async function main() {
       await contesto.close();
     });
 
-    await caso('senza debug: __gioco assente, override ignorato, nessun errore', async () => {
-      const { contesto, pagina, errori } = await apri(browser, `${server.base}/?p.combattimento.portata=90`);
+    await caso('senza debug (debug=0 vince sul default della meta gioco-avvio): __gioco assente, override ignorato, nessun errore', async () => {
+      const { contesto, pagina, errori } = await apri(browser, `${server.base}/?debug=0&p.combattimento.portata=90`);
       await pagina.waitForTimeout(500);
       assert.equal(await pagina.evaluate(() => typeof window.__gioco), 'undefined');
       assert.deepEqual(errori, []);

@@ -286,12 +286,12 @@
           ostacoli: s.analisi.ostacoli.map((o) => ({ c: o.c, r: o.r, id: o.id })),
           pericoli: s.analisi.pericoli.map((h) => ({ c: h.c, r: h.r, id: h.id })),
         })),
-        /** Luminanza (0-255, pesi Rec. 709) del pixel al centro della cella (c, r) del modello `id`. */
-        luminanza: (id, c, r) => {
+        /** Luminanza (0-255, pesi Rec. 709) del pixel della cella (c, r) del modello `id` in (fx, fy) ∈ [0,1]² (centro se omessi). */
+        luminanza: (id, c, r, fx = 0.5, fy = 0.5) => {
           const s = schede.find((x) => x.id === id);
           if (!s) return null;
           const p = s.cella(c, r);
-          const d = s.canvas.getContext('2d').getImageData(Math.round(p.x + cellaPx / 2), Math.round(p.y + cellaPx / 2), 1, 1).data;
+          const d = s.canvas.getContext('2d').getImageData(Math.round(p.x + cellaPx * fx), Math.round(p.y + cellaPx * fy), 1, 1).data;
           return 0.2126 * d[0] + 0.7152 * d[1] + 0.0722 * d[2];
         },
       });

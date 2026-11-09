@@ -29,6 +29,8 @@ const RADICE_GIOCO = path.resolve(__dirname, '..');
 const CARTELLA_EVIDENZE = path.resolve(RADICE_GIOCO, '..', 'production', 'qa', 'evidence');
 const EVIDENZA = path.join(CARTELLA_EVIDENZE, 'boss-provvisorio.png');
 const TESTI = JSON.parse(fs.readFileSync(path.join(RADICE_GIOCO, 'contenuti', 'interfaccia.json'), 'utf8'));
+/** Teatro: il piano 2 ha n_min stanze (7), letto da generazione.json. */
+const N_STANZE_P2 = JSON.parse(fs.readFileSync(path.join(RADICE_GIOCO, 'contenuti', 'parametri', 'generazione.json'), 'utf8')).piani.p2.n_min.base;
 const SEME = 1845;
 const ID_MEDAGLIONE = 'medaglione-di-rosa';
 
@@ -91,7 +93,7 @@ async function main() {
   try {
     browser = await chromium.launch();
 
-    await caso('stanza boss: un solo gatto boss provvisorio, ucciso → boss.sconfitto, Medaglione a terra e raccolto, stanza pulita, uscita attiva → piano.completato una volta, velo di vittoria, notte 2 dallo stesso seme; screenshot; zero errori', async () => {
+    await caso('stanza boss: un solo gatto boss provvisorio, ucciso → boss.sconfitto, Medaglione a terra e raccolto, stanza pulita, uscita attiva → piano.completato una volta, velo di discesa, piano 2 nella stessa run (notte 1, Medaglione addosso); screenshot; zero errori', async () => {
       const contesto = await browser.newContext({ viewport: { width: 1280, height: 720 } });
       const pagina = await contesto.newPage();
       const errori = [];
@@ -221,18 +223,18 @@ async function main() {
       assert.equal(uscita.completati[0].piano, 1);
       assert.equal(uscita.stato, 'pausa', 'pausa logica durante il velo');
       assert.equal(uscita.attivo, true);
-      assert.equal(uscita.motivo, 'vittoria');
-      assert.equal(uscita.fase, 'velo');
+      assert.equal(uscita.motivo, 'discesa', 'Teatro: dopo il boss dei piani 1-3 si scende');
+      assert.equal(uscita.fase, 'discesa');
       assert.equal(uscita.pianoProssimo, 2);
-      assert.equal(uscita.velo.motivo, 'vittoria');
-      assert.equal(uscita.velo.didascalia, TESTI.fine_piano.velo.replace('{piano}', '2'), 'il testo del velo viene da interfaccia.json');
+      assert.equal(uscita.velo.motivo, 'discesa');
+      assert.equal(uscita.velo.didascalia, TESTI.fine_piano.discesa.replace('{piano}', '2'), 'il testo del velo viene da interfaccia.json › fine_piano.discesa');
       assert.equal(uscita.notteSalvata, false, 'notte salvata cancellata');
       assert.equal(uscita.cancellata && uscita.cancellata.motivo, 'vittoria');
-      assert.ok(uscita.eventi.includes('fine_piano.avvio') && uscita.eventi.includes('economia.fine_notte') && !uscita.eventi.includes('morte.avvio'));
+      assert.ok(uscita.eventi.includes('fine_piano.avvio') && !uscita.eventi.includes('economia.fine_notte') && !uscita.eventi.includes('morte.avvio'), 'scendendo la notte dell\'economia non si chiude');
       assert.equal(uscita.pianoMax, 2, 'piano_max registrato');
       assert.equal(uscita.notte, 1, 'la notte avanza solo al risveglio');
 
-      // fine del velo: senza hub la notte riparte dallo stesso seme, notte 2, stesso piano, nessun secondo piano.completato
+      // fine del velo: la run continua al piano 2 (stesso seme della run, pianta nuova), notte invariata, nessun risveglio.fine, nessun secondo piano.completato
       const ripresa = await pagina.evaluate(() => {
         const g = window.__gioco;
         let ticks = 0;
@@ -240,6 +242,7 @@ async function main() {
         g.tick(5);
         return {
           ticks, stato: g.stato, attivo: g.risveglio.attivo, motivo: g.risveglio.motivo, piano: g.piano ? g.piano.stanze.map((s) => s.id) : null,
+          pianoP: g.piano ? g.piano.p : null, nonSegrete: g.piano ? g.piano.stanze.filter((s) => s.tipo !== 'segreta').length : 0,
           stanza: g.stanza ? g.stanza.tipo : null, bersagli: g.bersagli.length, notte: g.narrativa.avanzamento().notte, pianoMax: g.narrativa.avanzamento().piano_max,
           morti: g.risveglio.morti, fine: window.__eventiBoss.find((e) => e.nome === 'risveglio.fine'), velo: g.veloMorte(),
           completati: window.__eventiBoss.filter((e) => e.nome === 'piano.completato').length, inMano: g.ricordi.inMano().slice(), maschere: g.ferruccio.maschere,
@@ -248,15 +251,17 @@ async function main() {
       assert.ok(ripresa.ticks < 2000, 'il velo finisce');
       assert.equal(ripresa.attivo, false);
       assert.equal(ripresa.motivo, null);
-      assert.equal(ripresa.stato, 'notte', 'senza hub la notte riparte');
-      assert.deepEqual(ripresa.piano, nascita.stanze, 'stesso piano dallo stesso seme');
+      assert.equal(ripresa.stato, 'notte', 'la run continua: si scende al piano 2');
+      assert.equal(ripresa.pianoP, 2, 'piano 2 della stessa run');
+      assert.equal(ripresa.nonSegrete, N_STANZE_P2, 'Teatro: piano 2 = 7 stanze');
+      assert.notDeepEqual(ripresa.piano, nascita.stanze, 'una pianta nuova, non quella del piano 1');
       assert.equal(ripresa.stanza, 'ingresso');
       assert.equal(ripresa.bersagli, 0);
-      assert.equal(ripresa.notte, 2, 'notte + 1');
+      assert.equal(ripresa.notte, 1, 'la notte non avanza scendendo');
       assert.equal(ripresa.pianoMax, 2);
-      assert.equal(ripresa.morti, 0, 'la vittoria non conta come morte');
-      assert.equal(ripresa.fine && ripresa.fine.motivo, 'vittoria');
-      assert.equal(ripresa.fine.notte, 2);
+      assert.equal(ripresa.morti, 0, 'scendere non conta come morte');
+      assert.equal(ripresa.fine, undefined, 'nessun risveglio.fine: la run continua con tutto addosso');
+      assert.ok(ripresa.inMano.includes(ID_MEDAGLIONE), 'il Medaglione resta addosso scendendo');
       assert.equal(ripresa.completati, 1);
 
       assert.deepEqual(errori, [], `errori in console:\n${errori.join('\n')}`);

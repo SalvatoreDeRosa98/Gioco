@@ -19,8 +19,9 @@
  *   ricordo in mano, `valore_restituzione` lo CEDE (dono tolto, bonus finito, scintille di `effetto_ceduto`
  *   al profilo, `profilo.restituisci(id)`) → `ricordi.ceduto`; ogni altro valore lo TIENE (bonus fino a
  *   fine notte) → `ricordi.tenuto`. Una decisione forzata (QA) senza ricordo in mano non ha effetti.
- * - **Perdita** (regola 4): `ferruccio.morto` e `economia.fine_notte` tolgono i ricordi in mano e a terra
- *   senza toccare i flag (`ricordi.perso` {motivo}): alla prossima vittoria il boss lo lascia di nuovo.
+ * - **Perdita** (regola 4): `ferruccio.morto` e `economia.fine_notte` (fine della run, non del piano: scendendo di piano il
+ *   ricordo resta addosso, storia P03) tolgono i ricordi in mano e a terra senza toccare i flag (`ricordi.perso` {motivo}):
+ *   alla prossima vittoria il boss lo lascia di nuovo.
  * Nessun numero e nessuna stringa di gioco qui. Dipendenze (iniettate): `parametri`, catalogo, storia,
  * stato narrativo, modificatori, profilo, economia (scintille), Ferruccio, bus degli eventi.
  */

@@ -10,7 +10,7 @@ Serve la cartella con un server statico (i moduli ES e `fetch` non funzionano da
 ```sh
 python3 -m http.server 8000 --directory gioco
 # poi apri http://127.0.0.1:8000/
-# vetrina di QA dei 14 modelli del piano 1 (storia 017): http://127.0.0.1:8000/qa/vetrina-stanze.html?grigi=1
+# vetrina di QA dei 21 modelli dei piani 1-4 (storia 017, Teatro): http://127.0.0.1:8000/qa/vetrina-stanze.html?grigi=1
 #   (`?grigi=1` applica il filtro in scala di grigi, `?cella=N` cambia il lato in px di una cella; espone `window.__vetrina`)
 ```
 
@@ -18,6 +18,7 @@ Parametri dell'URL:
 
 | Parametro | Effetto |
 |---|---|
+| *(nessun parametro)* | **`index.html` e `prova.html` dichiarano `<meta name="gioco-avvio" content="debug=1&wire=1&piano=1">`** (Teatro, 2026-11-08): senza parametri la pagina parte già nel piano 1 con `__gioco` esposto. La meta riempie solo le chiavi assenti dall'URL (`fondazione/avvio-url.js`), quindi un valore esplicito la annulla: `?debug=0` spegne `__gioco`, `?wire=0` porta al `menu`, **`?piano=0` annulla il piano** (serve per `&hub=1` e per la scena di prova dei fantocci: `?debug=1&wire=1&piano=0&seme=1845`) |
 | `?debug=1` | espone `window.__gioco` e scrive il numero di tick sul canvas |
 | `?seme=1845` | seme della notte (senza, deriva dall'orologio) |
 | `?debug=1&p.combattimento.portata=90` | override di un parametro (solo con `debug=1`; fuori range → errore in console e valore riportato nel range) |
@@ -82,28 +83,34 @@ node gioco/qa/mondo.test.mjs              # unitari delle storie 014-018: porte,
                                           # reale (`drop`), nessuna ricompensa al rientro
 node gioco/qa/mondo.wire.test.js          # Playwright: ?debug=1&wire=1&piano=1&seme=1845, attraversa una porta,
                                           # pulisce una stanza; salva mondo-wire.png e mondo-pianta.png
-node gioco/qa/vetrina.test.js             # Playwright della storia 017: qa/vetrina-stanze.html?grigi=1, i 14 modelli del piano 1 in
-                                          # fil di ferro (conteggi 6/2/1/1/1/1/1/1, tag di difficoltà, zero errori), filtro in scala di
+node gioco/qa/vetrina.test.js             # Playwright della storia 017: qa/vetrina-stanze.html?grigi=1, i 21 modelli dei piani 1-4 in
+                                          # fil di ferro (conteggi 10/2/1/1/4/1/1/1, tag di difficoltà, zero errori), filtro in scala di
                                           # grigi attivo, centro di ogni ostacolo e pericolo scuro e pavimento chiaro (luminanza dal canvas);
                                           # salva vetrina-stanze-grigi.png e, tolto il filtro dalla casella, vetrina-stanze.png
 node gioco/qa/nemici.test.mjs             # unitari delle storie 019 e 020: formule F1-F3 sui dati, R2/R4, fermo a contatto,
                                           # separazione, telegrafo (tempi ed eventi), parata/stordimento (anche boss),
                                           # morte/dissoluzione/bottino, transizioni, direttore, factory nella stanza, prestazioni;
                                           # gatto: posa, anello 150 ms, d_balzo, hitbox dal 45% (impatto costante), anello
-                                          # d'attesa, tetto di 2 attaccanti, bot QA a 120 ms su 30 stanze (stampa una riga `# bot:`)
-node gioco/qa/economia.test.mjs           # unitari della storia 025: economia.json, formula del prezzo (tabella 1-5, sconto),
-                                          # monete_boss/scintille_boss/p_cuore/residuo/costo_sblocco, drop su 10 000 stanze (4,80 ± 0,10),
+                                          # d'attesa, tetto di 2 attaccanti, bot QA a 120 ms su 30 stanze (stampa una riga `# bot:`; la finestra
+                                          # 3-7 s del GDD scala con la vita del gatto di nemici.json: con vita 8 il tetto è 9,33 s, media misurata 7,11 s)
+node gioco/qa/economia.test.mjs           # unitari della storia 025: economia.json con i prezzi del Teatro (cuore 3, consumabile 5, dono 10/15/20,
+                                          # costanti sui piani), formula del prezzo (sconto, minimo, tetto), monete_boss = s0 + k × p (2 al piano 1),
+                                          # scintille_boss/p_cuore/residuo/costo_sblocco, drop su 10 000 stanze (E = 5 × p_drop × v_medio ± 0,05),
                                           # pool del banchetto, raccolta passandoci sopra e tetto 99, bonus di stanza e cuore, tre slot
                                           # con acquisto/rifiuto/consumabili/rientro, morte (monete perse, scintille nel profilo in RAM),
                                           # boss (scintille subito, monete a terra), prestazioni, nessun Math.random e nessun numero
 node gioco/qa/doni.test.mjs               # unitari delle storie 023-024: ordine e clamp, imposta, ganci (probabilità seminata, ricarica,
-                                          # tetto per stanza, profondità 1, budget), sinergie, bonus temporanei; pool: 12 MVP, sagome,
-                                          # probabilità 10/7,5/12 % e 11 %, 1000 estrazioni senza il raccolto, escludi_se_flag/richiede_flag
+                                          # tetto per stanza, profondità 1, budget nei 5 slot), sinergie, bonus temporanei; pool del Teatro: 21 MVP
+                                          # (20 doni d'oro + Medaglione), sagome, probabilità W_r(p)/ΣW × peso/Σpeso calcolate dai JSON, 1000 estrazioni
+                                          # senza il raccolto, escludi_se_flag/richiede_flag. I valori attesi sono letti da doni.json, ferruccio.json,
+                                          # combattimento.json e sinergie.json: cambiare un dono non rompe il test, cambiare la formula sì
 node gioco/qa/doni.integrazione.test.mjs  # integrazione della storia 024 (DOM finto): piedistallo e interagisci (33 ms), cartiglio 3000 ms senza
-                                          # pausa, HUD, doppio dal piano 3, sostituto, banchetto sul pool, ganci collegati, scintilla/catena/onda/cura
+                                          # pausa, HUD, doppio dal piano `piedistallo.piano_doppio` (4), sostituto, banchetto sul pool, ganci collegati,
+                                          # scintilla a ventaglio (n del gancio)/catena (2 bersagli nel raggio)/onda/cura
 node gioco/qa/doni.wire.test.js           # Playwright: ?debug=1&wire=1&piano=1&seme=1845, va nella bottega, anteprima, raccoglie, cartiglio e HUD
                                           # nel DOM, rientro, scintilla da un fendente; salva production/qa/evidence/doni-piedistallo.png
-node gioco/qa/parametri.test.js           # coerenza catalogo dei doni ↔ parametri ↔ libreria degli effetti (20 doni, 12 MVP, forme uniche)
+node gioco/qa/parametri.test.js           # coerenza catalogo dei doni ↔ parametri ↔ libreria degli effetti (Teatro: 25 doni, 20 d'oro + 5 ricordi,
+                                          # 21 MVP, forme d'oro uniche; i 5 doni nuovi usano gli effetti cura/onda/scintilla già in libreria)
 node gioco/qa/condizioni.test.mjs         # unitari della storia 026: condizioni, stato narrativo, decisioni, salvataggio del profilo
 node gioco/qa/incontri.test.mjs           # unitari della storia 027: spezzatura a 120 (140 → due cartigli identici concatenati), ancoraggi di tutto
                                           # piazza-dante, ripetizioni di Tonino per ogni stato, notte 1 hub Tonino → primo incontro poi ripetizione,
@@ -129,22 +136,31 @@ node gioco/qa/notte.test.mjs              # storia 030 (node:test, notte finta):
                                           # velo e pannello in DOM finto; regole del codice
 node gioco/qa/notte.wire.test.js          # Playwright della storia 030: ?debug=1&wire=1&hub=1&seme=1845, partenza, cambio di stanza, RELOAD della
                                           # pagina, pannello «Continua» (click DOM), piano rigenerato uguale, morte → velo → hub notte 2;
-                                          # salva notte-ripresa.png, notte-morte.png, notte-risveglio.png
+                                          # salva notte-ripresa.png, notte-morte.png, notte-risveglio.png (con `&piano=0` per annullare la meta)
 node gioco/qa/boss-provvisorio.test.mjs   # storia P01 (node:test, provvisoria): stanza boss reale (pd-b-01) con fantocci: un solo nemico boss === true,
                                           # boss.sconfitto alla morte, svuotata → pulita (rivisitata pulita), uscita inattiva → attiva, piano.completato
-                                          # una sola volta, velo di una fase e risveglio con motivo vittoria (notte + 1, flag/scintille/piano_max restano,
-                                          # notte salvata cancellata); contenuti e scheda boss; regole del codice
+                                          # una sola volta, velo di una fase `discesa` e `piano.discesa` {daPiano, aPiano} SENZA risveglio (Teatro: la run
+                                          # continua al piano 2 con doni, flag, scintille e pool addosso; notte invariata; piano_max 2; notte salvata
+                                          # cancellata; il residuo dell'economia è accreditato una volta); contenuti e scheda boss; regole del codice
 node gioco/qa/boss.wire.test.js           # Playwright della storia P01: ?debug=1&wire=1&piano=1&seme=1845, vaiA(stanza boss), boss nato e ucciso,
-                                          # Medaglione a terra e raccolto, uscita attiva → piano.completato, velo di vittoria, notte 2 dallo stesso seme;
-                                          # salva boss-provvisorio.png
+                                          # Medaglione a terra e raccolto, uscita attiva → piano.completato, velo di discesa (fine_piano.discesa), piano 2
+                                          # (7 stanze) nella stessa run con il Medaglione addosso, notte 1, nessun risveglio.fine; salva boss-provvisorio.png
 node gioco/qa/prova.test.mjs              # storia P02: fondiDefault/leggiMetaAvvio (la meta riempie solo le chiavi assenti, l'URL vince)
-node gioco/qa/prova.wire.test.js          # Playwright della storia P02: prova.html?debug=1&seme=1845 parte in hub dalla meta, pannello dei tasti
-                                          # visibile che sparisce al primo tasto, nessun controllo touch; index.html senza pannello;
+node gioco/qa/prova.wire.test.js          # Playwright della storia P02: prova.html?debug=1&seme=1845 parte nel piano 1 (stanza d'ingresso) dalla meta,
+                                          # pannello dei tasti visibile che sparisce al primo tasto, nessun controllo touch; index.html servita SENZA la
+                                          # meta (tolta al volo con page.route) → nessun pannello e menu; com'è → pannello e piano 1;
                                           # salva production/qa/evidence/prova-pagina.png
-node gioco/qa/hub.wire.test.js            # Playwright della storia 029: ?debug=1&wire=1&hub=1&seme=1845, targa automatica, presenze base e con
+node gioco/qa/hub.wire.test.js            # Playwright della storia 029: ?debug=1&wire=1&hub=1&piano=0&seme=1845, targa automatica, presenze base e con
                                           # taddeo/agnese, Tonino, partenza nella notte con seme derivato; salva hub-wire.png e hub-presenze.png
 node gioco/qa/seme.js 200 [--piano P] [--stampa K]   # genera N piani e riporta violatori e distribuzione dei tipi
+node gioco/qa/pacchetto.test.js           # impacchettatore: pacchetto via http e file://, frammento con CSP, determinismo; con la meta di index.html
+                                          # il pacchetto parte nel piano 1 (stato notte, stanza d'ingresso)
+node gioco/qa/stati64.js                  # forza i 64 stati narrativi: nessun buco, nessun conflitto
 ```
+
+> **Storia P03 (2026-11-08, riallineo delle suite al Teatro).** I test non fissano più i valori del GDD vecchio: prezzi,
+> drop, vite, catalogo, stanze per piano e probabilità del pool sono letti dai JSON di `contenuti/parametri/` o
+> restano scritti nel nome del caso come regola del Teatro (5/7/8/9 stanze, 25 doni, 21 modelli, discesa tra i piani).
 
 Entrambi escono con codice 1 se un caso fallisce. Il test di pagina usa il Chromium di Playwright
 preinstallato; non eseguire `playwright install`.

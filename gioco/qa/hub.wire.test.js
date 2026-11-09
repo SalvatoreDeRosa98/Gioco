@@ -96,7 +96,8 @@ async function main() {
       const errori = [];
       pagina.on('console', (m) => { if (m.type() === 'error') errori.push(m.text()); });
       pagina.on('pageerror', (e) => errori.push(String(e)));
-      await pagina.goto(`${server.base}/?debug=1&wire=1&hub=1&seme=${SEME}`, { waitUntil: 'load' });
+      // piano=0 annulla il piano=1 della meta gioco-avvio di index.html (l'hub vale solo senza piano)
+      await pagina.goto(`${server.base}/?debug=1&wire=1&hub=1&piano=0&seme=${SEME}`, { waitUntil: 'load' });
       await pagina.waitForFunction(() => window.__gioco && window.__gioco.parametri.caricato() && window.__gioco.hub && window.__gioco.hub.attivo);
       await pagina.evaluate(() => window.__gioco.ciclo.ferma());
       assert.deepEqual(errori, [], `errori in console:\n${errori.join('\n')}`);

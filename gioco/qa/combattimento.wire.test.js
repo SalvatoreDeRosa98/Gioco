@@ -92,7 +92,8 @@ async function main() {
       const errori = [];
       pagina.on('console', (m) => { if (m.type() === 'error') errori.push(m.text()); });
       pagina.on('pageerror', (e) => errori.push(String(e)));
-      await pagina.goto(`${server.base}/?debug=1&wire=1&seme=1845&fantoccio=attacca`, { waitUntil: 'load' });
+      // piano=0 annulla il piano=1 della meta gioco-avvio di index.html: resta la scena di prova con i fantocci
+      await pagina.goto(`${server.base}/?debug=1&wire=1&piano=0&seme=1845&fantoccio=attacca`, { waitUntil: 'load' });
       await pagina.waitForFunction(() => window.__gioco && window.__gioco.parametri.caricato());
       await pagina.waitForFunction(() => window.__gioco.tick() > 5);
       assert.deepEqual(errori, [], `errori in console:\n${errori.join('\n')}`);
@@ -212,13 +213,13 @@ async function main() {
       await contesto.close();
     });
 
-    await caso('senza wire: __gioco non espone la scena diagnostica, nessun fantoccio, stato menu', async () => {
+    await caso('senza wire (wire=0 vince sulla meta gioco-avvio): __gioco non espone la scena diagnostica, nessun fantoccio, stato menu', async () => {
       const contesto = await browser.newContext({ viewport: { width: 1280, height: 720 } });
       const pagina = await contesto.newPage();
       const errori = [];
       pagina.on('console', (m) => { if (m.type() === 'error') errori.push(m.text()); });
       pagina.on('pageerror', (e) => errori.push(String(e)));
-      await pagina.goto(`${server.base}/?debug=1&seme=1845`, { waitUntil: 'load' });
+      await pagina.goto(`${server.base}/?debug=1&wire=0&seme=1845`, { waitUntil: 'load' });
       await pagina.waitForFunction(() => window.__gioco && window.__gioco.parametri.caricato());
       const v = await pagina.evaluate(() => ({ wire: window.__gioco.wire, stato: window.__gioco.stato, bersagli: window.__gioco.bersagli.length }));
       assert.deepEqual(v, { wire: false, stato: 'menu', bersagli: 0 });

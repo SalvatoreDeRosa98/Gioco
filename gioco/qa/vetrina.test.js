@@ -27,12 +27,16 @@ const EVIDENZA_GRIGI = path.join(CARTELLA_EVIDENZE, 'vetrina-stanze-grigi.png');
 const EVIDENZA_COLORI = path.join(CARTELLA_EVIDENZE, 'vetrina-stanze.png');
 
 /** Conteggi attesi per `tipo/dim` (criterio della storia 017). */
-const CONTEGGI_ATTESI = { 'normale/1x1': 6, 'normale/2x1': 2, 'ingresso/1x1': 1, 'ricordo/1x1': 1, 'boss/1x1': 1, 'tesoro/1x1': 1, 'banchetto/1x1': 1, 'segreta/1x1': 1 };
-const MODELLI_ATTESI = 14;
+// Teatro (2026-11-08): 21 modelli — 10 normali 1x1 (pd-n-07..10 nuovi), 2 doppie, 4 boss (pd-b-02..04 nuovi), ingresso, ricordo, tesoro, banchetto, segreta
+const CONTEGGI_ATTESI = { 'normale/1x1': 10, 'normale/2x1': 2, 'ingresso/1x1': 1, 'ricordo/1x1': 1, 'boss/1x1': 4, 'tesoro/1x1': 1, 'banchetto/1x1': 1, 'segreta/1x1': 1 };
+const MODELLI_ATTESI = 21;
 /** Soglie di lettura della sagoma (luminanza 0-255): sotto la prima è «nero», sopra la seconda è pavimento chiaro. */
 const LUMINANZA_SAGOMA_MAX = 40;
 const LUMINANZA_PAVIMENTO_MIN = 80;
 const SIMBOLO_PAVIMENTO = '.';
+/** Dove campionare la sagoma (frazioni della cella): al centro, tranne le sagome cave: telaio (cornice piena, centro vuoto) , colonna crepata (crepa chiara nel centro) e grata (sbarre chiare, una al centro). */
+const PUNTO_SAGOMA = { telaio: [0.5, 0.12], colonna_crepata: [0.28, 0.5], grata: [0.395, 0.5] };
+const puntoSagoma = (id) => PUNTO_SAGOMA[id] ?? [0.5, 0.5];
 
 function portaLibera() {
   return new Promise((risolvi, rifiuta) => {
@@ -93,7 +97,7 @@ async function main() {
   try {
     browser = await chromium.launch();
 
-    await caso('vetrina: 14 modelli del piano 1 in fil di ferro, conteggi e tag di difficoltà, zero errori, ostacoli e pericoli in sagoma nera in scala di grigi; screenshot', async () => {
+    await caso('vetrina: 21 modelli dei piani 1-4 (Teatro) in fil di ferro, conteggi e tag di difficoltà, zero errori, ostacoli e pericoli in sagoma nera in scala di grigi; screenshot', async () => {
       const contesto = await browser.newContext({ viewport: { width: 1280, height: 900 } });
       const pagina = await contesto.newPage();
       const errori = [];
@@ -119,13 +123,13 @@ async function main() {
       const tagDifficolta = { 1: 'facile', 2: 'media', 3: 'dura', 4: 'durissima', 5: 'picco' };
       for (const m of stato.modelli) assert.ok(m.tag.includes(tagDifficolta[m.difficolta]), `${m.id}: tag di difficoltà`);
 
-      // ogni ostacolo e pericolo si legge in sagoma nera: centro scuro; il pavimento libero resta chiaro
+      // ogni ostacolo e pericolo si legge in sagoma nera: corpo scuro (centro, o la cornice per le sagome cave); il pavimento libero resta chiaro
       let sagome = 0;
       for (const m of stato.modelli) {
         // una stanza senza ostacoli (es. `piazza_aperta`) è legittima: il criterio riguarda gli ostacoli che ci sono
         const solidi = [...m.ostacoli, ...m.pericoli];
         for (const s of solidi) {
-          const lum = await pagina.evaluate(([id, c, r]) => window.__vetrina.luminanza(id, c, r), [m.id, s.c, s.r]);
+          const lum = await pagina.evaluate(([id, c, r, fx, fy]) => window.__vetrina.luminanza(id, c, r, fx, fy), [m.id, s.c, s.r, ...puntoSagoma(s.id)]);
           assert.ok(lum !== null && lum < LUMINANZA_SAGOMA_MAX, `${m.id}: ${s.id} in (${s.c}, ${s.r}) non è una sagoma nera (luminanza ${lum})`);
           sagome++;
         }
