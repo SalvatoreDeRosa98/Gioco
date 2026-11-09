@@ -106,6 +106,10 @@ const CASI = [
       if (s.f === 'morte' && caso.blocca && !bloccata) bloccata = await p.evaluate(() => window.__teatro.t4qa.bloccaMorte());
       if (s.f === 'morte' && s.m && s.m.f === 'fili' && !fotoFatta) { fotoFatta = true; messaggio = s.m; await p.screenshot({ path: foto(caso.id) }); }
       if (s.f === 'hub') break;
+      if (s.f === 'in_gioco' && caso.come === 'contatto') {
+        // a maschere piene servono più contatti: si torna addosso a un nemico vivo (anche se è fermo)
+        await p.evaluate(() => { const I = window.__teatro.interni; const n = I.statoRun.stanzaCorrente.nemici.find((x) => x.hp > 0); if (n) { I.player.x = n.x + 4; I.player.y = n.y; } });
+      }
       await p.waitForTimeout(100);
     }
     const ms = tMorte === null ? null : Date.now() - tMorte; // durata della sequenza, fino all'hub
