@@ -1063,12 +1063,13 @@ function disegnaNemicoPittorico() {
     ctx.fill();
 
   // =========================================================================
-  // 3. GATTO D'OMBRA (Isaac Hopper / Trite — Il Gatto dei Quattro Canti)
+  // 3. GATTO D'OMBRA / GATTO GRANDE (Isaac Hopper / Trite — Il Gatto dei Quattro Canti)
   // =========================================================================
   } else if (tipo === 'gatto') {
-    const isCrouch = state === 'crouch';
-    const isLeap = state === 'leap';
-    ctx.scale(flip, isCrouch ? 0.72 : 1.0);
+    const isCrouch = (n.crouchTicks > 0) || state === 'crouch';
+    const isLeap = (n.leapTimer > 0) || state === 'leap';
+    // Taglia Gatto Grande: scala proporzionata alla maestosita del burattino Ferruccio
+    ctx.scale(flip * 1.32, (isCrouch ? 0.62 : 1.0) * 1.32);
 
     // Corpo intagliato in legno d'ebano scuro con venature
     const catG = ctx.createLinearGradient(-10, -18, 12, 0);
@@ -1105,6 +1106,10 @@ function disegnaNemicoPittorico() {
     ctx.fillStyle = '#f9cb40';
     ctx.beginPath(); ctx.arc(-7, -7, 1.4, 0, TAU); ctx.fill();
 
+    // Perno zampa anteriore
+    ctx.fillStyle = '#f9cb40';
+    ctx.beginPath(); ctx.arc(4, -4, 1.2, 0, TAU); ctx.fill();
+
     // Muso felino sagomato con orecchie a punta erette
     ctx.beginPath();
     ctx.moveTo(5, -9);
@@ -1128,6 +1133,16 @@ function disegnaNemicoPittorico() {
     ctx.moveTo(13, -7); ctx.lineTo(19, -9);
     ctx.moveTo(13, -6); ctx.lineTo(19, -5);
     ctx.stroke();
+
+    // Artigli da balzo (attacco fisico senza proiettili)
+    if (isLeap) {
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(14, -1); ctx.lineTo(19, 2);
+      ctx.moveTo(13, 2); ctx.lineTo(17, 6);
+      ctx.stroke();
+    }
 
     // Occhi felini ardenti (oro magnetico, rosso fiammante se crouch/balzo)
     const colCatEye = (isCrouch || isLeap) ? '#ef4444' : '#fbbf24';

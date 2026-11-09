@@ -440,7 +440,7 @@ function popolaStanzaIsaac(s, piano) {
         hp: hpMax,
         maxHp: hpMax,
         speed: baseSpdMap[t] * moltVel * multSpdChamp,
-        r: t === 'statua' ? 13 : 11,
+        r: t === 'statua' ? 13 : t === 'gatto' ? 14 : 11,
         flash: 0,
         burnTicks: 0,
         stunTicks: 0,
