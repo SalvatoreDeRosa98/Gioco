@@ -386,6 +386,9 @@ export function creaCombattimento({
       }
     }
     s.miraForzata = null;
+    // --- squadra audio: inizio --- storia P10: il fendente della lama ha il suo evento (il sibilo); senza spada parte già `ferruccio.sparo`
+    if (haSpada()) eventi.emit('ferruccio.fendente', { x: ferruccio.x, y: ferruccio.y, direzione: { ...s.mira }, numero });
+    // --- squadra audio: fine ---
     vai('fendente', 'startup', numero > 1 ? 't_startup_combo' : 't_startup_f');
   }
 

@@ -1,0 +1,118 @@
+{
+  "_descrizione": "Storia P10: audio dinamico minimale con Web Audio API, nessun file audio. Ogni suono è sintetizzato da `motore/audio/sintesi.js` (oscillatori e rumore con inviluppi) e scelto da `motore/audio/eventi-audio.js` in base agli eventi del bus. Ogni voce è {base, min, max}: `volume` in [0, 1] (gain lineare), `freq_hz` e `freq_fine_hz` la frequenza iniziale e finale della rampa, `durata_ms`/`attacco_ms` l'inviluppo, `filtro_hz`/`filtro_fine_hz`/`q` il filtro del rumore, `gap_min_ms` il tempo minimo tra due ripetizioni dello stesso suono (anti-affollamento). Le forme d'onda (triangolo, quadra, seno…) stanno nelle ricette del codice perché non sono numeri. `master.volume` è il volume generale; il muto (tasto `muto` di input.json e interruttore del menu) non è un numero e vive nello stato del sintetizzatore.",
+  "master": {
+    "volume": { "base": 0.6, "min": 0, "max": 1 }
+  },
+  "rumore": {
+    "_nota": "il rumore bianco è generato una volta con il generatore seminato (mai il generatore casuale nativo): seme e lunghezza del buffer; l'impulso del riverbero sintetico è rumore con decadimento esponenziale",
+    "seme": { "base": 7, "min": 0, "max": 4294967295 },
+    "durata_buffer_ms": { "base": 1500, "min": 200, "max": 5000 },
+    "decadimento_riverbero": { "base": 4, "min": 1, "max": 12 }
+  },
+  "passi": {
+    "_nota": "cadenza dei passi delle marionette: un evento `attore.passo` ogni `lunghezza_px` percorsi (la cadenza segue la velocità), emesso da attori/passi.js",
+    "lunghezza_px": { "base": 26, "min": 6, "max": 200 },
+    "lunghezza_nemico_px": { "base": 34, "min": 6, "max": 200 }
+  },
+  "suoni": {
+    "passo": {
+      "_nota": "«toc» secco di noce/legno a ogni passo di Ferruccio: triangolo con rampa in giù + sbuffo di rumore passa-basso",
+      "freq_hz": { "base": 240, "min": 40, "max": 2000 },
+      "freq_fine_hz": { "base": 95, "min": 20, "max": 2000 },
+      "durata_ms": { "base": 55, "min": 10, "max": 500 },
+      "attacco_ms": { "base": 2, "min": 0, "max": 100 },
+      "volume": { "base": 0.35, "min": 0, "max": 1 },
+      "rumore_volume": { "base": 0.25, "min": 0, "max": 1 },
+      "filtro_hz": { "base": 1800, "min": 100, "max": 12000 },
+      "gap_min_ms": { "base": 60, "min": 0, "max": 1000 }
+    },
+    "passo_nemico": {
+      "_nota": "«toc» più basso e più lieve per i passi dei nemici",
+      "freq_hz": { "base": 160, "min": 40, "max": 2000 },
+      "freq_fine_hz": { "base": 70, "min": 20, "max": 2000 },
+      "durata_ms": { "base": 60, "min": 10, "max": 500 },
+      "attacco_ms": { "base": 2, "min": 0, "max": 100 },
+      "volume": { "base": 0.2, "min": 0, "max": 1 },
+      "rumore_volume": { "base": 0.15, "min": 0, "max": 1 },
+      "filtro_hz": { "base": 1200, "min": 100, "max": 12000 },
+      "gap_min_ms": { "base": 70, "min": 0, "max": 1000 }
+    },
+    "sibilo": {
+      "_nota": "sibilo metallico acuto quando si fende lo stocco (fendente, affondo) o parte una freccia: rumore passa-banda con rampa in su",
+      "durata_ms": { "base": 160, "min": 20, "max": 1000 },
+      "attacco_ms": { "base": 8, "min": 0, "max": 200 },
+      "volume": { "base": 0.3, "min": 0, "max": 1 },
+      "filtro_hz": { "base": 5200, "min": 200, "max": 16000 },
+      "filtro_fine_hz": { "base": 9000, "min": 200, "max": 16000 },
+      "q": { "base": 6, "min": 0.1, "max": 30 },
+      "gap_min_ms": { "base": 40, "min": 0, "max": 1000 }
+    },
+    "tonfo": {
+      "_nota": "tonfo profondo e riverberato sulle esplosioni (bomba ferma, impatti dei boss): rumore passa-basso con rampa in giù e convolver sintetico",
+      "durata_ms": { "base": 900, "min": 50, "max": 4000 },
+      "attacco_ms": { "base": 5, "min": 0, "max": 200 },
+      "volume": { "base": 0.8, "min": 0, "max": 1 },
+      "filtro_hz": { "base": 220, "min": 40, "max": 4000 },
+      "filtro_fine_hz": { "base": 60, "min": 20, "max": 4000 },
+      "riverbero_ms": { "base": 1200, "min": 100, "max": 5000 },
+      "riverbero_volume": { "base": 0.5, "min": 0, "max": 1 },
+      "gap_min_ms": { "base": 80, "min": 0, "max": 1000 }
+    },
+    "campana": {
+      "_nota": "rintocco sordo di campana quando si apre una porta / si entra in una stanza nuova: tre seni inarmonici (fondamentale, ×parziale_2, ×parziale_3) con decadimento lungo",
+      "freq_hz": { "base": 196, "min": 40, "max": 2000 },
+      "durata_ms": { "base": 1800, "min": 100, "max": 6000 },
+      "attacco_ms": { "base": 4, "min": 0, "max": 200 },
+      "volume": { "base": 0.4, "min": 0, "max": 1 },
+      "parziale_2": { "base": 2.37, "min": 1, "max": 8 },
+      "parziale_3": { "base": 4.12, "min": 1, "max": 12 },
+      "volume_parziali": { "base": 0.35, "min": 0, "max": 1 },
+      "gap_min_ms": { "base": 200, "min": 0, "max": 2000 }
+    },
+    "colpo_a_segno": {
+      "_nota": "colpo a segno su un nemico: quadra breve con rampa in giù",
+      "freq_hz": { "base": 660, "min": 40, "max": 4000 },
+      "freq_fine_hz": { "base": 330, "min": 20, "max": 4000 },
+      "durata_ms": { "base": 70, "min": 10, "max": 500 },
+      "attacco_ms": { "base": 2, "min": 0, "max": 100 },
+      "volume": { "base": 0.22, "min": 0, "max": 1 },
+      "gap_min_ms": { "base": 30, "min": 0, "max": 1000 }
+    },
+    "colpo_subito": {
+      "_nota": "colpo subito da Ferruccio: dente di sega grave con rampa in giù",
+      "freq_hz": { "base": 110, "min": 20, "max": 2000 },
+      "freq_fine_hz": { "base": 55, "min": 20, "max": 2000 },
+      "durata_ms": { "base": 260, "min": 10, "max": 1000 },
+      "attacco_ms": { "base": 3, "min": 0, "max": 100 },
+      "volume": { "base": 0.5, "min": 0, "max": 1 },
+      "gap_min_ms": { "base": 100, "min": 0, "max": 1000 }
+    },
+    "moneta": {
+      "_nota": "moneta raccolta: seno acuto con rampa in su",
+      "freq_hz": { "base": 1320, "min": 100, "max": 8000 },
+      "freq_fine_hz": { "base": 1980, "min": 100, "max": 8000 },
+      "durata_ms": { "base": 120, "min": 10, "max": 1000 },
+      "attacco_ms": { "base": 2, "min": 0, "max": 100 },
+      "volume": { "base": 0.18, "min": 0, "max": 1 },
+      "gap_min_ms": { "base": 40, "min": 0, "max": 1000 }
+    },
+    "porta_chiusa": {
+      "_nota": "porta che si chiude (stanza.chiusa): quadra molto grave con rampa in giù",
+      "freq_hz": { "base": 80, "min": 20, "max": 1000 },
+      "freq_fine_hz": { "base": 50, "min": 20, "max": 1000 },
+      "durata_ms": { "base": 220, "min": 10, "max": 1000 },
+      "attacco_ms": { "base": 3, "min": 0, "max": 100 },
+      "volume": { "base": 0.45, "min": 0, "max": 1 },
+      "gap_min_ms": { "base": 100, "min": 0, "max": 1000 }
+    },
+    "attivo": {
+      "_nota": "oggetto attivo usato (Q, evento attivo.usato): seno con rampa in su",
+      "freq_hz": { "base": 440, "min": 40, "max": 4000 },
+      "freq_fine_hz": { "base": 880, "min": 40, "max": 4000 },
+      "durata_ms": { "base": 180, "min": 10, "max": 1000 },
+      "attacco_ms": { "base": 5, "min": 0, "max": 100 },
+      "volume": { "base": 0.3, "min": 0, "max": 1 },
+      "gap_min_ms": { "base": 100, "min": 0, "max": 1000 }
+    }
+  }
+}

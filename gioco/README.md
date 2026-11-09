@@ -167,6 +167,14 @@ node gioco/qa/stati64.js                  # forza i 64 stati narrativi: nessun b
 node gioco/qa/statistiche.test.mjs        # storia P04 (node:test): ricalcolaStatisticheIsaac del Teatro (attori/statistiche.js) per i 4 personaggi
                                           # di personaggi.json e tre combinazioni di doni (blocco `teatro` di doni.json) e patti (patto.json), contro
                                           # valori calcolati a mano; applicazione ai modificatori
+node gioco/qa/audio.test.mjs              # storia P10 (node:test, AudioContext FINTO che registra i nodi): audio.json valido e mappa completa; senza
+                                          # AudioContext nessun errore; ogni evento → grafo di nodi atteso con i numeri del JSON (campana 3 seni
+                                          # inarmonici, toc triangolo + rumore passa-basso, sibilo passa-banda, tonfo passa-basso + convolver, toni);
+                                          # gap_min_ms, muto, contesto sospeso, passi dalla distanza (attori/passi.js), interruttore DOM finto, regole
+node gioco/qa/audio.wire.test.js          # Playwright della storia P10: AudioContext monkey-patchato con page.addInitScript (conta contesti e create*);
+                                          # menu: nessun contesto prima di un gesto, dopo un tasto running|suspended senza eccezioni, eventi del bus →
+                                          # nodi, M → muto con l'interruttore «Audio: spento (M)», click → acceso; piano 1: camminando partono gli
+                                          # attore.passo; salva production/qa/evidence/menu-audio.png
 ```
 
 > **Storia P03 (2026-11-08, riallineo delle suite al Teatro).** I test non fissano più i valori del GDD vecchio: prezzi,
@@ -186,8 +194,16 @@ gioco/
 │   ├── token.css               palette dell'art bible come variabili CSS (unico posto con i colori)
 │   ├── base.css                palco 16:9 senza scroll, canvas e interfaccia sovrapposti
 │   ├── prova.css               storia P02: pannello delle istruzioni iniziali di prova.html
-│   └── menu.css                storia P04: menu di selezione (sipario, quattro carte, slot, conferma di cancellazione)
+│   ├── menu.css                storia P04: menu di selezione (sipario, quattro carte, slot, conferma di cancellazione)
+│   └── audio.css               storia P10: interruttore del muto nell'angolo del palco (visibile nel menu)
 ├── motore/
+│   ├── audio/                  storia P10: audio dinamico minimale (Web Audio API, nessun file audio). Lo stato di gioco non lo conosce: solo eventi
+│   │   ├── sintesi.js          ricette di suoni (oscillatori e rumore seminato con inviluppi, convolver sintetico) con i numeri di audio.json;
+│   │   │                       AudioContext creato/ripreso al primo gesto (`collega`), master gain, muto, fabbrica iniettabile; senza Web Audio
+│   │   │                       degrada in silenzio
+│   │   └── eventi-audio.js     MAPPA_EVENTI: attore.passo → toc, ferruccio.fendente/affondo/sparo → sibilo, esplosione/bomba.esplosione/colpo di
+│   │                           un boss → tonfo, stanza.entrata → campana, ferruccio.colpo, ferruccio.danno, economia.monete (+), stanza.chiusa,
+│   │                           attivo.usato; anti-affollamento `gap_min_ms`
 │   ├── avvio.js                radice di composizione: carica i parametri, collega input e ciclo,
 │   │                           compone campo + Ferruccio + combattimento + fantocci, renderer
 │   │                           SEGNAPOSTO (sostituito dalla storia 005) o debug wire, window.__gioco
@@ -240,8 +256,9 @@ gioco/
 │   │   ├── morte.js            storia 030: velo DOM della sequenza di morte (dissolvenza, lanterne, fili, maschera, didascalie)
 │   │   ├── ripresa.js          storia 030: pannello DOM «Continua / Lascia andare» della notte salvata (nell'hub)
 │   │   ├── prova.js            storia P02: pannello DOM dei tasti di prova.html (sparisce al primo tasto o click)
-│   │   └── menu.js             storia P04: menu DOM di selezione del personaggio e dello slot (Teatro ~4042): `apri()` → Promise
-│   │                           {personaggio, slot}; non conosce il ciclo, avvio.js applica la scelta
+│   │   ├── menu.js             storia P04: menu DOM di selezione del personaggio e dello slot (Teatro ~4042): `apri()` → Promise
+│   │   │                       {personaggio, slot}; non conosce il ciclo, avvio.js applica la scelta
+│   │   └── audio.js            storia P10: interruttore DOM del muto «Audio: acceso/spento (M)» (testi `interfaccia.json › audio`), visibile nel menu
 │   ├── mondo/
 │   │   ├── fisica.js           campo a griglia con mura/ostacoli, cerchio contro rettangoli con
 │   │   │                       scivolamento, settore e rettangolo spazzato contro cerchi, linea di
@@ -273,6 +290,9 @@ gioco/
 │   │   │                       piano (F1-F3), corpo, separazione (§8.5), contratto del combattimento, hitbox
 │   │   │                       del Colpo via comeBersaglio, morte → anima (dissoluzione) e bottino (storia 019);
 │   │   │                       hitbox da hit_dal, segno a terra, gancio posa (storia 020)
+│   │   ├── passi.js            storia P10: passi delle marionette: un `attore.passo` {id, tipo, x, y} ogni `audio.passi.lunghezza_px`
+│   │   │                       percorsi da Ferruccio (e `lunghezza_nemico_px` dai bersagli): la cadenza segue la velocità; niente da
+│   │   │                       fermo, da morto o dopo un salto di posizione
 │   │   ├── effetti-doni.js     storia 024: collegaGanci (eventi ferruccio.*/stanza.* → ganci) e collegaEffettiDoni
 │   │   │                       (doni.scintilla/catena/onda/cura/ricarica_scatto eseguiti su bersagli, proiettili, Ferruccio)
 │   │   ├── gatto.js            gatto d'ombra (storia 020): posaGatto pura dai fattori nemici.archetipi.gatto.posa
@@ -309,6 +329,9 @@ gioco/
 │   ├── oggetti-attivi.json     storia P04 (Teatro OGGETTI_ATTIVI ~2381): Forbici, Tamburello, Ampolla: maxCarica ed effetti {base,min,max}
 │   ├── patto.json              storia P04 (Teatro CATALOGO_PATTO ~2397): le reliquie del Patto d'Ombra, costo in mezze maschere e `mod`
 │   ├── boss.json               storia P04 (Teatro POOL_BOSS/BOSS_FINALE ~2515): pool dei boss dei piani 1-3 e Donna Luciana al piano 4
+│   ├── audio.json              storia P10: master.volume, rumore (seme, buffer, decadimento del riverbero), passi (lunghezza_px), e per ogni suono
+│   │                           (passo, passo_nemico, sibilo, tonfo, campana, colpo_a_segno, colpo_subito, moneta, porta_chiusa, attivo) frequenze,
+│   │                           durate, inviluppi, filtri, volume e gap_min_ms, tutti {base,min,max}
 │   └── moto-ridotto.json       sovrascritture applicate con prefers-reduced-motion
 ├── contenuti/interfaccia.json  testi di HUD, banchetto, doni, cartiglio, hub e menu (unico posto con le stringhe mostrate; storie 024-025, 027 `incontri`, 029 `hub`, P04 `menu`)
 ├── contenuti/storia.json       la storia in forma macchina (copia di trama/storia.json; storia 026)
@@ -343,6 +366,8 @@ gioco/
     ├── boss.wire.test.js            test Playwright della storia P01 (stanza boss, Medaglione, uscita, velo di vittoria, screenshot)
     ├── prova.test.mjs               test della storia P02 (parametri di avvio dalla meta)
     ├── prova.wire.test.js           test Playwright della storia P02 (prova.html, pannello dei tasti, screenshot)
+    ├── audio.test.mjs               test della storia P10 (AudioContext finto: mappa evento → nodi con i numeri di audio.json, muto, passi, interruttore)
+    ├── audio.wire.test.js           test Playwright della storia P10 (AudioContext monkey-patchato: contesto dopo un gesto, nodi per evento, M, screenshot)
     └── combattimento.wire.test.js   test Playwright del modo wire
 ```
 
