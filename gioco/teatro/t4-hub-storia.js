@@ -1312,6 +1312,10 @@
   // GANCI CHIAMATI DAL FILE PRINCIPALE
   // ===========================================================================
   const AVANZA = ['Space', 'KeyE', 'Enter'];
+  /** Un cartiglio resta nella fase in cui è nato: cambiata la fase, si chiude senza esito. */
+  function chiudiDialogoOrfano() {
+    if (S.dialogo && S.dialogo.fase !== statoRun.fase) S.dialogo = null;
+  }
   const t4 = {
     avvio() {
       S.flag = caricaFlag();
@@ -1322,6 +1326,10 @@
       return true;
     },
     tasto(e) {
+      // (bug autore «non è partito nell'hub») Un cartiglio rimasto aperto quando il menu ESC porta al menu
+      // personaggi si mangiava Spazio/Invio/click del menu: nel menu il T4 non intercetta nulla.
+      chiudiDialogoOrfano();
+      if (statoRun.fase === 'menu_selezione') return false;
       // Il menu ESC dell'autore ha la precedenza: Esc lo apre/chiude (in run e nell'hub), e da aperto
       // riceve tutti i tasti. Durante la sequenza di morte niente menu.
       if (statoRun.fase === 'morte') return true;
@@ -1345,6 +1353,8 @@
       return false;
     },
     click(mx, my) {
+      chiudiDialogoOrfano();
+      if (statoRun.fase === 'menu_selezione') return false;
       if (S.dialogo) {
         const d = S.dialogo;
         if (d.inScelta) {
@@ -1402,6 +1412,18 @@
       return false;
     },
     morte(fonte) { return avviaMorte(fonte); },
+    /** «Ricomincia notte» (menu ESC, tasto R, pulsante): la notte successiva comincia in Piazza Dante. */
+    ricomincia() {
+      if (statoRun.fase === 'menu_selezione' || statoRun.fase === 'morte') return false;
+      statoRun.pausa = false;
+      S.morte = null;
+      statoRun.numeroNotte = typeof I.incrementaNumeroNotte === 'function'
+        ? I.incrementaNumeroNotte() : (statoRun.numeroNotte || 1) + 1;
+      S.nuoviStanotte = {};
+      salvaFlag();
+      entraHub('menu');
+      return true;
+    },
     bossSconfitto(st) {
       const b = st.nemici.find((n) => n.boss) || st.nemici[0];
       if (!b) return false;

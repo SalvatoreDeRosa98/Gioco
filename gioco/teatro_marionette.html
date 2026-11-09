@@ -2623,7 +2623,17 @@ function disegnaManoMarionettaPittorica() {
   // - Economia stile Isaac: parti da 0🪙, i mostri normali non regalano piogge di monete,
   //   devi risparmiare e cercare la Stanza Segreta per comprare gli oggetti forti (15-18🪙) ne La Fucina!
   // ===========================================================================
-  const STANZE_PER_PIANO_CICLO = { 1: 5, 2: 7, 3: 8, 4: 9 };
+  // (bug autore «il generatore di stanze è sbagliato») Stanze di COMBATTIMENTO per piano del ciclo, come
+  // in Isaac; ingresso, tesoro, fucina, boss, segreta e patto sono in aggiunta. Prima il piano 1 ne aveva una.
+  const STANZE_COMBATTIMENTO_PER_PIANO = { 1: 6, 2: 7, 3: 8, 4: 9 };
+  /** Forma della mappa (generaMappaPiano). Celle della griglia 1..larghezza × 1..altezza (minimappa 7×6). */
+  const MAPPA_PIANO = Object.freeze({
+    larghezza: 7, altezza: 6,
+    catenaMin: 4,            // stanze di combattimento minime fra ingresso e boss
+    catenaExtraMax: 2,       // la catena principale ne ha da catenaMin a catenaMin + catenaExtraMax (resto in rami)
+    proseguiRamo: 0.45,      // probabilità che un ramo prosegua dall'ultima stanza aggiunta (corridoi laterali)
+    tentativi: 400,
+  });
 
   // --- PROPOSTA 3: ROSTER DI 4 PERSONAGGI GIOCABILI STILE THE BINDING OF ISAAC ---
   const PERSONAGGI_GIOCABILI = {
@@ -2838,7 +2848,7 @@ function disegnaManoMarionettaPittorica() {
     const pInfo = PERSONAGGI_GIOCABILI[statoRun.personaggioId] || PERSONAGGI_GIOCABILI.ferruccio;
     if (ciclo > 1 && pianoNelCiclo === 1) {
       return {
-        atto: `CICLO INFINITO ${ciclo} · ATTO I (PIANO ${piano} · 5 STANZE + SEGRETA)`,
+        atto: `CICLO INFINITO ${ciclo} · ATTO I (PIANO ${piano} · ${numeroStanzeCombattimento(piano)} STANZE DI COMBATTIMENTO + SEGRETA)`,
         titolo: '«BIS! I FILI SOPRA LA BURATTINAIA»',
         testo1: 'Spezzando Donna Luciana hai scoperto l\'inganno: anche ai suoi polsi erano legati fili d\'oro',
         testo2: 'che salgono ancora più in alto nel buio del Teatro! Una voce invisibile grida: «BIS! DA CAPO!»',
@@ -2857,7 +2867,7 @@ function disegnaManoMarionettaPittorica() {
     }
     if (pianoNelCiclo === 2) {
       return {
-        atto: `ATTO II · CORSO TRIESTE E LE OFFICINE (PIANO ${piano} · 7 STANZE + 1 SEGRETA)`,
+        atto: `ATTO II · CORSO TRIESTE E LE OFFICINE (PIANO ${piano} · ${numeroStanzeCombattimento(piano)} STANZE DI COMBATTIMENTO + 1 SEGRETA)`,
         titolo: '«IL SORRISO DI TONINO E IL TRADIMENTO DI TADDEO»',
         testo1: 'Sotto il Velo, Tonino ride davanti alla sedia vuota della moglie Rosa senza ricordare il suo nome.',
         testo2: 'Il tuo amico Taddeo ti ha consegnato alla Burattinaia per guarire le paure della sorella Mariella.',
@@ -2868,7 +2878,7 @@ function disegnaManoMarionettaPittorica() {
     }
     if (pianoNelCiclo === 3) {
       return {
-        atto: `ATTO III · BELVEDERE DI SAN LEUCIO (PIANO ${piano} · 8 STANZE + 1 SEGRETA)`,
+        atto: `ATTO III · BELVEDERE DI SAN LEUCIO (PIANO ${piano} · ${numeroStanzeCombattimento(piano)} STANZE DI COMBATTIMENTO + 1 SEGRETA)`,
         titolo: '«LA SCIARPA ROSSA DI AGNESE»',
         testo1: 'Ai telai reali di San Leucio, Agnese continua a tessere una sciarpa rossa senza ricordare il tuo volto.',
         testo2: 'Da questo piano il Velo stringe più forte: ogni colpo subito spezza 1 Maschera intera (come in Isaac!).',
@@ -2876,9 +2886,9 @@ function disegnaManoMarionettaPittorica() {
       };
     }
     return {
-      atto: `ATTO IV · IL TRONO DEL VELO (PIANO ${piano} · 9 STANZE + 1 SEGRETA)`,
+      atto: `ATTO IV · IL TRONO DEL VELO (PIANO ${piano} · ${numeroStanzeCombattimento(piano)} STANZE DI COMBATTIMENTO + 1 SEGRETA)`,
       titolo: ciclo > 1 ? `«DONNA LUCIANA ASCESA (CICLO ${ciclo})»` : '«QUANTO VALE LA FELICITÀ?»',
-      testo1: 'Nelle 9 stanze finali, le Grandi Mani di Marionetta caleranno dal cielo per diventare Donna Luciana.',
+      testo1: `Nelle ${numeroStanzeCombattimento(piano)} stanze finali, le Grandi Mani di Marionetta caleranno dal cielo per diventare Donna Luciana.`,
       testo2: 'Spezzarle restituirà a Caserta il dolore, il lutto e la libertà... o svelerà chi tira davvero i suoi fili.',
       testo3: 'Fai gli ultimi acquisti ne La Fucina prima di varcare la porta del Boss Finale!',
     };
@@ -3219,8 +3229,7 @@ function disegnaManoMarionettaPittorica() {
 
     if (statoRun.pausa) {
       if (e.code === 'KeyR') {
-        statoRun.pausa = false;
-        nuovaRun(true);
+        ricominciaNotte();
       } else if (e.code === 'KeyM') {
         AudioSys.toggle();
       } else if (['Space', 'Enter'].includes(e.code)) {
@@ -3455,14 +3464,22 @@ function disegnaManoMarionettaPittorica() {
     mostraBanner('🔓 PASSAGGIO SEGRETO APERTO! Entra nella Stanza Segreta (?) coi Mob d\'Oro per fare soldi!', 220);
   }
 
-  function numeroStanzeDelPiano(piano) {
+  /** Stanze di combattimento del piano (STANZE_COMBATTIMENTO_PER_PIANO, per piano del ciclo). */
+  function numeroStanzeCombattimento(piano) {
     const pianoNelCiclo = ((piano - 1) % 4) + 1;
-    return STANZE_PER_PIANO_CICLO[pianoNelCiclo] || 5;
+    return STANZE_COMBATTIMENTO_PER_PIANO[pianoNelCiclo] || 6;
   }
 
+  /**
+   * Mappa del piano alla maniera di Isaac: catena principale ingresso → ≥ MAPPA_PIANO.catenaMin stanze di
+   * combattimento → boss, poi rami laterali con le altre stanze di combattimento, tesoro e fucina in fondo
+   * a un ramo, segreta dietro un muro, patto fuori griglia. Ogni stanza nuova tocca una sola stanza
+   * esistente (regola di Isaac: niente anelli, vicoli ciechi veri). I vincoli sono verificati prima di
+   * accettare la mappa (tools/qa-teatro-generatore.js li controlla su 200 semi).
+   */
   function generaMappaPiano(piano) {
-    const nTotale = numeroStanzeDelPiano(piano);
-    const nNormali = nTotale - 4;
+    const nCombattimento = numeroStanzeCombattimento(piano);
+    const G = MAPPA_PIANO;
     const dirs = [
       { lato: 'N', opposto: 'S', dx: 0, dy: -1 },
       { lato: 'E', opposto: 'W', dx: 1, dy: 0 },
@@ -3470,7 +3487,7 @@ function disegnaManoMarionettaPittorica() {
       { lato: 'W', opposto: 'E', dx: -1, dy: 0 },
     ];
 
-    for (let tentativo = 0; tentativo < 100; tentativo++) {
+    for (let tentativo = 0; tentativo < G.tentativi; tentativo++) {
       const griglia = new Map();
       const stanze = [];
       const key = (x, y) => `${x},${y}`;
@@ -3501,67 +3518,84 @@ function disegnaManoMarionettaPittorica() {
         a.porte[d.lato] = b.id;
         b.porte[d.opposto] = a.id;
       };
+      const dentro = (x, y) => x >= 1 && x <= G.larghezza && y >= 1 && y <= G.altezza;
+      const nVicini = (x, y) => dirs.filter((d) => griglia.has(key(x + d.dx, y + d.dy))).length;
+      /** Una cella libera accanto a `da` che tocca solo `da`; null se non c'è. */
+      const cellaLibera = (da, evitaBoss = false) => {
+        for (const d of shuffle(dirs)) {
+          const nx = da.cx + d.dx, ny = da.cy + d.dy;
+          if (!dentro(nx, ny) || griglia.has(key(nx, ny)) || nVicini(nx, ny) !== 1) continue;
+          if (evitaBoss && dirs.some((d2) => griglia.get(key(nx + d2.dx, ny + d2.dy))?.tipo === 'boss')) continue;
+          return { nx, ny, d };
+        }
+        return null;
+      };
 
-      const ingresso = aggiungi('ingresso', 4, 3);
+      const ingresso = aggiungi('ingresso', Math.ceil(G.larghezza / 2), Math.ceil(G.altezza / 2));
+      // 1. Catena principale
+      const lungCatena = Math.min(nCombattimento - 1,
+        G.catenaMin + Math.floor(rng() * (G.catenaExtraMax + 1)) + Math.floor((nCombattimento - 6) / 2));
       let curr = ingresso;
       let ok = true;
-      for (let i = 0; i < nNormali; i++) {
-        const libere = shuffle(dirs).filter((d) => {
-          const nx = curr.cx + d.dx, ny = curr.cy + d.dy;
-          return nx >= 1 && nx <= 7 && ny >= 1 && ny <= 6 && !griglia.has(key(nx, ny));
-        });
-        if (!libere.length) { ok = false; break; }
-        const d = libere[0];
-        const nuova = aggiungi('normale', curr.cx + d.dx, curr.cy + d.dy);
-        collega(curr, nuova, d);
-        if (rng() < 0.75) curr = nuova;
+      const catena = [];
+      for (let i = 0; i < lungCatena; i++) {
+        const c = cellaLibera(curr);
+        if (!c) { ok = false; break; }
+        const nuova = aggiungi('normale', c.nx, c.ny);
+        collega(curr, nuova, c.d);
+        catena.push(nuova);
+        curr = nuova;
       }
       if (!ok) continue;
-
-      const normali = stanze.filter((s) => s.tipo === 'normale');
-      let bossOk = false;
-      for (const cand of shuffle(normali).reverse()) {
-        for (const d of shuffle(dirs)) {
-          const nx = cand.cx + d.dx, ny = cand.cy + d.dy;
-          if (nx < 1 || nx > 7 || ny < 1 || ny > 6 || griglia.has(key(nx, ny))) continue;
-          if (Math.abs(nx - ingresso.cx) + Math.abs(ny - ingresso.cy) <= 1) continue;
-          const vicini = dirs.filter((d2) => griglia.has(key(nx + d2.dx, ny + d2.dy)));
-          if (vicini.length !== 1) continue;
-          const bossRoom = aggiungi('boss', nx, ny);
-          collega(cand, bossRoom, d);
-          bossOk = true;
+      // 2. Boss in fondo alla catena
+      const cb = cellaLibera(curr);
+      if (!cb) continue;
+      const bossRoom = aggiungi('boss', cb.nx, cb.ny);
+      collega(curr, bossRoom, cb.d);
+      // 3. Rami: le altre stanze di combattimento, attaccate alla catena (non al boss) o a un ramo
+      let ultimoRamo = null;
+      for (let i = lungCatena; i < nCombattimento && ok; i++) {
+        let posto = false;
+        const genitori = ultimoRamo && rng() < G.proseguiRamo
+          ? [ultimoRamo, ...shuffle([ingresso, ...stanze.filter((x) => x.tipo === 'normale')])]
+          : shuffle([...catena, ...stanze.filter((x) => x.tipo === 'normale' && !catena.includes(x)), ingresso]);
+        for (const g of genitori) {
+          const c = cellaLibera(g, true);
+          if (!c) continue;
+          const nuova = aggiungi('normale', c.nx, c.ny);
+          collega(g, nuova, c.d);
+          ultimoRamo = nuova;
+          posto = true;
           break;
         }
-        if (bossOk) break;
+        if (!posto) ok = false;
       }
-      if (!bossOk) continue;
-
+      if (!ok) continue;
+      // 4. Tesoro e fucina in fondo a un ramo (vicolo cieco), mai attaccati al boss
       for (const tipoSpec of ['tesoro', 'fucina']) {
         let pos = false;
-        const genitori = shuffle(stanze.filter((s) => s.tipo === 'normale' || s.tipo === 'ingresso'));
-        for (const g of genitori) {
-          for (const d of shuffle(dirs)) {
-            const nx = g.cx + d.dx, ny = g.cy + d.dy;
-            if (nx < 1 || nx > 7 || ny < 1 || ny > 6 || griglia.has(key(nx, ny))) continue;
-            const vicini = dirs.filter((d2) => griglia.has(key(nx + d2.dx, ny + d2.dy)));
-            if (vicini.length !== 1) continue;
-            const spec = aggiungi(tipoSpec, nx, ny);
-            collega(g, spec, d);
-            pos = true;
-            break;
-          }
-          if (pos) break;
+        for (const g of shuffle(stanze.filter((x) => x.tipo === 'normale' || x.tipo === 'ingresso'))) {
+          const c = cellaLibera(g, true);
+          if (!c) continue;
+          const spec = aggiungi(tipoSpec, c.nx, c.ny);
+          collega(g, spec, c.d);
+          pos = true;
+          break;
         }
         if (!pos) { ok = false; break; }
       }
-      if (!ok || stanze.length !== nTotale) continue;
+      if (!ok) continue;
+      // Vincoli: numero di stanze di combattimento, catena ≥ catenaMin, almeno un bivio fuori dall'ingresso
+      if (stanze.filter((x) => x.tipo === 'normale').length !== nCombattimento) continue;
+      if (catena.length < G.catenaMin) continue;
+      if (!stanze.some((x) => x.tipo === 'normale' && Object.keys(x.porte).length >= 3)) continue;
 
       let segretaOk = false;
       const candidatiSegreta = shuffle(stanze.filter((s) => s.tipo === 'normale' || s.tipo === 'ingresso'));
       for (const g of candidatiSegreta) {
         for (const d of shuffle(dirs)) {
           const nx = g.cx + d.dx, ny = g.cy + d.dy;
-          if (nx < 1 || nx > 7 || ny < 1 || ny > 6 || griglia.has(key(nx, ny))) continue;
+          if (!dentro(nx, ny) || griglia.has(key(nx, ny))) continue;
           const confBoss = dirs.some((d2) => griglia.get(key(nx + d2.dx, ny + d2.dy))?.tipo === 'boss');
           if (confBoss) continue;
           const stanzaSegreta = aggiungi('segreta', nx, ny);
@@ -3824,6 +3858,11 @@ function disegnaManoMarionettaPittorica() {
       statoRun.bossOrdine = shuffle(POOL_BOSS);
     }
     statoRun.mappa = generaMappaPiano(piano);
+    // rete di sicurezza: con un seme sfortunato si ritenta con un seme nuovo (mai una mappa nulla)
+    for (let k = 0; !statoRun.mappa && k < 20; k++) {
+      runSeed = (runSeed ^ (0x9E3779B9 * (k + 1))) >>> 0;
+      statoRun.mappa = generaMappaPiano(piano);
+    }
     const ing = statoRun.mappa.stanze.find((s) => s.tipo === 'ingresso');
     entraInStanza(ing, null);
     aggiornaBottoniPiano();
@@ -3852,6 +3891,19 @@ function disegnaManoMarionettaPittorica() {
     // --- T4: fine ---
     statoRun.fase = 'in_gioco';
     nuovaRun(false);
+  }
+
+  /**
+   * «Ricomincia notte» (menu ESC: tasto R o pulsante). Con il T4 la notte nuova comincia nell'hub di
+   * Piazza Dante (bug autore: si ripartiva direttamente nel piano); senza T4 il ramo dell'autore.
+   */
+  function ricominciaNotte() {
+    statoRun.pausa = false;
+    // --- T4: inizio ---
+    if (t4Gancio('ricomincia')) return;
+    // --- T4: fine ---
+    statoRun.fase = 'in_gioco';
+    nuovaRun(true);
   }
 
   function nuovaRun(incrementaNotte = false) {
@@ -4430,11 +4482,11 @@ function disegnaManoMarionettaPittorica() {
     if (el) el.addEventListener('click', fn);
   }
   bLeg('btn-menu-char', () => { statoRun.fase = 'menu_selezione'; statoRun.siparioAttivo = null; });
-  bLeg('btn-new-run', () => { statoRun.fase = 'in_gioco'; nuovaRun(true); });
+  bLeg('btn-new-run', () => ricominciaNotte());
   for (const charId of ['ferruccio', 'agnese', 'taddeo', 'ombra']) {
     bLeg(`btn-char-${charId}`, () => {
       selezionaPersonaggio(charId);
-      if (statoRun.fase === 'in_gioco') nuovaRun(false);
+      if (statoRun.fase === 'in_gioco') avviaPartitaConPersonaggio(charId); // (T4) passa dall'hub
     });
   }
   for (let p = 1; p <= 4; p++) bLeg(`btn-p${p}`, () => avviaPiano(p, true));
@@ -5996,8 +6048,10 @@ function disegnaManoMarionettaPittorica() {
       ctx.fillRect(bx, by, Math.round(bw * Math.max(0, boss.hp / boss.maxHp)), 8);
       ctx.restore();
     } else {
+      // (bug autore) il totale conta le stanze della mappa, non la segreta né il patto finché non le trovi
+      const nascosta = (s) => (s.tipo === 'segreta' || s.tipo === 'patto') && !s.visitata;
       const nVisitate = statoRun.mappa ? statoRun.mappa.stanze.filter((s) => s.visitata).length : 1;
-      const nTot = statoRun.mappa ? statoRun.mappa.stanze.length : 6;
+      const nTot = statoRun.mappa ? statoRun.mappa.stanze.filter((s) => !nascosta(s)).length : 1;
       drawPillLabel(
         `PIANO ${statoRun.piano} (CICLO ${statoRun.ciclo}) · STANZE ${nVisitate}/${nTot}`,
         W / 2,
@@ -6022,8 +6076,9 @@ function disegnaManoMarionettaPittorica() {
       ctx.clip();
 
       const scoperte = m.stanze.filter((s) => s.visitata).length;
+      const totMappa = m.stanze.filter((s) => !((s.tipo === 'segreta' || s.tipo === 'patto') && !s.visitata)).length;
       drawTextFit(
-        `MAPPA (${scoperte}/${m.stanze.length})`,
+        `MAPPA (${scoperte}/${totMappa})`,
         x0 - 6 + mw / 2,
         y0 - 5,
         mw - 8,
@@ -6316,8 +6371,7 @@ function disegnaManoMarionettaPittorica() {
     }
     // 4. Ricomincia Notte (y: my0 + 162)
     if (mx >= bx && mx <= bx + btnW && my >= my0 + 162 && my <= my0 + 162 + btnH) {
-      statoRun.pausa = false;
-      nuovaRun(true);
+      ricominciaNotte();
       return true;
     }
     // 5. Menù Personaggi (y: my0 + 196)
@@ -6419,6 +6473,21 @@ function disegnaManoMarionettaPittorica() {
       selezionaPersonaggio, nuovaRun, mostraBanner, scuoti, rng,
       // (T4) un solo contatore delle notti, quello dell'autore; menu ESC dell'autore disegnato anche nell'hub
       getNumeroNotte, incrementaNumeroNotte, disegnaMenuPausa,
+      // (QA generatore) mappa di un piano con un seme dato; non tocca la run in corso
+      mappaConSeme(piano, seme) {
+        const salvato = runSeed;
+        const salvatiPool = [statoRun.poolOggettiBase, statoRun.poolOggettiForti, statoRun.poolPatto, statoRun.bossOrdine];
+        runSeed = seme >>> 0;
+        if (!statoRun.bossOrdine || !statoRun.bossOrdine.length) statoRun.bossOrdine = POOL_BOSS.slice();
+        statoRun.poolOggettiBase = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'base'));
+        statoRun.poolOggettiForti = shuffle(CATALOGO_OGGETTI.filter((x) => x.tier === 'forte'));
+        statoRun.poolPatto = shuffle(CATALOGO_PATTO);
+        try { return generaMappaPiano(piano); } finally {
+          runSeed = salvato;
+          [statoRun.poolOggettiBase, statoRun.poolOggettiForti, statoRun.poolPatto, statoRun.bossOrdine] = salvatiPool;
+        }
+      },
+      MAPPA_PIANO, STANZE_COMBATTIMENTO_PER_PIANO,
     }),
   });
   adattaRisoluzione(); // (T5) primo dimensionamento del buffer

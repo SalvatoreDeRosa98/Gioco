@@ -7,7 +7,8 @@
  * I NUMERI non sono copiati: si leggono dal blocco `const ECONOMIA_T3 = {...}` di gioco/teatro_marionette.html.
  * La STRUTTURA (quante stanze, quanti nemici, probabilità dei campioni, chi lascia monete e quando) riproduce
  * generaMappaPiano / popolaStanzaIsaac / danneggiaNemico / verificaStanzaPulita / spawnaMonetaATerra del file:
- *   - Piano 1: 5 stanze (ingresso, 1 normale, tesoro, fucina, boss) + 1 segreta + patto.
+ *   - Piano 1: ingresso, STANZE_COMBATTIMENTO_PER_PIANO[1] stanze normali (letto dal file), tesoro, fucina,
+ *     boss + 1 segreta + patto. (Fino al bug autore del generatore le normali erano 1.)
  *   - Stanza normale: 3 + floor(rng*2) nemici; ognuno è campione al 20%, e il campione è dorato al 33%.
  *     Il dorato morendo lascia 1 moneta (da 3 con prob3) e una seconda da 1 con probExtra.
  *   - Pulizia della stanza normale: una moneta da 1 con probMoneta.
@@ -35,6 +36,13 @@ function leggiEconomia(file) {
   return Function(`"use strict"; return (${m[1]});`)();
 }
 
+/** Stanze di combattimento del Piano 1 dalla tabella STANZE_COMBATTIMENTO_PER_PIANO del gioco. */
+const STANZE_PIANO1 = (() => {
+  const m = fs.readFileSync(FILE_GIOCO, 'utf8').match(/const STANZE_COMBATTIMENTO_PER_PIANO = \{\s*1:\s*(\d+)/);
+  if (!m) throw new Error('STANZE_COMBATTIMENTO_PER_PIANO non trovato');
+  return Number(m[1]);
+})();
+
 /** Stesso generatore del gioco (rng() di teatro_marionette.html), con seme esplicito per il determinismo. */
 function creaRng(seme) {
   let s = seme | 0;
@@ -59,8 +67,8 @@ function simulaPiano1(E, rng) {
     if (rng() < E.dorato.probExtra) moneta(dove, 1);
   };
 
-  // Stanze normali: numeroStanzeDelPiano(1) - 4 = 1
-  const nNormali = 1;
+  // Stanze di combattimento del Piano 1: STANZE_COMBATTIMENTO_PER_PIANO[1] letta dal file del gioco
+  const nNormali = STANZE_PIANO1;
   for (let r = 0; r < nNormali; r++) {
     const nNem = 3 + Math.floor(rng() * 2) + Math.min(3, Math.floor(1 * 0.5));
     for (let i = 0; i < nNem; i++) {
