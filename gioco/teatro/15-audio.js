@@ -42,6 +42,7 @@ const AudioSys = (() => {
   return {
     get attivo() { return abilitato; },
     set attivo(v) { abilitato = Boolean(v); },
+    get ctx() { return audioCtx; }, // (8) contesto condiviso con la musica (a8-musica.js); null prima del primo gesto
     toggle() {
       abilitato = !abilitato;
       if (abilitato) getCtx();
