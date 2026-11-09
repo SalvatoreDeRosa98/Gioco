@@ -559,7 +559,7 @@
   // ===========================================================================
   const FLAG_VUOTI = () => ({
     tonino_ricordo: null, lettera_agnese: null, taddeo: null, agnese: null, registro: null, fucina_aperta: null,
-    viste: [], notte: 1, morti: 0, piano_max: 1,
+    viste: [], morti: 0, piano_max: 1,
     medaglione_in_mano: false, rivelazione_vista: false, luciana_sconfitta: false,
   });
   function caricaFlag() {
@@ -570,10 +570,21 @@
     } catch (err) { console.warn('[T4] flag illeggibili, si riparte puliti', err); }
     const f = Object.assign(FLAG_VUOTI(), dati && typeof dati === 'object' ? dati : {});
     if (!Array.isArray(f.viste)) f.viste = [];
+    delete f.notte; // vecchi salvataggi: la notte non è un flag, la conta il file principale
     return f;
+  }
+  /**
+   * Notte corrente: un solo contatore, quello del file principale (getNumeroNotte, localStorage
+   * 'ferruccio_notte', lo stesso delle notti progressive e del menu ESC). T4 lo legge e alla morte lo
+   * fa avanzare con incrementaNumeroNotte(); non ne tiene una copia nei flag.
+   */
+  function notteCorrente() {
+    if (typeof I.getNumeroNotte === 'function') return I.getNumeroNotte();
+    return statoRun.numeroNotte || 1;
   }
   function salvaFlag() {
     const copia = JSON.parse(JSON.stringify(S.flag));
+    delete copia.notte;
     try {
       if (typeof T.salvaFlag === 'function') T.salvaFlag(copia);
       else localStorage.setItem(CONFIG.chiaveFlag, JSON.stringify(copia));
@@ -583,7 +594,7 @@
   /** Condizione con la sintassi delle scene: '' = non deciso, '*' = deciso, altrimenti uguaglianza. */
   function valuta(quando, f) {
     for (const [k, v] of Object.entries(quando || {})) {
-      const att = f[k];
+      const att = k === 'notte' ? notteCorrente() : f[k];
       if (v === '') { if (att !== null && att !== undefined) return false; }
       else if (v === '*') { if (att === null || att === undefined) return false; }
       else if (att !== v) return false;
@@ -612,7 +623,7 @@
   // ===========================================================================
   function apriDialogo(voci, { scene = [], scelta = null, poi = null } = {}) {
     if (!voci.length && !scelta) { segnaViste(scene); if (poi) poi(); return; }
-    S.dialogo = { voci, idx: 0, scelta, sel: 0, scene, poi, inScelta: !voci.length && Boolean(scelta) };
+    S.dialogo = { voci, idx: 0, scelta, sel: 0, scene, poi, inScelta: !voci.length && Boolean(scelta), fase: statoRun.fase };
   }
   function segnaViste(ids) {
     let cambiato = false;
@@ -829,7 +840,8 @@
     if (S.morte.t < S.morte.totale) return;
     // Risveglio: una notte in più; flag e scene viste restano (una decisione presa non va perduta).
     S.morte = null;
-    S.flag.notte = (S.flag.notte || 1) + 1;
+    statoRun.numeroNotte = typeof I.incrementaNumeroNotte === 'function'
+      ? I.incrementaNumeroNotte() : (statoRun.numeroNotte || 1) + 1;
     S.flag.morti = (S.flag.morti || 0) + 1;
     S.nuoviStanotte = {};
     salvaFlag();
@@ -1149,7 +1161,7 @@
     } });
     cose.sort((a, b) => a.y - b.y).forEach((c) => c.d());
     // HUD dell'hub: luogo e numero della notte, Medaglione in mano
-    I.drawPillLabel(`${DATI.interfaccia.luogoHub} · ${DATI.interfaccia.hub.notte.replace('{n}', S.flag.notte)}`, W - 110, 18, 200, { size: 8, color: '#f9cb40', border: '#8a5a2b' });
+    I.drawPillLabel(`${DATI.interfaccia.luogoHub} · ${DATI.interfaccia.hub.notte.replace('{n}', notteCorrente())}`, W - 110, 18, 200, { size: 8, color: '#f9cb40', border: '#8a5a2b' });
     disegnaIconaRicordo(W - 34, 42);
     if (!S.dialogo) {
       const v = npcVicino();
@@ -1263,10 +1275,16 @@
     avvio() {
       S.flag = caricaFlag();
       S.nuoviStanotte = {};
+      statoRun.pausa = false;
+      statoRun.numeroNotte = notteCorrente();
       entraHub('menu');
       return true;
     },
     tasto(e) {
+      // Il menu ESC dell'autore ha la precedenza: Esc lo apre/chiude (in run e nell'hub), e da aperto
+      // riceve tutti i tasti. Durante la sequenza di morte niente menu.
+      if (statoRun.fase === 'morte') return true;
+      if (statoRun.pausa || e.code === 'Escape') return false;
       if (S.dialogo) {
         const d = S.dialogo;
         if (d.inScelta) {
@@ -1281,7 +1299,6 @@
       if (statoRun.fase === 'morte') return true;
       if (statoRun.fase === 'hub') {
         if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter') interagisciHub();
-        else if (e.code === 'Escape') statoRun.fase = 'menu_selezione';
         return true;
       }
       return false;
@@ -1306,7 +1323,12 @@
       return false;
     },
     logica() {
-      if (statoRun.fase === 'hub') { aggiornaHub(); return true; }
+      // Un cartiglio resta nella fase in cui è nato: se il menu ESC cambia fase (Ricomincia Notte dall'hub)
+      // il dialogo lasciato a metà si chiude senza esito (nessuna scena segnata vista).
+      if (S.dialogo && S.dialogo.fase !== statoRun.fase) S.dialogo = null;
+      // La rivelazione di Luciana è una per run, anche per le run nuove avviate dal menu ESC.
+      if (statoRun.numeroRun !== S.runCorrente) { S.runCorrente = statoRun.numeroRun; S.rivelazioneRun = false; }
+      if (statoRun.fase === 'hub') { if (!statoRun.pausa) aggiornaHub(); return true; }
       if (statoRun.fase === 'morte') { if (S.morte) aggiornaMorte(); return true; }
       if (statoRun.fase !== 'in_gioco') return false;
       if (S.dialogo) return true; // il cartiglio ferma la logica della stanza
@@ -1333,7 +1355,8 @@
         ctx.fillRect(0, 0, W, H);
       }
       if (statoRun.fase === 'in_gioco' && !statoRun.siparioAttivo) disegnaIconaRicordo(W - 34, H - 52);
-      if (S.dialogo && (statoRun.fase === 'hub' || statoRun.fase === 'in_gioco')) disegnaCartiglio();
+      if (S.dialogo && !statoRun.pausa && (statoRun.fase === 'hub' || statoRun.fase === 'in_gioco')) disegnaCartiglio();
+      if (statoRun.fase === 'hub' && statoRun.pausa && typeof I.disegnaMenuPausa === 'function') I.disegnaMenuPausa();
       return false;
     },
     morte() { return avviaMorte(); },

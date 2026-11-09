@@ -3188,7 +3188,9 @@ function disegnaManoMarionettaPittorica() {
     }
 
     if (e.code === 'Escape') {
-      if (statoRun.fase === 'in_gioco') {
+      // --- T4: inizio --- (il menu ESC dell'autore vale anche nell'hub di Piazza Dante)
+      if (statoRun.fase === 'in_gioco' || statoRun.fase === 'hub') {
+      // --- T4: fine ---
         if (statoRun.siparioAttivo) {
           statoRun.siparioAttivo = null;
         } else {
@@ -3248,6 +3250,9 @@ function disegnaManoMarionettaPittorica() {
       gestisciClickMenuPausa(mx, my);
       return;
     }
+    // --- T4: inizio ---
+    if (t4Gancio('click', mx, my)) return;
+    // --- T4: fine ---
 
     if (statoRun.fase === 'menu_selezione') {
       const charIds = ['ferruccio', 'agnese', 'taddeo', 'ombra'];
@@ -3825,6 +3830,9 @@ function disegnaManoMarionettaPittorica() {
 
   function avviaPartitaConPersonaggio(charId) {
     if (charId) selezionaPersonaggio(charId);
+    // --- T4: inizio ---
+    if (t4Gancio('avvio', charId)) return; // il menu porta all'hub di Piazza Dante
+    // --- T4: fine ---
     statoRun.fase = 'in_gioco';
     nuovaRun(false);
   }
@@ -4383,6 +4391,10 @@ function disegnaManoMarionettaPittorica() {
     player.invuln = ticksDaMs(FEEL.iframes.durataMs);
     scuoti(FEEL.scossa.ferita);
     if (statoRun.hpHalf <= 0) {
+      // --- T4: inizio ---
+      // Sequenza di morte e risveglio nell'hub: la notte successiva la conta T4 con incrementaNumeroNotte().
+      if (t4Gancio('morte', fonte)) return;
+      // --- T4: fine ---
       const proxNotte = incrementaNumeroNotte();
       statoRun.numeroNotte = proxNotte;
       mostraBanner(`🌙 NOTTE ${proxNotte} — Maschere spezzate contro ${fonte}... Risveglio!`, 220);
@@ -6339,7 +6351,17 @@ function disegnaManoMarionettaPittorica() {
     get stanza() { return statoRun.stanzaCorrente ? statoRun.stanzaCorrente.tipo : null; },
   });
   function t2Gancio() { return false; }
-  function t4Gancio() { return false; }
+  // --- T4: inizio ---
+  // Passo T4 (hub, storia, morte e risveglio): il codice sta in teatro/t4-hub-storia.js, script classico
+  // caricato dopo questo. Qui solo i ganci: t4Gancio(nome, ...) chiama window.__teatro.t4[nome] se c'è
+  // (true = il T4 ha gestito l'evento). La sonda sopra è congelata: la si ricopia (getter compresi) in un
+  // oggetto estendibile, così T3 e T4 vi aggiungono proprietà con Object.assign senza sovrascriversi.
+  function t4Gancio(nome, ...args) {
+    const g = window.__teatro && window.__teatro.t4;
+    if (!g || typeof g[nome] !== 'function') return false;
+    try { return Boolean(g[nome](...args)); } catch (err) { console.error('[T4]', nome, err); return false; }
+  }
+  // --- T4: fine ---
   if (Object.isFrozen(window.__teatro)) {
     window.__teatro = Object.defineProperties({}, Object.getOwnPropertyDescriptors(window.__teatro));
   }
@@ -6349,6 +6371,8 @@ function disegnaManoMarionettaPittorica() {
       PERSONAGGI_GIOCABILI, AudioSys, drawTextFit, drawPillLabel, drawPixelSprite, getFloorTileCanvas,
       disegnaFerruccioPittorico, disegnaManoMarionettaPittorica, disegnaFiliMarionetta, getCharCorrente,
       selezionaPersonaggio, nuovaRun, mostraBanner, scuoti, rng,
+      // (T4) un solo contatore delle notti, quello dell'autore; menu ESC dell'autore disegnato anche nell'hub
+      getNumeroNotte, incrementaNumeroNotte, disegnaMenuPausa,
     }),
   });
   adattaRisoluzione(); // (T5) primo dimensionamento del buffer
@@ -6356,5 +6380,18 @@ function disegnaManoMarionettaPittorica() {
 })();
 </script>
 <script src="teatro/t3-economia-salvataggi.js"></script>
+<!-- --- T4: inizio --- -->
+<script src="teatro/t4-hub-storia.js"></script>
+<script>
+// --- ponte T3/T4: i flag della trama di T4 vivono nello slot di salvataggio di T3 ---
+(function () {
+  var sv = window.__teatroT3 && window.__teatroT3.salvataggi;
+  var T = window.__teatro;
+  if (!sv || !T || Object.isFrozen(T)) return;
+  T.caricaFlag = function () { var d = sv.leggi(sv.slotAttivo); return (d && d.flag) ? Object.assign({}, d.flag) : {}; };
+  T.salvaFlag = function (flag) { Object.keys(flag || {}).forEach(function (k) { sv.impostaFlag(k, flag[k]); }); };
+})();
+</script>
+<!-- --- T4: fine --- -->
 </body>
 </html>
