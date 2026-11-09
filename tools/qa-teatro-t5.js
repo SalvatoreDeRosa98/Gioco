@@ -7,7 +7,7 @@
  * dimensione limitante, buffer del canvas, menu → click su un personaggio → hub → partita con le frecce,
  * mira col mouse (click → player.targetX/Y in coordinate 640x360), posizione dopo 1 s di D tenuto
  * (confrontata, se dato, con il file di riferimento). Screenshot a 1920x1080 in production/qa/evidence/
- * teatro-hd-<prefisso>-{menu,hub,gioco}.png se il prefisso è dato. Stampa solo osservazioni in JSON.
+ * teatro-hd-[<prefisso>-]{menu,hub,gioco}.png se il prefisso è dato ('.' = nessun prefisso). Stampa solo osservazioni in JSON.
  * Chromium preinstallato nella sessione: non serve (e non si deve) lanciare `playwright install`.
  */
 'use strict';
@@ -60,7 +60,7 @@ async function prova(browser, url, vp, dpr, foto) {
   });
   const out = { vp: `${vp.width}x${vp.height}@${dpr}` };
   out.menu = await misura();
-  if (foto) await pagina.screenshot({ path: path.join(EVID, `teatro-hd-${foto}menu.png`) });
+  if (foto !== null) await pagina.screenshot({ path: path.join(EVID, `teatro-hd-${foto}menu.png`) });
 
   // click sul secondo personaggio (Agnese) del menu: carta 2 a x 181..313, y 56..280 in coordinate di gioco
   const r = await pagina.locator('canvas#c').boundingBox();
@@ -75,7 +75,7 @@ async function prova(browser, url, vp, dpr, foto) {
   await pagina.waitForTimeout(600);
   out.faseDopoSpazio = await pagina.evaluate(() => window.__teatro.interni.statoRun.fase);
   out.hub = await misura();
-  if (foto) await pagina.screenshot({ path: path.join(EVID, `teatro-hd-${foto}hub.png`) });
+  if (foto !== null) await pagina.screenshot({ path: path.join(EVID, `teatro-hd-${foto}hub.png`) });
 
   // partita: corsa con D
   out.dopoD = await corsaD(pagina);
@@ -100,7 +100,7 @@ async function prova(browser, url, vp, dpr, foto) {
     I.player.x = 320; I.player.y = 220; I.player.targetX = null; I.player.targetY = null;
   });
   await pagina.waitForTimeout(400);
-  if (foto) await pagina.screenshot({ path: path.join(EVID, `teatro-hd-${foto}gioco.png`) });
+  if (foto !== null) await pagina.screenshot({ path: path.join(EVID, `teatro-hd-${foto}gioco.png`) });
   const lim = Math.min(vp.width / 16, vp.height / 9);
   out.quotaMenu = +(Math.min(out.menu.cssL / (lim * 16), out.menu.cssA / (lim * 9))).toFixed(3);
   out.quotaGioco = +(Math.min(out.gioco.cssL / (lim * 16), out.gioco.cssA / (lim * 9))).toFixed(3);
@@ -112,10 +112,12 @@ async function prova(browser, url, vp, dpr, foto) {
 (async () => {
   const browser = await chromium.launch();
   const ris = { file: path.relative(RADICE, file) };
-  ris.hd = await prova(browser, 'file://' + file, { width: 1920, height: 1080 }, 1, prefisso ? prefisso + (prefisso.endsWith('-') ? '' : '') : '');
-  ris.hd2x = await prova(browser, 'file://' + file, { width: 1280, height: 720 }, 2, '');
+  // prefisso '.' → teatro-hd-menu.png; 'xyz' → teatro-hd-xyz-menu.png; assente → nessuno screenshot
+  const foto = prefisso ? (prefisso === '.' ? '' : prefisso + '-') : null;
+  ris.hd = await prova(browser, 'file://' + file, { width: 1920, height: 1080 }, 1, foto);
+  ris.hd2x = await prova(browser, 'file://' + file, { width: 1280, height: 720 }, 2, null);
   if (riferimento) {
-    const rif = await prova(browser, 'file://' + riferimento, { width: 1920, height: 1080 }, 1, '');
+    const rif = await prova(browser, 'file://' + riferimento, { width: 1920, height: 1080 }, 1, null);
     ris.riferimento = { dopoD: rif.dopoD, errori: rif.errori };
     const dx = (q) => (q.x - 200);
     ris.scartoCorsaD = +((dx(ris.hd.dopoD) - dx(rif.dopoD)) / dx(rif.dopoD)).toFixed(4);
