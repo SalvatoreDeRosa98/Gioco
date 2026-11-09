@@ -24,6 +24,10 @@ function loop(oraMs) {
   let passi = 0;
   while (accumuloMs >= MS_PER_TICK && passi < FEEL.passo.maxTickPerFrame) {
     passoLogico();
+    // Rete di sicurezza: un nemico può morire senza passare da danneggiaNemico (Bozzo che esplode, fuoco…);
+    // se sono tutti a terra, la stanza si apre comunque.
+    { const st = statoRun.stanzaCorrente;
+      if (st && !st.pulita && statoRun.fase === 'in_gioco' && st.nemici.every((n) => n.hp <= 0)) verificaStanzaPulita(); }
     accumuloMs -= MS_PER_TICK;
     passi++;
   }

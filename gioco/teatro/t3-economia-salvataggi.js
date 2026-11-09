@@ -33,7 +33,7 @@
     raggio: Object.freeze({
       idOggetto: 'patto_raggio',
       ogniTick: 5,            // un impulso di danno ogni 5 tick (12 al secondo)
-      dannoPerImpulso: 0.3,   // frazione di statoRun.dmg per impulso: 3,6 x DMG al secondo (le lacrime ~2,7 x)
+      dannoPerImpulso: 0.18,  // frazione di statoRun.dmg per impulso: 2,16 x DMG al secondo (le lacrime ~2,7 x; il raggio trapassa e non manca mai). Era 0,3: troppo forte (autore, 2026-11-09)
       larghezzaPx: 10,        // spessore utile del raggio (si somma al raggio del nemico)
       origineAvantiPx: 10,    // il raggio parte poco davanti al burattino
       colori: Object.freeze({ alone: 'rgba(220, 20, 40, 0.30)', corpo: '#dc2626', anima: '#fde2e2' }),
@@ -235,7 +235,32 @@
     if (keys.ArrowLeft || keys.KeyJ) return [-1, 0];
     if (keys.ArrowUp || keys.KeyI) return [0, -1];
     if (keys.ArrowDown || keys.KeyK) return [0, 1];
+    if (mouseRaggio.giu) { // col raggio il mouse spara il raggio (tenuto premuto), non le lacrime
+      const dx = mouseRaggio.x - player.x, dy = mouseRaggio.y - player.y;
+      if (Math.abs(dx) >= Math.abs(dy)) return [dx >= 0 ? 1 : -1, 0];
+      return [0, dy >= 0 ? 1 : -1];
+    }
     return null;
+  }
+
+  // Mouse e raggio: con il Raggio Cremisi il click (tenuto) punta il raggio verso il cursore.
+  const mouseRaggio = { giu: false, x: 0, y: 0 };
+  const posMouse = (e) => {
+    const r = canvas.getBoundingClientRect();
+    mouseRaggio.x = (e.clientX - r.left) * (W / r.width);
+    mouseRaggio.y = (e.clientY - r.top) * (H / r.height);
+  };
+  canvas.addEventListener('mousedown', (e) => { if (e.button === 0) { mouseRaggio.giu = true; posMouse(e); } });
+  canvas.addEventListener('mousemove', (e) => { if (mouseRaggio.giu) posMouse(e); });
+  window.addEventListener('mouseup', () => { mouseRaggio.giu = false; });
+  window.addEventListener('blur', () => { mouseRaggio.giu = false; });
+  // Il click di 70-input spara una lacrima nelle 4 direzioni: col raggio non deve.
+  if (typeof eseguiAttacco4Direzioni === 'function') {
+    const attaccoBaseT3 = eseguiAttacco4Direzioni;
+    eseguiAttacco4Direzioni = function (...a) {
+      if (haOggetto(CONFIG.raggio.idOggetto) && !confermaPatto) return;
+      return attaccoBaseT3.apply(this, a);
+    };
   }
 
   function distanzaPuntoSegmento(px, py, ax, ay, bx, by) {

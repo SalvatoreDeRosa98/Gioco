@@ -98,12 +98,12 @@ function usaOggettoAttivo() {
     if (st) {
       for (const n of st.nemici) {
         if (n.hp > 0) {
-          n.stunTicks = 240; // 4 secondi immobilizzato coi fili tagliati!
+          n.stunTicks = 120; // 2 secondi immobilizzato coi fili tagliati (era 4 s: troppo lungo, autore 2026-11-09)
           danneggiaNemico(n, statoRun.dmg * 1.4, 0, 0);
         }
       }
     }
-    mostraBanner('✂️ FORBICI DI GAETANO! Fili d\'oro recisi: tutti i nemici sono immobilizzati per 4s!', 180);
+    mostraBanner('✂️ FORBICI DI GAETANO! Fili d\'oro recisi: tutti i nemici sono immobilizzati per 2s!', 180);
   } else if (att.id === 'tamburello') {
     statoRun.ondeEsplosione.push({ x: player.x, y: player.y, r: 8, maxR: 160, color: '#f9cb40' });
     statoRun.proiettiliNemici = [];
