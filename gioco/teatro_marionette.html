@@ -2858,6 +2858,23 @@ function disegnaManoMarionettaPittorica() {
       }),
       moltVelFase2: 1.35,
     }),
+    // custode: Il Custode di Marmo (alla Gurdy), immobile al centro. Macchina a stati con tabella esplicita
+    //   (sequenza): pausa → croci (+ e × alternate) → pausa → spirale → pausa → raffica mirata a 3 → pausa →
+    //   evocazione di 2 vespe o 2 statuette (a turno) → pausa → APERTO (vulnerabile, nessun attacco) → da capo.
+    //   Danno subito ×1,5 da aperto e ×0,6 da chiuso. Durata stimata del duello per Ferruccio base
+    //   (3,5 danno × 2,73 colpi/s, ~60% a segno = 5,7 danno/s): ciclo ≈ 607 tick con il 25% aperto →
+    //   moltiplicatore medio ≈ 0,83 → ≈ 4,7 danno/s → 235 PV (piano 1) ≈ 50 s, 325 PV (piano 3) ≈ 69 s.
+    custode: Object.freeze({
+      x: 320, y: 165,
+      sequenza: Object.freeze(['croci', 'spirale', 'raffica', 'evoca', 'aperto']),
+      pausaTick: 40, pausaRabbiaTick: 28,
+      croci: Object.freeze({ salve: 4, intervalloTick: 26, intervalloRabbiaTick: 20, velocita: 2.1 }),
+      spirale: Object.freeze({ durataTick: 96, ogniTick: 8, bracci: 2, bracciRabbia: 3, giro: 0.22, velocita: 2.0 }),
+      raffica: Object.freeze({ colpi: 3, intervalloTick: 9, velocita: 2.8 }),
+      evoca: Object.freeze({ durataTick: 30, numero: 2, maxServi: 4, hpVespa: 8, hpStatuetta: 14 }),
+      aperto: Object.freeze({ durataTick: 150 }),
+      moltAperto: 1.5, moltChiuso: 0.6,
+    }),
   });
   // --- A: fine ---
   const POOL_BOSS = [
@@ -4293,6 +4310,9 @@ function disegnaManoMarionettaPittorica() {
       return;
     }
 
+    // --- A: inizio --- Custode di Marmo: aperto ×1,5, chiuso ×0,6 (BOSS_A.custode)
+    if (nem.bossId === 'colosso-statua') dmg *= nem.apertoCM ? BOSS_A.custode.moltAperto : BOSS_A.custode.moltChiuso;
+    // --- A: fine ---
     nem.hp -= dmg;
     nem.flash = 6;
     if (statoRun.burn) nem.burnTicks = 120;
@@ -5404,38 +5424,67 @@ function disegnaManoMarionettaPittorica() {
               }
             }
           } else if (n.bossId === 'colosso-statua') {
-            // GURDY (Colosso di Marmo): immobile al centro, spara spirali rotanti a 8 vie e genera Bozzoli Esplosivi
-            n.x = 320;
-            n.y = 165;
-            n.shootCd--;
-            if (n.shootCd <= 0) {
-              n.shootCd = enrage ? 36 : 48;
-              for (let k = 0; k < 8; k++) {
-                const a = (TAU * k) / 8 + n.phaseTick * 0.28;
-                statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 8, vx: Math.cos(a) * 2.15, vy: Math.sin(a) * 2.15, dist: 0, bossShot: true });
+            // --- A: inizio ---
+            // IL CUSTODE DI MARMO (Gurdy): immobile; esegue BOSS_A.custode.sequenza separata da pause.
+            // Stati: 'pausa' → mossa successiva della sequenza → 'pausa' … ; 'aperto' = vulnerabile (×1,5).
+            const C = BOSS_A.custode;
+            n.x = C.x;
+            n.y = C.y;
+            if (!n.statoCM) { n.statoCM = 'pausa'; n.timerCM = C.pausaTick; n.indiceCM = 0; n.apertoCM = false; n.evocaCM = 0; n.parCM = 0; }
+            const sparaC = (a, v) => statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 8, vx: Math.cos(a) * v, vy: Math.sin(a) * v, dist: 0, bossShot: true });
+            const tCM = n.timerCM--;
+            if (n.statoCM === 'croci') {
+              const iv = enrage ? C.croci.intervalloRabbiaTick : C.croci.intervalloTick;
+              if (tCM % iv === 0) {
+                n.parCM = 1 - n.parCM;
+                for (let k = 0; k < 4; k++) sparaC(n.parCM * Math.PI / 4 + (k * Math.PI) / 2, C.croci.velocita);
               }
-              const nBombe = st.nemici.filter((m) => m.tipo === 'bomba_ferma' && m.hp > 0).length;
-              if (n.phaseTick % 3 === 0 && nBombe < 2) {
+            } else if (n.statoCM === 'spirale') {
+              if (tCM % C.spirale.ogniTick === 0) {
+                const nb = enrage ? C.spirale.bracciRabbia : C.spirale.bracci;
+                for (let k = 0; k < nb; k++) sparaC(n.phaseTick * C.spirale.giro + (TAU * k) / nb, C.spirale.velocita);
+              }
+            } else if (n.statoCM === 'raffica') {
+              if (tCM % C.raffica.intervalloTick === 0) sparaC(Math.atan2(player.y - (n.y - 8), player.x - n.x), C.raffica.velocita);
+            } else if (n.statoCM === 'evoca' && tCM === C.evoca.durataTick) {
+              const vespe = n.evocaCM++ % 2 === 0;
+              const servi = st.nemici.filter((m) => !m.boss && m.hp > 0).length;
+              for (let k = 0; k < C.evoca.numero && servi + k < C.evoca.maxServi; k++) {
+                const lato = k === 0 ? -1 : 1;
+                const hpS = vespe ? C.evoca.hpVespa : C.evoca.hpStatuetta;
                 st.nemici.push({
-                  id: `spawn-bomba-${tick}`,
-                  tipo: 'bomba_ferma',
-                  nome: 'Bozzolo di Polvere',
-                  comportamento: 'bomba_ferma',
-                  x: 160 + rng() * 320,
-                  y: 120 + rng() * 130,
+                  id: `spawn-custode-${tick}-${k}`,
+                  tipo: vespe ? 'vespa_cieca' : 'statua',
+                  nome: vespe ? 'Vespa Cieca (Attack Fly)' : 'Statuetta di Marmo',
+                  comportamento: vespe ? 'volo_puro' : 'torretta_croce',
+                  x: n.x + lato * 58, y: n.y + 34,
                   vx: 0, vy: 0,
-                  r: 12,
-                  hp: 10, maxHp: 10,
-                  speed: 0,
-                  shootCd: 999,
-                  boss: false,
-                  flash: 4,
-                  burnTicks: 0,
-                  stunTicks: 0,
-                  fuseTimer: 0,
+                  r: vespe ? 11 : 13,
+                  hp: hpS, maxHp: hpS,
+                  speed: vespe ? 1.55 : 0,
+                  shootCd: vespe ? 999 : 60,
+                  boss: false, flash: 6, burnTicks: 0, stunTicks: 0,
+                  state: 'idle', stateTimer: 20, maskOpen: false,
                 });
               }
             }
+            if (n.timerCM <= 0) {
+              if (n.statoCM === 'pausa') {
+                n.statoCM = C.sequenza[n.indiceCM++ % C.sequenza.length];
+                n.timerCM = n.statoCM === 'croci' ? C.croci.salve * (enrage ? C.croci.intervalloRabbiaTick : C.croci.intervalloTick)
+                  : n.statoCM === 'spirale' ? C.spirale.durataTick
+                  : n.statoCM === 'raffica' ? C.raffica.colpi * C.raffica.intervalloTick
+                  : n.statoCM === 'evoca' ? C.evoca.durataTick
+                  : C.aperto.durataTick;
+                n.apertoCM = n.statoCM === 'aperto';
+                if (n.apertoCM) n.flash = 8;
+              } else {
+                n.statoCM = 'pausa';
+                n.apertoCM = false;
+                n.timerCM = enrage ? C.pausaRabbiaTick : C.pausaTick;
+              }
+            }
+            // --- A: fine ---
           } else if (n.bossId === 'donna-luciana') {
             // --- A: inizio ---
             // DONNA LUCIANA: lei spara (ventaglio, spirale, raffica mirata) e non fa danno a contatto;
@@ -6017,6 +6066,28 @@ function disegnaManoMarionettaPittorica() {
             disegnaManoMarionettaPittorica(mani[1].x, mani[1].y, -1, LA.scala, tick + 12, false);
             // --- A: fine ---
           }
+          // --- A: inizio --- Custode di Marmo: alone d'oro quando è aperto (vulnerabile), guscio di pietra se chiuso
+          if (n.bossId === 'colosso-statua') {
+            ctx.save();
+            if (n.apertoCM) {
+              const pul = 0.55 + Math.sin(tick * 0.25) * 0.25;
+              const gl = ctx.createRadialGradient(n.x, n.y - 18, 2, n.x, n.y - 18, 34);
+              gl.addColorStop(0, `rgba(249, 203, 64, ${0.55 * pul})`);
+              gl.addColorStop(1, 'rgba(249, 203, 64, 0)');
+              ctx.fillStyle = gl;
+              ctx.beginPath(); ctx.arc(n.x, n.y - 18, 34, 0, TAU); ctx.fill();
+              ctx.strokeStyle = '#ef4444';
+              ctx.lineWidth = 1.6;
+              ctx.beginPath(); ctx.arc(n.x, n.y - 18, 30, 0, TAU); ctx.stroke();
+            } else {
+              ctx.strokeStyle = 'rgba(148, 163, 184, 0.7)';
+              ctx.lineWidth = 2.4;
+              ctx.setLineDash([5, 4]);
+              ctx.beginPath(); ctx.arc(n.x, n.y - 18, 30, 0, TAU); ctx.stroke();
+            }
+            ctx.restore();
+          }
+          // --- A: fine ---
           // --- A: inizio --- Spezzafili d'Ottone: linea di mira della carica e forbici rotanti a boomerang
           if (n.bossId === 'maestro-fucina') {
             if (n.statoSF === 'mira') {
