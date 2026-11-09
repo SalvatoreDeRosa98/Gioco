@@ -39,8 +39,8 @@ stato toccato.
   il menu si nasconde, `personaggio.scelto` è emesso, il profilo dello slot ricorda il personaggio, il ciclo va in `hub` con le
   statistiche del personaggio applicate (maschere da `hpHalf`); uno slot diverso ricarica la pagina con `?slot=&personaggio=`
   (`pagina.test.js`: Invio senza debug, `__gioco.scegli` con debug)
-- [x] GIVEN l'hub, WHEN `Esc` (azione `menu` di `input.json`) a dialogo chiuso, THEN si torna al menu (`apriMenu`) — provato a mano
-  con `__gioco.apriMenu()`, non ancora in una suite
+- [x] GIVEN l'hub, WHEN `Esc` (azione `menu` di `input.json`) a dialogo chiuso, THEN si torna al menu (`apriMenu`) — provato in
+  `menu.wire.test.js` (storia P05): scene automatiche chiuse con `avanza`, poi `premi('menu')` → ciclo in `menu`, menu visibile
 - [x] GIVEN `&piano=N`, `&hub=1`, `&scena=`, `&slot=`, `&personaggio=`, WHEN la pagina carica, THEN il menu è saltato (tutte le suite
   Playwright esistenti restano verdi senza modifiche ai loro URL)
 - [x] GIVEN i 4 personaggi e tre combinazioni di doni (blocco `teatro`) e patti, WHEN `calcolaStatistiche`, THEN DMG, SPD, cadenza
@@ -67,10 +67,10 @@ stato toccato.
 
 ## Evidenza
 
-- `node gioco/qa/statistiche.test.mjs` 11/11; `node gioco/qa/combattimento.test.mjs` 38/38 (32 + 6 P04);
+- `node gioco/qa/menu.wire.test.js` 2/2 (storia P05: menu → Agnese → slot 2 → hub con HUD `2/2` → Esc → menu; freccia destra spara senza muovere); `node gioco/qa/statistiche.test.mjs` 11/11; `node gioco/qa/combattimento.test.mjs` 38/38 (32 + 6 P04);
   `node gioco/qa/pagina.test.js` 5/5; `node gioco/qa/prova.wire.test.js` 2/2; `node gioco/qa/pacchetto.test.js` 6/6.
 - Screenshot (deviceScaleFactor 1, `production/qa/evidence/`): `menu-selezione.png` (menu con le quattro carte e i cinque
-  slot), `fondazione-pagina.png` (hub subito dopo la scelta), `prova-pagina.png`, `pacchetto-file.png`.
+  slot), `menu-slot.png` (Agnese e slot 2 evidenziati), `fondazione-pagina.png` (hub subito dopo la scelta), `prova-pagina.png`, `pacchetto-file.png`.
 - Tutte le altre suite verdi (vedi la tabella della P03 e il README).
 
 ## Decisioni

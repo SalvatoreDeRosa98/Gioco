@@ -18,7 +18,7 @@ Parametri dell'URL:
 
 | Parametro | Effetto |
 |---|---|
-| *(nessun parametro)* | **`index.html` e `prova.html` dichiarano `<meta name="gioco-avvio" content="debug=1">`** (storia P04, Teatro, 2026-11-09): senza parametri la pagina parte nel **menu di selezione del personaggio e dello slot** (`interfaccia/menu.js`, stile `stile/menu.css`, testi `interfaccia.json › menu`, personaggi da `personaggi.json`) con `__gioco` esposto; dal menu (Invio/Spazio o click) si entra nell'hub di Piazza Dante con il personaggio scelto; nell'hub `Esc` (azione `menu`, a dialogo chiuso) torna al menu. La meta riempie solo le chiavi assenti dall'URL (`fondazione/avvio-url.js`), quindi un valore esplicito la annulla: `?debug=0` spegne `__gioco`. **Saltano il menu** (strumenti di QA): `&piano=N`, `&hub=1`, `&scena=`, `&slot=N`, `&personaggio=id` |
+| *(nessun parametro)* | **`index.html` e `prova.html` dichiarano `<meta name="gioco-avvio" content="debug=1">`** (storia P04, Teatro, 2026-11-09): senza parametri la pagina parte nel **menu di selezione del personaggio e dello slot** (`interfaccia/menu.js`, stile `stile/menu.css`, testi `interfaccia.json › menu`, personaggi da `personaggi.json`) con `__gioco` esposto; dal menu (Invio/Spazio o click) si entra nell'hub di Piazza Dante con il personaggio scelto; nell'hub `Esc` (azione `menu`, a dialogo chiuso) torna al menu. Provato in `menu.wire.test.js` (storia P05). La meta riempie solo le chiavi assenti dall'URL (`fondazione/avvio-url.js`), quindi un valore esplicito la annulla: `?debug=0` spegne `__gioco`. **Saltano il menu** (strumenti di QA): `&piano=N`, `&hub=1`, `&scena=`, `&slot=N`, `&personaggio=id` |
 | `?debug=1&slot=2&personaggio=agnese` | storia P04: slot del salvataggio (`1`-`5`, chiavi del profilo, dello stato narrativo e della notte salvata) e personaggio di `personaggi.json` (`ferruccio`, `agnese`, `taddeo`, `ombra`) scelti dall'URL: il menu è saltato e si parte nell'hub con le statistiche alla Isaac di quel personaggio (`attori/statistiche.js`: maschere da `hpHalf`, DMG, SPD, cadenza, oggetto attivo iniziale, dono iniziale). Cambiare slot dal menu ricarica la pagina con questi due parametri |
 | `?debug=1` | espone `window.__gioco` e scrive il numero di tick sul canvas |
 | `?seme=1845` | seme della notte (senza, deriva dall'orologio) |
@@ -167,6 +167,12 @@ node gioco/qa/stati64.js                  # forza i 64 stati narrativi: nessun b
 node gioco/qa/statistiche.test.mjs        # storia P04 (node:test): ricalcolaStatisticheIsaac del Teatro (attori/statistiche.js) per i 4 personaggi
                                           # di personaggi.json e tre combinazioni di doni (blocco `teatro` di doni.json) e patti (patto.json), contro
                                           # valori calcolati a mano; applicazione ai modificatori
+node gioco/qa/menu.wire.test.js           # storia P05 (Playwright): index.html senza parametri → menu (.menu-teatro, carte nell'ordine di
+                                          # personaggi.json, 5 slot), Digit2 = Agnese, ArrowDown = slot 2, Invio → ricarica con ?slot=2&personaggio=agnese
+                                          # → hub con HUD maschere 2/2; scene automatiche chiuse, Esc (azione `menu`) → menu; con ?piano=1 la freccia
+                                          # destra tenuta spara proiettili (vx > 0) senza muovere Ferruccio; salva menu-selezione.png e menu-slot.png
+bash gioco/qa/suite-completa.sh           # storia P05: esegue tutte le suite qui sopra una dopo l'altra (node:test, Playwright, stati64, seme 200,
+                                          # grep Math.random) e riassume l'esito; esce con 1 se una è rossa
 ```
 
 > **Storia P03 (2026-11-08, riallineo delle suite al Teatro).** I test non fissano più i valori del GDD vecchio: prezzi,
