@@ -1899,10 +1899,7 @@ function disegnaManoMarionettaPittorica() {
 
       ctx.restore();
 
-      // Le due Grandi Mani di Marionetta scese ai suoi lati che sbattono a terra!
-      const slamOff = b.handSlamY || 0;
-      disegnaManoMarionettaPittorica(x - 64, y - 18 + slamOff, 1, 1.05, tick, isFlash);
-      disegnaManoMarionettaPittorica(x + 64, y - 18 + slamOff, -1, 1.05, tick, isFlash);
+      // --- A: inizio --- le sue due Mani (mobili) si disegnano a parte, da n.maniA --- A: fine ---
       return;
     }
 
@@ -2819,6 +2816,35 @@ function disegnaManoMarionettaPittorica() {
     sputo: Object.freeze({ caricaTick: 18, colpi: 6, apertura: 0.16, velocita: 1.9 }),
     saltelli: Object.freeze({ numero: 3, durataTick: 22, quotaPx: 14, passoPx: 26 }), // nessun colpo
   });
+  // --- A: inizio ---
+  /**
+   * BOSS_A (feedback autore A): parametri dei boss rifatti. Tick a 60 Hz, distanze in px, velocità in px/tick.
+   * luciana: Donna Luciana non fa danno a contatto; spara a turno ventaglio, spirale e raffica mirata.
+   *   Le sue DUE Mani riposano in alto, a turno mirano sopra il giocatore (ombra rossa a terra), scendono a
+   *   schiacciare e fanno danno SOLO a contatto mentre toccano terra, poi risalgono.
+   */
+  const BOSS_A = Object.freeze({
+    luciana: Object.freeze({
+      passo: 0.55,              // frazione della velocità del boss con cui si avvicina
+      quotaRiposoY: 46,         // quota delle Mani a riposo (sopra il palco, come le Mani del teatro)
+      scartoMani: 92,           // distanza orizzontale delle Mani dal corpo a riposo
+      inseguimento: 0.07,       // inerzia delle Mani verso la posizione di riposo
+      inseguimentoMira: 0.09,   // inerzia della Mano che mira sopra il giocatore
+      primaAttesaTick: 70,      // prima del primo schianto
+      pausaTick: 85,            // fra uno schianto e l'altro (le Mani si alternano)
+      pausaRabbiaTick: 58,      // sotto il 50% della vita
+      miraTick: 48, discesaTick: 14, aTerraTick: 26, risalitaTick: 34,
+      palmoY: 8,                // punto di contatto (dita) rispetto al centro della Mano
+      raggioSchianto: 20,       // raggio del contatto della Mano
+      scala: 1.1,               // grandezza disegnata delle Mani
+      cdSparoTick: 72, cdSparoRabbiaTick: 52,
+      sequenza: Object.freeze(['ventaglio', 'spirale', 'mirato']),
+      ventaglio: Object.freeze({ colpi: 5, apertura: 0.2, velocita: 2.3 }),
+      spirale: Object.freeze({ colpi: 10, colpiRabbia: 12, velocita: 2.0, passo: 0.3 }),
+      mirato: Object.freeze({ colpi: 3, intervalloTick: 8, velocita: 2.8 }),
+    }),
+  });
+  // --- A: fine ---
   const POOL_BOSS = [
     { id: 're-gatto', nome: 'Il Gatto dei Quattro Canti (Monstro)', tipo: 'gatto', hpBase: 175, speed: 1.05, pattern: 'monstro_jump' },
     { id: 'capitano-guardia', nome: 'Il Capitano di Piombo (Chub)', tipo: 'guardia', hpBase: 210, speed: 0.92, pattern: 'chub_charge' },
@@ -5396,34 +5422,78 @@ function disegnaManoMarionettaPittorica() {
               }
             }
           } else if (n.bossId === 'donna-luciana') {
-            // DONNA LUCIANA (Mom / Satan): le 2 Mani Giganti sparano ventagli + schianti + anelli rotanti
-            n.x = Math.max(ARENA.x1 + 32, Math.min(ARENA.x2 - 32, n.x + Math.cos(ang) * n.speed * 0.55));
-            n.y = Math.max(ARENA.y1 + 24, Math.min(ARENA.y2 - 24, n.y + Math.sin(ang) * n.speed * 0.55));
-            n.shootCd--;
-            if (n.shootCd <= 0) {
-              n.shootCd = enrage ? 34 : 46;
-              for (const handOffset of [-68, 68]) {
-                const ha = Math.atan2(player.y - (n.y - 14), player.x - (n.x + handOffset));
-                for (const da of [-0.25, 0, 0.25]) {
-                  statoRun.proiettiliNemici.push({
-                    x: n.x + handOffset, y: n.y - 14,
-                    vx: Math.cos(ha + da) * 2.45, vy: Math.sin(ha + da) * 2.45,
-                    dist: 0, bossShot: true,
-                  });
+            // --- A: inizio ---
+            // DONNA LUCIANA: lei spara (ventaglio, spirale, raffica mirata) e non fa danno a contatto;
+            // le sue DUE Mani mirano, scendono a schiacciare e fanno danno SOLO a contatto (BOSS_A.luciana).
+            const L = BOSS_A.luciana;
+            const xLim = (v) => Math.max(ARENA.x1 + 20, Math.min(ARENA.x2 - 20, v));
+            n.x = Math.max(ARENA.x1 + 32, Math.min(ARENA.x2 - 32, n.x + Math.cos(ang) * n.speed * L.passo));
+            n.y = Math.max(ARENA.y1 + 24, Math.min(ARENA.y2 - 24, n.y + Math.sin(ang) * n.speed * L.passo));
+            if (!n.maniA) {
+              // [0] = Mano sinistra (lato +1), [1] = Mano destra (lato -1)
+              n.maniA = [-1, 1].map((s) => ({ lato: -s, x: xLim(n.x + s * L.scartoMani), y: L.quotaRiposoY, y0: 0, ty: 0, fase: 'riposo', t: 0 }));
+              n.turnoManoA = 0;
+              n.attesaManiA = L.primaAttesaTick;
+              n.mossaA = 0;
+              n.rafficaA = 0;
+              n.rafficaTA = 0;
+            }
+            n.attesaManiA--;
+            if (n.attesaManiA <= 0) {
+              const m = n.maniA[n.turnoManoA];
+              if (m.fase === 'riposo') { m.fase = 'mira'; m.t = L.miraTick; }
+              n.turnoManoA = 1 - n.turnoManoA;
+              n.attesaManiA = enrage ? L.pausaRabbiaTick : L.pausaTick;
+            }
+            for (const m of n.maniA) {
+              if (m.fase === 'riposo' || m.fase === 'risalita') {
+                m.x += (xLim(n.x - m.lato * L.scartoMani) - m.x) * L.inseguimento;
+                m.y += (L.quotaRiposoY - m.y) * (m.fase === 'risalita' ? 0.12 : L.inseguimento);
+                if (m.fase === 'risalita' && --m.t <= 0) m.fase = 'riposo';
+              } else if (m.fase === 'mira') {
+                m.x += (xLim(player.x) - m.x) * L.inseguimentoMira;
+                m.y += (L.quotaRiposoY - m.y) * L.inseguimento;
+                m.ty = Math.min(ARENA.y2 - 12, player.y - 4 - L.palmoY);
+                if (--m.t <= 0) { m.fase = 'discesa'; m.t = L.discesaTick; m.y0 = m.y; }
+              } else if (m.fase === 'discesa') {
+                m.t--;
+                const k = 1 - m.t / L.discesaTick;
+                m.y = m.y0 + (m.ty - m.y0) * k * k;
+                if (m.t <= 0) {
+                  m.fase = 'aTerra'; m.t = L.aTerraTick; m.y = m.ty;
+                  scuoti(FEEL.scossa.schiantoCapitano);
+                  statoRun.effettiSplash.push({ x: m.x, y: m.y + L.palmoY, tick: 0 });
                 }
+              } else if (m.fase === 'aTerra') {
+                if (--m.t <= 0) { m.fase = 'risalita'; m.t = L.risalitaTick; }
               }
-              if (enrage || n.phaseTick % 2 === 0) {
-                const nRing = 10;
-                for (let k = 0; k < nRing; k++) {
-                  const a = (TAU * k) / nRing + n.phaseTick * 0.3;
-                  statoRun.proiettiliNemici.push({
-                    x: n.x, y: n.y - 8,
-                    vx: Math.cos(a) * 2.1, vy: Math.sin(a) * 2.1,
-                    dist: 0, bossShot: true,
-                  });
-                }
+              // Danno SOLO a contatto con la Mano mentre schiaccia
+              const schiaccia = m.fase === 'aTerra' || (m.fase === 'discesa' && m.t <= L.discesaTick * 0.35);
+              if (schiaccia && player.invuln <= 0 && statoRun.hpHalf > 0 &&
+                  Math.hypot(player.x - m.x, (player.y - 6) - (m.y + L.palmoY)) < L.raggioSchianto) {
+                subisciColpoGiocatore(2, 'una Mano di Donna Luciana', m.x, m.y + L.palmoY);
               }
             }
+            // Lei spara: ventaglio, spirale, raffica mirata a turno
+            const sparaL = (a, v) => statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 10, vx: Math.cos(a) * v, vy: Math.sin(a) * v, dist: 0, bossShot: true });
+            const angL = Math.atan2(player.y - (n.y - 10), player.x - n.x);
+            if (n.rafficaA > 0) {
+              if (--n.rafficaTA <= 0) { n.rafficaA--; n.rafficaTA = L.mirato.intervalloTick; sparaL(angL, L.mirato.velocita); }
+            } else if (--n.shootCd <= 0) {
+              n.shootCd = enrage ? L.cdSparoRabbiaTick : L.cdSparoTick;
+              const mossa = L.sequenza[n.mossaA++ % L.sequenza.length];
+              if (mossa === 'ventaglio') {
+                const V = L.ventaglio;
+                for (let k = 0; k < V.colpi; k++) sparaL(angL + (k - (V.colpi - 1) / 2) * V.apertura, V.velocita);
+              } else if (mossa === 'spirale') {
+                const S = L.spirale;
+                const nc = enrage ? S.colpiRabbia : S.colpi;
+                for (let k = 0; k < nc; k++) sparaL((TAU * k) / nc + n.phaseTick * S.passo, S.velocita);
+              } else {
+                n.rafficaA = L.mirato.colpi; n.rafficaTA = 0;
+              }
+            }
+            // --- A: fine ---
           }
         } else {
           // IA DIFFERENZIATA DEI NEMICI COMUNI IN STILE THE BINDING OF ISAAC:
@@ -5512,7 +5582,8 @@ function disegnaManoMarionettaPittorica() {
         }
 
         // Danno da contatto (solo se il boss non è in volo alto airZ > 20)
-        if ((n.airZ || 0) < 20 && Math.hypot(player.x - n.x, player.y - n.y) < n.r + 9 && player.invuln <= 0) {
+        // --- A: inizio --- Donna Luciana non fa danno a contatto (lo fanno solo le sue Mani) --- A: fine ---
+        if (n.bossId !== 'donna-luciana' && (n.airZ || 0) < 20 && Math.hypot(player.x - n.x, player.y - n.y) < n.r + 9 && player.invuln <= 0) {
           subisciColpoGiocatore(n.boss ? 2 : dannoBasePiano, n.nome, n.x, n.y);
           if (statoRun.hpHalf <= 0) break;
         }
@@ -5845,8 +5916,26 @@ function disegnaManoMarionettaPittorica() {
         if (n.boss) {
           disegnaBossPittorico(ctx, n, tick);
           if (n.bossId === 'donna-luciana') {
-            disegnaManoMarionettaPittorica(n.x - 68, n.y - 18, 1, 1.0, tick, n.flash > 0);
-            disegnaManoMarionettaPittorica(n.x + 68, n.y - 18, -1, 1.0, tick, n.flash > 0);
+            // --- A: inizio --- esattamente DUE Mani (n.maniA), mobili, con i due fili di disegnaFiliMarionetta
+            const LA = BOSS_A.luciana;
+            const mani = n.maniA || [-1, 1].map((s) => ({ lato: -s, x: n.x + s * LA.scartoMani, y: LA.quotaRiposoY, fase: 'riposo' }));
+            for (const m of mani) {
+              if (m.fase !== 'mira' && m.fase !== 'discesa') continue;
+              const k = m.fase === 'mira' ? 1 - m.t / LA.miraTick : 1;
+              ctx.save();
+              ctx.fillStyle = `rgba(220, 38, 38, ${0.18 + 0.32 * k})`;
+              ctx.strokeStyle = '#ef4444';
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.ellipse(m.x, m.ty + LA.palmoY + 4, LA.raggioSchianto * (1.3 - 0.3 * k), 7 * (1.3 - 0.3 * k), 0, 0, TAU);
+              ctx.fill(); ctx.stroke();
+              ctx.restore();
+            }
+            disegnaFiliMarionetta({ x: n.x, piedi: n.y - 18, altezza: 0, mezza: 18 },
+              [mani[0].x, mani[0].y + 15 * LA.scala], [mani[1].x, mani[1].y + 15 * LA.scala]);
+            disegnaManoMarionettaPittorica(mani[0].x, mani[0].y, 1, LA.scala, tick, false);
+            disegnaManoMarionettaPittorica(mani[1].x, mani[1].y, -1, LA.scala, tick + 12, false);
+            // --- A: fine ---
           }
         } else {
           disegnaNemicoPittorico(ctx, n, tick);
