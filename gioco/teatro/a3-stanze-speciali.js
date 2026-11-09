@@ -816,7 +816,10 @@ disegnaHUDPixelArt = function disegnaHUDPixelArtA3(st, ...resto) {
 if (window.__teatro && window.__teatro.interni) {
   Object.assign(window.__teatro.interni, {
     STANZE_SPECIALI_A3, probStanzaA3, aggiungiStanzeSpecialiA3, passoStanzeSpecialiA3, sacrificaA3,
-    giocaLottoA3, pagaCartomanteA3, avviaSfidaA3, verificaStanzaPulita: () => verificaStanzaPulita(),
+    giocaLottoA3, pagaCartomanteA3, avviaSfidaA3,
+    // gli interni di 80-ciclo.js puntano alle funzioni di base: qui le versioni avvolte (stesso comportamento del gioco)
+    entraInStanza: (...a) => entraInStanza(...a), interagisciStanza: (...a) => interagisciStanza(...a),
+    verificaStanzaPulita: () => verificaStanzaPulita(),
     disegnaStanzaPixelArt: (...a) => disegnaStanzaPixelArt(...a),
   });
 }
