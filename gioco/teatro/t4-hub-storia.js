@@ -1575,6 +1575,8 @@
     morteForzata() { statoRun.hpHalf = 0; return avviaMorte(); },
     /** QA del watchdog: la sequenza in corso non finirebbe mai da sola (simula una logica bloccata). */
     bloccaMorte() { if (S.morte) S.morte.totale = Number.MAX_SAFE_INTEGER; return Boolean(S.morte); },
+    // --- C: QA: apre un cartiglio di prova nella fase corrente (verifica che la porta sud resti visibile) ---
+    apriDialogoC(chi, testo) { apriDialogo([voce(chi, testo)]); },
   };
 
   Object.assign(window.__teatro ||= {}, { t4, t4qa: qa });

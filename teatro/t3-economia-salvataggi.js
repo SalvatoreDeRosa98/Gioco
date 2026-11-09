@@ -273,7 +273,9 @@
     }
     if (st.muroSegreto && !st.muroSegreto.aperto) {
       const pos = { N: [320, ARENA.y1], S: [320, ARENA.y2], W: [ARENA.x1, 188], E: [ARENA.x2, 188] }[st.muroSegreto.lato];
-      if (pos && distanzaPuntoSegmento(pos[0], pos[1], ox, oy, ex, ey) < 26) T.apriMuroSegreto(st);
+      // --- C: inizio --- ogni impulso del raggio sul muro giusto è un colpo: ne servono 3 (niente apertura diretta)
+      if (pos && distanzaPuntoSegmento(pos[0], pos[1], ox, oy, ex, ey) < 26) T.colpisciMuroSegretoC(st, pos[0], pos[1]);
+      // --- C: fine ---
     }
   }
 
