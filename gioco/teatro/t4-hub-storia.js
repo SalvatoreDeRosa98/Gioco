@@ -536,7 +536,12 @@
       sprite: 'medaglioneRosa',
     }),
     bossFinale: 'donna-luciana',
-    cartiglio: Object.freeze({ x: 36, y: 268, w: 568, h: 84 }),
+    // --- C: inizio --- cartiglio in alto, appena sotto la porta nord (y 70): la porta sud (y ≥ 304) resta
+    // visibile. La scelta si apre verso il basso (sceltaH) invece che sopra il cartiglio.
+    cartiglio: Object.freeze({ x: 36, y: 80, w: 568, h: 84, sceltaH: 134 }),
+    lanterneMorteY: 40,      // la fila di lanterne della morte sta in alto, non sulla porta sud
+    fasciaMorteY: 78,        // fascia del messaggio di morte (alta 86) sotto le lanterne
+    // --- C: fine ---
     nomeVoce: 'La Voce',
     nomeLuciana: 'Donna Luciana',
   });
@@ -906,10 +911,10 @@
     ctx.fillRect(0, 0, W, H);
     for (let i = 0; i < n; i++) {
       const x = 120 + (i * (W - 240)) / (n - 1);
-      disegnaLanterna(x, 312, i >= spente, 1.0);
+      disegnaLanterna(x, CONFIG.lanterneMorteY, i >= spente, 1.0); // C: lanterne in alto
       if (i === spente - 1 && f === 'lanterne') { // filo di fumo della lanterna appena spenta
         ctx.fillStyle = 'rgba(203, 213, 225, 0.35)';
-        for (let k = 0; k < 4; k++) ctx.fillRect(x - 1 + Math.sin(m.t * 0.3 + k) * 2, 294 - k * 6, 2, 4);
+        for (let k = 0; k < 4; k++) ctx.fillRect(x - 1 + Math.sin(m.t * 0.3 + k) * 2, CONFIG.lanterneMorteY - 18 - k * 6, 2, 4);
       }
     }
     // Fili d'oro che si spezzano e ricadono
@@ -952,12 +957,15 @@
     ctx.save();
     ctx.globalAlpha = entrata;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-    ctx.fillRect(0, 120, W, 86);
-    I.drawTextFit(CONFIG.morte.titolo, W / 2, 152, 560, { size: 22, color: '#ef4444' });
+    // --- C: inizio --- fascia del messaggio spostata in alto (CONFIG.fasciaMorteY)
+    const fy = CONFIG.fasciaMorteY;
+    ctx.fillRect(0, fy, W, 86);
+    I.drawTextFit(CONFIG.morte.titolo, W / 2, fy + 32, 560, { size: 22, color: '#ef4444' });
+    // --- C: fine ---
     const causa = CONFIG.morte.causa.replace('{fonte}', m.fonte).replace('{notte}', String(m.notte));
-    I.drawTextFit(causa, W / 2, 174, 520, { size: 10, weight: '', color: '#f5e6c8' });
+    I.drawTextFit(causa, W / 2, fy + 54, 520, { size: 10, weight: '', color: '#f5e6c8' });
     const didascalia = DATI.interfaccia.morte[f === 'fine' ? 'buio' : f];
-    if (didascalia) I.drawTextFit(didascalia, W / 2, 194, 520, { size: 9, weight: '', style: 'italic', color: '#c9a679' });
+    if (didascalia) I.drawTextFit(didascalia, W / 2, fy + 74, 520, { size: 9, weight: '', style: 'italic', color: '#c9a679' });
     ctx.restore();
   }
 
@@ -1284,7 +1292,7 @@
   }
   function rettOpzione(i) {
     const { x, y, w } = CONFIG.cartiglio;
-    return { x: x + 16, y: y - 96 + i * 34, w: w - 32, h: 28 };
+    return { x: x + 16, y: y + 14 + i * 34, w: w - 32, h: 28 }; // C: opzioni dentro il riquadro, verso il basso
   }
   function disegnaScelta(d) {
     const sc = d.scelta.scelta;
@@ -1292,9 +1300,12 @@
     ctx.fillStyle = '#140c08';
     ctx.strokeStyle = '#f9cb40';
     ctx.lineWidth = 2;
-    ctx.fillRect(x, y - 110, w, h + 110 - 50);
-    ctx.strokeRect(x, y - 110, w, h + 110 - 50);
-    I.drawTextFit(DATI.interfaccia.incontri.scegli, x + w / 2, y - 98 + 0, w - 40, { size: 9, color: '#f9cb40' });
+    // --- C: inizio --- riquadro della scelta che parte dal cartiglio e scende (sceltaH), lontano dalla porta sud
+    const sh = CONFIG.cartiglio.sceltaH;
+    ctx.fillRect(x, y, w, sh);
+    ctx.strokeRect(x, y, w, sh);
+    I.drawTextFit(DATI.interfaccia.incontri.scegli, x + w / 2, y + 12, w - 40, { size: 9, color: '#f9cb40' });
+    // --- C: fine ---
     sc.opzioni.forEach((op, i) => {
       const r = rettOpzione(i);
       const attiva = i === d.sel;
@@ -1305,7 +1316,7 @@
       I.drawTextFit(`${i + 1}. ${op.etichetta}`, r.x + 12, r.y + 24, r.w - 24, { size: 10, color: attiva ? '#ffffff' : '#c9a679', align: 'left' });
     });
     // (cosa_sacrifica di storia.json è una nota di design, non testo per il giocatore: non si mostra)
-    I.drawTextFit(`↑↓ / 1-2 · ${DATI.interfaccia.incontri.conferma}: Spazio / E`, x + w - 16, y + h - 58, 260, { size: 7.5, color: '#f9cb40', align: 'right' });
+    I.drawTextFit(`↑↓ / 1-2 · ${DATI.interfaccia.incontri.conferma}: Spazio / E`, x + w - 16, y + CONFIG.cartiglio.sceltaH - 6, 260, { size: 7.5, color: '#f9cb40', align: 'right' });
   }
 
   // ===========================================================================

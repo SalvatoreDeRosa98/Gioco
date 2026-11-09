@@ -2895,6 +2895,22 @@ function disegnaManoMarionettaPittorica() {
   }
 
   const ARENA = { x1: 76, y1: 78, x2: 564, y2: 298 };
+  // --- C: inizio ---
+  /**
+   * STANZE_C — parametri delle richieste dell'autore (feedback C).
+   * banner: fascia del testo in alto, fra il riquadro HUD di sinistra (x 6..178) e la minimappa
+   *   (x ≥ 516), sotto la barra del boss (y ≤ 30) e sopra la porta nord (y ≥ 52): la porta sud resta libera.
+   * distanzaPorte: px minimi fra un nemico e ogni porta / il punto di entrata.
+   * graziaIngressoMs: dopo l'ingresso in stanza i nemici non attaccano e il contatto non fa danno.
+   * segreta: la crepa si vede solo entro raggioCrepa px; servono colpiMuro colpi sul muro giusto.
+   */
+  const STANZE_C = Object.freeze({
+    banner: Object.freeze({ x: 184, y: 33, w: 332, h: 17 }),
+    distanzaPorte: 110,
+    graziaIngressoMs: 700,
+    segreta: Object.freeze({ raggioCrepa: 70, colpiMuro: 3, raggioEsplosione: 90 }),
+  });
+  // --- C: fine ---
 
   let runSeed = Date.now() >>> 0;
   function rng() {
@@ -6200,7 +6216,9 @@ function disegnaManoMarionettaPittorica() {
     // 5. Banner informativo (con auto-fit rigoroso dentro i 500px!)
     if (statoRun.bannerTimer > 0) {
       statoRun.bannerTimer--;
-      const bw = 516, bx = Math.round((W - bw) / 2), by = H - 56, bh = 18;
+      // --- C: inizio --- fascia in alto sotto l'HUD (STANZE_C.banner): la porta sud resta visibile
+      const { x: bx, y: by, w: bw, h: bh } = STANZE_C.banner;
+      // --- C: fine ---
       ctx.save();
       ctx.fillStyle = 'rgba(10, 6, 4, 0.95)';
       ctx.fillRect(bx, by, bw, bh);
@@ -6210,7 +6228,7 @@ function disegnaManoMarionettaPittorica() {
       ctx.beginPath();
       ctx.rect(bx + 2, by + 1, bw - 4, bh - 2);
       ctx.clip();
-      drawTextFit(statoRun.banner, W / 2, by + 12, bw - 14, { size: 8, color: '#f9cb40' });
+      drawTextFit(statoRun.banner, bx + bw / 2, by + 12, bw - 14, { size: 8, color: '#f9cb40' });
       ctx.restore();
     }
   }
