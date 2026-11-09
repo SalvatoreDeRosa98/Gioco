@@ -245,7 +245,9 @@ node gioco/qa/oggetti.test.mjs            # storie P04/P09: cinque slot (pendent
                                           # una notte vera (determinismo, tier, centro, raccolta), Crepa Dorata (visibile solo a stanza pulita, apertura con proiettile,
                                           # porte sui record, Ferruccio fermo, monete della segreta una volta), regole del codice
 node gioco/qa/oggetti.wire.test.js        # Playwright: ?debug=1&piano=1&seme=1845&personaggio=ferruccio, Q con carica, 6 doni → modale → sostituzione, crepa aperta con un
-                                          # proiettile, boss → altare → patto pagato; salva attivo-q.png, slot-sostituzione.png, segreta-crepa.png, patto.png
+                                          # proiettile, segreta che combatte (storia P15: nNemici predoni tutti dorati, stanza.chiusa → pulita, a terra
+                                          # monete_segreta + bottino), boss → altare → patto pagato; salva attivo-q.png, slot-sostituzione.png,
+                                          # segreta-crepa.png, segreta-predoni.png, patto.png
 node gioco/qa/patto.wire.test.js          # Playwright: boss → pannello del Patto (patto-conferma.png), raggio continuo acceso sulla linea (patto-raggio.png)
 node gioco/qa/statistiche.test.mjs        # storia P04 (node:test): ricalcolaStatisticheIsaac del Teatro (attori/statistiche.js) per i 4 personaggi
                                           # di personaggi.json e tre combinazioni di doni (blocco `teatro` di doni.json) e patti (patto.json), contro
@@ -255,7 +257,12 @@ node gioco/qa/menu.wire.test.js           # storia P05 (Playwright): index.html 
                                           # → hub con HUD maschere 2/2; scene automatiche chiuse, Esc (azione `menu`) → menu; con ?piano=1 la freccia
                                           # destra tenuta spara proiettili (vx > 0) senza muovere Ferruccio; salva menu-selezione.png e menu-slot.png
 bash gioco/qa/suite-completa.sh           # storia P05: esegue tutte le suite qui sopra una dopo l'altra (node:test, Playwright, stati64, seme 200,
-                                          # grep Math.random) e riassume l'esito; esce con 1 se una è rossa
+                                          # grep Math.random) e riassume l'esito; esce con 1 se una è rossa. Le suite Playwright riscrivono i PNG di
+                                          # production/qa/evidence/ con byte diversi a ogni corsa (Chromium non è deterministico al byte): dopo una
+                                          # corsa completa `git status` li mostra modificati e lo script ne stampa il conteggio (osservazione, non
+                                          # verdetto). Regola (storia P15): si GUARDANO e si committano con la storia come evidenza conservata del
+                                          # build corrente, oppure si ripristinano con `git checkout -- production/qa/evidence`; l'albero si
+                                          # consegna pulito, mai con PNG sospesi
 node gioco/qa/audio.test.mjs              # storia P10 (node:test, AudioContext FINTO che registra i nodi): audio.json valido e mappa completa; senza
                                           # AudioContext nessun errore; ogni evento → grafo di nodi atteso con i numeri del JSON (campana 3 seni
                                           # inarmonici, toc triangolo + rumore passa-basso, sibilo passa-banda, tonfo passa-basso + convolver, toni);

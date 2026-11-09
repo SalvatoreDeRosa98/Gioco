@@ -1,6 +1,8 @@
 #!/bin/bash
 # gioco/qa/suite-completa.sh — Esegue tutte le suite di QA una dopo l'altra e riassume l'esito (storia P05).
 # Uso: `bash gioco/qa/suite-completa.sh` dalla radice del repository. Esce con 1 se una suite è rossa.
+# Le suite Playwright riscrivono i PNG di production/qa/evidence/ con byte diversi a ogni corsa: l'ultima riga ne conta
+# quanti risultano modificati per git (storia P15; osservazione, non verdetto: si guardano e si committano, o si ripristinano).
 cd "$(dirname "$0")/../.." || exit 1
 fail=0
 for f in gioco/qa/*.test.mjs; do
@@ -17,5 +19,6 @@ done
 out=$(node gioco/qa/stati64.js 2>&1); echo "== stati64 rc=$? $(echo "$out" | tail -2 | tr '\n' ' ')"
 out=$(node gioco/qa/seme.js 200 2>&1); echo "== seme rc=$? $(echo "$out" | tail -2 | tr '\n' ' ')"
 echo "== Math.random nel motore: $(grep -rn 'Math.random' gioco/motore | wc -l)"
+echo "== PNG di evidenza riscritti da questa corsa (da guardare e committare, o ripristinare con git checkout): $(git status --short -- production/qa/evidence 2>/dev/null | wc -l)"
 echo "FINE fail=$fail"
 exit $fail

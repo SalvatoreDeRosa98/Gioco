@@ -63,9 +63,9 @@ respinge i mostri). **Fonte dell'architettura**: `docs/architecture/architecture
       (`combattimento.test.mjs` «P15 sparaProiettili»)
 - [x] GIVEN le suite, THEN tutte verdi: ogni `*.test.mjs`, `parametri.test.js`, `pagina.test.js`, ogni `*.wire.test.js`, `vetrina.test.js`,
       `pacchetto.test.js`, `stati64.js`, `seme.js 200`, `grep Math.random gioco/motore` vuoto (`suite-completa.sh`)
-- [ ] Non fatto, fuori perimetro: la palette `P` di `resa/renderer.js` e il disegno della maschera aperta / del proiettile riflesso (squadra S);
-      uno screenshot della segreta con i predoni dorati (il piano generato non garantisce una segreta raggiungibile in un percorso di debug
-      deterministico: resta alla squadra disegni/integrazione)
+- [x] GIVEN `oggetti.wire.test.js` (seme 1845), WHEN Ferruccio entra nella segreta aperta, THEN `combatte`, `nNemici` predoni tutti `dorato`,
+      `stanza.chiusa`, poi `pulita` con le monete a terra; screenshot `production/qa/evidence/segreta-predoni.png` (guardato)
+- [ ] Non fatto, fuori perimetro: la palette `P` di `resa/renderer.js` e il disegno della maschera aperta / del proiettile riflesso (squadra S)
 
 ## Evidenza
 
@@ -73,7 +73,11 @@ respinge i mostri). **Fonte dell'architettura**: `docs/architecture/architecture
   `node gioco/qa/combattimento.test.mjs` 39/39, `node gioco/qa/feel.test.mjs` 7/7, `node gioco/qa/audio.test.mjs` 13/13,
   `node gioco/qa/economia.test.mjs` 14/14, `node gioco/qa/boss.test.mjs` 19/19, `node gioco/qa/architettura.test.mjs` 6/6,
   `node gioco/qa/parametri.test.js` 4/4; `bash gioco/qa/suite-completa.sh` → `FINE fail=0` (vedi `test_output` della consegna).
-- Nessuna novità visibile a schermo: la storia è di sola logica (Logic, gate automatico), niente screenshot nuovo.
+- `node gioco/qa/oggetti.wire.test.js` 1/1 → `production/qa/evidence/segreta-predoni.png` (predoni dorati nella segreta, porte chiuse).
+- **Verifica indipendente (2026-11-09)**: l'albero era stato consegnato con tre PNG di evidenza (`prova-pagina`, `vetrina-stanze`,
+  `vetrina-stanze-grigi`) riscritti da una seconda corsa della suite partita dopo il commit. Correzione: le suite Playwright riscrivono
+  i PNG con byte diversi a ogni corsa, quindi dopo la corsa completa i PNG rigenerati si guardano e si committano come evidenza del
+  build corrente (o si ripristinano con `git checkout`), `suite-completa.sh` ne stampa il conteggio e il README fissa la regola.
 
 ## Decisioni
 
