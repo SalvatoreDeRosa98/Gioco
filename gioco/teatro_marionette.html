@@ -1237,8 +1237,13 @@ function disegnaManoMarionettaPittorica() {
     if (args[0] && typeof args[0].save === 'function') args.shift();
     const cx = args[0] || 0;
     const cy = args[1] || 0;
-    const lato = typeof args[2] === 'boolean' ? (args[2] ? -1 : 1) : (args[2] ?? 1);
-    const scala = args[3] ?? 1;
+    // --- A: inizio ---
+    // Ordine unico: (x, y, lato, scala, tick, flash); lato +1 = Mano sinistra, -1 = Mano destra.
+    // Prima alcune chiamate passavano (x, y, scala, flipBool, ...) e scala=false dava ctx.scale(0, 0).
+    const latoGrezzo = typeof args[2] === 'boolean' ? (args[2] ? -1 : 1) : (args[2] ?? 1);
+    const lato = latoGrezzo < 0 ? -1 : 1;
+    const scala = typeof args[3] === 'number' && args[3] > 0 ? args[3] : 1;
+    // --- A: fine ---
     let tick = 0, flash = false;
     for (let i = 4; i < args.length; i++) {
       if (typeof args[i] === 'boolean') flash = args[i];
@@ -1314,13 +1319,7 @@ function disegnaManoMarionettaPittorica() {
     ctx.save();
     ctx.imageSmoothingEnabled = true;
 
-    // 1. FILO D'ORO DELLA MARIONETTA (Collega ogni burattino nemico al bilancino del soffitto!)
-    ctx.strokeStyle = 'rgba(249, 203, 64, 0.35)';
-    ctx.lineWidth = 0.85;
-    ctx.beginPath();
-    ctx.moveTo(x, y - 18);
-    ctx.lineTo(x, Math.max(20, y - 220));
-    ctx.stroke();
+    // --- A: inizio --- tolto il terzo filo verticale: bastano i due di disegnaFiliMarionetta --- A: fine ---
 
     // 2. Ombra a terra morbida ellittica
     const shadowR = n.r ? Math.max(9, n.r * 0.9) : 12;
@@ -1835,14 +1834,7 @@ function disegnaManoMarionettaPittorica() {
       const floatY = Math.sin(tick * 0.08) * 3.5;
       ctx.translate(0, floatY);
 
-      // Fascio di fili dorati che salgono dalla corona e dai polsi
-      ctx.strokeStyle = 'rgba(249, 203, 64, 0.75)';
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.moveTo(-64, -18); ctx.lineTo(-64, -220);
-      ctx.moveTo(64, -18);  ctx.lineTo(64, -220);
-      ctx.moveTo(0, -36);   ctx.lineTo(0, -220);
-      ctx.stroke();
+      // --- A: inizio --- tolti i tre fili propri: restano i due di disegnaFiliMarionetta --- A: fine ---
 
       // Ampia gonna a crinolina barocca nera e scarlatta con trame dorate
       const dg = ctx.createLinearGradient(0, -28, 0, 10);
@@ -5853,14 +5845,8 @@ function disegnaManoMarionettaPittorica() {
         if (n.boss) {
           disegnaBossPittorico(ctx, n, tick);
           if (n.bossId === 'donna-luciana') {
-            ctx.strokeStyle = 'rgba(249,203,64,0.72)';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(n.x - 68, 0); ctx.lineTo(n.x - 68, n.y - 26);
-            ctx.moveTo(n.x + 68, 0); ctx.lineTo(n.x + 68, n.y - 26);
-            ctx.stroke();
-            disegnaManoMarionettaPittorica(ctx, n.x - 68, n.y - 18, 1.0, false, n.flash > 0, tick);
-            disegnaManoMarionettaPittorica(ctx, n.x + 68, n.y - 18, 1.0, true, n.flash > 0, tick);
+            disegnaManoMarionettaPittorica(n.x - 68, n.y - 18, 1, 1.0, tick, n.flash > 0);
+            disegnaManoMarionettaPittorica(n.x + 68, n.y - 18, -1, 1.0, tick, n.flash > 0);
           }
         } else {
           disegnaNemicoPittorico(ctx, n, tick);
@@ -5952,8 +5938,10 @@ function disegnaManoMarionettaPittorica() {
         for (const [tx, ty, mezza] of fili) {
           disegnaFiliMarionetta({ x: tx, piedi: ty, altezza: 0, mezza: mezza || 10 });
         }
-        disegnaManoMarionettaPittorica(ctx, 216, 25, 0.95, false, false, tick);
-        disegnaManoMarionettaPittorica(ctx, 424, 25, 0.95, true, false, tick + 12);
+        // --- A: inizio --- (ordine unico x, y, lato, scala, tick, flash: due Mani simmetriche)
+        disegnaManoMarionettaPittorica(216, 25, 1, 0.95, tick, false);
+        disegnaManoMarionettaPittorica(424, 25, -1, 0.95, tick + 12, false);
+        // --- A: fine ---
       }
 
       // --- T3: inizio ---
@@ -6307,8 +6295,10 @@ function disegnaManoMarionettaPittorica() {
     ctx.clip();
 
     // Le Mani di Marionetta sopra il cartellone + Ferruccio pittorico al centro
-    disegnaManoMarionettaPittorica(ctx, 232, 82, 0.92, false, false, tick);
-    disegnaManoMarionettaPittorica(ctx, 408, 82, 0.92, true, false, tick);
+    // --- A: inizio --- (ordine unico x, y, lato, scala, tick, flash)
+    disegnaManoMarionettaPittorica(232, 82, 1, 0.92, tick, false);
+    disegnaManoMarionettaPittorica(408, 82, -1, 0.92, tick, false);
+    // --- A: fine ---
     disegnaFerruccioPittorico(ctx, 320, 108, {
       scale: 0.95,
       flipX: false,
