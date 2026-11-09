@@ -3366,13 +3366,7 @@ function disegnaManoMarionettaPittorica() {
         W: { x: 62, y: 188, rx: 20, ry: 28, opp: 'E' },
         E: { x: 578, y: 188, rx: 20, ry: 28, opp: 'W' },
       };
-      if (st.muroSegreto && !st.muroSegreto.aperto) {
-        const ms = porteClick[st.muroSegreto.lato];
-        if (ms && Math.abs(mx - ms.x) <= ms.rx + 8 && Math.abs(my - ms.y) <= ms.ry + 8) {
-          apriMuroSegreto(st);
-          return;
-        }
-      }
+      // --- C: la Stanza Segreta non si apre più col click (né con E): solo bomba ferma o 3 colpi ---
       for (const [lato, idDest] of Object.entries(st.porte)) {
         const pc = porteClick[lato];
         if (Math.abs(mx - pc.x) <= pc.rx && Math.abs(my - pc.y) <= pc.ry) {
@@ -3467,6 +3461,20 @@ function disegnaManoMarionettaPittorica() {
     }
     return null;
   }
+
+  // --- C: inizio ---
+  /**
+   * Un colpo (lacrima, fendente, impulso del raggio) sul muro giusto: al STANZE_C.segreta.colpiMuro-esimo
+   * il passaggio si apre. Nessun avviso: solo un po' di polvere sul muro.
+   * @param {object} st stanza corrente @param {number} x @param {number} y punto d'impatto
+   */
+  function colpisciMuroSegretoC(st, x, y) {
+    if (!st?.muroSegreto || st.muroSegreto.aperto) return;
+    st.muroSegreto.colpi = (st.muroSegreto.colpi || 0) + 1;
+    if (Number.isFinite(x)) statoRun.effettiSplash.push({ x, y, tick: 0 });
+    if (st.muroSegreto.colpi >= STANZE_C.segreta.colpiMuro) apriMuroSegreto(st);
+  }
+  // --- C: fine ---
 
   function apriMuroSegreto(st) {
     if (!st?.muroSegreto || st.muroSegreto.aperto) return;
@@ -4053,9 +4061,7 @@ function disegnaManoMarionettaPittorica() {
           : `💀 BOSS PIANO ${statoRun.piano} (${b.hp} HP): ${b.nome}!`,
         220
       );
-    } else if (stanza.muroSegreto && !stanza.muroSegreto.aperto && stanza.pulita) {
-      mostraBanner(`✨ C'è una Crepa Dorata sul muro ${stanza.muroSegreto.lato}! Spara o fai esplodere un Bozzo per aprire la Segreta!`, 180);
-    }
+    } // --- C: nessun avviso della crepa: la Stanza Segreta resta da scoprire ---
   }
 
   function eseguiAttacco4Direzioni(dx, dy) {
@@ -4306,7 +4312,7 @@ function disegnaManoMarionettaPittorica() {
     }
     if (st.muroSegreto && !st.muroSegreto.aperto) {
       const posMuro = { N: [320, ARENA.y1], S: [320, ARENA.y2], W: [ARENA.x1, 188], E: [ARENA.x2, 188] }[st.muroSegreto.lato];
-      if (posMuro && Math.hypot(bx - posMuro[0], by - posMuro[1]) < 95) {
+      if (posMuro && Math.hypot(bx - posMuro[0], by - posMuro[1]) < STANZE_C.segreta.raggioEsplosione) { // C
         apriMuroSegreto(st);
       }
     }
@@ -4441,9 +4447,7 @@ function disegnaManoMarionettaPittorica() {
       if (st.oggettoPiedistallo) {
         const tag = st.oggettoPiedistallo.forteGratis ? '★ OGGETTO FORTE GRATIS (1 su 10)!' : '🎁 OGGETTO GRATIS (1 su 3)!';
         mostraBanner(`Stanza pulita! È apparso ${tag} → ${st.oggettoPiedistallo.nome} [Click/E]`, 220);
-      } else if (st.muroSegreto && !st.muroSegreto.aperto) {
-        mostraBanner(`Stanza pulita! ✨ Nota la Crepa Dorata sul muro ${st.muroSegreto.lato}: sparaci per la Stanza Segreta!`, 200);
-      } else {
+      } else { // --- C: nessun avviso della crepa a stanza pulita ---
         mostraBanner(st.tipo === 'segreta' ? 'Stanza Segreta ripulita! Raccogli tutte le monete a terra!' : 'Stanza ripulita! (+1⚡ Carica Attivo [Q])', 130);
       }
     }
@@ -4454,10 +4458,7 @@ function disegnaManoMarionettaPittorica() {
     const st = statoRun.stanzaCorrente;
     if (!st) return;
 
-    if (st.pulita && st.muroSegreto && !st.muroSegreto.aperto) {
-      apriMuroSegreto(st);
-      return;
-    }
+    // --- C: E non apre più la Stanza Segreta ---
 
     if (st.pulita && st.oggettoPiedistallo && !st.oggettoPiedistallo.preso) {
       const o = st.oggettoPiedistallo;
@@ -4696,26 +4697,23 @@ function disegnaManoMarionettaPittorica() {
 
     if (st.muroSegreto && !st.muroSegreto.aperto) {
       const p = porte[st.muroSegreto.lato];
-      if (p) {
-        const pulse = 0.55 + 0.45 * Math.sin(tick * 0.14);
+      // --- C: inizio --- crepa discreta, visibile solo da vicino (STANZE_C.segreta.raggioCrepa), senza etichetta
+      const dCrepa = p ? Math.hypot(player.x - p.x, player.y - p.y) : Infinity;
+      if (p && dCrepa < STANZE_C.segreta.raggioCrepa) {
+        const vis = 1 - dCrepa / STANZE_C.segreta.raggioCrepa;
         ctx.save();
-        ctx.strokeStyle = `rgba(249, 203, 64, ${pulse.toFixed(2)})`;
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = `rgba(20, 12, 8, ${(0.25 + 0.35 * vis).toFixed(2)})`;
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(p.x - 8, p.y - 6);
-        ctx.lineTo(p.x - 2, p.y);
-        ctx.lineTo(p.x + 5, p.y - 4);
-        ctx.lineTo(p.x + 2, p.y + 5);
-        ctx.lineTo(p.x + 9, p.y + 8);
+        ctx.moveTo(p.x - 5, p.y - 4);
+        ctx.lineTo(p.x - 1, p.y);
+        ctx.lineTo(p.x + 3, p.y - 2);
+        ctx.lineTo(p.x + 1, p.y + 4);
         ctx.stroke();
-        if (st.pulita) {
-          const lx = st.muroSegreto.lato === 'W' ? p.x + 48 : st.muroSegreto.lato === 'E' ? p.x - 48 : p.x;
-          const ly = st.muroSegreto.lato === 'N' ? p.y + 22 : st.muroSegreto.lato === 'S' ? p.y - 12 : p.y - 12;
-          drawPillLabel('? CREPA [Spara/E]', lx, ly, 108, { size: 7.5, color: '#f9cb40', border: '#f9cb40' });
-        }
         ctx.restore();
       }
     }
+    // --- C: fine ---
 
     for (const [lato, idDest] of Object.entries(st.porte)) {
       const dest = statoRun.mappa.perId.get(idDest);
@@ -5140,8 +5138,9 @@ function disegnaManoMarionettaPittorica() {
 
           if (st.muroSegreto && !st.muroSegreto.aperto) {
             const pm = posMuroSegreto[st.muroSegreto.lato];
-            if (pm && Math.hypot(hx - pm.x, hy - pm.y) <= reach + 16) {
-              apriMuroSegreto(st);
+            if (pm && Math.hypot(hx - pm.x, hy - pm.y) <= reach + 16 && !player.swordHitIds.has('muroC')) {
+              player.swordHitIds.add('muroC'); // C: un fendente conta un colpo solo
+              colpisciMuroSegretoC(st, pm.x, pm.y);
             }
           }
           for (const nem of st.nemici) {
@@ -5206,8 +5205,7 @@ function disegnaManoMarionettaPittorica() {
         if (st.muroSegreto && !st.muroSegreto.aperto) {
           const pm = posMuroSegreto[st.muroSegreto.lato];
           if (pm && Math.hypot(p.x - pm.x, p.y - pm.y) < 26) {
-            apriMuroSegreto(st);
-            statoRun.effettiSplash.push({ x: p.x, y: p.y, tick: 0 });
+            colpisciMuroSegretoC(st, p.x, p.y); // C: servono 3 colpi
             statoRun.proiettili.splice(i, 1);
             continue;
           }
@@ -6517,6 +6515,7 @@ function disegnaManoMarionettaPittorica() {
   window.__teatroInterno = {
     W, H, ARENA, ctx, canvas, statoRun, player, keys, AudioSys, CATALOGO_PATTO, CATALOGO_OGGETTI, ECONOMIA_T3,
     PERSONAGGI_GIOCABILI, drawTextFit, drawPillLabel, mostraBanner, danneggiaNemico, apriMuroSegreto,
+    colpisciMuroSegretoC, // C
     acquisisciOggettoConLimite5Slot, selezionaPersonaggio,
     get tick() { return tick; },
   };
