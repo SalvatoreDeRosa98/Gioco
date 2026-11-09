@@ -26,6 +26,8 @@
     { "tipo": "guardia", "peso": 0.9, "min": 1, "max": 4 },
     { "tipo": "vespa", "peso": 0.8, "min": 1, "max": 4 },
     { "tipo": "statua", "peso": 0.5, "min": 0, "max": 2 },
-    { "tipo": "gatto", "peso": 0.7, "min": 0, "max": 4 }
+    { "tipo": "gatto", "peso": 0.7, "min": 0, "max": 4 },
+    { "tipo": "maschera", "peso": 0.5, "min": 0, "max": 2 },
+    { "tipo": "bomba", "peso": 0.4, "min": 0, "max": 2 }
   ]
 }

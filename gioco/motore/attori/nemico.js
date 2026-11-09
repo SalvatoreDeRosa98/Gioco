@@ -32,6 +32,19 @@
  * moltiplica il raggio del corpo e la geometria dell'attacco (portata, banda, balzo); si costruisce con
  * `schedaBossProvvisorio()` da `nemici.boss_provvisorio`. Il flag `boss` resta quello della storia 019.
  *
+ * Storia P05 (nemici alla Isaac del Teatro): blocchi facoltativi della scheda letti se presenti —
+ * `sparo` {n_colpi, apertura_gradi, croce, velocita_fattore}: il Colpo non ha hitbox, **spara**
+ * proiettili nemici (`proiettili-nemici.js`, nella lista `proiettili` iniettata; direzioni da `ia/sparo.js`:
+ * ventaglio mirato o croce a parità alternata) con i numeri di `nemici.proiettili_nemici` (danno per
+ * piano, dei boss `danno_boss`); `esplosione` {r_giocatore, r_nemici, danno_nemici, n_schegge,
+ * velocita_fattore}: il Colpo è un'**esplosione** (Ferruccio entro `r_giocatore` subisce l'attacco della
+ * scheda, i nemici entro `r_nemici` perdono `danno_nemici`, partono `n_schegge` schegge radiali,
+ * evento `nemico.esplosione`, poi la bomba muore; esplode anche se uccisa prima, una volta sola);
+ * `corazza` {frazione_danno}: da **chiusa** (fuori da anticipo, lampo, colpo e recupero) la maschera
+ * subisce solo quella frazione del danno e ignora la spinta (`aperta` per il renderer); flag `dorato`
+ * (predone della segreta): monete × `drop.molt_monete_dorato`, `dorato` nei payload;
+ * `attacco.senza_gettone`: non chiede il gettone al direttore (statua e bomba).
+ *
  * Nessun numero di gioco qui; nessuna casualità nativa: `rng` è un generatore derivato (pattuglia,
  * verso di separazione, verso dell'orbita, bottino).
  */
@@ -39,16 +52,26 @@
 import { muoviCerchio, separazioneCerchi, lineaLibera as lineaLiberaCampo, rettangoloColpisceCerchio, settoreColpisceCerchio } from '../mondo/fisica.js';
 import { intero } from '../fondazione/rng.js';
 import { creaIaBase, STATI_TELEGRAFO } from './ia/base.js';
+import { direzioniSalva, direzioniRadiali } from './ia/sparo.js';
+import { creaProiettileNemico } from './proiettili-nemici.js';
 
 /** Archetipi dell'MVP (chiavi di `nemici.archetipi`). */
 export const ARCHETIPI_MVP = Object.freeze(['gatto', 'vespa', 'statua', 'guardia']);
+/** Archetipi alla Isaac aggiunti dalla storia P05 (Teatro): maschera (Host), bomba (Bozzo Esplosivo), predone (mob dorato). */
+export const ARCHETIPI_ISAAC = Object.freeze(['maschera', 'bomba', 'predone']);
 
 /** Chiavi numeriche di una scheda e del suo attacco (lette con `modificatori.valore`, ADR-0002). */
 const CHIAVI_SCHEDA = Object.freeze(['vita', 'r', 'peso', 'r_aggro', 'r_lose', 'v_pattuglia', 'v_insegue', 'd_attesa', 'costo', 'pezzi', 'volante']);
 const CHIAVI_ATTACCO = Object.freeze(['t_ant', 't_lamp', 't_imp', 't_rec', 't_cd', 'd_min', 'd_max', 'portata', 'larghezza', 'settore_gradi', 'pesante', 'imparabile', 'avanza', 'linea_libera']);
-/** Chiavi facoltative (storia 020): lette solo se il JSON le ha, altrimenti il valore di riposo indicato. */
-const FACOLTATIVE_SCHEDA = Object.freeze({ omega_attesa: 0 });
-const FACOLTATIVE_ATTACCO = Object.freeze({ t_anello: 0, balzo_extra: null, balzo_min: null, hit_dal: 0 });
+/** Chiavi facoltative (storia 020, P05): lette solo se il JSON le ha, altrimenti il valore di riposo indicato. */
+const FACOLTATIVE_SCHEDA = Object.freeze({ omega_attesa: 0, dorato: 0 });
+const FACOLTATIVE_ATTACCO = Object.freeze({ t_anello: 0, balzo_extra: null, balzo_min: null, hit_dal: 0, senza_gettone: 0 });
+/** Blocchi facoltativi della scheda (storia P05) con le loro chiavi numeriche. */
+const BLOCCHI_FACOLTATIVI = Object.freeze({
+  sparo: Object.freeze(['n_colpi', 'apertura_gradi', 'croce', 'velocita_fattore']),
+  esplosione: Object.freeze(['r_giocatore', 'r_nemici', 'danno_nemici', 'n_schegge', 'velocita_fattore']),
+  corazza: Object.freeze(['frazione_danno']),
+});
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
@@ -126,7 +149,28 @@ export function schedaArchetipo({ modificatori, parametri, archetipo, piano = 1 
   scheda.v_insegue = scalaVelocita(scheda.v_insegue, piano, S('k_vel'), G('v_cap'));
   attacco.t_ant = scalaAnticipo(attacco.t_ant, piano, S('k_tel'), S('t_ant_min'));
   scheda.attacco = attacco;
+  // storia P05: blocchi facoltativi (null se assenti)
+  for (const [blocco, chiavi] of Object.entries(BLOCCHI_FACOLTATIVI)) {
+    scheda[blocco] = null;
+    if (!parametri.ha(`${radice}.${blocco}`)) continue;
+    scheda[blocco] = {};
+    for (const k of chiavi) scheda[blocco][k] = val(`${blocco}.${k}`);
+  }
   return scheda;
+}
+
+/**
+ * Storia P05: parametri dei proiettili nemici per il piano (`nemici.proiettili_nemici`): danno in maschere
+ * (`danno.p<piano>`, tetto p5), dei boss `danno_boss`; velocità, gittata e raggio in unità del motore.
+ * @param {{ modificatori: { valore: (nome: string) => number }, parametri: { ha: (chiave: string) => boolean }, piano?: number, boss?: boolean }} o
+ * @returns {{ velocita: number, gittata: number, r: number, danno: number } | null} null se il blocco manca
+ */
+export function schedaProiettiliNemici({ modificatori, parametri, piano = 1, boss = false }) {
+  const radice = 'nemici.proiettili_nemici';
+  if (!parametri.ha(radice)) return null;
+  const v = (k) => modificatori.valore(`${radice}.${k}`);
+  const p = Math.max(1, Math.min(5, Math.round(piano)));
+  return { velocita: v('velocita'), gittata: v('gittata'), r: v('r'), danno: boss ? v('danno_boss') : v(`danno.p${p}`) };
 }
 
 /**
@@ -175,6 +219,11 @@ export function validaSchede(parametri) {
     if (a.t_anello && a.t_anello.base > a.t_lamp.base) errori.push(`${id}: t_anello ${a.t_anello.base} > t_lamp ${a.t_lamp.base}`);
     if (a.balzo_min && a.balzo_min.base > a.portata.base) errori.push(`${id}: balzo_min ${a.balzo_min.base} > portata ${a.portata.base}`);
     if (scheda.pezzi.base < 3 || scheda.pezzi.base > 6) errori.push(`${id}: pezzi ${scheda.pezzi.base} fuori da 3-6`);
+    // storia P05: un tiratore o una bomba non possono anche avanzare col corpo; chi spara ha almeno un colpo
+    if (scheda.sparo && scheda.esplosione) errori.push(`${id}: 'sparo' ed 'esplosione' insieme`);
+    if ((scheda.sparo || scheda.esplosione) && a.avanza.base) errori.push(`${id}: 'avanza' con sparo/esplosione`);
+    if (scheda.sparo && scheda.sparo.n_colpi.base < 1) errori.push(`${id}: n_colpi ${scheda.sparo.n_colpi.base} < 1`);
+    if (scheda.esplosione && !a.imparabile.base) errori.push(`${id}: l'esplosione deve essere imparabile`);
   }
   return errori;
 }
@@ -198,13 +247,17 @@ export function validaSchede(parametri) {
  *   archetipo: string, piano?: number, x: number, y: number, id?: string,
  *   boss?: boolean, elite?: boolean, ferito?: () => boolean,
  *   posa?: ((nemico: object) => object) | null,
- *   schedaBoss?: { vita: number, scalaRaggio: number, scalaPortata: number } | null
+ *   schedaBoss?: { vita: number, scalaRaggio: number, scalaPortata: number } | null,
+ *   proiettili?: object[] | null, spada?: (() => object | null) | null
  * }} o `altri` ritorna la lista dei bersagli (per la separazione); `ferito` dice se Ferruccio ha maschere non piene;
- *   `posa` descrive la sagoma per stato (storia 020, `attori/gatto.js`); `schedaBoss` è la taglia del boss provvisorio (storia P01)
+ *   `posa` descrive la sagoma per stato (storia 020, `attori/gatto.js`); `schedaBoss` è la taglia del boss provvisorio (storia P01);
+ *   `proiettili` (storia P05) è la lista condivisa in cui i tiratori e le bombe mettono i proiettili nemici (senza lista non sparano:
+ *   il Colpo resta a vuoto), `spada` ritorna la hitbox corrente del combattimento (il fendente cancella i proiettili)
  */
 export function creaNemico({
   modificatori, parametri, tempo, eventi = null, campo, bersaglio = null, altri = () => [], direttore = null, rng,
   archetipo, piano = 1, x, y, id = archetipo, boss = false, elite = false, ferito = () => false, posa = null, schedaBoss = null,
+  proiettili = null, spada = null,
 }) {
   if (!modificatori || !parametri || !tempo || !campo || typeof rng !== 'function') throw new TypeError('creaNemico: dipendenze mancanti');
   const schedaBase = schedaArchetipo({ modificatori, parametri, archetipo, piano });
@@ -214,6 +267,7 @@ export function creaNemico({
   const ticks = (ms) => tempo.ticksDaMs(ms);
   const A = scheda.attacco;
   const versoOrbita = rng() < 0.5 ? -1 : 1; // GDD 4.1: verso dell'orbita alternato per gatto (dal seme)
+  const dorato = scheda.dorato > 0;
 
   const corpo = {
     x, y, r: scheda.r, vita: scheda.vita, vitaMax: scheda.vita, peso: scheda.peso + (elite ? 1 : 0),
@@ -222,7 +276,56 @@ export function creaNemico({
     morto: false, dissoluzioneTicks: 0, bottinoDato: false, cuoreDato: false, cuore: false, monete: 0,
     immunitaTicks: 0, stordimentoMs: 0,
     danniSubiti: [], spinteSubite: [], impatti: [],
+    paritaSalva: 0, sparati: 0, esplosa: false, // storia P05
   };
+
+  // --- storia P05: tiratori ed esplosioni ---------------------------------------------------------
+
+  /** Mette in volo un proiettile nemico dal bordo del corpo lungo `dir` (niente lista: nessun proiettile). */
+  function lanciaProiettile(dir, fattoreVelocita) {
+    const base = schedaProiettiliNemici({ modificatori, parametri, piano, boss });
+    if (!proiettili || !base) return null;
+    const p = creaProiettileNemico({
+      x: corpo.x + dir.x * (corpo.r + base.r + 1), y: corpo.y + dir.y * (corpo.r + base.r + 1), direzione: dir,
+      velocita: base.velocita * fattoreVelocita, r: base.r, gittata: base.gittata, danno: base.danno,
+      campo, bersaglio, nemici: altri, origine: facciata, spada, eventi, boss, id: `${id}-p${corpo.sparati++}`,
+    });
+    proiettili.push(p);
+    return p;
+  }
+
+  /** Il Colpo di un tiratore: una salva (ventaglio mirato o croce a parità alternata). Ritorna 'sparo'. */
+  function spara() {
+    const direzioni = direzioniSalva(scheda.sparo, { direzione: ia.direzione, parita: corpo.paritaSalva });
+    corpo.paritaSalva = (corpo.paritaSalva + 1) % 2;
+    const lanciati = direzioni.map((d) => lanciaProiettile(d, scheda.sparo.velocita_fattore)).filter(Boolean);
+    eventi?.emit('nemico.sparo', { id, archetipo, boss, x: corpo.x, y: corpo.y, n: lanciati.length, croce: scheda.sparo.croce > 0, direzioni });
+    return 'sparo';
+  }
+
+  /**
+   * L'esplosione della bomba (Teatro `innescaEsplosioneBomba`): una volta sola. Ferruccio entro `r_giocatore`
+   * subisce l'attacco della scheda (imparabile, pesante); gli altri nemici vivi entro `r_nemici` perdono
+   * `danno_nemici`; partono `n_schegge` schegge radiali; evento `nemico.esplosione`; la bomba muore.
+   */
+  function esplodi() {
+    if (corpo.esplosa || !scheda.esplosione) return null;
+    corpo.esplosa = true;
+    const E = scheda.esplosione;
+    let esito = 'esplosione';
+    if (bersaglio && bersaglio.stato !== 'morto' && Math.hypot(bersaglio.x - corpo.x, bersaglio.y - corpo.y) <= E.r_giocatore + bersaglio.r) {
+      esito = bersaglio.colpisci({ danno: undefined, pesante: A.pesante > 0, x: corpo.x, y: corpo.y, imparabile: true, attaccante: facciata }) ?? esito;
+      corpo.impatti.push(esito);
+    }
+    for (const altro of altri()) {
+      if (!altro || altro === facciata || altro.stato === 'morto' || altro.stato === 'emersione' || typeof altro.colpisci !== 'function') continue;
+      if (Math.hypot(altro.x - corpo.x, altro.y - corpo.y) <= E.r_nemici + (altro.r ?? 0)) altro.colpisci(E.danno_nemici, null);
+    }
+    for (const d of direzioniRadiali(E.n_schegge, 0)) lanciaProiettile(d, E.velocita_fattore);
+    eventi?.emit('nemico.esplosione', { id, archetipo, boss, x: corpo.x, y: corpo.y, rGiocatore: E.r_giocatore, rNemici: E.r_nemici, schegge: Math.round(E.n_schegge) });
+    if (!corpo.morto) muori();
+    return 'esplosione';
+  }
 
   /** Campo di movimento: i volanti sorvolano gli ostacoli ma non i muri. */
   let cacheSolidi = null;
@@ -276,8 +379,10 @@ export function creaNemico({
     return { x1: o.x, y1: o.y, x2: o.x + dir.x * L, y2: o.y + dir.y * L, larghezza: larghezzaColpo() };
   }
 
-  /** Impatto del Colpo su Ferruccio (al primo contatto). */
+  /** Impatto del Colpo su Ferruccio (al primo contatto); per i tiratori spara, per la bomba esplode (storia P05). */
   function colpisciBersaglio() {
+    if (scheda.esplosione) return esplodi();
+    if (scheda.sparo) return spara();
     if (!bersaglio || bersaglio.stato === 'morto') return null;
     const h = hitbox();
     if (!h) return null;
@@ -306,6 +411,7 @@ export function creaNemico({
         dMin: A.d_min, dMax: A.d_max, portata: A.portata, larghezza: A.larghezza, settoreGradi: A.settore_gradi,
         pesante: A.pesante > 0, imparabile: A.imparabile > 0, avanza: A.avanza > 0, lineaLibera: A.linea_libera > 0,
         hitDal: A.hit_dal, balzoExtra: A.balzo_extra, balzoMin: A.balzo_min ?? A.portata, tAnello: A.t_anello > 0 ? ticks(A.t_anello) : 0,
+        senzaGettone: A.senza_gettone > 0,
       },
     },
     corpo,
@@ -356,7 +462,7 @@ export function creaNemico({
       corpo.bottinoDato = true;
       const angolo = rng() * Math.PI * 2;
       eventi?.emit('nemico.bottino', {
-        id, archetipo, boss, x: corpo.x, y: corpo.y, monete: corpo.monete, cuore: false,
+        id, archetipo, boss, dorato, x: corpo.x, y: corpo.y, monete: corpo.monete, cuore: false,
         direzione: { x: Math.cos(angolo), y: Math.sin(angolo) }, lancio: G('lancio_bottino'),
       });
     }
@@ -388,9 +494,11 @@ export function creaNemico({
    */
   function colpisci(danno, spinta) {
     if (corpo.morto || ia.stato === 'emersione') return; // emersione invulnerabile (§7)
-    corpo.vita -= danno;
-    corpo.danniSubiti.push(danno);
-    if (spinta && !ia.inTelegrafo) { // armatura del telegrafo: la spinta non sposta chi sta attaccando
+    const chiusa = Boolean(scheda.corazza) && !aperta(); // storia P05: la maschera chiusa è corazzata
+    const dannoEffettivo = chiusa ? danno * scheda.corazza.frazione_danno : danno;
+    corpo.vita -= dannoEffettivo;
+    corpo.danniSubiti.push(dannoEffettivo);
+    if (spinta && !ia.inTelegrafo && !chiusa) { // armatura del telegrafo: la spinta non sposta chi sta attaccando
       corpo.spinteSubite.push({ x: spinta.x, y: spinta.y });
       const n = tempo.ticksDaMs(spinta.ms);
       corpo.spinta = { vx: spinta.x, vy: spinta.y, ticks: n, totale: n };
@@ -404,13 +512,21 @@ export function creaNemico({
     corpo.morto = true;
     corpo.vita = Math.min(corpo.vita, 0);
     ia.muori();
-    corpo.monete = monetePerMorte({ costo: scheda.costo, extra: D('monete_extra'), rng, elite, moltElite: D('molt_monete_elite') });
+    const moltDorato = dorato && parametri.ha('nemici.drop.molt_monete_dorato') ? D('molt_monete_dorato') : 1;
+    corpo.monete = monetePerMorte({ costo: scheda.costo, extra: D('monete_extra'), rng, elite, moltElite: D('molt_monete_elite') }) * moltDorato;
     const p = probabilitaCuore({ p0: D('p_0_cuore'), costo: scheda.costo, ferito: Boolean(ferito()), mFerito: D('m_ferito') });
     corpo.cuore = rng() < p;
     eventi?.emit('nemico.morto', {
-      id, archetipo, boss, x: corpo.x, y: corpo.y, monete: corpo.monete, cuore: corpo.cuore, pezzi: scheda.pezzi,
+      id, archetipo, boss, dorato, x: corpo.x, y: corpo.y, monete: corpo.monete, cuore: corpo.cuore, pezzi: scheda.pezzi,
       tDissoluzione: G('t_dissoluzione'),
     });
+    if (scheda.esplosione && !corpo.esplosa) esplodi(); // storia P05: il Bozzo esplode anche alla morte
+  }
+
+  /** Storia P05: vero se la maschera è aperta (anticipo, lampo, colpo, recupero); sempre vero senza corazza. */
+  function aperta() {
+    if (!scheda.corazza) return true;
+    return ia.inTelegrafo || ia.stato === 'recupero';
   }
 
   /**
@@ -465,6 +581,14 @@ export function creaNemico({
     get spinteSubite() { return corpo.spinteSubite.slice(); },
     get impatti() { return corpo.impatti.slice(); },
     get esitoColpo() { return ia.esitoColpo; },
+    /** Storia P05: tiratore (`sparo`), bomba (`esplosione`), corazza; `aperta` per il renderer; `dorato` per il bottino. */
+    get tiratore() { return Boolean(scheda.sparo); },
+    get esplosivo() { return Boolean(scheda.esplosione); },
+    get corazzato() { return Boolean(scheda.corazza); },
+    get aperta() { return aperta(); },
+    get esplosa() { return corpo.esplosa; },
+    get dorato() { return dorato; },
+    get sparati() { return corpo.sparati; },
     /** Storia 020: progresso della fase, anello del lampo, portata e hitbox del Colpo corrente. */
     get progresso() { return ia.progresso; },
     get anello() { return ia.anello; },

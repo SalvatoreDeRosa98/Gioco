@@ -429,7 +429,9 @@ test('014: GIVEN un modello con 3 nemici, WHEN Ferruccio entra, THEN le porte si
   assert.ok(stanza.porte.every((p) => p.stato === 'chiusa'), 'le porte sono già chiuse quando i nemici compaiono');
   assert.ok(stanza.porte.every((p) => p.solido.ferma_passo && p.solido.ferma_colpi));
   assert.equal(stanza.stato, 'ondata');
-  assert.ok(m.bersagli.every((b) => ['gatto', 'vespa', 'statua', 'guardia'].includes(b.archetipo)));
+  // storia P05: gli archetipi ammessi sono le schede di nemici.json (non una lista fissa nel test)
+  const archetipiNoti = Object.keys(leggi('contenuti/parametri/nemici.json').archetipi).filter((k) => !k.startsWith('_'));
+  assert.ok(m.bersagli.every((b) => archetipiNoti.includes(b.archetipo)), m.bersagli.map((b) => b.archetipo).join(','));
   // le porte chiuse sono muro: Ferruccio sulla soglia W non riesce a uscire
   m.ferruccio.posiziona(arrivo.x, arrivo.y);
   m.tieni('sinistra');

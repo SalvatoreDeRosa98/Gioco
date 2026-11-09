@@ -84,7 +84,7 @@ export const STATI_TELEGRAFO = Object.freeze(['anticipo', 'lampo', 'colpo']);
  * @property {{ tAnt: number, tLamp: number, tImp: number, tRec: number, tCd: number, dMin: number, dMax: number,
  *             portata: number, larghezza: number, settoreGradi: number, pesante: boolean, imparabile: boolean,
  *             avanza: boolean, lineaLibera: boolean, hitDal?: number, balzoExtra?: number | null, balzoMin?: number,
- *             tAnello?: number }} attacco tempi in tick
+ *             tAnello?: number, senzaGettone?: boolean }} attacco tempi in tick; `senzaGettone` (storia P05) non chiede il gettone al direttore
  */
 
 /**
@@ -265,12 +265,13 @@ export function creaIaBase(ctx) {
     if (d < A.dMin || d > A.dMax) return false;
     if (A.lineaLibera && !vedeBersaglio()) return false;
     const traTicks = A.tAnt + A.tLamp + hitTicks;
-    const ok = direttore ? direttore.richiedi(chiave(), { traTicks, imparabile: A.imparabile }) : true;
+    // storia P05: `senzaGettone` (statua, bomba: pericoli ambientali alla Isaac) salta il direttore
+    const ok = direttore && !A.senzaGettone ? direttore.richiedi(chiave(), { traTicks, imparabile: A.imparabile }) : true;
     if (!ok) {
       s.riprovaTicks = scheda.tRiprova;
       return false;
     }
-    s.gettone = true;
+    s.gettone = !A.senzaGettone;
     vai('anticipo');
     fase(A.tAnt);
     if (A.imparabile) s.direzione = versoBersaglio(); // R5: gli imparabili fissano la direzione all'inizio dell'anticipo

@@ -25,6 +25,7 @@
   "tavolozza": [
     { "tipo": "guardia", "peso": 1.0, "min": 1, "max": 4 },
     { "tipo": "gatto", "peso": 0.6, "min": 1, "max": 4 },
-    { "tipo": "vespa", "peso": 0.4, "min": 0, "max": 3 }
+    { "tipo": "vespa", "peso": 0.4, "min": 0, "max": 3 },
+    { "tipo": "maschera", "peso": 0.5, "min": 0, "max": 2 }
   ]
 }

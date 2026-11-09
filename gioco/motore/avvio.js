@@ -85,6 +85,12 @@ import { creaFantoccio } from './attori/bersaglio.js';
 import { creaNemico as creaNemicoArchetipo, schedaBossProvvisorio } from './attori/nemico.js';
 import { creaGatto, ARCHETIPO_GATTO } from './attori/gatto.js'; // storia 020: il gatto d'ombra con la posa
 import { creaDirettore } from './attori/ia/direttore.js';
+// --- squadra nemici: inizio --- (storia P05)
+import { potaSpenti } from './attori/proiettili-nemici.js';
+/** Posizione (quote del campo) e id del nemico di prova di `?debug=1&piano=N&nemico=<archetipo>`. */
+const POSIZIONE_NEMICO_PROVA = Object.freeze({ x: 0.72, y: 0.5 });
+const ID_NEMICO_PROVA = 'nemico-prova';
+// --- squadra nemici: fine ---
 import { creaResaDebug } from './resa/debug.js';
 import { creaRenderer } from './resa/renderer.js';
 import { caricaModelli, creaCatalogo, regoleDaParametri, validaParametriGenerazione } from './mondo/modelli.js';
@@ -412,6 +418,9 @@ async function avvia() {
       rng: derivato(rngNemici, `${id}#${natiNemici++}`), archetipo: archEffettivo, piano: pianoCorrente, x, y, id,
       ferito: () => ferruccio.maschere < modificatori.valore('ferruccio.maschere_max'),
       boss, schedaBoss,
+      // --- squadra nemici: inizio --- (storia P05: lista dei proiettili nemici e hitbox della spada che li cancella)
+      proiettili, spada: () => combattimento.hitboxCorrente(),
+      // --- squadra nemici: fine ---
     });
     if (infoBoss) {
       attore.bossId = infoBoss.id;
@@ -597,6 +606,25 @@ async function avvia() {
       },
     }, { stati: ['notte'] });
   }
+
+  // --- squadra nemici: inizio --- (storia P05, nemici alla Isaac e proiettili nemici)
+  // I proiettili spenti (nemici, scintille, riflessi) escono dalla lista condivisa a ogni tick della notte.
+  ciclo.registra({ tick: () => { potaSpenti(proiettili); } }, { stati: ['notte'] });
+  // Strumento di QA: con `?debug=1&piano=N&nemico=<archetipo>` (nemici.wire.test.js) un nemico vero di quell'archetipo
+  // nasce nella stanza d'ingresso, a destra del centro del campo, con id `nemico-prova`, appena la notte è montata.
+  const archetipoProva = conPiano ? url.searchParams.get('nemico') : null;
+  if (archetipoProva && parametri.ha(`nemici.archetipi.${archetipoProva}`)) {
+    let natoProva = false;
+    ciclo.registra({
+      tick: () => {
+        if (natoProva || !notte?.stanza) return;
+        natoProva = true;
+        const p = { x: campo.x + campo.larghezza * POSIZIONE_NEMICO_PROVA.x, y: campo.y + campo.altezza * POSIZIONE_NEMICO_PROVA.y };
+        bersagli.push(creaNemico({ archetipo: archetipoProva, x: p.x, y: p.y, id: ID_NEMICO_PROVA }));
+      },
+    }, { stati: ['notte'] });
+  }
+  // --- squadra nemici: fine ---
 
   // storia 025: raccolta passando sopra e tasto `interagisci` al banchetto, dopo la notte (stessi stati)
   ciclo.registra({ tick: () => { economia.tick(); banchetto.tick(); piedistalli.tick(); ricordi.tick(); } }, { stati: ['notte'] });

@@ -35,6 +35,9 @@ import {
   creaNemico, schedaArchetipo, scalaVita, scalaVelocita, scalaAnticipo, validaSchede, monetePerMorte, probabilitaCuore, ARCHETIPI_MVP,
 } from '../motore/attori/nemico.js';
 import { creaGatto, posaGatto, ARCHETIPO_GATTO } from '../motore/attori/gatto.js';
+import { creaProiettileNemico, cancellaInRaggio, potaSpenti } from '../motore/attori/proiettili-nemici.js';
+import { direzioniVentaglio, direzioniRadiali } from '../motore/attori/ia/sparo.js';
+import { ARCHETIPI_ISAAC, schedaProiettiliNemici } from '../motore/attori/nemico.js';
 import { creaDirettore } from '../motore/attori/ia/direttore.js';
 import { STATI_NEMICO, TRANSIZIONI_NEMICO } from '../motore/attori/ia/base.js';
 import { creaStanza } from '../motore/mondo/stanza.js';
@@ -76,6 +79,7 @@ async function creaMondo({ override = {}, piano = 1, gettoni = null, ostacoli = 
   const centro = { x: campo.x + campo.larghezza / 2, y: campo.y + campo.altezza / 2 };
   const ferruccio = creaFerruccio({ modificatori: mod, tempo, eventi, input, campo, x: centro.x, y: centro.y });
   const bersagli = [];
+  const proiettili = []; // storia P05: lista condivisa dei proiettili nemici
   const comb = creaCombattimento({ modificatori: mod, tempo, eventi, input, campo, ferruccio, bersagli: () => bersagli });
   const direttore = creaDirettore({
     gettoni: gettoni ?? parametri.get(`nemici.direttore.gettoni.p${piano}`),
@@ -86,14 +90,15 @@ async function creaMondo({ override = {}, piano = 1, gettoni = null, ostacoli = 
   });
   const ricevuti = [];
   for (const nome of ['telegrafo.anticipo', 'telegrafo.lampo', 'telegrafo.anello', 'telegrafo.colpo', 'nemico.colpo', 'nemico.stordito', 'nemico.morto',
-    'nemico.bottino', 'nemico.stato', 'ferruccio.parata', 'ferruccio.danno', 'ferruccio.colpo', 'ferruccio.uccisione']) {
+    'nemico.bottino', 'nemico.stato', 'ferruccio.parata', 'ferruccio.danno', 'ferruccio.colpo', 'ferruccio.uccisione',
+    'nemico.sparo', 'nemico.esplosione', 'proiettile.spento']) {
     eventi.on(nome, (p) => ricevuti.push({ nome, payload: p, tick: m.t }));
   }
   const rng = creaRng(SEME);
   let nati = 0;
   const tasto = (azione) => `t:${parametri.get(`input.tastiera.${azione}`)[0]}`;
   const m = {
-    parametri, tempo, eventi, input, mod, campo, centro, ferruccio, comb, bersagli, direttore, ricevuti, log, piano,
+    parametri, tempo, eventi, input, mod, campo, centro, ferruccio, comb, bersagli, proiettili, direttore, ricevuti, log, piano,
     t: 0,
     ticks: (ms) => tempo.ticksDaMs(ms),
     G: (k) => parametri.get(`nemici.globali.${k}`),
@@ -104,6 +109,7 @@ async function creaMondo({ override = {}, piano = 1, gettoni = null, ostacoli = 
         modificatori: mod, parametri, tempo, eventi, campo, bersaglio: comb.comeBersaglio, altri: () => bersagli,
         direttore: conDirettore ? direttore : null, rng: derivato(rng, `${archetipo}#${nati++}`),
         archetipo, piano, x: x ?? centro.x, y: y ?? centro.y, id: id ?? `${archetipo}-${nati}`, boss, ferito,
+        proiettili, spada: () => comb.hitboxCorrente(),
       });
       bersagli.push(n);
       return n;
@@ -117,6 +123,8 @@ async function creaMondo({ override = {}, piano = 1, gettoni = null, ostacoli = 
         ferruccio.tick(dt);
         comb.tick(dt);
         for (const b of bersagli.slice()) b.tick(dt);
+        for (const p of proiettili.slice()) p.tick(dt);
+        potaSpenti(proiettili);
         direttore.tick();
       }
     },
@@ -336,15 +344,17 @@ test('019 c3 bis: l\'Anticipo non si interrompe (armatura del telegrafo: il dann
   assert.deepEqual({ x: n.x, y: n.y }, pos, 'la spinta è ignorata nel telegrafo');
   assert.equal(n.stordisci(600), false, 'nessuno stordimento prima del colpo (R7)');
 
+  // storia P05: l'imparabile pesante dell'MVP è ora la bomba (la statua spara croci parabili come nel Teatro)
   const m2 = await creaMondo();
-  const statua = m2.nemico('statua', { x: m2.centro.x + 100, y: m2.centro.y });
-  statua.forzaStato('insegue');
+  const JB = JSON.parse(readFileSync(new URL('../contenuti/parametri/nemici.json', import.meta.url), 'utf8')).archetipi.bomba.attacco;
+  const bomba = m2.nemico('bomba', { x: m2.centro.x + 60, y: m2.centro.y });
+  bomba.forzaStato('insegue');
   m2.gira(1);
-  assert.equal(statua.stato, 'anticipo');
-  assert.ok(Math.abs(statua.direzione.x - -1) < 1e-9, 'imparabile: direzione fissata all\'inizio dell\'anticipo (R5)');
+  assert.equal(bomba.stato, 'anticipo');
+  assert.ok(Math.abs(bomba.direzione.x - -1) < 1e-9, 'imparabile: direzione fissata all\'inizio dell\'anticipo (R5)');
   const ant = m2.eventiDi('telegrafo.anticipo')[0].payload;
   assert.equal(ant.imparabile, true);
-  const I = m2.t + m2.ticks(550) + m2.ticks(350); // il colpo parte qui, l'impatto nel tick seguente
+  const I = m2.t + m2.ticks(JB.t_ant.base) + m2.ticks(JB.t_lamp.base); // il colpo parte qui, l'impatto nel tick seguente
   m2.gira(I - m2.t - 6);
   m2.premi('parata', 1);
   m2.gira(10);
@@ -729,17 +739,40 @@ function creaBot(m) {
         m.tieni('parata');
         return;
       }
-      // bersaglio: prima chi è punibile e fermo (stordito, recupero), poi il più vicino
+      // storia P05: para il proiettile nemico in arrivo quando il suo impatto cade dentro la finestra della parata
+      const finestraMs = S('t_startup_p') + S('t_finestra_p') / 2;
+      for (const p of m.proiettili) {
+        if (!p?.nemico || !p.vivo || p.riflesso || p.velocita <= 0) continue;
+        const vx = m.ferruccio.x - p.x;
+        const vy = m.ferruccio.y - p.y;
+        const d = Math.hypot(vx, vy);
+        const avvicina = (vx * p.direzione.x + vy * p.direzione.y) / (d || 1) > 0.9;
+        const msAllImpatto = ((d - m.ferruccio.r - p.r) / p.velocita) * 1000;
+        if (avvicina && msAllImpatto <= finestraMs && m.comb.stato !== 'parata') {
+          m.tieni('parata');
+          return;
+        }
+      }
+      // bersaglio: prima chi è punibile e fermo (stordito, recupero), poi il più vicino; le bombe per ultime (storia P05)
       let bersaglio = null;
       let dMin = Infinity;
       let migliore = Infinity;
       for (const b of vivi) {
         const d = distanza(b, m.ferruccio);
-        const punteggio = d - (b.stato === 'stordito' || b.stato === 'recupero' ? 10000 : 0);
+        const punteggio = d - (b.stato === 'stordito' || b.stato === 'recupero' ? 10000 : 0) + (b.esplosivo ? 20000 : 0);
         if (punteggio < migliore) { migliore = punteggio; dMin = d; bersaglio = b; }
       }
       const dx = bersaglio.x - m.ferruccio.x;
       const dy = bersaglio.y - m.ferruccio.y;
+      // bomba alla Isaac: la si innesca avvicinandosi e ci si allontana finché non esplode da sola
+      if (bersaglio.esplosivo) {
+        const E = bersaglio.scheda.esplosione;
+        const rSicuro = E.r_giocatore + m.ferruccio.r + 24;
+        const innescata = bersaglio.stato === 'anticipo' || bersaglio.stato === 'lampo' || bersaglio.stato === 'colpo';
+        if (innescata || dMin < rSicuro) tieniDirezione(-dx, -dy);
+        else tieniDirezione(dx, dy);
+        return;
+      }
       const aPortata = dMin < S('portata') + bersaglio.r - 12;
       tieniDirezione(aPortata ? 0 : dx, aPortata ? 0 : dy);
       // come il bot del prototipo: nessun fendente mentre un gatto è in lampo o in balzo non ancora arrivato (startup + attivo
@@ -754,10 +787,11 @@ function creaBot(m) {
   };
 }
 
-/** Una stanza QA: `n` gatti nati a ≥ 220 px da Ferruccio e ≥ 64 px tra loro (regola di spawn del GDD), giocata dal bot. */
-function stanzaBot(m, bot, rngStanza, n = BOT_GATTI_PER_STANZA) {
+/** Una stanza QA: `n` nemici (`archetipi` a rotazione, gatti di default) nati a ≥ 220 px da Ferruccio e ≥ 64 px tra loro (regola di spawn del GDD), giocata dal bot. */
+function stanzaBot(m, bot, rngStanza, n = BOT_GATTI_PER_STANZA, archetipi = ['gatto']) {
   m.bersagli.length = 0;
   m.direttore.azzera();
+  if (m.ferruccio.stato === 'morto') m.ferruccio.risveglia(); // storia P05: una morte non svuota le stanze seguenti
   m.ferruccio.posiziona(m.centro.x, m.centro.y);
   m.ferruccio.impostaMaschere(m.parametri.get('ferruccio.maschere_max'));
   const margine = 16 + 8;
@@ -768,7 +802,8 @@ function stanzaBot(m, bot, rngStanza, n = BOT_GATTI_PER_STANZA) {
     if (distanza({ x, y }, m.ferruccio) < 220 || punti.some((p) => distanza(p, { x, y }) < 64)) continue;
     punti.push({ x, y });
   }
-  punti.forEach((p, i) => m.nemico('gatto', { x: p.x, y: p.y, id: `s${m.t}-g${i}` }));
+  m.proiettili.length = 0;
+  punti.forEach((p, i) => m.nemico(archetipi[i % archetipi.length], { x: p.x, y: p.y, id: `s${m.t}-g${i}` }));
   const prima = { balzi: m.eventiDi('nemico.colpo').length, parate: m.eventiDi('ferruccio.parata').length, danni: m.eventiDi('ferruccio.danno').length };
   const t0 = m.t;
   const limite = m.ticks(30000);
@@ -784,6 +819,7 @@ function stanzaBot(m, bot, rngStanza, n = BOT_GATTI_PER_STANZA) {
     parate: m.eventiDi('ferruccio.parata').length - prima.parate,
     danni: m.eventiDi('ferruccio.danno').length - prima.danni,
     pulita: m.bersagli.every((b) => b.stato === 'morto'),
+    morto: m.ferruccio.stato === 'morto',
   };
 }
 
@@ -809,6 +845,275 @@ test(`020 c3: GIVEN il bot a ${BOT_REAZIONE_MS} ms, WHEN gioca ${BOT_STANZE} sta
   for (const [i, d] of durate.entries()) assert.ok(d >= BOT_DURATA_MIN_S && d <= BOT_DURATA_MAX_S * 2, `stanza ${i}: ${d.toFixed(2)} s — ${riepilogo}`);
   const fuori = durate.filter((d) => d < BOT_DURATA_MIN_S || d > BOT_DURATA_MAX_S).length;
   console.log(`# bot: stanze fuori dai ${BOT_DURATA_MIN_S}-${BOT_DURATA_MAX_S} s: ${fuori}/${BOT_STANZE}`);
+});
+
+// ---------------------------------------------------------------------------------------------
+// Storia P05 — nemici alla Isaac del Teatro e proiettili nemici
+// ---------------------------------------------------------------------------------------------
+
+const NEMICI_JSON = JSON.parse(readFileSync(new URL('../contenuti/parametri/nemici.json', import.meta.url), 'utf8'));
+const PN = NEMICI_JSON.proiettili_nemici;
+const angoloDi = (d) => Math.atan2(d.y, d.x);
+/** Tempi in tick dall'ingresso in anticipo all'inizio del colpo (hitTicks = 1 con hit_dal 0). */
+const ticksAlColpo = (m, arch) => m.ticks(NEMICI_JSON.archetipi[arch].attacco.t_ant.base) + m.ticks(NEMICI_JSON.archetipi[arch].attacco.t_lamp.base) + 1;
+
+test('P05 dati: le sette schede (4 MVP + maschera, bomba, predone) passano le regole; sparo/esplosione/corazza letti dalla scheda; proiettili per piano (1 ai piani 1-2, 2 dal 3, boss sempre danno_boss)', async () => {
+  const m = await creaMondo();
+  assert.deepEqual(validaSchede(m.parametri), []);
+  for (const a of ARCHETIPI_ISAAC) assert.ok(m.parametri.ha(`nemici.archetipi.${a}`), a);
+  const S = (a) => schedaArchetipo({ modificatori: m.mod, parametri: m.parametri, archetipo: a, piano: 1 });
+  assert.equal(S('maschera').sparo.n_colpi, PN && NEMICI_JSON.archetipi.maschera.sparo.n_colpi.base);
+  assert.ok(S('maschera').corazza && S('bomba').esplosione && S('statua').sparo.croce > 0 && S('guardia').sparo && S('predone').dorato > 0);
+  assert.equal(S('gatto').sparo, null);
+  assert.equal(S('bomba').attacco.senza_gettone, 1);
+  assert.equal(S('statua').attacco.senza_gettone, 1);
+  for (const p of [1, 2, 3, 4, 5]) {
+    const pr = schedaProiettiliNemici({ modificatori: m.mod, parametri: m.parametri, piano: p });
+    assert.equal(pr.danno, PN.danno[`p${p}`].base, `piano ${p}`);
+    assert.equal(pr.velocita, PN.velocita.base);
+  }
+  assert.equal(schedaProiettiliNemici({ modificatori: m.mod, parametri: m.parametri, piano: 1, boss: true }).danno, PN.danno_boss.base);
+  // geometria pura delle salve
+  const v3 = direzioniVentaglio({ x: 1, y: 0 }, 3, 30);
+  assert.equal(v3.length, 3);
+  assert.ok(Math.abs(angoloDi(v3[0]) + Math.PI / 12) < 1e-9 && Math.abs(angoloDi(v3[2]) - Math.PI / 12) < 1e-9 && Math.abs(angoloDi(v3[1])) < 1e-9);
+  const croce = direzioniRadiali(4, 0);
+  assert.ok(Math.abs(croce[0].x - 1) < 1e-9 && Math.abs(croce[1].y - 1) < 1e-9);
+  const ics = direzioniRadiali(4, 1);
+  assert.ok(Math.abs(angoloDi(ics[0]) - Math.PI / 4) < 1e-9);
+});
+
+test('P05 maschera (Host): nasce e insegue da ferma; CHIUSA subisce solo frazione_danno e nessuna spinta; si APRE in anticipo (gettone), lampo, ventaglio di n_colpi su apertura_gradi, il proiettile ferisce Ferruccio di danno.p1; resta aperta nel recupero e si richiude', async () => {
+  const m = await creaMondo();
+  const J = NEMICI_JSON.archetipi.maschera;
+  const n = m.nemico('maschera', { x: m.centro.x + 200, y: m.centro.y });
+  assert.equal(n.stato, 'emersione');
+  m.gira(m.ticks(m.G('t_emersione')));
+  assert.ok(['emersione', 'pattuglia'].includes(n.stato), n.stato);
+  m.gira(2);
+  assert.ok(['insegue', 'anticipo'].includes(n.stato), `entro r_aggro con linea di vista: ${n.stato}`);
+  const x0 = n.x;
+  assert.equal(n.corazzato, true);
+  assert.ok(m.finche(() => n.stato === 'anticipo', 60) >= 0, 'parte l\'attacco (d 200 in [d_min, d_max], linea libera)');
+  assert.equal(n.gettone, true);
+  assert.equal(n.aperta, true, 'aperta nell\'anticipo');
+  const vitaPrima = n.vita;
+  n.colpisci(1, null);
+  assert.ok(Math.abs(vitaPrima - n.vita - 1) < 1e-9, 'aperta: danno pieno');
+  m.gira(m.ticks(J.attacco.t_ant.base));
+  assert.equal(n.stato, 'lampo');
+  m.gira(m.ticks(J.attacco.t_lamp.base));
+  assert.equal(n.stato, 'colpo');
+  assert.equal(m.proiettili.length, 0);
+  m.gira(1);
+  assert.equal(n.esitoColpo, 'sparo');
+  assert.equal(m.proiettili.length, J.sparo.n_colpi.base, 'ventaglio di n_colpi');
+  assert.equal(m.eventiDi('nemico.sparo').at(-1).payload.n, J.sparo.n_colpi.base);
+  let apertura = 0; // angolo massimo tra due colpi (prodotto scalare: niente salto a ±180°)
+  for (const a of m.proiettili) for (const b of m.proiettili) apertura = Math.max(apertura, Math.acos(Math.min(1, a.direzione.x * b.direzione.x + a.direzione.y * b.direzione.y)) * 180 / Math.PI);
+  assert.ok(Math.abs(apertura - J.sparo.apertura_gradi.base) < 1e-6, `apertura ${apertura}`);
+  for (const p of m.proiettili) {
+    assert.ok(p.nemico && p.vivo && p.stato === 'in_volo');
+    assert.ok(Math.abs(p.velocita - PN.velocita.base * J.sparo.velocita_fattore.base) < 1e-9);
+    assert.equal(p.r, PN.r.base);
+    assert.equal(p.danno, PN.danno.p1.base);
+  }
+  const maschere0 = m.ferruccio.maschere;
+  // recupero ancora aperta (mentre i colpi volano), poi chiusa in insegue; il corpo non si è mosso (v 0)
+  assert.ok(m.finche(() => n.stato === 'recupero', 60) >= 0);
+  assert.equal(n.aperta, true);
+  m.gira(m.ticks(J.attacco.t_rec.base) + 1);
+  assert.equal(n.stato, 'insegue');
+  assert.equal(n.aperta, false, 'chiusa fuori dal telegrafo (cooldown)');
+  assert.equal(n.x, x0, 'la maschera è immobile');
+  const vitaChiusa = n.vita;
+  n.colpisci(1, { x: 1, y: 0, ms: 100 });
+  assert.ok(Math.abs(vitaChiusa - n.vita - J.corazza.frazione_danno.base) < 1e-9, `chiusa: solo la frazione (${vitaChiusa} → ${n.vita})`);
+  assert.equal(n.spinteSubite.length, 0, 'la spinta è ignorata da chiusa');
+  // il colpo centrale del ventaglio raggiunge Ferruccio: danno.p1 maschere
+  const t = m.finche(() => m.eventiDi('ferruccio.danno').length > 0, m.ticks(2000));
+  assert.ok(t >= 0, 'il colpo centrale raggiunge Ferruccio');
+  assert.equal(m.ferruccio.maschere, maschere0 - PN.danno.p1.base);
+  assert.equal(m.eventiDi('proiettile.spento').filter((e) => e.payload.motivo === 'bersaglio').length, 1);
+});
+
+test('P05 guardia: doppietta di 2 colpi mirati (apertura 14°) tenendo d_attesa; la PARATA riflette il proiettile (danno_riflesso, v_riflesso) che torna a ferire la guardia e si spegne', async () => {
+  const m = await creaMondo();
+  const J = NEMICI_JSON.archetipi.guardia;
+  const C = (k) => m.parametri.get(`combattimento.${k}`);
+  const n = m.nemico('guardia', { x: m.centro.x + 250, y: m.centro.y });
+  inInsegue(m, n);
+  assert.ok(m.finche(() => n.stato === 'anticipo', 60) >= 0);
+  m.gira(ticksAlColpo(m, 'guardia'));
+  assert.equal(n.esitoColpo, 'sparo');
+  assert.equal(m.proiettili.length, J.sparo.n_colpi.base);
+  const [d0, d1] = m.proiettili.map((p) => p.direzione);
+  const traColpi = Math.acos(Math.min(1, d0.x * d1.x + d0.y * d1.y)) * 180 / Math.PI;
+  assert.ok(Math.abs(traColpi - J.sparo.apertura_gradi.base) < 1e-6, `apertura ${traColpi}`);
+  const p = m.proiettili[0];
+  // i due colpi incorniciano Ferruccio (±7° su 250 px = ±30 px): Ferruccio si mette sulla traiettoria del primo e para
+  // quando il proiettile è a ~50 px (contatto dentro la finestra, dopo lo startup): il proiettile viene riflesso verso la guardia
+  m.ferruccio.posiziona(p.x + p.direzione.x * 120, p.y + p.direzione.y * 120);
+  assert.ok(m.finche(() => distanza(p, m.ferruccio) < 50, m.ticks(3000)) >= 0);
+  m.tieni('parata');
+  const tr = m.finche(() => p.riflesso || !p.vivo, m.ticks(600));
+  m.lascia('parata');
+  assert.ok(tr >= 0 && p.riflesso, `riflesso (vivo ${p.vivo}, motivo ${p.motivo})`);
+  assert.equal(p.danno, C('danno_riflesso'));
+  assert.equal(p.velocita, C('v_riflesso'));
+  assert.equal(p.stato, 'riflesso');
+  assert.equal(m.eventiDi('ferruccio.parata').length, 1);
+  const vitaPrima = n.vita;
+  assert.ok(m.finche(() => !p.vivo, m.ticks(3000)) >= 0, 'il riflesso arriva');
+  assert.equal(p.motivo, 'nemico');
+  assert.ok(Math.abs(vitaPrima - n.vita - C('danno_riflesso')) < 1e-9, `vita ${vitaPrima} → ${n.vita}`);
+  assert.equal(m.eventiDi('ferruccio.danno').length, 0, 'Ferruccio non ha perso maschere');
+});
+
+test('P05 statua (torretta a croci): ferma, SENZA gettone, salve di 4 a + poi a ×, i proiettili si spengono sugli ostacoli e sui muri senza raggiungere Ferruccio dietro la colonna', async () => {
+  const m = await creaMondo({ ostacoli: [{ colonna: 8, riga: 3, id: 'colonna' }] });
+  const J = NEMICI_JSON.archetipi.statua;
+  const cella = m.parametri.get('stanza.cella');
+  const n = m.nemico('statua', { x: m.campo.x + 10.5 * cella, y: m.campo.y + 3.5 * cella });
+  inInsegue(m, n);
+  const x0 = n.x;
+  assert.ok(m.finche(() => n.stato === 'anticipo', 60) >= 0, 'attacca anche senza linea di vista (linea_libera 0)');
+  assert.equal(n.gettone, false, 'senza gettone');
+  assert.equal(m.direttore.occupati, 0);
+  m.gira(ticksAlColpo(m, 'statua'));
+  assert.equal(m.proiettili.length, J.sparo.n_colpi.base);
+  const prima = m.proiettili.slice();
+  const angoli1 = prima.map((p) => ((angoloDi(p.direzione) * 180 / Math.PI) % 360 + 360) % 360).sort((a, b) => a - b);
+  assert.deepEqual(angoli1.map(Math.round), [0, 90, 180, 270], 'croce +');
+  assert.ok(m.finche(() => prima.every((p) => !p.vivo), m.ticks(4000)) >= 0);
+  assert.ok(prima.every((p) => p.motivo === 'ostacolo'), prima.map((p) => p.motivo).join(','));
+  assert.equal(m.eventiDi('ferruccio.danno').length, 0, 'la colonna ferma il colpo verso Ferruccio');
+  assert.equal(m.proiettili.length, 0, 'potati dalla lista');
+  // seconda salva a ×
+  assert.ok(m.finche(() => n.stato === 'anticipo', m.ticks(5000)) >= 0);
+  m.gira(ticksAlColpo(m, 'statua'));
+  const angoli2 = m.proiettili.map((p) => ((angoloDi(p.direzione) * 180 / Math.PI) % 360 + 360) % 360).sort((a, b) => a - b);
+  assert.deepEqual(angoli2.map(Math.round), [45, 135, 225, 315], 'croce ×');
+  assert.equal(n.x, x0, 'la statua non si muove');
+});
+
+test('P05 bomba (Bozzo Esplosivo): ferma e inerte oltre d_max; entro d_max parte la miccia (anticipo + lampo, senza gettone, imparabile) e il Colpo è l\'ESPLOSIONE: Ferruccio entro r_giocatore perde il danno pesante, il nemico vicino perde danno_nemici, n_schegge radiali, la bomba muore; uccisa prima esplode comunque, una volta sola', async () => {
+  const m = await creaMondo();
+  const J = NEMICI_JSON.archetipi.bomba;
+  const E = J.esplosione;
+  const n = m.nemico('bomba', { x: m.centro.x + 150, y: m.centro.y });
+  inInsegue(m, n);
+  m.gira(m.ticks(1500));
+  assert.equal(n.stato, 'insegue', 'a 150 px (> d_max) non si innesca');
+  assert.equal(n.x, m.centro.x + 150);
+  const gatto = m.nemico('gatto', { x: n.x + 50, y: n.y });
+  gatto.forzaStato('pattuglia');
+  m.ferruccio.posiziona(n.x - 60, n.y); // entro d_max (93) ed entro r_giocatore (55) + r
+  assert.ok(m.finche(() => n.stato === 'anticipo', 30) >= 0, 'miccia innescata');
+  assert.equal(n.gettone, false);
+  assert.equal(n.imparabile, true);
+  m.gira(m.ticks(J.attacco.t_ant.base));
+  assert.equal(n.stato, 'lampo');
+  m.gira(m.ticks(J.attacco.t_lamp.base));
+  assert.equal(n.stato, 'colpo');
+  const vitaGatto = gatto.vita;
+  const maschere0 = m.ferruccio.maschere;
+  m.gira(1);
+  assert.equal(m.eventiDi('nemico.esplosione').length, 1);
+  assert.equal(n.stato, 'morto');
+  assert.equal(n.esplosa, true);
+  assert.equal(m.ferruccio.maschere, maschere0 - m.parametri.get('ferruccio.danno_subito.pesante'), 'danno pesante entro r_giocatore');
+  assert.equal(gatto.vita, vitaGatto - E.danno_nemici.base, 'il gatto vicino è ferito');
+  assert.equal(m.proiettili.length, E.n_schegge.base, 'schegge radiali');
+  const angoli = m.proiettili.map((p) => ((angoloDi(p.direzione) * 180 / Math.PI) % 360 + 360) % 360).sort((a, b) => a - b);
+  assert.deepEqual(angoli.map(Math.round), [0, 60, 120, 180, 240, 300]);
+  // uccisa prima: esplode alla morte, una volta sola
+  const b2 = m.nemico('bomba', { x: m.centro.x - 250, y: m.centro.y });
+  inInsegue(m, b2);
+  m.proiettili.length = 0;
+  b2.colpisci(99, null);
+  assert.equal(b2.stato, 'morto');
+  assert.equal(m.eventiDi('nemico.esplosione').length, 2);
+  assert.equal(m.proiettili.length, E.n_schegge.base);
+  b2.colpisci(99, null);
+  assert.equal(m.eventiDi('nemico.esplosione').length, 2, 'non riesplode');
+});
+
+test('P05 predone (mob dorato della segreta): dorato, monete × molt_monete_dorato nei payload di morte e bottino', async () => {
+  const m = await creaMondo();
+  const D = NEMICI_JSON.drop;
+  const J = NEMICI_JSON.archetipi.predone;
+  const n = m.nemico('predone', { x: m.centro.x + 300, y: m.centro.y });
+  assert.equal(n.dorato, true);
+  assert.equal(n.tiratore, true);
+  inInsegue(m, n);
+  n.colpisci(99, null);
+  const morte = m.eventiDi('nemico.morto')[0].payload;
+  assert.equal(morte.dorato, true);
+  const base = Math.ceil(J.costo.base / 2);
+  const ammesse = [];
+  for (let e = 0; e <= D.monete_extra.base; e++) ammesse.push((base + e) * D.molt_monete_dorato.base);
+  assert.ok(ammesse.includes(morte.monete), `monete ${morte.monete} non in ${ammesse}`);
+  m.gira(m.ticks(m.G('t_bottino')) + 1);
+  assert.equal(m.eventiDi('nemico.bottino')[0].payload.dorato, true);
+  assert.equal(m.eventiDi('nemico.bottino')[0].payload.monete, morte.monete);
+});
+
+test('P05 proiettili nemici: il FENDENTE attivo li cancella (motivo spada); gittata dal JSON; cancellaInRaggio (Tamburello) e potaSpenti', async () => {
+  const m = await creaMondo();
+  const base = schedaProiettiliNemici({ modificatori: m.mod, parametri: m.parametri, piano: 1 });
+  const fermo = creaProiettileNemico({
+    x: m.ferruccio.x + m.ferruccio.r + 20, y: m.ferruccio.y, direzione: { x: -1, y: 0 }, velocita: 0, r: base.r, gittata: base.gittata, danno: base.danno,
+    campo: m.campo, bersaglio: null, spada: () => m.comb.hitboxCorrente(), eventi: m.eventi,
+  });
+  m.proiettili.push(fermo);
+  m.gira(5);
+  assert.equal(fermo.vivo, true);
+  m.premi('attacco', 1);
+  assert.ok(m.finche(() => !fermo.vivo, m.ticks(600)) >= 0, 'il fendente lo raggiunge');
+  assert.equal(fermo.motivo, 'spada');
+  assert.equal(m.eventiDi('proiettile.spento').at(-1).payload.motivo, 'spada');
+  // gittata: un proiettile libero verso l'alto a destra si spegne a `gittata` px se non trova muri prima
+  const libero = creaProiettileNemico({ x: m.centro.x, y: m.centro.y, direzione: { x: 1, y: 0 }, velocita: base.velocita, r: base.r, gittata: 100, danno: 1, campo: m.campo });
+  m.proiettili.push(libero);
+  const t = m.finche(() => !libero.vivo, m.ticks(3000));
+  assert.ok(t >= 0 && libero.motivo === 'gittata', libero.motivo);
+  assert.ok(Math.abs(libero.percorso - 100) <= base.velocita * m.tempo.passoMs / 1000 + 1e-6);
+  assert.equal(m.proiettili.includes(libero), false, 'potato');
+  // Tamburello: cancella entro il raggio, non oltre
+  const vicino = creaProiettileNemico({ x: m.centro.x + 50, y: m.centro.y, direzione: { x: 1, y: 0 }, velocita: 0, r: base.r, gittata: 100, danno: 1, campo: m.campo });
+  const lontano = creaProiettileNemico({ x: m.centro.x + 300, y: m.centro.y, direzione: { x: 1, y: 0 }, velocita: 0, r: base.r, gittata: 100, danno: 1, campo: m.campo });
+  const lista = [vicino, lontano];
+  assert.equal(cancellaInRaggio(lista, { x: m.centro.x, y: m.centro.y, raggio: 100 }), 1);
+  assert.equal(vicino.motivo, 'cancellato');
+  assert.equal(lontano.vivo, true);
+  assert.equal(potaSpenti(lista), 1);
+  assert.deepEqual(lista, [lontano]);
+});
+
+const BOT_MISTO_ARCHETIPI = ['gatto', 'vespa', 'guardia', 'statua', 'maschera', 'bomba'];
+const BOT_MISTO_PER_STANZA = 3;
+/** Soglia documentata (storia P05): maschere perse in media per stanza dal bot (para balzi e proiettili in arrivo, innesca le bombe e
+ *  si allontana, ma non schiva i ventagli laterali): misurate 0,73 con il seme 1845 (22 su 30 stanze), durata media 10,3 s. */
+const BOT_MISTO_MASCHERE_MEDIA_MAX = 1;
+
+test(`P05 bot QA: ${BOT_STANZE} stanze miste da ${BOT_MISTO_PER_STANZA} nemici (${BOT_MISTO_ARCHETIPI.join(', ')}) con seme fisso: tutte pulite, mai morto, maschere perse in media ≤ ${BOT_MISTO_MASCHERE_MEDIA_MAX} per stanza`, async () => {
+  const m = await creaMondo();
+  const bot = creaBot(m);
+  const rngStanze = derivato(creaRng(SEME), 'stanze-bot-misto');
+  const esiti = [];
+  for (let k = 0; k < BOT_STANZE; k++) {
+    const rotazione = BOT_MISTO_ARCHETIPI.slice(k % BOT_MISTO_ARCHETIPI.length).concat(BOT_MISTO_ARCHETIPI.slice(0, k % BOT_MISTO_ARCHETIPI.length));
+    esiti.push(stanzaBot(m, bot, derivato(rngStanze, `stanza#${k}`), BOT_MISTO_PER_STANZA, rotazione));
+  }
+  const danni = esiti.reduce((a, e) => a + e.danni, 0);
+  const durate = esiti.map((e) => e.durataMs / 1000);
+  const media = durate.reduce((a, b) => a + b, 0) / durate.length;
+  const riepilogo = `maschere perse ${danni} (${(danni / BOT_STANZE).toFixed(2)} per stanza); durata media ${media.toFixed(2)} s, max ${Math.max(...durate).toFixed(2)}; non pulite ${esiti.filter((e) => !e.pulita).length}; morti ${esiti.filter((e) => e.morto).length}`;
+  console.log(`# bot misto: ${riepilogo}`);
+  assert.ok(esiti.every((e) => e.pulita), riepilogo);
+  assert.ok(esiti.every((e) => !e.morto), riepilogo);
+  assert.ok(danni / BOT_STANZE <= BOT_MISTO_MASCHERE_MEDIA_MAX, riepilogo);
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -857,9 +1162,9 @@ test('transizioni: emersione 700 ms → pattuglia (si muove tra 2-3 punti col se
 });
 
 test('transizioni: Insegue → Pattuglia dopo 3000 ms oltre r_lose (senza allarme); Ferruccio morto → nessun attacco', async () => {
-  // una statua (non si sposta) con r_lose portato a 400: Ferruccio nell'angolo è oltre
-  const m = await creaMondo({ override: { 'nemici.archetipi.statua.r_lose': 400 } });
-  const n = m.nemico('statua', { x: m.centro.x + 150, y: m.centro.y, conDirettore: false });
+  // una maschera (non si sposta; storia P05: la statua ora spara da ovunque) con r_lose portato a 400: Ferruccio nell'angolo è oltre
+  const m = await creaMondo({ override: { 'nemici.archetipi.maschera.r_lose': 400 } });
+  const n = m.nemico('maschera', { x: m.centro.x + 150, y: m.centro.y, conDirettore: false });
   inInsegue(m, n);
   m.ferruccio.posiziona(m.campo.x + 40, m.campo.y + 40); // oltre r_lose (400) dalla statua
   m.gira(m.ticks(3000) - 1);

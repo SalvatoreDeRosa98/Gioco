@@ -606,6 +606,47 @@ export const SPRITE_NEMICI = {
   ],
 };
 
+// --- squadra nemici: inizio --- (storia P05: Bozzo Esplosivo dall'illustrazione «La Bomba Ferma»;
+// due frame: miccia spenta / scintilla accesa; il predone della segreta è la guardia in veste dorata)
+SPRITE_NEMICI.bomba = [
+  [
+    '........ko........',
+    '.......kok........',
+    '......kkk.........',
+    '.....kDDDk........',
+    '...kkDdddDkk......',
+    '..kDdddddddDk.....',
+    '.kDddwwdddddDk....',
+    '.kDdwddddddddk....',
+    'kDddddddddddddk...',
+    'kDddddddddddddk...',
+    'kDddddddddddddk...',
+    '.kDdddddddddDk....',
+    '.kDDdddddddDDk....',
+    '..kkDDDDDDDkk.....',
+    '....kkkkkkk.......',
+  ],
+  [
+    '........kyk.......',
+    '.......kyoyk......',
+    '......kkoyk.......',
+    '.....kDDDk........',
+    '...kkDdddDkk......',
+    '..kDdddddddDk.....',
+    '.kDddwwdddddDk....',
+    '.kDdwddddddddk....',
+    'kDddddddddddddk...',
+    'kDdddddrdddddk....',
+    'kDddddddddddddk...',
+    '.kDdddddddddDk....',
+    '.kDDdddddddDDk....',
+    '..kkDDDDDDDkk.....',
+    '....kkkkkkk.......',
+  ],
+];
+SPRITE_NEMICI.predone = SPRITE_NEMICI.guardia.map((frame) => frame.map((riga) => riga.replace(/[rR]/g, (c) => (c === 'r' ? 'y' : 'O'))));
+// --- squadra nemici: fine ---
+
 // ============================================================================
 // 6. BOSS DEI PIANI 1-3 + DONNA LUCIANA (BOSS FINALE PIANO 4) AD ALTA DEFINIZIONE
 // ============================================================================
