@@ -80,6 +80,14 @@ const CASI = [
       // La stanza è messa a mano (senza entraInStanza): si azzera la grazia d'ingresso di C (700 ms senza danni,
       // voluta) rimasta dall'ingresso nella prima stanza, altrimenti il colpo preparato cade nella grazia.
       R.graziaIngressoC = 0;
+      if (c.come === 'contatto') {
+        // Il contatto ripetuto serve un nemico che resti vivo: con la stanza «Deposito di Polvere» (solo Bozzi,
+        // a caso secondo il seme) i Bozzi esplodono dopo la miccia e la stanza resta senza nemici. Si tolgono i
+        // Bozzi e, se non resta nessuno, si mette un Torrione di Marmo fermo.
+        st.nemici = st.nemici.filter((x) => x.hp > 0 && (x.patternMob || x.tipo) !== 'bomba_ferma');
+        if (!st.nemici.length) st.nemici = [{ id: 'qa-torrione', tipo: 'statua', nome: 'Torrione di Marmo', boss: false,
+          x: 320, y: 150, hp: 22, maxHp: 22, speed: 0, r: 13, flash: 0, burnTicks: 0, stunTicks: 0, state: 'idle', stateTimer: 30, shootCd: 76 }];
+      }
       st.visitata = true; R.stanzaCorrente = st; R.proiettiliNemici = [];
       R.hpHalf = c.hp; I.player.invuln = 0;
       const n = st.nemici.find((x) => x.hp > 0);
