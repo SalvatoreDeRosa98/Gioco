@@ -10,7 +10,8 @@
  *   per la run, la carta per sempre. La conoscenza sta nel flag oggettiConosciuti dello slot di salvataggio
  *   (ids con prefisso «a2:»), accanto agli oggetti del catalogo; pagina «Consumabili» nel Diario (tasto C).
  * - Raccolta camminandoci sopra; con lo slot pieno il vecchio resta a terra (va scavalcato per riprenderlo).
- * - Drop alla pulizia di una stanza (CONS_A2.drop) e slot nella Fucina a ECONOMIA_T3.prezzi.consumabile.
+ * - Drop alla pulizia di una stanza (CONS_A2.drop); nella Fucina prende lo slot «consumabile» (½ Maschera),
+ *   allo stesso prezzo ECONOMIA_T3.prezzi.consumabile.
  * Deviazione dal GDD economia.md §5 (consumabile applicato all'acquisto, niente tasti nuovi): richiesta
  * esplicita del miglioramento 2, da riallineare nel GDD.
  *
@@ -33,7 +34,7 @@ const CONS_A2 = Object.freeze({
     tipiEsclusi: Object.freeze(['boss', 'segreta']),
     x: 344, y: 168,
   }),
-  fucina: Object.freeze({ xSlot: Object.freeze([112, 216, 320, 424, 528]), y: 196 }),
+  fucina: Object.freeze({ sostituisce: 'mezzaMaschera' }), // sprite dello slot «consumabile» di base che prende il posto
   hud: Object.freeze({ x: 141, lato: 26 }),
   effettiStanza: Object.freeze({ dannoForza: 2 }),
 });
@@ -422,14 +423,17 @@ function dopoPuliziaA2(st) {
   }
 }
 
-/** Fucina: quinto slot «consumabile» al prezzo ECONOMIA_T3.prezzi.consumabile; gli slot si ridistribuiscono. */
+/**
+ * Fucina: lo slot «consumabile» di base (½ Maschera a ECONOMIA_T3.prezzi.consumabile) diventa un consumabile
+ * A2 allo stesso prezzo e nella stessa posizione (economia.md §5: dono, cuore, consumabile).
+ */
 const popolaOrigA2 = popolaStanzaIsaac;
 popolaStanzaIsaac = function popolaStanzaIsaacA2(s, ...resto) {
   const r = popolaOrigA2.call(this, s, ...resto);
   if (s.tipo === 'fucina' && Array.isArray(s.slotFucina) && !s.slotFucina.some((x) => x.tipo === 'consumabileA2')) {
-    s.slotFucina.push(creaSlotFucinaA2(estraiConsumabileA2()));
-    const X = CONS_A2.fucina.xSlot;
-    s.slotFucina.forEach((sl, i) => { if (X[i] !== undefined) sl.x = X[i]; });
+    const i = s.slotFucina.findIndex((x) => x.tipo === 'cura' && x.sprite === CONS_A2.fucina.sostituisce);
+    const nuovo = creaSlotFucinaA2(estraiConsumabileA2());
+    if (i >= 0) { nuovo.x = s.slotFucina[i].x; nuovo.y = s.slotFucina[i].y; s.slotFucina[i] = nuovo; }
   }
   return r;
 };
@@ -437,7 +441,7 @@ popolaStanzaIsaac = function popolaStanzaIsaacA2(s, ...resto) {
 function creaSlotFucinaA2(c) {
   const sl = {
     tipo: 'consumabileA2', cons: c, prezzo: ECONOMIA_T3.prezzi.consumabile, inSaldo: false,
-    sprite: spriteA2(c), tier: 'base', x: 0, y: CONS_A2.fucina.y, comprato: false,
+    sprite: spriteA2(c), tier: 'base', x: 158, y: 196, comprato: false,
   };
   Object.defineProperties(sl, {
     nome: { get: () => nomeA2(c), enumerable: true },

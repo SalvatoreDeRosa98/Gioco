@@ -28,3 +28,4 @@ Le dichiarazioni di primo livello (`const`/`let`/`function`) stanno nello scope 
 - Nuovo file: aggiungere il `<script src="teatro/NN-nome.js">` nell'HTML nella posizione giusta. `tools/teatro-release.js` incorpora tutti gli `<script src="teatro/*.js">` in `production/release/teatro.html`.
 - Per la QA, i nuovi interni vanno esposti in `80-ciclo.js` con `Object.assign(window.__teatro.interni, {...})`.
 - Dopo ogni modifica: `node tools/qa-teatro-{generatore,avvio,morte,c,d}.js` sia su `gioco/teatro_marionette.html` sia su `production/release/teatro.html`.
+| `a2-consumabili.js` | (miglioramento 2) consumabili sconosciuti: ampolle (colore → effetto rimescolato per run) e carte napoletane, slot HUD [F], drop alla pulizia, slot «consumabile» della Fucina, pagina del Diario (C). Avvolge funzioni globali; agganci: `scalaA2` in 10-sprite.js/60-resa.js e raggio del colpo in 40-combattimento.js. Caricato dopo `t4-hub-storia.js`. QA: `tools/qa-teatro-consumabili.js` |
