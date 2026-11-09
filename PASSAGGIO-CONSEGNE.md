@@ -1,7 +1,35 @@
-# Ferruccio — La Notte Immobile · passaggio di consegne (v4, porting del Teatro sul motore)
+# Ferruccio — La Notte Immobile · passaggio di consegne (v5, bilanciamento Isaac, notti, fullscreen e menu ESC)
 
-Aggiornato: 2026-11-09 · Branch: `claude/brave-cannon-ed3d3d` (nessun push dagli agenti) · Modello di lavoro: autonomo,
-l'autore prova da solo (sua richiesta: **nessun playtest automatico**).
+Aggiornato: 2026-11-09 · Branch: `claude/brave-cannon-ed3d3d` · Lavoro autonomo sul prototipo del Teatro (`teatro_marionette.html` e release `production/release/teatro.html`).
+
+## Aggiornamento del 09/11/2026: Richieste Autore Soddisfatte
+
+1. **Ripristino fedele degli sprite procedurali amati**:
+   - Disattivati gli override da foglio sprite esterno (`t2Gancio`), tornando agli autentici sprite procedurali disegnati su canvas (il Gatto con accovacciamento e salto, la Vespa cieca con ali diafane, la Bomba ferma a miccia, la Statua di marmo, la Guardia borbonica, la Maschera d'osso, il Predone, e i 4 eroi).
+   - Nessun proiettile o attacco è disegnato staticamente sul corpo dei personaggi o dei mob: ogni colpo (lacrime, spade, raggi, fiamme) è un'entità dinamica del sistema di combattimento.
+2. **Conteggio delle notti persistente (`Notte 1, Notte 2, Notte 3...`)**:
+   - Salvato in `localStorage` (`ferruccio_notte`).
+   - Ad ogni morte o riavvio della run, il conteggio avanza e viene annunciato dal banner a schermo (`🌙 NOTTE X — Le maschere si sono spezzate... Risveglio!`), dal sipario narrativo dell'Atto I e nell'HUD in alto a sinistra.
+3. **Rimozione Toolbar Sviluppatore & Schermo Intero**:
+   - Rimossa completamente la barra superiore con i pulsanti di debug e teletrasporto.
+   - Il palco si adatta a tutto schermo nel browser (`width: min(98vw, calc(98vh * 16 / 9))`), mantenendo le proporzioni 16:9 e la resa pixel-art nitida e pulita.
+4. **Menù di Pausa e Impostazioni con `ESC`**:
+   - Premendo `ESC` durante la partita si apre il menù di pausa a tema teatrale con:
+     - `▶ RIPRENDI GIOCO [ESC / Click]`
+     - `🔊 AUDIO: ON / MUTATO` (interattivo con un clic o tasto `M`)
+     - `⛶ SCHERMO INTERO: ON / OFF` (attiva/disattiva fullscreen)
+     - `🎲 RICOMINCIA NOTTE [R]` (fa partire una nuova notte)
+     - `🎭 MENÙ PERSONAGGI` (torna alla selezione dei 4 protagonisti)
+     - Promemoria comandi a piè di pagina.
+5. **Bilanciamento Stanze e Regole Isaac**:
+   - **Stanze normali**: NESSUN dono passivo gratis! La pulizia della stanza rilascia solo monete o mezze maschere e ricarica di +1 l'oggetto attivo `[Q]`.
+   - **Densità e coerenza nemici**: Al Piano 1 compaiono solo 2 nemici per stanza (raramente 3 vespe). Ogni stanza segue un tema coerente (es. solo Gatti d'Ombra, solo Vespe cieche, solo Guardie, solo Maschere o Bozzi) evitando miscugli caotici. Probabilità campioni colorati abbassata al 5% al Piano 1.
+   - **Stanza del Tesoro**: Esattamente 1 per piano, con 1 oggetto gratis sul piedistallo.
+   - **Stanza Segreta**: Esattamente 1 per piano dietro la crepa dorata sul muro. Ha esattamente **1/3 di probabilità (33.3%)** di contenere un oggetto gratis sul piedistallo; se presente, c'è **1/5 di probabilità (20%)** che sia un oggetto di tier forte (`★`), altrimenti base. Se non c'è l'oggetto, contiene un ricco bottino sicuro di 3-5 monete d'oro e mezza maschera di cera, **senza mob aggressivi**.
+   - **La Fucina (Shop)**: Esattamente 1 per piano per spendere le monete accumulate (mezze maschere, cuori, reliquie base e forti).
+   - **Pulizia Visiva**: Ridotte macchie e schizzi a terra (max 16 per stanza a trasparenza lieve) e raggio/durata delle pozze di fuoco ridotti per garantire leggibilità tattica perfetta.
+
+---
 
 ## Dove siamo: da due programmi a uno
 
