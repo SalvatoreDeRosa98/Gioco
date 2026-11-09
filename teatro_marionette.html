@@ -3290,6 +3290,53 @@ function disegnaManoMarionettaPittorica() {
   }
 
   const ARENA = { x1: 76, y1: 78, x2: 564, y2: 298 };
+  // --- C: inizio ---
+  /**
+   * STANZE_C — parametri delle richieste dell'autore (feedback C).
+   * banner: fascia del testo in alto, fra il riquadro HUD di sinistra (x 6..178) e la minimappa
+   *   (x ≥ 516), sotto la barra del boss (y ≤ 30) e sopra la porta nord (y ≥ 52): la porta sud resta libera.
+   * distanzaPorte: px minimi fra un nemico e ogni porta / il punto di entrata.
+   * graziaIngressoMs: dopo l'ingresso in stanza i nemici non attaccano e il contatto non fa danno.
+   * segreta: la crepa si vede solo entro raggioCrepa px; servono colpiMuro colpi sul muro giusto.
+   */
+  const STANZE_C = Object.freeze({
+    banner: Object.freeze({ x: 184, y: 33, w: 332, h: 17 }),
+    distanzaPorte: 110,
+    graziaIngressoMs: 700,
+    segreta: Object.freeze({ raggioCrepa: 70, colpiMuro: 3, raggioEsplosione: 95 }),
+  });
+
+  /**
+   * NOTTI_C — ogni notte (contatore dell'autore getNumeroNotte) cambia qualcosa. Le righe sono cumulative:
+   * alla notte n valgono tutte quelle con daNotte ≤ n. Cambi visibili nell'hub, moderati nel gioco.
+   *   notte 2: la sagoma di Mariella alla finestra illuminata (bibbia IX: «una finestra illuminata… una
+   *            breve sagoma»); la luna si sposta di lunaPassoC celle per notte (fino a lunaMaxNotte).
+   *   notte 3: una battuta nuova di Tonino; probNemicoExtra = probabilità di una Vespa in più per stanza.
+   *   notte 4: hub più buio (buioExtra sull'opacità del velo notturno) e un NPC nuovo, una festaiola della
+   *            festa del 1845 addormentata dal Velo (bibbia «La notte dell'inizio»).
+   *   notte 5+: ricompense un po' migliori: bonusForte sulla probabilità di oggetto forte gratis,
+   *            probMonetaExtra = probabilità di un grano in più a stanza pulita.
+   */
+  const NOTTI_C = Object.freeze([
+    Object.freeze({ daNotte: 2, mariellaAllaFinestra: true, lunaPassoC: 0.8, lunaMaxNotte: 6 }),
+    Object.freeze({ daNotte: 3, battutaTonino: true, probNemicoExtra: 0.35 }),
+    Object.freeze({ daNotte: 4, buioExtra: 0.16, npcNuovo: 'festaiola' }),
+    Object.freeze({ daNotte: 5, bonusForte: 0.05, probMonetaExtra: 0.3 }),
+  ]);
+  /** Effetti della notte n: unione delle righe di NOTTI_C con daNotte ≤ n (valori neutri se nessuna). */
+  /** Effetto del Medaglione di Rosa attivo stanotte (lo decide t4-hub-storia.js), o null. */
+  function medaglioneC() {
+    const f = window.__teatro && window.__teatro.effettoMedaglioneC;
+    try { return typeof f === 'function' ? f() : null; } catch (_) { return null; }
+  }
+  function effettiNotteC(n = getNumeroNotte()) {
+    const e = { notte: n, mariellaAllaFinestra: false, lunaPassoC: 0, lunaMaxNotte: 1, battutaTonino: false,
+      probNemicoExtra: 0, buioExtra: 0, npcNuovo: null, bonusForte: 0, probMonetaExtra: 0 };
+    for (const riga of NOTTI_C) if (n >= riga.daNotte) Object.assign(e, riga);
+    delete e.daNotte;
+    return e;
+  }
+  // --- C: fine ---
 
   let runSeed = Date.now() >>> 0;
   function rng() {
@@ -3443,6 +3490,10 @@ function disegnaManoMarionettaPittorica() {
       if (m.size) projScale = Math.max(projScale, m.size);
     }
 
+    // --- C: effetto passivo del Medaglione (Benedizione di Rosa / Oblio) ---
+    const medC = statoRun.fase === 'in_gioco' ? medaglioneC() : null;
+    if (medC) { flatDmg += medC.dmg; bonusMaxHp += medC.maxHpHalf; }
+    statoRun.medaglioneC = medC;
     const baseD = statoRun.baseDmgChar || 3.50;
     const effDmg = (baseD * Math.sqrt(Math.max(0, totalDmgUps * 1.2 + 1)) + flatDmg) * dmgMult;
     statoRun.dmg = Math.max(1.0, effDmg);
@@ -3711,13 +3762,7 @@ function disegnaManoMarionettaPittorica() {
         W: { x: 62, y: 188, rx: 20, ry: 28, opp: 'E' },
         E: { x: 578, y: 188, rx: 20, ry: 28, opp: 'W' },
       };
-      if (st.muroSegreto && !st.muroSegreto.aperto) {
-        const ms = porteClick[st.muroSegreto.lato];
-        if (ms && Math.abs(mx - ms.x) <= ms.rx + 8 && Math.abs(my - ms.y) <= ms.ry + 8) {
-          apriMuroSegreto(st);
-          return;
-        }
-      }
+      // --- C: la Stanza Segreta non si apre più col click (né con E): solo bomba ferma o 3 colpi ---
       for (const [lato, idDest] of Object.entries(st.porte)) {
         const pc = porteClick[lato];
         if (Math.abs(mx - pc.x) <= pc.rx && Math.abs(my - pc.y) <= pc.ry) {
@@ -3800,7 +3845,7 @@ function disegnaManoMarionettaPittorica() {
 
   function tiraOggettoGratisStanza(garantito = false) {
     const roll = rng();
-    if (roll < 0.10) {
+    if (roll < 0.10 + effettiNotteC().bonusForte) { // C: notte 5+ ricompense un po' migliori
       // --- B: inizio --- (a pool esaurito di forti può uscire un base o un cuore: l'etichetta segue l'oggetto)
       const o = estraiOggettoForte();
       return { ...o, forteGratis: o.tier === 'forte' };
@@ -3811,6 +3856,20 @@ function disegnaManoMarionettaPittorica() {
     }
     return null;
   }
+
+  // --- C: inizio ---
+  /**
+   * Un colpo (lacrima, fendente, impulso del raggio) sul muro giusto: al STANZE_C.segreta.colpiMuro-esimo
+   * il passaggio si apre. Nessun avviso: solo un po' di polvere sul muro.
+   * @param {object} st stanza corrente @param {number} x @param {number} y punto d'impatto
+   */
+  function colpisciMuroSegretoC(st, x, y) {
+    if (!st?.muroSegreto || st.muroSegreto.aperto) return;
+    st.muroSegreto.colpi = (st.muroSegreto.colpi || 0) + 1;
+    if (Number.isFinite(x)) statoRun.effettiSplash.push({ x, y, tick: 0 });
+    if (st.muroSegreto.colpi >= STANZE_C.segreta.colpiMuro) apriMuroSegreto(st);
+  }
+  // --- C: fine ---
 
   function apriMuroSegreto(st) {
     if (!st?.muroSegreto || st.muroSegreto.aperto) return;
@@ -3994,6 +4053,56 @@ function disegnaManoMarionettaPittorica() {
     return null;
   }
 
+  // --- C: inizio ---
+  /** Centri delle porte (come in disegnaStanza) e punti di entrata del giocatore (come in entraInStanza). */
+  const PORTE_C = Object.freeze({ N: { x: 320, y: 61 }, S: { x: 320, y: 313 }, W: { x: 59, y: 187 }, E: { x: 581, y: 187 } });
+  const ENTRATE_C = Object.freeze({
+    N: { x: 320, y: ARENA.y1 + 18 }, S: { x: 320, y: ARENA.y2 - 18 },
+    W: { x: ARENA.x1 + 22, y: 188 }, E: { x: ARENA.x2 - 22, y: 188 }, inizio: { x: 260, y: 225 },
+  });
+  /** Porte di una stanza da cui stare lontani: quelle aperte e il muro segreto (anche se chiuso). */
+  function porteVietateC(s) {
+    const lati = new Set(Object.keys(s?.porte || {}));
+    if (s?.muroSegreto) lati.add(s.muroSegreto.lato);
+    return [...lati].map((l) => PORTE_C[l]).filter(Boolean);
+  }
+  /**
+   * Punto più vicino a (x, y) a STANZE_C.distanzaPorte px da ogni punto vietato e ad almeno 26 px dagli
+   * altri nemici. Ricerca a griglia deterministica (nessun rng): se nulla è libero, rinuncia allo spazio
+   * fra nemici ma mai alla distanza dalle porte.
+   * @param {number} x @param {number} y @param {{x:number,y:number}[]} vietati @param {{x:number,y:number}[]} [altri]
+   */
+  function puntoLontanoDallePorteC(x, y, vietati, altri = []) {
+    const D = STANZE_C.distanzaPorte;
+    const lontano = (px, py) => vietati.every((p) => Math.hypot(px - p.x, py - p.y) >= D);
+    const spazio = (px, py) => altri.every((o) => Math.hypot(px - o.x, py - o.y) >= 26);
+    if (lontano(x, y) && spazio(x, y)) return { x, y };
+    for (const conSpazio of [true, false]) {
+      let best = null, bd = Infinity;
+      for (let gy = ARENA.y1 + 24; gy <= ARENA.y2 - 24; gy += 6) {
+        for (let gx = ARENA.x1 + 24; gx <= ARENA.x2 - 24; gx += 6) {
+          if (!lontano(gx, gy) || (conSpazio && !spazio(gx, gy))) continue;
+          const d = Math.hypot(gx - x, gy - y);
+          if (d < bd) { bd = d; best = { x: gx, y: gy }; }
+        }
+      }
+      if (best) return best;
+    }
+    return { x, y };
+  }
+  /** Allontana i nemici vivi della stanza dalle porte e dai punti vietati (ingresso, spawn a metà lotta). */
+  function allontanaNemiciDallePorteC(s, extra = []) {
+    const vietati = [...porteVietateC(s), ...extra];
+    const posti = [];
+    for (const n of s.nemici || []) {
+      if (n.hp <= 0) continue;
+      const p = puntoLontanoDallePorteC(n.x, n.y, vietati, posti);
+      n.x = p.x; n.y = p.y;
+      posti.push(p);
+    }
+  }
+  // --- C: fine ---
+
   function popolaStanzaIsaac(s, piano) {
     const ciclo = Math.floor((piano - 1) / 4) + 1;
     const moltCiclo = Math.pow(1.45, ciclo - 1);
@@ -4140,6 +4249,8 @@ function disegnaManoMarionettaPittorica() {
 
       const temaScelto = TEMI_STANZA[Math.floor(rng() * TEMI_STANZA.length)];
       const tipiGenerati = temaScelto.getTipi(piano);
+      // --- C: dalla notte 3 a volte una Vespa in più (NOTTI_C.probNemicoExtra) ---
+      if (rng() < effettiNotteC().probNemicoExtra) tipiGenerati.push('vespa_cieca');
 
       const nomiNem = {
         vespa_cieca: 'Vespa Cieca (Attack Fly)',
@@ -4193,6 +4304,7 @@ function disegnaManoMarionettaPittorica() {
           shootCd: 40 + Math.floor(rng() * 45),
         });
       }
+      allontanaNemiciDallePorteC(s); // --- C: nemici mai vicino alle porte ---
     } else if (s.tipo === 'boss') {
       const pianoNelCiclo = ((piano - 1) % 4) + 1;
       const bossInfo = pianoNelCiclo === 4
@@ -4206,8 +4318,9 @@ function disegnaManoMarionettaPittorica() {
         tipo: bossInfo.tipo,
         pattern: bossInfo.pattern,
         boss: true,
-        x: 320,
-        y: 162,
+        // --- C: inizio --- il boss parte lontano dalle porte (prima a 320,162: a 101 px dalla porta nord)
+        ...puntoLontanoDallePorteC(320, 162, porteVietateC(s)),
+        // --- C: fine ---
         vx: 1.35,
         vy: 1.05,
         airZ: 0,
@@ -4317,6 +4430,10 @@ function disegnaManoMarionettaPittorica() {
     statoRun.baseDmgChar = pInfo.baseDmg;
     statoRun.baseSpdChar = pInfo.baseSpd;
     ricalcolaStatisticheIsaac();
+    // --- C: con la Benedizione di Rosa la maschera in più parte piena ---
+    if (statoRun.medaglioneC && statoRun.medaglioneC.maxHpHalf > 0) {
+      statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + statoRun.medaglioneC.maxHpHalf);
+    }
     avviaPiano(1, true);
     mostraBanner(`🌙 NOTTE ${statoRun.numeroNotte} — Sipario alzato!`, 180);
   }
@@ -4348,6 +4465,11 @@ function disegnaManoMarionettaPittorica() {
     else if (daLato === 'W') { player.x = ARENA.x1 + 22; player.y = 188; }
     else if (daLato === 'E') { player.x = ARENA.x2 - 22; player.y = 188; }
     else { player.x = 260; player.y = 225; }
+    // --- C: inizio --- nemici lontani dalle porte e dal punto di entrata; grazia d'ingresso
+    allontanaNemiciDallePorteC(stanza, [{ x: player.x, y: player.y }]);
+    statoRun.graziaIngressoC = ticksDaMs(STANZE_C.graziaIngressoMs);
+    statoRun.scudoRosaC = Boolean(statoRun.medaglioneC && statoRun.medaglioneC.scudoStanza); // Benedizione di Rosa
+    // --- C: fine ---
 
     if (stanza.tipo === 'tesoro' && stanza.oggettoPiedistallo && !stanza.oggettoPiedistallo.preso) {
       const o = stanza.oggettoPiedistallo;
@@ -4369,9 +4491,7 @@ function disegnaManoMarionettaPittorica() {
           : `💀 BOSS PIANO ${statoRun.piano} (${b.hp} HP): ${b.nome}!`,
         220
       );
-    } else if (stanza.muroSegreto && !stanza.muroSegreto.aperto && stanza.pulita) {
-      mostraBanner(`✨ C'è una Crepa Dorata sul muro ${stanza.muroSegreto.lato}! Spara o fai esplodere un Bozzo per aprire la Segreta!`, 180);
-    }
+    } // --- C: nessun avviso della crepa: la Stanza Segreta resta da scoprire ---
   }
 
   function eseguiAttacco4Direzioni(dx, dy) {
@@ -4624,7 +4744,7 @@ function disegnaManoMarionettaPittorica() {
     }
     if (st.muroSegreto && !st.muroSegreto.aperto) {
       const posMuro = { N: [320, ARENA.y1], S: [320, ARENA.y2], W: [ARENA.x1, 188], E: [ARENA.x2, 188] }[st.muroSegreto.lato];
-      if (posMuro && Math.hypot(bx - posMuro[0], by - posMuro[1]) < 95) {
+      if (posMuro && Math.hypot(bx - posMuro[0], by - posMuro[1]) < STANZE_C.segreta.raggioEsplosione) { // C
         apriMuroSegreto(st);
       }
     }
@@ -4748,6 +4868,8 @@ function disegnaManoMarionettaPittorica() {
         };
       }
 
+      // --- C: dalla notte 5 un grano in più a stanza pulita (NOTTI_C.probMonetaExtra) ---
+      if (st.tipo !== 'segreta' && rng() < effettiNotteC().probMonetaExtra) spawnaMonetaATerra(st, 300, 172, 1);
       const rPick = rng();
       // --- T3: inizio ---
       if (st.tipo === 'segreta') {
@@ -4762,9 +4884,7 @@ function disegnaManoMarionettaPittorica() {
       if (st.oggettoPiedistallo) {
         const tag = st.oggettoPiedistallo.forteGratis ? '★ OGGETTO FORTE GRATIS (1 su 10)!' : '🎁 OGGETTO GRATIS (1 su 3)!';
         mostraBanner(`Stanza pulita! È apparso ${tag} → ${st.oggettoPiedistallo.nome} [Click/E]`, 220);
-      } else if (st.muroSegreto && !st.muroSegreto.aperto) {
-        mostraBanner(`Stanza pulita! ✨ Nota la Crepa Dorata sul muro ${st.muroSegreto.lato}: sparaci per la Stanza Segreta!`, 200);
-      } else {
+      } else { // --- C: nessun avviso della crepa a stanza pulita ---
         mostraBanner(st.tipo === 'segreta' ? 'Stanza Segreta ripulita! Raccogli tutte le monete a terra!' : 'Stanza ripulita! (+1⚡ Carica Attivo [Q])', 130);
       }
     }
@@ -4780,10 +4900,7 @@ function disegnaManoMarionettaPittorica() {
     if (st.tipo === 'sviluppatore') { apriPannelloSviluppatoreB(st); return; }
     // --- B: fine ---
 
-    if (st.pulita && st.muroSegreto && !st.muroSegreto.aperto) {
-      apriMuroSegreto(st);
-      return;
-    }
+    // --- C: E non apre più la Stanza Segreta ---
 
     if (st.pulita && st.oggettoPiedistallo && !st.oggettoPiedistallo.preso) {
       const o = st.oggettoPiedistallo;
@@ -4849,6 +4966,15 @@ function disegnaManoMarionettaPittorica() {
    */
   function subisciColpoGiocatore(mezzeMaschereDanno, fonte, daX, daY) {
     if (player.invuln > 0) return;
+    if (statoRun.graziaIngressoC > 0) return; // --- C: grazia d'ingresso: nessun danno ---
+    if (statoRun.scudoRosaC && statoRun.fase === 'in_gioco') {
+      // --- C: Benedizione di Rosa: il primo colpo della stanza non fa danno (solo i-frames e rimbalzo) ---
+      statoRun.scudoRosaC = false;
+      if (Number.isFinite(daX) && Number.isFinite(daY)) spingi(player, player.x - daX, player.y - daY, FEEL.iframes.rimbalzoPx);
+      player.invuln = ticksDaMs(FEEL.iframes.durataMs);
+      statoRun.effettiSplash.push({ x: player.x, y: player.y - 10, tick: 0 });
+      return;
+    }
     // (bug autore «quando perdo si freeza») fuori dalla run (sequenza di morte, hub, menu) nessun colpo:
     // un secondo colpo letale nello stesso tick non deve riavviare la run sopra la sequenza di morte.
     if (statoRun.fase !== 'in_gioco') return;
@@ -5021,26 +5147,23 @@ function disegnaManoMarionettaPittorica() {
 
     if (st.muroSegreto && !st.muroSegreto.aperto) {
       const p = porte[st.muroSegreto.lato];
-      if (p) {
-        const pulse = 0.55 + 0.45 * Math.sin(tick * 0.14);
+      // --- C: inizio --- crepa discreta, visibile solo da vicino (STANZE_C.segreta.raggioCrepa), senza etichetta
+      const dCrepa = p ? Math.hypot(player.x - p.x, player.y - p.y) : Infinity;
+      if (p && dCrepa < STANZE_C.segreta.raggioCrepa) {
+        const vis = 1 - dCrepa / STANZE_C.segreta.raggioCrepa;
         ctx.save();
-        ctx.strokeStyle = `rgba(249, 203, 64, ${pulse.toFixed(2)})`;
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = `rgba(20, 12, 8, ${(0.25 + 0.35 * vis).toFixed(2)})`;
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(p.x - 8, p.y - 6);
-        ctx.lineTo(p.x - 2, p.y);
-        ctx.lineTo(p.x + 5, p.y - 4);
-        ctx.lineTo(p.x + 2, p.y + 5);
-        ctx.lineTo(p.x + 9, p.y + 8);
+        ctx.moveTo(p.x - 5, p.y - 4);
+        ctx.lineTo(p.x - 1, p.y);
+        ctx.lineTo(p.x + 3, p.y - 2);
+        ctx.lineTo(p.x + 1, p.y + 4);
         ctx.stroke();
-        if (st.pulita) {
-          const lx = st.muroSegreto.lato === 'W' ? p.x + 48 : st.muroSegreto.lato === 'E' ? p.x - 48 : p.x;
-          const ly = st.muroSegreto.lato === 'N' ? p.y + 22 : st.muroSegreto.lato === 'S' ? p.y - 12 : p.y - 12;
-          drawPillLabel('? CREPA [Spara/E]', lx, ly, 108, { size: 7.5, color: '#f9cb40', border: '#f9cb40' });
-        }
         ctx.restore();
       }
     }
+    // --- C: fine ---
 
     for (const [lato, idDest] of Object.entries(st.porte)) {
       const dest = statoRun.mappa.perId.get(idDest);
@@ -5425,6 +5548,7 @@ function disegnaManoMarionettaPittorica() {
       if (player.shootAnimTimer > 0) player.shootAnimTimer--;
       if (player.pickupTimer > 0) player.pickupTimer--;
       if (player.invuln > 0) player.invuln--;
+      if (statoRun.graziaIngressoC > 0) statoRun.graziaIngressoC--; // --- C: grazia d'ingresso ---
 
       if (st.oggettiATerra && st.oggettiATerra.length > 0) {
         for (let i = st.oggettiATerra.length - 1; i >= 0; i--) {
@@ -5483,8 +5607,9 @@ function disegnaManoMarionettaPittorica() {
 
           if (st.muroSegreto && !st.muroSegreto.aperto) {
             const pm = posMuroSegreto[st.muroSegreto.lato];
-            if (pm && Math.hypot(hx - pm.x, hy - pm.y) <= reach + 16) {
-              apriMuroSegreto(st);
+            if (pm && Math.hypot(hx - pm.x, hy - pm.y) <= reach + 16 && !player.swordHitIds.has('muroC')) {
+              player.swordHitIds.add('muroC'); // C: un fendente conta un colpo solo
+              colpisciMuroSegretoC(st, pm.x, pm.y);
             }
           }
           for (const nem of st.nemici) {
@@ -5549,8 +5674,7 @@ function disegnaManoMarionettaPittorica() {
         if (st.muroSegreto && !st.muroSegreto.aperto) {
           const pm = posMuroSegreto[st.muroSegreto.lato];
           if (pm && Math.hypot(p.x - pm.x, p.y - pm.y) < 26) {
-            apriMuroSegreto(st);
-            statoRun.effettiSplash.push({ x: p.x, y: p.y, tick: 0 });
+            colpisciMuroSegretoC(st, p.x, p.y); // C: servono 3 colpi
             statoRun.proiettili.splice(i, 1);
             continue;
           }
@@ -5640,6 +5764,7 @@ function disegnaManoMarionettaPittorica() {
       for (const n of st.nemici) {
         if (n.hp <= 0) continue;
         if (n.flash > 0) n.flash--;
+        if (statoRun.graziaIngressoC > 0) continue; // --- C: grazia d'ingresso: niente attacchi né contatto ---
         if (n.burnTicks > 0) {
           n.burnTicks--;
           if (n.burnTicks % 20 === 0) {
@@ -5821,7 +5946,9 @@ function disegnaManoMarionettaPittorica() {
                   tipo: vespe ? 'vespa_cieca' : 'statua',
                   nome: vespe ? 'Vespa Cieca (Attack Fly)' : 'Statuetta di Marmo',
                   comportamento: vespe ? 'volo_puro' : 'torretta_croce',
-                  x: n.x + lato * 58, y: n.y + 34,
+                  // --- C: inizio --- anche gli spawn del boss stanno lontani dalle porte
+                  ...puntoLontanoDallePorteC(n.x + lato * 58, n.y + 34, porteVietateC(st).concat([{ x: player.x, y: player.y }])),
+                  // --- C: fine ---
                   vx: 0, vy: 0,
                   r: vespe ? 11 : 13,
                   hp: hpS, maxHp: hpS,
@@ -6825,10 +6952,19 @@ function disegnaManoMarionettaPittorica() {
     disegnaIconeOggettiB(dy0);
     // --- B: fine ---
 
+    // --- C: inizio --- effetto del Medaglione sotto il riquadro HUD di sinistra
+    if (statoRun.medaglioneC) {
+      const mc = statoRun.medaglioneC;
+      const scudo = mc.scudoStanza ? (statoRun.scudoRosaC ? ' \u00b7 scudo pronto' : ' \u00b7 scudo usato') : '';
+      drawTextFit(`\u2726 ${mc.nome}${scudo}`, 8, 67, 170, { size: 7.5, color: mc.id === 'oblio' ? '#c084fc' : '#67e8f9', align: 'left' });
+    }
+    // --- C: fine ---
     // 5. Banner informativo (con auto-fit rigoroso dentro i 500px!)
     if (statoRun.bannerTimer > 0) {
       statoRun.bannerTimer--;
-      const bw = 516, bx = Math.round((W - bw) / 2), by = H - 56, bh = 18;
+      // --- C: inizio --- fascia in alto sotto l'HUD (STANZE_C.banner): la porta sud resta visibile
+      const { x: bx, y: by, w: bw, h: bh } = STANZE_C.banner;
+      // --- C: fine ---
       ctx.save();
       ctx.fillStyle = 'rgba(10, 6, 4, 0.95)';
       ctx.fillRect(bx, by, bw, bh);
@@ -6838,7 +6974,7 @@ function disegnaManoMarionettaPittorica() {
       ctx.beginPath();
       ctx.rect(bx + 2, by + 1, bw - 4, bh - 2);
       ctx.clip();
-      drawTextFit(statoRun.banner, W / 2, by + 12, bw - 14, { size: 8, color: '#f9cb40' });
+      drawTextFit(statoRun.banner, bx + bw / 2, by + 12, bw - 14, { size: 8, color: '#f9cb40' });
       ctx.restore();
     }
   }
@@ -7003,6 +7139,7 @@ function disegnaManoMarionettaPittorica() {
   window.__teatroInterno = {
     W, H, ARENA, ctx, canvas, statoRun, player, keys, AudioSys, CATALOGO_PATTO, CATALOGO_OGGETTI, ECONOMIA_T3,
     PERSONAGGI_GIOCABILI, drawTextFit, drawPillLabel, mostraBanner, danneggiaNemico, apriMuroSegreto,
+    colpisciMuroSegretoC, // C
     acquisisciOggettoConLimite5Slot, selezionaPersonaggio,
     get tick() { return tick; },
   };
@@ -7037,6 +7174,7 @@ function disegnaManoMarionettaPittorica() {
       selezionaPersonaggio, nuovaRun, mostraBanner, scuoti, rng,
       // (T4) un solo contatore delle notti, quello dell'autore; menu ESC dell'autore disegnato anche nell'hub
       getNumeroNotte, incrementaNumeroNotte, disegnaMenuPausa,
+      NOTTI_C, effettiNotteC, STANZE_C, // C
       // (QA generatore) mappa di un piano con un seme dato; non tocca la run in corso
       mappaConSeme(piano, seme) {
         const salvato = runSeed;
