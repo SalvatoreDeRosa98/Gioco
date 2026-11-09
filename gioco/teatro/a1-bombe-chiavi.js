@@ -36,8 +36,10 @@ const BOMBE_CHIAVI_A1 = Object.freeze({
   raccolta: Object.freeze({ raggio: 20 }),
   forziere: Object.freeze({ raggioTocco: 20, spargimentoPx: 22 }),
   // Una sola estrazione a stanza di combattimento ripulita (oltre a monete/cure già esistenti).
-  // Probabilità cumulate in quest'ordine; il resto (0,67) è niente.
-  drop: Object.freeze({ bomba: 0.12, chiave: 0.09, forziereComune: 0.08, forziereChiuso: 0.04 }),
+  // Probabilità cumulate in quest'ordine; il resto (0,60) è niente.
+  // (bilancio 7) chiave 0,09 → 0,16: con 2 lucchetti a piano (tesoro e Fucina) dal piano 2 un piano su 4-5 lasciava
+  // una delle due porte chiusa (21-31%); ora 7-13% (tools/sim-bilancio-teatro.js, production/bilancio-teatro.md).
+  drop: Object.freeze({ bomba: 0.12, chiave: 0.16, forziereComune: 0.08, forziereChiuso: 0.04 }),
   posizioneDrop: Object.freeze({ x: 360, y: 214 }),
   contenuto: Object.freeze({
     comune: Object.freeze({ pezziMin: 1, pezziMax: 2, probOggetto: 0,

@@ -147,6 +147,9 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
     const I = window.__teatro.interni;
     const T = I.STANZE_SPECIALI_A3.maledetta;
     I.statoRun.hpHalf = I.statoRun.maxHpHalf; I.player.invuln = 0;
+    // come vaiIn: rigenera il piano finché c'è una Stanza dei Rovi (non dipende dalla mappa della Sfida)
+    for (let k = 0; k < 500 && !I.statoRun.mappa.stanze.some((x) => x.tipo === 'maledetta'); k++) I.avviaPiano(I.statoRun.piano, false);
+    I.statoRun.siparioAttivo = null;
     const m = I.statoRun.mappa; const s = m.stanze.find((x) => x.tipo === 'maledetta');
     const [lato, idG] = Object.entries(s.porte)[0]; const g = m.perId.get(idG);
     I.statoRun.stanzaCorrente = g; g.pulita = true;
