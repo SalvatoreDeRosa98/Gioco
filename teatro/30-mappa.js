@@ -553,7 +553,7 @@ function avviaPiano(piano, mostraSipario = true) {
   if ((piano - 1) % 4 === 0 && piano > 1) {
     const bossGatto = POOL_BOSS.find((x) => x.id === 're-gatto') || POOL_BOSS[0];
     const bossStatua = POOL_BOSS.find((x) => x.id === 'colosso-statua') || POOL_BOSS[1];
-    const bossLeucio = POOL_BOSS.find((x) => x.id === 'maestro-fucina') || POOL_BOSS.find((x) => x.id === 'capitano-guardia') || POOL_BOSS[2];
+    const bossLeucio = POOL_BOSS.find((x) => x.id === 'capitano-guardia') || POOL_BOSS.find((x) => x.id === 'maestro-fucina') || POOL_BOSS[2];
     const altriBoss = shuffle(POOL_BOSS.filter((x) => x.id !== 're-gatto' && x.id !== 'colosso-statua' && x.id !== bossLeucio.id));
     statoRun.bossOrdine = [bossGatto, bossStatua, bossLeucio, ...altriBoss];
   }

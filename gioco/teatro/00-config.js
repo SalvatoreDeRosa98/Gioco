@@ -230,7 +230,7 @@ const QUARTIERI_PIANI = Object.freeze({
     coloreRiflesso: '#7c2d12',
     coloreSeta: 'rgba(251, 146, 60, 0.22)',
     nemiciTipici: Object.freeze(['maschera', 'guardia', 'vespa_cieca']),
-    bossTipico: 'maestro-fucina',
+    bossTipico: 'capitano-guardia', // il Capitano di Piombo al piano 3: sblocca Taddeo (a6)
     descrizioneSipario: Object.freeze({
       atto: 'ATTO III · SAN LEUCIO',
       titolo: '«SAN LEUCIO ALL\'ALBA»',
