@@ -3169,6 +3169,9 @@ function disegnaManoMarionettaPittorica() {
     player.targetX = null;
     player.targetY = null;
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+    // --- T4: inizio ---
+    if (t4Gancio('tasto', e)) return;
+    // --- T4: fine ---
 
     if (statoRun.fase === 'menu_selezione') {
       const charIds = ['ferruccio', 'agnese', 'taddeo', 'ombra'];
@@ -3229,6 +3232,9 @@ function disegnaManoMarionettaPittorica() {
     const r = canvas.getBoundingClientRect();
     const mx = (e.clientX - r.left) * (W / r.width);
     const my = (e.clientY - r.top) * (H / r.height);
+    // --- T4: inizio ---
+    if (t4Gancio('click', mx, my)) return;
+    // --- T4: fine ---
 
     if (statoRun.fase === 'menu_selezione') {
       const charIds = ['ferruccio', 'agnese', 'taddeo', 'ombra'];
@@ -3789,6 +3795,9 @@ function disegnaManoMarionettaPittorica() {
 
   function avviaPartitaConPersonaggio(charId) {
     if (charId) selezionaPersonaggio(charId);
+    // --- T4: inizio ---
+    if (t4Gancio('avvio', charId)) return; // il menu porta all'hub di Piazza Dante
+    // --- T4: fine ---
     statoRun.fase = 'in_gioco';
     nuovaRun();
   }
@@ -4210,6 +4219,9 @@ function disegnaManoMarionettaPittorica() {
 
       if (st.tipo === 'boss') {
         st.uscitaAperta = true;
+        // --- T4: inizio ---
+        t4Gancio('bossSconfitto', st);
+        // --- T4: fine ---
         // Proposta 2: Apertura della Porta del Patto d'Ombra (100% se non hai subito danni nel boss, 60% altrimenti!)
         if (!statoRun.dannoSubitoNelBoss || rng() < 0.60) {
           st.portaPattoAperta = true;
@@ -4337,6 +4349,9 @@ function disegnaManoMarionettaPittorica() {
     player.invuln = ticksDaMs(FEEL.iframes.durataMs);
     scuoti(FEEL.scossa.ferita);
     if (statoRun.hpHalf <= 0) {
+      // --- T4: inizio ---
+      if (t4Gancio('morte', fonte)) return; // sequenza di morte e risveglio nell'hub
+      // --- T4: fine ---
       mostraBanner(`Le tue maschere si sono spezzate contro ${fonte}... Nuova Run al Piano 1!`, 200);
       nuovaRun();
     }
@@ -4800,6 +4815,9 @@ function disegnaManoMarionettaPittorica() {
     }
     if (passi >= FEEL.passo.maxTickPerFrame) accumuloMs = Math.min(accumuloMs, MS_PER_TICK);
     disegnaFrame(dtMs);
+    // --- T4: inizio ---
+    t4Gancio('sopra', dtMs);
+    // --- T4: fine ---
     requestAnimationFrame(loop);
   }
 
@@ -4807,6 +4825,9 @@ function disegnaManoMarionettaPittorica() {
   function passoLogico() {
     tick++;
     if (statoRun.fase === 'menu_selezione') return;
+    // --- T4: inizio ---
+    if (t4Gancio('logica')) return;
+    // --- T4: fine ---
 
     const st = statoRun.stanzaCorrente;
     const inPausaUI = Boolean(statoRun.scambioPendente || statoRun.siparioAttivo);
@@ -4901,6 +4922,9 @@ function disegnaManoMarionettaPittorica() {
               statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + pk.valore);
               st.oggettiATerra.splice(i, 1);
             }
+            // --- T4: inizio ---
+            else if (pk.tipo === 'ricordo' && t4Gancio('raccogli', pk, st)) st.oggettiATerra.splice(i, 1);
+            // --- T4: fine ---
           }
         }
       }
@@ -5385,6 +5409,9 @@ function disegnaManoMarionettaPittorica() {
    * @param {number} dtMs tempo reale dal frame precedente
    */
   function disegnaFrame(dtMs) {
+    // --- T4: inizio ---
+    if (t4Gancio('disegna', dtMs)) return;
+    // --- T4: fine ---
     if (statoRun.fase === 'menu_selezione') {
       disegnaMenuSelezionePersonaggio(tick);
       // --- T3: inizio ---
@@ -6198,9 +6225,44 @@ function disegnaManoMarionettaPittorica() {
     get player() { return { x: player.x, y: player.y, invuln: player.invuln }; },
     get stanza() { return statoRun.stanzaCorrente ? statoRun.stanzaCorrente.tipo : null; },
   });
+  // --- T4: inizio ---
+  // Passo T4 (hub, storia, morte e risveglio): il codice sta in teatro/t4-hub-storia.js, script classico
+  // caricato dopo questo. Qui solo i ganci: t4Gancio(nome, ...) chiama window.__teatro.t4[nome] se c'è
+  // (true = il T4 ha gestito l'evento). La sonda sopra è congelata: la si ricopia (getter compresi) in un
+  // oggetto estendibile, così T3 e T4 vi aggiungono proprietà con Object.assign senza sovrascriversi.
+  function t4Gancio(nome, ...args) {
+    const g = window.__teatro && window.__teatro.t4;
+    if (!g || typeof g[nome] !== 'function') return false;
+    try { return Boolean(g[nome](...args)); } catch (err) { console.error('[T4]', nome, err); return false; }
+  }
+  if (Object.isFrozen(window.__teatro)) {
+    window.__teatro = Object.defineProperties({}, Object.getOwnPropertyDescriptors(window.__teatro));
+  }
+  Object.assign(window.__teatro, {
+    interni: Object.assign(window.__teatro.interni || {}, {
+      ctx, W, H, TAU, ARENA, FEEL, MS_PER_TICK, statoRun, player, keys, SPRITE_OGGETTI, SPRITE_SCENA,
+      PERSONAGGI_GIOCABILI, AudioSys, drawTextFit, drawPillLabel, drawPixelSprite, getFloorTileCanvas,
+      disegnaFerruccioPittorico, disegnaManoMarionettaPittorica, disegnaFiliMarionetta, getCharCorrente,
+      selezionaPersonaggio, nuovaRun, mostraBanner, scuoti, rng,
+    }),
+  });
+  // --- T4: fine ---
   requestAnimationFrame(loop);
 })();
 </script>
 <script src="teatro/t3-economia-salvataggi.js"></script>
+<!-- --- T4: inizio --- -->
+<script src="teatro/t4-hub-storia.js"></script>
+<!-- --- T4: fine --- -->
+<script>
+// --- ponte T3/T4: i flag della trama di T4 vivono nello slot di salvataggio di T3 ---
+(function () {
+  var sv = window.__teatroT3 && window.__teatroT3.salvataggi;
+  var T = window.__teatro;
+  if (!sv || !T || Object.isFrozen(T)) return;
+  T.caricaFlag = function () { var d = sv.leggi(sv.slotAttivo); return (d && d.flag) ? Object.assign({}, d.flag) : {}; };
+  T.salvaFlag = function (flag) { Object.keys(flag || {}).forEach(function (k) { sv.impostaFlag(k, flag[k]); }); };
+})();
+</script>
 </body>
 </html>
