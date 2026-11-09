@@ -300,7 +300,6 @@ function aggiornaBombeA1(st) {
     if (--b.miccia > 0) continue;
     lista.splice(i, 1);
     esplodiBombaA1(st, b);
-    i = Math.min(i, lista.length); // la catena può aver accorciato la miccia di altre bombe
   }
 }
 
@@ -564,6 +563,8 @@ if (window.__teatro && !Object.isFrozen(window.__teatro)) {
     BOMBE_CHIAVI_A1, aggiungiChiavi, aggiungiBombe, generaForziere,
     piazzaBombaA1, esplodiBombaA1, apriForziereA1, applicaLucchettiA1, garantisciChiaveA1, percorsoBossA1,
     interazioniVicineA1, testoInventarioA1,
+    // le versioni avvolte sostituiscono quelle catturate da 80-ciclo.js (superinsieme: stessi effetti + A1)
+    avviaPiano, entraInStanza,
     entraInStanzaA1: entraInStanza, verificaStanzaPulitaA1: verificaStanzaPulita, interagisciStanzaA1: interagisciStanza,
   });
 }
