@@ -113,20 +113,25 @@
     ctx.imageSmoothingEnabled = liscio;
     if (liscio) ctx.imageSmoothingQuality = 'high';
     if (tinta) {
-      const w = Math.max(1, Math.ceil(dw)), h = Math.max(1, Math.ceil(dh));
+      // (T5) la tela di appoggio è alla risoluzione reale del contesto (scala del palco compresa), non a
+      // pochi pixel di gioco: il foglio dell'autore resta a piena definizione anche quando è tinto.
+      const m = ctx.getTransform();
+      const k = Math.max(1, Math.min(8, Math.max(Math.hypot(m.a, m.b), Math.hypot(m.c, m.d))));
+      const w = Math.max(1, Math.ceil(dw * k)), h = Math.max(1, Math.ceil(dh * k));
       if (appoggio.width < w) appoggio.width = w;
       if (appoggio.height < h) appoggio.height = h;
       actx.clearRect(0, 0, appoggio.width, appoggio.height);
       actx.globalCompositeOperation = 'source-over';
       actx.imageSmoothingEnabled = liscio;
-      actx.drawImage(immagini[nome], sx, sy, L.cella_l, L.cella_a, 0, 0, dw, dh);
+      if (liscio) actx.imageSmoothingQuality = 'high';
+      actx.drawImage(immagini[nome], sx, sy, L.cella_l, L.cella_a, 0, 0, dw * k, dh * k);
       actx.globalCompositeOperation = 'source-atop';
       actx.globalAlpha = tintaAlfa;
       actx.fillStyle = tinta;
       actx.fillRect(0, 0, w, h);
       actx.globalAlpha = 1;
       actx.globalCompositeOperation = 'source-over';
-      ctx.drawImage(appoggio, 0, 0, w, h, dx, dy, w, h);
+      ctx.drawImage(appoggio, 0, 0, w, h, dx, dy, w / k, h / k);
     } else {
       ctx.drawImage(immagini[nome], sx, sy, L.cella_l, L.cella_a, dx, dy, dw, dh);
     }

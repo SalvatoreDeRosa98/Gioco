@@ -50,8 +50,8 @@
     width: 100%;
     height: 100%;
     display: block;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
+    /* (T5) il buffer è alla risoluzione reale (o appena sopra, scala intera): il browser riduce in modo liscio */
+    image-rendering: auto;
     cursor: crosshair;
   }
 </style>
@@ -71,6 +71,49 @@
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   const wrap = document.getElementById('wrap');
+
+  // ===========================================================================
+  // (T5) RISOLUZIONE INTERNA ALTA
+  // La logica ragiona sempre in 640x360 (W, H, ARENA, posizioni, collisioni, velocità invariati).
+  // Il buffer del canvas è la dimensione reale a schermo × devicePixelRatio, arrotondata in su al
+  // multiplo intero di 640 (scala intera: la pixel-art resta a griglia regolare), con tetto
+  // RISOLUZIONE.bufferMaxL × bufferMaxA. Ogni frame parte da ctx.setTransform(scalaBase, …): ogni
+  // save/restore del frame (scossa compresa) torna a questa scala base, mai all'identità.
+  // ===========================================================================
+  const RISOLUZIONE = Object.freeze({
+    bufferMaxL: 3840, // tetto del buffer (3840x2160)
+    bufferMaxA: 2160,
+    scalaIntera: true, // arrotonda la scala all'intero superiore: pixel netti, nessun pixel doppio irregolare
+  });
+  let scalaBase = 1;
+  /**
+   * Ricalcola il buffer del canvas dalla sua dimensione a schermo (CSS dell'autore) × devicePixelRatio.
+   * Chiamata all'avvio, al resize, al cambio di schermo intero e da ResizeObserver.
+   */
+  function adattaRisoluzione() {
+    const cssL = canvas.clientWidth || W;
+    const dpr = window.devicePixelRatio || 1;
+    let s = (cssL * dpr) / W;
+    if (RISOLUZIONE.scalaIntera) s = Math.ceil(s - 1e-6);
+    s = Math.max(1, Math.min(s, RISOLUZIONE.bufferMaxL / W, RISOLUZIONE.bufferMaxA / H));
+    const bl = Math.round(W * s), ba = Math.round(H * s);
+    if (canvas.width !== bl || canvas.height !== ba) {
+      canvas.width = bl; canvas.height = ba; // azzera lo stato del contesto: lo ripristina iniziaFrame()
+      floorCache = null; // il pavimento si ridisegna alla nuova risoluzione
+    }
+    scalaBase = bl / W;
+  }
+  /** Stato base del contesto a inizio frame: scala 640x360 → buffer, pixel-art netta. */
+  function iniziaFrame() {
+    ctx.setTransform(scalaBase, 0, 0, scalaBase, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.imageSmoothingEnabled = false;
+  }
+  window.addEventListener('resize', adattaRisoluzione);
+  document.addEventListener('fullscreenchange', adattaRisoluzione);
+  document.addEventListener('webkitfullscreenchange', adattaRisoluzione);
+  if (typeof ResizeObserver === 'function') new ResizeObserver(() => adattaRisoluzione()).observe(canvas);
 
   // ===========================================================================
   // FEEL (roadmap «Novità nel Teatro», passo T1): tutti i numeri nuovi di passo fisso, colpi, scossa,
@@ -4403,9 +4446,11 @@ function disegnaManoMarionettaPittorica() {
   function getFloorTileCanvas() {
     if (floorCache) return floorCache;
     floorCache = document.createElement('canvas');
-    floorCache.width = W;
-    floorCache.height = H;
+    // (T5) alla risoluzione del buffer: si disegna in coordinate 640x360 con la stessa scala del palco
+    floorCache.width = Math.round(W * scalaBase);
+    floorCache.height = Math.round(H * scalaBase);
     const x = floorCache.getContext('2d');
+    x.setTransform(scalaBase, 0, 0, scalaBase, 0, 0);
     x.imageSmoothingEnabled = false;
 
     x.fillStyle = '#0c0806';
@@ -4459,7 +4504,7 @@ function disegnaManoMarionettaPittorica() {
   }
 
   function disegnaStanzaPixelArt(tick, st) {
-    ctx.drawImage(getFloorTileCanvas(), 0, 0);
+    ctx.drawImage(getFloorTileCanvas(), 0, 0, W, H); // (T5) la cache è alla risoluzione del buffer
 
     if (st.tipo === 'tesoro' || st.tipo === 'fucina' || st.tipo === 'boss' || st.tipo === 'segreta' || st.tipo === 'patto') {
       ctx.fillStyle = st.tipo === 'tesoro'
@@ -4783,6 +4828,7 @@ function disegnaManoMarionettaPittorica() {
       passi++;
     }
     if (passi >= FEEL.passo.maxTickPerFrame) accumuloMs = Math.min(accumuloMs, MS_PER_TICK);
+    iniziaFrame(); // (T5) scala base 640x360 → buffer
     disegnaFrame(dtMs);
     // --- T4: inizio ---
     t4Gancio('sopra', dtMs);
@@ -6305,6 +6351,7 @@ function disegnaManoMarionettaPittorica() {
       selezionaPersonaggio, nuovaRun, mostraBanner, scuoti, rng,
     }),
   });
+  adattaRisoluzione(); // (T5) primo dimensionamento del buffer
   requestAnimationFrame(loop);
 })();
 </script>
