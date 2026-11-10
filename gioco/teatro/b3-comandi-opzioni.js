@@ -122,7 +122,7 @@ const BOTTONE_MENU_B3 = Object.freeze({ x: 494, y: 305, w: 118, h: 28 });
 const PANNELLO_B3 = Object.freeze({
   x: 96, y: 8, w: 448, h: 344,
   righeY: 50, rigaH: 17, rigaHTasti: 15.5,
-  margine: 18, etichettaX: 34, controlloX: 244, tacche: 10, taccaL: 13, taccaPasso: 15, taccaA: 8,
+  margine: 18, etichettaX: 34, controlloX: 232, tacche: 10, taccaL: 12, taccaPasso: 14, taccaA: 8,
   colori: Object.freeze({
     velo: 'rgba(5, 3, 2, 0.9)', fondo: '#140c08', oro: '#f9cb40', bordoInterno: '#5a3818', rotolo: '#5c110b',
     scelta: '#63150d', testo: '#e6d2aa', testoScelto: '#ffffff', spento: '#8a6a3f', vuoto: '#2a1b10',
@@ -410,12 +410,17 @@ function tastieraB3(e) {
   if (!b3.inviando) {
     segnaDispositivoB3('tastiera');
     const o = b3.opz;
+    // scorciatoie del browser (Ctrl+R, F5, F11…): non si traducono, non si catturano, non si fermano
+    const scorciatoia = e.ctrlKey || e.metaKey || e.altKey || /^F\d+$/.test(e.code);
     if (o && giu) { // le Opzioni prendono tutti i tasti (i rilasci passano: nessun tasto resta «premuto»)
-      bloccaB3(e);
+      e.stopImmediatePropagation();
+      if (scorciatoia) return;
+      e.preventDefault();
       if (o.cattura) catturaTastoB3(e);
       else tastoOpzioniB3(e.code, e.repeat);
       return;
     }
+    if (scorciatoia) return;
     if (giu && !e.repeat && statoRun.fase === 'menu_selezione' && e.code === COMANDI_B3.tastoOpzioniMenu) {
       bloccaB3(e);
       apriOpzioniB3('menu');
@@ -527,7 +532,14 @@ function disegnaAggiuntePausaB3() {
     const v = voci[Math.min(b3.cursorePausa, voci.length - 1)];
     if (v) {
       const r = v.rett();
-      const pulsa = 0.65 + 0.35 * Math.sin(performance.now() / 160);
+      if (v.id !== 'riprendi') { // il rosso fisso di «Riprendi» si smorza: l'evidenza in vista è una sola
+        const rr = VOCI_PAUSA_BASE_B3[0].rett();
+        ctx.fillStyle = 'rgba(20, 12, 8, 0.6)';
+        ctx.fillRect(rr.x, rr.y, rr.w, rr.h);
+      }
+      ctx.fillStyle = 'rgba(249, 203, 64, 0.14)';
+      ctx.fillRect(r.x, r.y, r.w, r.h);
+      const pulsa = 0.8 + 0.2 * Math.sin(performance.now() / 160);
       ctx.strokeStyle = `rgba(249, 203, 64, ${pulsa.toFixed(2)})`;
       ctx.lineWidth = 2;
       ctx.strokeRect(r.x - 1.5, r.y - 1.5, r.w + 3, r.h + 3);
@@ -1045,7 +1057,13 @@ function disegnaRigaOpzioniB3(r, y, h, scelta) {
     drawTextFitBaseB3(si ? TESTI_B3.acceso : TESTI_B3.spento, cx + 38, yT, 80, { size: 8, color: si ? C.oro : C.spento, align: 'left' });
   } else if (r.tipo === 'tasto') {
     if (o.cattura === r.id) {
-      if (Math.floor(performance.now() / 350) % 2 === 0) drawTextFitBaseB3(TESTI_B3.premiTasto, cx, yT, 150, { size: 8.5, color: C.oro, align: 'left' });
+      // in attesa del tasto: casella vuota bordata d'oro e scritta che pulsa fra oro e bianco (sempre leggibile)
+      const acceso = Math.floor(performance.now() / 350) % 2 === 0;
+      ctx.strokeStyle = C.oro;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cx + 0.5, y + 1.5, 21, h - 5);
+      drawTextFitBaseB3('?', cx + 11, yT, 18, { size: 8, color: C.oro });
+      drawTextFitBaseB3(TESTI_B3.premiTasto, cx + 30, yT, 140, { size: 8.5, color: acceso ? C.oro : C.testoScelto, align: 'left' });
       return;
     }
     const nome = etichettaTastoB3(OPZIONI.tasti[r.id]);
