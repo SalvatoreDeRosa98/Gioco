@@ -706,6 +706,8 @@
     const sc = d.scelta;
     const op = sc.scelta.opzioni[i];
     if (!op) return;
+    // --- c1: una scelta che non decide un flag della trama (teatro/c1-partenza-segreta.js) chiude e avvisa ---
+    if (typeof sc.scelta.alScegliere === 'function') { d.scelta = null; d.inScelta = false; chiudiDialogo(); sc.scelta.alScegliere(op.valore); return; }
     S.flag[sc.scelta.flag] = op.valore;
     if (sc.scelta.flag === DATI.ricordo.flag) {
       S.flag.medaglione_in_mano = false; // ceduto o tenuto, il ricordo non è più da consegnare
@@ -744,6 +746,8 @@
       apriDialogo(s.battute.map((b) => voce(b.chi, b.testo)), { scene: [s.id], scelta: s.scelta ? s : null });
       return;
     }
+    // --- c1: quello che Tonino dice al posto delle battute solite (teatro/c1-partenza-segreta.js) ---
+    if (npc === 'tonino' && typeof T.toninoParlaC1 === 'function' && T.toninoParlaC1(apriDialogo, voce)) return;
     // --- C: inizio --- novità delle notti: la festaiola (notte 4) e la battuta nuova di Tonino (notte 3)
     if (npc === 'festaiola') { apriDialogo(TESTI_NOTTI_C.festaiola.slice()); return; }
     if (npc === 'tonino' && notteC().battutaTonino && S.battutaNotteC !== notteCorrente()) {
@@ -848,10 +852,13 @@
     return false;
   }
 
+  /** --- c1: la piazza è ferma (una scena di teatro/c1-partenza-segreta.js è in corso)? --- */
+  const fermoC1 = () => typeof T.hubFermoC1 === 'function' && Boolean(T.hubFermoC1());
+
   function aggiornaHub() {
     if (S.alba > 0) S.alba--;
     player.moving = false;
-    if (S.dialogo) return;
+    if (S.dialogo || fermoC1()) return;
     let mx = 0, my = 0;
     if (keys.KeyA || keys.ArrowLeft) mx -= 1;
     if (keys.KeyD || keys.ArrowRight) mx += 1;
@@ -868,9 +875,10 @@
     if (Math.hypot(player.x - INGRESSO.x, player.y - INGRESSO.y) < CONFIG.hub.raggioIngresso + cw / 2) parti();
   }
 
-  function interagisciHub() {
+  function interagisciHub(code) {
     const p = npcVicino();
-    if (!p) return;
+    // --- c1: nessuno con cui parlare qui accanto (teatro/c1-partenza-segreta.js) ---
+    if (!p) { if (typeof T.hubSenzaNessunoC1 === 'function') T.hubSenzaNessunoC1(code, LAMPIONE); return; }
     const ancoraggi = [p.ancoraggio];
     for (const [anc, npc] of Object.entries(DATI.ripetizioni.npc_per_ancoraggio)) if (npc === p.personaggio) ancoraggi.push(anc);
     interagisciNpc(p.personaggio, ancoraggi);
@@ -1161,6 +1169,7 @@
 
   /** Tonino: silhouette da teatro d'ombre (berretto, grembiule bianco), si muove appena. */
   function disegnaTonino(x, y, t) {
+    if (typeof T.disegnaToninoC1 === 'function' && T.disegnaToninoC1(x, y, t)) return; // --- c1 ---
     const bob = Math.sin(t * 0.08) * 1;
     ctx.save();
     ctx.fillStyle = 'rgba(8, 5, 3, 0.6)';
@@ -1236,7 +1245,7 @@
 
   function disegnaLampione(t) {
     const { x, y } = LAMPIONE;
-    const acceso = S.alba <= CONFIG.hub.tickAlba * 0.6;
+    const acceso = S.alba <= CONFIG.hub.tickAlba * 0.6 && !(typeof T.lampioneSpentoC1 === 'function' && T.lampioneSpentoC1()); // --- c1 ---
     if (acceso) {
       const g = ctx.createRadialGradient(x, y - 30, 2, x, y + 10, 90);
       g.addColorStop(0, 'rgba(249, 203, 64, 0.30)');
@@ -1301,11 +1310,12 @@
         scale: 1.0, flipX: player.flipX, tick: t, moving: player.moving, charInfo: I.getCharCorrente(), sinergie: {},
       });
     } });
+    if (typeof T.coseHubC1 === 'function') T.coseHubC1(cose, t, LAMPIONE); // --- c1: cose in più sulla piazza ---
     cose.sort((a, b) => a.y - b.y).forEach((c) => c.d());
     // HUD dell'hub: luogo e numero della notte, Medaglione in mano
     I.drawPillLabel(`${DATI.interfaccia.luogoHub} · ${DATI.interfaccia.hub.notte.replace('{n}', notteCorrente())}`, W - 110, 18, 200, { size: 8, color: '#f9cb40', border: '#8a5a2b' });
     disegnaIconaRicordo(W - 34, 42);
-    if (!S.dialogo) {
+    if (!S.dialogo && !fermoC1()) {
       const v = npcVicino();
       if (v) {
         I.drawPillLabel(DATI.interfaccia.hub.parla.replace('{tasto}', 'E').replace('{nome}', nome(v.personaggio)), v.x, v.y - 44, 260, { size: 8, color: '#ffffff', border: '#f9cb40' });
@@ -1454,7 +1464,7 @@
       }
       if (statoRun.fase === 'morte') return true;
       if (statoRun.fase === 'hub') {
-        if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter') interagisciHub();
+        if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter') interagisciHub(e.code);
         return true;
       }
       return false;
