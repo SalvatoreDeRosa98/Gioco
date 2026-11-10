@@ -1,8 +1,8 @@
 {
-  "fps": 30,
-  "uscita": "sdl",
-  "schermo": { "intero": true, "vsync": false, "accelerato": true, "scalaIntera": true, "liscio": false },
+  "livello": "medio",
   "audio": false,
+  "uscita": "sdl",
+  "schermo": { "intero": true, "vsync": false, "accelerato": true, "scalaIntera": true },
   "comandi": "joystick",
   "joystick": {
     "tastoSotto": 0, "tastoDestra": 1, "tastoSopra": 2, "tastoSinistra": 3,

@@ -50,7 +50,7 @@ mkdir -p "$F/node" "$F/gioco" "$F/lanciatore/font" "$F/dati" "$F/node_modules"
 cp "$S/node-arm64/node" "$F/node/node"
 cp "$S/node-arm64/LICENSE" "$F/node/LICENSE-node.txt"
 cp "$GIOCO" "$F/gioco/teatro.html"
-cp "$QUI/lanciatore/avvia.js" "$QUI/lanciatore/finto-browser.js" "$QUI/lanciatore/uscita-sdl.js" "$F/lanciatore/"
+cp "$QUI"/lanciatore/*.js "$F/lanciatore/"
 "$QUI/prepara-font.sh" "$F/lanciatore/font" "$M/node_modules"
 # moduli: copia senza collegamenti simbolici (la scheda SD è FAT/exFAT: non li regge)
 for m in @napi-rs/canvas @napi-rs/canvas-linux-arm64-gnu @kmamal/sdl node-web-audio-api; do
@@ -68,10 +68,11 @@ cp -L "$(ls "$S"/sdl-arm64/libSDL2-2.0.so.0.* | head -n 1)" "$F/sdl-in-dotazione
 # del Web Audio nativo serve solo il binario arm64
 find "$F/node_modules/node-web-audio-api" -name '*.node' ! -name '*linux-arm64-gnu*' -delete
 cp "$QUI/modello-pacchetto/Ferruccio.sh" "$P/Ferruccio.sh"
+cp "$QUI/modello-pacchetto/FerruccioMisura.sh" "$P/FerruccioMisura.sh"
 cp "$QUI/modello-pacchetto/impostazioni.json" "$QUI/modello-pacchetto/lancio.conf" "$QUI/modello-pacchetto/port.json" "$QUI/modello-pacchetto/ISTRUZIONI.txt" "$F/"
-chmod +x "$P/Ferruccio.sh" "$F/node/node"
+chmod +x "$P/Ferruccio.sh" "$P/FerruccioMisura.sh" "$F/node/node"
 # i file di lancio devono avere i fine riga di Linux (LF): con CRLF bash non li esegue
-if grep -q $'\r' "$P/Ferruccio.sh" "$F/lancio.conf"; then echo "ERRORE: fine riga CRLF nei file di lancio"; exit 1; fi
+if grep -q $'\r' "$P/Ferruccio.sh" "$P/FerruccioMisura.sh" "$F/lancio.conf"; then echo "ERRORE: fine riga CRLF nei file di lancio"; exit 1; fi
 if find "$P" -type l | grep -q .; then echo "ERRORE: nel pacchetto ci sono collegamenti simbolici"; find "$P" -type l; exit 1; fi
 
 echo "== 4. controllo dei binari (architettura e GLIBC chiesta; la console ha GLIBC $GLIBC_CONSOLE)"
@@ -96,7 +97,7 @@ done < <(find "$P" -type f \( -name '*.node' -o -name 'node' -o -name '*.so*' \)
 echo "binari con problemi: $guasti" | tee -a "$V"
 
 echo "== 5. zip"
-ZIP="$DEST/ferruccio-r36s.zip"
+ZIP="$DEST/ferruccio-r36s-v2.zip"
 python3 - "$P" "$ZIP" <<'PY'
 import os, sys, zipfile
 radice, dest = sys.argv[1], sys.argv[2]

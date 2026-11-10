@@ -1,5 +1,5 @@
 #!/bin/bash
-# Ferruccio — La Notte Immobile · script di lancio per R36S / ArkOS (aarch64).
+# Ferruccio — La Notte Immobile · script di lancio per R36S / ArkOS (aarch64) · pacchetto v2.
 # Va copiato in  ports/  insieme alla cartella  ferruccio/ : è la stessa forma dei port di PortMaster
 # (uno script .sh più la sua cartella), ma è AUTOSUFFICIENTE: non usa nessun file di PortMaster
 # (né control.txt, né gptokeyb, né runtime da scaricare). Tutto quello che serve sta in  ferruccio/ .
@@ -7,6 +7,8 @@
 #
 # Scrive  ferruccio/dati/lancio.log  (sistema, librerie, errori di avvio); il lanciatore scrive
 # ferruccio/dati/ferruccio.log  (schermo, tasti, errori del gioco, fotogrammi al secondo).
+# Con FERRUCCIO_MODO=misura (lo imposta FerruccioMisura.sh) al posto del gioco parte la misura automatica,
+# che scrive  ferruccio/dati/misura.log .
 #
 # Permessi: la scheda dei giochi è FAT/exFAT, che non ha i «bit di esecuzione»; il sistema la monta in
 # modo che i file risultino eseguibili (è così che partono gli script messi in ports). In più node, se
@@ -16,7 +18,11 @@ QUI="$(cd "$(dirname "$0")" && pwd)"
 GAMEDIR="$QUI/ferruccio"
 cd "$GAMEDIR" || exit 1
 mkdir -p "$GAMEDIR/dati"
-LOG="$GAMEDIR/dati/lancio.log"
+if [ "$FERRUCCIO_MODO" = "misura" ]; then
+  LOG="$GAMEDIR/dati/lancio-misura.log"; PROGRAMMA="$GAMEDIR/lanciatore/prova.js"; ARGOMENTI="--console"
+else
+  LOG="$GAMEDIR/dati/lancio.log"; PROGRAMMA="$GAMEDIR/lanciatore/avvia.js"; ARGOMENTI=""
+fi
 
 # scelta della SDL2 (lancio.conf): letta e ripulita, così regge anche un salvataggio da Windows (CRLF)
 SDL_SCELTA=auto
@@ -29,7 +35,7 @@ GLIBC_V="$(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $2}')"
 [ -z "$GLIBC_V" ] && GLIBC_V="$(ldd --version 2>/dev/null | head -n 1 | grep -o '[0-9]*\.[0-9]*$')"
 
 {
-  echo "=== Ferruccio: lancio del $(date) ==="
+  echo "=== Ferruccio v2: lancio del $(date) · modo: ${FERRUCCIO_MODO:-gioco} ==="
   echo "cartella: $GAMEDIR · utente: $(id 2>/dev/null) · macchina: $(uname -m)"
   uname -a
   head -n 4 /etc/os-release 2>/dev/null
@@ -40,8 +46,28 @@ GLIBC_V="$(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $2}')"
   echo "ingressi: $(ls /dev/input 2>/dev/null | tr '\n' ' ')"
   echo "SDL2 di sistema: $(ls /usr/lib/aarch64-linux-gnu/libSDL2-2.0.so.0* /usr/lib/libSDL2-2.0.so.0* 2>/dev/null | tr '\n' ' ')"
   echo "variabili SDL già presenti: $(env | grep -i '^SDL' | tr '\n' ' ')"
-  echo "PortMaster (non serve, solo per sapere): $(ls -d /opt/system/Tools/PortMaster /roms/tools/PortMaster /roms2/tools/PortMaster /roms/ports/PortMaster 2>/dev/null | tr '\n' ' ')"
 } > "$LOG" 2>&1
+
+# --- Velocità della macchina ---------------------------------------------------------------------------
+# Il disegno del gioco è tutto sulla CPU e sulla memoria: se i «regolatori» di frequenza (CPU, memoria,
+# GPU) non sono su «performance» la console va molto più piano. ArkOS li alza per gli emulatori; qui lo
+# si fa a mano, se il sistema lo permette (sudo senza password), e all'uscita si rimettono com'erano.
+REGOLATORI="$(ls /sys/devices/system/cpu/cpufreq/policy*/scaling_governor /sys/devices/platform/dmc/devfreq/*/governor /sys/devices/platform/*.gpu/devfreq/*/governor 2>/dev/null)"
+PRIMA=""
+scrivi_regolatore() { # $1 = file, $2 = valore
+  echo "$2" > "$1" 2>/dev/null && return 0
+  echo "$2" | sudo -n tee "$1" >/dev/null 2>&1
+}
+for r in $REGOLATORI; do
+  v="$(cat "$r" 2>/dev/null)"; PRIMA="$PRIMA$r=$v;"
+  [ "$v" = "performance" ] || scrivi_regolatore "$r" performance
+done
+{
+  for r in $REGOLATORI; do echo "regolatore $r: prima «$(echo "$PRIMA" | tr ';' '\n' | grep "^$r=" | cut -d= -f2)», adesso «$(cat "$r" 2>/dev/null)»"; done
+  [ -z "$REGOLATORI" ] && echo "regolatori di frequenza: non trovati"
+  echo "frequenze CPU disponibili: $(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_frequencies 2>/dev/null) · adesso $(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_cur_freq 2>/dev/null)"
+} >> "$LOG" 2>&1
+sudo -n renice -n -10 -p $$ >/dev/null 2>&1 && echo "priorità alzata (nice -10)" >> "$LOG"
 
 # Quale SDL2. Quella «in dotazione» (2.32.8, viaggia col gioco) chiede GLIBC 2.34: su ArkOS, che ha una
 # GLIBC più vecchia, NON si carica, quindi si usa la SDL2 della console (al lanciatore serve la 2.26 o
@@ -76,10 +102,16 @@ echo "prova di node: $v (avvio: ${AVVIO:-FALLITO})" >> "$LOG"
 if [ -z "$AVVIO" ]; then
   echo "node non parte su questo sistema: il gioco non può partire. Mandaci questo file." >> "$LOG"
 elif [ "$AVVIO" = "diretto" ]; then
-  "$NODE" --max-old-space-size=192 "$GAMEDIR/lanciatore/avvia.js" --dati="$GAMEDIR/dati" >> "$LOG" 2>&1
+  "$NODE" --max-old-space-size=192 "$PROGRAMMA" $ARGOMENTI --dati="$GAMEDIR/dati" >> "$LOG" 2>&1
   echo "=== uscita con codice $? alle $(date +%H:%M:%S) ===" >> "$LOG"
 else
-  "$AVVIO" "$NODE" --max-old-space-size=192 "$GAMEDIR/lanciatore/avvia.js" --dati="$GAMEDIR/dati" >> "$LOG" 2>&1
+  "$AVVIO" "$NODE" --max-old-space-size=192 "$PROGRAMMA" $ARGOMENTI --dati="$GAMEDIR/dati" >> "$LOG" 2>&1
   echo "=== uscita con codice $? alle $(date +%H:%M:%S) ===" >> "$LOG"
 fi
+
+# i regolatori tornano com'erano
+for r in $REGOLATORI; do
+  v="$(echo "$PRIMA" | tr ';' '\n' | grep "^$r=" | cut -d= -f2)"
+  [ -n "$v" ] && [ "$v" != "$(cat "$r" 2>/dev/null)" ] && scrivi_regolatore "$r" "$v"
+done
 exit 0

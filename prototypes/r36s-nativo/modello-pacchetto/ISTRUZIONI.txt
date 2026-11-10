@@ -1,123 +1,112 @@
-FERRUCCIO — LA NOTTE IMMOBILE sulla tua console
-(R36S con «ArkOS 2.0 (08232024)(AeUX)», scheda letta da un PC Windows)
+FERRUCCIO — LA NOTTE IMMOBILE sulla tua R36S · SECONDA PROVA (pacchetto v2)
 ==========================================================================
 
-PRIMA DI TUTTO, DUE COSE ONESTE
-  - Questa è una PROVA. Sul computer il gioco gira così; sulla console non l'ha ancora provato
-    nessuno. Può andare a scatti, e può anche non partire.
-  - Non rischi niente: copi un file e una cartella dentro  ports , e non tocchi nient'altro.
-    Se non parte, il gioco scrive due file di testo («log») che dicono perché: mandaceli.
-  In questa prima prova NON c'è il sonoro: è spento apposta.
-  Non serve internet, non serve PortMaster e non serve installare niente sulla console:
-  il pacchetto porta con sé tutto quello che gli occorre.
+La prima prova è partita ma andava a circa 5 immagini al secondo. Questa è fatta per andare più
+veloce: disegna il palco un po' più piccolo e lo ingrandisce, toglie qualche effetto di luce, e
+mette la console alla massima potenza mentre giochi. Quanto più veloce, lo dirà la tua console.
+Il sonoro è ancora spento.
 
 --------------------------------------------------------------------------
-PASSO 1 · Copia il gioco sulla scheda (sul PC)
+1 · SOSTITUISCI LA VECCHIA PROVA (sul PC)
 --------------------------------------------------------------------------
-  a. Sul PC fai clic destro su  ferruccio-r36s.zip  → «Estrai tutto».
-     Nella cartella estratta trovi DUE cose:
-         Ferruccio.sh      (un file)
-         ferruccio         (una cartella)
-     Non aprire  Ferruccio.sh : copialo e basta.
-  b. Spegni la console, togli la scheda e mettila nel PC.
-     Compaiono due unità:
-         EASYROMS (H:)     ← quella giusta: è dove stanno i giochi
-         R36S OS           ← NON toccarla: è il sistema della console
-     Se Windows chiede di «formattare il disco», rispondi sempre ANNULLA.
-  c. Apri  EASYROMS (H:)  e poi la cartella  ports  (c'è già).
-  d. Copia dentro  H:\ports\  tutte e due le cose:  Ferruccio.sh  e la cartella  ferruccio .
-     Sono circa 165 MB, ci vuole qualche minuto. Alla fine devi avere:
-         H:\ports\Ferruccio.sh
-         H:\ports\ferruccio\          (dentro:  gioco , node , lanciatore , node_modules …)
-  e. In basso a destra: «Rimozione sicura dell'hardware» → espelli EASYROMS. Poi togli la scheda
-     e rimettila nella console.
+  a. Metti la scheda nel PC e apri  EASYROMS (H:)  →  ports .
+     (Non toccare «R36S OS». Se Windows chiede di formattare, rispondi ANNULLA.)
+  b. Se vuoi mandarci i vecchi log, prima copia sul PC la cartella  H:\ports\ferruccio\dati .
+  c. CANCELLA da  H:\ports\  la vecchia cartella  ferruccio  e il vecchio  Ferruccio.sh .
+  d. Estrai  ferruccio-r36s-v2.zip  e copia in  H:\ports\  le TRE cose che contiene:
+         Ferruccio.sh          il gioco
+         FerruccioMisura.sh    una misura automatica (vedi punto 3)
+         ferruccio             la cartella con tutto il resto
+     Non aprire i file .sh: copiali e basta.
+  e. «Rimozione sicura», poi rimetti la scheda nella console.
 
 --------------------------------------------------------------------------
-PASSO 2 · Lancia (sulla console)
+2 · GIOCA (sulla console)
 --------------------------------------------------------------------------
-  a. Accendi. Nel menu principale scorri fino a  Ports  ed entra (tasto A).
-  b. Nell'elenco deve esserci  Ferruccio . Sceglilo e premi A.
-     Se non c'è: premi Start → Quit → Restart EmulationStation, poi riguarda in Ports.
-  c. Lo schermo diventa nero. ASPETTA: la prima volta possono servire 30-60 secondi.
-     Non spegnere prima di due minuti.
-  d. Se va bene appare il menu con i quattro burattini, con due fasce nere sopra e sotto
-     (è giusto: lo schermo della console è più «quadrato» del gioco).
-
-  I COMANDI
-     croce o levetta sinistra      muoversi (nei menu: scegliere)
-     Start                         nei menu: conferma / comincia   ·   in gioco: pausa
-     levetta destra                sparare in quella direzione
-     i quattro tasti a destra      sparare: quello in basso spara giù, quello a destra spara a
-                                   destra, quello a sinistra a sinistra, quello in alto in su
-                                   (nei menu quello in basso conferma, quello a destra torna indietro)
-     R1                            azione (porte, forzieri, parlare)
-     L1  consumabile     L2  oggetto attivo     Select  diario
-     PER USCIRE DAL GIOCO: tieni premuti insieme START e SELECT per un secondo.
-     Se non esce: tieni premuti insieme sei tasti qualsiasi (per esempio L1 L2 R1 R2 più due
-     dei quattro tasti a destra) per due secondi.
+  Ports → Ferruccio. Lo schermo resta nero per un po' (anche un minuto): aspetta.
+  Comandi come prima:
+     croce o levetta sinistra   muoversi          Start    conferma nei menu / pausa in gioco
+     levetta destra             sparare           R1       azione (porte, forzieri, parlare)
+     i quattro tasti a destra   sparare giù, a destra, a sinistra, in su, secondo dove sta il tasto
+     L1 consumabile   L2 oggetto attivo   Select diario
+     PER USCIRE: START + SELECT insieme per un secondo (oppure sei tasti insieme per due secondi).
+  Gioca tre o quattro minuti, entra in due o tre stanze coi nemici, poi esci con Start+Select.
+  Dicci: va meglio di prima? Si leggono le scritte? I tasti fanno quello che devono?
 
 --------------------------------------------------------------------------
-PASSO 3 · Cosa guardare (bastano cinque minuti)
+3 · LA MISURA AUTOMATICA (facoltativa, ma ci aiuta moltissimo)
 --------------------------------------------------------------------------
-  1. È partito? Hai visto il menu dei burattini?
-  2. Con Start sei entrato in piazza? E poi nel teatro (una stanza coi nemici)?
-  3. Va liscio, a scatti, lentissimo? Ci aspettiamo tra 15 e 30 immagini al secondo: giocabile,
-     non perfetto. Il numero vero lo scrive il gioco nel log.
-  4. I tasti rispondono tutti? I quattro tasti sparano dalla parte giusta?
-  5. Si leggono le scritte? Si vedono i simboli di monete, bombe e chiavi?
-  Gioca due o tre minuti, entra in almeno due stanze coi nemici, poi esci con Start+Select.
+  Ports → FerruccioMisura. Non devi toccare niente: il gioco si gioca da solo per qualche minuto
+  (menu, piazza, una stanza, una stanza piena di nemici, più volte e con qualità diverse), poi
+  torna da solo all'elenco dei Ports. Se dopo 12 minuti non è tornato, spegni pure.
+  Serve a noi: scrive quanto ci mette la TUA console a fare ogni cosa, così sappiamo dove
+  intervenire invece di tirare a indovinare.
 
 --------------------------------------------------------------------------
-PASSO 4 · Mandaci i due file di log (SEMPRE, che sia partito o no)
+4 · MANDACI I FILE (sul PC)
 --------------------------------------------------------------------------
-  Spegni la console, rimetti la scheda nel PC e apri:   H:\ports\ferruccio\dati\
-  Lì ci sono due file:
-     lancio.log         (che sistema c'è sulla console e se l'avvio è riuscito)
-     ferruccio.log      (schermo, tasti, errori e, ogni 5 secondi, la velocità:
-                         «fps 24.3 · logica+disegno 31.0 ms · copia a schermo 9.8 ms …»)
-  Mandaceli tutti e due così come sono.
-  Se la cartella  dati  non c'è o c'è solo  lancio.log , diccelo: è già un'informazione.
+  Tutti i file che trovi in  H:\ports\ferruccio\dati\ . Di solito sono:
+     lancio.log  e  ferruccio.log      (la partita)
+     lancio-misura.log  e  misura.log  (la misura automatica, se l'hai fatta)
+
+--------------------------------------------------------------------------
+5 · PIÙ VELOCE O PIÙ BELLO: I TRE LIVELLI
+--------------------------------------------------------------------------
+  Sul PC apri  H:\ports\ferruccio\impostazioni.json  col Blocco note. La prima riga utile è
+        "livello": "medio",
+  Puoi scrivere al posto di  medio  una di queste tre parole (tra virgolette, minuscole):
+
+     "veloce"   palco a 320×180 ingrandito. Il più rapido, ma le scritte piccole NON si leggono
+                e l'immagine è sfocata. Senza luci, riflessi, pioggia, schegge.
+     "medio"    palco a 480×270 ingrandito. Le scritte si leggono, l'immagine è un po' morbida.
+                Senza luci della ribalta, riflessi e velo della notte; la pioggia resta.
+                È il livello con cui parte.
+     "bello"    palco a 640×360 pieno, con tutto: è quello della prima prova (lento).
+
+  Salva il file, rimetti la scheda nella console e rilancia. Prova «medio»; se è ancora troppo a
+  scatti prova «veloce» e dicci com'è.
+
+  Per chi vuole regolare di fino, nello stesso file si possono AGGIUNGERE queste voci (vincono
+  sul livello). Ogni voce va su una riga sua, con la virgola in fondo, subito dopo "livello":
+
+        "scala": 0.6,         grandezza del palco: 1 = pieno, 0.75, 0.6, 0.5 … (più piccolo = più veloce)
+        "fps": 15,            quante immagini al secondo provare a fare (il gioco non rallenta:
+                              sotto ne disegna di meno, la velocità di gioco resta giusta fino a 12)
+        "tagli": { "fili": true, "atmosfera": true },
+                              cose da NON disegnare (true = tolta). Si possono mettere:
+                                luci         le luci della ribalta
+                                riflessi     i riflessi sul bagnato
+                                velo         il velo scuro della notte
+                                atmosfera    pioggia e velo insieme
+                                particelle   schegge e scintille
+                                crollo       i burattini che cadono a pezzi
+                                scenografia  gli arredi che calano dall'alto
+                                fili         i fili delle marionette
+
+  Se dopo una modifica il gioco non parte più, hai probabilmente tolto una virgola o una
+  virgoletta: rimetti il file  impostazioni.json  preso dallo zip.
 
 --------------------------------------------------------------------------
 SE QUALCOSA VA STORTO
 --------------------------------------------------------------------------
-  «Ferruccio» non compare in Ports
-     Controlla che  Ferruccio.sh  sia proprio dentro  H:\ports\  (non dentro un'altra cartella)
-     e che il nome finisca con  .sh . Poi riavvia la console.
-  Schermo nero per più di due minuti, oppure torna subito all'elenco dei Ports
-     Spegni e mandaci i log. È il punto più incerto: il gioco usa la libreria dello schermo
-     che è già sulla console (SDL2) e non sappiamo se quella della tua versione gli basta.
-  Va troppo a scatti
-     Sul PC apri  H:\ports\ferruccio\impostazioni.json  col Blocco note, cambia
-     "fps": 30  in  "fps": 20 , salva e riprova. Gli effetti pesanti (ombre lunghe, grana,
-     vignetta, pubblico) partono già spenti.
-  I quattro tasti sparano dalla parte sbagliata
-     Nello stesso file cambia  "scambiaAB": false  in  true  (e, se serve, anche "scambiaXY").
-  I tasti non rispondono, o fanno cose sbagliate
-     Premi comunque, uno alla volta, tutti i tasti della console, poi esci (o spegni) e mandaci
-     i log: il gioco scrive il numero di ogni tasto premuto e con quello sistemiamo la mappa.
-  La console non risponde più
-     Tieni premuto il tasto di accensione finché si spegne. Non si rovina niente.
-  Ricominciare da capo (salvataggi e opzioni)
-     Cancella la cartella  H:\ports\ferruccio\dati .
+  Schermo nero per più di due minuti, o torna subito all'elenco: spegni e mandaci i log.
+  I quattro tasti sparano dalla parte sbagliata: in impostazioni.json metti "scambiaAB": true
+     (e, se serve, "scambiaXY": true).
+  I tasti non rispondono: premili tutti uno alla volta, esci o spegni, e mandaci i log
+     (il gioco scrive il numero di ogni tasto premuto).
+  La console non risponde più: tieni premuto il tasto di accensione finché si spegne.
+  Ricominciare da capo: cancella la cartella  H:\ports\ferruccio\dati .
 
 PER TOGLIERE TUTTO
-  Cancella da  H:\ports\  il file  Ferruccio.sh  e la cartella  ferruccio . Nient'altro è stato toccato.
+  Cancella da  H:\ports\  i file  Ferruccio.sh  e  FerruccioMisura.sh  e la cartella  ferruccio .
 
 --------------------------------------------------------------------------
 NOTA TECNICA (per chi ti aiuta)
 --------------------------------------------------------------------------
-  - Permessi: EASYROMS è FAT/exFAT e non conserva i bit di esecuzione; ArkOS la monta in modo che
-    tutti i file risultino eseguibili (è così che partono tutti i port copiati da Windows).
-    In più lo script prova node anche attraverso ld-linux, che non guarda quel bit, e scrive
-    l'esito in lancio.log («prova di node: v22… (avvio: diretto)»).
-  - Fine riga: Ferruccio.sh e lancio.conf hanno i fine riga di Linux (LF) e lo zip li conserva;
-    copiarli da Windows non li cambia. Non vanno aperti e risalvati con editor che mettono CRLF.
-    impostazioni.json si può modificare col Blocco note senza problemi.
-  - PortMaster: non serve. La cartella ha la forma dei port (uno script .sh in ports più la sua
-    cartella) perché è così che EmulationStation elenca i «Ports», ma lo script non legge nessun
-    file di PortMaster (né control.txt né gptokeyb): i tasti li legge il gioco dal joystick con SDL,
-    con la mappa scritta in impostazioni.json.
-  - Librerie: node chiede GLIBC 2.28, i moduli 2.17/2.18 (ArkOS, base Ubuntu 19.10, ha la 2.30).
-    La SDL2 è quella della console (serve 2.26 o più nuova); quella nel pacchetto chiede GLIBC 2.34
-    e si usa da sola solo su sistemi più nuovi. Dettagli in ferruccio/verifica-binari.txt.
+  - Autosufficiente: nessun file di PortMaster; tasti dal joystick via SDL con la mappa per posizione
+    scritta in impostazioni.json ("joystick").
+  - Potenza: lo script porta su «performance» i regolatori di CPU, memoria (dmc) e GPU con sudo, se
+    il sistema lo permette, e all'uscita li rimette com'erano; il log dice cosa è riuscito a fare.
+  - Librerie: node chiede GLIBC 2.28, i moduli 2.17/2.18; si usa la SDL2 della console (quella nel
+    pacchetto chiede GLIBC 2.34). Dettagli in ferruccio/verifica-binari.txt.
+  - Fine riga: i .sh e lancio.conf sono LF; impostazioni.json si può salvare da Windows.
