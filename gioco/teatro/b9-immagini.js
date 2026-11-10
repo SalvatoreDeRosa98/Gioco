@@ -18,12 +18,20 @@
  *   - Niente logica di gioco: collisioni, economia e rng() non si toccano. L'immagine si adatta all'ingombro
  *     dell'elemento (campo `alt` della tabella), non il contrario.
  *
+ * SCELTE (2026-11-10, guardando ogni immagine nel gioco accanto al disegno a codice): 28 usate, 24 a codice.
+ * Le scartate restano collegate ma spente: se l'autore le rigenera basta rimettere `usa: true` nella tabella.
+ * Le immagini scure prendono un filo di luce calda sul contorno (opzione `filo`), come le sagome «a ombre».
+ *
  * AGGANCI (dove non c'era una funzione da avvolgere): 60-resa.js (ciclo degli ostacoli → disegnaOstacoloB9),
  * b2-ribalta.js (disegnaLumeB9, disegnaCavoB9), b7-stanze.js (spuntoniImmagineB9, saccoImmagineB9),
  * a3-stanze-speciali.js (arredoImmagineB9), b3-comandi-opzioni.js (cartiglioOpzioniB9, interruttoreB9,
  * tastoPergamenaB9, cursoreB9). Il resto avvolge: ELEMENTI_B1 (b1), reazionePubblicoB1, disegnaForziereA1,
  * disegnaLucchettoA1, disegnaClessidraB7, disegnaCiarlatanoB7, parteCoronaB4, parteMascheraB4,
- * disegnaDietroB4, disegnaSegniA6, drawTextFit, disegnaStanzaPixelArt.
+ * disegnaDietroB4, disegnaSegniA6, drawTextFit, disegnaStanzaPixelArt. Ogni avvolgimento chiama la base
+ * quando l'immagine non c'è.
+ *
+ * Da file:// le immagini «sporcano» il canvas come i fogli sprite (niente getImageData dopo averle disegnate):
+ * nella release, dove arrivano da data: URI, non succede.
  *
  * QA: tools/qa-teatro-immagini.js. Sonda: window.__teatro.interni.immaginiB9.
  */
@@ -98,7 +106,7 @@ const IMMAGINI_B9 = Object.freeze({
   'trasf-pulcinella-maschera': { celle: [1, 1], alt: 12, ancora: [0.56, 0.4], dove: 'b4 parteMascheraB4', usa: false,
     motivo: 'macchia nera senza bordo né occhi: sul viso dei burattini non si distingue; la maschera a codice ha il cuoio bruno, il bordo chiaro e il naso a becco' },
   'trasf-ombra-velo': { celle: [1, 1], alt: 38, ancora: [0.5, 0.3], dove: 'b4 disegnaDietroB4 (dietro il burattino)', usa: false,
-    motivo: 'una spirale di tratti rossi e neri su un alone grigio: non si legge come un velo e copre il burattino; i fili neri a codice bastano' },
+    motivo: 'un alone grigio con una spirale di tratti rossi e neri: dietro il burattino quasi non si vede e non si legge come un velo; i fili neri a codice bastano' },
   // --- E. porta della bottega (hub: t4-hub-storia.js, di un'altra squadra) ---
   'porta-bottega-chiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 1], dove: 'nessuno (hub)', usa: false, motivo: 'porta la scritta «LA BOTTEGA» ed è un abbozzo a tinte piatte; l\'hub è di un\'altra squadra' },
   'porta-bottega-socchiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 1], dove: 'nessuno (hub)', usa: false, motivo: 'porta la scritta «LA BOTTEGA» ed è un abbozzo a tinte piatte; l\'hub è di un\'altra squadra' },
