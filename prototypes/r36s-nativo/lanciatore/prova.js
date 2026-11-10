@@ -189,11 +189,29 @@ async function misura(nome, n, dt, azione) {
       if (effetti) foto('05-stanza-pesante-tutto-acceso'); else foto('06-stanza-pesante-effetti-spenti');
       risultati.push(Object.assign(await misura(`stanza pesante: ${quanti} nemici, raffiche (${e})`, Math.round(N / 2), PASSO * 2, battaglia), { effetti }));
     }
+    if (arg.profilo) {
+      // dove va il tempo di disegno: cronometro su ogni metodo del contesto 2D (stanza pesante, effetti come da --profilo=accesi|spenti)
+      accendi(arg.profilo === 'accesi');
+      const proto = Object.getPrototypeOf(browser.canvas.getContext('2d')); const conti = {};
+      for (const k of Object.getOwnPropertyNames(proto)) {
+        const d = Object.getOwnPropertyDescriptor(proto, k);
+        if (!d || typeof d.value !== 'function' || k === 'constructor') continue;
+        const f = d.value; const c = conti[k] = { n: 0, ms: 0 };
+        proto[k] = function () { const t = ms(); try { return f.apply(this, arguments); } finally { c.n++; c.ms += ms() - t; } };
+      }
+      const r = await misura(`PROFILO stanza pesante (${arg.profilo})`, 300, PASSO, battaglia);
+      const righe = Object.entries(conti).filter((e) => e[1].n).sort((a, b) => b[1].ms - a[1].ms).slice(0, 14);
+      console.log('  metodo: chiamate per fotogramma · ms per fotogramma (il cronometro aggiunge ~0,1 µs a chiamata)');
+      for (const [k, c] of righe) console.log(`  ${k.padEnd(24)} ${(c.n / 300).toFixed(1).padStart(8)} · ${(c.ms / 300).toFixed(3)} ms`);
+      console.log(`  somma dei metodi nativi ${(Object.values(conti).reduce((a, c) => a + c.ms, 0) / 300).toFixed(2)} ms su ${r.giocoMedia.toFixed(2)} ms di fotogramma`);
+    }
     rilascia();
     const mem = process.memoryUsage(); const picco = process.resourceUsage().maxRSS / 1024;
     console.log(`\nmemoria: RSS ${(mem.rss / 1048576).toFixed(0)} MB (picco ${picco.toFixed(0)} MB) · heap JS ${(mem.heapUsed / 1048576).toFixed(0)} MB · esterna ${(mem.external / 1048576).toFixed(0)} MB`);
+    const mg = browser.memoriaGrafica();
+    console.log(`memoria grafica del gioco: ${mg.immagini} immagini decodificate = ${mg.immaginiMB.toFixed(0)} MB · ${mg.tele} tele fuori schermo = ${mg.teleMB.toFixed(0)} MB`);
     const cpu = os.cpus()[0] || {};
-    fs.writeFileSync(path.join(dirUscita, 'misura.json'), JSON.stringify({ quando: new Date().toISOString(), node: process.version, arch: process.arch, cpu: cpu.model, gioco: path.basename(fileHtml), copia: nomeCopia, caricamentoMs: msCaricamento, rssMB: mem.rss / 1048576, piccoRssMB: picco, heapMB: mem.heapUsed / 1048576, risultati }, null, 1));
+    fs.writeFileSync(path.join(dirUscita, 'misura.json'), JSON.stringify({ quando: new Date().toISOString(), node: process.version, arch: process.arch, cpu: cpu.model, gioco: path.basename(fileHtml), copia: nomeCopia, caricamentoMs: msCaricamento, rssMB: mem.rss / 1048576, piccoRssMB: picco, heapMB: mem.heapUsed / 1048576, memoriaGrafica: mg, risultati }, null, 1));
     console.log('scritto ' + path.join(dirUscita, 'misura.json'));
   }
   tappa('nessun errore alla fine', browser.stato.errori === 0, `${browser.stato.errori} errori`);

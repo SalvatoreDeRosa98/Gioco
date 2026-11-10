@@ -175,7 +175,7 @@ function creaFintoBrowser(opz) {
   const G = globalThis;
   const log = opz.log || { riga() {} };
   const dirHtml = path.dirname(path.resolve(opz.fileHtml));
-  const stato = { errori: 0, ultimiErrori: [], caricato: false, immagini: 0, immaginiFallite: 0 };
+  const stato = { errori: 0, ultimiErrori: [], caricato: false, immagini: 0, immaginiFallite: 0, pixelImmagini: 0, tele: [] };
 
   function annotaErrore(dove, err) {
     stato.errori++;
@@ -216,6 +216,7 @@ function creaFintoBrowser(opz) {
     c.getContext = function (tipo, attr) { if (tipo !== '2d') return null; if (!cx) cx = originale.call(c, '2d', attr); return cx; };
     c.style = {};
     c.tagName = 'CANVAS';
+    stato.tele.push(new WeakRef(c));
     return c;
   }
 
@@ -285,6 +286,7 @@ function creaFintoBrowser(opz) {
         }
       }
       super.src = dato;
+      stato.pixelImmagini += (this.width || 0) * (this.height || 0);
     }
     get src() { return this.srcDichiarata || ''; }
   }
@@ -410,6 +412,12 @@ function creaFintoBrowser(opz) {
     pixel() { return canvas.data(); },
     /** Salva il palco in un PNG. */
     foto(file) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, canvas.toBuffer('image/png')); return file; },
+    /** Quanta memoria grafica tiene il gioco: immagini decodificate e tele fuori schermo ancora vive (MB, 4 byte a pixel). */
+    memoriaGrafica() {
+      let n = 0, px = 0;
+      for (const r of stato.tele) { const c = r.deref(); if (c) { n++; px += c.width * c.height; } }
+      return { immagini: stato.immagini, immaginiMB: stato.pixelImmagini * 4 / 1048576, tele: n, teleMB: px * 4 / 1048576 };
+    },
     /** Scrive subito i salvataggi su file (da chiamare all'uscita). */
     salva: scarica,
   };
