@@ -3,7 +3,8 @@
  * tools/qa-teatro-ribalta.js — verifica Playwright della squadra b2 (gioco/teatro/b2-ribalta.js):
  * luci della ribalta e ombre lunghe, scenografia che scende appesa ai cavi (collisioni invariate),
  * crollo in pezzi alla morte (nemici, boss, Ferruccio), trucioli/scintille per materiale, grana e
- * vignettatura (OPZIONI), riflessi bagnati al piano 1, suoni, costo per frame.
+ * vignettatura (OPZIONI), riflessi bagnati al piano 1, suoni, costo per frame; OPZIONI.ombre, degrado
+ * prudente delle ombre, schegge del raggio di T3, ripari ed etichette nelle stanze speciali, fili di Donna Luciana.
  * Uso: node tools/qa-teatro-ribalta.js <file html> [cartella/prefisso screenshot]
  * Esce con 1 se un controllo fallisce. Chromium preinstallato: non lanciare `playwright install`.
  */
@@ -231,6 +232,118 @@ if (pref.endsWith('/')) fs.mkdirSync(pref, { recursive: true });
   });
   await p.screenshot({ path: foto('boss-crollo') });
   ok('boss: ha l\'ombra lunga e alla morte crolla in pezzi', boss.sagome >= 2 && bossGiu.pezzi >= 5, { boss, pezzi: bossGiu.pezzi });
+
+  // 9b. OPZIONI.ombre: assente o true = ombre lunghe accese, false = spente (letta a runtime)
+  const attendi = (ms) => p.waitForTimeout(ms);
+  const conteggi = () => p.evaluate(() => window.__teatro.interni.ribaltaB2.stato().conteggi);
+  await p.evaluate(() => { window.__teatro.interni.ribaltaB2.bloccaMisura(true); window.__teatro.interni.ribaltaB2.azzeraPrestazioni(); window.__qaStanza(1, [['colonna', 220, 140], ['colonna', 420, 140]], null); });
+  await attendi(900);
+  const omb = {};
+  for (const [nome, valore] of [['assente', undefined], ['spenta', false], ['accesa', true]]) {
+    const prima = await p.evaluate((v) => { if (v === undefined) delete OPZIONI.ombre; else OPZIONI.ombre = v; return window.__teatro.interni.ribaltaB2.stato().conteggi.ombre; }, valore);
+    await attendi(300);
+    const s = await stato();
+    omb[nome] = { disegnate: s.conteggi.ombre - prima, accese: s.ombreAccese };
+    if (nome === 'spenta') await p.screenshot({ path: foto('ombre-spente') });
+  }
+  await p.evaluate(() => { delete OPZIONI.ombre; });
+  ok('OPZIONI.ombre: assente = accese, false = nessuna ombra lunga, true = accese', omb.assente.disegnate > 0 && omb.assente.accese && omb.spenta.disegnate === 0 && !omb.spenta.accese && omb.accesa.disegnate > 0, omb);
+
+  // 9c. degrado prudente: dopo N finestre lente le sagome si ritraggono a metà frequenza; poi risale
+  const deg = await p.evaluate(async () => {
+    const I = window.__teatro.interni; const B = I.ribaltaB2; const P = I.RIBALTA_B2.prestazioni;
+    const st = I.statoRun.stanzaCorrente;
+    for (const n of st.nemici) { n.speed = 0; n.vx = 0; n.vy = 0; }
+    const perFrame = async () => {
+      const a = B.stato(); await new Promise((r) => setTimeout(r, 900)); const b = B.stato();
+      return (b.conteggi.ritratti - a.conteggi.ritratti) / Math.max(1, b.frame - a.frame);
+    };
+    B.azzeraPrestazioni();
+    const pieno = await perFrame();
+    const gradini = [];
+    for (let k = 0; k < P.finestreLente - 1; k++) gradini.push(B.valutaFinestra(P.sogliaFps - 10));
+    gradini.push(B.valutaFinestra(P.sogliaFps + 1)); // una finestra buona azzera il conto: niente scatti per un singhiozzo
+    for (let k = 0; k < P.finestreLente; k++) gradini.push(B.valutaFinestra(P.sogliaFps - 10));
+    const dopoLente = B.stato().degrado;
+    for (let k = 0; k < P.finestreLente * 3; k++) B.valutaFinestra(P.sogliaFps - 10);
+    const tetto = B.stato().degrado;
+    const ridotto = await perFrame();
+    for (let k = 0; k < P.finestreBuone * P.gradiniMax; k++) B.valutaFinestra(P.recuperoFps + 1);
+    const risalito = B.stato().degrado;
+    B.azzeraPrestazioni(); B.bloccaMisura(false);
+    return { pieno: Number(pieno.toFixed(3)), ridotto: Number(ridotto.toFixed(3)), gradini, dopoLente, tetto, risalito, max: P.gradiniMax, nemici: st.nemici.filter((n) => n.hp > 0).length };
+  });
+  ok('degrado: scatta solo dopo le finestre lente di fila, non oltre il tetto, e risale se i frame reggono', deg.gradini.slice(0, deg.gradini.length - 1).every((g) => g === 0) && deg.dopoLente === 1 && deg.tetto === deg.max && deg.risalito === deg.max - 1, deg);
+  ok('degrado: le sagome delle ombre si ritraggono a circa metà frequenza', deg.pieno > 0 && deg.ridotto < deg.pieno * 0.7, { pieno: deg.pieno, ridotto: deg.ridotto });
+
+  // 9d. raggio del patto (T3): i colpi dal riferimento window.__teatroInterno fanno schegge, senza doppioni
+  const rg = await p.evaluate(() => {
+    const I = window.__teatro.interni; const B = I.ribaltaB2; const st = I.statoRun.stanzaCorrente;
+    const n = st.nemici.find((q) => q.hp > 0 && q.tipo !== 'maschera' && q.tipo !== 'bomba_ferma');
+    const hp0 = n.hp, max0 = n.maxHp;
+    n.hp = n.maxHp = 5000; n.x = 380; n.y = 200; I.player.x = 300; I.player.y = 200;
+    const T = window.__teatroInterno;
+    const schegge = () => { const c = B.stato().conteggi; return c.trucioli + c.scintille + c.polvere; };
+    const delta = (fn) => { const a = schegge(); fn(); return schegge() - a; };
+    const globaleSpinta = delta(() => danneggiaNemico(n, 1, 1, 0));
+    const internoSpinta = delta(() => T.danneggiaNemico(n, 1, 1, 0));
+    const globaleFermo = delta(() => danneggiaNemico(n, 1, 0, 0));
+    const impulsi = []; for (let k = 0; k < 4; k++) impulsi.push(delta(() => T.danneggiaNemico(n, 1, 0, 0)));
+    n.hp = hp0; n.maxHp = max0;
+    return { tipo: n.tipo, globaleSpinta, internoSpinta, globaleFermo, impulsi, ogni: I.RIBALTA_B2.materiali.continuo.ogniImpulsi };
+  });
+  ok('raggio (riferimento interno di T3): schegge lungo il raggio, non a ogni impulso, e mai doppie', rg.internoSpinta === rg.globaleSpinta && rg.globaleSpinta > 0 && rg.globaleFermo === 0 && rg.impulsi[0] > 0 && rg.impulsi.filter((d) => d > 0).length === Math.ceil(rg.impulsi.length / rg.ogni), rg);
+
+  // 9e. arredi delle stanze speciali e forzieri: ripari dalle ombre ed etichette ripassate sopra la luce
+  const arr = await p.evaluate(async () => {
+    const I = window.__teatro.interni; const R = I.statoRun; const B = I.ribaltaB2;
+    I.avviaPiano(2, false); R.siparioAttivo = null;
+    for (let k = 0; k < 500 && !R.mappa.stanze.some((x) => x.tipo === 'bisca'); k++) I.avviaPiano(2, false);
+    R.siparioAttivo = null;
+    const s = R.mappa.stanze.find((x) => x.tipo === 'bisca');
+    if (!s) return null;
+    const [lato, idG] = Object.entries(s.porte)[0]; const g = R.mappa.perId.get(idG);
+    R.stanzaCorrente = g; g.pulita = true; g.nemici = []; R.proiettiliNemici = [];
+    entraInStanza(s, lato);
+    R.siparioAttivo = null; R.banner = null; R.bannerTimer = 0;
+    if (s.biscaA3 && !s.biscaA3.cartomante) s.biscaA3.cartomante = { andata: false };
+    const T = I.STANZE_SPECIALI_A3.bisca;
+    I.player.x = T.cartomante.x + 2; I.player.y = T.cartomante.y + 44; // l'ombra di Ferruccio cadrebbe sulla Cartomante
+    await new Promise((r) => setTimeout(r, 400));
+    const a = B.stato();
+    I.generaForziere('comune', 250, 232, s);
+    await new Promise((r) => setTimeout(r, 200));
+    const b = B.stato();
+    return { dentro: R.stanzaCorrente === s, ripari: a.ripari, etichette: a.etichette, ripassate: b.conteggi.etichette - a.conteggi.etichette, conForziere: b.ripari, fonti: I.ripariLuceB2.length };
+  });
+  await p.screenshot({ path: foto('arredi') });
+  ok('stanze speciali: ripari attorno agli arredi (e al forziere), etichette ripassate sopra la luce', arr && arr.dentro && arr.ripari >= 2 && arr.etichette >= 2 && arr.ripassate > 0 && arr.conForziere === arr.ripari + 1 && arr.fonti >= 2, arr);
+
+  // 9f. Donna Luciana: i fili che si spezzano partono dalle SUE due Mani, non dalle Mani del teatro
+  const dl = await p.evaluate(async () => {
+    const I = window.__teatro.interni; const R = I.statoRun;
+    const base = t4Gancio; // la pergamena e la storia del dopo-boss non servono a questa prova
+    t4Gancio = function (nome, ...a) { return nome === 'bossSconfitto' ? false : base.call(this, nome, ...a); };
+    try {
+      I.avviaPiano(4, false); R.siparioAttivo = null;
+      const st = R.mappa.stanze.find((s) => s.tipo === 'boss');
+      entraInStanza(st, 'S');
+      R.siparioAttivo = null; R.banner = null; R.bannerTimer = 0; R.graziaIngressoC = 1e7;
+      const b = st.nemici.find((n) => n.bossId === 'donna-luciana');
+      if (!b) return { id: st.nemici[0] && st.nemici[0].bossId };
+      b.x = 320; b.y = 170; b.airZ = 0; I.player.x = 250; I.player.y = 250;
+      b.maniA = [{ lato: 1, x: 214, y: 84, y0: 0, ty: 0, fase: 'riposo', t: 0 }, { lato: -1, x: 438, y: 96, y0: 0, ty: 0, fase: 'riposo', t: 0 }];
+      const sc = 15 * BOSS_A.luciana.scala;
+      const attese = b.maniA.map((m) => [Math.round(m.x), Math.round(m.y + sc)]);
+      danneggiaNemico(b, 99999999, 1, 0);
+      await new Promise((r) => setTimeout(r, 90));
+      const s = I.ribaltaB2.stato();
+      await new Promise((r) => setTimeout(r, 900)); // il gancio del dopo-boss passa mentre è ancora zittito
+      return { id: b.bossId, attese, filiDa: s.filiDa, pezzi: I.ribaltaB2.stato().pezzi, teatro: [FEEL.fili.manoSinistra, FEEL.fili.manoDestra] };
+    } finally { t4Gancio = base; }
+  });
+  await p.screenshot({ path: foto('luciana-crollo') });
+  ok('Donna Luciana: i due fili spezzati partono dalle sue Mani', dl.id === 'donna-luciana' && JSON.stringify(dl.filiDa) === JSON.stringify(dl.attese), dl);
 
   // 10. suoni: dopo un gesto l'audio parte e i suoni nuovi vengono emessi
   await p.mouse.click(640, 600);

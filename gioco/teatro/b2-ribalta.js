@@ -86,7 +86,7 @@ const RIBALTA_B2 = Object.freeze({
       1: Object.freeze({ luce: 1, ombra: 1, vignetta: 1 }),
       2: Object.freeze({ luce: 1, ombra: 1, vignetta: 1 }),
       3: Object.freeze({ luce: 1, ombra: 1, vignetta: 1 }),
-      4: Object.freeze({ luce: 1, ombra: 1, vignetta: 1 }),
+      4: Object.freeze({ luce: 0.8, ombra: 1.15, vignetta: 0.8 }),
     }),
     etichetteMax: 16,          // etichette della stanza ripassate sopra lo strato di luce, per frame
     /**
@@ -337,7 +337,7 @@ const RIBALTA_B2 = Object.freeze({
     granaX: 0, granaY: 0,
     atlanteSporco: true,  // una sagoma è stata ritratta: le ombre vanno ricavate di nuovo
     degrado: 0,           // gradini di degrado delle ombre (0 = piena frequenza)
-    misura: { ultimo: 0, inizio: 0, frame: 0, lente: 0, buone: 0, recuperi: 0, fps: 0 },
+    misura: { ultimo: 0, inizio: 0, frame: 0, lente: 0, buone: 0, recuperi: 0, fps: 0, bloccata: false },
     etichette: [],        // argomenti delle drawPillLabel disegnate dentro la stanza in questo frame
     registraEtichette: false,
     ripari: [],           // { x, y, rx, ry } del frame
@@ -1632,6 +1632,7 @@ const RIBALTA_B2 = Object.freeze({
   function misuraFrame() {
     const P = C.prestazioni, M = S.misura, ora = performance.now(), dt = ora - M.ultimo;
     M.ultimo = ora;
+    if (M.bloccata) return; // QA: decide solo valutaFinestra chiamata a mano
     if (!(dt > 0) || dt > P.pausaMs || document.hidden || !inScena() || fermoUI() || !ombreAccese()) { M.inizio = ora; M.frame = 0; return; }
     M.frame++;
     if (ora - M.inizio < P.finestraMs) return;
@@ -1835,6 +1836,8 @@ const RIBALTA_B2 = Object.freeze({
         valutaFinestra,
         /** QA: riporta il degrado delle ombre a zero e azzera i contatori della misura. */
         azzeraPrestazioni() { S.degrado = 0; Object.assign(S.misura, { frame: 0, lente: 0, buone: 0, recuperi: 0, fps: 0 }); },
+        /** QA: ferma (true) o riavvia (false) la misura automatica dei frame, per provare il degrado coi numeri. */
+        bloccaMisura(si) { S.misura.bloccata = Boolean(si); },
         /** QA: ferma la discesa della scenografia al tick `t` (per fotografarla a mezz'aria). */
         fermaDiscesa(t) { if (S.discesa) { S.discesa.attiva = true; S.discesa.bloccata = true; S.discesa.t = t; } },
         /** QA: la discesa riprende da dov'era. */
