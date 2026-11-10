@@ -46,6 +46,10 @@ const LIMITI = Object.freeze({
   await p.evaluate(() => localStorage.clear());
   await p.reload();
   await p.waitForTimeout(500);
+  // (b9) il controllo della cucitura legge i pixel del canvas: da file:// le immagini di scena dell'autore lo
+  // «sporcherebbero» (come i fogli sprite), quindi fino a quel controllo si disegna tutto a codice.
+  const immaginiDiScena = (accese) => p.evaluate((si) => { const B = window.__teatro.interni.immaginiB9; if (B) B.senzaRisorse(!si); }, accese);
+  await immaginiDiScena(false);
 
   // -------------------------------------------------------------------------
   // SIPARIO
@@ -96,6 +100,7 @@ const LIMITI = Object.freeze({
   });
   ok('la cucitura d\'oro non attraversa il riquadro dei testi (e resta sopra e sotto)',
     cucitura.leggibile && cucitura.dentro.every((x) => x < cucitura.soglia) && cucitura.fuori.filter((x) => x > cucitura.soglia).length >= 2, cucitura);
+  await immaginiDiScena(true); // (b9) da qui in poi il teatro è quello vero, con le immagini dell'autore
 
   // un tasto chiude il cartellone e il sipario si apre
   const t0 = Date.now();

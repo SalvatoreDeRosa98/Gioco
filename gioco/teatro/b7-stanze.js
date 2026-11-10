@@ -2218,6 +2218,7 @@ function disegnaSuoloB7(st, t) {
     }
   }
   for (const o of suolo) {
+    if (o.tipo === 'spuntoni' && typeof spuntoniImmagineB9 === 'function' && spuntoniImmagineB9(o, t)) continue; // --- b9: immagine dell'autore (b9-immagini.js) ---
     if (o.tipo === 'leva') {
       const a = o.tirata ? 0.6 : -0.6;
       ctx.fillStyle = 'rgba(8, 5, 3, 0.6)'; ctx.beginPath(); ctx.ellipse(o.x, o.y + 3, 11, 4, 0, 0, TAU); ctx.fill();
@@ -2287,6 +2288,7 @@ function disegnaSacchiB7(st, t) {
     if (o.tipo !== 'sacco' || o.stato === 'a-terra') continue;
     const u = o.stato === 'cade' ? o.t / K.cadutaTick : 0;
     const sx = o.x + (o.stato === 'appeso' ? Math.sin(t * 0.03 + o.x) * 1.5 : 0), sy = o.y - K.altezzaPx * (1 - u * u);
+    if (typeof saccoImmagineB9 === 'function' && saccoImmagineB9(o, sx, sy)) continue; // --- b9: immagine dell'autore (b9-immagini.js) ---
     ctx.save();
     if (o.stato === 'appeso') {
       ctx.strokeStyle = '#8a6a2a'; ctx.lineWidth = 1.2;

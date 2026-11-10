@@ -1163,6 +1163,7 @@ function disegnaFrame(dtMs) {
 
     // 3. Ostacoli Tattici Ambientali sul Palco
     for (const o of st.ostacoli) {
+      if (typeof disegnaOstacoloB9 === 'function' && disegnaOstacoloB9(o, tick)) continue; // --- b9: immagine di scena dell'autore, se c'è (b9-immagini.js) ---
       if (o.variante && typeof disegnaOstacoloB7 === 'function' && disegnaOstacoloB7(o, tick)) continue; // --- b7: ostacoli con una pelle (b7-stanze.js) ---
       if (o.tipo === 'fossa') {
         // Botola teatrale / fossa scura tra le assi

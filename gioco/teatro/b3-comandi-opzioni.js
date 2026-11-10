@@ -545,8 +545,8 @@ function disegnaAggiuntePausaB3() {
       ctx.strokeStyle = `rgba(249, 203, 64, ${pulsa.toFixed(2)})`;
       ctx.lineWidth = 2;
       ctx.strokeRect(r.x - 1.5, r.y - 1.5, r.w + 3, r.h + 3);
-      drawTextFit('▶', r.x - 10, r.y + r.h / 2 + 3, 14, { size: 9, color: '#f9cb40' });
-      drawTextFit('◀', r.x + r.w + 10, r.y + r.h / 2 + 3, 14, { size: 9, color: '#f9cb40' });
+      if (typeof cursoreB9 !== 'function' || !cursoreB9(r.x - 11, r.y + r.h / 2, 1)) drawTextFit('▶', r.x - 10, r.y + r.h / 2 + 3, 14, { size: 9, color: '#f9cb40' }); // --- b9: mano dell'autore, se c'è ---
+      if (typeof cursoreB9 !== 'function' || !cursoreB9(r.x + r.w + 11, r.y + r.h / 2, -1)) drawTextFit('◀', r.x + r.w + 10, r.y + r.h / 2 + 3, 14, { size: 9, color: '#f9cb40' });
     }
   }
   ctx.restore();
@@ -1027,7 +1027,7 @@ function disegnaRigaOpzioniB3(r, y, h, scelta) {
     ctx.strokeStyle = C.oro;
     ctx.lineWidth = 1.2;
     ctx.strokeRect(x0, y, w0, h - 2);
-    drawTextFitBaseB3('▶', x0 + 9, yT, 12, { size: 8, color: C.oro });
+    if (typeof cursoreB9 !== 'function' || !cursoreB9(x0 + 9, yT - 3, 1)) drawTextFitBaseB3('▶', x0 + 9, yT, 12, { size: 8, color: C.oro }); // --- b9: mano dell'autore, se c'è ---
   }
   const colore = scelta ? C.testoScelto : C.testo;
   if (r.tipo === 'azione') {
@@ -1049,6 +1049,7 @@ function disegnaRigaOpzioniB3(r, y, h, scelta) {
   } else if (r.tipo === 'spunta') {
     const si = Boolean(valoreOpzioneB3(r.id));
     const ly = y + (h - 2 - 9) / 2;
+    if (typeof interruttoreB9 !== 'function' || !interruttoreB9(cx, ly, si)) { // --- b9: lanterna dell'autore, se c'è (b9-immagini.js) ---
     ctx.fillStyle = si ? '#7a1c12' : C.vuoto;
     ctx.fillRect(cx, ly, 28, 9);
     ctx.strokeStyle = si ? C.oro : C.bordoInterno;
@@ -1056,6 +1057,7 @@ function disegnaRigaOpzioniB3(r, y, h, scelta) {
     ctx.strokeRect(cx + 0.5, ly + 0.5, 27, 8);
     ctx.fillStyle = si ? C.oro : C.spento;
     ctx.fillRect(si ? cx + 16 : cx + 2, ly + 2, 10, 5);
+    } // --- b9: fine dell'interruttore a codice ---
     drawTextFitBaseB3(si ? TESTI_B3.acceso : TESTI_B3.spento, cx + 38, yT, 80, { size: 8, color: si ? C.oro : C.spento, align: 'left' });
   } else if (r.tipo === 'tasto') {
     if (o.cattura === r.id) {
@@ -1071,11 +1073,13 @@ function disegnaRigaOpzioniB3(r, y, h, scelta) {
     const nome = etichettaTastoB3(OPZIONI.tasti[r.id]);
     ctx.font = 'bold 8px ui-monospace, monospace';
     const kw = Math.max(22, Math.ceil(ctx.measureText(nome).width) + 12);
+    if (typeof tastoPergamenaB9 !== 'function' || !tastoPergamenaB9(cx, y + 1, kw, h - 4)) { // --- b9: tasto di pergamena dell'autore, se c'è (b9-immagini.js) ---
     ctx.fillStyle = C.pergamena;
     ctx.fillRect(cx, y + 1, kw, h - 4);
     ctx.strokeStyle = scelta ? C.oro : '#5c4024';
     ctx.lineWidth = 1;
     ctx.strokeRect(cx + 0.5, y + 1.5, kw - 1, h - 5);
+    } // --- b9: fine del tasto a codice ---
     drawTextFitBaseB3(nome, cx + kw / 2, yT, kw - 4, { size: 8, color: C.inchiostro, shadow: false });
     if (OPZIONI.tasti[r.id] !== CANONICO_B3[r.id]) {
       drawTextFitBaseB3(TESTI_B3.predefinito(etichettaTastoB3(CANONICO_B3[r.id])), x0 + w0 - 8, yT, 70, { size: 7, color: C.spento, align: 'right', weight: '' });
@@ -1094,6 +1098,7 @@ function disegnaOpzioniB3() {
   ctx.fillStyle = C.velo;
   ctx.fillRect(0, 0, W, H);
   // cartiglio: fondo scuro, doppio bordo d'oro, i due rotoli ai lati
+  if (typeof cartiglioOpzioniB9 !== 'function' || !cartiglioOpzioniB9(P)) { // --- b9: cornice dell'autore, se c'è (b9-immagini.js) ---
   ctx.fillStyle = C.fondo;
   ctx.fillRect(P.x, P.y, P.w, P.h);
   ctx.strokeStyle = C.oro;
@@ -1108,6 +1113,7 @@ function disegnaOpzioniB3() {
   ctx.strokeStyle = C.oro;
   ctx.strokeRect(P.x - 8.5, P.y - 1.5, 7, P.h + 3);
   ctx.strokeRect(P.x + P.w + 1.5, P.y - 1.5, 7, P.h + 3);
+  } // --- b9: fine del cartiglio a codice ---
   drawTextFitBaseB3(TESTI_B3.titolo, W / 2, P.y + 20, P.w - 40, { size: 12, color: C.oro });
   // linguette delle due pagine
   const lx = [P.x + P.w * 0.3, P.x + P.w * 0.7];

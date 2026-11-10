@@ -2,7 +2,7 @@
 /*
  * tools/teatro-release.js — build del Teatro delle Marionette in un solo file HTML.
  *
- * Uso: node tools/teatro-release.js   →  production/release/teatro.html
+ * Uso: node tools/teatro-release.js [--uscita <file.html>]   →  production/release/teatro.html (se non indicato)
  *
  * Parte da gioco/teatro_marionette.html e:
  *  1. incorpora inline ogni <script src="teatro/*.js"></script> il cui file esiste in gioco/teatro/
@@ -10,7 +10,9 @@
  *     nello stesso ordine; uno script che manca resta com'è e viene segnalato;
  *  2. trasforma in data: URI i PNG di gioco/assets/sprite_teatro/ che il gioco usa (fogli di t2-sprite.js e
  *     boss/ di 10-sprite.js), alleggeriti da tools/ottimizza-png-release.py, nella mappa globale
- *     window.__risorseTeatro['assets/sprite_teatro/<nome>.png'], inserita prima del primo script di teatro/.
+ *     window.__risorseTeatro['assets/sprite_teatro/<nome>.png'], inserita prima del primo script di teatro/;
+ *     delle immagini di scena dell'autore (assets/sprite_teatro/scena/) entrano SOLO quelle che la tabella
+ *     IMMAGINI_B9 di teatro/b9-immagini.js segna `usa: true`: le scartate restano fuori dal file unico.
  * Il risultato si apre da file:// senza altri file accanto. Serve Node; con Python 3 + Pillow le immagini
  * vengono alleggerite, altrimenti si incorporano gli originali.
  */
@@ -18,18 +20,36 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const vm = require('vm');
 const { spawnSync } = require('child_process');
 
 const RADICE = path.resolve(__dirname, '..');
 const SORGENTE = path.join(RADICE, 'gioco', 'teatro_marionette.html');
 const CARTELLA_GIOCO = path.join(RADICE, 'gioco');
 const SPRITE = path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro');
-const USCITA = path.join(RADICE, 'production', 'release', 'teatro.html');
+const iUscita = process.argv.indexOf('--uscita');
+const USCITA = iUscita > 0 && process.argv[iUscita + 1]
+  ? path.resolve(process.argv[iUscita + 1])
+  : path.join(RADICE, 'production', 'release', 'teatro.html');
 // Fogli citati in t2-sprite.js da lasciare comunque fuori dal file unico.
 const FOGLI_NON_USATI = []; // (t2 precarica tutti i fogli del suo LAYOUT: toglierne uno darebbe un errore di file mancante)
 
 /** Rende sicuro un sorgente JS dentro <script>…</script>. */
 const sicuroInScript = (js) => js.replace(/<\/script/gi, '<\\/script').replace(/<!--/g, '<\\!--');
+
+/**
+ * Le immagini di scena da incorporare: i nomi con `usa: true` nella tabella IMMAGINI_B9 di b9-immagini.js
+ * (il blocco fra i segnaposto <tabella-immagini> è fatto di soli dati e si valuta così com'è).
+ * @returns {string[]} nomi senza estensione; vuoto se il file o la tabella non ci sono
+ */
+function immaginiDiScenaUsate(jsB9) {
+  const m = /\/\/ <tabella-immagini>([\s\S]*?)\/\/ <\/tabella-immagini>/.exec(jsB9);
+  if (!m) return [];
+  const ambiente = {};
+  vm.runInNewContext(m[1].replace('const IMMAGINI_B9 =', 'IMMAGINI_B9 ='), ambiente);
+  const T = ambiente.IMMAGINI_B9 || {};
+  return Object.keys(T).filter((nome) => T[nome] && T[nome].usa === true).sort();
+}
 
 function main() {
   let html = fs.readFileSync(SORGENTE, 'utf8');
@@ -52,6 +72,13 @@ function main() {
     for (const f of fs.readdirSync(cartellaBoss).filter((n) => n.endsWith('.png')).sort()) {
       if (citato(jsSprite, f.slice(0, -4))) daIncorporare.push(`boss/${f}`);
     }
+  }
+  // immagini di scena dell'autore: solo quelle usate (tabella di teatro/b9-immagini.js)
+  const scena = immaginiDiScenaUsate(leggiJs('teatro/b9-immagini.js'));
+  const scenaMancanti = [];
+  for (const nome of scena) {
+    if (fs.existsSync(path.join(SPRITE, 'scena', `${nome}.png`))) daIncorporare.push(`scena/${nome}.png`);
+    else scenaMancanti.push(nome);
   }
   const risorse = {};
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'teatro-release-'));
@@ -92,6 +119,7 @@ function main() {
   fs.writeFileSync(USCITA, html);
   const kb = (fs.statSync(USCITA).size / 1024).toFixed(0);
   console.log(`scritto ${path.relative(RADICE, USCITA)} (${kb} KB)`);
+  console.log(`immagini di scena incorporate: ${scena.length - scenaMancanti.length}${scenaMancanti.length ? ` (mancano i file: ${scenaMancanti.join(', ')})` : ''}`);
   console.log(`script incorporati: ${incorporati.join(', ') || 'nessuno'}`);
   if (mancanti.length) console.log(`script non trovati (lasciati come riferimento esterno): ${mancanti.join(', ')}`);
   console.log(`immagini incorporate: ${Object.keys(risorse).length} (alleggerite: ${alleggeriti})`);
