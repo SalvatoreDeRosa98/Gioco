@@ -16,17 +16,29 @@
  *
  * Costo: luce dei lumi, ombre lunghe e vignetta stanno in UNA tela a bassa risoluzione (lo «strato di luce»)
  * composta sul palco con un solo passaggio 'hard-light'; la grana è un secondo passaggio (trama ripetuta).
+ * Le ombre lunghe si spengono con OPZIONI.ombre === false (assente = accese) e, se i frame restano sotto
+ * soglia per qualche secondo, le sagome si aggiornano a frequenza dimezzata (RIBALTA_B2.prestazioni).
+ *
+ * Lo strato di luce si stende DOPO tutta la catena di disegnaStanzaPixelArt, quindi anche sopra ciò che gli
+ * altri file disegnano lì dentro (forzieri di a1, arredi di a3). Per non sporcarli:
+ *  - le etichette (drawPillLabel) disegnate dentro la catena vengono ripassate sopra la luce;
+ *  - attorno a ciò che sta in piedi le ombre lunghe si spengono: sono i «ripari» (RIBALTA_B2.luce.ripari).
+ *    Chi aggiunge un arredo nella catena registra il suo riparo in window.__teatro.interni.ripariLuceB2.
  *
  * Script classico caricato dopo teatro/a7-registro-bilancio.js. Nessuna modifica ai file di base: avvolge
- * (chiamando sempre la base) disegnaFrame, disegnaStanzaPixelArt, disegnaFamigliOrbitaliD, t4Gancio('sopra'),
- *, passoLogico, entraInStanza, danneggiaNemico, AudioSys.playPasso/playFendente e il gancio
+ * (chiamando sempre la base) disegnaFrame, disegnaStanzaPixelArt, disegnaFamigliOrbitaliD, drawPillLabel,
+ * t4Gancio('sopra'), passoLogico, entraInStanza, danneggiaNemico (e il riferimento che ne tiene
+ * window.__teatroInterno, usato dal raggio di T3), AudioSys.playPasso/playFendente e il gancio
  * window.__teatro.t2.dopoNemici. Unica eccezione dichiarata: disegnaFerruccioPittorico NON chiama la base
  * mentre il corpo di Ferruccio è già crollato in pezzi (fase 'morte'), altrimenti si vedrebbe due volte.
  *
  * Regole che il file rispetta:
  *  - non chiama mai rng() del gioco (solo Math.random): la partita resta identica con o senza questo file;
  *  - non legge pixel (getImageData): da file:// le immagini degli sprite «sporcano» il canvas;
- *  - nessun segno a terra per gli attacchi nemici: le ombre sono solo delle figure e della scenografia.
+ *  - nessun segno a terra per gli attacchi nemici: le ombre sono solo delle figure e della scenografia;
+ *  - non tocca i tempi della sequenza di morte (t4-hub-storia.js): disegna soltanto.
+ * Immagini: ogni elemento di scena ha la SUA funzione di disegno (disegnaLume, disegnaCavo), così chi
+ * collegherà le immagini dell'autore (lume-ribalta.png, cavo-gancio.png) sostituisce solo quel corpo.
  * QA: tools/qa-teatro-ribalta.js. Sonda: window.__teatro.interni.ribaltaB2.
  */
 
@@ -66,6 +78,49 @@ const RIBALTA_B2 = Object.freeze({
     // (grigio, oro, arancio Fucina, rosso boss…) e la luce calda non deve falsarlo. [cx, cy, l, a] come 60-resa.js.
     porte: Object.freeze([Object.freeze([320, 61, 36, 18]), Object.freeze([320, 313, 36, 18]), Object.freeze([59, 187, 18, 36]), Object.freeze([581, 187, 18, 36])]),
     marginePorte: 6,
+    /**
+     * Regolazione per quartiere (piano nel ciclo): moltiplicatori della luce dei lumi, della densità delle
+     * ombre lunghe e della vignetta. Sul marmo chiaro della Reggia (4) la luce pesa meno e le ombre di più.
+     */
+    quartieri: Object.freeze({
+      1: Object.freeze({ luce: 1, ombra: 1, vignetta: 1 }),
+      2: Object.freeze({ luce: 1, ombra: 1, vignetta: 1 }),
+      3: Object.freeze({ luce: 1, ombra: 1, vignetta: 1 }),
+      4: Object.freeze({ luce: 1, ombra: 1, vignetta: 1 }),
+    }),
+    etichetteMax: 16,          // etichette della stanza ripassate sopra lo strato di luce, per frame
+    /**
+     * Ripari: attorno a ciò che sta in piedi sotto lo strato di luce le ombre lunghe si spengono (un'ombra
+     * stesa sopra un forziere o sulla Cartomante li renderebbe illeggibili). [dx, dy, rx, ry] dal punto
+     * dell'oggetto; `sfuma` = frazione del raggio da cui il riparo comincia a cedere.
+     */
+    ripari: Object.freeze({
+      max: 24,
+      sfuma: 0.45,
+      forziere: Object.freeze([0, -4, 20, 17]),            // a1: st.forzieriA1
+      // a3: nome della voce in STANZE_SPECIALI_A3[tipo della stanza] → riparo
+      arredi: Object.freeze({
+        sfida: Object.freeze({ piedistallo: Object.freeze([0, -6, 20, 28]) }),
+        sacrificio: Object.freeze({ ceppo: Object.freeze([0, -2, 30, 20]) }),
+        bisca: Object.freeze({ banco: Object.freeze([0, -6, 34, 26]), cartomante: Object.freeze([0, -6, 22, 30]) }),
+      }),
+    }),
+  }),
+
+  /**
+   * Prestazioni: se la media dei frame resta sotto `sogliaFps` per `finestreLente` finestre di fila, le sagome
+   * delle ombre lunghe si aggiornano a frequenza dimezzata (un gradino); se poi regge `recuperoFps` per
+   * `finestreBuone` finestre torna su. Dopo `recuperiMax` risalite resta dov'è: niente altalena.
+   */
+  prestazioni: Object.freeze({
+    finestraMs: 1000,          // durata di una finestra di misura
+    pausaMs: 250,              // un frame più lungo di così (scheda in secondo piano, singhiozzo) annulla la finestra
+    sogliaFps: 50,
+    finestreLente: 4,          // ~4 s sotto soglia → un gradino
+    gradiniMax: 1,             // 1 = ombre a metà frequenza; 2 = fino a un quarto
+    recuperoFps: 58,
+    finestreBuone: 20,
+    recuperiMax: 2,
   }),
 
   ombre: Object.freeze({
@@ -143,6 +198,9 @@ const RIBALTA_B2 = Object.freeze({
     spinta: 1.25, spintaBoss: 0.8,
     alfaResti: 0.92,
     coloreResti: 'rgba(8, 5, 3, 0.38)', // i resti a terra si scuriscono: non si confondono coi vivi
+    // Filo di contorno chiaro attorno alla sagoma dei pezzi (la luce dei lumi sul bordo): senza, i resti
+    // scuri (il gatto nero) spariscono sul selciato. `px` in px logici; `alfa` per materiale.
+    contorno: Object.freeze({ colore: '#e8c98a', px: 0.7, alfa: 0.4, alfaPerMateriale: Object.freeze({ ombra: 0.8, fuliggine: 0.7, metallo: 0.5 }) }),
     // righe del taglio: [dall'alto, fino a, colonne] in frazione dell'altezza della figura
     taglio: Object.freeze({
       mob: Object.freeze([[0, 0.38, 1], [0.38, 0.7, 3], [0.7, 1, 2]]),
@@ -163,6 +221,9 @@ const RIBALTA_B2 = Object.freeze({
   materiali: Object.freeze({
     predefinito: 'legno',
     corazza: 'corazza', // Maschera chiusa: il colpo rimbalza
+    // Colpi continui senza spinta che arrivano da window.__teatroInterno.danneggiaNemico (il raggio del patto,
+    // T3: un impulso ogni 5 tick): poche schegge lungo il raggio, non a ogni impulso.
+    continuo: Object.freeze({ forza: 0.45, ogniImpulsi: 2 }),
     perTipo: Object.freeze({ guardia: 'metallo', statua: 'pietra', gatto: 'ombra', vespa_cieca: 'ombra', lucciola: 'ombra', bomba_ferma: 'fuliggine' }),
     perBoss: Object.freeze({ 'capitano-guardia': 'metallo', 'maestro-fucina': 'metallo', 'colosso-statua': 'pietra', 're-gatto': 'ombra', 'regina-vespa': 'ombra' }),
     effetti: Object.freeze({
@@ -232,6 +293,11 @@ const RIBALTA_B2 = Object.freeze({
   const fermoUI = () => Boolean(statoRun.pausa || statoRun.siparioAttivo || statoRun.pannelloB || statoRun.scambioPendente);
   const pianoNelCiclo = () => ((Math.max(1, statoRun.piano || 1) - 1) % 4) + 1;
   const t2 = () => (window.__teatro && window.__teatro.t2) || null;
+  /** Le ombre lunghe: interruttore di sviluppo E opzione del giocatore (OPZIONI.ombre assente = accese). */
+  const ombreAccese = () => C.attivi.ombre && OPZIONI.ombre !== false;
+  const QUARTIERE_NEUTRO = Object.freeze({ luce: 1, ombra: 1, vignetta: 1 });
+  /** Regolazione di luce e ombre del quartiere corrente (RIBALTA_B2.luce.quartieri). */
+  const quartiere = () => C.luce.quartieri[pianoNelCiclo()] || QUARTIERE_NEUTRO;
 
   function nuovaTela(l, a) {
     const t = document.createElement('canvas');
@@ -269,8 +335,18 @@ const RIBALTA_B2 = Object.freeze({
     frame: 0,
     graffio: { x: 0, vita: 0 },
     granaX: 0, granaY: 0,
-    conteggi: { schiocco: 0, tonfo: 0, legno: 0, scricchiolio: 0, tintinnio: 0, cavo: 0, trucioli: 0, polvere: 0, scintille: 0, grana: 0, vignetta: 0, ombre: 0, riflessi: 0 },
+    atlanteSporco: true,  // una sagoma è stata ritratta: le ombre vanno ricavate di nuovo
+    degrado: 0,           // gradini di degrado delle ombre (0 = piena frequenza)
+    misura: { ultimo: 0, inizio: 0, frame: 0, lente: 0, buone: 0, recuperi: 0, fps: 0 },
+    etichette: [],        // argomenti delle drawPillLabel disegnate dentro la stanza in questo frame
+    registraEtichette: false,
+    ripari: [],           // { x, y, rx, ry } del frame
+    nRipari: 0,
+    passaggiColpo: 0,     // quante volte un colpo è passato dall'avvolgimento di danneggiaNemico
+    impulsi: new WeakMap(), // nemico → impulsi del colpo continuo (raggio) ricevuti
+    conteggi: { schiocco: 0, tonfo: 0, legno: 0, scricchiolio: 0, tintinnio: 0, cavo: 0, trucioli: 0, polvere: 0, scintille: 0, grana: 0, vignetta: 0, ombre: 0, riflessi: 0, ritratti: 0, etichette: 0, ripari: 0 },
   };
+  for (let i = 0; i < C.luce.ripari.max; i++) S.ripari.push({ x: 0, y: 0, rx: 0, ry: 0 });
   for (let i = 0; i < O.max; i++) S.slot.push({ usato: false, valido: false, chi: null, visto: -1, ultima: -99, flip: false, cella: i, gx: 0, gy: 0, h: 0, ent: { genere: 'nemico', n: null, taglio: 0 } });
   S.slot[0].ent.genere = 'giocatore';
 
@@ -409,6 +485,8 @@ const RIBALTA_B2 = Object.freeze({
   const LZ = C.luce.zona, RL = C.luce.risoluzione;
   const telaLuce = nuovaTela(LZ.l * RL, LZ.a * RL); // lo strato di luce del frame
   const lctx = telaLuce.getContext('2d');
+  const telaOmbre = nuovaTela(telaLuce.width, telaLuce.height); // le sole ombre lunghe del frame (coi ripari)
+  const octx = telaOmbre.getContext('2d');
   const NEUTRO = `rgb(${C.luce.neutro},${C.luce.neutro},${C.luce.neutro})`;
   /** La luce dei lumi (RGBA): una pozza calda per lume più una luce radente fino in fondo al palco. */
   function telaLumi() {
@@ -443,6 +521,7 @@ const RIBALTA_B2 = Object.freeze({
   }
   const telaBagliore = () => telaTonda('bagliore', 32, [[0, 'rgba(255,214,140,0.95)'], [0.3, 'rgba(255,170,70,0.5)'], [1, 'rgba(255,150,50,0)']]);
   const telaSbuffo = () => telaTonda('sbuffo', 32, [[0, 'rgba(222,204,170,0.9)'], [0.55, 'rgba(190,170,140,0.45)'], [1, 'rgba(170,150,120,0)']]);
+  const telaRiparo = () => telaTonda('riparo', 64, [[0, 'rgba(0,0,0,1)'], [C.luce.ripari.sfuma, 'rgba(0,0,0,1)'], [1, 'rgba(0,0,0,0)']]);
   function telaStriscia() {
     if (tele.striscia) return tele.striscia;
     const R = C.riflessi, t = nuovaTela(R.strisciaL, R.strisciaA), x = t.getContext('2d');
@@ -508,38 +587,57 @@ const RIBALTA_B2 = Object.freeze({
   }
   const fiammaMedia = (tk) => (fiamma(0, tk) + fiamma(3, tk) + fiamma(5, tk)) / 3;
 
+  /**
+   * La fiamma di UN lume in (x, y): alone e lingua di fuoco. `f` = intensità 0,35..1, `i` = indice del lume
+   * (sfasa l'ondeggiare), `tk` = tick. Resta disegnata dal codice anche quando la conchiglia sarà un'immagine.
+   */
+  function disegnaFiammaLume(x, y, f, i, tk) {
+    const L = C.lumi;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.6 * f;
+    ctx.drawImage(telaBagliore(), x - 12, y - 17, 24, 24);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    const h = L.fiammaAlta * (0.65 + 0.55 * f), sx = Math.sin(tk * 0.37 + i * 2.3) * 1.1 * (1.25 - f);
+    ctx.fillStyle = L.coloreFiamma;
+    ctx.beginPath();
+    ctx.moveTo(x - 1.9, y - 1.5);
+    ctx.quadraticCurveTo(x - 2.5 + sx, y - 1.5 - h * 0.55, x + sx, y - 1.5 - h);
+    ctx.quadraticCurveTo(x + 2.5 + sx, y - 1.5 - h * 0.55, x + 1.9, y - 1.5);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = L.coloreCuore;
+    ctx.beginPath(); ctx.ellipse(x + sx * 0.4, y - 1.5 - h * 0.32, 0.9, Math.max(0.6, h * 0.28), 0, 0, TAU); ctx.fill();
+  }
+
+  /**
+   * Il corpo di UN lume a olio in (x, y), visto dal pubblico: conchiglia in sagoma scura, orlo d'ottone acceso
+   * dalla fiamma (`f` = intensità 0,35..1). ELEMENTO DI SCENA CON FUNZIONE PROPRIA: chi collega l'immagine
+   * dell'autore (lume-ribalta.png) sostituisce solo questo corpo; la fiamma sta in disegnaFiammaLume.
+   */
+  function disegnaLume(x, y, f) {
+    const L = C.lumi;
+    ctx.fillStyle = L.coloreConchiglia;
+    ctx.beginPath();
+    ctx.moveTo(x - 6, y - 1.5); ctx.lineTo(x + 6, y - 1.5);
+    ctx.quadraticCurveTo(x + 5.5, y + 4, x, y + 4.5);
+    ctx.quadraticCurveTo(x - 5.5, y + 4, x - 6, y - 1.5);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = L.coloreOrlo;
+    ctx.globalAlpha = 0.5 + 0.5 * f;
+    ctx.beginPath(); ctx.moveTo(x - 6, y - 1.5); ctx.lineTo(x + 6, y - 1.5); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  /** Tutti i lumi della ribalta (posizioni in RIBALTA_B2.lumi): per ognuno la fiamma, poi il corpo. */
   function disegnaLumi(tk) {
     const L = C.lumi;
     ctx.save();
     ctx.imageSmoothingEnabled = true;
     ctx.lineWidth = 1;
     for (let i = 0; i < L.x.length; i++) {
-      const x = L.x[i], y = L.y, f = fiamma(i, tk);
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = 0.6 * f;
-      ctx.drawImage(telaBagliore(), x - 12, y - 17, 24, 24);
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = 1;
-      const h = L.fiammaAlta * (0.65 + 0.55 * f), sx = Math.sin(tk * 0.37 + i * 2.3) * 1.1 * (1.25 - f);
-      ctx.fillStyle = L.coloreFiamma;
-      ctx.beginPath();
-      ctx.moveTo(x - 1.9, y - 1.5);
-      ctx.quadraticCurveTo(x - 2.5 + sx, y - 1.5 - h * 0.55, x + sx, y - 1.5 - h);
-      ctx.quadraticCurveTo(x + 2.5 + sx, y - 1.5 - h * 0.55, x + 1.9, y - 1.5);
-      ctx.closePath(); ctx.fill();
-      ctx.fillStyle = L.coloreCuore;
-      ctx.beginPath(); ctx.ellipse(x + sx * 0.4, y - 1.5 - h * 0.32, 0.9, Math.max(0.6, h * 0.28), 0, 0, TAU); ctx.fill();
-      // conchiglia vista dal pubblico: sagoma scura, orlo d'ottone acceso dalla fiamma
-      ctx.fillStyle = L.coloreConchiglia;
-      ctx.beginPath();
-      ctx.moveTo(x - 6, y - 1.5); ctx.lineTo(x + 6, y - 1.5);
-      ctx.quadraticCurveTo(x + 5.5, y + 4, x, y + 4.5);
-      ctx.quadraticCurveTo(x - 5.5, y + 4, x - 6, y - 1.5);
-      ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = L.coloreOrlo;
-      ctx.globalAlpha = 0.5 + 0.5 * f;
-      ctx.beginPath(); ctx.moveTo(x - 6, y - 1.5); ctx.lineTo(x + 6, y - 1.5); ctx.stroke();
-      ctx.globalAlpha = 1;
+      const f = fiamma(i, tk);
+      disegnaFiammaLume(L.x[i], L.y, f, i, tk);
+      disegnaLume(L.x[i], L.y, f);
     }
     ctx.restore();
   }
@@ -640,15 +738,20 @@ const RIBALTA_B2 = Object.freeze({
   /** Prima del pavimento: ritrae le figure nell'atlante (celle stabili) e ne ricava le sagome d'ombra. */
   function preparaSagome(st) {
     for (const s of S.slot) s.usato = false;
-    const servono = C.attivi.ombre || (C.attivi.riflessi && pianoNelCiclo() === C.riflessi.piano);
+    const ombre = ombreAccese();
+    const servono = ombre || (C.attivi.riflessi && pianoNelCiclo() === C.riflessi.piano);
     if (!servono) return;
+    // Degrado (RIBALTA_B2.prestazioni): a ogni gradino le sagome si ritraggono un frame ogni `passo`, e con
+    // metà (un quarto) della cadenza. Le posizioni delle ombre restano aggiornate a ogni frame.
+    const passo = 1 << S.degrado, turno = S.frame % passo === 0, giro = (S.frame / passo) | 0;
     // Ferruccio: cella 0. Ritrarlo costa una copia dal canvas del gioco: lo si rifà ogni pochi frame.
     const io = S.slot[0];
     if (!S.giocatore.crollato) {
       const mosso = player.moving || (player.swordAnimTick >= 0 && player.swordAnimTick < 14) || player.shootAnimTimer > 0 || player.pickupTimer > 0;
-      if (!io.valido || io.flip !== player.flipX || S.frame - io.ultima >= (mosso ? O.giocatoreOgni : O.giocatoreFermoOgni)) {
+      if (!io.valido || io.flip !== player.flipX || S.frame - io.ultima >= (mosso ? O.giocatoreOgni : O.giocatoreFermoOgni) * passo) {
         ritrai(actx, 0, 0, 1, io.ent);
         io.valido = true; io.flip = player.flipX; io.ultima = S.frame;
+        S.atlanteSporco = true; S.conteggi.ritratti++;
       }
       io.usato = true;
       io.gx = player.x; io.gy = player.y + O.piediGiocatore;
@@ -666,10 +769,11 @@ const RIBALTA_B2 = Object.freeze({
       }
       const s = S.slot[i];
       s.visto = S.frame;
-      if (nuova || !s.valido || (S.frame + i) % O.nemiciOgni === 0) {
+      if (nuova || !s.valido || (turno && (giro + i) % O.nemiciOgni === 0)) {
         s.ent.genere = n.boss ? 'boss' : 'nemico'; s.ent.n = n;
         s.valido = ritrai(actx, (i % O.colonne) * O.cellaL, ((i / O.colonne) | 0) * O.cellaA, 1, s.ent);
         s.ent.n = null;
+        S.atlanteSporco = true; S.conteggi.ritratti++;
       }
       if (!s.valido) continue;
       s.usato = true;
@@ -680,7 +784,8 @@ const RIBALTA_B2 = Object.freeze({
       const s = S.slot[k];
       if (s.chi && s.visto !== S.frame) { s.chi = null; s.valido = false; }
     }
-    if (C.attivi.ombre) {
+    if (ombre && S.atlanteSporco) { // le sagome d'ombra si ricavano solo se una figura è stata ritratta di nuovo
+      S.atlanteSporco = false;
       bctx.setTransform(1, 0, 0, 1, 0, 0);
       bctx.globalAlpha = 1;
       bctx.imageSmoothingEnabled = true;
@@ -704,12 +809,55 @@ const RIBALTA_B2 = Object.freeze({
     geo.alfa = O.alfaVicino + (O.alfaLontano - O.alfaVicino) * lontano;
   }
 
-  /** Le ombre lunghe (scenografia e figure) sullo strato di luce, in coordinate del palco. */
-  function ombreSullaLuce(st, tk) {
-    const r = O.risoluzione;
-    lctx.setTransform(RL, 0, 0, RL, -LZ.x * RL, -LZ.y * RL);
+  // --- ripari: dove le ombre lunghe si spengono (ciò che sta in piedi sotto lo strato di luce) ---
+  /** Aggiunge al frame un riparo ellittico centrato in (x, y), semiassi (rx, ry), in coordinate del palco. */
+  function aggiungiRiparo(x, y, rx, ry) {
+    if (S.nRipari >= S.ripari.length || !(rx > 0) || !(ry > 0) || !Number.isFinite(x + y)) return;
+    const r = S.ripari[S.nRipari++];
+    r.x = x; r.y = y; r.rx = rx; r.ry = ry;
+  }
+  const riparoDa = (p, q) => { if (p && q) aggiungiRiparo(p.x + q[0], p.y + q[1], q[2], q[3]); };
+  /** Ripari dei forzieri (a1-bombe-chiavi.js): quelli aperti con l'oggetto sono sostituiti dal piedistallo. */
+  function ripariForzieri(st) {
+    const q = C.luce.ripari.forziere;
+    for (const f of st.forzieriA1 || []) if (f && !(f.aperto && f.oggetto)) riparoDa(f, q);
+  }
+  /** Ripari degli arredi delle stanze speciali (a3-stanze-speciali.js), dalle posizioni della sua tabella. */
+  function ripariArredi(st) {
+    const A = C.luce.ripari.arredi[st.tipo];
+    if (!A || typeof STANZE_SPECIALI_A3 === 'undefined') return;
+    const T = STANZE_SPECIALI_A3[st.tipo];
+    if (!T) return;
+    if (st.tipo === 'sfida' && st.sfidaA3 && st.sfidaA3.finita) return; // il piedistallo se n'è andato
+    for (const nome of Object.keys(A)) {
+      if (nome === 'cartomante' && !(st.biscaA3 && st.biscaA3.cartomante && !st.biscaA3.cartomante.andata)) continue;
+      riparoDa(T[nome], A[nome]);
+    }
+  }
+  /**
+   * Chi dà i ripari: funzioni (stanza, aggiungi) che chiamano aggiungi(x, y, rx, ry) per ogni cosa in piedi che
+   * disegnano dentro la catena di disegnaStanzaPixelArt. Esposta come window.__teatro.interni.ripariLuceB2:
+   * gli altri file vi aggiungono la loro con push().
+   */
+  const fontiRipari = [ripariForzieri, ripariArredi];
+  function raccogliRipari(st) {
+    S.nRipari = 0;
+    for (const fonte of fontiRipari) {
+      try { fonte(st, aggiungiRiparo); } catch (err) { errore('riparo', err); }
+    }
+  }
+
+  /** Le ombre lunghe del frame (scenografia e figure) sulla loro tela, in coordinate del palco, coi ripari. */
+  function disegnaOmbre(st, tk) {
+    const r = O.risoluzione, densita = quartiere().ombra;
+    octx.setTransform(1, 0, 0, 1, 0, 0);
+    octx.globalCompositeOperation = 'source-over';
+    octx.globalAlpha = 1;
+    octx.imageSmoothingEnabled = true;
+    octx.clearRect(0, 0, telaOmbre.width, telaOmbre.height);
+    octx.setTransform(RL, 0, 0, RL, -LZ.x * RL, -LZ.y * RL);
     if (S.discesa) { // la scenografia, sotto la stessa luce: un trapezio in due passate (più denso alla base)
-      lctx.fillStyle = O.colore;
+      octx.fillStyle = O.colore;
       for (const v of S.discesa.voci) {
         const o = v.o, sag = O.scenografia[o.tipo];
         if (!sag || st.ostacoli.indexOf(o) < 0) continue;
@@ -718,11 +866,11 @@ const RIBALTA_B2 = Object.freeze({
         geometriaOmbra(o.x, gy, tk);
         for (let passata = 0; passata < 2; passata++) {
           const al = sag[1] * geo.lung * (passata ? 0.55 : 1), dx = geo.inc * al;
-          lctx.globalAlpha = geo.alfa * O.scenografia.alfa * 0.6;
-          lctx.beginPath();
-          lctx.moveTo(o.x - sag[0], gy); lctx.lineTo(o.x + sag[0], gy);
-          lctx.lineTo(o.x + sag[0] * 0.8 + dx, gy - al); lctx.lineTo(o.x - sag[0] * 0.8 + dx, gy - al);
-          lctx.closePath(); lctx.fill();
+          octx.globalAlpha = Math.min(1, geo.alfa * O.scenografia.alfa * 0.6 * densita);
+          octx.beginPath();
+          octx.moveTo(o.x - sag[0], gy); octx.lineTo(o.x + sag[0], gy);
+          octx.lineTo(o.x + sag[0] * 0.8 + dx, gy - al); octx.lineTo(o.x - sag[0] * 0.8 + dx, gy - al);
+          octx.closePath(); octx.fill();
         }
       }
     }
@@ -730,19 +878,31 @@ const RIBALTA_B2 = Object.freeze({
       if (!s.usato) continue;
       geometriaOmbra(s.gx, s.gy, tk);
       const col = s.cella % O.colonne, riga = (s.cella / O.colonne) | 0;
-      lctx.save();
-      lctx.transform(1, 0, -geo.inc, geo.lung, s.gx, s.gy);
-      lctx.globalAlpha = geo.alfa;
-      lctx.drawImage(atlB, col * O.cellaL * r, riga * O.cellaA * r, O.cellaL * r, O.piedi * r, -O.cellaL / 2, -O.piedi, O.cellaL, O.piedi);
-      lctx.restore();
+      octx.save();
+      octx.transform(1, 0, -geo.inc, geo.lung, s.gx, s.gy);
+      octx.globalAlpha = Math.min(1, geo.alfa * densita);
+      octx.drawImage(atlB, col * O.cellaL * r, riga * O.cellaA * r, O.cellaL * r, O.piedi * r, -O.cellaL / 2, -O.piedi, O.cellaL, O.piedi);
+      octx.restore();
       S.conteggi.ombre++;
     }
-    lctx.setTransform(1, 0, 0, 1, 0, 0);
-    lctx.globalAlpha = 1;
+    if (S.nRipari > 0) {
+      octx.globalAlpha = 1;
+      octx.globalCompositeOperation = 'destination-out';
+      const tela = telaRiparo();
+      for (let i = 0; i < S.nRipari; i++) {
+        const q = S.ripari[i];
+        octx.drawImage(tela, q.x - q.rx, q.y - q.ry, q.rx * 2, q.ry * 2);
+        S.conteggi.ripari++;
+      }
+      octx.globalCompositeOperation = 'source-over';
+    }
+    octx.setTransform(1, 0, 0, 1, 0, 0);
+    octx.globalAlpha = 1;
   }
 
   /** Compone lo strato di luce del frame (luce dei lumi, ombre lunghe, vignetta) e lo stende sul palco. */
   function disegnaLuce(st, tk) {
+    const Q = quartiere();
     lctx.setTransform(1, 0, 0, 1, 0, 0);
     lctx.globalCompositeOperation = 'source-over';
     lctx.globalAlpha = 1;
@@ -750,12 +910,21 @@ const RIBALTA_B2 = Object.freeze({
     lctx.fillStyle = NEUTRO;
     lctx.fillRect(0, 0, telaLuce.width, telaLuce.height);
     if (C.attivi.lumi) {
-      lctx.globalAlpha = 0.68 + 0.32 * fiammaMedia(tk);
+      lctx.globalAlpha = Math.min(1, (0.68 + 0.32 * fiammaMedia(tk)) * Q.luce);
       lctx.drawImage(telaLumi(), 0, 0);
       lctx.globalAlpha = 1;
     }
-    if (C.attivi.ombre) ombreSullaLuce(st, tk);
-    if (OPZIONI.vignetta) { lctx.drawImage(telaVignetta(), 0, 0); S.conteggi.vignetta++; }
+    if (ombreAccese()) {
+      raccogliRipari(st);
+      disegnaOmbre(st, tk);
+      lctx.drawImage(telaOmbre, 0, 0);
+    }
+    if (OPZIONI.vignetta) {
+      lctx.globalAlpha = Math.min(1, Q.vignetta);
+      lctx.drawImage(telaVignetta(), 0, 0);
+      lctx.globalAlpha = 1;
+      S.conteggi.vignetta++;
+    }
     lctx.setTransform(RL, 0, 0, RL, -LZ.x * RL, -LZ.y * RL);
     lctx.fillStyle = NEUTRO;
     const mp = C.luce.marginePorte;
@@ -767,6 +936,16 @@ const RIBALTA_B2 = Object.freeze({
     ctx.globalCompositeOperation = 'hard-light';
     ctx.drawImage(telaLuce, LZ.x, LZ.y, LZ.l, LZ.a);
     ctx.restore();
+  }
+
+  /** Ripassa sopra lo strato di luce le etichette che la catena della stanza ha disegnato sotto. */
+  function ripassaEtichette() {
+    const n = S.etichette.length;
+    if (!n) return;
+    ctx.save();
+    for (let i = 0; i < n; i++) drawPillLabelBaseB2.apply(null, S.etichette[i]);
+    ctx.restore();
+    S.conteggi.etichette += n;
   }
 
   // ===========================================================================
@@ -922,6 +1101,27 @@ const RIBALTA_B2 = Object.freeze({
     if (S.tTensione >= 0 && S.tTensione < D.sussultoTick) S.tTensione++;
   }
 
+  /**
+   * UN cavo di scena, da sopra il bordo alto del palco fino al punto d'aggancio (x, yBasso). `lasco` = pancia
+   * in px (0 = teso), `lato` = -1/1 (da che parte fa la pancia), `fase` = ondeggiare. ELEMENTO DI SCENA CON
+   * FUNZIONE PROPRIA: chi collega l'immagine dell'autore (cavo-gancio.png) sostituisce solo questo corpo.
+   * Colore, spessore e alfa arrivano già impostati da disegnaCaviEAtterraggi.
+   */
+  function disegnaCavo(x, yBasso, lato, lasco, fase) {
+    ctx.beginPath(); ctx.moveTo(x, -6);
+    if (lasco > 0.05) ctx.quadraticCurveTo(x + lato * lasco * 2 + Math.sin(fase) * lasco * 0.5, yBasso * 0.55, x, yBasso);
+    else ctx.lineTo(x, yBasso);
+    ctx.stroke();
+  }
+
+  /** L'ombra nel punto d'arrivo (x, y) di UN pezzo di scenografia che cala: cresce con `p` (0..1 = quanto è sceso). */
+  function disegnaOmbraDiArrivo(x, y, p) {
+    ctx.globalAlpha = 0.12 + 0.45 * p;
+    ctx.fillStyle = O.coloreContatto;
+    ctx.beginPath(); ctx.ellipse(x, y, 15 * (0.4 + 0.6 * p), 5.5 * (0.4 + 0.6 * p), 0, 0, TAU); ctx.fill();
+  }
+
+  /** I due cavi di ogni pezzo di scenografia della stanza e, mentre cala, l'ombra del suo punto d'arrivo. */
   function disegnaCaviEAtterraggi(st, tk) {
     const dsc = S.discesa, D = C.scenografia;
     if (!dsc || !dsc.voci.length) return;
@@ -932,24 +1132,13 @@ const RIBALTA_B2 = Object.freeze({
       const v = dsc.voci[i], o = v.o;
       if (o.tipo === 'fossa' || st.ostacoli.indexOf(o) < 0) continue;
       const tau = dsc.t - v.ritardo, inVolo = dsc.attiva && tau < D.cadutaTick;
-      if (inVolo && tau >= 0) { // il punto d'arrivo: l'ombra del pezzo cresce mentre cala
-        const p = tau / D.cadutaTick;
-        ctx.globalAlpha = 0.12 + 0.45 * p;
-        ctx.fillStyle = O.coloreContatto;
-        ctx.beginPath(); ctx.ellipse(o.x, v.yVera + 6, 15 * (0.4 + 0.6 * p), 5.5 * (0.4 + 0.6 * p), 0, 0, TAU); ctx.fill();
-      }
+      if (inVolo && tau >= 0) disegnaOmbraDiArrivo(o.x, v.yVera + 6, tau / D.cadutaTick);
       const g = D.aggancio[o.tipo] || D.aggancio.predefinito;
       const yBasso = v.yVera + v.dy - g[1];
       if (yBasso < -4) continue;
       const tesi = inVolo ? 1 : S.tensione, lasco = D.cavo.lasco * (1 - tesi);
       ctx.globalAlpha = D.cavo.alfa + D.cavo.alfaTeso * lampoTeso;
-      for (let lato = -1; lato <= 1; lato += 2) {
-        const x = o.x + lato * g[0];
-        ctx.beginPath(); ctx.moveTo(x, -6);
-        if (lasco > 0.05) ctx.quadraticCurveTo(x + lato * lasco * 2 + Math.sin(tk * 0.045 + i * 1.9 + lato) * lasco * 0.5, yBasso * 0.55, x, yBasso);
-        else ctx.lineTo(x, yBasso);
-        ctx.stroke();
-      }
+      for (let lato = -1; lato <= 1; lato += 2) disegnaCavo(o.x + lato * g[0], yBasso, lato, lasco, tk * 0.045 + i * 1.9 + lato);
     }
     ctx.restore();
   }
@@ -1070,6 +1259,26 @@ const RIBALTA_B2 = Object.freeze({
     if ((C.materiali.effetti[mat] || {}).tintinnio) suonoTintinnio();
   }
 
+  /**
+   * Colpo continuo senza spinta arrivato da window.__teatroInterno.danneggiaNemico (il raggio del patto di T3):
+   * le schegge partono lungo il raggio, da Ferruccio verso il nemico, un impulso ogni `continuo.ogniImpulsi`;
+   * se il nemico cade, i pezzi volano via nella stessa direzione.
+   */
+  function dopoColpoContinuo(n, hpPrima) {
+    if (!(n.hp < hpPrima)) return;
+    const dx = n.x - player.x, dy = n.y - player.y, l = Math.hypot(dx, dy) || 1;
+    let c = S.ultimoColpo.get(n);
+    if (!c) { c = { x: 0, y: 0 }; S.ultimoColpo.set(n, c); }
+    c.x = dx / l; c.y = dy / l;
+    if (!C.attivi.particelle || !inScena()) return;
+    const K = C.materiali.continuo, k = S.impulsi.get(n) || 0;
+    S.impulsi.set(n, k + 1);
+    if (k % Math.max(1, K.ogniImpulsi) !== 0) return;
+    const mat = materialeDi(n);
+    schizzaColpo(n.x, n.y + 3, n.boss ? 22 : 12, c.x, c.y, mat, K.forza);
+    if ((C.materiali.effetti[mat] || {}).tintinnio) suonoTintinnio();
+  }
+
   // --- fili che si spezzano ---
   function spezzaFili(st, n) {
     suonoSchiocco(0, n.boss ? 0.8 : 1);
@@ -1077,9 +1286,12 @@ const RIBALTA_B2 = Object.freeze({
     const finale = st.tipo === 'boss' && pianoNelCiclo() === 4 && st.nemici.some((q) => q.hp > 0);
     let manoS = FEEL.fili.manoSinistra, manoD = FEEL.fili.manoDestra;
     if (n.bossId === 'donna-luciana') {
-      if (!n.maniA || n.maniA.length < 2 || typeof BOSS_A === 'undefined') return;
-      const sc = 15 * BOSS_A.luciana.scala;
-      manoS = [n.maniA[0].x, n.maniA[0].y + sc]; manoD = [n.maniA[1].x, n.maniA[1].y + sc];
+      // i suoi fili partono dalle SUE due Mani (n.maniA), dove stanno in questo istante; prima che la lotta
+      // le crei valgono le posizioni di riposo, come nel disegno di base (60-resa.js)
+      if (typeof BOSS_A === 'undefined') return;
+      const LA = BOSS_A.luciana, sc = 15 * LA.scala;
+      const mani = n.maniA && n.maniA.length >= 2 ? n.maniA : [{ x: n.x - LA.scartoMani, y: LA.quotaRiposoY }, { x: n.x + LA.scartoMani, y: LA.quotaRiposoY }];
+      manoS = [mani[0].x, mani[0].y + sc]; manoD = [mani[1].x, mani[1].y + sc];
     } else if (finale) return; // nella sala di Donna Luciana le Mani in alto non ci sono: niente fili da spezzare
     const y = n.y - 18 - (n.airZ || 0), dx = (n.boss ? 18 : 9) * FEEL.fili.scartoX;
     S.fili.push({ ax: manoS[0], ay: manoS[1], bx: n.x - dx, by: y, t: 0, lato: -1 });
@@ -1162,6 +1374,37 @@ const RIBALTA_B2 = Object.freeze({
     cat.scurita = true;
   }
 
+  const OTTO_LATI = Object.freeze([[-1, 0], [1, 0], [0, -1], [0, 1], [-0.7, -0.7], [0.7, -0.7], [-0.7, 0.7], [0.7, 0.7]]);
+  const teleContorno = { piatta: null, bordo: null };
+  /**
+   * Stende un filo di contorno chiaro attorno alla sagoma ritratta in `cat` (sotto la figura, mai sopra):
+   * la sagoma resa tinta unita, spostata negli otto versi e composta dietro. `materiale` sceglie l'alfa
+   * (RIBALTA_B2.crollo.contorno): i resti scuri ne hanno più bisogno.
+   */
+  function contorna(cat, materiale) {
+    const K = C.crollo.contorno, proprio = K.alfaPerMateriale[materiale];
+    const alfa = typeof proprio === 'number' ? proprio : K.alfa;
+    if (!(alfa > 0) || !(K.px > 0)) return;
+    const l = cat.tela.width, a = cat.tela.height, T = teleContorno;
+    if (!T.piatta) { T.piatta = nuovaTela(l, a); T.bordo = nuovaTela(l, a); }
+    for (const t of [T.piatta, T.bordo]) if (t.width !== l || t.height !== a) { t.width = l; t.height = a; }
+    const p = T.piatta.getContext('2d'), b = T.bordo.getContext('2d'), s = Math.max(1, K.px * cat.k);
+    p.setTransform(1, 0, 0, 1, 0, 0); p.globalAlpha = 1;
+    p.globalCompositeOperation = 'copy'; p.drawImage(cat.tela, 0, 0);
+    p.globalCompositeOperation = 'source-in'; p.fillStyle = K.colore; p.fillRect(0, 0, l, a);
+    p.globalCompositeOperation = 'source-over';
+    b.setTransform(1, 0, 0, 1, 0, 0); b.globalAlpha = 1; b.globalCompositeOperation = 'source-over';
+    b.clearRect(0, 0, l, a);
+    for (const [dx, dy] of OTTO_LATI) b.drawImage(T.piatta, dx * s, dy * s);
+    const d = cat.tctx;
+    d.save();
+    d.setTransform(1, 0, 0, 1, 0, 0);
+    d.globalCompositeOperation = 'destination-over';
+    d.globalAlpha = Math.min(1, alfa);
+    d.drawImage(T.bordo, 0, 0);
+    d.restore();
+  }
+
   /** Taglia la figura ritratta in `cat` nei pezzi della marionetta e li lancia. */
   function creaPezzi(cat, a) {
     const K = C.crollo, G = C.sagome, n = a.n;
@@ -1214,6 +1457,7 @@ const RIBALTA_B2 = Object.freeze({
       let riuscita = false;
       try { riuscita = ritrai(cat.tctx, 0, 0, cat.k, ent); } catch (err) { errore('ritratto del caduto', err); }
       if (!riuscita) { liberaCattura(cat); if (a.n) S.crollati.delete(a.n); continue; }
+      try { contorna(cat, a.n ? materialeDi(a.n) : C.materiali.predefinito); } catch (err) { errore('contorno dei resti', err); }
       creaPezzi(cat, a);
       if (!a.n) S.giocatore.crollato = true;
     }
@@ -1358,9 +1602,47 @@ const RIBALTA_B2 = Object.freeze({
     for (let i = S.fili.length - 1; i >= 0; i--) if (++S.fili[i].t > C.crollo.filo.durataTick) S.fili.splice(i, 1);
   }
 
+  // ===========================================================================
+  // PRESTAZIONI: misura dei frame e degrado prudente delle ombre lunghe
+  // ===========================================================================
+  /**
+   * Decide il gradino di degrado delle ombre lunghe da una finestra di misura chiusa a `fps` frame al secondo
+   * (tabella RIBALTA_B2.prestazioni). Separata dalla misura perché la QA la possa provare coi numeri.
+   * @param {number} fps media dei frame nella finestra appena chiusa
+   * @returns {number} il gradino dopo la decisione (0 = piena frequenza, 1 = sagome a metà frequenza…)
+   */
+  function valutaFinestra(fps) {
+    const P = C.prestazioni, M = S.misura;
+    M.fps = fps;
+    if (fps < P.sogliaFps) {
+      M.buone = 0;
+      if (++M.lente >= P.finestreLente) { M.lente = 0; if (S.degrado < P.gradiniMax) S.degrado++; }
+    } else {
+      M.lente = 0;
+      if (fps >= P.recuperoFps && S.degrado > 0 && M.recuperi < P.recuperiMax) {
+        if (++M.buone >= P.finestreBuone) { M.buone = 0; S.degrado--; M.recuperi++; }
+      } else M.buone = 0;
+    }
+    return S.degrado;
+  }
+  /**
+   * Conta i frame disegnati in finestre da `finestraMs` e a ogni finestra chiusa chiama valutaFinestra.
+   * Fuori scena, in pausa, a scheda nascosta o con le ombre spente non misura: lì non c'è nulla da alleggerire.
+   */
+  function misuraFrame() {
+    const P = C.prestazioni, M = S.misura, ora = performance.now(), dt = ora - M.ultimo;
+    M.ultimo = ora;
+    if (!(dt > 0) || dt > P.pausaMs || document.hidden || !inScena() || fermoUI() || !ombreAccese()) { M.inizio = ora; M.frame = 0; return; }
+    M.frame++;
+    if (ora - M.inizio < P.finestraMs) return;
+    const fps = (M.frame * 1000) / (ora - M.inizio);
+    M.inizio = ora; M.frame = 0;
+    valutaFinestra(fps);
+  }
+
   /** Strato del palco: sopra il pavimento, sotto ostacoli, nemici e Ferruccio. */
   function disegnaStratoPalco(tk, st) {
-    if (C.attivi.lumi || C.attivi.ombre || OPZIONI.vignetta) disegnaLuce(st, tk);
+    if (C.attivi.lumi || ombreAccese() || OPZIONI.vignetta) { disegnaLuce(st, tk); ripassaEtichette(); }
     if (C.attivi.riflessi && pianoNelCiclo() === C.riflessi.piano) disegnaRiflessi(tk);
     disegnaPezzi(true);
     if (C.attivi.scenografia) disegnaCaviEAtterraggi(st, tk);
@@ -1386,7 +1668,16 @@ const RIBALTA_B2 = Object.freeze({
     try { return disegnaFrameBaseB2.apply(this, args); } finally {
       if (spostata || S.spostate) rimettiScenografia();
       S.frame++;
+      try { misuraFrame(); } catch (err) { errore('misura dei frame', err); }
     }
+  };
+
+  // Le etichette disegnate dentro la catena della stanza (arredi di a3 e di chi verrà) finiscono sotto lo
+  // strato di luce: se ne prende nota per ripassarle sopra (ripassaEtichette). Fuori dalla stanza non costa nulla.
+  const drawPillLabelBaseB2 = drawPillLabel;
+  drawPillLabel = function drawPillLabelB2(...args) {
+    if (S.registraEtichette && S.etichette.length < C.luce.etichetteMax) S.etichette.push(args);
+    return drawPillLabelBaseB2.apply(this, args);
   };
 
   const disegnaStanzaBaseB2 = disegnaStanzaPixelArt;
@@ -1399,7 +1690,10 @@ const RIBALTA_B2 = Object.freeze({
         preparaSagome(st);
       } catch (err) { errore('sagome', err); }
     }
-    const r = disegnaStanzaBaseB2.call(this, tk, st, ...resto);
+    S.etichette.length = 0;
+    S.registraEtichette = mia;
+    let r;
+    try { r = disegnaStanzaBaseB2.call(this, tk, st, ...resto); } finally { S.registraEtichette = false; }
     if (mia) {
       ctx.save();
       try { disegnaStratoPalco(tk, st); } catch (err) { errore('strato del palco', err); } finally { ctx.restore(); }
@@ -1445,10 +1739,33 @@ const RIBALTA_B2 = Object.freeze({
   const danneggiaNemicoBaseB2 = danneggiaNemico;
   danneggiaNemico = function danneggiaNemicoB2(nem, dmg, kx, ky, ...resto) {
     const hpPrima = nem ? nem.hp : 0;
+    S.passaggiColpo++;
     const r = danneggiaNemicoBaseB2.call(this, nem, dmg, kx, ky, ...resto);
     try { if (nem) dopoColpo(nem, hpPrima, kx, ky); } catch (err) { errore('colpo', err); }
     return r;
   };
+
+  // Il raggio del patto (T3) non chiama la danneggiaNemico globale ma il riferimento che 80-ciclo.js ha messo
+  // in window.__teatroInterno prima di ogni avvolgimento: lo si avvolge allo stesso modo, chiamando sempre
+  // ciò che c'era. Se un altro file l'ha già rimandato alla funzione globale, le schegge dei colpi con spinta
+  // le ha già fatte l'avvolgimento qui sopra (lo dice S.passaggiColpo) e non si ripetono.
+  {
+    const TI = window.__teatroInterno;
+    if (TI && typeof TI.danneggiaNemico === 'function') {
+      const internoBaseB2 = TI.danneggiaNemico;
+      TI.danneggiaNemico = function danneggiaNemicoInternoB2(nem, dmg, kx, ky, ...resto) {
+        const hpPrima = nem ? nem.hp : 0, passaggi = S.passaggiColpo;
+        const r = internoBaseB2.call(this, nem, dmg, kx, ky, ...resto);
+        try {
+          if (nem) {
+            if (Math.hypot(kx || 0, ky || 0) > 0) { if (S.passaggiColpo === passaggi) dopoColpo(nem, hpPrima, kx, ky); }
+            else dopoColpoContinuo(nem, hpPrima);
+          }
+        } catch (err) { errore('colpo dal riferimento interno', err); }
+        return r;
+      };
+    }
+  }
 
   // Ferruccio crollato in pezzi non si ridisegna intero sotto il velo della morte (unica base non chiamata).
   const ferruccioBaseB2 = disegnaFerruccioPittorico;
@@ -1492,6 +1809,11 @@ const RIBALTA_B2 = Object.freeze({
   if (window.__teatro && window.__teatro.interni) {
     Object.assign(window.__teatro.interni, {
       RIBALTA_B2,
+      /**
+       * Ripari dalle ombre lunghe: chi disegna qualcosa che sta in piedi dentro la catena di
+       * disegnaStanzaPixelArt aggiunge qui una funzione (stanza, aggiungi) e chiama aggiungi(x, y, rx, ry).
+       */
+      ripariLuceB2: fontiRipari,
       ribaltaB2: {
         /** Fotografia dello stato degli effetti (sola lettura). */
         stato() {
@@ -1504,8 +1826,15 @@ const RIBALTA_B2 = Object.freeze({
             discesaAttiva: Boolean(d && d.attiva), discesaT: d ? d.t : -1, voci: d ? d.voci.length : 0,
             quote: d ? d.voci.map((v) => Math.round(v.dy)) : [], tensione: Number(S.tensione.toFixed(3)),
             giocatoreCrollato: S.giocatore.crollato, errori: erroriVisti, conteggi: Object.assign({}, S.conteggi),
+            ombreAccese: ombreAccese(), degrado: S.degrado, fps: Math.round(S.misura.fps), frame: S.frame,
+            ripari: S.nRipari, etichette: S.etichette.length,
+            filiDa: S.fili.map((f) => [Math.round(f.ax), Math.round(f.ay)]),
           };
         },
+        /** QA: fa valutare una finestra di misura finta a `fps` frame al secondo; rende il gradino di degrado. */
+        valutaFinestra,
+        /** QA: riporta il degrado delle ombre a zero e azzera i contatori della misura. */
+        azzeraPrestazioni() { S.degrado = 0; Object.assign(S.misura, { frame: 0, lente: 0, buone: 0, recuperi: 0, fps: 0 }); },
         /** QA: ferma la discesa della scenografia al tick `t` (per fotografarla a mezz'aria). */
         fermaDiscesa(t) { if (S.discesa) { S.discesa.attiva = true; S.discesa.bloccata = true; S.discesa.t = t; } },
         /** QA: la discesa riprende da dov'era. */
