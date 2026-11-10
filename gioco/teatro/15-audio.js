@@ -15,6 +15,15 @@
 const AudioSys = (() => {
   let audioCtx = null;
   let abilitato = true;
+  let uscita = null; // nodo comune degli effetti: il volume lo decide OPZIONI.volumeEffetti
+
+  /** Nodo d'uscita degli effetti sonori: tutti i suoni (anche dei file aggiunti) si collegano qui. */
+  function nodoUscita(ac) {
+    if (!uscita || uscita.context !== ac) { uscita = ac.createGain(); uscita.connect(ac.destination); }
+    const v = Math.max(0, Math.min(1, Number(OPZIONI.volumeEffetti)));
+    uscita.gain.value = Number.isFinite(v) ? v : 1;
+    return uscita;
+  }
 
   function getCtx() {
     if (!abilitato) return null;
@@ -42,7 +51,9 @@ const AudioSys = (() => {
   return {
     get attivo() { return abilitato; },
     set attivo(v) { abilitato = Boolean(v); },
-    get ctx() { return audioCtx; }, // (8) contesto condiviso con la musica (a8-musica.js); null prima del primo gesto
+    get ctx() { return audioCtx; },
+    /** Nodo a cui collegare ogni nuovo effetto sonoro (rispetta il volume degli effetti); null senza contesto. */
+    get uscita() { return audioCtx ? nodoUscita(audioCtx) : null; }, // (8) contesto condiviso con la musica (a8-musica.js); null prima del primo gesto
     toggle() {
       abilitato = !abilitato;
       if (abilitato) getCtx();
@@ -66,7 +77,7 @@ const AudioSys = (() => {
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
 
         osc.connect(gain);
-        gain.connect(ac.destination);
+        gain.connect(nodoUscita(ac));
 
         osc.start(t);
         osc.stop(t + 0.045);
@@ -89,7 +100,7 @@ const AudioSys = (() => {
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
 
         osc.connect(gain);
-        gain.connect(ac.destination);
+        gain.connect(nodoUscita(ac));
 
         osc.start(t);
         osc.stop(t + 0.085);
@@ -112,7 +123,7 @@ const AudioSys = (() => {
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
 
         osc.connect(gain);
-        gain.connect(ac.destination);
+        gain.connect(nodoUscita(ac));
 
         osc.start(t);
         osc.stop(t + 0.055);
@@ -135,7 +146,7 @@ const AudioSys = (() => {
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
 
         osc.connect(gain);
-        gain.connect(ac.destination);
+        gain.connect(nodoUscita(ac));
 
         osc.start(t);
         osc.stop(t + 0.065);
@@ -158,7 +169,7 @@ const AudioSys = (() => {
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
 
         osc.connect(gain);
-        gain.connect(ac.destination);
+        gain.connect(nodoUscita(ac));
 
         osc.start(t);
         osc.stop(t + 0.33);
@@ -184,7 +195,7 @@ const AudioSys = (() => {
 
         osc1.connect(gain);
         osc2.connect(gain);
-        gain.connect(ac.destination);
+        gain.connect(nodoUscita(ac));
 
         osc1.start(t);
         osc1.stop(t + 0.08);
@@ -212,7 +223,7 @@ const AudioSys = (() => {
 
         osc1.connect(gain);
         osc2.connect(gain);
-        gain.connect(ac.destination);
+        gain.connect(nodoUscita(ac));
 
         osc1.start(t);
         osc1.stop(t + 0.86);
@@ -237,7 +248,7 @@ const AudioSys = (() => {
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
 
         osc.connect(gain);
-        gain.connect(ac.destination);
+        gain.connect(nodoUscita(ac));
 
         osc.start(t);
         osc.stop(t + 0.16);

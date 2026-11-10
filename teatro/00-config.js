@@ -104,6 +104,23 @@ const FEEL = Object.freeze({
 
 const MS_PER_TICK = 1000 / FEEL.passo.hz;
 
+// ---------------------------------------------------------------------------
+// OPZIONI DEL GIOCATORE (menu Opzioni). Un solo oggetto vivo, letto da tutti i file di teatro/ a runtime:
+//   volumeEffetti, volumeMusica (0..1) · scossa (0..1, moltiplica lo scuotimento dello schermo)
+//   grana, vignetta, pubblico (effetti scenici accesi/spenti) · lampi (lampi bianchi sui colpi)
+// Salvate in localStorage 'ferruccio.teatro.opzioni'. Chi le cambia chiama salvaOpzioni().
+// ---------------------------------------------------------------------------
+const OPZIONI_PREDEFINITE = Object.freeze({ volumeEffetti: 1, volumeMusica: 1, scossa: 1, grana: true, vignetta: true, pubblico: true, lampi: true });
+const OPZIONI = (() => {
+  let salvate = {};
+  try { salvate = JSON.parse(localStorage.getItem('ferruccio.teatro.opzioni') || '{}') || {}; } catch (_) { salvate = {}; }
+  return Object.assign({}, OPZIONI_PREDEFINITE, salvate);
+})();
+/** Salva le opzioni correnti (da chiamare dopo ogni modifica di OPZIONI). */
+function salvaOpzioni() {
+  try { localStorage.setItem('ferruccio.teatro.opzioni', JSON.stringify(OPZIONI)); } catch (_) {}
+}
+
 const ticksDaMs = (ms) => Math.max(1, Math.round(ms / MS_PER_TICK));
 
 // ===========================================================================
