@@ -709,6 +709,7 @@ function disegnaArrediA3(st, tick) {
   } else if (st.tipo === 'sacrificio') {
     const S = st.sacrificioA3;
     const { x, y } = T.sacrificio.ceppo;
+    if (typeof arredoImmagineB9 !== 'function' || !arredoImmagineB9('ceppo', x, y, S, tick)) { // --- b9: immagine dell'autore, se c'è (b9-immagini.js) ---
     ctx.fillStyle = 'rgba(8,5,3,0.6)';
     ctx.beginPath(); ctx.ellipse(x, y + 10, 24, 7, 0, 0, TAU); ctx.fill();
     ctx.fillStyle = '#4a2c17'; ctx.strokeStyle = '#1c0f07'; ctx.lineWidth = 1.5;
@@ -726,6 +727,7 @@ function disegnaArrediA3(st, tick) {
       ctx.fillStyle = '#9ca3af'; ctx.fillRect(x + cx - 1, y + cy - 6, 2, 6);
       ctx.fillStyle = '#d1d5db'; ctx.fillRect(x + cx - 2, y + cy - 7, 4, 2);
     }
+    } // --- b9: fine del disegno a codice del ceppo ---
     drawPillLabel(S.fatti >= T.sacrificio.maxSacrifici ? '† IL CEPPO È SAZIO' : '† SALI SUL CEPPO: -½ ❤️', x, y - 30, 180, {
       size: 8, color: '#fca5a5', border: '#b91c1c',
     });
@@ -733,6 +735,7 @@ function disegnaArrediA3(st, tick) {
     const B = st.biscaA3;
     const { x, y } = T.bisca.banco;
     // banco di legno con l'urna dei numeri
+    if (typeof arredoImmagineB9 !== 'function' || !arredoImmagineB9('banco', x, y, B, tick)) { // --- b9: immagine dell'autore, se c'è (b9-immagini.js) ---
     ctx.fillStyle = 'rgba(8,5,3,0.6)';
     ctx.beginPath(); ctx.ellipse(x, y + 14, 26, 7, 0, 0, TAU); ctx.fill();
     ctx.fillStyle = '#5b3416'; ctx.strokeStyle = '#1c0f07'; ctx.lineWidth = 1.5;
@@ -742,12 +745,14 @@ function disegnaArrediA3(st, tick) {
     drawPixelSprite(SPRITE_SCENA.urna, x, y - 14, 1.6, false, false, rot);
     drawPixelSprite(SPRITE_OGGETTI.dado, x + 16, y - 8, 1);
     if (B.ultimo) drawTextFit(String(B.ultimo.numero), x - 14, y + 6, 20, { size: 8, color: '#fde68a' });
+    } // --- b9: fine del disegno a codice del banco ---
     drawPillLabel(B.chiuso ? '🎲 BANCO CHIUSO' : `🎲 LOTTO: ${T.bisca.costo}🪙 [E]`, x, y - 34, 130, {
       size: 7.5, color: B.chiuso ? '#9ca3af' : '#86efac', border: B.chiuso ? '#4b5563' : '#16a34a',
     });
     const C = B.cartomante;
     if (C && !C.andata) {
       const c = T.bisca.cartomante;
+      if (typeof arredoImmagineB9 !== 'function' || !arredoImmagineB9('cartomante', c.x, c.y, c, tick)) { // --- b9: immagine dell'autore, se c'è (b9-immagini.js) ---
       ctx.fillStyle = 'rgba(8,5,3,0.6)';
       ctx.beginPath(); ctx.ellipse(c.x, c.y + 14, 16, 5, 0, 0, TAU); ctx.fill();
       // sagoma d'ombra: scialle a campana, testa velata, candela
@@ -761,6 +766,7 @@ function disegnaArrediA3(st, tick) {
       ctx.fillRect(c.x - 10, c.y + 2, 20, 2);
       ctx.fillStyle = '#fbbf24';
       ctx.beginPath(); ctx.arc(c.x + 12, c.y - 2 + Math.sin(tick * 0.3), 1.8, 0, TAU); ctx.fill();
+      } // --- b9: fine del disegno a codice della cartomante ---
       drawPillLabel(`🔮 CARTOMANTE: ${c.costo}🪙 [E]`, c.x, c.y - 34, 130, { size: 7.5, color: '#f5d0fe', border: '#a21caf' });
     }
   } else if (st.tipo === 'maledetta') {
