@@ -41,7 +41,7 @@ const TEMI_B4 = Object.freeze({
   icone: Object.freeze({
     denari: ['..kkkk..', '.kyyyyk.', 'kywyyyok', 'kyyoyyok', 'kyyoyyok', 'kyyyyook', '.kyoook.', '..kkkk..'],
     ombra: ['..kkkk..', '.kppPPk.', 'kpPPkkk.', 'kpPk....', 'kpPk....', 'kpPPkkk.', '.kpPPPk.', '..kkkk..'],
-    maschera: ['.kkkkkk.', 'kcccccck', 'ckkcckkc', 'kcccccck', 'kcrccrck', '.kcccck.', '..kcck..', '...kk...'],
+    maschera: ['.kkkkkk.', 'kcccccck', 'kckcckck', 'kcccccck', 'kcrccrck', '.kcccck.', '..kcck..', '...kk...'],
     fili: ['...mm...', 'mmmmmmmm', '...mm...', '.y.mm.y.', '.y....y.', '.y....y.', '.y....y.', '.o....o.'],
     sacro: ['...yy...', '...yy...', '.yyyyyy.', '.yywwyy.', '...yy...', '...yy...', '...yy...', '...oo...'],
     fuoco: ['....r...', '...rr...', '..rro.r.', '.rrooorr', '.rooyoor', '.rooyyor', '..royyr.', '...rrr..'],
@@ -636,6 +636,9 @@ passoLogico = function passoLogicoB4(...args) {
     }
   }
   if (s.lampo > 0) s.lampo--;
+  if (s.eff.contrattacco > 0) { // Botta e Risposta: un colpo per ogni parata di questo tick
+    for (let k = (statoRun.bloccatiD || 0) - parati0; k > 0; k--) contrattaccoB4(s, st);
+  }
   if (ticksCongelati > 0) return r; // hit-stop: la logica del palco è ferma
   if (s.attive.ombra) auraOmbraB4(s, st);
   if (s.eco && tick >= s.eco.quando) { // secondo colpo di Pulcinella Traditore
@@ -646,9 +649,6 @@ passoLogico = function passoLogicoB4(...args) {
       player.shootAnimTimer = Math.max(player.shootAnimTimer, 5);
       AudioSys.playSparo();
     }
-  }
-  if (s.eff.contrattacco > 0) {
-    for (let k = (statoRun.bloccatiD || 0) - parati0; k > 0; k--) contrattaccoB4(s, st);
   }
   return r;
 };
