@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * tools/qa-teatro-regatto.js — misura i proiettili del boss Re-Gatto (pattern 'monstro_jump') in 10 s di gioco.
+ * tools/qa-teatro-regatto.js — misura i proiettili del boss Re-Gatto (pattern 'salto_gatto') in 10 s di gioco.
  *
  * Uso: node tools/qa-teatro-regatto.js <file html> [prefisso screenshot]
  * Da file://: menu → hub → piano 1, stanza del boss forzata sul Re-Gatto, giocatore invulnerabile e fermo.
@@ -48,7 +48,7 @@ const TICK = 600;
       R.siparioAttivo = null;
       const st = R.mappa.stanze.find((s) => s.tipo === 'boss');
       const b = st.nemici[0];
-      Object.assign(b, { bossId: 're-gatto', pattern: 'monstro_jump', tipo: 'gatto', nome: 'Il Gatto dei Quattro Canti (Monstro)', airZ: 0, shootCd: 40, state: 'idle' });
+      Object.assign(b, { bossId: 're-gatto', pattern: 'salto_gatto', tipo: 'gatto', nome: 'Il Gatto dei Quattro Canti', airZ: 0, shootCd: 40, state: 'idle' });
       if (c.rabbia) b.hp = Math.floor(b.maxHp * 0.4);
       b.hp = Math.max(b.hp, 1); b.maxHp = Math.max(b.maxHp, b.hp);
       st.visitata = true; R.stanzaCorrente = st; R.proiettiliNemici = [];

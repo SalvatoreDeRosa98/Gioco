@@ -961,7 +961,7 @@ function disegnaBossDaImmagineA(b, tick, flip, isFlash) {
   return false;
 }
 
-// Disegno pittorico differenziato per ogni archetipo di Nemico stile The Binding of Isaac!
+// Disegno pittorico differenziato per ogni archetipo di Nemico!
 function disegnaNemicoPittorico() {
   const args = Array.from(arguments);
   if (args[0] && typeof args[0].save === 'function') args.shift();
@@ -1031,7 +1031,7 @@ function disegnaNemicoPittorico() {
           : null;
 
   // =========================================================================
-  // 1. VESPA CIECA / VESPA D'OMBRA / LUCCIOLA (Isaac Attack Fly / Pooter)
+  // 1. VESPA CIECA / VESPA D'OMBRA / LUCCIOLA
   // =========================================================================
   if (tipo === 'vespa_cieca' || tipo === 'vespa' || tipo === 'lucciola') {
     const isLucc = tipo === 'lucciola';
@@ -1104,7 +1104,7 @@ function disegnaNemicoPittorico() {
     ctx.beginPath(); ctx.arc(4.5, -7.5, 1.3, 0, TAU); ctx.fill();
 
   // =========================================================================
-  // 2. BOMBA FERMA / BOZZO DI BRACE (Isaac Boil / Mulliboom)
+  // 2. BOMBA FERMA / BOZZO DI BRACE
   // =========================================================================
   } else if (tipo === 'bomba_ferma') {
     const isPrimed = state === 'primed';
@@ -1172,7 +1172,7 @@ function disegnaNemicoPittorico() {
     ctx.fill();
 
   // =========================================================================
-  // 3. GATTO D'OMBRA / GATTO GRANDE (Isaac Hopper / Trite — Il Gatto dei Quattro Canti)
+  // 3. GATTO D'OMBRA / GATTO GRANDE
   // =========================================================================
   } else if (tipo === 'gatto') {
     const isCrouch = (n.crouchTicks > 0) || state === 'crouch';
@@ -1367,7 +1367,7 @@ function disegnaNemicoPittorico() {
     ctx.fillRect(10.2, -11.0, 0.8, 3.0);
 
   // =========================================================================
-  // 4. MASCHERA D'OSSO / PULCINELLA D'ASSALTO (Isaac Host)
+  // 4. MASCHERA D'OSSO / PULCINELLA D'ASSALTO
   // =========================================================================
   } else if (tipo === 'maschera') {
     const openY = maskOpen ? -7 : 0;
@@ -1436,7 +1436,7 @@ function disegnaNemicoPittorico() {
     ctx.restore();
 
   // =========================================================================
-  // 5. STATUA SENTINELLA / CHERUBINO DI MARMO (Isaac Grimace)
+  // 5. STATUA SENTINELLA / CHERUBINO DI MARMO
   // =========================================================================
   } else if (tipo === 'statua') {
     const isCharging = (n.shootCd || 0) < 22;
@@ -1498,7 +1498,7 @@ function disegnaNemicoPittorico() {
     ctx.fill();
 
   // =========================================================================
-  // 6. GUARDIA D'ACCIAIO / PREDONE DEI BORBONI (Isaac Knight / Greed Mob)
+  // 6. GUARDIA D'ACCIAIO / PREDONE DEI BORBONI
   // =========================================================================
   } else {
     ctx.scale(flip, 1);
@@ -1583,7 +1583,7 @@ function disegnaBossPittorico() {
   ctx.save();
   ctx.imageSmoothingEnabled = true;
 
-  // Ombra a terra (fondamentale quando Re Gatto / Monstro salta in alto fuori campo!)
+  // Ombra a terra (fondamentale quando Re Gatto salta in alto fuori campo!)
   const shadowScale = Math.max(0.35, 1 - airZ / 180);
   ctx.fillStyle = airZ > 10 ? 'rgba(220, 38, 38, 0.55)' : 'rgba(8, 5, 3, 0.68)';
   ctx.beginPath();
@@ -1603,7 +1603,7 @@ function disegnaBossPittorico() {
   if (disegnaBossDaImmagineA(b, tick, flip, isFlash)) { ctx.restore(); return; }
 
   // =========================================================================
-  // BOSS 5: DONNA LUCIANA — LA BURATTINAIA DEL VELO (Isaac Mom)
+  // BOSS 5: DONNA LUCIANA — LA BURATTINAIA DEL VELO
   // =========================================================================
   if (bossId === 'donna-luciana') {
     const floatY = Math.sin(tick * 0.08) * 3.5;
@@ -1681,7 +1681,7 @@ function disegnaBossPittorico() {
   ctx.scale(flip, 1);
 
   // =========================================================================
-  // BOSS 1: RE GATTO DEI QUATTRO CANTI (Isaac Monstro)
+  // BOSS 1: RE GATTO DEI QUATTRO CANTI
   // =========================================================================
   if (bossId === 're-gatto') {
     const isAir = (airZ > 10) || (b.state === 'leap');
@@ -1783,7 +1783,7 @@ function disegnaBossPittorico() {
     ctx.fill();
 
   // =========================================================================
-  // BOSS 3: LA REGINA DELLE VESPE (Isaac Duke of Flies)
+  // BOSS 3: LA REGINA DELLE VESPE
   // =========================================================================
   } else if (bossId === 'regina-vespa') {
     const isLunge = (b.state === 'lunge') || (b.chargeTimer > 0) || Math.hypot(b.vx || 0, b.vy || 0) > 1.8;
@@ -1853,7 +1853,7 @@ function disegnaBossPittorico() {
     ctx.fill();
 
   // =========================================================================
-  // BOSS 4: IL COLOSSO DI CASERTA (Isaac Gurdy)
+  // BOSS 4: IL COLOSSO DI CASERTA
   // =========================================================================
   } else if (bossId === 'colosso-statua') {
     // Busto titanico di pietra e marmo emergente dalla pedana
@@ -1892,7 +1892,7 @@ function disegnaBossPittorico() {
     ctx.fill();
 
   // =========================================================================
-  // BOSS 6: LO SPEZZAFILI D'OTTONE (Isaac Peep)
+  // BOSS 6: LO SPEZZAFILI D'OTTONE
   // =========================================================================
   } else if (bossId === 'maestro-fucina') {
     // Procedurale per Lo Spezzafili
@@ -1919,7 +1919,7 @@ function disegnaBossPittorico() {
     ctx.moveTo(8, -8); ctx.lineTo(32, -8); ctx.stroke();
 
   // =========================================================================
-  // BOSS 2: CAPITANO GREGORIO / ARIETE DI PIOMBO (Isaac Chub)
+  // BOSS 2: CAPITANO GREGORIO / ARIETE DI PIOMBO
   // =========================================================================
   } else {
     // Juggernaut d'acciaio e ottone in carica
@@ -2173,7 +2173,7 @@ const SPRITE_OGGETTI = {
     '............',
     '............',
   ],
-  patto_abaddon: [
+  patto_abisso: [
     'k..........k',
     'kk..kkkk..kk',
     '.kkkddddkkk.',
@@ -2702,8 +2702,8 @@ Object.assign(SPRITE_OGGETTI, {
   'cuoio': ['............', '............', '.kkkkkkkkkk.', 'kddddddddddk', 'kdkkddddkkdk', 'kdk.kddk.kdk', 'kddkkddkkddk', '.kddddddddk.', '..kkddddkk..', '....kddk....', '.....kk.....', '............'],
   'gomitolo': ['............', '....kkkk....', '..kkyyoykk..', '.kyoyyyoyyk.', '.kyyoyyyoyk.', 'kyoyyoyyyoyk', 'kyyoyyoyyyyk', '.kyyyoyyoyk.', '.kyoyyyoyyk.', '..kkyyyykky.', '....kkkk...y', '...........y'],
   'ostia': ['............', '....kkkk....', '..kkwwwwkk..', '.kwwwwgwwwk.', '.kwwwwgwwwk.', 'kwwggggggwwk', 'kwwwwwgwwwwk', '.kwwwwgwwwk.', '.kwwwwgwwwk.', '..kkwwwwkk..', '....kkkk....', '............'],
-  'bobby': ['....kkkk....', '...kBBBBk...', '..kBBBBBBk..', '...kssssk...', '...kskksk...', '...kssssk...', '....kssk....', '..kmmmmmmk..', '.kskmmmmksk.', '...kmmmmk...', '...km..mk...', '...kk..kk...'],
-  'maggy': ['..r......r..', '..rrk..krr..', '...kkcckk...', '...kcccck...', '...kckkck...', '...kcccck...', '....kcck....', '..kpppppk...', '.kcpppppck..', '...kppppk...', '...kc..ck...', '...kk..kk...'],
+  'pupo_tonino': ['....kkkk....', '...kBBBBk...', '..kBBBBBBk..', '...kssssk...', '...kskksk...', '...kssssk...', '....kssk....', '..kmmmmmmk..', '.kskmmmmksk.', '...kmmmmk...', '...km..mk...', '...kk..kk...'],
+  'pupa_agnese': ['..r......r..', '..rrk..krr..', '...kkcckk...', '...kcccck...', '...kckkck...', '...kcccck...', '....kcck....', '..kpppppk...', '.kcpppppck..', '...kppppk...', '...kc..ck...', '...kk..kk...'],
   'gatto': ['..k.....k...', '..kk...kk...', '..kdkkkdk...', '..kdydydk...', '..kdddddk...', '...kdddk....', '..kdddddk...', '.kdddddddk..', '.kdddddddk..', '.kdddddddk.k', '..kdkdkdk.k.', '...kkkkkkk..'],
   'diavoletto': ['.k......y.y.', '.kk..kk.yyy.', '..krrrrk.y..', '..krwrwk.y..', '..krrrrk.y..', '...kRRk..y..', '..krrrrkky..', '.krrrrrrk...', '..krrrrk.y..', '..kr..rk.y..', '..kk..kk....', '............'],
   'pulcinellino': ['.....kk.....', '.....kwk....', '....kwwk....', '....kwwwk...', '...kwwwwk...', '...kkkkkk...', '...kddddk...', '...kdwdwk...', '....kcck....', '..kwwwwwwk..', '..kwwwwwwk..', '...kk..kk...'],

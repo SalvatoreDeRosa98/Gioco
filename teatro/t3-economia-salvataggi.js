@@ -9,7 +9,7 @@
  * Contiene:
  *   - [M] muto (persistente) e allineamento del bottone «Audio» (la campana d'ingresso è un gancio nel file).
  *   - Patto potente: raggio cremisi continuo (Raggio Cremisi del Velo: si tiene la freccia, danno continuo
- *     sulla linea fino al muro) e lacrime spettrali (Cuore Sacro di San Leucio: passano colonne, bracieri e
+ *     sulla linea fino al muro) e colpi spettrali (Cuore Sacro di San Leucio: passano colonne, bracieri e
  *     muri); conferma in pagina «−1 maschera massima per sempre» prima di ogni patto.
  *   - Cinque slot di salvataggio in localStorage (chiave ferruccio.teatro.slot.<n>): personaggio, piano
  *     massimo, scintille (monete di luce), flag della trama, data. Riga «Slot 1-5» nel menu dei personaggi,
@@ -33,7 +33,7 @@
     raggio: Object.freeze({
       idOggetto: 'patto_raggio',
       ogniTick: 5,            // un impulso di danno ogni 5 tick (12 al secondo)
-      dannoPerImpulso: 0.18,  // frazione di statoRun.dmg per impulso: 2,16 x DMG al secondo (le lacrime ~2,7 x; il raggio trapassa e non manca mai). Era 0,3: troppo forte (autore, 2026-11-09)
+      dannoPerImpulso: 0.18,  // frazione di statoRun.dmg per impulso: 2,16 x DMG al secondo (i colpi ~2,7 x; il raggio trapassa e non manca mai). Era 0,3: troppo forte (autore, 2026-11-09)
       larghezzaPx: 10,        // spessore utile del raggio (si somma al raggio del nemico)
       origineAvantiPx: 10,    // il raggio parte poco davanti al burattino
       colori: Object.freeze({ alone: 'rgba(220, 20, 40, 0.30)', corpo: '#dc2626', anima: '#fde2e2' }),
@@ -69,10 +69,10 @@
   // Il patto diventa potente: le descrizioni delle reliquie dicono cosa fanno davvero.
   for (const p of T.CATALOGO_PATTO) {
     if (p.id === CONFIG.raggio.idOggetto) {
-      p.statsDesc = '[😈 PATTO] Raggio Cremisi continuo: tieni la freccia, danno su tutta la linea · DMG x2.1';
+      p.statsDesc = '[😈 PATTO] Raggio Cremisi continuo: tieni la freccia, danno su tutta la linea · Danno x2.1';
     } else if (p.id === CONFIG.spettrali.idOggetto) {
       p.mod = { ...p.mod, spettrali: true };
-      p.statsDesc = '[😈 PATTO] Lacrime Spettrali: passano colonne e muri · DMG x2.3 · Rigenera la vita';
+      p.statsDesc = '[😈 PATTO] Colpi Spettrali: passano colonne e muri · Danno x2.3 · Rigenera la vita';
     }
   }
 
@@ -235,7 +235,7 @@
     if (keys.ArrowLeft || keys.KeyJ) return [-1, 0];
     if (keys.ArrowUp || keys.KeyI) return [0, -1];
     if (keys.ArrowDown || keys.KeyK) return [0, 1];
-    if (mouseRaggio.giu) { // col raggio il mouse spara il raggio (tenuto premuto), non le lacrime
+    if (mouseRaggio.giu) { // col raggio il mouse spara il raggio (tenuto premuto), non i colpi
       const dx = mouseRaggio.x - player.x, dy = mouseRaggio.y - player.y;
       if (Math.abs(dx) >= Math.abs(dy)) return [dx >= 0 ? 1 : -1, 0];
       return [0, dy >= 0 ? 1 : -1];
@@ -254,7 +254,7 @@
   canvas.addEventListener('mousemove', (e) => { if (mouseRaggio.giu) posMouse(e); });
   window.addEventListener('mouseup', () => { mouseRaggio.giu = false; });
   window.addEventListener('blur', () => { mouseRaggio.giu = false; });
-  // Il click di 70-input spara una lacrima nelle 4 direzioni: col raggio non deve.
+  // Il click di 70-input spara un colpo nelle 4 direzioni: col raggio non deve.
   if (typeof eseguiAttacco4Direzioni === 'function') {
     const attaccoBaseT3 = eseguiAttacco4Direzioni;
     eseguiAttacco4Direzioni = function (...a) {
@@ -270,7 +270,7 @@
     return Math.hypot(px - (ax + vx * t), py - (ay + vy * t));
   }
 
-  /** Gancio per tick (prima degli attacchi con le frecce). Con il raggio acceso le lacrime restano ferme. */
+  /** Gancio per tick (prima degli attacchi con le frecce). Con il raggio acceso i colpi restano fermi. */
   function aggiornaRaggio(st) {
     raggio.attivo = false;
     if (!st || !haOggetto(CONFIG.raggio.idOggetto) || confermaPatto) return;
@@ -279,7 +279,7 @@
     const [dx, dy] = dir;
     player.dirX = dx; player.dirY = dy;
     if (dx !== 0) player.flipX = dx < 0;
-    player.cooldown = Math.max(player.cooldown, 2); // eseguiAttacco4Direzioni non spara lacrime
+    player.cooldown = Math.max(player.cooldown, 2); // eseguiAttacco4Direzioni non spara colpi
     player.shootAnimTimer = Math.max(player.shootAnimTimer, 2);
 
     const ox = player.x + dx * CONFIG.raggio.origineAvantiPx;

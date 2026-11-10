@@ -123,7 +123,7 @@ function usaOggettoAttivo() {
   }
 }
 
-// --- INTERCAMBIABILITÀ ARMI SPECIALI (STILE THE BINDING OF ISAAC) ---
+// --- INTERCAMBIABILITÀ ARMI SPECIALI () ---
 const ARMI_SPECIALI_INTERCAMBIABILI = new Set([
   'spada',
   'patto_coltello',
@@ -182,14 +182,14 @@ function acquisisciOggettoConLimite5Slot(nuovoItem, origine, refSlot) {
     mostraBanner(`❤ ${nuovoItem.nome}: ${nuovoItem.statsDesc}`, 160);
     return;
   }
-  ricalcolaStatisticheIsaac();
+  ricalcolaStatistiche();
   dopoRaccoltaD(nuovoItem); // --- D ---
 
-  // Effetti immediati di raccolta patti e stanze segrete (paro paro da Isaac Rebirth)
-  if (nuovoItem.mod?.abaddonHp) {
+  // Effetti immediati di raccolta patti e stanze segrete
+  if (nuovoItem.mod?.ceraAbisso) {
     statoRun.baseMaxHpHalf = 2;
     statoRun.hpHalf = Math.min(24, (statoRun.hpHalf || 0) + (nuovoItem.mod.ceraExtra || 12));
-    mostraBanner('💀 ABADDON: Maschere mortali consumate, ottenute 6 Maschere d\'Ombra!', 180);
+    mostraBanner('💀 MANTO DELL\'ABISSO: Maschere mortali consumate, ottenute 6 Maschere d\'Ombra!', 180);
   } else if (nuovoItem.mod?.ceraExtra) {
     statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + nuovoItem.mod.ceraExtra);
   }
@@ -199,7 +199,7 @@ function acquisisciOggettoConLimite5Slot(nuovoItem, origine, refSlot) {
   }
   if (nuovoItem.mod?.vitaExtra) {
     statoRun.viteExtra = (statoRun.viteExtra || 0) + nuovoItem.mod.vitaExtra;
-    mostraBanner('🍄 1-UP! Ottenuta +1 Vita Extra per la marionetta!', 180);
+    mostraBanner('✚ SECONDA VITA! Ottenuta +1 Vita Extra per la marionetta!', 180);
   }
   if (nuovoItem.mod?.maxChiavi) {
     statoRun.chiavi = 99;
@@ -266,7 +266,7 @@ function tiraOggettoGratisStanza(garantito = false) {
 
 // --- C: inizio ---
 /**
- * Un colpo (lacrima, fendente, impulso del raggio) sul muro giusto: al STANZE_C.segreta.colpiMuro-esimo
+ * Un colpo (colpo, fendente, impulso del raggio) sul muro giusto: al STANZE_C.segreta.colpiMuro-esimo
  * il passaggio si apre. Nessun avviso: solo un po' di polvere sul muro.
  * @param {object} st stanza corrente @param {number} x @param {number} y punto d'impatto
  */

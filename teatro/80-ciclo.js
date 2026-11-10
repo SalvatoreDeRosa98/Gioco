@@ -5,7 +5,7 @@
  */
 
 // ===========================================================================
-// LOOP DI GIOCO E IA DIFFERENZIATA NEMICI/BOSS IN STILE THE BINDING OF ISAAC
+// LOOP DI GIOCO E IA DIFFERENZIATA NEMICI/BOSS
 // ===========================================================================
 let tick = 0;
 
@@ -130,7 +130,7 @@ Object.assign(window.__teatro.interni, {
 
 // --- D: inizio --- (sonda QA delle meccaniche e del catalogo D)
 Object.assign(window.__teatro.interni, {
-  OGGETTI_D, ECONOMIA_T3, conosciutiD, descD, apriDiarioD, gestisciClickMenuPausa, estraiNegativoD, sparaProiettiliDirezione, subisciColpoGiocatore, ricalcolaStatisticheIsaac, maledizioneD, trovaOggettoB,
+  OGGETTI_D, ECONOMIA_T3, conosciutiD, descD, apriDiarioD, gestisciClickMenuPausa, estraiNegativoD, sparaProiettiliDirezione, subisciColpoGiocatore, ricalcolaStatistiche, maledizioneD, trovaOggettoB,
 });
 // --- D: fine ---
 

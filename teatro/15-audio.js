@@ -96,7 +96,7 @@ const AudioSys = (() => {
       } catch (_) {}
     },
 
-    playTearShoot() {
+    playSparo() {
       try {
         const ac = getCtx();
         if (!ac || ac.state !== 'running') return;

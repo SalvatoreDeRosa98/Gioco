@@ -41,7 +41,7 @@ const CONS_A2 = Object.freeze({
 
 /**
  * AMPOLLE: effetti (12 per run, su CONS_A2_COLORI). polarita: positivo | negativo | neutro.
- * mod: voci di ricalcolaStatisticheIsaac sommate finché l'effetto dura (CONS_A2.durataStanze stanze ripulite).
+ * mod: voci di ricalcolaStatistiche sommate finché l'effetto dura (CONS_A2.durataStanze stanze ripulite).
  * Testi: da approvare dall'autore.
  */
 const CONS_A2_AMPOLLE = Object.freeze([
@@ -51,8 +51,8 @@ const CONS_A2_AMPOLLE = Object.freeze([
   { id: 'polso', nome: 'Polso Molle', polarita: 'negativo', mod: { flatDmg: -0.8 }, desc: '−0,8 Danno per 3 stanze' },
   { id: 'occhio', nome: 'Occhio Lungo', polarita: 'positivo', mod: { rangeUp: 60 }, desc: '+Gittata per 3 stanze' },
   { id: 'vista', nome: 'Vista Corta', polarita: 'negativo', mod: { rangeUp: -50 }, desc: '−Gittata per 3 stanze' },
-  { id: 'lesta', nome: 'Mano Lesta', polarita: 'positivo', mod: { tearsUp: 0.7 }, desc: '+Cadenza per 3 stanze' },
-  { id: 'fiato', nome: 'Fiato Corto', polarita: 'negativo', mod: { tearsUp: -0.5 }, desc: '−Cadenza per 3 stanze' },
+  { id: 'lesta', nome: 'Mano Lesta', polarita: 'positivo', mod: { cadenzaUp: 0.7 }, desc: '+Cadenza per 3 stanze' },
+  { id: 'fiato', nome: 'Fiato Corto', polarita: 'negativo', mod: { cadenzaUp: -0.5 }, desc: '−Cadenza per 3 stanze' },
   { id: 'sanita', nome: 'Acqua della Sanità', polarita: 'positivo', curaHalf: 2, desc: 'Rigenera 1 Maschera' },
   { id: 'veleno', nome: 'Veleno di Speziale', polarita: 'negativo', ferisciHalf: 1, desc: '−½ Maschera (mai l\'ultima)' },
   { id: 'capogiro', nome: 'Capogiro', polarita: 'negativo', confusioneMs: 6000, desc: 'Comandi invertiti per 6 s' },
@@ -270,7 +270,7 @@ function applicaAmpollaA2(e) {
     if (gia) gia.stanze = CONS_A2.durataStanze;
     else S.effetti.push({ id: e.id, stanze: CONS_A2.durataStanze });
     aggiornaScalaA2();
-    ricalcolaStatisticheIsaac();
+    ricalcolaStatistiche();
   }
   return null;
 }
@@ -336,7 +336,7 @@ function applicaCartaA2(e) {
     }
     case 'forza':
       S.forzaStanza = CONS_A2.effettiStanza.dannoForza;
-      ricalcolaStatisticheIsaac();
+      ricalcolaStatistiche();
       return null;
     case 'stordisci':
       statoRun.proiettiliNemici = [];
@@ -370,8 +370,8 @@ function applicaCartaA2(e) {
 // AGGANCI (funzioni globali avvolte)
 // ===========================================================================
 /** Statistiche: gli effetti a tempo entrano come un oggetto fittizio, così valgono clamp e formule di base. */
-const ricalcolaOrigA2 = ricalcolaStatisticheIsaac;
-ricalcolaStatisticheIsaac = function ricalcolaStatisticheIsaacA2(...args) {
+const ricalcolaOrigA2 = ricalcolaStatistiche;
+ricalcolaStatistiche = function ricalcolaStatisticheA2(...args) {
   const S = statoRun.fase === 'in_gioco' ? statoA2() : null;
   const mod = {};
   if (S) {
@@ -396,7 +396,7 @@ const entraInStanzaOrigA2 = entraInStanza;
 entraInStanza = function entraInStanzaA2(...args) {
   const r = entraInStanzaOrigA2.apply(this, args);
   const S = statoRun.consumabiliA2;
-  if (S && S.forzaStanza) { S.forzaStanza = 0; ricalcolaStatisticheIsaac(); }
+  if (S && S.forzaStanza) { S.forzaStanza = 0; ricalcolaStatistiche(); }
   return r;
 };
 
@@ -416,7 +416,7 @@ function dopoPuliziaA2(st) {
     for (const x of S.effetti) x.stanze--;
     S.effetti = S.effetti.filter((x) => x.stanze > 0);
     aggiornaScalaA2();
-    ricalcolaStatisticheIsaac();
+    ricalcolaStatistiche();
   }
   if (!CONS_A2.drop.tipiEsclusi.includes(st.tipo) && S.rnd() < CONS_A2.drop.probPulizia) {
     lasciaConsumabileA2(st, estraiConsumabileA2(), CONS_A2.drop.x, CONS_A2.drop.y);
@@ -427,8 +427,8 @@ function dopoPuliziaA2(st) {
  * Fucina: lo slot «consumabile» di base (½ Maschera a ECONOMIA_T3.prezzi.consumabile) diventa un consumabile
  * A2 allo stesso prezzo e nella stessa posizione (economia.md §5: dono, cuore, consumabile).
  */
-const popolaOrigA2 = popolaStanzaIsaac;
-popolaStanzaIsaac = function popolaStanzaIsaacA2(s, ...resto) {
+const popolaOrigA2 = popolaStanza;
+popolaStanza = function popolaStanzaA2(s, ...resto) {
   const r = popolaOrigA2.call(this, s, ...resto);
   if (s.tipo === 'fucina' && Array.isArray(s.slotFucina) && !s.slotFucina.some((x) => x.tipo === 'consumabileA2')) {
     const i = s.slotFucina.findIndex((x) => x.tipo === 'cura' && x.sprite === CONS_A2.fucina.sostituisce);
@@ -680,5 +680,5 @@ Object.assign(window.__teatro.interni, {
   CONS_A2, CONS_A2_AMPOLLE, CONS_A2_CARTE, CONS_A2_COLORI, statoA2, creaConsumabileA2, prendiConsumabileA2,
   usaConsumabileA2, lasciaConsumabileA2, estraiConsumabileA2, effettoA2, notoA2, descA2, nomeA2, conosciutiA2,
   // gli interni esposti in 80-ciclo.js puntano alle versioni non avvolte: si aggiornano
-  nuovaRun, entraInStanza, interagisciStanza, ricalcolaStatisticheIsaac, tastoDiarioD,
+  nuovaRun, entraInStanza, interagisciStanza, ricalcolaStatistiche, tastoDiarioD,
 });

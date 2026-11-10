@@ -11,7 +11,7 @@ Le dichiarazioni di primo livello (`const`/`let`/`function`) stanno nello scope 
 | `10-sprite.js` | testo auto-fit, cache sprite, disegno pittorico di Ferruccio/nemici/boss, tabelle SPRITE_* (incluse le aggiunte dei nuovi oggetti) |
 | `15-audio.js` | AudioSys (Web Audio procedurale) |
 | `20-stato.js` | seme/rng, notti, `statoRun`, `player`, statistiche, scelta personaggio, nuova run, banner |
-| `30-mappa.js` | `generaMappaPiano`, porte, `popolaStanzaIsaac`, `avviaPiano`, `entraInStanza`, muri segreti |
+| `30-mappa.js` | `generaMappaPiano`, porte, `popolaStanza`, `avviaPiano`, `entraInStanza`, muri segreti |
 | `40-combattimento.js` | attacchi, proiettili, meccaniche D, feel (scossa, hit-stop, spinte), danni, pulizia stanza, `passoLogico` (IA, collisioni) |
 | `50-oggetti.js` | oggetti attivi, pool della run, estrazioni, oggetti conosciuti, diario |
 | `60-resa.js` | risoluzione, pannello sviluppatore, stanza, menu selezione, `disegnaFrame`, HUD, sipario, menu pausa |

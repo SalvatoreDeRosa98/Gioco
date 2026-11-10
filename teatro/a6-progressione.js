@@ -75,7 +75,7 @@ const SBLOCCHI_A6 = Object.freeze([
     testo: 'Pulcinella d\'Ombra. Spezzati i fili, la tua ombra cammina da sola.',
   }),
   Object.freeze({
-    id: 'ogg-burattino-tonino', cosa: { oggetto: 'bobby' },
+    id: 'ogg-burattino-tonino', cosa: { oggetto: 'pupo_tonino' },
     quando: [{ parla: 'tonino' }],
     condizione: 'Parla con Tonino in Piazza Dante',
     testo: 'Burattino di Tonino. Ora può comparire nel Teatro.',

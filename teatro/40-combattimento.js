@@ -24,7 +24,7 @@ function eseguiAttacco4Direzioni(dx, dy) {
   } else {
     player.cooldown = statoRun.cooldownMax;
     player.shootAnimTimer = 7;
-    AudioSys.playTearShoot();
+    AudioSys.playSparo();
     sparaProiettiliDirezione(dx, dy, 1.0);
   }
 }
@@ -193,7 +193,7 @@ function aggiornaFamigliOrbitaliD(st) {
       dist: 0, maxDist: F.gittataPx, dmg: f.dmg, r: F.raggioColpo, tipo: f.oming ? 'viola' : 'base',
       piercing: false, overflowPierce: false, hitIds: new Set(), oming: f.oming ? F.omingForza : 0, rimbalzi: 0, famD: true,
     });
-    f.cd = Math.max(F.cadenzaMinTick, Math.round(60 / f.tears));
+    f.cd = Math.max(F.cadenzaMinTick, Math.round(60 / f.cadenza));
   }
   const O = OGGETTI_D.orbitali;
   const nO = (statoRun.statD && statoRun.statD.orbitali) || 0;
@@ -224,9 +224,9 @@ function maledizioneD(k) {
 
 function spawnaMonetaATerra(st, x, y, valore = 1) {
   if (!st) return;
-  // Se attivo Contract from Below (patto_contratto), raddoppia il valore delle monete
+  // Con la Cambiale del Sottosuolo (patto_contratto), raddoppia il valore delle monete
   if (statoRun.dropDoppi) valore *= 2;
-  // Calibrazione Isaac: monete scarse al Piano 1 (~30% di drop per raccogliere 5-8 monete in tutto il piano)
+  // Calibrazione: monete scarse al Piano 1 (~30% di drop per raccogliere 5-8 monete in tutto il piano)
   // --- T3: inizio ---
   if (statoRun.piano === 1 && rng() > (st.tipo === 'segreta' ? ECONOMIA_T3.piano1.probMonetaSegreta : ECONOMIA_T3.piano1.probMonetaAltre)) return;
   // --- T3: fine ---
@@ -345,7 +345,7 @@ function lasciaMacchia(nem) {
   if (macchieStanza.length > M.maxPerStanza) macchieStanza.splice(0, macchieStanza.length - M.maxPerStanza);
 }
 
-// Esplosione stile Isaac per i Bozzi Esplosivi ('bomba_ferma' — Mulliboom/Boil):
+// Esplosione per i Bozzi Esplosivi ('bomba_ferma'):
 // danneggia i nemici vicini, spara 6 proiettili radiali, può colpire il giocatore e apre il Muro Segreto!
 function innescaEsplosioneBomba(st, bx, by) {
   if (!st) return;
@@ -390,10 +390,10 @@ function innescaEsplosioneBomba(st, bx, by) {
 }
 
 function danneggiaNemico(nem, dmg, knockX, knockY) {
-  // Se il Boss Re Gatto (Monstro) è in volo alto (airZ > 25), non può essere colpito finché non atterra!
+  // Se il Boss Re Gatto è in volo alto (airZ > 25), non può essere colpito finché non atterra!
   if (nem.boss && (nem.airZ || 0) > 25) return;
 
-  // Maschera di Pulcinella (Isaac Host): quando è chiusa è corazzata e riduce l'85% del danno!
+  // Maschera di Pulcinella: quando è chiusa è corazzata e riduce l'85% del danno!
   if ((nem.patternMob || nem.tipo) === 'maschera' && !nem.maskOpen) {
     nem.flash = 3;
     nem.hp -= dmg * 0.12;
@@ -466,7 +466,7 @@ function verificaStanzaPulita() {
   if (st.nemici.every((n) => n.hp <= 0)) {
     st.pulita = true;
     AudioSys.playCampana();
-    // Ricarica di +1 tacca l'Oggetto Attivo [Q] a ogni stanza ripulita (Proposta 5: come in Isaac!)
+    // Ricarica di +1 tacca l'Oggetto Attivo [Q] a ogni stanza ripulita (Proposta 5)
     if (statoRun.oggettoAttivo) {
       statoRun.caricaAttivo = Math.min(statoRun.oggettoAttivo.maxCarica, statoRun.caricaAttivo + 1);
     }
@@ -634,11 +634,11 @@ function subisciColpoGiocatore(mezzeMaschereDanno, fonte, daX, daY) {
       player.invuln = 120;
       scuoti(FEEL.scossa.evento);
       statoRun.ondeEsplosione.push({ x: player.x, y: player.y, r: 10, maxR: 140, color: '#22c55e' });
-      mostraBanner('🍄 1-UP! La marionetta risorge a piena salute!', 200);
+      mostraBanner('✚ SECONDA VITA! La marionetta risorge a piena salute!', 200);
       return;
     }
-    const haGuppy = statoRun.oggettiEquipaggiati && statoRun.oggettiEquipaggiati.some((it) => it.id === 'patto_collare');
-    if (haGuppy && rng() < 0.5) {
+    const haCollare = statoRun.oggettiEquipaggiati && statoRun.oggettiEquipaggiati.some((it) => it.id === 'patto_collare');
+    if (haCollare && rng() < 0.5) {
       statoRun.hpHalf = 1;
       player.invuln = 120;
       scuoti(FEEL.scossa.evento);
@@ -769,7 +769,7 @@ function passoLogico() {
     }
 
     // --- T3: inizio ---
-    window.__teatroT3?.aggiornaRaggio?.(st); // raggio cremisi continuo del patto (blocca le lacrime finché è acceso)
+    window.__teatroT3?.aggiornaRaggio?.(st); // raggio cremisi continuo del patto (blocca i colpi finché è acceso)
     // --- T3: fine ---
     if (keys.ArrowRight || keys.KeyL) eseguiAttacco4Direzioni(1, 0);
     else if (keys.ArrowLeft || keys.KeyJ) eseguiAttacco4Direzioni(-1, 0);
@@ -832,7 +832,7 @@ function passoLogico() {
 
     // Proiettili di Ferruccio
     // --- T3: inizio ---
-    const spettraliT3 = window.__teatroT3?.spettrali?.() === true; // lacrime che passano colonne e muri
+    const spettraliT3 = window.__teatroT3?.spettrali?.() === true; // colpi che passano colonne e muri
     // --- T3: fine ---
     for (let i = statoRun.proiettili.length - 1; i >= 0; i--) {
       const p = statoRun.proiettili[i];
@@ -841,7 +841,7 @@ function passoLogico() {
       p.y += p.vy;
       p.dist += Math.hypot(p.vx, p.vy);
 
-      // Collisione con Colonne di Caserta (blocco lacrime) e Bracieri (esplosione fiamme)
+      // Collisione con Colonne di Caserta (blocco colpi) e Bracieri (esplosione fiamme)
       if (st.ostacoli && st.ostacoli.length > 0 && !spettraliT3) { // T3: le spettrali passano
         let hitOst = false;
         for (const o of st.ostacoli) {
@@ -971,7 +971,7 @@ function passoLogico() {
       }
     }
 
-    // 6. IA DIFFERENZIATA NEMICI E BOSS IN STILE THE BINDING OF ISAAC
+    // 6. IA DIFFERENZIATA NEMICI E BOSS
     for (const n of st.nemici) {
       if (n.hp <= 0) continue;
       if (n.flash > 0) n.flash--;
@@ -996,9 +996,9 @@ function passoLogico() {
         const enrage = n.hp < n.maxHp * 0.5;
 
         if (n.bossId === 're-gatto') {
-          // MONSTRO (Re Gatto): riposo → una mossa fra salto alto (corona lenta all'atterraggio), sputo a
-          // ventaglio o saltelli senza colpi. Parametri e ritmo in MONSTRO_REGATTO.
-          const M = MONSTRO_REGATTO;
+          // RE GATTO: riposo → una mossa fra salto alto (corona lenta all'atterraggio), sputo a
+          // ventaglio o saltelli senza colpi. Parametri e ritmo in SALTI_REGATTO.
+          const M = SALTI_REGATTO;
           if (!n.mossaRG) { n.mossaRG = 'riposo'; n.timerRG = 40; n.ultimaSparoRG = false; }
           if (n.mossaRG === 'salto') {
             n.timerRG--;
@@ -1060,7 +1060,7 @@ function passoLogico() {
             }
           }
         } else if (n.bossId === 'capitano-guardia') {
-          // CHUB (Capitano di Piombo): carica rettilinea ad alta velocità da parete a parete!
+          // CAPITANO DI PIOMBO: carica rettilinea ad alta velocità da parete a parete!
           if (n.charging && n.chargeTimer > 0) {
             n.chargeTimer--;
             n.x = Math.max(ARENA.x1 + 18, Math.min(ARENA.x2 - 18, n.x + n.vx));
@@ -1088,7 +1088,7 @@ function passoLogico() {
             }
           }
         } else if (n.bossId === 'regina-vespa') {
-          // DUKE OF FLIES (Regina Vespa): rimbalza in diagonale sui muri ed evoca Vespe Cieche che volano addosso senza sparare
+          // REGINA VESPA: rimbalza in diagonale sui muri ed evoca Vespe Cieche che volano addosso senza sparare
           n.x += n.vx || 1.1;
           n.y += n.vy || 0.85;
           if (n.x <= ARENA.x1 + 20 || n.x >= ARENA.x2 - 20) n.vx = -(n.vx || 1.1);
@@ -1125,7 +1125,7 @@ function passoLogico() {
           }
         } else if (n.bossId === 'colosso-statua') {
           // --- A: inizio ---
-          // IL CUSTODE DI MARMO (Gurdy): immobile; esegue BOSS_A.custode.sequenza separata da pause.
+          // IL CUSTODE DI MARMO: immobile; esegue BOSS_A.custode.sequenza separata da pause.
           // Stati: 'pausa' → mossa successiva della sequenza → 'pausa' … ; 'aperto' = vulnerabile (×1,5).
           const C = BOSS_A.custode;
           n.x = C.x;
@@ -1327,7 +1327,7 @@ function passoLogico() {
           // --- A: fine ---
         }
       } else {
-        // IA DIFFERENZIATA DEI NEMICI COMUNI IN STILE THE BINDING OF ISAAC:
+        // IA DIFFERENZIATA DEI NEMICI COMUNI:
         const comp = n.comportamento || n.tipo;
 
         if (comp === 'volo_puro' || n.tipo === 'vespa_cieca') {
@@ -1371,7 +1371,7 @@ function passoLogico() {
             statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(ang) * 2.8, vy: Math.sin(ang) * 2.8, dist: 0 });
           }
         } else if (comp === 'bomba_ferma' || n.tipo === 'bomba_ferma') {
-          // 2. BOZZOLO DI POLVERE (Mulliboom / Boil): STA FERMO sul posto, pulsa quando ti avvicini ed ESPLODE!
+          // 2. BOZZOLO DI POLVERE: STA FERMO sul posto, pulsa quando ti avvicini ed ESPLODE!
           if (distPlayer < 64 || n.fuseTimer > 0) {
             n.fuseTimer = (n.fuseTimer || 0) + 1;
             if (n.fuseTimer >= 42) {
@@ -1382,7 +1382,7 @@ function passoLogico() {
             }
           }
         } else if (comp === 'balzo' || n.tipo === 'gatto') {
-          // 3. GATTO DEL VELO (Trite / Hopper): NON spara! Si accovaccia (telegraph) e balza rapido verso di te
+          // 3. GATTO DEL VELO: NON spara! Si accovaccia (telegraph) e balza rapido verso di te
           if (n.leapTimer > 0) {
             n.leapTimer--;
             n.x = Math.max(ARENA.x1 + 14, Math.min(ARENA.x2 - 14, n.x + n.vx));
@@ -1401,7 +1401,7 @@ function passoLogico() {
             }
           }
         } else if (comp === 'host_scudo' || n.tipo === 'maschera') {
-          // 4. MASCHERA CORAZZATA (Host): immobile e corazzata finché chiusa; si apre per sparare un ventaglio di 3 colpi!
+          // 4. MASCHERA CORAZZATA: immobile e corazzata finché chiusa; si apre per sparare un ventaglio di 3 colpi!
           n.shootCd--;
           if (n.shootCd > 30) {
             n.maskOpen = false;
@@ -1422,7 +1422,7 @@ function passoLogico() {
             n.shootCd = 92;
           }
         } else if (comp === 'torretta_croce' || n.tipo === 'statua') {
-          // 5. BUSTO DI MARMO (Stone Grimace): completamente FERMO sul posto, spara salve alternate a '+' e '×'
+          // 5. BUSTO DI MARMO: completamente FERMO sul posto, spara salve alternate a '+' e '×'
           n.shootCd--;
           if (n.shootCd <= 0) {
             n.shootCd = 76;

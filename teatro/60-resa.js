@@ -229,7 +229,7 @@ function getRaccontoAtto(piano, ciclo) {
       titolo: `«${q.titoloCompleto.toUpperCase()}»`,
       testo1: 'Il primo raggio radente dell\'aurora dorata penetra tra i mattoni e i telai del setificio reale.',
       testo2: 'Agnese tesse la sciarpa rossa senza memoria. Maschere d\'osso e Spezzafili sorvegliano i fusi.',
-      testo3: 'Da questo piano il Velo stringe più forte: ogni colpo subito spezza 1 Maschera intera (come in Isaac!).',
+      testo3: 'Da questo piano il Velo stringe più forte: ogni colpo subito spezza 1 Maschera intera.',
     };
   }
   return {
@@ -246,7 +246,7 @@ function disegnaFamigliOrbitaliD() {
   for (const f of statoRun.famigliD || []) {
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.fillRect(Math.round(f.x - 5), Math.round(f.y + 5), 10, 3);
-    drawPixelSprite(SPRITE_OGGETTI[f.id] || SPRITE_OGGETTI.bobby, f.x, f.y - 6 + Math.sin(tick * 0.12) * 1.5, 1.3);
+    drawPixelSprite(SPRITE_OGGETTI[f.id] || SPRITE_OGGETTI.pupo_tonino, f.x, f.y - 6 + Math.sin(tick * 0.12) * 1.5, 1.3);
   }
   for (const o of statoRun.orbitaliPosD || []) drawPixelSprite(SPRITE_OGGETTI.gomitolo, o.x, o.y, 1.0);
 }
@@ -904,7 +904,7 @@ function disegnaStanzaPixelArt(tick, st) {
 }
 
 // ===========================================================================
-// MENÙ INIZIALE DI SELEZIONE DEL PERSONAGGIO (STILE THE BINDING OF ISAAC)
+// MENÙ INIZIALE DI SELEZIONE DEL PERSONAGGIO ()
 // ===========================================================================
 function disegnaMenuSelezionePersonaggio(tick) {
   // 1. Fondale teatrale e pedana in legno
@@ -1254,7 +1254,7 @@ function disegnaFrame(dtMs) {
     // NOTA: Ferruccio NON ha il filo! Solo i nemici, i boss e Mastro Peppe hanno i fili d'oro!
     const fili = [];
 
-    // La Fucina (⚒ Shop in stile The Binding of Isaac)
+    // La Fucina (⚒ bottega)
     if (st.tipo === 'fucina') {
       fili.push([320, 124]);
       const peppeFrame = Math.floor(tick / 14) % 2 === 0 ? SPRITE_SCENA.mercante : SPRITE_SCENA.mercante1;
@@ -1335,7 +1335,7 @@ function disegnaFrame(dtMs) {
       }
     }
 
-    // PROPOSTA 2: Stanza del Patto d'Ombra (😈 Devil Room in stile Isaac)
+    // PROPOSTA 2: Stanza del Patto d'Ombra (😈)
     if (st.tipo === 'patto') {
       drawPillLabel(
         `😈 STANZA DEL PATTO D'OMBRA · SACRIFICA 1 MASCHERA INTERA (-1 ❤️ MAX) 😈`,
@@ -1401,7 +1401,7 @@ function disegnaFrame(dtMs) {
       }
     }
 
-    // Onde d'urto delle esplosioni (Bozzoli Esplosivi / Atterraggio Monstro / Tamburello)
+    // Onde d'urto delle esplosioni (Bozzoli Esplosivi / Atterraggio del Re Gatto / Tamburello)
     if (statoRun.ondeEsplosione && statoRun.ondeEsplosione.length > 0) {
       for (let i = statoRun.ondeEsplosione.length - 1; i >= 0; i--) {
         const onda = statoRun.ondeEsplosione[i];
@@ -1623,11 +1623,11 @@ function disegnaFrame(dtMs) {
 }
 
 // ===========================================================================
-// HUD PIXEL-ART CON STATISTICHE ISAAC + MINIMAPPA AD ESPLORAZIONE + DOCK 5 SLOT
+// HUD PIXEL-ART CON STATISTICHE + MINIMAPPA AD ESPLORAZIONE + DOCK 5 SLOT
 // (Ogni singola scritta usa drawTextFit + clip per NON uscire mai dai riquadri!)
 // ===========================================================================
 function disegnaHUDPixelArt(st) {
-  // 1. Box alto a sinistra: Vita (Maschere intere e mezze) + Statistiche Isaac (DMG, TEARS, SPD, Monete)
+  // 1. Box alto a sinistra: Vita (Maschere intere e mezze) + Statistiche (danno, cadenza, velocità, monete)
   const hx = 6, hy = 5, hw = 172, hh = 52;
   ctx.save();
   ctx.fillStyle = 'rgba(10, 6, 4, 0.92)';
@@ -1661,9 +1661,9 @@ function disegnaHUDPixelArt(st) {
     { size: 7.5, color: '#ffffff', align: 'left' }
   );
 
-  // Statistiche stile Found HUD di Isaac
+  // Statistiche
   drawTextFit(
-    `⚔DMG:${statoRun.dmg.toFixed(2)}  💧TRS:${statoRun.tearsPerSec.toFixed(1)}/s`,
+    `⚔DMG:${statoRun.dmg.toFixed(2)}  ✦CAD:${statoRun.colpiAlSec.toFixed(1)}/s`,
     hx + 6,
     hy + 35,
     hw - 12,

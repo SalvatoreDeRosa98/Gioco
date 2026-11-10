@@ -31,10 +31,10 @@ function numeroStanzeCombattimento(piano) {
 }
 
 /**
- * Mappa del piano alla maniera di Isaac: catena principale ingresso → ≥ MAPPA_PIANO.catenaMin stanze di
+ * Mappa del piano a stanze collegate: catena principale ingresso → ≥ MAPPA_PIANO.catenaMin stanze di
  * combattimento → boss, poi rami laterali con le altre stanze di combattimento, tesoro e fucina in fondo
  * a un ramo, segreta dietro un muro, patto fuori griglia. Ogni stanza nuova tocca una sola stanza
- * esistente (regola di Isaac: niente anelli, vicoli ciechi veri). I vincoli sono verificati prima di
+ * esistente (regola: niente anelli, vicoli ciechi veri). I vincoli sono verificati prima di
  * accettare la mappa (tools/qa-teatro-generatore.js li controlla su 200 semi).
  */
 
@@ -189,7 +189,7 @@ function generaMappaPiano(piano) {
     // Aggiunge la Stanza del Patto d'Ombra (Proposta 2: accessibile dopo aver sconfitto il Boss!)
     aggiungi('patto', 0, 0);
 
-    for (const s of stanze) popolaStanzaIsaac(s, piano);
+    for (const s of stanze) popolaStanza(s, piano);
     return { piano, stanze, perId: new Map(stanze.map((s) => [s.id, s])) };
   }
   return null;
@@ -249,7 +249,7 @@ function allontanaNemiciDallePorteC(s, extra = []) {
 }
 // --- C: fine ---
 
-function popolaStanzaIsaac(s, piano) {
+function popolaStanza(s, piano) {
   const ciclo = Math.floor((piano - 1) / 4) + 1;
   const moltCiclo = Math.pow(1.45, ciclo - 1);
   const moltVel = Math.min(1.55, 1 + (piano - 1) * 0.045);
@@ -319,7 +319,7 @@ function popolaStanzaIsaac(s, piano) {
     s.ricompensaOggetto = null;
     s.nemici = [];
     s.pulita = true;
-    // Regola Isaac Rebirth: 1/3 di probabilità di avere un oggetto dal catalogo segreto speciale!
+    // Regola: 1/3 di probabilità di avere un oggetto dal catalogo segreto speciale!
     const haOggetto = rng() < (1 / 3);
     if (haOggetto) {
       const obj = estraiOggettoSegreto();
@@ -340,7 +340,7 @@ function popolaStanzaIsaac(s, piano) {
       s.oggettiATerra.push({ tipo: 'cura', valore: 1, sprite: 'mezzaMaschera', x: 320, y: 192 });
     }
   } else if (s.tipo === 'normale') {
-    s.ricompensaOggetto = null; // Regola Isaac: nessun oggetto gratis nelle stanze normali!
+    s.ricompensaOggetto = null; // Regola: nessun oggetto gratis nelle stanze normali!
     s.macchie = [];
     s.pozzanghereFuoco = [];
 
@@ -460,11 +460,11 @@ function popolaStanzaIsaac(s, piano) {
     const nomiNem = {
       vespa_cieca: 'Vespa Cieca (Attack Fly)',
       lucciola: 'Lucciola Pungente',
-      bomba_ferma: 'Bozzo Esplosivo (Boil)',
-      gatto: 'Gatto d\'Ombra (Hopper)',
+      bomba_ferma: 'Bozzo Esplosivo',
+      gatto: 'Gatto d\'Ombra',
       burattino: 'Burattino Scucito',
       predone: 'Predone d\'Ombra',
-      maschera: 'Maschera Corazzata (Host)',
+      maschera: 'Maschera Corazzata',
       guardia: 'Guardia di Piombo',
       statua: 'Torrione di Marmo',
     };

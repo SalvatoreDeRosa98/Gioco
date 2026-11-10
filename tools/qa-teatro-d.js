@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * tools/qa-teatro-d.js — verifica Playwright del feedback autore D (oggetti alla Isaac) sul Teatro.
+ * tools/qa-teatro-d.js — verifica Playwright del feedback autore D (catalogo esteso degli oggetti) sul Teatro.
  * Uso: node tools/qa-teatro-d.js [file html]
  * Osserva: errori di console; catalogo e negativi; le 5 meccaniche minime (scudoStanza, omingForza, rimbalzi,
  * orbitali, famiglio tiratore) e le altre; effetti nascosti e conosciuti nello slot (anche dopo il reload);
@@ -42,7 +42,7 @@ const foto = (n) => path.join(RADICE, 'production', 'qa', 'evidence', `teatro-d-
     const I = window.__teatro.interni;
     I.statoRun.oggettiEquipaggiati = [];
     for (const id of ids) I.acquisisciOggetto({ ...I.trovaOggettoB(id) }, 'sviluppatore', null);
-    I.ricalcolaStatisticheIsaac();
+    I.ricalcolaStatistiche();
   }, ids);
 
   await p.goto('file://' + file);
@@ -129,7 +129,7 @@ const foto = (n) => path.join(RADICE, 'production', 'qa', 'evidence', `teatro-d-
   await p.screenshot({ path: foto('01-orbitali') });
 
   await stanzaProva();
-  await dai(['bobby', 'maggy', 'diavoletto', 'pulcinellino', 'bobby']);
+  await dai(['pupo_tonino', 'pupa_agnese', 'diavoletto', 'pulcinellino', 'pupo_tonino']);
   oss.famiglio = await p.evaluate(async () => {
     const I = window.__teatro.interni; const S = I.statoRun; const P = I.player;
     P.x = 200; P.y = 200;

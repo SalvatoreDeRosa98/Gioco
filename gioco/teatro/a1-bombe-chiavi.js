@@ -1,7 +1,6 @@
 /*
  * teatro/a1-bombe-chiavi.js — Miglioramento 1: bombe, chiavi, forzieri e porte chiuse a lucchetto.
- * Ispirazione: bombe/chiavi/forzieri/porte chiuse di The Binding of Isaac (solo come riferimento nei
- * commenti: nel gioco nomi e testi sono del Teatro, Caserta 1845).
+ * Nomi e testi sono del Teatro, Caserta 1845.
  *
  * Script classico caricato dopo t4-hub-storia.js. Costruisce sopra il gioco senza duplicarlo:
  * - avvolge (riassegnando le `function` globali) generaMappaPiano, avviaPiano, entraInStanza,
@@ -11,7 +10,7 @@
  * - l'inventario è statoRun.bombe / statoRun.chiavi (azzerato a ogni run nuova, valori in tabella).
  * Unici agganci nei file di base: il contatore nell'HUD (60-resa.js, testoInventarioA1) e lo <script> nell'HTML.
  *
- * Tasto: E piazza una bomba quando non c'è niente con cui interagire vicino (in Isaac E è la bomba);
+ * Tasto: E piazza una bomba quando non c'è niente con cui interagire vicino;
  * con un piedistallo, uno slot della Fucina/del Patto o l'uscita del boss vicini E fa quello che faceva prima.
  */
 
@@ -22,11 +21,11 @@ const BOMBE_CHIAVI_A1 = Object.freeze({
   inizio: Object.freeze({ bombe: 1, chiavi: 1 }),     // dotazione a inizio run
   massimo: Object.freeze({ bombe: 99, chiavi: 99 }),
   bomba: Object.freeze({
-    miccaMs: 1500,            // miccia (Isaac ~1,5 s)
+    miccaMs: 1500,            // miccia
     raggio: 56,               // px: nemici, colonne, bracieri
     raggioGiocatore: 40,      // px: la propria bomba ferisce anche te
     raggioMuroSegreto: 95,    // px dal centro della porta murata
-    dannoBase: 30,            // al piano 1 (lacrime base ~3,5): un Bozzo o una Vespa muoiono, una Guardia quasi
+    dannoBase: 30,            // al piano 1 (colpi base ~3,5): un Bozzo o una Vespa muoiono, una Guardia quasi
     dannoPerPiano: 6,
     dannoGiocatoreHalf: 2,    // mezze maschere
     cooldownMs: 450,          // fra due bombe (anche col tasto tenuto premuto)
@@ -251,7 +250,7 @@ function esplodiBombaA1(st, b) {
     st.macchie.push({ x: b.x + (rm() - 0.5) * 40, y: b.y + (rm() - 0.5) * 28, r: 3.5 + rm() * 4.5,
       col: rm() < 0.7 ? '#050302' : '#450a0a', tipo: 'bruciatura' });
   }
-  // Nemici: il danno passa anche la maschera chiusa (in Isaac la bomba apre gli Host)
+  // Nemici: il danno passa anche la maschera chiusa
   const danno = B.dannoBase + (statoRun.piano - 1) * B.dannoPerPiano;
   for (const nem of st.nemici) {
     if (nem.hp <= 0 || (nem.airZ || 0) > 16) continue;

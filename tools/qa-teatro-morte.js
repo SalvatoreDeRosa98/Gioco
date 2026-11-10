@@ -73,10 +73,10 @@ const CASI = [
         const b = st.nemici[0];
         const id = c.boss || 're-gatto';
         b.bossId = id; b.airZ = 0;
-        if (id === 're-gatto') { b.pattern = 'monstro_jump'; b.nome = 'Il Gatto dei Quattro Canti (Monstro)'; b.tipo = 'gatto'; }
+        if (id === 're-gatto') { b.pattern = 'salto_gatto'; b.nome = 'Il Gatto dei Quattro Canti'; b.tipo = 'gatto'; }
       }
       if (c.come === 'bomba') {
-        st.nemici = [{ id: 'qa-bozzo', tipo: 'bomba_ferma', patternMob: 'bomba_ferma', nome: 'Bozzo Esplosivo (Boil)', boss: false,
+        st.nemici = [{ id: 'qa-bozzo', tipo: 'bomba_ferma', patternMob: 'bomba_ferma', nome: 'Bozzo Esplosivo', boss: false,
           x: 360, y: 188, hp: 1, maxHp: 12, speed: 0, r: 11, flash: 0, burnTicks: 0, stunTicks: 0, state: 'idle', stateTimer: 30, shootCd: 999 }];
       }
       // La stanza è messa a mano (senza entraInStanza): si azzera la grazia d'ingresso di C (700 ms senza danni,

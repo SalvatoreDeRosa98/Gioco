@@ -65,7 +65,7 @@ const statoRun = {
   baseDmgChar: 3.50,
   baseSpdChar: 1.00,
   dmg: 3.50,
-  tearsPerSec: 2.73,
+  colpiAlSec: 2.73,
   cooldownMax: 22,
   speed: 2.0,
   range: 170,
@@ -117,12 +117,12 @@ const player = {
   invuln: 0,
 };
 
-function ricalcolaStatisticheIsaac() {
+function ricalcolaStatistiche() {
   let totalDmgUps = 0;
   let flatDmg = 0;
   let dmgMult = 1.0;
-  let totalTearsUps = 0;
-  let tearsMult = 1.0;
+  let totCadenzaUp = 0;
+  let cadenzaMult = 1.0;
   let speedUp = 0;
   let rangeUp = 0;
   let bonusMaxHp = 0;
@@ -145,8 +145,8 @@ function ricalcolaStatisticheIsaac() {
     if (m.dmgUp) totalDmgUps += m.dmgUp;
     if (m.flatDmg) flatDmg += m.flatDmg;
     if (m.dmgMult) dmgMult *= m.dmgMult;
-    if (m.tearsUp) totalTearsUps += m.tearsUp;
-    if (m.tearsMult) tearsMult *= m.tearsMult;
+    if (m.cadenzaUp) totCadenzaUp += m.cadenzaUp;
+    if (m.cadenzaMult) cadenzaMult *= m.cadenzaMult;
     if (m.speedUp) speedUp += m.speedUp;
     if (m.rangeUp) rangeUp += m.rangeUp;
     if (m.bonusMaxHp) bonusMaxHp += m.bonusMaxHp;
@@ -172,12 +172,12 @@ function ricalcolaStatisticheIsaac() {
   const effDmg = (baseD * Math.sqrt(Math.max(0, totalDmgUps * 1.2 + 1)) + flatDmg) * dmgMult;
   statoRun.dmg = Math.max(1.0, effDmg);
 
-  const effTears = Math.max(0.85, Math.min(7.5, (2.73 + totalTearsUps * 0.95) * tearsMult));
-  statoRun.tearsPerSec = effTears;
-  statoRun.cooldownMax = Math.max(7, Math.round(60 / effTears));
+  const cadenzaEff = Math.max(0.85, Math.min(7.5, (2.73 + totCadenzaUp * 0.95) * cadenzaMult));
+  statoRun.colpiAlSec = cadenzaEff;
+  statoRun.cooldownMax = Math.max(7, Math.round(60 / cadenzaEff));
 
-  const isaacSpd = Math.max(0.7, Math.min(2.0, (statoRun.baseSpdChar || 1.0) + speedUp));
-  statoRun.speed = 2.0 * isaacSpd;
+  const moltVelocita = Math.max(0.7, Math.min(2.0, (statoRun.baseSpdChar || 1.0) + speedUp));
+  statoRun.speed = 2.0 * moltVelocita;
   statoRun.range = Math.max(OGGETTI_D.clamp.rangeMin, Math.min(320, 170 + rangeUp)); // D: gittata minima 50 px
 
   const nuovoMax = Math.max(2, Math.min(24, statoRun.baseMaxHpHalf + bonusMaxHp));
@@ -218,7 +218,7 @@ function ricalcolaStatisticheIsaac() {
     if (m.bloccaProiettili) dD.bloccaProiettili = true;
     if (m.velocitaColpo) dD.velocitaColpo *= m.velocitaColpo;
     if (m.famiglio && dD.famigli.length < C.famigli) {
-      dD.famigli.push({ id: item.id, tipo: m.famiglio, dmg: m.famDmg || 3, tears: m.famTears || 1, auto: m.mira === 'auto', oming: Boolean(m.famOming) });
+      dD.famigli.push({ id: item.id, tipo: m.famiglio, dmg: m.famDmg || 3, cadenza: m.famCadenza || 1, auto: m.mira === 'auto', oming: Boolean(m.famOming) });
     }
   }
   dD.rimbalzi = Math.min(C.rimbalzi, dD.rimbalzi);
@@ -327,7 +327,7 @@ function nuovaRun(incrementaNotte = false) {
   statoRun.hpHalf = pInfo.hpHalf;
   statoRun.baseDmgChar = pInfo.baseDmg;
   statoRun.baseSpdChar = pInfo.baseSpd;
-  ricalcolaStatisticheIsaac();
+  ricalcolaStatistiche();
   // --- C: con la Benedizione di Rosa la maschera in più parte piena ---
   if (statoRun.medaglioneC && statoRun.medaglioneC.maxHpHalf > 0) {
     statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + statoRun.medaglioneC.maxHpHalf);

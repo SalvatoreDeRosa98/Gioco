@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ferruccio — Pixel-Art Roguelike (Bilanciamento Isaac + 5 Slot + Loop Infinito)</title>
+<title>Ferruccio — La Notte Immobile · Teatro delle Marionette</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
   html, body {
@@ -209,16 +209,16 @@ const PALETTE = {
 };
 
 // ===========================================================================
-// BILANCIAMENTO REALE STILE THE BINDING OF ISAAC:
+// BILANCIAMENTO REALE:
 // - Ferruccio NON ha il filo (solo i nemici, i boss e il mercante hanno i fili!)
 // - Mappa ad esplorazione (solo quando entri in una stanza compare sulla minimappa)
 // - 1 Stanza Segreta per piano con mob dorati (il modo principale per fare soldi!)
 // - 1 stanza su 3 ha un OGGETTO GRATIS (tier 'base') e 1 stanza su 10 ha un OGGETTO FORTE GRATIS (tier 'forte')
-// - Economia stile Isaac: parti da 0🪙, i mostri normali non regalano piogge di monete,
+// - Economia: parti da 0🪙, i mostri normali non regalano piogge di monete,
 //   devi risparmiare e cercare la Stanza Segreta per comprare gli oggetti forti (15-18🪙) ne La Fucina!
 // ===========================================================================
-// (bug autore «il generatore di stanze è sbagliato») Stanze di COMBATTIMENTO per piano del ciclo, come
-// in Isaac; ingresso, tesoro, fucina, boss, segreta e patto sono in aggiunta. Prima il piano 1 ne aveva una.
+// (bug autore «il generatore di stanze è sbagliato») Stanze di COMBATTIMENTO per piano del ciclo;
+// ingresso, tesoro, fucina, boss, segreta e patto sono in aggiunta. Prima il piano 1 ne aveva una.
 const STANZE_COMBATTIMENTO_PER_PIANO = { 1: 6, 2: 7, 3: 8, 4: 9 };
 
 // ===========================================================================
@@ -356,7 +356,7 @@ const MAPPA_PIANO = Object.freeze({
   tentativi: 400,
 });
 
-// --- PROPOSTA 3: ROSTER DI 4 PERSONAGGI GIOCABILI STILE THE BINDING OF ISAAC ---
+// --- PROPOSTA 3: ROSTER DI 4 PERSONAGGI GIOCABILI ---
 const PERSONAGGI_GIOCABILI = {
   ferruccio: {
     id: 'ferruccio', nome: 'Ferruccio', titolo: 'Il Burattino Senza Filo',
@@ -392,107 +392,107 @@ const OGGETTI_ATTIVI = {
   },
 };
 
-// --- PROPOSTA 2: RELIQUIE DEL PATTO D'OMBRA (STATISTICHE PARO PARO A ISAAC REBIRTH DEVIL ROOM) ---
+// --- PROPOSTA 2: RELIQUIE DEL PATTO D'OMBRA ---
 const CATALOGO_PATTO = [
   {
-    id: 'patto_raggio', sprite: 'patto_raggio', nome: 'Raggio Cremisi del Velo', tier: 'patto',  // Rif. Isaac: Brimstone
-    statsDesc: '[😈 PATTO] Brimstone · Raggio Cremisi Continuo Perforante · DMG x1.5',
-    lore: 'Stringi il patto col Velo: le tue lacrime diventano un fascio di fuoco cremisi continuo.',
+    id: 'patto_raggio', sprite: 'patto_raggio', nome: 'Raggio Cremisi del Velo', tier: 'patto',
+    statsDesc: '[😈 PATTO] Raggio Cremisi Continuo Perforante · Danno x1.5',
+    lore: 'Stringi il patto col Velo: i tuoi colpi diventano un fascio di fuoco cremisi continuo.',
     costoMaxHpHalf: 4,
     mod: { laser: true, dmgMult: 1.5, piercing: true, tipoProiettile: 'cremisi', size: 1.5, armaSpeciale: true },
   },
   {
-    id: 'patto_coltello', sprite: 'patto_coltello', nome: 'Lama della Burattinaia', tier: 'patto',  // Rif. Isaac: Mom\'s Knife
-    statsDesc: '[😈 PATTO] Mom\'s Knife · Fendente da Mischia Perforante · DMG x2.0',
+    id: 'patto_coltello', sprite: 'patto_coltello', nome: 'Lama della Burattinaia', tier: 'patto',
+    statsDesc: '[😈 PATTO] Fendente da Mischia Perforante · Danno x2.0',
     lore: 'La lama affilata di Donna Luciana: recide i nemici al contatto.',
     costoMaxHpHalf: 4,
     mod: { spada: true, dmgMult: 2.0, piercing: true, tipoProiettile: 'cremisi', armaSpeciale: true },
   },
   {
-    id: 'patto_patto', sprite: 'patto_patto', nome: 'Il Patto di Sangue', tier: 'patto',  // Rif. Isaac: The Pact
-    statsDesc: '[😈 PATTO] The Pact · +0.5 DMG Up · +0.7 Tears Up · +2 Maschere di Cera',
+    id: 'patto_patto', sprite: 'patto_patto', nome: 'Giuramento di Sangue', tier: 'patto',
+    statsDesc: '[😈 PATTO] +0.5 Danno · +0.7 Cadenza · +2 Maschere di Cera',
     lore: 'Un accordo inciso a fuoco nel palcoscenico: vigore e rapidità.',
     costoMaxHpHalf: 4,
-    mod: { dmgUp: 0.5, tearsUp: 0.7, ceraExtra: 4 },
+    mod: { dmgUp: 0.5, cadenzaUp: 0.7, ceraExtra: 4 },
   },
   {
-    id: 'patto_marchio', sprite: 'patto_marchio', nome: 'Il Marchio dell\'Ombra', tier: 'patto',  // Rif. Isaac: The Mark
-    statsDesc: '[😈 PATTO] The Mark · +1.0 DMG Up · +0.2 Speed Up · +1 Maschera di Cera',
+    id: 'patto_marchio', sprite: 'patto_marchio', nome: 'Sigillo dell\'Ombra', tier: 'patto',
+    statsDesc: '[😈 PATTO] +1.0 Danno · +0.2 Velocità · +1 Maschera di Cera',
     lore: 'Un sigillo impresso sulla cera: rende i tuoi passi e i tuoi colpi inesorabili.',
     costoMaxHpHalf: 2,
     mod: { dmgUp: 1.0, speedUp: 0.2, ceraExtra: 2 },
   },
   {
-    id: 'patto_abaddon', sprite: 'patto_abaddon', nome: 'Abaddon delle Tenebre', tier: 'patto',  // Rif. Isaac: Abaddon
-    statsDesc: '[😈 PATTO] Abaddon · Rimuove Maschere Massime · +1.5 DMG · +0.2 Speed · +6 Maschere di Cera',
+    id: 'patto_abisso', sprite: 'patto_abisso', nome: 'Manto dell\'Abisso', tier: 'patto',
+    statsDesc: '[😈 PATTO] Rimuove Maschere Massime · +1.5 Danno · +0.2 Velocità · +6 Maschere di Cera',
     lore: 'Consuma ogni residuo di vita mortale per donare pura potenza d\'ombra.',
     costoMaxHpHalf: 4,
-    mod: { dmgUp: 1.5, speedUp: 0.2, abaddonHp: true, ceraExtra: 12 },
+    mod: { dmgUp: 1.5, speedUp: 0.2, ceraAbisso: true, ceraExtra: 12 },
   },
   {
-    id: 'patto_collare', sprite: 'patto_collare', nome: 'Collare del Gatto Randagio', tier: 'patto',  // Rif. Isaac: Guppy\'s Collar
-    statsDesc: '[😈 PATTO] Guppy\'s Collar · 50% di Risorgere con ½ Maschera alla Morte',
+    id: 'patto_collare', sprite: 'patto_collare', nome: 'Collare del Gatto Randagio', tier: 'patto',
+    statsDesc: '[😈 PATTO] 50% di Risorgere con ½ Maschera alla Morte',
     lore: 'Nove vite rubate dai tetti di Caserta: la morte ha solo metà presa su di te.',
     costoMaxHpHalf: 2,
-    mod: { guppyRevive: true },
+    mod: { risorgiCollare: true },
   },
   {
-    id: 'patto_tunica', sprite: 'patto_tunica', nome: 'Tunica Cerimoniale Nera', tier: 'patto',  // Rif. Isaac: Ceremonial Robes
-    statsDesc: '[😈 PATTO] Ceremonial Robes · +1.0 DMG Up · +3 Maschere di Cera',
+    id: 'patto_tunica', sprite: 'patto_tunica', nome: 'Mozzetta Nera del Confratello', tier: 'patto',
+    statsDesc: '[😈 PATTO] +1.0 Danno · +3 Maschere di Cera',
     lore: 'Vesti liturgiche del Velo: avvolgono la marionetta conferendole durezza e potenza.',
     costoMaxHpHalf: 2,
     mod: { dmgUp: 1.0, ceraExtra: 6 },
   },
   {
-    id: 'patto_contratto', sprite: 'patto_contratto', nome: 'Contratto Sotterraneo', tier: 'patto',  // Rif. Isaac: Contract from Below
-    statsDesc: '[😈 PATTO] Contract from Below · Raddoppia le Ricompense di Fine Stanza',
+    id: 'patto_contratto', sprite: 'patto_contratto', nome: 'Cambiale del Sottosuolo', tier: 'patto',
+    statsDesc: '[😈 PATTO] Raddoppia le Ricompense di Fine Stanza',
     lore: 'Ogni vittoria frutta il doppio di monete e risorse dai recessi del teatro.',
     costoMaxHpHalf: 2,
     mod: { dropDoppi: true },
   },
 ];
 
-// --- STANZE SEGRETE (POOL DEDICATO PARO PARO A ISAAC REBIRTH SECRET ROOMS) ---
+// --- STANZE SEGRETE ---
 const CATALOGO_SEGRETO = [
   {
-    id: 'trascendenza', sprite: 'trascendenza', nome: 'Trascendenza', tier: 'segreto',  // Rif. Isaac: Transcendence
+    id: 'trascendenza', sprite: 'trascendenza', nome: 'Ali di Cartapesta', tier: 'segreto',
     statsDesc: '[👁 SEGRETO] Volo Spettrale (Sorvola baratri, trappole e ostacoli)',
     lore: 'I fili si staccano dal ponte di comando: la marionetta galleggia libera nell\'aria.',
     mod: { volo: true },
   },
   {
-    id: 'fungo_1up', sprite: 'fungo_1up', nome: 'Fungo 1-UP!', tier: 'segreto',  // Rif. Isaac: 1-Up!
+    id: 'fungo_1up', sprite: 'fungo_1up', nome: 'Corno della Seconda Vita', tier: 'segreto',
     statsDesc: '[👁 SEGRETO] +1 Vita Extra · Risorgi con la salute completamente ripristinata!',
     lore: 'Intagliato nel legno di un albero secolare del Parco Reale: ti dona un altro atto in scena.',
     mod: { vitaExtra: 1 },
   },
   {
-    id: 'fegato_crudo', sprite: 'fegato_crudo', nome: 'Fegato Crudo', tier: 'segreto',  // Rif. Isaac: Raw Liver
+    id: 'fegato_crudo', sprite: 'fegato_crudo', nome: 'Zuppa di Soffritto', tier: 'segreto',
     statsDesc: '[👁 SEGRETO] +2 Maschere Massime (+4 mezze) · Ripristino Completo Salute',
     lore: 'Nutrimento primordiale dei mercati di pietra: rinnova completamente le tue fibre.',
     mod: { bonusMaxHp: 4, healFull: true },
   },
   {
-    id: 'chiave_scheletro', sprite: 'chiave_scheletro', nome: 'Chiave dello Scheletro', tier: 'segreto',  // Rif. Isaac: Skeleton Key
+    id: 'chiave_scheletro', sprite: 'chiave_scheletro', nome: 'Chiave del Munaciello', tier: 'segreto',
     statsDesc: '[👁 SEGRETO] 99 Chiavi (Apre ogni cassa e porta senza esaurirsi)',
     lore: 'Forgiata sulle antiche catacombe borboniche: spalanca ogni serratura.',
     mod: { maxChiavi: 99 },
   },
   {
-    id: 'barile_polvere', sprite: 'barile_polvere', nome: 'Cassa di Zecchini Borbonici', tier: 'segreto',  // Rif. Isaac: Pyro / A Dollar
+    id: 'barile_polvere', sprite: 'barile_polvere', nome: 'Cassa di Zecchini Borbonici', tier: 'segreto',
     statsDesc: '[👁 SEGRETO] 99 Monete Dorate d\'Epoca',
     lore: 'Un forziere dimenticato nei corridoi di servizio: oro a profusione.',
     mod: { bonusMonete: 99 },
   },
   {
-    id: 'loto_nero', sprite: 'loto_nero', nome: 'Loto Nero del Belvedere', tier: 'segreto',  // Rif. Isaac: Black Lotus
+    id: 'loto_nero', sprite: 'loto_nero', nome: 'Giglio Nero del Belvedere', tier: 'segreto',
     statsDesc: '[👁 SEGRETO] +1 Maschera Massima · +2 Maschere di Cera Protettive',
     lore: 'Rarissimo fiore cresciuto nell\'umido silenzio delle stanze nascoste.',
     mod: { bonusMaxHp: 2, ceraExtra: 4 },
   },
   {
-    id: 'soldi_potere', sprite: 'soldi_potere', nome: 'I Soldi Fanno la Forza', tier: 'segreto',  // Rif. Isaac: Money = Power
-    statsDesc: '[👁 SEGRETO] +0.04 DMG Up per ogni moneta d\'oro posseduta!',
+    id: 'soldi_potere', sprite: 'soldi_potere', nome: 'Borsa dell\'Usuraio', tier: 'segreto',
+    statsDesc: '[👁 SEGRETO] +0.04 Danno per ogni moneta d\'oro posseduta!',
     lore: 'La cupidigia alimenta la carica dei tuoi proiettili: più sei ricco, più colpisci duro.',
     mod: { moneyIsPower: true },
   },
@@ -502,42 +502,42 @@ const CATALOGO_OGGETTI = [
   // --- OGGETTI FORTI (TIER 'forte': 1 stanza su 10 gratis, oppure 15-18🪙 ne La Fucina) ---
   {
     id: 'spada', sprite: 'spada', nome: 'Spada di Gaetano', tier: 'forte',
-    statsDesc: '[★ FORTE] Equipa Spada (6 frame) · DMG x1.45 · +1.0 Flat DMG',
+    statsDesc: '[★ FORTE] Equipa Spada (6 frame) · Danno x1.45 · +1.0 Danno fisso',
     lore: 'Forgiata con gli ultimi attrezzi di tuo padre prima del crollo del 1839.',
     prezzo: 15,
     mod: { spada: true, flatDmg: 1.0, dmgMult: 1.45, armaSpeciale: true },
   },
   {
-    id: 'piombo', sprite: 'piombo', nome: 'Lacrima di Piombo', tier: 'forte',  // D: rif. Isaac: Polyphemus
-    statsDesc: '[★ FORTE] +3.8 Flat DMG · DMG x1.9 · Tears x0.48 (Colpi Giganti)',
+    id: 'piombo', sprite: 'piombo', nome: 'Pallino di Piombo', tier: 'forte',
+    statsDesc: '[★ FORTE] +3.8 Danno fisso · Danno x1.9 · Cadenza x0.48 (Colpi Giganti)',
     lore: 'Pesante come il silenzio di Piazza Dante sotto il Velo.',
     prezzo: 18,
-    mod: { flatDmg: 3.8, dmgMult: 1.9, tearsMult: 0.48, tipoProiettile: 'piombo', size: 1.55, overflowPierce: true },
+    mod: { flatDmg: 3.8, dmgMult: 1.9, cadenzaMult: 0.48, tipoProiettile: 'piombo', size: 1.55, overflowPierce: true },
   },
   {
-    id: 'anello', sprite: 'anello', nome: 'Anello Cremisi', tier: 'forte',  // D: rif. Isaac: Cricket's Head
-    statsDesc: '[★ FORTE] +0.8 DMG Up · DMG x1.5 · Proiettili Perforanti',
+    id: 'anello', sprite: 'anello', nome: 'Anello Cremisi', tier: 'forte',
+    statsDesc: '[★ FORTE] +0.8 Danno · Danno x1.5 · Proiettili Perforanti',
     lore: 'Anello caduto dal dito di una burattinaia: trapassa ogni marionetta.',
     prezzo: 16,
     mod: { dmgUp: 0.8, dmgMult: 1.5, piercing: true, tipoProiettile: 'cremisi' },
   },
   {
-    id: 'triplo', sprite: 'triplo', nome: 'Triplo Occhio', tier: 'forte',  // D: rif. Isaac: Inner Eye
-    statsDesc: '[★ FORTE] Triplo Colpo a ventaglio · +0.4 DMG Up · Tears x0.58',
+    id: 'triplo', sprite: 'triplo', nome: 'Triplo Occhio', tier: 'forte',
+    statsDesc: '[★ FORTE] Triplo Colpo a ventaglio · +0.4 Danno · Cadenza x0.58',
     lore: 'Tre pupille di vetro che vedono i fili d\'oro nel cielo.',
     prezzo: 15,
-    mod: { triplo: true, dmgUp: 0.4, tearsMult: 0.58 },
+    mod: { triplo: true, dmgUp: 0.4, cadenzaMult: 0.58 },
   },
   {
-    id: 'catena', sprite: 'catena', nome: 'Catena della Chiusa', tier: 'forte',  // D: rif. Isaac: Jacob's Ladder
-    statsDesc: '[★ FORTE] +0.6 Tears Up · Fulmini a catena tra tutti i nemici',
+    id: 'catena', sprite: 'catena', nome: 'Catena della Chiusa', tier: 'forte',
+    statsDesc: '[★ FORTE] +0.6 Cadenza · Fulmini a catena tra tutti i nemici',
     lore: 'Spezzata dalla chiusa reale: scarica scintille azzurrine a ogni impatto.',
     prezzo: 15,
-    mod: { tearsUp: 0.6, chain: true, tipoProiettile: 'elettrico' },
+    mod: { cadenzaUp: 0.6, chain: true, tipoProiettile: 'elettrico' },
   },
   {
-    id: 'venti', sprite: 'venti', nome: 'Maschera dei 4 Venti', tier: 'forte',  // D: rif. Isaac: Loki's Horns
-    statsDesc: '[★ FORTE] Spara contemporaneamente nelle 4 direzioni · +0.5 DMG Up',
+    id: 'venti', sprite: 'venti', nome: 'Maschera dei 4 Venti', tier: 'forte',
+    statsDesc: '[★ FORTE] Spara contemporaneamente nelle 4 direzioni · +0.5 Danno',
     lore: 'Quattro volti di Pulcinella che guardano ogni angolo del palco.',
     prezzo: 15,
     mod: { quadDir: true, dmgUp: 0.5 },
@@ -545,67 +545,67 @@ const CATALOGO_OGGETTI = [
 
   // --- OGGETTI BASE (TIER 'base': 1 stanza su 3 gratis, oppure 10🪙 ne La Fucina) ---
   {
-    id: 'chiodo', sprite: 'chiodo', nome: 'Chiodo della Fucina', tier: 'base',  // D: rif. Isaac: Blood Clot
-    statsDesc: '[BASE] +0.65 DMG Up · +20 Range',
+    id: 'chiodo', sprite: 'chiodo', nome: 'Chiodo della Fucina', tier: 'base',
+    statsDesc: '[BASE] +0.65 Danno · +20 Gittata',
     lore: 'Un chiodo battuto a mano da Ferruccio prima dell\'incantesimo.',
     prezzo: 10,
     mod: { dmgUp: 0.65, rangeUp: 20 },
   },
   {
-    id: 'fuoco', sprite: 'fuoco', nome: 'Tizzone di Bragia', tier: 'base',  // D: rif. Isaac: Fire Mind
-    statsDesc: '[BASE] +0.6 DMG Up · Proiettili Infuocati (Bruciatura DoT)',
+    id: 'fuoco', sprite: 'fuoco', nome: 'Tizzone di Bragia', tier: 'base',
+    statsDesc: '[BASE] +0.6 Danno · Proiettili Infuocati (Bruciatura DoT)',
     lore: 'Carbone ardente della vecchia fucina di famiglia.',
     prezzo: 10,
     mod: { dmgUp: 0.6, burn: true, tipoProiettile: 'fuoco' },
   },
   {
-    id: 'doppia', sprite: 'doppia', nome: 'Lente di San Leucio', tier: 'base',  // D: rif. Isaac: 20/20
-    statsDesc: '[BASE] Doppio Colpo parallelo · DMG x0.80',
+    id: 'doppia', sprite: 'doppia', nome: 'Lente di San Leucio', tier: 'base',
+    statsDesc: '[BASE] Doppio Colpo parallelo · Danno x0.80',
     lore: 'Lente da tessitrice usata da Agnese sul telaio reale.',
     prezzo: 10,
     mod: { doppia: true, dmgMult: 0.80 },
   },
   {
-    id: 'mercurio', sprite: 'mercurio', nome: 'Goccia di Mercurio', tier: 'base',  // D: rif. Isaac: Sad Onion
-    statsDesc: '[BASE] +0.85 Tears Up (Raffica) · +0.10 Speed',
+    id: 'mercurio', sprite: 'mercurio', nome: 'Goccia di Mercurio', tier: 'base',
+    statsDesc: '[BASE] +0.85 Cadenza (Raffica) · +0.10 Velocità',
     lore: 'Argento vivo degli specchi del teatro reale.',
     prezzo: 10,
-    mod: { tearsUp: 0.85, speedUp: 0.10 },
+    mod: { cadenzaUp: 0.85, speedUp: 0.10 },
   },
   {
-    id: 'cuore', sprite: 'cuore', nome: 'Medaglione di Rosa', tier: 'base',  // D: rif. Isaac: <3
-    statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera · +0.2 DMG Up',
+    id: 'cuore', sprite: 'cuore', nome: 'Medaglione di Rosa', tier: 'base',
+    statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera · +0.2 Danno',
     lore: 'Il ricordo della moglie che Tonino ha dimenticato per non soffrire.',
     prezzo: 10,
     mod: { bonusMaxHp: 2, dmgUp: 0.2, healOnEquip: 2 },
   },
   {
     id: 'stivali', sprite: 'stivali', nome: 'Sciarpa Rossa di Agnese', tier: 'base',
-    statsDesc: '[BASE] +0.25 Speed Up · +0.4 DMG Up · +35 Range',
+    statsDesc: '[BASE] +0.25 Velocità · +0.4 Danno · +35 Gittata',
     lore: 'Tessuta da Agnese senza ricordare per chi le tremassero le mani.',
     prezzo: 10,
     mod: { speedUp: 0.25, dmgUp: 0.4, rangeUp: 35 },
   },
   {
     id: 'mantice', sprite: 'mantice', nome: 'Mantice del Fabbro', tier: 'base',
-    statsDesc: '[BASE] +0.55 DMG Up · +0.45 Tears Up',
+    statsDesc: '[BASE] +0.55 Danno · +0.45 Cadenza',
     lore: 'Soffia aria calda nella vecchia bottega di Piazza Dante.',
     prezzo: 10,
-    mod: { dmgUp: 0.55, tearsUp: 0.45 },
+    mod: { dmgUp: 0.55, cadenzaUp: 0.45 },
   },
 ];
 
 // --- B: inizio ---
-// OGGETTI INFINITI ALLA MANIERA DI ISAAC (feedback autore B, 2026-11-09):
+// OGGETTI SENZA LIMITE (feedback autore B, 2026-11-09):
 //  1. niente più limite di 5 slot: gli oggetti passivi si accumulano senza fine (HUD a icone piccole);
 //  2. pool della run: a inizio run si estraggono `dimensionePool` oggetti DIVERSI da CATALOGO_OGGETTI
 //     (base + forti; il dono iniziale del personaggio resta fuori); tesoro, Fucina, segreta e ricompense
 //     pescano solo da lì senza ripetizioni; esauriti (cap raggiunto) ogni ricompensa è un oggetto a caso dei
 //     20 (anche già preso: doppione) oppure un Cuore di Cera. Il patto ha il suo pool a parte (CATALOGO_PATTO).
 //  3. Stanza dello Sviluppatore ai piani `sviluppatore.piani`: un pannello con TUTTO il catalogo, se ne sceglie uno.
-// Doppioni: si sommano solo le voci additive di `stack.chiaviSommabili` (DMG Up, Tears Up, Speed, Range,
+// Doppioni: si sommano solo le voci additive di `stack.chiaviSommabili` (Danno, Cadenza, Speed, Range,
 // vita…); moltiplicatori ed effetti on/off non si ripetono. Se l'oggetto non ha voci additive (es. la Lente
-// 20/20) il doppione vale `stack.bonusGenerico` (+0.3 DMG Up, +0.2 Tears Up).
+// 20/20) il doppione vale `stack.bonusGenerico` (+0.3 Danno, +0.2 Cadenza).
 const OGGETTI_B = Object.freeze({
   dimensionePool: 20,                 // oggetti diversi per run (cap)
   dopoCap: Object.freeze({
@@ -613,10 +613,10 @@ const OGGETTI_B = Object.freeze({
     curaCuoreHalf: 2,                 // il Cuore di Cera rigenera 1 maschera intera
   }),
   stack: Object.freeze({
-    chiaviSommabili: Object.freeze(['dmgUp', 'flatDmg', 'tearsUp', 'speedUp', 'rangeUp', 'bonusMaxHp', 'healOnEquip']),
+    chiaviSommabili: Object.freeze(['dmgUp', 'flatDmg', 'cadenzaUp', 'speedUp', 'rangeUp', 'bonusMaxHp', 'healOnEquip']),
     fattore: 1.0,                     // un doppione somma il 100% delle voci additive
-    bonusGenerico: Object.freeze({ dmgUp: 0.3, tearsUp: 0.2 }),
-    descGenerico: '+0.3 DMG Up · +0.2 Tears Up',
+    bonusGenerico: Object.freeze({ dmgUp: 0.3, cadenzaUp: 0.2 }),
+    descGenerico: '+0.3 Danno · +0.2 Cadenza',
   }),
   hud: Object.freeze({ lato: 12, passo: 13, righe: 2, xMin: 256, xMax: 566, scala: 1.0 }),
   sviluppatore: Object.freeze({
@@ -628,66 +628,66 @@ const OGGETTI_B = Object.freeze({
 
 // Catalogo esteso (B): 15 oggetti nuovi, così il pool di 20 è un vero sottoinsieme del catalogo (28 oggetti) e
 // la Stanza dello Sviluppatore offre anche oggetti fuori pool. Solo modificatori già gestiti da
-// ricalcolaStatisticheIsaac; i prezzi li fissa ECONOMIA_T3 qui sotto, per tier.
+// ricalcolaStatistiche; i prezzi li fissa ECONOMIA_T3 qui sotto, per tier.
 const OGGETTI_NUOVI_B = [
-  { id: 'corno', sprite: 'corno', nome: 'Corno di Corallo', tier: 'forte',  // D: rif. Isaac: Magic Mushroom
-    statsDesc: '[★ FORTE] +1 Maschera Massima · +0.6 DMG Up · DMG x1.25 · +0.15 Speed · +20 Range',
+  { id: 'corno', sprite: 'corno', nome: 'Corno di Corallo', tier: 'forte',
+    statsDesc: '[★ FORTE] +1 Maschera Massima · +0.6 Danno · Danno x1.25 · +0.15 Velocità · +20 Gittata',
     lore: 'Il corno rosso appeso alla porta della bottega: tiene lontano il malocchio del Velo.',
     mod: { bonusMaxHp: 2, healOnEquip: 2, dmgUp: 0.6, dmgMult: 1.25, speedUp: 0.15, rangeUp: 20 } },
-  { id: 'campana', sprite: 'campana', nome: 'Campana di San Lorenzo', tier: 'forte',  // D: rif. Isaac: Pentagram
-    statsDesc: '[★ FORTE] +1.0 DMG Up · +0.5 Flat DMG',
+  { id: 'campana', sprite: 'campana', nome: 'Campana di San Lorenzo', tier: 'forte',
+    statsDesc: '[★ FORTE] +1.0 Danno · +0.5 Danno fisso',
     lore: 'Suonava a morto la notte del crollo: ora suona per te.',
     mod: { dmgUp: 1.0, flatDmg: 0.5 } },
-  { id: 'fiaccola', sprite: 'fiaccola', nome: 'Fiaccola del Vesuvio', tier: 'forte',  // D: rif. Isaac: Fire Mind+
-    statsDesc: '[★ FORTE] Proiettili Infuocati e Perforanti · +0.4 DMG Up',
+  { id: 'fiaccola', sprite: 'fiaccola', nome: 'Fiaccola del Vesuvio', tier: 'forte',
+    statsDesc: '[★ FORTE] Proiettili Infuocati e Perforanti · +0.4 Danno',
     lore: 'Accesa al fuoco della montagna, non si spegne nemmeno sotto il Velo.',
     mod: { burn: true, piercing: true, dmgUp: 0.4, tipoProiettile: 'fuoco' } },
-  { id: 'lanterna', sprite: 'lanterna', nome: 'Lanterna Magica', tier: 'forte',  // D: rif. Isaac: 20/20+
-    statsDesc: '[★ FORTE] Doppio Colpo parallelo · +0.5 Tears Up · +0.3 DMG Up',
+  { id: 'lanterna', sprite: 'lanterna', nome: 'Lanterna Magica', tier: 'forte',
+    statsDesc: '[★ FORTE] Doppio Colpo parallelo · +0.5 Cadenza · +0.3 Danno',
     lore: 'Proietta due ombre per ogni figura: il pubblico non sa quale sia vera.',
-    mod: { doppia: true, tearsUp: 0.5, dmgUp: 0.3 } },
-  { id: 'sole', sprite: 'sole', nome: 'Sole d\'Ottone', tier: 'forte',  // D: rif. Isaac: Cricket's Body
-    statsDesc: '[★ FORTE] Colpi più grandi · +1.5 Flat DMG · +0.3 Tears Up',
+    mod: { doppia: true, cadenzaUp: 0.5, dmgUp: 0.3 } },
+  { id: 'sole', sprite: 'sole', nome: 'Sole d\'Ottone', tier: 'forte',
+    statsDesc: '[★ FORTE] Colpi più grandi · +1.5 Danno fisso · +0.3 Cadenza',
     lore: 'Il sole di scena del Teatro: brilla anche quando il sipario è chiuso.',
-    mod: { size: 1.35, flatDmg: 1.5, tearsUp: 0.3 } },
+    mod: { size: 1.35, flatDmg: 1.5, cadenzaUp: 0.3 } },
   { id: 'nastro', sprite: 'nastro', nome: 'Nastro del Sipario', tier: 'base',
-    statsDesc: '[BASE] +0.20 Speed Up · +0.4 Tears Up',
+    statsDesc: '[BASE] +0.20 Velocità · +0.4 Cadenza',
     lore: 'Il nastro rosso che lega il sipario a riposo.',
-    mod: { speedUp: 0.2, tearsUp: 0.4 } },
+    mod: { speedUp: 0.2, cadenzaUp: 0.4 } },
   { id: 'ago', sprite: 'ago', nome: 'Ago di Agnese', tier: 'base',
-    statsDesc: '[BASE] +40 Range · +0.35 DMG Up',
+    statsDesc: '[BASE] +40 Gittata · +0.35 Danno',
     lore: 'Cuce i fili strappati: arriva lontano e punge piano.',
     mod: { rangeUp: 40, dmgUp: 0.35 } },
-  { id: 'castagna', sprite: 'castagna', nome: 'Castagna del Ciuccio', tier: 'base',  // D: rif. Isaac: Breakfast
+  { id: 'castagna', sprite: 'castagna', nome: 'Castagna del Ciuccio', tier: 'base',
     statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera',
     lore: 'Arrostita sul braciere della piazza, sa ancora di casa.',
     mod: { bonusMaxHp: 2, healOnEquip: 2 } },
   { id: 'cornetto', sprite: 'cornetto', nome: 'Cornetto Portafortuna', tier: 'base',
-    statsDesc: '[BASE] +0.5 DMG Up · +0.10 Speed',
+    statsDesc: '[BASE] +0.5 Danno · +0.10 Velocità',
     lore: 'Mai regalato, mai comprato: trovato. Così porta fortuna.',
     mod: { dmgUp: 0.5, speedUp: 0.1 } },
-  { id: 'bottone', sprite: 'bottone', nome: 'Bottone di Madreperla', tier: 'base',  // D: rif. Isaac: Sad Onion
-    statsDesc: '[BASE] +0.7 Tears Up',
+  { id: 'bottone', sprite: 'bottone', nome: 'Bottone di Madreperla', tier: 'base',
+    statsDesc: '[BASE] +0.7 Cadenza',
     lore: 'Staccato dalla giacca buona, quella delle feste.',
-    mod: { tearsUp: 0.7 } },
+    mod: { cadenzaUp: 0.7 } },
   { id: 'pettine', sprite: 'pettine', nome: 'Pettine di Tartaruga', tier: 'base',
-    statsDesc: '[BASE] +0.35 Tears Up · +25 Range · +0.10 Speed',
+    statsDesc: '[BASE] +0.35 Cadenza · +25 Gittata · +0.10 Velocità',
     lore: 'Pettina i fili d\'oro senza spezzarli.',
-    mod: { tearsUp: 0.35, rangeUp: 25, speedUp: 0.1 } },
+    mod: { cadenzaUp: 0.35, rangeUp: 25, speedUp: 0.1 } },
   { id: 'pipa', sprite: 'pipa', nome: 'Pipa di Pulcinella', tier: 'base',
-    statsDesc: '[BASE] +0.45 DMG Up · +30 Range',
+    statsDesc: '[BASE] +0.45 Danno · +30 Gittata',
     lore: 'Fuma pensieri: ogni boccata un ricordo che torna.',
     mod: { dmgUp: 0.45, rangeUp: 30 } },
-  { id: 'pagnotta', sprite: 'pagnotta', nome: 'Pagnotta di Port\'Alba', tier: 'base',  // D: rif. Isaac: Dinner
-    statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera · +0.05 Speed',
+  { id: 'pagnotta', sprite: 'pagnotta', nome: 'Pagnotta di Port\'Alba', tier: 'base',
+    statsDesc: '[BASE] +1 Maschera Massima · Rigenera +1 Maschera · +0.05 Velocità',
     lore: 'Ancora calda, avvolta in un foglio di giornale del 1839.',
     mod: { bonusMaxHp: 2, healOnEquip: 2, speedUp: 0.05 } },
   { id: 'chiave', sprite: 'chiave', nome: 'Chiave del Camerino', tier: 'base',
-    statsDesc: '[BASE] +0.3 DMG Up · +0.3 Tears Up · +0.10 Speed · +15 Range',
+    statsDesc: '[BASE] +0.3 Danno · +0.3 Cadenza · +0.10 Velocità · +15 Gittata',
     lore: 'Apre il camerino dove le marionette si tolgono il trucco.',
-    mod: { dmgUp: 0.3, tearsUp: 0.3, speedUp: 0.1, rangeUp: 15 } },
+    mod: { dmgUp: 0.3, cadenzaUp: 0.3, speedUp: 0.1, rangeUp: 15 } },
   { id: 'dado', sprite: 'dado', nome: 'Dado della Bisca', tier: 'base',
-    statsDesc: '[BASE] +0.8 Flat DMG',
+    statsDesc: '[BASE] +0.8 Danno fisso',
     lore: 'Truccato, ma solo un poco.',
     mod: { flatDmg: 0.8 } },
 ];
@@ -695,144 +695,144 @@ const OGGETTI_NUOVI_B = [
 for (const o of OGGETTI_NUOVI_B) CATALOGO_OGGETTI.push({ prezzo: o.tier === 'forte' ? 15 : 10, ...o });
 
 // --- D: inizio ---
-// CATALOGO ALLA ISAAC (feedback autore D, production/arte/oggetti-teatro.md §3): 34 oggetti nuovi
+// CATALOGO ESTESO (feedback autore D, production/arte/oggetti-teatro.md §3): 34 oggetti nuovi
 // (22 positivi meno i 2 «fase 2» elmo/pupara, 8 misti meno matita/malocchio, 8 negativi). `polarita`:
-// positivo | misto | negativo; i nomi di Isaac stanno SOLO nei commenti (Rif. Isaac). Le meccaniche nuove
-// (omingForza, rimbalzi, orbitali, famiglio, maledizione…) le legge ricalcolaStatisticheIsaac (blocchi D).
+// positivo | misto | negativo. Le meccaniche nuove
+// (omingForza, rimbalzi, orbitali, famiglio, maledizione…) le legge ricalcolaStatistiche (blocchi D).
 const OGGETTI_NUOVI_D = [
-  { id: 'trottola', sprite: 'trottola', nome: 'Trottola di Piazza Mercato', tier: 'base', polarita: 'positivo', // Rif. Isaac: Speed Ball
-    statsDesc: '[BASE] +0.3 Speed · +0.2 Tears Up',
+  { id: 'trottola', sprite: 'trottola', nome: 'Trottola di Piazza Mercato', tier: 'base', polarita: 'positivo',
+    statsDesc: '[BASE] +0.3 Velocità · +0.2 Cadenza',
     lore: 'Gira da sola da quando il Velo è sceso.',
-    mod: { speedUp: 0.3, tearsUp: 0.2 } },
-  { id: 'sfogliatella', sprite: 'sfogliatella', nome: 'Sfogliatella Riccia', tier: 'base', polarita: 'positivo', // Rif. Isaac: Lunch
+    mod: { speedUp: 0.3, cadenzaUp: 0.2 } },
+  { id: 'sfogliatella', sprite: 'sfogliatella', nome: 'Sfogliatella Riccia', tier: 'base', polarita: 'positivo',
     statsDesc: '[BASE] +1 Maschera Massima (vuota)',
     lore: 'Croccante anche dopo sei anni di incantesimo.',
     mod: { bonusMaxHp: 2 } },
-  { id: 'pastiera', sprite: 'pastiera', nome: 'Fetta di Pastiera', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Supper/Dessert + Stigmata
-    statsDesc: '[★ FORTE] +1 Maschera Massima · Rigenera 2 Maschere · +0.3 DMG Up',
+  { id: 'pastiera', sprite: 'pastiera', nome: 'Fetta di Pastiera', tier: 'forte', polarita: 'positivo',
+    statsDesc: '[★ FORTE] +1 Maschera Massima · Rigenera 2 Maschere · +0.3 Danno',
     lore: 'La faceva Rosa a Pasqua: il profumo riporta la memoria.',
     mod: { bonusMaxHp: 2, healOnEquip: 4, dmgUp: 0.3 } },
-  { id: 'cucchiaio', sprite: 'cucchiaio', nome: 'Cucchiaio del Re', tier: 'base', polarita: 'positivo', // Rif. Isaac: Spoon Bender
+  { id: 'cucchiaio', sprite: 'cucchiaio', nome: 'Cucchiaio del Re', tier: 'base', polarita: 'positivo',
     statsDesc: '[BASE] Colpi a ricerca (curvano verso i nemici)',
     lore: 'Rubato dalla credenza della Reggia: si piega verso i nemici.',
     mod: { omingForza: 0.06, tipoProiettile: 'viola' } },
-  { id: 'astrolabio', sprite: 'astrolabio', nome: 'Astrolabio della Specola', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Tiny Planet
-    statsDesc: '[★ FORTE] I colpi ti orbitano attorno · +40 Range · +0.4 DMG Up',
+  { id: 'astrolabio', sprite: 'astrolabio', nome: 'Astrolabio della Specola', tier: 'forte', polarita: 'positivo',
+    statsDesc: '[★ FORTE] I colpi ti orbitano attorno · +40 Gittata · +0.4 Danno',
     lore: 'Misurava le stelle sopra la Reggia; ora i tuoi colpi gli girano attorno.',
     mod: { orbitaleProiettili: true, rangeUp: 40, dmgUp: 0.4 } },
-  { id: 'gomma', sprite: 'gomma', nome: 'Gomma del Burattinaio', tier: 'base', polarita: 'positivo', // Rif. Isaac: Rubber Cement
+  { id: 'gomma', sprite: 'gomma', nome: 'Gomma del Burattinaio', tier: 'base', polarita: 'positivo',
     statsDesc: '[BASE] I colpi rimbalzano 2 volte sui muri',
     lore: 'La colla dei fili: tutto ci rimbalza.',
     mod: { rimbalzi: 2 } },
-  { id: 'piedigrotta', sprite: 'piedigrotta', nome: 'Razzo di Piedigrotta', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Ipecac
-    statsDesc: '[★ FORTE] Colpi esplosivi · DMG x1.6 · Tears x0.55',
+  { id: 'piedigrotta', sprite: 'piedigrotta', nome: 'Razzo di Piedigrotta', tier: 'forte', polarita: 'positivo',
+    statsDesc: '[★ FORTE] Colpi esplosivi · Danno x1.6 · Cadenza x0.55',
     lore: 'Fuoco d\'artificio della festa di settembre.',
-    mod: { esplosiva: 42, dmgMult: 1.6, tearsMult: 0.55, tipoProiettile: 'fuoco', sparabombe: true, armaSpeciale: true } },
-  { id: 'ragno', sprite: 'ragno', nome: 'Ragno della Seta di San Leucio', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Mutant Spider
-    statsDesc: '[★ FORTE] 4 colpi a ventaglio · Tears x0.42',
+    mod: { esplosiva: 42, dmgMult: 1.6, cadenzaMult: 0.55, tipoProiettile: 'fuoco', sparabombe: true, armaSpeciale: true } },
+  { id: 'ragno', sprite: 'ragno', nome: 'Ragno della Seta di San Leucio', tier: 'forte', polarita: 'positivo',
+    statsDesc: '[★ FORTE] 4 colpi a ventaglio · Cadenza x0.42',
     lore: 'Tesse quattro fili per volta.',
-    mod: { quattroColpi: true, tearsMult: 0.42 } },
-  { id: 'velo-madonna', sprite: 'velo-madonna', nome: 'Velo della Madonna dell\'Arco', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Holy Mantle
+    mod: { quattroColpi: true, cadenzaMult: 0.42 } },
+  { id: 'velo-madonna', sprite: 'velo-madonna', nome: 'Velo della Madonna dell\'Arco', tier: 'forte', polarita: 'positivo',
     statsDesc: '[★ FORTE] Para il primo colpo di ogni stanza',
     lore: 'Benedetto in processione: para il primo colpo di ogni stanza.',
     mod: { scudoStanza: 1 } },
-  { id: 'cuoio', sprite: 'cuoio', nome: 'Maschera di Cuoio', tier: 'base', polarita: 'positivo', // Rif. Isaac: Infamy
+  { id: 'cuoio', sprite: 'cuoio', nome: 'Maschera di Cuoio', tier: 'base', polarita: 'positivo',
     statsDesc: '[BASE] 25% di parare i proiettili nemici',
     lore: 'La maschera da scena vera di Pulcinella, dura come uno scudo.',
     mod: { bloccoProb: 0.25 } },
-  { id: 'gomitolo', sprite: 'gomitolo', nome: 'Gomitolo di Fili d\'Oro', tier: 'base', polarita: 'positivo', // Rif. Isaac: Cube of Meat (liv. 1)
+  { id: 'gomitolo', sprite: 'gomitolo', nome: 'Gomitolo di Fili d\'Oro', tier: 'base', polarita: 'positivo',
     statsDesc: '[BASE] Un gomitolo ti orbita attorno: para i colpi e ferisce',
     lore: 'Fili che non si possono tagliare, avvolti stretti.',
     mod: { orbitali: 1 } },
-  { id: 'ostia', sprite: 'ostia', nome: 'Ostia della Cappella Palatina', tier: 'forte', polarita: 'positivo', // Rif. Isaac: The Wafer
+  { id: 'ostia', sprite: 'ostia', nome: 'Ostia della Cappella Palatina', tier: 'forte', polarita: 'positivo',
     statsDesc: '[★ FORTE] Ogni colpo toglie al massimo ½ Maschera',
     lore: 'Leggera: ti fa sentire leggero anche il dolore.',
     mod: { dannoMaxHalf: true } },
-  { id: 'bobby', sprite: 'bobby', nome: 'Burattino di Tonino', tier: 'base', polarita: 'positivo', // Rif. Isaac: Brother Bobby
-    statsDesc: '[BASE] Famiglio: un burattino che spara con te (3.0 DMG)',
+  { id: 'pupo_tonino', sprite: 'pupo_tonino', nome: 'Burattino di Tonino', tier: 'base', polarita: 'positivo',
+    statsDesc: '[BASE] Famiglio: un burattino che spara con te (3.0 Danno)',
     lore: 'Un pupazzetto che Tonino intagliò per un figlio mai nato.',
-    mod: { famiglio: 'tiratore', famDmg: 3.0, famTears: 0.9 } },
-  { id: 'maggy', sprite: 'maggy', nome: 'Pupattola di Agnese', tier: 'base', polarita: 'positivo', // Rif. Isaac: Sister Maggy
-    statsDesc: '[BASE] Famiglio: una bambola che spara con te (4.5 DMG)',
+    mod: { famiglio: 'tiratore', famDmg: 3.0, famCadenza: 0.9 } },
+  { id: 'pupa_agnese', sprite: 'pupa_agnese', nome: 'Pupattola di Agnese', tier: 'base', polarita: 'positivo',
+    statsDesc: '[BASE] Famiglio: una bambola che spara con te (4.5 Danno)',
     lore: 'Bambola di pezza cucita sul telaio reale.',
-    mod: { famiglio: 'tiratore', famDmg: 4.5, famTears: 0.7 } },
-  { id: 'gatto', sprite: 'gatto', nome: 'Gatto di Vico Lungo', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Guppy's Hairball
-    statsDesc: '[★ FORTE] Famiglio: un gatto che graffia i nemici (3.0 DMG)',
+    mod: { famiglio: 'tiratore', famDmg: 4.5, famCadenza: 0.7 } },
+  { id: 'gatto', sprite: 'gatto', nome: 'Gatto di Vico Lungo', tier: 'forte', polarita: 'positivo',
+    statsDesc: '[★ FORTE] Famiglio: un gatto che graffia i nemici (3.0 Danno)',
     lore: 'Il gatto randagio del vicolo: graffia chi ti tocca.',
     mod: { famiglio: 'contatto', famDmg: 3.0 } },
-  { id: 'diavoletto', sprite: 'diavoletto', nome: 'Diavoletto del Presepe', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Demon Baby
-    statsDesc: '[★ FORTE] Famiglio: spara da solo al nemico più vicino (3.5 DMG)',
+  { id: 'diavoletto', sprite: 'diavoletto', nome: 'Diavoletto del Presepe', tier: 'forte', polarita: 'positivo',
+    statsDesc: '[★ FORTE] Famiglio: spara da solo al nemico più vicino (3.5 Danno)',
     lore: 'Statuina rossa del presepe di San Gregorio Armeno.',
-    mod: { famiglio: 'tiratore', mira: 'auto', famDmg: 3.5, famTears: 0.8 } },
-  { id: 'pulcinellino', sprite: 'pulcinellino', nome: 'Pulcinellino', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Little Steven
-    statsDesc: '[★ FORTE] Famiglio: colpi a ricerca (3.0 DMG)',
+    mod: { famiglio: 'tiratore', mira: 'auto', famDmg: 3.5, famCadenza: 0.8 } },
+  { id: 'pulcinellino', sprite: 'pulcinellino', nome: 'Pulcinellino', tier: 'forte', polarita: 'positivo',
+    statsDesc: '[★ FORTE] Famiglio: colpi a ricerca (3.0 Danno)',
     lore: 'Un Pulcinella piccolo così: non sbaglia un colpo.',
-    mod: { famiglio: 'tiratore', famDmg: 3.0, famTears: 1.0, famOming: true } },
-  { id: 'campanello', sprite: 'campanello', nome: 'Campanello del Portiere', tier: 'base', polarita: 'positivo', // Rif. Isaac: Wire Coat Hanger
-    statsDesc: '[BASE] +0.5 Tears Up · +20 Range',
+    mod: { famiglio: 'tiratore', famDmg: 3.0, famCadenza: 1.0, famOming: true } },
+  { id: 'campanello', sprite: 'campanello', nome: 'Campanello del Portiere', tier: 'base', polarita: 'positivo',
+    statsDesc: '[BASE] +0.5 Cadenza · +20 Gittata',
     lore: 'Suona e la porta si apre.',
-    mod: { tearsUp: 0.5, rangeUp: 20 } },
-  { id: 'tarallo', sprite: 'tarallo', nome: 'Tarallo Sugna e Pepe', tier: 'base', polarita: 'positivo', // Rif. Isaac: Steven/Raw Liver
-    statsDesc: '[BASE] +0.4 DMG Up · +1 Maschera Massima',
+    mod: { cadenzaUp: 0.5, rangeUp: 20 } },
+  { id: 'tarallo', sprite: 'tarallo', nome: 'Tarallo Sugna e Pepe', tier: 'base', polarita: 'positivo',
+    statsDesc: '[BASE] +0.4 Danno · +1 Maschera Massima',
     lore: 'Duro come la vita del popolo.',
     mod: { dmgUp: 0.4, bonusMaxHp: 2 } },
-  { id: 'carta-ventaglio', sprite: 'carta-ventaglio', nome: 'Ventaglio di Carta', tier: 'base', polarita: 'positivo', // Rif. Isaac: Lost Contact
-    statsDesc: '[BASE] I tuoi colpi annullano i proiettili nemici · +0.2 DMG Up',
+  { id: 'carta-ventaglio', sprite: 'carta-ventaglio', nome: 'Ventaglio di Carta', tier: 'base', polarita: 'positivo',
+    statsDesc: '[BASE] I tuoi colpi annullano i proiettili nemici · +0.2 Danno',
     lore: 'Ventaglio della dama del palco reale.',
     mod: { bloccaProiettili: true, dmgUp: 0.2 } },
-  { id: 'cuore-sacro', sprite: 'cuore-sacro', nome: 'Cuore Sacro di Santa Chiara', tier: 'forte', polarita: 'misto', // Rif. Isaac: Sacred Heart
-    statsDesc: '[◐ MISTO] ★ DMG x2.3 · +1 Maschera · Colpi a ricerca · Tears x0.6',
+  { id: 'cuore-sacro', sprite: 'cuore-sacro', nome: 'Cuore Sacro di Santa Chiara', tier: 'forte', polarita: 'misto',
+    statsDesc: '[◐ MISTO] ★ Danno x2.3 · +1 Maschera · Colpi a ricerca · Cadenza x0.6',
     lore: 'Ex voto d\'argento: ti rende lento ma inesorabile.',
-    mod: { dmgMult: 2.3, bonusMaxHp: 2, healOnEquip: 2, omingForza: 0.05, tearsMult: 0.6 } },
-  { id: 'bombarda', sprite: 'bombarda', nome: 'Bombarda di Gaeta', tier: 'forte', polarita: 'misto', // Rif. Isaac: Mega Blast / Dr Fetus
-    statsDesc: '[◐ MISTO] ★ DMG x2.6 · Colpi enormi e lenti · Tears x0.3',
+    mod: { dmgMult: 2.3, bonusMaxHp: 2, healOnEquip: 2, omingForza: 0.05, cadenzaMult: 0.6 } },
+  { id: 'bombarda', sprite: 'bombarda', nome: 'Bombarda di Gaeta', tier: 'forte', polarita: 'misto',
+    statsDesc: '[◐ MISTO] ★ Danno x2.6 · Colpi enormi e lenti · Cadenza x0.3',
     lore: 'Il cannone della fortezza: un colpo ogni tanto, e la stanza trema.',
-    mod: { dmgMult: 2.6, size: 1.8, tearsMult: 0.3, velocitaColpo: 0.6, sparabombe: true, armaSpeciale: true } },
-  { id: 'occhio-vetro', sprite: 'occhio-vetro', nome: 'Occhio di Vetro del Ciarlatano', tier: 'forte', polarita: 'misto', // Rif. Isaac: Proptosis
-    statsDesc: '[◐ MISTO] ★ Danno x2 da vicino, cala con la distanza · -60 Range · +0.5 DMG Up',
+    mod: { dmgMult: 2.6, size: 1.8, cadenzaMult: 0.3, velocitaColpo: 0.6, sparabombe: true, armaSpeciale: true } },
+  { id: 'occhio-vetro', sprite: 'occhio-vetro', nome: 'Occhio di Vetro del Ciarlatano', tier: 'forte', polarita: 'misto',
+    statsDesc: '[◐ MISTO] ★ Danno x2 da vicino, cala con la distanza · -60 Gittata · +0.5 Danno',
     lore: 'Lo vendeva un ciarlatano a Piazza Mercato: vede bene solo da vicino.',
     mod: { prossimita: true, rangeUp: -60, dmgUp: 0.5 } },
-  { id: 'cappello-mago', sprite: 'cappello-mago', nome: 'Cappello del Mago di Corte', tier: 'base', polarita: 'misto', // Rif. Isaac: The Wiz
-    statsDesc: '[◐ MISTO] I colpi partono in due diagonali · +0.3 Tears Up',
+  { id: 'cappello-mago', sprite: 'cappello-mago', nome: 'Cappello del Mago di Corte', tier: 'base', polarita: 'misto',
+    statsDesc: '[◐ MISTO] I colpi partono in due diagonali · +0.3 Cadenza',
     lore: 'Il mago della Reggia non tirava mai dritto.',
-    mod: { diagonale: true, tearsUp: 0.3 } },
-  { id: 'sugna', sprite: 'sugna', nome: 'Sugna del Macellaio', tier: 'base', polarita: 'negativo', // Rif. Isaac: Bucket of Lard
-    statsDesc: '[◐ MISTO] +2 Maschere Massime · Rigenera 2 Maschere · -0.25 Speed',
+    mod: { diagonale: true, cadenzaUp: 0.3 } },
+  { id: 'sugna', sprite: 'sugna', nome: 'Sugna del Macellaio', tier: 'base', polarita: 'negativo',
+    statsDesc: '[◐ MISTO] +2 Maschere Massime · Rigenera 2 Maschere · -0.25 Velocità',
     lore: 'Ti sazia per una settimana, ma ti appesantisce.',
     mod: { bonusMaxHp: 4, healOnEquip: 4, speedUp: -0.25 } },
-  { id: 'ranocchio', sprite: 'ranocchio', nome: 'Ranocchio della Fontana', tier: 'base', polarita: 'negativo', // Rif. Isaac: Number One
-    statsDesc: '[◐ MISTO] +1.4 Tears Up · -110 Range',
+  { id: 'ranocchio', sprite: 'ranocchio', nome: 'Ranocchio della Fontana', tier: 'base', polarita: 'negativo',
+    statsDesc: '[◐ MISTO] +1.4 Cadenza · -110 Gittata',
     lore: 'Sputa acqua dalla fontana della Reggia: tanto, e corto.',
-    mod: { tearsUp: 1.4, rangeUp: -110 } },
-  { id: 'latte', sprite: 'latte', nome: 'Latte di Mandorla', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: Soy Milk
-    statsDesc: '[✗ NEGATIVO] DMG x0.2 · Tears x5.5 (pioggerella)',
+    mod: { cadenzaUp: 1.4, rangeUp: -110 } },
+  { id: 'latte', sprite: 'latte', nome: 'Latte di Mandorla', tier: 'negativo', polarita: 'negativo',
+    statsDesc: '[✗ NEGATIVO] Danno x0.2 · Cadenza x5.5 (pioggerella)',
     lore: 'Dolce e leggero: i colpi diventano una pioggerella.',
-    mod: { dmgMult: 0.2, tearsMult: 5.5 } },
-  { id: 'corda', sprite: 'corda', nome: 'Corda del Campanaro', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: pillola Tears Down
-    statsDesc: '[✗ NEGATIVO] -0.6 Tears',
+    mod: { dmgMult: 0.2, cadenzaMult: 5.5 } },
+  { id: 'corda', sprite: 'corda', nome: 'Corda del Campanaro', tier: 'negativo', polarita: 'negativo',
+    statsDesc: '[✗ NEGATIVO] -0.6 Cadenza',
     lore: 'Sembra un dono; ti lega le mani.',
-    mod: { tearsUp: -0.6 } },
-  { id: 'zoccoli', sprite: 'zoccoli', nome: 'Zoccoli di Legno', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: pillola Speed Down
-    statsDesc: '[✗ NEGATIVO] -0.25 Speed',
+    mod: { cadenzaUp: -0.6 } },
+  { id: 'zoccoli', sprite: 'zoccoli', nome: 'Zoccoli di Legno', tier: 'negativo', polarita: 'negativo',
+    statsDesc: '[✗ NEGATIVO] -0.25 Velocità',
     lore: 'Rumorosi e pesanti sul selciato.',
     mod: { speedUp: -0.25 } },
-  { id: 'spillo', sprite: 'spillo', nome: 'Spillo Spuntato', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: pillola Range Down
-    statsDesc: '[✗ NEGATIVO] -50 Range · +0.1 DMG Up',
+  { id: 'spillo', sprite: 'spillo', nome: 'Spillo Spuntato', tier: 'negativo', polarita: 'negativo',
+    statsDesc: '[✗ NEGATIVO] -50 Gittata · +0.1 Danno',
     lore: 'Punge, ma non arriva.',
     mod: { rangeUp: -50, dmgUp: 0.1 } },
-  { id: 'salasso', sprite: 'salasso', nome: 'Ventosa del Barbiere', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: pillola Health Down
+  { id: 'salasso', sprite: 'salasso', nome: 'Ventosa del Barbiere', tier: 'negativo', polarita: 'negativo',
     statsDesc: '[✗ NEGATIVO] -1 Maschera Massima',
     lore: 'Il barbiere salassatore di Via Mazzini «cura» tutti.',
     mod: { bonusMaxHp: -2 } },
-  { id: 'nebbia', sprite: 'nebbia', nome: 'Nebbia del Volturno', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: Curse of the Lost
+  { id: 'nebbia', sprite: 'nebbia', nome: 'Nebbia del Volturno', tier: 'negativo', polarita: 'negativo',
     statsDesc: '[✗ NEGATIVO] Maledizione: la mappa sparisce fino a fine piano',
     lore: 'La nebbia sale dal fiume e cancella le strade.',
     mod: { maledizione: 'mappa' } },
-  { id: 'lume', sprite: 'lume', nome: 'Lume Spento', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: Curse of Darkness
+  { id: 'lume', sprite: 'lume', nome: 'Lume Spento', tier: 'negativo', polarita: 'negativo',
     statsDesc: '[✗ NEGATIVO] Maledizione: buio attorno a te fino a fine piano',
     lore: 'Il lume a olio di San Leucio, ormai senza stoppino.',
     mod: { maledizione: 'buio' } },
-  { id: 'benda', sprite: 'benda', nome: 'Benda del Cieco', tier: 'negativo', polarita: 'negativo', // Rif. Isaac: Curse of the Blind
+  { id: 'benda', sprite: 'benda', nome: 'Benda del Cieco', tier: 'negativo', polarita: 'negativo',
     statsDesc: '[✗ NEGATIVO] Maledizione: gli oggetti tornano «???» fino a fine piano',
     lore: 'Il cieco del sagrato ti presta la sua benda.',
     mod: { maledizione: 'cieco' } },
@@ -882,16 +882,16 @@ for (const o of CATALOGO_OGGETTI) {
 for (const o of CATALOGO_OGGETTI) if (o.polarita === 'negativo') o.prezzo = ECONOMIA_T3.prezzi.negativo;
 // --- D: fine ---
 
-// Pool Boss stile Isaac (Monstro, Chub, Duke of Flies, Gurdy, Gemini/Peep, Mom/Satan)
+// Pool dei boss
 /**
- * Re-Gatto (pattern 'monstro_jump') alla maniera di Monstro in The Binding of Isaac (bug autore «il boss
+ * Re-Gatto (pattern 'salto_gatto') a salti (bug autore «il boss
  * che salta spara troppi colpi»: prima 84 proiettili in 10 s, 98 in rabbia, una rosa di 14 a ogni salto).
  * Ogni mossa è seguita da un riposo in cui il gatto si avvicina camminando; mai due mosse che sparano di
  * fila (dopo un salto alto o uno sputo vengono sempre i saltelli). Caso peggiore: 3 mosse che sparano in
  * 10 s × 8 colpi = 24 proiettili. Tempi in tick a 60 Hz, velocità in px/tick.
  */
 
-const MONSTRO_REGATTO = Object.freeze({
+const SALTI_REGATTO = Object.freeze({
   riposoTick: 75,             // pausa fra una mossa e l'altra (cammina verso il giocatore)
   riposoRabbiaTick: 55,       // in rabbia (vita sotto il 50%)
   passoRiposo: 0.45,          // frazione della velocità del boss mentre riposa
@@ -944,7 +944,7 @@ const BOSS_A = Object.freeze({
     }),
     moltVelFase2: 1.35,
   }),
-  // custode: Il Custode di Marmo (alla Gurdy), immobile al centro. Macchina a stati con tabella esplicita
+  // custode: Il Custode di Marmo, immobile al centro. Macchina a stati con tabella esplicita
   //   (sequenza): pausa → croci (+ e × alternate) → pausa → spirale → pausa → raffica mirata a 3 → pausa →
   //   evocazione di 2 vespe o 2 statuette (a turno) → pausa → APERTO (vulnerabile, nessun attacco) → da capo.
   //   Danno subito ×1,5 da aperto e ×0,6 da chiuso. Durata stimata del duello per Ferruccio base
@@ -965,11 +965,11 @@ const BOSS_A = Object.freeze({
 // --- A: fine ---
 
 const POOL_BOSS = [
-  { id: 're-gatto', nome: 'Il Gatto dei Quattro Canti (Monstro)', tipo: 'gatto', hpBase: 175, speed: 1.05, pattern: 'monstro_jump' },
-  { id: 'capitano-guardia', nome: 'Il Capitano di Piombo (Chub)', tipo: 'guardia', hpBase: 210, speed: 0.92, pattern: 'chub_charge' },
-  { id: 'regina-vespa', nome: 'La Regina delle Vespe (Duke of Flies)', tipo: 'vespa', hpBase: 165, speed: 1.15, pattern: 'duke_flies' },
-  { id: 'colosso-statua', nome: 'Il Custode di Marmo (Gurdy)', tipo: 'statua', hpBase: 235, speed: 0.40, pattern: 'gurdy_turret' },
-  { id: 'maestro-fucina', nome: 'Lo Spezzafili d\'Ottone (Peep)', tipo: 'guardia', hpBase: 195, speed: 1.05, pattern: 'scissor_blades' },
+  { id: 're-gatto', nome: 'Il Gatto dei Quattro Canti', tipo: 'gatto', hpBase: 175, speed: 1.05, pattern: 'salto_gatto' },
+  { id: 'capitano-guardia', nome: 'Il Capitano di Piombo', tipo: 'guardia', hpBase: 210, speed: 0.92, pattern: 'carica_capitano' },
+  { id: 'regina-vespa', nome: 'La Regina delle Vespe', tipo: 'vespa', hpBase: 165, speed: 1.15, pattern: 'sciame_regina' },
+  { id: 'colosso-statua', nome: 'Il Custode di Marmo', tipo: 'statua', hpBase: 235, speed: 0.40, pattern: 'torre_custode' },
+  { id: 'maestro-fucina', nome: 'Lo Spezzafili d\'Ottone', tipo: 'guardia', hpBase: 195, speed: 1.05, pattern: 'scissor_blades' },
 ];
 
 const BOSS_FINALE = {
@@ -2000,7 +2000,7 @@ function disegnaBossDaImmagineA(b, tick, flip, isFlash) {
   return false;
 }
 
-// Disegno pittorico differenziato per ogni archetipo di Nemico stile The Binding of Isaac!
+// Disegno pittorico differenziato per ogni archetipo di Nemico!
 function disegnaNemicoPittorico() {
   const args = Array.from(arguments);
   if (args[0] && typeof args[0].save === 'function') args.shift();
@@ -2070,7 +2070,7 @@ function disegnaNemicoPittorico() {
           : null;
 
   // =========================================================================
-  // 1. VESPA CIECA / VESPA D'OMBRA / LUCCIOLA (Isaac Attack Fly / Pooter)
+  // 1. VESPA CIECA / VESPA D'OMBRA / LUCCIOLA
   // =========================================================================
   if (tipo === 'vespa_cieca' || tipo === 'vespa' || tipo === 'lucciola') {
     const isLucc = tipo === 'lucciola';
@@ -2143,7 +2143,7 @@ function disegnaNemicoPittorico() {
     ctx.beginPath(); ctx.arc(4.5, -7.5, 1.3, 0, TAU); ctx.fill();
 
   // =========================================================================
-  // 2. BOMBA FERMA / BOZZO DI BRACE (Isaac Boil / Mulliboom)
+  // 2. BOMBA FERMA / BOZZO DI BRACE
   // =========================================================================
   } else if (tipo === 'bomba_ferma') {
     const isPrimed = state === 'primed';
@@ -2211,7 +2211,7 @@ function disegnaNemicoPittorico() {
     ctx.fill();
 
   // =========================================================================
-  // 3. GATTO D'OMBRA / GATTO GRANDE (Isaac Hopper / Trite — Il Gatto dei Quattro Canti)
+  // 3. GATTO D'OMBRA / GATTO GRANDE
   // =========================================================================
   } else if (tipo === 'gatto') {
     const isCrouch = (n.crouchTicks > 0) || state === 'crouch';
@@ -2406,7 +2406,7 @@ function disegnaNemicoPittorico() {
     ctx.fillRect(10.2, -11.0, 0.8, 3.0);
 
   // =========================================================================
-  // 4. MASCHERA D'OSSO / PULCINELLA D'ASSALTO (Isaac Host)
+  // 4. MASCHERA D'OSSO / PULCINELLA D'ASSALTO
   // =========================================================================
   } else if (tipo === 'maschera') {
     const openY = maskOpen ? -7 : 0;
@@ -2475,7 +2475,7 @@ function disegnaNemicoPittorico() {
     ctx.restore();
 
   // =========================================================================
-  // 5. STATUA SENTINELLA / CHERUBINO DI MARMO (Isaac Grimace)
+  // 5. STATUA SENTINELLA / CHERUBINO DI MARMO
   // =========================================================================
   } else if (tipo === 'statua') {
     const isCharging = (n.shootCd || 0) < 22;
@@ -2537,7 +2537,7 @@ function disegnaNemicoPittorico() {
     ctx.fill();
 
   // =========================================================================
-  // 6. GUARDIA D'ACCIAIO / PREDONE DEI BORBONI (Isaac Knight / Greed Mob)
+  // 6. GUARDIA D'ACCIAIO / PREDONE DEI BORBONI
   // =========================================================================
   } else {
     ctx.scale(flip, 1);
@@ -2622,7 +2622,7 @@ function disegnaBossPittorico() {
   ctx.save();
   ctx.imageSmoothingEnabled = true;
 
-  // Ombra a terra (fondamentale quando Re Gatto / Monstro salta in alto fuori campo!)
+  // Ombra a terra (fondamentale quando Re Gatto salta in alto fuori campo!)
   const shadowScale = Math.max(0.35, 1 - airZ / 180);
   ctx.fillStyle = airZ > 10 ? 'rgba(220, 38, 38, 0.55)' : 'rgba(8, 5, 3, 0.68)';
   ctx.beginPath();
@@ -2642,7 +2642,7 @@ function disegnaBossPittorico() {
   if (disegnaBossDaImmagineA(b, tick, flip, isFlash)) { ctx.restore(); return; }
 
   // =========================================================================
-  // BOSS 5: DONNA LUCIANA — LA BURATTINAIA DEL VELO (Isaac Mom)
+  // BOSS 5: DONNA LUCIANA — LA BURATTINAIA DEL VELO
   // =========================================================================
   if (bossId === 'donna-luciana') {
     const floatY = Math.sin(tick * 0.08) * 3.5;
@@ -2720,7 +2720,7 @@ function disegnaBossPittorico() {
   ctx.scale(flip, 1);
 
   // =========================================================================
-  // BOSS 1: RE GATTO DEI QUATTRO CANTI (Isaac Monstro)
+  // BOSS 1: RE GATTO DEI QUATTRO CANTI
   // =========================================================================
   if (bossId === 're-gatto') {
     const isAir = (airZ > 10) || (b.state === 'leap');
@@ -2822,7 +2822,7 @@ function disegnaBossPittorico() {
     ctx.fill();
 
   // =========================================================================
-  // BOSS 3: LA REGINA DELLE VESPE (Isaac Duke of Flies)
+  // BOSS 3: LA REGINA DELLE VESPE
   // =========================================================================
   } else if (bossId === 'regina-vespa') {
     const isLunge = (b.state === 'lunge') || (b.chargeTimer > 0) || Math.hypot(b.vx || 0, b.vy || 0) > 1.8;
@@ -2892,7 +2892,7 @@ function disegnaBossPittorico() {
     ctx.fill();
 
   // =========================================================================
-  // BOSS 4: IL COLOSSO DI CASERTA (Isaac Gurdy)
+  // BOSS 4: IL COLOSSO DI CASERTA
   // =========================================================================
   } else if (bossId === 'colosso-statua') {
     // Busto titanico di pietra e marmo emergente dalla pedana
@@ -2931,7 +2931,7 @@ function disegnaBossPittorico() {
     ctx.fill();
 
   // =========================================================================
-  // BOSS 6: LO SPEZZAFILI D'OTTONE (Isaac Peep)
+  // BOSS 6: LO SPEZZAFILI D'OTTONE
   // =========================================================================
   } else if (bossId === 'maestro-fucina') {
     // Procedurale per Lo Spezzafili
@@ -2958,7 +2958,7 @@ function disegnaBossPittorico() {
     ctx.moveTo(8, -8); ctx.lineTo(32, -8); ctx.stroke();
 
   // =========================================================================
-  // BOSS 2: CAPITANO GREGORIO / ARIETE DI PIOMBO (Isaac Chub)
+  // BOSS 2: CAPITANO GREGORIO / ARIETE DI PIOMBO
   // =========================================================================
   } else {
     // Juggernaut d'acciaio e ottone in carica
@@ -3212,7 +3212,7 @@ const SPRITE_OGGETTI = {
     '............',
     '............',
   ],
-  patto_abaddon: [
+  patto_abisso: [
     'k..........k',
     'kk..kkkk..kk',
     '.kkkddddkkk.',
@@ -3741,8 +3741,8 @@ Object.assign(SPRITE_OGGETTI, {
   'cuoio': ['............', '............', '.kkkkkkkkkk.', 'kddddddddddk', 'kdkkddddkkdk', 'kdk.kddk.kdk', 'kddkkddkkddk', '.kddddddddk.', '..kkddddkk..', '....kddk....', '.....kk.....', '............'],
   'gomitolo': ['............', '....kkkk....', '..kkyyoykk..', '.kyoyyyoyyk.', '.kyyoyyyoyk.', 'kyoyyoyyyoyk', 'kyyoyyoyyyyk', '.kyyyoyyoyk.', '.kyoyyyoyyk.', '..kkyyyykky.', '....kkkk...y', '...........y'],
   'ostia': ['............', '....kkkk....', '..kkwwwwkk..', '.kwwwwgwwwk.', '.kwwwwgwwwk.', 'kwwggggggwwk', 'kwwwwwgwwwwk', '.kwwwwgwwwk.', '.kwwwwgwwwk.', '..kkwwwwkk..', '....kkkk....', '............'],
-  'bobby': ['....kkkk....', '...kBBBBk...', '..kBBBBBBk..', '...kssssk...', '...kskksk...', '...kssssk...', '....kssk....', '..kmmmmmmk..', '.kskmmmmksk.', '...kmmmmk...', '...km..mk...', '...kk..kk...'],
-  'maggy': ['..r......r..', '..rrk..krr..', '...kkcckk...', '...kcccck...', '...kckkck...', '...kcccck...', '....kcck....', '..kpppppk...', '.kcpppppck..', '...kppppk...', '...kc..ck...', '...kk..kk...'],
+  'pupo_tonino': ['....kkkk....', '...kBBBBk...', '..kBBBBBBk..', '...kssssk...', '...kskksk...', '...kssssk...', '....kssk....', '..kmmmmmmk..', '.kskmmmmksk.', '...kmmmmk...', '...km..mk...', '...kk..kk...'],
+  'pupa_agnese': ['..r......r..', '..rrk..krr..', '...kkcckk...', '...kcccck...', '...kckkck...', '...kcccck...', '....kcck....', '..kpppppk...', '.kcpppppck..', '...kppppk...', '...kc..ck...', '...kk..kk...'],
   'gatto': ['..k.....k...', '..kk...kk...', '..kdkkkdk...', '..kdydydk...', '..kdddddk...', '...kdddk....', '..kdddddk...', '.kdddddddk..', '.kdddddddk..', '.kdddddddk.k', '..kdkdkdk.k.', '...kkkkkkk..'],
   'diavoletto': ['.k......y.y.', '.kk..kk.yyy.', '..krrrrk.y..', '..krwrwk.y..', '..krrrrk.y..', '...kRRk..y..', '..krrrrkky..', '.krrrrrrk...', '..krrrrk.y..', '..kr..rk.y..', '..kk..kk....', '............'],
   'pulcinellino': ['.....kk.....', '.....kwk....', '....kwwk....', '....kwwwk...', '...kwwwwk...', '...kkkkkk...', '...kddddk...', '...kdwdwk...', '....kcck....', '..kwwwwwwk..', '..kwwwwwwk..', '...kk..kk...'],
@@ -3869,7 +3869,7 @@ const AudioSys = (() => {
       } catch (_) {}
     },
 
-    playTearShoot() {
+    playSparo() {
       try {
         const ac = getCtx();
         if (!ac || ac.state !== 'running') return;
@@ -4089,7 +4089,7 @@ const statoRun = {
   baseDmgChar: 3.50,
   baseSpdChar: 1.00,
   dmg: 3.50,
-  tearsPerSec: 2.73,
+  colpiAlSec: 2.73,
   cooldownMax: 22,
   speed: 2.0,
   range: 170,
@@ -4141,12 +4141,12 @@ const player = {
   invuln: 0,
 };
 
-function ricalcolaStatisticheIsaac() {
+function ricalcolaStatistiche() {
   let totalDmgUps = 0;
   let flatDmg = 0;
   let dmgMult = 1.0;
-  let totalTearsUps = 0;
-  let tearsMult = 1.0;
+  let totCadenzaUp = 0;
+  let cadenzaMult = 1.0;
   let speedUp = 0;
   let rangeUp = 0;
   let bonusMaxHp = 0;
@@ -4169,8 +4169,8 @@ function ricalcolaStatisticheIsaac() {
     if (m.dmgUp) totalDmgUps += m.dmgUp;
     if (m.flatDmg) flatDmg += m.flatDmg;
     if (m.dmgMult) dmgMult *= m.dmgMult;
-    if (m.tearsUp) totalTearsUps += m.tearsUp;
-    if (m.tearsMult) tearsMult *= m.tearsMult;
+    if (m.cadenzaUp) totCadenzaUp += m.cadenzaUp;
+    if (m.cadenzaMult) cadenzaMult *= m.cadenzaMult;
     if (m.speedUp) speedUp += m.speedUp;
     if (m.rangeUp) rangeUp += m.rangeUp;
     if (m.bonusMaxHp) bonusMaxHp += m.bonusMaxHp;
@@ -4196,12 +4196,12 @@ function ricalcolaStatisticheIsaac() {
   const effDmg = (baseD * Math.sqrt(Math.max(0, totalDmgUps * 1.2 + 1)) + flatDmg) * dmgMult;
   statoRun.dmg = Math.max(1.0, effDmg);
 
-  const effTears = Math.max(0.85, Math.min(7.5, (2.73 + totalTearsUps * 0.95) * tearsMult));
-  statoRun.tearsPerSec = effTears;
-  statoRun.cooldownMax = Math.max(7, Math.round(60 / effTears));
+  const cadenzaEff = Math.max(0.85, Math.min(7.5, (2.73 + totCadenzaUp * 0.95) * cadenzaMult));
+  statoRun.colpiAlSec = cadenzaEff;
+  statoRun.cooldownMax = Math.max(7, Math.round(60 / cadenzaEff));
 
-  const isaacSpd = Math.max(0.7, Math.min(2.0, (statoRun.baseSpdChar || 1.0) + speedUp));
-  statoRun.speed = 2.0 * isaacSpd;
+  const moltVelocita = Math.max(0.7, Math.min(2.0, (statoRun.baseSpdChar || 1.0) + speedUp));
+  statoRun.speed = 2.0 * moltVelocita;
   statoRun.range = Math.max(OGGETTI_D.clamp.rangeMin, Math.min(320, 170 + rangeUp)); // D: gittata minima 50 px
 
   const nuovoMax = Math.max(2, Math.min(24, statoRun.baseMaxHpHalf + bonusMaxHp));
@@ -4242,7 +4242,7 @@ function ricalcolaStatisticheIsaac() {
     if (m.bloccaProiettili) dD.bloccaProiettili = true;
     if (m.velocitaColpo) dD.velocitaColpo *= m.velocitaColpo;
     if (m.famiglio && dD.famigli.length < C.famigli) {
-      dD.famigli.push({ id: item.id, tipo: m.famiglio, dmg: m.famDmg || 3, tears: m.famTears || 1, auto: m.mira === 'auto', oming: Boolean(m.famOming) });
+      dD.famigli.push({ id: item.id, tipo: m.famiglio, dmg: m.famDmg || 3, cadenza: m.famCadenza || 1, auto: m.mira === 'auto', oming: Boolean(m.famOming) });
     }
   }
   dD.rimbalzi = Math.min(C.rimbalzi, dD.rimbalzi);
@@ -4351,7 +4351,7 @@ function nuovaRun(incrementaNotte = false) {
   statoRun.hpHalf = pInfo.hpHalf;
   statoRun.baseDmgChar = pInfo.baseDmg;
   statoRun.baseSpdChar = pInfo.baseSpd;
-  ricalcolaStatisticheIsaac();
+  ricalcolaStatistiche();
   // --- C: con la Benedizione di Rosa la maschera in più parte piena ---
   if (statoRun.medaglioneC && statoRun.medaglioneC.maxHpHalf > 0) {
     statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + statoRun.medaglioneC.maxHpHalf);
@@ -4396,10 +4396,10 @@ function numeroStanzeCombattimento(piano) {
 }
 
 /**
- * Mappa del piano alla maniera di Isaac: catena principale ingresso → ≥ MAPPA_PIANO.catenaMin stanze di
+ * Mappa del piano a stanze collegate: catena principale ingresso → ≥ MAPPA_PIANO.catenaMin stanze di
  * combattimento → boss, poi rami laterali con le altre stanze di combattimento, tesoro e fucina in fondo
  * a un ramo, segreta dietro un muro, patto fuori griglia. Ogni stanza nuova tocca una sola stanza
- * esistente (regola di Isaac: niente anelli, vicoli ciechi veri). I vincoli sono verificati prima di
+ * esistente (regola: niente anelli, vicoli ciechi veri). I vincoli sono verificati prima di
  * accettare la mappa (tools/qa-teatro-generatore.js li controlla su 200 semi).
  */
 
@@ -4554,7 +4554,7 @@ function generaMappaPiano(piano) {
     // Aggiunge la Stanza del Patto d'Ombra (Proposta 2: accessibile dopo aver sconfitto il Boss!)
     aggiungi('patto', 0, 0);
 
-    for (const s of stanze) popolaStanzaIsaac(s, piano);
+    for (const s of stanze) popolaStanza(s, piano);
     return { piano, stanze, perId: new Map(stanze.map((s) => [s.id, s])) };
   }
   return null;
@@ -4614,7 +4614,7 @@ function allontanaNemiciDallePorteC(s, extra = []) {
 }
 // --- C: fine ---
 
-function popolaStanzaIsaac(s, piano) {
+function popolaStanza(s, piano) {
   const ciclo = Math.floor((piano - 1) / 4) + 1;
   const moltCiclo = Math.pow(1.45, ciclo - 1);
   const moltVel = Math.min(1.55, 1 + (piano - 1) * 0.045);
@@ -4684,7 +4684,7 @@ function popolaStanzaIsaac(s, piano) {
     s.ricompensaOggetto = null;
     s.nemici = [];
     s.pulita = true;
-    // Regola Isaac Rebirth: 1/3 di probabilità di avere un oggetto dal catalogo segreto speciale!
+    // Regola: 1/3 di probabilità di avere un oggetto dal catalogo segreto speciale!
     const haOggetto = rng() < (1 / 3);
     if (haOggetto) {
       const obj = estraiOggettoSegreto();
@@ -4705,7 +4705,7 @@ function popolaStanzaIsaac(s, piano) {
       s.oggettiATerra.push({ tipo: 'cura', valore: 1, sprite: 'mezzaMaschera', x: 320, y: 192 });
     }
   } else if (s.tipo === 'normale') {
-    s.ricompensaOggetto = null; // Regola Isaac: nessun oggetto gratis nelle stanze normali!
+    s.ricompensaOggetto = null; // Regola: nessun oggetto gratis nelle stanze normali!
     s.macchie = [];
     s.pozzanghereFuoco = [];
 
@@ -4825,11 +4825,11 @@ function popolaStanzaIsaac(s, piano) {
     const nomiNem = {
       vespa_cieca: 'Vespa Cieca (Attack Fly)',
       lucciola: 'Lucciola Pungente',
-      bomba_ferma: 'Bozzo Esplosivo (Boil)',
-      gatto: 'Gatto d\'Ombra (Hopper)',
+      bomba_ferma: 'Bozzo Esplosivo',
+      gatto: 'Gatto d\'Ombra',
       burattino: 'Burattino Scucito',
       predone: 'Predone d\'Ombra',
-      maschera: 'Maschera Corazzata (Host)',
+      maschera: 'Maschera Corazzata',
       guardia: 'Guardia di Piombo',
       statua: 'Torrione di Marmo',
     };
@@ -5027,7 +5027,7 @@ function eseguiAttacco4Direzioni(dx, dy) {
   } else {
     player.cooldown = statoRun.cooldownMax;
     player.shootAnimTimer = 7;
-    AudioSys.playTearShoot();
+    AudioSys.playSparo();
     sparaProiettiliDirezione(dx, dy, 1.0);
   }
 }
@@ -5196,7 +5196,7 @@ function aggiornaFamigliOrbitaliD(st) {
       dist: 0, maxDist: F.gittataPx, dmg: f.dmg, r: F.raggioColpo, tipo: f.oming ? 'viola' : 'base',
       piercing: false, overflowPierce: false, hitIds: new Set(), oming: f.oming ? F.omingForza : 0, rimbalzi: 0, famD: true,
     });
-    f.cd = Math.max(F.cadenzaMinTick, Math.round(60 / f.tears));
+    f.cd = Math.max(F.cadenzaMinTick, Math.round(60 / f.cadenza));
   }
   const O = OGGETTI_D.orbitali;
   const nO = (statoRun.statD && statoRun.statD.orbitali) || 0;
@@ -5227,9 +5227,9 @@ function maledizioneD(k) {
 
 function spawnaMonetaATerra(st, x, y, valore = 1) {
   if (!st) return;
-  // Se attivo Contract from Below (patto_contratto), raddoppia il valore delle monete
+  // Con la Cambiale del Sottosuolo (patto_contratto), raddoppia il valore delle monete
   if (statoRun.dropDoppi) valore *= 2;
-  // Calibrazione Isaac: monete scarse al Piano 1 (~30% di drop per raccogliere 5-8 monete in tutto il piano)
+  // Calibrazione: monete scarse al Piano 1 (~30% di drop per raccogliere 5-8 monete in tutto il piano)
   // --- T3: inizio ---
   if (statoRun.piano === 1 && rng() > (st.tipo === 'segreta' ? ECONOMIA_T3.piano1.probMonetaSegreta : ECONOMIA_T3.piano1.probMonetaAltre)) return;
   // --- T3: fine ---
@@ -5348,7 +5348,7 @@ function lasciaMacchia(nem) {
   if (macchieStanza.length > M.maxPerStanza) macchieStanza.splice(0, macchieStanza.length - M.maxPerStanza);
 }
 
-// Esplosione stile Isaac per i Bozzi Esplosivi ('bomba_ferma' — Mulliboom/Boil):
+// Esplosione per i Bozzi Esplosivi ('bomba_ferma'):
 // danneggia i nemici vicini, spara 6 proiettili radiali, può colpire il giocatore e apre il Muro Segreto!
 function innescaEsplosioneBomba(st, bx, by) {
   if (!st) return;
@@ -5393,10 +5393,10 @@ function innescaEsplosioneBomba(st, bx, by) {
 }
 
 function danneggiaNemico(nem, dmg, knockX, knockY) {
-  // Se il Boss Re Gatto (Monstro) è in volo alto (airZ > 25), non può essere colpito finché non atterra!
+  // Se il Boss Re Gatto è in volo alto (airZ > 25), non può essere colpito finché non atterra!
   if (nem.boss && (nem.airZ || 0) > 25) return;
 
-  // Maschera di Pulcinella (Isaac Host): quando è chiusa è corazzata e riduce l'85% del danno!
+  // Maschera di Pulcinella: quando è chiusa è corazzata e riduce l'85% del danno!
   if ((nem.patternMob || nem.tipo) === 'maschera' && !nem.maskOpen) {
     nem.flash = 3;
     nem.hp -= dmg * 0.12;
@@ -5469,7 +5469,7 @@ function verificaStanzaPulita() {
   if (st.nemici.every((n) => n.hp <= 0)) {
     st.pulita = true;
     AudioSys.playCampana();
-    // Ricarica di +1 tacca l'Oggetto Attivo [Q] a ogni stanza ripulita (Proposta 5: come in Isaac!)
+    // Ricarica di +1 tacca l'Oggetto Attivo [Q] a ogni stanza ripulita (Proposta 5)
     if (statoRun.oggettoAttivo) {
       statoRun.caricaAttivo = Math.min(statoRun.oggettoAttivo.maxCarica, statoRun.caricaAttivo + 1);
     }
@@ -5637,11 +5637,11 @@ function subisciColpoGiocatore(mezzeMaschereDanno, fonte, daX, daY) {
       player.invuln = 120;
       scuoti(FEEL.scossa.evento);
       statoRun.ondeEsplosione.push({ x: player.x, y: player.y, r: 10, maxR: 140, color: '#22c55e' });
-      mostraBanner('🍄 1-UP! La marionetta risorge a piena salute!', 200);
+      mostraBanner('✚ SECONDA VITA! La marionetta risorge a piena salute!', 200);
       return;
     }
-    const haGuppy = statoRun.oggettiEquipaggiati && statoRun.oggettiEquipaggiati.some((it) => it.id === 'patto_collare');
-    if (haGuppy && rng() < 0.5) {
+    const haCollare = statoRun.oggettiEquipaggiati && statoRun.oggettiEquipaggiati.some((it) => it.id === 'patto_collare');
+    if (haCollare && rng() < 0.5) {
       statoRun.hpHalf = 1;
       player.invuln = 120;
       scuoti(FEEL.scossa.evento);
@@ -5772,7 +5772,7 @@ function passoLogico() {
     }
 
     // --- T3: inizio ---
-    window.__teatroT3?.aggiornaRaggio?.(st); // raggio cremisi continuo del patto (blocca le lacrime finché è acceso)
+    window.__teatroT3?.aggiornaRaggio?.(st); // raggio cremisi continuo del patto (blocca i colpi finché è acceso)
     // --- T3: fine ---
     if (keys.ArrowRight || keys.KeyL) eseguiAttacco4Direzioni(1, 0);
     else if (keys.ArrowLeft || keys.KeyJ) eseguiAttacco4Direzioni(-1, 0);
@@ -5835,7 +5835,7 @@ function passoLogico() {
 
     // Proiettili di Ferruccio
     // --- T3: inizio ---
-    const spettraliT3 = window.__teatroT3?.spettrali?.() === true; // lacrime che passano colonne e muri
+    const spettraliT3 = window.__teatroT3?.spettrali?.() === true; // colpi che passano colonne e muri
     // --- T3: fine ---
     for (let i = statoRun.proiettili.length - 1; i >= 0; i--) {
       const p = statoRun.proiettili[i];
@@ -5844,7 +5844,7 @@ function passoLogico() {
       p.y += p.vy;
       p.dist += Math.hypot(p.vx, p.vy);
 
-      // Collisione con Colonne di Caserta (blocco lacrime) e Bracieri (esplosione fiamme)
+      // Collisione con Colonne di Caserta (blocco colpi) e Bracieri (esplosione fiamme)
       if (st.ostacoli && st.ostacoli.length > 0 && !spettraliT3) { // T3: le spettrali passano
         let hitOst = false;
         for (const o of st.ostacoli) {
@@ -5974,7 +5974,7 @@ function passoLogico() {
       }
     }
 
-    // 6. IA DIFFERENZIATA NEMICI E BOSS IN STILE THE BINDING OF ISAAC
+    // 6. IA DIFFERENZIATA NEMICI E BOSS
     for (const n of st.nemici) {
       if (n.hp <= 0) continue;
       if (n.flash > 0) n.flash--;
@@ -5999,9 +5999,9 @@ function passoLogico() {
         const enrage = n.hp < n.maxHp * 0.5;
 
         if (n.bossId === 're-gatto') {
-          // MONSTRO (Re Gatto): riposo → una mossa fra salto alto (corona lenta all'atterraggio), sputo a
-          // ventaglio o saltelli senza colpi. Parametri e ritmo in MONSTRO_REGATTO.
-          const M = MONSTRO_REGATTO;
+          // RE GATTO: riposo → una mossa fra salto alto (corona lenta all'atterraggio), sputo a
+          // ventaglio o saltelli senza colpi. Parametri e ritmo in SALTI_REGATTO.
+          const M = SALTI_REGATTO;
           if (!n.mossaRG) { n.mossaRG = 'riposo'; n.timerRG = 40; n.ultimaSparoRG = false; }
           if (n.mossaRG === 'salto') {
             n.timerRG--;
@@ -6063,7 +6063,7 @@ function passoLogico() {
             }
           }
         } else if (n.bossId === 'capitano-guardia') {
-          // CHUB (Capitano di Piombo): carica rettilinea ad alta velocità da parete a parete!
+          // CAPITANO DI PIOMBO: carica rettilinea ad alta velocità da parete a parete!
           if (n.charging && n.chargeTimer > 0) {
             n.chargeTimer--;
             n.x = Math.max(ARENA.x1 + 18, Math.min(ARENA.x2 - 18, n.x + n.vx));
@@ -6091,7 +6091,7 @@ function passoLogico() {
             }
           }
         } else if (n.bossId === 'regina-vespa') {
-          // DUKE OF FLIES (Regina Vespa): rimbalza in diagonale sui muri ed evoca Vespe Cieche che volano addosso senza sparare
+          // REGINA VESPA: rimbalza in diagonale sui muri ed evoca Vespe Cieche che volano addosso senza sparare
           n.x += n.vx || 1.1;
           n.y += n.vy || 0.85;
           if (n.x <= ARENA.x1 + 20 || n.x >= ARENA.x2 - 20) n.vx = -(n.vx || 1.1);
@@ -6128,7 +6128,7 @@ function passoLogico() {
           }
         } else if (n.bossId === 'colosso-statua') {
           // --- A: inizio ---
-          // IL CUSTODE DI MARMO (Gurdy): immobile; esegue BOSS_A.custode.sequenza separata da pause.
+          // IL CUSTODE DI MARMO: immobile; esegue BOSS_A.custode.sequenza separata da pause.
           // Stati: 'pausa' → mossa successiva della sequenza → 'pausa' … ; 'aperto' = vulnerabile (×1,5).
           const C = BOSS_A.custode;
           n.x = C.x;
@@ -6330,7 +6330,7 @@ function passoLogico() {
           // --- A: fine ---
         }
       } else {
-        // IA DIFFERENZIATA DEI NEMICI COMUNI IN STILE THE BINDING OF ISAAC:
+        // IA DIFFERENZIATA DEI NEMICI COMUNI:
         const comp = n.comportamento || n.tipo;
 
         if (comp === 'volo_puro' || n.tipo === 'vespa_cieca') {
@@ -6374,7 +6374,7 @@ function passoLogico() {
             statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(ang) * 2.8, vy: Math.sin(ang) * 2.8, dist: 0 });
           }
         } else if (comp === 'bomba_ferma' || n.tipo === 'bomba_ferma') {
-          // 2. BOZZOLO DI POLVERE (Mulliboom / Boil): STA FERMO sul posto, pulsa quando ti avvicini ed ESPLODE!
+          // 2. BOZZOLO DI POLVERE: STA FERMO sul posto, pulsa quando ti avvicini ed ESPLODE!
           if (distPlayer < 64 || n.fuseTimer > 0) {
             n.fuseTimer = (n.fuseTimer || 0) + 1;
             if (n.fuseTimer >= 42) {
@@ -6385,7 +6385,7 @@ function passoLogico() {
             }
           }
         } else if (comp === 'balzo' || n.tipo === 'gatto') {
-          // 3. GATTO DEL VELO (Trite / Hopper): NON spara! Si accovaccia (telegraph) e balza rapido verso di te
+          // 3. GATTO DEL VELO: NON spara! Si accovaccia (telegraph) e balza rapido verso di te
           if (n.leapTimer > 0) {
             n.leapTimer--;
             n.x = Math.max(ARENA.x1 + 14, Math.min(ARENA.x2 - 14, n.x + n.vx));
@@ -6404,7 +6404,7 @@ function passoLogico() {
             }
           }
         } else if (comp === 'host_scudo' || n.tipo === 'maschera') {
-          // 4. MASCHERA CORAZZATA (Host): immobile e corazzata finché chiusa; si apre per sparare un ventaglio di 3 colpi!
+          // 4. MASCHERA CORAZZATA: immobile e corazzata finché chiusa; si apre per sparare un ventaglio di 3 colpi!
           n.shootCd--;
           if (n.shootCd > 30) {
             n.maskOpen = false;
@@ -6425,7 +6425,7 @@ function passoLogico() {
             n.shootCd = 92;
           }
         } else if (comp === 'torretta_croce' || n.tipo === 'statua') {
-          // 5. BUSTO DI MARMO (Stone Grimace): completamente FERMO sul posto, spara salve alternate a '+' e '×'
+          // 5. BUSTO DI MARMO: completamente FERMO sul posto, spara salve alternate a '+' e '×'
           n.shootCd--;
           if (n.shootCd <= 0) {
             n.shootCd = 76;
@@ -6594,7 +6594,7 @@ function usaOggettoAttivo() {
   }
 }
 
-// --- INTERCAMBIABILITÀ ARMI SPECIALI (STILE THE BINDING OF ISAAC) ---
+// --- INTERCAMBIABILITÀ ARMI SPECIALI () ---
 const ARMI_SPECIALI_INTERCAMBIABILI = new Set([
   'spada',
   'patto_coltello',
@@ -6653,14 +6653,14 @@ function acquisisciOggettoConLimite5Slot(nuovoItem, origine, refSlot) {
     mostraBanner(`❤ ${nuovoItem.nome}: ${nuovoItem.statsDesc}`, 160);
     return;
   }
-  ricalcolaStatisticheIsaac();
+  ricalcolaStatistiche();
   dopoRaccoltaD(nuovoItem); // --- D ---
 
-  // Effetti immediati di raccolta patti e stanze segrete (paro paro da Isaac Rebirth)
-  if (nuovoItem.mod?.abaddonHp) {
+  // Effetti immediati di raccolta patti e stanze segrete
+  if (nuovoItem.mod?.ceraAbisso) {
     statoRun.baseMaxHpHalf = 2;
     statoRun.hpHalf = Math.min(24, (statoRun.hpHalf || 0) + (nuovoItem.mod.ceraExtra || 12));
-    mostraBanner('💀 ABADDON: Maschere mortali consumate, ottenute 6 Maschere d\'Ombra!', 180);
+    mostraBanner('💀 MANTO DELL\'ABISSO: Maschere mortali consumate, ottenute 6 Maschere d\'Ombra!', 180);
   } else if (nuovoItem.mod?.ceraExtra) {
     statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + nuovoItem.mod.ceraExtra);
   }
@@ -6670,7 +6670,7 @@ function acquisisciOggettoConLimite5Slot(nuovoItem, origine, refSlot) {
   }
   if (nuovoItem.mod?.vitaExtra) {
     statoRun.viteExtra = (statoRun.viteExtra || 0) + nuovoItem.mod.vitaExtra;
-    mostraBanner('🍄 1-UP! Ottenuta +1 Vita Extra per la marionetta!', 180);
+    mostraBanner('✚ SECONDA VITA! Ottenuta +1 Vita Extra per la marionetta!', 180);
   }
   if (nuovoItem.mod?.maxChiavi) {
     statoRun.chiavi = 99;
@@ -6737,7 +6737,7 @@ function tiraOggettoGratisStanza(garantito = false) {
 
 // --- C: inizio ---
 /**
- * Un colpo (lacrima, fendente, impulso del raggio) sul muro giusto: al STANZE_C.segreta.colpiMuro-esimo
+ * Un colpo (colpo, fendente, impulso del raggio) sul muro giusto: al STANZE_C.segreta.colpiMuro-esimo
  * il passaggio si apre. Nessun avviso: solo un po' di polvere sul muro.
  * @param {object} st stanza corrente @param {number} x @param {number} y punto d'impatto
  */
@@ -7078,7 +7078,7 @@ function getRaccontoAtto(piano, ciclo) {
       titolo: `«${q.titoloCompleto.toUpperCase()}»`,
       testo1: 'Il primo raggio radente dell\'aurora dorata penetra tra i mattoni e i telai del setificio reale.',
       testo2: 'Agnese tesse la sciarpa rossa senza memoria. Maschere d\'osso e Spezzafili sorvegliano i fusi.',
-      testo3: 'Da questo piano il Velo stringe più forte: ogni colpo subito spezza 1 Maschera intera (come in Isaac!).',
+      testo3: 'Da questo piano il Velo stringe più forte: ogni colpo subito spezza 1 Maschera intera.',
     };
   }
   return {
@@ -7095,7 +7095,7 @@ function disegnaFamigliOrbitaliD() {
   for (const f of statoRun.famigliD || []) {
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.fillRect(Math.round(f.x - 5), Math.round(f.y + 5), 10, 3);
-    drawPixelSprite(SPRITE_OGGETTI[f.id] || SPRITE_OGGETTI.bobby, f.x, f.y - 6 + Math.sin(tick * 0.12) * 1.5, 1.3);
+    drawPixelSprite(SPRITE_OGGETTI[f.id] || SPRITE_OGGETTI.pupo_tonino, f.x, f.y - 6 + Math.sin(tick * 0.12) * 1.5, 1.3);
   }
   for (const o of statoRun.orbitaliPosD || []) drawPixelSprite(SPRITE_OGGETTI.gomitolo, o.x, o.y, 1.0);
 }
@@ -7753,7 +7753,7 @@ function disegnaStanzaPixelArt(tick, st) {
 }
 
 // ===========================================================================
-// MENÙ INIZIALE DI SELEZIONE DEL PERSONAGGIO (STILE THE BINDING OF ISAAC)
+// MENÙ INIZIALE DI SELEZIONE DEL PERSONAGGIO ()
 // ===========================================================================
 function disegnaMenuSelezionePersonaggio(tick) {
   // 1. Fondale teatrale e pedana in legno
@@ -8103,7 +8103,7 @@ function disegnaFrame(dtMs) {
     // NOTA: Ferruccio NON ha il filo! Solo i nemici, i boss e Mastro Peppe hanno i fili d'oro!
     const fili = [];
 
-    // La Fucina (⚒ Shop in stile The Binding of Isaac)
+    // La Fucina (⚒ bottega)
     if (st.tipo === 'fucina') {
       fili.push([320, 124]);
       const peppeFrame = Math.floor(tick / 14) % 2 === 0 ? SPRITE_SCENA.mercante : SPRITE_SCENA.mercante1;
@@ -8184,7 +8184,7 @@ function disegnaFrame(dtMs) {
       }
     }
 
-    // PROPOSTA 2: Stanza del Patto d'Ombra (😈 Devil Room in stile Isaac)
+    // PROPOSTA 2: Stanza del Patto d'Ombra (😈)
     if (st.tipo === 'patto') {
       drawPillLabel(
         `😈 STANZA DEL PATTO D'OMBRA · SACRIFICA 1 MASCHERA INTERA (-1 ❤️ MAX) 😈`,
@@ -8250,7 +8250,7 @@ function disegnaFrame(dtMs) {
       }
     }
 
-    // Onde d'urto delle esplosioni (Bozzoli Esplosivi / Atterraggio Monstro / Tamburello)
+    // Onde d'urto delle esplosioni (Bozzoli Esplosivi / Atterraggio del Re Gatto / Tamburello)
     if (statoRun.ondeEsplosione && statoRun.ondeEsplosione.length > 0) {
       for (let i = statoRun.ondeEsplosione.length - 1; i >= 0; i--) {
         const onda = statoRun.ondeEsplosione[i];
@@ -8472,11 +8472,11 @@ function disegnaFrame(dtMs) {
 }
 
 // ===========================================================================
-// HUD PIXEL-ART CON STATISTICHE ISAAC + MINIMAPPA AD ESPLORAZIONE + DOCK 5 SLOT
+// HUD PIXEL-ART CON STATISTICHE + MINIMAPPA AD ESPLORAZIONE + DOCK 5 SLOT
 // (Ogni singola scritta usa drawTextFit + clip per NON uscire mai dai riquadri!)
 // ===========================================================================
 function disegnaHUDPixelArt(st) {
-  // 1. Box alto a sinistra: Vita (Maschere intere e mezze) + Statistiche Isaac (DMG, TEARS, SPD, Monete)
+  // 1. Box alto a sinistra: Vita (Maschere intere e mezze) + Statistiche (danno, cadenza, velocità, monete)
   const hx = 6, hy = 5, hw = 172, hh = 52;
   ctx.save();
   ctx.fillStyle = 'rgba(10, 6, 4, 0.92)';
@@ -8510,9 +8510,9 @@ function disegnaHUDPixelArt(st) {
     { size: 7.5, color: '#ffffff', align: 'left' }
   );
 
-  // Statistiche stile Found HUD di Isaac
+  // Statistiche
   drawTextFit(
-    `⚔DMG:${statoRun.dmg.toFixed(2)}  💧TRS:${statoRun.tearsPerSec.toFixed(1)}/s`,
+    `⚔DMG:${statoRun.dmg.toFixed(2)}  ✦CAD:${statoRun.colpiAlSec.toFixed(1)}/s`,
     hx + 6,
     hy + 35,
     hw - 12,
@@ -9177,7 +9177,7 @@ bLeg('btn-audio', () => {
  */
 
 // ===========================================================================
-// LOOP DI GIOCO E IA DIFFERENZIATA NEMICI/BOSS IN STILE THE BINDING OF ISAAC
+// LOOP DI GIOCO E IA DIFFERENZIATA NEMICI/BOSS
 // ===========================================================================
 let tick = 0;
 
@@ -9302,7 +9302,7 @@ Object.assign(window.__teatro.interni, {
 
 // --- D: inizio --- (sonda QA delle meccaniche e del catalogo D)
 Object.assign(window.__teatro.interni, {
-  OGGETTI_D, ECONOMIA_T3, conosciutiD, descD, apriDiarioD, gestisciClickMenuPausa, estraiNegativoD, sparaProiettiliDirezione, subisciColpoGiocatore, ricalcolaStatisticheIsaac, maledizioneD, trovaOggettoB,
+  OGGETTI_D, ECONOMIA_T3, conosciutiD, descD, apriDiarioD, gestisciClickMenuPausa, estraiNegativoD, sparaProiettiliDirezione, subisciColpoGiocatore, ricalcolaStatistiche, maledizioneD, trovaOggettoB,
 });
 // --- D: fine ---
 
@@ -9722,7 +9722,7 @@ requestAnimationFrame(loop);
  * Contiene:
  *   - [M] muto (persistente) e allineamento del bottone «Audio» (la campana d'ingresso è un gancio nel file).
  *   - Patto potente: raggio cremisi continuo (Raggio Cremisi del Velo: si tiene la freccia, danno continuo
- *     sulla linea fino al muro) e lacrime spettrali (Cuore Sacro di San Leucio: passano colonne, bracieri e
+ *     sulla linea fino al muro) e colpi spettrali (Cuore Sacro di San Leucio: passano colonne, bracieri e
  *     muri); conferma in pagina «−1 maschera massima per sempre» prima di ogni patto.
  *   - Cinque slot di salvataggio in localStorage (chiave ferruccio.teatro.slot.<n>): personaggio, piano
  *     massimo, scintille (monete di luce), flag della trama, data. Riga «Slot 1-5» nel menu dei personaggi,
@@ -9746,7 +9746,7 @@ requestAnimationFrame(loop);
     raggio: Object.freeze({
       idOggetto: 'patto_raggio',
       ogniTick: 5,            // un impulso di danno ogni 5 tick (12 al secondo)
-      dannoPerImpulso: 0.18,  // frazione di statoRun.dmg per impulso: 2,16 x DMG al secondo (le lacrime ~2,7 x; il raggio trapassa e non manca mai). Era 0,3: troppo forte (autore, 2026-11-09)
+      dannoPerImpulso: 0.18,  // frazione di statoRun.dmg per impulso: 2,16 x DMG al secondo (i colpi ~2,7 x; il raggio trapassa e non manca mai). Era 0,3: troppo forte (autore, 2026-11-09)
       larghezzaPx: 10,        // spessore utile del raggio (si somma al raggio del nemico)
       origineAvantiPx: 10,    // il raggio parte poco davanti al burattino
       colori: Object.freeze({ alone: 'rgba(220, 20, 40, 0.30)', corpo: '#dc2626', anima: '#fde2e2' }),
@@ -9782,10 +9782,10 @@ requestAnimationFrame(loop);
   // Il patto diventa potente: le descrizioni delle reliquie dicono cosa fanno davvero.
   for (const p of T.CATALOGO_PATTO) {
     if (p.id === CONFIG.raggio.idOggetto) {
-      p.statsDesc = '[😈 PATTO] Raggio Cremisi continuo: tieni la freccia, danno su tutta la linea · DMG x2.1';
+      p.statsDesc = '[😈 PATTO] Raggio Cremisi continuo: tieni la freccia, danno su tutta la linea · Danno x2.1';
     } else if (p.id === CONFIG.spettrali.idOggetto) {
       p.mod = { ...p.mod, spettrali: true };
-      p.statsDesc = '[😈 PATTO] Lacrime Spettrali: passano colonne e muri · DMG x2.3 · Rigenera la vita';
+      p.statsDesc = '[😈 PATTO] Colpi Spettrali: passano colonne e muri · Danno x2.3 · Rigenera la vita';
     }
   }
 
@@ -9948,7 +9948,7 @@ requestAnimationFrame(loop);
     if (keys.ArrowLeft || keys.KeyJ) return [-1, 0];
     if (keys.ArrowUp || keys.KeyI) return [0, -1];
     if (keys.ArrowDown || keys.KeyK) return [0, 1];
-    if (mouseRaggio.giu) { // col raggio il mouse spara il raggio (tenuto premuto), non le lacrime
+    if (mouseRaggio.giu) { // col raggio il mouse spara il raggio (tenuto premuto), non i colpi
       const dx = mouseRaggio.x - player.x, dy = mouseRaggio.y - player.y;
       if (Math.abs(dx) >= Math.abs(dy)) return [dx >= 0 ? 1 : -1, 0];
       return [0, dy >= 0 ? 1 : -1];
@@ -9967,7 +9967,7 @@ requestAnimationFrame(loop);
   canvas.addEventListener('mousemove', (e) => { if (mouseRaggio.giu) posMouse(e); });
   window.addEventListener('mouseup', () => { mouseRaggio.giu = false; });
   window.addEventListener('blur', () => { mouseRaggio.giu = false; });
-  // Il click di 70-input spara una lacrima nelle 4 direzioni: col raggio non deve.
+  // Il click di 70-input spara un colpo nelle 4 direzioni: col raggio non deve.
   if (typeof eseguiAttacco4Direzioni === 'function') {
     const attaccoBaseT3 = eseguiAttacco4Direzioni;
     eseguiAttacco4Direzioni = function (...a) {
@@ -9983,7 +9983,7 @@ requestAnimationFrame(loop);
     return Math.hypot(px - (ax + vx * t), py - (ay + vy * t));
   }
 
-  /** Gancio per tick (prima degli attacchi con le frecce). Con il raggio acceso le lacrime restano ferme. */
+  /** Gancio per tick (prima degli attacchi con le frecce). Con il raggio acceso i colpi restano fermi. */
   function aggiornaRaggio(st) {
     raggio.attivo = false;
     if (!st || !haOggetto(CONFIG.raggio.idOggetto) || confermaPatto) return;
@@ -9992,7 +9992,7 @@ requestAnimationFrame(loop);
     const [dx, dy] = dir;
     player.dirX = dx; player.dirY = dy;
     if (dx !== 0) player.flipX = dx < 0;
-    player.cooldown = Math.max(player.cooldown, 2); // eseguiAttacco4Direzioni non spara lacrime
+    player.cooldown = Math.max(player.cooldown, 2); // eseguiAttacco4Direzioni non spara colpi
     player.shootAnimTimer = Math.max(player.shootAnimTimer, 2);
 
     const ox = player.x + dx * CONFIG.raggio.origineAvantiPx;
@@ -11830,8 +11830,7 @@ requestAnimationFrame(loop);
 /* teatro/a1-bombe-chiavi.js (incorporato da tools/teatro-release.js) */
 /*
  * teatro/a1-bombe-chiavi.js — Miglioramento 1: bombe, chiavi, forzieri e porte chiuse a lucchetto.
- * Ispirazione: bombe/chiavi/forzieri/porte chiuse di The Binding of Isaac (solo come riferimento nei
- * commenti: nel gioco nomi e testi sono del Teatro, Caserta 1845).
+ * Nomi e testi sono del Teatro, Caserta 1845.
  *
  * Script classico caricato dopo t4-hub-storia.js. Costruisce sopra il gioco senza duplicarlo:
  * - avvolge (riassegnando le `function` globali) generaMappaPiano, avviaPiano, entraInStanza,
@@ -11841,7 +11840,7 @@ requestAnimationFrame(loop);
  * - l'inventario è statoRun.bombe / statoRun.chiavi (azzerato a ogni run nuova, valori in tabella).
  * Unici agganci nei file di base: il contatore nell'HUD (60-resa.js, testoInventarioA1) e lo <script> nell'HTML.
  *
- * Tasto: E piazza una bomba quando non c'è niente con cui interagire vicino (in Isaac E è la bomba);
+ * Tasto: E piazza una bomba quando non c'è niente con cui interagire vicino;
  * con un piedistallo, uno slot della Fucina/del Patto o l'uscita del boss vicini E fa quello che faceva prima.
  */
 
@@ -11852,11 +11851,11 @@ const BOMBE_CHIAVI_A1 = Object.freeze({
   inizio: Object.freeze({ bombe: 1, chiavi: 1 }),     // dotazione a inizio run
   massimo: Object.freeze({ bombe: 99, chiavi: 99 }),
   bomba: Object.freeze({
-    miccaMs: 1500,            // miccia (Isaac ~1,5 s)
+    miccaMs: 1500,            // miccia
     raggio: 56,               // px: nemici, colonne, bracieri
     raggioGiocatore: 40,      // px: la propria bomba ferisce anche te
     raggioMuroSegreto: 95,    // px dal centro della porta murata
-    dannoBase: 30,            // al piano 1 (lacrime base ~3,5): un Bozzo o una Vespa muoiono, una Guardia quasi
+    dannoBase: 30,            // al piano 1 (colpi base ~3,5): un Bozzo o una Vespa muoiono, una Guardia quasi
     dannoPerPiano: 6,
     dannoGiocatoreHalf: 2,    // mezze maschere
     cooldownMs: 450,          // fra due bombe (anche col tasto tenuto premuto)
@@ -12081,7 +12080,7 @@ function esplodiBombaA1(st, b) {
     st.macchie.push({ x: b.x + (rm() - 0.5) * 40, y: b.y + (rm() - 0.5) * 28, r: 3.5 + rm() * 4.5,
       col: rm() < 0.7 ? '#050302' : '#450a0a', tipo: 'bruciatura' });
   }
-  // Nemici: il danno passa anche la maschera chiusa (in Isaac la bomba apre gli Host)
+  // Nemici: il danno passa anche la maschera chiusa
   const danno = B.dannoBase + (statoRun.piano - 1) * B.dannoPerPiano;
   for (const nem of st.nemici) {
     if (nem.hp <= 0 || (nem.airZ || 0) > 16) continue;
@@ -12904,7 +12903,7 @@ const CONS_A2 = Object.freeze({
 
 /**
  * AMPOLLE: effetti (12 per run, su CONS_A2_COLORI). polarita: positivo | negativo | neutro.
- * mod: voci di ricalcolaStatisticheIsaac sommate finché l'effetto dura (CONS_A2.durataStanze stanze ripulite).
+ * mod: voci di ricalcolaStatistiche sommate finché l'effetto dura (CONS_A2.durataStanze stanze ripulite).
  * Testi: da approvare dall'autore.
  */
 const CONS_A2_AMPOLLE = Object.freeze([
@@ -12914,8 +12913,8 @@ const CONS_A2_AMPOLLE = Object.freeze([
   { id: 'polso', nome: 'Polso Molle', polarita: 'negativo', mod: { flatDmg: -0.8 }, desc: '−0,8 Danno per 3 stanze' },
   { id: 'occhio', nome: 'Occhio Lungo', polarita: 'positivo', mod: { rangeUp: 60 }, desc: '+Gittata per 3 stanze' },
   { id: 'vista', nome: 'Vista Corta', polarita: 'negativo', mod: { rangeUp: -50 }, desc: '−Gittata per 3 stanze' },
-  { id: 'lesta', nome: 'Mano Lesta', polarita: 'positivo', mod: { tearsUp: 0.7 }, desc: '+Cadenza per 3 stanze' },
-  { id: 'fiato', nome: 'Fiato Corto', polarita: 'negativo', mod: { tearsUp: -0.5 }, desc: '−Cadenza per 3 stanze' },
+  { id: 'lesta', nome: 'Mano Lesta', polarita: 'positivo', mod: { cadenzaUp: 0.7 }, desc: '+Cadenza per 3 stanze' },
+  { id: 'fiato', nome: 'Fiato Corto', polarita: 'negativo', mod: { cadenzaUp: -0.5 }, desc: '−Cadenza per 3 stanze' },
   { id: 'sanita', nome: 'Acqua della Sanità', polarita: 'positivo', curaHalf: 2, desc: 'Rigenera 1 Maschera' },
   { id: 'veleno', nome: 'Veleno di Speziale', polarita: 'negativo', ferisciHalf: 1, desc: '−½ Maschera (mai l\'ultima)' },
   { id: 'capogiro', nome: 'Capogiro', polarita: 'negativo', confusioneMs: 6000, desc: 'Comandi invertiti per 6 s' },
@@ -13133,7 +13132,7 @@ function applicaAmpollaA2(e) {
     if (gia) gia.stanze = CONS_A2.durataStanze;
     else S.effetti.push({ id: e.id, stanze: CONS_A2.durataStanze });
     aggiornaScalaA2();
-    ricalcolaStatisticheIsaac();
+    ricalcolaStatistiche();
   }
   return null;
 }
@@ -13199,7 +13198,7 @@ function applicaCartaA2(e) {
     }
     case 'forza':
       S.forzaStanza = CONS_A2.effettiStanza.dannoForza;
-      ricalcolaStatisticheIsaac();
+      ricalcolaStatistiche();
       return null;
     case 'stordisci':
       statoRun.proiettiliNemici = [];
@@ -13233,8 +13232,8 @@ function applicaCartaA2(e) {
 // AGGANCI (funzioni globali avvolte)
 // ===========================================================================
 /** Statistiche: gli effetti a tempo entrano come un oggetto fittizio, così valgono clamp e formule di base. */
-const ricalcolaOrigA2 = ricalcolaStatisticheIsaac;
-ricalcolaStatisticheIsaac = function ricalcolaStatisticheIsaacA2(...args) {
+const ricalcolaOrigA2 = ricalcolaStatistiche;
+ricalcolaStatistiche = function ricalcolaStatisticheA2(...args) {
   const S = statoRun.fase === 'in_gioco' ? statoA2() : null;
   const mod = {};
   if (S) {
@@ -13259,7 +13258,7 @@ const entraInStanzaOrigA2 = entraInStanza;
 entraInStanza = function entraInStanzaA2(...args) {
   const r = entraInStanzaOrigA2.apply(this, args);
   const S = statoRun.consumabiliA2;
-  if (S && S.forzaStanza) { S.forzaStanza = 0; ricalcolaStatisticheIsaac(); }
+  if (S && S.forzaStanza) { S.forzaStanza = 0; ricalcolaStatistiche(); }
   return r;
 };
 
@@ -13279,7 +13278,7 @@ function dopoPuliziaA2(st) {
     for (const x of S.effetti) x.stanze--;
     S.effetti = S.effetti.filter((x) => x.stanze > 0);
     aggiornaScalaA2();
-    ricalcolaStatisticheIsaac();
+    ricalcolaStatistiche();
   }
   if (!CONS_A2.drop.tipiEsclusi.includes(st.tipo) && S.rnd() < CONS_A2.drop.probPulizia) {
     lasciaConsumabileA2(st, estraiConsumabileA2(), CONS_A2.drop.x, CONS_A2.drop.y);
@@ -13290,8 +13289,8 @@ function dopoPuliziaA2(st) {
  * Fucina: lo slot «consumabile» di base (½ Maschera a ECONOMIA_T3.prezzi.consumabile) diventa un consumabile
  * A2 allo stesso prezzo e nella stessa posizione (economia.md §5: dono, cuore, consumabile).
  */
-const popolaOrigA2 = popolaStanzaIsaac;
-popolaStanzaIsaac = function popolaStanzaIsaacA2(s, ...resto) {
+const popolaOrigA2 = popolaStanza;
+popolaStanza = function popolaStanzaA2(s, ...resto) {
   const r = popolaOrigA2.call(this, s, ...resto);
   if (s.tipo === 'fucina' && Array.isArray(s.slotFucina) && !s.slotFucina.some((x) => x.tipo === 'consumabileA2')) {
     const i = s.slotFucina.findIndex((x) => x.tipo === 'cura' && x.sprite === CONS_A2.fucina.sostituisce);
@@ -13543,7 +13542,7 @@ Object.assign(window.__teatro.interni, {
   CONS_A2, CONS_A2_AMPOLLE, CONS_A2_CARTE, CONS_A2_COLORI, statoA2, creaConsumabileA2, prendiConsumabileA2,
   usaConsumabileA2, lasciaConsumabileA2, estraiConsumabileA2, effettoA2, notoA2, descA2, nomeA2, conosciutiA2,
   // gli interni esposti in 80-ciclo.js puntano alle versioni non avvolte: si aggiornano
-  nuovaRun, entraInStanza, interagisciStanza, ricalcolaStatisticheIsaac, tastoDiarioD,
+  nuovaRun, entraInStanza, interagisciStanza, ricalcolaStatistiche, tastoDiarioD,
 });
 
 </script>
@@ -13773,7 +13772,7 @@ function respingiDallaPortaA3(latoUscita) {
 /** Comprimari di un'ondata: gli stessi temi delle stanze di combattimento del piano. */
 function generaOndataA3(st, k) {
   const finta = { id: `${st.id}-o${k}`, tipo: 'normale', porte: {}, nemici: [], ostacoli: [], oggettiATerra: [] };
-  popolaStanzaIsaac(finta, statoRun.piano);
+  popolaStanza(finta, statoRun.piano);
   return finta.nemici;
 }
 
@@ -13866,7 +13865,7 @@ function popolaStanzaA3(s, piano) {
 /** Come generaOndataA3 ma col piano esplicito (alla generazione statoRun.piano può essere quello vecchio). */
 function generaOndataPianoA3(st, piano) {
   const finta = { id: `${st.id}-c`, tipo: 'normale', porte: {}, nemici: [], ostacoli: [], oggettiATerra: [] };
-  popolaStanzaIsaac(finta, piano);
+  popolaStanza(finta, piano);
   return finta.nemici;
 }
 
@@ -14457,7 +14456,7 @@ const SBLOCCHI_A6 = Object.freeze([
     testo: 'Pulcinella d\'Ombra. Spezzati i fili, la tua ombra cammina da sola.',
   }),
   Object.freeze({
-    id: 'ogg-burattino-tonino', cosa: { oggetto: 'bobby' },
+    id: 'ogg-burattino-tonino', cosa: { oggetto: 'pupo_tonino' },
     quando: [{ parla: 'tonino' }],
     condizione: 'Parla con Tonino in Piazza Dante',
     testo: 'Burattino di Tonino. Ora può comparire nel Teatro.',

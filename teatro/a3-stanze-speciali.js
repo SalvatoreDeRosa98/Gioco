@@ -222,7 +222,7 @@ function respingiDallaPortaA3(latoUscita) {
 /** Comprimari di un'ondata: gli stessi temi delle stanze di combattimento del piano. */
 function generaOndataA3(st, k) {
   const finta = { id: `${st.id}-o${k}`, tipo: 'normale', porte: {}, nemici: [], ostacoli: [], oggettiATerra: [] };
-  popolaStanzaIsaac(finta, statoRun.piano);
+  popolaStanza(finta, statoRun.piano);
   return finta.nemici;
 }
 
@@ -315,7 +315,7 @@ function popolaStanzaA3(s, piano) {
 /** Come generaOndataA3 ma col piano esplicito (alla generazione statoRun.piano può essere quello vecchio). */
 function generaOndataPianoA3(st, piano) {
   const finta = { id: `${st.id}-c`, tipo: 'normale', porte: {}, nemici: [], ostacoli: [], oggettiATerra: [] };
-  popolaStanzaIsaac(finta, piano);
+  popolaStanza(finta, piano);
   return finta.nemici;
 }
 
