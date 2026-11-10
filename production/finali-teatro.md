@@ -10,16 +10,24 @@
 | Fatto | Fonte | Come lo usiamo |
 |---|---|---|
 | La Voce narrante è Donna Luciana; si rivela all'ingresso del suo boss; **sconfitta lei, la voce scompare per sempre** e restano solo indicazioni nude fra parentesi quadre: «[Il copione è strappato. Nessuno detta più le tue parole.]» | `trama/decisione-narratrice-donna-luciana.md` | La «Voce del Burattinaio» chiesta dal compito è **lei** (la Burattinaia). Finché non è caduta commenta boss, atti, notti. Dopo la sua prima sconfitta le stesse didascalie diventano «senza regia»: fra quadre, senza nome, senza suono. |
-| «Spezzandola si scopre che anche ai suoi polsi sono legati fili d'oro che salgono più in alto nel buio del Teatro: "BIS! DA CAPO!"» | `storia.json › boss › donna-luciana › rivelazione` | È il ponte fra il finale vero e la «Notte senza fine», ed è la domanda a cui risponde il finale segreto: dove vanno quei fili? |
+| «Spezzandola si scopre che anche ai suoi polsi sono legati fili d'oro che salgono più in alto nel buio del Teatro: "BIS! DA CAPO!"» | `storia.json › boss › donna-luciana › rivelazione` | È il ponte fra il finale vero e la «Notte senza fine», ed è la domanda a cui risponde il finale segreto: chi c'è in cima a quei fili? |
 | Le due conclusioni della bibbia (Spezza il Velo / Risparmia), le quattro scene conclusive di Tonino, le frasi sul nero, la frase dei titoli di coda | bibbia §X, §XVI, §XX | Il finale vero **è** il bivio della bibbia, messo in scena sul palco delle marionette. Battute alla lettera. |
-| «Questo rende i due finali inevitabilmente opposti, **senza introdurre una soluzione perfetta nascosta**.» | bibbia §VIII | Il finale segreto **non** salva Caserta e non è un terzo esito per la città: riguarda solo Ferruccio. Lo diciamo a schermo: «quello che hai scelto sul palco resta scelto». |
+| «Questo rende i due finali inevitabilmente opposti, **senza introdurre una soluzione perfetta nascosta**.» | bibbia §VIII | Il finale segreto **non** sceglie per Caserta: chiude il Teatro (la notte che si replica), non il bivio. Lo diciamo a schermo: fuori c'è la città «come l'hai lasciata sul palco». |
 | La porta in alto al centro dell'hub è la **bottega di Gaetano**: `presenze › id "bottega" › etichetta "bottega di Gaetano" › aperta_se { fucina_aperta: "vera" }` | `t4-hub-storia.js › DATI.modelloHub` | È «la porta della prima stanza». Il flag `fucina_aperta` esiste già e non lo imposta nessuno: lo impostiamo noi quando il segreto è risolto. |
-| «Tonino e Assunta introducono la bottega di Gaetano; Mariella aggiunge l'indizio del **ferro che risuona dietro una porta** su Corso Trieste. […] la porta della bottega apre la **Fucina del Ricordo**. […] All'interno, parlare con Gaetano **restituisce a Ferruccio il nome e il volto umano**.» | `trama/inizio-memoria-e-doni.md` (decisione dell'autore, 10 ottobre) | **Questo è il significato preciso della porta.** Dietro c'è la Fucina del Ricordo; il finale segreto è l'incontro con Gaetano che restituisce il volto. Gli indizi sono proprio quelli scritti dall'autore: Tonino introduce la bottega, Mariella dice del ferro che risuona. |
-| Gaetano «non deve trasformarsi in un fantasma che accompagna e spiega tutto»; una sola battuta canonica: «Prima fate uscire i ragazzi!» | bibbia §VI | Nella Fucina Gaetano dice sei battute brevi, da capomastro. Non spiega il Velo. La sua battuta canonica torna come congedo. |
-| «La sua spada, forgiata con **gli ultimi strumenti del padre**, rappresenta inizialmente la vendetta.» · Taddeo: «Quella l'abbiamo forgiata insieme.» · il punzone **G. F.** «accanto alla fontana della Villa Comunale» · Agnese: «Siete venuto ad aggiustarlo o a finirlo?» … «Almeno quelle non le rompete.» · Gaetano muore nel cantiere della Reggia | bibbia §III, §IV, §V, §VI | La chiave della porta sono **i quattro ferri di Gaetano**, uno per quartiere. |
-| «Ogni sentimento lascia un filo invisibile nel mondo, e i fili più forti non scompaiono nemmeno dopo la morte.» · Violante: «Bianca non vuole più niente.» · Mariella: «Non devi aggiustarmi.» · Agnese chiede di «non lasciare che la morte del padre determini ogni sua decisione» | bibbia §I, §III, §VIII, §IX | È la regola con cui il segreto rovescia la storia (vedi §2.4). |
-| Tonino, prima battuta del gioco: «Mangia. Magari sotto 'sta maschera ce sta ancora qualcuno.» | bibbia §X | La frase sul nero del finale segreto la chiude: «Sotto la maschera c'era ancora qualcuno.» |
+| «Tonino e Assunta introducono la bottega di Gaetano; Mariella aggiunge l'indizio del **ferro che risuona dietro una porta** su Corso Trieste. […] la porta della bottega apre la **Fucina del Ricordo**. […] All'interno, parlare con Gaetano **restituisce a Ferruccio il nome e il volto umano**.» | `trama/inizio-memoria-e-doni.md` (decisione dell'autore, 10 ottobre) | **Questo è il significato preciso della porta.** Dietro c'è la Fucina del Ricordo; lì Gaetano restituisce il volto. Gli indizi sono quelli scritti dall'autore: Tonino introduce la bottega, Mariella dice del ferro che risuona. |
+| **Nota dell'autore arrivata durante il lavoro**: dietro tutto c'è «Il Grande Burattinaio», le gigantesche mani guantate di bianco che dall'alto reggono i fili (le due Mani che il gioco disegna già), con forbici colossali per strappare i fili di Ferruccio; si arriva «Sopra la Ribalta» da una porta chiusa da **3 sigilli**; il finale più vero: Ferruccio taglia l'ultimo filo maestro, libera il teatro e cala per sempre il sipario. | autore, via coordinatore | **Usata tutta**, vedi §2: la porta della bottega è la porta dei 3 sigilli (uno per quartiere), dietro c'è la Fucina del Ricordo e dalla fucina una scala sale Sopra la Ribalta. Come l'abbiamo resa coerente con la bibbia: §2.4. |
+| Gaetano «non deve trasformarsi in un fantasma che accompagna e spiega tutto»; una sola battuta canonica: «Prima fate uscire i ragazzi!» | bibbia §VI | Nella Fucina Gaetano dice sette battute brevi, da capomastro. Non spiega il Velo: fa il suo mestiere (tempra le forbici). La sua battuta canonica torna come congedo. |
+| «La sua spada, forgiata con **gli ultimi strumenti del padre**» · Taddeo: «Quella l'abbiamo forgiata insieme.» · il punzone **G. F.** «accanto alla fontana della Villa Comunale» · Agnese: «Siete venuto ad aggiustarlo o a finirlo?» … «Almeno quelle non le rompete.» · il giglio «è il simbolo che lega i guardiani a Violante» | bibbia §III, §IV, §V, §VI, §XII | Ogni sigillo (ceralacca col giglio) si rompe con uno dei **ferri di Gaetano**, uno per quartiere. |
+| L'oggetto attivo con cui Ferruccio comincia ogni notte si chiama **«Forbici di Gaetano»** | `00-config.js › OGGETTI_ATTIVI.forbici` | Contro le forbici colossali del Burattinaio, il filo maestro lo tagliano le forbici del padre. |
+| «La magia utilizzata da Violante non nasceva a Caserta, ma era stata tramandata da secoli.» | bibbia, Espansione III | È lo spazio che la bibbia lascia al Grande Burattinaio: le Mani sono più vecchie della Signora. |
+| Sequenza di morte: «I fili d'oro si spezzano. La maschera si stacca in pezzi che salgono.» Poi il lampione si riaccende. | `t4-hub-storia.js › morte` | Sopra la Ribalta si scopre cos'era: le forbici colossali che strappano i fili, le maschere che salgono ai ganci, qualcuno che ogni notte rimette insieme il burattino. |
+| «Ogni sentimento lascia un filo invisibile nel mondo, e i fili più forti non scompaiono nemmeno dopo la morte.» · Violante: «Bianca non vuole più niente.» · Mariella: «Non devi aggiustarmi.» · «Se nessuno vuole essere liberato, hai comunque il diritto di farlo?» | bibbia §I, §VIII, §IX, chiusa | Il padre non chiede vendetta («Io non te l'ho mai chiesto»); il taglio del filo maestro non è un lieto fine: «Nessuno gliel'aveva chiesto. Nemmeno stavolta.» |
+| Tonino, prima battuta del gioco: «Mangia. Magari sotto 'sta maschera ce sta ancora qualcuno.» | bibbia §X | La frase sul nero del finale più vero la chiude: «Sotto la maschera c'era ancora qualcuno.» |
 | Notti che cambiano: dalla notte 2 la luna si sposta e Mariella è alla finestra; notte 3 Tonino: «quanno 'a luna cammina, quaccheduno se ricorda» | `00-config.js › NOTTI_C`, `t4 › TESTI_NOTTI_C` | Gli indizi del segreto seguono lo stesso calendario (notte 2, 3, 4…). |
+
+**Luogo e anno.** Nella nota l'autore scrive «Napoli del 1839». Il gioco e la bibbia dicono **Caserta, 1845**
+(il 1839 è l'anno del crollo del cantiere, sei anni prima). Abbiamo seguito la bibbia: tutti i testi dicono
+Caserta e «sei anni». **Da segnalare all'autore.**
 
 **Violante o Donna Luciana?** La bibbia dice Violante; il Teatro (boss, sipari, decisione sulla Voce del 9 novembre)
 dice Donna Luciana. Non decidiamo noi: nel codice il nome è una sola costante (`TESTI_B8.nomeSignora`), le battute
@@ -118,17 +126,18 @@ Palco, poi **Piazza Dante grigia** con i fili d'oro tesi sulle case.
 ### 1.4 Epilogo comune — «Bis»
 
 Il palco visto dalla platea: le teste del pubblico d'ombre in basso, il sipario a metà, Donna Luciana a terra con
-due fili d'oro ai polsi che salgono oltre il boccascena; sul fondale, piccola, **una porta con l'insegna del fabbro**.
+due fili d'oro ai polsi che salgono oltre il boccascena verso due Mani guantate di bianco; sul fondale, piccola,
+**una porta con l'insegna del fabbro e tre sigilli**.
 
 | Chi | Testo | |
 |---|---|---|
 | didascalia | Il sipario dovrebbe calare. Non cala. | [nuovo] |
 | didascalia | Ai polsi di Donna Luciana ci sono fili d'oro. Salgono più in alto, nel buio sopra il palco. | [storia.json] |
-| didascalia | Dalla platea delle ombre arriva una voce che non è la sua. | [nuovo] |
-| Una voce dal buio | BIS! DA CAPO! | [storia.json] |
+| didascalia | Le grandi Mani, che credevi sue, si richiudono da sole. Portano guanti bianchi. | [nuovo — il Grande Burattinaio dell'autore] |
+| Una voce dall'alto | BIS! DA CAPO! | [storia.json] |
 | didascalia | I fili tirano. La Burattinaia si rialza come si rialza una marionetta. Non parla più. | [nuovo] |
 | didascalia | La luna torna al suo posto. In Piazza Dante un lampione si riaccende. | [nuovo] |
-| didascalia | Sul fondale, dove i fili piegano, c'è dipinta una porta. Ha l'insegna di un fabbro. | [nuovo — indizio del segreto] |
+| didascalia | Sul fondale, dove i fili piegano, c'è dipinta una porta. Ha l'insegna di un fabbro e tre sigilli. | [nuovo — indizio del segreto] |
 
 ### 1.5 Titoli di coda (brevi)
 
@@ -156,144 +165,193 @@ del Medaglione in mano) × patto sì/no. La QA ne prova quattro.
 
 ---
 
-## 2. Il finale segreto — «La porta della bottega»
+## 2. Il finale segreto — la porta dei tre sigilli, la Fucina del Ricordo, Sopra la Ribalta
 
 ### 2.1 Che porta è
 
-L'autore ha chiesto: «deve c'entrare la porta della prima stanza». La prima stanza è l'hub di Piazza Dante e la
-porta di legno chiusa in alto al centro è, nei dati del gioco, la **bottega di Gaetano** — la porta che per la
-decisione del 10 ottobre «apre la Fucina del Ricordo», dove «parlare con Gaetano restituisce a Ferruccio il nome
-e il volto umano». Non abbiamo inventato un significato: abbiamo usato quello dell'autore, che nel Teatro non era
-ancora stato messo in scena. (Nella versione a piattaforme la porta stava «dopo aver percorso Piazza e Corso»; nel
-Teatro è sul fondale di Piazza Dante, e l'indizio di Mariella sul Corso diventa il primo passo.)
+L'autore ha chiesto: «deve c'entrare la porta della prima stanza», e poi: «si arriva Sopra la Ribalta da una porta
+chiusa da 3 sigilli». La prima stanza è l'hub di Piazza Dante e la porta di legno chiusa in alto al centro è, nei
+dati del gioco, la **bottega di Gaetano** — la porta che per la decisione del 10 ottobre «apre la Fucina del
+Ricordo», dove «parlare con Gaetano restituisce a Ferruccio il nome e il volto umano». Le due idee dell'autore sono
+la stessa porta: **sulla spranga della bottega ci sono tre sigilli di ceralacca col giglio; dietro c'è la Fucina
+del Ricordo; in fondo alla fucina una scala a pioli sale Sopra la Ribalta**, dove le Mani reggono i fili.
+(Nella versione a piattaforme la porta stava «dopo aver percorso Piazza e Corso»; nel Teatro è sul fondale di
+Piazza Dante, e l'indizio di Mariella sul Corso diventa il primo sigillo.)
 
-### 2.2 La chiave: i quattro ferri di Gaetano
+### 2.2 La chiave: tre sigilli, tre ferri di Gaetano
 
-«Gli ultimi strumenti del padre», quelli con cui è stata forgiata la spada. Una bottega senza ferri non apre.
-Uno per quartiere; restano per sempre nello slot e **si vedono appesi accanto alla porta** nell'hub.
+La ceralacca col giglio non si rompe con le mani: ci vogliono «gli ultimi strumenti del padre». Un ferro per
+sigillo, un sigillo per quartiere. Restano per sempre nello slot; nell'hub **si vede il sigillo spaccato e il ferro
+appeso a un chiodo accanto alla porta**. Lo stato è `sigilli` (0..3).
 
-| # | Ferro | Quartiere | Come si ottiene | Perché (leggibile a posteriori) |
+| # | Sigillo / ferro | Quartiere | Come si ottiene | Perché (leggibile a posteriori) |
 |---|---|---|---|---|
 | 1 | **Le Tenaglie** | Corso Trieste (piano 1) | Sono a terra nella **stanza segreta** del piano 1. | Indizio canonico di Mariella: il ferro risuona «dietro una porta» sul Corso — una porta che non c'è: il muro segreto. Con le tenaglie Ferruccio e Taddeo tennero il ferro della spada («Quella l'abbiamo forgiata insieme»). |
 | 2 | **Il Punzone G. F.** | Villa Comunale (piano 2) | Nella stanza d'ingresso del piano c'è una **fontana muta**. Battuto il boss del piano, invece di scendere nella botola si **torna all'ingresso**: l'acqua scorre e il punzone è sul fondo. | Bibbia §VI: il punzone è «accanto alla fontana della Villa Comunale»; il marmo «custodisce i ricordi degli operai morti» e li libera quando cade. |
 | 3 | **La Lima** | San Leucio (piano 3) | Cade quando si batte il boss del piano 3 **senza perdere nemmeno una maschera nella sua stanza**. | Agnese, primo incontro: «Siete venuto ad aggiustarlo o a finirlo?» … «Almeno quelle non le rompete.» A San Leucio non si rompe niente. (Stesso criterio che il gioco già usa per la Porta del Patto sicura.) |
-| 4 | **Il Martello** | La Reggia (piano 4) | Cade dall'alto quando cade Donna Luciana, **solo se gli altri tre sono già alla porta** (o presi nella stessa notte). | Gaetano muore nel cantiere della Reggia; il martello è rimasto «in alto», dove salgono i fili della Burattinaia. È l'ultimo ricordo, e arriva solo quando ci sono gli altri. |
 
-**Ultimo passo — bussare.** Con i quattro ferri alla porta la spranga penzola ma la porta non si apre da sola.
-Bisogna bussare [E] **come batte lui: tre colpi, una pausa, uno**. È il ritmo con cui la luce sotto la porta
-pulsa fin dalla notte 2 e che il Diario annota quella stessa notte («Tre colpi, una pausa, uno.»). Bussare prima
-di avere i ferri non è inutile: se il ritmo è giusto la porta risponde, ma «mancano i ferri».
+**Il quarto passo è la Reggia.** Rotti i tre sigilli, un filo d'oro teso dall'alto tiene ancora chiusa la porta:
+si allenta solo dopo che Donna Luciana è caduta e si è visto l'epilogo «Bis» del finale vero (è lì che si scopre
+che i fili salgono oltre lei).
 
-Costanti in `SEGRETO_B8`: 3 colpi entro 150 tick l'uno dall'altro, pausa di 40-200 tick, 1 colpo, poi 60 tick di silenzio.
+**Ultimo passo — bussare.** La porta non si apre da sola. Bisogna bussare [E] **come batte lui: tre colpi, una
+pausa, uno**. È il ritmo con cui la luce sotto la porta pulsa fin dalla notte 2 e che il Diario annota quella
+stessa notte. Bussare prima non è inutile: se il ritmo è giusto la porta risponde, e dice cosa manca.
+
+Costanti in `SEGRETO_B8.bussata`: tre colpi a non più di 0,6 s l'uno dall'altro, una pausa fra 0,75 e 3 s, un
+colpo, poi 0,8 s di silenzio.
 
 ### 2.3 Gli indizi, notte dopo notte
 
 | Quando | Dove | Indizio | |
 |---|---|---|---|
-| Notte 1 | — | Niente. La porta è una porta chiusa. | |
+| Notte 1 | — | Niente. Una porta sprangata con tre sigilli. | |
 | Dalla notte 2 | La porta | Una lama di luce sotto la porta pulsa col ritmo del martello (tre, pausa, uno); avvicinandosi, qualche scintilla e il «tin» del ferro. | particolare che cambia |
 | Dalla notte 2, vicino alla porta | La Voce | «Quella porta è dipinta sul fondale, Ferruccio. Non perdere tempo con la scenografia.» — la narratrice mente. Caduta lei: «[Una porta sul fondale. Dietro, un ferro batte: tre colpi, una pausa, uno.]» | [nuovo] |
 | Dalla notte 2 | Diario | «Passando davanti alla bottega chiusa ho sentito battere. Tre colpi, una pausa, uno.» | [nuovo] |
-| Dalla notte 3 | Tonino | «Chella porta? È 'a puteca 'e Gaetano 'o ferraro.» / «Sta sprangata 'a quanno... boh. E chi s''o ricorda. Ma 'a notte, si staje zitto, siente 'o martiello.» | [nuovo; canone: Tonino introduce la bottega] |
+| Dalla notte 3 | Tonino | «Chella porta? È 'a puteca 'e Gaetano 'o ferraro.» / «'A sigillajeno doppo 'o fatto d''o cantiere. Tre sigille. E chi s''o ricorda cchiù pecché.» / «Ma 'a notte, si staje zitto, siente 'o martiello.» | [nuovo; canone: Tonino introduce la bottega] |
 | Dalla notte 4 (senza tenaglie) | Tonino | «'A piccerella d''a fenesta nun parla maje. Stanotte ha ditto 'na cosa sola.» / «"'O fierro sona areto a 'na porta ca nun ce sta, 'ncopp''o Corso."» | [nuovo; canone: l'indizio di Mariella] |
-| Sempre | La porta, [E] | Esaminare la porta dice a che punto sei e qual è il prossimo ricordo (testi sotto). | |
-| A ogni ferro | La porta | Il ferro compare appeso a un chiodo accanto allo stipite; la luce sotto la porta cresce. | particolare che cambia |
+| Sempre | La porta, [E] | Bussare/esaminare la porta dice a che punto sei e qual è il prossimo ferro (testi sotto). | |
+| A ogni ferro | La porta | Un sigillo spaccato, il ferro appeso al chiodo, la luce sotto la porta più forte. | particolare che cambia |
 | A ogni ferro | Diario | La pagina della notte lo racconta, e il «seme» in fondo alla pagina indica il successivo. | |
-| Finale vero, epilogo | Fondale | «Sul fondale, dove i fili piegano, c'è dipinta una porta. Ha l'insegna di un fabbro.» | |
+| Finale vero, epilogo | Fondale | «…c'è dipinta una porta. Ha l'insegna di un fabbro e tre sigilli.» + le Mani coi guanti bianchi. | |
 
-**Esame della porta [E]** (didascalie, [nuovo]):
+**La porta, bussando** (didascalie neutre, [nuovo]):
 
-- Notte 1: «Una porta di legno, sprangata. Sopra, l'insegna di un fabbro: martello e incudine.»
-- Dalla notte 2, nessun ferro: «Dietro la porta un ferro batte. Tre colpi, una pausa, uno. Poi daccapo.» / «Accanto allo stipite ci sono quattro chiodi vuoti, da rastrelliera.»
-- Tenaglie: «Le tenaglie sono appese al primo chiodo.» / «Mio padre firmava ogni ferro: G. F. Il punzone lo perse alla Villa, vicino all'acqua. L'acqua tace finché il suo guardiano è in piedi.»
-- Punzone: «Due ferri. Dentro, il martello ha saltato un colpo.» / «A San Leucio una ragazza rideva: "Almeno quelle non le rompete." Lì il ferro si arrende solo a chi non rompe niente. Nemmeno una maschera.»
-- Lima: «Tre ferri. Manca il martello.» / «Lo lasciò sul ponteggio della Reggia, la mattina del crollo. Sta in alto, dove salgono i fili: bisogna far cadere chi li regge.»
-- Tutti e quattro: «I quattro ferri sono alla porta. La spranga penzola, ma la porta non cede.» / «Bisogna bussare come bussa lui.»
+- Notte 1: «Una porta di legno, sprangata. Sopra, l'insegna di un fabbro. Sulla spranga, tre sigilli di ceralacca col giglio.»
+- Dalla notte 2, nessun sigillo rotto: «Dietro la porta un ferro batte. Tre colpi, una pausa, uno. Poi daccapo.» / «La ceralacca non si rompe con le mani: ci vogliono i ferri di chi abitava qui.»
+- Un sigillo: «Il primo sigillo è in briciole. Le tenaglie sono appese al chiodo.» / «Mio padre firmava ogni ferro: G. F. Il punzone lo perse alla Villa, vicino all'acqua. L'acqua tace finché il suo guardiano è in piedi.»
+- Due: «Due sigilli rotti. Dentro, il martello ha saltato un colpo.» / «A San Leucio una ragazza rideva: "Almeno quelle non le rompete." Lì il ferro si arrende solo a chi non rompe niente. Nemmeno una maschera.»
+- Tre, Donna Luciana ancora in piedi: «I tre sigilli sono a terra. Ma un filo d'oro scende dall'alto e tiene chiusa la porta.» / «Finché la Burattinaia regge la scena, non cede.»
+- Tre, dopo il finale vero: «I tre sigilli sono a terra e il filo d'oro si è allentato. La porta non cede lo stesso.» / «Bisogna bussare come batte lui.»
 - Bussata sbagliata: «La porta non risponde.»
-- Ritmo giusto senza ferri: «La porta risponde: tre colpi, una pausa, uno. Ma la spranga non si muove. Mancano i ferri.»
+- Ritmo giusto, mancano sigilli: «La porta risponde: tre colpi, una pausa, uno. Ma i sigilli tengono.»
+- Ritmo giusto, manca il finale: «La porta risponde. Ma il filo d'oro la tiene.»
+- Si apre: «La spranga cade. La porta della bottega è aperta.»
 
-### 2.4 Cosa c'è dietro: il rovesciamento
+### 2.4 Chi tiene davvero i fili: il Grande Burattinaio, reso coerente con la bibbia
 
-**Chi tiene davvero i fili? Nessuno.** Dietro la bottega non c'è Corso Trieste: c'è il **retro del Teatro**.
-I fili d'oro che salgono dai polsi di Donna Luciana non arrivano alla mano di un burattinaio più grande:
-ridiscendono qui, nella fucina del padre, e sono **annodati all'incudine — e alla spada di Ferruccio**.
+L'idea dell'autore **combacia con il canone già scritto**: `storia.json` dice che ai polsi di Donna Luciana ci sono
+fili «che salgono più in alto nel buio del Teatro» e che una voce grida «BIS! DA CAPO!». In cima a quei fili ci
+sono le due Mani guantate di bianco — **le stesse che il giocatore ha sempre creduto della Burattinaia** (sul
+sipario, nello scontro con lei). Il rovesciamento è questo: la Burattinaia era una marionetta; le Mani non erano sue.
 
-- Alla parete ci sono le maschere di Pulcinella, **una per ogni notte giocata**: ogni maschera che il giocatore ha
-  spezzato morendo è stata ribattuta qui, con una cucitura d'oro. È per questo che Ferruccio, solo lui, ogni notte si
-  rialza e ricorda.
-- La Burattinaia non ha mai legato Ferruccio: **ha tirato il filo con cui era arrivato**, la vendetta per il padre
-  («Ogni parola che udivi nel buio... era solo il mio filo che ti muoveva i passi»). Il «Burattino Senza Filo» un
-  filo l'aveva: di ferro.
-- E lei pende dal suo, uguale: «Sale verso qualcuno che non vuole più niente» (eco di «Bianca non vuole più
-  niente»; Bianca non si vede e non si nomina: il dubbio resta, come vuole la bibbia §XI).
-- È la leggenda del Velo presa alla lettera: i fili più forti non scompaiono nemmeno dopo la morte. I morti non
-  tirano: sono i vivi che non li lasciano. Ferruccio e la sua nemica sono la stessa marionetta («Chi di noi due è
-  davvero un mostro?»).
-- Gaetano non l'ha mai chiesto: «Ma io non te l'ho mai chiesto, figlio.» — la stessa cosa che Mariella scrive a
-  Taddeo («Non devi aggiustarmi»).
+Tre scelte per tenerlo dentro la bibbia:
 
-Niente di questo cambia il Velo, Violante/Luciana o il destino della città: è il perché **la notte di Ferruccio**
-si ripete. Per questo non è la «soluzione perfetta nascosta» che la bibbia esclude.
+1. **Il Grande Burattinaio è il padrone del Teatro, non l'autore del Velo.** La bibbia è netta: il Velo l'ha
+   fatto la Signora, per non sentire più il dolore di Bianca, e resta colpa sua. Le Mani non la assolvono:
+   «La Signora gli ha dato una città intera da far recitare. Ma le Mani sono più vecchie di lei, e di Caserta»
+   — è l'aggancio dell'Espansione III («la magia… era stata tramandata da secoli»). Lui vuole una cosa sola: che
+   la commedia non finisca. Per questo il suo intero vocabolario è «BIS!» e «DA CAPO!».
+2. **Spiega quello che il gioco già mostra.** A ogni morte «i fili d'oro si spezzano» e i pezzi della maschera
+   «salgono»: erano le forbici colossali che strappavano i fili di Ferruccio, e le maschere finivano ai ganci
+   della graticcia — **una per ogni notte giocata** — dove qualcuno le ricuciva per rimetterlo in scena. Il
+   «Burattino Senza Filo» due fili li aveva: sottili come capelli.
+3. **Non è la «soluzione perfetta nascosta» che la bibbia esclude.** Tagliare il filo maestro libera il Teatro
+   e cala per sempre il sipario: finisce la notte che si replica. **Non sceglie per Caserta**: fuori dal Teatro la
+   città è come il giocatore l'ha lasciata sul palco (libera e ostile, o in pace sotto il Velo). E resta la
+   domanda della bibbia, perché Ferruccio decide un'altra volta per tutti: «Nessuno gliel'aveva chiesto. Nemmeno
+   stavolta.» L'ultima riga dei titoli è la domanda dell'autore: «Se nessuno vuole essere liberato, hai comunque
+   il diritto di farlo?»
 
-### 2.5 Le scene della Fucina del Ricordo (testi completi, tutti [nuovo] salvo dove indicato)
+Il padre resta quello della bibbia: non chiede vendetta («Non lo fare per me, figlio. Io non te l'ho mai chiesto»
+— come Mariella: «Non devi aggiustarmi»), non spiega, non sale: tempra le forbici e resta nella fucina.
 
-**«La Fucina del Ricordo»** (interno: brace, incudine, un uomo di spalle, la parete delle maschere, i fili che scendono)
+### 2.5 Le scene (testi completi; tutti [nuovo] salvo dove indicato)
+
+**A. «La Fucina del Ricordo»** (interno: brace, incudine, un uomo di spalle, in fondo una scala a pioli)
 
 | Chi | Testo |
 |---|---|
-| didascalia | La porta non dà su una strada. Dà sul retro del Teatro. |
-| didascalia | Una fucina. Il fuoco è acceso. Alla parete, in fila, maschere di Pulcinella: una per ogni notte. Ne conti {n}. |
-| didascalia | Ognuna è stata spezzata. Ognuna è stata ribattuta, con una cucitura d'oro. |
-| didascalia | Dal buio del soffitto scendono i fili d'oro: gli stessi dei polsi della Burattinaia. |
-| didascalia | Non salgono verso nessuna mano. Scendono qui, e sono annodati al corno dell'incudine. |
+| didascalia | Dietro la porta non c'è una strada. C'è una bottega, e in fondo una scala a pioli che sale nel buio. |
+| didascalia | La fucina era spenta da sei anni. Quando Ferruccio entra, la brace si riaccende da sola. |
 | didascalia | All'incudine c'è un uomo di spalle. Batte: tre colpi, una pausa, uno. Poi si ferma. |
 | Gaetano | Ferruccio. |
 | didascalia | È la prima volta, in tutta la notte, che il tuo nome non suona come un ordine. |
-| Gaetano | Ogni notte mi porti una maschera rotta. Ogni notte te la ribatto. È il mio mestiere. |
-| Gaetano | Ma io non te l'ho mai chiesto, figlio. |
-| didascalia | Guarda i fili sull'incudine. Poi guarda la tua spada: è lì che finisce il nodo. |
-| didascalia | La Burattinaia non ti ha mai legato. Le è bastato tirare il filo con cui eri arrivato. |
-| didascalia | E ai suoi polsi ce n'è uno uguale. Sale verso qualcuno che non vuole più niente. |
 | Gaetano | Fatti guardare. |
 | didascalia | Ti toglie la maschera nera come si toglie un ferro dal fuoco: senza fretta. |
 | didascalia | Sotto c'è una faccia. È la tua. Te l'eri scordata. |
 | Gaetano | Eccoti. |
+| didascalia | Poi tende la mano. Vuole le forbici: quelle che porti dalla prima notte. |
+| Gaetano | Queste le ho fatte io. Tagliano la lamiera. L'oro no: l'oro va tagliato caldo. |
+| didascalia | Le arroventa, le ribatte, le tempra. Tre colpi, una pausa, uno. |
+| Gaetano | Io resto qui. I ricordi non salgono le scale. |
+| Gaetano | Non lo fare per me, figlio. Io non te l'ho mai chiesto. |
 
-**Scelta** — titolo «La spada è sull'incudine o nella tua mano?»
+**Scelta** — titolo «La scala sale sopra la ribalta.»
 
-1. **Posa la spada sull'incudine** — «Il nodo si scioglie. Nessuno ribatterà più le tue maschere.» → finale segreto
-2. **Tienila ancora** — «Tornerai qui ogni notte. La porta resta aperta.» → Gaetano: «Allora a domani, figlio. Il fuoco resta acceso.» Si torna in piazza; la porta resta aperta e ci si può rientrare quando si vuole.
+1. **Sali sopra la ribalta** — «Dove le Mani reggono i fili. Non si scende com'eri salito.» → Gaetano: «Prima fate uscire i ragazzi.» **[bibbia, sua unica battuta]** · didascalia: «Lo dice piano, stavolta. E guarda la scala.» → `entraSopraLaRibalta()`
+2. **Resta ancora un poco** — «La porta resta aperta. Il fuoco resta acceso.» → Gaetano: «A domani, figlio. Il fuoco resta acceso.» Si torna in piazza; la porta resta aperta e si rientra quando si vuole.
 
-**«Il nodo»** (solo con la scelta 1)
+Alla fine di questa scena (qualunque scelta) Ferruccio ha di nuovo il volto: ricompensa «Il Volto Ritrovato» (§2.7).
 
-| Chi | Testo |
-|---|---|
-| didascalia | Ferruccio posa la spada sull'incudine. Il ferro è ancora caldo delle mani di suo padre. |
-| didascalia | Il nodo si allenta. I fili d'oro risalgono nel buio, leggeri, senza tirare più niente. |
-| Gaetano | Prima fate uscire i ragazzi. **[bibbia, sua unica battuta — qui detta piano]** |
-| didascalia | Lo dice piano, stavolta. E indica la porta. |
-| didascalia | Il martello non batte più. Alla parete non c'è posto per un'altra maschera. |
-
-**«Piazza Dante, più tardi»** (la piazza con la luna bassa e un primo grigio)
+**B. «Sopra la Ribalta»** — oggi una scena narrata; **qui, domani, lo scontro** (§2.6)
 
 | Chi | Testo |
 |---|---|
-| didascalia | Fuori, in Piazza Dante, la luna si è mossa. Nessuno ha gridato bis. |
-| didascalia | Caserta dorme ancora, o è sveglia e lo odia: quello che hai scelto sul palco resta scelto. |
-| didascalia | Ma stanotte nessun filo lo tiene in piedi. Sta in piedi da solo. |
+| didascalia | Sopra la ribalta non c'è cielo: c'è la graticcia. Travi, corde, e sotto, piccolo, tutto il Teatro. |
+| didascalia | Ai ganci sono appese le tue maschere: una per ogni notte. Ne conti {n}. Ognuna ricucita con un punto d'oro. |
+| didascalia | È così che ogni sera tornavi in scena. Qualcuno ti rimetteva insieme. |
+| didascalia | Da ogni burattino di Caserta sale un filo. Anche dai polsi della Burattinaia. Anche da te. |
+| didascalia | Il Burattino Senza Filo ne aveva due, sottili come capelli. Non li aveva mai visti. |
+| didascalia | In cima a tutti i fili ci sono due mani. Guanti bianchi. Sono le Mani che credevi di Donna Luciana. |
+| didascalia | Non c'è un volto, sopra. Solo le Mani, e un paio di forbici grandi come un portone. |
+| didascalia | Con quelle, ogni volta che cadevi, ti strappava i fili. Poi li riannodava, e la notte ricominciava. |
+| Il Grande Burattinaio | BIS! |
+| Il Grande Burattinaio | DA CAPO! |
+| didascalia | Non sa dire altro. Non vuole altro: che la commedia non finisca. |
+| didascalia | La Signora gli ha dato una città intera da far recitare. Ma le Mani sono più vecchie di lei, e di Caserta. |
+| didascalia | Tutti i fili, salendo, si torcono in uno solo: il filo maestro. Lo tiene con due dita. |
+
+**C. «Il filo maestro»**
+
+| Chi | Testo |
+|---|---|
+| didascalia | Le forbici colossali si chiudono dove un attimo prima c'era Ferruccio. Tagliano l'aria. |
+| didascalia | Ferruccio ha in mano le forbici di suo padre. Piccole. Ancora calde di fucina. |
+| didascalia | Non lo fa per suo padre. Lo fa lo stesso. |
+| didascalia | Un colpo solo. Il filo maestro canta come una corda di violino, e si spezza. |
+| didascalia | Le Mani si aprono. Per un momento cercano qualcosa da reggere. Poi restano guanti vuoti. |
+| didascalia | I fili d'oro cadono sul palco come pioggia. Giù, i burattini restano in piedi lo stesso. |
+| didascalia | Nessuno gliel'aveva chiesto. Nemmeno stavolta. |
+
+**D. «Cala il sipario»** (la platea: il sipario scende, le ombre si alzano)
+
+| Chi | Testo |
+|---|---|
+| didascalia | Il sipario cala. Stavolta nessuno grida bis. |
+| didascalia | In platea le ombre si alzano, una a una. Hanno facce. Si guardano intorno come chi si sveglia in chiesa. |
+| *se sul palco hai spezzato il Velo* — didascalia | Fuori dal Teatro c'è Caserta libera, che lo odia. Nessun filo, adesso, li obbliga: lo scelgono. |
+| *se l'hai ricucito* — didascalia | Fuori dal Teatro c'è Caserta che sorride sotto il Velo. Ma la commedia che glielo faceva sembrare giusto è finita. |
+| didascalia | Ferruccio scende la scala a viso scoperto. Nessuno lo tiene in piedi. Sta in piedi da solo. |
 | **sul nero** | «Sotto la maschera c'era ancora qualcuno.» |
 
-Titoli: la frase della bibbia, «FINALE SEGRETO — LA FUCINA DEL RICORDO», la ricompensa.
+**Titoli del finale più vero**: la frase della bibbia · «IL FINALE PIÙ VERO — SOPRA LA RIBALTA» · «Il sipario è
+calato per sempre. Chi vuole può ancora salire sul palco: stavolta per scelta.» · la ricompensa · e per ultima la
+domanda della bibbia: «Se nessuno vuole essere liberato, hai comunque il diritto di farlo?»
 
 Dopo: Tonino ha una battuta nuova, una volta: «'O vvi'? T''o dicevo io: sotto 'sta maschera ce steva ancora qualcuno.» [nuovo]
 
-### 2.6 La ricompensa permanente: «Il Volto Ritrovato»
+### 2.6 L'aggancio per lo scontro col Grande Burattinaio (lo fa un'altra squadra)
 
-Registrata nella progressione di a6 (`statoA6().sbloccati['b8-volto-ritrovato']`, cartiglio «SBLOCCATO»).
-**Una volta per notte, quando l'ultima maschera si spezza, sotto c'è un volto: chi è in scena resta in piedi con
-½ Maschera.** (Le «maschere» sono la vita: finite le maschere, prima c'era solo il buio; adesso c'è una faccia.)
-Vale per tutti i burattini giocabili. Testo del cartiglio: «Il Volto Ritrovato. Una volta per notte, sotto l'ultima
-maschera c'è ancora qualcuno.» [nuovo]
+In `window.__teatro.interni`:
+
+- `sigilli` — numero 0..3 (sola lettura), i sigilli rotti nello slot attivo.
+- `entraSopraLaRibalta()` — **il gancio**. Lo chiama la Fucina quando il giocatore sceglie «Sali sopra la ribalta».
+  Oggi fa partire subito la scena narrata B-C-D. Se un'altra squadra assegna una funzione a
+  `interni.scontroSopraLaRibalta`, il gancio chiama quella (`scontroSopraLaRibalta({ fine, annulla })`) e rende
+  `'scontro'`: lo scontro parte **prima** della scena, e a vittoria chiama `fine()`.
+- `finaleSopraLaRibalta()` — fa partire la scena narrata (quello che `fine()` chiama).
+- `annulla()` (sconfitta nello scontro) riporta in Piazza Dante senza chiudere il finale: la porta resta aperta.
+
+### 2.7 La ricompensa permanente: «Il Volto Ritrovato»
+
+Registrata nella progressione di a6 (`statoA6().sbloccati['b8-volto-ritrovato']`, cartiglio «SBLOCCATO»), data
+dalla Fucina del Ricordo. **Una volta per notte, quando l'ultima maschera si spezza, sotto c'è un volto: chi è in
+scena resta in piedi con ½ Maschera.** (Le «maschere» sono la vita: finite le maschere, prima c'era solo il buio;
+adesso c'è una faccia.) Vale per tutti i burattini giocabili. Testo del cartiglio: «Il Volto Ritrovato. Una volta
+per notte, sotto l'ultima maschera c'è ancora qualcuno.» [nuovo]
+Il finale più vero registra anche `sbloccati['b8-sipario-calato']` (segno nel Diario, sezione Finali).
 
 ---
 
@@ -305,12 +363,12 @@ salva già scritta (non cambia più): ultime 60 notti per slot, chiave `ferrucci
 
 **Si apre** dal menu di pausa (linguetta «DIARIO DI FERRUCCIO [N]» accanto al Diario degli oggetti; il menu di
 pausa c'è anche nell'hub), con [N] direttamente dall'hub, e con [N] dentro il Diario degli oggetti (terza sezione
-accanto a Oggetti e Consumabili [C]). ← → sfogliano le notti, [F] passa a «Finali» (rivedi finale vero, finale
-segreto, primato della Notte senza fine, ferri trovati), Esc chiude.
+accanto a Oggetti e Consumabili [C]). ← → sfogliano le notti, [F] passa a «Finali» (rivedi finale vero, Fucina,
+Sopra la Ribalta; primato della Notte senza fine; sigilli), Esc chiude.
 
 **Da cosa è composta** (dal Registro di a7 + osservazioni nostre): apertura · fin dove è arrivato (piano,
 quartiere, stanze, nemici) · boss battuti · oggetti presi, patti, oggetti mai visti · stanze speciali · scelte
-(Tonino) · trasformazioni (`interni.statoTrasformazioni`, se c'è) · come è morto · ferri del segreto · un «seme»
+(Tonino) · trasformazioni (`interni.statoTrasformazioni`, se c'è) · come è morto · ferri e sigilli · un «seme»
 del segreto secondo lo stadio · chiusa. Ogni gruppo ha 2-4 varianti; non si ripete la variante della pagina prima.
 
 Tutte le frasi sono nella tabella `DIARIO_B8` in cima al file e **sono tutte [nuovo], da approvare**. Le principali:
@@ -336,11 +394,12 @@ Tutte le frasi sono nella tabella `DIARIO_B8` in cima al file e **sono tutte [nu
   ricomincia.»).
 - **Oggetti / patto / scelte / trasformazioni / stanze speciali / finali / ferri** — vedi tabella nel file.
 - **Semi del segreto** (ultima riga della pagina, secondo lo stadio) — «Passando davanti alla bottega chiusa ho
-  sentito battere. Tre colpi, una pausa, uno.» · «La Voce dice che quella porta è dipinta. Le porte dipinte non
-  fanno rumore.» · «Mio padre firmava ogni ferro: G. F. Il punzone lo perse alla Villa, vicino all'acqua.» · «A San
-  Leucio il ferro si arrende solo a chi non rompe niente. Nemmeno una maschera.» · «Il martello sta in alto, dove
-  salgono i fili. Bisogna far cadere chi li regge.» · «Tre colpi, una pausa, uno. L'ho scritto la seconda notte e
-  non l'avevo capito.»
+  sentito battere. Tre colpi, una pausa, uno.» · «Sulla spranga della bottega ci sono tre sigilli col giglio.
+  Qualcuno non vuole che quella porta faccia parte della scena.» · «La Voce dice che quella porta è dipinta. Le
+  porte dipinte non fanno rumore.» · «Mio padre firmava ogni ferro: G. F. Il punzone lo perse alla Villa, vicino
+  all'acqua.» · «A San Leucio il ferro si arrende solo a chi non rompe niente. Nemmeno una maschera.» · «Tre
+  sigilli rotti, e la porta non cede: un filo d'oro la tiene dall'alto. Bisogna far cadere chi regge la scena.» ·
+  «Tre colpi, una pausa, uno. L'ho scritto la seconda notte e non l'avevo capito.»
 - **Chiusa** — «Poi le lanterne si sono spente, una a una.» · «Domani — cioè stanotte — ricomincio.» · «Il legno
   ricorda ogni ferita. Io pure.» · «Chiudo il quaderno. Il lampione si riaccenderà da solo.»
 
@@ -352,12 +411,13 @@ Tutte le frasi sono nella tabella `DIARIO_B8` in cima al file e **sono tutte [nu
 decisione dell'autore: calma, materna, poetica, manipolatoria. Le «venature napoletane d'epoca» chieste dal compito
 le abbiamo messe nel **lessico del teatro** (signori miei, platea, tela, replica, bis, compagnia) e non nella
 grammatica: `storia.json` dà alla Signora «nessun dialetto, lessico elevato ma semplice». **Da confermare.**
+Il Grande Burattinaio non usa questa voce: di suo si sente solo «BIS! DA CAPO!».
 
-**Come si vede.** Una didascalia in basso (sopra la porta sud), fondo scuro velato, filetto d'oro, corsivo
-avorio, il nome in piccolo. Entra in 250 ms, resta 2,4 s + 45 ms a carattere, esce in 500 ms. Non ferma niente,
-non prende tasti; aspetta se c'è un sipario, un cartiglio o il cartiglio di un oggetto. Suono: un mormorio
-grave di mezzo secondo (due oscillatori, filtro vocale che si muove), collegato a `AudioSys.uscita`; tace se
-l'audio è muto o se `OPZIONI.voceSuono === false`; le didascalie non si disegnano se `OPZIONI.voce === false`.
+**Come si vede.** Una didascalia in basso, fondo scuro velato, filetto d'oro, corsivo avorio, il nome in
+piccolo. Entra in 250 ms, resta 2,4 s + 45 ms a carattere, esce in 500 ms. Non ferma niente, non prende tasti;
+aspetta se c'è un sipario, un cartiglio o il cartiglio di un oggetto. Suono: un mormorio grave di mezzo secondo
+(due oscillatori, filtro vocale che si muove), collegato a `AudioSys.uscita`; tace se l'audio è muto o se
+`OPZIONI.voceSuono === false`; le didascalie non si disegnano se `OPZIONI.voce === false`.
 
 **Dopo la caduta di Donna Luciana** (flag `luciana_sconfitta`): stessa posizione, ma fra parentesi quadre, grigio,
 senza nome e senza suono — «indicazioni nude di una scena abbandonata».
@@ -392,21 +452,28 @@ Per i boss nuovi delle altre squadre: `window.__teatro.interni.finaliB8.registra
 
 ---
 
-## 5. Cosa serve alla QA (in `window.__teatro.interni.finaliB8`)
+## 5. Cosa serve alla QA (in `window.__teatro.interni`)
 
-`stato()` · `azzera()` · `avviaFinale('vero' | 'segreto', { rivisto })` · `scena()` (id, battuta, scelta) ·
-`avanza()` · `scegli(i)` · `saltaFinale()` · `daiFerro(id)` / `impostaFerri([ids])` · `bussa()` · `apriPorta()` ·
-`indiziHub()` · `scriviPagina(voce)` / `pagine()` · `apriDiario(sezione)` · `voce(evento, dati)` / `didascalia()` ·
-`registraVoceBoss(id, righe)`. Suite: `tools/qa-teatro-finali.js`.
+`sigilli` · `entraSopraLaRibalta()` · `finaleSopraLaRibalta()` · `scontroSopraLaRibalta` (gancio, §2.6) e in
+`interni.finaliB8`: `stato()` · `azzera()` · `avviaFinale('vero' | 'fucina' | 'ribalta', { rivisto })` ·
+`scena()` (id, battuta, scelta) · `avanza()` · `scegli(i)` · `saltaFinale()` · `daiFerro(id)` /
+`impostaSigilli(n)` · `bussa()` / `bussaRitmo()` · `apriPorta()` · `indiziHub()` · `scriviPagina(voce, nota)` /
+`pagine()` · `apriDiario(sezione)` · `voce(evento, dati)` / `didascalia()` · `registraVoceBoss(id, righe)`.
+Suite: `tools/qa-teatro-finali.js`.
 
 ## 6. Decisioni aperte per l'autore
 
 1. Il nome: Donna Luciana o Violante (una costante).
 2. Donna Luciana che parla ancora nel finale, dopo che «la voce scompare per sempre».
-3. Le sei battute di Gaetano (la bibbia lo voleva muto; la decisione del 10 ottobre lo fa parlare).
-4. Il rovesciamento (§2.4): i fili della Burattinaia annodati alla spada di Ferruccio.
-5. La scelta si può rifare a ogni «Cala il sipario» (la commedia si replica): vale l'ultima. In alternativa la si
-   blocca alla prima.
-6. La Lima «senza perdere una maschera dal boss di San Leucio»: è il passo difficile. Se è troppo, si può
-   allargare a «senza perdere una maschera intera».
-7. Venature napoletane della Voce solo nel lessico teatrale.
+3. Le sette battute di Gaetano (la bibbia lo voleva muto; la decisione del 10 ottobre lo fa parlare).
+4. Il Grande Burattinaio come padrone del Teatro e non del Velo (§2.4): è la lettura che lo tiene coerente con
+   «Violante è l'ultimo nodo vivente dell'incantesimo» e con «nessuna soluzione perfetta nascosta». Se l'autore
+   vuole che tagliare il filo maestro liberi anche Caserta, va cambiata la bibbia §VIII, non solo questi testi.
+5. «Napoli del 1839» nella nota dell'autore contro «Caserta 1845» di gioco e bibbia: abbiamo seguito la bibbia.
+6. La scelta sul palco si può rifare a ogni «Cala il sipario» (la commedia si replica): vale l'ultima. In
+   alternativa la si blocca alla prima.
+7. Il terzo sigillo («senza perdere una maschera dal boss di San Leucio») è il passo difficile. Se è troppo, si
+   può allargare a «senza perdere una maschera intera».
+8. La porta chiede anche il finale vero (Donna Luciana caduta) prima di aprirsi: il finale più vero viene dopo
+   quello vero. Se l'autore vuole solo i 3 sigilli, è una costante (`SEGRETO_B8.serveFinaleVero`).
+9. Venature napoletane della Voce solo nel lessico teatrale.
