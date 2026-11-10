@@ -47,6 +47,7 @@ const OGGETTI_B5 = Object.freeze({
   colpi: Object.freeze({
     divisioneDanno: 0.5, divisioneGittata: 80, divisioneApertura: 1.3, // schegge: danno, px, apertura (rad) all'indietro
     ritornoGittata: 2.4,     // il colpo che torna vive fino a 2,4 gittate (andata + ritorno)
+    ritornoDanno: 0.6,       // al ritorno il colpo vale il 60% (all'andata trapassa: sennò non tornerebbe mai)
     crescitaRaggio: 0.5,     // il raggio cresce metà di quanto cresce il danno
     caricaTick: 90, caricaRaggio: 1.7, // 1,5 s senza sparare; il colpo caricato è più grande
     criticoMult: 3,
@@ -183,7 +184,7 @@ const RIGHE_PASSIVI_B5 = [
   // --- colpi che cambiano forma ---
   ['melagrana', 'Melagrana di Capodanno', 'base', 'positivo', ['cibo', 'sacro'], '[BASE] All\'impatto ogni colpo si divide in 2 schegge',
     'Si spacca a mezzanotte sulla soglia: ogni chicco, un colpo di fortuna.', { divisione: 2 }],
-  ['rocchetto', 'Rocchetto di Seta Reale', 'forte', 'positivo', ['fili'], '[★ FORTE] I colpi tornano indietro lungo il filo e colpiscono due volte · +20 Gittata',
+  ['rocchetto', 'Rocchetto di Seta Reale', 'forte', 'positivo', ['fili'], '[★ FORTE] I colpi trapassano i nemici e tornano indietro lungo il filo (al ritorno 60% del Danno) · +20 Gittata',
     'Seta di San Leucio avvolta stretta: quello che lanci, ritorna.', { ritorno: true, rangeUp: 20 }],
   ['olio-lucerna', 'Olio di Lucerna', 'base', 'positivo', ['fuoco'], '[BASE] I colpi lasciano a terra una scia di fuoco',
     'Gocciola dal lume e accende il selciato dei vicoli.', { scia: 'fuoco' }],
@@ -867,7 +868,7 @@ function dopoSparoB5(n0, dx, dy, eco) {
     if (S.dispersione) ruotaColpoB5(p, (Math.random() * 2 - 1) * S.dispersione);
     if (b.figlio) continue;
     if (S.divisione) b.div = S.divisione;
-    if (S.ritorno && !p.orbitaD) { b.rit = 1; b.giro = p.maxDist; p.maxDist *= C.ritornoGittata; }
+    if (S.ritorno && !p.orbitaD) { b.rit = 1; b.giro = p.maxDist; p.maxDist *= C.ritornoGittata; p.piercing = true; }
     if (S.scia) { b.scia = S.scia; b.sciaDa = 0; }
     if (S.crescita) { b.cresc = S.crescita; b.m = 1; b.r0 = p.r; b.gitt = p.maxDist; }
     if (S.onda && !p.orbitaD) b.onda = true;
@@ -918,7 +919,7 @@ aggiornaProiettileD = function (p, st, ...resto) {
   }
   if (b.rit === 1) {
     const nx = p.x + p.vx, ny = p.y + p.vy;
-    if (p.dist >= b.giro || nx < ARENA.x1 - 4 || nx > ARENA.x2 + 4 || ny < ARENA.y1 - 4 || ny > ARENA.y2 + 4) { b.rit = 2; p.hitIds = new Set(); p.rimbalzi = 0; }
+    if (p.dist >= b.giro || nx < ARENA.x1 - 4 || nx > ARENA.x2 + 4 || ny < ARENA.y1 - 4 || ny > ARENA.y2 + 4) { b.rit = 2; p.hitIds = new Set(); p.rimbalzi = 0; p.dmg *= C.ritornoDanno; }
   }
   if (b.rit === 2) {
     const ddx = player.x - p.x, ddy = player.y - 6 - p.y;
@@ -2128,7 +2129,7 @@ disegnaPannelloSviluppatoreB = function (...args) {
     const p = statoRun.pannelloB;
     const perPag = perPaginaPannelloB5();
     if (p && CATALOGO_OGGETTI.length > perPag) {
-      drawTextFit(TESTI_B5.pannelloPagina(Math.floor(p.sel / perPag) + 1, Math.ceil(CATALOGO_OGGETTI.length / perPag)), W - 110, 38, 150, { size: 7.5, color: '#f9cb40' });
+      drawTextFit(TESTI_B5.pannelloPagina(Math.floor(p.sel / perPag) + 1, Math.ceil(CATALOGO_OGGETTI.length / perPag)), W / 2, H - 40, 220, { size: 7.5, color: '#f9cb40' });
     }
   } catch (err) { console.error('[B5] pannello', err); }
   return r;
