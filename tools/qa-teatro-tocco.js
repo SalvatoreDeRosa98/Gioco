@@ -49,9 +49,8 @@ async function apri(browser, opzioni, prima) {
   await p.waitForTimeout(600);
   const cdp = await cx.newCDPSession(p);
   const dita = new Map();
-  const invia = (type) => cdp.send('Input.dispatchTouchEvent', {
-    type, touchPoints: [...dita].map(([id, q]) => ({ x: Math.round(q.x), y: Math.round(q.y), id, radiusX: 9, radiusY: 9, force: 1 })),
-  });
+  const punti = (voci) => voci.map(([id, q]) => ({ x: Math.round(q.x), y: Math.round(q.y), id, radiusX: 9, radiusY: 9, force: 1 }));
+  const invia = (type) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: punti([...dita]) });
   const T = {
     p, cx, cdp,
     async giu(id, x, y) { dita.set(id, { x, y }); await invia('touchStart'); },
@@ -59,8 +58,8 @@ async function apri(browser, opzioni, prima) {
       const q = dita.get(id); const x0 = q.x, y0 = q.y;
       for (let i = 1; i <= passi; i++) { q.x = x0 + ((x - x0) * i) / passi; q.y = y0 + ((y - y0) * i) / passi; await invia('touchMove'); await p.waitForTimeout(ms); }
     },
-    // il protocollo vuole touchEnd senza punti: per alzare un dito solo si manda un touchMove con quelli rimasti
-    async su(id) { dita.delete(id); await invia(dita.size ? 'touchMove' : 'touchEnd'); },
+    // per alzare UN dito il protocollo vuole un touchEnd che elenca solo quel dito (gli altri restano giù)
+    async su(id) { const q = dita.get(id); if (!q) return; dita.delete(id); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: punti([[id, q]]) }); },
     async tocca(x, y, ms = 70) { await T.giu(9, x, y); await p.waitForTimeout(ms); await T.su(9); await p.waitForTimeout(110); },
     stato: () => p.evaluate(() => window.__teatro.interni.toccoC2.stato),
     b3: () => p.evaluate(() => window.__teatro.interni.comandiB3.stato),
@@ -337,6 +336,26 @@ const SOLO = (process.env.QA_TOCCO_SOLO || 'ABCDE').toUpperCase(); // es. QA_TOC
     await T.bottone('pausa');
     await T.bottone('indietro');
     ok('vert-indietro-riprende', !(await T.run()).pausa);
+    // levetta tenuta mentre si apre la pausa: non muove il cursore del menu; alla ripresa riparte da ferma sotto il dito
+    await T.giu(1, zone.m.cx, zone.m.cy);
+    await T.muovi(1, zone.m.cx, zone.m.cy + 46);
+    await p.waitForTimeout(150);
+    const giuTenuto = await T.tasto('KeyS');
+    await T.giu(3, zone.pa.cx, zone.pa.cy); await p.waitForTimeout(80); await T.su(3);
+    await p.waitForTimeout(700);
+    s = await T.stato();
+    ok('vert-levetta-tenuta-non-muove-il-menu', giuTenuto && (await T.run()).pausa && (await T.b3()).cursorePausa === 0 && s.leve.sospesa && s.assi[1] === 0 && !(await T.tasto('KeyS')), { cursore: (await T.b3()).cursorePausa, leve: s.leve, assi: s.assi });
+    const ri = await T.rett('indietro');
+    await T.giu(3, ri.cx, ri.cy); await p.waitForTimeout(80); await T.su(3);
+    await p.waitForTimeout(200);
+    r0 = await T.run(); await p.waitForTimeout(250); r1 = await T.run();
+    s = await T.stato();
+    ok('vert-ripresa-con-la-levetta-ferma', !r1.pausa && s.leve.movimento && !s.leve.sospesa && Math.abs(r1.y - r0.y) < 0.5 && Math.abs(r1.x - r0.x) < 0.5, { da: [r0.x, r0.y], a: [r1.x, r1.y], leve: s.leve });
+    await T.muovi(1, zone.m.cx + 46, zone.m.cy + 46);
+    await p.waitForTimeout(300);
+    const r3 = await T.run();
+    await T.su(1);
+    ok('vert-la-levetta-riparte-sotto-il-dito', r3.x > r1.x + 10 && Math.abs(r3.y - r1.y) < 4, { da: [r1.x, r1.y], a: [r3.x, r3.y] });
     // DIARIO dalla scena, PAGINA e INDIETRO
     await T.bottone('diario');
     s = await T.stato();
