@@ -413,9 +413,11 @@ le abbiamo messe nel **lessico del teatro** (signori miei, platea, tela, replica
 grammatica: `storia.json` dà alla Signora «nessun dialetto, lessico elevato ma semplice». **Da confermare.**
 Il Grande Burattinaio non usa questa voce: di suo si sente solo «BIS! DA CAPO!».
 
-**Come si vede.** Una didascalia in basso, fondo scuro velato, filetto d'oro, corsivo avorio, il nome in
-piccolo. Entra in 250 ms, resta 2,4 s + 45 ms a carattere, esce in 500 ms. Non ferma niente, non prende tasti;
-aspetta se c'è un sipario, un cartiglio o il cartiglio di un oggetto. Suono: un mormorio grave di mezzo secondo
+**Come si vede.** Una didascalia in basso (in gioco in basso a destra, sotto il muro della stanza e fuori
+dall'HUD; nell'hub e alla morte in basso al centro), fondo scuro velato, filetto d'oro, corsivo avorio, il nome in
+piccolo. Entra in 250 ms, resta 1,9 s + 38 ms a carattere, esce in 450 ms. Non ferma niente, non prende tasti;
+aspetta se c'è un sipario, un cartiglio o il cartiglio di un oggetto; la presentazione di un boss e la buonanotte
+passano davanti alle altre in coda. Suono: un mormorio grave di mezzo secondo
 (due oscillatori, filtro vocale che si muove), collegato a `AudioSys.uscita`; tace se l'audio è muto o se
 `OPZIONI.voceSuono === false`; le didascalie non si disegnano se `OPZIONI.voce === false`.
 

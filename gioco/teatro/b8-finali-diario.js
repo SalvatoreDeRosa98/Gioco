@@ -149,7 +149,7 @@ const TESTI_B8 = Object.freeze({
     sblocco: 'Dopo Donna Luciana la botola porta al ciclo: il Teatro replica, più feroce.',
     botola: (ciclo, piano) => `▼▼ NOTTE SENZA FINE · CICLO ${ciclo} · PIANO ${piano} [Click / E] ▼▼`,
     atto: 'NOTTE SENZA FINE · CICLO',
-    banner: (ciclo) => `★ DONNA LUCIANA È CADUTA. Botola: NOTTE SENZA FINE (ciclo ${ciclo}). Cordone a sinistra: cala il sipario.`,
+    banner: (ciclo) => `★ DONNA LUCIANA È CADUTA! Botola: NOTTE SENZA FINE (ciclo ${ciclo}) · Cordone: cala il sipario`,
     cordone: 'CALA IL SIPARIO [E]',
     cordoneSotto: 'l\'ultimo atto, poi Piazza Dante',
   }),
@@ -2423,10 +2423,13 @@ function fondalePlateaB8(f, sc, st) {
     const a = 0.35 + 0.25 * Math.sin(tick * 0.12);
     ctx.fillStyle = `rgba(249, 203, 64, ${a.toFixed(3)})`; ctx.fillRect(dx - 19, dy - 22, 38, 70);
   }
+  const bottegaAperta = st.sipario === 'cala'; // nell'ultima scena la bottega è aperta: niente spranga, niente sigilli
   ctx.fillStyle = NERO_B8; ctx.fillRect(dx - 13, dy, 26, 42); ctx.beginPath(); ctx.arc(dx, dy, 13, Math.PI, 0); ctx.fill();
-  ctx.fillStyle = '#5c3a1e'; ctx.fillRect(dx - 10, dy + 2, 20, 38); ctx.beginPath(); ctx.arc(dx, dy + 2, 10, Math.PI, 0); ctx.fill();
-  ctx.fillStyle = '#9ca3af'; ctx.fillRect(dx - 12, dy + 16, 24, 3);
-  ctx.fillStyle = '#e53222'; for (let i = 0; i < 3; i++) ctx.fillRect(dx - 8 + i * 7, dy + 15, 3, 4);
+  ctx.fillStyle = bottegaAperta ? '#9c4c12' : '#5c3a1e'; ctx.fillRect(dx - 10, dy + 2, 20, 38); ctx.beginPath(); ctx.arc(dx, dy + 2, 10, Math.PI, 0); ctx.fill();
+  if (!bottegaAperta) {
+    ctx.fillStyle = '#9ca3af'; ctx.fillRect(dx - 12, dy + 16, 24, 3);
+    ctx.fillStyle = '#e53222'; for (let i = 0; i < 3; i++) ctx.fillRect(dx - 8 + i * 7, dy + 15, 3, 4);
+  }
   ctx.fillStyle = '#f9cb40'; ctx.fillRect(dx - 5, dy - 20, 10, 3); ctx.fillRect(dx - 2, dy - 17, 4, 3);
   ctx.fillStyle = '#3d2614'; ctx.fillRect(px, py + ph - 16, pw, 16); // le assi
   ctx.fillStyle = '#2a180c'; for (let x = px + 20; x < px + pw; x += 40) ctx.fillRect(x, py + ph - 16, 1, 16);
