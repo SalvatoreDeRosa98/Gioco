@@ -112,7 +112,8 @@ const IMMAGINI_B9 = Object.freeze({
   'ui-cursore-mano': { celle: [1, 1], alt: 13, ancora: [0.5, 0.47], dove: 'b3 cursore del menu di pausa e delle Opzioni (cursoreB9)', usa: true },
   'ui-interruttore-lanterna': { celle: [1, 2], alt: 13, ancora: [0.5, 0.5], dove: 'b3 righe «spunta» delle Opzioni (interruttoreB9)', usa: false,
     motivo: 'in una riga alta 13 px la lanterna è una macchiolina e accesa/spenta si distinguono poco: la levetta a codice lo dice meglio' },
-  'segni-boss': { celle: [1, 4], alt: 11, ancora: [0.5, 0.5], dove: 'a6 disegnaSegniA6 (i quattro boss nuovi di b6)', usa: true },
+  'segni-boss': { celle: [1, 4], alt: 11, ancora: [0.5, 0.5], dove: 'a6 disegnaSegniA6 (i quattro boss nuovi di b6)', usa: false,
+    motivo: 'sono solo quattro medaglioni su dieci segni: nella stessa riga stanno accanto a sei icone a pixel senza medaglione, e la riga si spezza in due stili' },
 });
 // </tabella-immagini>
 
@@ -166,7 +167,7 @@ const CONFIG_B9 = Object.freeze({
     braciere: Object.freeze({ img: 'ostacolo-braciere', ombra: [11, 4], luce: [-24, 14] }),
   }),
   spuntoni: Object.freeze({ meta: 0.12, fuori: 0.7 }),       // soglie di `alt` per i tre fotogrammi
-  forziere: Object.freeze({ vuoto: Object.freeze([96, 110, 47, 17]), coloreVuoto: 'rgba(10, 6, 4, 0.86)' }), // interno dell'aperto: [cx, cy, rx, ry] nella cella 192×192
+  forziere: Object.freeze({ vuoto: Object.freeze([96, 110, 47, 17]), coloreVuoto: 'rgba(10, 6, 4, 0.86)', chiaro: 0.5 }), // interno dell'aperto: [cx, cy, rx, ry] nella cella 192×192
   donGennaro: Object.freeze({
     cartello: Object.freeze([28, 227, 72, 43]),             // il cartello sul banco (cella 240×288): si copre, sopra ci va il numero uscito
     coloreCartello: '#e8ddc2', bordoCartello: '#5a3c1e',
@@ -190,7 +191,7 @@ const CONFIG_B9 = Object.freeze({
   // ui-pad-simboli.png: colonna di ogni simbolo
   pad: Object.freeze({ 'Ⓐ': 0, 'Ⓑ': 1, 'Ⓧ': 2, 'Ⓨ': 3, LB: 4, RB: 5, LT: 6, RT: 7, START: 8, SELECT: 9, 'LEVETTA S': 10, 'LEVETTA D': 11, '✥': 12 }),
   padAltezza: 1.28,             // altezza del simbolo rispetto al corpo del testo
-  cartiglio: Object.freeze({ cornice: Object.freeze([116, 32, 1230, 1003]), rotolo: 112 }), // riquadro scuro e larghezza di un rotolo, px d'origine
+  cartiglio: Object.freeze({ cornice: Object.freeze([116, 32, 1230, 1003]), rotolo: 112, veloRotoli: 'rgba(24, 6, 4, 0.3)' }), // riquadro scuro e larghezza di un rotolo, px d'origine
   tasto: Object.freeze({ capo: 62, bordo: Object.freeze([8, 8, 377, 89]) }), // estremi decorati (larghezza) e riquadro pieno del tasto, px d'origine
   cursore: Object.freeze({ altOpzioni: 15, altPausa: 21, spintaPausa: 3, dondolio: 0.8 }),
   segni: Object.freeze({ segnoLumeB6: 0, segnoCignoB6: 1, segnoGiostraB6: 2, segnoSpolaB6: 3 }),
@@ -304,7 +305,8 @@ function disegnaRitaglioB9(g, nome, sx, sy, sw, sh, dx, dy, dw, dh) {
  *   ritocco(g, l, a, k)  piccola correzione dipinta una volta sulla tela (k = px di tela per px d'origine);
  *   chiave               nome del ritocco (entra nella chiave della cache);
  *   filo                 true = filo di luce calda attorno alla sagoma (CONFIG_B9.filo): le figure scure
- *                        restano leggibili sui pavimenti scuri, come le sagome «a ombre» del resto del gioco.
+ *                        restano leggibili sui pavimenti scuri, come le sagome «a ombre» del resto del gioco;
+ *   chiaro               0..1 = quanto schiarire l'immagine (si somma a sé stessa): per i legni troppo scuri.
  * @returns {HTMLCanvasElement|null} null se l'immagine non è pronta o non è da usare
  */
 function fotogrammaB9(nome, riga = 0, col = 0, alt = 0, o = null) {
@@ -313,7 +315,7 @@ function fotogrammaB9(nome, riga = 0, col = 0, alt = 0, o = null) {
   if (statoB9.scalaFotogrammi !== scalaBase) { statoB9.fotogrammi.clear(); statoB9.scalaFotogrammi = scalaBase; }
   const voce = IMMAGINI_B9[nome];
   const a = alt || voce.alt;
-  const chiave = `${nome}|${riga}|${col}|${a}|${o ? `${o.chiave || ''}${o.filo ? 'f' : ''}` : ''}`;
+  const chiave = `${nome}|${riga}|${col}|${a}|${o ? `${o.chiave || ''}${o.filo ? 'f' : ''}${o.chiaro || ''}` : ''}`;
   let c = statoB9.fotogrammi.get(chiave);
   if (!c) {
     if (statoB9.fotogrammi.size > CONFIG_B9.fotogrammiMax) statoB9.fotogrammi.clear();
@@ -325,6 +327,7 @@ function fotogrammaB9(nome, riga = 0, col = 0, alt = 0, o = null) {
     if (o && o.filo) g.filter = `drop-shadow(0 0 ${(CONFIG_B9.filo.px * scalaBase).toFixed(2)}px ${CONFIG_B9.filo.colore})`;
     disegnaRitaglioB9(g, nome, col * cl, riga * ca, cl, ca, 0, 0, c.width, c.height);
     g.filter = 'none';
+    if (o && o.chiaro) { g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = o.chiaro; g.drawImage(c, 0, 0); g.restore(); }
     if (o && o.ritocco) { g.save(); o.ritocco(g, c.width, c.height, c.height / ca); g.restore(); }
     statoB9.fotogrammi.set(chiave, c);
   }
@@ -718,7 +721,8 @@ function ritoccoForziereApertoB9(g, l, a, k) {
   g.beginPath(); g.ellipse(V[0] * k, V[1] * k, V[2] * k, V[3] * k, 0, 0, TAU); g.fill();
 }
 
-const OPZ_FORZIERE_APERTO_B9 = Object.freeze({ ritocco: ritoccoForziereApertoB9, chiave: 'vuoto', filo: true });
+const OPZ_FORZIERE_B9 = Object.freeze({ filo: true, chiaro: CONFIG_B9.forziere.chiaro });
+const OPZ_FORZIERE_APERTO_B9 = Object.freeze({ ritocco: ritoccoForziereApertoB9, chiave: 'vuoto', filo: true, chiaro: CONFIG_B9.forziere.chiaro });
 
 if (typeof disegnaForziereA1 === 'function') {
   const disegnaForziereBaseB9 = disegnaForziereA1;
@@ -728,7 +732,7 @@ if (typeof disegnaForziereA1 === 'function') {
         const x = Math.round(f.x), y = Math.round(f.y);
         ctx.fillStyle = 'rgba(0,0,0,0.45)';
         ctx.beginPath(); ctx.ellipse(x, y + 7, 14, 4, 0, 0, TAU); ctx.fill();
-        if (timbraB9('forzieri', f.tipo === 'chiuso' ? 1 : 0, f.aperto ? 1 : 0, x, y, f.aperto ? OPZ_FORZIERE_APERTO_B9 : OPZ_FILO_B9)) return undefined;
+        if (timbraB9('forzieri', f.tipo === 'chiuso' ? 1 : 0, f.aperto ? 1 : 0, x, y, f.aperto ? OPZ_FORZIERE_APERTO_B9 : OPZ_FORZIERE_B9)) return undefined;
       }
     } catch (err) { guastoB9('forziere', err); }
     return disegnaForziereBaseB9.apply(this, arguments);
@@ -996,6 +1000,9 @@ function cartiglioOpzioniB9(P) {
       disegnaRitaglioB9(g, 'ui-cartiglio-opzioni', R[0], R[1], R[2] - R[0], R[3] - R[1], P.x, 1, P.w, H - 2);
       disegnaRitaglioB9(g, 'ui-cartiglio-opzioni', 0, 0, K.rotolo, img.naturalHeight, P.x - lr + 1, 1, lr, H - 2);
       disegnaRitaglioB9(g, 'ui-cartiglio-opzioni', img.naturalWidth - K.rotolo, 0, K.rotolo, img.naturalHeight, P.x + P.w - 1, 1, lr, H - 2);
+      g.globalCompositeOperation = 'source-atop'; // il rosso dei rotoli scende verso il cremisi scuro del velluto del gioco
+      g.fillStyle = K.veloRotoli;
+      g.fillRect(P.x - lr, 0, lr + 1, H); g.fillRect(P.x + P.w - 1, 0, lr + 1, H);
       c.chiaveB9 = chiave; c.imgB9 = img;
       telaCartiglioB9 = c;
     }

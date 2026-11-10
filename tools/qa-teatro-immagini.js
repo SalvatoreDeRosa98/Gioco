@@ -310,6 +310,7 @@ async function affianca(browser, gruppo, scene) {
       return { spente: +min(out.spente).toFixed(3), accese: +min(out.accese).toFixed(3), tutte: out };
     }, LIMITI.fotogrammiMisura).catch((e) => ({ errore: String(e) }));
     ok(`costo del fotogramma su una stanza piena: non sale più di ${LIMITI.costoInPiuMs} ms`, costo.accese !== undefined && costo.accese - costo.spente <= LIMITI.costoInPiuMs, costo);
+    console.log(`costo del fotogramma su una stanza piena (ms, il migliore di 3 giri da ${LIMITI.fotogrammiMisura} fotogrammi): immagini spente ${costo.spente} · accese ${costo.accese}`);
   }
   for (const [modo, forzatura] of MODI) {
     if (modo === 'dopo') await p.evaluate(() => window.__teatro.interni.immaginiB9.azzeraConti());
