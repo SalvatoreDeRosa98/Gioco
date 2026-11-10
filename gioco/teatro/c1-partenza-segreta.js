@@ -191,6 +191,7 @@ const c1 = {
   ripeti: 0,                 // quale battuta da sveglio tocca
   runSegreta: null,          // numeroRun della run partita col fagotto
   api: null,                 // { apri, voce } del cartiglio di T4 (arrivano dal gancio)
+  fermaQA: false,            // QA: la scena non avanza (per fotografarla)
 };
 
 /** Posa di Tonino del fotogramma (un solo oggetto, niente allocazioni per frame). */
@@ -751,6 +752,7 @@ function passoHubC1() {
   if (c1.scoppio && ++c1.scoppio.t > PARTENZA_C1.scoppio.durataTick) c1.scoppio = null;
   if (c1.scossaT > 0) c1.scossaT--;
   if (lampioneSpentoC1()) c1.tSpento++;
+  if (c1.fermaQA) return;
   if (c1.fili) for (const f of c1.fili) if (f.rotto) f.t++;
   if (c1.scena && !dialogoApertoC1()) avanzaScenaC1();
   const maniSu = c1.stato === 'risveglio' && (c1.risveglio === 'ricordo' || (c1.scena && c1.scena.fase !== 'fermo'));
@@ -1186,7 +1188,7 @@ if (window.__teatro && !Object.isFrozen(window.__teatro)) {
       get stato() {
         const A = c1.armeria;
         return {
-          notte: c1.notte, slot: c1.slot, stato: c1.stato, bomba: c1.bomba ? { ...c1.bomba } : null, lampioneSpento: lampioneSpentoC1(),
+          notte: c1.notte, slot: c1.slot, stato: c1.stato, lampione: c1.lampione ? { ...c1.lampione } : null, tonino: { ...c1.tonino }, bomba: c1.bomba ? { ...c1.bomba } : null, lampioneSpento: lampioneSpentoC1(),
           scena: c1.scena ? { ...c1.scena } : null, risveglio: c1.risveglio, fili: c1.fili ? c1.fili.map((f) => ({ ...f })) : null,
           maniAlfa: c1.maniAlfa, fermo: hubFermoC1(), aperta: armeriaApertaC1(), runSegreta: c1.runSegreta,
           armeria: A ? { passo: A.passo, arma: A.arma === null ? null : (A.armi[A.arma].id || 'di-sempre'), scelti: A.scelti.slice(), barra: A.barra,
@@ -1202,8 +1204,8 @@ if (window.__teatro && !Object.isFrozen(window.__teatro)) {
       cella: (i) => { const A = c1.armeria; return A && A.passo === 'arma' ? cellaArmaC1(i, A.armi.length) : cellaPannelloB(i); },
       posto: postoC1,
       conferma: () => PARTENZA_C1.armeria.conferma,
-      /** QA: porta la scena in corso all'ultimo tick della fase `fase` (per fotografarla o saltarla). */
-      portaScena(fase, t) { if (!c1.scena) return false; if (fase) c1.scena.fase = fase; c1.scena.t = Math.max(0, Math.min(SCENA_C1[c1.scena.fase].tick - 1, t)); return true; },
+      /** QA: ferma (true) o fa ripartire (false) la scena dei fili, per fotografarla. */
+      ferma(si) { c1.fermaQA = Boolean(si); return c1.fermaQA; },
     }),
   });
 }
