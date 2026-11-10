@@ -69,8 +69,11 @@ function installaAiuti() {
       statoRun.proiettiliNemici.length = 0; statoRun.proiettili.length = 0;
       statoRun.hpHalf = statoRun.maxHpHalf; player.invuln = 0;
       player.x = 320; player.y = 210;
+      Q.zitto();
       return st;
     },
+    /** Niente cartigli sopra le foto: notifiche di sblocco (a6), annunci e banner. */
+    zitto() { try { a6.coda.length = 0; a6.notifica = null; } catch (_) { /* a6 non c'è */ } statoRun.bannerTimer = 0; statoRun.cartiglioD = null; },
     rientra() { const st = statoRun.stanzaCorrente; entraInStanza(st, null); statoRun.siparioAttivo = null; st.nemici = []; st.pulita = true; player.x = 320; player.y = 205; },
     /** Mostra di tutti gli ostacoli del quartiere `q` (stessi campi che creano 30-mappa.js e b7-stanze.js). */
     ostacoli(q) {
@@ -168,8 +171,6 @@ function installaAiuti() {
  * `attesa` ms prima dello scatto, `ritaglio` in px logici, `zoom` del foglio affiancato.
  */
 const SCENE = [
-  { gruppo: 'interfaccia', nome: 'segni-dei-boss', ritaglio: [20, 150, 600, 90], zoom: 0.5,
-    prepara: () => { statoRun.pausa = false; if (typeof b3 !== 'undefined') b3.opz = null; window.__qaB9.mostra = null; statoRun.fase = 'menu_selezione'; const s = statoA6(); for (const id of Object.keys(PERSONAGGI_GIOCABILI)) s.segni[id] = SEGNI_A6.map((x) => x.boss); scriviA6(s); } },
   { gruppo: 'palchetti-platea', nome: 'ovazione', attesa: 1500,
     prepara: () => { __qaB9.avvia(1); __qaB9.stanzaVuota(); impostaGradimentoB1(0.95, true); },
     scatto: () => { pubblicoB1.fiori.length = 0; pubblicoB1.umore.t = 0; reazionePubblicoB1('ovazione'); } },
@@ -207,6 +208,11 @@ const SCENE = [
   { gruppo: 'interfaccia', nome: 'scena-col-gamepad', ritaglio: [0, 250, 640, 110], zoom: 0.5, attesa: 400,
     prepara: () => { __qaB9.avvia(2); const st = __qaB9.stanzaVuota(); generaForziere('comune', 330, 290, st); player.x = 320; player.y = 292; segnaDispositivoB3('pad'); },
     scatto: () => { segnaDispositivoB3('pad'); }, dopo: () => { segnaDispositivoB3('tastiera'); } },
+  { gruppo: 'interfaccia', nome: 'segni-dei-boss', attesa: 500,
+    prepara: () => { statoRun.pausa = false; b3.opz = null; __qaB9.mostra = null; segnaDispositivoB3('tastiera'); statoRun.fase = 'menu_selezione';
+      if (!__qaB9.statoA6Base) { __qaB9.statoA6Base = statoA6; statoA6 = function () { const s = __qaB9.statoA6Base(); if (__qaB9.segniFinti) for (const id of Object.keys(PERSONAGGI_GIOCABILI)) s.segni[id] = SEGNI_A6.map((x) => x.boss); return s; }; }
+      __qaB9.segniFinti = true; },
+    dopo: () => { __qaB9.segniFinti = false; } },
 ];
 
 /** Le immagini della tabella che hanno un contesto di prova in SCENE (tutte quelle collegabili). */
@@ -231,8 +237,11 @@ async function giraScene(p, modo, forzatura, scatta, scene) {
     await p.evaluate(`(${sc.prepara.toString()})(${JSON.stringify(sc.arg === undefined ? null : sc.arg)})`);
     await p.waitForTimeout(sc.scatto ? 250 : 80);
     if (sc.scatto) await p.evaluate(`(${sc.scatto.toString()})()`);
+    await p.evaluate(() => window.__qaB9.zitto());
     await p.waitForTimeout(scatta ? (sc.attesa || 300) : Math.min(sc.attesa || 300, 500));
     if (scatta) {
+      await p.evaluate(() => window.__qaB9.zitto());
+      await p.waitForTimeout(60);
       const r = sc.ritaglioDa ? await p.evaluate(`(${sc.ritaglioDa.toString()})()`) : sc.ritaglio;
       await p.screenshot({ path: foto(`${sc.gruppo}-${sc.nome}-${modo}`), clip: await ritaglioPagina(p, r) });
     }

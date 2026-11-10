@@ -42,10 +42,11 @@ const IMMAGINI_B9 = Object.freeze({
   'palchetto': { celle: [1, 1], alt: 93, ancora: [0.5, 0.667], dove: 'b1 ELEMENTI_B1.palcoLato*/balconata* (fondo e parapetto ritagliati dalla stessa immagine)', usa: true },
   'spettatori': { celle: [6, 4], alt: 46, ancora: [0.5, 0.9], dove: 'b1 ELEMENTI_B1.spettatore', usa: false,
     motivo: 'sagome quasi identiche (un ovale con la testa) e fotogrammi che non si distinguono: le sagome a codice hanno cilindri, piume, ventagli e si muovono' },
-  'platea': { celle: [1, 1], alt: 53.3, ancora: [0, 1], dove: 'b1 ELEMENTI_B1.buioPlatea (fila di fondo, dietro le sagome animate)', usa: true },
+  'platea': { celle: [1, 1], alt: 53.3, ancora: [0, 1], dove: 'b1 ELEMENTI_B1.buioPlatea (fila di fondo, dietro le sagome animate, col filo di luce sulle teste)', usa: true },
   'sipario-telo': { celle: [1, 1], alt: 360, ancora: [0, 0], dove: 'b1 ELEMENTI_B1.teloSipario', usa: false,
     motivo: 'strisce piatte senza pieghe né ombre: il velluto a codice ha volume, gallone e frangia' },
-  'sipario-mantovana': { celle: [1, 1], alt: 58, ancora: [0, 0], dove: 'b1 ELEMENTI_B1.mantovana', usa: true },
+  'sipario-mantovana': { celle: [1, 1], alt: 58, ancora: [0, 0], dove: 'b1 ELEMENTI_B1.mantovana', usa: false,
+    motivo: 'festoni a tre fasce di rosso piatto: accanto al velluto a pieghe del telo stonano; la mantovana a codice ha pieghe, ombre, frangia e nappe' },
   'lancio-fiore': { celle: [1, 1], alt: 13, ancora: [0.5, 0.56], dove: 'b1 ELEMENTI_B1.fiore (applausi)', usa: true },
   'lancio-mazzo': { celle: [1, 1], alt: 14, ancora: [0.5, 0.57], dove: 'b1 ELEMENTI_B1.fiore (un lancio su due)', usa: true },
   'lancio-ortaggio': { celle: [1, 1], alt: 12, ancora: [0.5, 0.5], dove: 'b1 ELEMENTI_B1.fiore dopo i fischi (lanciaOrtaggiB9)', usa: true },
@@ -59,9 +60,11 @@ const IMMAGINI_B9 = Object.freeze({
   'ostacolo-albero': { celle: [1, 1], alt: 62, ancora: [0.5, 0.89], dove: 'colonna di base alla Villa Comunale', usa: true },
   'ostacolo-aiuola': { celle: [1, 1], alt: 24, ancora: [0.486, 0.62], dove: 'ostacolo «aiuola» di b7 (Villa Comunale)', usa: true },
   'ostacolo-panchina': { celle: [1, 1], alt: 22, ancora: [0.497, 0.82], dove: 'colonna di base alla Villa Comunale', usa: true },
-  'ostacolo-telaio': { celle: [1, 1], alt: 58, ancora: [0.5, 0.86], dove: 'ostacolo «telaio» di b7 (San Leucio)', usa: true },
-  'ostacolo-balla-seta': { celle: [1, 1], alt: 40, ancora: [0.5, 0.78], dove: 'fragile «balla» di b7 (San Leucio)', usa: true },
-  'ostacolo-arcolaio': { celle: [1, 1], alt: 56, ancora: [0.5, 0.9], dove: 'colonna di base a San Leucio', usa: true },
+  'ostacolo-telaio': { celle: [1, 1], alt: 58, ancora: [0.5, 0.86], dove: 'ostacolo «telaio» di b7 e colonna di base a San Leucio', usa: true },
+  'ostacolo-balla-seta': { celle: [1, 1], alt: 40, ancora: [0.5, 0.78], dove: 'fragile «balla» di b7 (San Leucio)', usa: false,
+    motivo: 'un ovale bianco col bollo rosso: a schermo sembra un uovo o uno scudo, non una balla di seta; la balla a codice si riconosce meglio' },
+  'ostacolo-arcolaio': { celle: [1, 1], alt: 56, ancora: [0.5, 0.9], dove: 'colonna di base a San Leucio', usa: false,
+    motivo: 'figura filiforme e scura: non si legge come un ostacolo pieno (blocca passi e colpi) e sul pavimento rosso scuro quasi sparisce' },
   'ostacolo-colonna': { celle: [1, 1], alt: 62, ancora: [0.5, 0.87], dove: 'ostacolo «marmo» di b7 e colonna di base alla Reggia', usa: true },
   'ostacolo-statua': { celle: [1, 1], alt: 58, ancora: [0.5, 0.885], dove: 'ostacolo «statua» di b7 (Reggia)', usa: true },
   'ostacolo-candelabro': { celle: [1, 1], alt: 50, ancora: [0.5, 0.89], dove: 'ostacolo «candela» accesa di b7', usa: true },
@@ -69,36 +72,46 @@ const IMMAGINI_B9 = Object.freeze({
   'ostacolo-cassa-polvere': { celle: [1, 1], alt: 34, ancora: [0.47, 0.82], dove: 'fragile «polvere» di b7', usa: true },
   'ostacolo-botte': { celle: [1, 1], alt: 33, ancora: [0.5, 0.83], dove: 'fragile «botte» di b7 (Corso Trieste)', usa: true },
   'ostacolo-sacco': { celle: [1, 1], alt: 30, ancora: [0.5, 0.5], dove: 'sacco di sabbia appeso di b7 (disegnaSacchiB7)', usa: true },
-  'trappola-chiodi': { celle: [1, 3], alt: 19.8, ancora: [0.5, 0.57], dove: 'chiodi del palco di b7 (disegnaSuoloB7)', usa: true },
+  'trappola-chiodi': { celle: [1, 3], alt: 19.8, ancora: [0.5, 0.57], dove: 'chiodi del palco di b7 (disegnaSuoloB7)', usa: false,
+    motivo: 'chiodi grigio scuro e sottili sulle assi brune: a schermo i tre stati non si distinguono, e una trappola deve dire subito quando è fuori' },
   // --- C. eventi e botteghe (a1, a3, b7) ---
   'carta-dorso': { celle: [1, 1], alt: 30, ancora: [0.5, 1], dove: 'nessuno', usa: false, motivo: 'non serve più: il ciarlatano gioca con tre scatole, non con le carte' },
   'carta-asso-denari': { celle: [1, 1], alt: 30, ancora: [0.5, 1], dove: 'nessuno', usa: false, motivo: 'non serve più: il ciarlatano gioca con tre scatole, non con le carte' },
   'carta-re-coppe': { celle: [1, 1], alt: 30, ancora: [0.5, 1], dove: 'nessuno', usa: false, motivo: 'non serve più: il ciarlatano gioca con tre scatole, non con le carte' },
   'carta-cavallo-spade': { celle: [1, 1], alt: 30, ancora: [0.5, 1], dove: 'nessuno', usa: false, motivo: 'non serve più: il ciarlatano gioca con tre scatole, non con le carte' },
-  'npc-ciarlatano': { celle: [2, 4], alt: 63, ancora: [0.5, 0.661], dove: 'b7 disegnaCiarlatanoB7 (le tre scatole restano a codice, sopra il tavolino)', usa: true },
+  'npc-ciarlatano': { celle: [2, 4], alt: 63, ancora: [0.5, 0.661], dove: 'b7 disegnaCiarlatanoB7 (le tre scatole restano a codice, sopra il tavolino)', usa: false,
+    motivo: 'figura minuta e sottile dentro la cella, col tavolino a crociera che si confonde con le tre scatole del gioco; sul tavolo ha le carte, che non si usano più' },
   'npc-don-gennaro': { celle: [2, 4], alt: 64, ancora: [0.477, 0.7465], dove: 'a3 banco del lotto (arredoImmagineB9)', usa: true },
-  'npc-cartomante': { celle: [2, 4], alt: 54, ancora: [0.5, 0.678], dove: 'a3 Cartomante della Bisca (arredoImmagineB9)', usa: true },
+  'npc-cartomante': { celle: [2, 4], alt: 60, ancora: [0.5, 0.704], dove: 'a3 Cartomante della Bisca (arredoImmagineB9)', usa: true },
   'banco-lotto': { celle: [1, 1], alt: 48, ancora: [0.5, 0.7], dove: 'a3 banco del lotto, se manca Don Gennaro', usa: false,
     motivo: 'doppione: il foglio di Don Gennaro ha già il suo banco; in più porta la scritta «IL LOTTO»' },
-  'ceppo-chiodi': { celle: [1, 1], alt: 58, ancora: [0.5, 0.77], dove: 'a3 ceppo del Sacrificio (arredoImmagineB9)', usa: true },
+  'ceppo-chiodi': { celle: [1, 1], alt: 58, ancora: [0.5, 0.77], dove: 'a3 ceppo del Sacrificio (arredoImmagineB9)', usa: false,
+    motivo: 'ceppo quasi nero a tinta piatta: sul pavimento scuro della stanza sparisce e restano solo i chiodi; quello a codice si vede e si capisce' },
   'forzieri': { celle: [2, 2], alt: 42, ancora: [0.5, 0.693], dove: 'a1 disegnaForziereA1 (riga: comune / ferrato; colonna: chiuso / aperto)', usa: true },
   'lucchetto-porta': { celle: [1, 1], alt: 23, ancora: [0.5, 0.57], dove: 'a1 disegnaLucchettoA1 (le catene restano a codice)', usa: true },
   'clessidra': { celle: [1, 1], alt: 101, ancora: [0.5, 0.911], dove: 'b7 disegnaClessidraB7 (la sabbia resta a codice)', usa: true },
   // --- D. trasformazioni (b4-trasformazioni.js) ---
-  'trasf-re-denari-corona': { celle: [1, 1], alt: 11.6, ancora: [0.5, 0.714], dove: 'b4 parteCoronaB4', usa: true },
-  'trasf-re-denari-mantello': { celle: [1, 1], alt: 32, ancora: [0.5, 0.15], dove: 'b4 disegnaDietroB4 (dietro le spalle)', usa: true },
-  'trasf-pulcinella-maschera': { celle: [1, 1], alt: 12, ancora: [0.56, 0.4], dove: 'b4 parteMascheraB4', usa: true },
-  'trasf-ombra-velo': { celle: [1, 1], alt: 38, ancora: [0.5, 0.3], dove: 'b4 disegnaDietroB4 (dietro il burattino)', usa: true },
+  'trasf-re-denari-corona': { celle: [1, 1], alt: 11.6, ancora: [0.5, 0.714], dove: 'b4 parteCoronaB4', usa: false,
+    motivo: 'corona d\'ebano scura: su Taddeo e su Pulcinella d\'Ombra si vedono solo i puntini d\'oro; quella a codice ha il contorno d\'oro e si legge su tutti e quattro' },
+  'trasf-re-denari-mantello': { celle: [1, 1], alt: 32, ancora: [0.5, 0.15], dove: 'b4 disegnaDietroB4 (dietro le spalle)', usa: false,
+    motivo: 'è visto di spalle e simmetrico: dietro un burattino di tre quarti spunta solo come uno straccio rosso fra le gambe; il mantello a codice si apre dietro le spalle e si muove' },
+  'trasf-pulcinella-maschera': { celle: [1, 1], alt: 12, ancora: [0.56, 0.4], dove: 'b4 parteMascheraB4', usa: false,
+    motivo: 'macchia nera senza bordo né occhi: sul viso dei burattini non si distingue; la maschera a codice ha il cuoio bruno, il bordo chiaro e il naso a becco' },
+  'trasf-ombra-velo': { celle: [1, 1], alt: 38, ancora: [0.5, 0.3], dove: 'b4 disegnaDietroB4 (dietro il burattino)', usa: false,
+    motivo: 'una spirale di tratti rossi e neri su un alone grigio: non si legge come un velo e copre il burattino; i fili neri a codice bastano' },
   // --- E. porta della bottega (hub: t4-hub-storia.js, di un'altra squadra) ---
   'porta-bottega-chiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 1], dove: 'nessuno (hub)', usa: false, motivo: 'porta la scritta «LA BOTTEGA» ed è un abbozzo a tinte piatte; l\'hub è di un\'altra squadra' },
   'porta-bottega-socchiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 1], dove: 'nessuno (hub)', usa: false, motivo: 'porta la scritta «LA BOTTEGA» ed è un abbozzo a tinte piatte; l\'hub è di un\'altra squadra' },
   'porta-bottega-aperta': { celle: [1, 1], alt: 60, ancora: [0.5, 1], dove: 'nessuno (hub)', usa: false, motivo: 'porta la scritta «LA BOTTEGA» ed è un abbozzo a tinte piatte; l\'hub è di un\'altra squadra' },
   // --- G. interfaccia (b3-comandi-opzioni.js, a6-progressione.js) ---
-  'ui-pad-simboli': { celle: [1, 13], alt: 10, ancora: [0.5, 0.5], dove: 'drawTextFit col gamepad: simboli al posto di Ⓐ Ⓑ Ⓧ Ⓨ ✥ [LT] [RB]…', usa: true },
+  'ui-pad-simboli': { celle: [1, 13], alt: 10, ancora: [0.5, 0.5], dove: 'drawTextFit col gamepad: simboli al posto di Ⓐ Ⓑ Ⓧ Ⓨ ✥ [LT] [RB]…', usa: false,
+    motivo: 'alla misura delle scritte (7-9 px) sono dischetti scuri con la lettera illeggibile: i caratteri Ⓐ Ⓑ Ⓧ Ⓨ si leggono meglio' },
   'ui-cartiglio-opzioni': { celle: [1, 1], alt: 368, ancora: [0, 0], dove: 'b3 disegnaOpzioniB3 (cartiglioOpzioniB9)', usa: true },
-  'ui-tasto-pergamena': { celle: [1, 1], alt: 12.5, ancora: [0, 0], dove: 'b3 riga dei tasti (tastoPergamenaB9, in tre fette)', usa: true },
+  'ui-tasto-pergamena': { celle: [1, 1], alt: 12.5, ancora: [0, 0], dove: 'b3 riga dei tasti (tastoPergamenaB9, in tre fette)', usa: false,
+    motivo: 'alto 12 px, i due estremi decorati (punto d\'oro e staffa rossa) stringono la lettera fra due macchie: il tasto liscio a codice si legge meglio' },
   'ui-cursore-mano': { celle: [1, 1], alt: 13, ancora: [0.5, 0.47], dove: 'b3 cursore del menu di pausa e delle Opzioni (cursoreB9)', usa: true },
-  'ui-interruttore-lanterna': { celle: [1, 2], alt: 13, ancora: [0.5, 0.5], dove: 'b3 righe «spunta» delle Opzioni (interruttoreB9)', usa: true },
+  'ui-interruttore-lanterna': { celle: [1, 2], alt: 13, ancora: [0.5, 0.5], dove: 'b3 righe «spunta» delle Opzioni (interruttoreB9)', usa: false,
+    motivo: 'in una riga alta 13 px la lanterna è una macchiolina e accesa/spenta si distinguono poco: la levetta a codice lo dice meglio' },
   'segni-boss': { celle: [1, 4], alt: 11, ancora: [0.5, 0.5], dove: 'a6 disegnaSegniA6 (i quattro boss nuovi di b6)', usa: true },
 });
 // </tabella-immagini>
@@ -109,6 +122,7 @@ const CONFIG_B9 = Object.freeze({
   mipMax: 5,                    // dimezzamenti al massimo (1/32)
   fotogrammiMax: 260,           // tele in cache prima di ripartire
   ombra: 'rgba(8, 5, 3, 0.6)',  // ombra di contatto degli ostacoli (come 60-resa.js e b7)
+  filo: Object.freeze({ px: 0.55, colore: 'rgba(236, 184, 96, 0.75)' }), // filo di luce di lanterna attorno alle sagome scure
   // --- palchetto.png: righe e colonne dell'immagine (px d'origine 480×360) ---
   palchetto: Object.freeze({
     cielo: Object.freeze([15, 70]),        // cornice in alto
@@ -124,11 +138,11 @@ const CONFIG_B9 = Object.freeze({
     // balconata in alto: pezzi dello stesso palchetto alla misura dei palchi di b1 (42 px di vano, passo 50)
     alto: Object.freeze({ cieloY: -1.5, cieloA: 6.2, festoneY: 3.2, festoneA: 11.5, colonnaY: 8, colonnaA: 34, parapettoY: 40.2, parapettoA: 13 }),
   }),
-  platea: Object.freeze({ righe: Object.freeze([54, 132]), alfa: 0.92, filo: 0.6, coloreFilo: 'rgba(214, 158, 60, 0.5)' }),
+  platea: Object.freeze({ righe: Object.freeze([54, 132]), alfa: 0.9, filo: 0.6, coloreFilo: 'rgba(214, 158, 60, 0.5)', margineDock: 14 }),
   mantovana: Object.freeze({ righe: Object.freeze([0, 178]) }),
   ortaggi: Object.freeze({ quanti: 3, attesaTick: 900 }),   // pomodori dopo i fischi (a stanza senza nemici)
   lume: Object.freeze({ ogniTick: 7, bagliore: 13, alfaBagliore: 0.55 }),
-  cavo: Object.freeze({ alfa: 0.9 }),
+  cavo: Object.freeze({ alfa: 0.9, anello: 0.045 }),   // alfa del gancio; anello = quota dell'anello in cima alle quinte (frazione della cella)
   // ostacoli: pelle → immagine, ombra di contatto [rx, ry]; `luce` = alone caldo [dy, raggio]
   ostacoli: Object.freeze({
     varianti: Object.freeze({
@@ -137,7 +151,7 @@ const CONFIG_B9 = Object.freeze({
       telaio: Object.freeze({ img: 'ostacolo-telaio', ombra: [17, 5] }),
       balla: Object.freeze({ img: 'ostacolo-balla-seta', ombra: [12, 4.5] }),
       marmo: Object.freeze({ img: 'ostacolo-colonna', ombra: [14, 5] }),
-      statua: Object.freeze({ img: 'ostacolo-statua', ombra: [12, 4.5] }),
+      statua: Object.freeze({ img: 'ostacolo-statua', ombra: [12, 4.5], tinta: 'rgba(46, 54, 70, 0.46)' }), // gesso in ombra: ben diversa dal nemico di marmo bianco
       botte: Object.freeze({ img: 'ostacolo-botte', ombra: [12, 4.5] }),
       polvere: Object.freeze({ img: 'ostacolo-cassa-polvere', ombra: [13, 4.5], miccia: [13, -19] }),
       candela: Object.freeze({ img: 'ostacolo-candelabro', ombra: [8, 3], soloAcceso: true, luce: [-38, 13] }),
@@ -146,7 +160,7 @@ const CONFIG_B9 = Object.freeze({
     colonne: Object.freeze({
       1: Object.freeze([Object.freeze({ img: 'ostacolo-fontanella', ombra: [12, 4.5] }), Object.freeze({ img: 'ostacolo-carretto', ombra: [16, 5] })]),
       2: Object.freeze([Object.freeze({ img: 'ostacolo-albero', ombra: [13, 4.5] }), Object.freeze({ img: 'ostacolo-panchina', ombra: [15, 4.5] })]),
-      3: Object.freeze([Object.freeze({ img: 'ostacolo-arcolaio', ombra: [13, 4.5] })]),
+      3: Object.freeze([Object.freeze({ img: 'ostacolo-telaio', ombra: [16, 5] }), Object.freeze({ img: 'ostacolo-arcolaio', ombra: [13, 4.5] })]),
       4: Object.freeze([Object.freeze({ img: 'ostacolo-colonna', ombra: [14, 5] })]),
     }),
     braciere: Object.freeze({ img: 'ostacolo-braciere', ombra: [11, 4], luce: [-24, 14] }),
@@ -178,6 +192,7 @@ const CONFIG_B9 = Object.freeze({
   padAltezza: 1.28,             // altezza del simbolo rispetto al corpo del testo
   cartiglio: Object.freeze({ cornice: Object.freeze([116, 32, 1230, 1003]), rotolo: 112 }), // riquadro scuro e larghezza di un rotolo, px d'origine
   tasto: Object.freeze({ capo: 62, bordo: Object.freeze([8, 8, 377, 89]) }), // estremi decorati (larghezza) e riquadro pieno del tasto, px d'origine
+  cursore: Object.freeze({ altOpzioni: 15, altPausa: 21, spintaPausa: 3, dondolio: 0.8 }),
   segni: Object.freeze({ segnoLumeB6: 0, segnoCignoB6: 1, segnoGiostraB6: 2, segnoSpolaB6: 3 }),
 });
 
@@ -192,6 +207,7 @@ const statoB9 = {
   fotogrammi: new Map(),
   scalaFotogrammi: 0,
   ortaggiFinoA: -1,
+  dockPlatea: -1,
   bancoVisto: new WeakMap(),
   pelli: new WeakMap(),
   errori: 0,
@@ -235,6 +251,7 @@ function scenaB9(nome) {
 /** Butta ciò che è stato composto con le immagini (tele di questo file, di b1 e tavole di b4): si rifà al prossimo frame. */
 function invalidaImmaginiB9() {
   statoB9.fotogrammi.clear();
+  statoB9.pelli = new WeakMap();
   try { if (typeof invalidaTeleB1 === 'function') invalidaTeleB1(); } catch (_) { /* b1 non c'è */ }
   try { if (typeof tavoleB4 !== 'undefined') tavoleB4.clear(); } catch (_) { /* b4 non c'è */ }
 }
@@ -283,17 +300,20 @@ function disegnaRitaglioB9(g, nome, sx, sy, sw, sh, dx, dy, dw, dh) {
 
 /**
  * Una cella del foglio `nome` già ridotta alla scala del buffer (tela fuori schermo, in cache): a ogni frame
- * si copia così com'è. `alt` = altezza a schermo in px logici (predefinita: quella della tabella);
- * `ritocco(g, l, a, k)` = piccola correzione dipinta una volta sulla tela (k = px di tela per px d'origine).
+ * si copia così com'è. `alt` = altezza a schermo in px logici (0 = quella della tabella). `o` (facoltativo):
+ *   ritocco(g, l, a, k)  piccola correzione dipinta una volta sulla tela (k = px di tela per px d'origine);
+ *   chiave               nome del ritocco (entra nella chiave della cache);
+ *   filo                 true = filo di luce calda attorno alla sagoma (CONFIG_B9.filo): le figure scure
+ *                        restano leggibili sui pavimenti scuri, come le sagome «a ombre» del resto del gioco.
  * @returns {HTMLCanvasElement|null} null se l'immagine non è pronta o non è da usare
  */
-function fotogrammaB9(nome, riga = 0, col = 0, alt = 0, ritocco = null, chiaveRitocco = '') {
+function fotogrammaB9(nome, riga = 0, col = 0, alt = 0, o = null) {
   const img = scenaB9(nome);
   if (!img) return null;
   if (statoB9.scalaFotogrammi !== scalaBase) { statoB9.fotogrammi.clear(); statoB9.scalaFotogrammi = scalaBase; }
   const voce = IMMAGINI_B9[nome];
   const a = alt || voce.alt;
-  const chiave = `${nome}|${riga}|${col}|${a}|${chiaveRitocco}`;
+  const chiave = `${nome}|${riga}|${col}|${a}|${o ? `${o.chiave || ''}${o.filo ? 'f' : ''}` : ''}`;
   let c = statoB9.fotogrammi.get(chiave);
   if (!c) {
     if (statoB9.fotogrammi.size > CONFIG_B9.fotogrammiMax) statoB9.fotogrammi.clear();
@@ -302,8 +322,10 @@ function fotogrammaB9(nome, riga = 0, col = 0, alt = 0, ritocco = null, chiaveRi
     c.height = Math.max(1, Math.round(a * scalaBase));
     c.width = Math.max(1, Math.round((c.height * cl) / ca));
     const g = c.getContext('2d');
+    if (o && o.filo) g.filter = `drop-shadow(0 0 ${(CONFIG_B9.filo.px * scalaBase).toFixed(2)}px ${CONFIG_B9.filo.colore})`;
     disegnaRitaglioB9(g, nome, col * cl, riga * ca, cl, ca, 0, 0, c.width, c.height);
-    if (ritocco) { g.save(); ritocco(g, c.width, c.height, c.height / ca); g.restore(); }
+    g.filter = 'none';
+    if (o && o.ritocco) { g.save(); o.ritocco(g, c.width, c.height, c.height / ca); g.restore(); }
     statoB9.fotogrammi.set(chiave, c);
   }
   return c;
@@ -311,11 +333,11 @@ function fotogrammaB9(nome, riga = 0, col = 0, alt = 0, ritocco = null, chiaveRi
 
 /**
  * Copia sul canvas del gioco una cella di `nome` con l'àncora della tabella sul punto (x, y), allineata ai
- * pixel del buffer. `o`: { alt, ancora, specchio, alfa, ritocco, chiave }.
+ * pixel del buffer. `o`: { alt, ancora, specchio, alfa } più le opzioni di fotogrammaB9 (ritocco, chiave, filo).
  * @returns {boolean} false se l'immagine non c'è (il chiamante disegna il ripiego a codice)
  */
 function timbraB9(nome, riga, col, x, y, o) {
-  const c = fotogrammaB9(nome, riga, col, o && o.alt, o && o.ritocco, o && o.chiave);
+  const c = fotogrammaB9(nome, riga, col, o && o.alt, o);
   if (!c) return false;
   const s = scalaBase, l = c.width / s, a = c.height / s;
   const an = (o && o.ancora) || IMMAGINI_B9[nome].ancora;
@@ -335,6 +357,8 @@ function timbraB9(nome, riga, col, x, y, o) {
   contaB9(nome);
   return true;
 }
+
+const OPZ_FILO_B9 = Object.freeze({ filo: true });
 
 /** Un errore di disegno di questo file non ferma il gioco: si segnala una volta e si torna al disegno a codice. */
 function guastoB9(dove, err) {
@@ -422,14 +446,19 @@ avvolgiElementoB1('balconataFronte', (base, x) => {
   return true;
 });
 
-/** Platea: dietro le sagome animate di b1, la fila di teste dell'autore (ferma, nel buio). */
+/** Platea: dietro le sagome animate di b1, la fila di teste dell'autore (ferma, nel buio), mai sotto il dock dell'HUD. */
 avvolgiElementoB1('buioPlatea', (base, x, w, h) => {
-  if (!scenaB9('platea')) return false;
-  const img = scenaB9('platea'), R = CONFIG_B9.platea.righe;
+  const img = scenaB9('platea');
+  if (!img) return false;
+  const K = CONFIG_B9.platea, R = K.righe;
+  const da = Math.min(w, (typeof bordoDockB1 === 'function' ? bordoDockB1() : PUBBLICO_B1.dock.bordoMin) + K.margineDock);
+  statoB9.dockPlatea = da;
   base(x, w, h);
+  if (da >= w) return true;
   x.save();
-  x.globalAlpha = CONFIG_B9.platea.alfa;
-  x.filter = `drop-shadow(0 ${(-CONFIG_B9.platea.filo * scalaBase).toFixed(2)}px 0 ${CONFIG_B9.platea.coloreFilo})`; // filo di luce sulle teste: sagome nere nel buio non si vedrebbero
+  x.beginPath(); x.rect(da, 0, w - da, h); x.clip();
+  x.globalAlpha = K.alfa;
+  x.filter = `drop-shadow(0 ${(-K.filo * scalaBase).toFixed(2)}px 0 ${K.coloreFilo})`; // filo di luce sulle teste: sagome nere nel buio non si vedrebbero
   disegnaRitaglioB9(x, 'platea', 0, R[0], img.naturalWidth, R[1] - R[0], 0, 0, w, h);
   x.restore();
   return true;
@@ -496,6 +525,10 @@ if (typeof reazionePubblicoB1 === 'function') {
 
 /** A ogni frame della stanza: i pomodori rimasti in sospeso partono appena non ci sono più nemici. */
 function dopoStanzaB9(st) {
+  if (statoB9.dockPlatea >= 0 && typeof bordoDockB1 === 'function' && scenaB9('platea')) {
+    const da = Math.min(W, bordoDockB1() + CONFIG_B9.platea.margineDock);
+    if (Math.abs(da - statoB9.dockPlatea) > 0.5) { statoB9.dockPlatea = da; invalidaTeleB1(); } // il dock dell'HUD è cresciuto o calato
+  }
   if (statoB9.ortaggiFinoA < 0) return;
   if (tick > statoB9.ortaggiFinoA || statoRun.fase !== 'in_gioco') { statoB9.ortaggiFinoA = -1; return; }
   if (!st || st !== statoRun.stanzaCorrente || (st.nemici || []).some((n) => n.hp > 0)) return;
@@ -554,11 +587,34 @@ function disegnaLumeB9(x, y, f, i, tk) {
 }
 
 /**
- * AGGANCIO di b2 (disegnaCavo): il gancio di ferro in fondo a UN cavo (x, yBasso). La corda resta il tratto
- * di b2 (si piega quando il cavo è lasco): torna sempre false, così b2 la disegna.
+ * AGGANCIO di b2 (disegnaCavo): UN cavo di scena fino a (x, yBasso). Le quinte dell'autore hanno un anello di
+ * ferro in cima: lì arriva un solo cavo, dritto sull'anello (true: b2 non disegna i suoi due). Sugli altri
+ * pezzi resta il tratto di b2 (false) e in fondo ci va il gancio dell'autore.
  */
-function disegnaCavoB9(x, yBasso) {
+function disegnaCavoB9(x, yBasso, lato, lasco, fase) {
   try {
+    const st = statoRun.stanzaCorrente, A = typeof RIBALTA_B2 !== 'undefined' ? RIBALTA_B2.scenografia.aggancio : null;
+    if (st && A) {
+      let o = null, g = null, dist = 3;
+      for (const q of st.ostacoli) {
+        const gq = A[q.tipo] || A.predefinito;
+        if (Math.abs(q.x + lato * gq[0] - x) > 0.01) continue;
+        const d = Math.abs(yBasso + gq[1] - q.y);
+        if (d < dist) { dist = d; o = q; g = gq; }
+      }
+      const p = o ? pelleOstacoloB9(o) : null;
+      if (p && scenaB9(p.img)) {
+        if (lato > 0) return true;
+        const voce = IMMAGINI_B9[p.img];
+        const ya = yBasso + g[1] - voce.alt * voce.ancora[1] + voce.alt * CONFIG_B9.cavo.anello;
+        if (ya < -4) return true;
+        ctx.beginPath(); ctx.moveTo(o.x, -6);
+        if (lasco > 0.05) ctx.quadraticCurveTo(o.x + lasco * 1.4 + Math.sin(fase) * lasco * 0.4, ya * 0.55, o.x, ya);
+        else ctx.lineTo(o.x, ya);
+        ctx.stroke();
+        return true;
+      }
+    }
     if (yBasso > 6 && fotogrammaB9('cavo-gancio')) {
       const alfa0 = ctx.globalAlpha;
       ctx.globalAlpha = CONFIG_B9.cavo.alfa; // i cavi di b2 sono un velo: il gancio di ferro si deve vedere
@@ -572,6 +628,17 @@ function disegnaCavoB9(x, yBasso) {
 // ===========================================================================
 // B. SCENOGRAFIA APPESA AI CAVI: OSTACOLI (aggancio nel ciclo degli ostacoli di 60-resa.js)
 // ===========================================================================
+const tinteB9 = new Map();
+/** Opzioni di fotogrammaB9 per una quinta tinta (velo di colore sulla sola sagoma) col filo di luce. */
+function opzioniTintaB9(colore) {
+  let o = tinteB9.get(colore);
+  if (!o) {
+    o = Object.freeze({ filo: true, chiave: `tinta${colore}`, ritocco(g, l, a) { g.globalCompositeOperation = 'source-atop'; g.fillStyle = colore; g.fillRect(0, 0, l, a); } });
+    tinteB9.set(colore, o);
+  }
+  return o;
+}
+
 /** La pelle di un ostacolo (voce di CONFIG_B9.ostacoli) oppure null se resta a codice. */
 function pelleOstacoloB9(o) {
   const T = CONFIG_B9.ostacoli;
@@ -583,7 +650,7 @@ function pelleOstacoloB9(o) {
   if (o.tipo !== 'colonna') return null;
   let p = statoB9.pelli.get(o);
   if (p === undefined) {
-    const lista = T.colonne[((Math.max(1, statoRun.piano || 1) - 1) % 4) + 1] || [];
+    const lista = (T.colonne[((Math.max(1, statoRun.piano || 1) - 1) % 4) + 1] || []).filter((q) => usaImmagineB9(q.img));
     p = lista.length ? lista[Math.abs(Math.round(o.x * 0.37)) % lista.length] : null;
     statoB9.pelli.set(o, p);
   }
@@ -600,11 +667,12 @@ function disegnaOstacoloB9(o, t) {
     const p = pelleOstacoloB9(o);
     if (!p) return false;
     const col = o.tipo === 'braciere' && !o.variante && o.acceso ? 1 : 0;
-    if (!fotogrammaB9(p.img, 0, col)) return false;
+    const opz = p.tinta ? opzioniTintaB9(p.tinta) : OPZ_FILO_B9;
+    if (!fotogrammaB9(p.img, 0, col, 0, opz)) return false;
     const dx = o.scossoB7 > 0 ? (o.scossoB7 % 2 ? 1 : -1) : 0;
     ctx.fillStyle = CONFIG_B9.ombra;
     ctx.beginPath(); ctx.ellipse(o.x, o.y + 4, p.ombra[0], p.ombra[1], 0, 0, TAU); ctx.fill();
-    timbraB9(p.img, 0, col, o.x + dx, o.y);
+    timbraB9(p.img, 0, col, o.x + dx, o.y, opz);
     if (p.luce && (o.tipo !== 'braciere' || o.acceso)) {
       aloneCaldoB9(o.x, o.y + p.luce[0], p.luce[1], 0.5 + 0.12 * Math.sin(t * 0.21 + o.x));
     }
@@ -630,12 +698,12 @@ function spuntoniImmagineB9(o, t) {
 /** AGGANCIO di b7 (disegnaSacchiB7): il sacco di sabbia appeso o in caduta, col suo cavo. */
 function saccoImmagineB9(o, sx, sy) {
   try {
-    if (!fotogrammaB9('ostacolo-sacco')) return false;
+    if (!scenaB9('ostacolo-sacco')) return false;
     if (o.stato === 'appeso') {
       ctx.strokeStyle = '#8a6a2a'; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.moveTo(sx, sy - 13); ctx.lineTo(o.x, ARENA.y1 - 22); ctx.stroke();
     }
-    return timbraB9('ostacolo-sacco', 0, 0, sx, sy);
+    return timbraB9('ostacolo-sacco', 0, 0, sx, sy, OPZ_FILO_B9);
   } catch (err) { guastoB9('sacco', err); return false; }
 }
 
@@ -650,16 +718,17 @@ function ritoccoForziereApertoB9(g, l, a, k) {
   g.beginPath(); g.ellipse(V[0] * k, V[1] * k, V[2] * k, V[3] * k, 0, 0, TAU); g.fill();
 }
 
+const OPZ_FORZIERE_APERTO_B9 = Object.freeze({ ritocco: ritoccoForziereApertoB9, chiave: 'vuoto', filo: true });
+
 if (typeof disegnaForziereA1 === 'function') {
   const disegnaForziereBaseB9 = disegnaForziereA1;
   disegnaForziereA1 = function disegnaForziereB9(f) {
     try {
-      if (!(f.aperto && f.oggetto) && fotogrammaB9('forzieri')) {
+      if (!(f.aperto && f.oggetto) && scenaB9('forzieri')) {
         const x = Math.round(f.x), y = Math.round(f.y);
         ctx.fillStyle = 'rgba(0,0,0,0.45)';
         ctx.beginPath(); ctx.ellipse(x, y + 7, 14, 4, 0, 0, TAU); ctx.fill();
-        if (timbraB9('forzieri', f.tipo === 'chiuso' ? 1 : 0, f.aperto ? 1 : 0, x, y,
-          f.aperto ? { ritocco: ritoccoForziereApertoB9, chiave: 'vuoto' } : null)) return undefined;
+        if (timbraB9('forzieri', f.tipo === 'chiuso' ? 1 : 0, f.aperto ? 1 : 0, x, y, f.aperto ? OPZ_FORZIERE_APERTO_B9 : OPZ_FILO_B9)) return undefined;
       }
     } catch (err) { guastoB9('forziere', err); }
     return disegnaForziereBaseB9.apply(this, arguments);
@@ -699,6 +768,8 @@ function ritoccoCartelloB9(g, l, a, k) {
   g.strokeRect(R[0] * k, R[1] * k, R[2] * k, R[3] * k);
 }
 
+const OPZ_DON_GENNARO_B9 = Object.freeze({ ritocco: ritoccoCartelloB9, chiave: 'cartello', filo: true });
+
 /**
  * AGGANCIO di a3 (disegnaArrediA3): un arredo delle stanze speciali con l'immagine dell'autore.
  * `nome`: 'ceppo' (dati = st.sacrificioA3), 'banco' (dati = st.biscaA3), 'cartomante' (dati = posto).
@@ -707,10 +778,10 @@ function ritoccoCartelloB9(g, l, a, k) {
 function arredoImmagineB9(nome, x, y, dati, t) {
   try {
     if (nome === 'ceppo') {
-      if (!fotogrammaB9('ceppo-chiodi')) return false;
+      if (!scenaB9('ceppo-chiodi')) return false;
       ctx.fillStyle = 'rgba(8,5,3,0.6)';
       ctx.beginPath(); ctx.ellipse(x, y + 10, 24, 7, 0, 0, TAU); ctx.fill();
-      timbraB9('ceppo-chiodi', 0, 0, x, y);
+      timbraB9('ceppo-chiodi', 0, 0, x, y, OPZ_FILO_B9);
       const F = CONFIG_B9.ceppo.faccia;
       ctx.fillStyle = '#7f1d1d'; // macchie di sangue, una per sacrificio (come a3)
       for (let i = 0; i < ((dati && dati.fatti) || 0); i++) {
@@ -720,7 +791,7 @@ function arredoImmagineB9(nome, x, y, dati, t) {
     }
     if (nome === 'banco') {
       const D = CONFIG_B9.donGennaro;
-      if (fotogrammaB9('npc-don-gennaro')) {
+      if (scenaB9('npc-don-gennaro')) {
         let visto = statoB9.bancoVisto.get(dati);
         if (!visto) { visto = { ultimo: dati.ultimo, da: -1e9 }; statoB9.bancoVisto.set(dati, visto); }
         if (visto.ultimo !== dati.ultimo) { visto.ultimo = dati.ultimo; visto.da = t; }
@@ -728,7 +799,7 @@ function arredoImmagineB9(nome, x, y, dati, t) {
         const col = estrae ? Math.min(3, Math.floor((eta / D.estraeTick) * 4)) : (dati.chiuso ? 0 : Math.floor(t / D.ogniTick) % 4);
         ctx.fillStyle = 'rgba(8,5,3,0.6)';
         ctx.beginPath(); ctx.ellipse(x, y + 14, 26, 7, 0, 0, TAU); ctx.fill();
-        timbraB9('npc-don-gennaro', estrae ? 1 : 0, col, x, y, { ritocco: ritoccoCartelloB9, chiave: 'cartello' });
+        timbraB9('npc-don-gennaro', estrae ? 1 : 0, col, x, y, OPZ_DON_GENNARO_B9);
         if (dati.ultimo) drawTextFit(String(dati.ultimo.numero), x + D.numero[0], y + D.numero[1], 16, { size: 8, color: '#5c1a0c', shadow: false });
         return true;
       }
@@ -742,11 +813,11 @@ function arredoImmagineB9(nome, x, y, dati, t) {
       return false;
     }
     if (nome === 'cartomante') {
-      if (!fotogrammaB9('npc-cartomante')) return false;
+      if (!scenaB9('npc-cartomante')) return false;
       ctx.fillStyle = 'rgba(8,5,3,0.6)';
       ctx.beginPath(); ctx.ellipse(x, y + 14, 17, 5, 0, 0, TAU); ctx.fill();
       aloneCaldoB9(x, y - 8, 22, 0.28 + 0.05 * Math.sin(t * 0.3));
-      return timbraB9('npc-cartomante', 0, Math.floor(t / CONFIG_B9.cartomante.ogniTick) % 4, x, y);
+      return timbraB9('npc-cartomante', 0, Math.floor(t / CONFIG_B9.cartomante.ogniTick) % 4, x, y, OPZ_FILO_B9);
     }
   } catch (err) { guastoB9(`arredo ${nome}`, err); }
   return false;
@@ -921,8 +992,8 @@ function cartiglioOpzioniB9(P) {
       c.width = Math.round(W * scalaBase); c.height = Math.round(H * scalaBase);
       const g = c.getContext('2d');
       g.setTransform(scalaBase, 0, 0, scalaBase, 0, 0);
-      const ky = P.h / (R[3] - R[1]), lr = K.rotolo * ky;
-      disegnaRitaglioB9(g, 'ui-cartiglio-opzioni', R[0], R[1], R[2] - R[0], R[3] - R[1], P.x, P.y, P.w, P.h);
+      const ky = (H - 2) / (R[3] - R[1]), lr = K.rotolo * ky;
+      disegnaRitaglioB9(g, 'ui-cartiglio-opzioni', R[0], R[1], R[2] - R[0], R[3] - R[1], P.x, 1, P.w, H - 2);
       disegnaRitaglioB9(g, 'ui-cartiglio-opzioni', 0, 0, K.rotolo, img.naturalHeight, P.x - lr + 1, 1, lr, H - 2);
       disegnaRitaglioB9(g, 'ui-cartiglio-opzioni', img.naturalWidth - K.rotolo, 0, K.rotolo, img.naturalHeight, P.x + P.w - 1, 1, lr, H - 2);
       c.chiaveB9 = chiave; c.imgB9 = img;
@@ -971,7 +1042,11 @@ function tastoPergamenaB9(x, y, l, a) {
 
 /** AGGANCIO di b3: la mano di marionetta che fa da cursore, centrata in (x, y); `verso` = 1 indica a destra, -1 a sinistra. */
 function cursoreB9(x, y, verso = 1) {
-  try { return timbraB9('ui-cursore-mano', 0, 0, x, y, { specchio: verso < 0 }); } catch (err) { guastoB9('cursore', err); return false; }
+  try {
+    const K = CONFIG_B9.cursore, opzioni = typeof b3 !== 'undefined' && Boolean(b3.opz);
+    const dx = (opzioni ? 0 : K.spintaPausa) * -verso + Math.sin(performance.now() / 180) * K.dondolio * verso;
+    return timbraB9('ui-cursore-mano', 0, 0, x + dx, y, { alt: opzioni ? K.altOpzioni : K.altPausa, specchio: verso < 0 });
+  } catch (err) { guastoB9('cursore', err); return false; }
 }
 
 if (typeof disegnaSegniA6 === 'function') {
@@ -979,7 +1054,7 @@ if (typeof disegnaSegniA6 === 'function') {
   /** I segni di completamento: quelli dei quattro boss nuovi con l'immagine dell'autore, gli altri come prima. */
   disegnaSegniA6 = function disegnaSegniB9(cx, charId, s) {
     try {
-      if (fotogrammaB9('segni-boss')) {
+      if (scenaB9('segni-boss')) {
         const S = CONFIG_A6.scheda, G = CONFIG_A6.segni, M = CONFIG_B9.segni;
         const avuti = s.segni[charId] || [];
         const y = S.y + G.y;
@@ -1016,7 +1091,7 @@ if (typeof drawTextFit === 'function') {
    * aspetto da un computer all'altro). Senza gamepad, senza immagine o al primo intoppo: la scritta di prima.
    */
   drawTextFit = function drawTextFitB9(text, x, y, maxW, opts) {
-    if (typeof text !== 'string' || typeof b3 === 'undefined' || b3.dispositivo !== 'pad') return drawTextFitBaseB9(text, x, y, maxW, opts);
+    if (typeof text !== 'string' || typeof b3 === 'undefined' || b3.dispositivo !== 'pad' || !usaImmagineB9('ui-pad-simboli')) return drawTextFitBaseB9(text, x, y, maxW, opts);
     let posti = null, t2 = text;
     try {
       const t = b3.adatta && typeof adattaTestoB3 === 'function' ? adattaTestoB3(text) : text;
