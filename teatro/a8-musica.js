@@ -412,7 +412,9 @@ const Musica = (() => {
     else if (cambiato) avviaBusTema();
     const ora = ac.currentTime;
 
-    const obMaster = AudioSys.attivo ? MUSICA.volume * (statoRun.pausa ? MUSICA.volumePausa : 1) : 0;
+    // --- b3: il volume della musica segue OPZIONI.volumeMusica (menu Opzioni), applicato subito con la rampa ---
+    const volOpzB3 = Math.max(0, Math.min(1, Number(OPZIONI.volumeMusica)));
+    const obMaster = AudioSys.attivo ? MUSICA.volume * (Number.isFinite(volOpzB3) ? volOpzB3 : 1) * (statoRun.pausa ? MUSICA.volumePausa : 1) : 0;
     if (obMaster !== S.obiettivoMaster) { S.obiettivoMaster = obMaster; rampa(master.gain, obMaster, ora, MUSICA.rampaMutoSec); }
     const obStrato = voluto.combattimento && !MUSICA.temi[voluto.base].strato ? 1 : 0;
     if (obStrato !== S.obiettivoStrato) { S.obiettivoStrato = obStrato; S.fineRampaStrato = ora + MUSICA.rampaStratoSec; rampa(busStrato.gain, obStrato, ora, MUSICA.rampaStratoSec); }

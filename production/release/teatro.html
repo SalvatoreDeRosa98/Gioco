@@ -8924,6 +8924,13 @@ function disegnaMenuPausa() {
 
 const keys = {};
 
+// --- b3: inizio --- (comandi: rimappatura dei tasti, gamepad, menu Opzioni) Il filtro di b3-comandi-opzioni.js
+// deve vedere tasti e click PRIMA di ogni altro gestore, anche di quelli in cattura dei file caricati dopo.
+for (const tipoB3 of ['keydown', 'keyup', 'mousedown']) {
+  window.addEventListener(tipoB3, (e) => { if (typeof filtroIngressiB3 === 'function') filtroIngressiB3(e); }, true);
+}
+// --- b3: fine ---
+
 window.addEventListener('keydown', (e) => {
   keys[e.code] = true;
   player.targetX = null;
@@ -12845,7 +12852,9 @@ const Musica = (() => {
     else if (cambiato) avviaBusTema();
     const ora = ac.currentTime;
 
-    const obMaster = AudioSys.attivo ? MUSICA.volume * (statoRun.pausa ? MUSICA.volumePausa : 1) : 0;
+    // --- b3: il volume della musica segue OPZIONI.volumeMusica (menu Opzioni), applicato subito con la rampa ---
+    const volOpzB3 = Math.max(0, Math.min(1, Number(OPZIONI.volumeMusica)));
+    const obMaster = AudioSys.attivo ? MUSICA.volume * (Number.isFinite(volOpzB3) ? volOpzB3 : 1) * (statoRun.pausa ? MUSICA.volumePausa : 1) : 0;
     if (obMaster !== S.obiettivoMaster) { S.obiettivoMaster = obMaster; rampa(master.gain, obMaster, ora, MUSICA.rampaMutoSec); }
     const obStrato = voluto.combattimento && !MUSICA.temi[voluto.base].strato ? 1 : 0;
     if (obStrato !== S.obiettivoStrato) { S.obiettivoStrato = obStrato; S.fineRampaStrato = ora + MUSICA.rampaStratoSec; rampa(busStrato.gain, obStrato, ora, MUSICA.rampaStratoSec); }
@@ -14442,9 +14451,10 @@ const CONFIG_A6 = Object.freeze({
 
 /**
  * Segni di completamento: uno per boss, con l'icona (sprite di SPRITE_OGGETTI) e il nome breve.
- * L'ordine è quello in cui compaiono nella scheda.
+ * L'ordine è quello in cui compaiono nella scheda. (b6) La lista è estendibile: i file caricati dopo
+ * (teatro/b6-boss.js) aggiungono con push() il segno dei loro boss; la riga si stringe da sola.
  */
-const SEGNI_A6 = Object.freeze([
+const SEGNI_A6 = ([
   Object.freeze({ boss: 're-gatto', sprite: 'gatto', nome: 'Gatto dei Quattro Canti' }),
   Object.freeze({ boss: 'capitano-guardia', sprite: 'chiave', nome: 'Capitano di Piombo' }),
   Object.freeze({ boss: 'regina-vespa', sprite: 'ago', nome: 'Regina delle Vespe' }),
@@ -14782,17 +14792,18 @@ function disegnaSegniA6(cx, charId, s) {
   const G = CONFIG_A6.segni;
   const avuti = s.segni[charId] || [];
   const y = S.y + G.y;
-  const largh = (SEGNI_A6.length - 1) * G.passo;
+  const passo = Math.min(G.passo, (S.w - 20) / Math.max(1, SEGNI_A6.length - 1)); // (b6) più segni: riga più fitta
+  const largh = (SEGNI_A6.length - 1) * passo;
   const x0 = cx + S.w / 2 - largh / 2;
   ctx.save();
   for (let i = 0; i < SEGNI_A6.length; i++) {
     const sg = SEGNI_A6[i];
-    const x = x0 + i * G.passo;
+    const x = x0 + i * passo;
     const preso = avuti.includes(sg.boss);
     ctx.globalAlpha = preso ? 1 : G.spento;
     if (preso) {
       ctx.fillStyle = 'rgba(249, 203, 64, 0.22)';
-      ctx.beginPath(); ctx.arc(x, y, 7, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, Math.min(7, passo / 2 + 0.5), 0, TAU); ctx.fill();
     }
     drawPixelSprite(SPRITE_OGGETTI[sg.sprite] || SPRITE_OGGETTI.spada, x, y, G.scala);
   }
@@ -15602,6 +15613,2622 @@ Object.assign(window.__teatro.interni, {
   // versioni avvolte per la QA (stessi effetti + registro)
   nuovaRun, avviaPiano, entraInStanza, subisciColpoGiocatore,
   ...(typeof usaConsumabileA2 === 'function' ? { usaConsumabileA2 } : {}),
+});
+
+</script>
+<script>
+/* teatro/b3-comandi-opzioni.js (incorporato da tools/teatro-release.js) */
+/*
+ * teatro/b3-comandi-opzioni.js — (b3) Comandi e Opzioni.
+ *   - GAMEPAD (Gamepad API, layout standard; va bene su Steam Deck): levetta sinistra/croce = movimento,
+ *     levetta destra e A/B/X/Y = sparo nelle 4 direzioni (direzione dominante con isteresi, niente mira a 360°),
+ *     dorsali e grilletti = oggetto attivo, interazione/bomba, consumabile; Start = pausa; Select = Diario.
+ *   - MENU SENZA MOUSE: cursore nel menu di pausa, tasto del Diario in scena, gamepad in tutti i menu.
+ *   - SIMBOLI dei comandi secondo l'ultimo dispositivo usato (tastiera o gamepad).
+ *   - MENU OPZIONI (dal menu principale [O] e dal menu di pausa): volumi, scossa, effetti scenici, schermo
+ *     intero, vibrazione, testo grande, rimappatura dei tasti con conflitti e «ripristina predefiniti».
+ *
+ * Come funziona: il resto del gioco legge sempre gli stessi codici «canonici» (KeyW, ArrowUp, KeyQ, KeyE, KeyF,
+ * Escape, KeyO…). Questo file traduce verso quei codici sia i tasti rimappati sia il gamepad, inviando eventi
+ * di tastiera sintetici: nessun altro file deve sapere che esistono.
+ *
+ * Agganci nei file di base: 70-input.js (il filtro `filtroIngressiB3` registrato per primo, in cattura) e
+ * a8-musica.js (il volume della musica segue OPZIONI.volumeMusica). Tutto il resto avvolge funzioni globali
+ * (loop, scuoti, offsetScossa, drawTextFit, drawPillLabel, disegnaMenuPausa, disegnaMenuSelezionePersonaggio,
+ * disegnaCartiglioD) chiamando sempre la base.
+ * Script classico, caricato dopo a7-registro-bilancio.js. QA: tools/qa-teatro-comandi.js.
+ */
+
+// ===========================================================================
+// TABELLE (tutti i numeri e i testi di questo file)
+// ===========================================================================
+
+/** Azioni rimappabili: `canonico` è il codice che il resto del gioco legge (ed è anche il tasto predefinito). */
+const COMANDI_B3 = Object.freeze({
+  azioni: Object.freeze([
+    { id: 'su', nome: 'Muovi su', canonico: 'KeyW' },
+    { id: 'giu', nome: 'Muovi giù', canonico: 'KeyS' },
+    { id: 'sinistra', nome: 'Muovi a sinistra', canonico: 'KeyA' },
+    { id: 'destra', nome: 'Muovi a destra', canonico: 'KeyD' },
+    { id: 'sparaSu', nome: 'Spara in su', canonico: 'ArrowUp' },
+    { id: 'sparaGiu', nome: 'Spara in giù', canonico: 'ArrowDown' },
+    { id: 'sparaSinistra', nome: 'Spara a sinistra', canonico: 'ArrowLeft' },
+    { id: 'sparaDestra', nome: 'Spara a destra', canonico: 'ArrowRight' },
+    { id: 'attivo', nome: 'Oggetto attivo', canonico: 'KeyQ' },
+    { id: 'interagisci', nome: 'Interagisci / bomba', canonico: 'KeyE' },
+    { id: 'consumabile', nome: 'Consumabile', canonico: 'KeyF' },
+    { id: 'pausa', nome: 'Pausa', canonico: 'Escape' },
+    { id: 'diario', nome: 'Diario degli oggetti', canonico: 'KeyO' },
+  ].map((a) => Object.freeze(a))),
+  // Tasti che non si assegnano: Invio conferma sempre nei menu, Esc mette sempre in pausa (ed è solo della Pausa),
+  // gli altri appartengono al browser o al sistema.
+  riservati: Object.freeze(['Enter', 'NumpadEnter', 'Escape', 'Tab', 'CapsLock', 'NumLock', 'ScrollLock', 'PrintScreen',
+    'Pause', 'ContextMenu', 'MetaLeft', 'MetaRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight',
+    'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12']),
+  nomiTasti: Object.freeze({
+    ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Space: 'Spazio', Escape: 'Esc', Enter: 'Invio',
+    ShiftLeft: 'Maiusc sx', ShiftRight: 'Maiusc dx', Backspace: 'Backspace', Delete: 'Canc', Insert: 'Ins',
+    Home: 'Inizio', End: 'Fine', PageUp: 'Pag↑', PageDown: 'Pag↓', Comma: ',', Period: '.', Minus: '-', Equal: '=',
+    Semicolon: ';', Quote: '\'', BracketLeft: '[', BracketRight: ']', Backslash: '\\', Slash: '/', Backquote: '`',
+    IntlBackslash: '<',
+  }),
+  tastoOpzioniMenu: 'KeyO', // nel menu principale apre le Opzioni (tasto fisico, non rimappabile)
+});
+
+/** Gamepad: zone morte, isteresi, soglie, ripetizione nei menu, bottoni (indici del layout standard), vibrazione. */
+const PAD_B3 = Object.freeze({
+  zonaMortaSinistra: 0.30,   // levetta sinistra: sotto questa ampiezza il burattino sta fermo
+  rilascioSinistra: 0.22,    // isteresi: per fermarsi la levetta deve tornare sotto questo valore
+  isteresiSettoreRad: 0.14,  // la levetta sinistra cambia direzione (8 settori) solo superato il confine di ~8°
+  zonaMortaDestra: 0.38,     // levetta destra: sotto questa ampiezza non si spara
+  rilascioDestra: 0.26,
+  dominanza: 1.3,            // lo sparo cambia asse solo se il nuovo asse supera il vecchio di questo fattore
+  sogliaGrilletto: 0.35,     // LT/RT analogici: premuti oltre questo valore
+  sogliaBottone: 0.5,
+  ripetiPrimoMs: 340,        // nei menu: tenendo una direzione, primo ritardo…
+  ripetiPoiMs: 120,          // …e passo della ripetizione
+  bottoni: Object.freeze({ A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, select: 8, start: 9, su: 12, giu: 13, sinistra: 14, destra: 15 }),
+  quanti: 17,
+  // in scena: bottone → azione (un colpo per pressione)
+  tocchi: Object.freeze({ 4: 'consumabile', 5: 'interagisci', 6: 'attivo', 7: 'interagisci', 8: 'diario', 9: 'pausa' }),
+  // in scena: bottone tenuto → sparo in quella direzione (A giù, B destra, X sinistra, Y su: come sono messi sul pad)
+  sparo: Object.freeze({ 0: 'sparaGiu', 1: 'sparaDestra', 2: 'sparaSinistra', 3: 'sparaSu' }),
+  vibrazione: Object.freeze({ // leggera: [durata ms, motore debole 0..1, motore forte 0..1], moltiplicati per OPZIONI.vibrazione
+    colpo: Object.freeze({ ms: 130, debole: 0.45, forte: 0.20 }),
+    esplosione: Object.freeze({ ms: 190, debole: 0.60, forte: 0.45 }),
+  }),
+  simboli: Object.freeze({
+    su: 'Levetta S', giu: 'Levetta S', sinistra: 'Levetta S', destra: 'Levetta S',
+    sparaSu: 'Levetta D', sparaGiu: 'Levetta D', sparaSinistra: 'Levetta D', sparaDestra: 'Levetta D',
+    attivo: 'LT', interagisci: 'RB', consumabile: 'LB', pausa: 'Start', diario: 'Select',
+  }),
+});
+
+/** Nei menu: cosa invia ogni bottone del gamepad, contesto per contesto ('@opzioni' apre le Opzioni). */
+const PAD_MENU_B3 = Object.freeze({
+  principale: Object.freeze({ A: 'Enter', B: 'Escape', X: 'Delete', Y: '@opzioni', start: 'Enter', nav: true }),
+  conferma: Object.freeze({ A: 'Enter', B: 'Escape', nav: false }),
+  pausa: Object.freeze({ A: 'Enter', B: 'Escape', start: 'Escape', select: 'KeyO', nav: true }),
+  diario: Object.freeze({ A: 'Enter', B: 'Escape', Y: 'KeyC', start: 'Escape', select: 'KeyO', nav: true }),
+  registro: Object.freeze({ A: 'Enter', B: 'Escape', X: 'KeyX', start: 'Escape', nav: false }),
+  pergamena: Object.freeze({ A: 'Enter', B: 'Enter', start: 'Enter', nav: false }),
+  pannello: Object.freeze({ A: 'Enter', B: 'Escape', nav: true }),
+  sipario: Object.freeze({ A: 'Enter', B: 'Enter', start: 'Enter', nav: false }),
+  dialogo: Object.freeze({ A: 'Enter', start: 'Escape', nav: true }),
+  morte: Object.freeze({ nav: false }),
+  menu: Object.freeze({ A: 'Enter', B: 'Escape', start: 'Escape', nav: true }),
+});
+
+/** Opzioni aggiunte da questo file a OPZIONI (00-config.js), con i loro predefiniti. */
+const OPZIONI_B3_PREDEFINITE = Object.freeze({ vibrazione: 1, testoGrande: false });
+
+/** «Testo grande»: di quanto crescono banner, cartiglio degli oggetti ed etichette (l'auto-fit li tiene nei riquadri). */
+const TESTO_GRANDE_B3 = Object.freeze({ fattore: 1.3 });
+
+/** Menu di pausa dell'autore (60-resa.js): posizione dei bottoni per il cursore, e bottone delle Opzioni. */
+const MENU_PAUSA_B3 = Object.freeze({
+  x: 202, w: 236, h: 26,
+  voci: Object.freeze([['riprendi', 90], ['audio', 124], ['schermo', 158], ['ricomincia', 192], ['menu', 226], ['diario', 260]]),
+  copri: Object.freeze({ x: 179, y: 294, w: 282, h: 37 }), // il riquadro «comandi» dell'autore: lo sostituisce il bottone
+  opzioni: Object.freeze({ x: 202, y: 296, w: 236, h: 19 }),
+  aiutoY: 327,
+  fondo: '#140c08',
+});
+
+/** Bottone «Opzioni» del menu principale (a destra di «Inizia la commedia»). */
+const BOTTONE_MENU_B3 = Object.freeze({ x: 494, y: 305, w: 118, h: 28 });
+
+/** Cartiglio delle Opzioni: geometria e colori (oro su scuro, come il menu di pausa e i cartigli). */
+const PANNELLO_B3 = Object.freeze({
+  x: 96, y: 8, w: 448, h: 344,
+  righeY: 50, rigaH: 17, rigaHTasti: 15.5,
+  margine: 18, etichettaX: 34, controlloX: 232, tacche: 10, taccaL: 12, taccaPasso: 14, taccaA: 8,
+  colori: Object.freeze({
+    velo: 'rgba(5, 3, 2, 0.9)', fondo: '#140c08', oro: '#f9cb40', bordoInterno: '#5a3818', rotolo: '#5c110b',
+    scelta: '#63150d', testo: '#e6d2aa', testoScelto: '#ffffff', spento: '#8a6a3f', vuoto: '#2a1b10',
+    pergamena: '#e6d2aa', inchiostro: '#2a1d14', nota: '#c9a679', piede: '#a8a29e',
+  }),
+});
+
+const TESTI_B3 = Object.freeze({
+  titolo: '✦ OPZIONI ✦',
+  linguettaScena: 'SUONO E SCENA',
+  linguettaTasti: 'COMANDI',
+  acceso: 'ACCESO',
+  spento: 'SPENTO',
+  premiTasto: 'premi un tasto…',
+  predefinito: (n) => `pred. ${n}`,
+  bottoneMenu: '✦ OPZIONI',
+  bottonePausa: '✦ OPZIONI E COMANDI',
+  aiutoPausa: '↑↓ scegli · Invio: conferma · Esc: riprendi',
+  aiutoPausaPad: '✥ scegli · Ⓐ conferma · Ⓑ riprendi · Select: diario',
+  barraMenuPad: '✥ burattino e slot · Ⓐ inizia la commedia · Ⓧ cancella lo slot · Ⓨ opzioni',
+  pattoPad: 'Ⓐ sì, stringo il patto · Ⓑ no',
+  piedeScena: '↑↓ scegli · ←→ regola · Invio: cambia · Tab: comandi · Esc: chiudi',
+  piedeScenaPad: '✥ scegli e regola · Ⓐ cambia · LB/RB: comandi · Ⓑ chiudi',
+  piedeTasti: '↑↓ scegli · Invio: cambia il tasto · Backspace: predefinito · Esc: indietro',
+  piedeTastiPad: '✥ scegli · Ⓐ cambia (poi premi il tasto sulla tastiera) · Ⓧ predefinito · Ⓑ indietro',
+  piedeCattura: (az) => `Premi il nuovo tasto per «${az}» · Esc: annulla`,
+  piedeConflitto: 'Invio: scambia i due tasti · Esc: annulla',
+  conflitto: (tasto, altra) => `«${tasto}» è già il tasto di «${altra}». Li scambio?`,
+  scambiati: (a, b) => `Scambiati i tasti di «${a}» e «${b}».`,
+  assegnato: (az, tasto) => `«${az}» ora è «${tasto}».`,
+  riservato: (tasto) => `«${tasto}» non si può assegnare: scegline un altro.`,
+  tastiRipristinati: 'Tasti riportati ai predefiniti.',
+  opzioniRipristinate: 'Opzioni riportate ai valori di partenza.',
+  schermoNegato: 'Lo schermo intero vuole un tasto o un click: riprova con Invio.',
+  notaPausa: 'Esc mette sempre in pausa, qualunque tasto tu scelga.',
+  muto: 'L\'audio è muto: chiudi le opzioni e premi M per riaccenderlo.',
+  legendaPad1: 'Gamepad: levetta sin. o croce muovi · levetta des. o Ⓐ Ⓑ Ⓧ Ⓨ spara nelle 4 direzioni',
+  legendaPad2: 'LT attivo · RB / RT interagisci e bomba · LB consumabile · Start pausa · Select diario',
+  // con il gamepad queste scritte dei file di base cambiano per intero
+  interiPad: Object.freeze({
+    'Frecce/WASD o click: scorri · Esc/O: torna al menu': '✥ scorri · Ⓑ torna al menu',
+    'C: consumabili': 'Ⓨ consumabili',
+    'C: oggetti · Esc/O: torna al menu': 'Ⓨ oggetti · Ⓑ torna al menu',
+    'X: esporta il registro (JSON) · Esc / L: torna al menu': 'Ⓧ esporta il registro (JSON) · Ⓑ torna al menu',
+    'Frecce/WASD o click: scegli · E/Invio (o secondo click): prendi · Esc: chiudi · ▪ azzurro = fuori dal pool della notte':
+      '✥ scegli · Ⓐ prendi · Ⓑ chiudi · ▪ azzurro = fuori dal pool della notte',
+    'Clicca qui o premi [SPAZIO / INVIO] per entrare nel Teatro': 'Premi Ⓐ per entrare nel Teatro',
+  }),
+});
+
+/** Righe delle due pagine del menu Opzioni. tipo: barra (0..1 a decimi), spunta (sì/no), azione, tasto. */
+const RIGHE_B3 = Object.freeze({
+  scena: Object.freeze([
+    { id: 'volumeEffetti', tipo: 'barra', nome: 'Volume degli effetti', nota: 'Colpi, passi, campane e tutti i rumori di scena.' },
+    { id: 'volumeMusica', tipo: 'barra', nome: 'Volume della musica', nota: 'Mandolino, organetto e tammorra che accompagnano la notte.' },
+    { id: 'scossa', tipo: 'barra', nome: 'Scossa dello schermo', nota: 'Quanto trema il palco sui colpi e sulle esplosioni. A zero resta fermo.' },
+    { id: 'vibrazione', tipo: 'barra', nome: 'Vibrazione del gamepad', nota: 'Il gamepad vibra piano quando sei colpito e sulle esplosioni.' },
+    { id: 'grana', tipo: 'spunta', nome: 'Grana', nota: 'La grana sottile sopra la scena.' },
+    { id: 'vignetta', tipo: 'spunta', nome: 'Vignetta', nota: 'Il buio ai bordi del palco, come alla luce di una lanterna.' },
+    { id: 'pubblico', tipo: 'spunta', nome: 'Pubblico', nota: 'Le ombre del pubblico in sala, davanti al palco.' },
+    { id: 'lampi', tipo: 'spunta', nome: 'Lampi', nota: 'I lampi bianchi sui colpi. Spegnili se danno fastidio agli occhi.' },
+    { id: 'schermoIntero', tipo: 'spunta', nome: 'Schermo intero', nota: 'Il teatro a tutto schermo.' },
+    { id: 'testoGrande', tipo: 'spunta', nome: 'Testo grande', nota: 'Scritte più grandi per avvisi, cartiglio degli oggetti ed etichette.' },
+    { id: 'vaiTasti', tipo: 'azione', nome: 'Comandi della tastiera ▸', nota: 'Scegli i tasti di movimento, sparo, oggetti, pausa e diario.' },
+    { id: 'predefiniti', tipo: 'azione', nome: 'Ripristina i predefiniti', nota: 'Riporta volumi ed effetti ai valori di partenza (i tasti non cambiano).' },
+    { id: 'chiudi', tipo: 'azione', nome: 'Chiudi', nota: '' },
+  ].map((r) => Object.freeze(r))),
+  tasti: Object.freeze(COMANDI_B3.azioni.map((a) => Object.freeze({ id: a.id, tipo: 'tasto', nome: a.nome })).concat([
+    Object.freeze({ id: 'predefinitiTasti', tipo: 'azione', nome: 'Ripristina i tasti predefiniti' }),
+    Object.freeze({ id: 'indietro', tipo: 'azione', nome: '◂ Torna alle opzioni' }),
+  ])),
+});
+
+// ===========================================================================
+// STATO
+// ===========================================================================
+const CANONICO_B3 = Object.freeze(Object.fromEntries(COMANDI_B3.azioni.map((a) => [a.id, a.canonico])));
+const NOME_AZIONE_B3 = Object.freeze(Object.fromEntries(COMANDI_B3.azioni.map((a) => [a.id, a.nome])));
+const RISERVATI_B3 = new Set(COMANDI_B3.riservati);
+const DIR_B3 = Object.freeze({ su: 1, giu: 2, sinistra: 4, destra: 8 });
+// settori della levetta sinistra (atan2 con y verso il basso), da -4 a 4: maschera delle direzioni
+const SETTORI_B3 = Object.freeze({ 0: 8, 1: 10, 2: 2, 3: 6, 4: 4, '-4': 4, '-3': 5, '-2': 1, '-1': 9 });
+
+const b3 = {
+  dispositivo: 'tastiera', // ultimo dispositivo usato: 'tastiera' (anche mouse) o 'pad'
+  inviando: false,         // true mentre si invia un tasto sintetico (il filtro lo lascia passare)
+  inverso: new Map(),      // tasto fisico → azione
+  orfani: new Set(),       // codici canonici rimasti senza azione (il loro tasto è stato spostato)
+  identita: true,          // tutti i tasti sono quelli predefiniti: il filtro non tocca niente
+  adatta: false,           // le scritte dei comandi vanno adattate (gamepad o tasti rimappati)
+  cacheTesti: new Map(),
+  ambitoGrande: 0,         // >0 mentre si disegna qualcosa che «testo grande» ingrandisce
+  dentroPillola: false,
+  cursorePausa: 0,
+  diarioDiretto: false,    // il Diario è stato aperto dalla scena: chiudendolo si torna a giocare
+  opz: null,               // menu Opzioni aperto: { pagina, sel, cattura, conflitto, origine }
+  avviso: null,            // { testo, finoMs }
+  ultimaVibrazione: null,
+  menuAperti: [],          // altri file: funzioni () => true se hanno un loro riquadro aperto (il pad lo tratta da menu)
+  vociPausa: [],           // altri file: { id, rett() } bottoni in più del menu di pausa, per il cursore
+  pad: {
+    presente: false, contesto: '', prima: new Array(PAD_B3.quanti).fill(false), adesso: new Array(PAD_B3.quanti).fill(false),
+    premutoIn: new Array(PAD_B3.quanti).fill(''), ordine: new Array(PAD_B3.quanti).fill(0), contatore: 0,
+    settore: null, mascheraPrima: 0, asseSparo: null, miraPrima: null, navDir: null, navProssimo: 0,
+    tenuti: new Set(), voluti: new Set(),
+  },
+};
+
+const clamp01B3 = (v, pred = 1) => { const n = Number(v); return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : pred; };
+const dentroB3 = (mx, my, r) => mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+function bloccaB3(e) { e.preventDefault(); e.stopImmediatePropagation(); }
+function suonoB3(nome) { try { if (AudioSys && typeof AudioSys[nome] === 'function') AudioSys[nome](); } catch (_) { /* audio facoltativo */ } }
+
+// ===========================================================================
+// TASTI: assegnazioni, nomi, traduzione verso i codici canonici
+// ===========================================================================
+
+/** true se `code` non si può assegnare all'azione (Esc resta solo della Pausa). */
+function riservatoB3(code, azione) {
+  return !code || (RISERVATI_B3.has(code) && !(code === 'Escape' && azione === 'pausa'));
+}
+
+/** Mappa completa azione → tasto a partire da quella salvata; se è rotta o ha doppioni, i predefiniti. */
+function tastiValidiB3(salvati) {
+  const t = Object.assign({}, CANONICO_B3);
+  if (!salvati || typeof salvati !== 'object') return t;
+  for (const a of COMANDI_B3.azioni) {
+    const c = salvati[a.id];
+    if (typeof c === 'string' && !riservatoB3(c, a.id)) t[a.id] = c;
+  }
+  return new Set(Object.values(t)).size === COMANDI_B3.azioni.length ? t : Object.assign({}, CANONICO_B3);
+}
+
+/** Da chiamare dopo ogni cambio di OPZIONI.tasti: ricalcola la traduzione e rilascia i tasti tenuti. */
+function ricostruisciTastiB3() {
+  b3.inverso.clear();
+  b3.orfani.clear();
+  b3.identita = true;
+  for (const a of COMANDI_B3.azioni) {
+    b3.inverso.set(OPZIONI.tasti[a.id], a.id);
+    if (OPZIONI.tasti[a.id] !== a.canonico) b3.identita = false;
+  }
+  for (const a of COMANDI_B3.azioni) if (!b3.inverso.has(a.canonico)) b3.orfani.add(a.canonico);
+  aggiornaAdattaB3();
+  rilasciaTuttoB3();
+}
+
+function rilasciaTuttoB3() {
+  for (const k in keys) keys[k] = false;
+  b3.pad.tenuti.clear();
+}
+
+/** Nome leggibile di un tasto (codice fisico): quello visto alla rimappatura, o uno ricavato dal codice. */
+function etichettaTastoB3(code) {
+  const E = OPZIONI.tastiEtichette;
+  if (E && typeof E[code] === 'string' && E[code]) return E[code];
+  if (COMANDI_B3.nomiTasti[code]) return COMANDI_B3.nomiTasti[code];
+  let m = /^Key([A-Z])$/.exec(code);
+  if (m) return m[1];
+  m = /^Digit(\d)$/.exec(code);
+  if (m) return m[1];
+  m = /^Numpad(.+)$/.exec(code);
+  if (m) return `Tn ${m[1]}`;
+  return code;
+}
+
+/** Simbolo del comando di un'azione per l'ultimo dispositivo usato (es. «E» o «RB»). */
+function simboloB3(azione) {
+  if (b3.dispositivo === 'pad') return PAD_B3.simboli[azione] || '';
+  return etichettaTastoB3(OPZIONI.tasti[azione] || CANONICO_B3[azione]);
+}
+
+/**
+ * Codice canonico da inviare per un tasto fisico: lo stesso codice (nessuna traduzione), un altro codice, o
+ * null (il tasto era di un'azione spostata altrove: in scena non fa più niente; nei menu resta com'è).
+ */
+function traduciTastoB3(code, inMenu) {
+  if (b3.identita) return code;
+  const az = b3.inverso.get(code);
+  if (az) return CANONICO_B3[az];
+  if (b3.orfani.has(code)) return (inMenu || code === 'Escape') ? code : null;
+  return code;
+}
+
+function inviaTastoB3(tipo, code, ripetuto) {
+  const prima = b3.inviando;
+  b3.inviando = true;
+  try {
+    (document.body || document).dispatchEvent(new KeyboardEvent(tipo, { code, key: '', bubbles: true, cancelable: true, repeat: Boolean(ripetuto) }));
+  } finally { b3.inviando = prima; }
+}
+
+function toccoB3(code) { inviaTastoB3('keydown', code); inviaTastoB3('keyup', code); }
+
+function segnaDispositivoB3(d) {
+  if (b3.dispositivo === d) return;
+  b3.dispositivo = d;
+  aggiornaAdattaB3();
+}
+
+function aggiornaAdattaB3() {
+  b3.adatta = b3.dispositivo === 'pad' || !b3.identita;
+  b3.cacheTesti.clear();
+}
+
+/** Assegna un tasto a un'azione; se era di un'altra azione i due tasti si scambiano. Salva e applica subito. */
+function assegnaTastoB3(azione, code, etichetta) {
+  if (!CANONICO_B3[azione] || riservatoB3(code, azione)) return false;
+  const altra = b3.inverso.get(code);
+  if (altra && altra !== azione) OPZIONI.tasti[altra] = OPZIONI.tasti[azione];
+  OPZIONI.tasti[azione] = code;
+  if (etichetta) OPZIONI.tastiEtichette[code] = etichetta;
+  salvaOpzioni();
+  ricostruisciTastiB3();
+  return true;
+}
+
+/** Riporta tutti i tasti ai predefiniti. */
+function ripristinaTastiB3() {
+  OPZIONI.tasti = Object.assign({}, CANONICO_B3);
+  OPZIONI.tastiEtichette = {};
+  salvaOpzioni();
+  ricostruisciTastiB3();
+}
+
+// ===========================================================================
+// CONTESTO (chi riceve i comandi adesso)
+// ===========================================================================
+
+/**
+ * Contesto dei comandi: 'gioco' e 'hub' (ci si muove), 'opzioni', oppure un menu ('principale', 'conferma',
+ * 'pausa', 'diario', 'registro', 'pergamena', 'pannello', 'sipario', 'dialogo', 'morte', 'menu').
+ */
+function contestoB3() {
+  if (b3.opz) return 'opzioni';
+  const f = statoRun.fase;
+  if (f === 'menu_selezione') return 'principale';
+  const t3 = window.__teatroT3;
+  if (t3 && t3.confermaPattoAperta) return 'conferma';
+  if (statoRun.diarioD) return 'diario';
+  const reg = window.__teatro.interni.registroA7;
+  if (reg && reg.aperto) return 'registro';
+  if (statoRun.pausa) return 'pausa';
+  if (f === 'morte') return 'morte';
+  if (reg && reg.pergamena) return 'pergamena';
+  if (statoRun.pannelloB) return 'pannello';
+  if (statoRun.siparioAttivo) return 'sipario';
+  if (statoRun.scambioPendente) return 'menu';
+  for (const fn of b3.menuAperti) { try { if (fn()) return 'menu'; } catch (_) { /* un altro file: non blocca i comandi */ } }
+  try { const qa = window.__teatro.t4qa; if (qa && qa.dialogo) return 'dialogo'; } catch (_) { /* cartiglio a metà: come nessuno */ }
+  if (f === 'hub') return 'hub';
+  if (f === 'in_gioco') return 'gioco';
+  return 'menu';
+}
+
+const liberoB3 = (c) => c === 'gioco' || c === 'hub';
+
+/** true se sopra il menu di pausa c'è un altro riquadro (Diario, Registro, Opzioni, quelli di altri file). */
+function sovrapposizionePausaB3() {
+  if (statoRun.diarioD || b3.opz) return true;
+  const reg = window.__teatro.interni.registroA7;
+  if (reg && reg.aperto) return true;
+  for (const fn of b3.menuAperti) { try { if (fn()) return true; } catch (_) { /* vedi sopra */ } }
+  return false;
+}
+
+// ===========================================================================
+// FILTRO DEGLI INGRESSI (registrato per primo, in cattura, da 70-input.js)
+// ===========================================================================
+
+/**
+ * Vede ogni keydown/keyup/mousedown prima di tutti gli altri gestori: traduce i tasti rimappati, serve il menu
+ * Opzioni, il cursore del menu di pausa e il tasto del Diario. Con i tasti predefiniti e nessun menu di questo
+ * file aperto non tocca gli eventi.
+ */
+function filtroIngressiB3(e) {
+  try {
+    if (e.type === 'mousedown') mouseB3(e);
+    else tastieraB3(e);
+  } catch (err) { console.error('[b3] ingressi', err); }
+}
+
+function tastieraB3(e) {
+  const giu = e.type === 'keydown';
+  if (!b3.inviando) {
+    segnaDispositivoB3('tastiera');
+    const o = b3.opz;
+    // scorciatoie del browser (Ctrl+R, F5, F11…): non si traducono, non si catturano, non si fermano
+    const scorciatoia = e.ctrlKey || e.metaKey || e.altKey || /^F\d+$/.test(e.code);
+    if (o && giu) { // le Opzioni prendono tutti i tasti (i rilasci passano: nessun tasto resta «premuto»)
+      e.stopImmediatePropagation();
+      if (scorciatoia) return;
+      e.preventDefault();
+      if (o.cattura) catturaTastoB3(e);
+      else tastoOpzioniB3(e.code, e.repeat);
+      return;
+    }
+    if (scorciatoia) return;
+    if (giu && !e.repeat && statoRun.fase === 'menu_selezione' && e.code === COMANDI_B3.tastoOpzioniMenu) {
+      bloccaB3(e);
+      apriOpzioniB3('menu');
+      return;
+    }
+    const canonico = traduciTastoB3(e.code, !b3.identita && !liberoB3(contestoB3()));
+    if (canonico !== e.code) {
+      bloccaB3(e);
+      if (canonico) inviaTastoB3(e.type, canonico, e.repeat);
+      return;
+    }
+  } else if (b3.opz && giu) { bloccaB3(e); return; }
+  if (giu && tastoLogicoB3(e.code, e.repeat)) bloccaB3(e);
+}
+
+/** Tasti «logici» (già canonici): cursore del menu di pausa e Diario dalla scena. true = consumato. */
+function tastoLogicoB3(code, ripetuto) {
+  const f = statoRun.fase;
+  if (f !== 'in_gioco' && f !== 'hub') return false;
+  if (statoRun.pausa) {
+    if (sovrapposizionePausaB3()) return false;
+    if (code === 'ArrowUp' || code === 'KeyW') { muoviCursorePausaB3(-1); return true; }
+    if (code === 'ArrowDown' || code === 'KeyS') { muoviCursorePausaB3(1); return true; }
+    if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') { if (!ripetuto) attivaVocePausaB3(); return true; }
+    return false;
+  }
+  if (code === CANONICO_B3.diario && !ripetuto && liberoB3(contestoB3())) { apriDiarioDirettoB3(); return true; }
+  return false;
+}
+
+function coordB3(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * (W / r.width), y: (e.clientY - r.top) * (H / r.height) };
+}
+
+function mouseB3(e) {
+  segnaDispositivoB3('tastiera');
+  if (e.target !== canvas) return;
+  const p = coordB3(e);
+  if (b3.opz) { bloccaB3(e); clickOpzioniB3(p.x, p.y); return; }
+  if (statoRun.fase === 'menu_selezione') {
+    if (dentroB3(p.x, p.y, BOTTONE_MENU_B3)) { bloccaB3(e); apriOpzioniB3('menu'); }
+    return;
+  }
+  if (statoRun.pausa && !sovrapposizionePausaB3()) {
+    if (dentroB3(p.x, p.y, MENU_PAUSA_B3.opzioni)) { bloccaB3(e); apriOpzioniB3('pausa'); return; }
+    const voci = vociPausaB3();
+    for (let i = 0; i < voci.length; i++) if (dentroB3(p.x, p.y, voci[i].rett())) b3.cursorePausa = i; // il click prosegue
+  }
+}
+
+// ===========================================================================
+// MENU DI PAUSA: cursore, bottone delle Opzioni, Diario dalla scena
+// ===========================================================================
+const VOCI_PAUSA_BASE_B3 = MENU_PAUSA_B3.voci.map(([id, y]) => {
+  const r = Object.freeze({ x: MENU_PAUSA_B3.x, y, w: MENU_PAUSA_B3.w, h: MENU_PAUSA_B3.h });
+  return Object.freeze({ id, rett: () => r });
+});
+const VOCE_OPZIONI_B3 = Object.freeze({ id: 'opzioni', rett: () => MENU_PAUSA_B3.opzioni });
+
+/** Bottoni del menu di pausa dall'alto in basso (autore, Opzioni, Registro, quelli aggiunti da altri file). */
+function vociPausaB3() {
+  const v = VOCI_PAUSA_BASE_B3.concat([VOCE_OPZIONI_B3]);
+  if (typeof rettBottonePausaA7 === 'function') v.push({ id: 'registro', rett: rettBottonePausaA7 });
+  for (const x of b3.vociPausa) if (x && typeof x.rett === 'function') v.push(x);
+  return v.sort((a, b) => a.rett().y - b.rett().y);
+}
+
+function muoviCursorePausaB3(d) {
+  const n = vociPausaB3().length;
+  b3.cursorePausa = (b3.cursorePausa + d + n) % n;
+  suonoB3('playPasso');
+}
+
+/** Attiva il bottone sotto il cursore: per quelli degli altri file è un click nel loro centro. */
+function attivaVocePausaB3() {
+  const voci = vociPausaB3();
+  const v = voci[Math.min(b3.cursorePausa, voci.length - 1)];
+  if (!v) return;
+  if (v.id === 'opzioni') { apriOpzioniB3('pausa'); return; }
+  const r = v.rett();
+  gestisciClickMenuPausa(r.x + r.w / 2, r.y + r.h / 2);
+}
+
+/** Apre il Diario direttamente dalla scena (tasto del Diario o Select): chiudendolo si torna a giocare. */
+function apriDiarioDirettoB3() {
+  statoRun.pausa = true;
+  apriDiarioD();
+  b3.diarioDiretto = true;
+}
+
+function disegnaAggiuntePausaB3() {
+  if (!statoRun.pausa || statoRun.diarioD) return;
+  const M = MENU_PAUSA_B3;
+  const pad = b3.dispositivo === 'pad';
+  ctx.save();
+  ctx.fillStyle = M.fondo;
+  ctx.fillRect(M.copri.x, M.copri.y, M.copri.w, M.copri.h);
+  const R = M.opzioni;
+  ctx.fillStyle = '#22150d';
+  ctx.fillRect(R.x, R.y, R.w, R.h);
+  ctx.strokeStyle = '#7c5227';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(R.x, R.y, R.w, R.h);
+  drawTextFit(TESTI_B3.bottonePausa, W / 2, R.y + R.h / 2 + 3, R.w - 12, { size: 8.5, color: '#f9cb40', weight: 'bold' });
+  drawTextFit(pad ? TESTI_B3.aiutoPausaPad : TESTI_B3.aiutoPausa, W / 2, M.aiutoY, 276, { size: 7, color: '#c9a679', weight: '' });
+  if (!b3.opz) {
+    const voci = vociPausaB3();
+    const v = voci[Math.min(b3.cursorePausa, voci.length - 1)];
+    if (v) {
+      const r = v.rett();
+      if (v.id !== 'riprendi') { // il rosso fisso di «Riprendi» si smorza: l'evidenza in vista è una sola
+        const rr = VOCI_PAUSA_BASE_B3[0].rett();
+        ctx.fillStyle = 'rgba(20, 12, 8, 0.6)';
+        ctx.fillRect(rr.x, rr.y, rr.w, rr.h);
+      }
+      ctx.fillStyle = 'rgba(249, 203, 64, 0.14)';
+      ctx.fillRect(r.x, r.y, r.w, r.h);
+      const pulsa = 0.8 + 0.2 * Math.sin(performance.now() / 160);
+      ctx.strokeStyle = `rgba(249, 203, 64, ${pulsa.toFixed(2)})`;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(r.x - 1.5, r.y - 1.5, r.w + 3, r.h + 3);
+      drawTextFit('▶', r.x - 10, r.y + r.h / 2 + 3, 14, { size: 9, color: '#f9cb40' });
+      drawTextFit('◀', r.x + r.w + 10, r.y + r.h / 2 + 3, 14, { size: 9, color: '#f9cb40' });
+    }
+  }
+  ctx.restore();
+}
+
+const disegnaMenuPausaBaseB3 = disegnaMenuPausa;
+disegnaMenuPausa = function disegnaMenuPausaB3(...args) {
+  const r = disegnaMenuPausaBaseB3.apply(this, args);
+  try { disegnaAggiuntePausaB3(); } catch (err) { console.error('[b3] pausa', err); }
+  return r;
+};
+
+// ===========================================================================
+// MENU PRINCIPALE: bottone delle Opzioni
+// ===========================================================================
+const disegnaMenuSelezioneBaseB3 = disegnaMenuSelezionePersonaggio;
+disegnaMenuSelezionePersonaggio = function disegnaMenuSelezioneB3(...args) {
+  const r = disegnaMenuSelezioneBaseB3.apply(this, args);
+  try {
+    const B = BOTTONE_MENU_B3;
+    ctx.save();
+    ctx.fillStyle = '#1c140e';
+    ctx.fillRect(B.x, B.y, B.w, B.h);
+    ctx.strokeStyle = '#8a5a2b';
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(B.x, B.y, B.w, B.h);
+    drawTextFit(TESTI_B3.bottoneMenu, B.x + B.w / 2, B.y + 12, B.w - 10, { size: 8.5, color: '#f9cb40' });
+    drawTextFit(b3.dispositivo === 'pad' ? 'premi Ⓨ' : `click o [${etichettaTastoB3(COMANDI_B3.tastoOpzioniMenu)}]`, B.x + B.w / 2, B.y + 23, B.w - 10, { size: 7, color: '#c9a679', weight: '' });
+    ctx.restore();
+  } catch (err) { console.error('[b3] menu', err); }
+  return r;
+};
+
+// ===========================================================================
+// SCRITTE DEI COMANDI (ultimo dispositivo, tasti rimappati) E TESTO GRANDE
+// ===========================================================================
+const SONDA_TESTI_B3 = /\[|Spazio \/ E/;
+
+/** Adatta una scritta dei file di base al dispositivo e ai tasti correnti (es. «[Click/E]» → «[RB]»). */
+function adattaTestoB3(t) {
+  if (typeof t !== 'string' || !t) return t;
+  const noto = b3.cacheTesti.get(t);
+  if (noto !== undefined) return noto;
+  const pad = b3.dispositivo === 'pad';
+  let r = t;
+  if (t === 'Q') r = simboloB3('attivo');
+  else if (t === 'F') r = simboloB3('consumabile');
+  else if (pad && TESTI_B3.interiPad[t] !== undefined) r = TESTI_B3.interiPad[t];
+  else if (SONDA_TESTI_B3.test(t)) {
+    const E = simboloB3('interagisci');
+    r = t.replace(/\[Click\/E\]/g, pad ? `[${E}]` : `[Click/${E}]`)
+      .replace(/\[E\]/g, `[${E}]`)
+      .replace(/\[E \/ Invio\]/g, pad ? '[Ⓐ]' : `[${E} / Invio]`)
+      .replace(/\[Q\]/g, `[${simboloB3('attivo')}]`)
+      .replace(/\[F\]/g, `[${simboloB3('consumabile')}]`)
+      .replace(/\[ESC\]/g, `[${simboloB3('pausa').toUpperCase()}]`)
+      .replace(/Spazio \/ E$/, pad ? 'Ⓐ' : `Spazio / ${E}`);
+    if (pad) {
+      r = r.replace(/\[SPAZIO \/ INVIO\]/g, '[Ⓐ]').replace(/\[Click \/ Spazio\]/g, '[Ⓐ]')
+        .replace(/ \[[ROLM]\]$/, '');
+    }
+  }
+  if (b3.cacheTesti.size > 500) b3.cacheTesti.clear();
+  b3.cacheTesti.set(t, r);
+  return r;
+}
+
+const drawTextFitBaseB3 = drawTextFit;
+drawTextFit = function drawTextFitB3(text, x, y, maxW, opts) {
+  const t = b3.adatta ? adattaTestoB3(text) : text;
+  if (OPZIONI.testoGrande && !b3.dentroPillola && (b3.ambitoGrande > 0 || (text && text === statoRun.banner))) {
+    opts = Object.assign({}, opts, { size: ((opts && opts.size) || 8.5) * TESTO_GRANDE_B3.fattore });
+  }
+  return drawTextFitBaseB3(t, x, y, maxW, opts);
+};
+
+const drawPillLabelBaseB3 = drawPillLabel;
+drawPillLabel = function drawPillLabelB3(text, cx, cy, maxW, opts) {
+  const t = b3.adatta ? adattaTestoB3(text) : text;
+  if (!OPZIONI.testoGrande || b3.opz) return drawPillLabelBaseB3(t, cx, cy, maxW, opts);
+  const eraDentro = b3.dentroPillola;
+  b3.dentroPillola = true; // la pillola cresce con la scritta: dentro non si ingrandisce due volte
+  try {
+    return drawPillLabelBaseB3(t, cx, cy, maxW * TESTO_GRANDE_B3.fattore, Object.assign({}, opts, { size: ((opts && opts.size) || 8) * TESTO_GRANDE_B3.fattore }));
+  } finally { b3.dentroPillola = eraDentro; }
+};
+
+const disegnaCartiglioDBaseB3 = disegnaCartiglioD;
+disegnaCartiglioD = function disegnaCartiglioDB3(...args) {
+  b3.ambitoGrande++;
+  try { return disegnaCartiglioDBaseB3.apply(this, args); } finally { b3.ambitoGrande--; }
+};
+
+// ===========================================================================
+// SCOSSA DELLO SCHERMO (OPZIONI.scossa) E VIBRAZIONE (OPZIONI.vibrazione)
+// ===========================================================================
+const offsetScossaBaseB3 = offsetScossa;
+/** La scossa calcolata dal gioco, moltiplicata per OPZIONI.scossa (0 = schermo fermo). */
+offsetScossa = function offsetScossaB3(dtMs) {
+  const o = offsetScossaBaseB3(dtMs);
+  const k = clamp01B3(OPZIONI.scossa);
+  if (k >= 1 || (!o.x && !o.y)) return o;
+  o.x = Math.round(o.x * k);
+  o.y = Math.round(o.y * k);
+  return o;
+};
+
+/** Vibrazione leggera del gamepad ('colpo' o 'esplosione'), se c'è, se è l'ultimo dispositivo usato e se non è a zero. */
+function vibraB3(tipo, forza = clamp01B3(OPZIONI.vibrazione)) {
+  const V = PAD_B3.vibrazione[tipo];
+  if (!V || !(forza > 0) || b3.dispositivo !== 'pad') return false;
+  const g = padCorrenteB3();
+  const att = g && g.vibrationActuator;
+  if (!att || typeof att.playEffect !== 'function') return false;
+  try {
+    const p = att.playEffect('dual-rumble', { startDelay: 0, duration: V.ms, weakMagnitude: V.debole * forza, strongMagnitude: V.forte * forza });
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  } catch (_) { return false; }
+  b3.ultimaVibrazione = { tipo, forza, tick };
+  return true;
+}
+
+const scuotiBaseB3 = scuoti;
+scuoti = function scuotiB3(voce, ...resto) {
+  try {
+    if (voce === FEEL.scossa.ferita) vibraB3('colpo');
+    else if (voce === FEEL.scossa.bomba) vibraB3('esplosione');
+  } catch (_) { /* la vibrazione è facoltativa */ }
+  return scuotiBaseB3.call(this, voce, ...resto);
+};
+
+// ===========================================================================
+// GAMEPAD
+// ===========================================================================
+
+/** Il gamepad in uso: il primo collegato col layout standard, altrimenti il primo collegato. */
+function padCorrenteB3() {
+  let lista = null;
+  try { lista = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : null; } catch (_) { return null; }
+  if (!lista) return null;
+  let scelto = null;
+  for (let i = 0; i < lista.length; i++) {
+    const g = lista[i];
+    if (!g || g.connected === false || !g.buttons || g.buttons.length < 10) continue;
+    if (g.mapping === 'standard') return g;
+    if (!scelto) scelto = g;
+  }
+  return scelto;
+}
+
+function premutoPadB3(g, i) {
+  const b = g.buttons[i];
+  if (!b) return false;
+  if (typeof b !== 'object') return b > PAD_B3.sogliaBottone;
+  const soglia = (i === PAD_B3.bottoni.LT || i === PAD_B3.bottoni.RT) ? PAD_B3.sogliaGrilletto : PAD_B3.sogliaBottone;
+  return Boolean(b.pressed) || b.value > soglia;
+}
+
+/** Levetta sinistra → maschera delle direzioni (8 settori), con zona morta e isteresi. */
+function direzioneMovimentoB3(x, y) {
+  const P = b3.pad;
+  const m = Math.hypot(x, y);
+  if (m < (P.settore === null ? PAD_B3.zonaMortaSinistra : PAD_B3.rilascioSinistra)) { P.settore = null; return 0; }
+  const ang = Math.atan2(y, x);
+  let sett = Math.round(ang / (Math.PI / 4));
+  if (P.settore !== null && sett !== P.settore) {
+    let diff = ang - P.settore * (Math.PI / 4);
+    while (diff > Math.PI) diff -= TAU;
+    while (diff < -Math.PI) diff += TAU;
+    if (Math.abs(diff) < Math.PI / 8 + PAD_B3.isteresiSettoreRad) sett = P.settore;
+  }
+  P.settore = sett;
+  return SETTORI_B3[sett] || 0;
+}
+
+/** Levetta destra → azione di sparo nella direzione dominante (4 direzioni), con zona morta e isteresi. */
+function direzioneSparoB3(x, y) {
+  const P = b3.pad;
+  const m = Math.hypot(x, y);
+  if (m < (P.asseSparo === null ? PAD_B3.zonaMortaDestra : PAD_B3.rilascioDestra)) { P.asseSparo = null; return null; }
+  const ax = Math.abs(x), ay = Math.abs(y);
+  let asse = ax >= ay ? 'x' : 'y';
+  if (P.asseSparo !== null && P.asseSparo !== asse) {
+    const nuovo = asse === 'x' ? ax : ay, vecchio = asse === 'x' ? ay : ax;
+    if (nuovo < vecchio * PAD_B3.dominanza) asse = P.asseSparo;
+  }
+  P.asseSparo = asse;
+  if (asse === 'x') return x >= 0 ? 'sparaDestra' : 'sparaSinistra';
+  return y >= 0 ? 'sparaGiu' : 'sparaSu';
+}
+
+function rilasciaPadB3() {
+  const P = b3.pad;
+  for (const c of P.tenuti) inviaTastoB3('keyup', c);
+  P.tenuti.clear();
+}
+
+/** true quando è ora di muovere il cursore in un menu (prima pressione, poi ripetizione). */
+function navRipetiB3(dir, ora) {
+  const P = b3.pad;
+  if (dir !== P.navDir) {
+    P.navDir = dir;
+    if (!dir) return false;
+    P.navProssimo = ora + PAD_B3.ripetiPrimoMs;
+    return true;
+  }
+  if (dir && ora >= P.navProssimo) { P.navProssimo = ora + PAD_B3.ripetiPoiMs; return true; }
+  return false;
+}
+
+function direzioneNavB3(maschera) {
+  const prima = b3.pad.navDir;
+  if (maschera & DIR_B3.su && !(maschera & (DIR_B3.sinistra | DIR_B3.destra))) return 'ArrowUp';
+  if (maschera & DIR_B3.giu && !(maschera & (DIR_B3.sinistra | DIR_B3.destra))) return 'ArrowDown';
+  if (maschera & DIR_B3.sinistra && !(maschera & (DIR_B3.su | DIR_B3.giu))) return 'ArrowLeft';
+  if (maschera & DIR_B3.destra && !(maschera & (DIR_B3.su | DIR_B3.giu))) return 'ArrowRight';
+  return maschera ? prima : null; // in diagonale resta la direzione di prima
+}
+
+/** Una volta per frame: legge il gamepad e lo traduce nei tasti canonici secondo il contesto. */
+function aggiornaPadB3(ora) {
+  const P = b3.pad;
+  const g = padCorrenteB3();
+  if (!g) {
+    if (P.presente) { P.presente = false; rilasciaPadB3(); P.prima.fill(false); P.navDir = null; }
+    return;
+  }
+  P.presente = true;
+  const B = PAD_B3.bottoni;
+  const b = P.adesso;
+  let attivita = false;
+  for (let i = 0; i < PAD_B3.quanti; i++) {
+    b[i] = premutoPadB3(g, i);
+    if (b[i] && !P.prima[i]) attivita = true;
+  }
+  const ax = g.axes || [];
+  const maschera = direzioneMovimentoB3(Number(ax[0]) || 0, Number(ax[1]) || 0)
+    | (b[B.su] ? DIR_B3.su : 0) | (b[B.giu] ? DIR_B3.giu : 0) | (b[B.sinistra] ? DIR_B3.sinistra : 0) | (b[B.destra] ? DIR_B3.destra : 0);
+  const mira = direzioneSparoB3(Number(ax[2]) || 0, Number(ax[3]) || 0);
+  if (attivita || (maschera && !P.mascheraPrima) || (mira && !P.miraPrima)) segnaDispositivoB3('pad');
+
+  const c = contestoB3();
+  if (c !== P.contesto) {
+    if (!liberoB3(c)) rilasciaPadB3();
+    P.contesto = c;
+  }
+  for (let i = 0; i < PAD_B3.quanti; i++) {
+    if (b[i] && !P.prima[i]) { P.premutoIn[i] = c; P.ordine[i] = ++P.contatore; }
+  }
+  if (c === 'opzioni') padOpzioniB3(b, maschera, ora);
+  else if (liberoB3(c)) padLiberoB3(c, b, maschera, mira);
+  else padMenuB3(c, b, maschera, ora);
+  for (let i = 0; i < PAD_B3.quanti; i++) P.prima[i] = b[i];
+  P.mascheraPrima = maschera;
+  P.miraPrima = mira;
+}
+
+/** In scena e nell'hub: direzioni e sparo come tasti tenuti, il resto un colpo per pressione. */
+function padLiberoB3(c, b, maschera, mira) {
+  const P = b3.pad;
+  const V = P.voluti;
+  V.clear();
+  if (maschera & DIR_B3.su) V.add(CANONICO_B3.su);
+  if (maschera & DIR_B3.giu) V.add(CANONICO_B3.giu);
+  if (maschera & DIR_B3.sinistra) V.add(CANONICO_B3.sinistra);
+  if (maschera & DIR_B3.destra) V.add(CANONICO_B3.destra);
+  if (c === 'gioco') {
+    let az = mira;
+    if (!az) {
+      let meglio = 0;
+      for (let i = 0; i < 4; i++) {
+        if (b[i] && P.premutoIn[i] === 'gioco' && P.ordine[i] > meglio) { meglio = P.ordine[i]; az = PAD_B3.sparo[i]; }
+      }
+    }
+    if (az) V.add(CANONICO_B3[az]);
+  }
+  for (const k of P.tenuti) if (!V.has(k)) { P.tenuti.delete(k); inviaTastoB3('keyup', k); }
+  for (const k of V) if (!P.tenuti.has(k)) { P.tenuti.add(k); inviaTastoB3('keydown', k); }
+  for (let i = 4; i < 10; i++) {
+    if (b[i] && !P.prima[i] && PAD_B3.tocchi[i]) toccoB3(CANONICO_B3[PAD_B3.tocchi[i]]);
+  }
+  if (c === 'hub' && b[PAD_B3.bottoni.A] && !P.prima[PAD_B3.bottoni.A]) toccoB3(CANONICO_B3.interagisci);
+}
+
+/** Nei menu: croce/levetta = frecce (con ripetizione), i bottoni secondo PAD_MENU_B3. */
+function padMenuB3(c, b, maschera, ora) {
+  const P = b3.pad;
+  const T = PAD_MENU_B3[c] || PAD_MENU_B3.menu;
+  const dir = T.nav ? direzioneNavB3(maschera) : null;
+  if (navRipetiB3(dir, ora)) toccoB3(dir);
+  for (const nome of ['A', 'B', 'X', 'Y', 'start', 'select']) {
+    const i = PAD_B3.bottoni[nome];
+    if (!b[i] || P.prima[i]) continue;
+    const invio = T[nome];
+    if (invio === '@opzioni') apriOpzioniB3(c === 'principale' ? 'menu' : 'pausa');
+    else if (invio) toccoB3(invio);
+    if (contestoB3() !== c) break; // il menu è cambiato: gli altri bottoni di questo frame non contano
+  }
+}
+
+function padOpzioniB3(b, maschera, ora) {
+  const P = b3.pad;
+  const B = PAD_B3.bottoni;
+  const o = b3.opz;
+  const premuto = (i) => b[i] && !P.prima[i];
+  const libero = !o.cattura && !o.conflitto;
+  const dir = libero ? direzioneNavB3(maschera) : null;
+  if (navRipetiB3(dir, ora)) tastoOpzioniB3(dir, false);
+  if (premuto(B.B)) tastoOpzioniB3('Escape', false);
+  else if (premuto(B.A)) tastoOpzioniB3('Enter', false);
+  else if (premuto(B.X) && libero) tastoOpzioniB3('Backspace', false);
+  else if ((premuto(B.LB) || premuto(B.RB)) && libero) tastoOpzioniB3('Tab', false);
+  else if (premuto(B.start) && libero) chiudiOpzioniB3();
+}
+
+// ===========================================================================
+// MENU OPZIONI
+// ===========================================================================
+
+/** Apre il menu Opzioni ('menu' = dal menu principale, 'pausa' = dal menu di pausa). */
+function apriOpzioniB3(origine) {
+  if (b3.opz) return;
+  rilasciaPadB3();
+  rilasciaTuttoB3();
+  b3.opz = { pagina: 'scena', sel: 0, cattura: null, conflitto: null, origine: origine || 'menu' };
+  b3.avviso = null;
+  b3.pad.navDir = null;
+  suonoB3('playPasso');
+}
+
+/** Chiude il menu Opzioni (le opzioni sono già salvate a ogni modifica). */
+function chiudiOpzioniB3() {
+  if (!b3.opz) return;
+  b3.opz = null;
+  b3.avviso = null;
+  rilasciaTuttoB3();
+}
+
+function avvisoB3(testo, ms = 2600) { b3.avviso = { testo, finoMs: performance.now() + ms }; }
+
+function schermoInteroAttivoB3() { return Boolean(document.fullscreenElement || document.webkitFullscreenElement); }
+
+function cambiaSchermoInteroB3() {
+  try {
+    if (!schermoInteroAttivoB3()) {
+      const el = wrap || document.documentElement;
+      const req = el.requestFullscreen || el.webkitRequestFullscreen;
+      const p = req && req.call(el);
+      if (p && typeof p.catch === 'function') p.catch(() => avvisoB3(TESTI_B3.schermoNegato));
+    } else {
+      const esci = document.exitFullscreen || document.webkitExitFullscreen;
+      const p = esci && esci.call(document);
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    }
+  } catch (_) { avvisoB3(TESTI_B3.schermoNegato); }
+}
+
+function valoreOpzioneB3(id) { return id === 'schermoIntero' ? schermoInteroAttivoB3() : OPZIONI[id]; }
+
+/** Cambia un'opzione, la salva e la applica subito. */
+function impostaOpzioneB3(id, valore) {
+  if (id === 'schermoIntero') { if (Boolean(valore) !== schermoInteroAttivoB3()) cambiaSchermoInteroB3(); return; }
+  if (OPZIONI[id] === valore) return;
+  OPZIONI[id] = valore;
+  salvaOpzioni();
+  if (id === 'volumeEffetti') { void AudioSys.uscita; suonoB3('playMoneta'); } // il nodo d'uscita rilegge il volume: un tintinnio di prova
+  else if (id === 'vibrazione') vibraB3('colpo');
+  else suonoB3('playPasso');
+}
+
+function cambiaPaginaB3(pagina) {
+  const o = b3.opz;
+  if (!o || o.pagina === pagina) return;
+  o.pagina = pagina;
+  o.sel = pagina === 'tasti' ? 0 : RIGHE_B3.scena.findIndex((r) => r.id === 'vaiTasti');
+  suonoB3('playPasso');
+}
+
+function regolaRigaB3(r, d) {
+  if (r.tipo === 'barra') impostaOpzioneB3(r.id, Math.max(0, Math.min(10, Math.round(clamp01B3(OPZIONI[r.id]) * 10) + d)) / 10);
+  else if (r.tipo === 'spunta') impostaOpzioneB3(r.id, d > 0);
+}
+
+function attivaRigaB3(r) {
+  const o = b3.opz;
+  if (r.tipo === 'barra') { const v = Math.round(clamp01B3(OPZIONI[r.id]) * 10); impostaOpzioneB3(r.id, (v >= 10 ? 0 : v + 1) / 10); }
+  else if (r.tipo === 'spunta') impostaOpzioneB3(r.id, !valoreOpzioneB3(r.id));
+  else if (r.tipo === 'tasto') { o.cattura = r.id; b3.avviso = null; }
+  else if (r.id === 'vaiTasti') cambiaPaginaB3('tasti');
+  else if (r.id === 'indietro') cambiaPaginaB3('scena');
+  else if (r.id === 'chiudi') chiudiOpzioniB3();
+  else if (r.id === 'predefiniti') {
+    Object.assign(OPZIONI, OPZIONI_PREDEFINITE, OPZIONI_B3_PREDEFINITE);
+    salvaOpzioni();
+    void AudioSys.uscita;
+    avvisoB3(TESTI_B3.opzioniRipristinate);
+  } else if (r.id === 'predefinitiTasti') { ripristinaTastiB3(); avvisoB3(TESTI_B3.tastiRipristinati); }
+}
+
+/** Tasti del menu Opzioni (fissi: frecce/WASD, Invio/Spazio, Tab, Backspace, Esc). */
+function tastoOpzioniB3(code, ripetuto) {
+  const o = b3.opz;
+  if (!o) return;
+  if (o.cattura) { if (code === 'Escape') o.cattura = null; return; }
+  if (o.conflitto) {
+    const k = o.conflitto;
+    if (code === 'Enter' || code === 'NumpadEnter') {
+      o.conflitto = null;
+      assegnaTastoB3(k.azione, k.code, k.etichetta);
+      avvisoB3(TESTI_B3.scambiati(NOME_AZIONE_B3[k.azione], NOME_AZIONE_B3[k.altra]));
+    } else if (code === 'Escape' || code === 'Backspace') o.conflitto = null;
+    return;
+  }
+  const righe = RIGHE_B3[o.pagina];
+  const n = righe.length;
+  const r = righe[o.sel];
+  if (code === 'ArrowUp' || code === 'KeyW') { o.sel = (o.sel - 1 + n) % n; suonoB3('playPasso'); }
+  else if (code === 'ArrowDown' || code === 'KeyS') { o.sel = (o.sel + 1) % n; suonoB3('playPasso'); }
+  else if (code === 'ArrowLeft' || code === 'KeyA') regolaRigaB3(r, -1);
+  else if (code === 'ArrowRight' || code === 'KeyD') regolaRigaB3(r, 1);
+  else if (ripetuto) return;
+  else if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') attivaRigaB3(r);
+  else if (code === 'Tab') cambiaPaginaB3(o.pagina === 'scena' ? 'tasti' : 'scena');
+  else if ((code === 'Backspace' || code === 'Delete') && r.tipo === 'tasto') {
+    const pred = CANONICO_B3[r.id];
+    const altra = b3.inverso.get(pred);
+    assegnaTastoB3(r.id, pred, null);
+    avvisoB3(altra && altra !== r.id ? TESTI_B3.scambiati(r.nome, NOME_AZIONE_B3[altra]) : TESTI_B3.assegnato(r.nome, etichettaTastoB3(pred)));
+  } else if (code === 'Escape') { if (o.pagina === 'tasti') cambiaPaginaB3('scena'); else chiudiOpzioniB3(); }
+}
+
+/** Rimappatura: il prossimo tasto fisico premuto diventa il tasto dell'azione in cattura. */
+function catturaTastoB3(e) {
+  const o = b3.opz;
+  if (e.repeat) return;
+  const code = e.code;
+  if (code === 'Escape') { o.cattura = null; return; }
+  const azione = o.cattura;
+  const visto = typeof e.key === 'string' && e.key.length === 1 && e.key !== ' ' ? e.key.toUpperCase() : null;
+  const etichetta = visto && visto !== etichettaTastoB3(code) && !COMANDI_B3.nomiTasti[code] ? visto : null;
+  if (riservatoB3(code, azione)) { avvisoB3(TESTI_B3.riservato(etichetta || etichettaTastoB3(code))); return; }
+  o.cattura = null;
+  const altra = b3.inverso.get(code);
+  if (altra && altra !== azione) { o.conflitto = { azione, code, altra, etichetta }; return; }
+  assegnaTastoB3(azione, code, etichetta);
+  avvisoB3(TESTI_B3.assegnato(NOME_AZIONE_B3[azione], etichetta || etichettaTastoB3(code)));
+}
+
+const altezzaRigaB3 = (pagina) => (pagina === 'tasti' ? PANNELLO_B3.rigaHTasti : PANNELLO_B3.rigaH);
+
+function clickOpzioniB3(mx, my) {
+  const o = b3.opz;
+  if (!o) return;
+  if (o.cattura) { o.cattura = null; return; }
+  if (o.conflitto) { o.conflitto = null; return; }
+  const P = PANNELLO_B3;
+  if (mx < P.x || mx > P.x + P.w || my < P.y || my > P.y + P.h) { tastoOpzioniB3('Escape', false); return; }
+  if (my >= P.y + 27 && my <= P.y + 44) { cambiaPaginaB3(mx < W / 2 ? 'scena' : 'tasti'); return; }
+  const righe = RIGHE_B3[o.pagina];
+  const i = Math.floor((my - (P.y + P.righeY)) / altezzaRigaB3(o.pagina));
+  if (i < 0 || i >= righe.length || mx < P.x + P.margine || mx > P.x + P.w - P.margine) return;
+  o.sel = i;
+  const r = righe[i];
+  const cx = P.x + P.margine + P.controlloX;
+  if (r.tipo === 'barra') {
+    if (mx >= cx - 12) impostaOpzioneB3(r.id, Math.max(0, Math.min(P.tacche, Math.floor((mx - cx) / P.taccaPasso) + 1)) / P.tacche);
+  } else attivaRigaB3(r);
+}
+
+function disegnaRigaOpzioniB3(r, y, h, scelta) {
+  const P = PANNELLO_B3, C = P.colori;
+  const o = b3.opz;
+  const x0 = P.x + P.margine, w0 = P.w - P.margine * 2;
+  const yT = y + h / 2 + 2.5;
+  if (scelta) {
+    ctx.fillStyle = C.scelta;
+    ctx.fillRect(x0, y, w0, h - 2);
+    ctx.strokeStyle = C.oro;
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(x0, y, w0, h - 2);
+    drawTextFitBaseB3('▶', x0 + 9, yT, 12, { size: 8, color: C.oro });
+  }
+  const colore = scelta ? C.testoScelto : C.testo;
+  if (r.tipo === 'azione') {
+    drawTextFitBaseB3(r.nome, W / 2, yT, w0 - 60, { size: 8.5, color: scelta ? C.oro : C.testo });
+    return;
+  }
+  drawTextFitBaseB3(r.nome, x0 + P.etichettaX - 14, yT, P.controlloX - P.etichettaX, { size: 8.5, color: colore, align: 'left' });
+  const cx = x0 + P.controlloX;
+  if (r.tipo === 'barra') {
+    const piene = Math.round(clamp01B3(OPZIONI[r.id]) * P.tacche);
+    for (let i = 0; i < P.tacche; i++) {
+      ctx.fillStyle = i < piene ? (scelta ? C.oro : '#c9a23a') : C.vuoto;
+      ctx.fillRect(cx + i * P.taccaPasso, y + (h - 2 - P.taccaA) / 2, P.taccaL, P.taccaA);
+      ctx.strokeStyle = C.bordoInterno;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cx + i * P.taccaPasso + 0.5, y + (h - 2 - P.taccaA) / 2 + 0.5, P.taccaL - 1, P.taccaA - 1);
+    }
+    drawTextFitBaseB3(`${piene * 10}%`, x0 + w0 - 8, yT, 30, { size: 8, color: colore, align: 'right' });
+  } else if (r.tipo === 'spunta') {
+    const si = Boolean(valoreOpzioneB3(r.id));
+    const ly = y + (h - 2 - 9) / 2;
+    ctx.fillStyle = si ? '#7a1c12' : C.vuoto;
+    ctx.fillRect(cx, ly, 28, 9);
+    ctx.strokeStyle = si ? C.oro : C.bordoInterno;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cx + 0.5, ly + 0.5, 27, 8);
+    ctx.fillStyle = si ? C.oro : C.spento;
+    ctx.fillRect(si ? cx + 16 : cx + 2, ly + 2, 10, 5);
+    drawTextFitBaseB3(si ? TESTI_B3.acceso : TESTI_B3.spento, cx + 38, yT, 80, { size: 8, color: si ? C.oro : C.spento, align: 'left' });
+  } else if (r.tipo === 'tasto') {
+    if (o.cattura === r.id) {
+      // in attesa del tasto: casella vuota bordata d'oro e scritta che pulsa fra oro e bianco (sempre leggibile)
+      const acceso = Math.floor(performance.now() / 350) % 2 === 0;
+      ctx.strokeStyle = C.oro;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cx + 0.5, y + 1.5, 21, h - 5);
+      drawTextFitBaseB3('?', cx + 11, yT, 18, { size: 8, color: C.oro });
+      drawTextFitBaseB3(TESTI_B3.premiTasto, cx + 30, yT, 140, { size: 8.5, color: acceso ? C.oro : C.testoScelto, align: 'left' });
+      return;
+    }
+    const nome = etichettaTastoB3(OPZIONI.tasti[r.id]);
+    ctx.font = 'bold 8px ui-monospace, monospace';
+    const kw = Math.max(22, Math.ceil(ctx.measureText(nome).width) + 12);
+    ctx.fillStyle = C.pergamena;
+    ctx.fillRect(cx, y + 1, kw, h - 4);
+    ctx.strokeStyle = scelta ? C.oro : '#5c4024';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cx + 0.5, y + 1.5, kw - 1, h - 5);
+    drawTextFitBaseB3(nome, cx + kw / 2, yT, kw - 4, { size: 8, color: C.inchiostro, shadow: false });
+    if (OPZIONI.tasti[r.id] !== CANONICO_B3[r.id]) {
+      drawTextFitBaseB3(TESTI_B3.predefinito(etichettaTastoB3(CANONICO_B3[r.id])), x0 + w0 - 8, yT, 70, { size: 7, color: C.spento, align: 'right', weight: '' });
+    }
+  }
+}
+
+function disegnaOpzioniB3() {
+  const o = b3.opz;
+  if (!o) return;
+  const P = PANNELLO_B3, C = P.colori;
+  const pad = b3.dispositivo === 'pad';
+  const righe = RIGHE_B3[o.pagina];
+  const hR = altezzaRigaB3(o.pagina);
+  ctx.save();
+  ctx.fillStyle = C.velo;
+  ctx.fillRect(0, 0, W, H);
+  // cartiglio: fondo scuro, doppio bordo d'oro, i due rotoli ai lati
+  ctx.fillStyle = C.fondo;
+  ctx.fillRect(P.x, P.y, P.w, P.h);
+  ctx.strokeStyle = C.oro;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(P.x, P.y, P.w, P.h);
+  ctx.strokeStyle = C.bordoInterno;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(P.x + 4, P.y + 4, P.w - 8, P.h - 8);
+  ctx.fillStyle = C.rotolo;
+  ctx.fillRect(P.x - 9, P.y - 2, 8, P.h + 4);
+  ctx.fillRect(P.x + P.w + 1, P.y - 2, 8, P.h + 4);
+  ctx.strokeStyle = C.oro;
+  ctx.strokeRect(P.x - 8.5, P.y - 1.5, 7, P.h + 3);
+  ctx.strokeRect(P.x + P.w + 1.5, P.y - 1.5, 7, P.h + 3);
+  drawTextFitBaseB3(TESTI_B3.titolo, W / 2, P.y + 20, P.w - 40, { size: 12, color: C.oro });
+  // linguette delle due pagine
+  const lx = [P.x + P.w * 0.3, P.x + P.w * 0.7];
+  [['scena', TESTI_B3.linguettaScena], ['tasti', TESTI_B3.linguettaTasti]].forEach(([id, nome], i) => {
+    const att = o.pagina === id;
+    drawTextFitBaseB3(nome, lx[i], P.y + 38, 150, { size: 8.5, color: att ? C.oro : C.spento });
+    if (att) { ctx.fillStyle = C.oro; ctx.fillRect(lx[i] - 50, P.y + 42, 100, 1.5); }
+  });
+  ctx.fillStyle = C.bordoInterno;
+  ctx.fillRect(P.x + 16, P.y + 45, P.w - 32, 1);
+  for (let i = 0; i < righe.length; i++) disegnaRigaOpzioniB3(righe[i], P.y + P.righeY + i * hR, hR, i === o.sel);
+
+  const r = righe[o.sel];
+  const yNote = P.y + P.righeY + righe.length * hR;
+  if (o.pagina === 'scena') {
+    const muto = !AudioSys.attivo && (r.id === 'volumeEffetti' || r.id === 'volumeMusica');
+    const nota = muto ? TESTI_B3.muto : r.nota;
+    if (nota) drawTextFitBaseB3(nota, W / 2, yNote + 16, P.w - 44, { size: 8, color: muto ? '#fca5a5' : C.nota, weight: '', style: 'italic' });
+  } else {
+    drawTextFitBaseB3(TESTI_B3.legendaPad1, W / 2, yNote + 10, P.w - 36, { size: 6.5, color: C.nota, weight: '' });
+    drawTextFitBaseB3(TESTI_B3.legendaPad2, W / 2, yNote + 19, P.w - 36, { size: 6.5, color: C.nota, weight: '' });
+  }
+  let piede;
+  if (o.cattura) piede = TESTI_B3.piedeCattura(NOME_AZIONE_B3[o.cattura]);
+  else if (o.conflitto) piede = TESTI_B3.piedeConflitto;
+  else if (o.pagina === 'scena') piede = pad ? TESTI_B3.piedeScenaPad : TESTI_B3.piedeScena;
+  else piede = r.id === 'pausa' ? TESTI_B3.notaPausa : (pad ? TESTI_B3.piedeTastiPad : TESTI_B3.piedeTasti);
+  drawTextFitBaseB3(piede, W / 2, P.y + P.h - 9, P.w - 28, { size: 7, color: o.cattura || o.conflitto ? C.oro : C.piede, weight: '' });
+  if (o.conflitto) {
+    const k = o.conflitto;
+    drawPillLabelBaseB3(TESTI_B3.conflitto(k.etichetta || etichettaTastoB3(k.code), NOME_AZIONE_B3[k.altra]), W / 2, P.y + P.h - 22, P.w - 40, { size: 8, color: '#fca5a5', border: '#ef4444' });
+  } else if (b3.avviso) {
+    if (performance.now() > b3.avviso.finoMs) b3.avviso = null;
+    else drawPillLabelBaseB3(b3.avviso.testo, W / 2, P.y + P.h - 22, P.w - 40, { size: 8 });
+  }
+  ctx.restore();
+}
+
+// ===========================================================================
+// CICLO: il gamepad prima della logica, i riquadri di questo file sopra tutto
+// ===========================================================================
+function dopoIlFrameB3() {
+  if (!statoRun.pausa) b3.cursorePausa = 0;
+  if (b3.diarioDiretto && !statoRun.diarioD) {
+    b3.diarioDiretto = false;
+    statoRun.pausa = false;
+  }
+  if (b3.opz) { disegnaOpzioniB3(); return; }
+  if (b3.dispositivo !== 'pad') return;
+  if (statoRun.fase === 'menu_selezione') {
+    drawPillLabelBaseB3(TESTI_B3.barraMenuPad, W / 2, 357, 560, { size: 7, color: '#e6d2aa' });
+  } else if (window.__teatroT3 && window.__teatroT3.confermaPattoAperta) {
+    drawPillLabelBaseB3(TESTI_B3.pattoPad, W / 2, 282, 320, { size: 8 });
+  }
+}
+
+const loopBaseB3 = loop;
+loop = function loopB3(oraMs) {
+  try { aggiornaPadB3(Number.isFinite(oraMs) ? oraMs : performance.now()); } catch (err) { console.error('[b3] gamepad', err); }
+  const r = loopBaseB3(oraMs);
+  try { dopoIlFrameB3(); } catch (err) { console.error('[b3] disegno', err); }
+  return r;
+};
+
+// ===========================================================================
+// AVVIO: opzioni di questo file, tasti salvati, sonda QA
+// ===========================================================================
+for (const k of Object.keys(OPZIONI_B3_PREDEFINITE)) {
+  if (typeof OPZIONI[k] !== typeof OPZIONI_B3_PREDEFINITE[k]) OPZIONI[k] = OPZIONI_B3_PREDEFINITE[k];
+}
+OPZIONI.tasti = tastiValidiB3(OPZIONI.tasti);
+if (!OPZIONI.tastiEtichette || typeof OPZIONI.tastiEtichette !== 'object') OPZIONI.tastiEtichette = {};
+ricostruisciTastiB3();
+
+Object.assign(window.__teatro.interni, {
+  COMANDI_B3, PAD_B3, OPZIONI, OPZIONI_PREDEFINITE, salvaOpzioni,
+  // gli interni esposti in 80-ciclo.js puntano alle versioni non avvolte: si aggiornano (il T4 disegna da qui)
+  drawTextFit, drawPillLabel, disegnaMenuPausa, scuoti,
+  comandiB3: Object.freeze({
+    get stato() {
+      const o = b3.opz;
+      return {
+        dispositivo: b3.dispositivo, contesto: contestoB3(), cursorePausa: b3.cursorePausa,
+        voci: vociPausaB3().map((v) => v.id), tenuti: [...b3.pad.tenuti], padPresente: b3.pad.presente,
+        opzioni: o ? { pagina: o.pagina, riga: RIGHE_B3[o.pagina][o.sel].id, cattura: o.cattura, conflitto: o.conflitto ? { ...o.conflitto } : null } : null,
+        avviso: b3.avviso ? b3.avviso.testo : null, ultimaVibrazione: b3.ultimaVibrazione ? { ...b3.ultimaVibrazione } : null,
+      };
+    },
+    /** Tasti correnti: azione → codice fisico (copia). */
+    tasti: () => ({ ...OPZIONI.tasti }),
+    apriOpzioni: apriOpzioniB3,
+    chiudiOpzioni: chiudiOpzioniB3,
+    assegnaTasto: assegnaTastoB3,
+    ripristinaTasti: ripristinaTastiB3,
+    simbolo: simboloB3,
+    adattaTesto: adattaTestoB3,
+    offsetScossa: (dt) => offsetScossa(dt),
+    vibra: vibraB3,
+    /** Altri file: funzioni () => true quando hanno un loro riquadro aperto (il gamepad lo tratta da menu). */
+    menuAperti: b3.menuAperti,
+    /** Altri file: { id, rett() } per i bottoni che aggiungono al menu di pausa (li raggiunge il cursore). */
+    vociPausa: b3.vociPausa,
+  }),
+});
+
+</script>
+<script>
+/* teatro/b6-boss.js (incorporato da tools/teatro-release.js) */
+/*
+ * teatro/b6-boss.js — Squadra b6: una ROSA di boss per piano e quattro boss nuovi.
+ *
+ *   - ROSA: ogni piano del ciclo (1 Corso Trieste, 2 Villa Comunale, 3 San Leucio) ha una rosa di boss del suo
+ *     quartiere (ROSA_B6.perPiano). Per ogni piano c'è un «sacchetto» salvato per slot: si pesca senza
+ *     rimettere, così in tre visite al boss di un piano si incontrano tutti e tre e mai lo stesso due volte di
+ *     fila. Il sacchetto avanza solo quando il boss è stato INCONTRATO (ingresso nella sua stanza). I boss che
+ *     portano avanti la storia (ROSA_B6.primaLaStoria) escono per primi finché non sono stati battuti nello slot.
+ *     Il piano 4 resta sempre di Donna Luciana (BOSS_FINALE).
+ *   - BOSS NUOVI (SCHEDE_B6): L'Accendilumi di Corso Trieste (piano 1), Il Cigno di Latta e La Giostra delle
+ *     Lucciole (piano 2), La Tessitrice di Pietra (piano 3, bibbia §XII). Ognuno: IA a stati con tabella
+ *     esplicita (STATI_B6), numeri in BOSS_B6, due fasi (sotto BOSS_B6.sogliaFase2 della vita), colpi che si
+ *     leggono dalla posa (nessun segno a terra), disegno «a ombre» sul canvas (segnaposto dei fogli dell'autore).
+ *   - Fogli futuri: se il foglio di un boss (SCHEDE_B6[id].foglio.nome) compare nel LAYOUT di t2-sprite.js, o il
+ *     boss entra in FOGLIO_BOSS / SPRITE_BOSS_A, il gioco usa l'immagine al posto del disegno sul canvas.
+ *   - Segni di completamento (a6): un segno per ogni boss nuovo, aggiunto a SEGNI_A6.
+ *
+ * Nessun gancio nei file di base tranne a6 (SEGNI_A6 estendibile, segni su più righe): qui si avvolgono le
+ * function di primo livello popolaStanza, entraInStanza, verificaStanzaPulita, passoLogico,
+ * disegnaBossPittorico e disegnaHUDPixelArt, chiamando sempre la base.
+ * Script classico caricato dopo teatro/a7-registro-bilancio.js. Regole: teatro/LEGGIMI.md.
+ * QA: tools/qa-teatro-boss-nuovi.js. Sonda: window.__teatro.interni.bossB6.
+ */
+
+// ===========================================================================
+// TABELLE (numeri e testi). Tick a 60 Hz, distanze in px, velocità in px/tick, angoli in radianti.
+// ===========================================================================
+
+/**
+ * ROSA dei boss per piano del ciclo. `primaLaStoria`: boss che danno un ricordo o uno sblocco (il Gatto lascia
+ * il medaglione di Rosa, il Capitano sblocca Taddeo): finché non sono battuti nello slot aprono il sacchetto.
+ * `rispettaProvaDeiGatti`: true = con PLAYTEST_GATTI.bossGattoPrimo il piano 1 è sempre del Gatto (la rosa
+ * del piano 1 è sospesa); false = vale la rosa anche durante la prova dei gatti.
+ */
+const ROSA_B6 = Object.freeze({
+  perPiano: Object.freeze({
+    1: Object.freeze(['re-gatto', 'regina-vespa', 'lampionaio']),
+    2: Object.freeze(['colosso-statua', 'cigno-latta', 'giostra-lucciole']),
+    3: Object.freeze(['capitano-guardia', 'maestro-fucina', 'tessitrice-pietra']),
+  }),
+  primaLaStoria: Object.freeze(['re-gatto', 'capitano-guardia']),
+  rispettaProvaDeiGatti: false,
+  chiave: 'ferruccio.teatro.rosaBoss', // localStorage: <chiave>.<slot> → { piano: { ultimo, sacco: [id…] } }
+});
+
+/**
+ * SCHEDE dei boss nuovi. hpBase e speed come POOL_BOSS (vita vera = (hpBase + 45 × (piano nel ciclo − 1)) × ciclo).
+ * Confronto: piano 1 Gatto 175 / Regina 165; piano 2 Custode 235 (danno ×0,83 medio); piano 3 Capitano 210 /
+ * Spezzafili 195. TESTI DA APPROVARE DALL'AUTORE: nome, presentazione, sconfitta, nome del segno.
+ * foglio: nome del foglio animato futuro (assets/sprite_teatro/<nome>.png), altezza a schermo, piedi e
+ * posa del foglio per ogni stato dell'IA (gli stati non elencati usano «fermo»).
+ */
+const SCHEDE_B6 = Object.freeze({
+  lampionaio: Object.freeze({
+    id: 'lampionaio', nome: 'L\'Accendilumi di Corso Trieste', tipo: 'lampionaio', pattern: 'lumi_accendilumi',
+    hpBase: 170, speed: 1.0, raggio: 16, ombra: Object.freeze([20, 7]),
+    presentazione: '«Un lume per ogni ombra, guagliò.»',
+    sconfitta: 'Il lume si spegne. Sul Corso resta solo la pioggia.',
+    segno: Object.freeze({ sprite: 'segnoLumeB6', nome: 'Accendilumi di Corso Trieste' }),
+    foglio: Object.freeze({ nome: 'accendilumi', altezza: 70, piedi: 8, pose: Object.freeze({
+      passeggia: 'muove', alzaPertica: 'anticipo', rialza: 'anticipo', sferza: 'attacco', alzaLume: 'evoca',
+      rilancia: 'evoca', lancia: 'evoca', riposo: 'fermo', cambiaFase: 'colpito' }) }),
+  }),
+  'cigno-latta': Object.freeze({
+    id: 'cigno-latta', nome: 'Il Cigno di Latta', tipo: 'cigno', pattern: 'molla_cigno',
+    hpBase: 215, speed: 1.0, raggio: 18, ombra: Object.freeze([26, 8]),
+    presentazione: '«Tic, tic, tic»: qualcuno gli ha dato la corda.',
+    sconfitta: 'La molla si scarica. Il laghetto torna fermo.',
+    segno: Object.freeze({ sprite: 'segnoCignoB6', nome: 'Cigno di Latta' }),
+    foglio: Object.freeze({ nome: 'cigno-latta', altezza: 60, piedi: 8, pose: Object.freeze({
+      scivola: 'muove', inarca: 'anticipo', riarca: 'anticipo', beccata: 'carica', apreAli: 'apre',
+      piume: 'attacco', molla: 'fermo', cambiaFase: 'colpito' }) }),
+  }),
+  'giostra-lucciole': Object.freeze({
+    id: 'giostra-lucciole', nome: 'La Giostra delle Lucciole', tipo: 'giostra', pattern: 'giro_giostra',
+    hpBase: 225, speed: 0.5, raggio: 18, ombra: Object.freeze([24, 8]),
+    presentazione: '«Un altro giro, un altro giro ancora!»',
+    sconfitta: 'La giostra si ferma. Le lucciole tornano libere.',
+    segno: Object.freeze({ sprite: 'segnoGiostraB6', nome: 'Giostra delle Lucciole' }),
+    foglio: Object.freeze({ nome: 'giostra-lucciole', altezza: 72, piedi: 8, pose: Object.freeze({
+      gira: 'fermo', prendeGiro: 'anticipo', allarga: 'attacco', accende: 'evoca', rilascia: 'evoca',
+      quieta: 'fermo', cambiaFase: 'colpito' }) }),
+  }),
+  'tessitrice-pietra': Object.freeze({
+    id: 'tessitrice-pietra', nome: 'La Tessitrice di Pietra', tipo: 'tessitrice', pattern: 'ordito_tessitrice',
+    hpBase: 205, speed: 0.6, raggio: 18, ombra: Object.freeze([24, 8]),
+    presentazione: '«Nessuno tocca i telai della Signora.»',
+    sconfitta: 'La pietra si crepa: dentro, un filo di seta e un giglio.',
+    segno: Object.freeze({ sprite: 'segnoSpolaB6', nome: 'Tessitrice di Pietra' }),
+    foglio: Object.freeze({ nome: 'tessitrice-pietra', altezza: 72, piedi: 8, pose: Object.freeze({
+      cammina: 'muove', alzaPettine: 'anticipo', ripettina: 'anticipo', ordito: 'attacco', alzaSpole: 'evoca',
+      lancia: 'attacco', annoda: 'fermo', cambiaFase: 'colpito' }) }),
+  }),
+});
+
+/**
+ * BOSS_B6 — numeri delle IA. Una chiave <nome>Fase2 sostituisce <nome> sotto la soglia della fase 2.
+ * tettoProiettili: oltre questo numero di colpi nemici a schermo il boss non ne aggiunge altri.
+ */
+const BOSS_B6 = Object.freeze({
+  sogliaFase2: 0.5,
+  dannoHalf: 2,            // mezze maschere tolte dai colpi propri (lumi, lucciole, spole), come i colpi dei boss
+  tettoProiettili: 26,
+  raggioGiocatore: 9,
+  anime: Object.freeze({ numero: 12, durataTick: 110, salita: 0.45, colori: Object.freeze(['#f9cb40', '#fca5a5', '#fde68a', '#93c5fd', '#e9d5ff']) }),
+  bannerTick: 250,
+
+  // L'ACCENDILUMI: gira attorno al giocatore a distanza; SFERZA la pertica (una spazzata di faville, una alla
+  // volta, dal lato in cui l'ha alzata), LANCIA un lume a parabola che scoppia in una corona, poi RIPOSA.
+  // Fase 2: fiamma rossa, la spazzata torna indietro, due lumi di fila.
+  lampionaio: Object.freeze({
+    sequenza: Object.freeze(['sferza', 'lume', 'sferza', 'riposo']),
+    passo: 0.6, distanzaPx: 118, giro: 0.75, moltVelFase2: 1.3,
+    passeggiaTick: 78, passeggiaTickFase2: 56,
+    sferza: Object.freeze({ anticipoTick: 34, anticipoTickFase2: 28, colpi: 8, colpiFase2: 9, intervalloTick: 3,
+      apertura: 1.9, velocita: 2.0, spazzate: 1, spazzateFase2: 2, pausaRitornoTick: 18 }),
+    lume: Object.freeze({ anticipoTick: 30, lancioTick: 14, pausaLancioTick: 18, lanci: 1, lanciFase2: 2,
+      voloTick: 50, quotaPx: 44, scoppio: 6, velocita: 1.7, raggio: 10, ombra: true }),
+    riposoTick: 84, riposoTickFase2: 60,
+    cambioFaseTick: 54,
+  }),
+
+  // IL CIGNO DI LATTA: scivola a curve verso il giocatore; INARCA il collo e BECCA con uno scatto dritto;
+  // si mette di traverso, APRE LE ALI e lancia salve di PIUME in file parallele dai due fianchi; poi la MOLLA
+  // è scarica e resta fermo. Fase 2: due beccate di fila, tre salve che si aprono a ventaglio.
+  'cigno-latta': Object.freeze({
+    sequenza: Object.freeze(['beccata', 'piume', 'beccata', 'molla']),
+    moltVelFase2: 1.3,
+    scivola: Object.freeze({ tick: 84, tickFase2: 60, passo: 0.95, curva: 0.03, ondaFreq: 0.05, ondaAmp: 0.7 }),
+    beccata: Object.freeze({ anticipoTick: 30, bloccoTick: 9, scattoTick: 20, velocita: 4.4, scatti: 1, scattiFase2: 2, pausaTick: 18 }),
+    piume: Object.freeze({ anticipoTick: 34, bloccoTick: 10, salve: 2, salveFase2: 3, intervalloTick: 20, perAla: 4,
+      passoPx: 16, ventaglio: 0, ventaglioFase2: 0.08, velocita: 2.1 }),
+    mollaTick: 110, mollaTickFase2: 80,
+    cambioFaseTick: 56,
+  }),
+
+  // LA GIOSTRA DELLE LUCCIOLE: i lumi appesi ai bracci girano attorno al corpo e feriscono a contatto. PRENDE
+  // GIRO e ALLARGA i bracci avanzando; ACCENDE i lumi e RILASCIA lucciole che vagano, lampeggiano e scattano
+  // una dopo l'altra dove sta il giocatore; poi è QUIETA. Fase 2: un quinto lume, la giostra inverte il giro.
+  'giostra-lucciole': Object.freeze({
+    sequenza: Object.freeze(['allarga', 'rilascia', 'allarga', 'quieta']),
+    bracci: 4, bracciFase2: 5, raggioCorto: 30, raggioLungo: 92, schiaccio: 0.7, quotaLumi: 10, raggioLume: 7,
+    inerzia: 0.06, estensione: 0.05,
+    gira: Object.freeze({ tick: 72, tickFase2: 52, velAng: 0.022, passo: 0.5 }),
+    allarga: Object.freeze({ anticipoTick: 38, tick: 170, velAng: 0.04, velAngFase2: 0.046, passo: 1.1, inverte: false, inverteFase2: true }),
+    rilascia: Object.freeze({ anticipoTick: 30, salve: 2, salveFase2: 3, intervalloTick: 26, velUscita: 1.3, attrito: 0.965,
+      vagaTick: 34, lampeggiaTick: 16, sfasamentoTick: 6, velScatto: 3.0, oltrePx: 14, raggio: 4.5 }),
+    quietaTick: 104, quietaTickFase2: 78, quietaVelAng: 0.008,
+    cambioFaseTick: 56,
+  }),
+
+  // LA TESSITRICE DI PIETRA: statua lenta. ALZA IL PETTINE del telaio (i denti accesi sono i colpi, il dente
+  // che manca è il varco) e lancia l'ORDITO, una fila di aghi paralleli; ALZA LE SPOLE e le lancia: rimbalzano
+  // sui muri; poi RIANNODA i fili, ferma. Fase 2: due file con il varco dall'altra parte, tre spole.
+  'tessitrice-pietra': Object.freeze({
+    sequenza: Object.freeze(['pettine', 'spole', 'pettine', 'annoda']),
+    moltVelFase2: 1.25,
+    cammina: Object.freeze({ tick: 66, tickFase2: 48, passo: 0.6 }),
+    pettine: Object.freeze({ anticipoTick: 44, anticipoTickFase2: 38, bloccoTick: 12, denti: 9, passoPx: 20, varco: 2,
+      varchi: Object.freeze([1, 2, 5, 6]), velocita: 2.0, ritiroTick: 20, righe: 1, righeFase2: 2, intervalloRigheTick: 36 }),
+    spole: Object.freeze({ anticipoTick: 32, numero: 2, numeroFase2: 3, apertura: 0.55, velocita: 2.3, rimbalzi: 3,
+      raggio: 7, vitaMaxTick: 480, ritiroTick: 22 }),
+    annodaTick: 104, annodaTickFase2: 78,
+    cambioFaseTick: 56,
+  }),
+});
+
+/**
+ * STATI_B6 — tabelle esplicite delle macchine a stati. Per ogni boss:
+ *   inizio  stato iniziale;
+ *   mosse   mossa della sequenza (BOSS_B6[id].sequenza) → stato d'anticipo con cui comincia;
+ *   stati   stato → { durata: chiave di BOSS_B6[id] (null = la calcola l'azione d'ingresso),
+ *                     poi: stato successivo ('prossima' = la mossa successiva della sequenza),
+ *                     ripeti: stato in cui tornare finché restano ripetizioni (spazzate, scatti, salve…) }.
+ * Lo stato 'cambiaFase' interrompe qualunque altro quando la vita scende sotto la soglia della fase 2.
+ */
+const STATI_B6 = Object.freeze({
+  lampionaio: Object.freeze({
+    inizio: 'passeggia',
+    mosse: Object.freeze({ sferza: 'alzaPertica', lume: 'alzaLume', riposo: 'riposo' }),
+    stati: Object.freeze({
+      passeggia: Object.freeze({ durata: 'passeggiaTick', poi: 'prossima' }),
+      alzaPertica: Object.freeze({ durata: 'sferza.anticipoTick', poi: 'sferza' }),      // anticipo: pertica alzata di lato
+      sferza: Object.freeze({ durata: null, poi: 'passeggia', ripeti: 'rialza' }),        // (colpi − 1) × intervalloTick
+      rialza: Object.freeze({ durata: 'sferza.pausaRitornoTick', poi: 'sferza' }),        // anticipo della spazzata di ritorno
+      alzaLume: Object.freeze({ durata: 'lume.anticipoTick', poi: 'lancia' }),            // anticipo: lume alzato dietro la testa
+      lancia: Object.freeze({ durata: 'lume.lancioTick', poi: 'passeggia', ripeti: 'rilancia' }),
+      rilancia: Object.freeze({ durata: 'lume.pausaLancioTick', poi: 'lancia' }),
+      riposo: Object.freeze({ durata: 'riposoTick', poi: 'passeggia' }),                  // finestra: fermo, nessun colpo
+      cambiaFase: Object.freeze({ durata: 'cambioFaseTick', poi: 'passeggia' }),
+    }),
+  }),
+  'cigno-latta': Object.freeze({
+    inizio: 'scivola',
+    mosse: Object.freeze({ beccata: 'inarca', piume: 'apreAli', molla: 'molla' }),
+    stati: Object.freeze({
+      scivola: Object.freeze({ durata: 'scivola.tick', poi: 'prossima' }),
+      inarca: Object.freeze({ durata: 'beccata.anticipoTick', poi: 'beccata' }),          // anticipo: collo tirato indietro
+      beccata: Object.freeze({ durata: 'beccata.scattoTick', poi: 'scivola', ripeti: 'riarca' }),
+      riarca: Object.freeze({ durata: 'beccata.pausaTick', poi: 'beccata' }),
+      apreAli: Object.freeze({ durata: 'piume.anticipoTick', poi: 'piume' }),             // anticipo: di traverso, ali aperte che tremano
+      piume: Object.freeze({ durata: 'piume.intervalloTick', poi: 'scivola', ripeti: 'piume' }),
+      molla: Object.freeze({ durata: 'mollaTick', poi: 'scivola' }),                      // finestra: molla scarica
+      cambiaFase: Object.freeze({ durata: 'cambioFaseTick', poi: 'scivola' }),
+    }),
+  }),
+  'giostra-lucciole': Object.freeze({
+    inizio: 'gira',
+    mosse: Object.freeze({ allarga: 'prendeGiro', rilascia: 'accende', quieta: 'quieta' }),
+    stati: Object.freeze({
+      gira: Object.freeze({ durata: 'gira.tick', poi: 'prossima' }),
+      prendeGiro: Object.freeze({ durata: 'allarga.anticipoTick', poi: 'allarga' }),      // anticipo: gira più svelta, il tendone oscilla
+      allarga: Object.freeze({ durata: 'allarga.tick', poi: 'gira' }),
+      accende: Object.freeze({ durata: 'rilascia.anticipoTick', poi: 'rilascia' }),       // anticipo: i lumi lampeggiano
+      rilascia: Object.freeze({ durata: 'rilascia.intervalloTick', poi: 'gira', ripeti: 'rilascia' }),
+      quieta: Object.freeze({ durata: 'quietaTick', poi: 'gira' }),                       // finestra: lumi fiochi
+      cambiaFase: Object.freeze({ durata: 'cambioFaseTick', poi: 'gira' }),
+    }),
+  }),
+  'tessitrice-pietra': Object.freeze({
+    inizio: 'cammina',
+    mosse: Object.freeze({ pettine: 'alzaPettine', spole: 'alzaSpole', annoda: 'annoda' }),
+    stati: Object.freeze({
+      cammina: Object.freeze({ durata: 'cammina.tick', poi: 'prossima' }),
+      alzaPettine: Object.freeze({ durata: 'pettine.anticipoTick', poi: 'ordito' }),      // anticipo: pettine alzato, il varco si vede
+      ordito: Object.freeze({ durata: 'pettine.ritiroTick', poi: 'cammina', ripeti: 'ripettina' }),
+      ripettina: Object.freeze({ durata: 'pettine.intervalloRigheTick', poi: 'ordito' }),
+      alzaSpole: Object.freeze({ durata: 'spole.anticipoTick', poi: 'lancia' }),          // anticipo: braccia aperte, una spola per mano
+      lancia: Object.freeze({ durata: 'spole.ritiroTick', poi: 'cammina' }),
+      annoda: Object.freeze({ durata: 'annodaTick', poi: 'cammina' }),                    // finestra: riannoda i fili
+      cambiaFase: Object.freeze({ durata: 'cambioFaseTick', poi: 'cammina' }),
+    }),
+  }),
+});
+
+/** Colori del disegno «a ombre»: china, bordo di lanterna, oro e rosso. */
+const TINTE_B6 = Object.freeze({
+  china: '#0d0907', china2: '#1d1610', bordo: '#c9a15a', oro: '#f9cb40', rosso: '#e53222', lampo: '#fff3d6',
+  rgb: Object.freeze({ oro: '249, 203, 64', rosso: '229, 50, 34', brace: '234, 134, 38' }),
+});
+
+// Icone 12×12 dei segni di completamento (stessa palette degli oggetti).
+SPRITE_OGGETTI.segnoLumeB6 = ['.....kk.....', '....kyyk....', '....kyyk....', '...kkkkkk...', '..kyyoyyyk..', '..kyoooyyk..',
+  '..kyyoyyyk..', '..kyyyyyyk..', '...kkkkkk...', '....kkkk....', '............', '............'];
+SPRITE_OGGETTI.segnoCignoB6 = ['............', '......kk....', '.....kwwk...', '.....kwkoo..', '.....kwk....', '.....kwk....',
+  '..kkkkwwk...', '.kwwwwwwwk..', '.kwwwwwwwk..', '..kwwwwwk...', '...kkkkk....', '............'];
+SPRITE_OGGETTI.segnoGiostraB6 = ['.....yy.....', '.....kk.....', '....krrk....', '...kryyrk...', '..kryyyyrk..', '.kkkkkkkkkk.',
+  '..y..kk..y..', '..y..kk..y..', '.....kk.....', '.....kk.....', '...kkkkkk...', '............'];
+SPRITE_OGGETTI.segnoSpolaB6 = ['............', '............', '.........kk.', '.......kkyk.', '.....kkyyk..', '....kyrryk..',
+  '...kyrryk...', '..kyyykk....', '.kykkk......', '.kkk........', '............', '............'];
+
+// Catalogo e segni: i boss nuovi entrano in POOL_BOSS (il catalogo di tutti i boss) e in SEGNI_A6.
+for (const scheda of Object.values(SCHEDE_B6)) {
+  if (!POOL_BOSS.some((x) => x.id === scheda.id)) {
+    POOL_BOSS.push({ id: scheda.id, nome: scheda.nome, tipo: scheda.tipo, hpBase: scheda.hpBase, speed: scheda.speed, pattern: scheda.pattern });
+  }
+  if (typeof SEGNI_A6 !== 'undefined' && Array.isArray(SEGNI_A6) && !Object.isFrozen(SEGNI_A6) && !SEGNI_A6.some((s) => s.boss === scheda.id)) {
+    SEGNI_A6.push(Object.freeze({ boss: scheda.id, sprite: scheda.segno.sprite, nome: scheda.segno.nome }));
+  }
+}
+
+// ===========================================================================
+// ROSA: sacchetto per piano, salvato per slot
+// ===========================================================================
+const b6 = {
+  forzato: null,   // QA/sviluppo: id del boss imposto ai piani 1-3 (null = rosa)
+  anime: [],       // particelle della dissolvenza: { x, y, t0, fase, colore }
+  casuale: Math.random, // sorgente del caso del sacchetto (non il seme della mappa: la mappa resta ripetibile)
+};
+
+function chiaveRosaB6() {
+  const sv = window.__teatroT3 && window.__teatroT3.salvataggi;
+  return `${ROSA_B6.chiave}.${sv && sv.slotAttivo != null ? sv.slotAttivo : 0}`;
+}
+
+function leggiRosaB6() {
+  try { const m = JSON.parse(localStorage.getItem(chiaveRosaB6()) || '{}'); return m && typeof m === 'object' ? m : {}; } catch (_) { return {}; }
+}
+
+function scriviRosaB6(m) {
+  try { localStorage.setItem(chiaveRosaB6(), JSON.stringify(m)); } catch (_) { /* memoria piena o negata: la rosa vale per la sessione */ }
+}
+
+/** Rosa valida del piano del ciclo (solo boss che esistono nel catalogo). */
+function rosaDelPianoB6(pianoNelCiclo) {
+  return (ROSA_B6.perPiano[pianoNelCiclo] || []).filter((id) => POOL_BOSS.some((x) => x.id === id));
+}
+
+/** Boss già battuti nello slot (a6), per la regola «prima la storia». */
+function bossBattutiB6() {
+  try { return typeof statoA6 === 'function' ? statoA6().boss || [] : []; } catch (_) { return []; }
+}
+
+/**
+ * Riga del sacchetto del piano, riempita se vuota: rosa mescolata, i boss della storia non ancora battuti in
+ * testa, e mai in testa l'ultimo incontrato (se la rosa ha più di un boss).
+ */
+function saccoDelPianoB6(m, pianoNelCiclo) {
+  const rosa = rosaDelPianoB6(pianoNelCiclo);
+  const riga = m[pianoNelCiclo] && typeof m[pianoNelCiclo] === 'object' ? m[pianoNelCiclo] : { ultimo: null, sacco: [] };
+  riga.sacco = (Array.isArray(riga.sacco) ? riga.sacco : []).filter((id) => rosa.includes(id));
+  if (!riga.sacco.length && rosa.length) {
+    const nuovo = rosa.slice();
+    for (let i = nuovo.length - 1; i > 0; i--) {
+      const j = Math.floor(b6.casuale() * (i + 1));
+      [nuovo[i], nuovo[j]] = [nuovo[j], nuovo[i]];
+    }
+    const battuti = bossBattutiB6();
+    const storia = (id) => (ROSA_B6.primaLaStoria.includes(id) && !battuti.includes(id) ? 0 : 1);
+    nuovo.sort((a, b) => storia(a) - storia(b)); // ordinamento stabile: resta il caso fra pari
+    if (nuovo.length > 1 && nuovo[0] === riga.ultimo) [nuovo[0], nuovo[1]] = [nuovo[1], nuovo[0]];
+    riga.sacco = nuovo;
+  }
+  m[pianoNelCiclo] = riga;
+  return riga;
+}
+
+/**
+ * Boss del piano per la run in corso (una scelta per run e per piano, anche se la mappa si rigenera).
+ * @param {number} piano piano assoluto (1, 2, 3, 5…); al piano 4 del ciclo rende null (Donna Luciana).
+ * @returns {object|null} la voce di POOL_BOSS
+ */
+function bossDelPianoB6(piano) {
+  const pnc = ((Math.max(1, piano || 1) - 1) % 4) + 1;
+  if (pnc === 4) return null;
+  const perId = (id) => POOL_BOSS.find((x) => x.id === id) || null;
+  if (b6.forzato && perId(b6.forzato)) return perId(b6.forzato);
+  if (ROSA_B6.rispettaProvaDeiGatti && pnc === 1 && piano === 1 && PLAYTEST_GATTI.attivo && PLAYTEST_GATTI.bossGattoPrimo) return perId('re-gatto');
+  if (!statoRun.rosaB6 || statoRun.rosaB6.run !== statoRun.numeroRun) statoRun.rosaB6 = { run: statoRun.numeroRun, scelti: {} };
+  const scelti = statoRun.rosaB6.scelti;
+  if (!scelti[piano]) {
+    const m = leggiRosaB6();
+    const riga = saccoDelPianoB6(m, pnc);
+    scriviRosaB6(m);
+    scelti[piano] = riga.sacco[0] || null;
+  }
+  return perId(scelti[piano]);
+}
+
+/** Il boss è stato incontrato: esce dal sacchetto del suo piano e diventa «l'ultimo». */
+function segnaIncontratoB6(pianoNelCiclo, bossId) {
+  if (!rosaDelPianoB6(pianoNelCiclo).includes(bossId)) return;
+  const m = leggiRosaB6();
+  const riga = saccoDelPianoB6(m, pianoNelCiclo);
+  const i = riga.sacco.indexOf(bossId);
+  if (i >= 0) riga.sacco.splice(i, 1);
+  riga.ultimo = bossId;
+  scriviRosaB6(m);
+}
+
+const popolaStanzaBaseB6 = popolaStanza;
+/** La stanza del boss dei piani 1-3 prende il boss della rosa (la base legge statoRun.bossOrdine). */
+popolaStanza = function (s, piano, ...resto) {
+  let scelto = null;
+  try { if (s && s.tipo === 'boss') scelto = bossDelPianoB6(piano); } catch (err) { console.error('[B6] rosa', err); }
+  if (!scelto) return popolaStanzaBaseB6.call(this, s, piano, ...resto);
+  const ordine = statoRun.bossOrdine;
+  statoRun.bossOrdine = [scelto];
+  try {
+    const r = popolaStanzaBaseB6.call(this, s, piano, ...resto);
+    const b = s.nemici.find((n) => n.boss);
+    if (b && SCHEDE_B6[b.bossId]) b.r = SCHEDE_B6[b.bossId].raggio;
+    return r;
+  } finally { statoRun.bossOrdine = ordine; }
+};
+
+const entraInStanzaBaseB6 = entraInStanza;
+/** Ingresso nella stanza del boss: il sacchetto avanza e i boss nuovi si presentano. */
+entraInStanza = function (stanza, daLato, ...resto) {
+  const r = entraInStanzaBaseB6.call(this, stanza, daLato, ...resto);
+  try {
+    if (stanza && stanza.tipo === 'boss' && !stanza.pulita && statoRun.stanzaCorrente === stanza) {
+      const b = stanza.nemici.find((n) => n.boss);
+      const pnc = ((statoRun.piano - 1) % 4) + 1;
+      if (b && pnc !== 4 && !stanza.incontroB6) { stanza.incontroB6 = true; segnaIncontratoB6(pnc, b.bossId); }
+      const scheda = b && SCHEDE_B6[b.bossId];
+      if (scheda) mostraBanner(`💀 ${b.nome} (${b.hp} HP) — ${scheda.presentazione}`, BOSS_B6.bannerTick);
+    }
+  } catch (err) { console.error('[B6] ingresso', err); }
+  return r;
+};
+
+const verificaStanzaPulitaBaseB6 = verificaStanzaPulita;
+/** Boss nuovo sconfitto: frase di sconfitta (con le notizie della porta e della botola) e anime che salgono. */
+verificaStanzaPulita = function (...args) {
+  const st = statoRun.stanzaCorrente;
+  const era = Boolean(st && st.pulita);
+  const r = verificaStanzaPulitaBaseB6.apply(this, args);
+  try {
+    if (st && !era && st.pulita && st.tipo === 'boss') {
+      const b = st.nemici.find((n) => n.boss && SCHEDE_B6[n.bossId]);
+      if (b) {
+        const scheda = SCHEDE_B6[b.bossId];
+        mostraBanner(`${scheda.sconfitta} ${st.portaPattoAperta ? 'Porta del Patto d\'Ombra (😈) a destra · ' : ''}Botola aperta!`, BOSS_B6.bannerTick);
+        const A = BOSS_B6.anime;
+        for (let k = 0; k < A.numero; k++) {
+          b6.anime.push({ x: b.x + (k - A.numero / 2) * 3.2, y: b.y - 6 - (k % 4) * 9, t0: tick + k * 3, fase: k * 1.7, colore: A.colori[k % A.colori.length] });
+        }
+      }
+    }
+  } catch (err) { console.error('[B6] sconfitta', err); }
+  return r;
+};
+
+// ===========================================================================
+// IA: macchina a stati comune e azioni dei quattro boss
+// ===========================================================================
+/** Numero di BOSS_B6[id] dalla chiave ('a.b'); in fase 2 vince la chiave <chiave>Fase2 se esiste. */
+function valoreB6(C, chiave, fase2) {
+  const leggi = (k) => k.split('.').reduce((o, p) => (o == null ? undefined : o[p]), C);
+  const v2 = fase2 ? leggi(`${chiave}Fase2`) : undefined;
+  return v2 !== undefined ? v2 : leggi(chiave);
+}
+
+const nomeBossB6 = (n) => String(n.nome || '').replace(/\s*\(.*?\)/g, '');
+const angoloGiocatoreB6 = (n, quota = 8) => Math.atan2(player.y - 6 - (n.y - quota), player.x - n.x);
+
+function ruotaVersoB6(da, a, maxRad) {
+  let d = a - da;
+  while (d > Math.PI) d -= TAU;
+  while (d < -Math.PI) d += TAU;
+  return da + Math.max(-maxRad, Math.min(maxRad, d));
+}
+
+/** Sposta il boss di (dx, dy) tenendolo nell'arena; rende true se ha toccato un muro. */
+function muoviB6(n, dx, dy, margine = 22) {
+  const x = n.x + dx, y = n.y + dy;
+  n.x = Math.max(ARENA.x1 + margine, Math.min(ARENA.x2 - margine, x));
+  n.y = Math.max(ARENA.y1 + margine, Math.min(ARENA.y2 - margine, y));
+  return n.x !== x || n.y !== y;
+}
+
+/** Un colpo del boss (proiettile comune del Teatro), con il tetto e il nome del tiratore per il Registro (a7). */
+function sparaB6(n, x, y, ang, vel) {
+  if (statoRun.proiettiliNemici.length >= BOSS_B6.tettoProiettili) return false;
+  statoRun.proiettiliNemici.push({ x, y, vx: Math.cos(ang) * vel, vy: Math.sin(ang) * vel, dist: 0, bossShot: true, fonteA7: `un colpo di ${nomeBossB6(n)}` });
+  return true;
+}
+
+/** Contatto di un colpo proprio (lume, lucciola, spola) col giocatore. */
+function toccaGiocatoreB6(x, y, raggio) {
+  return player.invuln <= 0 && statoRun.hpHalf > 0
+    && Math.hypot(player.x - x, (player.y - 6) - y) < raggio + BOSS_B6.raggioGiocatore * (player.scalaA2 || 1);
+}
+
+function entraStatoB6(n, stato, st) {
+  const C = BOSS_B6[n.bossId];
+  const riga = STATI_B6[n.bossId].stati[stato];
+  const f2 = Boolean(n.fase2B6);
+  n.statoB6 = stato;
+  n.tStatoB6 = 0;
+  n.timerB6 = riga.durata ? Math.max(1, Math.round(valoreB6(C, riga.durata, f2))) : 1;
+  n.durataB6 = n.timerB6;
+  const az = AZIONI_B6[n.bossId].entra[stato];
+  if (az) az(n, C, f2, st);
+  n.durataB6 = Math.max(n.durataB6, n.timerB6);
+}
+
+function prossimoStatoB6(n) {
+  const T = STATI_B6[n.bossId];
+  const riga = T.stati[n.statoB6];
+  if (riga.ripeti && n.ripetiB6 > 0) { n.ripetiB6--; return riga.ripeti; }
+  if (riga.poi !== 'prossima') return riga.poi;
+  const seq = BOSS_B6[n.bossId].sequenza;
+  const mossa = seq[(n.indiceB6 || 0) % seq.length];
+  n.indiceB6 = (n.indiceB6 || 0) + 1;
+  return T.mosse[mossa];
+}
+
+/** Un tick dell'IA di un boss nuovo (chiamata solo nei tick in cui la base fa agire i boss). */
+function iaBossB6(n, st) {
+  const C = BOSS_B6[n.bossId];
+  const A = AZIONI_B6[n.bossId];
+  if (!n.statoB6) {
+    n.fase2B6 = false; n.indiceB6 = 0; n.ripetiB6 = 0;
+    if (A.nasce) A.nasce(n, C);
+    entraStatoB6(n, STATI_B6[n.bossId].inizio, st);
+  }
+  if (!n.fase2B6 && n.hp < n.maxHp * BOSS_B6.sogliaFase2) {
+    n.fase2B6 = true;
+    n.ripetiB6 = 0;
+    n.flash = 12;
+    scuoti(FEEL.scossa.schiantoCapitano);
+    statoRun.ondeEsplosione.push({ x: n.x, y: n.y - 12, r: 8, maxR: 58, tick: 0, color: TINTE_B6.rosso });
+    entraStatoB6(n, 'cambiaFase', st);
+  }
+  const f2 = n.fase2B6;
+  const passo = A.passo[n.statoB6];
+  if (passo) passo(n, C, f2, st);
+  n.tStatoB6++;
+  if (--n.timerB6 <= 0) entraStatoB6(n, prossimoStatoB6(n), st);
+  if (A.sempre) A.sempre(n, C, f2, st);
+}
+
+const AZIONI_B6 = {
+  // ------------------------------------------------------------------- L'Accendilumi di Corso Trieste
+  lampionaio: {
+    nasce(n) { n.lumiB6 = []; n.giroB6 = rng() < 0.5 ? -1 : 1; n.versoB6 = 1; n.angB6 = 0; n.angPerticaB6 = -Math.PI / 2; },
+    entra: {
+      alzaPertica(n, C, f2) {
+        n.versoB6 = rng() < 0.5 ? -1 : 1;
+        n.ripetiB6 = (f2 ? C.sferza.spazzateFase2 : C.sferza.spazzate) - 1;
+        n.sfasoB6 = 0;
+      },
+      rialza(n, C) { n.versoB6 = -n.versoB6; n.sfasoB6 = C.sferza.apertura / (2 * (C.sferza.colpiFase2 - 1)); },
+      sferza(n, C, f2) {
+        n.angB6 = angoloGiocatoreB6(n);
+        n.colpoB6 = 0;
+        n.timerB6 = ((f2 ? C.sferza.colpiFase2 : C.sferza.colpi) - 1) * C.sferza.intervalloTick + 2;
+      },
+      alzaLume(n, C, f2) { n.ripetiB6 = (f2 ? C.lume.lanciFase2 : C.lume.lanci) - 1; },
+      lancia(n) {
+        n.lumiB6.push({ x0: n.x, y0: n.y - 6, t: 0, x: n.x, y: n.y - 6, z: 30,
+          tx: Math.max(ARENA.x1 + 12, Math.min(ARENA.x2 - 12, player.x)), ty: Math.max(ARENA.y1 + 12, Math.min(ARENA.y2 - 12, player.y - 6)) });
+      },
+    },
+    passo: {
+      passeggia(n, C, f2) {
+        const ang = Math.atan2(player.y - n.y, player.x - n.x);
+        const dist = Math.hypot(player.x - n.x, player.y - n.y);
+        const rad = Math.max(-1, Math.min(1, (dist - C.distanzaPx) / 40));
+        const dx = Math.cos(ang) * rad + Math.cos(ang + n.giroB6 * Math.PI / 2) * C.giro;
+        const dy = Math.sin(ang) * rad + Math.sin(ang + n.giroB6 * Math.PI / 2) * C.giro;
+        const l = Math.hypot(dx, dy) || 1;
+        const v = n.speed * C.passo * (f2 ? C.moltVelFase2 : 1);
+        if (muoviB6(n, (dx / l) * v, (dy / l) * v) && n.tStatoB6 % 30 === 0) n.giroB6 = -n.giroB6;
+      },
+      alzaPertica(n, C) {
+        n.angB6 = angoloGiocatoreB6(n);
+        const k = 1 - n.timerB6 / n.durataB6;
+        n.angPerticaB6 = n.angB6 - n.versoB6 * (C.sferza.apertura / 2 + 0.7 * (1 - k));
+      },
+      rialza(n, C) {
+        n.angB6 = angoloGiocatoreB6(n);
+        const k = 1 - n.timerB6 / n.durataB6;
+        n.angPerticaB6 = n.angB6 - n.versoB6 * (C.sferza.apertura / 2 + 0.5 * (1 - k));
+      },
+      sferza(n, C, f2) {
+        const S = C.sferza;
+        const colpi = f2 ? S.colpiFase2 : S.colpi;
+        if (n.tStatoB6 % S.intervalloTick === 0 && n.colpoB6 < colpi) {
+          const k = n.colpoB6++;
+          const a = n.angB6 + n.versoB6 * (k / (colpi - 1) - 0.5) * S.apertura + (n.sfasoB6 || 0);
+          n.angPerticaB6 = a;
+          sparaB6(n, n.x + Math.cos(a) * 20, n.y - 10 + Math.sin(a) * 20, a, S.velocita);
+        }
+      },
+    },
+    sempre(n, C) {
+      const L = C.lume;
+      for (let i = n.lumiB6.length - 1; i >= 0; i--) {
+        const l = n.lumiB6[i];
+        l.t++;
+        const k = Math.min(1, l.t / L.voloTick);
+        l.x = l.x0 + (l.tx - l.x0) * k;
+        l.y = l.y0 + (l.ty - l.y0) * k;
+        l.z = Math.sin(k * Math.PI) * L.quotaPx + (1 - k) * 30;
+        if (k < 1) continue;
+        n.lumiB6.splice(i, 1);
+        statoRun.effettiSplash.push({ x: l.tx, y: l.ty, tick: 0 });
+        statoRun.ondeEsplosione.push({ x: l.tx, y: l.ty, r: 4, maxR: 22, tick: 0, color: TINTE_B6.oro });
+        const fase0 = (n.scoppiB6 = (n.scoppiB6 || 0) + 1) % 2 ? 0 : Math.PI / L.scoppio;
+        for (let j = 0; j < L.scoppio; j++) sparaB6(n, l.tx, l.ty, fase0 + (TAU * j) / L.scoppio, L.velocita);
+        if (toccaGiocatoreB6(l.tx, l.ty, L.raggio)) {
+          subisciColpoGiocatore(BOSS_B6.dannoHalf, `il lume de ${nomeBossB6(n)}`, l.tx, l.ty);
+          if (statoRun.hpHalf <= 0 || statoRun.fase !== 'in_gioco') return;
+        }
+      }
+    },
+  },
+
+  // ------------------------------------------------------------------- Il Cigno di Latta
+  'cigno-latta': {
+    nasce(n) { n.rotB6 = Math.atan2(player.y - n.y, player.x - n.x); n.angB6 = n.rotB6; n.salvaB6 = 0; },
+    entra: {
+      scivola(n) { n.vx = 0; n.vy = 0; },
+      inarca(n, C, f2) { n.vx = 0; n.vy = 0; n.ripetiB6 = (f2 ? C.beccata.scattiFase2 : C.beccata.scatti) - 1; },
+      riarca(n) { n.vx = 0; n.vy = 0; },
+      beccata(n, C) { n.vx = Math.cos(n.angB6) * C.beccata.velocita; n.vy = Math.sin(n.angB6) * C.beccata.velocita; n.rotB6 = n.angB6; },
+      apreAli(n, C, f2) { n.vx = 0; n.vy = 0; n.salvaB6 = 0; n.ripetiB6 = (f2 ? C.piume.salveFase2 : C.piume.salve) - 1; },
+      piume(n, C, f2) {
+        const P = C.piume;
+        const asse = n.angB6 + Math.PI / 2; // il corpo è di traverso: le ali guardano il giocatore e il lato opposto
+        const sfalsa = (n.salvaB6 % 2) * P.passoPx * 0.5;
+        const vent = f2 ? P.ventaglioFase2 : P.ventaglio;
+        for (const lato of [1, -1]) {
+          for (let k = 0; k < P.perAla; k++) {
+            const lungo = (k - (P.perAla - 1) / 2) * P.passoPx + sfalsa;
+            const dir = n.angB6 + (lato < 0 ? Math.PI : 0) + vent * (k - (P.perAla - 1) / 2) * lato;
+            sparaB6(n, n.x + Math.cos(asse) * lungo + Math.cos(dir) * 12, n.y - 8 + Math.sin(asse) * lungo + Math.sin(dir) * 12, dir, P.velocita);
+          }
+        }
+        n.salvaB6++;
+      },
+      molla(n) { n.vx = 0; n.vy = 0; },
+      cambiaFase(n) { n.vx = 0; n.vy = 0; },
+    },
+    passo: {
+      scivola(n, C, f2) {
+        const G = C.scivola;
+        const des = Math.atan2(player.y - n.y, player.x - n.x) + Math.sin(n.phaseTick * G.ondaFreq) * G.ondaAmp;
+        n.rotB6 = ruotaVersoB6(n.rotB6, des, G.curva);
+        const v = n.speed * G.passo * (f2 ? C.moltVelFase2 : 1);
+        n.vx = Math.cos(n.rotB6) * v; n.vy = Math.sin(n.rotB6) * v;
+        muoviB6(n, n.vx, n.vy, 24);
+      },
+      inarca(n, C) { if (n.timerB6 > C.beccata.bloccoTick) n.angB6 = angoloGiocatoreB6(n, 6); n.rotB6 = n.angB6; },
+      riarca(n, C) { if (n.timerB6 > C.beccata.bloccoTick) n.angB6 = angoloGiocatoreB6(n, 6); n.rotB6 = n.angB6; },
+      beccata(n) {
+        if (muoviB6(n, n.vx, n.vy, 20)) { n.vx = 0; n.vy = 0; n.timerB6 = Math.min(n.timerB6, 2); scuoti(FEEL.scossa.colpo); }
+      },
+      apreAli(n, C) { if (n.timerB6 > C.piume.bloccoTick) n.angB6 = angoloGiocatoreB6(n); },
+    },
+  },
+
+  // ------------------------------------------------------------------- La Giostra delle Lucciole
+  'giostra-lucciole': {
+    nasce(n, C) { n.girB6 = 0; n.velAngB6 = C.gira.velAng; n.raggioB6 = C.raggioCorto; n.sensoB6 = 1; n.luccioleB6 = []; n.metaB6 = 0; },
+    entra: {
+      prendeGiro(n) { n.sensoB6 = rng() < 0.5 ? -1 : 1; },
+      allarga(n) { n.metaB6 = Math.floor(n.timerB6 / 2); },
+      accende(n, C, f2) { n.ripetiB6 = (f2 ? C.rilascia.salveFase2 : C.rilascia.salve) - 1; },
+      rilascia(n, C, f2) {
+        const R = C.rilascia;
+        const nb = f2 ? C.bracciFase2 : C.bracci;
+        for (let k = 0; k < nb; k++) {
+          const a = n.girB6 + (TAU * k) / nb;
+          n.luccioleB6.push({ x: n.x + Math.cos(a) * n.raggioB6, y: n.y - C.quotaLumi + Math.sin(a) * n.raggioB6 * C.schiaccio,
+            vx: Math.cos(a) * R.velUscita, vy: Math.sin(a) * R.velUscita * C.schiaccio, t: 0, stato: 'vaga',
+            attesa: R.vagaTick + k * R.sfasamentoTick, resto: 0 });
+        }
+      },
+    },
+    passo: {
+      gira(n, C) { giraGiostraB6(n, C, C.gira.velAng * n.sensoB6, C.raggioCorto, C.gira.passo); },
+      prendeGiro(n, C, f2) { giraGiostraB6(n, C, valoreB6(C, 'allarga.velAng', f2) * 1.25 * n.sensoB6, C.raggioCorto, 0); },
+      allarga(n, C, f2) {
+        if (valoreB6(C, 'allarga.inverte', f2) && n.timerB6 === n.metaB6) n.sensoB6 = -n.sensoB6;
+        giraGiostraB6(n, C, valoreB6(C, 'allarga.velAng', f2) * n.sensoB6, C.raggioLungo, C.allarga.passo);
+      },
+      accende(n, C) { giraGiostraB6(n, C, C.gira.velAng * n.sensoB6, C.raggioCorto, 0); },
+      rilascia(n, C) { giraGiostraB6(n, C, C.gira.velAng * n.sensoB6, C.raggioCorto, 0); },
+      quieta(n, C) { giraGiostraB6(n, C, C.quietaVelAng * n.sensoB6, C.raggioCorto, 0); },
+      cambiaFase(n, C) { giraGiostraB6(n, C, 0, C.raggioCorto, 0); },
+    },
+    sempre(n, C, f2) {
+      n.girB6 += n.velAngB6;
+      const nb = f2 ? C.bracciFase2 : C.bracci;
+      for (let k = 0; k < nb; k++) {
+        const a = n.girB6 + (TAU * k) / nb;
+        const lx = n.x + Math.cos(a) * n.raggioB6, ly = n.y - C.quotaLumi + Math.sin(a) * n.raggioB6 * C.schiaccio;
+        if (toccaGiocatoreB6(lx, ly, C.raggioLume)) {
+          subisciColpoGiocatore(BOSS_B6.dannoHalf, `un lume de ${nomeBossB6(n)}`, lx, ly);
+          if (statoRun.hpHalf <= 0 || statoRun.fase !== 'in_gioco') return;
+        }
+      }
+      const R = C.rilascia;
+      for (let i = n.luccioleB6.length - 1; i >= 0; i--) {
+        const l = n.luccioleB6[i];
+        l.t++;
+        if (l.stato === 'vaga') {
+          l.x += l.vx; l.y += l.vy; l.vx *= R.attrito; l.vy *= R.attrito;
+          if (l.t >= l.attesa) { l.stato = 'lampeggia'; l.t = 0; }
+        } else if (l.stato === 'lampeggia') {
+          if (l.t >= R.lampeggiaTick) {
+            const dx = player.x - l.x, dy = player.y - 6 - l.y;
+            const d = Math.hypot(dx, dy) || 1;
+            l.vx = (dx / d) * R.velScatto; l.vy = (dy / d) * R.velScatto;
+            l.resto = d + R.oltrePx; l.stato = 'scatta';
+          }
+        } else {
+          l.x += l.vx; l.y += l.vy; l.resto -= R.velScatto;
+        }
+        const fuori = l.x < ARENA.x1 - 8 || l.x > ARENA.x2 + 8 || l.y < ARENA.y1 - 8 || l.y > ARENA.y2 + 8;
+        if (fuori || (l.stato === 'scatta' && l.resto <= 0)) {
+          statoRun.effettiSplash.push({ x: l.x, y: l.y, tick: 0 });
+          n.luccioleB6.splice(i, 1);
+          continue;
+        }
+        if (toccaGiocatoreB6(l.x, l.y, R.raggio)) {
+          n.luccioleB6.splice(i, 1);
+          subisciColpoGiocatore(BOSS_B6.dannoHalf, `una lucciola de ${nomeBossB6(n)}`, l.x - l.vx, l.y - l.vy);
+          if (statoRun.hpHalf <= 0 || statoRun.fase !== 'in_gioco') return;
+        }
+      }
+    },
+  },
+
+  // ------------------------------------------------------------------- La Tessitrice di Pietra
+  'tessitrice-pietra': {
+    nasce(n) { n.spoleB6 = []; n.angB6 = Math.atan2(player.y - n.y, player.x - n.x); n.varcoB6 = 1; },
+    entra: {
+      alzaPettine(n, C, f2) {
+        const P = C.pettine;
+        n.ripetiB6 = (f2 ? P.righeFase2 : P.righe) - 1;
+        n.varcoB6 = P.varchi[Math.floor(rng() * P.varchi.length)];
+      },
+      ripettina(n, C) {
+        const P = C.pettine;
+        const meta = (P.denti - P.varco) / 2;
+        const altri = P.varchi.filter((v) => (v < meta) !== (n.varcoB6 < meta));
+        if (altri.length) n.varcoB6 = altri[Math.floor(rng() * altri.length)];
+      },
+      ordito(n, C) {
+        const P = C.pettine;
+        const a = n.angB6;
+        const px = -Math.sin(a), py = Math.cos(a);
+        for (let i = 0; i < P.denti; i++) {
+          if (i >= n.varcoB6 && i < n.varcoB6 + P.varco) continue;
+          const lat = (i - (P.denti - 1) / 2) * P.passoPx;
+          sparaB6(n, n.x + px * lat + Math.cos(a) * 12, n.y - 8 + py * lat + Math.sin(a) * 12, a, P.velocita);
+        }
+      },
+      lancia(n, C, f2) {
+        const S = C.spole;
+        const num = f2 ? S.numeroFase2 : S.numero;
+        for (let k = 0; k < num; k++) {
+          const a = n.angB6 + (k - (num - 1) / 2) * S.apertura;
+          n.spoleB6.push({ x: n.x + Math.cos(a) * 14, y: n.y - 8 + Math.sin(a) * 14, vx: Math.cos(a) * S.velocita, vy: Math.sin(a) * S.velocita, t: 0, rimbalzi: S.rimbalzi });
+        }
+      },
+    },
+    passo: {
+      cammina(n, C, f2) {
+        const ang = Math.atan2(player.y - n.y, player.x - n.x);
+        const v = n.speed * C.cammina.passo * (f2 ? C.moltVelFase2 : 1);
+        muoviB6(n, Math.cos(ang) * v, Math.sin(ang) * v, 24);
+      },
+      alzaPettine(n, C) { if (n.timerB6 > C.pettine.bloccoTick) n.angB6 = angoloGiocatoreB6(n); },
+      ripettina(n, C) { if (n.timerB6 > C.pettine.bloccoTick) n.angB6 = angoloGiocatoreB6(n); },
+      alzaSpole(n) { n.angB6 = angoloGiocatoreB6(n); },
+    },
+    sempre(n, C) {
+      const S = C.spole;
+      for (let i = n.spoleB6.length - 1; i >= 0; i--) {
+        const s = n.spoleB6[i];
+        s.t++;
+        let urto = false;
+        if (s.x + s.vx < ARENA.x1 + 6 || s.x + s.vx > ARENA.x2 - 6) { s.vx = -s.vx; urto = true; }
+        if (s.y + s.vy < ARENA.y1 + 6 || s.y + s.vy > ARENA.y2 - 6) { s.vy = -s.vy; urto = true; }
+        if (urto && s.rimbalzi-- <= 0) { statoRun.effettiSplash.push({ x: s.x, y: s.y, tick: 0 }); n.spoleB6.splice(i, 1); continue; }
+        s.x += s.vx; s.y += s.vy;
+        if (s.t > S.vitaMaxTick) { n.spoleB6.splice(i, 1); continue; }
+        if (toccaGiocatoreB6(s.x, s.y, S.raggio)) {
+          subisciColpoGiocatore(BOSS_B6.dannoHalf, `una spola de ${nomeBossB6(n)}`, s.x - s.vx, s.y - s.vy);
+          if (statoRun.hpHalf <= 0 || statoRun.fase !== 'in_gioco') return;
+        }
+      }
+    },
+  },
+};
+for (const az of Object.values(AZIONI_B6)) { az.entra = az.entra || {}; az.passo = az.passo || {}; }
+
+/** Giostra: porta velocità di giro e raggio dei bracci verso i valori voluti e avanza verso il giocatore. */
+function giraGiostraB6(n, C, velAng, raggio, passo) {
+  n.velAngB6 += (velAng - n.velAngB6) * C.inerzia;
+  n.raggioB6 += (raggio - n.raggioB6) * C.estensione;
+  if (passo > 0) {
+    const ang = Math.atan2(player.y - n.y, player.x - n.x);
+    muoviB6(n, Math.cos(ang) * n.speed * passo, Math.sin(ang) * n.speed * passo, 26);
+  }
+}
+
+/** Colpi vivi di un boss nuovo oltre ai proiettili comuni (lumi in volo, lucciole, spole). */
+function colpiPropriB6(n) {
+  return ((n && n.lumiB6) || []).length + ((n && n.luccioleB6) || []).length + ((n && n.spoleB6) || []).length;
+}
+
+const passoLogicoBaseB6 = passoLogico;
+/**
+ * L'IA dei boss nuovi gira subito dopo la base, solo nei tick in cui la base ha fatto agire il boss
+ * (n.phaseTick avanzato: niente hit-stop, pausa, sipario, grazia d'ingresso o stordimento).
+ */
+passoLogico = function (...args) {
+  const st = statoRun.stanzaCorrente;
+  let attesi = null;
+  if (st && st.tipo === 'boss' && statoRun.fase === 'in_gioco') {
+    for (const n of st.nemici) {
+      if (n.boss && n.hp > 0 && AZIONI_B6[n.bossId]) (attesi || (attesi = [])).push([n, n.phaseTick || 0]);
+    }
+  }
+  const r = passoLogicoBaseB6.apply(this, args);
+  if (attesi) {
+    for (const [n, prima] of attesi) {
+      if (statoRun.stanzaCorrente !== st || statoRun.fase !== 'in_gioco' || statoRun.hpHalf <= 0) break;
+      if (n.hp <= 0 || (n.phaseTick || 0) === prima) continue;
+      try { iaBossB6(n, st); } catch (err) { console.error('[B6] ia', n.bossId, err); }
+    }
+  }
+  return r;
+};
+
+// ===========================================================================
+// DISEGNO «A OMBRE» (segnaposto dei fogli dell'autore)
+// ===========================================================================
+const BAGLIORI_B6 = {};
+/** Alone di luce (tela fuori schermo, una per tinta). */
+function bagliorB6(x, y, r, tinta, alfa = 1) {
+  let c = BAGLIORI_B6[tinta];
+  if (!c) {
+    c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d');
+    const rgb = TINTE_B6.rgb[tinta] || TINTE_B6.rgb.oro;
+    const gr = g.createRadialGradient(32, 32, 1, 32, 32, 32);
+    gr.addColorStop(0, `rgba(${rgb}, 0.9)`);
+    gr.addColorStop(0.4, `rgba(${rgb}, 0.32)`);
+    gr.addColorStop(1, `rgba(${rgb}, 0)`);
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 64, 64);
+    BAGLIORI_B6[tinta] = c;
+  }
+  const a0 = ctx.globalAlpha;
+  ctx.globalAlpha = a0 * Math.max(0, Math.min(1, alfa));
+  ctx.drawImage(c, x - r, y - r, r * 2, r * 2);
+  ctx.globalAlpha = a0;
+}
+
+/** Penna della sagoma: riempimento di china, contorno netto color lanterna (bianco nel lampo del colpo). */
+function chinaB6(flash) {
+  ctx.fillStyle = flash ? TINTE_B6.lampo : TINTE_B6.china;
+  ctx.strokeStyle = flash ? '#ffffff' : TINTE_B6.bordo;
+  ctx.lineWidth = 1.1;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+}
+
+/** Un tratto a sagoma (arto, asta, collo): prima il bordo più largo, poi la china. `curva` = funzione che traccia il percorso. */
+function trattoB6(spessore, flash, curva) {
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = flash ? '#ffffff' : TINTE_B6.bordo;
+  ctx.lineWidth = spessore + 1.8;
+  ctx.beginPath(); curva(); ctx.stroke();
+  ctx.strokeStyle = flash ? TINTE_B6.lampo : TINTE_B6.china;
+  ctx.lineWidth = spessore;
+  ctx.beginPath(); curva(); ctx.stroke();
+}
+
+const lineaB6 = (x1, y1, x2, y2) => () => { ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); };
+
+function puntoB6(x, y, r, colore) {
+  ctx.fillStyle = colore;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+}
+
+function fiammaB6(x, y, r, rossa, tick) {
+  bagliorB6(x, y - r * 0.5, r * 3.4, rossa ? 'rosso' : 'oro', 0.6);
+  const tr = Math.sin(tick * 0.5) * r * 0.18;
+  ctx.fillStyle = rossa ? TINTE_B6.rosso : TINTE_B6.oro;
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.7, y);
+  ctx.quadraticCurveTo(x - r * 0.85, y - r, x + tr, y - r * 2.1);
+  ctx.quadraticCurveTo(x + r * 0.85, y - r, x + r * 0.7, y);
+  ctx.quadraticCurveTo(x, y + r * 0.8, x - r * 0.7, y);
+  ctx.fill();
+  ctx.fillStyle = rossa ? TINTE_B6.oro : TINTE_B6.lampo;
+  ctx.beginPath(); ctx.ellipse(x, y - r * 0.3, r * 0.3, r * 0.55, 0, 0, TAU); ctx.fill();
+}
+
+/** Lume a mano dell'Accendilumi (anche in volo). */
+function lumeB6(x, y, scala, rosso, alfa = 1) {
+  bagliorB6(x, y, 13 * scala, rosso ? 'rosso' : 'oro', 0.75 * alfa);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scala, scala);
+  chinaB6(false);
+  ctx.beginPath(); ctx.moveTo(-3.4, -4); ctx.lineTo(3.4, -4); ctx.lineTo(4.2, 4); ctx.lineTo(-4.2, 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-2.4, -4); ctx.lineTo(0, -7); ctx.lineTo(2.4, -4); ctx.stroke();
+  ctx.fillStyle = rosso ? TINTE_B6.rosso : TINTE_B6.oro;
+  ctx.fillRect(-2.2, -2.4, 4.4, 5);
+  ctx.fillStyle = TINTE_B6.lampo;
+  ctx.fillRect(-0.8, -1, 1.6, 2.6);
+  ctx.restore();
+}
+
+function disegnaLampionaioB6(b, tick, flash, flip) {
+  const s = b.statoB6 || 'passeggia';
+  const f2 = Boolean(b.fase2B6);
+  const k = b.durataB6 ? 1 - (b.timerB6 || 0) / b.durataB6 : 0; // avanzamento dello stato 0..1
+  const passo = s === 'passeggia' ? Math.sin(tick * 0.22) : 0;
+  const china = s === 'riposo' ? 2.5 : 0; // si appoggia alla pertica
+  const colLume = s === 'alzaLume' || s === 'rilancia';
+  ctx.save();
+  ctx.scale(flip, 1);
+  // scala a pioli sulla schiena
+  ctx.strokeStyle = flash ? '#ffffff' : TINTE_B6.bordo;
+  ctx.globalAlpha = 0.85;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-12, -50); ctx.lineTo(-14, -8); ctx.moveTo(-7.5, -50); ctx.lineTo(-9.5, -8);
+  for (let y = -44; y <= -12; y += 8) { ctx.moveTo(-12.2 + (y + 50) * -0.045, y); ctx.lineTo(-7.7 + (y + 50) * -0.045, y); }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  // gambe lunghe e scarpe
+  trattoB6(2.6, flash, lineaB6(-2.5, -20, -4 - passo * 4.5, 6));
+  trattoB6(2.6, flash, lineaB6(2.5, -20, 4 + passo * 4.5, 6));
+  chinaB6(flash);
+  ctx.beginPath(); ctx.ellipse(-2.5 - passo * 4.5, 7, 4, 1.8, 0, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(5.5 + passo * 4.5, 7, 4, 1.8, 0, 0, TAU); ctx.fill(); ctx.stroke();
+  // finanziera a code
+  ctx.save();
+  ctx.translate(china, 0);
+  chinaB6(flash);
+  ctx.beginPath();
+  ctx.moveTo(-6, -46); ctx.lineTo(6, -46); ctx.lineTo(8, -25); ctx.lineTo(11.5, -12 + passo * 1.5);
+  ctx.lineTo(4, -17); ctx.lineTo(0, -13); ctx.lineTo(-4, -17); ctx.lineTo(-11.5, -12 - passo * 1.5); ctx.lineTo(-8, -25);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  for (const y of [-40, -34, -28]) puntoB6(1.6, y, 0.9, TINTE_B6.oro);
+  // sciarpa rossa
+  ctx.fillStyle = TINTE_B6.rosso;
+  ctx.beginPath(); ctx.moveTo(-5, -47); ctx.lineTo(5.5, -47); ctx.lineTo(2, -43.5); ctx.lineTo(-8.5, -39 + Math.sin(tick * 0.15) * 1.2); ctx.closePath(); ctx.fill();
+  // testa, tuba e occhio
+  chinaB6(flash);
+  ctx.beginPath(); ctx.arc(0.5, -52, 5.4, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.rect(-5.5, -68, 11, 11.5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = f2 ? TINTE_B6.rosso : TINTE_B6.oro;
+  ctx.fillRect(-5.5, -60, 11, 1.8);
+  trattoB6(1.6, flash, lineaB6(-9, -56.4, 9, -56.4));
+  puntoB6(3, -52.4, 1.3, f2 ? TINTE_B6.rosso : TINTE_B6.oro);
+  ctx.restore();
+  ctx.restore();
+
+  // braccio e pertica: in coordinate di schermo (l'angolo della pertica è quello vero della spazzata)
+  let ang = -Math.PI / 2 + flip * 0.22;
+  let fiamma = 2.6;
+  if (s === 'alzaPertica' || s === 'rialza') { ang = b.angPerticaB6; fiamma = 3 + 3.6 * k + Math.sin(tick * 0.9) * 0.6; }
+  else if (s === 'sferza') { ang = b.angPerticaB6; fiamma = 6.4; }
+  else if (s === 'riposo') { ang = -Math.PI / 2 + flip * 0.06; fiamma = 1.2 + (k > 0.7 ? (k - 0.7) * 5 : 0); }
+  else if (s === 'cambiaFase') { ang = -Math.PI / 2; fiamma = 4 + 5 * Math.abs(Math.sin(tick * 0.3)); }
+  else if (colLume || s === 'lancia') { ang = -Math.PI / 2 + flip * 0.1; }
+  const mx = flip * 6 + (s === 'riposo' ? flip * 2.5 : 0), my = -31;
+  const lung = 30; // lunghezza della pertica oltre la mano
+  const tx = mx + Math.cos(ang) * lung, ty = my + Math.sin(ang) * lung;
+  trattoB6(2.2, flash, lineaB6(flip * 4, -43, mx, my));
+  trattoB6(1.7, flash, lineaB6(mx - Math.cos(ang) * 9, my - Math.sin(ang) * 9, tx, ty));
+  fiammaB6(tx, ty, fiamma, f2, tick);
+  // l'altro braccio: lume alla cintura, oppure alzato dietro la testa prima del lancio
+  if (colLume) {
+    const hx = -flip * 11, hy = -58 - 5 * k;
+    trattoB6(2.2, flash, lineaB6(-flip * 4, -43, hx, hy + 6));
+    lumeB6(hx, hy, 1 + 0.35 * k + Math.sin(tick * 0.8) * 0.08, f2);
+  } else if (s === 'lancia') {
+    trattoB6(2.2, flash, lineaB6(-flip * 4, -43, flip * 12, -40));
+  } else {
+    trattoB6(2.2, flash, lineaB6(-flip * 4, -43, -flip * 8, -27));
+    lumeB6(-flip * 8.5, -21, 0.7, f2, 0.6);
+  }
+}
+
+function accessoriLampionaioB6(b, tick, strato) {
+  if (strato !== 'davanti') return;
+  const L = BOSS_B6.lampionaio.lume;
+  for (const l of b.lumiB6 || []) {
+    if (L.ombra) {
+      ctx.fillStyle = 'rgba(8, 5, 3, 0.4)';
+      ctx.beginPath(); ctx.ellipse(l.x, l.y + 6, 4.5, 1.8, 0, 0, TAU); ctx.fill();
+    }
+    lumeB6(l.x, l.y - l.z, 1.15, Boolean(b.fase2B6));
+  }
+}
+
+function disegnaCignoB6(b, tick, flash, flipGiocatore) {
+  const s = b.statoB6 || 'scivola';
+  const f2 = Boolean(b.fase2B6);
+  const k = b.durataB6 ? 1 - (b.timerB6 || 0) / b.durataB6 : 0;
+  const versoMoto = s === 'scivola' || s === 'beccata' || s === 'inarca' || s === 'riarca';
+  const flip = versoMoto ? (Math.cos(b.rotB6 || 0) < 0 ? -1 : 1) : flipGiocatore;
+  const aliAperte = s === 'apreAli' || s === 'piume' || s === 'cambiaFase';
+  const trema = s === 'apreAli' ? Math.sin(tick * 1.4) * (0.5 + k) : s === 'inarca' || s === 'riarca' ? Math.sin(tick * 1.1) * 0.5 * k : 0;
+  // posa del collo: [testa x, testa y, controllo 1 x, y, controllo 2 x, y, becco (rad)]
+  const POSE = {
+    scivola: [18, -37, 23, -20, 8, -31, 0.2], inarca: [3, -30, 19, -23, -4, -21, -0.05], riarca: [3, -30, 19, -23, -4, -21, -0.05],
+    beccata: [33, -17, 19, -14, 26, -19, 0], apreAli: [13, -42, 21, -22, 5, -33, 0.1], piume: [15, -41, 21, -22, 6, -33, 0.25],
+    molla: [23, -6, 21, -23, 28, -16, 1.25], cambiaFase: [11, -45, 20, -24, 3, -34, -0.5],
+  };
+  const P = POSE[s] || POSE.scivola;
+  const D = b.disegnoB6 || (b.disegnoB6 = P.slice());
+  for (let i = 0; i < 7; i++) D[i] += (P[i] - D[i]) * (s === 'beccata' ? 0.6 : 0.22);
+  ctx.save();
+  ctx.scale(flip, 1);
+  ctx.translate(trema, s === 'scivola' ? Math.sin(tick * 0.09) * 0.8 : 0);
+  // ala lontana (dietro lo scafo)
+  if (aliAperte) alaCignoB6(-4, -14, 0.82, -1, tick, flash, s === 'apreAli' ? k : 1);
+  // ruote di latta
+  for (const wx of [-11, 9]) {
+    chinaB6(flash);
+    ctx.beginPath(); ctx.arc(wx, 5, 3.4, 0, TAU); ctx.fill(); ctx.stroke();
+    puntoB6(wx, 5, 1, TINTE_B6.oro);
+  }
+  // scafo con la coda all'insù
+  chinaB6(flash);
+  ctx.beginPath();
+  ctx.moveTo(-20, -6); ctx.quadraticCurveTo(-25, -20, -18, -25); ctx.quadraticCurveTo(-13, -14, -4, -15);
+  ctx.lineTo(10, -15); ctx.quadraticCurveTo(21, -13, 20, -4); ctx.quadraticCurveTo(14, 4, 0, 4); ctx.lineTo(-12, 4);
+  ctx.quadraticCurveTo(-19, 2, -20, -6); ctx.closePath(); ctx.fill(); ctx.stroke();
+  for (const rx of [-13, -5, 3, 11]) puntoB6(rx, -1, 0.7, flash ? '#ffffff' : TINTE_B6.bordo);
+  if (f2) { // la lamiera si è aperta: una crepa rossa
+    ctx.strokeStyle = TINTE_B6.rosso; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(-2, -14); ctx.lineTo(1, -9); ctx.lineTo(-2, -6); ctx.lineTo(2, -1); ctx.stroke();
+  }
+  // chiave a farfalla sul dorso: gira (svelta quando sta per ripartire, lenta a molla scarica)
+  const velChiave = s === 'molla' ? (k > 0.72 ? 0.55 : 0.04) : f2 ? 0.34 : 0.2;
+  b.chiaveB6 = (b.chiaveB6 || 0) + velChiave;
+  const lc = Math.abs(Math.cos(b.chiaveB6)) * 4.6 + 0.7;
+  ctx.strokeStyle = TINTE_B6.oro; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-7, -16); ctx.lineTo(-7, -24); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(-7 - lc, -27.5, lc, 3.6, 0, 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(-7 + lc, -27.5, lc, 3.6, 0, 0, TAU); ctx.stroke();
+  // collo e testa
+  trattoB6(4.6, flash, () => { ctx.moveTo(12, -13); ctx.bezierCurveTo(D[2], D[3], D[4], D[5], D[0], D[1]); });
+  ctx.save();
+  ctx.translate(D[0], D[1]);
+  ctx.rotate(D[6]);
+  ctx.fillStyle = f2 ? TINTE_B6.rosso : TINTE_B6.oro;
+  ctx.beginPath(); ctx.moveTo(3, -2.2); ctx.lineTo(11.5, 0.4); ctx.lineTo(3, 2.4); ctx.closePath(); ctx.fill();
+  chinaB6(flash);
+  ctx.beginPath(); ctx.ellipse(0, 0, 5, 3.9, 0, 0, TAU); ctx.fill(); ctx.stroke();
+  puntoB6(1.4, -0.9, 1.1, f2 ? TINTE_B6.rosso : TINTE_B6.oro);
+  ctx.restore();
+  // ala vicina
+  if (aliAperte) alaCignoB6(-2, -14, 1, 1, tick, flash, s === 'apreAli' ? k : 1);
+  else if (s === 'beccata') {
+    chinaB6(flash);
+    ctx.beginPath(); ctx.moveTo(4, -14); ctx.lineTo(-27, -27); ctx.lineTo(-10, -9); ctx.closePath(); ctx.fill(); ctx.stroke();
+  } else {
+    chinaB6(flash);
+    const giu = s === 'molla' ? 3 : 0;
+    ctx.beginPath(); ctx.moveTo(-13, -13 + giu); ctx.quadraticCurveTo(0, -27 + giu * 2, 13, -11 + giu); ctx.quadraticCurveTo(0, -6 + giu, -13, -13 + giu); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-7, -13 + giu); ctx.quadraticCurveTo(0, -19 + giu, 8, -11.5 + giu); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** Ala aperta a ventaglio del Cigno (lato = 1 vicina, −1 lontana); `apre` 0..1. */
+function alaCignoB6(x, y, scala, lato, tick, flash, apre) {
+  const penne = 5;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scala, scala);
+  chinaB6(flash);
+  if (lato < 0) ctx.globalAlpha = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(8, 0);
+  for (let i = 0; i < penne; i++) {
+    const a = -2.75 + i * 0.42 * (0.45 + 0.55 * apre) + (lato < 0 ? 0.25 : 0);
+    const lung = [26, 33, 35, 31, 24][i] * (0.6 + 0.4 * apre);
+    ctx.lineTo(Math.cos(a) * lung, Math.sin(a) * lung);
+    const am = a + 0.21 * (0.45 + 0.55 * apre);
+    if (i < penne - 1) ctx.lineTo(Math.cos(am) * lung * 0.62, Math.sin(am) * lung * 0.62);
+  }
+  ctx.lineTo(-6, 2);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+function disegnaGiostraB6(b, tick, flash) {
+  const s = b.statoB6 || 'gira';
+  const f2 = Boolean(b.fase2B6);
+  const incl = s === 'prendeGiro' ? Math.sin(tick * 0.55) * 0.09 : s === 'allarga' ? Math.sin(b.girB6 || 0) * 0.05 : 0;
+  const cala = s === 'quieta' ? 3 : 0;
+  const accento = f2 ? TINTE_B6.rosso : TINTE_B6.oro;
+  // basamento a tamburo con le lampadine
+  chinaB6(flash);
+  ctx.beginPath(); ctx.ellipse(0, 5, 18, 5.5, 0, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.rect(-14, -4, 28, 8); ctx.fill(); ctx.stroke();
+  for (let i = 0; i < 5; i++) {
+    const acceso = s !== 'quieta' && Math.floor(tick / 10 + i) % 2 === 0;
+    puntoB6(-10 + i * 5, 0, 1.1, acceso ? accento : TINTE_B6.bordo);
+  }
+  // colonna con la maschera
+  chinaB6(flash);
+  ctx.beginPath(); ctx.rect(-3.2, -42 + cala, 6.4, 39 - cala); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0, -22, 6.4, 7.6, 0, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = accento;
+  ctx.beginPath(); ctx.ellipse(-2.5, -23, 1.7, s === 'quieta' ? 0.5 : 1.1, 0.25, 0, TAU); ctx.ellipse(2.5, -23, 1.7, s === 'quieta' ? 0.5 : 1.1, -0.25, 0, TAU); ctx.fill();
+  ctx.strokeStyle = accento; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.arc(0, -20, 2.6, 0.25, Math.PI - 0.25); ctx.stroke();
+  // tendone a spicchi con il pennacchio
+  ctx.save();
+  ctx.translate(0, -41 + cala);
+  ctx.rotate(incl);
+  chinaB6(flash);
+  ctx.beginPath();
+  ctx.moveTo(-25, 0); ctx.lineTo(0, -21); ctx.lineTo(25, 0);
+  for (let i = 4; i >= 0; i--) ctx.quadraticCurveTo(-25 + i * 10 + 5, 5.5, -25 + i * 10, 0);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  if (!flash) {
+    ctx.fillStyle = TINTE_B6.rosso;
+    ctx.globalAlpha = 0.8;
+    for (const i of [0, 2, 4]) {
+      ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(-25 + i * 10 + 1.5, -0.6); ctx.lineTo(-25 + i * 10 + 8.5, -0.6); ctx.closePath(); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  trattoB6(1.2, flash, lineaB6(0, -21, 0, -29));
+  puntoB6(0, -30, 2.3, accento);
+  ctx.fillStyle = TINTE_B6.rosso;
+  const sv = Math.sin(tick * 0.3) * 1.5;
+  ctx.beginPath(); ctx.moveTo(1, -29); ctx.lineTo(10, -27 + sv); ctx.lineTo(1, -24.5); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function accessoriGiostraB6(b, tick, strato) {
+  const C = BOSS_B6['giostra-lucciole'];
+  const s = b.statoB6 || 'gira';
+  const f2 = Boolean(b.fase2B6);
+  const nb = f2 ? C.bracciFase2 : C.bracci;
+  const raggio = b.raggioB6 || C.raggioCorto;
+  const gir = b.girB6 || 0;
+  const luce = s === 'quieta' ? 0.3 : s === 'accende' ? (Math.floor(tick / 4) % 2 ? 1 : 0.35) : s === 'cambiaFase' ? 0.5 + 0.5 * Math.abs(Math.sin(tick * 0.4)) : 0.85;
+  for (let k = 0; k < nb; k++) {
+    const a = gir + (TAU * k) / nb;
+    const dietro = Math.sin(a) < 0;
+    if (dietro !== (strato === 'dietro')) continue;
+    const lx = b.x + Math.cos(a) * raggio, ly = b.y - C.quotaLumi + Math.sin(a) * raggio * C.schiaccio;
+    ctx.strokeStyle = TINTE_B6.bordo; ctx.lineWidth = 1; ctx.globalAlpha = 0.9;
+    ctx.beginPath(); ctx.moveTo(b.x + Math.cos(a) * 22, b.y - 41 + Math.sin(a) * 4); ctx.lineTo(lx, ly - 7); ctx.stroke();
+    ctx.globalAlpha = 1;
+    const rosso = f2 && k === nb - 1;
+    bagliorB6(lx, ly, s === 'accende' ? 16 : 12, rosso ? 'rosso' : f2 ? 'brace' : 'oro', luce);
+    chinaB6(false);
+    ctx.beginPath(); ctx.rect(lx - 3.6, ly - 5.5, 7.2, 10); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lx - 2.6, ly - 5.5); ctx.lineTo(lx, ly - 8); ctx.lineTo(lx + 2.6, ly - 5.5); ctx.stroke();
+    ctx.globalAlpha = luce;
+    puntoB6(lx, ly - 0.5, 2.2, rosso ? TINTE_B6.rosso : TINTE_B6.oro);
+    puntoB6(lx, ly - 0.5, 0.9, TINTE_B6.lampo);
+    ctx.globalAlpha = 1;
+  }
+  if (strato !== 'davanti') return;
+  for (const l of b.luccioleB6 || []) {
+    const lampeggia = l.stato === 'lampeggia';
+    const acceso = !lampeggia || Math.floor(l.t / 3) % 2 === 0;
+    if (l.stato === 'scatta') {
+      ctx.strokeStyle = TINTE_B6.oro; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.globalAlpha = 0.7;
+      ctx.beginPath(); ctx.moveTo(l.x - l.vx * 3, l.y - l.vy * 3); ctx.lineTo(l.x, l.y); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    bagliorB6(l.x, l.y, lampeggia ? (acceso ? 13 : 6) : 8, f2 ? 'brace' : 'oro', acceso ? 1 : 0.5);
+    puntoB6(l.x, l.y, lampeggia && acceso ? 2.8 : 2, acceso ? TINTE_B6.lampo : TINTE_B6.oro);
+    chinaB6(false);
+    ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.ellipse(l.x - 2.6, l.y - 2.2, 2.4, 1, -0.5 + Math.sin(tick * 0.9) * 0.4, 0, TAU); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(l.x + 2.6, l.y - 2.2, 2.4, 1, 0.5 - Math.sin(tick * 0.9) * 0.4, 0, TAU); ctx.stroke();
+  }
+}
+
+function disegnaTessitriceB6(b, tick, flash, flip) {
+  const s = b.statoB6 || 'cammina';
+  const f2 = Boolean(b.fase2B6);
+  const k = b.durataB6 ? 1 - (b.timerB6 || 0) / b.durataB6 : 0;
+  const pettineSu = s === 'alzaPettine' || s === 'ripettina' || s === 'ordito';
+  const spoleSu = s === 'alzaSpole';
+  const accento = f2 ? TINTE_B6.rosso : TINTE_B6.oro;
+  ctx.save();
+  ctx.rotate(s === 'cammina' ? Math.sin(tick * 0.1) * 0.035 : 0);
+  // plinto
+  chinaB6(flash);
+  ctx.beginPath(); ctx.moveTo(-18, 8); ctx.lineTo(18, 8); ctx.lineTo(15, -1); ctx.lineTo(-15, -1); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-16.5, 3.5); ctx.lineTo(16.5, 3.5); ctx.stroke();
+  // veste a colonna
+  ctx.beginPath();
+  ctx.moveTo(-12.5, -1); ctx.lineTo(-9, -30); ctx.quadraticCurveTo(-9.5, -41, -5, -43); ctx.lineTo(5, -43);
+  ctx.quadraticCurveTo(9.5, -41, 9, -30); ctx.lineTo(12.5, -1); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.globalAlpha = 0.5;
+  ctx.beginPath();
+  for (const px of [-6, -1.5, 3, 7]) { ctx.moveTo(px * 0.8, -26); ctx.lineTo(px * 1.25, -3); }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  // giglio d'oro sul petto
+  ctx.fillStyle = accento; ctx.strokeStyle = accento; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.ellipse(0, -34, 1.5, 4, 0, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(-3.2, -33, 2.6, -0.3, 2.2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(3.2, -33, 2.6, Math.PI - 2.2, Math.PI + 0.3); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-3.4, -30); ctx.lineTo(3.4, -30); ctx.stroke();
+  // crepe (in fase 2 ardono)
+  ctx.strokeStyle = f2 ? TINTE_B6.rosso : TINTE_B6.bordo; ctx.lineWidth = f2 ? 1.3 : 0.8; ctx.globalAlpha = f2 ? 1 : 0.6;
+  ctx.beginPath(); ctx.moveTo(6, -27); ctx.lineTo(3.5, -21); ctx.lineTo(7, -16); ctx.lineTo(4.5, -9);
+  if (f2) { ctx.moveTo(-7, -24); ctx.lineTo(-4, -18); ctx.lineTo(-8, -11); ctx.moveTo(-2, -47); ctx.lineTo(1, -43); }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  if (f2) bagliorB6(5, -18, 12, 'rosso', 0.35 + 0.2 * Math.sin(tick * 0.2));
+  // velo e volto
+  const capo = s === 'annoda' ? 2.5 : 0;
+  chinaB6(flash);
+  ctx.beginPath();
+  ctx.moveTo(-8.5, -40 + capo); ctx.quadraticCurveTo(-10, -57 + capo, 0, -59 + capo); ctx.quadraticCurveTo(10, -57 + capo, 8.5, -40 + capo);
+  ctx.quadraticCurveTo(0, -36 + capo, -8.5, -40 + capo); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = flash ? '#ffffff' : TINTE_B6.china2;
+  ctx.beginPath(); ctx.ellipse(flip * 1.4, -48.5 + capo, 4.3, 5.4, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = accento;
+  ctx.fillRect(flip * 1.4 - 3, -49.6 + capo, 2.2, s === 'annoda' ? 0.6 : 1.1);
+  ctx.fillRect(flip * 1.4 + 0.8, -49.6 + capo, 2.2, s === 'annoda' ? 0.6 : 1.1);
+  // braccia di pietra
+  if (pettineSu) {
+    const su = s === 'ordito' ? 1 - k * 0.6 : Math.min(1, k * 3);
+    trattoB6(3, flash, lineaB6(-8, -39, -13, -39 - 17 * su));
+    trattoB6(3, flash, lineaB6(8, -39, 13, -39 - 17 * su));
+  } else if (spoleSu || s === 'lancia') {
+    const ap = s === 'lancia' ? 1 - k : Math.min(1, k * 2.5);
+    trattoB6(3, flash, lineaB6(-8, -39, -9 - 9 * ap, -32 - 13 * ap));
+    trattoB6(3, flash, lineaB6(8, -39, 9 + 9 * ap, -32 - 13 * ap));
+    if (spoleSu) {
+      const pul = 1 + Math.sin(tick * 0.7) * 0.12;
+      spolaB6(-18, -46, 0.5, pul, f2);
+      spolaB6(18, -46, -0.5, pul, f2);
+      if (f2) spolaB6(0, -66, 0, pul, f2);
+    }
+  } else if (s === 'cambiaFase') {
+    trattoB6(3, flash, lineaB6(-8, -39, -15, -55));
+    trattoB6(3, flash, lineaB6(8, -39, 15, -55));
+  } else {
+    const giu = s === 'annoda' ? 9 : 0;
+    trattoB6(3, flash, lineaB6(-8, -39, -6 - giu * 0.6, -23 + giu));
+    trattoB6(3, flash, lineaB6(8, -39, 6 + giu * 0.6, -23 + giu));
+    if (s === 'annoda') { // fili lenti da riannodare
+      ctx.strokeStyle = TINTE_B6.oro; ctx.lineWidth = 0.9; ctx.globalAlpha = 0.85;
+      ctx.beginPath();
+      ctx.moveTo(-11.5, -14); ctx.quadraticCurveTo(-16, 2 + Math.sin(tick * 0.12) * 2, -4, 5);
+      ctx.moveTo(11.5, -14); ctx.quadraticCurveTo(17, 0 + Math.cos(tick * 0.1) * 2, 5, 6);
+      ctx.moveTo(-11.5, -14); ctx.quadraticCurveTo(0, -4 + Math.sin(tick * 0.16) * 2.5, 11.5, -14);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    } else { // il pettine tenuto basso
+      ctx.strokeStyle = TINTE_B6.oro; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(-9, -22); ctx.lineTo(9, -22);
+      for (let i = -8; i <= 8; i += 3.2) { ctx.moveTo(i, -22); ctx.lineTo(i, -18.5); }
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+/** Spola della Tessitrice (in mano o in volo): fuso d'oro con il filo rosso. */
+function spolaB6(x, y, rot, scala, fase2) {
+  bagliorB6(x, y, 11 * scala, fase2 ? 'rosso' : 'oro', 0.6);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.scale(scala, scala);
+  ctx.fillStyle = TINTE_B6.oro; ctx.strokeStyle = TINTE_B6.china; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(-8, 0); ctx.quadraticCurveTo(0, -4.4, 8, 0); ctx.quadraticCurveTo(0, 4.4, -8, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = TINTE_B6.rosso;
+  ctx.fillRect(-2.6, -2, 5.2, 4);
+  ctx.restore();
+}
+
+function accessoriTessitriceB6(b, tick, strato) {
+  if (strato !== 'davanti') return;
+  const C = BOSS_B6['tessitrice-pietra'];
+  const s = b.statoB6;
+  const f2 = Boolean(b.fase2B6);
+  // il pettine del telaio sopra la testa, orientato come la fila che partirà: denti accesi = colpi, vuoto = varco
+  if (s === 'alzaPettine' || s === 'ripettina') {
+    const P = C.pettine;
+    const kk = b.durataB6 ? 1 - (b.timerB6 || 0) / b.durataB6 : 0;
+    const su = Math.min(1, kk * 3);
+    const a = b.angB6 || 0;
+    const px = -Math.sin(a), py = Math.cos(a), dx = Math.cos(a), dy = Math.sin(a);
+    const cx = b.x, cy = b.y - 50 - 20 * su;
+    const passo = 5.4, meta = (P.denti - 1) / 2;
+    const fermo = (b.timerB6 || 0) <= P.bloccoTick; // angolo bloccato: i denti brillano
+    ctx.save();
+    ctx.globalAlpha = su;
+    ctx.strokeStyle = TINTE_B6.oro; ctx.lineWidth = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(b.x - 13, b.y - 39 - 17 * su); ctx.lineTo(cx - px * meta * passo, cy - py * meta * passo);
+    ctx.moveTo(b.x + 13, b.y - 39 - 17 * su); ctx.lineTo(cx + px * meta * passo, cy + py * meta * passo);
+    ctx.stroke();
+    trattoB6(2.2, false, lineaB6(cx - px * (meta + 0.7) * passo, cy - py * (meta + 0.7) * passo, cx + px * (meta + 0.7) * passo, cy + py * (meta + 0.7) * passo));
+    for (let i = 0; i < P.denti; i++) {
+      if (i >= b.varcoB6 && i < b.varcoB6 + P.varco) continue;
+      const ox = cx + px * (i - meta) * passo, oy = cy + py * (i - meta) * passo;
+      ctx.strokeStyle = fermo ? TINTE_B6.lampo : f2 ? TINTE_B6.rosso : TINTE_B6.oro;
+      ctx.lineWidth = fermo ? 2 : 1.6;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + dx * (6 + (fermo ? 2 : 0)), oy + dy * (6 + (fermo ? 2 : 0))); ctx.stroke();
+      if (fermo) bagliorB6(ox + dx * 7, oy + dy * 7, 5, f2 ? 'rosso' : 'oro', 0.8);
+    }
+    ctx.restore();
+  }
+  for (const sp of b.spoleB6 || []) {
+    ctx.strokeStyle = TINTE_B6.oro; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.55;
+    ctx.beginPath(); ctx.moveTo(sp.x - sp.vx * 5, sp.y - sp.vy * 5); ctx.lineTo(sp.x, sp.y); ctx.stroke();
+    ctx.globalAlpha = 1;
+    spolaB6(sp.x, sp.y, Math.atan2(sp.vy, sp.vx) + Math.sin(sp.t * 0.5) * 0.3, 1, f2);
+  }
+}
+
+const DISEGNI_B6 = Object.freeze({
+  lampionaio: Object.freeze({ corpo: disegnaLampionaioB6, accessori: accessoriLampionaioB6 }),
+  'cigno-latta': Object.freeze({ corpo: disegnaCignoB6, accessori: null }),
+  'giostra-lucciole': Object.freeze({ corpo: disegnaGiostraB6, accessori: accessoriGiostraB6 }),
+  'tessitrice-pietra': Object.freeze({ corpo: disegnaTessitriceB6, accessori: accessoriTessitriceB6 }),
+});
+
+/**
+ * Immagine dell'autore al posto del disegno sul canvas, se c'è: (1) foglio animato del boss nel LAYOUT di
+ * t2-sprite.js, con la posa presa dallo stato dell'IA; (2) FOGLIO_BOSS di t2; (3) immagine ferma di SPRITE_BOSS_A.
+ * @returns {boolean} true se ha disegnato
+ */
+function disegnaBossDaFoglioB6(b, tick, flip, flash) {
+  const t2 = window.__teatro && window.__teatro.t2;
+  const F = SCHEDE_B6[b.bossId].foglio;
+  if (t2 && t2.LAYOUT && t2.LAYOUT[F.nome] && typeof t2.disegnaFotogramma === 'function') {
+    const posa = F.pose[b.statoB6] || 'fermo';
+    ctx.save();
+    ctx.scale(flip, 1);
+    const ok = t2.disegnaFotogramma(ctx, F.nome, posa, t2.fotogramma(posa, tick), F.piedi, flash ? '#ffffff' : null, flash ? 0.6 : 0, F.altezza);
+    ctx.restore();
+    if (ok) return true;
+  }
+  if (t2 && typeof t2.boss === 'function' && t2.boss(ctx, b, tick)) return true;
+  const A = typeof SPRITE_BOSS_A !== 'undefined' ? SPRITE_BOSS_A[b.bossId] : null;
+  if (A && A.pose && A.pose.fermo) {
+    return disegnaMobSprite(ctx, `boss/${A.pose.fermo[0]}`, 0, A.piedi || 8, A.altezza * (A.pose.fermo[1] || 1), A.guardaDestra ? flip : -flip, flash);
+  }
+  return false;
+}
+
+/** Disegna un boss nuovo: ombra del corpo, accessori dietro, corpo (foglio o canvas), accessori davanti. */
+function disegnaBossB6(b, tick) {
+  const scheda = SCHEDE_B6[b.bossId];
+  const D = DISEGNI_B6[b.bossId];
+  const flash = b.flash > 0 && OPZIONI.lampi !== false;
+  const flip = player.x < b.x ? -1 : 1;
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.fillStyle = 'rgba(8, 5, 3, 0.68)';
+  ctx.beginPath(); ctx.ellipse(b.x, b.y + 8, scheda.ombra[0], scheda.ombra[1], 0, 0, TAU); ctx.fill();
+  if (D.accessori) { ctx.save(); D.accessori(b, tick, 'dietro'); ctx.restore(); }
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  if (!disegnaBossDaFoglioB6(b, tick, flip, flash)) D.corpo(b, tick, flash, flip);
+  ctx.restore();
+  if (D.accessori) { ctx.save(); D.accessori(b, tick, 'davanti'); ctx.restore(); }
+  ctx.restore();
+}
+
+const disegnaBossPittoricoBaseB6 = disegnaBossPittorico;
+/** I boss nuovi si disegnano qui; gli altri restano alla base. Stessa firma: ([ctx], boss, tick). */
+disegnaBossPittorico = function (...args) {
+  const a = args[0] && typeof args[0].save === 'function' ? args.slice(1) : args;
+  const b = a[0];
+  if (!b || !DISEGNI_B6[b.bossId]) return disegnaBossPittoricoBaseB6.apply(this, args);
+  try { disegnaBossB6(b, a[1] || 0); } catch (err) { console.error('[B6] disegno', b.bossId, err); }
+};
+
+const disegnaHUDPixelArtBaseB6 = disegnaHUDPixelArt;
+/** Prima dell'HUD: le anime del boss sconfitto salgono e svaniscono (bibbia §XII: non lasciano cadaveri). */
+disegnaHUDPixelArt = function (...args) {
+  try {
+    const A = BOSS_B6.anime;
+    for (let i = b6.anime.length - 1; i >= 0; i--) {
+      const p = b6.anime[i];
+      const eta = tick - p.t0;
+      if (eta < 0) continue;
+      if (eta > A.durataTick || statoRun.stanzaCorrente == null || statoRun.stanzaCorrente.tipo !== 'boss') { b6.anime.splice(i, 1); continue; }
+      const alfa = 1 - eta / A.durataTick;
+      const x = p.x + Math.sin(eta * 0.08 + p.fase) * 6, y = p.y - eta * A.salita;
+      ctx.save();
+      ctx.globalAlpha = alfa;
+      bagliorB6(x, y, 9, 'oro', 0.5);
+      puntoB6(x, y, 2.2, p.colore);
+      puntoB6(x, y, 0.9, TINTE_B6.lampo);
+      ctx.restore();
+    }
+  } catch (err) { console.error('[B6] anime', err); }
+  return disegnaHUDPixelArtBaseB6.apply(this, args);
+};
+
+// ===========================================================================
+// SONDA QA / SVILUPPO
+// ===========================================================================
+Object.assign(window.__teatro.interni, {
+  ROSA_B6, SCHEDE_B6, BOSS_B6, STATI_B6,
+  bossB6: Object.freeze({
+    /** Sviluppo/QA: impone un boss (id di POOL_BOSS) ai piani 1-3; null torna alla rosa. */
+    forza(id) { b6.forzato = id || null; },
+    /** Sviluppo/QA: sorgente del caso del sacchetto (funzione 0..1); senza argomento torna Math.random. */
+    caso(f) { b6.casuale = typeof f === 'function' ? f : Math.random; },
+    get memoria() { return leggiRosaB6(); },
+    azzeraMemoria() { try { localStorage.removeItem(chiaveRosaB6()); } catch (_) { /* idem */ } if (statoRun.rosaB6) statoRun.rosaB6 = null; },
+    rosaDelPiano: rosaDelPianoB6,
+    bossDelPiano: (piano) => { const x = bossDelPianoB6(piano); return x ? x.id : null; },
+    /** Boss nuovo della stanza corrente: stato dell'IA, fase, colpi propri. */
+    get stato() {
+      const st = statoRun.stanzaCorrente;
+      const n = st && st.nemici.find((x) => x.boss);
+      if (!n) return null;
+      return { bossId: n.bossId, nome: n.nome, nuovo: Boolean(SCHEDE_B6[n.bossId]), stato: n.statoB6 || null, fase2: Boolean(n.fase2B6),
+        hp: n.hp, maxHp: n.maxHp, x: n.x, y: n.y, colpiPropri: colpiPropriB6(n), proiettili: statoRun.proiettiliNemici.length };
+    },
+    get anime() { return b6.anime.length; },
+  }),
 });
 
 </script>
