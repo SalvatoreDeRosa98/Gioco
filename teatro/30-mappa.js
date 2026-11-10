@@ -454,6 +454,7 @@ function popolaStanza(s, piano) {
       ? vicoloGatti
       : TEMI_STANZA[Math.floor(rng() * TEMI_STANZA.length)];
     const tipiGenerati = temaScelto.getTipi(piano);
+    if (typeof gruppoNemiciB7 === 'function') gruppoNemiciB7(s, piano, tipiGenerati); // --- b7: gruppi per quartiere e difficoltà (b7-stanze.js) ---
     // --- C: dalla notte 3 a volte una Vespa in più (NOTTI_C.probNemicoExtra) ---
     if (rng() < effettiNotteC().probNemicoExtra) tipiGenerati.push('vespa_cieca');
 

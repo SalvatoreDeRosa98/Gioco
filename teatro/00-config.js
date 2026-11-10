@@ -107,10 +107,11 @@ const MS_PER_TICK = 1000 / FEEL.passo.hz;
 // ---------------------------------------------------------------------------
 // OPZIONI DEL GIOCATORE (menu Opzioni). Un solo oggetto vivo, letto da tutti i file di teatro/ a runtime:
 //   volumeEffetti, volumeMusica (0..1) · scossa (0..1, moltiplica lo scuotimento dello schermo)
-//   grana, vignetta, pubblico (effetti scenici accesi/spenti) · lampi (lampi bianchi sui colpi)
+//   grana, vignetta, pubblico, ombre (effetti scenici accesi/spenti) · lampi (lampi bianchi sui colpi)
+//   voce (didascalie della Voce del Burattinaio)
 // Salvate in localStorage 'ferruccio.teatro.opzioni'. Chi le cambia chiama salvaOpzioni().
 // ---------------------------------------------------------------------------
-const OPZIONI_PREDEFINITE = Object.freeze({ volumeEffetti: 1, volumeMusica: 1, scossa: 1, grana: true, vignetta: true, pubblico: true, lampi: true });
+const OPZIONI_PREDEFINITE = Object.freeze({ volumeEffetti: 1, volumeMusica: 1, scossa: 1, grana: true, vignetta: true, pubblico: true, lampi: true, ombre: true, voce: true });
 const OPZIONI = (() => {
   let salvate = {};
   try { salvate = JSON.parse(localStorage.getItem('ferruccio.teatro.opzioni') || '{}') || {}; } catch (_) { salvate = {}; }
