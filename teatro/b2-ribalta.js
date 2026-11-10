@@ -636,6 +636,7 @@ const RIBALTA_B2 = Object.freeze({
     ctx.lineWidth = 1;
     for (let i = 0; i < L.x.length; i++) {
       const f = fiamma(i, tk);
+      if (typeof disegnaLumeB9 === 'function' && disegnaLumeB9(L.x[i], L.y, f, i, tk)) continue; // --- b9: lume dell'autore (b9-immagini.js) ---
       disegnaFiammaLume(L.x[i], L.y, f, i, tk);
       disegnaLume(L.x[i], L.y, f);
     }
@@ -1108,6 +1109,7 @@ const RIBALTA_B2 = Object.freeze({
    * Colore, spessore e alfa arrivano già impostati da disegnaCaviEAtterraggi.
    */
   function disegnaCavo(x, yBasso, lato, lasco, fase) {
+    if (typeof disegnaCavoB9 === 'function' && disegnaCavoB9(x, yBasso, lato, lasco, fase)) return; // --- b9: gancio dell'autore (b9-immagini.js) ---
     ctx.beginPath(); ctx.moveTo(x, -6);
     if (lasco > 0.05) ctx.quadraticCurveTo(x + lato * lasco * 2 + Math.sin(fase) * lasco * 0.5, yBasso * 0.55, x, yBasso);
     else ctx.lineTo(x, yBasso);

@@ -1104,6 +1104,9 @@ t4Gancio = function t4GancioC1(nome, ...args) {
       if (nome === 'tasto') { tastoPannelloB(args[0].code, Boolean(args[0].repeat)); return true; }
       if (nome === 'click') { clickPannelloB(args[0], args[1]); return true; }
     }
+    // la scena dei fili non si interrompe: tasti e click aspettano (Esc apre comunque il menu di pausa)
+    if (inPiazza && c1.scena && !statoRun.pausa && !dialogoApertoC1()
+      && ((nome === 'tasto' && args[0].code !== 'Escape') || nome === 'click')) return true;
   } catch (err) { console.error('[c1]', nome, err); }
   const scossa = nome === 'disegna' && inPiazza && c1.scossaT > 0 && OPZIONI.scossa > 0;
   if (scossa) { // la piazza trema un attimo (scoppio, fili che cedono)
