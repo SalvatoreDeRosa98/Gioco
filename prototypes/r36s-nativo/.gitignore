@@ -1,0 +1,6 @@
+# binari pesanti e prodotti: fuori da git (li rimonta prepara-pacchetto.sh)
+node_modules/
+pacchetto/
+scaricati/
+uscita/
+*.log

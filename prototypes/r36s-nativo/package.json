@@ -1,0 +1,12 @@
+{
+  "name": "ferruccio-r36s-nativo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Prova di fattibilità: Ferruccio fuori dal browser (Node + Canvas 2D nativo + SDL) per R36S/PortMaster",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@kmamal/sdl": "^0.11.13",
+    "@napi-rs/canvas": "^1.1.0",
+    "dejavu-fonts-ttf": "^2.37.3"
+  }
+}
