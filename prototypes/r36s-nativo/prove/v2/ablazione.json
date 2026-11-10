@@ -1,0 +1,254 @@
+[
+ {
+  "scena": "menu",
+  "base": 6.633672383342248,
+  "nulla": 3.149294683331391,
+  "righe": [
+   {
+    "tipo": "stroke / strokeRect",
+    "chiamate": 146,
+    "mpx": 0.30835085583275373,
+    "mpxSorgente": 0,
+    "msTolti": 2.1178464166839452
+   },
+   {
+    "tipo": "fill a tinta unita",
+    "chiamate": 90,
+    "mpx": 0.051816181524498024,
+    "mpxSorgente": 0,
+    "msTolti": 1.343852600012906
+   },
+   {
+    "tipo": "fill con sfumatura",
+    "chiamate": 42,
+    "mpx": 0.012078997063967839,
+    "mpxSorgente": 0,
+    "msTolti": 1.2336766333474465
+   },
+   {
+    "tipo": "testo (fillText, strokeText)",
+    "chiamate": 109,
+    "mpx": 0,
+    "mpxSorgente": 0,
+    "msTolti": 1.0704231333395002
+   },
+   {
+    "tipo": "fillRect a tinta unita",
+    "chiamate": 41.06666666666667,
+    "mpx": 0.5353077599920263,
+    "mpxSorgente": 0,
+    "msTolti": 0.8926828000073632
+   },
+   {
+    "tipo": "fillRect con sfumatura",
+    "chiamate": 6,
+    "mpx": 0.269008,
+    "mpxSorgente": 0,
+    "msTolti": 0.6707628333475437
+   },
+   {
+    "tipo": "drawImage da una tela",
+    "chiamate": 10,
+    "mpx": 0.00144,
+    "mpxSorgente": 0.00144,
+    "msTolti": 0.6299978166624589
+   }
+  ]
+ },
+ {
+  "scena": "hub di Piazza Dante",
+  "base": 2.0294385666648544,
+  "nulla": 1.7585986833223919,
+  "righe": [
+   {
+    "tipo": "fill con sfumatura",
+    "chiamate": 11,
+    "mpx": 0.04451936375962682,
+    "mpxSorgente": 0,
+    "msTolti": 0.3931554499974783
+   },
+   {
+    "tipo": "fillRect a tinta unita",
+    "chiamate": 118.13333333333334,
+    "mpx": 0.18208424703296744,
+    "mpxSorgente": 0,
+    "msTolti": 0.2844021499894247
+   },
+   {
+    "tipo": "stroke / strokeRect",
+    "chiamate": 17,
+    "mpx": 0.040103773531963566,
+    "mpxSorgente": 0,
+    "msTolti": 0.24917555000671765
+   },
+   {
+    "tipo": "fillRect con sfumatura",
+    "chiamate": 2,
+    "mpx": 0.26368,
+    "mpxSorgente": 0,
+    "msTolti": 0.23966928331841064
+   },
+   {
+    "tipo": "fill a tinta unita",
+    "chiamate": 16,
+    "mpx": 0.005509204197071787,
+    "mpxSorgente": 0,
+    "msTolti": 0.18994406666412633
+   },
+   {
+    "tipo": "drawImage da una tela",
+    "chiamate": 1,
+    "mpx": 0.2304,
+    "mpxSorgente": 0.2304,
+    "msTolti": 0.1182464166621986
+   },
+   {
+    "tipo": "testo (fillText, strokeText)",
+    "chiamate": 4,
+    "mpx": 0,
+    "mpxSorgente": 0,
+    "msTolti": -0.022076850002243464
+   }
+  ]
+ },
+ {
+  "scena": "stanza pesante, effetti spenti",
+  "base": 5.600884235003614,
+  "nulla": 2.2656776199990416,
+  "righe": [
+   {
+    "tipo": "drawImage da una tela",
+    "chiamate": 121.33333333333333,
+    "mpx": 0.5227820677347819,
+    "mpxSorgente": 4.6858927999999995,
+    "msTolti": 2.1238976050022753
+   },
+   {
+    "tipo": "stroke / strokeRect",
+    "chiamate": 74.6,
+    "mpx": 1.1221996970539292,
+    "mpxSorgente": 0,
+    "msTolti": 1.0440249550068987
+   },
+   {
+    "tipo": "testo (fillText, strokeText)",
+    "chiamate": 16,
+    "mpx": 0,
+    "mpxSorgente": 0,
+    "msTolti": 0.5673410250077726
+   },
+   {
+    "tipo": "fill a tinta unita",
+    "chiamate": 48.2,
+    "mpx": 0.021720904160568325,
+    "mpxSorgente": 0,
+    "msTolti": 0.5482433950010455
+   },
+   {
+    "tipo": "clearRect",
+    "chiamate": 3.2666666666666666,
+    "mpx": 0.06690133333333333,
+    "mpxSorgente": 0,
+    "msTolti": 0.4433131150080589
+   },
+   {
+    "tipo": "drawImage da una Image",
+    "chiamate": 15,
+    "mpx": 0.012082979303244555,
+    "mpxSorgente": 0,
+    "msTolti": 0.345280295003322
+   },
+   {
+    "tipo": "fillRect con sfumatura",
+    "chiamate": 1,
+    "mpx": 0.143616,
+    "mpxSorgente": 0,
+    "msTolti": 0.25140708500926845
+   },
+   {
+    "tipo": "fillRect a tinta unita",
+    "chiamate": 36,
+    "mpx": 0.07248067999202722,
+    "mpxSorgente": 0,
+    "msTolti": 0.03670960500428855
+   },
+   {
+    "tipo": "fill con sfumatura",
+    "chiamate": 20.8,
+    "mpx": 0.005092150704221598,
+    "mpxSorgente": 0,
+    "msTolti": -0.005249544995022504
+   }
+  ]
+ },
+ {
+  "scena": "stanza pesante, tutto acceso",
+  "base": 6.928733650002978,
+  "nulla": 1.9427806899999267,
+  "righe": [
+   {
+    "tipo": "drawImage da una tela",
+    "chiamate": 159,
+    "mpx": 0.9113583145517308,
+    "mpxSorgente": 6.183067733333333,
+    "msTolti": 2.5872889900003795
+   },
+   {
+    "tipo": "fillRect con sfumatura",
+    "chiamate": 2.5,
+    "mpx": 0.414976,
+    "mpxSorgente": 0,
+    "msTolti": 0.38928990000917185
+   },
+   {
+    "tipo": "clearRect",
+    "chiamate": 6.3,
+    "mpx": 0.15017653333333333,
+    "mpxSorgente": 0,
+    "msTolti": 0.02556471999909249
+   },
+   {
+    "tipo": "stroke / strokeRect",
+    "chiamate": 76.63333333333334,
+    "mpx": 1.123312009059152,
+    "mpxSorgente": 0,
+    "msTolti": -0.01653028999047823
+   },
+   {
+    "tipo": "fill con sfumatura",
+    "chiamate": 20.8,
+    "mpx": 0.005092150704221598,
+    "mpxSorgente": 0,
+    "msTolti": -0.12940664999594365
+   },
+   {
+    "tipo": "fill a tinta unita",
+    "chiamate": 68.8,
+    "mpx": 0.02559111995676369,
+    "mpxSorgente": 0,
+    "msTolti": -0.3255072699958692
+   },
+   {
+    "tipo": "drawImage da una Image",
+    "chiamate": 15,
+    "mpx": 0.012082979303244555,
+    "mpxSorgente": 0,
+    "msTolti": -0.43956446999625776
+   },
+   {
+    "tipo": "testo (fillText, strokeText)",
+    "chiamate": 16,
+    "mpx": 0,
+    "mpxSorgente": 0,
+    "msTolti": -0.6656134400045266
+   },
+   {
+    "tipo": "fillRect a tinta unita",
+    "chiamate": 37.03333333333333,
+    "mpx": 0.11345347999202736,
+    "mpxSorgente": 0,
+    "msTolti": -0.9821530899958448
+   }
+  ]
+ }
+]

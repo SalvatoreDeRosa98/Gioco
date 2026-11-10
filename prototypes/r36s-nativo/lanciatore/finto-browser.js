@@ -176,7 +176,7 @@ function creaFintoBrowser(opz) {
   const G = globalThis;
   const log = opz.log || { riga() {} };
   const dirHtml = path.dirname(path.resolve(opz.fileHtml));
-  const stato = { errori: 0, ultimiErrori: [], caricato: false, immagini: 0, immaginiFallite: 0, pixelImmagini: 0, tele: [], simboli: [], filtroNero: false, sfumatureIgnote: 0 };
+  const stato = { errori: 0, ultimiErrori: [], caricato: false, immagini: 0, immaginiFallite: 0, pixelImmagini: 0, tele: [], simboli: [], filtroNero: false, sfumatureIgnote: 0, scala: 1, tagli: [] };
 
   function annotaErrore(dove, err) {
     stato.errori++;
@@ -350,6 +350,24 @@ function creaFintoBrowser(opz) {
     } else log.riga('avviso: il contesto 2D non lascia agganciare «filter»: il menu coi burattini in ombra sarà lento');
   }
 
+  // measureText con memoria: il gioco misura le stesse scritte a ogni fotogramma (drawTextFit) e ne usa
+  // solo la larghezza. Misurare vuol dire impaginare il testo (caro su una CPU lenta): si ricorda il
+  // risultato per (font, testo).
+  if (opz.memoriaTesto !== false) {
+    const proto = Object.getPrototypeOf(canvas.getContext('2d'));
+    const dFont = Object.getOwnPropertyDescriptor(proto, 'font');
+    const misuraVera = proto.measureText;
+    if (dFont && dFont.get && typeof misuraVera === 'function') {
+      let misure = new Map();
+      proto.measureText = function (testo) {
+        const k = dFont.get.call(this) + '\n' + testo;
+        let m = misure.get(k);
+        if (m === undefined) { m = misuraVera.call(this, testo); if (misure.size > 6000) misure = new Map(); misure.set(k, m); }
+        return m;
+      };
+    }
+  }
+
   Object.assign(documento, {
     body: corpo, documentElement: radice, head: creaElemento('head', documento), hidden: false, visibilityState: 'visible',
     readyState: 'complete', fullscreenElement: null, webkitFullscreenElement: null, activeElement: corpo, title: 'Ferruccio',
@@ -506,9 +524,71 @@ function creaFintoBrowser(opz) {
   /** Valore di un nome dello scope globale lessicale del gioco (const/let di primo livello), o undefined. */
   function leggi(espressione) { try { return vm.runInThisContext(espressione); } catch (_) { return undefined; } }
 
+  /**
+   * Risoluzione interna del palco: 1 = 640×360, 0.75 = 480×270, 0.5 = 320×180. Il gioco ha già una scala del
+   * buffer separata dalla logica (60-resa.js: adattaRisoluzione → scalaBase, e ogni cache si rifà quando
+   * cambia), ma la sua funzione non scende sotto 1: qui la si sostituisce con una che fissa la scala voluta.
+   * Lo schermo poi ingrandisce la tela con la GPU. Meno pixel = meno lavoro per ogni disegno.
+   */
+  function impostaScala(s) {
+    const scala = Math.max(0.25, Math.min(2, Number(s) || 1));
+    vm.runInThisContext(`(function (s) {
+      adattaRisoluzione = function () {
+        const bl = Math.max(1, Math.round(W * s)), ba = Math.max(1, Math.round(H * s));
+        if (canvas.width !== bl || canvas.height !== ba) { canvas.width = bl; canvas.height = ba; floorCachesPerPiano.clear(); }
+        scalaBase = bl / W;
+      };
+      adattaRisoluzione();
+    })`)(scala);
+    stato.scala = scala;
+    return scala;
+  }
+
+  /**
+   * Tagli di scena per le macchine lente: true = quel pezzo NON si disegna. Usano gli interruttori che il
+   * gioco ha già (RIBALTA_B2.attivi) o sostituiscono una funzione di solo disegno; la logica non cambia.
+   *   luci        lumi della ribalta e strato di luce del palco (un passaggio a tutto palco in «hard-light»)
+   *   riflessi    riflessi bagnati del piano 1 (e le sagome fuori schermo che servono a farli)
+   *   particelle  trucioli e scintille       crollo  il burattino che cade a pezzi
+   *   scenografia la scenografia che cala dai cavi (gli ostacoli ci sono lo stesso)
+   *   atmosfera   pioggia, cerchi d'acqua e velo freddo del quartiere (tutto)
+   *   velo        solo il velo del quartiere: una sfumatura radiale stesa su tutto il palco a ogni fotogramma
+   *               (un disegno solo, ma caro: a 480×270 pesa quanto tutte le scritte); pioggia e cerchi restano
+   *   fili        i fili delle marionette (lunghe linee su tutto il palco)
+   */
+  const originali = {};
+  function impostaTagli(tagli) {
+    const t = tagli || {};
+    const I = G.__teatro && G.__teatro.interni;
+    const att = I && I.RIBALTA_B2 && I.RIBALTA_B2.attivi;
+    if (att) {
+      if (!originali.attivi) originali.attivi = Object.assign({}, att);
+      const coppie = { luci: 'lumi', riflessi: 'riflessi', particelle: 'particelle', crollo: 'crollo', scenografia: 'scenografia' };
+      for (const [mio, suo] of Object.entries(coppie)) att[suo] = t[mio] ? false : originali.attivi[suo];
+    }
+    for (const [mio, nome] of [['atmosfera', 'disegnaAtmosferaQuartiere'], ['fili', 'disegnaFiliMarionetta']]) {
+      if (typeof G[nome] !== 'function' && !originali[nome]) continue;
+      if (!originali[nome]) originali[nome] = G[nome];
+      G[nome] = t[mio] ? function () {} : originali[nome];
+    }
+    // il velo: dentro disegnaAtmosferaQuartiere si saltano i fillRect con una sfumatura (il resto si disegna)
+    if (t.velo && !t.atmosfera && originali.disegnaAtmosferaQuartiere) {
+      if (!originali.fillRectVelo) {
+        const proto = Object.getPrototypeOf(canvas.getContext('2d'));
+        const d = Object.getOwnPropertyDescriptor(proto, 'fillStyle'); const f = proto.fillRect;
+        originali.fillRectVelo = f;
+        proto.fillRect = function () { if (stato.dentroAtmosfera && d && typeof d.get.call(this) !== 'string') return undefined; return f.apply(this, arguments); };
+      }
+      const atmosfera = originali.disegnaAtmosferaQuartiere;
+      G.disegnaAtmosferaQuartiere = function () { stato.dentroAtmosfera = true; try { return atmosfera.apply(this, arguments); } finally { stato.dentroAtmosfera = false; } };
+    }
+    stato.tagli = Object.keys(t).filter((k) => t[k]);
+    return stato.tagli;
+  }
+
   return {
-    PALCO, canvas, stato, pad, memoria, carica, fotogramma, tasto, mouse, leggi, erroreNonGestito,
-    /** I pixel del palco (RGBA, 640×360×4) pronti per lo schermo. */
+    PALCO, canvas, stato, pad, memoria, carica, fotogramma, tasto, mouse, leggi, erroreNonGestito, impostaScala, impostaTagli,
+    /** I pixel del palco (RGBA premoltiplicato, canvas.width × canvas.height × 4) pronti per lo schermo. */
     pixel() { return canvas.data(); },
     /** Salva il palco in un PNG. */
     foto(file) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, canvas.toBuffer('image/png')); return file; },

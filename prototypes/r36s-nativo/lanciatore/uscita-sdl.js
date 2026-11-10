@@ -48,8 +48,9 @@ function apriSdl(p) {
     width: sch.larghezza || base.width, height: sch.altezza || base.height,
     fullscreen: sch.intero !== false, accelerated: sch.accelerato !== false, vsync: sch.vsync !== false,
   });
-  log.riga(`finestra ${finestra.pixelWidth}×${finestra.pixelHeight} · accelerata ${finestra.accelerated} · vsync ${finestra.vsync}`);
+  log.riga(`finestra ${finestra.pixelWidth}×${finestra.pixelHeight} · resa SDL ${finestra.accelerated ? 'ACCELERATA (GPU)' : 'SOFTWARE (senza GPU: lenta)'} · vsync ${finestra.vsync}`);
 
+  const stato = { liscio: p.liscio !== undefined ? Boolean(p.liscio) : Boolean(sch.liscio) };
   let rett = null;
   function rettangolo() {
     const pw = finestra.pixelWidth, ph = finestra.pixelHeight;
@@ -141,15 +142,20 @@ function apriSdl(p) {
     if (B[8] && B[9]) { if (!insiemeDa) insiemeDa = oraMs; else if (!uscitaChiesta && oraMs - insiemeDa > (imp.uscitaMs || 1000)) { uscitaChiesta = true; p.esci('Start + Select'); } } else insiemeDa = 0;
   }
 
-  /** Copia a schermo i pixel del palco (RGBA 640×360). */
-  function mostra(pixel) {
+  /**
+   * Copia a schermo i pixel del palco (RGBA, `l`×`a`: la tela può essere più piccola di 640×360 se il livello
+   * riduce la risoluzione interna). Una sola copia verso una texture; l'ingrandimento lo fa SDL (la GPU, se
+   * la finestra è accelerata): liscio se la misura non coincide, a pixel netti se coincide.
+   */
+  function mostra(pixel, l, a) {
     if (finestra.destroyed) return;
-    finestra.render(L, A, L * 4, 'rgba32', pixel, { scaling: sch.liscio ? 'linear' : 'nearest', dstRect: rett });
+    const tl = l || L, ta = a || A;
+    finestra.render(tl, ta, tl * 4, 'rgba32', pixel, { scaling: stato.liscio && tl !== rett.width ? 'linear' : 'nearest', dstRect: rett });
   }
 
   function chiudi() { try { if (!finestra.destroyed) finestra.destroy(); } catch (_) { /* già chiusa */ } }
 
-  return { ingressi, mostra, chiudi, finestra, sdl };
+  return { ingressi, mostra, chiudi, finestra, sdl, stato };
 }
 
 module.exports = { apriSdl, codiceDaScancode };
