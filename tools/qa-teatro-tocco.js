@@ -427,19 +427,103 @@ const SOLO = (process.env.QA_TOCCO_SOLO || 'ABCDE').toUpperCase(); // es. QA_TOC
     await T.cx.close();
   }
 
-  // ================================================================ C. VERTICALE ALTO (412×915): solo disposizione
+  // ================================================================ C. VERTICALE ALTO (412×915): la strada vera del giocatore
   if (SOLO.includes('C')) {
-    const T = await apri(browser, TELEFONI.verticaleAlto);
+    const T = await apri(browser, TELEFONI.verticaleAlto, () => {
+      // Wake Lock finto (registra le richieste) e gamepad finto spento: si accende più sotto
+      window.__veglia = { chieste: 0, rilasciate: 0 };
+      const finta = { request() { window.__veglia.chieste++; return Promise.resolve({ addEventListener() {}, release() { window.__veglia.rilasciate++; return Promise.resolve(); } }); } };
+      try { Object.defineProperty(navigator, 'wakeLock', { configurable: true, get: () => finta }); } catch (_) { /* non ridefinibile */ }
+      window.__padAcceso = false;
+      window.__pad = { id: 'Pad finto (QA)', index: 0, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })) };
+      Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: () => (window.__padAcceso ? [window.__pad] : []) });
+    });
     const { p } = T;
     await T.toccaGioco(320, 20);
-    await T.inScena();
+    await p.waitForTimeout(100);
+    let s = await T.stato();
+    ok('alto-schermo-tenuto-acceso', s.attivo && s.veglia && (await p.evaluate(() => window.__veglia.chieste)) === 1, { veglia: s.veglia });
+    await T.bottone('conferma');
+    await p.waitForTimeout(400);
+    ok('alto-dialoghi-chiusi', (await T.run()).fase === 'hub' && (await T.chiudiDialoghi()));
+    // AZIONE accanto a qualcuno: si parla
+    const npc = await p.evaluate(() => {
+      const n = window.__teatro.t4qa.presenze.find((x) => x.tipo === 'npc');
+      if (n) { const P = window.__teatro.interni.player; P.x = n.x - 22; P.y = n.y + 4; }
+      return n || null;
+    });
+    await p.waitForTimeout(120);
+    await T.bottone('azione');
+    await p.waitForTimeout(150);
+    ok('alto-azione-nell-hub-parla', Boolean(npc) && Boolean(await T.dialogo()) && (await T.stato()).contesto === 'dialogo', { npc });
+    await T.chiudiDialoghi();
+    // a piedi fino all'ingresso con la levetta, poi il cartellone si alza con un tocco sul palco
+    const ing = await p.evaluate(() => window.__teatro.t4qa.ingresso);
+    await p.evaluate((g) => { const P = window.__teatro.interni.player; P.x = g.x - 40; P.y = g.y; }, ing);
+    const lm = await T.rett('movimento');
+    await T.giu(1, lm.cx, lm.cy); await T.muovi(1, lm.cx + 46, lm.cy);
+    await p.waitForTimeout(1000);
+    await T.su(1);
+    await p.waitForTimeout(250);
+    await T.chiudiDialoghi();
+    ok('alto-levetta-fino-all-ingresso', (await T.run()).fase === 'in_gioco', (await T.run()).fase);
+    if ((await T.run()).sipario) {
+      s = await T.stato();
+      ok('alto-cartellone-con-conferma', s.contesto === 'sipario' && s.visibili.includes('conferma') && !s.visibili.includes('azione'), s.visibili);
+      await T.toccaGioco(320, 200);
+    }
     await p.waitForTimeout(300);
+    await T.chiudiDialoghi();
+    s = await T.stato();
+    ok('alto-in-scena-dopo-il-cartellone', !(await T.run()).sipario && s.contesto === 'gioco' && s.visibili.includes('oggetto'), s);
+
+    // Capogiro (comandi invertiti di a2): anche la levetta analogica si rovescia
+    await T.inScena();
+    await p.waitForTimeout(250);
+    const m = await T.rett('movimento');
+    await p.evaluate(() => { window.__teatro.interni.statoA2().confusione = 600; });
+    let r0 = await T.run();
+    await T.giu(1, m.cx, m.cy); await T.muovi(1, m.cx + 46, m.cy + 10);
+    await p.waitForTimeout(350);
+    let r1 = await T.run();
+    await T.su(1);
+    await p.evaluate(() => { window.__teatro.interni.statoA2().confusione = 0; });
+    ok('alto-capogiro-rovescia-la-levetta', r1.x < r0.x - 10 && r1.y < r0.y, { da: [r0.x, r0.y], a: [r1.x, r1.y] });
+
+    // disposizione: tutto sotto il palco e a portata di pollice
+    await p.waitForTimeout(200);
     const palco = await T.palco();
     const nomi = ['movimento', 'sparo', 'azione', 'oggetto', 'consuma', 'pausa', 'diario'];
     const rr = {};
     for (const n of nomi) rr[n] = await T.rett(n);
     ok('alto-comandi-sotto-il-palco-e-a-portata', nomi.every((n) => rr[n] && rr[n].y >= palco.y + palco.h && rr[n].y + rr[n].h <= palco.vh + 1) && rr.azione.cy > palco.vh - 330, { azioneDalFondo: palco.vh - rr.azione.cy, palco });
     await p.screenshot({ path: foto('06-vert-alto-scena') });
+
+    // «Schermo intero» del menu di pausa: col tocco è della pagina intera (i comandi restano visibili)
+    await T.bottone('pausa');
+    await T.toccaGioco(320, 171);
+    await p.waitForTimeout(400);
+    const intero = await p.evaluate(() => (document.fullscreenElement ? document.fullscreenElement.tagName : null));
+    s = await T.stato();
+    ok('alto-schermo-intero-dalla-pausa-su-tutta-la-pagina', intero === 'HTML' || (intero === null && s.schermoNegato), { intero, negato: s.schermoNegato });
+    if (intero) { await p.evaluate(() => document.exitFullscreen().catch(() => {})); await p.waitForTimeout(300); }
+    await T.bottone('indietro');
+    ok('alto-ripresa-dopo-lo-schermo-intero', !(await T.run()).pausa && (await T.stato()).attivo);
+
+    // un gamepad vero che dà segni di vita: lo strato si nasconde e lo schermo torna libero di spegnersi
+    await p.evaluate(() => { window.__padAcceso = true; });
+    await p.waitForTimeout(150);
+    ok('alto-gamepad-collegato-ma-fermo-non-nasconde', (await T.stato()).attivo);
+    await p.evaluate(() => { const b = window.__pad.buttons[0]; b.pressed = true; b.value = 1; });
+    await p.waitForTimeout(150);
+    await p.evaluate(() => { const b = window.__pad.buttons[0]; b.pressed = false; b.value = 0; });
+    await p.waitForTimeout(100);
+    s = await T.stato();
+    ok('alto-gamepad-vero-nasconde-lo-strato', !s.attivo && s.motivo === 'pad' && (await T.strato()).hidden && s.dispositivoB3 === 'pad' && !s.veglia && (await p.evaluate(() => window.__veglia.rilasciate)) === 1, s);
+    await p.evaluate(() => { window.__padAcceso = false; });
+    await T.toccaGioco(320, 200);
+    s = await T.stato();
+    ok('alto-il-dito-riporta-lo-strato', s.attivo && s.dispositivoB3 === 'tocco' && s.veglia, s);
     await T.cx.close();
   }
 

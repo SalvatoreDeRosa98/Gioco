@@ -715,6 +715,8 @@ function suPuntatoreMuoviC2(e) {
 function suPuntatoreSuC2(e) {
   if (e.pointerType !== 'touch') return;
   c2.haToccato = true;
+  // il dito che si alza è il «gesto» che i browser chiedono per far partire l'audio (in scena non ci sono click)
+  try { const a = AudioSys.ctx; if (a && a.state === 'suspended') { const pr = a.resume(); if (pr && typeof pr.catch === 'function') pr.catch(() => {}); } } catch (_) { /* audio facoltativo */ }
   const annullato = e.type === 'pointercancel';
   if (rilasciaBottoneC2(e.pointerId, !annullato)) return;
   if (e.pointerId === c2.leve.movimento.id) levaSuC2('movimento', !annullato);
