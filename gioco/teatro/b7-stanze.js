@@ -2160,6 +2160,16 @@ function disegnaClessidraB7(st, t) {
     ctx.beginPath(); ctx.ellipse(0, yy - 1, 17, 3.6, 0, Math.PI, TAU); ctx.stroke();
   }
   ctx.restore();
+}
+
+/** I secondi della Clessidra, sopra le entità (passata dell'HUD): un nemico non li copre mai. */
+function disegnaTempoClessidraB7(st, t) {
+  const C = CLESSIDRA_B7, K = st.clessidraB7, S = st.sfidaA3;
+  if (!K || !S || statoRun.siparioAttivo) return;
+  const x = C.posto.x, y = C.posto.y, k = C.scala;
+  const sec = Math.ceil((K.restoTick * MS_PER_TICK) / 1000);
+  const urgente = S.attiva && !K.scaduta && !K.chiusa && sec <= C.ultimiSecondi;
+  const lampo = urgente && Math.floor(t / (sec <= C.battito.finaleSecondi ? 6 : 12)) % 2 === 0;
   const testo = K.scaduta ? TESTI_B7.clessidraFinita : `⌛ ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
   drawPillLabel(testo, x, y - 70 * k - 6, 110, {
     size: urgente ? 10.5 : 9.5,
@@ -2308,7 +2318,10 @@ disegnaStanzaPixelArt = function disegnaStanzaPixelArtB7(tickR, st, ...resto) {
 const disegnaHUDPixelArtBaseB7 = disegnaHUDPixelArt;
 disegnaHUDPixelArt = function disegnaHUDPixelArtB7(st, ...resto) {
   const r = disegnaHUDPixelArtBaseB7.call(this, st, ...resto);
-  try { disegnaPannelloCiarlatanoB7(tick); } catch (err) { console.error('[b7] tavolino', err); }
+  try {
+    if (st && st.clessidraB7 && statoRun.fase === 'in_gioco') disegnaTempoClessidraB7(st, tick);
+    disegnaPannelloCiarlatanoB7(tick);
+  } catch (err) { console.error('[b7] tavolino', err); }
   return r;
 };
 
