@@ -918,6 +918,64 @@ function disegnaGattoSprite(ctx, posa, x, y, scaleH, flip, flash, isBoss = false
   return true;
 }
 
+// ---------------------------------------------------------------------------
+// BOSS DA IMMAGINE (ritagli ripuliti da tools/pulisci-sprite-boss.py in assets/sprite_teatro/boss/)
+// Per ogni boss: altezza a schermo (px del canvas 640x360) della posa «fermo» e, per posa, il file e
+// un moltiplicatore d'altezza (le pose hanno ritagli di proporzioni diverse). `piedi` = px sotto il punto (x, y).
+// Se un'immagine manca o non è ancora caricata, il boss si disegna col disegno pittorico di prima.
+// ---------------------------------------------------------------------------
+const SPRITE_BOSS_A = Object.freeze({
+  're-gatto': Object.freeze({ altezza: 46, piedi: 10, guardaDestra: true, pose: Object.freeze({
+    fermo: ['gatto_fermo', 1], accucciato: ['gatto_accucciato', 0.52], salto: ['gatto_salto', 0.62], cammina: ['gatto_cammina', 0.5] }) }),
+  'capitano-guardia': Object.freeze({ altezza: 66, piedi: 10, guardaDestra: false, pose: Object.freeze({
+    fermo: ['capitano_guardia_fermo', 1] }) }),
+  'colosso-statua': Object.freeze({ altezza: 72, piedi: 10, guardaDestra: false, pose: Object.freeze({
+    fermo: ['colosso_statua_fermo', 1], aperto: ['colosso_statua_aperto', 1] }) }),
+  'maestro-fucina': Object.freeze({ altezza: 66, piedi: 10, guardaDestra: false, pose: Object.freeze({
+    fermo: ['maestro_fucina_fermo', 1], attacco: ['maestro_fucina_attacco', 1] }) }),
+  'donna-luciana': Object.freeze({ altezza: 76, piedi: 10, guardaDestra: false, pose: Object.freeze({
+    fermo: ['donna_luciana_ferma', 1] }) }),
+  'regina-vespa': Object.freeze({ altezza: 64, piedi: 6, guardaDestra: false, pose: Object.freeze({
+    fermo: ['regina_vespa_ferma', 1] }) }),
+});
+
+/** Posa dell'immagine dallo stato dell'IA del boss (40-combattimento.js). */
+function posaBossA(b) {
+  switch (b.bossId) {
+    case 're-gatto':
+      if ((b.airZ || 0) > 6) return 'salto';
+      if (b.mossaRG && b.mossaRG !== 'riposo') return 'accucciato';
+      return 'fermo';
+    case 'colosso-statua': return b.apertoCM ? 'aperto' : 'fermo';
+    case 'maestro-fucina': return (b.statoSF === 'mira' || b.statoSF === 'carica') ? 'attacco' : 'fermo';
+    default: return 'fermo';
+  }
+}
+
+/** Disegna il boss dalla sua immagine, già traslato in (x, y - airZ). false = immagine non disponibile. */
+function disegnaBossDaImmagineA(b, tick, flip, isFlash) {
+  const S = SPRITE_BOSS_A[b.bossId];
+  if (!S) return false;
+  const [nome, mult] = S.pose[posaBossA(b)] || S.pose.fermo;
+  const img = getSpriteTeatro(`boss/${nome}`) || (nome !== S.pose.fermo[0] ? getSpriteTeatro(`boss/${S.pose.fermo[0]}`) : null);
+  if (!img) return false;
+  const usaMult = img === SPRITE_TEATRO_CACHE[`boss/${nome}`] ? mult : 1;
+  const h = S.altezza * usaMult;
+  const w = h * (img.naturalWidth / img.naturalHeight);
+  ctx.save();
+  // respiro leggero; la Regina e Donna Luciana fluttuano
+  const fluttua = (b.bossId === 'regina-vespa' || b.bossId === 'donna-luciana') ? Math.sin(tick * 0.08) * 3 : 0;
+  ctx.translate(0, S.piedi + fluttua);
+  // le figure viste di fronte non si specchiano; il gatto (di profilo) e lo Spezzafili in attacco guardano a destra
+  const profilo = S.guardaDestra || (b.bossId === 'maestro-fucina' && img === SPRITE_TEATRO_CACHE['boss/maestro_fucina_attacco']);
+  ctx.scale(profilo ? flip : 1, 1 + Math.sin(tick * 0.06) * 0.012);
+  if (b.bossId === 'capitano-guardia' && b.charging) ctx.rotate(0.16); // carica: piegato in avanti
+  if (isFlash) ctx.filter = 'brightness(2.6) contrast(1.3)';
+  ctx.drawImage(img, -w / 2, -h, w, h);
+  ctx.restore();
+  return true;
+}
+
 // Disegno pittorico differenziato per ogni archetipo di Nemico stile The Binding of Isaac!
 function disegnaNemicoPittorico() {
   const args = Array.from(arguments);
@@ -1554,6 +1612,9 @@ function disegnaBossPittorico() {
   }
 
   ctx.translate(x, y - airZ);
+
+  // Immagine del boss (ritaglio ripulito), se c'è: altrimenti il disegno pittorico qui sotto
+  if (disegnaBossDaImmagineA(b, tick, flip, isFlash)) { ctx.restore(); return; }
 
   // =========================================================================
   // BOSS 5: DONNA LUCIANA — LA BURATTINAIA DEL VELO (Isaac Mom)
