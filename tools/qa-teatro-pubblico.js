@@ -81,18 +81,21 @@ const LIMITI = Object.freeze({
     const R = (window.__teatro.interni.SIPARIO_B1 || {}).riquadro || { x: 78, y: 62, w: 484, h: 104 };
     let g;
     try { g = c.getContext('2d'); g.getImageData(0, 0, 1, 1); } catch (e) { return { leggibile: false, errore: String(e) }; }
-    const oro = (lx, ly) => {
+    // luce massima (rosso + verde) in una striscia larga 3 px logici centrata su lx
+    const luce = (lx, ly) => {
       const d = g.getImageData(Math.round((lx - 1.5) * s), Math.round(ly * s), Math.max(1, Math.round(3 * s)), 1).data;
-      for (let i = 0; i < d.length; i += 4) if (d[i] > 180 && d[i + 1] > 135 && d[i + 2] < 150 && d[i] - d[i + 2] > 70) return true;
-      return false;
+      let m = 0;
+      for (let i = 0; i < d.length; i += 4) m = Math.max(m, d[i] + d[i + 1]);
+      return m;
     };
-    const colonne = [316.6, 323.4];
-    const dentro = [R.y + 5, R.y + 25, R.y + 46, R.y + 82, R.y + R.h - 4].map((y) => colonne.some((x) => oro(x, y)));
-    const fuori = [R.y - 14, R.y + R.h + 16, 302].map((y) => colonne.some((x) => oro(x, y)));
-    return { leggibile: true, dentro, fuori };
+    // la cucitura si vede se sulle sue due colonne c'è molta più luce che subito ai lati
+    const stacco = (ly) => Math.max(luce(316.6, ly), luce(323.4, ly)) - Math.max(luce(306, ly), luce(334, ly));
+    const dentro = [R.y + 5, R.y + 25, R.y + 46, R.y + 82, R.y + R.h - 6].map(stacco);
+    const fuori = [R.y - 14, R.y + R.h + 16, 302].map(stacco);
+    return { leggibile: true, dentro, fuori, soglia: 60 };
   });
   ok('la cucitura d\'oro non attraversa il riquadro dei testi (e resta sopra e sotto)',
-    cucitura.leggibile && cucitura.dentro.every((x) => !x) && cucitura.fuori.filter(Boolean).length >= 2, cucitura);
+    cucitura.leggibile && cucitura.dentro.every((x) => x < cucitura.soglia) && cucitura.fuori.filter((x) => x > cucitura.soglia).length >= 2, cucitura);
 
   // un tasto chiude il cartellone e il sipario si apre
   const t0 = Date.now();
@@ -452,7 +455,7 @@ const LIMITI = Object.freeze({
         const ordine = m.stanze.filter((s) => s.tipo === 'normale').concat(m.stanze.filter((s) => s.tipo === 'segreta' || s.tipo === 'boss'));
         for (const s of ordine) {
           R.stanzaCorrente = s; I.player.invuln = 1e9; R.maxHpHalf = 6; R.hpHalf = 5; s.pulita = false;
-          P.stato.colpiStanza = conDanni ? 1 : 0;
+          P.stato.stanza = s; P.stato.colpiStanza = conDanni ? 1 : 0; // il pubblico «è già» in questa stanza: i colpi contati restano
           for (let v = 0; v < 6 && s.nemici.some((n) => n.hp > 0); v++) for (const n of s.nemici.slice()) if (n.hp > 0) { n.airZ = 0; n.maskOpen = true; danneggiaNemico(n, 1e9, 0, 0); }
           verificaStanzaPulita(); R.proiettiliNemici = [];
           conta(s, s.tipo);
@@ -497,15 +500,18 @@ const LIMITI = Object.freeze({
   const suoni = await p.evaluate(() => window.__teatro.interni.pubblicoB1.provaSuoni());
   ok('suoni: tutti udibili, finiti, senza saturare', Object.values(suoni).length >= 9 && Object.values(suoni).every((s) => s.finito && s.picco > 0.004 && s.picco < 0.95), suoni);
 
-  // un tick di logica e un frame per giro, come nel ciclo vero; mediana di 7 confronti acceso/spento
+  // Un tick di logica e un frame per giro, come nel ciclo vero; mediana di 7 confronti acceso/spento. Il canvas
+  // registra i comandi e li disegna dopo: copiarne un pixel su un'altra tela lo obbliga a disegnare subito,
+  // così il tempo misurato comprende davvero il disegno (in tutti e due i casi).
   const tempi = await p.evaluate(() => {
     const I = window.__teatro.interni; const P = I.pubblicoB1;
+    const c = document.getElementById('c'); const spia = document.createElement('canvas'); spia.width = spia.height = 1; const sx = spia.getContext('2d');
     const mis = (acceso, n, reazione) => {
       OPZIONI.pubblico = acceso; let tot = 0;
       for (let k = 0; k < n; k++) {
         if (reazione && P.stato.umore.t < 100) { P.stato.umore.t = 0; P.stato.umore.priorita = 0; I.reazionePubblicoB1('ovazione'); P.stato.voci.length = 0; }
         passoLogico();
-        const t = performance.now(); disegnaFrame(1000 / 60); tot += performance.now() - t;
+        const t = performance.now(); disegnaFrame(1000 / 60); sx.drawImage(c, 0, 0, 1, 1, 0, 0, 1, 1); tot += performance.now() - t;
       }
       return tot / n;
     };
@@ -516,15 +522,19 @@ const LIMITI = Object.freeze({
       for (let g = 0; g < 7; g++) { const a = mis(true, 90, reazione), b = mis(false, 90, false); con.push(a); senza.push(b); diff.push(a - b); }
       return { conPubblicoMs: +mediana(con).toFixed(3), senzaMs: +mediana(senza).toFixed(3), inPiuMs: +mediana(diff).toFixed(3) };
     };
-    P.imposta(0.5, true); P.stato.umore.t = 0;
+    P.imposta(0.5, true); P.stato.umore.t = 0; P.stato.umore.priorita = 0;
+    for (let k = 0; k < 150; k++) passoLogico(); // la tensione e i posti si assestano
     const fermo = confronto(false);
+    // quante zone si ricompongono per frame a pubblico calmo (1 = una a turno) e in ovazione
+    const zone = (reazione) => { const r0 = P.stato.conti.ridisegni || 0; mis(true, 120, reazione); return +(((P.stato.conti.ridisegni || 0) - r0) / 120).toFixed(2); };
+    const zoneFermo = zone(false);
     const reazione = confronto(true);
+    const zoneReazione = zone(true);
     OPZIONI.pubblico = true; P.stato.umore.t = 0; P.stato.umore.priorita = 0; P.stato.fiori.length = 0; P.stato.voci.length = 0;
-    const c = document.getElementById('c');
-    return { fermo, reazione, buffer: `${c.width}x${c.height}`, ridisegni: P.stato.conti.ridisegni };
+    return { fermo, reazione, zoneFermo, zoneReazione, buffer: `${c.width}x${c.height}` };
   });
-  ok(`costo del disegno: pubblico calmo ≤ ${LIMITI.costoFermoMs} ms in più per frame, in ovazione ≤ ${LIMITI.costoReazioneMs} ms`,
-    tempi.fermo.inPiuMs <= LIMITI.costoFermoMs && tempi.reazione.inPiuMs <= LIMITI.costoReazioneMs, tempi);
+  ok(`costo del disegno: pubblico calmo ≤ ${LIMITI.costoFermoMs} ms in più per frame (una zona ricomposta per frame), in ovazione ≤ ${LIMITI.costoReazioneMs} ms`,
+    tempi.fermo.inPiuMs <= LIMITI.costoFermoMs && tempi.reazione.inPiuMs <= LIMITI.costoReazioneMs && tempi.zoneFermo > 0 && tempi.zoneFermo <= 1.5, tempi);
 
   ok('nessun errore di console', errori.length === 0, errori.slice(0, 6));
   console.log(JSON.stringify(esiti, null, 1));

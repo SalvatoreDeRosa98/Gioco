@@ -15,6 +15,12 @@
  *
  * Nessuna modifica ai file di base: solo avvolgimenti di funzioni globali, che chiamano sempre la base.
  * QA: tools/qa-teatro-pubblico.js. Sonda: window.__teatro.interni.pubblicoB1.
+ *
+ * DISEGNI: ogni pezzo di scena ha la sua funzione, raccolta in ELEMENTI_B1 (palchi, sagome, telo, mantovana,
+ * cartiglio, fiore…). Sono segnaposto a canvas: per passare alle immagini dell'autore si sostituisce la voce
+ * di ELEMENTI_B1 e si chiama invalidaTeleB1(), senza toccare il resto.
+ * COSTO: gli elementi fermi stanno su tele fuori schermo; il pubblico si compone su quattro tele di zona
+ * (ZONE_B1) rifatte solo ogni PUBBLICO_B1.resa.ogniTickFermo tick, o ogniTickVivo dove qualcuno si muove.
  */
 
 // ===========================================================================
@@ -80,9 +86,27 @@ const PUBBLICO_B1 = Object.freeze({
     scartoTick: 5,            // fra un premio e il successivo dello stesso lancio
     gestoTick: 14,            // durata del gesto del braccio di chi lancia
     maxInVolo: 64,
+    // un forziere (A1) pesa: arco più basso, un solo rimbalzo corto
+    forziere: Object.freeze({ apicePx: 26, rimbalzi: Object.freeze([Object.freeze({ distPx: 5, altPx: 5, tick: 9 })]) }),
   }),
   fiori: Object.freeze({ max: 30, voloTick: 38, apicePx: 40, vitaTick: 330, dissolvenzaTick: 60, distMin: 26, distMax: 84, scartoTick: 7 }),
-  voci: Object.freeze({ durataTick: 70, salitaPx: 9, max: 6 }),
+  voci: Object.freeze({
+    durataTick: 70, salitaPx: 9, max: 6, scartoTick: 9,
+    largCarattere: 4.4, largMax: 46, altRiga: 8, aria: 3,  // ingombro stimato del testo (corsivo 7 px): due interiezioni non si sovrappongono mai
+    tentativi: 12,                                          // posti provati prima di rinunciare a un'interiezione
+    latoX: 25, latoSu: 37,                                  // sopra un palco laterale: centro della colonna, px sopra il davanzale
+    plateaSu: Object.freeze([21, 32]),                      // in platea: due righe (px dal bordo basso)
+    plateaDaX: 352, plateaMargineDx: 8,                     // in platea mai sopra il dock né sopra la porta sud
+  }),
+  // la platea lascia libero il dock in basso (consumabile, oggetto attivo, arma, icone degli oggetti): da x = 0 al suo bordo destro
+  dock: Object.freeze({ margine: 6, mezzaTesta: 11, bordoMin: 300 }),
+  // costo del disegno: ogni zona (balconata, palchi di sinistra, di destra, platea) sta su una tela composta e si rifà solo ogni tanto
+  resa: Object.freeze({
+    ogniTickFermo: 4,         // pubblico calmo: una zona per tick, a turno
+    ogniTickVivo: 2,          // zona in movimento (reazione, lancio, tensione che cambia, chi entra o esce)
+    sbalzoLati: 18,           // px oltre il palco laterale: braccia e aloni delle candele
+    altoAlt: 58, plateaAlt: 44,
+  }),
   posti: Object.freeze({
     sempreQuota: 0.3,         // quota di spettatori che non se ne va mai
     isteresi: 0.04,
@@ -108,6 +132,9 @@ const SIPARIO_B1 = Object.freeze({
   mantovanaDa: 0.6,      // da qui la mantovana sale via
   testiFinoA: 0.3,       // i testi svaniscono nel primo tratto dell'apertura
   fotoMaxL: 1280,        // larghezza massima della fotografia della scena dietro il sipario che si chiude
+  dtMaxMs: 50,           // un frame lento (generazione del piano) non fa saltare l'animazione
+  riquadro: Object.freeze({ x: 78, y: 62, w: 484, h: 104 }),   // cartiglio dei testi: copre la cucitura centrale
+  invito: Object.freeze({ x: 206, y: 266, w: 228, h: 26 }),
 });
 
 /** Suoni procedurali (volumi relativi a AudioSys.uscita). */
@@ -171,7 +198,7 @@ const pubblicoB1 = {
   voli: [],            // { st, pk }
   fiori: [],
   voci: [],
-  conti: { lanciati: 0, atterrati: 0, regalate: 0, trattenute: 0, bonus: 0, disegni: 0 },
+  conti: { lanciati: 0, atterrati: 0, regalate: 0, trattenute: 0, bonus: 0, disegni: 0, ridisegni: 0 },
 };
 
 const siparioB1 = {
@@ -181,6 +208,7 @@ const siparioB1 = {
   gestoMs: -1e9, inizioMs: 0,
   foto: null, fotoValida: false,
   fermo: null,         // QA: sipario bloccato a questa apertura (0..1)
+  fermoChiudendo: false, // QA: bloccato come in chiusura (con la scena di prima dietro)
 };
 
 /** Generatore separato (non tocca rng() del gioco: le regole di base restano identiche). */
@@ -330,6 +358,29 @@ function azzeraPubblicoB1() {
   P.ultimaSerie = P.ultimoSussulto = P.ultimaRisata = -1e9;
   P.tensione = 0; P.umore.t = 0; P.umore.tipo = 'calmo'; P.umore.nome = 'calmo'; P.umore.priorita = 0;
   rndB1 = generatoreB1(0xB1 ^ Math.imul(statoRun.numeroRun | 0, 2654435761));
+  for (const s of postiB1) if (sottoIlDockB1(s)) { s.dentro = false; s.presenza = 0; } // nessuna testa da far svanire sotto il dock
+}
+
+/**
+ * Bordo destro (px logici) del dock in basso: slot del consumabile, oggetto attivo, arma e icone degli oggetti
+ * (stessa formula di disegnaIconeOggettiB in 60-resa.js: cresce con gli oggetti raccolti).
+ */
+function bordoDockB1() {
+  const D = PUBBLICO_B1.dock;
+  let x = D.bordoMin;
+  if (typeof OGGETTI_B !== 'undefined' && OGGETTI_B && OGGETTI_B.hud) {
+    const Hd = OGGETTI_B.hud, n = statoRun.oggettiEquipaggiati ? statoRun.oggettiEquipaggiati.length : 0;
+    const perRiga = Math.max(1, Math.ceil(n / Hd.righe));
+    const passo = Math.min(Hd.passo, perRiga > 1 ? (Hd.xMax - Hd.xMin - Hd.lato) / (perRiga - 1) : Hd.passo);
+    x = Hd.xMin + 3 + Math.min(Hd.xMax - Hd.xMin, (Math.min(n, perRiga) - 1) * passo + Hd.lato) + (n ? 0 : 40);
+  }
+  return x;
+}
+
+/** Questo posto di platea finirebbe sotto il dock? */
+function sottoIlDockB1(s) {
+  const D = PUBBLICO_B1.dock;
+  return s.zona === 'platea' && s.x - D.mezzaTesta < bordoDockB1() + D.margine;
 }
 
 function cambioStanzaB1(st) {
@@ -341,6 +392,15 @@ function cambioStanzaB1(st) {
   P.fiori.length = 0; P.voci.length = 0;
   for (const n of st.nemici || []) if (n.hp <= 0) P.morti.add(n);
   for (const pk of st.oggettiATerra || []) P.noti.add(pk);
+  for (const f of st.forzieriA1 || []) P.noti.add(f);
+}
+
+/**
+ * Un premio sta per cadere in una stanza in cui si è appena entrati, prima che sia passato un tick: il
+ * pubblico la «vede» subito, così il cambio di stanza del tick dopo non fa atterrare di colpo i premi in volo.
+ */
+function allineaStanzaB1(st) {
+  if (st && st !== pubblicoB1.stanza && st === statoRun.stanzaCorrente && statoRun.fase === 'in_gioco') cambioStanzaB1(st);
 }
 
 /** Un tick del pubblico (dopo il passo di base): cadute, tensione, umore, voli. */
@@ -375,9 +435,10 @@ function aggiornaPubblicoB1() {
     P.gradimento += Math.abs(d) <= passo ? d : Math.sign(d) * passo;
   }
 
-  const I = PUBBLICO_B1.posti.isteresi;
+  const I = PUBBLICO_B1.posti.isteresi, D = PUBBLICO_B1.dock, bordo = bordoDockB1() + D.margine;
   for (const s of postiB1) {
-    s.dentro = s.dentro ? P.gradimento >= s.soglia - I : P.gradimento >= s.soglia + I;
+    const coperto = s.zona === 'platea' && s.x - D.mezzaTesta < bordo; // la platea lascia libero il dock
+    s.dentro = !coperto && (s.dentro ? P.gradimento >= s.soglia - I : P.gradimento >= s.soglia + I);
     s.presenza += ((s.dentro ? 1 : 0) - s.presenza) * 0.04;
     if (s.lancioT > 0) s.lancioT--;
   }
@@ -453,17 +514,23 @@ function lanciatoreB1(tx) {
 }
 
 /**
- * Lancia dai palchetti un raccoglibile già presente in st.oggettiATerra: vola, rimbalza e si ferma dove
- * stava (spostato solo se era dentro un buco o un ostacolo). In volo non si raccoglie.
+ * Lancia dai palchetti un raccoglibile già presente in st.oggettiATerra, oppure un forziere di A1 già in
+ * st.forzieriA1: vola, rimbalza e si ferma dove stava (spostato solo se era dentro un buco o un ostacolo).
+ * In volo non si raccoglie e non si apre.
  * Le altre squadre possono chiamarla per i loro premi; per escluderne uno: pk.nonLanciareB1 = true.
- * @param {object} st stanza @param {object} pk raccoglibile @param {number} [ordine] posizione nel lancio (scarto di tempo)
+ * @param {object} st stanza @param {object} pk raccoglibile o forziere @param {number} [ordine] posizione nel lancio (scarto di tempo)
  * @returns {boolean} true se è partito
  */
 function lanciaPremioB1(st, pk, ordine = 0) {
-  const P = pubblicoB1, L = PUBBLICO_B1.lancio;
+  const P = pubblicoB1;
   if (!st || !pk || pk.voloB1 || pk.nonLanciareB1 || pk.bloccoA2) return false;
   if (PUBBLICO_B1.premi.tipiEsclusi.includes(pk.tipo) || !Number.isFinite(pk.x) || !Number.isFinite(pk.y)) return false;
-  const dest = postoLiberoB1(st, pk.x, pk.y);
+  const forziere = Array.isArray(st.forzieriA1) && st.forzieriA1.includes(pk);
+  if (forziere && pk.aperto) return false;
+  const L = forziere ? { ...PUBBLICO_B1.lancio, ...PUBBLICO_B1.lancio.forziere } : PUBBLICO_B1.lancio;
+  const ox = pk.x, oy = pk.y;
+  pk.x = PARCHEGGIO_B1; pk.y = PARCHEGGIO_B1; // prima di cercare il posto: un forziere non deve scansare sé stesso
+  const dest = postoLiberoB1(st, ox, oy);
   const da = lanciatoreB1(dest.x);
   const dx = dest.x - da.x, dy = dest.y - da.y, dist = Math.hypot(dx, dy) || 1;
   const ux = dx / dist, uy = dy / dist;
@@ -481,9 +548,8 @@ function lanciaPremioB1(st, pk, ordine = 0) {
     ax = punti[i].x; ay = punti[i].y;
   }
   pk.voloB1 = { tx: dest.x, ty: dest.y, t: -Math.max(0, ordine) * L.scartoTick, fase: 0, seg, giro: rndB1() * TAU };
-  pk.x = PARCHEGGIO_B1; pk.y = PARCHEGGIO_B1;
   P.noti.add(pk);
-  P.voli.push({ st, pk });
+  P.voli.push({ st, pk, forziere });
   P.conti.lanciati++;
   while (P.voli.length > L.maxInVolo) atterraPremioB1(P.voli.shift().pk);
   return true;
@@ -507,7 +573,8 @@ function aggiornaVoliB1(st) {
   const P = pubblicoB1;
   for (let i = P.voli.length - 1; i >= 0; i--) {
     const v = P.voli[i], pk = v.pk, V = pk.voloB1;
-    if (!V || v.st !== st || !st.oggettiATerra || !st.oggettiATerra.includes(pk)) {
+    const lista = v.forziere ? st.forzieriA1 : st.oggettiATerra;
+    if (!V || v.st !== st || !lista || !lista.includes(pk) || (v.forziere && pk.aperto)) {
       atterraPremioB1(pk); P.voli.splice(i, 1); continue;
     }
     if (++V.t < 0) continue;
@@ -534,6 +601,11 @@ function lanciaNuoviB1(st, daIndice = 0) {
     P.noti.add(pk);
     if (qui && lanciaPremioB1(st, pk, ordine)) ordine++;
   }
+  for (const f of st.forzieriA1 || []) { // forzieri di A1 comparsi alla pulizia: arrivano in volo anche loro
+    if (!f || P.noti.has(f)) continue;
+    P.noti.add(f);
+    if (qui && lanciaPremioB1(st, f, ordine)) ordine++;
+  }
 }
 
 /** Avvolge una funzione di base che può far cadere premi (morte di un nemico, pulizia della stanza). */
@@ -542,7 +614,11 @@ function conLancioB1(base, dopo) {
     const P = pubblicoB1;
     const st = statoRun.stanzaCorrente;
     const lista = st && st.oggettiATerra;
-    if (P.profLancio === 0 && Array.isArray(lista)) for (const pk of lista) P.noti.add(pk);
+    if (P.profLancio === 0 && Array.isArray(lista)) {
+      allineaStanzaB1(st);
+      for (const pk of lista) P.noti.add(pk);
+      for (const f of st.forzieriA1 || []) P.noti.add(f);
+    }
     P.profLancio++;
     try {
       return base.apply(this, args);
@@ -706,20 +782,49 @@ function telaB1(nome, w, h, disegna, molt = 1) {
   return c;
 }
 
+/** Butta le tele in cache e le zone composte (da chiamare dopo aver sostituito una voce di ELEMENTI_B1). */
+function invalidaTeleB1() {
+  teleB1.clear();
+  for (const z of ZONE_B1) z.scala = 0;
+}
+
+/**
+ * ELEMENTI DI SCENA: una funzione di disegno per elemento, sulla tela `x` in px logici con l'origine in alto a
+ * sinistra dell'elemento (lo spettatore ha l'origine sul davanzale; il fiore si disegna sul canvas del gioco).
+ * Oggetto volutamente non congelato: chi collega le immagini vere sostituisce la voce, per esempio
+ *   ELEMENTI_B1.teloSipario = (x, w, h) => x.drawImage(immagine, 0, 0, w, h); invalidaTeleB1();
+ */
+const ELEMENTI_B1 = {
+  balconataFondo: disegnaBalconataFondoB1,       // (x, w, h) 640×54: parete e interno dei palchi in alto
+  balconataFronte: disegnaBalconataFronteB1,     // (x, w, h) 640×58: drappi, davanzali, colonnine, candele
+  palcoLatoFondo: disegnaPalcoLatoFondoB1,       // (x, w, h) 48×216: colonna di sinistra (a destra si specchia)
+  palcoLatoFronte: disegnaPalcoLatoFronteB1,     // (x, w, h) 48×216
+  spettatore: disegnaSagomaSpettatoreB1,         // (x, tipo, frontale) 40×46 con origine (20, 42)
+  aloneCandela: disegnaAloneCandelaB1,           // (x, w, h) 36×36
+  buioPlatea: disegnaBuioPlateaB1,               // (x, w, h) 640×26
+  teloSipario: disegnaTeloSiparioB1,             // (x, w, h) 320×360: telo di sinistra (il destro si specchia)
+  mantovana: disegnaMantovanaB1,                 // (x, w, h) 640×58
+  penombraSipario: disegnaPenombraSiparioB1,     // (x, w, h) 540×140
+  cartiglioSipario: disegnaCartiglioSiparioB1,   // (x, w, h) riquadro dei testi (SIPARIO_B1.riquadro)
+  fiore: disegnaFioreB1,                         // (x, y, angolo, alfa, chiaro) sul canvas del gioco
+};
+
 const SPRITE_SP_B1 = Object.freeze({ w: 40, h: 46, ox: 20, oy: 42, molt: 1.25 });
+
+/** ELEMENTO: sagoma ferma di uno spettatore a mezzo busto (guanti, occhi, ventaglio e binocolo si muovono a parte). */
+function disegnaSagomaSpettatoreB1(x, tipo, frontale) {
+  const S = sagomaSpettatoreB1(tipo, frontale);
+  x.lineJoin = 'round';
+  x.strokeStyle = COLORI_B1.contorno; x.lineWidth = 1.2;
+  for (const p of S.pezzi) x.stroke(p);
+  x.fillStyle = COLORI_B1.ombra;
+  for (const p of S.pezzi) x.fill(p);
+  for (const [p, col] of S.accenti) { x.fillStyle = col; x.fill(p); }
+}
 
 function telaSpettatoreB1(tipo, frontale) {
   const D = SPRITE_SP_B1;
-  return telaB1(`sp:${tipo}:${frontale ? 'f' : 'l'}`, D.w, D.h, (x) => {
-    const S = sagomaSpettatoreB1(tipo, frontale);
-    x.translate(D.ox, D.oy);
-    x.lineJoin = 'round';
-    x.strokeStyle = COLORI_B1.contorno; x.lineWidth = 1.2;
-    for (const p of S.pezzi) x.stroke(p);
-    x.fillStyle = COLORI_B1.ombra;
-    for (const p of S.pezzi) x.fill(p);
-    for (const [p, col] of S.accenti) { x.fillStyle = col; x.fill(p); }
-  }, D.molt);
+  return telaB1(`sp:${tipo}:${frontale ? 'f' : 'l'}`, D.w, D.h, (x) => { x.translate(D.ox, D.oy); ELEMENTI_B1.spettatore(x, tipo, frontale); }, D.molt);
 }
 
 const sagomeB1 = new Map();
@@ -804,122 +909,149 @@ function candelaB1(x, cx, y) {
 
 const candeleB1 = []; // posizioni degli aloni (riempite quando si disegnano le tele)
 
-function telaBalconataFondoB1() {
+/** ELEMENTO: balconata in alto, parte DIETRO agli spettatori (parete e interno buio dei palchi). */
+function disegnaBalconataFondoB1(x) {
   const A = PUBBLICO_B1.posti.alto, C = COLORI_B1;
-  return telaB1('alto:fondo', W, 54, (x) => {
-    const g = x.createLinearGradient(0, 0, 0, 50);
-    g.addColorStop(0, C.legnoScuro); g.addColorStop(1, C.legno);
-    x.fillStyle = g; x.fillRect(0, 0, W, 48);
-    for (let k = -7; k <= 7; k++) {
-      const cx = A.centro + k * A.passo, x0 = cx - 21;
-      x.beginPath(); x.moveTo(x0, 44); x.lineTo(x0, 15); x.quadraticCurveTo(cx, 1, x0 + 42, 15); x.lineTo(x0 + 42, 44); x.closePath();
-      x.fillStyle = C.interno; x.fill();
-      const lume = x.createRadialGradient(cx, 44, 2, cx, 44, 26);
-      lume.addColorStop(0, 'rgba(249, 176, 64, 0.16)'); lume.addColorStop(1, 'rgba(249, 176, 64, 0)');
-      x.fillStyle = lume; x.fill();
+  const g = x.createLinearGradient(0, 0, 0, 50);
+  g.addColorStop(0, C.legnoScuro); g.addColorStop(1, C.legno);
+  x.fillStyle = g; x.fillRect(0, 0, W, 48);
+  for (let k = -7; k <= 7; k++) {
+    const cx = A.centro + k * A.passo, x0 = cx - 21;
+    x.beginPath(); x.moveTo(x0, 44); x.lineTo(x0, 15); x.quadraticCurveTo(cx, 1, x0 + 42, 15); x.lineTo(x0 + 42, 44); x.closePath();
+    x.fillStyle = C.interno; x.fill();
+    const lume = x.createRadialGradient(cx, 44, 2, cx, 44, 26);
+    lume.addColorStop(0, 'rgba(249, 176, 64, 0.16)'); lume.addColorStop(1, 'rgba(249, 176, 64, 0)');
+    x.fillStyle = lume; x.fill();
+  }
+}
+
+function telaBalconataFondoB1() {
+  return telaB1('alto:fondo', W, 54, (x, w, h) => ELEMENTI_B1.balconataFondo(x, w, h));
+}
+
+/** ELEMENTO: balconata in alto, parte DAVANTI agli spettatori (drappi, davanzali, colonnine con le candele). */
+function disegnaBalconataFronteB1(x) {
+  const A = PUBBLICO_B1.posti.alto, C = COLORI_B1;
+  for (let k = -7; k <= 7; k++) {
+    const cx = A.centro + k * A.passo, x0 = cx - 21;
+    // drappo: chiuso dietro le Mani, a festone negli altri palchi
+    x.save();
+    x.beginPath(); x.moveTo(x0, 44); x.lineTo(x0, 15); x.quadraticCurveTo(cx, 1, x0 + 42, 15); x.lineTo(x0 + 42, 44); x.closePath(); x.clip();
+    if (A.chiusi.includes(k)) {
+      pieghetteB1(x, x0, 0, 42, 44, k, 3.2);
+      x.fillStyle = 'rgba(0, 0, 0, 0.35)'; x.fillRect(x0, 0, 42, 44);
+    } else {
+      x.fillStyle = C.vellutoPieno;
+      x.beginPath(); x.moveTo(x0, 0); x.lineTo(x0 + 42, 0); x.lineTo(x0 + 42, 17);
+      x.quadraticCurveTo(cx + 11, 23, cx, 13); x.quadraticCurveTo(cx - 11, 23, x0, 17); x.closePath(); x.fill();
+      x.strokeStyle = C.vellutoBuio; x.lineWidth = 0.8;
+      for (const d of [-13, -6, 6, 13]) { x.beginPath(); x.moveTo(cx + d, 4); x.quadraticCurveTo(cx + d * 0.9, 12, cx + d * 0.75, 17); x.stroke(); }
+      frangiaB1(x, [x0, 17], [cx - 11, 23], [cx, 13], 2.2);
+      frangiaB1(x, [cx, 13], [cx + 11, 23], [x0 + 42, 17], 2.2);
+      nappaB1(x, cx, 12, 0.5);
     }
-  });
+    x.restore();
+    davanzaleB1(x, x0 - 4, x0 + 46, 41, 6, 3);
+  }
+  for (let k = -8; k <= 7; k++) {
+    const px = A.centro + k * A.passo + 25;
+    const g = x.createLinearGradient(px - 4, 0, px + 4, 0);
+    g.addColorStop(0, C.legnoScuro); g.addColorStop(0.5, C.legnoLuce); g.addColorStop(1, C.legnoScuro);
+    x.fillStyle = g; x.fillRect(px - 4, 5, 8, 37);
+    x.fillStyle = C.oroScuro; x.fillRect(px - 4.5, 9, 9, 1); x.fillRect(px - 4.5, 38, 9, 1);
+    candelaB1(x, px, 28);
+  }
+  x.fillStyle = C.legnoScuro; x.fillRect(0, 0, W, 5);
+  x.fillStyle = C.oro; x.fillRect(0, 5, W, 1);
+  const om = x.createLinearGradient(0, 49, 0, 58);
+  om.addColorStop(0, 'rgba(0, 0, 0, 0.5)'); om.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  x.fillStyle = om; x.fillRect(0, 50, W, 8);
 }
 
 function telaBalconataFronteB1() {
-  const A = PUBBLICO_B1.posti.alto, C = COLORI_B1;
-  return telaB1('alto:fronte', W, 58, (x) => {
-    for (let k = -7; k <= 7; k++) {
-      const cx = A.centro + k * A.passo, x0 = cx - 21;
-      // drappo: chiuso dietro le Mani, a festone negli altri palchi
-      x.save();
-      x.beginPath(); x.moveTo(x0, 44); x.lineTo(x0, 15); x.quadraticCurveTo(cx, 1, x0 + 42, 15); x.lineTo(x0 + 42, 44); x.closePath(); x.clip();
-      if (A.chiusi.includes(k)) {
-        pieghetteB1(x, x0, 0, 42, 44, k, 3.2);
-        x.fillStyle = 'rgba(0, 0, 0, 0.35)'; x.fillRect(x0, 0, 42, 44);
-      } else {
-        x.fillStyle = C.vellutoPieno;
-        x.beginPath(); x.moveTo(x0, 0); x.lineTo(x0 + 42, 0); x.lineTo(x0 + 42, 17);
-        x.quadraticCurveTo(cx + 11, 23, cx, 13); x.quadraticCurveTo(cx - 11, 23, x0, 17); x.closePath(); x.fill();
-        x.strokeStyle = C.vellutoBuio; x.lineWidth = 0.8;
-        for (const d of [-13, -6, 6, 13]) { x.beginPath(); x.moveTo(cx + d, 4); x.quadraticCurveTo(cx + d * 0.9, 12, cx + d * 0.75, 17); x.stroke(); }
-        frangiaB1(x, [x0, 17], [cx - 11, 23], [cx, 13], 2.2);
-        frangiaB1(x, [cx, 13], [cx + 11, 23], [x0 + 42, 17], 2.2);
-        nappaB1(x, cx, 12, 0.5);
-      }
-      x.restore();
-      davanzaleB1(x, x0 - 4, x0 + 46, 41, 6, 3);
-    }
-    for (let k = -8; k <= 7; k++) {
-      const px = A.centro + k * A.passo + 25;
-      const g = x.createLinearGradient(px - 4, 0, px + 4, 0);
-      g.addColorStop(0, C.legnoScuro); g.addColorStop(0.5, C.legnoLuce); g.addColorStop(1, C.legnoScuro);
-      x.fillStyle = g; x.fillRect(px - 4, 5, 8, 37);
-      x.fillStyle = C.oroScuro; x.fillRect(px - 4.5, 9, 9, 1); x.fillRect(px - 4.5, 38, 9, 1);
-      candelaB1(x, px, 28);
-    }
-    x.fillStyle = C.legnoScuro; x.fillRect(0, 0, W, 5);
-    x.fillStyle = C.oro; x.fillRect(0, 5, W, 1);
-    const om = x.createLinearGradient(0, 49, 0, 58);
-    om.addColorStop(0, 'rgba(0, 0, 0, 0.5)'); om.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    x.fillStyle = om; x.fillRect(0, 50, W, 8);
-  });
+  return telaB1('alto:fronte', W, 58, (x, w, h) => ELEMENTI_B1.balconataFronte(x, w, h));
+}
+
+/** Altezza (px logici) della colonna dei palchi di proscenio. */
+function altezzaLatiB1() {
+  const L = PUBBLICO_B1.posti.lati;
+  return L.cornice + L.numero * L.altPalco + 6;
+}
+
+/** Arco di un palco laterale: percorso sulla tela `x`, y0 = cima del palco. */
+function arcoPalcoLatoB1(x, y0) {
+  x.beginPath(); x.moveTo(5, y0 + 53); x.lineTo(5, y0 + 17); x.quadraticCurveTo(24.5, y0 + 1, 44, y0 + 17); x.lineTo(44, y0 + 53); x.closePath();
+}
+
+/** ELEMENTO: colonna dei palchi di proscenio, parte DIETRO agli spettatori (parete e interno buio dei palchi). */
+function disegnaPalcoLatoFondoB1(x, w, h) {
+  const L = PUBBLICO_B1.posti.lati, C = COLORI_B1;
+  const g = x.createLinearGradient(0, 0, w, 0);
+  g.addColorStop(0, C.legnoScuro); g.addColorStop(1, C.legno);
+  x.fillStyle = g; x.fillRect(0, 0, w, h);
+  for (let i = 0; i < L.numero; i++) {
+    const y0 = L.cornice + i * L.altPalco;
+    arcoPalcoLatoB1(x, y0); x.fillStyle = C.interno; x.fill();
+    const lume = x.createLinearGradient(44, 0, 8, 0);
+    lume.addColorStop(0, 'rgba(249, 176, 64, 0.17)'); lume.addColorStop(1, 'rgba(249, 176, 64, 0)');
+    x.fillStyle = lume; x.fill();
+  }
+}
+
+/** ELEMENTO: colonna dei palchi di proscenio, parte DAVANTI agli spettatori (drappi, davanzali, cornici, candele). */
+function disegnaPalcoLatoFronteB1(x, w, h) {
+  const L = PUBBLICO_B1.posti.lati, C = COLORI_B1;
+  for (let i = 0; i < L.numero; i++) {
+    const y0 = L.cornice + i * L.altPalco;
+    x.save(); arcoPalcoLatoB1(x, y0); x.clip();
+    // festone in alto e telo raccolto sul lato esterno
+    x.fillStyle = C.vellutoPieno;
+    x.beginPath(); x.moveTo(5, y0); x.lineTo(44, y0); x.lineTo(44, y0 + 20);
+    x.quadraticCurveTo(35, y0 + 26, 24.5, y0 + 15); x.quadraticCurveTo(14, y0 + 26, 5, y0 + 20); x.closePath(); x.fill();
+    x.beginPath(); x.moveTo(5, y0 + 14); x.lineTo(12, y0 + 18); x.quadraticCurveTo(7.5, y0 + 36, 11, y0 + 53); x.lineTo(5, y0 + 53); x.closePath(); x.fill();
+    x.strokeStyle = C.vellutoBuio; x.lineWidth = 0.8;
+    for (const d of [-14, -7, 7, 14]) { x.beginPath(); x.moveTo(24.5 + d, y0 + 3); x.quadraticCurveTo(24.5 + d * 0.9, y0 + 13, 24.5 + d * 0.72, y0 + 20); x.stroke(); }
+    x.beginPath(); x.moveTo(8, y0 + 20); x.quadraticCurveTo(7, y0 + 36, 8.5, y0 + 52); x.stroke();
+    frangiaB1(x, [5, y0 + 20], [14, y0 + 26], [24.5, y0 + 15], 2.6);
+    frangiaB1(x, [24.5, y0 + 15], [35, y0 + 26], [44, y0 + 20], 2.6);
+    x.fillStyle = C.oro; x.fillRect(5, y0 + 35, 5.4, 1.4);
+    x.restore();
+    nappaB1(x, 24.5, y0 + 14, 0.62);
+    davanzaleB1(x, 1.5, 47, y0 + L.davanzale, 7, 3.6);
+    x.fillStyle = 'rgba(0, 0, 0, 0.4)'; x.fillRect(0, y0 + 64, w, 4);
+    candelaB1(x, 45.6, y0 + 33);
+  }
+  // cornice in alto, base, filetto d'oro verso il palco
+  x.fillStyle = C.legnoScuro; x.fillRect(0, 0, w, L.cornice - 1); x.fillRect(0, h - 6, w, 6);
+  x.fillStyle = C.oro; x.fillRect(0, L.cornice - 1.5, w, 1); x.fillRect(0, h - 6, w, 1);
+  x.fillStyle = C.oroScuro; x.fillRect(w - 1, 0, 1, h);
 }
 
 function telaLatoB1(fronte) {
-  const L = PUBBLICO_B1.posti.lati, C = COLORI_B1;
-  const alt = L.cornice + L.numero * L.altPalco + 6;
-  return telaB1(fronte ? 'lato:fronte' : 'lato:fondo', L.larg, alt, (x) => {
-    const arco = (y0) => { x.beginPath(); x.moveTo(5, y0 + 53); x.lineTo(5, y0 + 17); x.quadraticCurveTo(24.5, y0 + 1, 44, y0 + 17); x.lineTo(44, y0 + 53); x.closePath(); };
-    if (!fronte) {
-      const g = x.createLinearGradient(0, 0, L.larg, 0);
-      g.addColorStop(0, C.legnoScuro); g.addColorStop(1, C.legno);
-      x.fillStyle = g; x.fillRect(0, 0, L.larg, alt);
-      for (let i = 0; i < L.numero; i++) {
-        const y0 = L.cornice + i * L.altPalco;
-        arco(y0); x.fillStyle = C.interno; x.fill();
-        const lume = x.createLinearGradient(44, 0, 8, 0);
-        lume.addColorStop(0, 'rgba(249, 176, 64, 0.17)'); lume.addColorStop(1, 'rgba(249, 176, 64, 0)');
-        x.fillStyle = lume; x.fill();
-      }
-      return;
-    }
-    for (let i = 0; i < L.numero; i++) {
-      const y0 = L.cornice + i * L.altPalco;
-      x.save(); arco(y0); x.clip();
-      // festone in alto e telo raccolto sul lato esterno
-      x.fillStyle = C.vellutoPieno;
-      x.beginPath(); x.moveTo(5, y0); x.lineTo(44, y0); x.lineTo(44, y0 + 20);
-      x.quadraticCurveTo(35, y0 + 26, 24.5, y0 + 15); x.quadraticCurveTo(14, y0 + 26, 5, y0 + 20); x.closePath(); x.fill();
-      x.beginPath(); x.moveTo(5, y0 + 14); x.lineTo(12, y0 + 18); x.quadraticCurveTo(7.5, y0 + 36, 11, y0 + 53); x.lineTo(5, y0 + 53); x.closePath(); x.fill();
-      x.strokeStyle = C.vellutoBuio; x.lineWidth = 0.8;
-      for (const d of [-14, -7, 7, 14]) { x.beginPath(); x.moveTo(24.5 + d, y0 + 3); x.quadraticCurveTo(24.5 + d * 0.9, y0 + 13, 24.5 + d * 0.72, y0 + 20); x.stroke(); }
-      x.beginPath(); x.moveTo(8, y0 + 20); x.quadraticCurveTo(7, y0 + 36, 8.5, y0 + 52); x.stroke();
-      frangiaB1(x, [5, y0 + 20], [14, y0 + 26], [24.5, y0 + 15], 2.6);
-      frangiaB1(x, [24.5, y0 + 15], [35, y0 + 26], [44, y0 + 20], 2.6);
-      x.fillStyle = C.oro; x.fillRect(5, y0 + 35, 5.4, 1.4);
-      x.restore();
-      nappaB1(x, 24.5, y0 + 14, 0.62);
-      davanzaleB1(x, 1.5, 47, y0 + L.davanzale, 7, 3.6);
-      x.fillStyle = 'rgba(0, 0, 0, 0.4)'; x.fillRect(0, y0 + 64, L.larg, 4);
-      candelaB1(x, 45.6, y0 + 33);
-    }
-    // cornice in alto, base, filetto d'oro verso il palco
-    x.fillStyle = C.legnoScuro; x.fillRect(0, 0, L.larg, L.cornice - 1); x.fillRect(0, alt - 6, L.larg, 6);
-    x.fillStyle = C.oro; x.fillRect(0, L.cornice - 1.5, L.larg, 1); x.fillRect(0, alt - 6, L.larg, 1);
-    x.fillStyle = C.oroScuro; x.fillRect(L.larg - 1, 0, 1, alt);
-  });
+  return telaB1(fronte ? 'lato:fronte' : 'lato:fondo', PUBBLICO_B1.posti.lati.larg, altezzaLatiB1(),
+    (x, w, h) => (fronte ? ELEMENTI_B1.palcoLatoFronte : ELEMENTI_B1.palcoLatoFondo)(x, w, h));
+}
+
+/** ELEMENTO: alone caldo di una candela (si somma alla scena). */
+function disegnaAloneCandelaB1(x) {
+  const g = x.createRadialGradient(18, 18, 0.5, 18, 18, 18);
+  g.addColorStop(0, 'rgba(255, 214, 130, 0.55)'); g.addColorStop(0.35, 'rgba(249, 160, 60, 0.2)'); g.addColorStop(1, 'rgba(249, 160, 60, 0)');
+  x.fillStyle = g; x.fillRect(0, 0, 36, 36);
 }
 
 function telaAloneB1() {
-  return telaB1('alone', 36, 36, (x) => {
-    const g = x.createRadialGradient(18, 18, 0.5, 18, 18, 18);
-    g.addColorStop(0, 'rgba(255, 214, 130, 0.55)'); g.addColorStop(0.35, 'rgba(249, 160, 60, 0.2)'); g.addColorStop(1, 'rgba(249, 160, 60, 0)');
-    x.fillStyle = g; x.fillRect(0, 0, 36, 36);
-  });
+  return telaB1('alone', 36, 36, (x, w, h) => ELEMENTI_B1.aloneCandela(x, w, h));
+}
+
+/** ELEMENTO: buio della platea lungo il bordo basso. */
+function disegnaBuioPlateaB1(x) {
+  const g = x.createLinearGradient(0, 0, 0, 26);
+  g.addColorStop(0, 'rgba(5, 3, 2, 0)'); g.addColorStop(1, 'rgba(5, 3, 2, 0.7)');
+  x.fillStyle = g; x.fillRect(0, 0, W, 26);
 }
 
 function telaBuioPlateaB1() {
-  return telaB1('platea:buio', W, 26, (x) => {
-    const g = x.createLinearGradient(0, 0, 0, 26);
-    g.addColorStop(0, 'rgba(5, 3, 2, 0)'); g.addColorStop(1, 'rgba(5, 3, 2, 0.7)');
-    x.fillStyle = g; x.fillRect(0, 0, W, 26);
-  });
+  return telaB1('platea:buio', W, 26, (x, w, h) => ELEMENTI_B1.buioPlatea(x, w, h));
 }
 
 (function creaCandeleB1() {
@@ -934,7 +1066,8 @@ function telaBuioPlateaB1() {
 // ===========================================================================
 // DISEGNO DEL PUBBLICO
 // ===========================================================================
-function disegnaSpettatoreB1(s, t) {
+/** Uno spettatore sulla tela `x` della sua zona: sagoma in cache più ciò che si muove (occhi, binocolo, ventaglio, guanti). */
+function disegnaSpettatoreB1(x, s, t) {
   const P = pubblicoB1, U = P.umore, tens = P.tensione, C = COLORI_B1;
   if (s.presenza <= 0.03) return;
   const retro = s.zona === 'platea', frontale = s.dir === 0;
@@ -965,113 +1098,182 @@ function disegnaSpettatoreB1(s, t) {
     }
   }
   const specchio = (s.dir < 0) !== gira ? -1 : 1;
-  ctx.save();
-  ctx.translate(s.x + dx, s.y + dy);
-  if (rot) ctx.rotate(rot);
-  ctx.scale(s.scala * specchio, s.scala);
-  if (s.presenza < 0.97) ctx.globalAlpha = s.presenza;
+  x.save();
+  x.translate(s.x + dx, s.y + dy);
+  if (rot) x.rotate(rot);
+  x.scale(s.scala * specchio, s.scala);
+  if (s.presenza < 0.97) x.globalAlpha = s.presenza;
   const tela = telaSpettatoreB1(s.tipo, frontale), SP = SPRITE_SP_B1;
-  ctx.drawImage(tela, -SP.ox, -SP.oy, SP.w, SP.h);
+  x.drawImage(tela, -SP.ox, -SP.oy, SP.w, SP.h);
 
   // binocolo da teatro: alzato quando c'è tensione o ogni tanto
   let binocoloSu = false;
   if (s.tipo === 'binocolo') {
     binocoloSu = tens > 0.4 || (t + s.indice * 53) % 420 < 150;
     if (binocoloSu) {
-      ctx.fillStyle = C.ombra; ctx.strokeStyle = C.oroScuro; ctx.lineWidth = 0.5;
-      if (frontale) { ctx.fillRect(-3.6, D.cy - 1.9, 3, 2.6); ctx.fillRect(0.6, D.cy - 1.9, 3, 2.6); ctx.strokeRect(-3.6, D.cy - 1.9, 3, 2.6); ctx.strokeRect(0.6, D.cy - 1.9, 3, 2.6); }
-      else { ctx.fillRect(D.hx + 2.2, D.cy - 2, 5.6, 2.6); ctx.strokeRect(D.hx + 2.2, D.cy - 2, 5.6, 2.6); }
-      ctx.fillStyle = C.oroLuce;
-      if (frontale) { ctx.fillRect(-2.5, D.cy - 1, 0.8, 0.8); ctx.fillRect(1.7, D.cy - 1, 0.8, 0.8); } else ctx.fillRect(D.hx + 7, D.cy - 1.2, 0.9, 0.9);
+      x.fillStyle = C.ombra; x.strokeStyle = C.oroScuro; x.lineWidth = 0.5;
+      if (frontale) { x.fillRect(-3.6, D.cy - 1.9, 3, 2.6); x.fillRect(0.6, D.cy - 1.9, 3, 2.6); x.strokeRect(-3.6, D.cy - 1.9, 3, 2.6); x.strokeRect(0.6, D.cy - 1.9, 3, 2.6); }
+      else { x.fillRect(D.hx + 2.2, D.cy - 2, 5.6, 2.6); x.strokeRect(D.hx + 2.2, D.cy - 2, 5.6, 2.6); }
+      x.fillStyle = C.oroLuce;
+      if (frontale) { x.fillRect(-2.5, D.cy - 1, 0.8, 0.8); x.fillRect(1.7, D.cy - 1, 0.8, 0.8); } else x.fillRect(D.hx + 7, D.cy - 1.2, 0.9, 0.9);
     }
   }
   // occhi accesi nel buio (si spengono a ogni battito di ciglia)
   if (D.occhi && !binocoloSu && (t + s.indice * 37) % s.battito > 5) {
     const r = 0.72 + 0.45 * tens;
-    ctx.fillStyle = C.occhi;
-    ctx.beginPath();
-    ctx.arc(D.occhi[0][0], D.occhi[0][1], r, 0, TAU);
-    ctx.moveTo(D.occhi[1][0] + r, D.occhi[1][1]);
-    ctx.arc(D.occhi[1][0], D.occhi[1][1], r, 0, TAU);
-    ctx.fill();
+    x.fillStyle = C.occhi;
+    x.beginPath();
+    x.arc(D.occhi[0][0], D.occhi[0][1], r, 0, TAU);
+    x.moveTo(D.occhi[1][0] + r, D.occhi[1][1]);
+    x.arc(D.occhi[1][0], D.occhi[1][1], r, 0, TAU);
+    x.fill();
   }
   // ventaglio
   if (s.tipo === 'ventaglio') {
     const copre = attivo && U.tipo === 'mormorio';
     const chiuso = tens > 0.5;
     const px = frontale ? 6 : 6.5, py = copre ? -10.5 : -6.5;
-    ctx.save();
-    ctx.translate(px, py);
-    ctx.rotate(-1.25 + (copre ? -0.3 : 0) + (chiuso ? 0 : Math.sin(t * 0.33 + s.fase * 9) * 0.2));
-    ctx.fillStyle = C.vellutoChiaro; ctx.strokeStyle = C.oro; ctx.lineWidth = 0.5;
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 7.4, chiuso ? -0.1 : -0.85, chiuso ? 0.1 : 0.85); ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.restore();
+    x.save();
+    x.translate(px, py);
+    x.rotate(-1.25 + (copre ? -0.3 : 0) + (chiuso ? 0 : Math.sin(t * 0.33 + s.fase * 9) * 0.2));
+    x.fillStyle = C.vellutoChiaro; x.strokeStyle = C.oro; x.lineWidth = 0.5;
+    x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, 7.4, chiuso ? -0.1 : -0.85, chiuso ? 0.1 : 0.85); x.closePath();
+    x.fill(); x.stroke();
+    x.restore();
   }
   // guanti chiari: battimani, braccia alzate, mano alla bocca, gesto del lancio
-  ctx.fillStyle = C.crema;
+  x.fillStyle = C.crema;
   if (s.lancioT > 0) {
     const q = 1 - s.lancioT / PUBBLICO_B1.lancio.gestoTick, su = Math.sin(q * Math.PI);
-    ctx.beginPath();
-    if (retro) ctx.ellipse(3, -15 - su * 14, 1.6, 1.4, 0, 0, TAU);
-    else if (frontale) ctx.ellipse(4 + q * 2, -9 - su * 13, 1.6, 1.4, 0, 0, TAU);
-    else ctx.ellipse(3 + q * 8, -10 - su * 12, 1.6, 1.4, 0, 0, TAU);
-    ctx.fill();
+    x.beginPath();
+    if (retro) x.ellipse(3, -15 - su * 14, 1.6, 1.4, 0, 0, TAU);
+    else if (frontale) x.ellipse(4 + q * 2, -9 - su * 13, 1.6, 1.4, 0, 0, TAU);
+    else x.ellipse(3 + q * 8, -10 - su * 12, 1.6, 1.4, 0, 0, TAU);
+    x.fill();
   } else if (mani === 1) {
     const d = 0.5 + 2.6 * (0.5 + 0.5 * Math.sin(a * 1.9));
     const my = retro ? -24.5 : frontale ? -7.2 : -8.6, mx = retro || frontale ? 0 : 5;
-    ctx.beginPath();
-    ctx.ellipse(mx - d - 0.5, my, 1.5, 1.3, 0, 0, TAU);
-    ctx.moveTo(mx + d + 2, my);
-    ctx.ellipse(mx + d + 0.5, my, 1.5, 1.3, 0, 0, TAU);
-    ctx.fill();
+    x.beginPath();
+    x.ellipse(mx - d - 0.5, my, 1.5, 1.3, 0, 0, TAU);
+    x.moveTo(mx + d + 2, my);
+    x.ellipse(mx + d + 0.5, my, 1.5, 1.3, 0, 0, TAU);
+    x.fill();
   } else if (mani === 2) {
-    ctx.beginPath();
-    ctx.ellipse(-5.4 + Math.sin(a) * 1.5, -25 - Math.abs(Math.sin(a * 0.7)) * 2.4, 1.5, 1.3, 0, 0, TAU);
-    ctx.moveTo(7, -25);
-    ctx.ellipse(5.4 + Math.sin(a + 1) * 1.5, -25 - Math.abs(Math.cos(a * 0.7)) * 2.4, 1.5, 1.3, 0, 0, TAU);
-    ctx.fill();
+    x.beginPath();
+    x.ellipse(-5.4 + Math.sin(a) * 1.5, -25 - Math.abs(Math.sin(a * 0.7)) * 2.4, 1.5, 1.3, 0, 0, TAU);
+    x.moveTo(7, -25);
+    x.ellipse(5.4 + Math.sin(a + 1) * 1.5, -25 - Math.abs(Math.cos(a * 0.7)) * 2.4, 1.5, 1.3, 0, 0, TAU);
+    x.fill();
   } else if (bocca && !retro) {
-    ctx.beginPath();
-    ctx.ellipse(frontale ? 1.4 : D.hx + 3.6, D.cy + 2.5, 1.5, 1.3, 0, 0, TAU);
-    ctx.fill();
+    x.beginPath();
+    x.ellipse(frontale ? 1.4 : D.hx + 3.6, D.cy + 2.5, 1.5, 1.3, 0, 0, TAU);
+    x.fill();
   }
-  ctx.restore();
+  x.restore();
 }
 
-/** Balconata, palchi di proscenio e platea: fondo, spettatori, davanzali, aloni delle candele. */
+/**
+ * Zone del pubblico: balconata, palchi di sinistra, palchi di destra, platea. Ognuna ha la sua tela composta
+ * (fondo, sagome, davanzali, lumi) alla risoluzione del buffer; `posti` e `candele` sono quelli che le cadono dentro.
+ */
+const ZONE_B1 = (() => {
+  const L = PUBBLICO_B1.posti.lati, R = PUBBLICO_B1.resa, largL = L.larg + R.sbalzoLati;
+  return [
+    { nome: 'alto', x: 0, y: 0, w: W, h: R.altoAlt },
+    { nome: 'sx', x: 0, y: L.y, w: largL, h: altezzaLatiB1() },
+    { nome: 'dx', x: W - largL, y: L.y, w: largL, h: altezzaLatiB1() },
+    { nome: 'platea', x: 0, y: H - R.plateaAlt, w: W, h: R.plateaAlt },
+  ].map((z, indice) => ({
+    ...z, indice, tela: null, cx: null, scala: 0, px: 0, py: 0, tick: -1e9, tensione: 0,
+    posti: postiB1.filter((s) => s.zona === z.nome),
+    candele: candeleB1.filter((c) => c[0] >= z.x && c[0] < z.x + z.w && c[1] >= z.y && c[1] < z.y + z.h),
+  }));
+})();
+
+/** Nella zona qualcuno si muove davvero (reazione, lancio, tensione che cambia, chi entra o esce) e non il solo respiro? */
+function zonaVivaB1(z) {
+  const P = pubblicoB1, U = P.umore;
+  if (Math.abs(P.tensione - z.tensione) > 0.004) return true;
+  for (const s of z.posti) {
+    if (s.lancioT > 0 || Math.abs(s.presenza - (s.dentro ? 1 : 0)) > 0.01) return true;
+    if (U.t > 0 && s.presenza > 0.03 && s.estro <= U.forza) return true;
+  }
+  return false;
+}
+
+/** Ciò che in una zona sta DIETRO agli spettatori. */
+function disegnaFondoZonaB1(x, z) {
+  const L = PUBBLICO_B1.posti.lati, altL = altezzaLatiB1();
+  if (z.nome === 'alto') x.drawImage(telaBalconataFondoB1(), 0, 0, W, 54);
+  else if (z.nome === 'sx') x.drawImage(telaLatoB1(false), 0, L.y, L.larg, altL);
+  else if (z.nome === 'dx') { x.save(); x.translate(W, 0); x.scale(-1, 1); x.drawImage(telaLatoB1(false), 0, L.y, L.larg, altL); x.restore(); }
+  else x.drawImage(telaBuioPlateaB1(), 0, H - 26, W, 26);
+}
+
+/** Ciò che in una zona sta DAVANTI agli spettatori (la platea non ha nulla davanti). */
+function disegnaFronteZonaB1(x, z) {
+  const L = PUBBLICO_B1.posti.lati, altL = altezzaLatiB1();
+  if (z.nome === 'alto') x.drawImage(telaBalconataFronteB1(), 0, 0, W, 58);
+  else if (z.nome === 'sx') x.drawImage(telaLatoB1(true), 0, L.y, L.larg, altL);
+  else if (z.nome === 'dx') { x.save(); x.translate(W, 0); x.scale(-1, 1); x.drawImage(telaLatoB1(true), 0, L.y, L.larg, altL); x.restore(); }
+}
+
+/** Aloni tremolanti delle candele di una zona (luce di lanterna). */
+function disegnaLumiZonaB1(x, z, t) {
+  if (!z.candele.length) return;
+  const alone = telaAloneB1();
+  x.globalCompositeOperation = 'lighter';
+  for (const c of z.candele) {
+    x.globalAlpha = 0.62 + 0.2 * Math.sin(t * 0.31 + c[0] * 1.7) * Math.sin(t * 0.13 + c[1]);
+    x.drawImage(alone, c[0] - 18, c[1] - 18, 36, 36);
+  }
+  x.globalAlpha = 1;
+  x.globalCompositeOperation = 'source-over';
+}
+
+/** Ricompone la tela di una zona al tick `t`: fondo, spettatori, davanzali, lumi. */
+function ridisegnaZonaB1(z, t) {
+  const s = scalaBase;
+  if (!z.tela) { z.tela = document.createElement('canvas'); z.cx = z.tela.getContext('2d'); z.scala = 0; }
+  if (z.scala !== s) { // tela allineata ai pixel del buffer: la copia non sfoca
+    z.px = Math.floor(z.x * s); z.py = Math.floor(z.y * s);
+    z.tela.width = Math.max(1, Math.ceil((z.x + z.w) * s) - z.px);
+    z.tela.height = Math.max(1, Math.ceil((z.y + z.h) * s) - z.py);
+    z.scala = s;
+  }
+  const x = z.cx;
+  x.setTransform(1, 0, 0, 1, 0, 0);
+  x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
+  x.clearRect(0, 0, z.tela.width, z.tela.height);
+  x.setTransform(s, 0, 0, s, -z.px, -z.py);
+  x.imageSmoothingEnabled = true;
+  disegnaFondoZonaB1(x, z);
+  for (const p of z.posti) disegnaSpettatoreB1(x, p, t);
+  disegnaFronteZonaB1(x, z);
+  disegnaLumiZonaB1(x, z, t);
+  z.tick = t; z.tensione = pubblicoB1.tensione;
+  pubblicoB1.conti.ridisegni++;
+}
+
+/**
+ * Balconata, palchi di proscenio e platea. A ogni frame si copiano le quattro tele di zona; una zona si
+ * ricompone solo quando tocca a lei (PUBBLICO_B1.resa): il pubblico calmo costa quattro copie per frame.
+ */
 function disegnaTeatroB1(t) {
   if (!OPZIONI.pubblico) return;
-  const P = pubblicoB1, L = PUBBLICO_B1.posti.lati;
-  P.conti.disegni++;
-  const fondoA = telaBalconataFondoB1(), fronteA = telaBalconataFronteB1();
-  const fondoL = telaLatoB1(false), fronteL = telaLatoB1(true);
-  const altL = L.cornice + L.numero * L.altPalco + 6;
+  const R = PUBBLICO_B1.resa, s = scalaBase;
+  pubblicoB1.conti.disegni++;
   ctx.save();
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(fondoA, 0, 0, W, 54);
-  ctx.drawImage(fondoL, 0, L.y, L.larg, altL);
-  ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1); ctx.drawImage(fondoL, 0, L.y, L.larg, altL); ctx.restore();
-  for (const s of postiB1) if (s.zona !== 'platea') disegnaSpettatoreB1(s, t);
-  ctx.drawImage(fronteA, 0, 0, W, 58);
-  ctx.drawImage(fronteL, 0, L.y, L.larg, altL);
-  ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1); ctx.drawImage(fronteL, 0, L.y, L.larg, altL); ctx.restore();
-  // aloni delle candele (luce di lanterna)
-  const alone = telaAloneB1();
-  ctx.globalCompositeOperation = 'lighter';
-  for (let i = 0; i < candeleB1.length; i++) {
-    const c = candeleB1[i];
-    ctx.globalAlpha = 0.62 + 0.2 * Math.sin(t * 0.31 + i * 1.7) * Math.sin(t * 0.13 + i);
-    ctx.drawImage(alone, c[0] - 18, c[1] - 18, 36, 36);
+  for (const z of ZONE_B1) {
+    const ogni = zonaVivaB1(z) ? R.ogniTickVivo : R.ogniTickFermo;
+    if (!z.tela || z.scala !== s || t < z.tick || t - z.tick >= ogni || (t !== z.tick && (t + z.indice) % ogni === 0)) ridisegnaZonaB1(z, t);
+    ctx.drawImage(z.tela, z.px / s, z.py / s, z.tela.width / s, z.tela.height / s);
   }
-  ctx.globalAlpha = 1;
-  ctx.globalCompositeOperation = 'source-over';
-  // platea: teste di spalle lungo il bordo basso
-  ctx.drawImage(telaBuioPlateaB1(), 0, H - 26, W, 26);
-  for (const s of postiB1) if (s.zona === 'platea') disegnaSpettatoreB1(s, t);
   ctx.restore();
 }
 
+/** ELEMENTO: un fiore lanciato dal pubblico, sul canvas del gioco in (x, y). */
 function disegnaFioreB1(x, y, ang, alfa, chiaro) {
   ctx.save();
   ctx.translate(x, y); ctx.rotate(ang);
@@ -1091,7 +1293,7 @@ function disegnaFioriATerraB1() {
   for (const f of pubblicoB1.fiori) {
     if (f.t < f.durata) continue;
     const resto = f.durata + F.vitaTick - f.t;
-    disegnaFioreB1(f.tx, f.ty, f.giro, 0.85 * Math.min(1, resto / F.dissolvenzaTick), f.chiaro);
+    ELEMENTI_B1.fiore(f.tx, f.ty, f.giro, 0.85 * Math.min(1, resto / F.dissolvenzaTick), f.chiaro);
   }
 }
 
@@ -1111,6 +1313,7 @@ function disegnaVoliB1(st) {
       ctx.fillStyle = `rgba(0, 0, 0, ${(0.16 + 0.26 * vic).toFixed(2)})`;
       ctx.beginPath(); ctx.ellipse(gx, gy + 6, 3.2 + 2.6 * vic, 1.3 + 0.9 * vic, 0, 0, TAU); ctx.fill();
     }
+    if (v.forziere) { disegnaForziereInVoloB1(pk, gx, gy - h); continue; }
     const griglia = SPRITE_OGGETTI[pk.sprite] || SPRITE_OGGETTI.moneta1;
     if (pk.tipo === 'moneta') {
       const c = Math.cos(V.giro + (V.fase === 0 ? V.t * 0.45 : 0));
@@ -1128,7 +1331,7 @@ function disegnaVoliB1(st) {
   for (const f of P.fiori) {
     if (f.t < 0 || f.t >= f.durata) continue;
     const u = f.t / f.durata;
-    disegnaFioreB1(f.x0 + (f.tx - f.x0) * u, f.y0 + (f.ty - f.y0) * u - 4 * F.apicePx * u * (1 - u), f.giro + f.t * 0.35, 1, f.chiaro);
+    ELEMENTI_B1.fiore(f.x0 + (f.tx - f.x0) * u, f.y0 + (f.ty - f.y0) * u - 4 * F.apicePx * u * (1 - u), f.giro + f.t * 0.35, 1, f.chiaro);
   }
   const Vc = PUBBLICO_B1.voci;
   for (const v of P.voci) {
@@ -1139,6 +1342,15 @@ function disegnaVoliB1(st) {
     drawTextFit(v.testo, v.x, v.y - u * Vc.salitaPx, 46, { size: 7, color: v.colore, style: 'italic' });
     ctx.restore();
   }
+}
+
+/** Un forziere di A1 in volo: il disegno è quello di A1 (senza la sua ombra, che resta a terra). */
+function disegnaForziereInVoloB1(f, x, y) {
+  if (typeof disegnaForziereA1 !== 'function') return;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x - 12.5, y - 16, 25, 23.2); ctx.clip();
+  f.x = x; f.y = y;
+  try { disegnaForziereA1(f); } finally { f.x = PARCHEGGIO_B1; f.y = PARCHEGGIO_B1; ctx.restore(); }
 }
 
 /** Fiori (solo scena) lanciati attorno a Ferruccio. A stanza con nemici vivi non si lanciano. */
@@ -1156,88 +1368,151 @@ function lanciaFioriB1(quanti) {
   }
 }
 
-/** Un'interiezione sopra un palco laterale o in platea. */
+/** Riquadro (px logici) che un'interiezione occupa per tutta la sua salita: serve a non sovrapporle. */
+function riquadroVoceB1(v) {
+  const V = PUBBLICO_B1.voci, m = Math.min(V.largMax, v.testo.length * V.largCarattere) / 2 + V.aria;
+  return { x0: v.x - m, x1: v.x + m, y0: v.y - V.salitaPx - V.altRiga, y1: v.y + V.aria };
+}
+
+/** Nessuna interiezione ancora in scena tocca il riquadro `q`? */
+function voceLiberaB1(q) {
+  for (const v of pubblicoB1.voci) {
+    const o = riquadroVoceB1(v);
+    if (q.x0 < o.x1 && o.x0 < q.x1 && q.y0 < o.y1 && o.y0 < q.y1) return false;
+  }
+  return true;
+}
+
+/**
+ * Un'interiezione sopra un palco laterale o in platea, mai sovrapposta a un'altra né sopra il dock: se non
+ * trova posto dopo PUBBLICO_B1.voci.tentativi prove, questa volta il pubblico tace.
+ * @returns {boolean} true se è partita
+ */
 function aggiungiVoceB1(tipo, ordine) {
   const P = pubblicoB1, V = PUBBLICO_B1.voci;
   const elenco = TESTI_B1.voci[tipo];
-  if (!elenco || P.voci.length >= V.max) return;
-  let s = null;
-  for (let k = 0; k < 8 && !s; k++) { const c = postiB1[Math.floor(rndB1() * postiB1.length)]; if (c.zona !== 'alto' && c.presenza > 0.6) s = c; }
-  if (!s) return;
-  const lato = s.zona !== 'platea';
-  P.voci.push({
-    testo: elenco[Math.floor(rndB1() * elenco.length)],
-    x: lato ? (s.zona === 'sx' ? 25 : W - 25) : limitaB1(s.x, 330, W - 70),
-    y: lato ? s.y - 37 : H - 21 - (ordine % 2) * 8,
-    t: -ordine * 9,
-    colore: tipo === 'fischi' || tipo === 'mormorio' ? '#d6b99a' : COLORI_B1.oroLuce,
-  });
+  if (!elenco || P.voci.length >= V.max) return false;
+  const testo = elenco[Math.floor(rndB1() * elenco.length)];
+  const mezza = Math.min(V.largMax, testo.length * V.largCarattere) / 2 + V.aria;
+  const sinistra = Math.max(V.plateaDaX, bordoDockB1() + PUBBLICO_B1.dock.margine) + mezza, destra = W - V.plateaMargineDx - mezza;
+  const colore = tipo === 'fischi' || tipo === 'mormorio' ? '#d6b99a' : COLORI_B1.oroLuce;
+  for (let k = 0; k < V.tentativi; k++) {
+    const s = postiB1[Math.floor(rndB1() * postiB1.length)];
+    if (s.zona === 'alto' || s.presenza <= 0.6) continue;
+    const lato = s.zona !== 'platea';
+    if (!lato && sinistra > destra) continue;
+    const v = {
+      testo, colore, t: -ordine * V.scartoTick,
+      x: lato ? (s.zona === 'sx' ? V.latoX : W - V.latoX) : limitaB1(s.x, sinistra, destra),
+      y: lato ? s.y - V.latoSu : H - V.plateaSu[(ordine + k) % V.plateaSu.length],
+    };
+    if (!voceLiberaB1(riquadroVoceB1(v))) continue;
+    P.voci.push(v);
+    return true;
+  }
+  return false;
 }
 
 // ===========================================================================
 // SIPARIO DI VELLUTO
 // ===========================================================================
-function telaVellutoB1() {
+/** ELEMENTO: telo di sinistra del sipario (mezzo palco × altezza), col gallone sul bordo che si apre. */
+function disegnaTeloSiparioB1(x) {
   const C = COLORI_B1, meta = W / 2;
-  return telaB1('sipario:telo', meta, H, (x) => {
-    pieghetteB1(x, 0, 0, meta, H, 0.6);
-    const alto = x.createLinearGradient(0, 0, 0, 120);
-    alto.addColorStop(0, 'rgba(0, 0, 0, 0.5)'); alto.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    x.fillStyle = alto; x.fillRect(0, 0, meta, 120);
-    const ribalta = x.createLinearGradient(0, 240, 0, H);
-    ribalta.addColorStop(0, 'rgba(255, 170, 80, 0)'); ribalta.addColorStop(1, 'rgba(255, 170, 80, 0.13)');
-    x.fillStyle = ribalta; x.fillRect(0, 240, meta, H - 240);
-    // ricamo a rombi sopra l'orlo
-    x.fillStyle = 'rgba(201, 149, 46, 0.75)';
-    for (let i = 10; i < meta; i += 18) { x.save(); x.translate(i, H - 26); x.rotate(Math.PI / 4); x.fillRect(-1.8, -1.8, 3.6, 3.6); x.restore(); }
-    x.fillStyle = 'rgba(201, 149, 46, 0.55)'; x.fillRect(0, H - 33, meta, 0.8); x.fillRect(0, H - 19.5, meta, 0.8);
-    // gallone e frangia dorata
-    x.fillStyle = C.oroScuro; x.fillRect(0, H - 16, meta, 4);
-    x.fillStyle = C.oroLuce; x.fillRect(0, H - 15, meta, 1.4);
-    for (let i = 0, n = 0; i < meta; i += 1.5, n++) {
-      x.fillStyle = n % 2 ? C.oro : C.oroScuro;
-      x.fillRect(i, H - 12, 0.9, 10.5 + Math.sin(i * 1.3) * 1.3);
+  pieghetteB1(x, 0, 0, meta, H, 0.6);
+  const alto = x.createLinearGradient(0, 0, 0, 120);
+  alto.addColorStop(0, 'rgba(0, 0, 0, 0.5)'); alto.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  x.fillStyle = alto; x.fillRect(0, 0, meta, 120);
+  const ribalta = x.createLinearGradient(0, 240, 0, H);
+  ribalta.addColorStop(0, 'rgba(255, 170, 80, 0)'); ribalta.addColorStop(1, 'rgba(255, 170, 80, 0.13)');
+  x.fillStyle = ribalta; x.fillRect(0, 240, meta, H - 240);
+  // ricamo a rombi sopra l'orlo
+  x.fillStyle = 'rgba(201, 149, 46, 0.75)';
+  for (let i = 10; i < meta; i += 18) { x.save(); x.translate(i, H - 26); x.rotate(Math.PI / 4); x.fillRect(-1.8, -1.8, 3.6, 3.6); x.restore(); }
+  x.fillStyle = 'rgba(201, 149, 46, 0.55)'; x.fillRect(0, H - 33, meta, 0.8); x.fillRect(0, H - 19.5, meta, 0.8);
+  // gallone e frangia dorata
+  x.fillStyle = C.oroScuro; x.fillRect(0, H - 16, meta, 4);
+  x.fillStyle = C.oroLuce; x.fillRect(0, H - 15, meta, 1.4);
+  for (let i = 0, n = 0; i < meta; i += 1.5, n++) {
+    x.fillStyle = n % 2 ? C.oro : C.oroScuro;
+    x.fillRect(i, H - 12, 0.9, 10.5 + Math.sin(i * 1.3) * 1.3);
+  }
+  // gallone lungo il bordo che si apre
+  x.fillStyle = C.oroScuro; x.fillRect(meta - 5, 0, 4, H - 12);
+  x.fillStyle = C.oroLuce; x.fillRect(meta - 4, 0, 1.3, H - 12);
+  x.fillStyle = 'rgba(0, 0, 0, 0.3)'; x.fillRect(meta - 1, 0, 1, H);
+}
+
+function telaVellutoB1() {
+  return telaB1('sipario:telo', W / 2, H, (x, w, h) => ELEMENTI_B1.teloSipario(x, w, h));
+}
+
+/** ELEMENTO: mantovana a festoni in cima al sipario. */
+function disegnaMantovanaB1(x) {
+  const C = COLORI_B1;
+  pieghetteB1(x, 0, 6, W, 18, 2.1, 1.6);
+  const n = 5, larg = W / n;
+  for (let k = 0; k < n; k++) {
+    const x0 = k * larg, mx = x0 + larg / 2;
+    x.fillStyle = C.vellutoPieno;
+    x.beginPath(); x.moveTo(x0, 16); x.lineTo(x0 + larg, 16); x.lineTo(x0 + larg, 23); x.quadraticCurveTo(mx, 59, x0, 23); x.closePath(); x.fill();
+    for (let f = 1; f <= 4; f++) {
+      x.strokeStyle = f % 2 ? 'rgba(42, 6, 5, 0.8)' : 'rgba(146, 33, 22, 0.55)'; x.lineWidth = 1.3;
+      x.beginPath(); x.moveTo(x0 + f * 7, 18); x.quadraticCurveTo(mx, 18 + (59 - 18) * (1 - f * 0.19), x0 + larg - f * 7, 18); x.stroke();
     }
-    // gallone lungo il bordo che si apre
-    x.fillStyle = C.oroScuro; x.fillRect(meta - 5, 0, 4, H - 12);
-    x.fillStyle = C.oroLuce; x.fillRect(meta - 4, 0, 1.3, H - 12);
-    x.fillStyle = 'rgba(0, 0, 0, 0.3)'; x.fillRect(meta - 1, 0, 1, H);
-  });
+    frangiaB1(x, [x0, 23], [mx, 59], [x0 + larg, 23], 4);
+  }
+  const om = x.createLinearGradient(0, 6, 0, 22);
+  om.addColorStop(0, 'rgba(0, 0, 0, 0.45)'); om.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  x.fillStyle = om; x.fillRect(0, 6, W, 16);
+  for (let k = 0; k <= n; k++) nappaB1(x, limitaB1(k * larg, 4, W - 4), 21, 1);
+  x.fillStyle = C.legnoScuro; x.fillRect(0, 0, W, 7);
+  x.fillStyle = C.oro; x.fillRect(0, 6, W, 1.2);
+  x.fillStyle = C.oroScuro; x.fillRect(0, 2.5, W, 0.8);
 }
 
 function telaMantovanaB1() {
-  const C = COLORI_B1;
-  return telaB1('sipario:mantovana', W, 58, (x) => {
-    pieghetteB1(x, 0, 6, W, 18, 2.1, 1.6);
-    const n = 5, larg = W / n;
-    for (let k = 0; k < n; k++) {
-      const x0 = k * larg, mx = x0 + larg / 2;
-      x.fillStyle = C.vellutoPieno;
-      x.beginPath(); x.moveTo(x0, 16); x.lineTo(x0 + larg, 16); x.lineTo(x0 + larg, 23); x.quadraticCurveTo(mx, 59, x0, 23); x.closePath(); x.fill();
-      for (let f = 1; f <= 4; f++) {
-        x.strokeStyle = f % 2 ? 'rgba(42, 6, 5, 0.8)' : 'rgba(146, 33, 22, 0.55)'; x.lineWidth = 1.3;
-        x.beginPath(); x.moveTo(x0 + f * 7, 18); x.quadraticCurveTo(mx, 18 + (59 - 18) * (1 - f * 0.19), x0 + larg - f * 7, 18); x.stroke();
-      }
-      frangiaB1(x, [x0, 23], [mx, 59], [x0 + larg, 23], 4);
-    }
-    const om = x.createLinearGradient(0, 6, 0, 22);
-    om.addColorStop(0, 'rgba(0, 0, 0, 0.45)'); om.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    x.fillStyle = om; x.fillRect(0, 6, W, 16);
-    for (let k = 0; k <= n; k++) nappaB1(x, limitaB1(k * larg, 4, W - 4), 21, 1);
-    x.fillStyle = C.legnoScuro; x.fillRect(0, 0, W, 7);
-    x.fillStyle = C.oro; x.fillRect(0, 6, W, 1.2);
-    x.fillStyle = C.oroScuro; x.fillRect(0, 2.5, W, 0.8);
-  });
+  return telaB1('sipario:mantovana', W, 58, (x, w, h) => ELEMENTI_B1.mantovana(x, w, h));
+}
+
+/** ELEMENTO: penombra morbida dietro il cartiglio dei testi. */
+function disegnaPenombraSiparioB1(x) {
+  x.save(); x.translate(270, 70); x.scale(1, 70 / 270);
+  const g = x.createRadialGradient(0, 0, 40, 0, 0, 270);
+  g.addColorStop(0, 'rgba(8, 2, 2, 0.62)'); g.addColorStop(0.7, 'rgba(8, 2, 2, 0.4)'); g.addColorStop(1, 'rgba(8, 2, 2, 0)');
+  x.fillStyle = g; x.fillRect(-270, -270, 540, 540);
+  x.restore();
 }
 
 function telaPenombraB1() {
-  return telaB1('sipario:penombra', 540, 140, (x) => {
-    x.save(); x.translate(270, 70); x.scale(1, 70 / 270);
-    const g = x.createRadialGradient(0, 0, 40, 0, 0, 270);
-    g.addColorStop(0, 'rgba(8, 2, 2, 0.62)'); g.addColorStop(0.7, 'rgba(8, 2, 2, 0.4)'); g.addColorStop(1, 'rgba(8, 2, 2, 0)');
-    x.fillStyle = g; x.fillRect(-270, -270, 540, 540);
-    x.restore();
-  });
+  return telaB1('sipario:penombra', 540, 140, (x, w, h) => ELEMENTI_B1.penombraSipario(x, w, h));
+}
+
+/** ELEMENTO: cartiglio dei testi, uno stendardo di velluto scuro appeso davanti ai teli (w×h px logici). */
+function disegnaCartiglioSiparioB1(x, w, h) {
+  const g = x.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#210a07'); g.addColorStop(1, '#140504');
+  x.fillStyle = g; x.fillRect(0, 0, w, h);
+  // pieghe appena accennate: è stoffa pesante, non un cartello
+  for (let i = 0; i < w; i += 2) {
+    const p = 0.6 * Math.sin(i * 0.105 + 1.3) + 0.4 * Math.sin(i * 0.031 + 0.4);
+    x.fillStyle = p > 0 ? `rgba(146, 33, 22, ${(p * 0.1).toFixed(3)})` : `rgba(0, 0, 0, ${(-p * 0.22).toFixed(3)})`;
+    x.fillRect(i, 0, 2, h);
+  }
+  // ombra lungo i bordi e filetto d'oro scuro
+  const b = 12;
+  for (const [x0, y0, x1, y1, rx, ry, rw, rh] of [[0, 0, 0, b, 0, 0, w, b], [0, h, 0, h - b, 0, h - b, w, b], [0, 0, b, 0, 0, 0, b, h], [w, 0, w - b, 0, w - b, 0, b, h]]) {
+    const o = x.createLinearGradient(x0, y0, x1, y1);
+    o.addColorStop(0, 'rgba(0, 0, 0, 0.42)'); o.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    x.fillStyle = o; x.fillRect(rx, ry, rw, rh);
+  }
+  x.strokeStyle = COLORI_B1.oroScuro; x.lineWidth = 0.6;
+  x.strokeRect(3.5, 3.5, w - 7, h - 7);
+}
+
+function telaCartiglioB1() {
+  const R = SIPARIO_B1.riquadro;
+  return telaB1('sipario:cartiglio', R.w, R.h, (x, w, h) => ELEMENTI_B1.cartiglioSipario(x, w, h));
 }
 
 const bordiSiparioB1 = new Float32Array(SIPARIO_B1.fasce * 2);
@@ -1297,9 +1572,11 @@ function disegnaTestiSiparioB1(info, alfa) {
   ctx.globalAlpha = alfa;
   ctx.imageSmoothingEnabled = true;
   ctx.drawImage(telaPenombraB1(), 50, 44, 540, 140);
+  // cartiglio: uno stendardo scuro appeso davanti ai teli (la cucitura d'oro gli passa dietro, non fra le righe)
+  const { x: fx, y: fy, w: fw, h: fh } = SIPARIO_B1.riquadro;
+  ctx.drawImage(telaCartiglioB1(), fx, fy, fw, fh);
   ctx.imageSmoothingEnabled = false;
   // cornice ricamata a punti d'oro
-  const fx = 78, fy = 62, fw = 484, fh = 104;
   ctx.strokeStyle = 'rgba(249, 203, 64, 0.7)'; ctx.lineWidth = 1;
   ctx.setLineDash([3, 2]);
   ctx.strokeRect(fx, fy, fw, fh);
@@ -1315,12 +1592,12 @@ function disegnaTestiSiparioB1(info, alfa) {
   drawTextFit(info.testo2, W / 2, 136, mw, { size: 8.5, weight: '', color: C.crema });
   drawTextFit(info.testo3, W / 2, 155, mw, { size: 8.5, color: '#fde68a' });
   // invito
-  const battito = 0.75 + 0.25 * Math.sin(tick * 0.1);
-  ctx.fillStyle = 'rgba(20, 6, 4, 0.9)';
-  ctx.fillRect(206, 266, 228, 26);
+  const battito = 0.75 + 0.25 * Math.sin(tick * 0.1), N = SIPARIO_B1.invito;
+  ctx.fillStyle = '#140604';
+  ctx.fillRect(N.x, N.y, N.w, N.h);
   ctx.strokeStyle = `rgba(249, 203, 64, ${battito.toFixed(2)})`; ctx.lineWidth = 1.5;
-  ctx.strokeRect(206, 266, 228, 26);
-  drawTextFit(TESTI_B1.alzaSipario, W / 2, 283, 214, { size: 9, color: '#ffffff' });
+  ctx.strokeRect(N.x, N.y, N.w, N.h);
+  drawTextFit(TESTI_B1.alzaSipario, W / 2, N.y + 17, N.w - 14, { size: 9, color: '#ffffff' });
   ctx.restore();
 }
 
@@ -1372,7 +1649,7 @@ function fotografaScenaB1() {
 function siparioChiusoB1(info) {
   const S = siparioB1;
   S.visto = true; S.info = info;
-  if (S.fermo != null) { disegnaSiparioB1(info, S.fermo, false); return; }
+  if (S.fermo != null) { disegnaSiparioB1(info, S.fermo, S.fermoChiudendo); return; }
   if (S.stato === 'aperto') { S.stato = 'chiuso'; S.k = 0; }
   else if (S.stato === 'apertura') S.stato = 'chiusura';
   if (S.stato === 'chiusura') {
@@ -1753,9 +2030,20 @@ verificaStanzaPulita = (() => {
   });
 })();
 
+// A1: chi apre da codice un forziere ancora in volo lo trova già a terra (mai premi sparsi dal parcheggio)
+if (typeof apriForziereA1 === 'function') {
+  const apriForziereBaseB1 = apriForziereA1;
+  apriForziereA1 = function (st, f, ...resto) {
+    if (f && f.voloB1) atterraPremioB1(f);
+    return apriForziereBaseB1.call(this, st, f, ...resto);
+  };
+  if (window.__teatro && window.__teatro.interni && window.__teatro.interni.apriForziereA1) window.__teatro.interni.apriForziereA1 = apriForziereA1;
+}
+
 const spawnaMonetaBaseB1 = spawnaMonetaATerra;
 spawnaMonetaATerra = function (st, ...resto) {
   const n0 = st && Array.isArray(st.oggettiATerra) ? st.oggettiATerra.length : 0;
+  if (pubblicoB1.profLancio === 0) allineaStanzaB1(st);
   const r = spawnaMonetaBaseB1.call(this, st, ...resto);
   try { dopoMonetaB1(st, n0); } catch (err) { console.error('[B1] moneta', err); }
   return r;
@@ -1810,7 +2098,7 @@ disegnaSiparioNarrativo = function (info, ...resto) {
 
 const disegnaFrameBaseB1 = disegnaFrame;
 disegnaFrame = function (dtMs, ...resto) {
-  siparioB1.dt = Number.isFinite(dtMs) ? dtMs : MS_PER_TICK;
+  siparioB1.dt = Math.min(SIPARIO_B1.dtMaxMs, Number.isFinite(dtMs) ? dtMs : MS_PER_TICK);
   siparioB1.visto = false;
   const r = disegnaFrameBaseB1.call(this, dtMs, ...resto);
   try { dopoFrameSiparioB1(); } catch (err) { console.error('[B1] sipario', err); }
@@ -1822,7 +2110,7 @@ disegnaFrame = function (dtMs, ...resto) {
 // ===========================================================================
 if (window.__teatro && window.__teatro.interni) {
   Object.assign(window.__teatro.interni, {
-    PUBBLICO_B1, SIPARIO_B1, SUONI_B1, TESTI_B1,
+    PUBBLICO_B1, SIPARIO_B1, SUONI_B1, TESTI_B1, ELEMENTI_B1, invalidaTeleB1,
     gradimentoPubblico, reazionePubblicoB1, lanciaPremioB1, postoLiberoB1, gestoSiparioB1,
     pubblicoB1: {
       stato: pubblicoB1, sipario: siparioB1, posti: postiB1, audio: audioB1,
@@ -1831,8 +2119,12 @@ if (window.__teatro && window.__teatro.interni) {
       danneggiaNemico: (...a) => danneggiaNemico(...a), verificaStanzaPulita: () => verificaStanzaPulita(),
       spawnaMonetaATerra: (...a) => spawnaMonetaATerra(...a), subisciColpoGiocatore: (...a) => subisciColpoGiocatore(...a),
       avviaPiano: (...a) => avviaPiano(...a), disegnaFrame: (...a) => disegnaFrame(...a),
-      /** QA: blocca il sipario a un'apertura fissa (0..1); null lo libera. */
-      fermaSipario(k) { siparioB1.fermo = k == null ? null : limitaB1(Number(k) || 0, 0, 1); },
+      bordoDock: bordoDockB1, riquadroVoce: riquadroVoceB1, zone: ZONE_B1,
+      /** QA: blocca il sipario a un'apertura fissa (0..1), se `chiudendo` con la scena di prima dietro; null lo libera. */
+      fermaSipario(k, chiudendo = false) {
+        siparioB1.fermo = k == null ? null : limitaB1(Number(k) || 0, 0, 1);
+        siparioB1.fermoChiudendo = k != null && Boolean(chiudendo);
+      },
     },
   });
 }
