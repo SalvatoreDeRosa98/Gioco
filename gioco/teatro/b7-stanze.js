@@ -9,7 +9,7 @@
  *      raggiungibile a piedi da ogni altra (flood fill), nessun nemico a meno di STANZE_C.distanzaPorte px da
  *      una porta né dentro un ostacolo, spazio per muoversi, valide con le porte su qualunque lato.
  *   2. ELEMENTI DI SCENA (ELEMENTI_B7): chiodi del palco a ritmo, casse di polvere, botti/vasi/balle/bauli
- *      fragili, Vasi di Capodimonte, pedana a pressione con cancello, pozzanghere scivolose (solo Corso Trieste).
+ *      fragili, Vasi di Capodimonte, leva con sacchi di sabbia, pozze d'olio e candele, pedana a pressione con cancello, pozzanghere scivolose (solo Corso Trieste).
  *      Gli ostacoli solidi stanno in stanza.ostacoli con gli stessi campi di quelli di base (tipo 'colonna' |
  *      'fossa' | 'braciere', x, y, r, w, h, acceso) più `variante` per il disegno; ciò che sta a filo del
  *      palco (pozzanghere, chiodi, pedane) sta in stanza.suoloB7 e non scende dai cavi.
@@ -56,8 +56,8 @@ const STANZE_B7 = Object.freeze({
   fragili: Object.freeze({
     pelle: Object.freeze({ 1: 'botte', 2: 'vaso', 3: 'balla', 4: 'baule' }),
     tipi: Object.freeze({
-      comune: Object.freeze({ colpi: 2, premi: Object.freeze({ niente: 0.85, moneta: 0.12, mezzaMaschera: 0.03, ragno: 0 }) }),
-      capodimonte: Object.freeze({ colpi: 1, premi: Object.freeze({ niente: 0.45, moneta: 0.3, mezzaMaschera: 0.1, ragno: 0.15 }),
+      comune: Object.freeze({ colpi: 2, premi: Object.freeze({ niente: 0.89, moneta: 0.08, mezzaMaschera: 0.03, ragno: 0 }) }),
+      capodimonte: Object.freeze({ colpi: 1, premi: Object.freeze({ niente: 0.5, moneta: 0.25, mezzaMaschera: 0.1, ragno: 0.15 }),
         ragno: 'vespa_cieca', stordimentoRagnoTick: 36 }),
     }),
   }),
@@ -77,7 +77,20 @@ const STANZE_B7 = Object.freeze({
   pozza: Object.freeze({ rx: 31, ry: 16, presa: 0.09, saltoMaxPx: 12 }),
   /** Pedana a pressione e cancello dell'alcova. */
   pedana: Object.freeze({ raggio: 13 }),
-  alcova: Object.freeze({ moneteMin: 1, moneteMax: 2, probMezzaMaschera: 0.25 }),
+  /** Dietro il cancello c'è una cosa sola (pesi): poco, perché l'economia dei piani 2-4 è già larga. */
+  alcova: Object.freeze({ premi: Object.freeze({ moneta: 0.5, mezzaMaschera: 0.5 }) }),
+  /**
+   * Leva, carrucola e sacco di sabbia (nota dell'autore): [E] vicino alla leva e i sacchi appesi della stanza
+   * cadono sul loro punto fisso. Feriscono e stordiscono i nemici sotto (anche chi vola) e Ferruccio se è lì.
+   */
+  sacco: Object.freeze({ raggio: 32, dannoBase: 18, dannoPerPiano: 5, stordimentoTick: 70, cadutaTick: 14,
+    altezzaPx: 86, raggioLeva: 28, raggioGiocatore: 20, dannoGiocatoreHalf: 1 }),
+  /**
+   * Pozza d'olio (nota dell'autore): innocua finché un fuoco non la tocca (una candela o un braciere colpiti lì
+   * accanto, un'altra pozza che brucia). Poi brucia come le fiamme di base (pozzanghereFuoco: danno a
+   * Ferruccio, burnTicks ai nemici) per durataTick; il fuoco passa alla pozza vicina dopo ritardoTick.
+   */
+  olio: Object.freeze({ rx: 30, ry: 15, raggioInnesco: 46, ritardoTick: 9, durataTick: 300, raggioFuoco: 24 }),
 });
 
 /**
@@ -100,6 +113,10 @@ const ELEMENTI_B7 = Object.freeze({
   '^': Object.freeze({ dove: 'suolo', tipo: 'spuntoni', sfasa: 0 }),
   v: Object.freeze({ dove: 'suolo', tipo: 'spuntoni', sfasa: 0.5 }),
   '=': Object.freeze({ dove: 'suolo', tipo: 'pedana' }),
+  '!': Object.freeze({ dove: 'suolo', tipo: 'leva' }),
+  s: Object.freeze({ dove: 'suolo', tipo: 'sacco' }),
+  O: Object.freeze({ dove: 'suolo', tipo: 'olio' }),
+  i: Object.freeze({ dove: 'ostacoli', tipo: 'braciere', variante: 'candela', r: 8, w: 16, h: 16, acceso: true }),
   // --- Corso Trieste ---
   L: Object.freeze({ dove: 'ostacoli', tipo: 'colonna', variante: 'lampione', r: 7, w: 14, h: 14 }),
   '~': Object.freeze({ dove: 'suolo', tipo: 'pozza' }),
@@ -265,6 +282,22 @@ const DISPOSIZIONI_B7 = Object.freeze([
     '...e..C.C..e...',
     '...............',
     '..e.........e..',
+    '...............'] },
+  { id: 'sacchi-di-sabbia', nome: 'I sacchi di sabbia', q: 0, peso: 0.7, pianoMin: 1, specchi: 'y', g: [
+    '...............',
+    '..e.........e..',
+    '...............',
+    '...e.s.C.s.e...',
+    '.......!.......',
+    '..e.........e..',
+    '...............'] },
+  { id: 'olio-e-candele', nome: 'Olio e candele', q: 0, peso: 0.7, pianoMin: 2, specchi: 'y', g: [
+    '...............',
+    '..e.........e..',
+    '.....iOOOi.....',
+    '...e...e...e...',
+    '...............',
+    '..e..O...O..e..',
     '...............'] },
   // ------------------------------------------------------------------ 1 · Corso Trieste (lampioni, pozzanghere)
   { id: 'viale-dei-lampioni', nome: 'Il viale dei lampioni', q: 1, peso: 1.2, pianoMin: 1, specchi: '', g: [
@@ -682,6 +715,9 @@ const TESTI_B7 = Object.freeze({
   ciarlatanoRipiego: (n) => `🎩 La reliquia non trova posto: il ciarlatano te la paga ${n}🪙.`,
   titoloCiarlatano: 'LE TRE SCATOLE DEL CIARLATANO',
   ragno: '🕷 Dal vaso di Capodimonte salta fuori un ragno arrabbiato!',
+  leva: '⚙ La carrucola gira: i sacchi di sabbia vengono giù!',
+  levaInvito: '⚙ LEVA [E]',
+  sacco: 'il sacco di sabbia',
   clessidraIngresso: '⌛ LA CLESSIDRA DELLA RIBALTA: tocca il piedistallo e ripulisci le ondate prima che finisca la sabbia. A sabbia finita il premio si riduce.',
   clessidraScaduta: '⌛ LA SABBIA È FINITA: il premio si sbriciola in pochi grani. Finisci le ondate per prenderli.',
   clessidraPieno: (nome, n) => `⌛ SFIDA VINTA PRIMA DELL'ULTIMO GRANELLO! Premio pieno: ${nome} e ${n}🪙 [Click/E]`,
@@ -757,6 +793,9 @@ function elementiVarianteB7(v, quartiere) {
         if (E.tipo === 'spuntoni') { o.r = F.spuntoni.raggio; o.sfasa = Math.round(E.sfasa * periodoSpuntoniB7()); }
         else if (E.tipo === 'pozza') { o.rx = F.pozza.rx; o.ry = F.pozza.ry; }
         else if (E.tipo === 'pedana') { o.r = F.pedana.raggio; o.premuta = false; }
+        else if (E.tipo === 'leva') { o.r = F.sacco.raggioLeva; o.tirata = false; }
+        else if (E.tipo === 'sacco') { o.r = F.sacco.raggio; o.stato = 'appeso'; o.t = 0; }
+        else if (E.tipo === 'olio') { o.rx = F.olio.rx; o.ry = F.olio.ry; o.innesco = 0; }
         el.suolo.push(o);
         return;
       }
@@ -854,6 +893,11 @@ function analizzaVarianteB7(v) {
       if (aperta.di(q.x, q.y) !== princAperta) motivi.push('premio non raggiungibile a cancello aperto');
     }
   }
+  const leve = el.suolo.filter((o) => o.tipo === 'leva'), sacchi = el.suolo.filter((o) => o.tipo === 'sacco');
+  if (leve.length || sacchi.length) {
+    if (!leve.length || !sacchi.length) motivi.push('leva e sacco vanno insieme');
+    for (const q of leve) if (chiusa.di(q.x, q.y) !== principale) motivi.push('leva non raggiungibile');
+  }
   const comparse = [];
   for (const q of el.comparse) {
     let male = null;
@@ -921,13 +965,12 @@ function applicaDisposizioneB7(s, v, piano) {
   s.premiB7 = el.premi;
   s.fragiliB7 = el.ostacoli.filter((o) => o.fragileB7);
   s.disposizioneB7 = { id: v.disp.id, variante: v.id, nome: v.disp.nome };
-  const A = STANZE_B7.alcova;
+  const premiAlcova = STANZE_B7.alcova.premi;
   for (const p of el.premi) {
-    const n = A.moneteMin + Math.floor(rng() * (A.moneteMax - A.moneteMin + 1));
-    for (let i = 0; i < n; i++) {
-      s.oggettiATerra.push({ tipo: 'moneta', valore: 1, sprite: 'moneta1', x: p.x + (i - (n - 1) / 2) * 10, y: p.y + 3, alcovaB7: true });
-    }
-    if (rng() < A.probMezzaMaschera) s.oggettiATerra.push({ tipo: 'cura', valore: 1, sprite: 'mezzaMaschera', x: p.x, y: p.y - 6, alcovaB7: true });
+    const cosa = estraiPesatoB7(Object.keys(premiAlcova), (k) => premiAlcova[k]);
+    s.oggettiATerra.push(cosa === 'moneta'
+      ? { tipo: 'moneta', valore: 1, sprite: 'moneta1', x: p.x, y: p.y + 2, alcovaB7: true }
+      : { tipo: 'cura', valore: 1, sprite: 'mezzaMaschera', x: p.x, y: p.y + 2, alcovaB7: true });
   }
   return s;
 }
@@ -1333,8 +1376,61 @@ function aggiornaSuoloB7(st) {
       }
     } else if (o.tipo === 'pedana' && !o.premuta && Math.hypot(player.x - o.x, player.y - o.y) < o.r) {
       premiPedanaB7(st, o);
+    } else if (o.tipo === 'sacco' && o.stato === 'cade') {
+      if (++o.t >= STANZE_B7.sacco.cadutaTick) atterraSaccoB7(st, o);
     }
   }
+  aggiornaOlioB7(st);
+}
+
+/** [E] vicino alla leva: la carrucola molla tutti i sacchi appesi della stanza. */
+function tiraLevaB7(st, leva) {
+  if (!leva || leva.tirata) return false;
+  leva.tirata = true;
+  for (const o of st.suoloB7) if (o.tipo === 'sacco' && o.stato === 'appeso') { o.stato = 'cade'; o.t = 0; }
+  AudioSys.playColpo();
+  suonoB7(700, 220, 'sawtooth', 0.05, 160);
+  mostraBanner(TESTI_B7.leva, 130);
+  return true;
+}
+
+/** Il sacco arriva a terra: ferisce e stordisce chi sta sotto, poi resta sfondato sul palco. */
+function atterraSaccoB7(st, o) {
+  const K = STANZE_B7.sacco;
+  o.stato = 'a-terra';
+  scuoti(FEEL.scossa.bomba);
+  AudioSys.playColpo();
+  suonoB7(110, 260, 'triangle', 0.12, 45);
+  statoRun.ondeEsplosione.push({ x: o.x, y: o.y, r: 6, maxR: K.raggio, color: '#d6b676' });
+  const danno = K.dannoBase + (statoRun.piano - 1) * K.dannoPerPiano;
+  for (const nem of st.nemici.slice()) {
+    if (nem.hp <= 0) continue;
+    const dx = nem.x - o.x, dy = nem.y - o.y, d = Math.hypot(dx, dy);
+    if (d >= K.raggio + (nem.r || 0)) continue;
+    danneggiaNemico(nem, danno, d > 0 ? dx / d : 0, d > 0 ? dy / d : 0);
+    if (nem.hp > 0) nem.stunTicks = Math.max(nem.stunTicks || 0, K.stordimentoTick);
+  }
+  if (Math.hypot(player.x - o.x, player.y - o.y) < K.raggioGiocatore) subisciColpoGiocatore(K.dannoGiocatoreHalf, TESTI_B7.sacco, o.x, o.y);
+}
+
+/** Le pozze d'olio toccate da un fuoco si accendono (con un ritardo: il fuoco corre di pozza in pozza). */
+function aggiornaOlioB7(st) {
+  const O = STANZE_B7.olio;
+  let accese = false;
+  for (const o of st.suoloB7) {
+    if (o.tipo !== 'olio' || o.bruciata) continue;
+    if (o.innesco > 0) {
+      if (--o.innesco > 0) continue;
+      o.bruciata = true; accese = true;
+      if (!st.pozzanghereFuoco) st.pozzanghereFuoco = [];
+      st.pozzanghereFuoco.push({ x: o.x, y: o.y, r: O.raggioFuoco, tick: O.durataTick, olioB7: true });
+      statoRun.ondeEsplosione.push({ x: o.x, y: o.y, r: 4, maxR: O.raggioFuoco, color: '#f97316' });
+      suonoB7(240, 200, 'sawtooth', 0.04, 90);
+    } else if ((st.pozzanghereFuoco || []).some((f) => Math.hypot(f.x - o.x, f.y - o.y) < O.raggioInnesco)) {
+      o.innesco = O.ritardoTick;
+    }
+  }
+  if (accese) for (let i = st.suoloB7.length - 1; i >= 0; i--) if (st.suoloB7[i].bruciata) st.suoloB7.splice(i, 1);
 }
 
 /** I nemici che camminano girano attorno agli ostacoli (cerchi, come Ferruccio). */
@@ -1774,6 +1870,10 @@ verificaStanzaPulita = function verificaStanzaPulitaB7(...args) {
 const interagisciStanzaBaseB7 = interagisciStanza;
 interagisciStanza = function interagisciStanzaB7(...args) {
   const st = statoRun.stanzaCorrente, T = st && st.ciarlatanoB7;
+  if (st && st.suoloB7 && statoRun.fase === 'in_gioco' && !statoRun.scambioPendente && !statoRun.pannelloB && !statoRun.siparioAttivo) {
+    const leva = st.suoloB7.find((o) => o.tipo === 'leva' && !o.tirata && Math.hypot(player.x - o.x, player.y - o.y) < o.r);
+    if (leva && tiraLevaB7(st, leva)) return undefined;
+  }
   if (T && !T.andato && !T.aperto && statoRun.fase === 'in_gioco' && !statoRun.scambioPendente && !statoRun.pannelloB && !statoRun.siparioAttivo) {
     const P = CIARLATANO_B7.posto, o = st.oggettoPiedistallo;
     const piedistalloVicino = o && !o.preso && Math.hypot(player.x - o.x, player.y - o.y) < 52;
@@ -2005,6 +2105,15 @@ const PELLI_B7 = Object.freeze({
     g.fillStyle = '#0a0604'; g.beginPath(); g.arc(0, -8, 1.8, 0, TAU); g.fill();
     g.strokeStyle = '#c9a679'; g.lineWidth = 1.1; g.beginPath(); g.moveTo(4, -18); g.quadraticCurveTo(8, -22, 6, -26); g.stroke();
   } },
+  candela: { l: 28, a: 52, ax: 14, ay: 42, disegna(g) {
+    ombraB7(g, 9, 3.5);
+    sagomaB7(g, [[-6, 2], [6, 2], [3, -3], [-3, -3]], '#1c1410');
+    rettB7(g, -1.4, -24, 2.8, 21, '#1c1410', null);
+    g.fillStyle = '#c9a23a'; g.fillRect(-5, -26, 10, 2.2);
+    rettB7(g, -2.2, -35, 4.4, 9, '#efe6d2', '#050302', 0.8);
+    g.fillStyle = 'rgba(120, 104, 80, 0.5)'; g.fillRect(0.4, -34.6, 1.6, 8.2);
+    g.fillStyle = '#0a0604'; g.fillRect(-0.4, -37, 0.8, 2);
+  } },
   cancello: { l: 44, a: 54, ax: 22, ay: 42, disegna(g) {
     ombraB7(g, 16, 4.5);
     rettB7(g, -15, -31, 4, 33, '#0d0907'); rettB7(g, 11, -31, 4, 33, '#0d0907');
@@ -2043,6 +2152,12 @@ function disegnaOstacoloB7(o, t) {
     ctx.strokeStyle = `rgba(186, 230, 253, ${(0.5 * (1 - f)).toFixed(2)})`;
     ctx.beginPath(); ctx.ellipse(o.x, o.y - 1, 5 + f * 11, 2 + f * 4, 0, 0, TAU); ctx.stroke();
     ctx.restore();
+  } else if (o.variante === 'candela' && o.acceso) {
+    const fy = o.y - 39 + Math.sin(t * 0.4 + o.x) * 0.8;
+    ctx.fillStyle = `rgba(251, 191, 36, ${(0.16 + 0.05 * Math.sin(t * 0.27 + o.x)).toFixed(2)})`;
+    ctx.beginPath(); ctx.arc(o.x, fy, 11, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.ellipse(o.x, fy, 2.2, 3.6, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.ellipse(o.x, fy + 0.8, 1.1, 2, 0, 0, TAU); ctx.fill();
   } else if (o.variante === 'polvere' && o.micciaB7 > 0) {
     ctx.fillStyle = t % 4 < 2 ? '#fef08a' : '#ef4444';
     ctx.beginPath(); ctx.arc(o.x + 6, o.y - 26, 2.4, 0, TAU); ctx.fill();
@@ -2082,8 +2197,53 @@ function disegnaSuoloB7(st, t) {
       ctx.beginPath(); ctx.ellipse(player.x, player.y + 6, 9, 3.5, 0, 0, TAU); ctx.stroke();
     }
   }
+  let olio = 0;
+  ctx.beginPath();
   for (const o of suolo) {
-    if (o.tipo === 'spuntoni') {
+    if (o.tipo !== 'olio') continue;
+    ctx.moveTo(o.x + o.rx, o.y); ctx.ellipse(o.x, o.y, o.rx, o.ry, 0, 0, TAU);
+    olio++;
+  }
+  if (olio) {
+    ctx.fillStyle = 'rgba(8, 6, 3, 0.82)'; ctx.fill();
+    ctx.fillStyle = 'rgba(202, 138, 4, 0.2)'; ctx.fill();
+    ctx.lineWidth = 1;
+    for (const o of suolo) {
+      if (o.tipo !== 'olio') continue;
+      ctx.strokeStyle = 'rgba(250, 204, 21, 0.45)';
+      ctx.beginPath(); ctx.ellipse(o.x - 4, o.y - 3, o.rx * 0.5, o.ry * 0.36, 0, Math.PI * 1.05, Math.PI * 1.7); ctx.stroke();
+      ctx.strokeStyle = 'rgba(168, 85, 247, 0.28)';
+      ctx.beginPath(); ctx.ellipse(o.x + 5, o.y + 3, o.rx * 0.4, o.ry * 0.3, 0, Math.PI * 0.1, Math.PI * 0.8); ctx.stroke();
+      if (o.innesco > 0) { ctx.fillStyle = t % 4 < 2 ? '#fef08a' : '#f97316'; ctx.beginPath(); ctx.arc(o.x, o.y - 2, 3, 0, TAU); ctx.fill(); }
+    }
+  }
+  for (const o of suolo) {
+    if (o.tipo === 'leva') {
+      const a = o.tirata ? 0.6 : -0.6;
+      ctx.fillStyle = 'rgba(8, 5, 3, 0.6)'; ctx.beginPath(); ctx.ellipse(o.x, o.y + 3, 11, 4, 0, 0, TAU); ctx.fill();
+      ctx.strokeStyle = 'rgba(138, 106, 42, 0.55)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(o.x + 7, o.y - 2); ctx.lineTo(o.x + 7, ARENA.y1 - 20); ctx.stroke();
+      ctx.fillStyle = '#1c1410'; ctx.strokeStyle = '#050302'; ctx.lineWidth = 1.2;
+      ctx.fillRect(o.x - 9, o.y - 3, 18, 6); ctx.strokeRect(o.x - 9, o.y - 3, 18, 6);
+      ctx.fillStyle = '#c9a23a'; ctx.fillRect(o.x - 9, o.y - 3, 18, 1.4);
+      ctx.strokeStyle = '#3b2414'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(o.x, o.y - 1); ctx.lineTo(o.x + Math.sin(a) * 20, o.y - 1 - Math.cos(a) * 20); ctx.stroke();
+      ctx.fillStyle = o.tirata ? '#8a6a2a' : '#e53222';
+      ctx.beginPath(); ctx.arc(o.x + Math.sin(a) * 21, o.y - 1 - Math.cos(a) * 21, 3.4, 0, TAU); ctx.fill();
+    } else if (o.tipo === 'sacco') {
+      const K = STANZE_B7.sacco;
+      if (o.stato === 'a-terra') {
+        ctx.fillStyle = '#d6b676';
+        ctx.beginPath(); ctx.ellipse(o.x, o.y + 3, 20, 7, 0, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#7a6a45'; ctx.strokeStyle = '#050302'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(o.x - 13, o.y + 2); ctx.quadraticCurveTo(o.x - 10, o.y - 9, o.x, o.y - 7); ctx.quadraticCurveTo(o.x + 12, o.y - 10, o.x + 13, o.y + 2); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#d6b676'; ctx.beginPath(); ctx.ellipse(o.x + 3, o.y - 2, 5, 2.4, 0, 0, TAU); ctx.fill();
+      } else {
+        const u = o.stato === 'cade' ? o.t / K.cadutaTick : 0;
+        ctx.fillStyle = `rgba(5, 3, 2, ${(0.22 + 0.3 * u).toFixed(2)})`;
+        ctx.beginPath(); ctx.ellipse(o.x, o.y + 2, 9 + 7 * u, 3.5 + 2.5 * u, 0, 0, TAU); ctx.fill();
+      }
+    } else if (o.tipo === 'spuntoni') {
       const s = statoSpuntoniB7(o, t);
       ctx.fillStyle = '#1a0f08'; ctx.fillRect(o.x - 14, o.y - 9, 28, 18);
       ctx.strokeStyle = '#6b4a1e'; ctx.lineWidth = 1; ctx.strokeRect(o.x - 13.5, o.y - 8.5, 27, 17);
@@ -2115,6 +2275,32 @@ function disegnaSuoloB7(st, t) {
     }
   }
   ctx.restore();
+}
+
+/** I sacchi di sabbia appesi (o in caduta) e l'invito della leva: sopra le entità, nella passata dell'HUD. */
+function disegnaSacchiB7(st, t) {
+  const K = STANZE_B7.sacco;
+  for (const o of st.suoloB7 || []) {
+    if (o.tipo === 'leva' && !o.tirata && Math.hypot(player.x - o.x, player.y - o.y) < o.r + 26) {
+      drawPillLabel(TESTI_B7.levaInvito, o.x, o.y - 30, 80, { size: 7.5, color: '#fde68a', border: '#c9a23a' });
+    }
+    if (o.tipo !== 'sacco' || o.stato === 'a-terra') continue;
+    const u = o.stato === 'cade' ? o.t / K.cadutaTick : 0;
+    const sx = o.x + (o.stato === 'appeso' ? Math.sin(t * 0.03 + o.x) * 1.5 : 0), sy = o.y - K.altezzaPx * (1 - u * u);
+    ctx.save();
+    if (o.stato === 'appeso') {
+      ctx.strokeStyle = '#8a6a2a'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(sx, sy - 13); ctx.lineTo(o.x, ARENA.y1 - 22); ctx.stroke();
+    }
+    ctx.fillStyle = '#7a6a45'; ctx.strokeStyle = '#050302'; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.moveTo(sx - 4, sy - 12); ctx.quadraticCurveTo(sx - 13, sy - 6, sx - 11, sy + 6); ctx.quadraticCurveTo(sx, sy + 13, sx + 11, sy + 6);
+    ctx.quadraticCurveTo(sx + 13, sy - 6, sx + 4, sy - 12); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#5c4f33'; ctx.fillRect(sx - 5, sy - 15, 10, 4);
+    ctx.fillStyle = 'rgba(5, 3, 2, 0.28)';
+    ctx.beginPath(); ctx.moveTo(sx + 2, sy - 9); ctx.quadraticCurveTo(sx + 10, sy - 4, sx + 9, sy + 5); ctx.quadraticCurveTo(sx + 5, sy + 9, sx + 2, sy + 9); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#d6b676'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(sx - 6, sy - 2); ctx.lineTo(sx - 2, sy + 2); ctx.moveTo(sx - 2, sy - 2); ctx.lineTo(sx - 6, sy + 2); ctx.stroke();
+    ctx.restore();
+  }
 }
 
 /** La Clessidra della Ribalta in scena: grande, con la sabbia vera (restoTick / totTick) e i secondi. */
@@ -2319,6 +2505,7 @@ const disegnaHUDPixelArtBaseB7 = disegnaHUDPixelArt;
 disegnaHUDPixelArt = function disegnaHUDPixelArtB7(st, ...resto) {
   const r = disegnaHUDPixelArtBaseB7.call(this, st, ...resto);
   try {
+    if (st && st.suoloB7 && statoRun.fase === 'in_gioco' && !statoRun.siparioAttivo) disegnaSacchiB7(st, tick);
     if (st && st.clessidraB7 && statoRun.fase === 'in_gioco') disegnaTempoClessidraB7(st, tick);
     disegnaPannelloCiarlatanoB7(tick);
   } catch (err) { console.error('[b7] tavolino', err); }
@@ -2351,7 +2538,7 @@ if (window.__teatro && window.__teatro.interni) {
     PORTE_C, ENTRATE_C,
     variantiB7, elementiVarianteB7, analizzaVarianteB7, verificaDisposizioniB7, regioniB7, applicaDisposizioneB7,
     scegliVarianteB7, scegliGruppoB7, creaNemiciB7, piazzaNemiciB7, sistemaNemiciB7, allestisciB7,
-    statoSpuntoniB7, periodoSpuntoniB7, rompiFragileB7, colpisciFragileB7, premiPedanaB7, sullaPozzaB7, scivolataB7,
+    statoSpuntoniB7, periodoSpuntoniB7, tiraLevaB7, aggiornaOlioB7, rompiFragileB7, colpisciFragileB7, premiPedanaB7, sullaPozzaB7, scivolataB7,
     nuovaManoB7, passoManoB7, posizioniScatoleB7, scegliScatolaB7, preparaCiarlatanoB7, apriCiarlatanoB7,
     puntaCiarlatanoB7, scegliCiarlatanoB7, tastoCiarlatanoB7, pannelloCiarlatanoB7,
     preparaClessidraB7, scadeClessidraB7, passoClessidraB7,
