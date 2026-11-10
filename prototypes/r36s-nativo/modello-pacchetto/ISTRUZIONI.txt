@@ -32,6 +32,8 @@ Il sonoro è ancora spento.
      PER USCIRE: START + SELECT insieme per un secondo (oppure sei tasti insieme per due secondi).
   Gioca tre o quattro minuti, entra in due o tre stanze coi nemici, poi esci con Start+Select.
   Dicci: va meglio di prima? Si leggono le scritte? I tasti fanno quello che devono?
+  Una cosa è cambiata di sicuro: anche se l'immagine va a scatti, il gioco ora cammina alla
+  velocità giusta (prima andava anche al rallentatore).
 
 --------------------------------------------------------------------------
 3 · LA MISURA AUTOMATICA (facoltativa, ma ci aiuta moltissimo)

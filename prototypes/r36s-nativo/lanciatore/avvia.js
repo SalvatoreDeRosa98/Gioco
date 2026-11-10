@@ -109,12 +109,30 @@ if (typeof globalThis.passoLogico === 'function') {
   globalThis.passoLogico = function () { const t = performance.now(); try { return pl.apply(this, arguments); } finally { T.logica += performance.now() - t; T.passi++; } };
 }
 
+// --- disegno saltabile: la logica può recuperare senza ridisegnare -------------------------------------------
+// Il gioco fa al massimo 5 passi di logica (83 ms) per fotogramma: sotto i 12 fotogrammi al secondo va al
+// rallentatore. Qui, se un fotogramma è durato di più, la logica si rimette in pari con passaggi SENZA
+// disegno (si dà al gioco un orologio a scatti di 80 ms e disegnaFrame non fa niente): la velocità di gioco
+// resta giusta anche a 5-6 disegni al secondo. Il tempo dei disegni saltati si somma al disegno seguente.
+const D = { salta: false, dt: 0 };
+if (typeof globalThis.disegnaFrame === 'function') {
+  const df = globalThis.disegnaFrame;
+  globalThis.disegnaFrame = function (dtMs) {
+    if (D.salta) { D.dt += Number(dtMs) || 0; return undefined; }
+    const dt = (Number(dtMs) || 0) + D.dt; D.dt = 0;
+    return df.call(this, dt);
+  };
+}
+const PASSO_MAX_MS = 80; const RECUPERI_MAX = 5;
+const zavorraMs = Number(arg.zavorra || 0); // solo per le prove sul PC: finge una macchina lenta
+
 // --- ciclo ---------------------------------------------------------------------------------------------
 // La logica del gioco va a passo fisso (60 al secondo, fino a 5 passi per fotogramma): qui si decide solo
 // ogni quanto DISEGNARE. Mai più di un disegno ogni `periodo` ms; se un disegno dura di più, il prossimo
 // parte subito ma il ritardo non si accumula.
 const periodo = 1000 / fps;
-const S = { n: 0, gioco: 0, resa: 0, schermo: 0, max: 0, da: performance.now(), totale: 0, lenti: 0, lunghi: 0 };
+const S = { n: 0, gioco: 0, resa: 0, schermo: 0, max: 0, da: performance.now(), totale: 0, lenti: 0, lunghi: 0, recuperi: 0 };
+let oraGioco = null; // l'ultimo istante dato al gioco
 const scadenza = arg.secondi ? performance.now() + Number(arg.secondi) * 1000 : Infinity;
 let prossimo = performance.now();
 function scena() {
@@ -127,7 +145,15 @@ function giro() {
   if (chiuso) return;
   const t0 = performance.now();
   if (uscita) uscita.ingressi(t0);
+  if (oraGioco !== null) {
+    for (let k = 0; k < RECUPERI_MAX && t0 - oraGioco > PASSO_MAX_MS; k++) {
+      oraGioco += PASSO_MAX_MS; S.recuperi++;
+      D.salta = true; try { browser.fotogramma(oraGioco); } finally { D.salta = false; }
+    }
+  }
+  oraGioco = t0;
   browser.fotogramma(t0);
+  if (zavorraMs) { const fine = performance.now() + zavorraMs; while (performance.now() < fine) { /* attesa attiva */ } }
   const t1 = performance.now();
   const pixel = uscita ? browser.pixel() : null;
   const t2 = performance.now();
@@ -138,9 +164,9 @@ function giro() {
   if (d > 400 && S.lunghi++ < 25) log.riga(`fotogramma lungo: il n. ${S.totale} è durato ${d.toFixed(0)} ms (gioco ${(t1 - t0).toFixed(0)}, resa ${(t2 - t1).toFixed(0)}, schermo ${(t3 - t2).toFixed(0)}) · ${scena()} · immagini chieste finora ${browser.stato.immagini}`);
   if (t3 - S.da >= 5000) {
     const n = S.n; const logica = T.logica / n; const disegno = S.gioco / n - logica;
-    log.riga(`fps ${(n * 1000 / (t3 - S.da)).toFixed(1)} · a fotogramma: logica ${logica.toFixed(1)} ms (${(T.passi / n).toFixed(1)} passi) + disegno ${disegno.toFixed(1)} + resa dei pixel ${(S.resa / n).toFixed(1)} + schermo ${(S.schermo / n).toFixed(1)} = ${((S.gioco + S.resa + S.schermo) / n).toFixed(1)} ms · peggiore ${S.max.toFixed(0)} ms · oltre il tempo ${S.lenti}/${n}`
+    log.riga(`fps ${(n * 1000 / (t3 - S.da)).toFixed(1)} · velocità di gioco ${Math.round(T.passi * 1000 / (t3 - S.da) / 60 * 100)}% (${S.recuperi} recuperi senza disegno) · a fotogramma: logica ${logica.toFixed(1)} ms (${(T.passi / n).toFixed(1)} passi) + disegno ${disegno.toFixed(1)} + resa dei pixel ${(S.resa / n).toFixed(1)} + schermo ${(S.schermo / n).toFixed(1)} = ${((S.gioco + S.resa + S.schermo) / n).toFixed(1)} ms · peggiore ${S.max.toFixed(0)} ms · oltre il tempo ${S.lenti}/${n}`
       + ` · ${scena()} · CPU ${frequenzaMHz() || '?'} MHz · memoria ${(process.memoryUsage().rss / 1048576).toFixed(0)} MB · errori ${browser.stato.errori}`);
-    S.n = 0; S.gioco = 0; S.resa = 0; S.schermo = 0; S.max = 0; S.lenti = 0; S.da = t3; T.logica = 0; T.passi = 0;
+    S.n = 0; S.gioco = 0; S.resa = 0; S.schermo = 0; S.max = 0; S.lenti = 0; S.recuperi = 0; S.da = t3; T.logica = 0; T.passi = 0;
   }
   if (t3 > scadenza) { esci(`fine dei ${arg.secondi} secondi di prova`); return; }
   const ora = performance.now();

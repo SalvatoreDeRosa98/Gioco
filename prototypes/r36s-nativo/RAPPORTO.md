@@ -1,9 +1,14 @@
 # Ferruccio sull'R36S: prova di fattibilità (2026-11-10)
 
-**In una riga.** Il gioco vero gira fuori dal browser (Node + Skia + SDL) su un PC, senza toccare
-`gioco/teatro/`; c'è un pacchetto autosufficiente da copiare in `ports/`. Sulla console **non è stato
-provato niente**: la stima dice «giocabile ma non fluido» (attorno a 20-25 fotogrammi al secondo con
-gli effetti spenti, 30 solo nel caso migliore), e il punto più incerto è se la SDL2 della console basta.
+**Dove siamo (secondo giro).** Sulla console vera il pacchetto v1 **parte** (node, la SDL2 di sistema e lo
+schermo funzionano) ma va a **circa 5 fotogrammi al secondo** a occhio: quattro-cinque volte peggio della
+mia stima centrale. La stima del §3 era sbagliata, e il §8 dice perché. C'è un pacchetto **v2** che lavora
+solo nello strato del lanciatore: tre livelli di qualità, console alla massima potenza, velocità di gioco
+giusta anche quando disegna poco, e una misura automatica da lanciare sulla console. **Non so se arriva a
+15-20**: la mia attesa onesta è 9-14 al livello che resta leggibile e 11-20 a quello veloce (§8).
+
+**In una riga (primo giro).** Il gioco vero gira fuori dal browser (Node + Skia + SDL) su un PC, senza toccare
+`gioco/teatro/`; c'è un pacchetto autosufficiente da copiare in `ports/`.
 
 Bersaglio preciso: R36S (clone) con **«ArkOS 2.0 (08232024)(AeUX)»**, EmulationStation 2.13, senza Wi-Fi;
 scheda con `EASYROMS` (leggibile da Windows) e cartella `ports` vuota (niente PortMaster lì).
@@ -65,7 +70,7 @@ La logica è trascurabile (0,05-0,15 ms a passo): pesa il disegno. «Effetti spe
 vignetta, pubblico. Memoria: **420-500 MB** di RSS (137 MB sono le 23 immagini decodificate, 7 MB le tele,
 27 MB l'heap JavaScript). Dati grezzi: `prove/misura.json`.
 
-## 3. Stima per l'R36S (Cortex-A35 a ~1,3-1,5 GHz)
+## 3. Stima per l'R36S (Cortex-A35 a ~1,3-1,5 GHz) — SMENTITA DALLA CONSOLE, vedi §8
 
 Questa macchina: Xeon Emerald Rapids a 2,1 GHz in macchina virtuale; nel test 7-Zip a un filo fa
 **3265 MIPS** (misurato qui). Dati pubblici sull'A35: a pari frequenza vale l'80-100 % di un A53
@@ -98,7 +103,7 @@ clone, i tempi veri, la memoria, il tempo di avvio, il sonoro. Qui non c'è aarc
 provato `skia-canvas` né il Web Audio nativo con un dispositivo audio. Il log del pacchetto è fatto per
 rispondere a ognuna di queste domande al primo lancio.
 
-## 5. Il pacchetto
+## 5. Il pacchetto (v1; il v2 è al §8)
 
 `./prepara-pacchetto.sh <cartella>` → `ferruccio-r36s.zip` (64 MB; 165 MB estratto, 168 file).
 Contiene `Ferruccio.sh` e `ferruccio/` (gioco = release a file unico, node 22.23.4 arm64 da nodejs.org con
@@ -140,3 +145,105 @@ d'ora e i due log dicono la verità su ogni incognita. Poi si decide sui numeri:
 - **(c) Riscrivere il disegno su un altro runtime** (Love2D o SDL2 con la GPU): sono 34.000 righe di
   JavaScript, in gran parte disegno a canvas; stimo due-quattro mesi a tempo pieno. Non lo consiglio:
   ha senso solo se la console diventa un bersaglio vero del gioco.
+
+## 8. Secondo giro: la console vera e il pacchetto v2
+
+### Cosa ha detto la console
+L'autore ha copiato il v1 sulla R36S: «si è aperto, a 5 fps secondo me». I log non sono ancora arrivati,
+quindi il numero è a occhio e non so in quale scena. Risolte le incognite del §4 su node, SDL2 e schermo.
+Il fattore vero rispetto a questo PC è attorno a **×30-40**, non ×8.
+
+**Perché la stima era sbagliata.** Ho ricavato il fattore da prove generiche (7-Zip, PassMark, Geekbench).
+Ma il lavoro qui è disegno software: sul PC Skia usa istruzioni vettoriali larghe (AVX2/AVX-512) e cache
+grandi; sull'A35 ha NEON, un core che esegue in ordine e una memoria lenta. Il disegno a pixel scala molto
+peggio di una prova di compressione. In più a 5 disegni al secondo il gioco andava anche al rallentatore
+(fa al massimo 5 passi di logica per fotogramma).
+
+### Cosa ho misurato (sul PC, release, effetti del gioco spenti come sulla console)
+Il canvas disegna in differita, quindi cronometrare i metodi inganna: ho misurato **per ablazione** (si salta
+un tipo di disegno alla volta e si guarda di quanto scende il fotogramma) e contato i **pixel toccati**.
+
+| Stanza pesante, 640×360 (5,6-6,0 ms) | chiamate | Mpx toccati | ms tolti |
+|---|---|---|---|
+| `drawImage` da tele (pavimento, strato di luce in «hard-light», sagome) | 121-128 | 0,51-0,52 | 2,1-2,2 |
+| `stroke` (fili delle marionette, pioggia, contorni) | 73-75 | 0,84-1,12 (ingombro) | 1,0-1,1 |
+| `fill` con sfumatura (ombre a terra, aloni) | 25 | 0,01 | ~1,0 |
+| `fillRect` a tinta unita | 40 | 0,07 | 0,8 |
+| `fill` a tinta unita | 46 | 0,01 | 0,65 |
+| testo | 16 | — | 0,65 |
+| `fillRect` con sfumatura (il velo della notte: una sfumatura radiale su tutto il palco) | 5 | 0,15 | 0,34 |
+| niente disegno: logica, JavaScript, lettura dei pixel | | | 1,9-2,3 restano |
+
+In una stanza si toccano **1,5 milioni di pixel a fotogramma** su 230.000 di schermo: sei-sette passate.
+La logica non pesa (0,1 ms a passo). Due cose che credevo e che le misure hanno smentito: disegnare da una
+tela **non** costa più che da un'immagine, e abbassare la qualità del filtro sugli sprite li **rallenta**
+(a qualità alta Skia usa le copie ridotte, che sono già l'idea delle «immagini pre-ridotte»).
+Dati: `prove/v2/ablazione.json`, `prove/v2/livelli.json`.
+
+### Cosa c'è nel v2 (tutto nello strato, `gioco/teatro/` intatto)
+1. **Risoluzione interna** (`scala`): il gioco ha già una scala del buffer separata dalla logica; si
+   sostituisce `adattaRisoluzione` (che non scendeva sotto 1) e il gioco disegna a 480×270 o 320×180; lo
+   ingrandisce SDL. Riduce in proporzione ogni disegno, la lettura dei pixel e la copia a schermo.
+2. **Tagli di scena** con gli interruttori che il gioco ha già (`RIBALTA_B2.attivi`: luci, riflessi,
+   particelle, crollo, scenografia) più velo, atmosfera e fili (funzioni di solo disegno sostituite).
+3. **Ritmo fisso** a 20 disegni al secondo senza accumulo di ritardo, e **recupero della logica senza
+   disegno**: se un fotogramma dura più di 80 ms la logica si rimette in pari; la velocità di gioco resta
+   al 100 % anche a 6 disegni al secondo (provato sul PC con una zavorra di 150 ms: 6,3 fps, 100 %).
+4. **`measureText` con memoria** (il gioco rimisura le stesse scritte a ogni fotogramma).
+5. **Console alla massima potenza**: lo script porta su «performance» i regolatori di CPU, memoria (dmc) e
+   GPU con `sudo`, se il sistema lo permette, e li rimette a posto all'uscita. Non so se su questa build
+   riesce: il log lo dice. Se la console girava a frequenza bassa, da solo può valere molto.
+6. **Log**: CPU, regolatore e frequenza, memoria libera, se la resa SDL è accelerata; ogni 5 secondi
+   fotogrammi al secondo, velocità di gioco, ms di logica / disegno / resa dei pixel / schermo, scena.
+7. **`FerruccioMisura.sh`**: il gioco si gioca da solo (menu, piazza, stanza, stanza piena) ai tre livelli e
+   scrive in `misura.log` i tempi veri della console, più l'ablazione per tipo di disegno. Sul PC dura 7 s;
+   sulla console qualche minuto.
+
+### I tre livelli (PC, ms a fotogramma · Mpx toccati · disegni)
+
+| Scena | bello 640×360 | medio 480×270 | veloce 320×180 |
+|---|---|---|---|
+| Menu | 6,3 · 0,95 · 443 | 5,1 · 0,53 · 443 | 4,5 · 0,24 · 443 |
+| Hub | 2,4 · 0,54 · 168 | 1,7 · 0,30 · 168 | 1,4 · 0,13 · 168 |
+| Stanza normale | 5,5 · 1,03 · 303 | 2,3 · 0,33 · 152 | 1,8 · 0,11 · 145 |
+| Stanza pesante | 6,4 · 1,54 · 437 | 2,7 · 0,54 · 191 | 2,4 · 0,21 · 182 |
+
+- **bello** = il v1. **medio**: senza luci della ribalta, riflessi e velo; le scritte si leggono, immagine
+  un po' morbida (`prove/v2/livello-*-medio.png`). **veloce**: anche senza pioggia, schegge e crollo; le
+  scritte piccole **non si leggono** (`prove/v2/livello-*-veloce.png`).
+- Si parte da **medio**: è il più veloce che resta leggibile.
+- Sul PC nelle stanze il medio costa il 42 % del bello e tocca un terzo dei pixel. Il menu invece cala poco
+  (443 disegni, 109 scritte: lì pesa la CPU, non i pixel): **sulla console il menu resterà lento**.
+
+### Quanto mi aspetto sulla console
+Ho un solo dato vero (5 al secondo, a occhio) e non so quanto del tempo siano pixel e quanto siano
+JavaScript e preparazione dei disegni. Nei due casi estremi:
+
+| Se il tempo sulla console è… | medio | veloce |
+|---|---|---|
+| soprattutto pixel (70 %) | 11-14 fps | 17-20 fps |
+| soprattutto JavaScript e preparazione (70 %) | 9-10 fps | 11-12 fps |
+
+A parte, non contato sopra: i regolatori su «performance», se erano bassi. **Non posso promettere 15-20 al
+livello leggibile.** Se la misura dirà che domina il JavaScript, il tetto di questo strato è vicino.
+
+### Cosa non ho fatto, e cosa farei coi numeri della console
+- **Memoria delle scritte e delle sfumature** (disegnarle una volta e riusarle): al livello medio valgono
+  insieme circa il 25 % del fotogramma sul PC. Sono delicate (allineamenti, trasparenze): le farei solo se
+  `misura.log` conferma che pesano.
+- **Menu**: è quasi fermo, si potrebbe ridisegnare solo quando cambia. Non fatto.
+- Scena a bassa risoluzione con scritte a risoluzione piena: richiede due tele e cambia l'ordine dei
+  disegni; al momento non c'è.
+- Non verificato sulla console: tutto il v2.
+
+### Il pacchetto v2
+`ferruccio-r36s-v2.zip` (64 MB): `Ferruccio.sh`, `FerruccioMisura.sh`, `ferruccio/`. Stessi binari del v1,
+stessi controlli. Istruzioni brevi in `modello-pacchetto/ISTRUZIONI.txt`: cancellare la vecchia cartella,
+copiare la nuova, giocare, lanciare la misura, mandare i file di `dati/`; i tre livelli e le voci di
+`impostazioni.json` sono spiegati lì.
+
+### Raccomandazione aggiornata
+Far provare il v2 e soprattutto **far lanciare `FerruccioMisura`**: con `misura.log` il terzo giro è mirato.
+Se al livello medio la console resta sotto i 10, questo approccio (canvas software su A35) non arriva a un
+gioco fluido senza perdere le scritte, e le strade sono due: accettare 10-12 al secondo a velocità giusta,
+oppure la riscrittura del disegno sulla GPU (§7c), che resta il lavoro di mesi già detto.
