@@ -175,7 +175,7 @@ function creaFintoBrowser(opz) {
   const G = globalThis;
   const log = opz.log || { riga() {} };
   const dirHtml = path.dirname(path.resolve(opz.fileHtml));
-  const stato = { errori: 0, ultimiErrori: [], caricato: false, immagini: 0, immaginiFallite: 0, pixelImmagini: 0, tele: [] };
+  const stato = { errori: 0, ultimiErrori: [], caricato: false, immagini: 0, immaginiFallite: 0, pixelImmagini: 0, tele: [], simboli: [] };
 
   function annotaErrore(dove, err) {
     stato.errori++;
@@ -204,6 +204,12 @@ function creaFintoBrowser(opz) {
     for (const alias of ['ui-monospace', 'monospace', 'Cascadia Mono']) { reg('DejaVuSansMono.ttf', alias); reg('DejaVuSansMono-Bold.ttf', alias); }
     for (const alias of ['Georgia', 'serif']) { reg('DejaVuSerif.ttf', alias); reg('DejaVuSerif-Bold.ttf', alias); }
     reg('DejaVuSans.ttf', 'sans-serif'); reg('DejaVuSans-Bold.ttf', 'sans-serif');
+    // simboli ed emoji (monete, bombe, chiavi, i tasti Ⓐ Ⓑ…): nel browser li mette il sistema, qui no.
+    // Ogni file «simboli-*» diventa una famiglia di ripiego messa in coda a ogni ctx.font (più sotto).
+    for (const f of fs.readdirSync(opz.dirFont).filter((n) => /^simboli-.*\.(ttf|otf|woff2?)$/i.test(n)).sort()) {
+      const alias = 'Ferruccio ' + path.parse(f).name.slice(0, 30);
+      try { if (F.registerFromPath(path.join(opz.dirFont, f), alias)) stato.simboli.push(`"${alias}"`); } catch (_) { /* formato non letto: resta il quadratino */ }
+    }
   } else {
     log.riga('avviso: cartella dei font non trovata, si usano quelli di sistema');
   }
@@ -249,6 +255,18 @@ function creaFintoBrowser(opz) {
   canvas.clientWidth = PALCO.l; canvas.clientHeight = PALCO.a; // adattaRisoluzione() → buffer 640×360, scala 1
   canvas.getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: PALCO.l, height: PALCO.a, right: PALCO.l, bottom: PALCO.a });
   canvas.focus = () => {}; canvas.parentNode = wrap;
+
+  // In coda a ogni font chiesto dal gioco si aggiungono le famiglie dei simboli: il gioco non cambia,
+  // i glifi che il font del testo non ha (🪙 💣 🗝 Ⓐ…) si pescano da lì.
+  if (stato.simboli.length) {
+    const proto = Object.getPrototypeOf(canvas.getContext('2d'));
+    const d = Object.getOwnPropertyDescriptor(proto, 'font');
+    if (d && d.set && d.get) {
+      const coda = ', ' + stato.simboli.join(', ');
+      Object.defineProperty(proto, 'font', { configurable: true, enumerable: d.enumerable, get: d.get, set(v) { d.set.call(this, typeof v === 'string' && !v.endsWith(coda) ? v + coda : v); } });
+      log.riga(`font dei simboli in coda ai testi: ${stato.simboli.length}`);
+    } else log.riga('avviso: il contesto 2D non lascia agganciare «font»: emoji e simboli restano quadratini');
+  }
 
   Object.assign(documento, {
     body: corpo, documentElement: radice, head: creaElemento('head', documento), hidden: false, visibilityState: 'visible',

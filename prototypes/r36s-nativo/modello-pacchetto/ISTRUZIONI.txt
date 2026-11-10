@@ -1,0 +1,73 @@
+FERRUCCIO — LA NOTTE IMMOBILE · prova sulla console R36S (ArkOS + PortMaster)
+============================================================================
+
+Questa è una PROVA DI FATTIBILITÀ: sul PC il gioco gira così, sulla console non l'ha ancora
+provato nessuno. Può non partire. Se non parte, i due file di log dicono perché: mandaceli.
+
+COSA C'È NEL PACCHETTO
+  Ferruccio.sh              lo script di lancio (formato PortMaster)
+  ferruccio/                il gioco e tutto quello che gli serve:
+    gioco/teatro.html         il gioco (lo stesso file unico della release)
+    node/node                 Node.js per ARM a 64 bit (il «motore» che esegue il gioco)
+    node_modules/             disegno (Skia), schermo e comandi (SDL2)
+    lanciatore/               lo strato che fa da browser
+    impostazioni.json         fotogrammi al secondo, tasti, audio, effetti di partenza
+    lancio.conf               piano B per lo schermo
+    dati/                     salvataggi e log (si crea al primo avvio)
+
+1. COPIARE
+  a. Spegni la console, togli la scheda SD dei giochi e mettila nel PC.
+     (Con una scheda sola è la partizione che si chiama EASYROMS; con due schede è la seconda.)
+  b. Apri la cartella  ports  della scheda.
+  c. Copia dentro  ports  sia il file  Ferruccio.sh  sia la cartella  ferruccio  (tutta intera).
+     Alla fine devi avere:  ports/Ferruccio.sh  e  ports/ferruccio/node/node
+  d. Espelli la scheda in modo sicuro e rimettila nella console.
+
+2. LANCIARE
+  a. Accendi. Nel menu principale entra in  Ports.
+     Se «Ferruccio» non c'è: Start → Quit → Restart EmulationStation, poi riguarda.
+  b. Scegli  Ferruccio. Lo schermo resta nero per un po': il primo avvio può volerci
+     20-40 secondi. Aspetta almeno un minuto prima di dire che non parte.
+  c. Deve apparire il menu coi quattro burattini, con due bande nere sopra e sotto.
+
+3. COMANDI (quelli del gamepad che il gioco ha già)
+  Levetta sinistra o croce    muovi (nei menu: scegli)
+  Levetta destra              spara in quella direzione
+  A / B / X / Y               spara giù / destra / sinistra / su (secondo la POSIZIONE del tasto)
+  R1                          interagisci (porte, forzieri, dialoghi)
+  L1                          consumabile        L2  oggetto attivo
+  Start                       pausa              Select  diario
+  START + SELECT insieme per un secondo          ESCI dal gioco
+  Se i quattro tasti sparano in direzioni che non corrispondono alla loro posizione, apri
+  ports/ferruccio/impostazioni.json  e metti  "scambiaAB": true  e/o  "scambiaXY": true.
+
+4. COSA GUARDARE E DIRCI
+  - Parte? Arriva al menu? Si entra in piazza e poi nel piano?
+  - Va fluido o a scatti? (Il numero esatto è nel log, vedi sotto.)
+  - I comandi rispondono tutti? Start+Select esce?
+  - Si vedono i testi e i simboli (monete, bombe, chiavi)?
+  Non c'è AUDIO: è spento apposta in questa prima prova (vedi punto 6).
+
+5. I FILE DI LOG (da mandarci sempre, che parta o no)
+  Dopo aver provato, rimetti la scheda nel PC e prendi questi due file:
+     ports/ferruccio/dati/lancio.log      sistema, librerie, errori di avvio
+     ports/ferruccio/dati/ferruccio.log   schermo, controller, errori del gioco e, ogni 5 secondi,
+                                          una riga tipo:
+        fps 29.8 · logica+disegno 21.3 ms · copia a schermo 4.1 ms · … · memoria 380 MB
+  «fps» sono i fotogrammi al secondo veri; il gioco è regolato per 30.
+  Per una misura utile: gioca due o tre minuti, entra in almeno due stanze coi nemici, poi esci
+  con Start+Select (così il log si chiude bene).
+
+6. SE QUALCOSA NON VA
+  Schermo nero per più di un minuto, o torna subito al menu della console:
+     apri  ports/ferruccio/lancio.conf , cambia  SDL_DI_SISTEMA=0  in  SDL_DI_SISTEMA=1 , riprova.
+     In ogni caso mandaci i due log.
+  Va a scatti (fps sotto 25 nel log):
+     in  impostazioni.json  metti  "fps": 20 . Gli effetti pesanti (ombre, grana, vignetta,
+     pubblico) partono già spenti; si riaccendono dal menu Opzioni del gioco.
+  Vuoi provare l'audio (sperimentale, può gracchiare o non partire):
+     in  impostazioni.json  metti  "audio": true .
+  Ricominciare da zero (salvataggi e opzioni): cancella la cartella  ports/ferruccio/dati .
+
+7. TOGLIERE TUTTO
+  Cancella  ports/Ferruccio.sh  e la cartella  ports/ferruccio . Non tocca nient'altro.

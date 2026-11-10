@@ -1,0 +1,13 @@
+{
+  "fps": 30,
+  "uscita": "sdl",
+  "schermo": { "intero": true, "vsync": false, "accelerato": true, "scalaIntera": true, "liscio": false },
+  "audio": false,
+  "scambiaAB": false,
+  "scambiaXY": false,
+  "uscitaMs": 1000,
+  "opzioniIniziali": {
+    "volumeEffetti": 1, "volumeMusica": 1, "scossa": 1,
+    "ombre": false, "grana": false, "vignetta": false, "pubblico": false, "lampi": true, "voce": true
+  }
+}

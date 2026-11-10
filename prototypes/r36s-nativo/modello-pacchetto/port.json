@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "name": "ferruccio.zip",
+  "items": ["Ferruccio.sh", "ferruccio"],
+  "items_opt": [],
+  "attr": {
+    "title": "Ferruccio — La Notte Immobile",
+    "porter": ["prototipo"],
+    "desc": "Teatro delle Marionette: gioco d'azione a stanze. Prova di fattibilità: gira con Node.js, Canvas 2D nativo (Skia) e SDL2, senza browser.",
+    "inst": "Copiare Ferruccio.sh e la cartella ferruccio in ports/. Start + Select per un secondo: uscita.",
+    "genres": ["action"],
+    "image": null,
+    "rtr": true,
+    "exp": true,
+    "runtime": null,
+    "reqs": [],
+    "arch": ["aarch64"]
+  }
+}
