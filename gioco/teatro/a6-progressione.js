@@ -33,9 +33,10 @@ const CONFIG_A6 = Object.freeze({
 
 /**
  * Segni di completamento: uno per boss, con l'icona (sprite di SPRITE_OGGETTI) e il nome breve.
- * L'ordine è quello in cui compaiono nella scheda.
+ * L'ordine è quello in cui compaiono nella scheda. (b6) La lista è estendibile: i file caricati dopo
+ * (teatro/b6-boss.js) aggiungono con push() il segno dei loro boss; la riga si stringe da sola.
  */
-const SEGNI_A6 = Object.freeze([
+const SEGNI_A6 = ([
   Object.freeze({ boss: 're-gatto', sprite: 'gatto', nome: 'Gatto dei Quattro Canti' }),
   Object.freeze({ boss: 'capitano-guardia', sprite: 'chiave', nome: 'Capitano di Piombo' }),
   Object.freeze({ boss: 'regina-vespa', sprite: 'ago', nome: 'Regina delle Vespe' }),
@@ -373,17 +374,18 @@ function disegnaSegniA6(cx, charId, s) {
   const G = CONFIG_A6.segni;
   const avuti = s.segni[charId] || [];
   const y = S.y + G.y;
-  const largh = (SEGNI_A6.length - 1) * G.passo;
+  const passo = Math.min(G.passo, (S.w - 20) / Math.max(1, SEGNI_A6.length - 1)); // (b6) più segni: riga più fitta
+  const largh = (SEGNI_A6.length - 1) * passo;
   const x0 = cx + S.w / 2 - largh / 2;
   ctx.save();
   for (let i = 0; i < SEGNI_A6.length; i++) {
     const sg = SEGNI_A6[i];
-    const x = x0 + i * G.passo;
+    const x = x0 + i * passo;
     const preso = avuti.includes(sg.boss);
     ctx.globalAlpha = preso ? 1 : G.spento;
     if (preso) {
       ctx.fillStyle = 'rgba(249, 203, 64, 0.22)';
-      ctx.beginPath(); ctx.arc(x, y, 7, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, Math.min(7, passo / 2 + 0.5), 0, TAU); ctx.fill();
     }
     drawPixelSprite(SPRITE_OGGETTI[sg.sprite] || SPRITE_OGGETTI.spada, x, y, G.scala);
   }
