@@ -16,6 +16,8 @@ let ultimoFrameMs = null;
 let accumuloMs = 0;
 
 function loop(oraMs) {
+  // Il prossimo fotogramma si prenota per primo: un errore in questo non ferma più il gioco (000-errori.js).
+  requestAnimationFrame(loop);
   const ora = Number.isFinite(oraMs) ? oraMs : performance.now();
   if (ultimoFrameMs === null) ultimoFrameMs = ora - MS_PER_TICK;
   const dtMs = Math.min(FEEL.passo.maxDeltaMs, Math.max(0, ora - ultimoFrameMs));
@@ -23,21 +25,31 @@ function loop(oraMs) {
   accumuloMs += dtMs;
   let passi = 0;
   while (accumuloMs >= MS_PER_TICK && passi < FEEL.passo.maxTickPerFrame) {
-    passoLogico();
-    // Rete di sicurezza: un nemico può morire senza passare da danneggiaNemico (Bozzo che esplode, fuoco…);
-    // se sono tutti a terra, la stanza si apre comunque.
-    { const st = statoRun.stanzaCorrente;
-      if (st && !st.pulita && statoRun.fase === 'in_gioco' && st.nemici.every((n) => n.hp <= 0)) verificaStanzaPulita(); }
+    try {
+      passoLogico();
+      // Rete di sicurezza: un nemico può morire senza passare da danneggiaNemico (Bozzo che esplode, fuoco…);
+      // se sono tutti a terra, la stanza si apre comunque.
+      const st = statoRun.stanzaCorrente;
+      if (st && !st.pulita && statoRun.fase === 'in_gioco' && st.nemici.every((n) => n.hp <= 0)) verificaStanzaPulita();
+    } catch (err) {
+      segnalaErroreTeatro('logica', err);
+    }
     accumuloMs -= MS_PER_TICK;
     passi++;
   }
   if (passi >= FEEL.passo.maxTickPerFrame) accumuloMs = Math.min(accumuloMs, MS_PER_TICK);
-  iniziaFrame(); // (T5) scala base 640x360 → buffer
-  disegnaFrame(dtMs);
-  // --- T4: inizio ---
-  t4Gancio('sopra', dtMs);
-  // --- T4: fine ---
-  requestAnimationFrame(loop);
+  try {
+    iniziaFrame(); // (T5) scala base 640x360 → buffer
+    disegnaFrame(dtMs);
+    // --- T4: inizio ---
+    t4Gancio('sopra', dtMs);
+    // --- T4: fine ---
+    fusibileScenaTeatro(true);
+  } catch (err) {
+    segnalaErroreTeatro('disegno', err);
+    ripulisciContestoTeatro(ctx); // save/restore rimasti aperti a metà fotogramma
+    fusibileScenaTeatro(false);
+  }
 }
 
 statoRun.fase = 'menu_selezione';

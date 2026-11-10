@@ -7,6 +7,7 @@ Le dichiarazioni di primo livello (`const`/`let`/`function`) stanno nello scope 
 
 | File | Contenuto |
 |---|---|
+| `000-errori.js` | rete di sicurezza (primo file): raccoglie gli errori e li mostra in un riquadro a schermo; `segnalaErroreTeatro`, `fusibileScenaTeatro` (spegne gli effetti di scena se il disegno fallisce), usati dal ciclo in `80-ciclo.js` |
 | `00-config.js` | costanti, contesto canvas, FEEL, palette, tabelle: stanze, personaggi, patto, cataloghi oggetti (B, D), economia, boss (BOSS_A), STANZE_C, NOTTI_C |
 | `10-sprite.js` | testo auto-fit, cache sprite, disegno pittorico di Ferruccio/nemici/boss, tabelle SPRITE_* (incluse le aggiunte dei nuovi oggetti) |
 | `15-audio.js` | AudioSys (Web Audio procedurale) |
