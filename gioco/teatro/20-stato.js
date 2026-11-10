@@ -285,6 +285,8 @@ function nuovaRun(incrementaNotte = false) {
   }
   const pInfo = PERSONAGGI_GIOCABILI[statoRun.personaggioId] || PERSONAGGI_GIOCABILI.ferruccio;
   statoRun.numeroRun += 1;
+  // Effetti degli oggetti segreti che valgono solo per la run: non devono passare alla notte dopo
+  statoRun.viteExtra = 0; statoRun.volo = false; statoRun.dropDoppi = false; player.volo = false;
   // Boss assegnati coerentemente ai quartieri della Bibbia narrativa:
   // Piano 1 (Corso Trieste): Il Gatto dei Quattro Canti
   // Piano 2 (Villa Comunale): Il Custode di Marmo (Madre di Marmo)

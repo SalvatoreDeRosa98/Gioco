@@ -121,7 +121,7 @@ const BOTTONE_MENU_B3 = Object.freeze({ x: 494, y: 305, w: 118, h: 28 });
 /** Cartiglio delle Opzioni: geometria e colori (oro su scuro, come il menu di pausa e i cartigli). */
 const PANNELLO_B3 = Object.freeze({
   x: 96, y: 8, w: 448, h: 344,
-  righeY: 50, rigaH: 17, rigaHTasti: 15.5,
+  righeY: 50, rigaH: 15, rigaHTasti: 15.5, // 15 righe nella pagina «Suono e scena»
   margine: 18, etichettaX: 34, controlloX: 232, tacche: 10, taccaL: 12, taccaPasso: 14, taccaA: 8,
   colori: Object.freeze({
     velo: 'rgba(5, 3, 2, 0.9)', fondo: '#140c08', oro: '#f9cb40', bordoInterno: '#5a3818', rotolo: '#5c110b',
@@ -184,6 +184,8 @@ const RIGHE_B3 = Object.freeze({
     { id: 'vignetta', tipo: 'spunta', nome: 'Vignetta', nota: 'Il buio ai bordi del palco, come alla luce di una lanterna.' },
     { id: 'pubblico', tipo: 'spunta', nome: 'Pubblico', nota: 'Le ombre del pubblico in sala, davanti al palco.' },
     { id: 'lampi', tipo: 'spunta', nome: 'Lampi', nota: 'I lampi bianchi sui colpi. Spegnili se danno fastidio agli occhi.' },
+    { id: 'ombre', tipo: 'spunta', nome: 'Ombre lunghe', nota: 'Le ombre delle marionette alla luce della ribalta. Spegnile se il gioco rallenta.' },
+    { id: 'voce', tipo: 'spunta', nome: 'Voce del Burattinaio', nota: 'Le didascalie che presentano i boss e commentano la notte.' },
     { id: 'schermoIntero', tipo: 'spunta', nome: 'Schermo intero', nota: 'Il teatro a tutto schermo.' },
     { id: 'testoGrande', tipo: 'spunta', nome: 'Testo grande', nota: 'Scritte più grandi per avvisi, cartiglio degli oggetti ed etichette.' },
     { id: 'vaiTasti', tipo: 'azione', nome: 'Comandi della tastiera ▸', nota: 'Scegli i tasti di movimento, sparo, oggetti, pausa e diario.' },

@@ -173,12 +173,12 @@ const B = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, select: 8, start
   const click = (lx, ly) => p.mouse.click(rc.x + lx * rc.w / 640, rc.y + ly * rc.h / 360);
   await click(553, 319); // bottone «Opzioni» del menu principale
   ok('mouse-apre-opzioni', (await stato()).contesto === 'opzioni');
-  await click(360, 151); // interruttore «Vignetta» (sesta riga)
+  await click(360, 140); // interruttore «Vignetta» (sesta riga: y = 8 + 50 + 5 × 15 + 7, righe alte 15)
   ok('mouse-interruttore', (await opzioni()).vignetta === false);
   await click(346 + 3 * 14 + 6, 66); // quarta tacca del volume degli effetti
   ok('mouse-barra', (await opzioni()).volumeEffetti === 0.4, (await opzioni()).volumeEffetti);
   await click(346 + 9 * 14 + 6, 66);
-  await click(360, 151);
+  await click(360, 140);
   ok('mouse-ripristino', (await opzioni()).volumeEffetti === 1 && (await opzioni()).vignetta === true);
   await click(480, 46); // linguetta «Comandi»
   ok('mouse-linguetta', (await stato()).opzioni.pagina === 'tasti');
