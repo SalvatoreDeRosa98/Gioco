@@ -49,6 +49,10 @@ const statoRun = {
   poolOggettiBase: [],
   poolOggettiForti: [],
   poolPatto: [],
+  poolSegreto: [],
+  viteExtra: 0,
+  volo: false,
+  dropDoppi: false,
   oggettiEquipaggiati: [], // (B) oggetti passivi senza limite
   sinergieVisive: {},
   // Oggetto Attivo (Proposta 5: [Q])
@@ -156,6 +160,8 @@ function ricalcolaStatisticheIsaac() {
     if (m.chain) chain = true;
     if (m.tipoProiettile) tipoProiettile = m.tipoProiettile;
     if (m.size) projScale = Math.max(projScale, m.size);
+    if (m.volo) { statoRun.volo = true; player.volo = true; }
+    if (m.moneyIsPower) flatDmg += (statoRun.monete || 0) * 0.04;
   }
 
   // --- C: effetto passivo del Medaglione (Benedizione di Rosa / Oblio) ---

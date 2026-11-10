@@ -321,28 +321,109 @@ const OGGETTI_ATTIVI = {
   },
 };
 
-// --- PROPOSTA 2: RELIQUIE PROIBITE DEL PATTO D'OMBRA (COSTANO 1 ❤️ MASCHERA MASSIMA, STILE DEVIL DEAL!) ---
+// --- PROPOSTA 2: RELIQUIE DEL PATTO D'OMBRA (STATISTICHE PARO PARO A ISAAC REBIRTH DEVIL ROOM) ---
 const CATALOGO_PATTO = [
   {
-    id: 'patto_raggio', sprite: 'patto_raggio', nome: 'Raggio Cremisi del Velo', tier: 'patto',  // D: rif. Isaac: Brimstone
-    statsDesc: '[😈 PATTO] DMG x2.1 · +1.5 DMG Up · Proiettili Cremisi Perforanti Giganti',
-    lore: 'Stringi il patto col Velo: cedi 1 Maschera di vita per un potere devastante.',
-    costoMaxHpHalf: 2,
-    mod: { dmgUp: 1.5, dmgMult: 2.1, piercing: true, tipoProiettile: 'cremisi', size: 1.45 },
+    id: 'patto_raggio', sprite: 'patto_raggio', nome: 'Raggio Cremisi del Velo', tier: 'patto',  // Rif. Isaac: Brimstone
+    statsDesc: '[😈 PATTO] Brimstone · Raggio Cremisi Continuo Perforante · DMG x1.5',
+    lore: 'Stringi il patto col Velo: le tue lacrime diventano un fascio di fuoco cremisi continuo.',
+    costoMaxHpHalf: 4,
+    mod: { laser: true, dmgMult: 1.5, piercing: true, tipoProiettile: 'cremisi', size: 1.5, armaSpeciale: true },
   },
   {
-    id: 'patto_sacro', sprite: 'patto_sacro', nome: 'Cuore Sacro di San Leucio', tier: 'patto',  // D: rif. Isaac: Sacred Heart
-    statsDesc: '[😈 PATTO] DMG x2.3 · +1.0 Flat DMG · Rigenera tutta la vita rimasta',
-    lore: 'Il cuore luminoso nascosto dietro l\'altare del Belvedere.',
-    costoMaxHpHalf: 2,
-    mod: { flatDmg: 1.0, dmgMult: 2.3, healOnEquip: 12 },
+    id: 'patto_coltello', sprite: 'patto_coltello', nome: 'Lama della Burattinaia', tier: 'patto',  // Rif. Isaac: Mom\'s Knife
+    statsDesc: '[😈 PATTO] Mom\'s Knife · Fendente da Mischia Perforante · DMG x2.0',
+    lore: 'La lama affilata di Donna Luciana: recide i nemici al contatto.',
+    costoMaxHpHalf: 4,
+    mod: { spada: true, dmgMult: 2.0, piercing: true, tipoProiettile: 'cremisi', armaSpeciale: true },
   },
   {
-    id: 'patto_coltello', sprite: 'patto_coltello', nome: 'Lama della Burattinaia', tier: 'patto',  // D: rif. Isaac: Mom's Knife
-    statsDesc: '[😈 PATTO] Equipa Lama + Proiettili Perforanti · DMG x1.85 · +0.5 Tears Up',
-    lore: 'La lama con cui Donna Luciana recide i ricordi superflui.',
+    id: 'patto_patto', sprite: 'patto_patto', nome: 'Il Patto di Sangue', tier: 'patto',  // Rif. Isaac: The Pact
+    statsDesc: '[😈 PATTO] The Pact · +0.5 DMG Up · +0.7 Tears Up · +2 Maschere di Cera',
+    lore: 'Un accordo inciso a fuoco nel palcoscenico: vigore e rapidità.',
+    costoMaxHpHalf: 4,
+    mod: { dmgUp: 0.5, tearsUp: 0.7, ceraExtra: 4 },
+  },
+  {
+    id: 'patto_marchio', sprite: 'patto_marchio', nome: 'Il Marchio dell\'Ombra', tier: 'patto',  // Rif. Isaac: The Mark
+    statsDesc: '[😈 PATTO] The Mark · +1.0 DMG Up · +0.2 Speed Up · +1 Maschera di Cera',
+    lore: 'Un sigillo impresso sulla cera: rende i tuoi passi e i tuoi colpi inesorabili.',
     costoMaxHpHalf: 2,
-    mod: { spada: true, piercing: true, dmgMult: 1.85, tearsUp: 0.5, tipoProiettile: 'cremisi' },
+    mod: { dmgUp: 1.0, speedUp: 0.2, ceraExtra: 2 },
+  },
+  {
+    id: 'patto_abaddon', sprite: 'patto_abaddon', nome: 'Abaddon delle Tenebre', tier: 'patto',  // Rif. Isaac: Abaddon
+    statsDesc: '[😈 PATTO] Abaddon · Rimuove Maschere Massime · +1.5 DMG · +0.2 Speed · +6 Maschere di Cera',
+    lore: 'Consuma ogni residuo di vita mortale per donare pura potenza d\'ombra.',
+    costoMaxHpHalf: 4,
+    mod: { dmgUp: 1.5, speedUp: 0.2, abaddonHp: true, ceraExtra: 12 },
+  },
+  {
+    id: 'patto_collare', sprite: 'patto_collare', nome: 'Collare del Gatto Randagio', tier: 'patto',  // Rif. Isaac: Guppy\'s Collar
+    statsDesc: '[😈 PATTO] Guppy\'s Collar · 50% di Risorgere con ½ Maschera alla Morte',
+    lore: 'Nove vite rubate dai tetti di Caserta: la morte ha solo metà presa su di te.',
+    costoMaxHpHalf: 2,
+    mod: { guppyRevive: true },
+  },
+  {
+    id: 'patto_tunica', sprite: 'patto_tunica', nome: 'Tunica Cerimoniale Nera', tier: 'patto',  // Rif. Isaac: Ceremonial Robes
+    statsDesc: '[😈 PATTO] Ceremonial Robes · +1.0 DMG Up · +3 Maschere di Cera',
+    lore: 'Vesti liturgiche del Velo: avvolgono la marionetta conferendole durezza e potenza.',
+    costoMaxHpHalf: 2,
+    mod: { dmgUp: 1.0, ceraExtra: 6 },
+  },
+  {
+    id: 'patto_contratto', sprite: 'patto_contratto', nome: 'Contratto Sotterraneo', tier: 'patto',  // Rif. Isaac: Contract from Below
+    statsDesc: '[😈 PATTO] Contract from Below · Raddoppia le Ricompense di Fine Stanza',
+    lore: 'Ogni vittoria frutta il doppio di monete e risorse dai recessi del teatro.',
+    costoMaxHpHalf: 2,
+    mod: { dropDoppi: true },
+  },
+];
+
+// --- STANZE SEGRETE (POOL DEDICATO PARO PARO A ISAAC REBIRTH SECRET ROOMS) ---
+const CATALOGO_SEGRETO = [
+  {
+    id: 'trascendenza', sprite: 'trascendenza', nome: 'Trascendenza', tier: 'segreto',  // Rif. Isaac: Transcendence
+    statsDesc: '[👁 SEGRETO] Volo Spettrale (Sorvola baratri, trappole e ostacoli)',
+    lore: 'I fili si staccano dal ponte di comando: la marionetta galleggia libera nell\'aria.',
+    mod: { volo: true },
+  },
+  {
+    id: 'fungo_1up', sprite: 'fungo_1up', nome: 'Fungo 1-UP!', tier: 'segreto',  // Rif. Isaac: 1-Up!
+    statsDesc: '[👁 SEGRETO] +1 Vita Extra · Risorgi con la salute completamente ripristinata!',
+    lore: 'Intagliato nel legno di un albero secolare del Parco Reale: ti dona un altro atto in scena.',
+    mod: { vitaExtra: 1 },
+  },
+  {
+    id: 'fegato_crudo', sprite: 'fegato_crudo', nome: 'Fegato Crudo', tier: 'segreto',  // Rif. Isaac: Raw Liver
+    statsDesc: '[👁 SEGRETO] +2 Maschere Massime (+4 mezze) · Ripristino Completo Salute',
+    lore: 'Nutrimento primordiale dei mercati di pietra: rinnova completamente le tue fibre.',
+    mod: { bonusMaxHp: 4, healFull: true },
+  },
+  {
+    id: 'chiave_scheletro', sprite: 'chiave_scheletro', nome: 'Chiave dello Scheletro', tier: 'segreto',  // Rif. Isaac: Skeleton Key
+    statsDesc: '[👁 SEGRETO] 99 Chiavi (Apre ogni cassa e porta senza esaurirsi)',
+    lore: 'Forgiata sulle antiche catacombe borboniche: spalanca ogni serratura.',
+    mod: { maxChiavi: 99 },
+  },
+  {
+    id: 'barile_polvere', sprite: 'barile_polvere', nome: 'Cassa di Zecchini Borbonici', tier: 'segreto',  // Rif. Isaac: Pyro / A Dollar
+    statsDesc: '[👁 SEGRETO] 99 Monete Dorate d\'Epoca',
+    lore: 'Un forziere dimenticato nei corridoi di servizio: oro a profusione.',
+    mod: { bonusMonete: 99 },
+  },
+  {
+    id: 'loto_nero', sprite: 'loto_nero', nome: 'Loto Nero del Belvedere', tier: 'segreto',  // Rif. Isaac: Black Lotus
+    statsDesc: '[👁 SEGRETO] +1 Maschera Massima · +2 Maschere di Cera Protettive',
+    lore: 'Rarissimo fiore cresciuto nell\'umido silenzio delle stanze nascoste.',
+    mod: { bonusMaxHp: 2, ceraExtra: 4 },
+  },
+  {
+    id: 'soldi_potere', sprite: 'soldi_potere', nome: 'I Soldi Fanno la Forza', tier: 'segreto',  // Rif. Isaac: Money = Power
+    statsDesc: '[👁 SEGRETO] +0.04 DMG Up per ogni moneta d\'oro posseduta!',
+    lore: 'La cupidigia alimenta la carica dei tuoi proiettili: più sei ricco, più colpisci duro.',
+    mod: { moneyIsPower: true },
   },
 ];
 
@@ -353,7 +434,7 @@ const CATALOGO_OGGETTI = [
     statsDesc: '[★ FORTE] Equipa Spada (6 frame) · DMG x1.45 · +1.0 Flat DMG',
     lore: 'Forgiata con gli ultimi attrezzi di tuo padre prima del crollo del 1839.',
     prezzo: 15,
-    mod: { spada: true, flatDmg: 1.0, dmgMult: 1.45 },
+    mod: { spada: true, flatDmg: 1.0, dmgMult: 1.45, armaSpeciale: true },
   },
   {
     id: 'piombo', sprite: 'piombo', nome: 'Lacrima di Piombo', tier: 'forte',  // D: rif. Isaac: Polyphemus
@@ -575,7 +656,7 @@ const OGGETTI_NUOVI_D = [
   { id: 'piedigrotta', sprite: 'piedigrotta', nome: 'Razzo di Piedigrotta', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Ipecac
     statsDesc: '[★ FORTE] Colpi esplosivi · DMG x1.6 · Tears x0.55',
     lore: 'Fuoco d\'artificio della festa di settembre.',
-    mod: { esplosiva: 42, dmgMult: 1.6, tearsMult: 0.55, tipoProiettile: 'fuoco' } },
+    mod: { esplosiva: 42, dmgMult: 1.6, tearsMult: 0.55, tipoProiettile: 'fuoco', sparabombe: true, armaSpeciale: true } },
   { id: 'ragno', sprite: 'ragno', nome: 'Ragno della Seta di San Leucio', tier: 'forte', polarita: 'positivo', // Rif. Isaac: Mutant Spider
     statsDesc: '[★ FORTE] 4 colpi a ventaglio · Tears x0.42',
     lore: 'Tesse quattro fili per volta.',
@@ -632,10 +713,10 @@ const OGGETTI_NUOVI_D = [
     statsDesc: '[◐ MISTO] ★ DMG x2.3 · +1 Maschera · Colpi a ricerca · Tears x0.6',
     lore: 'Ex voto d\'argento: ti rende lento ma inesorabile.',
     mod: { dmgMult: 2.3, bonusMaxHp: 2, healOnEquip: 2, omingForza: 0.05, tearsMult: 0.6 } },
-  { id: 'bombarda', sprite: 'bombarda', nome: 'Bombarda di Gaeta', tier: 'forte', polarita: 'misto', // Rif. Isaac: Mega Blast (lento)
+  { id: 'bombarda', sprite: 'bombarda', nome: 'Bombarda di Gaeta', tier: 'forte', polarita: 'misto', // Rif. Isaac: Mega Blast / Dr Fetus
     statsDesc: '[◐ MISTO] ★ DMG x2.6 · Colpi enormi e lenti · Tears x0.3',
     lore: 'Il cannone della fortezza: un colpo ogni tanto, e la stanza trema.',
-    mod: { dmgMult: 2.6, size: 1.8, tearsMult: 0.3, velocitaColpo: 0.6 } },
+    mod: { dmgMult: 2.6, size: 1.8, tearsMult: 0.3, velocitaColpo: 0.6, sparabombe: true, armaSpeciale: true } },
   { id: 'occhio-vetro', sprite: 'occhio-vetro', nome: 'Occhio di Vetro del Ciarlatano', tier: 'forte', polarita: 'misto', // Rif. Isaac: Proptosis
     statsDesc: '[◐ MISTO] ★ Danno x2 da vicino, cala con la distanza · -60 Range · +0.5 DMG Up',
     lore: 'Lo vendeva un ciarlatano a Piazza Mercato: vede bene solo da vicino.',

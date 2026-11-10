@@ -123,6 +123,21 @@ function usaOggettoAttivo() {
   }
 }
 
+// --- INTERCAMBIABILITÀ ARMI SPECIALI (STILE THE BINDING OF ISAAC) ---
+const ARMI_SPECIALI_INTERCAMBIABILI = new Set([
+  'spada',
+  'patto_coltello',
+  'patto_raggio',
+  'piedigrotta',
+  'bombarda',
+]);
+
+function eArmaSpeciale(it) {
+  if (!it) return false;
+  return ARMI_SPECIALI_INTERCAMBIABILI.has(it.id) ||
+    Boolean(it.mod && (it.mod.armaSpeciale || it.mod.spada || it.mod.laser || it.mod.sparabombe));
+}
+
 function acquisisciOggettoConLimite5Slot(nuovoItem, origine, refSlot) {
   if (origine === 'patto' && refSlot) {
     const costo = refSlot.costoMaxHpHalf || 2;
@@ -133,6 +148,15 @@ function acquisisciOggettoConLimite5Slot(nuovoItem, origine, refSlot) {
     // --- T3: inizio ---
     if (window.__teatroT3?.chiediConfermaPatto?.(nuovoItem, refSlot)) return; // «−1 maschera massima per sempre»
     // --- T3: fine ---
+  }
+
+  // --- INTERCAMBIABILITÀ ARMI SPECIALI: Se raccogli un'arma speciale, rimuovi la precedente ---
+  if (eArmaSpeciale(nuovoItem)) {
+    const idxVecchia = statoRun.oggettiEquipaggiati.findIndex((it) => eArmaSpeciale(it));
+    if (idxVecchia !== -1) {
+      const rimossa = statoRun.oggettiEquipaggiati.splice(idxVecchia, 1)[0];
+      mostraBanner(`🔄 [Arma Sostituita] Rimosso: ${rimossa.nome}`, 140);
+    }
   }
 
   // --- B: inizio --- (oggetti infiniti: niente limite di 5 slot né modale di sostituzione)
@@ -160,6 +184,36 @@ function acquisisciOggettoConLimite5Slot(nuovoItem, origine, refSlot) {
   }
   ricalcolaStatisticheIsaac();
   dopoRaccoltaD(nuovoItem); // --- D ---
+
+  // Effetti immediati di raccolta patti e stanze segrete (paro paro da Isaac Rebirth)
+  if (nuovoItem.mod?.abaddonHp) {
+    statoRun.baseMaxHpHalf = 2;
+    statoRun.hpHalf = Math.min(24, (statoRun.hpHalf || 0) + (nuovoItem.mod.ceraExtra || 12));
+    mostraBanner('💀 ABADDON: Maschere mortali consumate, ottenute 6 Maschere d\'Ombra!', 180);
+  } else if (nuovoItem.mod?.ceraExtra) {
+    statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + nuovoItem.mod.ceraExtra);
+  }
+  if (nuovoItem.mod?.healFull) {
+    statoRun.hpHalf = statoRun.maxHpHalf;
+    mostraBanner('🩸 FEGATO CRUDO: Ripristino completo della salute!', 160);
+  }
+  if (nuovoItem.mod?.vitaExtra) {
+    statoRun.viteExtra = (statoRun.viteExtra || 0) + nuovoItem.mod.vitaExtra;
+    mostraBanner('🍄 1-UP! Ottenuta +1 Vita Extra per la marionetta!', 180);
+  }
+  if (nuovoItem.mod?.maxChiavi) {
+    statoRun.chiavi = 99;
+    mostraBanner('🗝 CHIAVE DELLO SCHELETRO: +99 Chiavi!', 160);
+  }
+  if (nuovoItem.mod?.bonusMonete) {
+    statoRun.monete = (statoRun.monete || 0) + nuovoItem.mod.bonusMonete;
+    mostraBanner('💰 FORZIERE BORBONICO: +99 Monete d\'Oro!', 160);
+  }
+  if (nuovoItem.mod?.dropDoppi) {
+    statoRun.dropDoppi = true;
+    mostraBanner('📜 CONTRATTO SOTTERRANEO: Le ricompense future sono raddoppiate!', 160);
+  }
+
   if (nuovoItem.mod?.healOnEquip) {
     statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + nuovoItem.mod.healOnEquip);
   }
@@ -181,10 +235,17 @@ function estraiOggettoForte() {
 // --- B: fine ---
 
 function estraiOggettoPatto() {
-  if (!statoRun.poolPatto.length) {
+  if (!statoRun.poolPatto || !statoRun.poolPatto.length) {
     statoRun.poolPatto = shuffle(CATALOGO_PATTO);
   }
   return { ...statoRun.poolPatto.pop() };
+}
+
+function estraiOggettoSegreto() {
+  if (!statoRun.poolSegreto || !statoRun.poolSegreto.length) {
+    statoRun.poolSegreto = shuffle(CATALOGO_SEGRETO);
+  }
+  return { ...statoRun.poolSegreto.pop() };
 }
 
 function tiraOggettoGratisStanza(garantito = false) {

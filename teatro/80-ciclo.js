@@ -46,10 +46,10 @@ statoRun.fase = 'menu_selezione';
 // Unico punto di esposizione degli interni per gioco/teatro/t3-economia-salvataggi.js (script classico
 // caricato subito dopo questo). Riferimenti vivi, non copie: lo script T3 li legge e li modifica.
 window.__teatroInterno = {
-  W, H, ARENA, ctx, canvas, statoRun, player, keys, AudioSys, CATALOGO_PATTO, CATALOGO_OGGETTI, ECONOMIA_T3,
+  W, H, ARENA, ctx, canvas, statoRun, player, keys, AudioSys, CATALOGO_PATTO, CATALOGO_OGGETTI, CATALOGO_SEGRETO, ECONOMIA_T3,
   PERSONAGGI_GIOCABILI, drawTextFit, drawPillLabel, mostraBanner, danneggiaNemico, apriMuroSegreto,
   colpisciMuroSegretoC, // C
-  acquisisciOggettoConLimite5Slot, selezionaPersonaggio,
+  acquisisciOggettoConLimite5Slot, selezionaPersonaggio, estraiOggettoSegreto,
   get tick() { return tick; },
 };
 // --- T3: fine ---

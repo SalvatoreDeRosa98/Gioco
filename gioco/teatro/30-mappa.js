@@ -319,17 +319,16 @@ function popolaStanzaIsaac(s, piano) {
     s.ricompensaOggetto = null;
     s.nemici = [];
     s.pulita = true;
-    // Regola Isaac richiesta: 1/3 di probabilità di avere un oggetto; se c'è, 1/5 che sia molto forte.
+    // Regola Isaac Rebirth: 1/3 di probabilità di avere un oggetto dal catalogo segreto speciale!
     const haOggetto = rng() < (1 / 3);
     if (haOggetto) {
-      const forte = rng() < (1 / 5);
-      const obj = forte ? estraiOggettoForte() : estraiOggettoBase();
+      const obj = estraiOggettoSegreto();
       s.oggettoPiedistallo = {
         ...obj,
         x: 320,
         y: 192,
         preso: false,
-        forteGratis: forte,
+        forteGratis: true,
       };
     } else {
       s.oggettoPiedistallo = null;
@@ -367,10 +366,10 @@ function popolaStanzaIsaac(s, piano) {
 
     const pianoNelCiclo = ((piano - 1) % 4) + 1;
     // Archetipi con temi e nemici tipici per quartiere della Bibbia narrativa:
-    // Piano 1 (Corso Trieste sotto la pioggia): Gatti d'Ombra, Vespe Cieche, Bozzi di polvere
-    // Piano 2 (Villa Comunale con le lucciole): Statue di Marmo, Guardie di ronda, Bozzi nei cespugli
-    // Piano 3 (San Leucio all'alba): Maschere Corazzate d'osso/ottone, Guardie di manifattura, Vespe dei telai
-    // Piano 4 (La Reggia con le torce): Guardie Borboniche scelte, Statue di gala, Maschere di corte
+    // Piano 1 (Corso Trieste sotto la pioggia): Gatti d'Ombra, Vespe Cieche, Bozzi di fuliggine
+    // Piano 2 (Villa Comunale con le lucciole): Lucciole Pungenti, Torrette di Marmo, Predoni d'Ombra
+    // Piano 3 (San Leucio all'alba): Burattini Scuciti d'Ago, Maschere Corazzate, Guardie di Ronda
+    // Piano 4 (La Reggia con le torce): Guardie Borboniche scelte, Predoni d'élite, Maschere e Statue di gala
     const TEMI_PER_PIANO = {
       1: [
         {
@@ -392,52 +391,52 @@ function popolaStanzaIsaac(s, piano) {
       ],
       2: [
         {
-          nome: 'Chiostro di Pietra',
-          getTipi: (p) => ['statua', rng() < 0.5 ? 'vespa_cieca' : 'bomba_ferma']
+          nome: 'Chiostro delle Lucciole',
+          getTipi: (p) => ['lucciola', rng() < 0.6 ? 'lucciola' : 'statua']
         },
         {
-          nome: 'Viale delle Statue',
-          getTipi: (p) => (p >= 3 ? ['statua', 'statua'] : ['statua', rng() < 0.4 ? 'statua' : 'vespa_cieca'])
+          nome: 'Viale delle Statue di Marmo',
+          getTipi: (p) => ['statua', rng() < 0.5 ? 'statua' : 'lucciola']
         },
         {
-          nome: 'Pattuglia della Villa',
-          getTipi: (p) => ['guardia', rng() < 0.6 ? 'vespa_cieca' : 'guardia']
+          nome: 'Agguato nei Cespugli della Villa',
+          getTipi: (p) => ['predone', rng() < 0.6 ? 'lucciola' : 'predone']
         },
         {
-          nome: 'Boschetto dei Ricordi',
-          getTipi: (p) => ['statua', 'guardia']
+          nome: 'Boschetto delle Ombre Notturne',
+          getTipi: (p) => ['statua', 'predone']
         },
       ],
       3: [
         {
-          nome: 'Manifattura delle Maschere',
-          getTipi: (p) => ['maschera', rng() < 0.5 ? 'vespa_cieca' : 'maschera']
+          nome: 'Atelier dei Burattini Scuciti',
+          getTipi: (p) => ['burattino', rng() < 0.6 ? 'burattino' : 'maschera']
         },
         {
           nome: 'Cripta dei Telai Reali',
-          getTipi: (p) => ['maschera', 'guardia']
+          getTipi: (p) => ['burattino', 'guardia']
         },
         {
-          nome: 'Officina dello Spezzafili',
-          getTipi: (p) => ['maschera', 'maschera']
+          nome: 'Manifattura delle Maschere Corazzate',
+          getTipi: (p) => ['maschera', rng() < 0.5 ? 'burattino' : 'maschera']
         },
         {
-          nome: 'Guardia di San Leucio',
+          nome: 'Ronda di San Leucio',
           getTipi: (p) => ['guardia', 'guardia']
         },
       ],
       4: [
         {
           nome: 'Guardia Borbonica Reale',
-          getTipi: (p) => ['guardia', 'guardia', rng() < 0.5 ? 'guardia' : 'maschera']
+          getTipi: (p) => ['guardia', 'guardia', rng() < 0.5 ? 'predone' : 'maschera']
         },
         {
           nome: 'Galleria delle Statue di Gala',
           getTipi: (p) => ['statua', 'guardia', 'maschera']
         },
         {
-          nome: 'Corte del Velo',
-          getTipi: (p) => ['maschera', 'maschera', 'guardia']
+          nome: 'Corte del Velo Supremo',
+          getTipi: (p) => ['maschera', 'predone', 'guardia']
         },
         {
           nome: 'Avamposto del Trono',
@@ -460,15 +459,18 @@ function popolaStanzaIsaac(s, piano) {
 
     const nomiNem = {
       vespa_cieca: 'Vespa Cieca (Attack Fly)',
+      lucciola: 'Lucciola Pungente',
       bomba_ferma: 'Bozzo Esplosivo (Boil)',
       gatto: 'Gatto d\'Ombra (Hopper)',
+      burattino: 'Burattino Scucito',
+      predone: 'Predone d\'Ombra',
       maschera: 'Maschera Corazzata (Host)',
       guardia: 'Guardia di Piombo',
       statua: 'Torrione di Marmo',
     };
-    const baseHpMap = { vespa_cieca: 8, bomba_ferma: 12, gatto: 12, maschera: 16, guardia: 20, statua: 22 };
-    const stageHpMap = { vespa_cieca: 2, bomba_ferma: 3, gatto: 3.5, maschera: 4.5, guardia: 5, statua: 6 };
-    const baseSpdMap = { vespa_cieca: 1.45, bomba_ferma: 0.0, gatto: 1.38, maschera: 0.32, guardia: 0.98, statua: 0.0 };
+    const baseHpMap = { vespa_cieca: 8, lucciola: 10, bomba_ferma: 12, gatto: 12, burattino: 15, predone: 18, maschera: 16, guardia: 20, statua: 22 };
+    const stageHpMap = { vespa_cieca: 2, lucciola: 2.5, bomba_ferma: 3, gatto: 3.5, burattino: 4, predone: 4.5, maschera: 4.5, guardia: 5, statua: 6 };
+    const baseSpdMap = { vespa_cieca: 1.45, lucciola: 1.65, bomba_ferma: 0.0, gatto: 1.38, burattino: 1.15, predone: 1.35, maschera: 0.32, guardia: 0.98, statua: 0.0 };
 
     // Al Piano 1 i campioni sono quasi inesistenti (5%), nei piani avanzati salgono al 18%
     const probCampione = piano === 1 ? 0.05 : 0.18;

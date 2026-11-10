@@ -224,6 +224,8 @@ function maledizioneD(k) {
 
 function spawnaMonetaATerra(st, x, y, valore = 1) {
   if (!st) return;
+  // Se attivo Contract from Below (patto_contratto), raddoppia il valore delle monete
+  if (statoRun.dropDoppi) valore *= 2;
   // Calibrazione Isaac: monete scarse al Piano 1 (~30% di drop per raccogliere 5-8 monete in tutto il piano)
   // --- T3: inizio ---
   if (statoRun.piano === 1 && rng() > (st.tipo === 'segreta' ? ECONOMIA_T3.piano1.probMonetaSegreta : ECONOMIA_T3.piano1.probMonetaAltre)) return;
@@ -626,6 +628,24 @@ function subisciColpoGiocatore(mezzeMaschereDanno, fonte, daX, daY) {
   player.invuln = ticksDaMs(FEEL.iframes.durataMs);
   scuoti(FEEL.scossa.ferita);
   if (statoRun.hpHalf <= 0) {
+    if (statoRun.viteExtra > 0) {
+      statoRun.viteExtra--;
+      statoRun.hpHalf = statoRun.maxHpHalf;
+      player.invuln = 120;
+      scuoti(FEEL.scossa.evento);
+      statoRun.ondeEsplosione.push({ x: player.x, y: player.y, r: 10, maxR: 140, color: '#22c55e' });
+      mostraBanner('🍄 1-UP! La marionetta risorge a piena salute!', 200);
+      return;
+    }
+    const haGuppy = statoRun.oggettiEquipaggiati && statoRun.oggettiEquipaggiati.some((it) => it.id === 'patto_collare');
+    if (haGuppy && rng() < 0.5) {
+      statoRun.hpHalf = 1;
+      player.invuln = 120;
+      scuoti(FEEL.scossa.evento);
+      statoRun.ondeEsplosione.push({ x: player.x, y: player.y, r: 10, maxR: 120, color: '#f59e0b' });
+      mostraBanner('🐱 COLLARE DEL GATTO: 9 Vite! Ti risvegli con ½ Maschera!', 200);
+      return;
+    }
     // --- T4: inizio ---
     // Sequenza di morte e risveglio nell'hub: la notte successiva la conta T4 con incrementaNumeroNotte().
     if (t4Gancio('morte', fonte)) return;
@@ -1315,6 +1335,41 @@ function passoLogico() {
           const osc = Math.sin(tick * 0.22 + n.x * 0.05) * 0.3;
           n.x = Math.max(ARENA.x1 + 12, Math.min(ARENA.x2 - 12, n.x + Math.cos(ang + osc) * n.speed));
           n.y = Math.max(ARENA.y1 + 12, Math.min(ARENA.y2 - 12, n.y + Math.sin(ang + osc) * n.speed));
+        } else if (n.tipo === 'lucciola') {
+          // LUCCIOLA PUNGENTE (Villa Comunale): volo erratico luminoso, scatto da vicino e puntura
+          const osc = Math.sin(tick * 0.32 + n.y * 0.07) * 0.45;
+          const vicina = distPlayer < 65;
+          const spd = vicina ? n.speed * 1.35 : n.speed;
+          n.x = Math.max(ARENA.x1 + 12, Math.min(ARENA.x2 - 12, n.x + Math.cos(ang + osc) * spd));
+          n.y = Math.max(ARENA.y1 + 12, Math.min(ARENA.y2 - 12, n.y + Math.sin(ang + osc) * spd));
+          n.shootCd = (n.shootCd || 68) - 1;
+          if (n.shootCd <= 0) {
+            n.shootCd = 65 + Math.floor(rng() * 20);
+            statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(ang) * 2.6, vy: Math.sin(ang) * 2.6, dist: 0 });
+          }
+        } else if (n.tipo === 'burattino') {
+          // BURATTINO SCUCITO (San Leucio): passo sincopato a scatti, telegrafa la mira e stoccata d'ago a corto raggio
+          n.shootCd = (n.shootCd || 58) - 1;
+          if (n.shootCd > 18) {
+            const passo = Math.sin(tick * 0.28) > 0.1 ? n.speed * 1.25 : 0;
+            n.x = Math.max(ARENA.x1 + 14, Math.min(ARENA.x2 - 14, n.x + Math.cos(ang) * passo));
+            n.y = Math.max(ARENA.y1 + 14, Math.min(ARENA.y2 - 14, n.y + Math.sin(ang) * passo));
+          } else if (n.shootCd === 8) {
+            // Affondo stoccata d'ago
+            statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(ang) * 3.5, vy: Math.sin(ang) * 3.5, dist: 0, maxDist: 75 });
+          } else if (n.shootCd <= 0) {
+            n.shootCd = 56 + Math.floor(rng() * 16);
+          }
+        } else if (n.tipo === 'predone') {
+          // PREDONE D'OMBRA: scatto obliquo rapido e tiro secco
+          n.shootCd = (n.shootCd || 64) - 1;
+          const diagAng = ang + Math.sin(tick * 0.12) * 0.55;
+          n.x = Math.max(ARENA.x1 + 14, Math.min(ARENA.x2 - 14, n.x + Math.cos(diagAng) * n.speed * 0.95));
+          n.y = Math.max(ARENA.y1 + 14, Math.min(ARENA.y2 - 14, n.y + Math.sin(diagAng) * n.speed * 0.95));
+          if (n.shootCd <= 0) {
+            n.shootCd = 58 + Math.floor(rng() * 20);
+            statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(ang) * 2.8, vy: Math.sin(ang) * 2.8, dist: 0 });
+          }
         } else if (comp === 'bomba_ferma' || n.tipo === 'bomba_ferma') {
           // 2. BOZZOLO DI POLVERE (Mulliboom / Boil): STA FERMO sul posto, pulsa quando ti avvicini ed ESPLODE!
           if (distPlayer < 64 || n.fuseTimer > 0) {

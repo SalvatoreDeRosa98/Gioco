@@ -952,28 +952,13 @@ function posaBossA(b) {
   }
 }
 
-/** Disegna il boss dalla sua immagine, già traslato in (x, y - airZ). false = immagine non disponibile. */
+/** Disegna il boss dallo sprite sheet animato multi-frame T2 in stile marionette di Ferruccio. false = fallback procedurale. */
 function disegnaBossDaImmagineA(b, tick, flip, isFlash) {
-  const S = SPRITE_BOSS_A[b.bossId];
-  if (!S) return false;
-  const [nome, mult] = S.pose[posaBossA(b)] || S.pose.fermo;
-  const img = getSpriteTeatro(`boss/${nome}`) || (nome !== S.pose.fermo[0] ? getSpriteTeatro(`boss/${S.pose.fermo[0]}`) : null);
-  if (!img) return false;
-  const usaMult = img === SPRITE_TEATRO_CACHE[`boss/${nome}`] ? mult : 1;
-  const h = S.altezza * usaMult;
-  const w = h * (img.naturalWidth / img.naturalHeight);
-  ctx.save();
-  // respiro leggero; la Regina e Donna Luciana fluttuano
-  const fluttua = (b.bossId === 'regina-vespa' || b.bossId === 'donna-luciana') ? Math.sin(tick * 0.08) * 3 : 0;
-  ctx.translate(0, S.piedi + fluttua);
-  // le figure viste di fronte non si specchiano; il gatto (di profilo) e lo Spezzafili in attacco guardano a destra
-  const profilo = S.guardaDestra || (b.bossId === 'maestro-fucina' && img === SPRITE_TEATRO_CACHE['boss/maestro_fucina_attacco']);
-  ctx.scale(profilo ? flip : 1, 1 + Math.sin(tick * 0.06) * 0.012);
-  if (b.bossId === 'capitano-guardia' && b.charging) ctx.rotate(0.16); // carica: piegato in avanti
-  if (isFlash) ctx.filter = 'brightness(2.6) contrast(1.3)';
-  ctx.drawImage(img, -w / 2, -h, w, h);
-  ctx.restore();
-  return true;
+  const t2 = window.__teatro && window.__teatro.t2;
+  if (t2 && t2.boss && t2.boss(ctx, b, tick)) {
+    return true;
+  }
+  return false;
 }
 
 // Disegno pittorico differenziato per ogni archetipo di Nemico stile The Binding of Isaac!
@@ -1046,14 +1031,15 @@ function disegnaNemicoPittorico() {
           : null;
 
   // =========================================================================
-  // 1. VESPA CIECA / VESPA D'OMBRA (Isaac Attack Fly / Pooter)
+  // 1. VESPA CIECA / VESPA D'OMBRA / LUCCIOLA (Isaac Attack Fly / Pooter)
   // =========================================================================
-  if (tipo === 'vespa_cieca' || tipo === 'vespa') {
+  if (tipo === 'vespa_cieca' || tipo === 'vespa' || tipo === 'lucciola') {
+    const isLucc = tipo === 'lucciola';
     const wingWave = Math.sin(tick * 0.95) * 5.5;
     ctx.scale(flip, 1);
 
     // Doppia coppia di ali diafane con nervature chine
-    ctx.fillStyle = 'rgba(224, 242, 254, 0.55)';
+    ctx.fillStyle = isLucc ? 'rgba(254, 240, 138, 0.65)' : 'rgba(224, 242, 254, 0.55)';
     ctx.strokeStyle = 'rgba(15, 23, 42, 0.75)';
     ctx.lineWidth = 0.85;
     // Ala anteriore superiore
@@ -1061,20 +1047,20 @@ function disegnaNemicoPittorico() {
     ctx.ellipse(-4, -14 + wingWave * 0.45, 9, 4.2, -0.4, 0, TAU);
     ctx.fill(); ctx.stroke();
     // Nervature
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+    ctx.strokeStyle = isLucc ? 'rgba(250, 204, 21, 0.7)' : 'rgba(56, 189, 248, 0.6)';
     ctx.beginPath();
     ctx.moveTo(-4, -14 + wingWave * 0.45); ctx.lineTo(-10, -16 + wingWave * 0.5);
     ctx.stroke();
     // Ala posteriore
-    ctx.fillStyle = 'rgba(186, 230, 253, 0.45)';
+    ctx.fillStyle = isLucc ? 'rgba(253, 224, 71, 0.5)' : 'rgba(186, 230, 253, 0.45)';
     ctx.beginPath();
     ctx.ellipse(3, -15 - wingWave * 0.35, 7.5, 3.6, 0.35, 0, TAU);
     ctx.fill(); ctx.stroke();
 
-    // Carapace in 3 segmenti (testa, torace, addome a strisce)
+    // Carapace in 3 segmenti (testa, torace, addome a strisce / luminescente)
     const chitinG = ctx.createLinearGradient(-6, -12, 6, 0);
-    chitinG.addColorStop(0, tint || (tipo === 'vespa_cieca' ? '#2e1065' : '#78350f'));
-    chitinG.addColorStop(0.5, tint || (tipo === 'vespa_cieca' ? '#1e1b24' : '#b45309'));
+    chitinG.addColorStop(0, tint || (isLucc ? '#854d0e' : (tipo === 'vespa_cieca' ? '#2e1065' : '#78350f')));
+    chitinG.addColorStop(0.5, tint || (isLucc ? '#facc15' : (tipo === 'vespa_cieca' ? '#1e1b24' : '#b45309')));
     chitinG.addColorStop(1, '#090604');
     ctx.fillStyle = chitinG;
     ctx.strokeStyle = '#050302';
@@ -1084,7 +1070,7 @@ function disegnaNemicoPittorico() {
     ctx.fill(); ctx.stroke();
 
     // Anelli chitinici dell'addome
-    ctx.strokeStyle = tipo === 'vespa_cieca' ? 'rgba(168, 85, 247, 0.5)' : 'rgba(251, 191, 36, 0.55)';
+    ctx.strokeStyle = isLucc ? 'rgba(250, 204, 21, 0.85)' : (tipo === 'vespa_cieca' ? 'rgba(168, 85, 247, 0.5)' : 'rgba(251, 191, 36, 0.55)');
     ctx.lineWidth = 1.0;
     ctx.beginPath();
     ctx.moveTo(-5, -6); ctx.lineTo(5, -6);
@@ -1106,8 +1092,8 @@ function disegnaNemicoPittorico() {
     ctx.moveTo(-7, -5); ctx.lineTo(-11, -3); ctx.lineTo(-6, -7);
     ctx.closePath(); ctx.fill();
 
-    // Occhi sfaccettati ardenti (rosso cremisi per vespa cieca, ambra per vespa)
-    const colVespaEye = tipo === 'vespa_cieca' ? '#ef4444' : '#facc15';
+    // Occhi sfaccettati ardenti (rosso cremisi per vespa cieca, ambra per vespa, oro per lucciola)
+    const colVespaEye = isLucc ? '#fef08a' : (tipo === 'vespa_cieca' ? '#ef4444' : '#facc15');
     const eyeVg = ctx.createRadialGradient(4.5, -7.5, 0.2, 4.5, -7.5, 3.5);
     eyeVg.addColorStop(0, '#ffffff');
     eyeVg.addColorStop(0.5, colVespaEye);
@@ -1530,8 +1516,8 @@ function disegnaNemicoPittorico() {
     ctx.ellipse(3, 6.5, 3.0, 1.4, 0, 0, TAU);
     ctx.fill();
 
-    // Giubba borbonica scarlatta o dorata (Predone) con bottoni
-    const colCoat = tint || (tipo === 'predone' ? '#ca8a04' : '#991b1b');
+    // Giubba borbonica scarlatta, dorata (Predone) o pezza verde (Burattino)
+    const colCoat = tint || (tipo === 'predone' ? '#ca8a04' : tipo === 'burattino' ? '#14532d' : '#991b1b');
     ctx.fillStyle = colCoat;
     ctx.strokeStyle = '#090604';
     ctx.lineWidth = 1.3;
@@ -1541,14 +1527,14 @@ function disegnaNemicoPittorico() {
     ctx.fill(); ctx.stroke();
 
     // Corazza di piombo/ottone sul petto con giglio borbonico
-    ctx.fillStyle = tipo === 'predone' ? '#fef08a' : '#475569';
+    ctx.fillStyle = tipo === 'predone' ? '#fef08a' : tipo === 'burattino' ? '#86efac' : '#475569';
     ctx.beginPath();
     ctx.moveTo(-5, -13); ctx.lineTo(-6, -4); ctx.quadraticCurveTo(0, 1, 6, -4); ctx.lineTo(5, -13);
     ctx.closePath();
     ctx.fill(); ctx.stroke();
 
-    // Morione / Elmo piumato con cresta
-    const colHelm = tipo === 'predone' ? '#d97706' : '#64748b';
+    // Morione / Elmo piumato / Testa di legno scucita
+    const colHelm = tipo === 'predone' ? '#d97706' : tipo === 'burattino' ? '#78350f' : '#64748b';
     ctx.fillStyle = colHelm;
     ctx.beginPath();
     ctx.arc(0, -18, 6.5, 0, TAU);
@@ -2156,6 +2142,188 @@ const SPRITE_OGGETTI = {
     '..kRRRRk....',
     '.kRRRRk.....',
     'kkkkkk......',
+    '............',
+    '............',
+  ],
+  patto_patto: [
+    '...kkkkkk...',
+    '..kRRRRRRk..',
+    '.kRrrrrrrRk.',
+    '.kRryyyrrRk.',
+    '.kRrywyrrRk.',
+    '.kRryyyrrRk.',
+    '.kRrrrrrrRk.',
+    '..kRRRRRRk..',
+    '...kwwwwk...',
+    '....kkkk....',
+    '............',
+    '............',
+  ],
+  patto_marchio: [
+    '....kkkk....',
+    '..kkrrrrkk..',
+    '.krrrwwrrrk.',
+    '.krrkrrkrrk.',
+    '.krrrrrrrrk.',
+    '.krrk..krrk.',
+    '..krrkkrrk..',
+    '...krrrrk...',
+    '....kRRk....',
+    '.....kk.....',
+    '............',
+    '............',
+  ],
+  patto_abaddon: [
+    'k..........k',
+    'kk..kkkk..kk',
+    '.kkkddddkkk.',
+    '..kddddddk..',
+    '.kdrrddrrk..',
+    '.kdRkdRkdk..',
+    '..kddddddk..',
+    '...kddddk...',
+    '...kdkkdk...',
+    '....kkkk....',
+    '............',
+    '............',
+  ],
+  patto_collare: [
+    '....kkkk....',
+    '..kkyyyykk..',
+    '.kyy....yyk.',
+    '.ky......yk.',
+    '.ky......yk.',
+    '..kyy..yyk..',
+    '...kkddkk...',
+    '....kddk....',
+    '...kddddk...',
+    '....kkkk....',
+    '............',
+    '............',
+  ],
+  patto_tunica: [
+    '....kkkk....',
+    '...kddddk...',
+    '..kddddddk..',
+    '.kddddddddk.',
+    '.kdkyyyykdk.',
+    'kddkyyyykddk',
+    'kddkyyyykddk',
+    'kddddddddddk',
+    '.kddddddddk.',
+    '..kkkkkkkk..',
+    '............',
+    '............',
+  ],
+  patto_contratto: [
+    '...kkkkkk...',
+    '..kyyyyyyk..',
+    '.kyyrrrrryyk',
+    '.kyrrrrrrryk',
+    '.kyrwwwwrryk',
+    '.kyrrrrrrryk',
+    '.kyyrrrrryyk',
+    '..kyyyyyyk..',
+    '...kRRRRk...',
+    '....kkkk....',
+    '............',
+    '............',
+  ],
+  trascendenza: [
+    '....kkkk....',
+    '..kkwwwwkk..',
+    '.kwwdwwdwwk.',
+    '.kwwkwwkwwk.',
+    '.kwwwwwwwwk.',
+    '..kwwwwwwk..',
+    '...kkkkkk...',
+    '....kyyk....',
+    '...kyk.kyk..',
+    '....k...k...',
+    '............',
+    '............',
+  ],
+  fungo_1up: [
+    '....kkkk....',
+    '..kkggggkk..',
+    '.kgggwwgggk.',
+    '.kgwwwwwwgk.',
+    'kgggwwgggggk',
+    'kkkkkkkkkkkk',
+    '..kwwwwwwk..',
+    '..kwwwwwwk..',
+    '..kwk..kwk..',
+    '..kk....kk..',
+    '............',
+    '............',
+  ],
+  fegato_crudo: [
+    '....kkkk....',
+    '..kkrrrrkk..',
+    '.krrrrrrrrk.',
+    'krrrwwrrrrrk',
+    'krrwwwwrrrrk',
+    'krrrrrrrrrrk',
+    '.krrrrrrrkk.',
+    '..krrrrkk...',
+    '...kRRk.....',
+    '....kk......',
+    '............',
+    '............',
+  ],
+  chiave_scheletro: [
+    '....kkkk....',
+    '..kkwwwwkk..',
+    '.kwwk..kwwk.',
+    '.kwwk..kwwk.',
+    '..kkwwwwkk..',
+    '....kwwk....',
+    '....kwwkk...',
+    '....kwwk....',
+    '....kwwkk...',
+    '....kwwk....',
+    '....kkkk....',
+    '............',
+  ],
+  barile_polvere: [
+    '....kyyk....',
+    '.....yk.....',
+    '...kkkkkk...',
+    '..kddddddk..',
+    '.kddkyykddk.',
+    '.kddkyykddk.',
+    '.kddddddddk.',
+    '.kddkyykddk.',
+    '..kddddddk..',
+    '...kkkkkk...',
+    '............',
+    '............',
+  ],
+  loto_nero: [
+    '.....kk.....',
+    '....kddk....',
+    '..kkddddkk..',
+    '.kddkyykddk.',
+    'kdddywwydddk',
+    '.kddkyykddk.',
+    '..kkddddkk..',
+    '...kggggk...',
+    '....kggk....',
+    '.....kk.....',
+    '............',
+    '............',
+  ],
+  soldi_potere: [
+    '....kkkk....',
+    '..kkyyyykk..',
+    '.kyyyyyyyyk.',
+    '.kyyggyyyyk.',
+    'kyyggggggyyk',
+    'kyyyyggyyyyk',
+    'kyyyyggyyyyk',
+    '.kyyyyyyyyk.',
+    '..kkyyyykk..',
+    '....kkkk....',
     '............',
     '............',
   ],
