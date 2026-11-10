@@ -52,6 +52,9 @@ const browser = creaFintoBrowser({
 });
 browser.carica();
 const msCaricamento = ms() - tAvvio;
+// Sulla console le scene si raggiungono col palco piccolo (320×180): arrivarci non è la misura, e così dura poco.
+const SCALA_VIAGGIO = CONSOLE ? 0.5 : 1;
+if (SCALA_VIAGGIO !== 1) browser.impostaScala(SCALA_VIAGGIO);
 
 const cedi = () => new Promise((r) => setImmediate(r));
 const PASSO = 1000 / 60;
@@ -73,8 +76,9 @@ function foto(nome) { if (CONSOLE) return ''; const f = browser.foto(path.join(d
 
 /** Colori diversi in una griglia di campioni: un fotogramma «vero» ne ha tanti, uno vuoto uno solo. */
 function coloriDiversi() {
-  const d = browser.pixel(); const visti = new Set();
-  for (let y = 4; y < 360; y += 8) for (let x = 4; x < 640; x += 8) { const i = (y * 640 + x) * 4; visti.add((d[i] << 16) | (d[i + 1] << 8) | d[i + 2]); }
+  const d = browser.pixel(); const visti = new Set(); const L = browser.canvas.width, A = browser.canvas.height;
+  const p = Math.max(2, Math.round(L / 80)); const m = p >> 1;
+  for (let y = m; y < A; y += p) for (let x = m; x < L; x += p) { const i = (y * L + x) * 4; visti.add((d[i] << 16) | (d[i + 1] << 8) | d[i + 2]); }
   return visti.size;
 }
 
@@ -292,7 +296,7 @@ async function giroLivelli(scena, chiave, azione) {
     console.log(`${scena.padEnd(36)} ${nome.padEnd(7)} ${riga.tela.padEnd(8)} ${riga.totale.toFixed(1).padStart(7)} ms (95° ${riga.p95.toFixed(0)}) = logica ${riga.logica.toFixed(1)} + disegno ${riga.disegno.toFixed(1)} + resa ${riga.resa.toFixed(1)} + schermo ${riga.schermo.toFixed(1)} → ${Math.min(L.fps, 1000 / riga.totale).toFixed(1)} fps su ${L.fps} voluti | ${mpx.toFixed(2)} Mpx toccati in ${disegni.toFixed(0)} disegni${riga.mhz ? ' | CPU ' + riga.mhz + ' MHz' : ''}`);
     fotoIngrandita(`livello-${chiave}-${nome}`, L.liscio);
   }
-  browser.impostaScala(1); browser.impostaTagli({}); Object.assign(O, com);
+  browser.impostaScala(SCALA_VIAGGIO); browser.impostaTagli({}); Object.assign(O, com);
   for (let i = 0; i < 4; i++) { orologio.t += PASSO; browser.fotogramma(orologio.t); copia(); }
 }
 
@@ -334,7 +338,7 @@ async function giroLivelli(scena, chiave, azione) {
     if (CONSOLE) {
       accendi(false); browser.impostaScala(LIVELLI.medio.scala); browser.impostaTagli(LIVELLI.medio.tagli);
       await ablazione('stanza pesante al livello medio', battaglia, Number(arg['fot-ablazione'] || 20));
-      browser.impostaScala(1); browser.impostaTagli({});
+      browser.impostaScala(SCALA_VIAGGIO); browser.impostaTagli({});
     }
     rilascia();
     if (!CONSOLE) fs.writeFileSync(path.join(dirUscita, 'livelli.json'), JSON.stringify(risultatiLivelli, null, 1));
