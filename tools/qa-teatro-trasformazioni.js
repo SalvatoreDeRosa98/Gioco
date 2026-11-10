@@ -479,14 +479,17 @@ const TERNE = {
     const opts = { tick: 0, flipX: false, moving: false, charInfo: I.getCharCorrente(), sinergie: R.sinergieVisive };
     const N = 2000;
     window.iniziaFrame();
-    const cx = window.__teatroInterno.ctx;
-    cx.getImageData(0, 0, 1, 1); // svuota i disegni in sospeso prima di misurare
+    // copiare il canvas su un altro obbliga il browser a eseguire i disegni in sospeso (getImageData non si può:
+    // da file:// le immagini degli sprite «sporcano» il canvas)
+    const scarico = document.createElement('canvas'); scarico.width = scarico.height = 1;
+    const svuota = () => scarico.getContext('2d').drawImage(window.__teatroInterno.canvas, 0, 0, 1, 1);
+    svuota();
     const t0 = performance.now();
     for (let i = 0; i < N; i++) {
       opts.tick = i;
       window.disegnaDietroB4(s, P.x, P.y, opts, true); window.disegnaSopraB4(s, P.x, P.y, opts, true); window.disegnaStrisciaTemiB4(s);
     }
-    cx.getImageData(0, 0, 1, 1); // e li fa eseguire dentro la misura
+    svuota(); // i disegni si eseguono dentro la misura
     const costume = (performance.now() - t0) / N;
     const t1 = performance.now();
     for (let i = 0; i < 100; i++) { window.iniziaFrame(); window.disegnaFrame(16.7); }
