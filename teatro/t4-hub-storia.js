@@ -865,7 +865,10 @@
     if (keys.KeyW || keys.ArrowUp) my -= 1;
     if (keys.KeyS || keys.ArrowDown) my += 1;
     if (!mx && !my) return;
-    const l = Math.hypot(mx, my);
+    // --- c2: levetta a tocco analogica (teatro/c2-tocco.js): direzione libera, intensità = lunghezza (al più 1) ---
+    const levaC2 = typeof levaToccoC2 === 'function' && !keys.ArrowLeft && !keys.ArrowRight && !keys.ArrowUp && !keys.ArrowDown ? levaToccoC2(mx, my) : null;
+    if (levaC2) { mx = levaC2.x; my = levaC2.y; }
+    const l = levaC2 ? Math.max(1, Math.hypot(mx, my)) : Math.hypot(mx, my);
     const nx = player.x + (mx / l) * CONFIG.hub.velocita;
     const ny = player.y + (my / l) * CONFIG.hub.velocita;
     if (!bloccato(nx, player.y)) player.x = nx;
