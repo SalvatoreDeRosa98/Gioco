@@ -51,7 +51,9 @@ const CONFIG_B8 = Object.freeze({
   cartiglioHub: Object.freeze({ x: 36, y: 80, w: 568, h: 84 }), // come quello di t4-hub-storia.js
   scelta: Object.freeze({ x: 96, y: 150, w: 448, h: 190, optH: 50 }),
   // didascalie della Voce
-  didascalia: Object.freeze({ y: 303, wMax: 460, entrataMs: 250, baseMs: 2400, perCarattereMs: 45, uscitaMs: 500, maxCoda: 3, pausaFraMs: 350 }),
+  // in gioco la didascalia sta in basso a destra (sotto il muro, fuori dall'HUD); altrove in basso al centro
+  didascalia: Object.freeze({ fondo: 354, wMax: 440, wMaxGioco: 318, xGioco: 472, entrataMs: 250, baseMs: 1900, perCarattereMs: 38, uscitaMs: 450, maxCoda: 3, pausaFraMs: 300,
+    urgenti: Object.freeze(['boss', 'fineNotte']) }),
   suonoVoce: Object.freeze({ hz: 164, durataS: 0.55, volume: 0.07, formanti: Object.freeze([520, 880, 640]) }),
   // menu di pausa: linguetta accanto al Diario degli oggetti
   linguetta: Object.freeze({ x: 474, y: 258, w: 150, h: 30 }),
@@ -60,7 +62,7 @@ const CONFIG_B8 = Object.freeze({
   // ricompensa «Il Volto Ritrovato»
   volto: Object.freeze({ hpHalf: 1, invulnTick: 120, sblocco: 'b8-volto-ritrovato' }),
   sblocchi: Object.freeze({ senzaFine: 'b8-notte-senza-fine', sipario: 'b8-sipario-calato' }),
-  diario: Object.freeze({ x: 84, y: 20, w: 472, h: 322, righeMax: 17, interlinea: 13.5 }),
+  diario: Object.freeze({ x: 60, y: 14, w: 520, h: 334, interlinea: 12.5 }),
 });
 
 /** Il segreto della porta della bottega: tre sigilli, tre ferri, il ritmo del martello. */
@@ -672,6 +674,8 @@ const riempiB8 = (testo, dati) => String(testo).replace(/\{(\w+)\}/g, (m, k) => 
 const pianoNelCicloB8 = (p = statoRun.piano) => ((Math.max(1, p || 1) - 1) % 4) + 1;
 const maiuscolaB8 = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t);
 const pulisciNomeB8 = (n) => String(n || '').replace(/\s*\(.*?\)/g, '').split(' — ')[0].trim();
+/** «Il Gatto…» dentro una frase diventa «il Gatto…» (a inizio frase ci pensa maiuscolaB8). */
+const nomeInFraseB8 = (n) => String(n || '').replace(/^(Il|La|Lo|I|Le|Gli|L')(\s|(?<=')\S)/, (m) => m.charAt(0).toLowerCase() + m.slice(1));
 const t4qaB8 = () => (window.__teatro && window.__teatro.t4qa) || null;
 function dialogoT4B8() { try { const q = t4qaB8(); return Boolean(q && q.dialogo); } catch (_) { return false; } }
 
@@ -853,8 +857,15 @@ function righeEventoB8(evento, dati) {
 }
 
 function accodaDidB8(d) {
+  const D = CONFIG_B8.didascalia;
   const Q = b8.did.coda;
-  if (Q.length >= CONFIG_B8.didascalia.maxCoda) Q.shift();
+  if (D.urgenti.includes(d.evento)) { // la presentazione di un boss non aspetta in coda: passa davanti a tutto
+    Q.length = 0;
+    const a = b8.did.att;
+    if (a) a.ms = Math.max(a.ms, a.durata - D.uscitaMs);
+    b8.did.attesaMs = 0;
+  }
+  if (Q.length >= D.maxCoda) Q.shift();
   Q.push(d);
 }
 
@@ -923,7 +934,7 @@ function rigaMorteB8(v, prendi) {
   const causa = String(v.causa || 'le ombre');
   const c = causa.toLowerCase();
   if (/luciana|burattinaia|\bman[oi]\b/.test(c)) return prendi('morte:luciana', M.luciana);
-  if (nomiBossB8().some((n) => n && c.includes(n.toLowerCase()))) return prendi('morte:boss', M.boss, { fonte: causa.replace(/^un colpo d(i|el|ella|ello)\s+/i, '') });
+  if (nomiBossB8().some((n) => n && c.includes(n.toLowerCase()))) return prendi('morte:boss', M.boss, { fonte: nomeInFraseB8(causa.replace(/^un colpo d(i|el|ella|ello)\s+/i, '')) });
   if (/sangue|ceppo|rovi|sacrific/.test(c)) return prendi('morte:sangue', M.sangue);
   if (/bomb|esplos|botto|polvere/.test(c)) return prendi('morte:bomba', M.bomba);
   if (/vesp/.test(c)) return prendi('morte:vespa', M.vespa);
@@ -972,7 +983,7 @@ function componiPaginaB8(v, nota, s, memoria, opz = {}) {
   else {
     righe.push(prendi(`cammino:${Math.min(piano, 5)}`, piano > 4 ? D.cammino.oltre : D.cammino[piano], { ciclo }));
     if ((v.stanzePulite || 0) > 0) righe.push(prendi('conteggio', D.conteggio, { stanze: v.stanzePulite, nemici: v.nemiciUccisi || 0 }));
-    for (const b of (v.boss || []).slice(0, 4)) righe.push(prendi(`boss:${b.id || 'x'}`, D.boss[b.id] || D.boss.generico, { boss: pulisciNomeB8(b.nome) || 'un guardiano' }));
+    for (const b of (v.boss || []).slice(0, 4)) righe.push(prendi(`boss:${b.id || 'x'}`, D.boss[b.id] || D.boss.generico, { boss: nomeInFraseB8(pulisciNomeB8(b.nome)) || 'un guardiano' }));
     const ogg = v.oggetti || [];
     const patti = ogg.filter((o) => o.tier === 'patto').map((o) => o.nome).concat(nota.patti || []);
     const altri = ogg.filter((o) => o.tier !== 'patto' && o.nome && o.nome !== '?');
@@ -2124,15 +2135,18 @@ function signoraB8(x, y, posa, s = 1) {
     ctx.fillStyle = '#f3dfc1'; ctx.fillRect(24, -12, 6, 7);
     ctx.fillStyle = '#f9cb40'; ctx.fillRect(4, -9, 3, 3);
   } else {
-    const h = posa === 'piedi' ? 62 : 42;
-    const china = posa === 'piedi' ? 0 : -4;
+    const inPiedi = posa === 'piedi';
+    const h = inPiedi ? 62 : 32;
+    const china = inPiedi ? 0 : -8;
+    const larg = inPiedi ? 24 : 34;
     ctx.fillStyle = NERO_B8;
-    ctx.beginPath(); ctx.moveTo(-24, 0); ctx.lineTo(24, 0); ctx.lineTo(9, -h * 0.62); ctx.lineTo(-9, -h * 0.62); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-larg, 0); ctx.lineTo(larg, 0); ctx.lineTo(9, -h * 0.62); ctx.lineTo(-9, -h * 0.62); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#3b0d2a';
-    ctx.beginPath(); ctx.moveTo(-17, -2); ctx.lineTo(17, -2); ctx.lineTo(6, -h * 0.56); ctx.lineTo(-6, -h * 0.56); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-larg + 7, -2); ctx.lineTo(larg - 7, -2); ctx.lineTo(6, -h * 0.56); ctx.lineTo(-6, -h * 0.56); ctx.closePath(); ctx.fill();
     ctx.fillStyle = NERO_B8;
-    ctx.fillRect(-8, -h * 0.92, 16, h * 0.34);
-    ctx.fillRect(-15, -h * 0.86, 5, h * 0.36); ctx.fillRect(10, -h * 0.86, 5, h * 0.36);
+    ctx.fillRect(-8 + china * 0.5, -h * 0.92, 16, h * 0.34);
+    if (inPiedi) { ctx.fillRect(-15, -h * 0.86, 5, h * 0.36); ctx.fillRect(10, -h * 0.86, 5, h * 0.36); }
+    else { ctx.fillRect(-21, -h * 0.84, 5, h * 0.84); ctx.fillRect(-24, -3, 9, 3); ctx.fillRect(6, -h * 0.84, 5, h * 0.4); } // una mano a terra
     ctx.beginPath(); ctx.arc(china, -h - 3, 8, 0, TAU); ctx.fill();
     ctx.fillRect(china - 9, -h - 14, 18, 7); ctx.fillRect(china - 4, -h - 19, 8, 6);
     ctx.fillStyle = '#f3dfc1'; ctx.fillRect(china - 6, -h - 6, 9, 7);
@@ -2401,7 +2415,7 @@ function fondalePlateaB8(f, sc, st) {
   const g = ctx.createLinearGradient(0, py, 0, py + ph);
   g.addColorStop(0, '#1f130a'); g.addColorStop(1, '#4a2c14');
   ctx.fillStyle = g; ctx.fillRect(px, py, pw, ph);
-  ctx.fillStyle = '#f3dfc1'; ctx.beginPath(); ctx.arc(px + 70, py + 44, 13, 0, TAU); ctx.fill(); // la luna dipinta
+  ctx.fillStyle = '#f3dfc1'; ctx.beginPath(); ctx.arc(px + 128, py + 42, 13, 0, TAU); ctx.fill(); // la luna dipinta
   ctx.fillStyle = '#120a06'; // tetti dipinti
   for (let i = 0; i < 8; i++) ctx.fillRect(px + i * 50, py + ph - 60 - ((i * 37) % 26), 50, 60);
   const dx = px + 296, dy = py + 92; // la porta dipinta sul fondale
@@ -2434,7 +2448,7 @@ function fondalePlateaB8(f, sc, st) {
     ctx.fillStyle = '#7a1c12'; for (let k = x + 4; k < x + w - 3; k += 12) ctx.fillRect(k, y, 4, h);
     ctx.fillStyle = '#3a0907'; for (let k = x + 10; k < x + w - 3; k += 12) ctx.fillRect(k, y, 2, h);
   };
-  if (st.sipario === 'meta') { piega(px, py, 74, ph); piega(px + pw - 74, py, 74, ph); }
+  if (st.sipario === 'meta') { piega(px, py, 54, ph); piega(px + pw - 54, py, 54, ph); }
   if (st.sipario === 'cala') {
     const hh = Math.min(ph, 20 + f.tScena * 0.9);
     piega(px, py, pw, hh);
@@ -2447,10 +2461,12 @@ function fondalePlateaB8(f, sc, st) {
     const hx = 66 + i * 42 + (i % 2) * 6;
     const su = st.alzati ? Math.min(18, Math.max(0, dtAlza * 0.45 - i * 3)) : 0;
     const hy = 250 - (i % 3) * 4 - su;
-    ctx.fillStyle = NERO_B8;
+    ctx.fillStyle = '#17100b';
     ctx.beginPath(); ctx.arc(hx, hy, 9, 0, TAU); ctx.fill();
     ctx.fillRect(hx - 13, hy + 7, 26, 34 + su);
-    ctx.fillStyle = 'rgba(138, 90, 43, 0.55)'; ctx.fillRect(hx - 6, hy - 9, 12, 1);
+    ctx.strokeStyle = 'rgba(201, 166, 121, 0.5)'; ctx.lineWidth = 1; // la luce della ribalta sul profilo delle teste
+    ctx.beginPath(); ctx.arc(hx, hy, 9, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+    ctx.fillStyle = 'rgba(201, 166, 121, 0.3)'; ctx.fillRect(hx - 13, hy + 7, 26, 1);
     if (su > 10) { ctx.fillStyle = 'rgba(201, 166, 121, 0.6)'; ctx.fillRect(hx + 2, hy - 4, 5, 6); }
   }
 }
@@ -2461,7 +2477,7 @@ function fondaleFucinaB8(f, sc, st) {
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, 262);
   ctx.fillStyle = 'rgba(92, 58, 30, 0.16)';
   for (let y = 30; y < 236; y += 18) for (let x = 46 + ((y / 18) % 2) * 20; x < 594; x += 40) ctx.fillRect(x, y, 38, 1);
-  const brace = st.brace ? Math.min(1, 0.25 + f.tScena / 140) : 0;
+  const brace = st.brace ? Math.min(1, 0.45 + f.tScena / 140) : 0;
   const fl = 0.8 + 0.2 * Math.sin(tick * 0.27);
   ctx.fillStyle = NERO_B8; ctx.fillRect(66, 124, 104, 112); ctx.beginPath(); ctx.arc(118, 124, 52, Math.PI, 0); ctx.fill(); // la forgia
   ctx.fillStyle = '#1a0f08'; ctx.fillRect(78, 136, 80, 100); ctx.beginPath(); ctx.arc(118, 136, 40, Math.PI, 0); ctx.fill();
@@ -2803,34 +2819,37 @@ function didLiberaB8() {
 
 function disegnaDidB8(a, alpha) {
   const D = CONFIG_B8.didascalia;
-  const font = fontB8(10, 'italic');
-  const righe = aCapoB8(a.testo, D.wMax - 34, font).slice(0, 3);
-  if (a.larg === undefined) {
+  const inGioco = statoRun.fase === 'in_gioco';
+  const wMax = inGioco ? D.wMaxGioco : D.wMax;
+  const font = fontB8(9.5, 'italic');
+  const righe = aCapoB8(a.testo, wMax - 30, font).slice(0, 4);
+  if (a.larg === undefined || a.largInGioco !== inGioco) {
     ctx.save(); ctx.font = font;
     a.larg = 0;
     for (const r of righe) a.larg = Math.max(a.larg, ctx.measureText(r).width);
     ctx.restore();
+    a.largInGioco = inGioco;
   }
-  const w = Math.round(Math.min(D.wMax, Math.max(170, a.larg + 38)));
-  const h = 13 + righe.length * 13;
-  const x = Math.round(W / 2 - w / 2);
-  const y = D.y;
+  const w = Math.round(Math.min(wMax, Math.max(150, a.larg + 34)));
+  const h = 12 + righe.length * 12;
+  const x = Math.round(Math.min(W - w - 6, Math.max(6, (inGioco ? D.xGioco : W / 2) - w / 2)));
+  const y = D.fondo - h;
   const filetto = a.tipo === 'voce' ? '#f9cb40' : a.tipo === 'silenzio' ? '#6b7280' : '#8a5a2b';
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.fillStyle = 'rgba(10, 6, 4, 0.88)'; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = 'rgba(10, 6, 4, 0.9)'; ctx.fillRect(x, y, w, h);
   ctx.fillStyle = filetto;
   ctx.fillRect(x + 10, y, w - 20, 1); ctx.fillRect(x + 10, y + h - 1, w - 20, 1);
   ctx.fillRect(x + 4, y + Math.round(h / 2) - 1, 2, 2); ctx.fillRect(x + w - 6, y + Math.round(h / 2) - 1, 2, 2);
   if (a.nome) {
     ctx.font = fontB8(7.5, 'bold');
     const nw = Math.ceil(ctx.measureText(a.nome).width) + 12;
-    ctx.fillStyle = '#3b0d2a'; ctx.fillRect(x + 14, y - 6, nw, 11);
-    ctx.strokeStyle = '#f9cb40'; ctx.lineWidth = 1; ctx.strokeRect(x + 14.5, y - 5.5, nw - 1, 10);
-    testoB8(a.nome, x + 14 + nw / 2, y + 2.5, { size: 7.5, stile: 'bold', color: '#f9cb40', align: 'center', ombra: false });
+    ctx.fillStyle = '#3b0d2a'; ctx.fillRect(x + 14, y - 7, nw, 11);
+    ctx.strokeStyle = '#f9cb40'; ctx.lineWidth = 1; ctx.strokeRect(x + 14.5, y - 6.5, nw - 1, 10);
+    testoB8(a.nome, x + 14 + nw / 2, y + 1.5, { size: 7.5, stile: 'bold', color: '#f9cb40', align: 'center', ombra: false });
   }
   const colore = a.tipo === 'voce' ? '#f3dfc1' : a.tipo === 'silenzio' ? '#9ca3af' : '#c9a679';
-  righe.forEach((r, i) => testoB8(r, W / 2, y + 16 + i * 13, { size: 10, stile: 'italic', color: colore, align: 'center' }));
+  righe.forEach((r, k) => testoB8(r, x + w / 2, y + 16 + k * 12, { size: 9.5, stile: 'italic', color: colore, align: 'center' }));
   ctx.restore();
 }
 
