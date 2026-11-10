@@ -61,9 +61,10 @@ const TOCCO_C2 = Object.freeze({
     consuma: Object.freeze({ dx: 206, su: 0.40 }),
     riposoSparo: Object.freeze({ dx: 96, su: 0.30 }),
     riposoMovimento: Object.freeze({ dx: 92, su: 0.32 }),
-    conferma: Object.freeze({ dx: 72, su: 0.37 }),
-    indietro: Object.freeze({ dx: 172, su: 0.25 }),
-    pagina: Object.freeze({ dx: 166, su: 0.52 }),
+    invito: Object.freeze({ versoMovimento: 54, versoSparo: 102 }), // margini della scritta: fra i bottoni piccoli
+    conferma: Object.freeze({ dx: 72, su: 0.35 }),
+    indietro: Object.freeze({ dx: 60, su: 0.68 }),
+    pagina: Object.freeze({ dx: 150, su: 0.62 }),
     frecce: Object.freeze({ dx: 104, su: 0.37, braccio: 56 }),
   }),
   // ORIZZONTALE: una colonna nella gronda della mano che spara; distanze dal fondo in frazione dell'altezza
@@ -86,14 +87,21 @@ const TOCCO_C2 = Object.freeze({
   padVero: Object.freeze({ bottoniMinimi: 10, sogliaAsse: 0.6 }),
 });
 
-/** Sui dispositivi a tocco la risoluzione interna si ferma a questa scala (2 = 1280×720): vedi il report della QA. */
+/**
+ * Sui dispositivi a tocco la risoluzione interna si ferma a questa scala (2 = 1280×720). Misura della QA
+ * (tools/qa-teatro-tocco.js, «Pixel 7» orizzontale a densità 2,6, CPU rallentata ×4, stanza con nemici): senza
+ * tetto il buffer è 1920×1080 e un fotogramma costa ~32 ms, col tetto ~16 ms; a schermo la differenza non si nota
+ * (il palco è largo 620-640 px CSS: 1280 px di buffer sono già il doppio).
+ */
 const RISOLUZIONE_C2 = Object.freeze({ scalaMax: 2 });
 
 /**
- * Impostazioni più leggere proposte SOLO al primo avvio su un dispositivo a tocco senza opzioni salvate
- * (poi comanda il menu Opzioni). Scelte misurate con la QA (CPU rallentata ×4): vedi production/qa.
+ * Impostazioni più leggere proposte SOLO al primo avvio su un dispositivo a tocco senza opzioni salvate (poi
+ * comanda il menu Opzioni). Stessa misura di sopra, col tetto: ombre lunghe spente −3 ms su 16 (−20%); grana e
+ * vignetta non costano niente di misurabile (restano accese: sono il carattere del gioco); il pubblico è l'effetto
+ * più caro (−7 ms) ma è parte del gioco: resta acceso, ed è il primo da spegnere dalle Opzioni se il telefono arranca.
  */
-const AVVIO_LEGGERO_C2 = Object.freeze({ grana: false, ombre: false });
+const AVVIO_LEGGERO_C2 = Object.freeze({ ombre: false });
 
 /** Opzioni aggiunte a OPZIONI da questo file (compaiono nel menu Opzioni solo quando il tocco è in uso). */
 const OPZIONI_C2_PREDEFINITE = Object.freeze({ toccoGrandezza: 'medi', toccoOpacita: 0.7, toccoMancino: false, toccoVibrazione: true });
@@ -193,14 +201,14 @@ const STILE_STRATO_C2 = `
 #c2-strato .c2-b svg { width: 44%; height: 44%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 #c2-strato .c2-b b { font-size: calc(var(--d, 54px) * 0.155); line-height: 1; margin-top: 2px; letter-spacing: 0.4px; pointer-events: none; }
 #c2-strato .c2-b.c2-solo svg { width: 54%; height: 54%; }
-#c2-strato .c2-b.c2-giu { background: radial-gradient(circle at 50% 40%, #8a2014 0%, #63150d 75%); border-color: #fff3c4; color: #fff; transform: scale(0.94); }
+#c2-strato .c2-b.c2-premuto { background: radial-gradient(circle at 50% 40%, #8a2014 0%, #63150d 75%); border-color: #fff3c4; color: #fff; transform: scale(0.94); }
 #c2-strato .c2-b.c2-spento { color: #8a6a3f; border-color: #7c5227; }
 #c2-strato .c2-b.c2-pronto { box-shadow: 0 0 0 2px #140c08, inset 0 0 0 1px #5a3818, 0 0 12px 2px rgba(249, 203, 64, 0.75); }
 #c2-strato .c2-b i { position: absolute; right: -4px; top: -4px; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: #140c08;
   border: 1px solid #f9cb40; color: #f6e7c4; font: bold 11px/18px ui-monospace, monospace; text-align: center; pointer-events: none; }
 #c2-strato .c2-b i:empty { display: none; }
 #c2-strato .c2-su svg { transform: rotate(0deg); } #c2-strato .c2-destra svg { transform: rotate(90deg); }
-#c2-strato .c2-giu-f svg { transform: rotate(180deg); } #c2-strato .c2-sinistra svg { transform: rotate(270deg); }
+#c2-strato .c2-giu svg { transform: rotate(180deg); } #c2-strato .c2-sinistra svg { transform: rotate(270deg); }
 #c2-strato .c2-leva { position: absolute; width: var(--d, 92px); height: var(--d, 92px); margin: calc(var(--d, 92px) / -2) 0 0 calc(var(--d, 92px) / -2);
   border-radius: 50%; border: 2px solid #f9cb40; background: radial-gradient(circle, rgba(58, 36, 18, 0.55) 0%, rgba(20, 12, 8, 0.72) 70%);
   box-shadow: 0 0 0 2px rgba(20, 12, 8, 0.8), inset 0 0 0 1px #5a3818; pointer-events: none; }
@@ -211,8 +219,8 @@ const STILE_STRATO_C2 = `
 #c2-strato .c2-leva.c2-riposo u { width: 34%; height: 34%; }
 #c2-strato .c2-leva[data-dir="su"] { border-top-color: #fff; } #c2-strato .c2-leva[data-dir="giu"] { border-bottom-color: #fff; }
 #c2-strato .c2-leva[data-dir="sinistra"] { border-left-color: #fff; } #c2-strato .c2-leva[data-dir="destra"] { border-right-color: #fff; }
-#c2-strato .c2-invito { position: absolute; left: 0; right: 0; text-align: center; color: #c9a679; font-size: 11px; pointer-events: none;
-  opacity: 0.85; transition: opacity 1.2s; }
+#c2-strato .c2-invito { position: absolute; left: 0; right: 0; text-align: center; color: #c9a679; font-size: 10px; line-height: 14px; pointer-events: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.85; transition: opacity 1.2s; }
 #c2-strato .c2-invito.c2-via { opacity: 0; }
 `;
 
@@ -391,7 +399,7 @@ function creaStratoC2() {
   creaBottoneC2('indietro', ICONE_C2.indietro, { scritta: true });
   creaBottoneC2('pagina', ICONE_C2.pagina, { scritta: true });
   creaBottoneC2('su', ICONE_C2.freccia);
-  creaBottoneC2('giu', ICONE_C2.freccia, { classe: 'c2-giu-f' });
+  creaBottoneC2('giu', ICONE_C2.freccia);
   creaBottoneC2('sinistra', ICONE_C2.freccia);
   creaBottoneC2('destra', ICONE_C2.freccia);
   const inv = document.createElement('div');
@@ -446,6 +454,8 @@ function disponiC2() {
     mettiC2(E.su, fx, fy - br, D.freccia * k); mettiC2(E.giu, fx, fy + br, D.freccia * k);
     mettiC2(E.sinistra, fx - br, fy, D.freccia * k); mettiC2(E.destra, fx + br, fy, D.freccia * k);
     c2.invito.style.top = `${Math.round(ys - 7)}px`;
+    c2.invito.style.left = `${manc ? V.invito.versoSparo : V.invito.versoMovimento}px`;
+    c2.invito.style.right = `${manc ? V.invito.versoMovimento : V.invito.versoSparo}px`;
     c2.invito.hidden = false;
   } else {
     const O = TOCCO_C2.orizzontale;
@@ -587,7 +597,7 @@ function bottoneGiuC2(el, e) {
   try { el.setPointerCapture(e.pointerId); } catch (_) { /* il dito è già «catturato» dal bottone */ }
   if (c2.puntatori.has(e.pointerId)) return;
   c2.puntatori.set(e.pointerId, el);
-  el.classList.add('c2-giu');
+  el.classList.add('c2-premuto');
   const i = el.dataset.b;
   if (i !== undefined) { c2.tenuti[i]++; c2.lampo[i] = true; }
   vibraC2(TOCCO_C2.vibra.bottone);
@@ -601,7 +611,7 @@ function rilasciaBottoneC2(pointerId, attiva) {
   if (i !== undefined) c2.tenuti[i] = Math.max(0, c2.tenuti[i] - 1);
   let ancora = false;
   for (const altro of c2.puntatori.values()) if (altro === el) ancora = true;
-  if (!ancora) el.classList.remove('c2-giu');
+  if (!ancora) el.classList.remove('c2-premuto');
   // lo schermo intero vuole un gesto «concluso»: parte al rilascio del dito
   if (attiva && el.dataset.nome === 'schermo') schermoInteroC2();
   return true;

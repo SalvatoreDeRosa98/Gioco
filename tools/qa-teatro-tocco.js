@@ -59,7 +59,8 @@ async function apri(browser, opzioni, prima) {
       const q = dita.get(id); const x0 = q.x, y0 = q.y;
       for (let i = 1; i <= passi; i++) { q.x = x0 + ((x - x0) * i) / passi; q.y = y0 + ((y - y0) * i) / passi; await invia('touchMove'); await p.waitForTimeout(ms); }
     },
-    async su(id) { dita.delete(id); await invia('touchEnd'); },
+    // il protocollo vuole touchEnd senza punti: per alzare un dito solo si manda un touchMove con quelli rimasti
+    async su(id) { dita.delete(id); await invia(dita.size ? 'touchMove' : 'touchEnd'); },
     async tocca(x, y, ms = 70) { await T.giu(9, x, y); await p.waitForTimeout(ms); await T.su(9); await p.waitForTimeout(110); },
     stato: () => p.evaluate(() => window.__teatro.interni.toccoC2.stato),
     b3: () => p.evaluate(() => window.__teatro.interni.comandiB3.stato),
@@ -84,17 +85,22 @@ async function apri(browser, opzioni, prima) {
     salvate: () => p.evaluate(() => { try { return JSON.parse(localStorage.getItem('ferruccio.teatro.opzioni') || 'null'); } catch (_) { return 'negata'; } }),
     strato: () => p.evaluate(() => { const e = document.getElementById('c2-strato'); return e ? { hidden: e.hidden, figli: e.children.length } : null; }),
     palco: () => p.evaluate(() => { const r = document.getElementById('c').getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, vw: innerWidth, vh: innerHeight }; }),
-    /** Mette Ferruccio in una stanza di combattimento con nemici, invulnerabile, al centro. */
-    inScena: () => p.evaluate(() => {
+    /**
+     * Mette Ferruccio in una stanza di combattimento con nemici, invulnerabile, al centro. `sgombra` toglie
+     * lampioni, casse e pozzanghere scivolose (le prove di direzione e velocità vogliono un palco libero).
+     */
+    inScena: (sgombra = true) => p.evaluate((sgombra) => {
       const I = window.__teatro.interni; const R = I.statoRun;
       R.pausa = false; R.fase = 'in_gioco'; I.nuovaRun(false); R.siparioAttivo = null;
       const s = R.mappa.stanze.find((x) => x.tipo === 'normale');
       I.entraInStanza(s, null);
       R.siparioAttivo = null;
       I.player.invuln = 999999; I.player.x = 320; I.player.y = 200; I.player.targetX = null; I.player.targetY = null;
-      for (const n of R.stanzaCorrente.nemici) { n.x = 120 + Math.random() * 60; n.y = 100; n.hp = 9999; n.vel = 0; n.speed = 0; }
-      return { stanza: s.id, nemici: R.stanzaCorrente.nemici.length };
-    }),
+      const st = R.stanzaCorrente;
+      for (const n of st.nemici) { n.x = 120 + Math.random() * 60; n.y = 100; n.hp = 9999; n.vel = 0; n.speed = 0; }
+      if (sgombra) { if (st.ostacoli) st.ostacoli.length = 0; if (st.suoloB7) st.suoloB7.length = 0; }
+      return { stanza: s.id, nemici: st.nemici.length };
+    }, sgombra),
     async chiudiDialoghi() {
       for (let i = 0; i < 40; i++) { if (!(await T.dialogo())) return true; if (!(await T.bottone('conferma'))) return false; }
       return false;
@@ -103,11 +109,13 @@ async function apri(browser, opzioni, prima) {
   return T;
 }
 
+const SOLO = (process.env.QA_TOCCO_SOLO || 'ABCDE').toUpperCase(); // es. QA_TOCCO_SOLO=BD per provare solo alcune parti
+
 (async () => {
   const browser = await chromium.launch();
 
   // ================================================================ A. SU PC NON ESISTE
-  {
+  if (SOLO.includes('A')) {
     const T = await apri(browser, { viewport: { width: 1280, height: 720 } });
     const { p } = T;
     let s = await T.stato();
@@ -116,7 +124,7 @@ async function apri(browser, opzioni, prima) {
     const palco0 = await T.palco();
     const O = await T.opzioni();
     ok('pc-opzioni-di-sempre', O.grana === true && O.ombre === true && O.toccoGrandezza === undefined && (await T.salvate()) === null, { grana: O.grana, ombre: O.ombre });
-    ok('pc-risoluzione-di-sempre', s.buffer[0] === 1280 && s.tetto === null, s.buffer); // Infinity → null nel JSON
+    ok('pc-risoluzione-di-sempre', s.buffer[0] === 1280 && (s.tetto === Infinity || s.tetto === null), s);
     await p.mouse.click(640, 360);
     await p.mouse.move(200, 200); await p.mouse.down(); await p.mouse.move(400, 300); await p.mouse.up();
     await p.keyboard.press('Enter');
@@ -129,14 +137,14 @@ async function apri(browser, opzioni, prima) {
   }
 
   // ================================================================ B. VERTICALE (lo schermo dell'autore)
-  {
+  if (SOLO.includes('B')) {
     const T = await apri(browser, TELEFONI.verticale);
     const { p } = T;
     let s = await T.stato();
     let palco = await T.palco();
     ok('vert-prima-del-dito-niente-strato', (await T.strato()) === null && s.dispositivo && !s.installato && !s.attivo, s);
     ok('vert-palco-in-alto-a-tutta-larghezza', palco.y <= 1 && Math.abs(palco.w - palco.vw) <= 1 && palco.h < palco.vh * 0.45, palco);
-    ok('vert-avvio-leggero', s.avvioLeggero && (await T.opzioni()).grana === false && (await T.opzioni()).ombre === false && (await T.salvate()).grana === false, await T.salvate());
+    ok('vert-avvio-leggero', s.avvioLeggero && (await T.opzioni()).ombre === false && (await T.opzioni()).grana === true && (await T.salvate()).ombre === false, await T.salvate());
     ok('vert-risoluzione-col-tetto', s.buffer[0] <= 1280 && s.tetto === 2, s.buffer);
 
     // primo dito: un tocco in un punto vuoto del menu
@@ -383,6 +391,15 @@ async function apri(browser, opzioni, prima) {
     ok('vert-opzioni-chiuse', (await T.stato()).contesto === 'pausa', (await T.stato()).contesto);
     await T.bottone('indietro');
 
+    // schermo intero (dove il browser lo concede) e schermo acceso: mai un errore, mai un bottone morto
+    await T.bottone('schermo');
+    await p.waitForTimeout(400);
+    const intero = await p.evaluate(() => (document.fullscreenElement ? document.fullscreenElement.tagName : null));
+    s = await T.stato();
+    ok('vert-schermo-intero-o-bottone-tolto', intero === 'HTML' ? s.visibili.includes('schermo') : (s.schermoNegato && !s.visibili.includes('schermo')), { intero, negato: s.schermoNegato });
+    console.log(`INFO schermo intero: ${intero === 'HTML' ? 'concesso su tutta la pagina' : 'negato (bottone tolto)'} · schermo acceso (Wake Lock): ${s.veglia ? 'concesso' : 'non disponibile qui'}`);
+    if (intero) { await p.evaluate(() => document.exitFullscreen().catch(() => {})); await p.waitForTimeout(300); }
+
     // le scritte dei comandi nominano i bottoni a schermo
     const scritte = await p.evaluate(() => { const C = window.__teatro.interni.comandiB3; return [C.adattaTesto('[E] Prendi'), C.adattaTesto('[Click/E] Compra'), C.adattaTesto('[Q] Usa'), C.adattaTesto('▷ Spazio / E'), C.simbolo('pausa')]; });
     ok('vert-scritte-dei-bottoni-a-schermo', scritte[0] === '[AZIONE] Prendi' && scritte[1] === '[AZIONE] Compra' && scritte[2] === '[OGGETTO] Usa' && scritte[3] === '▷ CONFERMA' && scritte[4] === 'PAUSA' && !scritte.join(' ').includes('Ⓐ'), scritte);
@@ -401,17 +418,17 @@ async function apri(browser, opzioni, prima) {
     ok('vert-un-dito-lo-riporta', s.attivo && !(await T.strato()).hidden && s.dispositivoB3 === 'tocco', s);
 
     // ricarica: le opzioni del tocco restano, le impostazioni leggere non si ripropongono
-    await p.evaluate(() => { const I = window.__teatro.interni; I.OPZIONI.grana = true; I.OPZIONI.toccoMancino = true; I.salvaOpzioni(); });
+    await p.evaluate(() => { const I = window.__teatro.interni; I.OPZIONI.ombre = true; I.OPZIONI.toccoMancino = true; I.salvaOpzioni(); });
     await p.reload();
     await p.waitForTimeout(600);
     s = await T.stato();
     const Or = await T.opzioni();
-    ok('vert-ricarica-rispetta-le-opzioni', !s.avvioLeggero && Or.grana === true && Or.toccoMancino === true && Or.ombre === false, { grana: Or.grana, mancino: Or.toccoMancino, avvioLeggero: s.avvioLeggero });
+    ok('vert-ricarica-rispetta-le-opzioni', !s.avvioLeggero && Or.ombre === true && Or.toccoMancino === true, { ombre: Or.ombre, mancino: Or.toccoMancino, avvioLeggero: s.avvioLeggero });
     await T.cx.close();
   }
 
   // ================================================================ C. VERTICALE ALTO (412×915): solo disposizione
-  {
+  if (SOLO.includes('C')) {
     const T = await apri(browser, TELEFONI.verticaleAlto);
     const { p } = T;
     await T.toccaGioco(320, 20);
@@ -427,7 +444,7 @@ async function apri(browser, opzioni, prima) {
   }
 
   // ================================================================ D. ORIZZONTALE («Pixel 7 landscape»)
-  {
+  if (SOLO.includes('D')) {
     const T = await apri(browser, TELEFONI.orizzontale);
     const { p } = T;
     let s = await T.stato();
@@ -470,7 +487,7 @@ async function apri(browser, opzioni, prima) {
     }), ms);
     const scena = async (opz, tetto) => {
       await p.evaluate(([opz, tetto]) => { const I = window.__teatro.interni; Object.assign(I.OPZIONI, opz); I.toccoC2.tetto(tetto); }, [opz, tetto]);
-      await T.inScena();
+      await T.inScena(false); // stanza piena: lampioni, pozzanghere, nemici, pubblico
       await p.waitForTimeout(700);
       const buffer = (await T.stato()).buffer;
       return { buffer: buffer.join('×'), ...(await misura()) };
@@ -480,12 +497,13 @@ async function apri(browser, opzioni, prima) {
       'senza tetto (1920×1080), tutti gli effetti': await scena(tutto, false),
       'tetto 1280×720, tutti gli effetti': await scena(tutto, true),
       'tetto, grana spenta': await scena({ ...tutto, grana: false }, true),
-      'tetto, ombre lunghe spente': await scena({ ...tutto, ombre: false }, true),
-      'tetto, grana e ombre spente (avvio leggero)': await scena({ ...tutto, grana: false, ombre: false }, true),
-      'tetto, anche pubblico e vignetta spenti': await scena({ grana: false, ombre: false, vignetta: false, pubblico: false }, true),
+      'tetto, vignetta spenta': await scena({ ...tutto, vignetta: false }, true),
+      'tetto, ombre lunghe spente (avvio leggero)': await scena({ ...tutto, ombre: false }, true),
+      'tetto, pubblico spento': await scena({ ...tutto, pubblico: false }, true),
+      'tetto, ombre lunghe e pubblico spenti': await scena({ ...tutto, ombre: false, pubblico: false }, true),
     };
     await T.cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
-    const prima = costi['senza tetto (1920×1080), tutti gli effetti'], dopo = costi['tetto, grana e ombre spente (avvio leggero)'];
+    const prima = costi['senza tetto (1920×1080), tutti gli effetti'], dopo = costi['tetto, ombre lunghe spente (avvio leggero)'];
     ok('costo-del-fotogramma-scende', dopo.msFotogramma < prima.msFotogramma * 0.9 && costi['tetto 1280×720, tutti gli effetti'].buffer === '1280×720' && prima.buffer === '1920×1080', { prima, dopo });
     console.log('COSTO DEL FOTOGRAMMA (CPU ×4, Pixel 7 orizzontale, stanza con nemici):');
     for (const [nome, c] of Object.entries(costi)) console.log(`  ${nome.padEnd(46)} ${c.buffer.padEnd(10)} ${String(c.msFotogramma).padStart(6)} ms  ${c.fps} fps`);
@@ -493,7 +511,7 @@ async function apri(browser, opzioni, prima) {
   }
 
   // ================================================================ E. MEMORIA DEL BROWSER NEGATA (content://)
-  {
+  if (SOLO.includes('E')) {
     const T = await apri(browser, TELEFONI.verticale, () => {
       const nega = () => { throw new DOMException('The operation is insecure.', 'SecurityError'); };
       try { Object.defineProperty(window, 'localStorage', { configurable: true, get: nega }); } catch (_) { /* già definita */ }
