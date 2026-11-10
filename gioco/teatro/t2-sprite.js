@@ -48,7 +48,11 @@
     "custode-marmo": {"cella_l": 392, "cella_a": 240, "colonne": 4, "altezza_rif": 232, "margine": 4, "righe": [["fermo", 2], ["apre", 2], ["spara", 3], ["colpito", 1], ["morte", 4]]},
     "spezzafili": {"cella_l": 403, "cella_a": 246, "colonne": 4, "altezza_rif": 238, "margine": 4, "righe": [["fermo", 2], ["muove", 4], ["anticipo", 2], ["attacco", 2], ["morte", 3]]},
     "lucciola": {"cella_l": 293, "cella_a": 222, "colonne": 4, "altezza_rif": 214, "margine": 4, "righe": [["vola", 4], ["carica", 2], ["colpito", 1], ["morte", 3]]},
-    "burattino": {"cella_l": 308, "cella_a": 267, "colonne": 4, "altezza_rif": 259, "margine": 4, "righe": [["fermo", 2], ["muove", 4], ["anticipo", 2], ["attacco", 2], ["morte", 3]]}
+    "burattino": {"cella_l": 308, "cella_a": 267, "colonne": 4, "altezza_rif": 259, "margine": 4, "righe": [["fermo", 2], ["muove", 4], ["anticipo", 2], ["attacco", 2], ["morte", 3]]},
+    "accendilumi": {"cella_l": 384, "cella_a": 256, "colonne": 4, "altezza_rif": 240, "margine": 4, "righe": [["fermo", 2], ["muove", 4], ["anticipo", 2], ["attacco", 3], ["evoca", 2], ["colpito", 1], ["morte", 3]]},
+    "cigno-latta": {"cella_l": 384, "cella_a": 256, "colonne": 4, "altezza_rif": 240, "margine": 4, "righe": [["fermo", 2], ["muove", 4], ["anticipo", 2], ["carica", 2], ["apre", 2], ["attacco", 2], ["colpito", 1], ["morte", 3]]},
+    "giostra-lucciole": {"cella_l": 384, "cella_a": 256, "colonne": 4, "altezza_rif": 240, "margine": 4, "righe": [["fermo", 2], ["anticipo", 2], ["attacco", 4], ["evoca", 2], ["colpito", 1], ["morte", 3]]},
+    "tessitrice-pietra": {"cella_l": 384, "cella_a": 256, "colonne": 4, "altezza_rif": 240, "margine": 4, "righe": [["fermo", 2], ["muove", 4], ["anticipo", 2], ["attacco", 2], ["evoca", 2], ["colpito", 1], ["morte", 4]]}
   };
   /* T2-LAYOUT: fine */
 
