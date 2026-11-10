@@ -60,13 +60,18 @@ done
 rm -rf "$F/node_modules/@kmamal/sdl/scripts" "$F/node_modules/@kmamal/sdl/binding.gyp" "$F/node_modules/@kmamal/sdl/dist"
 mkdir -p "$F/node_modules/@kmamal/sdl/dist"
 cp "$S/sdl-arm64/sdl.node" "$F/node_modules/@kmamal/sdl/dist/sdl.node"
-# della SDL2 basta un file solo, col nome che sdl.node cerca (SONAME)
-cp -L "$(ls "$S"/sdl-arm64/libSDL2-2.0.so.0.* | head -n 1)" "$F/node_modules/@kmamal/sdl/dist/libSDL2-2.0.so.0"
+# La SDL2 in dotazione al modulo (2.32.8) chiede GLIBC 2.34: su ArkOS non si carica. Non sta quindi accanto
+# a sdl.node (che la troverebbe per prima) ma in una cartella a parte, che Ferruccio.sh mette nel percorso
+# delle librerie solo se la console ha una GLIBC abbastanza nuova; altrimenti vale la SDL2 della console.
+mkdir -p "$F/sdl-in-dotazione"
+cp -L "$(ls "$S"/sdl-arm64/libSDL2-2.0.so.0.* | head -n 1)" "$F/sdl-in-dotazione/libSDL2-2.0.so.0"
 # del Web Audio nativo serve solo il binario arm64
 find "$F/node_modules/node-web-audio-api" -name '*.node' ! -name '*linux-arm64-gnu*' -delete
 cp "$QUI/modello-pacchetto/Ferruccio.sh" "$P/Ferruccio.sh"
 cp "$QUI/modello-pacchetto/impostazioni.json" "$QUI/modello-pacchetto/lancio.conf" "$QUI/modello-pacchetto/port.json" "$QUI/modello-pacchetto/ISTRUZIONI.txt" "$F/"
 chmod +x "$P/Ferruccio.sh" "$F/node/node"
+# i file di lancio devono avere i fine riga di Linux (LF): con CRLF bash non li esegue
+if grep -q $'\r' "$P/Ferruccio.sh" "$F/lancio.conf"; then echo "ERRORE: fine riga CRLF nei file di lancio"; exit 1; fi
 if find "$P" -type l | grep -q .; then echo "ERRORE: nel pacchetto ci sono collegamenti simbolici"; find "$P" -type l; exit 1; fi
 
 echo "== 4. controllo dei binari (architettura e GLIBC chiesta; la console ha GLIBC $GLIBC_CONSOLE)"
@@ -80,13 +85,18 @@ while IFS= read -r -d '' b; do
   serve="$(readelf -d "$b" 2>/dev/null | grep NEEDED | sed 's/.*\[\(.*\)\]/\1/' | tr '\n' ' ' || true)"
   esito="ok"
   case "$tipo" in *aarch64*) ;; *) esito="NON AARCH64"; guasti=$((guasti + 1)) ;; esac
-  if [ -n "$glibc" ] && [ "$(printf '%s\n%s\n' "$glibc" "$GLIBC_CONSOLE" | sort -V | tail -n 1)" != "$GLIBC_CONSOLE" ]; then esito="GLIBC TROPPO NUOVA"; guasti=$((guasti + 1)); fi
+  if [ -n "$glibc" ] && [ "$(printf '%s\n%s\n' "$glibc" "$GLIBC_CONSOLE" | sort -V | tail -n 1)" != "$GLIBC_CONSOLE" ]; then
+    case "$b" in
+      */sdl-in-dotazione/*) esito="solo con GLIBC>=$glibc" ;; # facoltativa: su ArkOS si usa la SDL2 della console
+      *) esito="GLIBC TROPPO NUOVA"; guasti=$((guasti + 1)) ;;
+    esac
+  fi
   printf '%-58s %-20s GLIBC<=%-5s GLIBCXX<=%-7s %s MB\n   chiede: %s\n' "${b#$P/}" "$esito" "${glibc:--}" "${glibcxx:--}" "$(( $(stat -c %s "$b") / 1048576 ))" "$serve" | tee -a "$V"
 done < <(find "$P" -type f \( -name '*.node' -o -name 'node' -o -name '*.so*' \) -print0 | sort -z)
 echo "binari con problemi: $guasti" | tee -a "$V"
 
 echo "== 5. zip"
-ZIP="$DEST/ferruccio-r36s-portmaster.zip"
+ZIP="$DEST/ferruccio-r36s.zip"
 python3 - "$P" "$ZIP" <<'PY'
 import os, sys, zipfile
 radice, dest = sys.argv[1], sys.argv[2]

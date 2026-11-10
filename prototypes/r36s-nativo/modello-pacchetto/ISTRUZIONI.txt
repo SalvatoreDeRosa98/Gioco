@@ -1,73 +1,123 @@
-FERRUCCIO — LA NOTTE IMMOBILE · prova sulla console R36S (ArkOS + PortMaster)
-============================================================================
+FERRUCCIO — LA NOTTE IMMOBILE sulla tua console
+(R36S con «ArkOS 2.0 (08232024)(AeUX)», scheda letta da un PC Windows)
+==========================================================================
 
-Questa è una PROVA DI FATTIBILITÀ: sul PC il gioco gira così, sulla console non l'ha ancora
-provato nessuno. Può non partire. Se non parte, i due file di log dicono perché: mandaceli.
+PRIMA DI TUTTO, DUE COSE ONESTE
+  - Questa è una PROVA. Sul computer il gioco gira così; sulla console non l'ha ancora provato
+    nessuno. Può andare a scatti, e può anche non partire.
+  - Non rischi niente: copi un file e una cartella dentro  ports , e non tocchi nient'altro.
+    Se non parte, il gioco scrive due file di testo («log») che dicono perché: mandaceli.
+  In questa prima prova NON c'è il sonoro: è spento apposta.
+  Non serve internet, non serve PortMaster e non serve installare niente sulla console:
+  il pacchetto porta con sé tutto quello che gli occorre.
 
-COSA C'È NEL PACCHETTO
-  Ferruccio.sh              lo script di lancio (formato PortMaster)
-  ferruccio/                il gioco e tutto quello che gli serve:
-    gioco/teatro.html         il gioco (lo stesso file unico della release)
-    node/node                 Node.js per ARM a 64 bit (il «motore» che esegue il gioco)
-    node_modules/             disegno (Skia), schermo e comandi (SDL2)
-    lanciatore/               lo strato che fa da browser
-    impostazioni.json         fotogrammi al secondo, tasti, audio, effetti di partenza
-    lancio.conf               piano B per lo schermo
-    dati/                     salvataggi e log (si crea al primo avvio)
+--------------------------------------------------------------------------
+PASSO 1 · Copia il gioco sulla scheda (sul PC)
+--------------------------------------------------------------------------
+  a. Sul PC fai clic destro su  ferruccio-r36s.zip  → «Estrai tutto».
+     Nella cartella estratta trovi DUE cose:
+         Ferruccio.sh      (un file)
+         ferruccio         (una cartella)
+     Non aprire  Ferruccio.sh : copialo e basta.
+  b. Spegni la console, togli la scheda e mettila nel PC.
+     Compaiono due unità:
+         EASYROMS (H:)     ← quella giusta: è dove stanno i giochi
+         R36S OS           ← NON toccarla: è il sistema della console
+     Se Windows chiede di «formattare il disco», rispondi sempre ANNULLA.
+  c. Apri  EASYROMS (H:)  e poi la cartella  ports  (c'è già).
+  d. Copia dentro  H:\ports\  tutte e due le cose:  Ferruccio.sh  e la cartella  ferruccio .
+     Sono circa 165 MB, ci vuole qualche minuto. Alla fine devi avere:
+         H:\ports\Ferruccio.sh
+         H:\ports\ferruccio\          (dentro:  gioco , node , lanciatore , node_modules …)
+  e. In basso a destra: «Rimozione sicura dell'hardware» → espelli EASYROMS. Poi togli la scheda
+     e rimettila nella console.
 
-1. COPIARE
-  a. Spegni la console, togli la scheda SD dei giochi e mettila nel PC.
-     (Con una scheda sola è la partizione che si chiama EASYROMS; con due schede è la seconda.)
-  b. Apri la cartella  ports  della scheda.
-  c. Copia dentro  ports  sia il file  Ferruccio.sh  sia la cartella  ferruccio  (tutta intera).
-     Alla fine devi avere:  ports/Ferruccio.sh  e  ports/ferruccio/node/node
-  d. Espelli la scheda in modo sicuro e rimettila nella console.
+--------------------------------------------------------------------------
+PASSO 2 · Lancia (sulla console)
+--------------------------------------------------------------------------
+  a. Accendi. Nel menu principale scorri fino a  Ports  ed entra (tasto A).
+  b. Nell'elenco deve esserci  Ferruccio . Sceglilo e premi A.
+     Se non c'è: premi Start → Quit → Restart EmulationStation, poi riguarda in Ports.
+  c. Lo schermo diventa nero. ASPETTA: la prima volta possono servire 30-60 secondi.
+     Non spegnere prima di due minuti.
+  d. Se va bene appare il menu con i quattro burattini, con due fasce nere sopra e sotto
+     (è giusto: lo schermo della console è più «quadrato» del gioco).
 
-2. LANCIARE
-  a. Accendi. Nel menu principale entra in  Ports.
-     Se «Ferruccio» non c'è: Start → Quit → Restart EmulationStation, poi riguarda.
-  b. Scegli  Ferruccio. Lo schermo resta nero per un po': il primo avvio può volerci
-     20-40 secondi. Aspetta almeno un minuto prima di dire che non parte.
-  c. Deve apparire il menu coi quattro burattini, con due bande nere sopra e sotto.
+  I COMANDI
+     croce o levetta sinistra      muoversi (nei menu: scegliere)
+     Start                         nei menu: conferma / comincia   ·   in gioco: pausa
+     levetta destra                sparare in quella direzione
+     i quattro tasti a destra      sparare: quello in basso spara giù, quello a destra spara a
+                                   destra, quello a sinistra a sinistra, quello in alto in su
+                                   (nei menu quello in basso conferma, quello a destra torna indietro)
+     R1                            azione (porte, forzieri, parlare)
+     L1  consumabile     L2  oggetto attivo     Select  diario
+     PER USCIRE DAL GIOCO: tieni premuti insieme START e SELECT per un secondo.
+     Se non esce: tieni premuti insieme sei tasti qualsiasi (per esempio L1 L2 R1 R2 più due
+     dei quattro tasti a destra) per due secondi.
 
-3. COMANDI (quelli del gamepad che il gioco ha già)
-  Levetta sinistra o croce    muovi (nei menu: scegli)
-  Levetta destra              spara in quella direzione
-  A / B / X / Y               spara giù / destra / sinistra / su (secondo la POSIZIONE del tasto)
-  R1                          interagisci (porte, forzieri, dialoghi)
-  L1                          consumabile        L2  oggetto attivo
-  Start                       pausa              Select  diario
-  START + SELECT insieme per un secondo          ESCI dal gioco
-  Se i quattro tasti sparano in direzioni che non corrispondono alla loro posizione, apri
-  ports/ferruccio/impostazioni.json  e metti  "scambiaAB": true  e/o  "scambiaXY": true.
+--------------------------------------------------------------------------
+PASSO 3 · Cosa guardare (bastano cinque minuti)
+--------------------------------------------------------------------------
+  1. È partito? Hai visto il menu dei burattini?
+  2. Con Start sei entrato in piazza? E poi nel teatro (una stanza coi nemici)?
+  3. Va liscio, a scatti, lentissimo? Ci aspettiamo tra 15 e 30 immagini al secondo: giocabile,
+     non perfetto. Il numero vero lo scrive il gioco nel log.
+  4. I tasti rispondono tutti? I quattro tasti sparano dalla parte giusta?
+  5. Si leggono le scritte? Si vedono i simboli di monete, bombe e chiavi?
+  Gioca due o tre minuti, entra in almeno due stanze coi nemici, poi esci con Start+Select.
 
-4. COSA GUARDARE E DIRCI
-  - Parte? Arriva al menu? Si entra in piazza e poi nel piano?
-  - Va fluido o a scatti? (Il numero esatto è nel log, vedi sotto.)
-  - I comandi rispondono tutti? Start+Select esce?
-  - Si vedono i testi e i simboli (monete, bombe, chiavi)?
-  Non c'è AUDIO: è spento apposta in questa prima prova (vedi punto 6).
+--------------------------------------------------------------------------
+PASSO 4 · Mandaci i due file di log (SEMPRE, che sia partito o no)
+--------------------------------------------------------------------------
+  Spegni la console, rimetti la scheda nel PC e apri:   H:\ports\ferruccio\dati\
+  Lì ci sono due file:
+     lancio.log         (che sistema c'è sulla console e se l'avvio è riuscito)
+     ferruccio.log      (schermo, tasti, errori e, ogni 5 secondi, la velocità:
+                         «fps 24.3 · logica+disegno 31.0 ms · copia a schermo 9.8 ms …»)
+  Mandaceli tutti e due così come sono.
+  Se la cartella  dati  non c'è o c'è solo  lancio.log , diccelo: è già un'informazione.
 
-5. I FILE DI LOG (da mandarci sempre, che parta o no)
-  Dopo aver provato, rimetti la scheda nel PC e prendi questi due file:
-     ports/ferruccio/dati/lancio.log      sistema, librerie, errori di avvio
-     ports/ferruccio/dati/ferruccio.log   schermo, controller, errori del gioco e, ogni 5 secondi,
-                                          una riga tipo:
-        fps 29.8 · logica+disegno 21.3 ms · copia a schermo 4.1 ms · … · memoria 380 MB
-  «fps» sono i fotogrammi al secondo veri; il gioco è regolato per 30.
-  Per una misura utile: gioca due o tre minuti, entra in almeno due stanze coi nemici, poi esci
-  con Start+Select (così il log si chiude bene).
+--------------------------------------------------------------------------
+SE QUALCOSA VA STORTO
+--------------------------------------------------------------------------
+  «Ferruccio» non compare in Ports
+     Controlla che  Ferruccio.sh  sia proprio dentro  H:\ports\  (non dentro un'altra cartella)
+     e che il nome finisca con  .sh . Poi riavvia la console.
+  Schermo nero per più di due minuti, oppure torna subito all'elenco dei Ports
+     Spegni e mandaci i log. È il punto più incerto: il gioco usa la libreria dello schermo
+     che è già sulla console (SDL2) e non sappiamo se quella della tua versione gli basta.
+  Va troppo a scatti
+     Sul PC apri  H:\ports\ferruccio\impostazioni.json  col Blocco note, cambia
+     "fps": 30  in  "fps": 20 , salva e riprova. Gli effetti pesanti (ombre lunghe, grana,
+     vignetta, pubblico) partono già spenti.
+  I quattro tasti sparano dalla parte sbagliata
+     Nello stesso file cambia  "scambiaAB": false  in  true  (e, se serve, anche "scambiaXY").
+  I tasti non rispondono, o fanno cose sbagliate
+     Premi comunque, uno alla volta, tutti i tasti della console, poi esci (o spegni) e mandaci
+     i log: il gioco scrive il numero di ogni tasto premuto e con quello sistemiamo la mappa.
+  La console non risponde più
+     Tieni premuto il tasto di accensione finché si spegne. Non si rovina niente.
+  Ricominciare da capo (salvataggi e opzioni)
+     Cancella la cartella  H:\ports\ferruccio\dati .
 
-6. SE QUALCOSA NON VA
-  Schermo nero per più di un minuto, o torna subito al menu della console:
-     apri  ports/ferruccio/lancio.conf , cambia  SDL_DI_SISTEMA=0  in  SDL_DI_SISTEMA=1 , riprova.
-     In ogni caso mandaci i due log.
-  Va a scatti (fps sotto 25 nel log):
-     in  impostazioni.json  metti  "fps": 20 . Gli effetti pesanti (ombre, grana, vignetta,
-     pubblico) partono già spenti; si riaccendono dal menu Opzioni del gioco.
-  Vuoi provare l'audio (sperimentale, può gracchiare o non partire):
-     in  impostazioni.json  metti  "audio": true .
-  Ricominciare da zero (salvataggi e opzioni): cancella la cartella  ports/ferruccio/dati .
+PER TOGLIERE TUTTO
+  Cancella da  H:\ports\  il file  Ferruccio.sh  e la cartella  ferruccio . Nient'altro è stato toccato.
 
-7. TOGLIERE TUTTO
-  Cancella  ports/Ferruccio.sh  e la cartella  ports/ferruccio . Non tocca nient'altro.
+--------------------------------------------------------------------------
+NOTA TECNICA (per chi ti aiuta)
+--------------------------------------------------------------------------
+  - Permessi: EASYROMS è FAT/exFAT e non conserva i bit di esecuzione; ArkOS la monta in modo che
+    tutti i file risultino eseguibili (è così che partono tutti i port copiati da Windows).
+    In più lo script prova node anche attraverso ld-linux, che non guarda quel bit, e scrive
+    l'esito in lancio.log («prova di node: v22… (avvio: diretto)»).
+  - Fine riga: Ferruccio.sh e lancio.conf hanno i fine riga di Linux (LF) e lo zip li conserva;
+    copiarli da Windows non li cambia. Non vanno aperti e risalvati con editor che mettono CRLF.
+    impostazioni.json si può modificare col Blocco note senza problemi.
+  - PortMaster: non serve. La cartella ha la forma dei port (uno script .sh in ports più la sua
+    cartella) perché è così che EmulationStation elenca i «Ports», ma lo script non legge nessun
+    file di PortMaster (né control.txt né gptokeyb): i tasti li legge il gioco dal joystick con SDL,
+    con la mappa scritta in impostazioni.json.
+  - Librerie: node chiede GLIBC 2.28, i moduli 2.17/2.18 (ArkOS, base Ubuntu 19.10, ha la 2.30).
+    La SDL2 è quella della console (serve 2.26 o più nuova); quella nel pacchetto chiede GLIBC 2.34
+    e si usa da sola solo su sistemi più nuovi. Dettagli in ferruccio/verifica-binari.txt.

@@ -80,7 +80,7 @@ if (imp.audio) {
 const { creaFintoBrowser } = require('./finto-browser');
 browser = creaFintoBrowser({
   fileHtml, fileMemoria: path.join(dirDati, 'salvataggi.json'), log, audio,
-  dirFont: primoEsistente([path.join(QUI, 'font'), path.join(QUI, '..', 'node_modules', 'dejavu-fonts-ttf', 'ttf'), '/usr/share/fonts/truetype/dejavu']),
+  dirFont: arg.font ? path.resolve(arg.font) : primoEsistente([path.join(QUI, 'font'), path.join(QUI, '..', 'node_modules', 'dejavu-fonts-ttf', 'ttf'), '/usr/share/fonts/truetype/dejavu']),
   opzioniIniziali: imp.opzioniIniziali || null,
 });
 browser.carica();
@@ -91,7 +91,7 @@ if (uscitaVoluta === 'sdl') {
 
 // --- ciclo ---------------------------------------------------------------------------------------------
 const periodo = 1000 / fps;
-const S = { n: 0, gioco: 0, copia: 0, max: 0, da: performance.now(), totale: 0, lenti: 0 };
+const S = { n: 0, gioco: 0, copia: 0, max: 0, da: performance.now(), totale: 0, lenti: 0, lunghi: 0 };
 const scadenza = arg.secondi ? performance.now() + Number(arg.secondi) * 1000 : Infinity;
 let prossimo = performance.now();
 function giro() {
@@ -103,6 +103,7 @@ function giro() {
   if (uscita) uscita.mostra(browser.pixel());
   const t2 = performance.now();
   S.n++; S.totale++; S.gioco += t1 - t0; S.copia += t2 - t1; if (t2 - t0 > S.max) S.max = t2 - t0; if (t2 - t0 > periodo) S.lenti++;
+  if (t2 - t0 > 250 && S.lunghi++ < 25) log.riga(`fotogramma lungo: il n. ${S.totale} è durato ${(t2 - t0).toFixed(0)} ms (logica+disegno ${(t1 - t0).toFixed(0)}, copia ${(t2 - t1).toFixed(0)}) · fase ${globalThis.__teatro ? globalThis.__teatro.fase : '?'} · immagini chieste finora ${browser.stato.immagini}`);
   if (t2 - S.da >= 5000) {
     const T = globalThis.__teatro; const R = T && T.interni && T.interni.statoRun; const st = R && R.stanzaCorrente;
     log.riga(`fps ${(S.n * 1000 / (t2 - S.da)).toFixed(1)} · logica+disegno ${(S.gioco / S.n).toFixed(1)} ms · copia a schermo ${(S.copia / S.n).toFixed(1)} ms · peggiore ${S.max.toFixed(0)} ms · oltre il tempo ${S.lenti}/${S.n}`
@@ -116,5 +117,4 @@ function giro() {
   const attesa = prossimo - ora;
   if (attesa > 1.5) setTimeout(giro, attesa - 1); else setImmediate(giro);
 }
-log.riga('avvio del ciclo');
-giro();
+if (!chiuso) { log.riga('avvio del ciclo'); giro(); }

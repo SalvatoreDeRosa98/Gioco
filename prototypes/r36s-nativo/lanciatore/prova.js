@@ -32,7 +32,7 @@ const fileMemoria = path.join(os.tmpdir(), `ferruccio-prova-${process.pid}.json`
 const { creaFintoBrowser } = require('./finto-browser');
 const tAvvio = ms();
 const browser = creaFintoBrowser({
-  fileHtml, fileMemoria, log, orologio,
+  fileHtml, fileMemoria, log, orologio, filtroNero: !arg['senza-filtro-nero'],
   dirFont: [path.join(QUI, 'font'), path.join(QUI, '..', 'node_modules', 'dejavu-fonts-ttf', 'ttf'), '/usr/share/fonts/truetype/dejavu'].find((d) => fs.existsSync(d)),
 });
 browser.carica();
@@ -47,6 +47,7 @@ async function passo(n, dt) {
 async function premi(code, fotogrammi) { browser.tasto(code, true); await passo(fotogrammi || 3); browser.tasto(code, false); await passo(2); }
 const T = () => globalThis.__teatro;
 const esiti = [];
+const prima = []; // misure prese strada facendo (menu, hub)
 function tappa(nome, ok, extra) { esiti.push({ nome, ok: Boolean(ok), extra }); console.log(`${ok ? 'OK  ' : 'FALLITO'} ${nome}${extra ? ' — ' + extra : ''}`); }
 function foto(nome) { const f = browser.foto(path.join(dirUscita, nome + '.png')); console.log('     foto ' + f); return f; }
 
@@ -61,12 +62,14 @@ async function arrivaAlPiano() {
   await passo(90);
   tappa('menu di selezione', T().fase === 'menu_selezione' && coloriDiversi() > 50, `fase ${T().fase}, ${coloriDiversi()} colori`);
   foto('01-menu');
+  if (arg.misura) prima.push(await misura('menu (tre burattini in ombra, effetti accesi)', 90, PASSO * 2, null));
   await premi('Space');
   await passo(40);
   for (let i = 0; i < 80 && T().t4qa && T().t4qa.dialogo; i++) await premi(T().t4qa.dialogo.scelta ? 'Digit1' : 'Space');
   await passo(90);
   tappa('hub di Piazza Dante', T().fase === 'hub' && coloriDiversi() > 50, `fase ${T().fase}, ${coloriDiversi()} colori`);
   foto('02-hub');
+  if (arg.misura) prima.push(await misura('hub di Piazza Dante (effetti accesi)', 90, PASSO * 2, null));
   for (let giro = 0; giro < 6 && T().fase === 'hub'; giro++) {
     for (let i = 0; i < 80 && T().t4qa.dialogo; i++) await premi(T().t4qa.dialogo.scelta ? 'Digit1' : 'Space');
     const g = T().t4qa.ingresso; const P = T().interni.player;
@@ -132,7 +135,7 @@ async function misura(nome, n, dt, azione) {
     orologio.t += dt;
     const t0 = ms(); browser.fotogramma(orologio.t); const t1 = ms(); copia(); const t2 = ms();
     tot.push(t1 - t0); cop.push(t2 - t1);
-    const R = T().interni.statoRun; const st = R.stanzaCorrente;
+    const R = T().interni.statoRun; const st = R.stanzaCorrente && T().fase === 'in_gioco' ? R.stanzaCorrente : null;
     colpi += (R.proiettili ? R.proiettili.length : 0) + (R.proiettiliNemici ? R.proiettiliNemici.length : 0);
     nemici += st ? st.nemici.filter((x) => x.hp > 0).length : 0;
     if (i % 30 === 29) await cedi();
@@ -145,6 +148,7 @@ async function misura(nome, n, dt, azione) {
 
 (async () => {
   console.log(`\n== PROVA: ${path.relative(process.cwd(), fileHtml)} · node ${process.version} ${process.arch} · caricamento ${msCaricamento.toFixed(0)} ms ==`);
+  if (arg.misura) agganciaCronometri();
   await arrivaAlPiano();
   const st = stanzaDiCombattimento();
   await passo(150);
@@ -156,7 +160,6 @@ async function misura(nome, n, dt, azione) {
   let risultati = null;
   if (arg.misura) {
     console.log(`\n== MISURA: ${N} fotogrammi per riga · copia = ${nomeCopia} ==`);
-    agganciaCronometri();
     const I = T().interni; const P = I.player; const OPZIONI = browser.leggi('OPZIONI');
     const accendi = (v) => { OPZIONI.ombre = v; OPZIONI.grana = v; OPZIONI.vignetta = v; OPZIONI.pubblico = v; };
     const immortale = () => { P.invuln = 1e9; R.graziaIngressoC = 0; if (R.hpHalf !== undefined && R.hpHalf < 4) R.hpHalf = 12; };
@@ -175,7 +178,7 @@ async function misura(nome, n, dt, azione) {
       }
     };
     const rilascia = () => { for (const k of TASTI) if (I.keys[k]) browser.tasto(k, false); };
-    risultati = [];
+    risultati = prima.slice();
     for (const effetti of [true, false]) {
       accendi(effetti); const e = effetti ? 'tutto acceso' : 'effetti spenti';
       await passo(60);

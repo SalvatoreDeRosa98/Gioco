@@ -35,6 +35,10 @@ function apriSdl(p) {
   const L = browser.PALCO.l, A = browser.PALCO.a;
   const info = sdl.info;
   log.riga(`SDL ${info.version.runtime.major}.${info.version.runtime.minor}.${info.version.runtime.patch} · video «${info.drivers.video.current}» (disponibili: ${info.drivers.video.all.join(', ')}) · audio «${info.drivers.audio.current}»`);
+  // Il modulo è compilato per SDL 2.32; con la SDL2 della console le funzioni si legano alla prima chiamata.
+  // Quelle che questo lanciatore usa esistono dalla 2.26 (SDL_GetWindowSizeInPixels è la più recente).
+  const vr = info.version.runtime;
+  if (vr.major === 2 && vr.minor < 26) log.riga(`ATTENZIONE: la SDL2 in uso è la ${vr.major}.${vr.minor}.${vr.patch}, serve la 2.26 o più nuova. Se il log si ferma qui sotto con «symbol lookup error», il motivo è questo.`);
   const schermi = sdl.video.displays || [];
   schermi.forEach((d, i) => log.riga(`schermo ${i}: ${d.geometry.width}×${d.geometry.height} @${d.frequency} Hz «${d.name || ''}»`));
   const sch = imp.schermo || {};
@@ -80,21 +84,29 @@ function apriSdl(p) {
     if (joystick || controller) return;
     try { joystick = sdl.joystick.openDevice(dev); log.riga(`joystick grezzo aperto (nessuna mappa SDL): «${dev.name}» · ${joystick.buttons.length} tasti, ${joystick.axes.length} assi, ${joystick.hats.length} croci`); joystick.on('close', () => { joystick = null; }); } catch (err) { log.riga('ERRORE apertura joystick: ' + err.message); }
   }
+  // "comandi": "joystick" (console) = solo il joystick «grezzo» con la mappa di impostazioni.json: non serve
+  // nessuna mappa SDL né PortMaster, e i tasti valgono per POSIZIONE. Altrimenti (PC): il controller SDL se
+  // SDL lo conosce, sennò il joystick grezzo.
+  const soloJoystick = imp.comandi === 'joystick';
   function cercaDispositivi() {
     const cs = sdl.controller.devices; const js = sdl.joystick.devices;
-    if (!controller && cs.length) apriController(cs[0]);
+    if (!soloJoystick && !controller && cs.length) apriController(cs[0]);
     if (!controller && !joystick && js.length) apriJoystick(js[0]);
   }
-  log.riga(`dispositivi: ${sdl.controller.devices.length} controller, ${sdl.joystick.devices.length} joystick` + (process.env.SDL_GAMECONTROLLERCONFIG ? ' · SDL_GAMECONTROLLERCONFIG presente' : ' · SDL_GAMECONTROLLERCONFIG assente'));
+  log.riga(`dispositivi: ${sdl.controller.devices.length} controller, ${sdl.joystick.devices.length} joystick · comandi «${imp.comandi || 'auto'}»`);
+  sdl.joystick.devices.forEach((d, i) => log.riga(`joystick ${i}: «${d.name}» guid ${d.guid || '?'} percorso ${d.path || '?'}`));
   cercaDispositivi();
-  sdl.controller.on('deviceAdd', (e) => { log.riga(`controller collegato: «${e.device.name}»`); apriController(e.device); });
+  sdl.controller.on('deviceAdd', (e) => { if (soloJoystick) return; log.riga(`controller collegato: «${e.device.name}»`); apriController(e.device); });
   sdl.joystick.on('deviceAdd', () => setTimeout(cercaDispositivi, 200));
 
   const pad = browser.pad; const B = pad.bottoni;
   const n = (v) => (v ? 1 : 0);
-  // mappa di ripiego per il joystick grezzo (indici dei tasti secondo l'ordine «odroidgo3/r36s» più comune): si cambia in impostazioni.json → joystick
-  const J = Object.assign({ A: 1, B: 0, X: 2, Y: 3, L1: 4, R1: 5, L2: 6, R2: 7, su: 8, giu: 9, sinistra: 10, destra: 11, select: 12, start: 13, assi: [0, 1, 2, 3] }, imp.joystick || {});
-  let insiemeDa = 0; let uscitaChiesta = false;
+  // Mappa del joystick grezzo: numero del tasto per POSIZIONE (il gioco spara giù/destra/sinistra/su coi
+  // quattro tasti secondo dove stanno). Valori predefiniti: l'ordine del joypad delle console RK3326 tipo
+  // Odroid Go / R36S (0 = tasto in basso, 1 = a destra, 2 = in alto, 3 = a sinistra, 4-7 dorsali, 8-11
+  // croce, 12 Select, 13 Start). Si cambia in impostazioni.json → "joystick"; il log scrive ogni tasto premuto.
+  const J = Object.assign({ tastoSotto: 0, tastoDestra: 1, tastoSopra: 2, tastoSinistra: 3, L1: 4, R1: 5, L2: 6, R2: 7, croceSu: 8, croceGiu: 9, croceSinistra: 10, croceDestra: 11, select: 12, start: 13, assi: [0, 1, 2, 3] }, imp.joystick || {});
+  let insiemeDa = 0; let uscitaChiesta = false; let tantiDa = 0;
 
   /** Legge il controller e aggiorna il gamepad «standard» del finto browser. Da chiamare a ogni fotogramma. */
   function ingressi(oraMs) {
@@ -110,12 +122,16 @@ function apriSdl(p) {
     } else if (joystick) {
       const jb = joystick.buttons, ja = joystick.axes, cr = (joystick.hats && joystick.hats[0]) || '';
       for (let i = 0; i < jb.length; i++) if (jb[i] && !visti.has(i)) { visti.add(i); log.riga(`joystick grezzo: premuto il tasto n.${i}`); }
-      B[0] = n(jb[J.A]); B[1] = n(jb[J.B]); B[2] = n(jb[J.X]); B[3] = n(jb[J.Y]);
+      // layout «standard»: 0 = tasto in basso, 1 = a destra, 2 = a sinistra, 3 = in alto
+      B[0] = n(jb[J.tastoSotto]); B[1] = n(jb[J.tastoDestra]); B[2] = n(jb[J.tastoSinistra]); B[3] = n(jb[J.tastoSopra]);
       B[4] = n(jb[J.L1]); B[5] = n(jb[J.R1]); B[6] = n(jb[J.L2]); B[7] = n(jb[J.R2]);
       B[8] = n(jb[J.select]); B[9] = n(jb[J.start]);
-      B[12] = n(jb[J.su] || /up/.test(cr)); B[13] = n(jb[J.giu] || /down/.test(cr)); B[14] = n(jb[J.sinistra] || /left/.test(cr)); B[15] = n(jb[J.destra] || /right/.test(cr));
+      B[12] = n(jb[J.croceSu] || /up/.test(cr)); B[13] = n(jb[J.croceGiu] || /down/.test(cr)); B[14] = n(jb[J.croceSinistra] || /left/.test(cr)); B[15] = n(jb[J.croceDestra] || /right/.test(cr));
       for (let i = 0; i < 4; i++) pad.assi[i] = ja[J.assi[i]] || 0;
       pad.connesso = true; pad.nome = (joystick.device && joystick.device.name) || 'joystick SDL';
+      // uscita di sicurezza che non dipende dalla mappa: sei o più tasti qualsiasi tenuti insieme per due secondi
+      let premuti = 0; for (let i = 0; i < jb.length; i++) if (jb[i]) premuti++;
+      if (premuti >= 6) { if (!tantiDa) tantiDa = oraMs; else if (!uscitaChiesta && oraMs - tantiDa > 2000) { uscitaChiesta = true; p.esci('sei tasti insieme'); } } else tantiDa = 0;
     } else {
       pad.connesso = false;
     }
