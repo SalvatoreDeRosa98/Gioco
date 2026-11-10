@@ -6,6 +6,13 @@
 
 const keys = {};
 
+// --- b3: inizio --- (comandi: rimappatura dei tasti, gamepad, menu Opzioni) Il filtro di b3-comandi-opzioni.js
+// deve vedere tasti e click PRIMA di ogni altro gestore, anche di quelli in cattura dei file caricati dopo.
+for (const tipoB3 of ['keydown', 'keyup', 'mousedown']) {
+  window.addEventListener(tipoB3, (e) => { if (typeof filtroIngressiB3 === 'function') filtroIngressiB3(e); }, true);
+}
+// --- b3: fine ---
+
 window.addEventListener('keydown', (e) => {
   keys[e.code] = true;
   player.targetX = null;
