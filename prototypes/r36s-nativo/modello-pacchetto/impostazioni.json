@@ -1,0 +1,21 @@
+{
+  "fps": 30,
+  "uscita": "sdl",
+  "schermo": { "intero": true, "vsync": false, "accelerato": true, "scalaIntera": true, "liscio": false },
+  "audio": false,
+  "comandi": "joystick",
+  "joystick": {
+    "tastoSotto": 0, "tastoDestra": 1, "tastoSopra": 2, "tastoSinistra": 3,
+    "L1": 4, "R1": 5, "L2": 6, "R2": 7,
+    "croceSu": 8, "croceGiu": 9, "croceSinistra": 10, "croceDestra": 11,
+    "select": 12, "start": 13,
+    "assi": [0, 1, 2, 3]
+  },
+  "scambiaAB": false,
+  "scambiaXY": false,
+  "uscitaMs": 1000,
+  "opzioniIniziali": {
+    "volumeEffetti": 1, "volumeMusica": 1, "scossa": 1,
+    "ombre": false, "grana": false, "vignetta": false, "pubblico": false, "lampi": true, "voce": true
+  }
+}
