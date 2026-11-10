@@ -79,7 +79,7 @@ function installaAiuti() {
       const fragile = { 1: 'botte', 2: 'vaso', 3: 'balla', 4: 'baule' }[q];
       const su = 150, giu = 250;
       st.ostacoli = [
-        O('colonna', 122, su, 14), O('colonna', 186, su, 14),
+        O('colonna', 122, su, 14), O('colonna', 184, su, 14),
         O('braciere', 250, su, 10, { acceso: true }), O('braciere', 300, su, 10),
         O('colonna', 352, su, 12, { variante: 'polvere', fragileB7: { genere: 'polvere', colpi: 2, esplode: true } }),
         O('braciere', 404, su, 8, { variante: 'candela', acceso: true }),
@@ -168,34 +168,34 @@ function installaAiuti() {
  * `attesa` ms prima dello scatto, `ritaglio` in px logici, `zoom` del foglio affiancato.
  */
 const SCENE = [
-  { gruppo: 'interfaccia', nome: 'segni-dei-boss', ritaglio: [20, 150, 600, 90], zoom: 1,
-    prepara: () => { statoRun.pausa = false; if (typeof b3 !== 'undefined') b3.opz = null; window.__qaB9.mostra = null; statoRun.fase = 'menu_selezione'; const s = statoA6(); for (const id of Object.keys(PERSONAGGI_GIOCABILI)) s.segni[id] = SEGNI_A6.map((x) => x.boss); salvaA6(s); } },
+  { gruppo: 'interfaccia', nome: 'segni-dei-boss', ritaglio: [20, 150, 600, 90], zoom: 0.5,
+    prepara: () => { statoRun.pausa = false; if (typeof b3 !== 'undefined') b3.opz = null; window.__qaB9.mostra = null; statoRun.fase = 'menu_selezione'; const s = statoA6(); for (const id of Object.keys(PERSONAGGI_GIOCABILI)) s.segni[id] = SEGNI_A6.map((x) => x.boss); scriviA6(s); } },
   { gruppo: 'palchetti-platea', nome: 'ovazione', attesa: 1500,
     prepara: () => { __qaB9.avvia(1); __qaB9.stanzaVuota(); impostaGradimentoB1(0.95, true); },
     scatto: () => { pubblicoB1.fiori.length = 0; pubblicoB1.umore.t = 0; reazionePubblicoB1('ovazione'); } },
-  { gruppo: 'palchetti-platea', nome: 'palchi-da-vicino', ritaglio: [0, 0, 250, 300], zoom: 1, attesa: 300,
+  { gruppo: 'palchetti-platea', nome: 'palchi-da-vicino', ritaglio: [0, 60, 300, 240], zoom: 1, attesa: 300,
     prepara: () => { __qaB9.avvia(1); __qaB9.stanzaVuota(); impostaGradimentoB1(0.95, true); } },
-  { gruppo: 'palchetti-platea', nome: 'fischi-e-pomodori', ritaglio: [200, 130, 240, 150], zoom: 1, attesa: 1300,
+  { gruppo: 'palchetti-platea', nome: 'fischi-e-pomodori', ritaglio: [200, 130, 240, 150], zoom: 1.25, attesa: 1300,
     prepara: () => { __qaB9.avvia(1); __qaB9.stanzaVuota(); impostaGradimentoB1(0.1, true); },
     scatto: () => { pubblicoB1.fiori.length = 0; pubblicoB1.umore.t = 0; reazionePubblicoB1('fischi'); } },
   { gruppo: 'palchetti-platea', nome: 'sipario', attesa: 1100,
-    prepara: () => { __qaB9.avvia(1); avviaPiano(1, false); } },
-  { gruppo: 'ribalta', nome: 'lumi-e-cavi', ritaglio: [70, 130, 500, 200], zoom: 1, attesa: 1500,
+    prepara: () => { statoRun.pausa = false; b3.opz = null; __qaB9.mostra = null; statoRun.fase = 'in_gioco'; nuovaRun(false); } },
+  { gruppo: 'ribalta', nome: 'lumi-e-cavi', ritaglio: [70, 130, 500, 200], zoom: 0.62, attesa: 1500,
     prepara: () => { __qaB9.avvia(1); const st = __qaB9.stanzaVuota(); st.ostacoli = [{ tipo: 'colonna', x: 200, y: 240, r: 14, w: 26, h: 26 }, { tipo: 'braciere', x: 320, y: 250, r: 10, w: 20, h: 20, acceso: true }, { tipo: 'colonna', x: 440, y: 240, r: 7, w: 14, h: 14, variante: 'lampione' }]; __qaB9.rientra(); player.x = 260; player.y = 200; statoRun.stanzaCorrente.pulita = false; } },
-  ...[1, 2, 3, 4].map((q) => ({ gruppo: `ostacoli-${['corso-trieste', 'villa-comunale', 'san-leucio', 'reggia'][q - 1]}`, nome: 'mostra', ritaglio: [70, 70, 500, 220], zoom: 1, attesa: 1500,
+  ...[1, 2, 3, 4].map((q) => ({ gruppo: `ostacoli-${['corso-trieste', 'villa-comunale', 'san-leucio', 'reggia'][q - 1]}`, nome: 'mostra', ritaglio: [70, 70, 500, 220], zoom: 0.62, attesa: 1500,
     prepara: (qq) => __qaB9.ostacoli(qq), arg: q })),
-  { gruppo: 'forzieri-lucchetto', nome: 'forzieri', ritaglio: [200, 150, 240, 90], zoom: 2, attesa: 400,
+  { gruppo: 'forzieri-lucchetto', nome: 'forzieri', ritaglio: [200, 160, 240, 80], zoom: 1.25, attesa: 400,
     prepara: () => { __qaB9.avvia(2); const st = __qaB9.stanzaVuota(); const a = generaForziere('comune', 240, 205, st), b = generaForziere('comune', 290, 205, st), c = generaForziere('chiuso', 350, 205, st), d = generaForziere('chiuso', 400, 205, st); for (const f of [b, d]) if (f) f.aperto = true; if (!a || !c) throw new Error('generaForziere non restituisce il forziere'); player.x = 320; player.y = 260; } },
   { gruppo: 'forzieri-lucchetto', nome: 'lucchetto', zoom: 2, attesa: 400,
     prepara: () => { __qaB9.avvia(2); const st = __qaB9.stanzaVuota(); const [lato, id] = Object.entries(st.porte)[0]; statoRun.mappa.perId.get(id).chiusaA1 = true; window.__qaB9.porta = PORTE_C[lato]; player.x = 320; player.y = 200; },
     ritaglioDa: () => { const P = window.__qaB9.porta; return [Math.max(0, Math.min(520, P.x - 60)), Math.max(0, Math.min(280, P.y - 40)), 120, 80]; } },
-  { gruppo: 'stanze-speciali', nome: 'bisca', ritaglio: [80, 70, 400, 150], zoom: 2, attesa: 500,
+  { gruppo: 'stanze-speciali', nome: 'bisca', ritaglio: [80, 70, 400, 150], zoom: 0.78, attesa: 500,
     prepara: () => { __qaB9.avvia(2); if (!__qaB9.trovaStanza('bisca', 'ciarlatanoB7')) throw new Error('nessuna Bisca col ciarlatano'); const st = statoRun.stanzaCorrente; if (!st.biscaA3.cartomante) st.biscaA3.cartomante = { grani: 0, andata: false }; st.biscaA3.cartomante.andata = false; st.biscaA3.ultimo = { numero: 47 }; st.oggettoPiedistallo = null; player.x = 320; player.y = 250; } },
-  { gruppo: 'stanze-speciali', nome: 'sacrificio', ritaglio: [240, 110, 160, 110], zoom: 2, attesa: 500,
+  { gruppo: 'stanze-speciali', nome: 'sacrificio', ritaglio: [240, 110, 160, 110], zoom: 1.6, attesa: 500,
     prepara: () => { __qaB9.avvia(2); if (!__qaB9.trovaStanza('sacrificio')) throw new Error('nessuna stanza del Sacrificio'); statoRun.stanzaCorrente.sacrificioA3.fatti = 3; player.x = 320; player.y = 250; } },
-  { gruppo: 'stanze-speciali', nome: 'clessidra', ritaglio: [158, 80, 150, 150], zoom: 2, attesa: 500,
+  { gruppo: 'stanze-speciali', nome: 'clessidra', ritaglio: [158, 80, 150, 150], zoom: 1.6, attesa: 500,
     prepara: () => { __qaB9.avvia(2); if (!__qaB9.trovaStanza('sfida', 'clessidraB7')) throw new Error('nessuna Sfida con la clessidra'); const st = statoRun.stanzaCorrente, K = st.clessidraB7; K.restoTick = Math.round(K.totTick * 0.62); st.nemici = []; player.x = 400; player.y = 250; } },
-  { gruppo: 'trasformazioni', nome: 'costumi', ritaglio: [60, 60, 520, 262], zoom: 2, attesa: 400,
+  { gruppo: 'trasformazioni', nome: 'costumi', ritaglio: [60, 60, 520, 262], zoom: 0.6, attesa: 400,
     prepara: () => __qaB9.costumi() },
   { gruppo: 'interfaccia', nome: 'opzioni-scena', attesa: 400,
     prepara: () => { __qaB9.avvia(1); __qaB9.stanzaVuota(); segnaDispositivoB3('tastiera'); statoRun.pausa = true; apriOpzioniB3('pausa'); b3.opz.sel = 4; } },
@@ -204,7 +204,7 @@ const SCENE = [
   { gruppo: 'interfaccia', nome: 'pausa-col-gamepad', attesa: 400,
     prepara: () => { __qaB9.avvia(1); __qaB9.stanzaVuota(); statoRun.pausa = true; segnaDispositivoB3('pad'); b3.cursorePausa = 2; },
     scatto: () => { segnaDispositivoB3('pad'); b3.cursorePausa = 2; } },
-  { gruppo: 'interfaccia', nome: 'scena-col-gamepad', ritaglio: [0, 250, 640, 110], zoom: 1, attesa: 400,
+  { gruppo: 'interfaccia', nome: 'scena-col-gamepad', ritaglio: [0, 250, 640, 110], zoom: 0.5, attesa: 400,
     prepara: () => { __qaB9.avvia(2); const st = __qaB9.stanzaVuota(); generaForziere('comune', 330, 290, st); player.x = 320; player.y = 292; segnaDispositivoB3('pad'); },
     scatto: () => { segnaDispositivoB3('pad'); }, dopo: () => { segnaDispositivoB3('tastiera'); } },
 ];
@@ -244,7 +244,7 @@ async function giraScene(p, modo, forzatura, scatta, scene) {
 async function affianca(browser, gruppo, scene) {
   const b64 = (f) => 'data:image/png;base64,' + fs.readFileSync(f).toString('base64');
   const righe = scene.map((sc) => {
-    const celle = MODI.map(([modo]) => `<td><img src="${b64(foto(`${sc.gruppo}-${sc.nome}-${modo}`))}" style="zoom:${(sc.zoom || 0.5) / 2}"></td>`).join('');
+    const celle = MODI.map(([modo]) => `<td><img src="${b64(foto(`${sc.gruppo}-${sc.nome}-${modo}`))}" style="zoom:${sc.zoom || 0.5}"></td>`).join('');
     return `<tr><th colspan="3">${sc.nome.replace(/-/g, ' ')}</th></tr><tr>${celle}</tr>`;
   }).join('');
   const html = `<html><body style="margin:0;background:#15100c;color:#f3dfc1;font:bold 15px Georgia,serif"><table id="t" style="border-collapse:separate;border-spacing:8px">

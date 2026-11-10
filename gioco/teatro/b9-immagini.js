@@ -124,7 +124,7 @@ const CONFIG_B9 = Object.freeze({
     // balconata in alto: pezzi dello stesso palchetto alla misura dei palchi di b1 (42 px di vano, passo 50)
     alto: Object.freeze({ cieloY: -1.5, cieloA: 6.2, festoneY: 3.2, festoneA: 11.5, colonnaY: 8, colonnaA: 34, parapettoY: 40.2, parapettoA: 13 }),
   }),
-  platea: Object.freeze({ righe: Object.freeze([54, 132]), alfa: 0.92 }),
+  platea: Object.freeze({ righe: Object.freeze([54, 132]), alfa: 0.92, filo: 0.6, coloreFilo: 'rgba(214, 158, 60, 0.5)' }),
   mantovana: Object.freeze({ righe: Object.freeze([0, 178]) }),
   ortaggi: Object.freeze({ quanti: 3, attesaTick: 900 }),   // pomodori dopo i fischi (a stanza senza nemici)
   lume: Object.freeze({ ogniTick: 7, bagliore: 13, alfaBagliore: 0.55 }),
@@ -427,9 +427,11 @@ avvolgiElementoB1('buioPlatea', (base, x, w, h) => {
   if (!scenaB9('platea')) return false;
   const img = scenaB9('platea'), R = CONFIG_B9.platea.righe;
   base(x, w, h);
+  x.save();
   x.globalAlpha = CONFIG_B9.platea.alfa;
+  x.filter = `drop-shadow(0 ${(-CONFIG_B9.platea.filo * scalaBase).toFixed(2)}px 0 ${CONFIG_B9.platea.coloreFilo})`; // filo di luce sulle teste: sagome nere nel buio non si vedrebbero
   disegnaRitaglioB9(x, 'platea', 0, R[0], img.naturalWidth, R[1] - R[0], 0, 0, w, h);
-  x.globalAlpha = 1;
+  x.restore();
   return true;
 });
 
