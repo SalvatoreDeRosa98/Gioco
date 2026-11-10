@@ -212,7 +212,7 @@ function statoB4() {
     s = statoRun.trasfB4 = {
       run: statoRun.numeroRun, attive: {}, ordine: [], conteggi: {}, impulsi: {}, sinergie: {}, annunciate: {}, eff: {},
       coda: [], annuncio: null, lampo: 0, colpiMaglio: 0, eco: null, fumetto: null, prossimoSberleffo: 0,
-      gatti: [], tagli: [], critForzato: null,
+      gatti: [], tagli: [], critForzato: null, firmaTemi: '',
     };
   }
   return s;
@@ -403,6 +403,7 @@ function dopoRicalcoloB4() {
   const s = statoB4();
   const prima = s.conteggi;
   s.conteggi = contaTemiB4();
+  s.firmaTemi = '';
   for (const t of TEMI_B4.ordine) {
     if ((s.conteggi[t] || 0) > (prima[t] || 0)) s.impulsi[t] = tick;
     if (!s.attive[t] && s.conteggi[t] >= TRASFORMAZIONI_B4.soglia) attivaTrasformazioneB4(s, t);
@@ -655,14 +656,21 @@ passoLogico = function passoLogicoB4(...args) {
 
 // ===========================================================================
 // RESA: costume sopra/attorno al burattino
+// Misurato (tools/qa-teatro-trasformazioni.js, buffer 2560 px senza GPU): i particolari fermi e piccoli
+// (corona, maschera, muso, aureola, grembiule, tovagliolo) costano meno come tavole in cache dal riquadro
+// stretto; i tratti lunghi e sottili che si muovono (fili, lame dell'aura, coda, mantello) costano meno
+// disegnati dal vivo che timbrati, perché una tavola grande e quasi vuota si paga pixel per pixel.
 // ===========================================================================
 
-/** Punti d'attacco del costume per personaggio (coordinate locali dello sprite, rivolto a destra). */
+/**
+ * Punti d'attacco del costume per personaggio (coordinate locali dello sprite, rivolto a destra).
+ * `muso` è il riquadro [x0, y0, w, h] della tavola con orecchie, baffi e pupille.
+ */
 const ANCORE_B4 = Object.freeze({
-  normale: Object.freeze({ viso: [3.8, -21.2], occhi: [[2.2, -21.0], [6.1, -21.2]], banda: [-2.6, -29.0, -0.22], cima: [-9.5, -41],
-    aureola: [-1, -44], orecchie: [[-9.6, -24.6, -6.6, -28.6, -12.6, -32.2], [3.2, -29.2, 7.6, -27.0, 8.0, -35.0]] }),
-  taddeo: Object.freeze({ viso: [1.5, -19.5], occhi: [[-1.2, -19.6], [4.2, -19.6]], banda: [0, -31.5, 0], cima: [0, -44],
-    aureola: [0, -48], orecchie: [[-10.5, -27, -6.5, -31, -11.5, -36], [6.5, -31, 10.5, -27, 11.5, -36]] }),
+  normale: Object.freeze({ nome: 'n', viso: [3.8, -21.2], occhi: [[2.2, -21.0], [6.1, -21.2]], banda: [-2.6, -29.0, -0.22], cima: [-9.5, -41],
+    aureola: [-1, -44], orecchie: [[-9.6, -24.6, -6.6, -28.6, -12.6, -32.2], [3.2, -29.2, 7.6, -27.0, 8.0, -35.0]], muso: [-14.5, -37, 30, 21] }),
+  taddeo: Object.freeze({ nome: 't', viso: [1.5, -19.5], occhi: [[-1.2, -19.6], [4.2, -19.6]], banda: [0, -31.5, 0], cima: [0, -44],
+    aureola: [0, -48], orecchie: [[-10.5, -27, -6.5, -31, -11.5, -36], [6.5, -31, 10.5, -27, 11.5, -36]], muso: [-13.5, -38, 27, 24] }),
 });
 
 const aloniB4 = new Map();
@@ -685,6 +693,213 @@ function aloneB4(colore, raggio) {
   return c;
 }
 
+const tavoleB4 = new Map(); // scala del buffer → (chiave → tavola)
+
+/**
+ * Tavola in cache: un particolare fermo del costume, in coordinate locali del burattino, dentro il riquadro
+ * (x0, y0, w, h), alla scala del buffer (pixel netti). `disegna(c, A)` riceve il contesto della tavola già
+ * scalato e traslato ed è chiamata una volta sola per chiave e per scala.
+ * @returns {{cv: HTMLCanvasElement, x0: number, y0: number, w: number, h: number}}
+ */
+function tavolaB4(chiave, x0, y0, w, h, disegna, A) {
+  const k = Math.max(2, Math.min(6, Math.ceil(scalaBase || 1)));
+  let perScala = tavoleB4.get(k);
+  if (!perScala) { tavoleB4.clear(); perScala = new Map(); tavoleB4.set(k, perScala); } // cambio di scala: si riparte
+  let tv = perScala.get(chiave);
+  if (!tv) {
+    if (perScala.size > 96) perScala.clear();
+    const cv = document.createElement('canvas');
+    cv.width = Math.ceil(w * k);
+    cv.height = Math.ceil(h * k);
+    const c = cv.getContext('2d');
+    c.scale(k, k);
+    c.translate(-x0, -y0);
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    disegna(c, A);
+    tv = { cv, x0, y0, w, h };
+    perScala.set(chiave, tv);
+  }
+  return tv;
+}
+
+/** Timbra una tavola nelle coordinate correnti. */
+function timbraB4(tv) {
+  ctx.drawImage(tv.cv, tv.x0, tv.y0, tv.w, tv.h);
+}
+
+/** Tratto a due passate su `c`: prima il bordo largo, poi il filo. `traccia(c)` descrive il percorso. */
+function doppioTrattoB4(c, bordo, largoBordo, colore, largo, traccia) {
+  c.strokeStyle = bordo;
+  c.lineWidth = largoBordo;
+  c.beginPath(); traccia(c); c.stroke();
+  c.strokeStyle = colore;
+  c.lineWidth = largo;
+  c.beginPath(); traccia(c); c.stroke();
+}
+
+/** Tavola del Mastro di Fucina: grembiule di cuoio e maglio (il calore del maglio si disegna vivo). */
+function parteGrembiuleB4(c) {
+  c.fillStyle = '#3a2416';
+  c.strokeStyle = '#120c08';
+  c.lineWidth = 0.9;
+  c.beginPath();
+  c.moveTo(-4.5, -9.5); c.lineTo(4.2, -9.5); c.lineTo(6.8, 0.6); c.quadraticCurveTo(0, 2.8, -7.4, 0.8);
+  c.closePath();
+  c.fill(); c.stroke();
+  c.strokeStyle = '#5b3a22';
+  c.lineWidth = 0.8;
+  c.beginPath();
+  c.moveTo(-4.5, -9.5); c.lineTo(-3, -12.2);
+  c.moveTo(4.2, -9.5); c.lineTo(3, -12.2);
+  c.moveTo(-3, -3.5); c.lineTo(3.5, -3.5);
+  c.stroke();
+  c.strokeStyle = '#6d4c2f';
+  c.lineWidth = 1.7;
+  c.beginPath(); c.moveTo(1.2, -1); c.lineTo(9.5, -10.5); c.stroke();
+  c.translate(10.2, -11.4);
+  c.rotate(-0.85);
+  c.fillStyle = '#2b2b30';
+  c.strokeStyle = '#0a0604';
+  c.lineWidth = 0.9;
+  c.fillRect(-4.2, -2.6, 8.4, 5.2);
+  c.strokeRect(-4.2, -2.6, 8.4, 5.2);
+}
+
+/** Tavola del Re di Denari: i due risvolti del mantello col fermaglio d'oro. */
+function parteRisvoltiB4(c) {
+  c.fillStyle = '#17100b';
+  c.strokeStyle = '#c9992e';
+  c.lineWidth = 0.8;
+  c.beginPath();
+  c.moveTo(-6, -14.2); c.lineTo(-9.5, -5.5); c.lineTo(-6.2, -3.2); c.lineTo(-3.6, -11.8);
+  c.closePath();
+  c.fill(); c.stroke();
+  c.beginPath();
+  c.moveTo(5.2, -14.2); c.lineTo(8.6, -5.8); c.lineTo(5.8, -3.6); c.lineTo(3.4, -11.8);
+  c.closePath();
+  c.fill(); c.stroke();
+  c.fillStyle = '#f9cb40';
+  c.beginPath(); c.arc(0, -11.2, 1.5, 0, TAU); c.fill();
+}
+
+/** Tavola del Re di Denari: la corona d'ebano con le punte d'oro e il rubino. */
+function parteCoronaB4(c, A) {
+  c.translate(A.banda[0], A.banda[1]);
+  c.rotate(A.banda[2]);
+  c.fillStyle = '#17100b';
+  c.strokeStyle = '#f9cb40';
+  c.lineWidth = 0.9;
+  c.beginPath();
+  c.moveTo(-7, 1.6); c.lineTo(-7.6, -5.4); c.lineTo(-4.4, -2.2); c.lineTo(-2.4, -6.6); c.lineTo(0, -2.4);
+  c.lineTo(2.4, -6.6); c.lineTo(4.4, -2.2); c.lineTo(7.6, -5.4); c.lineTo(7, 1.6);
+  c.closePath();
+  c.fill(); c.stroke();
+  c.fillStyle = '#f9cb40';
+  for (const [px, py] of [[-7.6, -5.6], [-2.4, -6.8], [2.4, -6.8], [7.6, -5.6]]) { c.beginPath(); c.arc(px, py, 0.9, 0, TAU); c.fill(); }
+  c.fillStyle = '#e53222';
+  c.beginPath(); c.arc(0, -0.2, 1.1, 0, TAU); c.fill();
+}
+
+/** Tavola del Mangiamaccheroni: tovagliolo al collo e forchetta col boccone. */
+function parteTovaglioloB4(c) {
+  c.fillStyle = '#f5efe2';
+  c.strokeStyle = '#120c08';
+  c.lineWidth = 0.8;
+  c.beginPath();
+  c.moveTo(-4.2, -12.2); c.lineTo(4.6, -12.2); c.lineTo(0.4, -4.4);
+  c.closePath();
+  c.fill(); c.stroke();
+  c.strokeStyle = '#df3624';
+  c.lineWidth = 0.6;
+  c.beginPath();
+  c.moveTo(-2.2, -10.6); c.lineTo(2.8, -10.6);
+  c.moveTo(-1, -8.6); c.lineTo(1.8, -8.6);
+  c.stroke();
+  doppioTrattoB4(c, '#120c08', 2.6, '#d9b248', 1.3, (x) => {
+    x.moveTo(-7.5, -4.5); x.lineTo(-13, -19.5);
+    for (const dx of [-1.6, 0, 1.6]) { x.moveTo(-13 + dx, -19.5); x.lineTo(-14 + dx, -23.6); }
+  });
+  doppioTrattoB4(c, '#120c08', 2.6, '#f7e3a0', 1.2, (x) => x.ellipse(-13.8, -22.4, 3.6, 2.2, -0.3, 0, TAU));
+}
+
+/** Tavola del Re dei Gatti: orecchie, baffi, pupille a fessura. */
+function parteMusoB4(c, A) {
+  for (const [x1, y1, x2, y2, xa, ya] of A.orecchie) {
+    c.fillStyle = '#0d0907';
+    c.strokeStyle = '#3a2a1f';
+    c.lineWidth = 0.8;
+    c.beginPath(); c.moveTo(x1, y1); c.lineTo(xa, ya); c.lineTo(x2, y2); c.closePath();
+    c.fill(); c.stroke();
+    c.fillStyle = '#a8452f';
+    c.beginPath();
+    c.moveTo((x1 * 2 + x2) / 3, (y1 * 2 + y2) / 3); c.lineTo((xa * 2 + (x1 + x2) / 2) / 3, (ya * 2 + (y1 + y2) / 2) / 3); c.lineTo((x1 + x2 * 2) / 3, (y1 + y2 * 2) / 3);
+    c.closePath();
+    c.fill();
+  }
+  const [vx, vy] = A.viso;
+  c.strokeStyle = '#e8dcc0';
+  c.lineWidth = 0.6;
+  c.beginPath();
+  c.moveTo(vx + 4, vy + 1.6); c.lineTo(vx + 9.5, vy + 0.4);
+  c.moveTo(vx + 4, vy + 2.6); c.lineTo(vx + 9.5, vy + 3.6);
+  c.moveTo(vx - 4, vy + 1.6); c.lineTo(vx - 8.5, vy + 0.6);
+  c.moveTo(vx - 4, vy + 2.6); c.lineTo(vx - 8.5, vy + 3.6);
+  c.stroke();
+  for (const [ex, ey] of A.occhi) {
+    c.fillStyle = '#facc15';
+    c.beginPath(); c.arc(ex, ey, 1.35, 0, TAU); c.fill();
+    c.fillStyle = '#0a0604';
+    c.fillRect(ex - 0.3, ey - 1.2, 0.6, 2.4);
+  }
+}
+
+/** Tavola di Pulcinella Traditore: mezza maschera di cuoio col naso a becco e gli occhi furbi. */
+function parteMascheraB4(c, A) {
+  const [vx, vy] = A.viso;
+  c.fillStyle = '#2a1a12';
+  c.strokeStyle = '#8a5a3a';
+  c.lineWidth = 0.8;
+  c.beginPath();
+  c.moveTo(vx - 4.6, vy - 0.4);
+  c.quadraticCurveTo(vx - 4.2, vy - 4.8, vx, vy - 4.6);
+  c.quadraticCurveTo(vx + 4.4, vy - 4.4, vx + 4.6, vy - 1.2);
+  c.quadraticCurveTo(vx + 8.6, vy - 0.6, vx + 9.6, vy + 2.6); // il naso a becco
+  c.quadraticCurveTo(vx + 9.2, vy + 4.6, vx + 7.2, vy + 3.8);
+  c.quadraticCurveTo(vx + 6.6, vy + 2.2, vx + 3.4, vy + 1.8);
+  c.quadraticCurveTo(vx - 1, vy + 2.6, vx - 4.6, vy - 0.4);
+  c.closePath();
+  c.fill(); c.stroke();
+  c.lineWidth = 0.6;
+  c.beginPath(); // rughe della fronte
+  c.moveTo(vx - 2.6, vy - 3.4); c.quadraticCurveTo(vx, vy - 4, vx + 2.8, vy - 3.2);
+  c.stroke();
+  for (const [ex, ey] of A.occhi) {
+    c.fillStyle = '#fffdf5';
+    c.beginPath(); c.arc(ex, ey, 1.15, 0, TAU); c.fill();
+    c.strokeStyle = '#0a0604';
+    c.lineWidth = 0.7;
+    c.beginPath(); c.moveTo(ex - 1.5, ey - 1.9); c.lineTo(ex + 1.4, ey - 1.2); c.stroke();
+  }
+}
+
+/** Tavola del Santo di Cera: l'aureola. */
+function parteAureolaB4(c, A) {
+  const [ax, ay] = A.aureola;
+  c.strokeStyle = '#f59e0b';
+  c.lineWidth = 2.4;
+  c.beginPath(); c.ellipse(ax, ay, 8.6, 2.7, -0.1, 0, TAU); c.stroke();
+  c.strokeStyle = '#fef3c7';
+  c.lineWidth = 1.1;
+  c.beginPath(); c.ellipse(ax, ay, 8.6, 2.7, -0.1, 0, TAU); c.stroke();
+}
+
+/** Chiavi delle tavole per personaggio (niente stringhe composte a ogni frame). */
+const CHIAVI_TAVOLE_B4 = Object.freeze({
+  n: Object.freeze({ corona: 'corona-n', muso: 'muso-n', maschera: 'maschera-n', aureola: 'aureola-n' }),
+  t: Object.freeze({ corona: 'corona-t', muso: 'muso-t', maschera: 'maschera-t', aureola: 'aureola-t' }),
+});
+
 /** Entra nelle coordinate locali del burattino (stessa trasformazione di disegnaFerruccioPittorico). Torna la scala. */
 function apriPupazzoB4(px, py, opts) {
   const t = opts.tick || 0;
@@ -700,59 +915,91 @@ function apriPupazzoB4(px, py, opts) {
   return sc;
 }
 
-/** Filo nero con bordo viola (i fili del Velo): da (x0, y0) a (x1, y1) con una pancia `curva`. */
-function filoNeroB4(x0, y0, x1, y1, curva) {
-  for (let passata = 0; passata < 2; passata++) {
-    ctx.strokeStyle = passata ? '#07040a' : 'rgba(139, 92, 246, 0.42)';
-    ctx.lineWidth = passata ? 1.1 : 2.4;
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.quadraticCurveTo((x0 + x1) / 2 + curva, (y0 + y1) / 2, x1, y1);
-    ctx.stroke();
+/** Aggiunge al percorso il tratto finale (da `u` a 1) della curva quadratica P0 → (controllo C) → P1. */
+function codaCurvaB4(x0, y0, cx, cy, x1, y1, u) {
+  const ax = x0 + (cx - x0) * u, ay = y0 + (cy - y0) * u;
+  const bx = cx + (x1 - cx) * u, by = cy + (y1 - cy) * u;
+  ctx.moveTo(ax + (bx - ax) * u, ay + (by - ay) * u);
+  ctx.quadraticCurveTo(bx, by, x1, y1);
+}
+
+/**
+ * I due fili neri del Velo (due per marionetta, come i fili d'oro degli altri), da `alto` (sopra il palco)
+ * alle spalle. L'anima nera sale fino in cima; il bordo viola c'è solo nel tratto vicino al burattino,
+ * così il filo si perde nel buio (e costa meno).
+ */
+function disegnaFiliNeriB4(t, alto) {
+  const o1 = Math.sin(t * 0.05) * 3, o2 = Math.cos(t * 0.045) * 3;
+  const cy = (alto - 13.5) / 2;
+  const u = Math.max(0, 1 - 58 / Math.max(58, -13.5 - alto)); // gli ultimi ~58 px
+  ctx.strokeStyle = 'rgba(139, 92, 246, 0.5)';
+  ctx.lineWidth = 3.2;
+  ctx.beginPath();
+  codaCurvaB4(-15, alto, -12 + o1, cy, -8.5, -13.5, u);
+  codaCurvaB4(15, alto, 12 + o2, cy, 8.5, -13, u);
+  ctx.stroke();
+  ctx.strokeStyle = '#07040a';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(-15, alto); ctx.quadraticCurveTo(-12 + o1, cy, -8.5, -13.5);
+  ctx.moveTo(15, alto); ctx.quadraticCurveTo(12 + o2, cy, 8.5, -13);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(221, 214, 254, 0.9)';
+  for (let k = 0; k < 2; k++) { // riflessi taglienti che scendono lungo i fili
+    const f = ((t * 0.012 + k * 0.5) % 1);
+    ctx.fillRect((k ? 11.5 - 3 * f : -11.5 + 3 * f) - 0.7, -72 + 58.5 * f - 1.5, 1.4, 3);
   }
 }
 
-/** Parti del costume che stanno DIETRO al corpo (mantello, coda, fili che salgono, aloni). */
+/** Parti del costume che stanno DIETRO al corpo (alone, fili neri e loro lame, fili d'oro recisi, mantello). */
 function disegnaDietroB4(s, px, py, opts, sulPalco) {
   const t = opts.tick || 0;
   const A = (opts.charInfo && opts.charInfo.id) === 'taddeo' ? ANCORE_B4.taddeo : ANCORE_B4.normale;
   const sc = apriPupazzoB4(px, py, opts);
   if (s.attive.sacro) { // luce di cera attorno al santo
     const alfa0 = ctx.globalAlpha;
-    ctx.globalAlpha = alfa0 * (0.55 + Math.sin(t * 0.07) * 0.12);
-    ctx.drawImage(aloneB4('rgba(253, 230, 138, 0.75)', 28), -28, -44);
+    ctx.globalAlpha = alfa0 * (0.7 + Math.sin(t * 0.07) * 0.15);
+    ctx.drawImage(aloneB4('rgba(253, 230, 138, 0.85)', 16), A.viso[0] - 19, A.viso[1] - 18); // attorno alla testa
     ctx.globalAlpha = alfa0;
   }
   if (s.attive.ombra) {
-    if (sulPalco) { // lame di filo che girano al raggio dell'aura
+    if (sulPalco) { // lame di filo che girano al raggio dell'aura (raggio vero anche col burattino ingrandito)
       const R = TRASFORMAZIONI_B4.ombra.raggioPx / sc;
-      for (let k = 0; k < 3; k++) {
-        const a0 = t * 0.075 + (k * TAU) / 3;
-        for (let passata = 0; passata < 2; passata++) {
-          ctx.strokeStyle = passata ? '#07040a' : 'rgba(139, 92, 246, 0.38)';
-          ctx.lineWidth = passata ? 1.3 : 2.8;
-          ctx.beginPath();
-          ctx.arc(0, -5, R, a0, a0 + 0.95);
-          ctx.stroke();
+      for (let passata = 0; passata < 2; passata++) {
+        ctx.strokeStyle = passata ? '#07040a' : 'rgba(139, 92, 246, 0.45)';
+        ctx.lineWidth = passata ? 1.3 : 2.6;
+        ctx.beginPath();
+        for (let k = 0; k < 3; k++) {
+          const a0 = t * 0.075 + (k * TAU) / 3;
+          ctx.moveTo(Math.cos(a0) * R, -5 + Math.sin(a0) * R);
+          ctx.arc(0, -5, R, a0, a0 + 0.8);
         }
-        const xa = Math.cos(a0 + 0.95) * R, ya = -5 + Math.sin(a0 + 0.95) * R; // punta tagliente
-        ctx.fillStyle = '#ddd6fe';
-        ctx.fillRect(xa - 0.8, ya - 0.8, 1.6, 1.6);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#ddd6fe';
+      for (let k = 0; k < 3; k++) { // punte taglienti
+        const a1 = t * 0.075 + (k * TAU) / 3 + 0.8;
+        ctx.fillRect(Math.cos(a1) * R - 0.8, -5 + Math.sin(a1) * R - 0.8, 1.6, 1.6);
       }
     }
-    const alto = sulPalco ? -(py + 6) / sc : -70; // i fili salgono fin sopra il palco
-    filoNeroB4(-9, alto, -5.5, -14, Math.sin(t * 0.05) * 3);
-    filoNeroB4(9, alto, 5, -14, Math.cos(t * 0.045) * 3);
-    filoNeroB4(A.cima[0] - 2, alto, A.cima[0], A.cima[1], Math.sin(t * 0.04 + 1) * 2);
-    for (let k = 0; k < 3; k++) { // riflessi taglienti che scendono lungo i fili
-      const f = ((t * 0.012 + k * 0.37) % 1);
-      const x = k === 0 ? -9 + 3.5 * f : k === 1 ? 9 - 4 * f : A.cima[0] - 2 + 2 * f;
-      const y1 = k === 2 ? A.cima[1] : -14;
-      ctx.fillStyle = 'rgba(221, 214, 254, 0.9)';
-      ctx.fillRect(x - 0.6, alto + (y1 - alto) * f - 1.5, 1.2, 3);
-    }
+    disegnaFiliNeriB4(t, sulPalco ? Math.min(-70, -(py + 6) / sc) : -70); // sul palco salgono fin sopra la scena
   }
-  if (s.attive.denari) { // mantello d'ebano con l'orlo d'oro
+  if (s.attive.fili) { // due fili d'oro recisi salgono dalle spalle, ai lati della testa
+    ctx.strokeStyle = '#f9cb40';
+    ctx.lineWidth = 1.25;
+    ctx.beginPath();
+    for (let lato = -1; lato <= 1; lato += 2) {
+      const o = Math.sin(t * 0.06 + lato * 1.3) * 2.2;
+      const xe = lato * 12.5 + o, ye = lato < 0 ? -52 : -48;
+      ctx.moveTo(lato * 8.5, -13.5);
+      ctx.bezierCurveTo(lato * 13, -22, lato * 12 - o, -36, xe, ye);
+      ctx.moveTo(xe, ye); ctx.lineTo(xe - 2, ye - 2.6); // estremità sfilacciata
+      ctx.moveTo(xe, ye); ctx.lineTo(xe + 0.2, ye - 3.4);
+      ctx.moveTo(xe, ye); ctx.lineTo(xe + 2, ye - 2.4);
+    }
+    ctx.stroke();
+  }
+  if (s.attive.denari) { // mantello d'ebano con l'orlo d'oro che si muove
     const w = Math.sin(t * 0.11) * 1.6;
     ctx.fillStyle = '#17100b';
     ctx.strokeStyle = '#c9992e';
@@ -767,239 +1014,95 @@ function disegnaDietroB4(s, px, py, opts, sulPalco) {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    ctx.strokeStyle = 'rgba(201, 153, 46, 0.5)';
-    ctx.lineWidth = 0.7;
-    ctx.beginPath();
-    ctx.moveTo(-12, -6); ctx.quadraticCurveTo(-15, 0, -17 + w, 5);
-    ctx.moveTo(11, -5); ctx.quadraticCurveTo(13, 0, 13.5, 4);
-    ctx.stroke();
-  }
-  if (s.attive.bestia) { // coda di gatto che ondeggia
-    const sw = Math.sin(t * 0.09) * 3;
-    ctx.strokeStyle = '#0d0907';
-    ctx.lineWidth = 2.8;
-    ctx.beginPath();
-    ctx.moveTo(-6, 0);
-    ctx.bezierCurveTo(-16, 4, -22, -5, -17 + sw, -14);
-    ctx.stroke();
-    ctx.strokeStyle = '#3a2a1f';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(-17.5 + sw, -12); ctx.lineTo(-17 + sw, -14);
-    ctx.stroke();
   }
   ctx.restore();
 }
 
-/** Parti del costume SOPRA il corpo (corona, maschera, orecchie, aureola, grembiule, tovagliolo, fili recisi, fumetto). */
+/** Parti del costume SOPRA il corpo: le tavole dei particolari fermi, i pochi tratti vivi e il fumetto. */
 function disegnaSopraB4(s, px, py, opts, sulPalco) {
   const t = opts.tick || 0;
   const A = (opts.charInfo && opts.charInfo.id) === 'taddeo' ? ANCORE_B4.taddeo : ANCORE_B4.normale;
+  const K = CHIAVI_TAVOLE_B4[A.nome];
   apriPupazzoB4(px, py, opts);
 
-  if (s.attive.fuoco) { // grembiule di cuoio, maglio che si arroventa, faville
-    ctx.fillStyle = '#3a2416';
-    ctx.strokeStyle = '#120c08';
-    ctx.lineWidth = 0.9;
-    ctx.beginPath();
-    ctx.moveTo(-4.5, -9.5); ctx.lineTo(4.2, -9.5); ctx.lineTo(6.8, 0.6); ctx.quadraticCurveTo(0, 2.8, -7.4, 0.8);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.strokeStyle = '#5b3a22';
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(-4.5, -9.5); ctx.lineTo(-3, -12.2);
-    ctx.moveTo(4.2, -9.5); ctx.lineTo(3, -12.2);
-    ctx.moveTo(-3, -3.5); ctx.lineTo(3.5, -3.5);
-    ctx.stroke();
-    const caldo = (s.colpiMaglio + 1) / TRASFORMAZIONI_B4.fuoco.ogniColpi; // più rovente verso il terzo colpo
-    ctx.strokeStyle = '#6d4c2f';
-    ctx.lineWidth = 1.7;
-    ctx.beginPath(); ctx.moveTo(1.2, -1); ctx.lineTo(9.5, -10.5); ctx.stroke();
+  if (s.attive.bestia) { // coda che dondola, davanti alla sciarpa
+    const sw = Math.sin(t * 0.09) * 3;
+    for (let passata = 0; passata < 2; passata++) {
+      ctx.strokeStyle = passata ? '#0d0907' : '#4a382b';
+      ctx.lineWidth = passata ? 2.6 : 3.8;
+      ctx.beginPath();
+      ctx.moveTo(-7.5, 0.5);
+      ctx.bezierCurveTo(-17, 5, -24, -3, -19 + sw, -13);
+      ctx.stroke();
+    }
+  }
+  if (s.attive.fuoco) { // grembiule e maglio; il maglio si arroventa verso il terzo colpo; faville che salgono
+    timbraB4(tavolaB4('grembiule', -9, -18, 26, 22, parteGrembiuleB4, A));
+    const caldo = (s.colpiMaglio + 1) / TRASFORMAZIONI_B4.fuoco.ogniColpi;
+    const alfa0 = ctx.globalAlpha;
     ctx.save();
     ctx.translate(10.2, -11.4);
     ctx.rotate(-0.85);
-    ctx.fillStyle = '#2b2b30';
-    ctx.strokeStyle = '#0a0604';
-    ctx.lineWidth = 0.9;
-    ctx.fillRect(-4.2, -2.6, 8.4, 5.2);
-    ctx.strokeRect(-4.2, -2.6, 8.4, 5.2);
-    ctx.globalAlpha *= Math.min(1, 0.25 + caldo * 0.75);
+    ctx.globalAlpha = alfa0 * Math.min(1, 0.25 + caldo * 0.75);
     ctx.fillStyle = '#fb923c';
     ctx.fillRect(1.6, -2.1, 2.2, 4.2);
     ctx.fillStyle = '#fde047';
     ctx.fillRect(2.8, -1.4, 0.9, 2.8);
     ctx.restore();
-    const alfaFaville = ctx.globalAlpha;
     for (let k = 0; k < 4; k++) {
       const f = ((t * 0.02 + k * 0.27) % 1);
-      ctx.globalAlpha = alfaFaville * (1 - f);
+      ctx.globalAlpha = alfa0 * (1 - f);
       ctx.fillStyle = k % 2 ? '#fde047' : '#fb923c';
       ctx.fillRect(9 + Math.sin(t * 0.1 + k * 2.1) * 4 - k * 3, -12 - f * 24, 1.3, 1.3);
     }
-    ctx.globalAlpha = alfaFaville;
+    ctx.globalAlpha = alfa0;
   }
-
-  if (s.attive.denari) { // risvolti del mantello col fermaglio, corona d'ebano
-    ctx.fillStyle = '#17100b';
-    ctx.strokeStyle = '#c9992e';
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(-6, -14.2); ctx.lineTo(-9.5, -5.5); ctx.lineTo(-6.2, -3.2); ctx.lineTo(-3.6, -11.8);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(5.2, -14.2); ctx.lineTo(8.6, -5.8); ctx.lineTo(5.8, -3.6); ctx.lineTo(3.4, -11.8);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#f9cb40';
-    ctx.beginPath(); ctx.arc(0, -11.2, 1.5, 0, TAU); ctx.fill();
-    ctx.save();
-    ctx.translate(A.banda[0], A.banda[1]);
-    ctx.rotate(A.banda[2]);
-    ctx.fillStyle = '#17100b';
-    ctx.strokeStyle = '#f9cb40';
-    ctx.lineWidth = 0.9;
-    ctx.beginPath();
-    ctx.moveTo(-7, 1.6); ctx.lineTo(-7.6, -5.4); ctx.lineTo(-4.4, -2.2); ctx.lineTo(-2.4, -6.6); ctx.lineTo(0, -2.4);
-    ctx.lineTo(2.4, -6.6); ctx.lineTo(4.4, -2.2); ctx.lineTo(7.6, -5.4); ctx.lineTo(7, 1.6);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#f9cb40';
-    for (const cx of [-7.6, -2.4, 2.4, 7.6]) { ctx.beginPath(); ctx.arc(cx, cx === -7.6 || cx === 7.6 ? -5.6 : -6.8, 0.9, 0, TAU); ctx.fill(); }
-    ctx.fillStyle = '#e53222';
-    ctx.beginPath(); ctx.arc(0, -0.2, 1.1, 0, TAU); ctx.fill();
-    ctx.restore();
+  if (s.attive.denari) { // risvolti col fermaglio e corona d'ebano
+    timbraB4(tavolaB4('risvolti', -11, -16, 21, 14, parteRisvoltiB4, A));
+    timbraB4(tavolaB4(K.corona, A.banda[0] - 10, A.banda[1] - 10.5, 20, 14.5, parteCoronaB4, A));
   }
-
-  if (s.attive.cibo) { // tovagliolo al collo, forchetta coi maccheroni
-    ctx.fillStyle = '#f5efe2';
-    ctx.strokeStyle = '#120c08';
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(-4.2, -12.2); ctx.lineTo(4.6, -12.2); ctx.lineTo(0.4, -4.4);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.strokeStyle = '#df3624';
-    ctx.lineWidth = 0.6;
-    ctx.beginPath();
-    ctx.moveTo(-2.2, -10.6); ctx.lineTo(2.8, -10.6);
-    ctx.moveTo(-1, -8.6); ctx.lineTo(1.8, -8.6);
-    ctx.stroke();
-    ctx.strokeStyle = '#c9a23a';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.moveTo(-7.5, -5); ctx.lineTo(-11.5, -17); ctx.stroke();
-    ctx.lineWidth = 0.7;
-    ctx.beginPath();
-    for (const dx of [-1.3, 0, 1.3]) { ctx.moveTo(-11.5 + dx, -17); ctx.lineTo(-12.2 + dx, -20.4); }
-    ctx.stroke();
-    ctx.strokeStyle = '#f3dc8a';
-    ctx.lineWidth = 1;
+  if (s.attive.cibo) { // tovagliolo e forchetta; i maccheroni che pendono si muovono
+    timbraB4(tavolaB4('tovagliolo', -20, -27.5, 26, 25, parteTovaglioloB4, A));
     const o = Math.sin(t * 0.12) * 1.2;
+    ctx.strokeStyle = '#f7e3a0';
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.ellipse(-12, -19.2, 2.6, 1.6, -0.3, 0, TAU);
-    ctx.moveTo(-13.6, -18.6); ctx.quadraticCurveTo(-15.5 + o, -15.5, -14 + o, -12.5);
-    ctx.moveTo(-10.6, -18.4); ctx.quadraticCurveTo(-9 - o, -15.5, -10.2 - o, -13.2);
+    ctx.moveTo(-16.4, -21.4); ctx.quadraticCurveTo(-18.6 + o, -17.5, -16.8 + o, -13.5);
+    ctx.moveTo(-11.8, -21.2); ctx.quadraticCurveTo(-10 - o, -18, -11.4 - o, -15);
+    ctx.moveTo(-14, -20.6); ctx.quadraticCurveTo(-14.8 + o * 0.6, -18, -14 - o * 0.5, -16);
     ctx.stroke();
   }
-
-  if (s.attive.bestia) { // orecchie, baffi, pupille a fessura
-    for (const [x1, y1, x2, y2, xa, ya] of A.orecchie) {
-      ctx.fillStyle = '#0d0907';
-      ctx.strokeStyle = '#3a2a1f';
-      ctx.lineWidth = 0.8;
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(xa, ya); ctx.lineTo(x2, y2); ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#a8452f';
-      ctx.beginPath();
-      ctx.moveTo((x1 * 2 + x2) / 3, (y1 * 2 + y2) / 3); ctx.lineTo((xa * 2 + (x1 + x2) / 2) / 3, (ya * 2 + (y1 + y2) / 2) / 3); ctx.lineTo((x1 + x2 * 2) / 3, (y1 + y2 * 2) / 3);
-      ctx.closePath();
-      ctx.fill();
-    }
-    ctx.strokeStyle = '#e8dcc0';
-    ctx.lineWidth = 0.6;
-    ctx.beginPath();
-    const [vx, vy] = A.viso;
-    ctx.moveTo(vx + 4, vy + 1.6); ctx.lineTo(vx + 9.5, vy + 0.4);
-    ctx.moveTo(vx + 4, vy + 2.6); ctx.lineTo(vx + 9.5, vy + 3.6);
-    ctx.moveTo(vx - 4, vy + 1.6); ctx.lineTo(vx - 8.5, vy + 0.6);
-    ctx.moveTo(vx - 4, vy + 2.6); ctx.lineTo(vx - 8.5, vy + 3.6);
-    ctx.stroke();
-    for (const [ex, ey] of A.occhi) {
-      ctx.fillStyle = '#facc15';
-      ctx.beginPath(); ctx.arc(ex, ey, 1.35, 0, TAU); ctx.fill();
-      ctx.fillStyle = '#0a0604';
-      ctx.fillRect(ex - 0.3, ey - 1.2, 0.6, 2.4);
-    }
-  }
-
-  if (s.attive.maschera) { // mezza maschera di cuoio col naso a becco
-    const [vx, vy] = A.viso;
-    ctx.fillStyle = '#2a1a12';
-    ctx.strokeStyle = '#8a5a3a';
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(vx - 4.6, vy - 0.4);
-    ctx.quadraticCurveTo(vx - 4.2, vy - 4.8, vx, vy - 4.6);
-    ctx.quadraticCurveTo(vx + 4.4, vy - 4.4, vx + 4.6, vy - 1.2);
-    ctx.quadraticCurveTo(vx + 8.6, vy - 0.6, vx + 9.6, vy + 2.6); // il naso a becco
-    ctx.quadraticCurveTo(vx + 9.2, vy + 4.6, vx + 7.2, vy + 3.8);
-    ctx.quadraticCurveTo(vx + 6.6, vy + 2.2, vx + 3.4, vy + 1.8);
-    ctx.quadraticCurveTo(vx - 1, vy + 2.6, vx - 4.6, vy - 0.4);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.strokeStyle = '#8a5a3a';
-    ctx.lineWidth = 0.6;
-    ctx.beginPath(); // rughe della fronte
-    ctx.moveTo(vx - 2.6, vy - 3.4); ctx.quadraticCurveTo(vx, vy - 4, vx + 2.8, vy - 3.2);
-    ctx.stroke();
-    for (const [ex, ey] of A.occhi) { // occhi furbi nei fori della maschera
-      ctx.fillStyle = '#fffdf5';
-      ctx.beginPath(); ctx.arc(ex, ey, 1.15, 0, TAU); ctx.fill();
-      ctx.strokeStyle = '#0a0604';
-      ctx.lineWidth = 0.7;
-      ctx.beginPath(); ctx.moveTo(ex - 1.5, ey - 1.9); ctx.lineTo(ex + 1.4, ey - 1.2); ctx.stroke();
-    }
-  }
-
+  if (s.attive.bestia) timbraB4(tavolaB4(K.muso, A.muso[0], A.muso[1], A.muso[2], A.muso[3], parteMusoB4, A));
+  if (s.attive.maschera) timbraB4(tavolaB4(K.maschera, A.viso[0] - 6, A.viso[1] - 6.5, 17.5, 12.5, parteMascheraB4, A));
   if (s.attive.ombra) { // occhi velati di viola
-    for (const [ex, ey] of A.occhi) {
-      ctx.fillStyle = 'rgba(139, 92, 246, 0.55)';
-      ctx.beginPath(); ctx.arc(ex, ey, 2.1, 0, TAU); ctx.fill();
-    }
+    ctx.fillStyle = 'rgba(139, 92, 246, 0.55)';
+    ctx.beginPath();
+    for (const [ex, ey] of A.occhi) { ctx.moveTo(ex + 2.1, ey); ctx.arc(ex, ey, 2.1, 0, TAU); }
+    ctx.fill();
   }
-
-  if (s.attive.fili) { // fili d'oro recisi che fluttuano verso l'alto
-    const basi = [[-5.5, -14, 15], [5, -14, 13], [A.cima[0], A.cima[1], 11], [1.2, -2, 9]];
-    ctx.strokeStyle = '#f9cb40';
-    ctx.lineWidth = 0.95;
-    for (let k = 0; k < basi.length; k++) {
-      const [bx, by, lung] = basi[k];
-      const o1 = Math.sin(t * 0.07 + k * 1.7) * 3, o2 = Math.cos(t * 0.05 + k * 2.3) * 4;
-      const xe = bx + o2 + (k % 2 ? 3 : -3), ye = by - lung;
-      ctx.beginPath();
-      ctx.moveTo(bx, by);
-      ctx.bezierCurveTo(bx + o1, by - lung * 0.35, bx - o1 + (k % 2 ? 2 : -2), by - lung * 0.7, xe, ye);
-      ctx.moveTo(xe, ye); ctx.lineTo(xe - 1.6, ye - 2.2); // estremità sfilacciata
-      ctx.moveTo(xe, ye); ctx.lineTo(xe + 1.4, ye - 2.4);
-      ctx.stroke();
-    }
-  }
-
-  if (s.attive.sacro) { // aureola, fiammella in cima, colature di cera
-    const [ax, ay] = A.aureola;
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 2.4;
-    ctx.beginPath(); ctx.ellipse(ax, ay, 8.6, 2.7, -0.1, 0, TAU); ctx.stroke();
-    ctx.strokeStyle = '#fef3c7';
-    ctx.lineWidth = 1.1;
-    ctx.beginPath(); ctx.ellipse(ax, ay, 8.6, 2.7, -0.1, 0, TAU); ctx.stroke();
+  if (s.attive.fili) { // il filo reciso della cima e due pagliuzze d'oro che salgono
     const [cx, cy] = A.cima;
-    const fl = Math.sin(t * 0.4) * 0.6;
-    ctx.fillStyle = '#fb923c';
-    ctx.beginPath(); ctx.ellipse(cx + fl * 0.4, cy - 2.6, 1.7, 3.1 + fl * 0.4, 0, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#fef08a';
-    ctx.beginPath(); ctx.ellipse(cx + fl * 0.3, cy - 2, 0.85, 1.7, 0, 0, TAU); ctx.fill();
+    const o = Math.sin(t * 0.07) * 2;
+    ctx.strokeStyle = '#f9cb40';
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.bezierCurveTo(cx - o, cy - 5, cx + o, cy - 10, cx - 1 + o, cy - 15);
+    ctx.moveTo(cx - 1 + o, cy - 15); ctx.lineTo(cx - 3 + o, cy - 17.4);
+    ctx.moveTo(cx - 1 + o, cy - 15); ctx.lineTo(cx + 1 + o, cy - 17.6);
+    ctx.stroke();
+    const alfaFili = ctx.globalAlpha;
+    ctx.fillStyle = '#fde68a';
+    for (let k = 0; k < 2; k++) {
+      const f = ((t * 0.014 + k * 0.5) % 1);
+      ctx.globalAlpha = alfaFili * (1 - f);
+      ctx.fillRect((k ? 11 : -12) + Math.sin(t * 0.08 + k) * 1.5, -30 - f * 22, 1.3, 1.3);
+    }
+    ctx.globalAlpha = alfaFili;
+  }
+  if (s.attive.sacro) { // aureola, colature di cera, fiammella in cima al cappuccio
+    timbraB4(tavolaB4(K.aureola, A.aureola[0] - 11, A.aureola[1] - 5, 22, 10, parteAureolaB4, A));
+    const [cx, cy] = A.cima;
     ctx.strokeStyle = '#fff7e0';
     ctx.lineWidth = 1.1;
     ctx.beginPath();
@@ -1008,6 +1111,11 @@ function disegnaSopraB4(s, px, py, opts, sulPalco) {
     ctx.moveTo(-6.8, -13.6); ctx.lineTo(-6.8, -10.6);
     ctx.moveTo(6.2, -13.4); ctx.lineTo(6.2, -11.2);
     ctx.stroke();
+    const fl = Math.sin(t * 0.4) * 0.6;
+    ctx.fillStyle = '#fb923c';
+    ctx.beginPath(); ctx.ellipse(cx + fl * 0.4, cy - 2.6, 1.7, 3.1 + fl * 0.4, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath(); ctx.ellipse(cx + fl * 0.3, cy - 2, 0.85, 1.7, 0, 0, TAU); ctx.fill();
   }
 
   // fumetto dello sberleffo (non ribaltato)
@@ -1109,36 +1217,66 @@ disegnaFerruccioPittorico = function disegnaFerruccioPittoricoB4(...args) {
 // RESA: HUD (progresso dei temi), annuncio, lampo
 // ===========================================================================
 
-/** Fila di icone sotto la minimappa: solo i temi che hai addosso; pallini n/3, cornice d'oro se trasformato. */
-function disegnaStrisciaTemiB4(s) {
+/** Disegna su `c` la fila dei temi (icone, cornice d'oro, pallini) a partire da x0, y; `scale[t]` ingrandisce l'icona. */
+function tracciaStrisciaTemiB4(c, s, x0, y, impulso) {
   const G = TRASFORMAZIONI_B4.hud;
   const soglia = TRASFORMAZIONI_B4.soglia;
-  let n = 0;
-  for (const t of TEMI_B4.ordine) if ((s.conteggi[t] || 0) > 0 || s.attive[t]) n++;
-  if (!n) return;
-  const x0 = G.xDestra - n * G.cella;
-  ctx.save();
-  ctx.fillStyle = 'rgba(10, 6, 4, 0.82)';
-  ctx.fillRect(x0 - 2, G.y - 2, n * G.cella + 2, G.altezza + 2);
   let i = 0;
   for (const t of TEMI_B4.ordine) {
-    const c = s.conteggi[t] || 0;
+    const n = s.conteggi[t] || 0;
     const att = Boolean(s.attive[t]);
-    if (!c && !att) continue;
+    if (!n && !att) continue;
     const cx = x0 + i * G.cella + G.cella / 2 - 1;
     i++;
-    const eta = tick - (s.impulsi[t] === undefined ? -9999 : s.impulsi[t]);
-    const scala = eta >= 0 && eta < G.impulsoTick ? 1 + 0.7 * (1 - eta / G.impulsoTick) : 1;
     if (att) {
-      ctx.strokeStyle = '#f9cb40';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(cx - 5.5, G.y - 0.5, 11, 11);
+      c.strokeStyle = '#f9cb40';
+      c.lineWidth = 1;
+      c.strokeRect(cx - 5.5, y - 0.5, 11, 11);
     }
-    drawPixelSprite(TEMI_B4.icone[t], cx, G.y + 5, scala);
+    const eta = impulso ? tick - (s.impulsi[t] === undefined ? -9999 : s.impulsi[t]) : -1;
+    const lato = 8 * (eta >= 0 && eta < G.impulsoTick ? 1 + 0.7 * (1 - eta / G.impulsoTick) : 1);
+    c.drawImage(getSpriteCanvas(TEMI_B4.icone[t]), cx - lato / 2, y + 5 - lato / 2, lato, lato);
     for (let k = 0; k < soglia; k++) {
-      ctx.fillStyle = att ? '#f9cb40' : k < c ? TEMI_B4.colori[t] : '#3f342a';
-      ctx.fillRect(Math.round(cx - 5 + k * 4), G.y + 12, 3, 2);
+      c.fillStyle = att ? '#f9cb40' : k < n ? TEMI_B4.colori[t] : '#3f342a';
+      c.fillRect(Math.round(cx - 5 + k * 4), y + 12, 3, 2);
     }
+  }
+}
+
+/** Tavola della fila dei temi (stato `s` fermo: si rifà solo quando cambiano i conteggi). */
+function parteStrisciaTemiB4(c, s) {
+  c.imageSmoothingEnabled = false;
+  tracciaStrisciaTemiB4(c, s, 0, 0, false);
+}
+
+/**
+ * Fila di icone sotto la minimappa: solo i temi che hai addosso; pallini n/3, cornice d'oro se trasformato.
+ * In cache finché i conteggi non cambiano; disegnata dal vivo solo nei tick dell'impulso (un tema è salito).
+ */
+function disegnaStrisciaTemiB4(s) {
+  const G = TRASFORMAZIONI_B4.hud;
+  let n = 0, vivo = false;
+  for (const t of TEMI_B4.ordine) {
+    if ((s.conteggi[t] || 0) > 0 || s.attive[t]) n++;
+    if (s.impulsi[t] !== undefined && tick - s.impulsi[t] < G.impulsoTick) vivo = true;
+  }
+  if (!n) return;
+  const larg = n * G.cella + 2;
+  const x0 = G.xDestra - n * G.cella;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = 'rgba(10, 6, 4, 0.82)';
+  ctx.fillRect(x0 - 2, G.y - 2, larg, G.altezza + 2);
+  if (vivo) {
+    tracciaStrisciaTemiB4(ctx, s, x0, G.y, true);
+  } else {
+    if (!s.firmaTemi) {
+      s.firmaTemi = '';
+      for (const t of TEMI_B4.ordine) s.firmaTemi += s.attive[t] ? 'A' : String(Math.min(TRASFORMAZIONI_B4.soglia, s.conteggi[t] || 0));
+      s.firmaTemi = 'temi-' + s.firmaTemi;
+    }
+    const tv = tavolaB4(s.firmaTemi, -2, -2, larg, G.altezza + 2, parteStrisciaTemiB4, s);
+    ctx.drawImage(tv.cv, x0 - 2, G.y - 2, tv.w, tv.h);
   }
   ctx.restore();
 }
