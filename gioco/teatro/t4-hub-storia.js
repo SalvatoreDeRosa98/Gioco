@@ -1115,6 +1115,8 @@
     ctx.fillStyle = '#f9cb40';
     ctx.fillRect(x - 6, y - 46, 12, 4);
     ctx.fillRect(x - 2, y - 42, 4, 3);
+    // --- b8: il segreto della bottega (luce sotto la porta, sigilli, ferri appesi): teatro/b8-finali-diario.js ---
+    if (typeof T.portaBottegaB8 === 'function') T.portaBottegaB8(p);
   }
 
   function disegnaBanchetto(t) {
