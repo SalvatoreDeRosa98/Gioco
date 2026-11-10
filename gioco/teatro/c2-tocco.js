@@ -245,8 +245,9 @@ const c2 = {
   lampo: new Array(TOCCO_C2.quantiBottoni).fill(false), // toccato dall'ultimo fotogramma (anche se già rilasciato)
   puntatori: new Map(),   // pointerId → bottone premuto
   leve: {
-    movimento: { id: null, ox: 0, oy: 0, x: 0, y: 0, t0: 0, corsa: 0, px0: 0, py0: 0, vx: 0, vy: 0, forza: 0 },
-    sparo: { id: null, ox: 0, oy: 0, x: 0, y: 0, t0: 0, corsa: 0, px0: 0, py0: 0, vx: 0, vy: 0, forza: 0 },
+    // sospesa: il dito è ancora giù ma sopra il gioco c'è un riquadro (pausa, dialogo…): la levetta non comanda
+    movimento: { id: null, ox: 0, oy: 0, x: 0, y: 0, t0: 0, corsa: 0, px0: 0, py0: 0, vx: 0, vy: 0, forza: 0, sospesa: false },
+    sparo: { id: null, ox: 0, oy: 0, x: 0, y: 0, t0: 0, corsa: 0, px0: 0, py0: 0, vx: 0, vy: 0, forza: 0, sospesa: false },
   },
   riposo: { movimento: { x: 0, y: 0 }, sparo: { x: 0, y: 0 } },
   raggio: TOCCO_C2.leva.raggio,
@@ -504,7 +505,7 @@ function disegnaLevaC2(nome) {
   const el = c2.leveEl[nome], L = c2.leve[nome];
   if (!el) return;
   const d = c2.raggio * 2;
-  if (L.id === null) {
+  if (L.id === null || L.sospesa) {
     mettiC2(el, c2.riposo[nome].x, c2.riposo[nome].y, d);
     el.classList.add('c2-riposo');
     el.style.setProperty('--kx', '0px');
@@ -631,7 +632,7 @@ function levaGiuC2(e) {
   L.ox = L.x = L.px0 = e.clientX;
   L.oy = L.y = L.py0 = e.clientY;
   L.t0 = performance.now();
-  L.corsa = 0; L.vx = 0; L.vy = 0; L.forza = 0;
+  L.corsa = 0; L.vx = 0; L.vy = 0; L.forza = 0; L.sospesa = false;
   disegnaLevaC2(ruolo);
 }
 
@@ -640,6 +641,7 @@ function levaMuoviC2(ruolo, x, y) {
   const L = c2.leve[ruolo], C = TOCCO_C2.leva, R = c2.raggio;
   L.x = x; L.y = y;
   L.corsa = Math.max(L.corsa, Math.hypot(x - L.px0, y - L.py0));
+  if (L.sospesa) return;
   let dx = x - L.ox, dy = y - L.oy, d = Math.hypot(dx, dy);
   if (d > R) { // l'anello insegue il dito: la levetta non «finisce» mai sotto il pollice
     L.ox += (dx / d) * (d - R); L.oy += (dy / d) * (d - R);
@@ -665,11 +667,29 @@ function levaSuC2(ruolo, tocco) {
   const L = c2.leve[ruolo];
   const breve = tocco && performance.now() - L.t0 < TOCCO_C2.tocco.brevissimoMs && L.corsa < TOCCO_C2.tocco.fermoPx;
   const x = L.px0, y = L.py0;
-  L.id = null; L.vx = 0; L.vy = 0; L.forza = 0;
+  L.id = null; L.vx = 0; L.vy = 0; L.forza = 0; L.sospesa = false;
   const base = ruolo === 'movimento' ? 0 : 2;
   padC2.axes[base] = 0; padC2.axes[base + 1] = 0;
   disegnaLevaC2(ruolo);
   if (breve) clickSulPalcoC2(x, y);
+}
+
+/**
+ * Sopra il gioco si apre un riquadro (pausa, dialogo, scambio…) mentre un dito tiene una levetta: la levetta si
+ * ferma, così non sposta il cursore del menu. Quando si torna in scena riparte centrata sotto il dito, da ferma.
+ */
+function sospendiLeveC2(libero) {
+  for (const nome of ['movimento', 'sparo']) {
+    const L = c2.leve[nome];
+    if (L.id === null || L.sospesa === !libero) continue;
+    L.sospesa = !libero;
+    L.corsa = Infinity; // non è più un tocco breve: al rilascio nessun click
+    L.vx = 0; L.vy = 0; L.forza = 0;
+    L.ox = L.x; L.oy = L.y;
+    const base = nome === 'movimento' ? 0 : 2;
+    padC2.axes[base] = 0; padC2.axes[base + 1] = 0;
+    disegnaLevaC2(nome);
+  }
 }
 
 /**
@@ -727,7 +747,7 @@ function rilasciaTuttoC2() {
   for (const id of [...c2.puntatori.keys()]) rilasciaBottoneC2(id, false);
   c2.tenuti.fill(0);
   c2.lampo.fill(false);
-  for (const nome of ['movimento', 'sparo']) { const L = c2.leve[nome]; L.id = null; L.vx = 0; L.vy = 0; L.forza = 0; }
+  for (const nome of ['movimento', 'sparo']) { const L = c2.leve[nome]; L.id = null; L.vx = 0; L.vy = 0; L.forza = 0; L.sospesa = false; }
   padC2.axes.fill(0);
   for (const b of padC2.buttons) { b.pressed = false; b.touched = false; b.value = 0; }
 }
@@ -824,10 +844,7 @@ function dopoIlFrameC2() {
   const dir = mira ? mira.slice(5).toLowerCase() : '';
   if (c2.leveEl.sparo.dataset.dir !== dir) c2.leveEl.sparo.dataset.dir = dir;
   if (c2.invitoFinoMs && performance.now() > c2.invitoFinoMs) { c2.invitoFinoMs = 0; c2.invito.classList.add('c2-via'); }
-  // i riquadri sopra il gioco tolgono le dita dalle levette: quando si torna in scena si riparte da fermi
-  if (!liberoB3(c) && (c2.leve.movimento.id !== null || c2.leve.sparo.id !== null)) {
-    for (const nome of ['movimento', 'sparo']) if (c2.leve[nome].id !== null) levaSuC2(nome, false);
-  }
+  if (c2.leve.movimento.id !== null || c2.leve.sparo.id !== null) sospendiLeveC2(liberoB3(c));
 }
 
 /** Crea lo strato e aggancia ciò che serve SOLO quando si usa il tocco (mai eseguita su un PC senza dita). */
@@ -958,7 +975,7 @@ Object.assign(window.__teatro.interni, {
         dispositivo: c2.dispositivo, installato: c2.installato, attivo: c2.attivo, motivo: c2.ultimoMotivo || '', verticale: verticaleC2(),
         contesto: contestoB3(), dispositivoB3: b3.dispositivo, assi: padC2.axes.slice(),
         premuti: padC2.buttons.map((b, i) => (b.pressed ? i : -1)).filter((i) => i >= 0), visibili,
-        leve: { movimento: c2.leve.movimento.id !== null, sparo: c2.leve.sparo.id !== null, forza: c2.leve.movimento.forza },
+        leve: { movimento: c2.leve.movimento.id !== null, sparo: c2.leve.sparo.id !== null, forza: c2.leve.movimento.forza, sospesa: c2.leve.movimento.sospesa },
         veglia: Boolean(c2.veglia && c2.veglia !== 'attesa'), avvioLeggero: c2.avvioLeggero, schermoNegato: c2.schermoNegato,
         buffer: [canvas.width, canvas.height], tetto: tettoScalaC2(), ultimaVibrazione: c2.ultimaVibrazione,
       };
