@@ -208,6 +208,11 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
     I.statoRun.siparioAttivo = null;
     return { piano: I.statoRun.piano, fase: I.statoRun.fase };
   }, piano);
+  /** Aspetta che le notifiche di sblocco (a6) siano passate: non devono coprire le fotografie. */
+  const quiete = () => p.waitForFunction(() => {
+    const P = window.__teatro.interni.progressione;
+    return !P || (!P.notifica && !P.coda.length);
+  }, null, { timeout: 30000 }).catch(() => {});
   /** Entra in una stanza di combattimento del piano e vi monta la variante data. */
   const allestisci = (piano, variante, tipi, giocatore) => p.evaluate(({ piano, variante, tipi, giocatore }) => {
     const I = window.__teatro.interni;
@@ -243,7 +248,7 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
   oss.scatti = [];
   let pianoCorrente = 0;
   for (const [piano, variante, tipi] of SCATTI) {
-    if (piano !== pianoCorrente) { await prepara(piano); pianoCorrente = piano; }
+    if (piano !== pianoCorrente) { await prepara(piano); await quiete(); pianoCorrente = piano; }
     const r = await allestisci(piano, variante, tipi, { x: 320, y: 262 });
     if (!r) { violazioni.push(`screenshot: variante ${variante} non montata`); continue; }
     await p.waitForTimeout(450);
@@ -253,6 +258,7 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
 
   // ---------------------------------------------------------------- 3. elementi di scena
   await prepara(2);
+  await quiete();
   await allestisci(2, 'chiodi-del-palco', [], { x: 320, y: 262 });
   oss.chiodi = await p.evaluate(() => {
     const I = window.__teatro.interni;
@@ -509,6 +515,7 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
     return { dentro: I.statoRun.stanzaCorrente === s, lato };
   }, { tipo, campo });
   oss.tavolino = { ingresso: await trovaStanza('bisca', 'ciarlatanoB7') };
+  await quiete();
   if (!oss.tavolino.ingresso || !oss.tavolino.ingresso.dentro) violazioni.push('ciarlatano: nessuna Bisca col ciarlatano trovata');
   else {
     await p.evaluate(() => {
@@ -618,6 +625,7 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
   const provaClessidra = async (lasciaScadere, nome) => {
     await prepara(2);
     const ing = await trovaStanza('sfida', 'clessidraB7');
+    await quiete();
     if (!ing || !ing.dentro) { violazioni.push('clessidra: nessuna Sfida a tempo trovata'); return null; }
     const avvio = await p.evaluate(() => {
       const I = window.__teatro.interni;
