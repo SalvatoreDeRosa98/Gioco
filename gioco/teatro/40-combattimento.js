@@ -836,6 +836,7 @@ function passoLogico() {
     // --- T3: fine ---
     for (let i = statoRun.proiettili.length - 1; i >= 0; i--) {
       const p = statoRun.proiettili[i];
+      if (!p) continue; // la lista può essersi accorciata di più colpi nel giro precedente
       aggiornaProiettileD(p, st); // --- D: orbita / ricerca ---
       p.x += p.vx;
       p.y += p.vy;
@@ -922,6 +923,8 @@ function passoLogico() {
     const dannoBasePiano = statoRun.piano >= 3 ? 2 : 1;
     for (let i = statoRun.proiettiliNemici.length - 1; i >= 0; i--) {
       const pr = statoRun.proiettiliNemici[i];
+      // Un effetto scattato nel giro precedente (onda che spegne i colpi, scudo…) può aver tolto più colpi insieme
+      if (!pr) continue;
       pr.x += pr.vx;
       pr.y += pr.vy;
       pr.dist += Math.hypot(pr.vx, pr.vy);
