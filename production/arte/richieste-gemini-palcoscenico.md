@@ -122,3 +122,36 @@ Nel foglio `donna-luciana.png` la figura è grigia e un po' trasparente e sul pa
 confonde. Se vuoi, rigenerala con lo stesso disegno ma più piena: abito nero con ricami oro ben visibili, viso di
 porcellana chiaro, un contorno chiaro sottile. Stesso formato del foglio attuale (4 colonne; righe: fermo×4,
 evoca×4, attacco×2, colpito×1, morte×3).
+
+---
+
+# Secondo lotto (in aggiornamento man mano che le squadre consegnano)
+
+## F. I quattro boss nuovi: fogli animati (priorità 1)
+
+Stesso formato dei fogli dei boss che hai già fatto (`capitano.png`, `donna-luciana.png`): **4 colonne**, una riga
+per posa, fotogrammi da sinistra a destra, celle tutte uguali, personaggio rivolto a destra, piedi sul bordo basso
+della cella. Vanno in `gioco/assets/sprite_teatro/` (NON in `scena/`) con il nome indicato. Aggiungi la voce a
+`gioco/assets/sprite_teatro/layout.json` come per gli altri fogli; al gioco li collego io.
+Oggi nel gioco c'è un disegno provvisorio a ombre di ognuno (foto: `production/qa/evidence/teatro-boss-nuovi-insieme.png`):
+puoi darlo a Gemini come riferimento della sagoma.
+
+| # | File | Righe (posa × fotogrammi) | Descrizione |
+|---|---|---|---|
+| 47 | `accendilumi.png` | fermo×2, muove×4, anticipo×2, attacco×3, evoca×2, colpito×1, morte×3 | **L'Accendilumi di Corso Trieste** (piano 1, sotto la pioggia): lampionaio alto e magro, tuba e finanziera, sciarpa rossa, scala a pioli sulla schiena, lunga pertica con la fiamma in cima. `anticipo` = alza la pertica di lato; `attacco` = spazzata con la pertica (scia di faville); `evoca` = alza un lume dietro la testa per lanciarlo. |
+| 48 | `cigno-latta.png` | fermo×2, muove×4, anticipo×2, carica×2, apre×2, attacco×2, colpito×1, morte×3 | **Il Cigno di Latta** (piano 2, Villa Comunale): cigno giocattolo di latta su ruote, con una grande chiave a farfalla d'oro sul dorso. `fermo` = collo chino, a molla scarica; `anticipo` = collo tirato indietro; `carica` = collo teso in avanti, scatto; `apre` = ali aperte a ventaglio che tremano; `attacco` = lancia le piume di latta. |
+| 49 | `giostra-lucciole.png` | fermo×2, anticipo×2, attacco×4, evoca×2, colpito×1, morte×3 | **La Giostra delle Lucciole** (piano 2): giostrina da fiera col tendone a spicchi rossi e neri, pennacchio in cima, una maschera che ride sulla colonna centrale, bracci di ferro. SENZA i lumi appesi ai bracci (li disegna il gioco, perché sono i colpi). `anticipo` = il tendone oscilla; `attacco` = in pieno giro (4 fotogrammi della rotazione); `evoca` = si illumina dall'interno. |
+| 50 | `tessitrice-pietra.png` | fermo×2, muove×4, anticipo×2, attacco×2, evoca×2, colpito×1, morte×4 | **La Tessitrice di Pietra** (piano 3, San Leucio): statua velata di pietra su un plinto, un giglio d'oro sul petto, crepe da cui esce luce rossa. SENZA pettine e spole (li disegna il gioco). `anticipo` = braccia alzate; `attacco` = braccia in avanti; `evoca` = braccia aperte; `morte` = la pietra si crepa e dentro si vede un filo di seta. |
+
+## G. Interfaccia (priorità 3)
+
+In `gioco/assets/sprite_teatro/scena/`.
+
+| # | File | Dimensione minima | Descrizione |
+|---|---|---|---|
+| 51 | `ui-pad-simboli.png` | foglio, celle 64×64: 1 riga × 13 | Simboli del controller, sagome scure con accento oro: A, B, X, Y, LB, RB, LT, RT, Start, Select, levetta sinistra, levetta destra, croce direzionale. |
+| 52 | `ui-cartiglio-opzioni.png` | 1344×1032 | Cornice del cartiglio delle Opzioni: fondo scuro, doppio bordo d'oro, due rotoli di velluto rosso ai lati. Vuota al centro. |
+| 53 | `ui-tasto-pergamena.png` | 384×96 | Un tasto di pergamena con bordo dorato, che si possa allungare in orizzontale (i due estremi decorati, il centro liscio). |
+| 54 | `ui-cursore-mano.png` | 96×96 | Piccola mano di marionetta di legno che indica verso destra: cursore dei menu. |
+| 55 | `ui-interruttore-lanterna.png` | foglio, celle 96×96: 1 riga × 2 | Interruttore a forma di lanterna: spenta e accesa. |
+| 56 | `segni-boss.png` | foglio, celle 64×64: 1 riga × 4 | Quattro piccoli segni di trionfo: un lume, un cigno, una giostrina, una spola. Oro su scuro. |
