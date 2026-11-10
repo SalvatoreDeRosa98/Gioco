@@ -9,6 +9,7 @@ function adattaRisoluzione() {
   const dpr = window.devicePixelRatio || 1;
   let s = (cssL * dpr) / W;
   if (RISOLUZIONE.scalaIntera) s = Math.ceil(s - 1e-6);
+  if (typeof tettoScalaC2 === 'function') s = Math.min(s, tettoScalaC2()); // --- c2: tetto più basso sui dispositivi a tocco (teatro/c2-tocco.js) ---
   s = Math.max(1, Math.min(s, RISOLUZIONE.bufferMaxL / W, RISOLUZIONE.bufferMaxA / H));
   const bl = Math.round(W * s), ba = Math.round(H * s);
   if (canvas.width !== bl || canvas.height !== ba) {
