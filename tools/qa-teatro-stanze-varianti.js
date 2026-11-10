@@ -11,7 +11,7 @@
  *     né dentro un ostacolo, anche dopo l'ingresso da ogni porta; frequenze di disposizioni, gruppi, stanze a
  *     tema, Clessidra e ciarlatano; curva di difficoltà (le prime stanze più facili).
  *  3. Elementi di scena: chiodi, fragili, Vasi di Capodimonte, casse di polvere, pedana e cancello,
- *     pozzanghera scivolosa, nemici che girano attorno agli ostacoli.
+ *     leva e sacchi di sabbia, pozze d'olio e candele, pozzanghera scivolosa, nemici che girano attorno agli ostacoli.
  *  4. Le tre scatole: 100 mani scegliendo a caso (premio ≈ 1/3) e 100 seguendo la scatola con gli occhi
  *     (solo posizioni anonime: 100%), poi una partita vera al tavolino (posta, premio, bomba, congedo).
  *  5. La Clessidra: premio pieno in tempo, premio ridotto a sabbia finita, nessuna morte per il tempo.
@@ -239,6 +239,8 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
     [2, 'la-fontana', ['lucciola', 'lucciola', 'statua']],
     [2, 'labirinto-di-siepi', ['predone', 'predone', 'lucciola']],
     [2, 'chiodi-del-palco', ['lucciola', 'predone']],
+    [2, 'sacchi-di-sabbia', ['predone', 'lucciola']],
+    [2, 'olio-e-candele', ['predone', 'lucciola']],
     [3, 'sala-dei-telai', ['burattino', 'burattino', 'guardia']],
     [3, 'deposito-chiuso', ['burattino', 'maschera']],
     [4, 'galleria-delle-statue', ['guardia', 'guardia', 'maschera']],
@@ -318,6 +320,7 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
       return Object.fromEntries(Object.entries(esiti).map(([k, x]) => [k, Number((x / n).toFixed(3))]));
     };
     const pianoVero = I.statoRun.piano; I.statoRun.piano = 2; // fuori dal filtro di rarità del piano 1
+    r.tabellaCapodimonte = I.STANZE_B7.fragili.tipi.capodimonte.premi;
     r.premiComuni = conta('botti-in-fila', 600);
     r.premiCapodimonte = conta('vasi-di-capodimonte', 600);
     I.statoRun.piano = pianoVero;
@@ -325,7 +328,7 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
   });
   if (!oss.fragili.dopoUnColpo || oss.fragili.dopoDueColpi) violazioni.push('fragili: la botte non si rompe al secondo colpo');
   if (!oss.fragili.proiettileColpisce || !oss.fragili.proiettileAssorbito) violazioni.push('fragili: il proiettile non colpisce la botte');
-  { const c = oss.fragili.premiCapodimonte, T = { moneta: 0.3, mezzaMaschera: 0.1, ragno: 0.15 };
+  { const c = oss.fragili.premiCapodimonte, T = oss.fragili.tabellaCapodimonte;
     for (const [k, atteso] of Object.entries(T)) if (Math.abs((c[k] || 0) - atteso) > 0.07) violazioni.push(`Capodimonte: ${k} ${c[k]} lontano da ${atteso}`); }
 
   await allestisci(2, 'vasi-di-capodimonte', [], { x: 320, y: 262 });
@@ -393,7 +396,78 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
   await p.waitForTimeout(250);
   await p.screenshot({ path: foto('pedana-cancello-aperto') });
 
+  await allestisci(2, 'sacchi-di-sabbia', ['predone'], { x: 320, y: 262 });
+  oss.sacchi = await p.evaluate(() => {
+    const I = window.__teatro.interni;
+    const st = I.statoRun.stanzaCorrente;
+    const leva = st.suoloB7.find((o) => o.tipo === 'leva'), sacchi = st.suoloB7.filter((o) => o.tipo === 'sacco');
+    const nem = st.nemici[0];
+    nem.x = sacchi[0].x + 6; nem.y = sacchi[0].y + 4; nem.stunTicks = 400; // fermo sotto il sacco
+    const hpPrima = nem.hp;
+    I.statoRun.graziaIngressoC = 0; I.statoRun.hpHalf = I.statoRun.maxHpHalf; I.player.invuln = 0;
+    I.player.x = leva.x + 8; I.player.y = leva.y + 10;
+    const r = { sacchi: sacchi.length, appesi: sacchi.filter((o) => o.stato === 'appeso').length };
+    I.interagisciStanza();
+    r.tirata = leva.tirata; r.inCaduta = sacchi.filter((o) => o.stato === 'cade').length;
+    for (let k = 0; k < I.STANZE_B7.sacco.cadutaTick + 12; k++) I.passoLogico();
+    r.aTerra = sacchi.filter((o) => o.stato === 'a-terra').length;
+    r.dannoAlNemico = Number((hpPrima - nem.hp).toFixed(1));
+    r.dannoAFerruccio = I.statoRun.maxHpHalf - I.statoRun.hpHalf; // alla leva si è al sicuro
+    I.interagisciStanza(); // la leva non si tira due volte (qui [E] torna alla base)
+    r.unaVoltaSola = sacchi.every((o) => o.stato === 'a-terra');
+    return r;
+  });
+  if (!oss.sacchi.tirata || oss.sacchi.inCaduta !== oss.sacchi.sacchi || oss.sacchi.aTerra !== oss.sacchi.sacchi) violazioni.push('sacchi: la leva non li fa cadere');
+  if (!(oss.sacchi.dannoAlNemico > 0) || oss.sacchi.dannoAFerruccio !== 0) violazioni.push('sacchi: il sacco non ferisce il nemico sotto (o ferisce Ferruccio alla leva)');
+  await p.waitForTimeout(250);
+  await p.screenshot({ path: foto('sacchi-caduti') });
+
+  await allestisci(2, 'olio-e-candele', ['predone'], { x: 320, y: 262 });
+  oss.olio = await p.evaluate(() => {
+    const I = window.__teatro.interni;
+    const st = I.statoRun.stanzaCorrente;
+    const candela = st.ostacoli.find((o) => o.variante === 'candela');
+    const pozze = st.suoloB7.filter((o) => o.tipo === 'olio');
+    const vicine = pozze.filter((o) => Math.abs(o.y - candela.y) < 4), lontane = pozze.filter((o) => Math.abs(o.y - candela.y) >= 4);
+    const nem = st.nemici[0];
+    nem.x = vicine[1].x; nem.y = vicine[1].y; nem.stunTicks = 900; nem.burnTicks = 0;
+    I.statoRun.graziaIngressoC = 0; I.statoRun.hpHalf = I.statoRun.maxHpHalf; I.player.invuln = 0;
+    const r = { pozze: pozze.length, vicine: vicine.length };
+    // a olio spento ci si cammina sopra senza danno
+    I.player.x = vicine[0].x; I.player.y = vicine[0].y;
+    for (let k = 0; k < 20; k++) I.passoLogico();
+    r.dannoAOlioSpento = I.statoRun.maxHpHalf - I.statoRun.hpHalf;
+    // un colpo vero alla candela
+    I.player.x = candela.x - 56; I.player.y = candela.y + 6; I.player.cooldown = 0;
+    I.sparaProiettiliDirezione(1, 0);
+    for (let k = 0; k < 60 && candela.acceso; k++) I.passoLogico();
+    r.candelaRovesciata = !candela.acceso;
+    for (let k = 0; k < 60; k++) I.passoLogico();
+    r.vicineBruciate = vicine.filter((o) => o.bruciata).length;
+    r.lontaneIntatte = lontane.filter((o) => !o.bruciata && st.suoloB7.includes(o)).length === lontane.length;
+    r.fuochi = st.pozzanghereFuoco.length;
+    r.nemicoBrucia = nem.burnTicks > 0;
+    return r;
+  });
+  await p.waitForTimeout(200);
+  await p.screenshot({ path: foto('olio-acceso') });
+  oss.olio.dannoSulFuoco = await p.evaluate(() => {
+    const I = window.__teatro.interni;
+    const st = I.statoRun.stanzaCorrente, f = st.pozzanghereFuoco.find((x) => x.olioB7);
+    if (!f) return -1;
+    I.player.invuln = 0; I.statoRun.hpHalf = I.statoRun.maxHpHalf;
+    I.player.x = f.x; I.player.y = f.y;
+    for (let k = 0; k < 6; k++) I.passoLogico();
+    const d = I.statoRun.maxHpHalf - I.statoRun.hpHalf;
+    I.statoRun.hpHalf = I.statoRun.maxHpHalf; I.player.x = 320; I.player.y = 262;
+    return d;
+  });
+  if (oss.olio.dannoAOlioSpento !== 0) violazioni.push("olio: brucia anche da spento");
+  if (!oss.olio.candelaRovesciata || oss.olio.vicineBruciate !== oss.olio.vicine || !oss.olio.lontaneIntatte) violazioni.push("olio: la candela colpita non accende le pozze vicine (o accende quelle lontane)");
+  if (!oss.olio.nemicoBrucia || !(oss.olio.dannoSulFuoco >= 1)) violazioni.push("olio: il fuoco non brucia chi ci cammina sopra");
+
   await prepara(1);
+  await quiete();
   await allestisci(1, 'viale-dei-lampioni', [], { x: 250, y: 188 });
   oss.pozza = await p.evaluate(() => {
     const I = window.__teatro.interni;
