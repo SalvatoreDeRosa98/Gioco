@@ -209,7 +209,8 @@ const DIR_B3 = Object.freeze({ su: 1, giu: 2, sinistra: 4, destra: 8 });
 const SETTORI_B3 = Object.freeze({ 0: 8, 1: 10, 2: 2, 3: 6, 4: 4, '-4': 4, '-3': 5, '-2': 1, '-1': 9 });
 
 const b3 = {
-  dispositivo: 'tastiera', // ultimo dispositivo usato: 'tastiera' (anche mouse) o 'pad'
+  dispositivo: 'tastiera', // ultimo dispositivo usato: 'tastiera' (anche mouse), 'pad' o 'tocco' (c2)
+  tocco: null,             // (c2) comandi a tocco registrati da c2-tocco.js: { pad(), daTocco(e), simboli, interi, testi, righe }
   inviando: false,         // true mentre si invia un tasto sintetico (il filtro lo lascia passare)
   inverso: new Map(),      // tasto fisico → azione
   orfani: new Set(),       // codici canonici rimasti senza azione (il loro tasto è stato spostato)
@@ -293,6 +294,7 @@ function etichettaTastoB3(code) {
 
 /** Simbolo del comando di un'azione per l'ultimo dispositivo usato (es. «E» o «RB»). */
 function simboloB3(azione) {
+  if (inToccoB3()) return b3.tocco.simboli[azione] || ''; // --- c2: nomi dei bottoni a schermo ---
   if (b3.dispositivo === 'pad') return PAD_B3.simboli[azione] || '';
   return etichettaTastoB3(OPZIONI.tasti[azione] || CANONICO_B3[azione]);
 }
@@ -319,6 +321,15 @@ function inviaTastoB3(tipo, code, ripetuto) {
 
 function toccoB3(code) { inviaTastoB3('keydown', code); inviaTastoB3('keyup', code); }
 
+/** (c2) true se l'ultimo dispositivo usato sono i comandi a tocco di c2-tocco.js. */
+function inToccoB3() { return b3.dispositivo === 'tocco' && Boolean(b3.tocco); }
+
+/** (c2) Righe di una pagina del menu Opzioni: quelle di RIGHE_B3, o quelle dei comandi a tocco. */
+function righeB3(pagina) { return pagina === 'tocco' && b3.tocco ? b3.tocco.righe : (RIGHE_B3[pagina] || RIGHE_B3.scena); }
+
+/** (c2) La seconda pagina del menu Opzioni: i tasti, oppure i comandi a tocco se sono quelli in uso. */
+function secondaPaginaB3() { return inToccoB3() ? 'tocco' : 'tasti'; }
+
 function segnaDispositivoB3(d) {
   if (b3.dispositivo === d) return;
   b3.dispositivo = d;
@@ -326,7 +337,7 @@ function segnaDispositivoB3(d) {
 }
 
 function aggiornaAdattaB3() {
-  b3.adatta = b3.dispositivo === 'pad' || !b3.identita;
+  b3.adatta = b3.dispositivo !== 'tastiera' || !b3.identita; // gamepad, tocco (c2) o tasti rimappati
   b3.cacheTesti.clear();
 }
 
@@ -459,7 +470,7 @@ function coordB3(e) {
 }
 
 function mouseB3(e) {
-  segnaDispositivoB3('tastiera');
+  segnaDispositivoB3(b3.tocco && b3.tocco.daTocco(e) ? 'tocco' : 'tastiera'); // --- c2: il click di un dito non è un mouse ---
   if (e.target !== canvas) return;
   const p = coordB3(e);
   if (b3.opz) { bloccaB3(e); clickOpzioniB3(p.x, p.y); return; }
@@ -518,6 +529,7 @@ function disegnaAggiuntePausaB3() {
   if (!statoRun.pausa || statoRun.diarioD) return;
   const M = MENU_PAUSA_B3;
   const pad = b3.dispositivo === 'pad';
+  const aiuto = inToccoB3() ? b3.tocco.testi.aiutoPausa : (pad ? TESTI_B3.aiutoPausaPad : TESTI_B3.aiutoPausa); // --- c2 ---
   ctx.save();
   ctx.fillStyle = M.fondo;
   ctx.fillRect(M.copri.x, M.copri.y, M.copri.w, M.copri.h);
@@ -528,7 +540,7 @@ function disegnaAggiuntePausaB3() {
   ctx.lineWidth = 1;
   ctx.strokeRect(R.x, R.y, R.w, R.h);
   drawTextFit(TESTI_B3.bottonePausa, W / 2, R.y + R.h / 2 + 3, R.w - 12, { size: 8.5, color: '#f9cb40', weight: 'bold' });
-  drawTextFit(pad ? TESTI_B3.aiutoPausaPad : TESTI_B3.aiutoPausa, W / 2, M.aiutoY, 276, { size: 7, color: '#c9a679', weight: '' });
+  drawTextFit(aiuto, W / 2, M.aiutoY, 276, { size: 7, color: '#c9a679', weight: '' });
   if (!b3.opz) {
     const voci = vociPausaB3();
     const v = voci[Math.min(b3.cursorePausa, voci.length - 1)];
@@ -574,7 +586,7 @@ disegnaMenuSelezionePersonaggio = function disegnaMenuSelezioneB3(...args) {
     ctx.lineWidth = 1.2;
     ctx.strokeRect(B.x, B.y, B.w, B.h);
     drawTextFit(TESTI_B3.bottoneMenu, B.x + B.w / 2, B.y + 12, B.w - 10, { size: 8.5, color: '#f9cb40' });
-    drawTextFit(b3.dispositivo === 'pad' ? 'premi Ⓨ' : `click o [${etichettaTastoB3(COMANDI_B3.tastoOpzioniMenu)}]`, B.x + B.w / 2, B.y + 23, B.w - 10, { size: 7, color: '#c9a679', weight: '' });
+    drawTextFit(inToccoB3() ? b3.tocco.testi.bottoneMenu : b3.dispositivo === 'pad' ? 'premi Ⓨ' : `click o [${etichettaTastoB3(COMANDI_B3.tastoOpzioniMenu)}]`, B.x + B.w / 2, B.y + 23, B.w - 10, { size: 7, color: '#c9a679', weight: '' });
     ctx.restore();
   } catch (err) { console.error('[b3] menu', err); }
   return r;
@@ -590,22 +602,25 @@ function adattaTestoB3(t) {
   if (typeof t !== 'string' || !t) return t;
   const noto = b3.cacheTesti.get(t);
   if (noto !== undefined) return noto;
-  const pad = b3.dispositivo === 'pad';
+  const tocco = inToccoB3(); // --- c2: col tocco le scritte nominano i bottoni a schermo ---
+  const pad = b3.dispositivo === 'pad' || tocco; // senza tastiera
+  const interi = tocco ? b3.tocco.interi : TESTI_B3.interiPad;
+  const A = tocco ? b3.tocco.simboli.conferma : 'Ⓐ';
   let r = t;
-  if (t === 'Q') r = simboloB3('attivo');
-  else if (t === 'F') r = simboloB3('consumabile');
-  else if (pad && TESTI_B3.interiPad[t] !== undefined) r = TESTI_B3.interiPad[t];
+  if (t === 'Q') r = tocco ? b3.tocco.simboli.slotAttivo : simboloB3('attivo');
+  else if (t === 'F') r = tocco ? b3.tocco.simboli.slotConsumabile : simboloB3('consumabile');
+  else if (pad && interi[t] !== undefined) r = interi[t];
   else if (SONDA_TESTI_B3.test(t)) {
     const E = simboloB3('interagisci');
     r = t.replace(/\[Click\/E\]/g, pad ? `[${E}]` : `[Click/${E}]`)
       .replace(/\[E\]/g, `[${E}]`)
-      .replace(/\[E \/ Invio\]/g, pad ? '[Ⓐ]' : `[${E} / Invio]`)
+      .replace(/\[E \/ Invio\]/g, pad ? `[${A}]` : `[${E} / Invio]`)
       .replace(/\[Q\]/g, `[${simboloB3('attivo')}]`)
       .replace(/\[F\]/g, `[${simboloB3('consumabile')}]`)
       .replace(/\[ESC\]/g, `[${simboloB3('pausa').toUpperCase()}]`)
-      .replace(/Spazio \/ E$/, pad ? 'Ⓐ' : `Spazio / ${E}`);
+      .replace(/Spazio \/ E$/, pad ? A : `Spazio / ${E}`);
     if (pad) {
-      r = r.replace(/\[SPAZIO \/ INVIO\]/g, '[Ⓐ]').replace(/\[Click \/ Spazio\]/g, '[Ⓐ]')
+      r = r.replace(/\[SPAZIO \/ INVIO\]/g, `[${A}]`).replace(/\[Click \/ Spazio\]/g, `[${A}]`)
         .replace(/ \[[ROLM]\]$/, '');
     }
   }
@@ -684,6 +699,7 @@ scuoti = function scuotiB3(voce, ...resto) {
 
 /** Il gamepad in uso: il primo collegato col layout standard, altrimenti il primo collegato. */
 function padCorrenteB3() {
+  if (b3.tocco) { const v = b3.tocco.pad(); if (v) return v; } // --- c2: il gamepad virtuale dei comandi a tocco ---
   let lista = null;
   try { lista = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : null; } catch (_) { return null; }
   if (!lista) return null;
@@ -786,7 +802,7 @@ function aggiornaPadB3(ora) {
   const maschera = direzioneMovimentoB3(Number(ax[0]) || 0, Number(ax[1]) || 0)
     | (b[B.su] ? DIR_B3.su : 0) | (b[B.giu] ? DIR_B3.giu : 0) | (b[B.sinistra] ? DIR_B3.sinistra : 0) | (b[B.destra] ? DIR_B3.destra : 0);
   const mira = direzioneSparoB3(Number(ax[2]) || 0, Number(ax[3]) || 0);
-  if (attivita || (maschera && !P.mascheraPrima) || (mira && !P.miraPrima)) segnaDispositivoB3('pad');
+  if (attivita || (maschera && !P.mascheraPrima) || (mira && !P.miraPrima)) segnaDispositivoB3(g.tocco === true ? 'tocco' : 'pad'); // (c2) il pad virtuale è «tocco»
 
   const c = contestoB3();
   if (c !== P.contesto) {
@@ -921,21 +937,29 @@ function cambiaPaginaB3(pagina) {
   const o = b3.opz;
   if (!o || o.pagina === pagina) return;
   o.pagina = pagina;
-  o.sel = pagina === 'tasti' ? 0 : RIGHE_B3.scena.findIndex((r) => r.id === 'vaiTasti');
+  o.sel = pagina !== 'scena' ? 0 : RIGHE_B3.scena.findIndex((r) => r.id === 'vaiTasti');
   suonoB3('playPasso');
 }
 
 function regolaRigaB3(r, d) {
   if (r.tipo === 'barra') impostaOpzioneB3(r.id, Math.max(0, Math.min(10, Math.round(clamp01B3(OPZIONI[r.id]) * 10) + d)) / 10);
   else if (r.tipo === 'spunta') impostaOpzioneB3(r.id, d > 0);
+  else if (r.tipo === 'scelta') impostaOpzioneB3(r.id, sceltaVicinaB3(r, d));
+}
+
+/** (c2) Riga «scelta» (una voce fra più valori): il valore accanto a quello corrente, girando in tondo. */
+function sceltaVicinaB3(r, d) {
+  const i = Math.max(0, r.scelte.findIndex((s) => s[0] === OPZIONI[r.id]));
+  return r.scelte[(i + d + r.scelte.length) % r.scelte.length][0];
 }
 
 function attivaRigaB3(r) {
   const o = b3.opz;
   if (r.tipo === 'barra') { const v = Math.round(clamp01B3(OPZIONI[r.id]) * 10); impostaOpzioneB3(r.id, (v >= 10 ? 0 : v + 1) / 10); }
   else if (r.tipo === 'spunta') impostaOpzioneB3(r.id, !valoreOpzioneB3(r.id));
+  else if (r.tipo === 'scelta') impostaOpzioneB3(r.id, sceltaVicinaB3(r, 1));
   else if (r.tipo === 'tasto') { o.cattura = r.id; b3.avviso = null; }
-  else if (r.id === 'vaiTasti') cambiaPaginaB3('tasti');
+  else if (r.id === 'vaiTasti') cambiaPaginaB3(secondaPaginaB3());
   else if (r.id === 'indietro') cambiaPaginaB3('scena');
   else if (r.id === 'chiudi') chiudiOpzioniB3();
   else if (r.id === 'predefiniti') {
@@ -960,7 +984,7 @@ function tastoOpzioniB3(code, ripetuto) {
     } else if (code === 'Escape' || code === 'Backspace') o.conflitto = null;
     return;
   }
-  const righe = RIGHE_B3[o.pagina];
+  const righe = righeB3(o.pagina);
   const n = righe.length;
   const r = righe[o.sel];
   if (code === 'ArrowUp' || code === 'KeyW') { o.sel = (o.sel - 1 + n) % n; suonoB3('playPasso'); }
@@ -969,13 +993,13 @@ function tastoOpzioniB3(code, ripetuto) {
   else if (code === 'ArrowRight' || code === 'KeyD') regolaRigaB3(r, 1);
   else if (ripetuto) return;
   else if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') attivaRigaB3(r);
-  else if (code === 'Tab') cambiaPaginaB3(o.pagina === 'scena' ? 'tasti' : 'scena');
+  else if (code === 'Tab') cambiaPaginaB3(o.pagina === 'scena' ? secondaPaginaB3() : 'scena');
   else if ((code === 'Backspace' || code === 'Delete') && r.tipo === 'tasto') {
     const pred = CANONICO_B3[r.id];
     const altra = b3.inverso.get(pred);
     assegnaTastoB3(r.id, pred, null);
     avvisoB3(altra && altra !== r.id ? TESTI_B3.scambiati(r.nome, NOME_AZIONE_B3[altra]) : TESTI_B3.assegnato(r.nome, etichettaTastoB3(pred)));
-  } else if (code === 'Escape') { if (o.pagina === 'tasti') cambiaPaginaB3('scena'); else chiudiOpzioniB3(); }
+  } else if (code === 'Escape') { if (o.pagina !== 'scena') cambiaPaginaB3('scena'); else chiudiOpzioniB3(); }
 }
 
 /** Rimappatura: il prossimo tasto fisico premuto diventa il tasto dell'azione in cattura. */
@@ -1004,8 +1028,8 @@ function clickOpzioniB3(mx, my) {
   if (o.conflitto) { o.conflitto = null; return; }
   const P = PANNELLO_B3;
   if (mx < P.x || mx > P.x + P.w || my < P.y || my > P.y + P.h) { tastoOpzioniB3('Escape', false); return; }
-  if (my >= P.y + 27 && my <= P.y + 44) { cambiaPaginaB3(mx < W / 2 ? 'scena' : 'tasti'); return; }
-  const righe = RIGHE_B3[o.pagina];
+  if (my >= P.y + 27 && my <= P.y + 44) { cambiaPaginaB3(mx < W / 2 ? 'scena' : secondaPaginaB3()); return; }
+  const righe = righeB3(o.pagina);
   const i = Math.floor((my - (P.y + P.righeY)) / altezzaRigaB3(o.pagina));
   if (i < 0 || i >= righe.length || mx < P.x + P.margine || mx > P.x + P.w - P.margine) return;
   o.sel = i;
@@ -1031,7 +1055,8 @@ function disegnaRigaOpzioniB3(r, y, h, scelta) {
   }
   const colore = scelta ? C.testoScelto : C.testo;
   if (r.tipo === 'azione') {
-    drawTextFitBaseB3(r.nome, W / 2, yT, w0 - 60, { size: 8.5, color: scelta ? C.oro : C.testo });
+    const nome = r.id === 'vaiTasti' && inToccoB3() ? b3.tocco.testi.vaiTocco : r.nome; // --- c2: col tocco porta ai comandi a tocco ---
+    drawTextFitBaseB3(nome, W / 2, yT, w0 - 60, { size: 8.5, color: scelta ? C.oro : C.testo });
     return;
   }
   drawTextFitBaseB3(r.nome, x0 + P.etichettaX - 14, yT, P.controlloX - P.etichettaX, { size: 8.5, color: colore, align: 'left' });
@@ -1059,6 +1084,9 @@ function disegnaRigaOpzioniB3(r, y, h, scelta) {
     ctx.fillRect(si ? cx + 16 : cx + 2, ly + 2, 10, 5);
     } // --- b9: fine dell'interruttore a codice ---
     drawTextFitBaseB3(si ? TESTI_B3.acceso : TESTI_B3.spento, cx + 38, yT, 80, { size: 8, color: si ? C.oro : C.spento, align: 'left' });
+  } else if (r.tipo === 'scelta') { // --- c2: una voce fra più valori ---
+    const s = r.scelte.find((x) => x[0] === OPZIONI[r.id]) || r.scelte[0];
+    drawTextFitBaseB3(`◂ ${s[1]} ▸`, cx, yT, 150, { size: 8.5, color: scelta ? C.oro : '#c9a23a', align: 'left' });
   } else if (r.tipo === 'tasto') {
     if (o.cattura === r.id) {
       // in attesa del tasto: casella vuota bordata d'oro e scritta che pulsa fra oro e bianco (sempre leggibile)
@@ -1092,7 +1120,8 @@ function disegnaOpzioniB3() {
   if (!o) return;
   const P = PANNELLO_B3, C = P.colori;
   const pad = b3.dispositivo === 'pad';
-  const righe = RIGHE_B3[o.pagina];
+  const tocco = inToccoB3(); // --- c2 ---
+  const righe = righeB3(o.pagina);
   const hR = altezzaRigaB3(o.pagina);
   ctx.save();
   ctx.fillStyle = C.velo;
@@ -1117,7 +1146,7 @@ function disegnaOpzioniB3() {
   drawTextFitBaseB3(TESTI_B3.titolo, W / 2, P.y + 20, P.w - 40, { size: 12, color: C.oro });
   // linguette delle due pagine
   const lx = [P.x + P.w * 0.3, P.x + P.w * 0.7];
-  [['scena', TESTI_B3.linguettaScena], ['tasti', TESTI_B3.linguettaTasti]].forEach(([id, nome], i) => {
+  [['scena', TESTI_B3.linguettaScena], o.pagina === 'tocco' || tocco ? ['tocco', b3.tocco.testi.linguetta] : ['tasti', TESTI_B3.linguettaTasti]].forEach(([id, nome], i) => {
     const att = o.pagina === id;
     drawTextFitBaseB3(nome, lx[i], P.y + 38, 150, { size: 8.5, color: att ? C.oro : C.spento });
     if (att) { ctx.fillStyle = C.oro; ctx.fillRect(lx[i] - 50, P.y + 42, 100, 1.5); }
@@ -1128,9 +1157,9 @@ function disegnaOpzioniB3() {
 
   const r = righe[o.sel];
   const yNote = P.y + P.righeY + righe.length * hR;
-  if (o.pagina === 'scena') {
+  if (o.pagina !== 'tasti') {
     const muto = !AudioSys.attivo && (r.id === 'volumeEffetti' || r.id === 'volumeMusica');
-    const nota = muto ? TESTI_B3.muto : r.nota;
+    const nota = muto ? TESTI_B3.muto : (r.id === 'vaiTasti' && tocco ? b3.tocco.testi.notaVaiTocco : r.nota);
     if (nota) drawTextFitBaseB3(nota, W / 2, yNote + 16, P.w - 44, { size: 8, color: muto ? '#fca5a5' : C.nota, weight: '', style: 'italic' });
   } else {
     drawTextFitBaseB3(TESTI_B3.legendaPad1, W / 2, yNote + 10, P.w - 36, { size: 6.5, color: C.nota, weight: '' });
@@ -1139,7 +1168,8 @@ function disegnaOpzioniB3() {
   let piede;
   if (o.cattura) piede = TESTI_B3.piedeCattura(NOME_AZIONE_B3[o.cattura]);
   else if (o.conflitto) piede = TESTI_B3.piedeConflitto;
-  else if (o.pagina === 'scena') piede = pad ? TESTI_B3.piedeScenaPad : TESTI_B3.piedeScena;
+  else if (tocco) piede = o.pagina === 'scena' ? b3.tocco.testi.piede : b3.tocco.testi.piedePagina; // --- c2 ---
+  else if (o.pagina !== 'tasti') piede = pad ? TESTI_B3.piedeScenaPad : TESTI_B3.piedeScena;
   else piede = r.id === 'pausa' ? TESTI_B3.notaPausa : (pad ? TESTI_B3.piedeTastiPad : TESTI_B3.piedeTasti);
   drawTextFitBaseB3(piede, W / 2, P.y + P.h - 9, P.w - 28, { size: 7, color: o.cattura || o.conflitto ? C.oro : C.piede, weight: '' });
   if (o.conflitto) {
@@ -1198,7 +1228,7 @@ Object.assign(window.__teatro.interni, {
       return {
         dispositivo: b3.dispositivo, contesto: contestoB3(), cursorePausa: b3.cursorePausa,
         voci: vociPausaB3().map((v) => v.id), tenuti: [...b3.pad.tenuti], padPresente: b3.pad.presente,
-        opzioni: o ? { pagina: o.pagina, riga: RIGHE_B3[o.pagina][o.sel].id, cattura: o.cattura, conflitto: o.conflitto ? { ...o.conflitto } : null } : null,
+        opzioni: o ? { pagina: o.pagina, riga: righeB3(o.pagina)[o.sel].id, cattura: o.cattura, conflitto: o.conflitto ? { ...o.conflitto } : null } : null,
         avviso: b3.avviso ? b3.avviso.testo : null, ultimaVibrazione: b3.ultimaVibrazione ? { ...b3.ultimaVibrazione } : null,
       };
     },

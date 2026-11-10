@@ -214,6 +214,8 @@ canvas.addEventListener('mousedown', (e) => {
     return;
   }
 
+  // --- c2: coi comandi a tocco il dito sul palco non fa «cammina fin lì e spara» (teatro/c2-tocco.js) ---
+  if (typeof toccoSulPalcoC2 === 'function' && toccoSulPalcoC2(e)) return;
   const dx = mx - player.x;
   const dy = my - player.y;
   let dirX = 0, dirY = 0;

@@ -2,7 +2,13 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!-- (c2) telefono: colore delle barre e avvio a tutto schermo da «Aggiungi a schermata Home» -->
+<meta name="theme-color" content="#050302">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ferruccio">
 <title>Ferruccio — La Notte Immobile · Teatro delle Marionette</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
@@ -54,6 +60,9 @@
     image-rendering: auto;
     cursor: crosshair;
   }
+  /* (c2) col dito: niente scorrimento, zoom, «tira per aggiornare», menu del tasto lungo (su PC non cambia niente) */
+  html, body, canvas { touch-action: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 </style>
 </head>
 <body>
@@ -95,6 +104,7 @@
 <script src="teatro/b1-pubblico.js"></script>
 <script src="teatro/c1-partenza-segreta.js"></script>
 <script src="teatro/b9-immagini.js"></script>
+<script src="teatro/c2-tocco.js"></script>
 <script>
 // --- ponte T3/T4: i flag della trama di T4 vivono nello slot di salvataggio di T3 ---
 (function () {

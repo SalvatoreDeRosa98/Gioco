@@ -681,10 +681,13 @@ function passoLogico() {
     if (keys.KeyD) mx += 1;
     if (keys.KeyW) my -= 1;
     if (keys.KeyS) my += 1;
+    // --- c2: levetta a tocco analogica (teatro/c2-tocco.js): direzione libera, intensità = lunghezza (al più 1) ---
+    const levaC2 = typeof levaToccoC2 === 'function' ? levaToccoC2(mx, my) : null;
+    if (levaC2) { mx = levaC2.x; my = levaC2.y; }
 
     player.moving = false;
     if (mx !== 0 || my !== 0) {
-      const l = Math.hypot(mx, my);
+      const l = levaC2 ? Math.max(1, Math.hypot(mx, my)) : Math.hypot(mx, my); // (c2) sotto 1 la levetta va piano
       player.x = Math.max(ARENA.x1, Math.min(ARENA.x2, player.x + (mx / l) * statoRun.speed));
       player.y = Math.max(ARENA.y1, Math.min(ARENA.y2, player.y + (my / l) * statoRun.speed));
       if (mx !== 0) player.flipX = mx < 0;
