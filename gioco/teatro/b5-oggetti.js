@@ -63,16 +63,16 @@ const OGGETTI_B5 = Object.freeze({
       fuoco: Object.freeze({ r: 9, vita: 150, dannoMult: 0.3, brucia: 60, lento: 0, colore: '#f97316', alpha: 0.55 }),
       china: Object.freeze({ r: 11, vita: 210, dannoMult: 0, brucia: 0, lento: 50, colore: '#0b0704', alpha: 0.6 }),
       santa: Object.freeze({ r: 10, vita: 130, dannoMult: 0.4, brucia: 0, lento: 0, colore: '#93c5fd', alpha: 0.5 }),
-      pozza: Object.freeze({ r: 44, vita: 480, dannoMult: 0.45, brucia: 0, lento: 0, colore: '#7dd3fc', alpha: 0.4 }),
+      pozza: Object.freeze({ r: 44, vita: 480, dannoMult: 0.45, brucia: 0, lento: 0, colore: '#38bdf8', alpha: 0.5 }),
     }),
   }),
   nemici: Object.freeze({ lentoFattore: 0.5, lentoBoss: 0.8, geloTick: 60, geloBossTick: 20, scoppioDannoMult: 1.2, iellaVita: 1.6 }),
   difesa: Object.freeze({ spineRaggio: 46, ondaRaggio: 120, ondaSpintaPx: 26, furiaMult: 1.6, pocaVitaHalf: 2, scudoPrimaTick: 60 }),
   famigli: Object.freeze({
-    seguiPx: 26,
+    seguiPx: 34, largoPx: 18, // distanza a cui seguono; sotto `largoPx` dal giocatore si scostano
     raccoglitore: Object.freeze({ velocita: 2.6, presaPx: 9 }),
     scudiero: Object.freeze({ distanzaPx: 22, raggioBlocco: 11, ricaricaTick: 30 }),
-    torretta: Object.freeze({ gittataPx: 260, velocitaColpo: 3.6, raggioColpo: 3.5, scartoPx: 18 }),
+    torretta: Object.freeze({ gittataPx: 260, velocitaColpo: 3.6, raggioColpo: 3.5 }),
     pastore: Object.freeze({ danno: 1.6, cadenza: 1.0 }),
     lume: Object.freeze({ ogniTick: 30, bruciaTick: 50 }),
     bombarolo: Object.freeze({ ogniTick: 240, gittataPx: 220, danno: 6, dannoPerPiano: 1.5, raggio: 34, velocita: 3.2 }),
@@ -168,7 +168,6 @@ const TESTI_B5 = Object.freeze({
   calamita: '🧲 CALAMITA: i nemici finiscono in mezzo alla stanza!',
   calza: Object.freeze({ moneta: '🧦 Dalla calza esce una moneta!', cura: '🧦 Dalla calza esce mezza Maschera!', bomba: '🧦 Dalla calza esce una bomba!', chiave: '🧦 Dalla calza esce una chiave!' }),
   diarioTitolo: '📖 DIARIO DEGLI OGGETTI',
-  diarioAiuto: 'Frecce/WASD o click: scorri · Q/E o PagSu/PagGiù: pagina · Esc/O: torna al menu',
   diarioIgnoto: 'Effetto: ??? — raccoglilo per scoprirlo.',
   diarioBloccato: (cond) => `🔒 Non ancora in scena: ${cond}`,
   diarioSezioni: Object.freeze({ passivi: 'Oggetti', attivi: 'Oggetti attivi [Q]', patti: 'Patti d\'Ombra', segreti: 'Oggetti segreti' }),
@@ -389,41 +388,41 @@ const PASSIVI_B5 = RIGHE_PASSIVI_B5.map(([id, nome, tier, polarita, temi, statsD
 
 /** Patti d'Ombra nuovi (stessa forma di CATALOGO_PATTO). */
 const PATTI_B5 = [
-  { id: 'patto_eco', sprite: 'patto_eco', nome: 'Ombra Gemella', tier: 'patto', temi: ['ombra', 'maschera'], costoMaxHpHalf: 4,
+  { id: 'patto_eco', sprite: 'patto_eco', polarita: 'positivo', nome: 'Ombra Gemella', tier: 'patto', temi: ['ombra', 'maschera'], costoMaxHpHalf: 4,
     statsDesc: '[😈 PATTO] Un\'ombra ripete ogni tuo colpo dopo un istante (60% del Danno)',
     lore: 'La tua ombra si stacca dal muro e impara a fare quello che fai tu.', mod: { eco: true } },
-  { id: 'patto_fame', sprite: 'patto_fame', nome: 'Fame del Velo', tier: 'patto', temi: ['ombra', 'bestia'], costoMaxHpHalf: 2,
+  { id: 'patto_fame', sprite: 'patto_fame', polarita: 'positivo', nome: 'Fame del Velo', tier: 'patto', temi: ['ombra', 'bestia'], costoMaxHpHalf: 2,
     statsDesc: '[😈 PATTO] Ogni 9 nemici sconfitti rigeneri ½ Maschera · +0.4 Danno',
     lore: 'Il Velo mangia i ricordi. Tu impari a mangiare con lui.', mod: { rubaVita: 9, dmgUp: 0.4 } },
-  { id: 'patto_trenta', sprite: 'patto_trenta', nome: 'Trenta Denari', tier: 'patto', temi: ['ombra', 'denari'], costoMaxHpHalf: 2,
+  { id: 'patto_trenta', sprite: 'patto_trenta', polarita: 'misto', nome: 'Trenta Denari', tier: 'patto', temi: ['ombra', 'denari'], costoMaxHpHalf: 2,
     statsDesc: '[😈 PATTO] +15 monete subito · ogni colpo subito ti fa perdere 3 monete',
     lore: 'Contali pure: sono giusti. È il resto che non torna.', mod: { moneteSubito: 15, colpoPerdeMonete: 3 } },
-  { id: 'patto_luna_nera', sprite: 'patto_luna_nera', nome: 'Luna Nera', tier: 'patto', temi: ['ombra'], costoMaxHpHalf: 2,
+  { id: 'patto_luna_nera', sprite: 'patto_luna_nera', polarita: 'positivo', nome: 'Luna Nera', tier: 'patto', temi: ['ombra'], costoMaxHpHalf: 2,
     statsDesc: '[😈 PATTO] +0.2 Danno fisso per ogni notte vissuta (fino a +3.0)',
     lore: 'La notte immobile ha una luna che nessuno guarda. Lei guarda te.', mod: { notteDanno: 0.2, notteDannoMax: 3.0 } },
-  { id: 'patto_nodo', sprite: 'patto_nodo', nome: 'Nodo Scorsoio', tier: 'patto', temi: ['ombra', 'fili'], costoMaxHpHalf: 2,
+  { id: 'patto_nodo', sprite: 'patto_nodo', polarita: 'positivo', nome: 'Nodo Scorsoio', tier: 'patto', temi: ['ombra', 'fili'], costoMaxHpHalf: 2,
     statsDesc: '[😈 PATTO] I colpi rallentano i nemici · i nemici comuni sotto il 25% di vita cadono subito',
     lore: 'Un filo d\'oro annodato a cappio: stringe da solo.', mod: { rallenta: 150, finisci: 0.25 } },
-  { id: 'patto_candela', sprite: 'patto_candela', nome: 'Candela Nera', tier: 'patto', temi: ['ombra', 'fuoco'], costoMaxHpHalf: 2,
+  { id: 'patto_candela', sprite: 'patto_candela', polarita: 'misto', nome: 'Candela Nera', tier: 'patto', temi: ['ombra', 'fuoco'], costoMaxHpHalf: 2,
     statsDesc: '[😈 PATTO] Con 1 Maschera o meno: Danno x2.2 · +2 Maschere di Cera',
     lore: 'Si accende per chiedere il male di qualcuno. Stanotte, del Velo.', mod: { pocaVita: 2.2, ceraExtra: 4 } },
 ];
 
 /** Oggetti segreti nuovi (stessa forma di CATALOGO_SEGRETO). */
 const SEGRETI_B5 = [
-  { id: 'lanterna_munaciello', sprite: 'lanterna_munaciello', nome: 'Lanterna del Munaciello', tier: 'segreto', temi: ['ombra', 'fuoco'],
+  { id: 'lanterna_munaciello', sprite: 'lanterna_munaciello', polarita: 'positivo', nome: 'Lanterna del Munaciello', tier: 'segreto', temi: ['ombra', 'fuoco'],
     statsDesc: '[👁 SEGRETO] La Stanza Segreta di ogni piano è già segnata sulla mappa',
     lore: 'Il piccolo monaco la lascia accesa nei cunicoli per chi gli sta simpatico.', mod: { segretaVista: true } },
-  { id: 'tombola_piena', sprite: 'tombola_piena', nome: 'Tombola Piena', tier: 'segreto', temi: ['denari'],
+  { id: 'tombola_piena', sprite: 'tombola_piena', polarita: 'positivo', nome: 'Tombola Piena', tier: 'segreto', temi: ['denari'],
     statsDesc: '[👁 SEGRETO] +7 monete · +3 bombe · +3 chiavi · salute ripristinata',
     lore: 'Tutti e quindici i numeri: il panariello è tuo.', mod: { moneteSubito: 7, subitoBombe: 3, subitoChiavi: 3, curaTotale: true } },
-  { id: 'corona_latta', sprite: 'corona_latta', nome: 'Corona di Latta', tier: 'segreto', temi: ['denari', 'maschera'],
+  { id: 'corona_latta', sprite: 'corona_latta', polarita: 'positivo', nome: 'Corona di Latta', tier: 'segreto', temi: ['denari', 'maschera'],
     statsDesc: '[👁 SEGRETO] Nella Fucina tutto costa la metà · +0.5 Danno',
     lore: 'La corona del re di scena. Mastro Peppe s\'inchina lo stesso.', mod: { sconto: 0.5, dmgUp: 0.5 } },
-  { id: 'presepe_intero', sprite: 'presepe_intero', nome: 'Presepe Intero', tier: 'segreto', temi: ['sacro', 'fili'],
+  { id: 'presepe_intero', sprite: 'presepe_intero', polarita: 'positivo', nome: 'Presepe Intero', tier: 'segreto', temi: ['sacro', 'fili'],
     statsDesc: '[👁 SEGRETO] Tre pastorelli ti seguono e sparano da soli (1.6 Danno ciascuno)',
     lore: 'Tutte le statuine di San Gregorio Armeno, in fila dietro di te.', mod: { pastori: 3 } },
-  { id: 'occhio_lucia', sprite: 'occhio_lucia', nome: 'Occhi di Santa Lucia', tier: 'segreto', temi: ['sacro'],
+  { id: 'occhio_lucia', sprite: 'occhio_lucia', polarita: 'positivo', nome: 'Occhi di Santa Lucia', tier: 'segreto', temi: ['sacro'],
     statsDesc: '[👁 SEGRETO] Vedi l\'effetto di ogni oggetto prima di prenderlo · +30 Gittata',
     lore: 'Due occhi su un piattino d\'argento: vedono quello che tu non sai ancora.', mod: { rivelaEffetti: true, rangeUp: 30 } },
 ];
@@ -723,12 +722,14 @@ function sincronizzaFamigliB5() {
   };
   const nuovi = [];
   for (const spec of S.famigli) {
-    const f = prendi(spec.id, spec.tipo) || { id: spec.id, tipo: spec.tipo, x: player.x, y: player.y, cd: 30, tx: player.x, ty: player.y, porta: null };
+    const posto = postoFamiglioB5(nuovi.length);
+    const f = prendi(spec.id, spec.tipo) || { id: spec.id, tipo: spec.tipo, x: posto.x, y: posto.y, cd: 30, tx: posto.x, ty: posto.y, porta: null };
     f.dmg = spec.dmg; f.cadenza = spec.cadenza;
     nuovi.push(f);
   }
   for (let i = 0; i < (S.pastori || 0); i++) {
-    nuovi.push(prendi('presepe_intero', 'pastore') || { id: 'presepe_intero', tipo: 'pastore', sprite: 'b5_pastore', x: player.x, y: player.y, cd: 20 + i * 15 });
+    const posto = postoFamiglioB5(nuovi.length);
+    nuovi.push(prendi('presepe_intero', 'pastore') || { id: 'presepe_intero', tipo: 'pastore', sprite: 'b5_pastore', x: posto.x, y: posto.y, cd: 20 + i * 15 });
   }
   for (const f of vecchi) if (f.temp) nuovi.push(f);
   B.famigli = nuovi;
@@ -1159,10 +1160,11 @@ function allIngressoB5(st, S, B) {
   B.eco.length = 0;
   B.ultimaSciaX = null;
   if (B.famigli.some((f) => f.temp)) B.famigli = B.famigli.filter((f) => !f.temp);
-  for (const f of B.famigli) {
-    f.x = player.x; f.y = player.y; f.porta = null; f.cd = Math.max(f.cd || 0, 30);
-    if (f.tipo === 'torretta') { f.tx = player.x; f.ty = player.y - OGGETTI_B5.famigli.torretta.scartoPx; }
-  }
+  B.famigli.forEach((f, i) => {
+    const posto = postoFamiglioB5(i);
+    f.x = posto.x; f.y = posto.y; f.porta = null; f.cd = Math.max(f.cd || 0, 30);
+    if (f.tipo === 'torretta') { f.tx = posto.x; f.ty = posto.y; }
+  });
   const nemici = st.nemici || [];
   for (const n of nemici) if (n.hp <= 0) n.mortoB5 = true;
   const vivi = nemici.filter((n) => n.hp > 0);
@@ -1327,6 +1329,21 @@ function allaRaccoltaB5(item) {
 function seguiB5(f, capo, dist) {
   const d = Math.hypot(capo.x - f.x, capo.y - f.y);
   if (d > dist) { const k = ((d - dist) / d) * 0.25; f.x += (capo.x - f.x) * k; f.y += (capo.y - f.y) * k; }
+  const dp = Math.hypot(player.x - f.x, player.y - f.y); // mai sopra il giocatore
+  if (dp < OGGETTI_B5.famigli.largoPx) {
+    const a = dp > 0.01 ? Math.atan2(f.y - player.y, f.x - player.x) : 2.4;
+    f.x = Math.max(ARENA.x1, Math.min(ARENA.x2, f.x + Math.cos(a) * 1.2));
+    f.y = Math.max(ARENA.y1, Math.min(ARENA.y2, f.y + Math.sin(a) * 1.2));
+  }
+}
+
+/** Posto di partenza dell'i-esimo famiglio: a ventaglio dietro il giocatore, dentro l'arena. */
+function postoFamiglioB5(i) {
+  const lato = i % 2 ? 1 : -1;
+  return {
+    x: Math.max(ARENA.x1 + 6, Math.min(ARENA.x2 - 6, player.x + lato * (22 + 12 * Math.floor(i / 2)))),
+    y: Math.max(ARENA.y1 + 6, Math.min(ARENA.y2 - 6, player.y + 12 + 7 * (i % 3))),
+  };
 }
 
 function versoB5(f, x, y, vel) {
@@ -1400,7 +1417,7 @@ function aggiornaFamigliB5(st, S, B) {
         if (n && colpoFamiglioB5(f, n, f.dmg || 2)) f.cd = Math.max(8, Math.round(60 / (f.cadenza || 1)));
       }
     } else if (f.tipo === 'pastore') {
-      seguiB5(f, capo, F.seguiPx * 0.7); capo = f;
+      seguiB5(f, capo, F.seguiPx * 0.6); capo = f;
       if (f.cd <= 0) {
         const n = nemicoVicinoD(st, f.x, f.y, F.torretta.gittataPx);
         if (n && colpoFamiglioB5(f, n, F.pastore.danno)) f.cd = Math.round(60 / F.pastore.cadenza);
@@ -2026,7 +2043,6 @@ function disegnaDiarioB5(d) {
     if (noto && o.lore) drawTextFit(`«${o.lore}»`, W / 2, yD + 25, W - 80, { size: 7.5, color: '#e6d2aa', weight: '', style: 'italic' });
     if (noto && o.temi && o.temi.length) drawTextFit(`Temi: ${o.temi.join(' · ')}`, W / 2, yD + 37, W - 80, { size: 7, color: '#a8a29e', weight: '' });
   }
-  drawTextFit(TESTI_B5.diarioAiuto, W / 2, H - 26, W - 80, { size: 7, color: '#9ca3af' });
   ctx.restore();
 }
 
@@ -2126,8 +2142,8 @@ Object.assign(window.__teatro.interni, {
   CATALOGO_PATTO, CATALOGO_SEGRETO, OGGETTI_ATTIVI, SPRITE_PROIETTILI,
   nuoviB5: Object.freeze({ passivi: PASSIVI_B5.map((o) => o.id), patti: PATTI_B5.map((o) => o.id), segreti: SEGRETI_B5.map((o) => o.id), attivi: ATTIVI_B5.map((o) => o.id) }),
   tuttiGliOggettiB5, sezioniCatalogoB5, daiOggettoB5, oggettoSbloccatoB5, estraiAttivoB5, gradimentoB5,
-  /** Stato B5 della run (riferimento vivo). */
-  get statoB5() { return B5(); },
+  /** Stato B5 della run in corso (riferimento vivo). */
+  statoB5: () => B5(),
   /** Statistiche B5 correnti (riferimento vivo). */
-  get statB5() { return statoRun.statB5 || null; },
+  statB5: () => statoRun.statB5 || null,
 });
