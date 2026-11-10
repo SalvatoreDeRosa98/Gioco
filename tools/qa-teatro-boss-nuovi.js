@@ -95,6 +95,14 @@ const NUOVI = [
     }
     return false;
   };
+  /** Per le foto: il giocatore (invulnerabile) si mette lontano dal boss, nell'angolo opposto. */
+  const allontana = () => p.evaluate(() => {
+    const I = window.__teatro.interni; const s = I.bossB6.stato;
+    if (!s) return;
+    I.player.x = s.x < 320 ? 470 : 170;
+    I.player.y = s.y < 188 ? 262 : 120;
+    I.player.invuln = 1e9;
+  });
   /** Fa vivere il boss `n` tick di logica contando colpi e stati (giocatore invulnerabile, fermo). */
   const vivi = (n) => p.evaluate((quanti) => {
     const I = window.__teatro.interni; const R = I.statoRun; const A = I.ARENA;
@@ -139,10 +147,13 @@ const NUOVI = [
     ok(`${c.id}:tema-boss`, ing.tema === 'boss', ing.tema);
     ok(`${c.id}:segno-in-tabella`, tabelle.segni.includes(c.id));
     // 2. Fase 1 in tempo reale: screenshot dell'anticipo e dell'attacco
+    await allontana();
     ok(`${c.id}:anticipo-visto`, await aspettaStato(c.anticipo), c.anticipo);
+    await allontana();
     await p.waitForTimeout(c.id === 'giostra-lucciole' ? 250 : 380);
     await primoPiano(`${c.id}-1-anticipo-zoom`);
     await scatta(`${c.id}-1-anticipo`);
+    await allontana();
     ok(`${c.id}:attacco-visto`, await aspettaStato(c.attacco), c.attacco);
     await p.waitForTimeout(c.id === 'giostra-lucciole' ? 1500 : 200);
     await scatta(`${c.id}-2-attacco`);
@@ -165,8 +176,9 @@ const NUOVI = [
       return { stato: b.statoB6, fase2: Boolean(b.fase2B6) };
     });
     ok(`${c.id}:cambio-fase`, cambio.fase2 && cambio.stato === 'cambiaFase', cambio);
+    await allontana();
     ok(`${c.id}:fase2-attacco-visto`, await aspettaStato(c.fase2), c.fase2);
-    await p.waitForTimeout(c.id === 'giostra-lucciole' ? 1700 : c.id === 'cigno-latta' ? 60 : 300);
+    await p.waitForTimeout(c.id === 'giostra-lucciole' ? 1700 : c.id === 'cigno-latta' ? 420 : 300);
     await primoPiano(`${c.id}-3-fase2-zoom`);
     await scatta(`${c.id}-3-fase2`);
     const v2 = await vivi(TICK_VITA);
