@@ -394,7 +394,7 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
     const st = I.statoRun.stanzaCorrente;
     const corri = (x0, y0) => {
       I.player.x = x0; I.player.y = y0; I.player.kbx = 0; I.player.kby = 0;
-      I.scivolataB7.attiva = false; I.scivolataB7.vx = 0; I.scivolataB7.vy = 0;
+      I.scivolataB7.attiva = false; I.scivolataB7.vx = 0; I.scivolataB7.vy = 0; I.scivolataB7.ux = 0; I.scivolataB7.uy = 0;
       for (const k of Object.keys(I.keys)) I.keys[k] = false;
       I.keys.KeyD = true;
       for (let k = 0; k < 30; k++) I.passoLogico();

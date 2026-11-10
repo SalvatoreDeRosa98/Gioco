@@ -518,19 +518,19 @@ const DISPOSIZIONI_B7 = Object.freeze([
  * popolaStanza di base.
  */
 const GRUPPI_B7 = Object.freeze({
-  1: Object.freeze([
-    { id: 'due-gatti', diff: 1, peso: 3, tipi: ['gatto', 'gatto'] },
-    { id: 'due-vespe', diff: 1, peso: 2, tipi: ['vespa_cieca', 'vespa_cieca'] },
+  1: Object.freeze([ // al piano 1 mai più di due gatti per stanza (come il Vicolo dei Gatti dell'autore)
     { id: 'gatto-e-vespa', diff: 1, peso: 3, tipi: ['gatto', 'vespa_cieca'] },
-    { id: 'bozzi', diff: 1, peso: 1, tipi: ['bomba_ferma', 'bomba_ferma', 'vespa_cieca'] },
-    { id: 'gatti-e-vespa', diff: 2, peso: 3, tipi: ['gatto', 'gatto', 'vespa_cieca'] },
+    { id: 'due-vespe', diff: 1, peso: 2, tipi: ['vespa_cieca', 'vespa_cieca'] },
+    { id: 'due-gatti', diff: 1, peso: 2, tipi: ['gatto', 'gatto'] },
+    { id: 'bozzi', diff: 1, peso: 1, tipi: ['bomba_ferma', 'bomba_ferma'] },
+    { id: 'coppia-di-gatti', diff: 2, peso: 4, tipi: ['gatto', 'gatto'] },
+    { id: 'gatto-e-vespe', diff: 2, peso: 2, tipi: ['gatto', 'vespa_cieca', 'vespa_cieca'] },
     { id: 'nido', diff: 2, peso: 2, tipi: ['vespa_cieca', 'vespa_cieca', 'vespa_cieca'] },
-    { id: 'gatto-e-bozzo', diff: 2, peso: 2, tipi: ['gatto', 'bomba_ferma', 'vespa_cieca'] },
-    { id: 'gatti-e-bozzo', diff: 2, peso: 2, tipi: ['gatto', 'gatto', 'bomba_ferma'] },
-    { id: 'tre-gatti', diff: 3, peso: 3, tipi: ['gatto', 'gatto', 'gatto'] },
-    { id: 'gatti-e-vespe', diff: 3, peso: 2, tipi: ['gatto', 'gatto', 'vespa_cieca', 'vespa_cieca'] },
+    { id: 'gatto-e-bozzo', diff: 2, peso: 1, tipi: ['gatto', 'bomba_ferma', 'vespa_cieca'] },
+    { id: 'gatti-e-vespa', diff: 3, peso: 3, tipi: ['gatto', 'gatto', 'vespa_cieca'] },
     { id: 'nido-grande', diff: 3, peso: 2, tipi: ['vespa_cieca', 'vespa_cieca', 'vespa_cieca', 'vespa_cieca'] },
-    { id: 'vicolo-minato', diff: 3, peso: 1, tipi: ['gatto', 'vespa_cieca', 'bomba_ferma', 'bomba_ferma'] },
+    { id: 'gatti-e-bozzo', diff: 3, peso: 2, tipi: ['gatto', 'gatto', 'bomba_ferma'] },
+    { id: 'vicolo-minato', diff: 3, peso: 1, tipi: ['gatto', 'vespa_cieca', 'vespa_cieca', 'bomba_ferma'] },
   ]),
   2: Object.freeze([
     { id: 'due-lucciole', diff: 1, peso: 3, tipi: ['lucciola', 'lucciola'] },
@@ -578,8 +578,8 @@ const GRUPPI_B7 = Object.freeze({
 const CURVA_B7 = Object.freeze([
   Object.freeze({ finoA: 1, pesi: Object.freeze({ 1: 1, 2: 0, 3: 0 }) }),
   Object.freeze({ finoA: 2, pesi: Object.freeze({ 1: 0.55, 2: 0.45, 3: 0 }) }),
-  Object.freeze({ finoA: 3, pesi: Object.freeze({ 1: 0.2, 2: 0.6, 3: 0.2 }) }),
-  Object.freeze({ finoA: 99, pesi: Object.freeze({ 1: 0.1, 2: 0.5, 3: 0.4 }) }),
+  Object.freeze({ finoA: 3, pesi: Object.freeze({ 1: 0.25, 2: 0.6, 3: 0.15 }) }),
+  Object.freeze({ finoA: 99, pesi: Object.freeze({ 1: 0.15, 2: 0.55, 3: 0.3 }) }),
 ]);
 
 /**
@@ -593,8 +593,8 @@ const TEMI_RARI_B7 = Object.freeze({
   1: Object.freeze([
     { id: 'sciame', nome: 'Lo Sciame dei Quattro Canti', tipi: Array(5).fill('vespa_cieca'),
       avviso: '🐝 LO SCIAME DEI QUATTRO CANTI: un nido intero di Vespe Cieche. Chi lo spazza via trova qualcosa in più.' },
-    { id: 'agguato', nome: "L'Agguato dei Gatti", tipi: Array(4).fill('gatto'),
-      avviso: "🐈 L'AGGUATO DEI GATTI: quattro paia d'occhi nel buio del vicolo. Chi ne esce trova qualcosa in più." },
+    { id: 'agguato', nome: "L'Agguato dei Gatti", tipi: Array(3).fill('gatto'),
+      avviso: "🐈 L'AGGUATO DEI GATTI: tre paia d'occhi nel buio del vicolo. Chi ne esce trova qualcosa in più." },
   ]),
   2: Object.freeze([
     { id: 'ballo-delle-lucciole', nome: 'Il Ballo delle Lucciole', tipi: Array(5).fill('lucciola'),
@@ -611,8 +611,8 @@ const TEMI_RARI_B7 = Object.freeze({
   4: Object.freeze([
     { id: 'plotone-reale', nome: 'Il Plotone delle Guardie', tipi: Array(4).fill('guardia'),
       avviso: '🛡 IL PLOTONE DELLE GUARDIE: la guardia borbonica schierata. Chi rompe le righe trova qualcosa in più.' },
-    { id: 'corte-delle-maschere', nome: 'La Corte delle Maschere', tipi: Array(4).fill('maschera'),
-      avviso: '🎭 LA CORTE DELLE MASCHERE: quattro volti chiusi che aspettano. Chi li fa parlare trova qualcosa in più.' },
+    { id: 'corte-delle-maschere', nome: 'La Corte delle Maschere', tipi: Array(3).fill('maschera'),
+      avviso: '🎭 LA CORTE DELLE MASCHERE: tre volti chiusi che aspettano. Chi li fa parlare trova qualcosa in più.' },
   ]),
   vinta: '★ STANZA A TEMA RIPULITA: il Teatro applaude e lascia cadere qualcosa in più.',
 });
@@ -1271,7 +1271,7 @@ function aggiornaFragiliB7(st) {
   }
 }
 
-const scivolataB7 = { attiva: false, vx: 0, vy: 0 };
+const scivolataB7 = { attiva: false, vx: 0, vy: 0, ux: 0, uy: 0 };
 
 /** (x, y) sta su una pozzanghera della stanza? */
 function sullaPozzaB7(st, x, y) {
@@ -1290,9 +1290,14 @@ function sullaPozzaB7(st, x, y) {
 function scivolaB7(st, px, py) {
   const Z = STANZE_B7.pozza, S = scivolataB7;
   const dx = player.x - px, dy = player.y - py;
-  if (Math.hypot(dx, dy) > Z.saltoMaxPx || !sullaPozzaB7(st, px, py)) { S.attiva = false; S.vx = 0; S.vy = 0; return; }
-  if (!S.attiva) { S.attiva = true; S.vx = dx; S.vy = dy; }
-  else { S.vx += (dx - S.vx) * Z.presa; S.vy += (dy - S.vy) * Z.presa; }
+  const salto = Math.hypot(dx, dy) > Z.saltoMaxPx;
+  if (salto || !sullaPozzaB7(st, px, py)) {
+    // all'asciutto si ricorda solo l'ultimo passo: è la velocità con cui si entra nella pozzanghera
+    S.attiva = false; S.vx = 0; S.vy = 0; S.ux = salto ? 0 : dx; S.uy = salto ? 0 : dy;
+    return;
+  }
+  if (!S.attiva) { S.attiva = true; S.vx = S.ux; S.vy = S.uy; }
+  S.vx += (dx - S.vx) * Z.presa; S.vy += (dy - S.vy) * Z.presa;
   if (Math.hypot(S.vx, S.vy) < 0.03) { S.vx = 0; S.vy = 0; }
   let nx = Math.max(ARENA.x1, Math.min(ARENA.x2, px + S.vx));
   let ny = Math.max(ARENA.y1, Math.min(ARENA.y2, py + S.vy));
@@ -1733,7 +1738,7 @@ function chiudiClessidraB7(st) {
 
 /** Dopo l'ingresso in una stanza: nemici in regola rispetto agli ostacoli, avvisi. */
 function dopoIngressoB7(st) {
-  scivolataB7.attiva = false; scivolataB7.vx = 0; scivolataB7.vy = 0;
+  scivolataB7.attiva = false; scivolataB7.vx = 0; scivolataB7.vy = 0; scivolataB7.ux = 0; scivolataB7.uy = 0;
   if (st.ciarlatanoB7) { st.ciarlatanoB7.aperto = false; st.ciarlatanoB7.partita = null; }
   if (st.disposizioneB7 && !st.pulita) {
     sistemaNemiciB7(st, [{ x: player.x, y: player.y }]);
@@ -2172,11 +2177,14 @@ function disegnaCiarlatanoB7(st, t) {
   ctx.fillStyle = 'rgba(8, 5, 3, 0.6)'; ctx.beginPath(); ctx.ellipse(x, y + 15, 22, 6, 0, 0, TAU); ctx.fill();
   ctx.fillStyle = `rgba(251, 191, 36, ${(0.13 + 0.04 * Math.sin(t * 0.3)).toFixed(2)})`;
   ctx.beginPath(); ctx.arc(x + 23, y - 6, 12, 0, TAU); ctx.fill();
-  ctx.fillStyle = '#0d0810';
-  ctx.beginPath(); ctx.moveTo(x - 13, y + 6); ctx.quadraticCurveTo(x - 11, y - 14, x + osc, y - 18); ctx.quadraticCurveTo(x + 11, y - 14, x + 13, y + 6); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.arc(x + osc, y - 22, 5.5, 0, TAU); ctx.fill();
-  ctx.fillRect(x + osc - 8, y - 28, 16, 2.2);
-  ctx.beginPath(); ctx.moveTo(x + osc - 5, y - 28); ctx.lineTo(x + osc - 5.5, y - 39); ctx.lineTo(x + osc + 4, y - 41); ctx.lineTo(x + osc + 5, y - 28); ctx.closePath(); ctx.fill();
+  const alone = ctx.createRadialGradient(x, y - 14, 4, x, y - 14, 40);
+  alone.addColorStop(0, 'rgba(251, 191, 36, 0.20)'); alone.addColorStop(1, 'rgba(251, 191, 36, 0)');
+  ctx.fillStyle = alone; ctx.beginPath(); ctx.arc(x, y - 14, 40, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#0d0810'; ctx.strokeStyle = 'rgba(201, 162, 58, 0.7)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x - 13, y + 6); ctx.quadraticCurveTo(x - 11, y - 14, x + osc, y - 18); ctx.quadraticCurveTo(x + 11, y - 14, x + 13, y + 6); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x + osc, y - 22, 5.5, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.rect(x + osc - 8, y - 28, 16, 2.2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + osc - 5, y - 28); ctx.lineTo(x + osc - 5.5, y - 39); ctx.lineTo(x + osc + 4, y - 41); ctx.lineTo(x + osc + 5, y - 28); ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.fillStyle = '#8f160c'; ctx.fillRect(x + osc - 5, y - 31, 10, 2);
   ctx.fillStyle = '#fbbf24'; ctx.fillRect(x + osc - 3.2, y - 23.5, 1.7, 1.7); ctx.fillRect(x + osc + 1.5, y - 23.5, 1.7, 1.7);
   ctx.strokeStyle = '#1a0f08'; ctx.lineWidth = 1.5;
