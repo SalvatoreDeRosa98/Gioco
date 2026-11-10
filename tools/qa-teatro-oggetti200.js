@@ -336,8 +336,11 @@ const TEMI = ['denari', 'ombra', 'maschera', 'fili', 'sacro', 'fuoco', 'bestia',
     if (notte === null) localStorage.removeItem('ferruccio_notte'); else localStorage.setItem('ferruccio_notte', notte);
     r.notte = { notte2: +dn2.toFixed(2), notte9: +dn9.toFixed(2) };
     // pubblico: senza la sonda l'oggetto vale i soli numeri; con la sonda al massimo il danno sale
+    // (col pubblico vero di b1 la sonda esiste: la si toglie per misurare il caso «senza», poi la si rimette)
+    const sondaVera = I.gradimentoPubblico; delete I.gradimentoPubblico;
     con(['rosa-loggione'], 1); Q.ticks(31); const senza = I.statoB5().moltDanno;
     I.gradimentoPubblico = 1; Q.ticks(31); const colPubblico = I.statoB5().moltDanno; delete I.gradimentoPubblico;
+    if (sondaVera !== undefined) I.gradimentoPubblico = sondaVera;
     r.pubblico = { senza: +senza.toFixed(2), entusiasta: +colPubblico.toFixed(2) };
     // bottega: sconto del 25%
     con(['polizza-monte']); st = Q.stanza(0); st.tipo = 'fucina';
@@ -388,6 +391,9 @@ const TEMI = ['denari', 'ombra', 'maschera', 'fili', 'sacro', 'fuoco', 'bestia',
   const carico = (conOggetti) => p.evaluate((pieno) => {
     const Q = window.__qaB5, I = window.__teatro.interni;
     Q.nuova();
+    // Qui si misura il costo degli OGGETTI: gli effetti di scena delle altre squadre (ombre lunghe, pubblico, grana,
+    // vignetta) si spengono, altrimenti il loro disegno software si somma e la misura non dice più niente sugli oggetti.
+    for (const k of ['ombre', 'pubblico', 'grana', 'vignetta']) OPZIONI[k] = false;
     if (pieno) {
       for (const o of I.CATALOGO_OGGETTI) if (!(o.mod && (o.mod.maledizione || o.mod.spada || o.mod.laser))) I.daiOggettoB5(o.id);
       for (const id of I.nuoviB5.patti.concat(I.nuoviB5.segreti)) I.daiOggettoB5(id);
