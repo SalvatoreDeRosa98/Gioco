@@ -46,9 +46,9 @@ const BURATTINAIO_D1 = Object.freeze({
     moltTenaglie: 1.7,                 // sigillo delle tenaglie: tempo a terra ×
   }),
   forbici: Object.freeze({
-    raggio: 28, lunghezza: 128,
+    raggio: 30, lunghezza: 380,                  // lame lunghe quasi mezza arena, manici fuori quadro
     posa: 44, apre: 46, apreLima: 80, taglio: 24, piantate: 80, moltLima: 1.9, stacca: 22,
-    larghezzaTaglio: 15, danno: 2, cicatriciMax: 6,
+    larghezzaTaglio: 15, danno: 2, cicatriciMax: 4, squarcioTick: 300, tremitoApre: 2.2,
   }),
   marionette: Object.freeze({
     tipi: Object.freeze(['burattino', 'guardia', 'predone']),
@@ -456,7 +456,9 @@ function iaForbiciD1(f, puoAttaccare) {
     }
     case 'apre': { // le lame si aprono piano verso il bersaglio: l'avviso è la posa
       const dur = lima ? F.apreLima : F.apre;
-      f.apertura = 0.12 + 0.75 * Math.min(1, f.tD1 / dur);
+      f.apertura = 0.12 + 0.75 * Math.min(1, f.tD1 / dur) + (f.tD1 > dur * 0.5 ? Math.sin(f.tD1 * 2.3) * 0.03 : 0);
+      f.tremaD1 = f.tD1 > dur * 0.5 ? F.tremitoApre : 0;
+      if (f.tD1 === Math.round(dur * 0.5)) suonoD1('lama', 0.6);
       if (f.tD1 < dur * 0.6) { f.a = { x: player.x, y: player.y }; f.ang = Math.atan2(f.a.y - f.y, f.a.x - f.x); }
       if (f.tD1 >= dur) {
         // il taglio attraversa tutta l'arena lungo la diagonale scelta
@@ -474,7 +476,8 @@ function iaForbiciD1(f, puoAttaccare) {
       const k = Math.min(1, f.tD1 / F.taglio);
       const px = f.x, py = f.y;
       f.x = f.inizio.x + (f.fine.x - f.inizio.x) * k; f.y = f.inizio.y + (f.fine.y - f.inizio.y) * k; f.h = 4;
-      f.apertura = 0.87 * (1 - k);
+      f.apertura = k < 0.25 ? 0.87 * (1 - k / 0.25) : 0; // si chiudono di scatto
+      f.tremaD1 = 0;
       // segmento percorso in questo tick: tocca se il giocatore è vicino alla lama
       const dx = f.x - px, dy = f.y - py, l2 = dx * dx + dy * dy || 1;
       const u = Math.max(0, Math.min(1, ((player.x - px) * dx + (player.y - py) * dy) / l2));
@@ -571,6 +574,8 @@ function passoD1() {
   d1.t++;
   d1.tremito = Math.max(0, d1.tremito - 0.02);
   for (const e of d1.effetti) e.t++;
+  for (const c of d1.cicatrici) c.t++;
+  while (d1.cicatrici.length && d1.cicatrici[0].t > BURATTINAIO_D1.forbici.squarcioTick) d1.cicatrici.shift();
   for (let i = d1.effetti.length - 1; i >= 0; i--) if (d1.effetti[i].t > 90) d1.effetti.splice(i, 1);
   if (d1.vittoria) { passoVittoriaD1(); return; }
 
@@ -848,18 +853,42 @@ function disegnaArenaD1() {
   if (!telaFondoD1) telaFondoD1 = preparaFondoD1();
   if (!telaTraviD1) telaTraviD1 = preparaTraviD1();
   ctx.drawImage(telaFondoD1, 0, 0);
-  // i tagli delle forbici restano sulle tavole (dopo il colpo, mai prima)
-  ctx.save();
-  for (const c of d1.cicatrici) {
-    ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(c.x1, c.y1); ctx.lineTo(c.x2, c.y2); ctx.stroke();
-    ctx.strokeStyle = 'rgba(232,176,80,0.35)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(c.x1, c.y1 + 2); ctx.lineTo(c.x2, c.y2 + 2); ctx.stroke();
-  }
-  ctx.restore();
+  // i tagli delle forbici restano sulle tavole per qualche secondo (dopo il colpo, mai prima)
+  for (const c of d1.cicatrici) disegnaSquarcioD1(c);
   disegnaCapoD1();
   ctx.drawImage(telaTraviD1, 0, 0);
   disegnaCordeD1();
+}
+
+/** Lo squarcio del tavolato: assi spezzate, schegge, la luce del palco che sale dal buco. */
+function disegnaSquarcioD1(c) {
+  const vita = 1 - c.t / BURATTINAIO_D1.forbici.squarcioTick;
+  const dx = c.x2 - c.x1, dy = c.y2 - c.y1, L = Math.hypot(dx, dy) || 1;
+  const nx = -dy / L, ny = dx / L;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, vita * 1.6);
+  // luce calda che sale da sotto (più forte appena tagliato)
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = `rgba(232,176,80,${0.18 + 0.35 * vita})`; ctx.lineWidth = 16; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(c.x1, c.y1); ctx.lineTo(c.x2, c.y2); ctx.stroke();
+  ctx.globalCompositeOperation = 'source-over';
+  // il buco: frastagliato, nero
+  ctx.fillStyle = '#020103';
+  ctx.beginPath();
+  const n = Math.max(6, Math.round(L / 18));
+  for (let i = 0; i <= n; i++) { const k = i / n, w = 3 + ((i * 7) % 4); ctx.lineTo(c.x1 + dx * k + nx * w, c.y1 + dy * k + ny * w); }
+  for (let i = n; i >= 0; i--) { const k = i / n, w = 3 + ((i * 5) % 4); ctx.lineTo(c.x1 + dx * k - nx * w, c.y1 + dy * k - ny * w); }
+  ctx.closePath(); ctx.fill();
+  // filo di luce nel fondo del buco
+  ctx.strokeStyle = `rgba(255,214,140,${0.5 * vita + 0.2})`; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(c.x1, c.y1); ctx.lineTo(c.x2, c.y2); ctx.stroke();
+  // assi spezzate: schegge alzate ai bordi
+  ctx.strokeStyle = '#3a2716'; ctx.lineWidth = 2;
+  for (let i = 1; i < n; i += 2) {
+    const k = i / n, s = i % 4 === 1 ? 1 : -1, bx = c.x1 + dx * k + nx * 5 * s, by = c.y1 + dy * k + ny * 5 * s;
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + nx * 7 * s + dx / L * 3, by + ny * 7 * s - 4); ctx.stroke();
+  }
+  ctx.restore();
 }
 
 /** Guanto bianco. (x, y) = punto dove tocca le tavole; h = altezza da terra. */
@@ -924,7 +953,7 @@ function disegnaForbiciSagomaD1(x, y, ang, apertura, h, flash, alfa = 1) {
   ctx.save();
   ctx.globalAlpha *= alfa;
   ctx.fillStyle = `rgba(0,0,0,${0.3 * Math.max(0, 1 - h / 60)})`;
-  ctx.beginPath(); ctx.ellipse(x, y + 2, 26, 5, 0, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x, y + 2, 30, 6, 0, 0, TAU); ctx.fill();
   ctx.translate(x, y - h - 6);
   ctx.rotate(ang);
   const lama = (segno) => {
@@ -932,23 +961,25 @@ function disegnaForbiciSagomaD1(x, y, ang, apertura, h, flash, alfa = 1) {
     const gr = ctx.createLinearGradient(0, -6, 0, 6);
     gr.addColorStop(0, TINTE_D1.ottoneLuce); gr.addColorStop(0.5, flash ? '#fff1c0' : TINTE_D1.ottone); gr.addColorStop(1, TINTE_D1.ottoneOmbra);
     ctx.fillStyle = gr;
-    ctx.beginPath(); ctx.moveTo(-6, -segno * 1); ctx.lineTo(L * 0.62, -segno * 6.5); ctx.lineTo(L * 0.62, segno * 0.5); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-10, -segno * 2); ctx.quadraticCurveTo(L * 0.3, -segno * 17, L * 0.62, -segno * 1.5); ctx.lineTo(L * 0.62, segno * 0.5); ctx.lineTo(-10, segno * 3); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = TINTE_D1.china; ctx.lineWidth = 1.3; ctx.stroke();
     // anello del manico
-    ctx.beginPath(); ctx.ellipse(-L * 0.28, segno * 5, 12, 7, segno * 0.3, 0, TAU);
-    ctx.strokeStyle = TINTE_D1.ottone; ctx.lineWidth = 4.5; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(-L * 0.24, segno * 14, 30, 16, segno * 0.3, 0, TAU);
+    ctx.strokeStyle = TINTE_D1.ottone; ctx.lineWidth = 8; ctx.stroke();
     ctx.strokeStyle = TINTE_D1.china; ctx.lineWidth = 1; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-6, segno * 1); ctx.lineTo(-L * 0.18, segno * 4); ctx.strokeStyle = TINTE_D1.ottone; ctx.lineWidth = 4; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-8, segno * 2); ctx.lineTo(-L * 0.17, segno * 10); ctx.strokeStyle = TINTE_D1.ottone; ctx.lineWidth = 8; ctx.stroke();
     ctx.restore();
   };
   lama(1); lama(-1);
-  ctx.fillStyle = '#2a1a06'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, TAU); ctx.fill();
-  ctx.strokeStyle = TINTE_D1.ottoneLuce; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = '#2a1a06'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, TAU); ctx.fill();
+  ctx.strokeStyle = TINTE_D1.ottoneLuce; ctx.lineWidth = 2; ctx.stroke();
+  ctx.strokeStyle = TINTE_D1.ottone; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.stroke();
   ctx.restore();
 }
 
 function disegnaForbiciD1(f) {
-  disegnaForbiciSagomaD1(f.x, f.y, f.ang || 0, f.apertura || 0, f.h || 0, f.flash > 0);
+  const tr = f.tremaD1 ? Math.sin(tick * 1.9) * f.tremaD1 : 0;
+  disegnaForbiciSagomaD1(f.x + tr, f.y, f.ang || 0, f.apertura || 0, f.h || 0, f.flash > 0);
   if (f.faseD1 === 'apre' && f.tD1 % 12 < 3) { // bagliore sulla lama aperta (sulla forbice, non a terra)
     ctx.save(); ctx.globalAlpha = 0.8; ctx.fillStyle = '#fff6d0';
     ctx.beginPath(); ctx.arc(f.x + Math.cos(f.ang) * 30, f.y - (f.h || 0) - 6 + Math.sin(f.ang) * 30, 2.4, 0, TAU); ctx.fill(); ctx.restore();

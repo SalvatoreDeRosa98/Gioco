@@ -45,6 +45,8 @@ const foto = (n) => `${prefisso}-${n}.png`;
     await p.keyboard.press('Space'); // menu → hub
     await p.waitForTimeout(400);
   };
+  /** Le foto devono mostrare lo scontro: via i cartigli «SBLOCCATO» del salvataggio vuoto. */
+  const senzaCartigli = () => p.evaluate(() => { try { a6.coda.length = 0; a6.notifica = null; } catch (_) { /* a6 assente */ } });
 
   // ---- 1. Zero sigilli: ingresso, attacchi, atti, vittoria ----
   await avvio();
@@ -59,13 +61,13 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('zero-sigilli', !s.sigilli.tenaglie && !s.sigilli.punzone && !s.sigilli.lima, s.sigilli);
   await immortale();
   await p.waitForTimeout(2200);
-  await p.screenshot({ path: foto('01-atto1') });
+  await senzaCartigli(); await p.screenshot({ path: foto('01-atto1') });
   const pugno = await aspetta(() => window.__teatro.interni.burattinaioD1.stato().parti.some((x) => x.fase === 'pugno'), 12000, 50);
   ok('mano-a-pugno', pugno);
-  await p.screenshot({ path: foto('02-pugno') });
+  await senzaCartigli(); await p.screenshot({ path: foto('02-pugno') });
   const colpo = await aspetta(() => window.__teatro.interni.burattinaioD1.stato().parti.some((x) => x.fase === 'terra'), 6000, 50);
   ok('mano-a-terra', colpo);
-  await p.screenshot({ path: foto('03-schianto') });
+  await senzaCartigli(); await p.screenshot({ path: foto('03-schianto') });
 
   // pausa: lo scontro si ferma
   await p.keyboard.press('Escape');
@@ -85,10 +87,10 @@ const foto = (n) => `${prefisso}-${n}.png`;
   const marionette = await aspetta(() => window.__teatro.interni.burattinaioD1.stato().parti.some((x) => x.elite), 12000);
   ok('marionette-elite', marionette, (await S()).parti);
   await p.waitForTimeout(900);
-  await p.screenshot({ path: foto('04-atto2') });
+  await senzaCartigli(); await p.screenshot({ path: foto('04-atto2') });
   const presa = await aspetta(() => window.__teatro.interni.burattinaioD1.stato().parti.some((x) => x.fase === 'segui' || x.fase === 'chiude' || x.fase === 'tiene'), 15000, 50);
   ok('presa-tentata', presa);
-  await p.screenshot({ path: foto('05-presa') });
+  await senzaCartigli(); await p.screenshot({ path: foto('05-presa') });
 
   // atto III
   await p.evaluate(() => window.__teatro.interni.burattinaioD1.danneggia(500));
@@ -98,22 +100,22 @@ const foto = (n) => `${prefisso}-${n}.png`;
   const apre = await aspetta(() => window.__teatro.interni.burattinaioD1.stato().parti.some((x) => x.id === 'gb-forbici' && x.fase === 'apre'), 12000, 50);
   ok('forbici-aprono', apre);
   await p.waitForTimeout(400);
-  await p.screenshot({ path: foto('06-forbici') });
+  await senzaCartigli(); await p.screenshot({ path: foto('06-forbici') });
   const piantate = await aspetta(() => window.__teatro.interni.burattinaioD1.stato().parti.some((x) => x.id === 'gb-forbici' && x.fase === 'piantate'), 8000, 50);
   ok('forbici-tagliano', piantate);
-  await p.screenshot({ path: foto('07-taglio') });
+  await senzaCartigli(); await p.screenshot({ path: foto('07-taglio') });
 
   // vittoria
   const capoPrima = (await S()).capo;
   await p.evaluate(() => window.__teatro.interni.burattinaioD1.danneggia(999));
   ok('vittoria-scena', await aspetta(() => window.__teatro.interni.burattinaioD1.stato().vittoria, 3000));
   await p.waitForTimeout(1300);
-  await p.screenshot({ path: foto('08-vittoria') });
+  await senzaCartigli(); await p.screenshot({ path: foto('08-vittoria') });
   ok('fine-chiamata', await aspetta(() => window.__teatro.interni.burattinaioD1.stato().esito === 'vittoria', 8000), capoPrima);
   await p.waitForTimeout(600);
   const dopo = await p.evaluate(() => ({ attivo: window.__teatro.interni.burattinaioD1.stato().attivo, fase: statoRun.fase }));
   ok('scontro-spento', !dopo.attivo, dopo);
-  await p.screenshot({ path: foto('09-finale-narrato') });
+  await senzaCartigli(); await p.screenshot({ path: foto('09-finale-narrato') });
   // il finale narrato va avanti a Spazio fino al ritorno
   for (let i = 0; i < 120 && ['in_gioco', 'finale'].includes(await fase()); i++) { await p.keyboard.press('Space'); await p.waitForTimeout(120); }
   const fin = await fase();
@@ -129,11 +131,11 @@ const foto = (n) => `${prefisso}-${n}.png`;
   await p.evaluate(() => { statoRun.hpHalf = 1; });
   const morto = await aspetta(() => statoRun.fase !== 'in_gioco', 25000, 100);
   ok('morte-dal-burattinaio', morto && (await fase()) === 'morte', await fase());
-  await p.screenshot({ path: foto('10-morte') });
+  await senzaCartigli(); await p.screenshot({ path: foto('10-morte') });
   ok('torna-hub', await aspetta(() => statoRun.fase === 'hub', 20000), await fase());
   await p.waitForTimeout(300);
   ok('stato-pulito-dopo-morte', !(await S()).attivo, await S());
-  await p.screenshot({ path: foto('11-hub-dopo-morte') });
+  await senzaCartigli(); await p.screenshot({ path: foto('11-hub-dopo-morte') });
 
   // ---- 3. Aggancio vero di b8 ----
   const via = await p.evaluate(() => window.__teatro.interni.entraSopraLaRibalta());
