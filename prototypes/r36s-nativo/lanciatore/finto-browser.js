@@ -20,6 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const canvasLib = require('@napi-rs/canvas');
+const { installaAcceleratore } = require('./acceleratore');
 
 const ASC = Symbol('ascoltatori');
 const GEN = Symbol('genitore');
@@ -171,12 +172,14 @@ function creaMemoria(file, log) {
  * @param {object} [opz.audio]       { AudioContext, OfflineAudioContext } da esporre al gioco (assente = muto)
  * @param {object} [opz.opzioniIniziali] valori di «ferruccio.teatro.opzioni» da scrivere SOLO se non ci sono già
  * @param {boolean} [opz.filtroNero]  false = lascia ctx.filter='brightness(0)' al filtro vero (lento; serve solo a misurare)
+ * @param {number} [opz.scala]       la scala interna che si userà (impostaScala dopo carica): decide quanto ridurre le immagini in memoria
+ * @param {boolean} [opz.immaginiRidotte] false = tiene le immagini intere (per misurare)
  */
 function creaFintoBrowser(opz) {
   const G = globalThis;
   const log = opz.log || { riga() {} };
   const dirHtml = path.dirname(path.resolve(opz.fileHtml));
-  const stato = { errori: 0, ultimiErrori: [], caricato: false, immagini: 0, immaginiFallite: 0, pixelImmagini: 0, tele: [], simboli: [], filtroNero: false, sfumatureIgnote: 0, scala: 1, tagli: [] };
+  const stato = { errori: 0, ultimiErrori: [], caricato: false, immagini: 0, immaginiFallite: 0, tele: [], simboli: [], filtroNero: false, sfumatureIgnote: 0, scala: Number(opz.scala) || 1, tagli: [], tagliVelo: false, dentroAtmosfera: false };
 
   function annotaErrore(dove, err) {
     stato.errori++;
@@ -257,116 +260,19 @@ function creaFintoBrowser(opz) {
   canvas.getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: PALCO.l, height: PALCO.a, right: PALCO.l, bottom: PALCO.a });
   canvas.focus = () => {}; canvas.parentNode = wrap;
 
-  // In coda a ogni font chiesto dal gioco si aggiungono le famiglie dei simboli: il gioco non cambia,
-  // i glifi che il font del testo non ha (🪙 💣 🗝 Ⓐ…) si pescano da lì.
-  if (stato.simboli.length) {
-    const proto = Object.getPrototypeOf(canvas.getContext('2d'));
-    const d = Object.getOwnPropertyDescriptor(proto, 'font');
-    if (d && d.set && d.get) {
-      const coda = ', ' + stato.simboli.join(', ');
-      Object.defineProperty(proto, 'font', { configurable: true, enumerable: d.enumerable, get: d.get, set(v) { d.set.call(this, typeof v === 'string' && !v.endsWith(coda) ? v + coda : v); } });
-      log.riga(`font dei simboli in coda ai testi: ${stato.simboli.length}`);
-    } else log.riga('avviso: il contesto 2D non lascia agganciare «font»: emoji e simboli restano quadratini');
-  }
-
-  // ctx.filter = 'brightness(0)' SENZA filtro. Il menu disegna i burattini ancora chiusi come ombre nere
-  // con quel filtro (a6-progressione.js). Nel browser costa poco; qui (Skia su CPU) ogni fill/stroke sotto
-  // filtro apre uno strato grande come la tela: misurati ~120 ms a fotogramma su un PC, cioè un menu a
-  // 1 fotogramma al secondo sulla console. «brightness(0)» vuol dire «tutto nero, stessa trasparenza»:
-  // lo si ottiene uguale dipingendo col nero (stessa alfa) al posto del colore o della sfumatura; solo per
-  // drawImage si usa il filtro vero (uno strato a immagine). Gli altri filtri passano com'erano.
-  if (opz.filtroNero !== false) {
-    const proto = Object.getPrototypeOf(canvas.getContext('2d'));
-    const dFiltro = Object.getOwnPropertyDescriptor(proto, 'filter');
-    const dPieno = Object.getOwnPropertyDescriptor(proto, 'fillStyle');
-    const dTratto = Object.getOwnPropertyDescriptor(proto, 'strokeStyle');
-    if (dFiltro && dFiltro.set && dPieno && dPieno.set && dTratto && dTratto.set) {
-      const NERO = Symbol('nero'); const PILA = Symbol('pila');
-      const tappe = new WeakMap(); // sfumatura → come è stata fatta (per rifarla nera)
-      const eNero = (v) => typeof v === 'string' && /^\s*brightness\(\s*0(\.0+)?%?\s*\)\s*$/.test(v);
-      Object.defineProperty(proto, 'filter', {
-        configurable: true, enumerable: dFiltro.enumerable,
-        get() { return this[NERO] ? 'brightness(0)' : dFiltro.get.call(this); },
-        set(v) { if (eNero(v)) { this[NERO] = true; dFiltro.set.call(this, 'none'); } else { this[NERO] = false; dFiltro.set.call(this, v); } },
-      });
-      const salva = proto.save; const ripristina = proto.restore;
-      proto.save = function () { (this[PILA] || (this[PILA] = [])).push(this[NERO] === true); return salva.call(this); };
-      proto.restore = function () { const p = this[PILA]; if (p && p.length) this[NERO] = p.pop(); return ripristina.call(this); };
-      const crea = {}; let aggiungi = null;
-      for (const nome of ['createRadialGradient', 'createLinearGradient', 'createConicGradient']) {
-        const f = proto[nome]; if (typeof f !== 'function') continue;
-        crea[nome] = f;
-        proto[nome] = function () {
-          const g = f.apply(this, arguments);
-          if (!aggiungi) { // al primo uso si aggancia addColorStop, per ricordare le tappe
-            const gp = Object.getPrototypeOf(g); aggiungi = gp.addColorStop;
-            gp.addColorStop = function (o, c) { const t = tappe.get(this); if (t) t.stop.push(o, c); return aggiungi.call(this, o, c); };
-          }
-          tappe.set(g, { nome, arg: Array.prototype.slice.call(arguments), stop: [], nera: null, n: -1 });
-          return g;
-        };
-      }
-      const cacheNero = new Map();
-      const neroCome = (colore) => {
-        let n = cacheNero.get(colore); if (n !== undefined) return n;
-        const s = String(colore).trim().toLowerCase(); let a = 1; let m;
-        if (s === 'transparent') a = 0;
-        else if ((m = /^(?:rgb|hsl)a?\(([^)]+)\)$/.exec(s))) { const p = m[1].split(/[\s,/]+/).filter(Boolean); if (p.length >= 4) a = p[3].endsWith('%') ? parseFloat(p[3]) / 100 : parseFloat(p[3]); }
-        else if (/^#[0-9a-f]{8}$/.test(s)) a = parseInt(s.slice(7), 16) / 255;
-        else if (/^#[0-9a-f]{4}$/.test(s)) a = parseInt(s[4] + s[4], 16) / 255;
-        if (!(a >= 0 && a <= 1)) a = 1;
-        n = `rgba(0,0,0,${a})`; if (cacheNero.size < 4000) cacheNero.set(colore, n);
-        return n;
-      };
-      const stileNero = (cx, stile) => {
-        if (typeof stile === 'string') return neroCome(stile);
-        const t = stile && tappe.get(stile);
-        if (!t) { if (!stato.sfumatureIgnote++) log.riga('avviso: sotto brightness(0) uno stile non riconosciuto è stato dipinto nero pieno'); return '#000'; }
-        if (!t.nera || t.n !== t.stop.length) {
-          t.nera = crea[t.nome].apply(cx, t.arg);
-          for (let i = 0; i < t.stop.length; i += 2) aggiungi.call(t.nera, t.stop[i], neroCome(t.stop[i + 1]));
-          t.n = t.stop.length;
-        }
-        return t.nera;
-      };
-      const conNero = (nome, d) => {
-        const f = proto[nome]; if (typeof f !== 'function') return;
-        proto[nome] = function () {
-          if (!this[NERO]) return f.apply(this, arguments);
-          const s = d.get.call(this);
-          d.set.call(this, stileNero(this, s));
-          try { return f.apply(this, arguments); } finally { d.set.call(this, s); }
-        };
-      };
-      for (const nome of ['fill', 'fillRect', 'fillText']) conNero(nome, dPieno);
-      for (const nome of ['stroke', 'strokeRect', 'strokeText']) conNero(nome, dTratto);
-      const disegna = proto.drawImage;
-      proto.drawImage = function () {
-        if (!this[NERO]) return disegna.apply(this, arguments);
-        dFiltro.set.call(this, 'brightness(0)');
-        try { return disegna.apply(this, arguments); } finally { dFiltro.set.call(this, 'none'); }
-      };
-      stato.filtroNero = true;
-    } else log.riga('avviso: il contesto 2D non lascia agganciare «filter»: il menu coi burattini in ombra sarà lento');
-  }
-
-  // measureText con memoria: il gioco misura le stesse scritte a ogni fotogramma (drawTextFit) e ne usa
-  // solo la larghezza. Misurare vuol dire impaginare il testo (caro su una CPU lenta): si ricorda il
-  // risultato per (font, testo).
-  if (opz.memoriaTesto !== false) {
-    const proto = Object.getPrototypeOf(canvas.getContext('2d'));
-    const dFont = Object.getOwnPropertyDescriptor(proto, 'font');
-    const misuraVera = proto.measureText;
-    if (dFont && dFont.get && typeof misuraVera === 'function') {
-      let misure = new Map();
-      proto.measureText = function (testo) {
-        const k = dFont.get.call(this) + '\n' + testo;
-        let m = misure.get(k);
-        if (m === undefined) { m = misuraVera.call(this, testo); if (misure.size > 6000) misure = new Map(); misure.set(k, m); }
-        return m;
-      };
+  // --- l'acceleratore: font dei simboli, filtro nero finto, immagini ridotte, scritte e velo in memoria ------
+  function leggiSorgente(v) {
+    if (v.startsWith('data:')) {
+      const i = v.indexOf(',');
+      return /;base64/i.test(v.slice(0, i)) ? Buffer.from(v.slice(i + 1), 'base64') : Buffer.from(decodeURIComponent(v.slice(i + 1)), 'utf8');
     }
+    let q = v.replace(/^file:\/\//, '').split(/[?#]/)[0];
+    try { q = decodeURIComponent(q); } catch (_) { /* percorso già in chiaro */ }
+    if (!path.isAbsolute(q)) q = path.join(dirHtml, q);
+    return fs.readFileSync(q);
   }
+  const acceleratore = installaAcceleratore({ canvasLib, canvas, stato, log, opz, leggiSorgente, suErrore: (e) => erroreNonGestito(e) });
+  const Immagine = acceleratore.Immagine;
 
   Object.assign(documento, {
     body: corpo, documentElement: radice, head: creaElemento('head', documento), hidden: false, visibilityState: 'visible',
@@ -378,36 +284,6 @@ function creaFintoBrowser(opz) {
     hasFocus() { return true; },
     exitFullscreen() { return Promise.resolve(); },
   });
-
-  // --- immagini: percorso relativo all'HTML oppure data: URI ----------------------------------------------
-  class Immagine extends canvasLib.Image {
-    set src(v) {
-      let dato = v;
-      if (typeof v === 'string') {
-        this.srcDichiarata = v;
-        stato.immagini++;
-        try {
-          if (v.startsWith('data:')) {
-            const i = v.indexOf(',');
-            dato = /;base64/i.test(v.slice(0, i)) ? Buffer.from(v.slice(i + 1), 'base64') : Buffer.from(decodeURIComponent(v.slice(i + 1)), 'utf8');
-          } else {
-            let p = v.replace(/^file:\/\//, '').split(/[?#]/)[0];
-            try { p = decodeURIComponent(p); } catch (_) { /* percorso già in chiaro */ }
-            if (!path.isAbsolute(p)) p = path.join(dirHtml, p);
-            dato = fs.readFileSync(p);
-          }
-        } catch (err) {
-          stato.immaginiFallite++;
-          const io = this;
-          setImmediate(() => { try { if (typeof io.onerror === 'function') io.onerror(err); } catch (e) { erroreNonGestito(e); } });
-          return;
-        }
-      }
-      super.src = dato;
-      stato.pixelImmagini += (this.width || 0) * (this.height || 0);
-    }
-    get src() { return this.srcDichiarata || ''; }
-  }
 
   // --- requestAnimationFrame a comando --------------------------------------------------------------------
   let codaRaf = []; let contaRaf = 0;
@@ -498,6 +374,7 @@ function creaFintoBrowser(opz) {
 
   /** Esegue un fotogramma: chiama le funzioni prenotate con requestAnimationFrame. */
   function fotogramma(oraMs) {
+    acceleratore.fotogramma();
     const q = codaRaf; codaRaf = [];
     for (let i = 0; i < q.length; i++) { try { q[i][1](oraMs); } catch (err) { erroreNonGestito(err); } }
   }
@@ -571,14 +448,10 @@ function creaFintoBrowser(opz) {
       if (!originali[nome]) originali[nome] = G[nome];
       G[nome] = t[mio] ? function () {} : originali[nome];
     }
-    // il velo: dentro disegnaAtmosferaQuartiere si saltano i fillRect con una sfumatura (il resto si disegna)
-    if (t.velo && !t.atmosfera && originali.disegnaAtmosferaQuartiere) {
-      if (!originali.fillRectVelo) {
-        const proto = Object.getPrototypeOf(canvas.getContext('2d'));
-        const d = Object.getOwnPropertyDescriptor(proto, 'fillStyle'); const f = proto.fillRect;
-        originali.fillRectVelo = f;
-        proto.fillRect = function () { if (stato.dentroAtmosfera && d && typeof d.get.call(this) !== 'string') return undefined; return f.apply(this, arguments); };
-      }
+    // il velo: dentro disegnaAtmosferaQuartiere l'acceleratore riconosce il fillRect con la sfumatura e lo
+    // salta (taglio «velo») oppure lo ricopia da una tela calcolata una volta sola
+    stato.tagliVelo = Boolean(t.velo);
+    if (!t.atmosfera && originali.disegnaAtmosferaQuartiere) {
       const atmosfera = originali.disegnaAtmosferaQuartiere;
       G.disegnaAtmosferaQuartiere = function () { stato.dentroAtmosfera = true; try { return atmosfera.apply(this, arguments); } finally { stato.dentroAtmosfera = false; } };
     }
@@ -596,8 +469,11 @@ function creaFintoBrowser(opz) {
     memoriaGrafica() {
       let n = 0, px = 0;
       for (const r of stato.tele) { const c = r.deref(); if (c) { n++; px += c.width * c.height; } }
-      return { immagini: stato.immagini, immaginiMB: stato.pixelImmagini * 4 / 1048576, tele: n, teleMB: px * 4 / 1048576 };
+      const im = acceleratore.memoriaImmagini();
+      return { immagini: im.immagini, immaginiPronte: im.pronte, immaginiMB: im.tenuteMB, immaginiIntereMB: im.intereMB, decodifiche: im.decodifiche, tele: n, teleMB: px * 4 / 1048576, acceleratore: acceleratore.statistiche() };
     },
+    /** Immagini ancora in decodifica (in sottofondo). */
+    immaginiInAttesa() { return acceleratore.inAttesa(); },
     /** Scrive subito i salvataggi su file (da chiamare all'uscita). */
     salva: scarica,
   };

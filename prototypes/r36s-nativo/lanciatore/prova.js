@@ -48,6 +48,7 @@ const { creaFintoBrowser } = require('./finto-browser');
 const tAvvio = ms();
 const browser = creaFintoBrowser({
   fileHtml, fileMemoria, log, orologio, filtroNero: !arg['senza-filtro-nero'],
+  immaginiRidotte: !arg['senza-ridotte'], memoriaScritte: Boolean(arg['con-scritte']), memoriaVelo: !arg['senza-velo'],
   dirFont: [path.join(QUI, 'font'), path.join(QUI, '..', 'node_modules', 'dejavu-fonts-ttf', 'ttf'), '/usr/share/fonts/truetype/dejavu'].find((d) => fs.existsSync(d)),
 });
 browser.carica();
@@ -57,6 +58,8 @@ const SCALA_VIAGGIO = CONSOLE ? 0.5 : 1;
 if (SCALA_VIAGGIO !== 1) browser.impostaScala(SCALA_VIAGGIO);
 
 const cedi = () => new Promise((r) => setImmediate(r));
+/** Aspetta che le immagini chieste finora siano pronte (si decodificano e si riducono in sottofondo). */
+async function attendiImmagini() { const fine = Date.now() + 20000; while (browser.immaginiInAttesa() > 0 && Date.now() < fine) await new Promise((r) => setTimeout(r, 15)); }
 const PASSO = 1000 / 60;
 // Sulla console, per arrivare alle scene, si disegna un fotogramma ogni 5 passi di logica (il massimo che il
 // gioco fa in un fotogramma) e lo si mostra: si vede il gioco che cammina da solo e non si spreca tempo.
@@ -83,7 +86,9 @@ function coloriDiversi() {
 }
 
 async function arrivaAlPiano() {
+  await attendiImmagini();
   await passo(90);
+  await attendiImmagini(); await passo(6);
   tappa('menu di selezione', T().fase === 'menu_selezione' && coloriDiversi() > 50, `fase ${T().fase}, ${coloriDiversi()} colori`);
   foto('01-menu');
   if (arg.misura) prima.push(await misura('menu (tre burattini in ombra, effetti accesi)', 90, PASSO * 2, null));
@@ -93,6 +98,7 @@ async function arrivaAlPiano() {
   await passo(40);
   for (let i = 0; i < 80 && T().t4qa && T().t4qa.dialogo; i++) await premi(T().t4qa.dialogo.scelta ? 'Digit1' : 'Space');
   await passo(90);
+  await attendiImmagini(); await passo(6);
   tappa('hub di Piazza Dante', T().fase === 'hub' && coloriDiversi() > 50, `fase ${T().fase}, ${coloriDiversi()} colori`);
   foto('02-hub');
   if (arg.misura) prima.push(await misura('hub di Piazza Dante (effetti accesi)', 90, PASSO * 2, null));
@@ -307,6 +313,7 @@ async function giroLivelli(scena, chiave, azione) {
   await arrivaAlPiano();
   const st = stanzaDiCombattimento();
   await passo(150);
+  await attendiImmagini(); await passo(6);
   const R = T().interni.statoRun;
   tappa('stanza di combattimento del piano 1', Boolean(st) && R.stanzaCorrente === st && st.nemici.length > 0 && coloriDiversi() > 50, st ? `${st.nemici.length} nemici, ${coloriDiversi()} colori` : 'nessuna stanza normale');
   foto('04-piano1-stanza-nemici');
@@ -388,7 +395,7 @@ async function giroLivelli(scena, chiave, azione) {
     const mem = process.memoryUsage(); const picco = process.resourceUsage().maxRSS / 1024;
     console.log(`\nmemoria: RSS ${(mem.rss / 1048576).toFixed(0)} MB (picco ${picco.toFixed(0)} MB) · heap JS ${(mem.heapUsed / 1048576).toFixed(0)} MB · esterna ${(mem.external / 1048576).toFixed(0)} MB`);
     const mg = browser.memoriaGrafica();
-    console.log(`memoria grafica del gioco: ${mg.immagini} immagini decodificate = ${mg.immaginiMB.toFixed(0)} MB · ${mg.tele} tele fuori schermo = ${mg.teleMB.toFixed(0)} MB`);
+    console.log(`memoria grafica del gioco: ${mg.immagini} immagini tenute in ${mg.immaginiMB.toFixed(1)} MB (intere sarebbero ${mg.immaginiIntereMB.toFixed(0)} MB) · ${mg.tele} tele fuori schermo = ${mg.teleMB.toFixed(0)} MB · ${JSON.stringify(mg.acceleratore)}`);
     const cpu = os.cpus()[0] || {};
     fs.writeFileSync(path.join(dirUscita, 'misura.json'), JSON.stringify({ quando: new Date().toISOString(), node: process.version, arch: process.arch, cpu: cpu.model, gioco: path.basename(fileHtml), copia: nomeCopia, caricamentoMs: msCaricamento, rssMB: mem.rss / 1048576, piccoRssMB: picco, heapMB: mem.heapUsed / 1048576, memoriaGrafica: mg, risultati }, null, 1));
     console.log('scritto ' + path.join(dirUscita, 'misura.json'));
