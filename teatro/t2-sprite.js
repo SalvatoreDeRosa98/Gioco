@@ -96,7 +96,9 @@
     const img = new Image();
     const percorso = CONFIG.cartella + nome + '.png';
     img.onerror = () => console.warn('[T2] sprite non caricato, resta il disegno pittorico:', percorso);
-    img.src = risorse[percorso] || percorso;
+    // versione migliorata (SPRITE_V2 di 10-sprite.js) con ripiego sull'originale
+    if (typeof caricaSpriteTeatro === 'function') caricaSpriteTeatro(img, nome);
+    else img.src = risorse[percorso] || percorso;
     immagini[nome] = img;
     const L = LAYOUT[nome];
     L.indice = {};
