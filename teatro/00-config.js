@@ -292,8 +292,9 @@ function getQuartierePiano(piano) {
 
 /** Forma della mappa (generaMappaPiano). Celle della griglia 1..larghezza × 1..altezza (minimappa 7×6). */
 // Prova dei gatti (richiesta dell'autore, 2026-11-09): con attivo = true al Piano 1 le stanze accanto all'ingresso
-// sono sempre il «Vicolo dei Gatti» e il primo boss della run è il Gatto dei Quattro Canti. Rimettere false per il gioco normale.
-const PLAYTEST_GATTI = Object.freeze({ attivo: true, bossGattoPrimo: true, vicoloAccantoIngresso: true });
+// sono sempre il «Vicolo dei Gatti» e il primo boss della run è il Gatto dei Quattro Canti.
+// Spenta l'11-11-2026 su richiesta dell'autore («spegni i gatti»): il gioco normale ha attivo = false.
+const PLAYTEST_GATTI = Object.freeze({ attivo: false, bossGattoPrimo: true, vicoloAccantoIngresso: true });
 
 const MAPPA_PIANO = Object.freeze({
   larghezza: 7, altezza: 6,
