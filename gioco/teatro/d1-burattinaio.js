@@ -36,9 +36,9 @@ const BURATTINAIO_D1 = Object.freeze({
   inizioTick: 120,                     // le mani calano prima del primo colpo
   pausaFraColpiTick: Object.freeze([26, 18, 34]),
   mano: Object.freeze({
-    raggio: 24,                        // raggio colpibile a terra
-    scala: 1.55,
-    quotaAlta: 150,                    // altezza della mano «in riposo» sopra il palco
+    raggio: 28,                        // raggio colpibile a terra
+    scala: 1.95,
+    quotaAlta: 92,                     // altezza della mano «in riposo» sopra il palco
     seguiVel: 2.1,                     // quanto insegue il giocatore mentre si prepara (px/tick)
     schianto: Object.freeze({ alza: 34, pugno: 30, cala: 7, terra: 70, risale: 24, raggio: 34, danno: 2 }),
     spazzata: Object.freeze({ scende: 32, gira: 30, corsa: 52, terra: 50, risale: 24, mezzaAltezza: 22, danno: 1 }),
@@ -46,7 +46,7 @@ const BURATTINAIO_D1 = Object.freeze({
     moltTenaglie: 1.7,                 // sigillo delle tenaglie: tempo a terra ×
   }),
   forbici: Object.freeze({
-    raggio: 26, lunghezza: 92,
+    raggio: 28, lunghezza: 128,
     posa: 44, apre: 46, apreLima: 80, taglio: 24, piantate: 80, moltLima: 1.9, stacca: 22,
     larghezzaTaglio: 15, danno: 2, cicatriciMax: 6,
   }),
@@ -352,7 +352,7 @@ function iaManoD1(m, puoAttaccare) {
       if (m.tD1 >= S.cala) {
         m.h = 0;
         suonoD1('tonfo', 1); scuoti(FEEL.scossa.evento); d1.tremito = 1;
-        statoRun.ondeEsplosione.push({ x: m.x, y: m.y, r: 8, maxR: S.raggio + 14, color: '#f2c06b' });
+        statoRun.ondeEsplosione.push({ x: m.x, y: m.y, r: 8, maxR: S.raggio + 14, color: '#f2c06b', tick: 0 });
         if (toccaD1(m.x, m.y, S.raggio)) colpisciGiocatoreD1(S.danno, TESTI_D1.fonti.schianto, m.x, m.y);
         aTerraManoD1(m, S.terra);
       }
@@ -442,9 +442,9 @@ function iaForbiciD1(f, puoAttaccare) {
     case 'posa': { // si porta a un angolo, alta
       if (!f.da) {
         const sx = player.x < 320 ? 1 : -1, sy = player.y < 188 ? 1 : -1; // dall'angolo opposto al giocatore
-        f.da = { x: sx > 0 ? ARENA.x2 - 20 : ARENA.x1 + 20, y: sy > 0 ? ARENA.y2 - 14 : ARENA.y1 + 14 };
+        f.da = { x: sx > 0 ? ARENA.x2 - 44 : ARENA.x1 + 44, y: sy > 0 ? ARENA.y2 - 14 : ARENA.y1 + 48 }; // dentro la vista (non sotto la mappa)
       }
-      f.x += (f.da.x - f.x) * 0.08; f.y += (f.da.y - f.y) * 0.08; f.h += (30 - f.h) * 0.08;
+      f.x += (f.da.x - f.x) * 0.08; f.y += (f.da.y - f.y) * 0.08; f.h += (14 - f.h) * 0.08;
       f.apertura += (0.12 - f.apertura) * 0.2;
       if (f.tD1 >= F.posa && puoAttaccare) {
         f.faseD1 = 'apre'; f.tD1 = 0;
@@ -702,10 +702,34 @@ disegnaBossPittorico = function (...args) {
   return disegnaBossPittoricoBaseD1.apply(this, args);
 };
 
+const disegnaFrameBaseD1 = disegnaFrame;
+/**
+ * Durante il disegno l'arena non si presenta come «stanza del boss» alla resa di base: niente botola al centro,
+ * niente Mani di Donna Luciana del boss finale. La logica (barra, musica, danni) la vede sempre come 'boss'.
+ */
+disegnaFrame = function (...args) {
+  const st = statoRun.stanzaCorrente;
+  if (!st || !st.arenaD1 || st.tipo !== 'boss') return disegnaFrameBaseD1.apply(this, args);
+  // le parti del Burattinaio le disegna d1 (prima dell'HUD): la base non vi tira i suoi fili di marionetta
+  const tutti = st.nemici;
+  partiDaDisegnareD1 = tutti.filter((n) => n.hp > 0 && (n.bossId === 'gb-mano' || n.bossId === 'gb-forbici'));
+  st.tipo = 'ribaltaD1';
+  st.nemici = tutti.filter((n) => n.bossId !== 'gb-mano' && n.bossId !== 'gb-forbici');
+  try { return disegnaFrameBaseD1.apply(this, args); } finally { st.tipo = 'boss'; st.nemici = tutti; partiDaDisegnareD1 = null; }
+};
+let partiDaDisegnareD1 = null;
+
 const disegnaHUDPixelArtBaseD1 = disegnaHUDPixelArt;
 /** Prima dell'HUD: effetti di caduta, fili che cadono a vittoria. */
 disegnaHUDPixelArt = function (...args) {
-  try { if (statoRun.stanzaCorrente && statoRun.stanzaCorrente.arenaD1) disegnaEffettiD1(); } catch (err) { console.error('[D1] effetti', err); }
+  try {
+    if (statoRun.stanzaCorrente && statoRun.stanzaCorrente.arenaD1) {
+      // forbici sotto, mani sopra (calano dall'alto); per y crescente fra le mani
+      const parti = (partiDaDisegnareD1 || []).slice().sort((a, b) => (a.bossId === 'gb-forbici' ? -1 : 0) - (b.bossId === 'gb-forbici' ? -1 : 0) || a.y - b.y);
+      for (const n of parti) { if (n.bossId === 'gb-mano') disegnaManoD1(n); else disegnaForbiciD1(n); }
+      disegnaEffettiD1();
+    }
+  } catch (err) { console.error('[D1] effetti', err); }
   return disegnaHUDPixelArtBaseD1.apply(this, args);
 };
 
@@ -725,7 +749,7 @@ function preparaFondoD1() {
   gr.addColorStop(0, 'rgba(232,176,80,0.22)'); gr.addColorStop(0.35, 'rgba(120,60,30,0.10)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
   g.fillStyle = gr; g.fillRect(0, 0, W, H);
   // il palco piccolo e lontano: boccascena, sipario rosso, ribalta di lumini, figurine
-  g.save(); g.translate(320, 206);
+  g.save(); g.translate(320, 206); g.scale(0.62, 0.62); g.globalAlpha = 0.75;
   g.fillStyle = 'rgba(30,18,10,0.9)'; g.fillRect(-64, -30, 128, 58);
   g.fillStyle = 'rgba(232,176,80,0.55)'; g.fillRect(-52, -22, 104, 40);
   g.fillStyle = TINTE_D1.rosso; g.fillRect(-56, -26, 14, 46); g.fillRect(42, -26, 14, 46); g.fillRect(-56, -28, 112, 8);
@@ -739,7 +763,10 @@ function preparaFondoD1() {
   // la graticcia: travetti lunghi (orizzontali) e traversi, coi vuoti fra le tavole
   const x1 = ARENA.x1 - 30, x2 = ARENA.x2 + 30, y1 = ARENA.y1 - 14, y2 = ARENA.y2 + 18;
   for (let y = y1; y < y2; y += 22) {
-    g.fillStyle = TINTE_D1.trave; g.fillRect(x1, y, x2 - x1, 13);
+    const sopraPalco = y > 150 && y < 250; // sopra il palco lontano le tavole sono rade: si vede giù
+    g.fillStyle = TINTE_D1.trave;
+    if (sopraPalco) { g.fillRect(x1, y, 200 - x1, 13); g.fillRect(440, y, x2 - 440, 13); g.globalAlpha = 0.42; g.fillRect(200, y, 240, 7); g.globalAlpha = 1; }
+    else g.fillRect(x1, y, x2 - x1, 13);
     g.fillStyle = 'rgba(242,192,107,0.16)'; g.fillRect(x1, y, x2 - x1, 1);
     g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(x1, y + 12, x2 - x1, 1);
     g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 1;

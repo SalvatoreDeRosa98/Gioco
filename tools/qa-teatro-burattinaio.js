@@ -115,7 +115,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('scontro-spento', !dopo.attivo, dopo);
   await p.screenshot({ path: foto('09-finale-narrato') });
   // il finale narrato va avanti a Spazio fino al ritorno
-  for (let i = 0; i < 80 && (await fase()) === 'in_gioco'; i++) { await p.keyboard.press('Space'); await p.waitForTimeout(120); }
+  for (let i = 0; i < 120 && ['in_gioco', 'finale'].includes(await fase()); i++) { await p.keyboard.press('Space'); await p.waitForTimeout(120); }
   const fin = await fase();
   ok('ritorno-dopo-finale', fin === 'hub' || fin === 'menu_selezione', fin);
   ok('volto-ritrovato', await p.evaluate(() => Boolean(window.__teatro.interni.finaliB8.stato().segretoVisto)));
