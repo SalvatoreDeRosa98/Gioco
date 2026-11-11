@@ -47,7 +47,8 @@ const foto = (n) => `${prefisso}-${n}.png`;
     entraInStanza(s, null);
     statoRun.siparioAttivo = null; statoRun.pausa = false;
     const st = statoRun.stanzaCorrente;
-    const modello = st.nemici.find((n) => !n.boss) || st.nemici[0];
+    // mai il Bozzo Esplosivo come bersaglio di prova: scoppia da solo e falsa le misure di danno
+    const modello = st.nemici.find((n) => !n.boss && (n.patternMob || n.tipo) !== 'bomba_ferma') || st.nemici.find((n) => !n.boss) || st.nemici[0];
     st.nemici = []; st.ostacoli = []; st.fragiliB7 = []; st.oggettiATerra = []; st.muroSegreto = null; st.suoloB7 = [];
     statoRun.proiettili.length = 0; statoRun.proiettiliNemici.length = 0;
     player.x = 300; player.y = 200; player.targetX = null; player.targetY = null; player.invuln = 0; player.cooldown = 0;
