@@ -45,7 +45,12 @@ const prefisso = process.argv[3] || null;
       await p.waitForTimeout(150);
       const pulita = await p.evaluate(() => window.__teatro.interni.statoRun.stanzaCorrente.pulita);
       provate++;
-      if (!pulita) violazioni.push(`piano ${piano}: porte chiuse con tutti i nemici a terra`);
+      // d5: una stanza col secondo quadro ancora da giocare, o con nemici sotto le botole, resta chiusa di proposito
+      const scenaD5 = await p.evaluate(() => {
+        const d5 = window.__teatro.interni.d5, sd5 = window.__teatro.interni.statoRun.stanzaCorrente;
+        return Boolean(d5 && sd5 && ((sd5.quadriD5 && sd5.quadriD5.fase !== 'finito') || d5.inAttesaBotole(sd5)));
+      });
+      if (!pulita && !scenaD5) violazioni.push(`piano ${piano}: porte chiuse con tutti i nemici a terra`);
     }
   }
   if (!provate) violazioni.push('nessuna stanza provata');
