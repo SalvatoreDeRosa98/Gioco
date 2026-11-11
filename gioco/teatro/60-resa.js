@@ -1567,6 +1567,7 @@ function disegnaFrame(dtMs) {
     disegnaFamigliOrbitaliD(); // --- D ---
     // Proiettili Nemici
     for (const pr of statoRun.proiettiliNemici) {
+      if (typeof aloneProiettileD7 === 'function') aloneProiettileD7(pr); // (d7) leggibili sugli scacchi
       drawPixelSprite(SPRITE_PROIETTILI.nemico, pr.x, pr.y, pr.bossShot ? 1.85 : 1.55);
     }
 
