@@ -9,7 +9,7 @@ Le dichiarazioni di primo livello (`const`/`let`/`function`) stanno nello scope 
 |---|---|
 | `000-errori.js` | rete di sicurezza (primo file): raccoglie gli errori e li mostra in un riquadro a schermo; `segnalaErroreTeatro`, `fusibileScenaTeatro` (spegne gli effetti di scena se il disegno fallisce), usati dal ciclo in `80-ciclo.js` |
 | `00-config.js` | costanti, contesto canvas, FEEL, palette, tabelle: stanze, personaggi, patto, cataloghi oggetti (B, D), economia, boss (BOSS_A), STANZE_C, NOTTI_C |
-| `10-sprite.js` | testo auto-fit, cache sprite, disegno pittorico di Ferruccio/nemici/boss, tabelle SPRITE_* (incluse le aggiunte dei nuovi oggetti) |
+| `10-sprite.js` | testo auto-fit, cache sprite, disegno pittorico di Ferruccio/nemici/boss, tabelle SPRITE_* (incluse le aggiunte dei nuovi oggetti); `SPRITE_V2` + `caricaSpriteTeatro` (e1): per ogni sprite originale / `assets/sprite_teatro_v2/` (leggera) / `assets/sprite_teatro_v2_ombre/`, con ripiego sull'originale; li usa anche t2-sprite.js, la release incorpora la versione scelta. Versioni prodotte da `tools/migliora-sprite-teatro.py`, tavole in `production/arte/prima-dopo-sprite/`, QA `tools/qa-teatro-sprite-v2.js` |
 | `15-audio.js` | AudioSys (Web Audio procedurale) |
 | `20-stato.js` | seme/rng, notti, `statoRun`, `player`, statistiche, scelta personaggio, nuova run, banner |
 | `30-mappa.js` | `generaMappaPiano`, porte, `popolaStanza`, `avviaPiano`, `entraInStanza`, muri segreti |
