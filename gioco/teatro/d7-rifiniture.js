@@ -14,9 +14,10 @@
 /** Numeri della resa dell'arena di Donna Luciana. */
 const LUCIANA_D7 = Object.freeze({
   bossId: 'donna-luciana',
-  pavimento: Object.freeze({ x: 68, y: 70, w: 504, h: 234, velo: 'rgba(12, 7, 5, 0.46)' }), // scacchi smorzati
-  occhioDiBue: Object.freeze({ rx: 46, ry: 17, dy: 8, centro: 'rgba(255, 214, 140, 0.55)', bordo: 'rgba(255, 190, 90, 0)' }),
-  contorno: Object.freeze({ colore: 'rgba(255, 196, 92, 0.9)', raggio: 1.2 }),
+  pavimento: Object.freeze({ x: 68, y: 70, w: 504, h: 234, velo: 'rgba(46, 26, 14, 0.6)' }), // scacchi smorzati: chiare a ~38% di luminosità, tinta calda
+  occhioDiBue: Object.freeze({ rx: 58, ry: 22, dy: 8, centro: 'rgba(255, 226, 160, 0.85)', bordo: 'rgba(255, 190, 90, 0)',
+    alone: Object.freeze({ dy: -26, r: 64, centro: 'rgba(255, 214, 140, 0.5)', bordo: 'rgba(255, 190, 90, 0)' }) }),
+  contorno: Object.freeze({ colore: '#ffc45c', spessore: 2 }), // px logici
   proiettile: Object.freeze({ r: 5.5, fondo: 'rgba(10, 5, 3, 0.85)', anello: '#ffcf6b', spessore: 1.4 }),
 });
 
@@ -68,10 +69,19 @@ disegnaBossPittorico = function disegnaBossPittoricoD7(...a) {
     ctx.beginPath();
     ctx.ellipse(b.x, yb, O.rx, O.ry, 0, 0, TAU);
     ctx.fill();
+    const A = O.alone, ya = b.y + A.dy; // alone dietro la figura
+    const ga = ctx.createRadialGradient(b.x, ya, 4, b.x, ya, A.r);
+    ga.addColorStop(0, A.centro);
+    ga.addColorStop(1, A.bordo);
+    ctx.fillStyle = ga;
+    ctx.beginPath();
+    ctx.arc(b.x, ya, A.r, 0, TAU);
+    ctx.fill();
     ctx.restore();
   } catch (err) { console.error('[d7] occhio di bue', err); }
   ctx.save();
-  ctx.filter = `drop-shadow(0 0 ${C.raggio}px ${C.colore}) drop-shadow(0 0 ${C.raggio}px ${C.colore})`; // contorno di lanterna
+  const t = ctx.getTransform(), d = (C.spessore * Math.hypot(t.a, t.b)).toFixed(2); // filter lavora in px della tela
+  ctx.filter = `drop-shadow(${d}px 0 0 ${C.colore}) drop-shadow(-${d}px 0 0 ${C.colore}) drop-shadow(0 ${d}px 0 ${C.colore}) drop-shadow(0 -${d}px 0 ${C.colore})`; // contorno pieno di lanterna
   disegniLucianaD7++;
   try { return disegnaBossPittoricoBaseD7.apply(this, a); } finally { ctx.restore(); }
 };

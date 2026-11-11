@@ -1384,8 +1384,8 @@ function disegnaFrame(dtMs) {
         ? (pianoNelCiclo === 4
           ? `▼ BIS! LOOP INFINITO · PIANO ${statoRun.piano + 1} (CICLO ${statoRun.ciclo + 1}) [Click/E] ▼`
           : `▼ SCENDI AL PIANO ${statoRun.piano + 1} [Click/E] ▼`)
-        : '🔒 SCONFIGGI IL BOSS PER APRIRE LA BOTOLA';
-      drawPillLabel(msgBotola, 320, 222, 340, {
+        : (typeof lucianaInScenaD7 === 'function' && lucianaInScenaD7() ? '' : '🔒 SCONFIGGI IL BOSS PER APRIRE LA BOTOLA'); // (d7) non copre Donna Luciana
+      if (msgBotola) drawPillLabel(msgBotola, 320, 222, 340, {
         size: 8,
         color: st.uscitaAperta ? '#f9cb40' : '#f87171',
         border: st.uscitaAperta ? '#f9cb40' : '#8f160c',
