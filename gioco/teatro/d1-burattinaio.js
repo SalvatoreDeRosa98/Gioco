@@ -225,7 +225,7 @@ function creaStanzaD1() {
   });
   return {
     id: 'd1-ribalta', tipo: 'boss', cx: 0, cy: 0, porte: {}, muroSegreto: null, pulita: false, visitata: true,
-    nemici: [capo], ostacoli: [], oggettiATerra: [], oggettoPiedistallo: null, arenaD1: true, incontroB6: true,
+    nemici: [capo], ostacoli: [], oggettiATerra: [], oggettoPiedistallo: null, arenaD1: true, incontroB6: true, nomeLuogoHud: 'Sopra la Ribalta',
   };
 }
 

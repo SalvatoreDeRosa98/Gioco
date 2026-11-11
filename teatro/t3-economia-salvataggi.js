@@ -393,7 +393,8 @@
         drawTextFit('✕', c.x + c.w / 2, c.y + 9, c.w, { size: 7, color: '#ef4444', shadow: false });
       }
     }
-    drawTextFit(TESTI.aiuto, W / 2, 352, 420, { size: 6.5, color: '#a8a29e', shadow: false });
+    drawTextFit(typeof testoToccoD7 === 'function' ? testoToccoD7(TESTI.aiuto) : TESTI.aiuto, // (d7) col tocco
+      W / 2, 352, 420, { size: 6.5, color: '#a8a29e', shadow: false });
 
     if (confermaCancella) {
       const n = confermaCancella;

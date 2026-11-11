@@ -5003,7 +5003,7 @@ function popolaStanza(s, piano) {
     if (rng() < effettiNotteC().probNemicoExtra) tipiGenerati.push('vespa_cieca');
 
     const nomiNem = {
-      vespa_cieca: 'Vespa Cieca (Attack Fly)',
+      vespa_cieca: 'Vespa Cieca',
       lucciola: 'Lucciola Pungente',
       bomba_ferma: 'Bozzo Esplosivo',
       gatto: 'Gatto d\'Ombra',
@@ -5012,10 +5012,11 @@ function popolaStanza(s, piano) {
       maschera: 'Maschera Corazzata',
       guardia: 'Guardia di Piombo',
       statua: 'Torrione di Marmo',
+      ragno_seta: 'Ragno della Seta', // (d7) d7-rifiniture.js
     };
-    const baseHpMap = { vespa_cieca: 8, lucciola: 10, bomba_ferma: 12, gatto: 12, burattino: 15, predone: 18, maschera: 16, guardia: 20, statua: 22 };
-    const stageHpMap = { vespa_cieca: 2, lucciola: 2.5, bomba_ferma: 3, gatto: 3.5, burattino: 4, predone: 4.5, maschera: 4.5, guardia: 5, statua: 6 };
-    const baseSpdMap = { vespa_cieca: 1.45, lucciola: 1.65, bomba_ferma: 0.0, gatto: 1.38, burattino: 1.15, predone: 1.35, maschera: 0.32, guardia: 0.98, statua: 0.0 };
+    const baseHpMap = { vespa_cieca: 8, lucciola: 10, bomba_ferma: 12, gatto: 12, burattino: 15, predone: 18, maschera: 16, guardia: 20, statua: 22, ragno_seta: 6 };
+    const stageHpMap = { vespa_cieca: 2, lucciola: 2.5, bomba_ferma: 3, gatto: 3.5, burattino: 4, predone: 4.5, maschera: 4.5, guardia: 5, statua: 6, ragno_seta: 1.5 };
+    const baseSpdMap = { vespa_cieca: 1.45, lucciola: 1.65, bomba_ferma: 0.0, gatto: 1.38, burattino: 1.15, predone: 1.35, maschera: 0.32, guardia: 0.98, statua: 0.0, ragno_seta: 0.0 }; // (d7) il ragno lo muove passoRagnoSetaD7
 
     // Al Piano 1 i campioni sono quasi inesistenti (5%), nei piani avanzati salgono al 18%
     const probCampione = piano === 1 ? 0.05 : 0.18;
@@ -5047,7 +5048,7 @@ function popolaStanza(s, piano) {
         hp: hpMax,
         maxHp: hpMax,
         speed: baseSpdMap[t] * moltVel * multSpdChamp,
-        r: t === 'statua' ? 13 : t === 'gatto' ? 14 : 11, // gatto grande (sprite scalato 1,32)
+        r: t === 'ragno_seta' ? 8 : t === 'statua' ? 13 : t === 'gatto' ? 14 : 11, // gatto grande (sprite scalato 1,32)
         flash: 0,
         burnTicks: 0,
         stunTicks: 0,
@@ -6292,7 +6293,7 @@ function passoLogico() {
               st.nemici.push({
                 id: `spawn-vespa-${tick}`,
                 tipo: 'vespa_cieca',
-                nome: 'Vespa Cieca (Attack Fly)',
+                nome: 'Vespa Cieca',
                 comportamento: 'volo_puro',
                 x: n.x + (rng() - 0.5) * 26,
                 y: n.y + (rng() - 0.5) * 20,
@@ -6344,7 +6345,7 @@ function passoLogico() {
               st.nemici.push({
                 id: `spawn-custode-${tick}-${k}`,
                 tipo: vespe ? 'vespa_cieca' : 'statua',
-                nome: vespe ? 'Vespa Cieca (Attack Fly)' : 'Statuetta di Marmo',
+                nome: vespe ? 'Vespa Cieca' : 'Statuetta di Marmo',
                 comportamento: vespe ? 'volo_puro' : 'torretta_croce',
                 // --- C: inizio --- anche gli spawn del boss stanno lontani dalle porte
                 ...puntoLontanoDallePorteC(n.x + lato * 58, n.y + 34, porteVietateC(st).concat([{ x: player.x, y: player.y }])),
@@ -6520,7 +6521,7 @@ function passoLogico() {
         const comp = n.comportamento || n.tipo;
 
         if (comp === 'volo_puro' || n.tipo === 'vespa_cieca') {
-          // 1. VESPA CIECA (Attack Fly): vola dritta contro di te SENZA SPARARE!
+          // 1. VESPA CIECA: vola dritta contro di te SENZA SPARARE!
           const osc = Math.sin(tick * 0.22 + n.x * 0.05) * 0.3;
           n.x = Math.max(ARENA.x1 + 12, Math.min(ARENA.x2 - 12, n.x + Math.cos(ang + osc) * n.speed));
           n.y = Math.max(ARENA.y1 + 12, Math.min(ARENA.y2 - 12, n.y + Math.sin(ang + osc) * n.speed));
@@ -6559,6 +6560,8 @@ function passoLogico() {
             n.shootCd = 58 + Math.floor(rng() * 20);
             statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(ang) * 2.8, vy: Math.sin(ang) * 2.8, dist: 0 });
           }
+        } else if (comp === 'ragno_seta') {
+          if (typeof passoRagnoSetaD7 === 'function') passoRagnoSetaD7(n, ang); // (d7) scatti, pause e salto
         } else if (comp === 'bomba_ferma' || n.tipo === 'bomba_ferma') {
           // 2. BOZZOLO DI POLVERE: STA FERMO sul posto, pulsa quando ti avvicini ed ESPLODE!
           if (distPlayer < 64 || n.fuseTimer > 0) {
@@ -6623,7 +6626,7 @@ function passoLogico() {
             }
           }
         } else {
-          // 6. SOLDATO DI PIOMBO (Knight / Clotty): pattuglia ed esegue doppi colpi mirati
+          // 6. SOLDATO DI PIOMBO: pattuglia ed esegue doppi colpi mirati
           n.x = Math.max(ARENA.x1 + 14, Math.min(ARENA.x2 - 14, n.x + Math.cos(ang) * n.speed * 0.72));
           n.y = Math.max(ARENA.y1 + 14, Math.min(ARENA.y2 - 14, n.y + Math.sin(ang) * n.speed * 0.72));
           n.shootCd--;
@@ -8419,8 +8422,8 @@ function disegnaFrame(dtMs) {
         ? (pianoNelCiclo === 4
           ? `▼ BIS! LOOP INFINITO · PIANO ${statoRun.piano + 1} (CICLO ${statoRun.ciclo + 1}) [Click/E] ▼`
           : `▼ SCENDI AL PIANO ${statoRun.piano + 1} [Click/E] ▼`)
-        : '🔒 SCONFIGGI IL BOSS PER APRIRE LA BOTOLA';
-      drawPillLabel(msgBotola, 320, 222, 340, {
+        : (typeof lucianaInScenaD7 === 'function' && lucianaInScenaD7() ? '' : '🔒 SCONFIGGI IL BOSS PER APRIRE LA BOTOLA'); // (d7) non copre Donna Luciana
+      if (msgBotola) drawPillLabel(msgBotola, 320, 222, 340, {
         size: 8,
         color: st.uscitaAperta ? '#f9cb40' : '#f87171',
         border: st.uscitaAperta ? '#f9cb40' : '#8f160c',
@@ -8444,9 +8447,10 @@ function disegnaFrame(dtMs) {
       for (let i = statoRun.ondeEsplosione.length - 1; i >= 0; i--) {
         const onda = statoRun.ondeEsplosione[i];
         onda.r += (onda.maxR - onda.r) * 0.25;
-        onda.tick++;
+        onda.tick = (onda.tick || 0) + 1; // molte onde nascono senza tick: con «tick++» restavano a schermo per sempre
         const alpha = Math.max(0, 1 - onda.tick / 16);
         ctx.save();
+        ctx.globalAlpha = alpha;          // l'anello sfuma anche quando ha un colore suo
         ctx.strokeStyle = onda.color || onda.colore || `rgba(251, 146, 60, ${alpha.toFixed(2)})`;
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -8602,6 +8606,7 @@ function disegnaFrame(dtMs) {
     disegnaFamigliOrbitaliD(); // --- D ---
     // Proiettili Nemici
     for (const pr of statoRun.proiettiliNemici) {
+      if (typeof aloneProiettileD7 === 'function') aloneProiettileD7(pr); // (d7) leggibili sugli scacchi
       drawPixelSprite(SPRITE_PROIETTILI.nemico, pr.x, pr.y, pr.bossShot ? 1.85 : 1.55);
     }
 
@@ -8666,9 +8671,10 @@ function disegnaFrame(dtMs) {
 // ===========================================================================
 function disegnaHUDPixelArt(st) {
   // 1. Box alto a sinistra: Vita (Maschere intere e mezze) + Statistiche (danno, cadenza, velocità, monete)
+  // (d7) fondo semitrasparente: la balconata del pubblico si intravede dietro il riquadro
   const hx = 6, hy = 5, hw = 172, hh = 52;
   ctx.save();
-  ctx.fillStyle = 'rgba(10, 6, 4, 0.92)';
+  ctx.fillStyle = 'rgba(10, 6, 4, 0.62)';
   ctx.fillRect(hx, hy, hw, hh);
   ctx.strokeStyle = '#f9cb40';
   ctx.lineWidth = 1;
@@ -8737,21 +8743,9 @@ function disegnaHUDPixelArt(st) {
     ctx.fillStyle = '#e53222';
     ctx.fillRect(bx, by, Math.round(bw * Math.max(0, boss.hp / boss.maxHp)), 8);
     ctx.restore();
-  } else {
-    // (bug autore) il totale conta le stanze della mappa, non la segreta né il patto finché non le trovi
-    const nascosta = (s) => (s.tipo === 'segreta' || s.tipo === 'patto') && !s.visitata;
-    const nVisitate = statoRun.mappa ? statoRun.mappa.stanze.filter((s) => s.visitata).length : 1;
-    const nTot = statoRun.mappa ? statoRun.mappa.stanze.filter((s) => !nascosta(s)).length : 1;
-    const q = getQuartierePiano(statoRun.piano);
-    const cicloTxt = statoRun.ciclo > 1 ? ` (∞${statoRun.ciclo})` : '';
-    drawPillLabel(
-      `${q.nome.toUpperCase()} · ${q.atmosfera.toUpperCase()}${cicloTxt} · STANZE ${nVisitate}/${nTot}`,
-      W / 2,
-      15,
-      280,
-      { size: 8, color: q.coloreTema, border: q.bordoPillola }
-    );
   }
+  // (d7) fuori dal boss il centro in alto resta alla balconata del pubblico: quartiere e stanze scoperte
+  // stanno nell'intestazione della minimappa (il nome del quartiere e l'atmosfera li annuncia il banner).
 
   // 3. Minimappa ad ESPLORAZIONE in alto a destra:
   const m = statoRun.mappa;
@@ -8759,7 +8753,7 @@ function disegnaHUDPixelArt(st) {
     const cell = 12, x0 = W - 118, y0 = 24;
     const mw = 114, mh = 92;
     ctx.save();
-    ctx.fillStyle = 'rgba(10,6,4,0.92)';
+    ctx.fillStyle = 'rgba(10,6,4,0.62)'; // (d7) semitrasparente come il riquadro di sinistra
     ctx.fillRect(x0 - 6, y0 - 16, mw, mh);
     ctx.strokeStyle = '#f9cb40';
     ctx.strokeRect(x0 - 6, y0 - 16, mw, mh);
@@ -8770,7 +8764,8 @@ function disegnaHUDPixelArt(st) {
     const scoperte = m.stanze.filter((s) => s.visitata).length;
     const totMappa = m.stanze.filter((s) => !((s.tipo === 'segreta' || s.tipo === 'patto') && !s.visitata)).length;
     drawTextFit(
-      `MAPPA (${scoperte}/${totMappa})`,
+      // una stanza può dare il suo nome al luogo (st.nomeLuogoHud: lo scontro Sopra la Ribalta di d1)
+      `${((statoRun.stanzaCorrente && statoRun.stanzaCorrente.nomeLuogoHud) || getQuartierePiano(statoRun.piano).nome).toUpperCase()}${statoRun.ciclo > 1 ? ' ∞' + statoRun.ciclo : ''} · ${scoperte}/${totMappa}`, // (d7)
       x0 - 6 + mw / 2,
       y0 - 5,
       mw - 8,
@@ -10320,7 +10315,8 @@ requestAnimationFrame(loop);
         drawTextFit('✕', c.x + c.w / 2, c.y + 9, c.w, { size: 7, color: '#ef4444', shadow: false });
       }
     }
-    drawTextFit(TESTI.aiuto, W / 2, 352, 420, { size: 6.5, color: '#a8a29e', shadow: false });
+    drawTextFit(typeof testoToccoD7 === 'function' ? testoToccoD7(TESTI.aiuto) : TESTI.aiuto, // (d7) col tocco
+      W / 2, 352, 420, { size: 6.5, color: '#a8a29e', shadow: false });
 
     if (confermaCancella) {
       const n = confermaCancella;
@@ -16757,7 +16753,7 @@ function cambiaPaginaB3(pagina) {
   const o = b3.opz;
   if (!o || o.pagina === pagina) return;
   o.pagina = pagina;
-  o.sel = pagina !== 'scena' ? 0 : RIGHE_B3.scena.findIndex((r) => r.id === 'vaiTasti');
+  o.sel = pagina !== 'scena' ? 0 : righeB3('scena').findIndex((r) => r.id === 'vaiTasti');
   suonoB3('playPasso');
 }
 
@@ -18525,14 +18521,14 @@ const STANZE_B7 = Object.freeze({
    * Fragili: si rompono coi colpi (proiettili, fendente, bombe, scoppi) e a volte lasciano qualcosa.
    * pelle: aspetto del fragile comune secondo il quartiere. tipi.*.premi: pesi di ciò che cade.
    * I Vasi di Capodimonte (richiesta dell'autore) sono più ricchi, ma ogni tanto ne esce un ragno
-   * arrabbiato: `ragno` è il tipo del nemico piccolo che compare (oggi la Vespa Cieca).
+   * arrabbiato: `ragno` è il tipo del nemico piccolo che compare (il Ragno della Seta di d7-rifiniture.js).
    */
   fragili: Object.freeze({
     pelle: Object.freeze({ 1: 'botte', 2: 'vaso', 3: 'balla', 4: 'baule' }),
     tipi: Object.freeze({
       comune: Object.freeze({ colpi: 2, premi: Object.freeze({ niente: 0.89, moneta: 0.08, mezzaMaschera: 0.03, ragno: 0 }) }),
       capodimonte: Object.freeze({ colpi: 1, premi: Object.freeze({ niente: 0.5, moneta: 0.25, mezzaMaschera: 0.1, ragno: 0.15 }),
-        ragno: 'vespa_cieca', stordimentoRagnoTick: 36 }),
+        ragno: 'ragno_seta', stordimentoRagnoTick: 36 }),
     }),
   }),
   /** Fendente di base (come in passoLogico): portata e avanzamento del colpo, per rompere i fragili. */
@@ -19188,7 +19184,7 @@ const TESTI_B7 = Object.freeze({
   ciarlatanoOggetto: (nome) => `🎩 Sotto la scatola c'era una reliquia: ${nome} [Click/E]`,
   ciarlatanoRipiego: (n) => `🎩 La reliquia non trova posto: il ciarlatano te la paga ${n}🪙.`,
   titoloCiarlatano: 'LE TRE SCATOLE DEL CIARLATANO',
-  ragno: '🕷 Dal vaso di Capodimonte salta fuori un ragno arrabbiato!',
+  ragno: '🕷 Dal vaso di Capodimonte salta fuori un Ragno della Seta, arrabbiato!',
   leva: '⚙ La carrucola gira: i sacchi di sabbia vengono giù!',
   levaInvito: '⚙ LEVA [E]',
   sacco: 'il sacco di sabbia',
@@ -19674,7 +19670,7 @@ function liberaRagnoB7(st, o, T) {
   const n = creaNemiciB7({ id: `${st.id}-ragno${st.ragniB7}` }, statoRun.piano, [T.ragno])[0];
   if (!n) return null;
   n.x = o.x; n.y = o.y;
-  n.nome = 'Ragno arrabbiato';
+  n.nome = 'Ragno della Seta';
   n.ragnoB7 = true;
   n.stunTicks = T.stordimentoRagnoTick;
   st.nemici.push(n);
@@ -35487,6 +35483,3056 @@ Object.assign(window.__teatro.interni, {
     attiva: attivaC2,
     disattiva: disattivaC2,
     pad: padC2,
+  }),
+});
+
+</script>
+<script>
+/* teatro/d5-cambio-scena.js (incorporato da tools/teatro-release.js) */
+/*
+ * d5-cambio-scena.js — (squadra d5) IL CAMBIO DI SCENA A METÀ STANZA e LE BOTOLE DI SCENA.
+ *
+ * 1. Stanze «in due quadri» (QUADRI_D5): alcune stanze normali (mai l'ingresso, mai boss o speciali, al massimo
+ *    `massimoPerPiano` per piano, probabilità crescente col piano) hanno due compagnie. Quando cade l'ultimo nemico
+ *    del primo quadro le porte NON si aprono: grancassa, luci giù, il fondale sale e ne cala un altro, gli arredi
+ *    scendono nelle botole e salgono quelli del secondo quadro (un'altra disposizione di b7), poi la seconda
+ *    compagnia sale dalle botole. Solo dopo il secondo quadro la stanza è pulita (si chiama la base) e arriva un
+ *    premio più ricco. Durante il cambio Ferruccio è al sicuro (niente danni, i proiettili svaniscono) e, prima che
+ *    salgano gli arredi nuovi, viene spostato fuori dalle loro sagome.
+ *    Macchina a stati esplicita: TRANSIZIONI_D5 (primo → cambio → secondo → finito). Vale SOLO per le stanze
+ *    marcate qui con `st.quadriD5`.
+ * 2. Botole (BOTOLE_D5): sportelli nel tavolato. In poche stanze normali (`st.botoleD5`) 2-3 nemici del quadro
+ *    entrano salendo: lo sportello TREMA (la posa che avvisa), si apre, il nemico sale. DURANTE L'ASCESA IL NEMICO
+ *    NON COLPISCE E NON È COLPIBILE (non è ancora in `st.nemici`: lo disegna questo file). Una botola aperta è un
+ *    buco: chi cammina non ci passa, chi vola (`player.volo`) sì. Le stesse botole servono al cambio di scena.
+ *
+ * Solo agganci per avvolgimento (chiamando sempre la base): generaMappaPiano, entraInStanza, verificaStanzaPulita,
+ * passoLogico, subisciColpoGiocatore, disegnaStanzaPixelArt. Interni per la QA: window.__teatro.interni.d5.
+ */
+
+/** Stanze in due quadri: tutti i valori del cambio di scena. Indici dei vettori = piano nel ciclo (1..4) - 1. */
+const QUADRI_D5 = Object.freeze({
+  probPerPiano: Object.freeze([0.3, 0.45, 0.6, 0.75]),
+  probSecondaStanza: Object.freeze([0, 0.15, 0.3, 0.45]),
+  massimoPerPiano: 2,
+  profonditaMin: 2,            // stanze ad almeno 2 porte dall'ingresso
+  nemiciMin: 2,
+  pausaPrimaMs: 450,           // dall'ultimo nemico caduto al colpo di grancassa
+  cambioMs: 1700,              // durata del cambio dei macchinisti
+  // frazioni del cambio: luci giù e arredi che scendono (buio → scesi), scambio a telo calato (giu),
+  // arredi nuovi che salgono mentre il telo risale (salita → su)
+  fasi: Object.freeze({ buio: 0.08, scesi: 0.33, giu: 0.42, salita: 0.62, su: 0.88 }),
+  telo: Object.freeze({ calaFine: 0.36, risaleInizio: 0.6, risaleFine: 0.95, margine: 22 }),
+  buioMax: 0.72,
+  margineGiocatore: 14,        // distanza minima di Ferruccio da un arredo che sale
+  ascesaSfasaMs: 170,          // la seconda compagnia sale a una botola per volta
+  profonditaGruppo2: 1,        // la seconda compagnia è scelta come se la stanza fosse un passo più in là
+  premioExtra: Object.freeze({ monete: 2, probMezzaMaschera: 0.5 }),
+  cartelloMs: 2400,
+  altezzaFondale: 64,
+});
+
+/** Botole di scena: probabilità, misure e tempi (ms). */
+const BOTOLE_D5 = Object.freeze({
+  probStanza: Object.freeze([0.12, 0.18, 0.24, 0.3]),
+  massimoPerPiano: 2,
+  quanteMin: 2, quanteMax: 3,
+  w: 34, h: 20, raggioBuco: 14,
+  ritardoMs: 500, intervalloMs: 550,
+  tremaMs: 650, apreMs: 220, ascesaMs: 750, apertaDopoMs: 2000, chiudeMs: 260,
+  profonditaAscesa: 44,
+  colori: Object.freeze({ legno: '#2b1b0f', assi: '#120a05', contorno: '#c99a4a', cerniera: '#e2b85c', buio: '#050302', luce: '#ffb04a' }),
+});
+
+/** Transizioni ammesse della stanza in due quadri. */
+const TRANSIZIONI_D5 = Object.freeze({ primo: 'cambio', cambio: 'secondo', secondo: 'finito', finito: null });
+/** Stati di una botola: durata (chiave di BOTOLE_D5) e stato seguente. 'attesa' usa il proprio conto alla rovescia. */
+const STATI_BOTOLA_D5 = Object.freeze({
+  chiusa: null,
+  attesa: Object.freeze({ poi: 'trema' }),
+  trema: Object.freeze({ ms: 'tremaMs', poi: 'apre' }),
+  apre: Object.freeze({ ms: 'apreMs', poi: 'ascesa' }),
+  ascesa: Object.freeze({ ms: 'ascesaMs', poi: 'aperta' }),
+  aperta: Object.freeze({ ms: 'apertaDopoMs', poi: 'chiude' }),
+  chiude: Object.freeze({ ms: 'chiudeMs', poi: 'chiusa' }),
+});
+
+const variantiD5 = new WeakMap(); // stanza → variante b7 del secondo quadro (fuori dal JSON del salvataggio)
+
+function cicloD5(piano) { return ((((piano || 1) - 1) % 4) + 4) % 4; }
+function passaD5(st, nuova) {
+  const q = st.quadriD5;
+  if (!q || TRANSIZIONI_D5[q.fase] !== nuova) return false;
+  q.fase = nuova; q.t = 0;
+  return true;
+}
+function eBossD5(n) { return Boolean(n && (n.boss || n.isBoss || n.tipo === 'boss')); }
+/** Una stanza già marcata da un'altra squadra (campi xxxD1..D9 diversi dai miei) resta fuori. */
+function marcataAltroveD5(s) {
+  return Object.keys(s).some((k) => /D[0-9]$/.test(k) && k !== 'quadriD5' && k !== 'botoleD5');
+}
+function candidataD5(s) {
+  return Boolean(s && s.tipo === 'normale' && !s.pulita && Array.isArray(s.nemici) && s.disposizioneB7
+    && s.nemici.length >= QUADRI_D5.nemiciMin && !s.quadriD5 && !s.botoleD5
+    && (s.profonditaB7 || 1) >= QUADRI_D5.profonditaMin && !s.nemici.some(eBossD5) && !marcataAltroveD5(s));
+}
+
+// ===========================================================================
+// PREPARAZIONE (alla generazione del piano)
+// ===========================================================================
+
+/**
+ * Marca una stanza come «in due quadri»: sceglie la disposizione b7 e il gruppo del secondo quadro.
+ * @param {object} s stanza @param {number} piano @returns {boolean} vero se marcata
+ */
+function preparaQuadriD5(s, piano) {
+  if (typeof scegliVarianteB7 !== 'function') return false;
+  let v2 = null;
+  for (let i = 0; i < 8 && !v2; i++) {
+    const v = scegliVarianteB7(piano);
+    if (v && (!s.disposizioneB7 || v.disp.id !== s.disposizioneB7.id)) v2 = v;
+  }
+  if (!v2) return false;
+  const scelta = scegliGruppoB7(piano, (s.profonditaB7 || 1) + QUADRI_D5.profonditaGruppo2, { tema: true });
+  s.quadriD5 = { fase: 'primo', t: 0, piano, disp2: { id: v2.disp.id, variante: v2.id, nome: v2.disp.nome }, tipi2: scelta.tipi.slice(), gruppo2: scelta.id, cartello: 0 };
+  variantiD5.set(s, v2);
+  return true;
+}
+
+/**
+ * Mette 2-3 botole nel tavolato di una stanza, lontane dalle porte e dagli arredi.
+ * @param {object} s stanza @returns {boolean}
+ */
+function preparaBotoleD5(s) {
+  const B = BOTOLE_D5, vietati = porteVietateC(s), lista = [];
+  const quante = B.quanteMin + Math.floor(rng() * (B.quanteMax - B.quanteMin + 1));
+  for (let i = 0; i < quante * 3 && lista.length < quante; i++) {
+    const x = ARENA.x1 + 60 + rng() * (ARENA.x2 - ARENA.x1 - 120), y = ARENA.y1 + 40 + rng() * (ARENA.y2 - ARENA.y1 - 80);
+    const p = puntoValidoB7(s, x, y, vietati, lista);
+    if (p && lista.every((b) => Math.hypot(b.x - p.x, b.y - p.y) >= 70)) lista.push({ x: p.x, y: p.y, w: B.w, h: B.h, stato: 'chiusa', t: 0, nemico: null });
+  }
+  if (lista.length < B.quanteMin) return false;
+  s.botoleD5 = { lista, usate: false };
+  return true;
+}
+
+/** Passata sulla mappa appena generata (dopo b7): stanze in due quadri e stanze con le botole. */
+function preparaMappaD5(m, piano) {
+  const c = cicloD5(piano), Q = QUADRI_D5, B = BOTOLE_D5;
+  const cand = shuffle(m.stanze.filter(candidataD5));
+  let quadri = 0, botole = 0;
+  for (const s of cand) {
+    const prob = quadri === 0 ? Q.probPerPiano[c] : Q.probSecondaStanza[c];
+    if (quadri < Q.massimoPerPiano && rng() < prob && preparaQuadriD5(s, piano)) { quadri++; continue; }
+    if (botole < B.massimoPerPiano && rng() < B.probStanza[c] && preparaBotoleD5(s)) botole++;
+  }
+  return m;
+}
+
+const generaMappaPianoBaseD5 = generaMappaPiano;
+generaMappaPiano = function generaMappaPianoD5(piano, ...resto) {
+  const m = generaMappaPianoBaseD5.call(this, piano, ...resto);
+  if (m && Array.isArray(m.stanze)) { try { preparaMappaD5(m, piano); } catch (err) { console.error('[d5] mappa', err); } }
+  return m;
+};
+
+// ===========================================================================
+// BOTOLE: logica
+// ===========================================================================
+
+/** Apertura 0..1 dello sportello. */
+function aperturaBotolaD5(b) {
+  const B = BOTOLE_D5;
+  if (b.stato === 'apre') return Math.min(1, b.t / Math.max(1, ticksDaMs(B.apreMs)));
+  if (b.stato === 'ascesa' || b.stato === 'aperta') return 1;
+  if (b.stato === 'chiude') return Math.max(0, 1 - b.t / Math.max(1, ticksDaMs(B.chiudeMs)));
+  return 0;
+}
+function listaBotoleD5(st) { return (st && st.botoleD5 && st.botoleD5.lista) || []; }
+/** Vero se qualche nemico deve ancora salire da una botola (la stanza non è pulita). */
+function inAttesaBotoleD5(st) {
+  return listaBotoleD5(st).some((b) => b.nemico && b.stato !== 'aperta' && b.stato !== 'chiude' && b.stato !== 'chiusa');
+}
+/** Fa salire i nemici dalle botole date (una per nemico), sfasati di `sfasaMs`. Toglie i nemici da st.nemici. */
+function faiSalireD5(st, coppie, ritardoMs, sfasaMs) {
+  if (!st.botoleD5) st.botoleD5 = { lista: [], usate: true };
+  coppie.forEach(({ b, n }, i) => {
+    n.x = b.x; n.y = b.y;
+    b.nemico = n; b.stato = 'attesa'; b.t = ticksDaMs(ritardoMs + i * sfasaMs);
+    const k = st.nemici.indexOf(n);
+    if (k >= 0) st.nemici.splice(k, 1);
+    if (st.botoleD5.lista.indexOf(b) < 0) st.botoleD5.lista.push(b);
+  });
+}
+/** Un passo della macchina a stati di ogni botola; libera il nemico a fine ascesa; il buco respinge chi cammina. */
+function passoBotoleD5(st) {
+  const lista = listaBotoleD5(st);
+  for (let i = lista.length - 1; i >= 0; i--) {
+    const b = lista[i], S = STATI_BOTOLA_D5[b.stato];
+    if (!S) continue;
+    if (b.stato === 'attesa') { if (--b.t <= 0) { b.stato = 'trema'; b.t = 0; } continue; }
+    b.t++;
+    if (b.t < ticksDaMs(BOTOLE_D5[S.ms])) continue;
+    b.stato = S.poi; b.t = 0;
+    if (b.stato === 'apre') suonoD5('sportello');
+    if (b.stato === 'aperta' && b.nemico) { st.nemici.push(b.nemico); b.nemico = null; }
+    if (b.stato === 'chiusa' && b.temporanea) lista.splice(i, 1);
+  }
+  if (player.volo) return;
+  const R = BOTOLE_D5.raggioBuco + 9;
+  for (const b of lista) {
+    if (aperturaBotolaD5(b) < 0.3) continue;
+    const d = Math.hypot(player.x - b.x, player.y - b.y);
+    if (d < R) {
+      const nx = d > 0.01 ? (player.x - b.x) / d : 0, ny = d > 0.01 ? (player.y - b.y) / d : 1;
+      player.x = b.x + nx * R; player.y = b.y + ny * R;
+    }
+  }
+}
+
+// ===========================================================================
+// CAMBIO DI SCENA: logica
+// ===========================================================================
+
+/** Vero mentre i macchinisti cambiano la scena nella stanza corrente (Ferruccio al sicuro). */
+function cambioInCorsoD5() {
+  const st = statoRun.stanzaCorrente;
+  return Boolean(st && st.quadriD5 && st.quadriD5.fase === 'cambio');
+}
+function avviaCambioD5(st) {
+  if (!passaD5(st, 'cambio')) return;
+  const q = st.quadriD5;
+  q.pausa = ticksDaMs(QUADRI_D5.pausaPrimaMs);
+  q.durata = Math.max(1, ticksDaMs(QUADRI_D5.cambioMs));
+  q.colpo = q.giu = q.su = q.montato = q.salitaSuono = false;
+  statoRun.proiettili = []; statoRun.proiettiliNemici = [];
+}
+/**
+ * Variante b7 del secondo quadro: quella scelta alla generazione (in memoria o, dopo un caricamento, ritrovata
+ * dagli id salvati in `st.quadriD5.disp2`); solo se manca del tutto se ne estrae una nuova e la si salva.
+ */
+function varianteSecondoQuadroD5(st, piano) {
+  const q = st.quadriD5;
+  let v = variantiD5.get(st);
+  if (!v && q.disp2 && typeof variantiB7 === 'function') {
+    v = variantiB7().find((x) => x.id === q.disp2.variante && x.disp.id === q.disp2.id) || null;
+  }
+  if (!v) v = scegliVarianteB7(piano);
+  if (v) { variantiD5.set(st, v); q.disp2 = { id: v.disp.id, variante: v.id, nome: v.disp.nome }; }
+  return v;
+}
+function fuoriDagliArrediD5(o, x, y, margine) { return Math.hypot(x - o.x, y - o.y) >= (o.r || 0) + margine; }
+/** Prepara il secondo quadro su una stanza d'appoggio: arredi, suolo, comparse, alcova; sposta Ferruccio e gli oggetti. */
+function montaSecondoQuadroD5(st) {
+  const q = st.quadriD5, piano = q.piano || statoRun.piano;
+  const v2 = varianteSecondoQuadroD5(st, piano);
+  const temp = { id: st.id, tipo: 'normale', porte: st.porte, muroSegreto: st.muroSegreto, nemici: [], ostacoli: [], oggettiATerra: [] };
+  if (v2) applicaDisposizioneB7(temp, v2, piano);
+  q.nuovi = temp.ostacoli || [];
+  q.suolo2 = temp.suoloB7 || []; q.comparse2 = temp.comparseB7 || []; q.fragili2 = temp.fragiliB7 || []; q.premi2 = temp.premiB7 || [];
+  const M = QUADRI_D5.margineGiocatore;
+  if (!q.nuovi.every((o) => fuoriDagliArrediD5(o, player.x, player.y, M + 9))) {
+    const p = puntoValidoB7(temp, player.x, player.y, [], []);
+    if (p) { player.x = p.x; player.y = p.y; player.targetX = null; player.targetY = null; }
+  }
+  for (const it of st.oggettiATerra || []) {
+    if (q.nuovi.every((o) => fuoriDagliArrediD5(o, it.x, it.y, 6))) continue;
+    const p = puntoValidoB7(temp, it.x, it.y, [], []);
+    if (p) { it.x = p.x; it.y = p.y; }
+  }
+  for (const it of temp.oggettiATerra) st.oggettiATerra.push(it); // alcova del secondo quadro: due stanze in una
+  q.montato = true;
+}
+function entraSecondaCompagniaD5(st) {
+  const q = st.quadriD5, piano = q.piano || statoRun.piano;
+  const nuovi = creaNemiciB7(st, piano, q.tipi2 || []);
+  st.nemici = nuovi;
+  piazzaNemiciB7(st);
+  allontanaNemiciDallePorteC(st, [{ x: player.x, y: player.y }]);
+  const coppie = st.nemici.filter((n) => n.hp > 0).map((n) => ({ n, b: { x: n.x, y: n.y, w: BOTOLE_D5.w, h: BOTOLE_D5.h, stato: 'chiusa', t: 0, nemico: null, temporanea: true } }));
+  faiSalireD5(st, coppie, 0, QUADRI_D5.ascesaSfasaMs);
+}
+/** Un passo del cambio: grancassa, arredi giù, arredi su, seconda compagnia. */
+function passoCambioD5(st) {
+  const q = st.quadriD5, F = QUADRI_D5.fasi;
+  q.t++;
+  statoRun.proiettiliNemici = [];
+  const u = (q.t - q.pausa) / q.durata;
+  if (u >= 0 && !q.colpo) { q.colpo = true; suonoD5('grancassa'); if (typeof reazionePubblicoB1 === 'function') { try { reazionePubblicoB1('cortesia'); } catch (_) { /* il pubblico non ferma la scena */ } } }
+  if (u >= F.buio && !q.giu) {
+    q.giu = true; q.vecchi = (st.ostacoli || []).slice();
+    st.ostacoli = []; st.suoloB7 = []; st.fragiliB7 = []; st.premiB7 = [];
+    suonoD5('argano');
+  }
+  if (u >= F.giu && !q.montato) montaSecondoQuadroD5(st); // a telo calato: nessuno vede lo scambio
+  if (u >= F.salita && !q.salitaSuono) { q.salitaSuono = true; suonoD5('argano'); }
+  if (u >= F.su && !q.su) {
+    q.su = true;
+    st.ostacoli = q.nuovi; st.suoloB7 = q.suolo2; st.comparseB7 = q.comparse2; st.fragiliB7 = q.fragili2; st.premiB7 = q.premi2;
+    st.disposizioneB7 = q.disp2;
+  }
+  if (u >= 1 && passaD5(st, 'secondo')) {
+    q.vecchi = []; q.cartello = ticksDaMs(QUADRI_D5.cartelloMs);
+    entraSecondaCompagniaD5(st);
+  }
+}
+
+function premioExtraD5(st) {
+  const P = QUADRI_D5.premioExtra;
+  for (let i = 0; i < P.monete; i++) spawnaMonetaATerra(st, 290 + i * 26, 200, 1);
+  if (rng() < P.probMezzaMaschera) st.oggettiATerra.push({ tipo: 'cura', valore: 1, sprite: 'mezzaMaschera', x: 350, y: 200 });
+  mostraBanner('Fine del secondo quadro! Il pubblico ringrazia: premio doppio.', 170);
+  if (typeof reazionePubblicoB1 === 'function') { try { reazionePubblicoB1('applausoPieno'); } catch (_) { /* niente */ } }
+}
+
+// ===========================================================================
+// AGGANCI
+// ===========================================================================
+
+const verificaStanzaPulitaBaseD5 = verificaStanzaPulita;
+verificaStanzaPulita = function verificaStanzaPulitaD5(...a) {
+  const st = statoRun.stanzaCorrente;
+  try {
+    if (st && !st.pulita) {
+      if (inAttesaBotoleD5(st)) return undefined;
+      const q = st.quadriD5;
+      if (q && (q.fase === 'primo' || q.fase === 'cambio')) {
+        if (q.fase === 'primo' && st.nemici.every((n) => n.hp <= 0)) avviaCambioD5(st);
+        return undefined;
+      }
+      if (q && q.fase === 'secondo' && st.nemici.every((n) => n.hp <= 0)) {
+        const r = verificaStanzaPulitaBaseD5.apply(this, a);
+        if (st.pulita) { passaD5(st, 'finito'); premioExtraD5(st); }
+        return r;
+      }
+    }
+  } catch (err) { console.error('[d5] pulizia', err); }
+  return verificaStanzaPulitaBaseD5.apply(this, a);
+};
+
+const entraInStanzaBaseD5 = entraInStanza;
+entraInStanza = function entraInStanzaD5(stanza, ...resto) {
+  const r = entraInStanzaBaseD5.call(this, stanza, ...resto);
+  try {
+    const st = statoRun.stanzaCorrente;
+    if (st) {
+      for (const b of listaBotoleD5(st)) { // rientro: niente di sospeso
+        if (b.nemico) { st.nemici.push(b.nemico); b.nemico = null; }
+        b.stato = 'chiusa'; b.t = 0;
+      }
+      if (st.botoleD5) st.botoleD5.lista = st.botoleD5.lista.filter((b) => !b.temporanea);
+      if (st.quadriD5 && !st.pulita && st.quadriD5.fase === 'primo') st.quadriD5.cartello = ticksDaMs(QUADRI_D5.cartelloMs);
+      if (st.botoleD5 && !st.botoleD5.usate && !st.pulita) {
+        st.botoleD5.usate = true;
+        const vivi = shuffle(st.nemici.filter((n) => n.hp > 0 && !eBossD5(n)));
+        const coppie = st.botoleD5.lista.slice(0, vivi.length).map((b, i) => ({ b, n: vivi[i] }));
+        faiSalireD5(st, coppie, BOTOLE_D5.ritardoMs, BOTOLE_D5.intervalloMs);
+      }
+    }
+  } catch (err) { console.error('[d5] ingresso', err); }
+  return r;
+};
+
+function fermoD5() {
+  return statoRun.fase !== 'in_gioco' || Boolean(statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo || statoRun.pausa);
+}
+const passoLogicoBaseD5 = passoLogico;
+passoLogico = function passoLogicoD5(...a) {
+  const r = passoLogicoBaseD5.apply(this, a);
+  try {
+    const st = statoRun.stanzaCorrente;
+    if (st && !fermoD5()) {
+      if (st.quadriD5 && st.quadriD5.fase === 'cambio') passoCambioD5(st);
+      if (st.quadriD5 && st.quadriD5.cartello > 0) st.quadriD5.cartello--;
+      if (st.botoleD5) passoBotoleD5(st);
+    }
+  } catch (err) { console.error('[d5] passo', err); }
+  return r;
+};
+
+const subisciColpoGiocatoreBaseD5 = subisciColpoGiocatore;
+subisciColpoGiocatore = function subisciColpoGiocatoreD5(...a) {
+  if (cambioInCorsoD5()) return false; // i macchinisti lavorano: nessuno si fa male
+  return subisciColpoGiocatoreBaseD5.apply(this, a);
+};
+
+// ===========================================================================
+// SUONI (Web Audio procedurale)
+// ===========================================================================
+
+/** Grancassa, argano dei macchinisti, sportello: brevi suoni procedurali; rispettano AudioSys.attivo. */
+function suonoD5(nome) {
+  const c = AudioSys.ctx;
+  if (!c || !AudioSys.attivo) return;
+  try {
+    const t = c.currentTime, out = AudioSys.uscita || c.destination;
+    const o = c.createOscillator(), g = c.createGain();
+    if (nome === 'grancassa') {
+      o.type = 'sine'; o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.5);
+      g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+    } else if (nome === 'argano') {
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(140, t); o.frequency.linearRampToValueAtTime(95, t + 0.55);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.035, t + 0.08); g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+    } else {
+      o.type = 'square'; o.frequency.setValueAtTime(220, t); o.frequency.exponentialRampToValueAtTime(70, t + 0.12);
+      g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    }
+    o.connect(g); g.connect(out); o.start(t); o.stop(t + 1);
+  } catch (_) { /* l'audio non deve mai fermare il gioco */ }
+}
+
+// ===========================================================================
+// DISEGNO (a ombre)
+// ===========================================================================
+
+let luceSottopalcoD5 = null;
+/** Alone caldo che sale dal sottopalco, disegnato una volta sola su una tela fuori schermo. */
+function alonaD5() {
+  if (luceSottopalcoD5) return luceSottopalcoD5;
+  const tela = document.createElement('canvas'); tela.width = 64; tela.height = 64;
+  const c = tela.getContext('2d'), g = c.createRadialGradient(32, 40, 2, 32, 36, 32);
+  g.addColorStop(0, 'rgba(255,190,90,0.9)'); g.addColorStop(0.45, 'rgba(255,140,50,0.35)'); g.addColorStop(1, 'rgba(255,120,40,0)');
+  c.fillStyle = g; c.fillRect(0, 0, 64, 64);
+  luceSottopalcoD5 = tela;
+  return tela;
+}
+
+/** Disegna uno sportello di botola: `a` apertura 0..1, `scossa` tremito in px, `tk` per la polvere. */
+function disegnaBotolaD5(x, y, w, h, a, scossa, tk) {
+  const C = BOTOLE_D5.colori, x0 = Math.round(x - w / 2), y0 = Math.round(y - h / 2);
+  ctx.save();
+  if (a > 0) { // il buco: buio, e la luce calda che sale
+    ctx.fillStyle = C.buio; ctx.fillRect(x0, y0, w, h);
+    ctx.globalAlpha = 0.85 * a; ctx.globalCompositeOperation = 'lighter';
+    ctx.drawImage(alonaD5(), x - w * 0.8, y - h * 2.2, w * 1.6, h * 3);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  }
+  const dx = scossa ? Math.sin(tk * 2.1) * scossa : 0, dy = scossa ? Math.cos(tk * 2.7) * scossa * 0.6 : 0;
+  const meta = (w / 2) * (1 - a);
+  for (const lato of [-1, 1]) { // due ante incernierate sui fianchi
+    if (meta < 1) continue;
+    const xa = lato < 0 ? x0 + dx : x0 + w - meta + dx;
+    ctx.fillStyle = C.legno; ctx.fillRect(xa, y0 + dy, meta, h);
+    ctx.strokeStyle = C.assi; ctx.lineWidth = 1;
+    for (let k = 4; k < h; k += 5) { ctx.beginPath(); ctx.moveTo(xa + 1, y0 + dy + k); ctx.lineTo(xa + meta - 1, y0 + dy + k); ctx.stroke(); }
+    ctx.fillStyle = C.cerniera;
+    const xc = lato < 0 ? x0 + dx : x0 + w - 3 + dx;
+    ctx.fillRect(xc, y0 + dy + 3, 3, 3); ctx.fillRect(xc, y0 + dy + h - 6, 3, 3);
+  }
+  ctx.strokeStyle = C.contorno; ctx.globalAlpha = 0.75; ctx.lineWidth = 1;
+  ctx.strokeRect(x0 + 0.5, y0 + 0.5, w - 1, h - 1);
+  if (scossa) { // polvere che sbuffa dalle fessure
+    ctx.globalAlpha = 0.5; ctx.fillStyle = '#d8c39a';
+    for (let i = 0; i < 5; i++) {
+      const f = ((tk * 0.9 + i * 13) % 20) / 20;
+      ctx.fillRect(x0 + ((i * 7 + 3) % w), y0 - f * 10, 1.5, 1.5);
+    }
+  }
+  ctx.restore();
+}
+
+/** Sagoma d'ombra di un arredo che scende o sale (dy > 0 = più in basso, tagliata al tavolato). */
+function sagomaArredoD5(o, dy) {
+  if (o.tipo === 'fossa') return;
+  const w = o.w || 24, h = (o.h || 24) + 18, base = o.y + (o.h || 24) / 2;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(o.x - w, 0, w * 2, base + 1); ctx.clip();
+  ctx.translate(0, dy);
+  ctx.fillStyle = '#1a110a'; ctx.strokeStyle = BOTOLE_D5.colori.contorno; ctx.lineWidth = 1.6;
+  if (o.tipo === 'braciere') {
+    ctx.beginPath(); ctx.moveTo(o.x - w / 2, base - h * 0.55); ctx.lineTo(o.x + w / 2, base - h * 0.55);
+    ctx.lineTo(o.x + w * 0.2, base - h * 0.25); ctx.lineTo(o.x + w * 0.12, base); ctx.lineTo(o.x - w * 0.12, base);
+    ctx.lineTo(o.x - w * 0.2, base - h * 0.25); ctx.closePath();
+  } else {
+    ctx.beginPath(); ctx.rect(o.x - w / 2, base - h, w, h);
+    ctx.rect(o.x - w / 2 - 3, base - h - 4, w + 6, 5);
+  }
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+function buioCambioD5(u) {
+  const F = QUADRI_D5.fasi, M = QUADRI_D5.buioMax;
+  if (u < 0) return 0;
+  if (u < F.buio) return M * (u / F.buio);
+  if (u < F.su) return M;
+  return M * Math.max(0, 1 - (u - F.su) / (1 - F.su));
+}
+
+/**
+ * Telo dipinto che cala dall'alto su tutta l'area di gioco, appeso a due corde, con la stanga in fondo e il motivo
+ * del quartiere a ombre. `yb` = quota (coordinate 640x360) del bordo basso del telo.
+ */
+function disegnaTeloD5(yb, tk) {
+  if (yb <= 0) return;
+  const M = QUADRI_D5.telo.margine, x1 = ARENA.x1 - M, x2 = ARENA.x2 + M, w = x2 - x1, C = BOTOLE_D5.colori;
+  const quart = typeof quartiereB7 === 'function' ? quartiereB7(statoRun.piano) : 1;
+  const ondeggia = Math.sin(tk * 0.09) * 1.5;
+  ctx.save();
+  ctx.fillStyle = '#e2b85c'; // le due corde
+  ctx.fillRect(x1 + 26, 0, 1, yb); ctx.fillRect(x2 - 27, 0, 1, yb);
+  ctx.fillStyle = '#1d130b'; ctx.fillRect(x1, 0, w, yb);
+  ctx.fillStyle = 'rgba(0,0,0,0.28)'; // pieghe della tela
+  for (let x = x1 + 18; x < x2; x += 38) ctx.fillRect(x + ondeggia, 0, 9, yb);
+  ctx.beginPath(); ctx.rect(x1, 0, w, yb); ctx.clip();
+  const cy = yb - 70, cx = (x1 + x2) / 2; // il dipinto viaggia col telo
+  ctx.fillStyle = '#080504'; ctx.strokeStyle = C.contorno; ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  if (quart === 1) { // il Vesuvio col pennacchio, sopra il golfo
+    ctx.moveTo(x1 + 20, cy + 50); ctx.lineTo(cx - 34, cy - 40); ctx.lineTo(cx - 8, cy - 32); ctx.lineTo(cx + 22, cy - 44); ctx.lineTo(x2 - 20, cy + 50); ctx.closePath();
+  } else if (quart === 2) { // gli alberi della Villa
+    for (let x = x1 + 40; x < x2 - 30; x += 70) { ctx.moveTo(x + 18, cy + 50); ctx.arc(x + 18, cy - 4, 26, 0, Math.PI * 2); ctx.rect(x + 14, cy + 10, 8, 40); }
+  } else if (quart === 3) { // cupole e campanili
+    for (let x = x1 + 30; x < x2 - 40; x += 90) { ctx.moveTo(x + 60, cy + 50); ctx.arc(x + 30, cy + 10, 30, Math.PI, 0); ctx.rect(x, cy + 10, 60, 40); ctx.rect(x + 70, cy - 30, 12, 80); }
+  } else { // il colonnato della Reggia
+    ctx.rect(x1 + 20, cy - 34, w - 40, 10);
+    for (let x = x1 + 30; x < x2 - 30; x += 34) ctx.rect(x, cy - 24, 10, 74);
+  }
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(226,184,92,0.5)'; ctx.font = 'bold 13px Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('~ cambio di scena ~', cx, yb - 12);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = C.contorno; ctx.lineWidth = 1; ctx.strokeRect(x1 + 0.5, -1, w - 1, yb + 1);
+  ctx.fillStyle = '#4a2e14'; ctx.fillRect(x1 - 6, yb - 2, w + 12, 6); // la stanga
+  ctx.fillStyle = '#e2b85c'; ctx.fillRect(x1 - 6, yb - 2, 4, 6); ctx.fillRect(x2 + 2, yb - 2, 4, 6);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x1, yb + 4, w, 6); // ombra sul palco
+  ctx.restore();
+}
+
+/** Quota del bordo basso del telo al tempo `u` del cambio. */
+function quotaTeloD5(u) {
+  const T = QUADRI_D5.telo, giu = ARENA.y2 + 16;
+  const liscio = (x) => x * x * (3 - 2 * x);
+  if (u <= 0) return 0;
+  if (u < T.calaFine) return giu * liscio(u / T.calaFine);
+  if (u < T.risaleInizio) return giu;
+  if (u < T.risaleFine) return giu * (1 - liscio((u - T.risaleInizio) / (T.risaleFine - T.risaleInizio)));
+  return 0;
+}
+
+/** Due fondali arrotolati sotto il cielo del palco: il segno onesto di una stanza in due quadri. */
+function disegnaRotoliD5() {
+  ctx.save();
+  for (const [x, w] of [[ARENA.x1 + 40, 150], [ARENA.x2 - 190, 150]]) {
+    ctx.fillStyle = '#24160c'; ctx.fillRect(x, ARENA.y1 - 16, w, 8);
+    ctx.strokeStyle = BOTOLE_D5.colori.contorno; ctx.globalAlpha = 0.7; ctx.strokeRect(x + 0.5, ARENA.y1 - 15.5, w - 1, 7);
+    ctx.globalAlpha = 1; ctx.fillStyle = '#e2b85c';
+    ctx.fillRect(x + 6, ARENA.y1 - 30, 1, 14); ctx.fillRect(x + w - 7, ARENA.y1 - 30, 1, 14);
+  }
+  ctx.restore();
+}
+
+/** Cartello del quadro, appeso in alto a sinistra (grande appena entrati / al cambio, poi piccolo). */
+function disegnaCartelloD5(testo, grande) {
+  const s = grande ? 1.6 : 1, w = 74 * s, h = 18 * s, x = ARENA.x1 + 8, y = ARENA.y1 + 6;
+  ctx.save();
+  ctx.fillStyle = '#e2b85c'; ctx.fillRect(x + 8, y - 10, 1, 10); ctx.fillRect(x + w - 9, y - 10, 1, 10);
+  ctx.fillStyle = '#1b110a'; ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#c99a4a'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  ctx.fillStyle = '#f1d9a0'; ctx.font = `bold ${Math.round(10 * s)}px Georgia, serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(testo, x + w / 2, y + h / 2 + 1);
+  ctx.restore();
+}
+
+function disegnaScenaD5(tk, st) {
+  const q = st.quadriD5;
+  for (const b of listaBotoleD5(st)) {
+    const a = aperturaBotolaD5(b);
+    disegnaBotolaD5(b.x, b.y, b.w, b.h, a, b.stato === 'trema' ? 1.2 : 0, tk);
+    if (b.stato === 'ascesa' && b.nemico) {
+      const u = b.t / Math.max(1, ticksDaMs(BOTOLE_D5.ascesaMs));
+      ctx.save();
+      ctx.beginPath(); ctx.rect(b.x - 60, 0, 120, b.y + b.h / 2); ctx.clip();
+      ctx.translate(0, (1 - u) * BOTOLE_D5.profonditaAscesa);
+      try { disegnaNemicoPittorico(ctx, b.nemico, tk); } catch (_) { /* il disegno non ferma la scena */ }
+      ctx.restore();
+    }
+  }
+  if (!q) return;
+  if (q.fase === 'primo') disegnaRotoliD5();
+  if (q.fase === 'cambio') return; // il cambio lo disegna disegnaCambioD5, sopra tutta la scena
+  if (q.fase === 'primo') disegnaCartelloD5('QUADRO I', q.cartello > 0);
+  else if (q.fase === 'secondo' || q.fase === 'finito') disegnaCartelloD5('QUADRO II', q.cartello > 0);
+}
+
+/**
+ * Il cambio di scena: buio, botole e sagome degli arredi, telo che cala e risale, Ferruccio davanti nel suo occhio
+ * di bue. Disegnato appena prima dell'HUD: sopra pavimento, arredi e nemici, sotto HUD e banner.
+ */
+function disegnaCambioD5(tk, st) {
+  const q = st.quadriD5, F = QUADRI_D5.fasi, u = (q.t - (q.pausa || 0)) / (q.durata || 1);
+  ctx.save();
+  ctx.fillStyle = `rgba(0,0,0,${buioCambioD5(u).toFixed(3)})`;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  if (u >= F.buio && u < F.giu) {
+    const s = Math.min(1, (u - F.buio) / (F.scesi - F.buio));
+    for (const o of q.vecchi || []) {
+      disegnaBotolaD5(o.x, o.y + (o.h || 20) * 0.3, (o.w || 24) + 10, 14, Math.min(1, s * 3), 0, tk);
+      if (s < 1) sagomaArredoD5(o, s * ((o.h || 24) + 34));
+    }
+  } else if (u >= F.salita && u < 1) {
+    const s = Math.min(1, (u - F.salita) / (F.su - F.salita));
+    const chiusura = u < F.su ? 1 : Math.max(0, 1 - (u - F.su) / (1 - F.su));
+    for (const o of q.nuovi || []) {
+      disegnaBotolaD5(o.x, o.y + (o.h || 20) * 0.3, (o.w || 24) + 10, 14, chiusura, 0, tk);
+      if (u < F.su) sagomaArredoD5(o, (1 - s) * ((o.h || 24) + 34));
+    }
+  }
+  disegnaTeloD5(quotaTeloD5(u), tk);
+  const P = player, lu = buioCambioD5(u) / QUADRI_D5.buioMax;
+  ctx.save();
+  ctx.globalAlpha = 0.6 * lu; ctx.globalCompositeOperation = 'lighter';
+  ctx.drawImage(alonaD5(), P.x - 44, P.y - 60, 88, 88);
+  ctx.restore();
+  try { // Ferruccio resta davanti al telo
+    disegnaFerruccioPittorico(ctx, P.x, P.y, { scale: 1.0, scalaA2: P.scalaA2, flipX: P.flipX, tick: tk, moving: P.moving, shootAnim: false, pickup: false, flash: false });
+  } catch (_) { /* il disegno non ferma la scena */ }
+  disegnaCartelloD5('CAMBIO DI SCENA', false);
+}
+
+const disegnaHUDPixelArtBaseD5 = disegnaHUDPixelArt;
+disegnaHUDPixelArt = function disegnaHUDPixelArtD5(st, ...resto) {
+  try {
+    const sc = statoRun.stanzaCorrente;
+    if (sc && sc.quadriD5 && sc.quadriD5.fase === 'cambio' && statoRun.fase === 'in_gioco') disegnaCambioD5(tick, sc);
+  } catch (err) { console.error('[d5] cambio', err); }
+  return disegnaHUDPixelArtBaseD5.call(this, st, ...resto);
+};
+
+const disegnaStanzaPixelArtBaseD5 = disegnaStanzaPixelArt;
+disegnaStanzaPixelArt = function disegnaStanzaPixelArtD5(tk, st, ...resto) {
+  const r = disegnaStanzaPixelArtBaseD5.call(this, tk, st, ...resto);
+  try { if (st && (st.quadriD5 || st.botoleD5)) disegnaScenaD5(tk, st); } catch (err) { console.error('[d5] disegno', err); }
+  return r;
+};
+
+// ===========================================================================
+// SONDA QA
+// ===========================================================================
+
+Object.assign(window.__teatro.interni, {
+  QUADRI_D5, BOTOLE_D5, TRANSIZIONI_D5, STATI_BOTOLA_D5,
+  d5: {
+    /** Marca la stanza data (o la corrente) come stanza in due quadri, a prescindere dalla probabilità. */
+    forzaQuadri(st) { const s = st || statoRun.stanzaCorrente; delete s.quadriD5; return preparaQuadriD5(s, statoRun.piano); },
+    /** Mette le botole nella stanza data (o la corrente). */
+    forzaBotole(st) { const s = st || statoRun.stanzaCorrente; delete s.botoleD5; return preparaBotoleD5(s); },
+    cambioInCorso: cambioInCorsoD5,
+    inAttesaBotole: inAttesaBotoleD5,
+    aperturaBotola: aperturaBotolaD5,
+  },
+});
+
+</script>
+<script>
+/* teatro/d7-rifiniture.js (incorporato da tools/teatro-release.js) */
+/*
+ * teatro/d7-rifiniture.js — (squadra d7) rifiniture rimaste indietro. Solo ciò che è nuovo:
+ *  - stacco di Donna Luciana dal pavimento a scacchi della Reggia (occhio di bue, contorno color lanterna,
+ *    pavimento dell'arena smorzato, alone dei suoi proiettili): solo resa, il comportamento non cambia;
+ *  - il Ragno della Seta (nemico nuovo dei Vasi di Capodimonte, raro a San Leucio).
+ * Le correzioni piccole stanno nei file che le contenevano (HUD in 60-resa.js, scritte in b3/c2...).
+ * Script classico, caricato dopo teatro/c2-tocco.js. QA: tools/qa-teatro-rifiniture.js.
+ */
+'use strict';
+
+// ===========================================================================
+// DONNA LUCIANA SUGLI SCACCHI (solo resa)
+// ===========================================================================
+/** Numeri della resa dell'arena di Donna Luciana. */
+const LUCIANA_D7 = Object.freeze({
+  bossId: 'donna-luciana',
+  pavimento: Object.freeze({ x: 68, y: 70, w: 504, h: 234, velo: 'rgba(46, 26, 14, 0.6)' }), // scacchi smorzati: chiare a ~38% di luminosità, tinta calda
+  occhioDiBue: Object.freeze({ rx: 58, ry: 22, dy: 8, centro: 'rgba(255, 226, 160, 0.85)', bordo: 'rgba(255, 190, 90, 0)',
+    alone: Object.freeze({ dy: -26, r: 64, centro: 'rgba(255, 214, 140, 0.5)', bordo: 'rgba(255, 190, 90, 0)' }) }),
+  contorno: Object.freeze({ colore: '#ffc45c', spessore: 2 }), // px logici
+  proiettile: Object.freeze({ r: 5.5, fondo: 'rgba(10, 5, 3, 0.85)', anello: '#ffcf6b', spessore: 1.4 }),
+});
+
+/** La stanza in cui si gioca (oggetto), o null. */
+function stanzaAttualeD7() {
+  const s = statoRun.stanzaCorrente;
+  if (s && typeof s === 'object') return s;
+  return statoRun.mappa?.stanze?.find((x) => x.id === s) || null;
+}
+
+/** Donna Luciana viva nella stanza attuale, o null. */
+function lucianaInScenaD7() {
+  if (statoRun.fase !== 'in_gioco') return null;
+  const st = stanzaAttualeD7();
+  return st?.nemici?.find((n) => n.boss && n.hp > 0 && n.bossId === LUCIANA_D7.bossId) || null;
+}
+
+/** Disegna il velo scuro sugli scacchi dell'arena di Donna Luciana (dopo le macchie, prima delle figure). */
+function disegnaArenaLucianaD7() {
+  const b = lucianaInScenaD7();
+  if (!b) return;
+  const P = LUCIANA_D7.pavimento;
+  ctx.save();
+  ctx.fillStyle = P.velo;
+  ctx.fillRect(P.x, P.y, P.w, P.h);
+  ctx.restore();
+}
+
+const disegnaMacchieBaseD7 = disegnaMacchie;
+disegnaMacchie = function disegnaMacchieD7(...a) {
+  const r = disegnaMacchieBaseD7.apply(this, a);
+  try { disegnaSetaD7(); disegnaArenaLucianaD7(); } catch (err) { console.error('[d7] pavimento', err); }
+  return r;
+};
+
+let disegniLucianaD7 = 0; // sonda QA: quante volte il contorno è stato applicato
+const disegnaBossPittoricoBaseD7 = disegnaBossPittorico;
+disegnaBossPittorico = function disegnaBossPittoricoD7(...a) {
+  const b = a[0] && typeof a[0].save === 'function' ? a[1] : a[0];
+  if (!b || b.bossId !== LUCIANA_D7.bossId) return disegnaBossPittoricoBaseD7.apply(this, a);
+  const O = LUCIANA_D7.occhioDiBue, C = LUCIANA_D7.contorno;
+  try { // occhio di bue ai suoi piedi (sopra tappeto e arredi, sotto la sagoma)
+    ctx.save();
+    const yb = b.y + O.dy;
+    const g = ctx.createRadialGradient(b.x, yb, 2, b.x, yb, O.rx);
+    g.addColorStop(0, O.centro);
+    g.addColorStop(1, O.bordo);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(b.x, yb, O.rx, O.ry, 0, 0, TAU);
+    ctx.fill();
+    const A = O.alone, ya = b.y + A.dy; // alone dietro la figura
+    const ga = ctx.createRadialGradient(b.x, ya, 4, b.x, ya, A.r);
+    ga.addColorStop(0, A.centro);
+    ga.addColorStop(1, A.bordo);
+    ctx.fillStyle = ga;
+    ctx.beginPath();
+    ctx.arc(b.x, ya, A.r, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  } catch (err) { console.error('[d7] occhio di bue', err); }
+  ctx.save();
+  const t = ctx.getTransform(), d = (C.spessore * Math.hypot(t.a, t.b)).toFixed(2); // filter lavora in px della tela
+  ctx.filter = `drop-shadow(${d}px 0 0 ${C.colore}) drop-shadow(-${d}px 0 0 ${C.colore}) drop-shadow(0 ${d}px 0 ${C.colore}) drop-shadow(0 -${d}px 0 ${C.colore})`; // contorno pieno di lanterna
+  disegniLucianaD7++;
+  try { return disegnaBossPittoricoBaseD7.apply(this, a); } finally { ctx.restore(); }
+};
+
+/**
+ * Alone scuro con anello di lanterna sotto un proiettile nemico, solo nell'arena di Donna Luciana
+ * (aggancio di una riga nel ciclo dei proiettili di 60-resa.js).
+ * @param {{x:number,y:number}} pr proiettile
+ */
+function aloneProiettileD7(pr) {
+  if (!lucianaInScenaD7()) return;
+  const A = LUCIANA_D7.proiettile;
+  ctx.save();
+  ctx.fillStyle = A.fondo;
+  ctx.strokeStyle = A.anello;
+  ctx.lineWidth = A.spessore;
+  ctx.beginPath();
+  ctx.arc(pr.x, pr.y, A.r, 0, TAU);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ===========================================================================
+// IL RAGNO DELLA SETA (nemico nuovo: Vasi di Capodimonte, raro a San Leucio)
+// ===========================================================================
+/**
+ * Numeri del Ragno della Seta (tick a 60 al secondo). La vita e il nome stanno nelle tabelle dei nemici di
+ * 30-mappa.js (`ragno_seta`); qui il passo, il salto e la seta.
+ * Macchina a stati: pausa → scatto (linea retta) → pausa …; da pausa, se Ferruccio è vicino → salto → pausa.
+ */
+const RAGNO_D7 = Object.freeze({
+  tipo: 'ragno_seta',
+  pausaTick: Object.freeze([22, 46]),     // ferma, zampe che tremano
+  scattoTick: Object.freeze([16, 26]),    // corsa dritta
+  velScatto: 2.6,                         // px/tick in corsa
+  direzioni: 8,                           // le corse seguono 8 direzioni (dritte o di sbieco)
+  versoFerruccio: 0.65,                   // probabilità che la corsa punti verso di lui
+  salto: Object.freeze({ distanza: 62, durataTick: 22, altezza: 16, ricaricaTick: 90 }),
+  seta: Object.freeze({ ogniTick: 3, vitaTick: 150, raggio: 6, rallenta: 0.5, max: 60 }), // filo dietro di sé
+  sanLeucio: Object.freeze({ piano: 3, probabilita: 0.1 }), // raro nelle stanze normali del piano 3
+  disegno: Object.freeze({ corpo: '#120a08', contorno: '#ffc45c', occhi: '#e53222', seta: 'rgba(236, 226, 200, 0.75)' }),
+});
+/** Transizioni ammesse della macchina a stati del ragno. */
+const STATI_RAGNO_D7 = Object.freeze({ pausa: Object.freeze(['scatto', 'salto']), scatto: Object.freeze(['pausa']), salto: Object.freeze(['pausa']) });
+
+/** Hash intero di una stringa (scelte di resa e di comparsa senza toccare il seme della run). */
+function hashD7(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+/** Numero pseudo-casuale 0..1 proprio del ragno (non consuma `rng()` della run). */
+function casoRagnoD7(n) { n.casoD7 = (Math.imul(n.casoD7 || hashD7(String(n.id)) || 1, 1103515245) + 12345) >>> 0; return (n.casoD7 >>> 8) / 16777216; }
+
+function cambiaStatoRagnoD7(n, nuovo, durata) {
+  if (!STATI_RAGNO_D7[n.statoD7 || 'pausa'].includes(nuovo) && nuovo !== 'pausa') return;
+  n.statoD7 = nuovo; n.timerD7 = durata;
+}
+
+/**
+ * Un passo dell'IA del Ragno della Seta (chiamato dal ciclo dei nemici di 40-combattimento.js).
+ * @param {object} n nemico `ragno_seta`
+ * @param {number} ang angolo verso Ferruccio
+ */
+function passoRagnoSetaD7(n, ang) {
+  const R = RAGNO_D7;
+  if (!n.statoD7) { n.statoD7 = 'pausa'; n.timerD7 = R.pausaTick[0]; n.ricaricaD7 = 0; n.airZ = 0; }
+  if (n.ricaricaD7 > 0) n.ricaricaD7--;
+  n.timerD7--;
+  const tra = (a) => a[0] + Math.floor(casoRagnoD7(n) * (a[1] - a[0] + 1));
+  if (n.statoD7 === 'pausa') {
+    if (n.timerD7 > 0) return;
+    const d = Math.hypot(player.x - n.x, player.y - n.y);
+    if (d < R.salto.distanza && n.ricaricaD7 <= 0) {
+      cambiaStatoRagnoD7(n, 'salto', R.salto.durataTick);
+      const passi = R.salto.durataTick;
+      n.vxD7 = (player.x - n.x) / passi; n.vyD7 = (player.y - n.y) / passi;
+      n.ricaricaD7 = R.salto.ricaricaTick;
+      return;
+    }
+    const passo = (Math.PI * 2) / R.direzioni;
+    const verso = casoRagnoD7(n) < R.versoFerruccio ? ang : casoRagnoD7(n) * Math.PI * 2;
+    const a = Math.round(verso / passo) * passo;
+    n.vxD7 = Math.cos(a) * R.velScatto; n.vyD7 = Math.sin(a) * R.velScatto;
+    cambiaStatoRagnoD7(n, 'scatto', tra(R.scattoTick));
+    return;
+  }
+  const nx = n.x + n.vxD7, ny = n.y + n.vyD7;
+  const fuori = nx < ARENA.x1 + 10 || nx > ARENA.x2 - 10 || ny < ARENA.y1 + 10 || ny > ARENA.y2 - 10;
+  n.x = Math.max(ARENA.x1 + 10, Math.min(ARENA.x2 - 10, nx));
+  n.y = Math.max(ARENA.y1 + 10, Math.min(ARENA.y2 - 10, ny));
+  if (n.statoD7 === 'salto') {
+    const k = 1 - n.timerD7 / R.salto.durataTick;
+    n.airZ = Math.sin(Math.PI * Math.max(0, Math.min(1, k))) * R.salto.altezza;
+  } else if ((n.timerD7 % R.seta.ogniTick) === 0) {
+    lasciaSetaD7(n);
+  }
+  if (n.timerD7 <= 0 || (fuori && n.statoD7 === 'scatto')) { n.airZ = 0; cambiaStatoRagnoD7(n, 'pausa', tra(R.pausaTick)); }
+}
+
+/** Aggiunge un tratto di seta fra l'ultima posizione e quella attuale del ragno. */
+function lasciaSetaD7(n) {
+  const st = stanzaAttualeD7();
+  if (!st) return;
+  const lista = st.setaD7 || (st.setaD7 = []);
+  if (n.ultimoD7) lista.push({ x1: n.ultimoD7.x, y1: n.ultimoD7.y, x2: n.x, y2: n.y, vita: RAGNO_D7.seta.vitaTick });
+  n.ultimoD7 = { x: n.x, y: n.y };
+  if (lista.length > RAGNO_D7.seta.max) lista.shift();
+}
+
+/** Vero se il punto (x, y) è sopra un filo di seta. */
+function suSetaD7(st, x, y) {
+  const r = RAGNO_D7.seta.raggio;
+  for (const f of st.setaD7 || []) {
+    const dx = f.x2 - f.x1, dy = f.y2 - f.y1, l2 = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((x - f.x1) * dx + (y - f.y1) * dy) / l2));
+    if (Math.hypot(x - (f.x1 + dx * t), y - (f.y1 + dy * t)) < r) return true;
+  }
+  return false;
+}
+
+const passoLogicoBaseD7 = passoLogico;
+passoLogico = function passoLogicoD7(...a) {
+  const st = statoRun.fase === 'in_gioco' ? stanzaAttualeD7() : null;
+  const x0 = player.x, y0 = player.y;
+  const r = passoLogicoBaseD7.apply(this, a);
+  try {
+    if (st && st.setaD7 && st.setaD7.length && st === stanzaAttualeD7()) {
+      if (suSetaD7(st, x0, y0)) { // la seta trattiene: metà del passo
+        const k = RAGNO_D7.seta.rallenta;
+        player.x = x0 + (player.x - x0) * k; player.y = y0 + (player.y - y0) * k;
+        st.invischiatoD7 = (st.invischiatoD7 || 0) + 1;
+      }
+      for (let i = st.setaD7.length - 1; i >= 0; i--) if (--st.setaD7[i].vita <= 0) st.setaD7.splice(i, 1);
+    }
+  } catch (err) { console.error('[d7] seta', err); }
+  return r;
+};
+
+/** Disegna i fili di seta sul pavimento. */
+function disegnaSetaD7() {
+  const st = statoRun.fase === 'in_gioco' ? stanzaAttualeD7() : null;
+  if (!st || !st.setaD7 || !st.setaD7.length) return;
+  ctx.save();
+  ctx.strokeStyle = RAGNO_D7.disegno.seta;
+  ctx.lineWidth = 0.9;
+  for (const f of st.setaD7) {
+    ctx.globalAlpha = Math.min(1, f.vita / 40);
+    ctx.beginPath(); ctx.moveTo(f.x1, f.y1); ctx.lineTo(f.x2, f.y2); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** Sagoma a ombra del Ragno della Seta: otto zampe snodate, contorno di lanterna, occhi rossi. */
+function disegnaRagnoSetaD7(n, tick) {
+  const D = RAGNO_D7.disegno, z = n.airZ || 0;
+  const corre = n.statoD7 === 'scatto';
+  const fase = corre ? tick * 0.9 : Math.sin(tick * 0.5) * 0.15;
+  ctx.save();
+  ctx.fillStyle = 'rgba(8, 5, 3, 0.55)'; // ombra a terra
+  ctx.beginPath(); ctx.ellipse(n.x, n.y + 5, 8 - z * 0.15, 3, 0, 0, TAU); ctx.fill();
+  ctx.translate(n.x, n.y - z);
+  const corpo = n.flash > 0 ? '#ffffff' : D.corpo;
+  ctx.strokeStyle = corpo; ctx.lineWidth = 1.3; ctx.lineCap = 'round';
+  for (let lato = -1; lato <= 1; lato += 2) {
+    for (let k = 0; k < 4; k++) {
+      const onda = Math.sin(fase + k * 1.6 + (lato > 0 ? Math.PI : 0)) * (corre ? 2 : 0.6);
+      const ay = -3 + k * 2;
+      const gx = lato * (6 + (k === 0 || k === 3 ? 1 : 2)), gy = ay - 4 + onda * 0.5;
+      const px = lato * (10 + (k === 1 || k === 2 ? 1 : 0)), py = ay + 3 + (k - 1.5) * 1.6 + onda;
+      ctx.beginPath(); ctx.moveTo(lato * 2.5, ay); ctx.lineTo(gx, gy); ctx.lineTo(px, py); ctx.stroke();
+    }
+  }
+  ctx.fillStyle = corpo; ctx.strokeStyle = D.contorno; ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.ellipse(0, 3, 5, 5.5, 0, 0, TAU); ctx.fill(); ctx.stroke(); // addome
+  ctx.beginPath(); ctx.ellipse(0, -3.5, 3.4, 3, 0, 0, TAU); ctx.fill(); ctx.stroke(); // capo
+  ctx.fillStyle = D.contorno; ctx.fillRect(-0.5, 1, 1, 4); // segno d'oro sul dorso
+  ctx.fillStyle = D.occhi;
+  ctx.fillRect(-2, -5, 1.3, 1.3); ctx.fillRect(0.7, -5, 1.3, 1.3);
+  ctx.restore();
+}
+
+const disegnaNemicoPittoricoBaseD7 = disegnaNemicoPittorico;
+disegnaNemicoPittorico = function disegnaNemicoPittoricoD7(...a) {
+  const n = a[0] && typeof a[0].save === 'function' ? a[1] : a[0];
+  const tick = (a[0] && typeof a[0].save === 'function' ? a[2] : a[1]) || 0;
+  if (!n || n.tipo !== RAGNO_D7.tipo) return disegnaNemicoPittoricoBaseD7.apply(this, a);
+  try { disegnaRagnoSetaD7(n, tick); } catch (err) { console.error('[d7] ragno', err); }
+  return undefined;
+};
+
+let creandoRagnoD7 = false;
+const popolaStanzaBaseD7 = popolaStanza;
+popolaStanza = function popolaStanzaD7(s, piano, ...resto) {
+  const r = popolaStanzaBaseD7.call(this, s, piano, ...resto);
+  if (creandoRagnoD7 || (typeof gruppoRichiestoB7 !== 'undefined' && gruppoRichiestoB7) || !s || s.tipo !== 'normale' || !s.nemici || !s.nemici.length) return r;
+  try {
+    const L = RAGNO_D7.sanLeucio;
+    if (((piano - 1) % 4) + 1 !== L.piano) return r;
+    if ((hashD7(`${statoRun.seme || ''}:${s.id}:ragno`) % 1000) / 1000 >= L.probabilita) return r;
+    creandoRagnoD7 = true;
+    const n = creaNemiciB7({ id: `${s.id}-ragnoD7` }, piano, [RAGNO_D7.tipo])[0];
+    const via = s.nemici[s.nemici.length - 1];
+    if (n && !via.boss) { n.x = via.x; n.y = via.y; s.nemici[s.nemici.length - 1] = n; }
+  } catch (err) { console.error('[d7] ragno a San Leucio', err); } finally { creandoRagnoD7 = false; }
+  return r;
+};
+
+// ===========================================================================
+// TELEFONO: scritte senza tasti del PC, linguette del Diario, vibrazione solo col gamepad
+// ===========================================================================
+/**
+ * Col tocco attivo (inToccoB3 di b3) le scritte fisse che nominano tasti del PC si riscrivono coi bottoni a
+ * schermo di c2. Prima le frasi intere, poi le parole: i segni fra parentesi ([E], [Q], [ESC]...) li traduce b3.
+ */
+const TOCCO_D7 = Object.freeze({
+  frasi: Object.freeze([
+    Object.freeze(['WASD: Movimento · Frecce/Mouse: Spara/Attacca', 'Levetta sinistra: movimento · levetta destra: sparo']),
+    Object.freeze(['[W/S] o click: scegli lo slot · [Canc] cancella · [M] muto', 'Tocca uno slot per sceglierlo']),
+    Object.freeze(['Q: Attivo · E: Compra/Patto/Raccogli · ESC: Pausa', 'OGGETTO: attivo · AZIONE: compra/patto/raccogli · ❚❚: pausa']),
+  ]),
+  parole: Object.freeze([
+    Object.freeze([/\[(?:Click|Clic|click|clic)\s*\/\s*E\]/g, '[E]']),
+    Object.freeze([/(?:premi\s+)?(?:SPAZIO|Spazio|spazio)\s*\/\s*E\b/g, '[E]']),
+    Object.freeze([/\b(?:premi|Premi)\s+(?:SPAZIO|Spazio|spazio|INVIO|Invio)\b/g, 'tocca CONFERMA']),
+    Object.freeze([/\b(?:SPAZIO|Spazio|INVIO|Invio)\b/g, 'CONFERMA']),
+    Object.freeze([/\b(?:Click|Clic|CLICK|CLIC)\b/g, 'Tocca']),
+    Object.freeze([/\b(?:click|clic)\b/g, 'tocca']),
+    Object.freeze([/\b(?:WASD|Frecce|frecce|Mouse|mouse)\b/g, 'levette']),
+    Object.freeze([/\b(?:Esc|ESC)\s*\/\s*O\b/g, 'INDIETRO']),
+    Object.freeze([/(^|[\s·(])ESC\b/g, '$1INDIETRO']),
+    Object.freeze([/(^|[\s·(])[TNFCOL]:\s/g, '$1']), // «T: trasformazioni»: col tocco ci sono le linguette
+  ]),
+  linguette: Object.freeze({ y: 318, h: 15, w: 112, spazio: 8,
+    voci: Object.freeze([Object.freeze(['KeyT', 'TRASFORMAZIONI']), Object.freeze(['KeyN', 'DIARIO DI FERRUCCIO']), Object.freeze(['KeyF', 'FINALI'])]) }),
+});
+
+/** Riscrive per il tocco una scritta che nomina tasti del PC (identica se il tocco non è attivo). */
+function testoToccoD7(t) {
+  if (typeof t !== 'string' || typeof inToccoB3 !== 'function' || !inToccoB3()) return t;
+  if (typeof TESTI_C2 !== 'undefined' && TESTI_C2.interi && TESTI_C2.interi[t]) return t; // la traduce già c2
+  for (const [da, a] of TOCCO_D7.frasi) if (t === da) return a;
+  let r = t;
+  for (const [re, a] of TOCCO_D7.parole) r = r.replace(re, a);
+  return r;
+}
+
+const drawTextFitBaseD7 = drawTextFit;
+drawTextFit = function drawTextFitD7(t, ...a) { return drawTextFitBaseD7.call(this, testoToccoD7(t), ...a); };
+const drawPillLabelBaseD7 = drawPillLabel;
+drawPillLabel = function drawPillLabelD7(t, ...a) { return drawPillLabelBaseD7.call(this, testoToccoD7(t), ...a); };
+
+/** Rettangoli delle linguette del Diario (coordinate logiche), centrati in basso nel riquadro. */
+function linguetteDiarioD7() {
+  const L = TOCCO_D7.linguette, n = L.voci.length;
+  const x0 = Math.round(W / 2 - (n * L.w + (n - 1) * L.spazio) / 2);
+  return L.voci.map(([codice, nome], k) => ({ codice, nome, x: x0 + k * (L.w + L.spazio), y: L.y, w: L.w, h: L.h }));
+}
+
+const disegnaDiarioBaseD7 = disegnaDiarioD;
+disegnaDiarioD = function disegnaDiarioDD7(...a) {
+  const r = disegnaDiarioBaseD7.apply(this, a);
+  try {
+    if (statoRun.diarioD && typeof inToccoB3 === 'function' && inToccoB3()) {
+      ctx.save();
+      for (const l of linguetteDiarioD7()) {
+        ctx.fillStyle = 'rgba(28, 19, 12, 0.95)';
+        ctx.fillRect(l.x, l.y, l.w, l.h);
+        ctx.strokeStyle = '#f9cb40'; ctx.lineWidth = 1;
+        ctx.strokeRect(l.x + 0.5, l.y + 0.5, l.w - 1, l.h - 1);
+        drawTextFitBaseD7(l.nome, l.x + l.w / 2, l.y + l.h - 4, l.w - 8, { size: 7, color: '#f9cb40' });
+      }
+      ctx.restore();
+    }
+  } catch (err) { console.error('[d7] linguette', err); }
+  return r;
+};
+
+const clickDiarioBaseD7 = clickDiarioD;
+clickDiarioD = function clickDiarioDD7(mx, my, ...a) {
+  if (statoRun.diarioD && typeof inToccoB3 === 'function' && inToccoB3()) {
+    for (const l of linguetteDiarioD7()) {
+      if (mx >= l.x && mx <= l.x + l.w && my >= l.y && my <= l.y + l.h) { tastoDiarioD(l.codice); return undefined; }
+    }
+  }
+  return clickDiarioBaseD7.call(this, mx, my, ...a);
+};
+
+/** Vero se c'è almeno un gamepad vero collegato (il pad virtuale di c2 non conta). */
+function gamepadCollegatoD7() {
+  try { return Array.from(navigator.getGamepads ? navigator.getGamepads() : []).some((g) => g && g.connected !== false); } catch (_) { return false; }
+}
+
+const righeBaseD7 = righeB3;
+righeB3 = function righeB3D7(...a) {
+  const r = righeBaseD7.apply(this, a);
+  // solo col tocco: su PC le righe restano ferme (rimappatura, cursore, clic delle prove di b3)
+  if (!Array.isArray(r) || typeof inToccoB3 !== 'function' || !inToccoB3() || gamepadCollegatoD7()) return r;
+  return r.some((x) => x && x.id === 'vibrazione') ? r.filter((x) => !x || x.id !== 'vibrazione') : r;
+};
+
+Object.assign(window.__teatro.interni, { rifinitureD7: { LUCIANA_D7, lucianaInScenaD7, disegniLuciana: () => disegniLucianaD7, RAGNO_D7, suSetaD7, stanzaAttualeD7, testoToccoD7, linguetteDiarioD7, gamepadCollegatoD7 } });
+
+</script>
+<script>
+/* teatro/d3-registro-scena.js (incorporato da tools/teatro-release.js) */
+/*
+ * teatro/d3-registro-scena.js — (d3) IL REGISTRO DI SCENA e i TRIONFI che portano oggetti nuovi in attrezzeria.
+ *
+ *  1. REGISTRO DI SCENA: un leggio col librone del teatro in Piazza Dante (hub di t4-hub-storia.js). [E] accanto
+ *     al leggio apre un libro a pagine con quattro sezioni:
+ *       - Comparse (nemici): figura, nome, volte battuto, aneddoto che si svela dopo N sconfitte.
+ *       - Primi attori (boss di 00-config.js e b6-boss.js): figura, nome, volte battuto, battuta, aneddoto.
+ *       - Attrezzeria: oggetti conosciuti sul totale, per tema (legge il Diario degli oggetti: conosciutiD,
+ *         tuttiGliOggettiB5, temiDi; nessun dato duplicato).
+ *       - Trionfi: griglia dei segni di a6 per personaggio e le voci di TRIONFI_D3.
+ *     Non è il «Registro delle notti» di a7-registro-bilancio.js (statistiche delle run, dal menu di pausa):
+ *     il libro lo ricorda in calce.
+ *  2. TRIONFI: ogni segno di completamento di a6 (boss battuto con un personaggio) e alcuni fatti della storia
+ *     (finale vero, finale segreto di b8, boss battuto senza un graffio) sono trionfi; TRIONFI_D3 dice quale
+ *     oggetto del catalogo ciascuno porta in attrezzeria. Finché il trionfo manca l'oggetto resta fuori dal
+ *     pool della run (avvolgendo oggettoSbloccatoA6, che il filtro del pool di a6 già consulta).
+ *     Nessun salvataggio vecchio si rompe: i segni di a6 restano dove sono e si leggono soltanto.
+ *
+ * Salvataggio: localStorage `ferruccio.teatro.registroScena` (globale, non per slot): conteggi e trionfi visti.
+ * Robusto a dati vecchi o corrotti (normalizzaD3).
+ * Comandi: tastiera (frecce/WASD, Invio, Esc, Tab, 1-4), gamepad e tocco (contesto «menu» di b3 via
+ * interni.comandiB3.menuAperti), mouse/tocco sul libro.
+ * Avvolge (chiamando sempre la base): passoLogico, danneggiaNemico, subisciColpoGiocatore, entraInStanza,
+ * t4Gancio, disegnaFrame, oggettoSbloccatoA6 e i ganci di T4 window.__teatro.hubSenzaNessunoC1, hubFermoC1,
+ * coseHubC1. Script classico caricato dopo teatro/c2-tocco.js. QA: tools/qa-teatro-registro-scena.js.
+ */
+
+// ===========================================================================
+// 1. TABELLE (numeri, posizioni; i testi sono DA APPROVARE DALL'AUTORE)
+// ===========================================================================
+const CONFIG_D3 = Object.freeze({
+  chiave: 'ferruccio.teatro.registroScena',
+  versione: 1,
+  // leggio nella piazza: cella della griglia dell'hub (13×7 sull'ARENA), raggio per [E], raggio del corpo
+  leggio: Object.freeze({ c: 0.9, r: 5.2, raggioE: 32, raggioCorpo: 10 }),
+  libro: Object.freeze({ x: 36, y: 18, w: 568, h: 324 }),
+  carta: Object.freeze({ fondo: '#eadcbd', bordo: '#5c4024', inchiostro: '#4a2c14', tenue: '#8a6a48', rosso: '#7a1f12', oro: '#b8860b' }),
+  carte: Object.freeze({ perPagina: 4, colonne: 4, w: 124, h: 100, x0: [56, 186, 330, 460], y0: [58, 164] }),
+  rivelaComparsa: 5,          // sconfitte per svelare l'aneddoto di una comparsa (se la voce non dice altro)
+  rivelaPrimoAttore: 1,       // sconfitte per svelare l'aneddoto di un boss
+  controlloTrionfiMs: 500,
+  scalaComparsa: 1.15,
+  scalaPrimoAttore: 0.62,
+});
+
+/** Comparse: tipo (patternMob) → nome a schermo e aneddoto. `rivela` = sconfitte che lo svelano. */
+const COMPARSE_D3 = Object.freeze([
+  Object.freeze({ tipo: 'vespa_cieca', nome: 'Vespa Cieca', rivela: 8,
+    aneddoto: 'Ali di carta velina incollate con la colla di farina: il garzone ne rifà dieci a sera, perché la ribalta le brucia.' }),
+  Object.freeze({ tipo: 'lucciola', nome: 'Lucciola Pungente', rivela: 6,
+    aneddoto: 'Dentro c\'è un mozzicone di candela di sego. Quando si spegne cade giù: in bottega la chiamano «la poveretta».' }),
+  Object.freeze({ tipo: 'bomba_ferma', nome: 'Bozzo Esplosivo', rivela: 5,
+    aneddoto: 'Polvere avanzata dalla festa di Piedigrotta, cucita in un sacchetto di iuta. Il capocomico giura che in prova non è mai scoppiato.' }),
+  Object.freeze({ tipo: 'gatto', nome: 'Gatto d\'Ombra', rivela: 5,
+    aneddoto: 'Ritagliato da un vecchio fondale di Vico Lungo: sulla schiena si legge ancora mezza insegna di cantina.' }),
+  Object.freeze({ tipo: 'burattino', nome: 'Burattino Scucito', rivela: 5,
+    aneddoto: 'Un pupo rimasto senza parte. Ha recitato in troppe commedie e non ricorda più quale: per questo se la prende con tutti.' }),
+  Object.freeze({ tipo: 'predone', nome: 'Predone d\'Ombra', rivela: 5,
+    aneddoto: 'Sagoma di cartone nero tirata da due fili soli. I macchinisti dicono che si muove anche a teatro chiuso.' }),
+  Object.freeze({ tipo: 'maschera', nome: 'Maschera Corazzata', rivela: 4,
+    aneddoto: 'Cartapesta su latta, otto mani di vernice. Quando la bocca si apre, dentro c\'è solo il buio delle quinte.' }),
+  Object.freeze({ tipo: 'guardia', nome: 'Guardia di Piombo', rivela: 4,
+    aneddoto: 'Fusa coi soldatini rotti della fiera di Caserta. Pesa tanto che a sollevarla ci vogliono due burattinai.' }),
+  Object.freeze({ tipo: 'statua', nome: 'Torrione di Marmo', rivela: 3,
+    aneddoto: 'Non è marmo: è gesso venato a pennello. Ma quando cade, cade come un macigno.' }),
+]);
+
+/**
+ * Primi attori: battuta (se il boss non ne ha già una in SCHEDE_B6.presentazione) e aneddoto.
+ * Nome e figura vengono da POOL_BOSS, BOSS_FINALE e SCHEDE_B6.
+ */
+const PRIMI_ATTORI_D3 = Object.freeze({
+  're-gatto': Object.freeze({ battuta: '«Ai Quattro Canti si paga il pedaggio, guagliò.»',
+    aneddoto: 'Il salto si fa con una carrucola nascosta sopra il boccascena: due macchinisti tirano insieme, al tre.' }),
+  'capitano-guardia': Object.freeze({ battuta: '«Alt! In nome di Sua Maestà, fermo là!»',
+    aneddoto: 'La corazza è una caldaia battuta a martello. A ogni carica suona come la campana di una chiesa.' }),
+  'regina-vespa': Object.freeze({ battuta: '«Sciame mio, ronzate per la Signora!»',
+    aneddoto: 'La corona è fatta coi ditali delle sarte. Ne manca uno: in sartoria lo cercano ancora.' }),
+  'colosso-statua': Object.freeze({ battuta: '(Il marmo non parla. Ascolta.)',
+    aneddoto: 'Lo muove una manovella sotto il palco: se senti cigolare, sta per aprirsi.' }),
+  'maestro-fucina': Object.freeze({ battuta: '«Ogni filo ha il suo taglio, burattino.»',
+    aneddoto: 'Le lame erano cesoie da sarto. Il fabbro della bottega le affilava di notte, perché di giorno facevano paura.' }),
+  'donna-luciana': Object.freeze({ battuta: '«Tutti i fili tornano alla mia mano.»',
+    aneddoto: 'Quando entra lei la ribalta si abbassa di un palmo: anche le lanterne, dicono, s\'inchinano.' }),
+  lampionaio: Object.freeze({ battuta: null,
+    aneddoto: 'La pertica è vera: l\'ha lasciata un lampionaio di Corso Trieste che veniva alle recite senza pagare.' }),
+  'cigno-latta': Object.freeze({ battuta: null,
+    aneddoto: 'Un giocattolo a molla da tre carlini, ingrandito dal falegname. Per caricarlo ci vogliono quaranta giri di chiave.' }),
+  'giostra-lucciole': Object.freeze({ battuta: null,
+    aneddoto: 'Smontata dopo la festa e rimontata in fretta, al contrario: per questo gira all\'indietro.' }),
+  'tessitrice-pietra': Object.freeze({ battuta: null,
+    aneddoto: 'Il telaio, dicono, viene da San Leucio. La seta no: è polvere e filo di ragno.' }),
+});
+
+/**
+ * TRIONFI. `quando`: { boss } boss battuto (qualunque personaggio), { boss, personaggio } con quel personaggio
+ * (i segni di a6), { finale: 'vero' | 'segreto' } (stato di b8), { senzaDanni: true } boss battuto senza un
+ * colpo subito nella sua stanza. `oggetto`: id del catalogo passivo che il trionfo porta in attrezzeria.
+ * 16 oggetti su 200 (8%), nessuno di base, nessuno già dietro gli sblocchi di a6/b5.
+ */
+const TRIONFI_D3 = Object.freeze([
+  Object.freeze({ id: 'gatto', nome: 'Pedaggio pagato', quando: { boss: 're-gatto' }, oggetto: 'corno' }),
+  Object.freeze({ id: 'capitano', nome: 'Il piombo s\'inchina', quando: { boss: 'capitano-guardia' }, oggetto: 'tromboncino' }),
+  Object.freeze({ id: 'vespa', nome: 'Sciame spento', quando: { boss: 'regina-vespa' }, oggetto: 'ragno' }),
+  Object.freeze({ id: 'custode', nome: 'Marmo crepato', quando: { boss: 'colosso-statua' }, oggetto: 'campana-vetro' }),
+  Object.freeze({ id: 'spezzafili', nome: 'Fili salvi', quando: { boss: 'maestro-fucina' }, oggetto: 'tenaglie' }),
+  Object.freeze({ id: 'lampionaio', nome: 'L\'ultimo lume', quando: { boss: 'lampionaio' }, oggetto: 'ombrello' }),
+  Object.freeze({ id: 'cigno', nome: 'Molla scarica', quando: { boss: 'cigno-latta' }, oggetto: 'archetto' }),
+  Object.freeze({ id: 'giostra', nome: 'Giostra ferma', quando: { boss: 'giostra-lucciole' }, oggetto: 'piedigrotta' }),
+  Object.freeze({ id: 'tessitrice', nome: 'Telaio sciolto', quando: { boss: 'tessitrice-pietra' }, oggetto: 'sigillo-borbone' }),
+  Object.freeze({ id: 'luciana-ferruccio', nome: 'Ferruccio alla ribalta', quando: { boss: 'donna-luciana', personaggio: 'ferruccio' }, oggetto: 'angelo-cartapesta' }),
+  Object.freeze({ id: 'luciana-agnese', nome: 'Agnese alla ribalta', quando: { boss: 'donna-luciana', personaggio: 'agnese' }, oggetto: 'cuore-sacro' }),
+  Object.freeze({ id: 'luciana-taddeo', nome: 'Taddeo alla ribalta', quando: { boss: 'donna-luciana', personaggio: 'taddeo' }, oggetto: 'bombarda' }),
+  Object.freeze({ id: 'luciana-ombra', nome: 'L\'Ombra alla ribalta', quando: { boss: 'donna-luciana', personaggio: 'ombra' }, oggetto: 'diavoletto' }),
+  Object.freeze({ id: 'finale-vero', nome: 'Il bivio', quando: { finale: 'vero' }, oggetto: 'croce-comando' }),
+  Object.freeze({ id: 'finale-segreto', nome: 'Sopra la ribalta', quando: { finale: 'segreto' }, oggetto: 'sole' }),
+  Object.freeze({ id: 'senza-danni', nome: 'Recita senza graffi', quando: { senzaDanni: true }, oggetto: 'baba' }),
+]);
+
+/** Testi a schermo. DA APPROVARE DALL'AUTORE. */
+const TESTI_D3 = Object.freeze({
+  titolo: 'Registro di Scena',
+  sottotitolo: 'Real Teatro delle Marionette · Caserta, 1845',
+  invito: '[E] Registro di Scena',
+  sezioni: Object.freeze(['Comparse', 'Primi attori', 'Attrezzeria', 'Trionfi']),
+  ignoto: '???',
+  battuto: (n) => `Battuto ${n} ${n === 1 ? 'volta' : 'volte'}`,
+  mai: 'Mai in scena con te',
+  visto: 'Visto in scena, mai battuto',
+  daSvelare: (n) => `Batti ancora ${n} ${n === 1 ? 'volta' : 'volte'} per leggerne la storia.`,
+  primoAttoreIgnoto: 'Non ha ancora calcato la tua scena.',
+  temaTot: (k, n) => `${k} su ${n}`,
+  attrezzeria: (k, n) => `Attrezzi conosciuti: ${k} su ${n}. Il Diario degli oggetti li racconta uno per uno ([O] dal menu di pausa).`,
+  trionfoPreso: (nome) => `In attrezzeria: ${nome}`,
+  trionfoMancante: 'Un attrezzo ancora chiuso nel baule.',
+  condizione: (q) => q.finale === 'vero' ? 'Arriva al finale vero.'
+    : q.finale === 'segreto' ? 'Trova il finale segreto.'
+    : q.senzaDanni ? 'Batti un primo attore senza farti nemmeno un graffio.'
+    : q.personaggio ? `Batti ${nomeBossD3(q.boss)} con ${nomePersonaggioD3(q.personaggio)}.`
+    : `Batti ${nomeBossD3(q.boss)}.`,
+  griglia: 'Segni di completamento: un segno per ogni primo attore battuto con ogni burattino.',
+  contoSegni: (n, tot) => `${n} ${n === 1 ? 'segno' : 'segni'} su ${tot}.`,
+  nuovo: (nome) => `Nuovo nell'attrezzeria: ${nome}`,
+  calce: 'Le cronache delle notti stanno nel Registro delle notti ([L] dal menu di pausa).',
+  comandi: '[←][→] sfoglia · [↑] sezioni · [ESC] chiudi',
+});
+
+// ===========================================================================
+// 2. SALVATAGGIO (localStorage, globale)
+// ===========================================================================
+const d3 = {
+  reg: null,             // registro normalizzato in memoria
+  libro: null,           // { sez, spread, sel, schede } se il libro è aperto
+  colpitoInStanza: false,
+  ultimoControlloMs: 0,
+  cache6: null, cache6Tick: -1,
+  ultimaNotifica: null,  // per la QA
+};
+
+/** Registro vuoto. */
+function vuotoD3() { return { versione: CONFIG_D3.versione, iniziato: false, nemici: {}, boss: {}, trionfi: {} }; }
+
+const interoD3 = (v) => { const n = Math.floor(Number(v)); return Number.isFinite(n) && n > 0 ? Math.min(n, 1e9) : 0; };
+
+/** Normalizza un registro letto da disco: ogni campo strano torna al predefinito. */
+function normalizzaD3(d) {
+  const s = vuotoD3();
+  if (!d || typeof d !== 'object' || Array.isArray(d)) return s;
+  s.iniziato = Boolean(d.iniziato);
+  for (const k of ['nemici', 'boss']) {
+    const src = d[k];
+    if (!src || typeof src !== 'object' || Array.isArray(src)) continue;
+    for (const [id, v] of Object.entries(src)) {
+      if (!v || typeof v !== 'object') continue;
+      s[k][id] = { visti: interoD3(v.visti), battuti: interoD3(v.battuti) };
+    }
+  }
+  if (d.trionfi && typeof d.trionfi === 'object' && !Array.isArray(d.trionfi)) {
+    for (const [id, v] of Object.entries(d.trionfi)) if (v === true) s.trionfi[id] = true;
+  }
+  return s;
+}
+
+/** Registro di scena (lo carica la prima volta; mai null). */
+function registroD3() {
+  if (d3.reg) return d3.reg;
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(CONFIG_D3.chiave) || 'null'); } catch (_) { raw = null; }
+  d3.reg = normalizzaD3(raw);
+  return d3.reg;
+}
+
+function scriviD3() {
+  try { localStorage.setItem(CONFIG_D3.chiave, JSON.stringify(registroD3())); } catch (_) { /* memoria piena o negata: resta in memoria */ }
+}
+
+function vocePerD3(k, id) {
+  const r = registroD3();
+  return r[k][id] || (r[k][id] = { visti: 0, battuti: 0 });
+}
+
+// ===========================================================================
+// 3. CONTEGGI (uno sguardo per passo alla stanza: prende anche chi muore senza danneggiaNemico)
+// ===========================================================================
+const tipoNemicoD3 = (n) => n.patternMob || n.tipo;
+
+/** Un Bozzo che scoppia da solo (miccia finita, nessun colpo letale) non conta come battuto. */
+function scoppiatoDaSoloD3(n) {
+  return tipoNemicoD3(n) === 'bomba_ferma' && !n.d3Ucciso && (n.fuseTimer || 0) >= 42;
+}
+
+/** Guarda i nemici della stanza corrente: nuovi visti e nuovi caduti. */
+function contaStanzaD3() {
+  const st = statoRun.stanzaCorrente;
+  if (!st || !Array.isArray(st.nemici) || !st.nemici.length) return;
+  let cambiato = false;
+  for (const n of st.nemici) {
+    if (!n || n.d3Contato) continue;
+    const k = n.boss ? 'boss' : 'nemici';
+    const id = n.boss ? n.bossId : tipoNemicoD3(n);
+    if (!id) { n.d3Contato = true; continue; }
+    if (!n.d3Visto) { n.d3Visto = true; vocePerD3(k, id).visti++; cambiato = true; }
+    if (n.hp <= 0) {
+      n.d3Contato = true;
+      if (!scoppiatoDaSoloD3(n)) { vocePerD3(k, id).battuti++; cambiato = true; }
+    }
+  }
+  if (cambiato) scriviD3();
+}
+
+// ===========================================================================
+// 4. NOMI E FIGURE
+// ===========================================================================
+/** Tutti i primi attori, una volta sola ciascuno: { id, nome, tipo, scheda }. */
+function primiAttoriD3() {
+  const visti = new Set();
+  const out = [];
+  const metti = (b) => { if (b && b.id && !visti.has(b.id)) { visti.add(b.id); out.push(b); } };
+  try { POOL_BOSS.forEach(metti); } catch (_) { /* senza 00-config */ }
+  try { if (typeof SCHEDE_B6 === 'object') Object.values(SCHEDE_B6).forEach(metti); } catch (_) { /* senza b6 */ }
+  try { metti(BOSS_FINALE); } catch (_) { /* idem */ }
+  return out;
+}
+
+function nomeBossD3(id) {
+  const b = primiAttoriD3().find((x) => x.id === id);
+  return b ? String(b.nome).split(' — ')[0] : id;
+}
+
+function nomePersonaggioD3(pid) {
+  try { return (PERSONAGGI_GIOCABILI[pid] && PERSONAGGI_GIOCABILI[pid].nome) || pid; } catch (_) { return pid; }
+}
+
+/** Disegna una comparsa coi piedi in (x, y). sagoma = tutta nera. */
+function figuraComparsaD3(tipo, x, y, scala, sagoma) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scala, scala);
+  if (sagoma) ctx.filter = 'brightness(0)';
+  try {
+    disegnaNemicoPittorico({ x: 0, y: 0, tipo, patternMob: tipo, hp: 1, maxHp: 1, flash: 0, champion: null,
+      state: 'idle', stateTimer: 0, maskOpen: true, airZ: 0, fuseTimer: 0, id: 'd3-' + tipo }, 0);
+  } catch (_) { disegnaSagomaRipiegoD3(); }
+  ctx.restore();
+}
+
+/** Disegna un primo attore coi piedi in (x, y). */
+function figuraPrimoAttoreD3(b, x, y, scala, sagoma) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scala, scala);
+  if (sagoma) ctx.filter = 'brightness(0)';
+  try {
+    disegnaBossPittorico({ x: 0, y: 0, bossId: b.id, tipo: b.tipo, boss: true, nome: b.nome, hp: 1, maxHp: 1, flash: 0,
+      airZ: 0, phase: 1, fase: 1, state: 'idle', stateTimer: 0, pattern: b.pattern, id: 'd3-' + b.id }, 0);
+  } catch (_) { disegnaSagomaRipiegoD3(); }
+  ctx.restore();
+}
+
+function disegnaSagomaRipiegoD3() {
+  ctx.fillStyle = '#120c08';
+  ctx.beginPath(); ctx.ellipse(0, -14, 9, 14, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -32, 7, 0, Math.PI * 2); ctx.fill();
+}
+
+// ===========================================================================
+// 5. TRIONFI E SBLOCCO DEGLI OGGETTI
+// ===========================================================================
+/** Stato di a6 dello slot attivo, una lettura per tick. */
+function stato6D3() {
+  if (typeof statoA6 !== 'function') return null;
+  const t = typeof tick === 'number' ? tick : -2;
+  if (!d3.cache6 || d3.cache6Tick !== t) { try { d3.cache6 = statoA6(); } catch (_) { d3.cache6 = null; } d3.cache6Tick = t; }
+  return d3.cache6;
+}
+
+function stato8D3() {
+  try { return typeof statoB8 === 'function' ? statoB8() : null; } catch (_) { return null; }
+}
+
+/** true se la condizione del trionfo è vera adesso (senza contare quel che è già nel registro). */
+function condizioneVeraD3(t, s6, s8) {
+  const q = t.quando;
+  if (q.finale === 'vero') return Boolean(s8 && s8.finaleVisto);
+  if (q.finale === 'segreto') return Boolean(s8 && s8.segretoVisto);
+  if (q.senzaDanni) return false; // si registra solo nel momento (bossSconfittoD3)
+  if (!s6 || !q.boss) return false;
+  if (q.personaggio) return Array.isArray(s6.segni[q.personaggio]) && s6.segni[q.personaggio].includes(q.boss);
+  return s6.boss.includes(q.boss) || Object.values(s6.segni).some((v) => Array.isArray(v) && v.includes(q.boss));
+}
+
+/** true se il trionfo è stato ottenuto (registro globale o salvataggio dello slot). */
+function trionfoOttenutoD3(id) {
+  const t = TRIONFI_D3.find((x) => x.id === id);
+  if (!t) return false;
+  if (registroD3().trionfi[id]) return true;
+  return condizioneVeraD3(t, stato6D3(), null);
+}
+
+const TRIONFO_PER_OGGETTO_D3 = new Map(TRIONFI_D3.map((t) => [t.oggetto, t]));
+
+/** true se l'oggetto può uscire nelle estrazioni (gli oggetti fuori da TRIONFI_D3 sempre). */
+function oggettoInAttrezzeriaD3(idOgg) {
+  const t = TRIONFO_PER_OGGETTO_D3.get(idOgg);
+  if (!t) return true;
+  try { if (typeof tuttoSbloccatoA6 === 'function' && tuttoSbloccatoA6()) return true; } catch (_) { /* nessuno */ }
+  return trionfoOttenutoD3(t.id);
+}
+
+/** Registra i trionfi nuovi; annuncia (se `annuncia`) col cartiglio di a6. Restituisce gli id nuovi. */
+function controllaTrionfiD3(annuncia = true) {
+  const r = registroD3();
+  const s6 = stato6D3();
+  const s8 = stato8D3();
+  const nuovi = [];
+  for (const t of TRIONFI_D3) if (!r.trionfi[t.id] && condizioneVeraD3(t, s6, s8)) { r.trionfi[t.id] = true; nuovi.push(t.id); }
+  const prima = !r.iniziato;
+  r.iniziato = true;
+  if (nuovi.length || prima) scriviD3();
+  if (annuncia && !prima) for (const id of nuovi) annunciaTrionfoD3(id);
+  return nuovi;
+}
+
+/** Cartiglio «Nuovo nell'attrezzeria: …» (coda delle notifiche di a6; senza a6, un banner). */
+function annunciaTrionfoD3(id) {
+  const t = TRIONFI_D3.find((x) => x.id === id);
+  if (!t) return;
+  let o = null;
+  try { o = trovaOggettoB(t.oggetto); } catch (_) { o = null; }
+  const nomeOgg = o ? o.nome : t.oggetto;
+  d3.ultimaNotifica = TESTI_D3.nuovo(nomeOgg);
+  if (typeof a6 === 'object' && a6 && Array.isArray(a6.coda)) a6.coda.push({ testo: TESTI_D3.nuovo(nomeOgg), nome: t.nome, sprite: o ? o.sprite : null, personaggio: null });
+  else if (typeof mostraBanner === 'function') mostraBanner(TESTI_D3.nuovo(nomeOgg), 200);
+}
+
+/** Boss sconfitto: il trionfo «senza graffi» se nella stanza non hai subito colpi. */
+function bossSconfittoD3() {
+  const r = registroD3();
+  if (!d3.colpitoInStanza && !r.trionfi['senza-danni']) {
+    r.trionfi['senza-danni'] = true;
+    scriviD3();
+    if (r.iniziato) annunciaTrionfoD3('senza-danni');
+  }
+  controllaTrionfiD3(true);
+}
+
+// ===========================================================================
+// 6. IL LEGGIO NELLA PIAZZA
+// ===========================================================================
+function posLeggioD3() {
+  const L = CONFIG_D3.leggio;
+  const cw = (ARENA.x2 - ARENA.x1) / 13, ch = (ARENA.y2 - ARENA.y1) / 7;
+  return { x: ARENA.x1 + (L.c + 0.5) * cw, y: ARENA.y1 + (L.r + 0.5) * ch };
+}
+
+function vicinoLeggioD3() {
+  const p = posLeggioD3();
+  return Math.hypot(player.x - p.x, player.y - p.y) < CONFIG_D3.leggio.raggioE;
+}
+
+/** Leggio a ombre: piede, colonna tornita, piano inclinato col librone aperto. (x, y) = piede. */
+function disegnaLeggioD3(x, y, t) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(8, 5, 3, 0.55)';
+  ctx.beginPath(); ctx.ellipse(x, y + 2, 15, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#1a110b';
+  ctx.strokeStyle = '#c9963a';
+  ctx.lineWidth = 1;
+  // piede a tre zampe
+  ctx.beginPath();
+  ctx.moveTo(x - 13, y + 2); ctx.lineTo(x - 3, y - 6); ctx.lineTo(x + 3, y - 6); ctx.lineTo(x + 13, y + 2);
+  ctx.lineTo(x + 9, y + 3); ctx.lineTo(x, y - 2); ctx.lineTo(x - 9, y + 3); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  // colonna tornita
+  ctx.beginPath();
+  ctx.moveTo(x - 2.5, y - 5); ctx.lineTo(x - 2.5, y - 20); ctx.quadraticCurveTo(x - 5, y - 23, x - 2.5, y - 26);
+  ctx.lineTo(x - 2.5, y - 32); ctx.lineTo(x + 2.5, y - 32); ctx.lineTo(x + 2.5, y - 26);
+  ctx.quadraticCurveTo(x + 5, y - 23, x + 2.5, y - 20); ctx.lineTo(x + 2.5, y - 5); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  // piano inclinato
+  ctx.beginPath();
+  ctx.moveTo(x - 16, y - 33); ctx.lineTo(x + 16, y - 33); ctx.lineTo(x + 13, y - 42); ctx.lineTo(x - 13, y - 42); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  // librone aperto (carta tenue, unica luce chiara)
+  const respiro = 0.75 + 0.08 * Math.sin((t || 0) * 0.05);
+  ctx.fillStyle = `rgba(234, 220, 189, ${respiro.toFixed(2)})`;
+  ctx.beginPath();
+  ctx.moveTo(x - 14, y - 43); ctx.quadraticCurveTo(x - 7, y - 47, x, y - 44); ctx.quadraticCurveTo(x + 7, y - 47, x + 14, y - 43);
+  ctx.lineTo(x + 12, y - 38); ctx.quadraticCurveTo(x + 6, y - 41, x, y - 39); ctx.quadraticCurveTo(x - 6, y - 41, x - 12, y - 38);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#5c4024'; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y - 44); ctx.lineTo(x, y - 39); ctx.stroke();
+  // segnalibro rosso
+  ctx.strokeStyle = '#b91c1c'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(x + 4, y - 41); ctx.lineTo(x + 5, y - 33); ctx.stroke();
+  ctx.restore();
+}
+
+/** Spinge Ferruccio fuori dal piede del leggio (la piazza di T4 non lo conosce). */
+function collisioneLeggioD3() {
+  if (statoRun.fase !== 'hub') return;
+  const p = posLeggioD3();
+  const dx = player.x - p.x, dy = player.y - p.y;
+  const d = Math.hypot(dx, dy);
+  const R = CONFIG_D3.leggio.raggioCorpo;
+  if (d >= R) return;
+  if (d < 0.01) { player.y = p.y + R; return; }
+  player.x = p.x + (dx / d) * R; player.y = p.y + (dy / d) * R;
+}
+
+// ===========================================================================
+// 7. IL LIBRO: contenuto delle pagine
+// ===========================================================================
+/** Le «aperture» (due pagine) di una sezione: { tipo: 'carte', carte } oppure { tipo: 'griglia' }. */
+function apertureD3(sez) {
+  const per = CONFIG_D3.carte.perPagina * 2;
+  let carte = [];
+  if (sez === 0) carte = COMPARSE_D3.map((c) => ({ tipo: 'comparsa', voce: c }));
+  else if (sez === 1) carte = primiAttoriD3().map((b) => ({ tipo: 'primo', voce: b }));
+  else if (sez === 2) carte = ((typeof TEMI_B4 === 'object' && TEMI_B4.ordine) || []).map((t) => ({ tipo: 'tema', voce: t }));
+  else carte = TRIONFI_D3.map((t) => ({ tipo: 'trionfo', voce: t }));
+  const out = sez === 3 ? [{ tipo: 'griglia', carte: [] }] : [];
+  for (let i = 0; i < carte.length; i += per) out.push({ tipo: 'carte', carte: carte.slice(i, i + per) });
+  if (!out.length) out.push({ tipo: 'carte', carte: [] });
+  return out;
+}
+
+/** Conteggio degli oggetti conosciuti per tema (legge il Diario: nessun dato copiato). */
+function attrezzeriaD3() {
+  let tutti = [];
+  try { tutti = typeof tuttiGliOggettiB5 === 'function' ? tuttiGliOggettiB5() : CATALOGO_OGGETTI.slice(); } catch (_) { tutti = []; }
+  let noti = [];
+  try { noti = typeof conosciutiD === 'function' ? conosciutiD() : []; } catch (_) { noti = []; }
+  const set = new Set(noti);
+  const perTema = {};
+  let k = 0;
+  for (const o of tutti) {
+    if (!o || !o.id) continue;
+    const c = set.has(o.id);
+    if (c) k++;
+    let temi = [];
+    try { temi = typeof temiDi === 'function' ? temiDi(o) : (o.temi || []); } catch (_) { temi = []; }
+    for (const t of temi) {
+      const v = perTema[t] || (perTema[t] = { k: 0, n: 0 });
+      v.n++; if (c) v.k++;
+    }
+  }
+  return { k, n: tutti.length, perTema };
+}
+
+// ===========================================================================
+// 8. IL LIBRO: resa
+// ===========================================================================
+function rettCartaD3(i) {
+  const C = CONFIG_D3.carte;
+  const col = i % C.colonne, riga = Math.floor(i / C.colonne);
+  return { x: C.x0[col], y: C.y0[riga], w: C.w, h: C.h };
+}
+
+function rettSchedaD3(i) {
+  const B = CONFIG_D3.libro;
+  const w = 104;
+  return { x: B.x + 70 + i * (w + 8), y: B.y + 6, w, h: 18 };
+}
+
+const RETT_CHIUDI_D3 = Object.freeze({ x: 578, y: 22, w: 20, h: 18 });
+const RETT_PRIMA_D3 = Object.freeze({ x: 44, y: 318, w: 28, h: 18 });
+const RETT_DOPO_D3 = Object.freeze({ x: 568, y: 318, w: 28, h: 18 });
+
+/** Testo a capo entro maxW: restituisce le righe. */
+function righeD3(testo, maxW, font) {
+  ctx.save();
+  ctx.font = font;
+  const parole = String(testo || '').split(/\s+/);
+  const out = [];
+  let riga = '';
+  for (const p of parole) {
+    const prova = riga ? riga + ' ' + p : p;
+    if (ctx.measureText(prova).width > maxW && riga) { out.push(riga); riga = p; } else riga = prova;
+  }
+  if (riga) out.push(riga);
+  ctx.restore();
+  return out;
+}
+
+function testoD3(s, x, y, { size = 8, color = CONFIG_D3.carta.inchiostro, align = 'left', style = '', weight = '' } = {}) {
+  ctx.save();
+  ctx.font = `${style} ${weight} ${size}px Georgia, 'Times New Roman', serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(s, x, y);
+  ctx.restore();
+}
+
+/** Disegna il libro aperto sopra la piazza. */
+function disegnaLibroD3() {
+  const L = d3.libro;
+  if (!L) return;
+  const B = CONFIG_D3.libro, K = CONFIG_D3.carta;
+  const aperture = apertureD3(L.sez);
+  L.spread = Math.max(0, Math.min(L.spread, aperture.length - 1));
+  const ap = aperture[L.spread];
+  ctx.save();
+  ctx.fillStyle = 'rgba(6, 4, 2, 0.72)';
+  ctx.fillRect(0, 0, W, H);
+  // copertina di cuoio
+  ctx.fillStyle = '#3b1f12';
+  ctx.fillRect(B.x - 6, B.y - 4, B.w + 12, B.h + 10);
+  ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 1;
+  ctx.strokeRect(B.x - 3, B.y - 1, B.w + 6, B.h + 4);
+  // le due pagine
+  for (const [px, pw] of [[B.x, B.w / 2 - 2], [B.x + B.w / 2 + 2, B.w / 2 - 2]]) {
+    const g = ctx.createLinearGradient(px, 0, px + pw, 0);
+    const sinistra = px === B.x;
+    g.addColorStop(0, sinistra ? '#e2d1ad' : '#cdb98f');
+    g.addColorStop(0.08, K.fondo);
+    g.addColorStop(0.92, K.fondo);
+    g.addColorStop(1, sinistra ? '#cdb98f' : '#e2d1ad');
+    ctx.fillStyle = g;
+    ctx.fillRect(px, B.y + 28, pw, B.h - 30);
+  }
+  // testata con le schede delle sezioni
+  ctx.fillStyle = K.fondo;
+  ctx.fillRect(B.x, B.y, B.w, 28);
+  ctx.strokeStyle = K.bordo;
+  ctx.beginPath(); ctx.moveTo(B.x + 8, B.y + 28); ctx.lineTo(B.x + B.w - 8, B.y + 28); ctx.stroke();
+  testoD3('R', B.x + 10, B.y + 24, { size: 24, color: K.rosso, weight: 'bold' });
+  testoD3('egistro', B.x + 27, B.y + 14, { size: 8, color: K.inchiostro, style: 'italic' });
+  testoD3('di Scena', B.x + 27, B.y + 24, { size: 8, color: K.inchiostro, style: 'italic' });
+  testoD3(TESTI_D3.sottotitolo, B.x + B.w / 2, B.y + B.h - 7, { size: 6.5, color: K.tenue, align: 'center', style: 'italic' });
+  TESTI_D3.sezioni.forEach((nome, i) => {
+    const r = rettSchedaD3(i);
+    const attiva = i === L.sez;
+    ctx.fillStyle = attiva ? '#f4e8cc' : '#d8c49c';
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.strokeStyle = attiva && L.fuoco === 'schede' ? K.rosso : K.bordo;
+    ctx.lineWidth = attiva && L.fuoco === 'schede' ? 2 : 1;
+    ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+    testoD3(nome, r.x + r.w / 2, r.y + 13, { size: 9, color: attiva ? K.rosso : K.inchiostro, align: 'center', weight: attiva ? 'bold' : '' });
+  });
+  testoD3('✕', RETT_CHIUDI_D3.x + 10, RETT_CHIUDI_D3.y + 13, { size: 11, color: K.rosso, align: 'center', weight: 'bold' });
+  // dorso
+  ctx.fillStyle = 'rgba(60, 35, 15, 0.35)';
+  ctx.fillRect(B.x + B.w / 2 - 3, B.y + 28, 6, 262 - B.y - 32);
+  // striscia di dettaglio in calce: carta piena, senza piega (le righe lunghe non cadono nel dorso)
+  ctx.fillStyle = K.fondo;
+  ctx.fillRect(B.x + 6, 264, B.w - 12, B.y + B.h - 266);
+
+  if (ap.tipo === 'griglia') disegnaGrigliaD3();
+  else ap.carte.forEach((c, i) => disegnaCartaD3(c, rettCartaD3(i), L.fuoco === 'carte' && i === L.sel));
+
+  // striscia di dettaglio
+  disegnaDettaglioD3(ap);
+  // piede: numeri di pagina, frecce, comandi
+  const pag = `— ${L.spread * 2 + 1} · ${L.spread * 2 + 2} —`;
+  testoD3(pag, B.x + B.w - 60, B.y + B.h - 7, { size: 7.5, color: K.tenue, align: 'center', style: 'italic' });
+  if (L.spread > 0) testoD3('◀', RETT_PRIMA_D3.x + 14, RETT_PRIMA_D3.y + 12, { size: 11, color: K.rosso, align: 'center' });
+  if (L.spread < aperture.length - 1) testoD3('▶', RETT_DOPO_D3.x + 14, RETT_DOPO_D3.y + 12, { size: 11, color: K.rosso, align: 'center' });
+  drawTextFit(TESTI_D3.comandi, B.x + B.w * 0.27, B.y + B.h + 13, 280, { size: 7, color: '#e6d2aa', shadow: true });
+  drawTextFit(TESTI_D3.calce, B.x + B.w * 0.74, B.y + B.h + 13, 290, { size: 6.5, color: '#bfa57a', weight: '', style: 'italic', shadow: true });
+  ctx.restore();
+}
+
+function disegnaCartaD3(c, r, sel) {
+  const K = CONFIG_D3.carta;
+  ctx.save();
+  ctx.strokeStyle = sel ? K.rosso : 'rgba(92, 64, 36, 0.45)';
+  ctx.lineWidth = sel ? 2 : 1;
+  ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+  if (sel) { ctx.fillStyle = 'rgba(122, 31, 18, 0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); }
+  const cx = r.x + r.w / 2;
+  const piedi = r.y + 64;
+  const reg = registroD3();
+  let nome = TESTI_D3.ignoto, riga2 = '';
+  if (c.tipo === 'comparsa') {
+    const v = reg.nemici[c.voce.tipo] || { visti: 0, battuti: 0 };
+    ctx.save(); ctx.beginPath(); ctx.rect(r.x + 2, r.y + 2, r.w - 4, 64); ctx.clip();
+    figuraComparsaD3(c.voce.tipo, cx, piedi - 4, CONFIG_D3.scalaComparsa, v.battuti <= 0);
+    ctx.restore();
+    if (v.visti > 0 || v.battuti > 0) nome = c.voce.nome;
+    riga2 = v.battuti > 0 ? TESTI_D3.battuto(v.battuti) : v.visti > 0 ? TESTI_D3.visto : TESTI_D3.mai;
+  } else if (c.tipo === 'primo') {
+    const v = reg.boss[c.voce.id] || { visti: 0, battuti: 0 };
+    ctx.save(); ctx.beginPath(); ctx.rect(r.x + 2, r.y + 2, r.w - 4, 64); ctx.clip();
+    figuraPrimoAttoreD3(c.voce, cx, piedi - 2, CONFIG_D3.scalaPrimoAttore, v.battuti <= 0);
+    ctx.restore();
+    if (v.visti > 0 || v.battuti > 0) nome = nomeBossD3(c.voce.id);
+    riga2 = v.battuti > 0 ? TESTI_D3.battuto(v.battuti) : v.visti > 0 ? TESTI_D3.visto : TESTI_D3.mai;
+  } else if (c.tipo === 'tema') {
+    const a = attrezzeriaD3();
+    const v = a.perTema[c.voce] || { k: 0, n: 0 };
+    try { drawPixelSprite(TEMI_B4.icone[c.voce], cx, r.y + 30, 4); } catch (_) { /* icona facoltativa */ }
+    nome = (TEMI_B4.nomi && TEMI_B4.nomi[c.voce]) || c.voce;
+    riga2 = TESTI_D3.temaTot(v.k, v.n);
+    // barra d'inchiostro
+    ctx.fillStyle = 'rgba(92, 64, 36, 0.25)'; ctx.fillRect(r.x + 14, r.y + 60, r.w - 28, 4);
+    ctx.fillStyle = K.rosso; ctx.fillRect(r.x + 14, r.y + 60, (r.w - 28) * (v.n ? v.k / v.n : 0), 4);
+  } else if (c.tipo === 'trionfo') {
+    const preso = trionfoOttenutoD3(c.voce.id);
+    let o = null;
+    try { o = trovaOggettoB(c.voce.oggetto); } catch (_) { o = null; }
+    const spr = o && (SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI[o.id]);
+    ctx.save();
+    if (!preso) { ctx.filter = 'brightness(0)'; ctx.globalAlpha = 0.75; }
+    try { drawPixelSprite(spr || SPRITE_OGGETTI.spada, cx, r.y + 32, 3); } catch (_) { /* icona facoltativa */ }
+    ctx.restore();
+    nome = preso ? c.voce.nome : TESTI_D3.ignoto;
+    riga2 = preso && o ? o.nome : '';
+    if (preso) { testoD3('✦', r.x + r.w - 10, r.y + 13, { size: 10, color: K.oro, align: 'center' }); }
+  }
+  drawTextFit(nome, cx, r.y + 80, r.w - 8, { size: 8.5, color: K.inchiostro, shadow: false });
+  if (riga2) drawTextFit(riga2, cx, r.y + 93, r.w - 8, { size: 7, color: K.tenue, weight: '', style: 'italic', shadow: false });
+  ctx.restore();
+}
+
+/** Griglia dei segni (a6): righe = burattini, colonne = primi attori. */
+function disegnaGrigliaD3() {
+  const K = CONFIG_D3.carta;
+  const s6 = stato6D3();
+  const boss = (typeof SEGNI_A6 !== 'undefined' ? SEGNI_A6 : []).map((sg) => sg.boss);
+  const pg = (CONFIG_A6 && CONFIG_A6.scheda && CONFIG_A6.scheda.ids) || ['ferruccio', 'agnese', 'taddeo', 'ombra'];
+  const x0 = 116, y0 = 104, passoX = Math.min(40, (590 - x0) / Math.max(1, boss.length)), passoY = 34; // con 10 colonne il dorso cade fra la 5ª e la 6ª
+  const segni = typeof SEGNI_A6 !== 'undefined' ? SEGNI_A6 : [];
+  boss.forEach((id, j) => {
+    ctx.save();
+    ctx.translate(x0 + j * passoX + passoX / 2 - 2, y0 - 4);
+    ctx.rotate(-0.55);
+    const corto = (segni[j] && segni[j].nome) || nomeBossD3(id);
+    testoD3(corto.length > 20 ? corto.slice(0, 19) + '…' : corto, 0, 0, { size: 6.5, color: K.tenue });
+    ctx.restore();
+  });
+  pg.forEach((pid, i) => {
+    const y = y0 + 16 + i * passoY;
+    testoD3(nomePersonaggioD3(pid), x0 - 8, y + 3, { size: 8, color: K.inchiostro, align: 'right' });
+    const avuti = (s6 && s6.segni[pid]) || [];
+    boss.forEach((id, j) => {
+      const x = x0 + j * passoX + passoX / 2;
+      const ok = avuti.includes(id);
+      ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2);
+      ctx.fillStyle = ok ? K.rosso : 'rgba(92, 64, 36, 0.12)'; ctx.fill();
+      ctx.strokeStyle = ok ? K.oro : 'rgba(92, 64, 36, 0.5)'; ctx.lineWidth = 1; ctx.stroke();
+      if (ok) testoD3('✦', x, y + 3.5, { size: 9, color: '#f4e8cc', align: 'center' });
+    });
+  });
+}
+
+function disegnaDettaglioD3(ap) {
+  const K = CONFIG_D3.carta, B = CONFIG_D3.libro;
+  const L = d3.libro;
+  const y = 272;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(92, 64, 36, 0.5)';
+  ctx.beginPath(); ctx.moveTo(B.x + 16, y - 4); ctx.lineTo(B.x + B.w - 16, y - 4); ctx.stroke();
+  ctx.restore();
+  let righe = [];
+  if (L.sez === 2) {
+    const a = attrezzeriaD3();
+    righe = [TESTI_D3.attrezzeria(a.k, a.n)];
+  } else if (ap.tipo === 'griglia') {
+    const s6 = stato6D3();
+    const n = s6 ? Object.values(s6.segni).reduce((acc, v) => acc + (Array.isArray(v) ? v.length : 0), 0) : 0;
+    const tot = ((typeof SEGNI_A6 !== 'undefined' ? SEGNI_A6.length : 0) * ((CONFIG_A6 && CONFIG_A6.scheda && CONFIG_A6.scheda.ids.length) || 4));
+    righe = [TESTI_D3.griglia, TESTI_D3.contoSegni(n, tot)];
+  } else {
+    const c = ap.carte[L.sel];
+    if (!c) return;
+    const reg = registroD3();
+    if (c.tipo === 'comparsa') {
+      const v = reg.nemici[c.voce.tipo] || { battuti: 0 };
+      const soglia = c.voce.rivela || CONFIG_D3.rivelaComparsa;
+      righe = [v.battuti >= soglia ? c.voce.aneddoto : (v.battuti > 0 ? TESTI_D3.daSvelare(soglia - v.battuti) : TESTI_D3.ignoto)];
+    } else if (c.tipo === 'primo') {
+      const v = reg.boss[c.voce.id] || { battuti: 0 };
+      const extra = PRIMI_ATTORI_D3[c.voce.id] || {};
+      const battuta = (typeof SCHEDE_B6 === 'object' && SCHEDE_B6[c.voce.id] && SCHEDE_B6[c.voce.id].presentazione) || extra.battuta || '';
+      righe = v.battuti >= CONFIG_D3.rivelaPrimoAttore ? [battuta, extra.aneddoto || ''] : [TESTI_D3.primoAttoreIgnoto];
+    } else if (c.tipo === 'trionfo') {
+      const preso = trionfoOttenutoD3(c.voce.id);
+      righe = [TESTI_D3.condizione(c.voce.quando)];
+      let o = null;
+      try { o = trovaOggettoB(c.voce.oggetto); } catch (_) { o = null; }
+      righe.push(preso && o ? TESTI_D3.trionfoPreso(o.nome) : TESTI_D3.trionfoMancante);
+    }
+  }
+  // fregio d'inchiostro in calce (la pagina non resta mai nuda)
+  ctx.save();
+  ctx.strokeStyle = 'rgba(92, 64, 36, 0.55)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W / 2 - 90, 316); ctx.quadraticCurveTo(W / 2 - 45, 308, W / 2 - 12, 316); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W / 2 + 90, 316); ctx.quadraticCurveTo(W / 2 + 45, 308, W / 2 + 12, 316); ctx.stroke();
+  ctx.restore();
+  testoD3('❦', W / 2, 320, { size: 12, color: K.rosso, align: 'center' });
+  let yy = y + 10;
+  const font = "italic 9px Georgia, 'Times New Roman', serif";
+  const tutte = righe.filter(Boolean).flatMap((r) => righeD3(r, B.w - 60, font).slice(0, 2)).slice(0, 3);
+  for (const r of [0]) {
+    for (const riga of tutte) {
+      testoD3(riga, W / 2, yy, { size: 9, color: K.inchiostro, align: 'center', style: 'italic' });
+      yy += 12;
+    }
+  }
+}
+
+// ===========================================================================
+// 9. IL LIBRO: comandi
+// ===========================================================================
+/** Apre il Registro di Scena (nell'hub). */
+function apriRegistroScenaD3() {
+  try { controllaTrionfiD3(true); } catch (_) { /* il libro si apre comunque */ }
+  d3.libro = { sez: 0, spread: 0, sel: 0, fuoco: 'carte' };
+  for (const k of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD']) keys[k] = false;
+  try { AudioSys.playPasso(); } catch (_) { /* audio facoltativo */ }
+}
+
+function chiudiRegistroScenaD3() { d3.libro = null; }
+
+function cambiaSezioneD3(i) {
+  const L = d3.libro;
+  L.sez = (i + 4) % 4; L.spread = 0; L.sel = 0;
+}
+
+/** Un tasto col libro aperto (codici canonici: tastiera, gamepad e tocco arrivano qui tramite b3). */
+function tastoLibroD3(code) {
+  const L = d3.libro;
+  if (!L) return;
+  const aperture = apertureD3(L.sez);
+  const ap = aperture[L.spread];
+  const nCarte = ap.tipo === 'carte' ? ap.carte.length : 0;
+  const C = CONFIG_D3.carte;
+  const sx = ['ArrowLeft', 'KeyA'].includes(code), dx = ['ArrowRight', 'KeyD'].includes(code);
+  const su = ['ArrowUp', 'KeyW'].includes(code), giu = ['ArrowDown', 'KeyS'].includes(code);
+  if (code === 'Escape' || code === 'Backspace') { chiudiRegistroScenaD3(); return; }
+  if (/^Digit[1-4]$/.test(code)) { cambiaSezioneD3(Number(code.slice(5)) - 1); L.fuoco = 'carte'; return; }
+  if (code === 'Tab' || code === 'PageDown') { cambiaSezioneD3(L.sez + 1); return; }
+  if (code === 'PageUp') { cambiaSezioneD3(L.sez - 1); return; }
+  if (L.fuoco === 'schede') {
+    if (sx) cambiaSezioneD3(L.sez - 1);
+    else if (dx) cambiaSezioneD3(L.sez + 1);
+    else if (giu || code === 'Enter' || code === 'Space' || code === 'KeyE') L.fuoco = 'carte';
+    return;
+  }
+  if (ap.tipo !== 'carte' || !nCarte) {
+    if (sx && L.spread > 0) L.spread--;
+    else if (dx && L.spread < aperture.length - 1) { L.spread++; L.sel = 0; }
+    else if (su) L.fuoco = 'schede';
+    return;
+  }
+  const col = L.sel % C.colonne, riga = Math.floor(L.sel / C.colonne);
+  if (dx) {
+    if (col < C.colonne - 1 && L.sel + 1 < nCarte) L.sel++;
+    else if (L.spread < aperture.length - 1) { L.spread++; L.sel = Math.min(riga * C.colonne, apertureD3(L.sez)[L.spread].carte.length - 1); L.sel = Math.max(0, L.sel); }
+  } else if (sx) {
+    if (col > 0) L.sel--;
+    else if (L.spread > 0) {
+      L.spread--;
+      const prec = apertureD3(L.sez)[L.spread];
+      L.sel = prec.tipo === 'carte' ? Math.min(riga * C.colonne + C.colonne - 1, prec.carte.length - 1) : 0;
+    }
+  } else if (su) {
+    if (riga > 0) L.sel -= C.colonne; else L.fuoco = 'schede';
+  } else if (giu) {
+    if (L.sel + C.colonne < nCarte) L.sel += C.colonne;
+  }
+}
+
+/** Click (mouse o tocco) sul libro, in coordinate del canvas. */
+function clickLibroD3(mx, my) {
+  const L = d3.libro;
+  const dentro = (r) => mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+  const B = CONFIG_D3.libro;
+  if (dentro(RETT_CHIUDI_D3) || !dentro({ x: B.x - 6, y: B.y - 4, w: B.w + 12, h: B.h + 10 })) { chiudiRegistroScenaD3(); return; }
+  for (let i = 0; i < 4; i++) if (dentro(rettSchedaD3(i))) { cambiaSezioneD3(i); L.fuoco = 'carte'; return; }
+  const aperture = apertureD3(L.sez);
+  if (dentro(RETT_PRIMA_D3) && L.spread > 0) { L.spread--; L.sel = 0; return; }
+  if (dentro(RETT_DOPO_D3) && L.spread < aperture.length - 1) { L.spread++; L.sel = 0; return; }
+  const ap = aperture[L.spread];
+  if (ap.tipo === 'carte') for (let i = 0; i < ap.carte.length; i++) if (dentro(rettCartaD3(i))) { L.sel = i; L.fuoco = 'carte'; return; }
+}
+
+function bloccaD3(e) { e.preventDefault(); e.stopImmediatePropagation(); }
+
+window.addEventListener('keydown', (e) => {
+  if (!d3.libro) return;
+  if (statoRun.fase !== 'hub') { chiudiRegistroScenaD3(); return; }
+  tastoLibroD3(e.code);
+  bloccaD3(e);
+}, true);
+window.addEventListener('keyup', (e) => { if (d3.libro) bloccaD3(e); }, true);
+
+window.addEventListener('mousedown', (e) => {
+  if (!d3.libro || e.target !== canvas) return;
+  const r = canvas.getBoundingClientRect();
+  clickLibroD3((e.clientX - r.left) * (W / r.width), (e.clientY - r.top) * (H / r.height));
+  bloccaD3(e);
+}, true);
+
+// ===========================================================================
+// 10. AVVOLGIMENTI (sempre la base)
+// ===========================================================================
+const passoLogicoBaseD3 = passoLogico;
+passoLogico = function (...args) {
+  const r = passoLogicoBaseD3.apply(this, args);
+  try { if (statoRun.fase === 'in_gioco') contaStanzaD3(); } catch (err) { console.error('[D3] conteggi', err); }
+  return r;
+};
+
+const danneggiaNemicoBaseD3 = danneggiaNemico;
+danneggiaNemico = function (nem, ...resto) {
+  const r = danneggiaNemicoBaseD3.call(this, nem, ...resto);
+  try { if (nem && nem.hp <= 0) { nem.d3Ucciso = true; contaStanzaD3(); } } catch (err) { console.error('[D3] colpo', err); }
+  return r;
+};
+
+const subisciColpoGiocatoreBaseD3 = subisciColpoGiocatore;
+subisciColpoGiocatore = function (...args) {
+  const prima = player.invuln || 0;
+  const r = subisciColpoGiocatoreBaseD3.apply(this, args);
+  if (prima <= 0 && (player.invuln || 0) > 0) d3.colpitoInStanza = true; // colpo arrivato (anche se uno scudo l'ha preso)
+  return r;
+};
+
+const entraInStanzaBaseD3 = entraInStanza;
+entraInStanza = function (...args) {
+  d3.colpitoInStanza = false;
+  return entraInStanzaBaseD3.apply(this, args);
+};
+
+const t4GancioBaseD3 = t4Gancio;
+t4Gancio = function (nome, ...args) {
+  const r = t4GancioBaseD3(nome, ...args);
+  if (nome === 'bossSconfitto') { try { contaStanzaD3(); bossSconfittoD3(); } catch (err) { console.error('[D3] boss', err); } }
+  return r;
+};
+
+if (typeof oggettoSbloccatoA6 === 'function') {
+  const oggettoSbloccatoA6BaseD3 = oggettoSbloccatoA6;
+  /** Gli oggetti dei trionfi restano fuori dal pool finché il trionfo manca. */
+  oggettoSbloccatoA6 = function (idOgg, ...resto) {
+    if (TRIONFO_PER_OGGETTO_D3.has(idOgg)) return oggettoInAttrezzeriaD3(idOgg);
+    return oggettoSbloccatoA6BaseD3.call(this, idOgg, ...resto);
+  };
+}
+
+const disegnaFrameBaseD3 = disegnaFrame;
+disegnaFrame = function (dtMs) {
+  const r = disegnaFrameBaseD3(dtMs);
+  try {
+    const ora = performance.now();
+    if (ora - d3.ultimoControlloMs > CONFIG_D3.controlloTrionfiMs) { d3.ultimoControlloMs = ora; controllaTrionfiD3(true); }
+    if (statoRun.fase === 'hub') { collisioneLeggioD3(); if (d3.libro) disegnaLibroD3(); }
+    else if (d3.libro) chiudiRegistroScenaD3();
+  } catch (err) { console.error('[D3] frame', err); }
+  return r;
+};
+
+// ganci della piazza (T4 li legge al momento della chiamata)
+(function agganciaPiazzaD3() {
+  const T = window.__teatro;
+  if (!T || Object.isFrozen(T)) return;
+  const senzaNessunoBase = T.hubSenzaNessunoC1;
+  T.hubSenzaNessunoC1 = function (code, lamp, ...resto) {
+    if (code === 'KeyE' && statoRun.fase === 'hub' && !d3.libro && vicinoLeggioD3()) { apriRegistroScenaD3(); return true; }
+    return typeof senzaNessunoBase === 'function' ? senzaNessunoBase.call(this, code, lamp, ...resto) : false;
+  };
+  const fermoBase = T.hubFermoC1;
+  T.hubFermoC1 = function (...a) {
+    if (d3.libro) return true;
+    return typeof fermoBase === 'function' ? fermoBase.apply(this, a) : false;
+  };
+  const coseBase = T.coseHubC1;
+  T.coseHubC1 = function (cose, t, lamp, ...resto) {
+    if (typeof coseBase === 'function') coseBase.call(this, cose, t, lamp, ...resto);
+    const p = posLeggioD3();
+    cose.push({ y: p.y, d: () => disegnaLeggioD3(p.x, p.y, t) });
+    if (!d3.libro && vicinoLeggioD3()) {
+      let dialogo = false;
+      try { dialogo = Boolean(T.t4qa && T.t4qa.dialogo); } catch (_) { dialogo = false; }
+      if (!dialogo) cose.push({ y: 5e6, d: () => drawPillLabel(TESTI_D3.invito, p.x + 30, p.y - 56, 200, { size: 8, color: '#ffffff', border: '#f9cb40' }) });
+    }
+  };
+})();
+
+// gamepad e tocco: col libro aperto b3 passa al contesto «menu» (frecce, A = Invio, B/Start = Esc)
+try { window.__teatro.interni.comandiB3.menuAperti.push(() => Boolean(d3.libro)); } catch (_) { /* senza b3: solo tastiera e mouse */ }
+
+// ===========================================================================
+// 11. SONDA QA
+// ===========================================================================
+Object.assign(window.__teatro.interni, {
+  CONFIG_D3, COMPARSE_D3, PRIMI_ATTORI_D3, TRIONFI_D3, TESTI_D3,
+  registroScenaD3: {
+    get aperto() { return Boolean(d3.libro); },
+    get libro() { return d3.libro ? { ...d3.libro } : null; },
+    get ultimaNotifica() { return d3.ultimaNotifica; },
+    registro: () => JSON.parse(JSON.stringify(registroD3())),
+    ricarica: () => { d3.reg = null; return registroD3(); },
+    leggio: posLeggioD3,
+    apri: apriRegistroScenaD3,
+    chiudi: chiudiRegistroScenaD3,
+    tasto: tastoLibroD3,
+    aperture: (s) => apertureD3(s).map((a) => ({ tipo: a.tipo, n: a.carte.length })),
+    trionfoOttenuto: trionfoOttenutoD3,
+    oggettoInAttrezzeria: oggettoInAttrezzeriaD3,
+    controllaTrionfi: controllaTrionfiD3,
+  },
+});
+
+</script>
+<script>
+/* teatro/d1-burattinaio.js (incorporato da tools/teatro-release.js) */
+'use strict';
+/*
+ * d1-burattinaio.js — Squadra d1: lo scontro vero col Grande Burattinaio, «Sopra la Ribalta».
+ *
+ * Aggancio: b8-finali-diario.js chiama interni.scontroSopraLaRibalta({ fine, annulla, sigilli }) quando si sale la
+ * scala della Fucina del Ricordo. Qui quella funzione apre una notte nuova (nuovaRun) e la sostituisce con una sola
+ * stanza di tipo 'boss': la graticcia sopra la ribalta, fra travi, corde e contrappesi, col palco piccolo e lontano
+ * sotto. Si combatte col ciclo, i proiettili, le collisioni e il flusso di morte di sempre.
+ *
+ * Il Burattinaio non si vede intero. Le parti sono nemici della stanza (boss: true, così la base non le muove e
+ * non le fa toccare: l'IA è tutta qui):
+ *   - 'grande-burattinaio': il capo invisibile, fuori scena, porta solo la barra della vita (somma delle parti);
+ *   - 'gb-mano' ×2: guanti bianchi enormi (schianto, spazzata, presa che trascina); colpibili solo a terra;
+ *   - 'gb-forbici': forbici d'ottone che tagliano il palco in diagonale (atto III), colpibili quando piantate;
+ *   - marionette d'élite: nemici normali rinforzati (burattino, guardia, predone) calati appesi ai fili.
+ * Tre atti: I Le Mani · II I Fili (mani + presa + marionette) · III Le Forbici (forbici + una mano).
+ * Sigilli (ferri di Gaetano): tenaglie = le mani restano a terra di più; punzone = meno marionette;
+ * lima = le forbici si inceppano (piantate più a lungo, niente doppio taglio, apertura più lenta).
+ * Niente segni a terra: gli attacchi si leggono dalla posa (la mano si alza, si chiude a pugno, si gira di
+ * taglio), dal suono e dal tremito delle corde.
+ *
+ * Avvolge (chiamando sempre la base): passoLogico, disegnaStanzaPixelArt, disegnaAtmosferaQuartiere,
+ * disegnaBossPittorico, disegnaHUDPixelArt. Sonda QA: interni.provaBurattinaioD1(sigilli), interni.burattinaioD1.
+ */
+
+// ===========================================================================
+// 1. TABELLE DI GIOCO (tutti i numeri sono in tick da 1/60 s e pixel dell'arena)
+// ===========================================================================
+const BURATTINAIO_D1 = Object.freeze({
+  idCapo: 'grande-burattinaio',
+  nome: 'Il Grande Burattinaio',
+  pianoFinto: 4,                       // la Reggia: tema e danni di contatto del piano più alto
+  /** Vita delle parti per atto (0 sigilli: le stesse; i sigilli cambiano i tempi, non la vita). */
+  vita: Object.freeze({ mano1: 110, mano2: 85, mano3: 70, forbici: 190 }),
+  intermezzoTick: 110,                 // pausa fra un atto e l'altro (nessun attacco)
+  inizioTick: 120,                     // le mani calano prima del primo colpo
+  pausaFraColpiTick: Object.freeze([26, 18, 34]),
+  mano: Object.freeze({
+    raggio: 28,                        // raggio colpibile a terra
+    scala: 1.95,
+    quotaAlta: 92,                     // altezza della mano «in riposo» sopra il palco
+    seguiVel: 2.1,                     // quanto insegue il giocatore mentre si prepara (px/tick)
+    schianto: Object.freeze({ alza: 34, pugno: 30, cala: 7, terra: 70, risale: 24, raggio: 34, danno: 2 }),
+    spazzata: Object.freeze({ scende: 32, gira: 30, corsa: 52, terra: 50, risale: 24, mezzaAltezza: 22, danno: 1 }),
+    presa: Object.freeze({ segui: 46, chiude: 16, durata: 96, terra: 60, risale: 24, raggio: 28, liberati: 22, danno: 1, trascina: 1.1 }),
+    moltTenaglie: 1.7,                 // sigillo delle tenaglie: tempo a terra ×
+  }),
+  forbici: Object.freeze({
+    raggio: 30, lunghezza: 380,                  // lame lunghe quasi mezza arena, manici fuori quadro
+    posa: 44, apre: 46, apreLima: 80, taglio: 24, piantate: 80, moltLima: 1.9, stacca: 22,
+    larghezzaTaglio: 15, danno: 2, cicatriciMax: 4, squarcioTick: 300, tremitoApre: 2.2,
+  }),
+  marionette: Object.freeze({
+    tipi: Object.freeze(['burattino', 'guardia', 'predone']),
+    vita: Object.freeze({ burattino: 34, guardia: 44, predone: 38 }),
+    velocita: Object.freeze({ burattino: 1.2, guardia: 1.0, predone: 1.4 }),
+    ondataTick: 380, primaOndataTick: 140, calataTick: 44,
+    perOndata: Object.freeze([0, 2, 1]),         // per atto (I, II, III)
+    perOndataPunzone: Object.freeze([0, 1, 0]),
+    massimoVive: 3, massimoVivePunzone: 2,
+    curaOgni: 2,                                 // ogni N marionette cadute, mezza maschera a terra
+  }),
+  vittoriaTick: 230,
+  secondaBattutaTick: 200,          // la battuta sui sigilli, dopo quella d'ingresso
+  battitoBpm: Object.freeze([52, 68, 90]),       // il timpano sotto la tarantella del boss, per atto
+});
+
+/** Testi per il giocatore (da approvare dall'autore). */
+const TESTI_D1 = Object.freeze({
+  atti: Object.freeze([
+    'ATTO I — Le Mani del Burattinaio',
+    'ATTO II — I Fili',
+    'ATTO III — Le Forbici',
+  ]),
+  voce: Object.freeze({
+    inizio: 'Ferruccio. Sei salito fin quassù, dove i fili s\'annodano. Qua sopra le mani sono le mie.',
+    senzaSigilli: 'A mani nude? Mi fai quasi tenerezza, guagliò.',
+    conSigilli: 'I ferri di Gaetano… Te li sei portati appresso. Non ti basteranno.',
+    atto2: 'Hai sciolto un nodo. Ne tengo mille. Scendete, figli miei.',
+    atto3: 'Basta col teatrino. Le forbici le tengo io, e io taglio quando dico io.',
+    vittoria: '…Le mani… non rispondono più.',
+  }),
+  fonti: Object.freeze({
+    schianto: 'il pugno del Grande Burattinaio',
+    spazzata: 'la mano del Grande Burattinaio',
+    presa: 'la presa del Grande Burattinaio',
+    forbici: 'le forbici del Grande Burattinaio',
+  }),
+  nomi: Object.freeze({ mano: 'Mano del Burattinaio', forbici: 'Forbici del Burattinaio', marionetta: 'Marionetta d\'élite' }),
+  bannerVittoria: 'I fili del teatro cadono. Il Grande Burattinaio non tiene più niente.',
+});
+
+/** Colori «a ombre»: i guanti sono l'unico bianco pieno della scena. */
+const TINTE_D1 = Object.freeze({
+  notte: '#07060a', vuoto: '#0d0b12', trave: '#1c130d', traveLuce: '#4a3220', lanterna: '#f2c06b',
+  corda: '#8a6a3c', china: '#120c08', guanto: '#f7f3ea', guantoOmbra: '#cdc5b4', guantoFlash: '#ffd27a',
+  manica: '#0b0910', oro: '#d4a017', ottone: '#c9a13a', ottoneLuce: '#f7dc8a', ottoneOmbra: '#6b4e14',
+  rosso: '#b3261e', palco: '#e8b050',
+});
+
+// ===========================================================================
+// 2. STATO
+// ===========================================================================
+const d1 = {
+  attivo: false, stanza: null, opz: null, atto: 0, t: 0, intermezzo: 0, pausaColpo: 0,
+  turnoMano: 0, ondata: 0, cadute: 0, tremito: 0, prossimoBattito: 0, sigilli: { tenaglie: false, punzone: false, lima: false },
+  effetti: [], cicatrici: [], vittoria: null, presa: null, esito: null, voceDetta: {},
+};
+
+const capoD1 = () => d1.stanza && d1.stanza.nemici.find((n) => n.bossId === BURATTINAIO_D1.idCapo);
+const partiD1 = (id) => (d1.stanza ? d1.stanza.nemici.filter((n) => n.bossId === id && n.hp > 0) : []);
+
+/** Quali ferri contano: quelli veri dello slot (se b8 li espone), altrimenti i primi `n` nell'ordine della bibbia. */
+function sigilliDaNumeroD1(n, veri) {
+  const ordine = ['tenaglie', 'punzone', 'lima'];
+  const s = { tenaglie: false, punzone: false, lima: false };
+  if (veri && typeof veri === 'object' && ordine.some((k) => veri[k])) { for (const k of ordine) s[k] = Boolean(veri[k]); return s; }
+  const k = Math.max(0, Math.min(3, Math.floor(Number(n) || 0)));
+  for (let i = 0; i < k; i++) s[ordine[i]] = true;
+  return s;
+}
+
+// ===========================================================================
+// 3. SUONI (Web Audio procedurale)
+// ===========================================================================
+function audioD1() {
+  try {
+    if (typeof AudioSys !== 'object' || !AudioSys || !AudioSys.attivo || !AudioSys.ctx || !AudioSys.uscita) return null;
+    return { ac: AudioSys.ctx, out: AudioSys.uscita };
+  } catch (_) { return null; }
+}
+
+/** Un colpo di suono: tipo 'scricchio' (corde), 'tonfo' (schianto), 'lama' (forbici), 'timpano', 'squillo'. */
+function suonoD1(tipo, forza = 1) {
+  const a = audioD1();
+  if (!a) return;
+  try {
+    const { ac, out } = a;
+    const t0 = ac.currentTime + 0.005;
+    const g = ac.createGain();
+    g.connect(out);
+    if (tipo === 'scricchio' || tipo === 'tonfo') {
+      const dur = tipo === 'tonfo' ? 0.45 : 0.32;
+      const buf = ac.createBuffer(1, Math.floor(ac.sampleRate * dur), ac.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+      const src = ac.createBufferSource(); src.buffer = buf;
+      const f = ac.createBiquadFilter();
+      f.type = tipo === 'tonfo' ? 'lowpass' : 'bandpass';
+      f.frequency.value = tipo === 'tonfo' ? 260 : 900; f.Q.value = tipo === 'tonfo' ? 0.8 : 9;
+      src.connect(f); f.connect(g);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.32 * forza, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      src.start(t0); src.stop(t0 + dur);
+      if (tipo === 'tonfo') {
+        const o = ac.createOscillator(); const go = ac.createGain();
+        o.frequency.setValueAtTime(110, t0); o.frequency.exponentialRampToValueAtTime(38, t0 + 0.35);
+        go.gain.setValueAtTime(0.4 * forza, t0); go.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.4);
+        o.connect(go); go.connect(out); o.start(t0); o.stop(t0 + 0.42);
+      }
+      return;
+    }
+    const o = ac.createOscillator();
+    o.connect(g);
+    if (tipo === 'lama') {
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(1800, t0); o.frequency.exponentialRampToValueAtTime(5200, t0 + 0.18);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.12 * forza, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.22);
+      o.start(t0); o.stop(t0 + 0.24);
+    } else if (tipo === 'timpano') {
+      o.type = 'sine';
+      o.frequency.setValueAtTime(74, t0); o.frequency.exponentialRampToValueAtTime(52, t0 + 0.3);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.22 * forza, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
+      o.start(t0); o.stop(t0 + 0.36);
+    } else { // squillo: cambio d'atto
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(196, t0); o.frequency.setValueAtTime(147, t0 + 0.25);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.09 * forza, t0 + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.9);
+      o.start(t0); o.stop(t0 + 0.92);
+    }
+  } catch (err) { console.warn('[D1] suono', err); }
+}
+
+/** La Voce del Burattinaio (didascalie di b8). Una volta per chiave a scontro. */
+function voceD1(chiave) {
+  if (d1.voceDetta[chiave]) return;
+  d1.voceDetta[chiave] = true;
+  const testo = TESTI_D1.voce[chiave];
+  try {
+    if (typeof OPZIONI === 'object' && OPZIONI && OPZIONI.voce === false) return;
+    if (typeof accodaDidB8 === 'function') accodaDidB8({ tipo: 'voce', testo, evento: 'burattinaioD1' });
+    if (typeof suonoVoceB8 === 'function') suonoVoceB8();
+  } catch (err) { console.warn('[D1] voce', err); }
+}
+
+// ===========================================================================
+// 4. INGRESSO E USCITA
+// ===========================================================================
+function nuovaParteD1(id, extra) {
+  return Object.assign({
+    id: `d1-${id}-${Math.random().toString(36).slice(2, 7)}`, bossId: id, boss: true, tipo: 'boss', pattern: 'nessuno',
+    x: 320, y: 190, vx: 0, vy: 0, airZ: 40, handSlamY: 0, state: 'idle', stateTimer: 999,
+    hp: 1, maxHp: 1, speed: 0, r: 20, flash: 0, burnTicks: 0, stunTicks: 0, shootCd: 9999, phaseTick: 0,
+  }, extra);
+}
+
+function nuovaManoD1(lato, vita) {
+  const M = BURATTINAIO_D1.mano;
+  return nuovaParteD1('gb-mano', {
+    nome: TESTI_D1.nomi.mano, lato, hp: vita, maxHp: vita, r: M.raggio,
+    x: 320 + lato * 120, y: 200, h: M.quotaAlta + 80, posa: 'aperta', faseD1: 'riposo', tD1: 0, dannoPresa: 0,
+  });
+}
+
+/** Costruisce la stanza della graticcia (una sola stanza 'boss', senza porte). */
+function creaStanzaD1() {
+  const V = BURATTINAIO_D1.vita;
+  const capo = nuovaParteD1(BURATTINAIO_D1.idCapo, {
+    nome: BURATTINAIO_D1.nome, x: 320, y: -600, airZ: 999, r: 1,
+    hp: V.mano1 * 2 + V.mano2 * 2 + V.forbici + V.mano3, maxHp: V.mano1 * 2 + V.mano2 * 2 + V.forbici + V.mano3,
+  });
+  return {
+    id: 'd1-ribalta', tipo: 'boss', cx: 0, cy: 0, porte: {}, muroSegreto: null, pulita: false, visitata: true,
+    nemici: [capo], ostacoli: [], oggettiATerra: [], oggettoPiedistallo: null, arenaD1: true, incontroB6: true, nomeLuogoHud: 'Sopra la Ribalta',
+  };
+}
+
+/**
+ * Lo scontro Sopra la Ribalta (assegnato a interni.scontroSopraLaRibalta, lo chiama b8).
+ * @param {{fine: Function, annulla: Function, sigilli: number}} opz fine() a vittoria; annulla() se non si può.
+ */
+function scontroSopraLaRibaltaD1(opz = {}) {
+  try {
+    let veri = null;
+    try { const s8 = window.__teatro.interni.finaliB8 && window.__teatro.interni.finaliB8.stato(); veri = s8 && s8.ferri; } catch (_) { veri = null; }
+    if (opz.soloNumero) veri = null;
+    nuovaRun(false);
+    statoRun.fase = 'in_gioco';
+    statoRun.pausa = false;
+    statoRun.siparioAttivo = null;
+    statoRun.piano = BURATTINAIO_D1.pianoFinto;
+    statoRun.ciclo = 1;
+    const st = creaStanzaD1();
+    statoRun.mappa = Object.assign({}, statoRun.mappa || {}, { stanze: [st] });
+    Object.assign(d1, {
+      attivo: true, stanza: st, opz, atto: 0, t: 0, intermezzo: BURATTINAIO_D1.inizioTick, pausaColpo: 0, turnoMano: 0,
+      ondata: BURATTINAIO_D1.marionette.primaOndataTick, cadute: 0, tremito: 1, prossimoBattito: 0,
+      sigilli: sigilliDaNumeroD1(opz.sigilli, veri), effetti: [], cicatrici: [], vittoria: null, presa: null, esito: null, voceDetta: {},
+    });
+    entraInStanza(st, 'S');
+    avviaAttoD1(1);
+    voceD1('inizio');
+    return true;
+  } catch (err) {
+    console.error('[D1] avvio dello scontro', err);
+    d1.attivo = false;
+    try { if (typeof opz.annulla === 'function') opz.annulla(); } catch (e2) { console.error('[D1] annulla', e2); }
+    return false;
+  }
+}
+
+function avviaAttoD1(n) {
+  const st = d1.stanza;
+  const V = BURATTINAIO_D1.vita;
+  d1.atto = n;
+  d1.turnoMano = 0;
+  if (n === 1) st.nemici.push(nuovaManoD1(-1, V.mano1), nuovaManoD1(1, V.mano1));
+  else if (n === 2) st.nemici.push(nuovaManoD1(-1, V.mano2), nuovaManoD1(1, V.mano2));
+  else {
+    st.nemici.push(nuovaManoD1(1, V.mano3));
+    st.nemici.push(nuovaParteD1('gb-forbici', {
+      nome: TESTI_D1.nomi.forbici, hp: V.forbici, maxHp: V.forbici, r: BURATTINAIO_D1.forbici.raggio,
+      x: 320, y: 120, h: 120, ang: Math.PI / 4, apertura: 0.1, faseD1: 'posa', tD1: 0, da: null, a: null, tagli: 0,
+    }));
+  }
+  if (n > 1) d1.intermezzo = BURATTINAIO_D1.intermezzoTick;
+  mostraBanner(TESTI_D1.atti[n - 1], 170);
+  suonoD1('squillo');
+  d1.tremito = 1;
+  if (n === 2) voceD1('atto2');
+  if (n === 3) voceD1('atto3');
+}
+
+/** Fine dello scontro (vittoria, morte o uscita): rilascia la presa e spegne la logica. */
+function terminaD1() {
+  d1.attivo = false;
+  d1.presa = null;
+}
+
+// ===========================================================================
+// 5. IA DELLE MANI
+// ===========================================================================
+function toccaD1(x, y, r) { return Math.hypot(player.x - x, player.y - y) < r + 8 * (player.scalaA2 || 1); }
+
+function colpisciGiocatoreD1(danno, fonte, x, y) {
+  if (player.invuln > 0 || d1.vittoria) return;
+  subisciColpoGiocatore(danno, fonte, x, y);
+}
+
+/** La mano sceglie il prossimo colpo (il repertorio cresce con l'atto). */
+function scegliColpoManoD1(m) {
+  const rep = d1.atto === 1 ? ['schianto', 'spazzata', 'schianto'] : d1.atto === 2 ? ['schianto', 'presa', 'spazzata', 'presa'] : ['schianto', 'schianto', 'spazzata'];
+  m.colpo = rep[(m.colpiFatti = (m.colpiFatti || 0) + 1) % rep.length];
+  m.tD1 = 0;
+  if (m.colpo === 'schianto') { m.faseD1 = 'alza'; m.posa = 'aperta'; }
+  else if (m.colpo === 'spazzata') {
+    m.faseD1 = 'scende'; m.posa = 'piatta';
+    m.verso = player.x < 320 ? -1 : 1;         // parte dal lato del giocatore e spazza verso l'altro
+    m.x0 = m.verso < 0 ? ARENA.x1 - 10 : ARENA.x2 + 10; m.dirSpazza = -m.verso;
+    m.y = Math.max(ARENA.y1 + 24, Math.min(ARENA.y2 - 24, player.y));
+  } else { m.faseD1 = 'segui'; m.posa = 'aperta'; }
+  d1.tremito = Math.max(d1.tremito, 0.6);
+  suonoD1('scricchio', 0.8);
+}
+
+function aTerraManoD1(m, tick) {
+  m.faseD1 = 'terra'; m.tD1 = 0; m.durTerra = Math.round(tick * (d1.sigilli.tenaglie ? BURATTINAIO_D1.mano.moltTenaglie : 1));
+}
+
+function iaManoD1(m, puoAttaccare) {
+  const M = BURATTINAIO_D1.mano;
+  m.tD1++;
+  const verso = (x, y, v) => { const dx = x - m.x, dy = y - m.y, l = Math.hypot(dx, dy); if (l > 0.5) { m.x += (dx / l) * Math.min(v, l); m.y += (dy / l) * Math.min(v, l); } };
+  const clampY = (y) => Math.max(ARENA.y1 + 20, Math.min(ARENA.y2 - 16, y));
+  m.airZ = 40;
+  switch (m.faseD1) {
+    case 'riposo': {
+      m.h += (M.quotaAlta - m.h) * 0.06;
+      verso(320 + m.lato * 130, 170, 1.2);
+      m.posa = 'aperta';
+      if (puoAttaccare) scegliColpoManoD1(m);
+      break;
+    }
+    case 'alza': { // schianto: la mano insegue dall'alto e sale
+      const S = M.schianto;
+      verso(player.x, clampY(player.y), M.seguiVel);
+      m.h += (M.quotaAlta + 30 - m.h) * 0.1;
+      if (m.tD1 >= S.alza) { m.faseD1 = 'pugno'; m.tD1 = 0; m.posa = 'pugno'; suonoD1('scricchio', 1); d1.tremito = 1; }
+      break;
+    }
+    case 'pugno': { // si chiude a pugno, ferma: questo è l'avviso
+      if (m.tD1 < 8) verso(player.x, clampY(player.y), M.seguiVel * 0.5);
+      if (m.tD1 >= M.schianto.pugno) { m.faseD1 = 'cala'; m.tD1 = 0; m.h0 = m.h; }
+      break;
+    }
+    case 'cala': {
+      const S = M.schianto;
+      m.h = m.h0 * (1 - m.tD1 / S.cala);
+      if (m.tD1 >= S.cala) {
+        m.h = 0;
+        suonoD1('tonfo', 1); scuoti(FEEL.scossa.evento); d1.tremito = 1;
+        statoRun.ondeEsplosione.push({ x: m.x, y: m.y, r: 8, maxR: S.raggio + 14, color: '#f2c06b', tick: 0 });
+        if (toccaD1(m.x, m.y, S.raggio)) colpisciGiocatoreD1(S.danno, TESTI_D1.fonti.schianto, m.x, m.y);
+        aTerraManoD1(m, S.terra);
+      }
+      break;
+    }
+    case 'scende': { // spazzata: cala di taglio sul bordo, all'altezza del giocatore
+      const S = M.spazzata;
+      m.x += (m.x0 - m.x) * 0.12;
+      m.h += (6 - m.h) * 0.12;
+      if (m.tD1 >= S.scende) { m.faseD1 = 'gira'; m.tD1 = 0; suonoD1('scricchio', 1); d1.tremito = 1; }
+      break;
+    }
+    case 'gira': { // il palmo si gira di taglio (avviso), poi parte
+      if (m.tD1 >= M.spazzata.gira) { m.faseD1 = 'spazza'; m.tD1 = 0; }
+      break;
+    }
+    case 'spazza': {
+      const S = M.spazzata;
+      const corsa = (ARENA.x2 - ARENA.x1 + 40) / S.corsa;
+      m.x += m.dirSpazza * corsa;
+      m.h = 4;
+      if (Math.abs(player.x - m.x) < 26 && Math.abs(player.y - m.y) < S.mezzaAltezza + 6) colpisciGiocatoreD1(S.danno, TESTI_D1.fonti.spazzata, m.x, m.y);
+      if (m.tD1 % 6 === 0) scuoti(FEEL.scossa.colpo);
+      if (m.tD1 >= S.corsa) { m.h = 0; m.x = Math.max(ARENA.x1 + 24, Math.min(ARENA.x2 - 24, m.x)); m.posa = 'aperta'; aTerraManoD1(m, S.terra); }
+      break;
+    }
+    case 'segui': { // presa: aperta sopra il giocatore, lo segue da vicino
+      const P = M.presa;
+      verso(player.x, clampY(player.y), M.seguiVel * 1.1);
+      m.h += (60 - m.h) * 0.1;
+      if (m.tD1 >= P.segui) { m.faseD1 = 'chiude'; m.tD1 = 0; m.posa = 'presa'; suonoD1('scricchio', 1); d1.tremito = 1; }
+      break;
+    }
+    case 'chiude': {
+      const P = M.presa;
+      m.h = 60 * (1 - m.tD1 / P.chiude);
+      if (m.tD1 >= P.chiude) {
+        m.h = 0;
+        if (!d1.presa && player.invuln <= 0 && toccaD1(m.x, m.y, P.raggio)) {
+          d1.presa = { mano: m, t: 0, hp0: m.hp, verso: player.x < 320 ? -1 : 1 };
+          m.faseD1 = 'tiene'; m.tD1 = 0; m.posa = 'pugno';
+          mostraBanner('Ti ha preso! Colpisci la mano per liberarti!', 90);
+        } else { m.posa = 'aperta'; aTerraManoD1(m, P.terra); }
+      }
+      break;
+    }
+    case 'tiene': { // trascina il giocatore verso il bordo della graticcia
+      const P = M.presa;
+      const pr = d1.presa;
+      m.airZ = 22;
+      const mx = pr ? (pr.verso < 0 ? ARENA.x1 + 26 : ARENA.x2 - 26) : m.x;
+      verso(mx, m.y, P.trascina);
+      const liberato = pr && pr.hp0 - m.hp >= P.liberati;
+      if (!pr || liberato || m.tD1 >= P.durata) {
+        if (pr && !liberato) colpisciGiocatoreD1(P.danno, TESTI_D1.fonti.presa, m.x, m.y);
+        else if (pr) player.invuln = Math.max(player.invuln, 40);
+        d1.presa = null; m.posa = 'aperta'; aTerraManoD1(m, P.terra);
+      } else {
+        player.x = m.x; player.y = m.y + 2; player.targetX = null; player.targetY = null;
+      }
+      break;
+    }
+    case 'terra': { // a terra: colpibile
+      m.h = 0; m.airZ = 22;
+      if (m.tD1 >= m.durTerra) { m.faseD1 = 'risale'; m.tD1 = 0; }
+      break;
+    }
+    case 'risale': {
+      m.h += (M.quotaAlta - m.h) * 0.08;
+      m.posa = 'aperta';
+      if (m.tD1 >= M.schianto.risale) { m.faseD1 = 'riposo'; m.tD1 = 0; }
+      break;
+    }
+    default: m.faseD1 = 'riposo';
+  }
+}
+
+// ===========================================================================
+// 6. IA DELLE FORBICI (atto III)
+// ===========================================================================
+function iaForbiciD1(f, puoAttaccare) {
+  const F = BURATTINAIO_D1.forbici;
+  const lima = d1.sigilli.lima;
+  f.tD1++;
+  f.airZ = 40;
+  switch (f.faseD1) {
+    case 'posa': { // si porta a un angolo, alta
+      if (!f.da) {
+        const sx = player.x < 320 ? 1 : -1, sy = player.y < 188 ? 1 : -1; // dall'angolo opposto al giocatore
+        f.da = { x: sx > 0 ? ARENA.x2 - 44 : ARENA.x1 + 44, y: sy > 0 ? ARENA.y2 - 14 : ARENA.y1 + 48 }; // dentro la vista (non sotto la mappa)
+      }
+      f.x += (f.da.x - f.x) * 0.08; f.y += (f.da.y - f.y) * 0.08; f.h += (14 - f.h) * 0.08;
+      f.apertura += (0.12 - f.apertura) * 0.2;
+      if (f.tD1 >= F.posa && puoAttaccare) {
+        f.faseD1 = 'apre'; f.tD1 = 0;
+        f.a = { x: player.x, y: player.y };
+        f.ang = Math.atan2(f.a.y - f.da.y, f.a.x - f.da.x);
+        suonoD1('lama', 1); d1.tremito = 1;
+      }
+      break;
+    }
+    case 'apre': { // le lame si aprono piano verso il bersaglio: l'avviso è la posa
+      const dur = lima ? F.apreLima : F.apre;
+      f.apertura = 0.12 + 0.75 * Math.min(1, f.tD1 / dur) + (f.tD1 > dur * 0.5 ? Math.sin(f.tD1 * 2.3) * 0.03 : 0);
+      f.tremaD1 = f.tD1 > dur * 0.5 ? F.tremitoApre : 0;
+      if (f.tD1 === Math.round(dur * 0.5)) suonoD1('lama', 0.6);
+      if (f.tD1 < dur * 0.6) { f.a = { x: player.x, y: player.y }; f.ang = Math.atan2(f.a.y - f.y, f.a.x - f.x); }
+      if (f.tD1 >= dur) {
+        // il taglio attraversa tutta l'arena lungo la diagonale scelta
+        const L = Math.hypot(ARENA.x2 - ARENA.x1, ARENA.y2 - ARENA.y1);
+        f.fine = {
+          x: Math.max(ARENA.x1 + 16, Math.min(ARENA.x2 - 16, f.x + Math.cos(f.ang) * L)),
+          y: Math.max(ARENA.y1 + 12, Math.min(ARENA.y2 - 12, f.y + Math.sin(f.ang) * L)),
+        };
+        f.inizio = { x: f.x, y: f.y };
+        f.faseD1 = 'taglio'; f.tD1 = 0; suonoD1('lama', 1.4);
+      }
+      break;
+    }
+    case 'taglio': {
+      const k = Math.min(1, f.tD1 / F.taglio);
+      const px = f.x, py = f.y;
+      f.x = f.inizio.x + (f.fine.x - f.inizio.x) * k; f.y = f.inizio.y + (f.fine.y - f.inizio.y) * k; f.h = 4;
+      f.apertura = k < 0.25 ? 0.87 * (1 - k / 0.25) : 0; // si chiudono di scatto
+      f.tremaD1 = 0;
+      // segmento percorso in questo tick: tocca se il giocatore è vicino alla lama
+      const dx = f.x - px, dy = f.y - py, l2 = dx * dx + dy * dy || 1;
+      const u = Math.max(0, Math.min(1, ((player.x - px) * dx + (player.y - py) * dy) / l2));
+      if (Math.hypot(player.x - (px + dx * u), player.y - (py + dy * u)) < F.larghezzaTaglio + 6) colpisciGiocatoreD1(F.danno, TESTI_D1.fonti.forbici, f.x, f.y);
+      if (k >= 1) {
+        d1.cicatrici.push({ x1: f.inizio.x, y1: f.inizio.y, x2: f.fine.x, y2: f.fine.y, t: 0 });
+        if (d1.cicatrici.length > F.cicatriciMax) d1.cicatrici.shift();
+        scuoti(FEEL.scossa.evento); suonoD1('tonfo', 0.7); d1.tremito = 1;
+        f.tagli++;
+        if (!lima && f.tagli % 2 === 1) { // senza lima: secondo taglio subito, dal punto d'arrivo
+          f.da = { x: f.x, y: f.y }; f.faseD1 = 'apre'; f.tD1 = Math.round(F.apre * 0.35);
+        } else {
+          f.faseD1 = 'piantate'; f.tD1 = 0; f.durTerra = Math.round(F.piantate * (lima ? F.moltLima : 1));
+        }
+      }
+      break;
+    }
+    case 'piantate': { // conficcate nelle tavole: colpibili (con la lima scricchiolano, inceppate)
+      f.h = 0; f.airZ = 22; f.apertura = lima ? 0.05 + Math.abs(Math.sin(f.tD1 * 0.5)) * 0.04 : 0.02;
+      if (lima && f.tD1 % 40 === 0) suonoD1('scricchio', 0.5);
+      if (f.tD1 >= f.durTerra) { f.faseD1 = 'stacca'; f.tD1 = 0; }
+      break;
+    }
+    case 'stacca': {
+      f.h += (30 - f.h) * 0.15;
+      if (f.tD1 >= F.stacca) { f.faseD1 = 'posa'; f.tD1 = 0; f.da = null; }
+      break;
+    }
+    default: f.faseD1 = 'posa';
+  }
+}
+
+// ===========================================================================
+// 7. MARIONETTE D'ÉLITE
+// ===========================================================================
+function calaMarionettaD1(i) {
+  const MA = BURATTINAIO_D1.marionette;
+  const tipo = MA.tipi[(d1.cadute + i + d1.atto) % MA.tipi.length];
+  const x = ARENA.x1 + 60 + ((i * 157 + d1.t * 7) % (ARENA.x2 - ARENA.x1 - 120));
+  const yFin = ARENA.y1 + 40 + ((i * 53 + d1.t) % 80);
+  d1.stanza.nemici.push({
+    id: `d1-mar-${d1.t}-${i}`, tipo, patternMob: tipo, nome: TESTI_D1.nomi.marionetta, boss: false, mobSoldi: false, champion: null,
+    x, y: ARENA.y1 - 60, hp: MA.vita[tipo], maxHp: MA.vita[tipo], speed: MA.velocita[tipo], r: 11, flash: 0, burnTicks: 0,
+    stunTicks: MA.calataTick + 4, state: 'idle', stateTimer: 30, maskOpen: false, shootCd: 50 + i * 20,
+    eliteD1: true, calataD1: { y0: ARENA.y1 - 60, y1: yFin, t: 0 },
+  });
+  d1.tremito = Math.max(d1.tremito, 0.7);
+  suonoD1('scricchio', 0.6);
+}
+
+function iaMarionetteD1() {
+  const MA = BURATTINAIO_D1.marionette;
+  const st = d1.stanza;
+  let vive = 0;
+  for (const n of st.nemici) {
+    if (!n.eliteD1) continue;
+    if (n.calataD1 && n.hp > 0) {
+      const c = n.calataD1;
+      c.t++;
+      n.y = c.y0 + (c.y1 - c.y0) * Math.min(1, c.t / MA.calataTick);
+      if (c.t >= MA.calataTick) n.calataD1 = null;
+    }
+    if (n.hp > 0) vive++;
+    else if (!n.cadutaD1) { // filo tagliato: cade nel vuoto sotto la graticcia
+      n.cadutaD1 = true;
+      d1.cadute++;
+      d1.effetti.push({ tipo: 'caduta', x: n.x, y: n.y, t: 0 });
+      if (d1.cadute % MA.curaOgni === 0) st.oggettiATerra.push({ tipo: 'cura', valore: 1, sprite: 'mezzaMaschera', x: n.x, y: n.y });
+    }
+  }
+  const per = (d1.sigilli.punzone ? MA.perOndataPunzone : MA.perOndata)[d1.atto - 1] || 0;
+  const max = d1.sigilli.punzone ? MA.massimoVivePunzone : MA.massimoVive;
+  if (per > 0 && --d1.ondata <= 0) {
+    d1.ondata = MA.ondataTick;
+    for (let i = 0; i < per && vive < max; i++, vive++) calaMarionettaD1(i);
+  }
+}
+
+// ===========================================================================
+// 8. REGIA: atti, vita del capo, vittoria
+// ===========================================================================
+function vitaRestanteD1() {
+  const V = BURATTINAIO_D1.vita;
+  let somma = 0;
+  for (const n of d1.stanza.nemici) if (n.bossId === 'gb-mano' || n.bossId === 'gb-forbici') somma += Math.max(0, n.hp);
+  if (d1.atto <= 1) somma += V.mano2 * 2 + V.forbici + V.mano3;
+  else if (d1.atto === 2) somma += V.forbici + V.mano3;
+  return somma;
+}
+
+function passoD1() {
+  const st = d1.stanza;
+  const capo = capoD1();
+  d1.t++;
+  d1.tremito = Math.max(0, d1.tremito - 0.02);
+  for (const e of d1.effetti) e.t++;
+  for (const c of d1.cicatrici) c.t++;
+  while (d1.cicatrici.length && d1.cicatrici[0].t > BURATTINAIO_D1.forbici.squarcioTick) d1.cicatrici.shift();
+  for (let i = d1.effetti.length - 1; i >= 0; i--) if (d1.effetti[i].t > 90) d1.effetti.splice(i, 1);
+  if (d1.vittoria) { passoVittoriaD1(); return; }
+  // seconda battuta dopo la prima (la presentazione del boss di b8 svuota la coda: si aspetta)
+  if (d1.t === BURATTINAIO_D1.secondaBattutaTick) voceD1(Object.values(d1.sigilli).some(Boolean) ? 'conSigilli' : 'senzaSigilli');
+
+  // il timpano sotto la musica: il ritmo cresce con l'atto
+  const bpm = BURATTINAIO_D1.battitoBpm[d1.atto - 1] || 60;
+  if (--d1.prossimoBattito <= 0) { d1.prossimoBattito = Math.round(3600 / bpm); suonoD1('timpano', d1.atto === 3 ? 1.2 : 0.9); }
+
+  // parti morte: effetto di caduta (mano che si affloscia e risale nel buio)
+  for (const n of st.nemici) {
+    if ((n.bossId === 'gb-mano' || n.bossId === 'gb-forbici') && n.hp <= 0 && !n.cadutaD1) {
+      n.cadutaD1 = true;
+      if (d1.presa && d1.presa.mano === n) d1.presa = null;
+      d1.effetti.push({ tipo: n.bossId === 'gb-mano' ? 'mano' : 'forbici', x: n.x, y: n.y, lato: n.lato || 1, t: 0 });
+      suonoD1('tonfo', 0.8); d1.tremito = 1;
+    }
+  }
+
+  const mani = partiD1('gb-mano');
+  const forbici = partiD1('gb-forbici');
+  if (d1.intermezzo > 0) d1.intermezzo--;
+  const libero = d1.intermezzo <= 0;
+
+  // chi attacca: una mano alla volta (atto II: la seconda parte quando la prima è a terra)
+  if (libero && d1.pausaColpo > 0) d1.pausaColpo--;
+  const occupata = (m) => m.faseD1 !== 'riposo' && m.faseD1 !== 'terra' && m.faseD1 !== 'risale';
+  const inAzione = mani.filter(occupata).length;
+  for (const m of mani) {
+    let puo = false;
+    if (libero && m.faseD1 === 'riposo' && d1.pausaColpo <= 0 && inAzione === 0) {
+      const turno = mani[d1.turnoMano % mani.length];
+      puo = turno === m;
+    }
+    if (libero && d1.atto === 2 && m.faseD1 === 'riposo' && inAzione === 0 && mani.some((o) => o !== m && o.faseD1 === 'terra') && d1.pausaColpo <= 0) puo = true;
+    const prima = m.faseD1;
+    iaManoD1(m, puo);
+    if (prima === 'riposo' && m.faseD1 !== 'riposo') { d1.turnoMano++; d1.pausaColpo = BURATTINAIO_D1.pausaFraColpiTick[d1.atto - 1]; }
+  }
+  for (const f of forbici) iaForbiciD1(f, libero);
+  iaMarionetteD1();
+
+  // fine dell'atto
+  if (d1.atto < 3 && mani.length === 0) {
+    if (d1.atto === 2) for (const n of st.nemici) if (n.eliteD1 && n.hp > 0) n.hp = 0;
+    avviaAttoD1(d1.atto + 1);
+  } else if (d1.atto === 3 && forbici.length === 0) {
+    for (const n of st.nemici) if (n.hp > 0 && n.bossId !== BURATTINAIO_D1.idCapo) n.hp = 0;
+    avviaVittoriaD1();
+  }
+  if (capo) capo.hp = d1.vittoria ? 0 : Math.max(1, vitaRestanteD1());
+  if (capo) { capo.x = 320; capo.y = -600; capo.airZ = 999; capo.kbx = 0; capo.kby = 0; }
+}
+
+function avviaVittoriaD1() {
+  const st = d1.stanza;
+  d1.presa = null;
+  d1.vittoria = { t: 0, fili: [] };
+  for (let i = 0; i < 26; i++) d1.vittoria.fili.push({ x: 40 + ((i * 97) % 560), y: -20 - ((i * 37) % 80), vy: 0.6 + (i % 5) * 0.25, len: 60 + ((i * 53) % 140), ondula: i * 0.7 });
+  for (const n of st.nemici) n.hp = 0;
+  st.pulita = true;
+  statoRun.proiettiliNemici = [];
+  player.invuln = Math.max(player.invuln, BURATTINAIO_D1.vittoriaTick + 30);
+  mostraBanner(TESTI_D1.bannerVittoria, BURATTINAIO_D1.vittoriaTick);
+  voceD1('vittoria');
+  suonoD1('squillo', 1.2);
+  d1.tremito = 1;
+}
+
+function passoVittoriaD1() {
+  const v = d1.vittoria;
+  v.t++;
+  for (const f of v.fili) { f.vy += 0.05; f.y += f.vy; }
+  if (v.t % 50 === 0) suonoD1('scricchio', 0.5);
+  if (v.t >= BURATTINAIO_D1.vittoriaTick && !d1.esito) {
+    d1.esito = 'vittoria';
+    const fine = d1.opz && d1.opz.fine;
+    terminaD1();
+    try { if (typeof fine === 'function') fine(); } catch (err) { console.error('[D1] fine', err); }
+  }
+}
+
+// ===========================================================================
+// 9. AGGANCI AL CICLO
+// ===========================================================================
+const passoLogicoBaseD1 = passoLogico;
+/** Dopo la base: l'IA del Burattinaio gira solo se la base ha fatto agire il capo (niente pausa, hit-stop, grazia). */
+passoLogico = function (...args) {
+  const capo = d1.attivo ? capoD1() : null;
+  const prima = capo ? capo.phaseTick || 0 : 0;
+  const r = passoLogicoBaseD1.apply(this, args);
+  try {
+    if (d1.attivo) {
+      if (statoRun.stanzaCorrente !== d1.stanza || (statoRun.fase !== 'in_gioco' && !d1.vittoria)) { terminaD1(); d1.esito = d1.esito || statoRun.fase; }
+      else if (statoRun.fase === 'in_gioco' && capo && ((capo.phaseTick || 0) !== prima || d1.vittoria) && !statoRun.pausa) {
+        if (statoRun.hpHalf > 0) passoD1();
+      }
+    }
+  } catch (err) { console.error('[D1] passo', err); }
+  return r;
+};
+
+/** Argomenti di una funzione di disegno che può ricevere ctx come primo argomento. */
+const argsD1 = (args) => (args[0] && typeof args[0].save === 'function' ? args.slice(1) : args);
+
+const disegnaStanzaPixelArtBaseD1 = disegnaStanzaPixelArt;
+disegnaStanzaPixelArt = function (...args) {
+  const a = argsD1(args);
+  const st = a[1];
+  if (st && st.arenaD1) { try { disegnaArenaD1(a[0] || 0); return; } catch (err) { console.error('[D1] arena', err); } }
+  return disegnaStanzaPixelArtBaseD1.apply(this, args);
+};
+
+const disegnaAtmosferaQuartiereBaseD1 = disegnaAtmosferaQuartiere;
+disegnaAtmosferaQuartiere = function (...args) {
+  if (statoRun.stanzaCorrente && statoRun.stanzaCorrente.arenaD1) return undefined;
+  return disegnaAtmosferaQuartiereBaseD1.apply(this, args);
+};
+
+const disegnaBossPittoricoBaseD1 = disegnaBossPittorico;
+disegnaBossPittorico = function (...args) {
+  const a = argsD1(args);
+  const b = a[0];
+  if (b && (b.bossId === BURATTINAIO_D1.idCapo || b.bossId === 'gb-mano' || b.bossId === 'gb-forbici')) {
+    try {
+      if (b.bossId === 'gb-mano') disegnaManoD1(b);
+      else if (b.bossId === 'gb-forbici') disegnaForbiciD1(b);
+    } catch (err) { console.error('[D1] disegno', b.bossId, err); }
+    return undefined;
+  }
+  return disegnaBossPittoricoBaseD1.apply(this, args);
+};
+
+const disegnaFrameBaseD1 = disegnaFrame;
+/**
+ * Durante il disegno l'arena non si presenta come «stanza del boss» alla resa di base: niente botola al centro,
+ * niente Mani di Donna Luciana del boss finale. La logica (barra, musica, danni) la vede sempre come 'boss'.
+ */
+disegnaFrame = function (...args) {
+  const st = statoRun.stanzaCorrente;
+  if (!st || !st.arenaD1 || st.tipo !== 'boss') return disegnaFrameBaseD1.apply(this, args);
+  // le parti del Burattinaio le disegna d1 (prima dell'HUD): la base non vi tira i suoi fili di marionetta
+  const tutti = st.nemici;
+  partiDaDisegnareD1 = tutti.filter((n) => n.hp > 0 && (n.bossId === 'gb-mano' || n.bossId === 'gb-forbici'));
+  st.tipo = 'ribaltaD1';
+  st.nemici = tutti.filter((n) => n.bossId !== 'gb-mano' && n.bossId !== 'gb-forbici');
+  try { return disegnaFrameBaseD1.apply(this, args); } finally { st.tipo = 'boss'; st.nemici = tutti; partiDaDisegnareD1 = null; }
+};
+let partiDaDisegnareD1 = null;
+
+/** Scontro in scena: le uniche mani sono i due guanti grandi (richiesta dell'autore). */
+const scontroInScenaD1 = () => Boolean((d1.attivo || d1.vittoria) && statoRun.stanzaCorrente && statoRun.stanzaCorrente === d1.stanza && statoRun.fase === 'in_gioco');
+let maniPiccoleD1 = 0; // QA: quante volte la resa ha disegnato le manine della balconata o i loro fili
+
+const disegnaManoMarionettaPittoricaBaseD1 = disegnaManoMarionettaPittorica;
+/** Niente manine con la crociera in alto durante lo scontro col Grande Burattinaio. */
+disegnaManoMarionettaPittorica = function (...args) {
+  if (scontroInScenaD1()) return undefined;
+  maniPiccoleD1++;
+  return disegnaManoMarionettaPittoricaBaseD1.apply(this, args);
+};
+
+const disegnaFiliMarionettaBaseD1 = disegnaFiliMarionetta;
+/** Niente fili delle manine durante lo scontro. */
+disegnaFiliMarionetta = function (...args) {
+  if (scontroInScenaD1()) return undefined;
+  maniPiccoleD1++;
+  return disegnaFiliMarionettaBaseD1.apply(this, args);
+};
+
+const disegnaHUDPixelArtBaseD1 = disegnaHUDPixelArt;
+/** Prima dell'HUD: effetti di caduta, fili che cadono a vittoria. */
+disegnaHUDPixelArt = function (...args) {
+  try {
+    if (statoRun.stanzaCorrente && statoRun.stanzaCorrente.arenaD1) {
+      // forbici sotto, mani sopra (calano dall'alto); per y crescente fra le mani
+      const parti = (partiDaDisegnareD1 || []).slice().sort((a, b) => (a.bossId === 'gb-forbici' ? -1 : 0) - (b.bossId === 'gb-forbici' ? -1 : 0) || a.y - b.y);
+      for (const n of parti) { if (n.bossId === 'gb-mano') disegnaManoD1(n); else disegnaForbiciD1(n); }
+      disegnaEffettiD1();
+    }
+  } catch (err) { console.error('[D1] effetti', err); }
+  return disegnaHUDPixelArtBaseD1.apply(this, args);
+};
+
+// ===========================================================================
+// 10. DISEGNO «A OMBRE»
+// ===========================================================================
+let telaFondoD1 = null, telaTraviD1 = null;
+
+function nuovaTelaD1() { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; }
+
+/** Il vuoto, il palco lontano laggiù e la graticcia di tavole (fermo: tela fuori schermo). */
+function preparaFondoD1() {
+  const c = nuovaTelaD1(); const g = c.getContext('2d');
+  g.fillStyle = TINTE_D1.notte; g.fillRect(0, 0, W, H);
+  // il pozzo di buio sotto la graticcia, con la luce calda del palco che sale dal basso
+  const gr = g.createRadialGradient(320, 205, 10, 320, 205, 260);
+  gr.addColorStop(0, 'rgba(232,176,80,0.22)'); gr.addColorStop(0.35, 'rgba(120,60,30,0.10)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  // il palco piccolo e lontano: boccascena, sipario rosso, ribalta di lumini, figurine
+  g.save(); g.translate(320, 206); g.scale(0.62, 0.62); g.globalAlpha = 0.75;
+  g.fillStyle = 'rgba(30,18,10,0.9)'; g.fillRect(-64, -30, 128, 58);
+  g.fillStyle = 'rgba(232,176,80,0.55)'; g.fillRect(-52, -22, 104, 40);
+  g.fillStyle = TINTE_D1.rosso; g.fillRect(-56, -26, 14, 46); g.fillRect(42, -26, 14, 46); g.fillRect(-56, -28, 112, 8);
+  g.fillStyle = '#1a100a';
+  for (const [x, h] of [[-26, 16], [-8, 19], [12, 15], [28, 17]]) {
+    g.fillRect(x - 2, 14 - h, 4, h); g.beginPath(); g.arc(x, 12 - h, 3, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(242,192,107,0.5)'; g.lineWidth = 0.5; g.beginPath(); g.moveTo(x, 9 - h); g.lineTo(x, -22); g.stroke();
+  }
+  g.fillStyle = '#ffe2a0'; for (let x = -48; x <= 48; x += 8) { g.beginPath(); g.arc(x, 20, 1.2, 0, TAU); g.fill(); }
+  g.restore();
+  // la graticcia: travetti lunghi (orizzontali) e traversi, coi vuoti fra le tavole
+  const x1 = ARENA.x1 - 30, x2 = ARENA.x2 + 30, y1 = ARENA.y1 - 14, y2 = ARENA.y2 + 18;
+  for (let y = y1; y < y2; y += 22) {
+    const sopraPalco = y > 150 && y < 250; // sopra il palco lontano le tavole sono rade: si vede giù
+    g.fillStyle = TINTE_D1.trave;
+    if (sopraPalco) { g.fillRect(x1, y, 200 - x1, 13); g.fillRect(440, y, x2 - 440, 13); g.globalAlpha = 0.42; g.fillRect(200, y, 240, 7); g.globalAlpha = 1; }
+    else g.fillRect(x1, y, x2 - x1, 13);
+    g.fillStyle = 'rgba(242,192,107,0.16)'; g.fillRect(x1, y, x2 - x1, 1);
+    g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(x1, y + 12, x2 - x1, 1);
+    g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 1;
+    for (let x = x1 + ((y * 7) % 60); x < x2; x += 61) { g.beginPath(); g.moveTo(x, y + 1); g.lineTo(x, y + 12); g.stroke(); }
+  }
+  for (let x = x1; x <= x2; x += 98) {
+    g.fillStyle = '#140d08'; g.fillRect(x - 5, y1 - 4, 10, y2 - y1 + 8);
+    g.fillStyle = 'rgba(242,192,107,0.14)'; g.fillRect(x - 5, y1 - 4, 1, y2 - y1 + 8);
+  }
+  // bordo della graticcia verso la ribalta (davanti): il vuoto sotto
+  const gb = g.createLinearGradient(0, y2, 0, H);
+  gb.addColorStop(0, 'rgba(232,176,80,0.18)'); gb.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gb; g.fillRect(0, y2, W, H - y2);
+  g.strokeStyle = TINTE_D1.lanterna; g.globalAlpha = 0.55; g.lineWidth = 1.2; g.strokeRect(x1, y1, x2 - x1, y2 - y1); g.globalAlpha = 1;
+  return c;
+}
+
+/** Le travi del soffitto, le carrucole e i contrappesi fissi (davanti al capo, dietro alle mani). */
+function preparaTraviD1() {
+  const c = nuovaTelaD1(); const g = c.getContext('2d');
+  const trave = (y, h) => {
+    g.fillStyle = TINTE_D1.trave; g.fillRect(0, y, W, h);
+    g.fillStyle = TINTE_D1.traveLuce; g.fillRect(0, y + h - 2, W, 2);
+    g.fillStyle = 'rgba(242,192,107,0.35)'; for (let x = 18; x < W; x += 52) { g.beginPath(); g.arc(x, y + h / 2, 1.6, 0, TAU); g.fill(); }
+  };
+  trave(0, 16); trave(38, 10);
+  // carrucole
+  for (const x of [40, 96, 544, 600]) {
+    g.fillStyle = '#0e0906'; g.beginPath(); g.arc(x, 26, 8, 0, TAU); g.fill();
+    g.strokeStyle = TINTE_D1.lanterna; g.lineWidth = 1; g.globalAlpha = 0.6; g.beginPath(); g.arc(x, 26, 8, 0, TAU); g.stroke(); g.globalAlpha = 1;
+  }
+  // montanti ai lati
+  g.fillStyle = '#100a07'; g.fillRect(0, 0, 22, H); g.fillRect(W - 22, 0, 22, H);
+  g.fillStyle = 'rgba(242,192,107,0.2)'; g.fillRect(21, 0, 1, H); g.fillRect(W - 22, 0, 1, H);
+  return c;
+}
+
+/** Il capo: un'ombra enorme dietro le travi, solo spalle e due bagliori d'occhi. Non si vede mai intero. */
+function disegnaCapoD1() {
+  const fiato = Math.sin(tick * 0.02) * 2;
+  const via = d1.vittoria ? Math.min(1, d1.vittoria.t / 120) : 0;
+  ctx.save();
+  ctx.globalAlpha = 0.92 * (1 - via * 0.7);
+  ctx.fillStyle = '#030205';
+  ctx.beginPath();
+  ctx.moveTo(60, 0); ctx.quadraticCurveTo(140, 56 + fiato, 250, 44 + fiato); ctx.quadraticCurveTo(320, 10 + fiato, 390, 44 + fiato);
+  ctx.quadraticCurveTo(500, 56 + fiato, 580, 0); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(242,192,107,0.25)'; ctx.lineWidth = 1; ctx.stroke();
+  if (!d1.vittoria) {
+    const occhi = 0.5 + 0.5 * Math.sin(tick * 0.05);
+    ctx.fillStyle = `rgba(249,203,64,${0.35 + 0.4 * occhi})`;
+    ctx.beginPath(); ctx.ellipse(300, 24 + fiato, 4, 1.5, 0, 0, TAU); ctx.ellipse(340, 24 + fiato, 4, 1.5, 0, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** Corde e contrappesi che tremano quando il Burattinaio prepara un colpo (l'unico «avviso» della scena). */
+function disegnaCordeD1() {
+  const am = d1.tremito * 3.2;
+  ctx.save();
+  ctx.lineWidth = 1.4;
+  for (let i = 0; i < 8; i++) {
+    const x = i < 4 ? 30 + i * 12 : W - 30 - (i - 4) * 12;
+    const lung = 120 + ((i * 47) % 150);
+    const sw = Math.sin(tick * 0.6 + i * 1.3) * am + Math.sin(tick * 0.03 + i) * 1.2;
+    ctx.strokeStyle = TINTE_D1.corda;
+    ctx.beginPath(); ctx.moveTo(x, 18); ctx.quadraticCurveTo(x + sw, 18 + lung / 2, x + sw * 0.6, 18 + lung); ctx.stroke();
+    // contrappeso (sacchetto di sabbia)
+    const cy = 18 + lung + Math.sin(tick * 0.05 + i) * 1.5;
+    ctx.fillStyle = '#1b130c';
+    ctx.beginPath(); ctx.ellipse(x + sw * 0.6, cy + 8, 6, 9, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(242,192,107,0.45)'; ctx.lineWidth = 0.8; ctx.stroke(); ctx.lineWidth = 1.4;
+  }
+  ctx.restore();
+}
+
+/** Arena completa: fondo fermo, cicatrici dei tagli, ombra del capo, travi, corde. */
+function disegnaArenaD1() {
+  if (!telaFondoD1) telaFondoD1 = preparaFondoD1();
+  if (!telaTraviD1) telaTraviD1 = preparaTraviD1();
+  ctx.drawImage(telaFondoD1, 0, 0);
+  // i tagli delle forbici restano sulle tavole per qualche secondo (dopo il colpo, mai prima)
+  for (const c of d1.cicatrici) disegnaSquarcioD1(c);
+  disegnaCapoD1();
+  ctx.drawImage(telaTraviD1, 0, 0);
+  disegnaCordeD1();
+}
+
+/** Lo squarcio del tavolato: assi spezzate, schegge, la luce del palco che sale dal buco. */
+function disegnaSquarcioD1(c) {
+  const vita = 1 - c.t / BURATTINAIO_D1.forbici.squarcioTick;
+  const dx = c.x2 - c.x1, dy = c.y2 - c.y1, L = Math.hypot(dx, dy) || 1;
+  const nx = -dy / L, ny = dx / L;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, vita * 1.6);
+  // luce calda che sale da sotto (più forte appena tagliato)
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = `rgba(232,176,80,${0.18 + 0.35 * vita})`; ctx.lineWidth = 16; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(c.x1, c.y1); ctx.lineTo(c.x2, c.y2); ctx.stroke();
+  ctx.globalCompositeOperation = 'source-over';
+  // il buco: frastagliato, nero
+  ctx.fillStyle = '#020103';
+  ctx.beginPath();
+  const n = Math.max(6, Math.round(L / 18));
+  for (let i = 0; i <= n; i++) { const k = i / n, w = 3 + ((i * 7) % 4); ctx.lineTo(c.x1 + dx * k + nx * w, c.y1 + dy * k + ny * w); }
+  for (let i = n; i >= 0; i--) { const k = i / n, w = 3 + ((i * 5) % 4); ctx.lineTo(c.x1 + dx * k - nx * w, c.y1 + dy * k - ny * w); }
+  ctx.closePath(); ctx.fill();
+  // filo di luce nel fondo del buco
+  ctx.strokeStyle = `rgba(255,214,140,${0.5 * vita + 0.2})`; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(c.x1, c.y1); ctx.lineTo(c.x2, c.y2); ctx.stroke();
+  // assi spezzate: schegge alzate ai bordi
+  ctx.strokeStyle = '#3a2716'; ctx.lineWidth = 2;
+  for (let i = 1; i < n; i += 2) {
+    const k = i / n, s = i % 4 === 1 ? 1 : -1, bx = c.x1 + dx * k + nx * 5 * s, by = c.y1 + dy * k + ny * 5 * s;
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + nx * 7 * s + dx / L * 3, by + ny * 7 * s - 4); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** Guanto bianco. (x, y) = punto dove tocca le tavole; h = altezza da terra. */
+function disegnaGuantoD1(x, y, h, lato, posa, flash, alfa = 1, rot = 0) {
+  const s = BURATTINAIO_D1.mano.scala;
+  const tremo = posa === 'pugno' || posa === 'presa' ? Math.sin(tick * 1.7) * 0.8 : 0;
+  ctx.save();
+  ctx.globalAlpha *= alfa;
+  // ombra morbida sotto (solo volume, mai un bersaglio: piccola, sempre centrata sulla mano e svanisce con l'altezza)
+  ctx.fillStyle = `rgba(0,0,0,${0.32 * Math.max(0, 1 - h / 90)})`;
+  ctx.beginPath(); ctx.ellipse(x, y + 2, 20 * s * 0.8, 5, 0, 0, TAU); ctx.fill();
+  ctx.translate(x + tremo, y - h - 26 * s);
+  ctx.rotate(rot);
+  ctx.scale(s * (lato < 0 ? -1 : 1), s);
+  const bianco = flash ? TINTE_D1.guantoFlash : TINTE_D1.guanto;
+  // manica nera che sale nel buio (il braccio non finisce mai)
+  ctx.fillStyle = TINTE_D1.manica;
+  ctx.beginPath(); ctx.moveTo(-15, -14); ctx.lineTo(-24, -420); ctx.lineTo(24, -420); ctx.lineTo(15, -14); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(242,192,107,0.35)'; ctx.lineWidth = 0.8; ctx.stroke();
+  ctx.lineJoin = 'round';
+  const contorno = () => { ctx.strokeStyle = TINTE_D1.china; ctx.lineWidth = 1.6; ctx.stroke(); };
+  // polsino con l'impuntura d'oro
+  ctx.fillStyle = bianco; ctx.beginPath(); ctx.roundRect(-16, -22, 32, 10, 3); ctx.fill(); contorno();
+  ctx.strokeStyle = TINTE_D1.oro; ctx.lineWidth = 0.9; ctx.beginPath(); ctx.moveTo(-13, -17); ctx.lineTo(13, -17); ctx.stroke();
+  if (posa === 'pugno') {
+    ctx.fillStyle = bianco; ctx.beginPath(); ctx.roundRect(-17, -13, 34, 26, 8); ctx.fill(); contorno();
+    for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(-12 + i * 8, 13, 4.6, 0, TAU); ctx.fillStyle = bianco; ctx.fill(); contorno(); }
+    ctx.fillStyle = TINTE_D1.guantoOmbra; ctx.beginPath(); ctx.roundRect(-6, -2, 20, 7, 3); ctx.fill(); contorno(); // pollice di traverso
+  } else {
+    const presa = posa === 'presa';
+    const floscia = posa === 'floscia';
+    ctx.fillStyle = bianco; ctx.beginPath(); ctx.roundRect(-17, -13, 34, 24, 7); ctx.fill(); contorno();
+    for (let i = 0; i < 4; i++) {
+      const fx = -12.5 + i * 8.3;
+      const ventaglio = (i - 1.5) * (floscia ? 0.05 : 0.12);
+      ctx.save(); ctx.translate(fx, 9); ctx.rotate(ventaglio + (floscia ? 0.15 : 0));
+      ctx.fillStyle = bianco; ctx.beginPath();
+      if (presa) { ctx.moveTo(-3.6, 0); ctx.quadraticCurveTo(-4, 14, 3, 15); ctx.lineTo(3.6, 9); ctx.quadraticCurveTo(1, 8, 3.6, 0); ctx.closePath(); }
+      else ctx.roundRect(-3.6, -1, 7.2, floscia ? 22 : 20 - Math.abs(i - 1.5) * 2, 3.6);
+      ctx.fill(); contorno(); ctx.restore();
+    }
+    ctx.save(); ctx.translate(16, -4); ctx.rotate(presa ? 0.2 : -0.6);
+    ctx.fillStyle = bianco; ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 15, 3.5); ctx.fill(); contorno(); ctx.restore();
+    // le tre cuciture sul dorso
+    ctx.strokeStyle = TINTE_D1.guantoOmbra; ctx.lineWidth = 1;
+    for (const k of [-6, 0, 6]) { ctx.beginPath(); ctx.moveTo(k, -9); ctx.lineTo(k, 4); ctx.stroke(); }
+  }
+  // luce di lanterna sul bordo alto
+  ctx.strokeStyle = 'rgba(242,192,107,0.6)'; ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(-14, -12); ctx.lineTo(14, -12); ctx.stroke();
+  ctx.restore();
+}
+
+function disegnaManoD1(m) {
+  const rot = m.posa === 'piatta' ? (m.dirSpazza || 1) * -1.25 : 0;
+  disegnaGuantoD1(m.x, m.y, m.h || 0, m.lato, m.posa === 'piatta' ? 'aperta' : m.posa, m.flash > 0, 1, rot);
+}
+
+/** Forbici colossali d'ottone (centro sul perno). */
+function disegnaForbiciSagomaD1(x, y, ang, apertura, h, flash, alfa = 1) {
+  const L = BURATTINAIO_D1.forbici.lunghezza;
+  ctx.save();
+  ctx.globalAlpha *= alfa;
+  ctx.fillStyle = `rgba(0,0,0,${0.3 * Math.max(0, 1 - h / 60)})`;
+  ctx.beginPath(); ctx.ellipse(x, y + 2, 30, 6, 0, 0, TAU); ctx.fill();
+  ctx.translate(x, y - h - 6);
+  ctx.rotate(ang);
+  const lama = (segno) => {
+    ctx.save(); ctx.rotate(segno * apertura * 0.5);
+    const gr = ctx.createLinearGradient(0, -6, 0, 6);
+    gr.addColorStop(0, TINTE_D1.ottoneLuce); gr.addColorStop(0.5, flash ? '#fff1c0' : TINTE_D1.ottone); gr.addColorStop(1, TINTE_D1.ottoneOmbra);
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.moveTo(-10, -segno * 2); ctx.quadraticCurveTo(L * 0.3, -segno * 17, L * 0.62, -segno * 1.5); ctx.lineTo(L * 0.62, segno * 0.5); ctx.lineTo(-10, segno * 3); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = TINTE_D1.china; ctx.lineWidth = 1.3; ctx.stroke();
+    // anello del manico
+    ctx.beginPath(); ctx.ellipse(-L * 0.24, segno * 14, 30, 16, segno * 0.3, 0, TAU);
+    ctx.strokeStyle = TINTE_D1.ottone; ctx.lineWidth = 8; ctx.stroke();
+    ctx.strokeStyle = TINTE_D1.china; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-8, segno * 2); ctx.lineTo(-L * 0.17, segno * 10); ctx.strokeStyle = TINTE_D1.ottone; ctx.lineWidth = 8; ctx.stroke();
+    ctx.restore();
+  };
+  lama(1); lama(-1);
+  ctx.fillStyle = '#2a1a06'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, TAU); ctx.fill();
+  ctx.strokeStyle = TINTE_D1.ottoneLuce; ctx.lineWidth = 2; ctx.stroke();
+  ctx.strokeStyle = TINTE_D1.ottone; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.stroke();
+  ctx.restore();
+}
+
+function disegnaForbiciD1(f) {
+  const tr = f.tremaD1 ? Math.sin(tick * 1.9) * f.tremaD1 : 0;
+  disegnaForbiciSagomaD1(f.x + tr, f.y, f.ang || 0, f.apertura || 0, f.h || 0, f.flash > 0);
+  if (f.faseD1 === 'apre' && f.tD1 % 12 < 3) { // bagliore sulla lama aperta (sulla forbice, non a terra)
+    ctx.save(); ctx.globalAlpha = 0.8; ctx.fillStyle = '#fff6d0';
+    ctx.beginPath(); ctx.arc(f.x + Math.cos(f.ang) * 30, f.y - (f.h || 0) - 6 + Math.sin(f.ang) * 30, 2.4, 0, TAU); ctx.fill(); ctx.restore();
+  }
+}
+
+/** Effetti di caduta (marionette col filo tagliato, mani che si afflosciano) e i fili che cadono a vittoria. */
+function disegnaEffettiD1() {
+  for (const e of d1.effetti) {
+    const k = e.t / 90;
+    if (e.tipo === 'caduta') {
+      ctx.save();
+      ctx.globalAlpha = 1 - k;
+      ctx.translate(e.x, e.y + e.t * e.t * 0.04);
+      ctx.rotate(e.t * 0.08);
+      ctx.fillStyle = '#100a07';
+      ctx.fillRect(-3, -14, 6, 14); ctx.beginPath(); ctx.arc(0, -17, 4, 0, TAU); ctx.fill();
+      ctx.fillRect(-7, -12, 14, 2.5); ctx.fillRect(-3, 0, 2, 8); ctx.fillRect(1, 0, 2, 8);
+      ctx.restore();
+      ctx.save(); ctx.globalAlpha = 1 - k; ctx.strokeStyle = TINTE_D1.oro; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(e.x, e.y - 30 - e.t * 3); ctx.lineTo(e.x + Math.sin(e.t * 0.3) * 4, e.y - 70 - e.t * 4); ctx.stroke(); ctx.restore();
+    } else if (e.tipo === 'mano') {
+      disegnaGuantoD1(e.x, e.y, e.t * e.t * 0.05, e.lato, 'floscia', false, 1 - k, 0.2 * e.lato);
+    } else if (e.tipo === 'forbici') {
+      disegnaForbiciSagomaD1(e.x, e.y + e.t * e.t * 0.03, e.t * 0.05, 0.3, 0, false, 1 - k);
+    }
+  }
+  const v = d1.vittoria;
+  if (v && statoRun.stanzaCorrente === d1.stanza) {
+    ctx.save();
+    ctx.strokeStyle = TINTE_D1.oro; ctx.lineWidth = 0.9;
+    for (const f of v.fili) {
+      ctx.globalAlpha = Math.max(0, 1 - v.t / BURATTINAIO_D1.vittoriaTick) * 0.9;
+      ctx.beginPath(); ctx.moveTo(f.x, f.y);
+      ctx.quadraticCurveTo(f.x + Math.sin(v.t * 0.1 + f.ondula) * 10, f.y + f.len / 2, f.x + Math.sin(v.t * 0.07 + f.ondula) * 4, f.y + f.len);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+// ===========================================================================
+// 11. SONDA QA E AGGANCI
+// ===========================================================================
+try { if (typeof registraVoceBossB8 === 'function') registraVoceBossB8(BURATTINAIO_D1.idCapo, [TESTI_D1.voce.inizio]); } catch (_) { /* b8 assente */ }
+
+Object.assign(window.__teatro.interni, {
+  BURATTINAIO_D1, TESTI_D1,
+  /** Lo scontro vero Sopra la Ribalta (b8 lo chiama da entraSopraLaRibalta). */
+  scontroSopraLaRibalta: scontroSopraLaRibaltaD1,
+  /**
+   * QA: parte lo scontro con `sigilli` (0..3, i primi n ferri) senza giocare la run. fine() = finale narrato di b8.
+   * @param {number} sigilli
+   */
+  provaBurattinaioD1(sigilli = 0) {
+    const I = window.__teatro.interni;
+    return scontroSopraLaRibaltaD1({
+      sigilli, soloNumero: true,
+      fine: () => { if (typeof I.finaleSopraLaRibalta === 'function') I.finaleSopraLaRibalta(); },
+      annulla: () => { if (typeof tornaInPiazzaB8 === 'function' && statoRun.fase !== 'hub') tornaInPiazzaB8(false); },
+    });
+  },
+  burattinaioD1: Object.freeze({
+    stato: () => ({
+      attivo: d1.attivo, atto: d1.atto, esito: d1.esito, vittoria: Boolean(d1.vittoria), sigilli: { ...d1.sigilli },
+      presa: Boolean(d1.presa), intermezzo: d1.intermezzo,
+      capo: (() => { const c = capoD1(); return c ? { hp: c.hp, maxHp: c.maxHp, nome: c.nome } : null; })(),
+      parti: d1.stanza ? d1.stanza.nemici.filter((n) => n.hp > 0 && n.bossId !== BURATTINAIO_D1.idCapo).map((n) => ({
+        id: n.bossId || n.tipo, hp: n.hp, fase: n.faseD1 || null, elite: Boolean(n.eliteD1), x: Math.round(n.x), y: Math.round(n.y),
+      })) : [],
+    }),
+    /** QA: danno a tutte le parti vive del Burattinaio (anche in aria). */
+    danneggia(q) {
+      if (!d1.stanza) return;
+      for (const n of d1.stanza.nemici) {
+        if (n.hp > 0 && (n.bossId === 'gb-mano' || n.bossId === 'gb-forbici')) n.hp -= q;
+      }
+    },
+    /** QA: porta avanti la scena (salta intermezzi). */
+    saltaIntermezzo() { d1.intermezzo = 0; },
+    /** QA: disegni delle manine piccole (e dei loro fili) passati alla resa finora. */
+    maniPiccole: () => maniPiccoleD1,
   }),
 });
 

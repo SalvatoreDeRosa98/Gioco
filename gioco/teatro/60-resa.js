@@ -1409,9 +1409,10 @@ function disegnaFrame(dtMs) {
       for (let i = statoRun.ondeEsplosione.length - 1; i >= 0; i--) {
         const onda = statoRun.ondeEsplosione[i];
         onda.r += (onda.maxR - onda.r) * 0.25;
-        onda.tick++;
+        onda.tick = (onda.tick || 0) + 1; // molte onde nascono senza tick: con «tick++» restavano a schermo per sempre
         const alpha = Math.max(0, 1 - onda.tick / 16);
         ctx.save();
+        ctx.globalAlpha = alpha;          // l'anello sfuma anche quando ha un colore suo
         ctx.strokeStyle = onda.color || onda.colore || `rgba(251, 146, 60, ${alpha.toFixed(2)})`;
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -1725,7 +1726,8 @@ function disegnaHUDPixelArt(st) {
     const scoperte = m.stanze.filter((s) => s.visitata).length;
     const totMappa = m.stanze.filter((s) => !((s.tipo === 'segreta' || s.tipo === 'patto') && !s.visitata)).length;
     drawTextFit(
-      `${getQuartierePiano(statoRun.piano).nome.toUpperCase()}${statoRun.ciclo > 1 ? ' ∞' + statoRun.ciclo : ''} · ${scoperte}/${totMappa}`, // (d7)
+      // una stanza può dare il suo nome al luogo (st.nomeLuogoHud: lo scontro Sopra la Ribalta di d1)
+      `${((statoRun.stanzaCorrente && statoRun.stanzaCorrente.nomeLuogoHud) || getQuartierePiano(statoRun.piano).nome).toUpperCase()}${statoRun.ciclo > 1 ? ' ∞' + statoRun.ciclo : ''} · ${scoperte}/${totMappa}`, // (d7)
       x0 - 6 + mw / 2,
       y0 - 5,
       mw - 8,
