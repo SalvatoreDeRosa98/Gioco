@@ -421,11 +421,14 @@ function disegnaSchedaBloccataA6(cx, charId, selezionata) {
   ctx.fillStyle = g;
   ctx.fillRect(cx + 2, S.y + 2, S.w - 4, 100);
   // silhouette: il burattino disegnato in nero (teatro d'ombre)
+  // (e4) ritaglio sulla scheda: il filtro di Chrome lavora su tutta la tela a ogni operazione (−90% dei pixel filtrati)
+  ctx.save();
+  ctx.beginPath(); ctx.rect(cx + 2, S.y + 2, S.w - 4, 98); ctx.clip(); // la parte alta, dove sta la sagoma (piedi a S.y + 68)
   ctx.filter = 'brightness(0)';
   ctx.globalAlpha = 0.92;
   try {
     disegnaFerruccioPittorico(pedX, pedY, { charId, charInfo: p, flipX: false, moving: false, tick: 0, haSpada: charId === 'taddeo', sinergie: {} });
-  } finally { ctx.filter = 'none'; ctx.globalAlpha = 1; }
+  } finally { ctx.restore(); ctx.filter = 'none'; ctx.globalAlpha = 1; }
   drawPillLabel('🔒', cx + S.w - 16, S.y + 12, 22, { size: 7, color: '#a8a29e', border: '#4b5563' });
   drawTextFit(TESTI_A6.silhouetteNome(p.nome), pedX, S.y + 95, S.w - 10, { size: 8.5, color: '#a8a29e', weight: 'bold' });
   drawTextFit(TESTI_A6.bloccato, pedX, S.y + 109, S.w - 12, { size: 7, color: '#f9cb40' });
