@@ -60,10 +60,15 @@ const file = path.resolve(RADICE, process.argv[2] || 'gioco/teatro_marionette.ht
     const firma = (m) => JSON.stringify(m.stanze.map((s) => [s.id, s.tipo, s.cx, s.cy, Boolean(s.quadriD5), s.botoleD5 ? s.botoleD5.lista.length : 0,
       s.bucaD4 ? s.bucaD4.ondateTot : 0, (s.nemici || []).map((n) => n.tipo).join()]));
     for (let piano = 1; piano <= 4; piano++) for (let seme = 1; seme <= 6; seme++) {
-      // la prima chiamata può risentire dello stato lasciato dalle mappe precedenti (rosa dei boss, pool segreto: prima di d4/d5);
-      // la seconda e la terza devono coincidere: quadri, botole e Buca non aggiungono stato loro
-      I.mappaConSeme(piano, seme * 2654435761);
-      if (firma(I.mappaConSeme(piano, seme * 2654435761)) !== firma(I.mappaConSeme(piano, seme * 2654435761))) diversi.push([piano, seme]);
+      // stessa sequenza di chiamate → stessa mappa: prima di ogni chiamata si rimette il pool segreto della run, che la
+      // generazione legge e svuota. Quel pool NON fa parte del seme: in una run vera la mappa di un piano dipende anche da
+      // cosa i piani precedenti ne hanno già preso (voluto, non è un guasto di d4-d6). Rosa dei boss e pozioni sono già
+      // fisse dopo il riscaldamento qui sopra.
+      const R = I.statoRun, pool = Array.isArray(R.poolSegreto) ? R.poolSegreto.slice() : R.poolSegreto;
+      const rimetti = () => { R.poolSegreto = Array.isArray(pool) ? pool.slice() : pool; };
+      rimetti(); const a = firma(I.mappaConSeme(piano, seme * 2654435761));
+      rimetti(); const b = firma(I.mappaConSeme(piano, seme * 2654435761));
+      if (a !== b) diversi.push([piano, seme]);
     }
     return diversi;
   });
