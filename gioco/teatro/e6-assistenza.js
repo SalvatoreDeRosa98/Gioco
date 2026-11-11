@@ -19,8 +19,13 @@
  *      Vale per colpi, spada, maglio di Taddeo (alla partenza), colpi spettrali dell'Ombra; il raggio (t3) resta
  *      dritto. Mai nemici in volo/in alto (stesse soglie di nemicoVicinoD e danneggiaNemico).
  *
+ *   3. IL CONTO DELLA NOTTE: alla morte e alla vittoria la pergamena del registro (a7) si disegna come locandina:
+ *      chi ti ha battuto (figura a ombre), piano, tempo, stanze, nemici, icone degli oggetti, trasformazioni, il
+ *      momento migliore e un consiglio legato alla causa (CONSIGLI_E6). Stessi dati, momenti e chiusura di a7
+ *      (un tasto, un click/tocco, Ⓐ): la sequenza di morte non cambia.
+ *
  * Avvolge (chiamando sempre la base): avviaPiano, t4Gancio, disegnaFrame, eseguiAttacco4Direzioni,
- * sparaProiettiliDirezione, colpoMaglioD2, passoLogico, righeB3, impostaOpzioneB3. Nessun gancio nei file altrui.
+ * sparaProiettiliDirezione, colpoMaglioD2, passoLogico, righeB3, impostaOpzioneB3, disegnaPergamenaA7. Nessun gancio nei file altrui.
  * Script classico caricato dopo l'ultimo teatro/d*.js. Regole: teatro/LEGGIMI.md.
  */
 
@@ -48,6 +53,12 @@ const ASSISTENZA_E6 = Object.freeze({
     riflessoTick: 10,           // per quanti tick il colpo corretto porta il piccolo riflesso
     predefinito: Object.freeze({ tocco: 'leggera', tastiera: 'spenta', pad: 'spenta' }),
   }),
+  conto: Object.freeze({
+    x: 70, y: 28, w: 500, h: 304,
+    oggettiMax: 14,             // icone degli oggetti presi (poi «+N»)
+    scalaIcona: 1.5,
+    serieMinima: 2,             // stanze di fila senza danni perché diventino «il momento migliore»
+  }),
 });
 
 const TESTI_E6 = Object.freeze({
@@ -62,7 +73,46 @@ const TESTI_E6 = Object.freeze({
   rigaMira: 'Mira assistita',
   notaMira: 'Leggera: il colpo si piega un poco verso il nemico. Piena: anche senza direzione spara al più vicino.',
   sceltaMira: Object.freeze({ spenta: 'SPENTA', leggera: 'LEGGERA', piena: 'PIENA' }),
+  contoTitolo: (n) => `IL CONTO DELLA NOTTE ${n}`,
+  contoVittoria: (n) => `NOTTE ${n}: I FILI SONO SPEZZATI`,
+  battuto: 'Ti ha battuto',
+  vittoria: 'Donna Luciana è caduta. Il Teatro continua.',
+  voci: Object.freeze({ piano: 'Piano', tempo: 'Tempo', stanze: 'Stanze ripulite', nemici: 'Nemici battuti', oggetti: 'Oggetti presi', trasf: 'Trasformazioni' }),
+  nessuno: 'nessuna',
+  momento: 'Il momento migliore',
+  serie: (n) => `${n} stanze di fila senza un graffio`,
+  boss: (nome) => `Hai abbattuto ${nome}`,
+  nemiciMomento: (n) => `${n} nemici giù prima del sipario`,
+  momentoVuoto: 'Il sipario si è alzato: la prossima volta si va più lontano',
+  consiglio: 'Per la prossima notte',
+  chiudi: 'Premi [E] o tocca per tornare in piazza',
+  chiudiVittoria: 'Premi [E] o tocca per proseguire',
+  trasformazione: (t) => `${t}`,
 });
+
+/**
+ * Consiglio legato alla causa della morte: la prima riga la cui espressione riconosce il nome della fonte.
+ * Ogni frase dice cosa guardare (la posa che annuncia il colpo). Da approvare dall'autore.
+ */
+const CONSIGLI_E6 = Object.freeze([
+  [/pugno.*Burattinaio/i, 'Prima del pugno la mano si ferma in alto e si chiude: quando smette di seguirti, fai due passi di lato.'],
+  [/mano.*Burattinaio|presa/i, 'La mano aperta che scende piano cerca di prenderti: tieniti lontano dalla sua ombra e colpiscila quando è a terra.'],
+  [/forbici.*Burattinaio|Forbici del Burattinaio/i, 'Le forbici si aprono prima di tagliare: quando le lame si allargano, esci dalla loro linea.'],
+  [/Gatto dei Quattro Canti/i, 'Il Gatto si acquatta prima del balzo e da in alto non si colpisce: spostati quando abbassa la coda, colpisci quando atterra.'],
+  [/Custode di Marmo|Madre di Marmo|statua/i, 'Il Custode si chiude e incassa: aspetta che si apra, è lì che i colpi fanno male davvero.'],
+  [/Capitano di Piombo/i, 'Il Capitano punta il moschetto prima di sparare: quando alza la canna, mettiti di traverso alla sua linea.'],
+  [/Spezzafili/i, 'Lo Spezzafili carica il colpo all\'indietro: quando si piega, allontanati prima che sciolga il braccio.'],
+  [/Regina delle Vespe/i, 'La Regina si ferma a mezz\'aria prima della picchiata: muoviti in quel momento, non dopo.'],
+  [/Donna Luciana|Burattinaia/i, 'Donna Luciana tende i fili prima di tirarli: quando li vedi tesi, cambia corsia.'],
+  [/Vespa/i, 'La vespa vibra sul posto prima di lanciarsi: se smette di girarti attorno, scansati di lato.'],
+  [/Gatto/i, 'Il gatto si abbassa sulle zampe prima di saltare: appena lo vedi acquattato, cambia direzione.'],
+  [/Guardia|Plotone|Soldat/i, 'La guardia si pianta e alza l\'arma prima del colpo: quando si ferma, esci dalla sua linea di tiro.'],
+  [/Maschera|Pulcinell/i, 'La maschera chiusa incassa quasi tutto: aspetta che si apra e colpisci allora, tenendoti a distanza.'],
+  [/Bozzo|esplosion|bomba|scoppio/i, 'Il bozzo gonfio sta per scoppiare: non colpirlo da vicino, allontanati e tira da lontano.'],
+  [/sangue|ceppo|rovi|Camerini|sacrificio/i, 'Le stanze speciali chiedono Maschere: entraci quando sei pieno, non a mezza Maschera.'],
+  [/un colpo di|proiettil|Velo/i, 'I colpi partono dopo una piccola pausa di chi spara: quando un nemico si ferma e ti guarda, muoviti di lato.'],
+  [/./, 'Chi ti ha battuto si è fermato un attimo prima di colpire: guarda la sua posa e muoviti in quell\'attimo.'],
+]);
 
 // ===========================================================================
 // STATO
@@ -271,6 +321,7 @@ avviaPiano = function avviaPianoE6(...args) {
 const t4GancioBaseE6 = t4Gancio;
 t4Gancio = function t4GancioE6(nome, ...args) {
   try {
+    if ((nome === 'morte' && statoRun.fase === 'in_gioco') || nome === 'bossSconfitto') arricchisciVoceE6();
     if (nome === 'morte' && statoRun.fase === 'in_gioco') cancellaIstantaneaE6();
     else if (nome === 'ricomincia') cancellaIstantaneaE6();
     else if (nome === 'bossSconfitto') {
@@ -349,7 +400,7 @@ function disegnaCartelloE6() {
   ctx.beginPath(); ctx.arc(R.x + 28, R.y + 19, 7, 0, Math.PI * 2); ctx.fill();
   drawTextFit(TESTI_E6.titoloRipresa, W / 2, R.y + 22, R.w - 70, { size: 10, color: '#f9cb40' });
   drawTextFit(TESTI_E6.riprendi(k.snap.piano, nome), W / 2, R.y + 42, R.w - 24, { size: 9, color: '#ffffff' });
-  drawTextFit(TESTI_E6.sottoRipresa, W / 2, R.y + 58, R.w - 24, { size: 7, color: '#c9a679', style: 'italic' });
+  drawTextFit(TESTI_E6.sottoRipresa, W / 2, R.y + 58, R.w - 24, { size: 7.5, color: '#c9a679', style: 'italic' });
   if (k.snap.riprese > 0) drawTextFit(TESTI_E6.riprese(k.snap.riprese), W / 2, R.y + 70, R.w - 24, { size: 6.5, color: '#8a6a3f' });
   [TESTI_E6.bottoneRiprendi, TESTI_E6.bottoneNuova].forEach((t, i) => {
     const b = R.bottoni[i];
@@ -554,6 +605,7 @@ passoLogico = function passoLogicoE6(...args) {
       if (d) eseguiAttacco4Direzioni(d[0], d[1]);
     }
     mira.senzaDirezione = false;
+    osservaContoE6();
   } catch (err) { console.error('[e6] mira', err); }
   return r;
 };
@@ -601,6 +653,173 @@ if (typeof impostaOpzioneB3 === 'function') {
   };
 }
 
+
+// ===========================================================================
+// 3. IL CONTO DELLA NOTTE (al posto della pergamena del registro, stessi momenti e stessa chiusura di a7)
+// ===========================================================================
+const conto = { serie: 0, serieMax: 0, pulite: 0, danni: 0, trasf: [], runVista: null };
+
+/** Consiglio per la causa `causa` (mai generico: c'è sempre una riga che riconosce la fonte). */
+function consiglioE6(causa) {
+  const c = String(causa || 'le ombre');
+  for (const [re, frase] of CONSIGLI_E6) if (re.test(c)) return frase;
+  return CONSIGLI_E6[CONSIGLI_E6.length - 1][1];
+}
+
+/** A ogni tick: stanze ripulite di fila senza danni (dati del registro a7, niente contatori doppi). */
+function osservaContoE6() {
+  if (typeof a7 === 'undefined' || !a7.run) return;
+  const r = a7.run;
+  if (conto.runVista !== r.id) { conto.runVista = r.id; conto.serie = 0; conto.serieMax = 0; conto.pulite = r.stanzePulite; conto.danni = r.danni.length; }
+  if (r.danni.length > conto.danni) { conto.danni = r.danni.length; conto.serie = 0; }
+  if (r.stanzePulite > conto.pulite) { conto.serie += r.stanzePulite - conto.pulite; conto.pulite = r.stanzePulite; conto.serieMax = Math.max(conto.serieMax, conto.serie); }
+}
+
+/** Trasformazioni della run in corso (nomi dei temi di b4). */
+function trasformazioniE6() {
+  const s = statoRun.trasfB4;
+  if (!s || s.run !== statoRun.numeroRun || !s.attive) return [];
+  return Object.keys(s.attive).filter((k) => s.attive[k]).map((k) => (typeof TEMI_B4 !== 'undefined' && TEMI_B4.nomi[k]) || k);
+}
+
+/** Il momento migliore della notte, dai dati del registro. */
+function momentoE6(v) {
+  const C = ASSISTENZA_E6.conto;
+  if (v.serieE6 >= C.serieMinima) return TESTI_E6.serie(v.serieE6);
+  if (v.boss && v.boss.length) return TESTI_E6.boss(v.boss[v.boss.length - 1].nome);
+  if (v.nemiciUccisi > 0) return TESTI_E6.nemiciMomento(v.nemiciUccisi);
+  return TESTI_E6.momentoVuoto;
+}
+
+/** Sagoma a ombre di chi ha battuto il giocatore (famiglia riconosciuta dal nome). */
+function disegnaFiguraE6(causa, x, y) {
+  const c = String(causa || '');
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = '#0b0705'; ctx.strokeStyle = '#f2b15a'; ctx.lineWidth = 1.4; ctx.lineJoin = 'round';
+  // fili d'oro dall'alto
+  ctx.save(); ctx.strokeStyle = 'rgba(249, 203, 64, 0.7)'; ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(-10, -46); ctx.lineTo(-10, -18); ctx.moveTo(10, -46); ctx.lineTo(10, -18); ctx.moveTo(0, -46); ctx.lineTo(0, -30); ctx.stroke(); ctx.restore();
+  ctx.beginPath();
+  if (/gatt/i.test(c)) {
+    ctx.ellipse(0, 6, 18, 10, 0, 0, Math.PI * 2);
+    ctx.moveTo(14, -6); ctx.arc(14, -6, 8, 0, Math.PI * 2);
+    ctx.moveTo(9, -12); ctx.lineTo(11, -20); ctx.lineTo(15, -13); ctx.lineTo(19, -20); ctx.lineTo(20, -11);
+    ctx.moveTo(-18, 4); ctx.quadraticCurveTo(-30, -6, -24, -20);
+  } else if (/vesp/i.test(c)) {
+    ctx.ellipse(0, 4, 8, 13, 0, 0, Math.PI * 2);
+    ctx.moveTo(0, -12); ctx.arc(0, -12, 6, 0, Math.PI * 2);
+    ctx.moveTo(-6, -2); ctx.ellipse(-15, -6, 10, 5, -0.4, 0, Math.PI * 2);
+    ctx.moveTo(6, -2); ctx.ellipse(15, -6, 10, 5, 0.4, 0, Math.PI * 2);
+  } else if (/mano|pugno|presa|forbici|Burattinaio/i.test(c)) {
+    ctx.moveTo(-14, 18); ctx.lineTo(-16, -4); ctx.lineTo(-12, -20); ctx.lineTo(-8, -4); ctx.lineTo(-5, -24); ctx.lineTo(-1, -4);
+    ctx.lineTo(3, -24); ctx.lineTo(6, -4); ctx.lineTo(11, -18); ctx.lineTo(13, 0); ctx.lineTo(20, -6); ctx.lineTo(16, 18); ctx.closePath();
+  } else {
+    // marionetta in piedi (guardie, maschere, boss): testa, busto a campana, braccia appese
+    ctx.arc(0, -18, 7, 0, Math.PI * 2);
+    ctx.moveTo(-8, -9); ctx.lineTo(8, -9); ctx.lineTo(13, 20); ctx.lineTo(-13, 20); ctx.closePath();
+    ctx.moveTo(-9, -7); ctx.lineTo(-17, 8); ctx.lineTo(-14, 9); ctx.lineTo(-7, -2);
+    ctx.moveTo(9, -7); ctx.lineTo(17, 8); ctx.lineTo(14, 9); ctx.lineTo(7, -2);
+    if (/Guardia|Capitano|Plotone/i.test(c)) { ctx.moveTo(-6, -24); ctx.lineTo(6, -24); ctx.lineTo(3, -34); ctx.lineTo(-3, -34); ctx.closePath(); }
+  }
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+/** Spezza `testo` in righe larghe al più `maxW` px (parole intere). */
+function aCapoE6(testo, maxW, size) {
+  ctx.save();
+  ctx.font = `italic bold ${size}px Georgia, serif`;
+  const righe = [];
+  let riga = '';
+  for (const p of String(testo).split(' ')) {
+    const prova = riga ? `${riga} ${p}` : p;
+    if (ctx.measureText(prova).width > maxW && riga) { righe.push(riga); riga = p; } else riga = prova;
+  }
+  if (riga) righe.push(riga);
+  ctx.restore();
+  return righe;
+}
+
+/** La locandina del conto: sostituisce il disegno della pergamena di a7 (stessa voce del registro). */
+function disegnaContoE6() {
+  const { voce: v, tipo } = a7.pergamena;
+  const C = ASSISTENZA_E6.conto;
+  const vitt = tipo === 'vittoria';
+  const T = (t, x, y, w, o = {}) => drawTextFit(t, x, y, w, { size: 8, color: '#e6d2aa', align: 'left', ...o });
+  ctx.save();
+  ctx.fillStyle = 'rgba(5, 3, 2, 0.78)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#140c08'; ctx.fillRect(C.x, C.y, C.w, C.h);
+  ctx.strokeStyle = '#f9cb40'; ctx.lineWidth = 2; ctx.strokeRect(C.x, C.y, C.w, C.h);
+  ctx.strokeStyle = '#5a3818'; ctx.lineWidth = 1; ctx.strokeRect(C.x + 5, C.y + 5, C.w - 10, C.h - 10);
+  const cx = C.x + C.w / 2;
+  T(vitt ? TESTI_E6.contoVittoria(v.notte) : TESTI_E6.contoTitolo(v.notte), cx, C.y + 24, C.w - 40, { size: 13, color: '#f9cb40', align: 'center' });
+  T(v.nomePersonaggio || '', cx, C.y + 38, C.w - 40, { size: 7.5, color: '#a8a29e', align: 'center', style: 'italic' });
+  // a sinistra: chi ti ha battuto, con la sua figura
+  const fx = C.x + 74;
+  ctx.fillStyle = '#2a1b10'; ctx.fillRect(C.x + 18, C.y + 48, 112, 120);
+  ctx.strokeStyle = '#5a3818'; ctx.strokeRect(C.x + 18.5, C.y + 48.5, 111, 119);
+  if (vitt) T('★', fx, C.y + 112, 40, { size: 26, color: '#f9cb40', align: 'center' });
+  else {
+    disegnaFiguraE6(v.causa, fx, C.y + 116);
+    T(TESTI_E6.battuto, fx, C.y + 60, 104, { size: 7, color: '#c9a679', align: 'center', style: 'italic' });
+  }
+  T(vitt ? '' : (v.causa || 'le ombre'), fx, C.y + 158, 104, { size: 7.5, color: '#ffffff', align: 'center' });
+  // a destra: i numeri
+  const xs = C.x + 146, w2 = C.w - 164;
+  const righe = [
+    [TESTI_E6.voci.piano, String(v.piano)],
+    [TESTI_E6.voci.tempo, tempoA7(v.tempoMs)],
+    [TESTI_E6.voci.stanze, String(v.stanzePulite)],
+    [TESTI_E6.voci.nemici, String(v.nemiciUccisi)],
+    [TESTI_E6.voci.trasf, (v.trasfE6 && v.trasfE6.length) ? v.trasfE6.join(', ') : TESTI_E6.nessuno],
+  ];
+  righe.forEach(([k, val], i) => {
+    const y = C.y + 60 + i * 15;
+    T(`${k}`, xs, y, 110, { size: 7.5, color: '#c9a679' });
+    T(val, xs + 116, y, w2 - 116, { size: 8.5, color: '#ffffff' });
+  });
+  const yO = C.y + 60 + righe.length * 15 + 2;
+  T(`${TESTI_E6.voci.oggetti} (${v.oggetti.length})`, xs, yO, 110, { size: 7.5, color: '#c9a679' });
+  const passo = 12 * C.scalaIcona + 4;
+  v.oggetti.slice(0, C.oggettiMax).forEach((o, i) => {
+    const base = typeof trovaOggettoB === 'function' ? trovaOggettoB(o.id) : null;
+    const spr = (base && (SPRITE_OGGETTI[base.sprite] || SPRITE_OGGETTI[base.id])) || SPRITE_OGGETTI[o.id];
+    const ix = xs + 10 + (i % 7) * passo, iy = yO + 16 + Math.floor(i / 7) * passo;
+    if (spr && o.nome !== '?') drawPixelSprite(spr, ix, iy, C.scalaIcona);
+    else T('?', ix, iy + 3, 12, { size: 9, color: '#a8a29e', align: 'center' });
+  });
+  if (v.oggetti.length > C.oggettiMax) T(`+${v.oggetti.length - C.oggettiMax}`, xs + 10 + 7 * passo, yO + 16 + passo, 30, { size: 8, color: '#c9a679' });
+  // in basso: il momento migliore e il consiglio
+  const yM = C.y + 184;
+  ctx.strokeStyle = '#5a3818'; ctx.beginPath(); ctx.moveTo(C.x + 18, yM - 8); ctx.lineTo(C.x + C.w - 18, yM - 8); ctx.stroke();
+  T(`✦ ${TESTI_E6.momento}`, C.x + 22, yM + 4, 200, { size: 7.5, color: '#c9a679' });
+  T(momentoE6(v), C.x + 22, yM + 20, C.w - 44, { size: 9, color: '#ffffff' });
+  if (!vitt) {
+    T(`✦ ${TESTI_E6.consiglio}`, C.x + 22, yM + 42, 200, { size: 7.5, color: '#c9a679' });
+    const righeC = aCapoE6(consiglioE6(v.causa), C.w - 44, 8.5);
+    righeC.slice(0, 3).forEach((rg, i) => T(rg, C.x + 22, yM + 58 + i * 13, C.w - 44, { size: 8.5, color: '#f2d9a6', style: 'italic' }));
+  } else T(TESTI_E6.vittoria, C.x + 22, yM + 46, C.w - 44, { size: 8.5, color: '#f2d9a6', style: 'italic' });
+  T(vitt ? TESTI_E6.chiudiVittoria : TESTI_E6.chiudi, cx, C.y + C.h - 14, C.w - 40, { size: 7.5, color: '#a8a29e', align: 'center' });
+  ctx.restore();
+}
+
+if (typeof disegnaPergamenaA7 === 'function') {
+  const pergamenaBaseE6 = disegnaPergamenaA7;
+  disegnaPergamenaA7 = function disegnaPergamenaE6(...args) {
+    try { if (a7.pergamena && a7.pergamena.voce) { disegnaContoE6(); return undefined; } } catch (err) { console.error('[e6] conto', err); }
+    return pergamenaBaseE6.apply(this, args);
+  };
+}
+
+/** Prima che a7 chiuda la voce (morte, vittoria): serie migliore e trasformazioni dentro la voce stessa. */
+function arricchisciVoceE6() {
+  if (typeof a7 === 'undefined' || !a7.run) return;
+  osservaContoE6();
+  a7.run.serieE6 = conto.serieMax;
+  a7.run.trasfE6 = trasformazioniE6();
+}
+
 // ===========================================================================
 // SONDA QA
 // ===========================================================================
@@ -620,6 +839,7 @@ Object.assign(window.__teatro.interni, {
     angolo: (ang) => angoloAssistitoE6(ang),
     direzioneVicino: () => direzioneVersoVicinoE6(),
     get correzioni() { return mira.contati; },
+    consiglio: (c) => consiglioE6(c),
     sparaSenzaDirezione() { mira.senzaDirezione = true; eseguiAttacco4Direzioni(player.dirX, player.dirY); },
   }),
 });
