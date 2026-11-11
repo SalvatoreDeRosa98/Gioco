@@ -72,7 +72,7 @@ const ACQUEDOTTO_D6 = Object.freeze({
   /** Giocatore inzuppato da un panno bagnato. */
   inzuppato: Object.freeze({ tick: 150, rallenta: 0.6 }),
   /** Il dono dopo il Guardiano. */
-  dono: Object.freeze({ x: 214, y: 190 }),
+  dono: Object.freeze({ x: 170, y: 100 }),  // in alto a sinistra: lontano da botola, Patto e condotti
   /** Come scala popolaStanza di 30-mappa.js (stessi numeri: qui servono per i nemici sostituiti). */
   scala: Object.freeze({ moltCiclo: 1.45, velPerPiano: 0.045, velMax: 1.55, hpCremisi: 1.6, hpCampione: 1.35, velDorato: 1.2, hpBossPerPiano: 45 }),
 });
@@ -122,7 +122,7 @@ const TESTI_D6 = Object.freeze({
   presentazione: '«Chi beve l\'acqua del Re, paga il pedaggio.»',
   sconfitta: 'Il Guardiano torna pietra. L\'acqua riprende la sua strada verso la Reggia.',
   dono: '★ DONO DELL\'ACQUEDOTTO',
-  bannerDono: 'L\'acqua, calando, lascia qualcosa sul fondo: un DONO DELL\'ACQUEDOTTO, a sinistra.',
+  bannerDono: '· In alto a sinistra l\'acqua ha lasciato un DONO DELL\'ACQUEDOTTO.',
   inzuppato: 'Inzuppato! I panni bagnati pesano: cammini piano finché non ti asciughi.',
   pergamena: Object.freeze(['Percorso', 'per l\'Acquedotto Carolino']),
   diario: Object.freeze([
@@ -142,6 +142,16 @@ const NEMICI_D6 = Object.freeze({
     nome: 'Rondone di Latta', sostituisce: 'lucciola', hpBase: 9, hpPiano: 2.5, vel: 1.5, raggio: 10, vola: true, massa: 0.5,
     quota: 15, raggioOrbita: 98, giro: 0.8, planaTick: Object.freeze([84, 132]), puntaTick: 28, bloccoTick: 9,
     velPicchiata: 4.0, picchiataTick: 24, risaleTick: 22, spintaVento: 1.4, anticipoVentoTick: 10,
+  }),
+  lavandaia_tufo: Object.freeze({
+    nome: 'Lavandaia di Tufo', sostituisce: 'statua', hpBase: 20, hpPiano: 5.5, vel: 0, raggio: 13, vola: false, massa: Infinity,
+    lavaTick: Object.freeze([70, 112]), alzaTick: 36, bloccoTick: 10, lanciaTick: 16,
+    panno: Object.freeze({ velocita: 2.2, raggio: 7, vitaTick: 150, quotaPx: 16, massimi: 3 }),
+  }),
+  fontaniere: Object.freeze({
+    nome: 'Fontaniere', sostituisce: 'predone', hpBase: 16, hpPiano: 4.5, vel: 1.05, raggio: 11, vola: false, massa: 1.6,
+    distanzaPx: 110, bandaPx: 24, giro: 0.5, passo: 0.8, camminaTick: Object.freeze([120, 172]), giraTick: 38, apreTick: 16,
+    getto: Object.freeze({ gocce: 3, gocceSenzaCanale: 5, apertura: 0.26, velocita: 2.5 }),
   }),
 });
 
@@ -621,6 +631,10 @@ function disegnaCanaleD6(c, tk) {
     else { const px = c.x + corsia, py = c.y + s; ctx.moveTo(px - 2.2, py - a); ctx.lineTo(px, py); ctx.lineTo(px + 2.2, py - a); }
   }
   ctx.globalAlpha = 0.5; ctx.stroke(); ctx.globalAlpha = 1;
+  if (c.giratoD6 !== undefined && tk >= c.giratoD6 && tk - c.giratoD6 < 40) { // la saracinesca ha appena girato
+    ctx.fillStyle = TINTE_D6.schiuma; ctx.globalAlpha = 0.4 * (1 - (tk - c.giratoD6) / 40);
+    ctx.fillRect(c.x, c.y, c.w, c.h); ctx.globalAlpha = 1;
+  }
   // schiuma dove l'acqua esce
   ctx.fillStyle = TINTE_D6.schiuma; ctx.globalAlpha = 0.7;
   for (let i = 0; i < 5; i++) {
@@ -754,6 +768,14 @@ function disegnaAriaD6(tk, st) {
     }
   }
   ctx.globalAlpha = 1;
+  // i panni bagnati della Lavandaia, in volo
+  for (const p of (st && st.panniD6) || []) {
+    ombraD6(p.x, p.y + 10, 6, 2.2, 0.4);
+    ctx.fillStyle = TINTE_D6.acqua; ctx.globalAlpha = 0.7;
+    ctx.fillRect(p.x - p.vx * 3 - 0.7, p.y - p.vy * 3 + 3, 1.4, 2); ctx.fillRect(p.x - p.vx * 6 - 0.7, p.y - p.vy * 6 + 6, 1.2, 1.8);
+    ctx.globalAlpha = 1;
+    pannoD6(p.x, p.y, Math.sin(p.rot) * 0.5, 1.35, tk + p.t, false);
+  }
   if ((statoRun.inzuppatoD6 || 0) > 0) {
     ctx.fillStyle = TINTE_D6.acqua;
     for (let i = 0; i < 4; i++) {
@@ -969,6 +991,9 @@ function dopoIlPassoD6(st, prima) {
     pk.y = limitaD6(pk.y + cp.dy * C.spintaOggetti, ARENA.y1 + M, ARENA.y2 - M);
   }
 
+  aggiornaPanniD6(st);
+  if (statoRun.fase !== 'in_gioco' || statoRun.stanzaCorrente !== st) return;
+
   // il Guardiano agisce nei tick in cui la base ha fatto agire il boss (niente pausa, grazia, stordimento)
   for (const n of st.nemici) {
     if (!n.boss || n.bossId !== SCHEDA_D6.id || n.hp <= 0 || (n.phaseTick || 0) === n.ptD6) continue;
@@ -1107,6 +1132,88 @@ function iaNemicoD6(n, st, ang, dist) {
   return true;
 }
 
+/** Tick a caso fra i due estremi di una coppia [min, max]. */
+const fraD6 = (coppia) => coppia[0] + Math.floor(rng() * (coppia[1] - coppia[0]));
+
+// LAVANDAIA DI TUFO: statua ferma al suo lavatoio. LAVA; poi ALZA il panno bagnato sopra la testa (gocciola,
+// lei segue il bersaglio e si blocca) e lo LANCIA: un panno lento e largo, che il vento sposta più dei colpi.
+// Chi lo prende si fa male e resta INZUPPATO (cammina piano finché non si asciuga).
+IA_D6.lavandaia_tufo = function (n, st, ang, dist, T) {
+  if (!n.statoD6) { n.statoD6 = 'lava'; n.tD6 = fraD6(T.lavaTick); n.angD6 = ang; }
+  if (n.statoD6 === 'lava') {
+    if (--n.tD6 <= 0) {
+      if ((st.panniD6 || []).length >= T.panno.massimi) n.tD6 = 20;
+      else { n.statoD6 = 'alza'; n.tD6 = T.alzaTick; }
+    }
+  } else if (n.statoD6 === 'alza') {
+    if (n.tD6 > T.bloccoTick) n.angD6 = Math.atan2(player.y - 6 - (n.y - T.panno.quotaPx), player.x - n.x);
+    if (--n.tD6 <= 0) {
+      n.statoD6 = 'lancia'; n.tD6 = T.lanciaTick;
+      const a = n.angD6, v = T.panno.velocita;
+      (st.panniD6 || (st.panniD6 = [])).push({ x: n.x + Math.cos(a) * 10, y: n.y - T.panno.quotaPx + Math.sin(a) * 6,
+        vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, rot: a, fonte: String(n.nome || T.nome).replace(/\s*\[.*?\]/g, '') });
+    }
+  } else if (--n.tD6 <= 0) { n.statoD6 = 'lava'; n.tD6 = fraD6(T.lavaTick); }
+};
+
+// FONTANIERE: tiene la distanza girando di lato; poi PIANTA la chiave della saracinesca e la GIRA (due mani
+// sulla maniglia, la chiave ruota sempre più svelta): quando APRE, la corrente di tutti i canali della stanza
+// cambia verso e dalla bocchetta parte un getto a ventaglio verso il giocatore.
+IA_D6.fontaniere = function (n, st, ang, dist, T) {
+  if (!n.statoD6) { n.statoD6 = 'cammina'; n.tD6 = fraD6(T.camminaTick); n.giroD6 = rng() < 0.5 ? -1 : 1; n.angD6 = ang; }
+  if (n.statoD6 === 'cammina') {
+    const rad = limitaD6((dist - T.distanzaPx) / T.bandaPx, -1, 1);
+    const dx = Math.cos(ang) * rad + Math.cos(ang + n.giroD6 * Math.PI / 2) * T.giro;
+    const dy = Math.sin(ang) * rad + Math.sin(ang + n.giroD6 * Math.PI / 2) * T.giro;
+    const l = Math.hypot(dx, dy) || 1;
+    if (muoviD6(n, (dx / l) * n.speed * T.passo, (dy / l) * n.speed * T.passo) && n.tD6 % 20 === 0) n.giroD6 = -n.giroD6;
+    if (--n.tD6 <= 0) { n.statoD6 = 'gira'; n.tD6 = T.giraTick; }
+  } else if (n.statoD6 === 'gira') {
+    n.angD6 = ang;
+    if (--n.tD6 <= 0) {
+      n.statoD6 = 'apre'; n.tD6 = T.apreTick;
+      const canali = (st.canaliD6 || []).filter((c) => c.forma !== 'boss');
+      for (const c of canali) { c.dx = -c.dx || 0; c.dy = -c.dy || 0; c.giratoD6 = tick; }
+      const G = T.getto, gocce = canali.length ? G.gocce : G.gocceSenzaCanale;
+      for (let k = 0; k < gocce; k++) {
+        const a = ang + (k - (gocce - 1) / 2) * G.apertura;
+        statoRun.proiettiliNemici.push({ x: n.x + Math.cos(a) * 8, y: n.y - 8 + Math.sin(a) * 5, vx: Math.cos(a) * G.velocita, vy: Math.sin(a) * G.velocita,
+          dist: 0, gocciaD6: true, fonteA7: `uno spruzzo del ${T.nome}` });
+      }
+      suonoAcquaD6(0.35);
+    }
+  } else if (--n.tD6 <= 0) { n.statoD6 = 'cammina'; n.tD6 = fraD6(T.camminaTick); }
+};
+
+/** I panni bagnati in volo: avanzano, sbattono su colonne e muri, feriscono e inzuppano chi colpiscono. */
+function aggiornaPanniD6(st) {
+  const lista = st.panniD6;
+  if (!lista || !lista.length) return;
+  const P = NEMICI_D6.lavandaia_tufo.panno, Z = ACQUEDOTTO_D6.inzuppato;
+  for (let i = lista.length - 1; i >= 0; i--) {
+    const p = lista[i];
+    p.x += p.vx; p.y += p.vy; p.t++; p.rot += 0.16;
+    let via = p.t > P.vitaTick || p.x < ARENA.x1 - 8 || p.x > ARENA.x2 + 8 || p.y < ARENA.y1 - 8 || p.y > ARENA.y2 + 8;
+    if (!via) {
+      for (const o of st.ostacoli || []) {
+        if (o.tipo === 'colonna' && Math.hypot(p.x - o.x, p.y - o.y) < (o.r || 0) + 5) { via = true; break; }
+      }
+    }
+    if (!via && player.invuln <= 0 && !(statoRun.graziaIngressoC > 0) && statoRun.hpHalf > 0
+      && Math.hypot(player.x - p.x, (player.y - 6) - p.y) < P.raggio + 9 * (player.scalaA2 || 1)) {
+      lista.splice(i, 1);
+      statoRun.effettiSplash.push({ x: p.x, y: p.y, tick: 0 });
+      subisciColpoGiocatore(statoRun.piano >= 3 ? 2 : 1, `un panno bagnato della ${p.fonte || NEMICI_D6.lavandaia_tufo.nome}`, p.x - p.vx, p.y - p.vy);
+      if (statoRun.hpHalf <= 0 || statoRun.fase !== 'in_gioco') return;
+      statoRun.inzuppatoD6 = Z.tick;
+      suonoAcquaD6(0.25);
+      if (statoRun.avvisoInzuppatoD6 !== statoRun.numeroRun) { statoRun.avvisoInzuppatoD6 = statoRun.numeroRun; mostraBanner(TESTI_D6.inzuppato, 170); }
+      continue;
+    }
+    if (via) { statoRun.effettiSplash.push({ x: p.x, y: p.y, tick: 0 }); lista.splice(i, 1); }
+  }
+}
+
 // --------------------------------------------------------------------------- penne del disegno «a ombre»
 /** Penna della sagoma: china col contorno netto color lanterna (bianco nel lampo del colpo). */
 function chinaD6(flash) {
@@ -1196,6 +1303,140 @@ const DISEGNI_NEMICI_D6 = {
     if (!flash) { puntoD6(0, 0, 0.6, TINTE_D6.bordo); puntoD6(-4, 0, 0.6, TINTE_D6.bordo); }
     ctx.restore();
   },
+};
+
+/** Un panno bagnato (in mano o in volo): un telo chiaro che sbatte, col bordo di china. */
+function pannoD6(x, y, rot, scala, tk, flash) {
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot); ctx.scale(scala, scala);
+  const o = Math.sin(tk * 0.5) * 1.4;
+  ctx.fillStyle = flash ? '#ffffff' : TINTE_D6.schiuma; ctx.strokeStyle = TINTE_D6.china; ctx.lineWidth = 1; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-7, -3.5 + o * 0.4); ctx.quadraticCurveTo(-2, -5.5 - o, 3, -3.5); ctx.quadraticCurveTo(6, -2.5 + o, 7.5, -4 + o);
+  ctx.lineTo(7, 3.5 + o * 0.6); ctx.quadraticCurveTo(3, 5 + o, -1, 3.2); ctx.quadraticCurveTo(-4, 2 - o, -7.5, 4);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = TINTE_D6.acqua; ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(-4, -1 + o * 0.3); ctx.quadraticCurveTo(0, 1 - o * 0.3, 4.5, -0.5); ctx.stroke();
+  ctx.restore();
+}
+
+/** Lavandaia di Tufo: statua inginocchiata al lavatoio, il fazzoletto rosso in testa, il panno fra le mani. */
+DISEGNI_NEMICI_D6.lavandaia_tufo = function (n, tk, flash) {
+  const T = NEMICI_D6.lavandaia_tufo, s = n.statoD6 || 'lava';
+  const flip = player.x < n.x ? -1 : 1;
+  const k = s === 'alza' ? 1 - (n.tD6 || 0) / T.alzaTick : 0;
+  ombraD6(n.x, n.y + 5, 16, 5, 0.6);
+  aloneCampioneD6(n, 12);
+  stordimentoD6(n, 46);
+  ctx.save();
+  ctx.translate(n.x + (s === 'alza' ? Math.sin(tk * 1.4) * 0.8 * k : 0), n.y);
+  if (n.champion) ctx.scale(1.18, 1.18);
+  ctx.scale(flip, 1);
+  // il lavatoio di pietra, davanti a lei
+  chinaD6(flash);
+  ctx.beginPath(); ctx.moveTo(3, -4); ctx.lineTo(19, -4); ctx.lineTo(17, 7); ctx.lineTo(5, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = flash ? '#ffffff' : TINTE_D6.acqua; ctx.globalAlpha = 0.85; ctx.fillRect(5, -3, 12, 1.6); ctx.globalAlpha = 1;
+  // gonna a campana (è inginocchiata) e busto
+  chinaD6(flash);
+  ctx.beginPath(); ctx.moveTo(-13, 7); ctx.quadraticCurveTo(-13, -8, -5, -12); ctx.lineTo(4, -12); ctx.quadraticCurveTo(8, -4, 6, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-6, -11); ctx.lineTo(-6.5, -22); ctx.quadraticCurveTo(-6, -26, -2, -26); ctx.lineTo(3, -26); ctx.quadraticCurveTo(6, -25, 5.5, -21); ctx.lineTo(5, -11); ctx.closePath(); ctx.fill(); ctx.stroke();
+  // crepe del tufo
+  ctx.strokeStyle = flash ? '#ffffff' : TINTE_D6.bordo; ctx.lineWidth = 0.7; ctx.globalAlpha = 0.55;
+  ctx.beginPath(); ctx.moveTo(-9, -3); ctx.lineTo(-6, 1); ctx.lineTo(-8, 5); ctx.moveTo(1, -9); ctx.lineTo(-1, -3); ctx.stroke();
+  ctx.globalAlpha = 1;
+  // testa col fazzoletto annodato
+  const capo = s === 'lava' ? 2 + Math.sin(tk * 0.2) * 0.8 : s === 'alza' ? -1 : 0;
+  chinaD6(flash);
+  ctx.beginPath(); ctx.arc(0.5, -31 + capo, 5.4, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = flash ? '#ffffff' : TINTE_D6.drappo;
+  ctx.beginPath(); ctx.moveTo(-5.2, -32 + capo); ctx.quadraticCurveTo(0.5, -41 + capo, 6, -32.5 + capo); ctx.lineTo(3, -34 + capo); ctx.lineTo(-3, -34 + capo); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-5, -33 + capo); ctx.lineTo(-10.5, -30 + capo); ctx.lineTo(-6.5, -29.5 + capo); ctx.closePath(); ctx.fill();
+  puntoD6(3, -30.6 + capo, 1.1, s === 'alza' ? TINTE_D6.rosso : TINTE_D6.oro);
+  // braccia e panno
+  if (s === 'alza') {
+    const su = Math.min(1, k * 2.5);
+    trattoD6(2.6, flash, -4, -23, -8, -30 - 9 * su);
+    trattoD6(2.6, flash, 4, -23, 9, -30 - 9 * su);
+    pannoD6(0.5, -40 - 9 * su, 0, 1.25, tk, flash);
+    ctx.fillStyle = TINTE_D6.acqua; // il panno gocciola
+    for (let i = 0; i < 3; i++) { const kk = (tk * 0.06 + i * 0.33) % 1; ctx.globalAlpha = 1 - kk; ctx.fillRect(-6 + i * 6, -36 - 9 * su + kk * 12, 1.2, 2.2); }
+    ctx.globalAlpha = 1;
+  } else if (s === 'lancia') {
+    trattoD6(2.6, flash, -4, -23, 9, -27);
+    trattoD6(2.6, flash, 4, -23, 14, -24);
+  } else {
+    const sfrega = Math.sin(tk * 0.22) * 2.6;
+    trattoD6(2.6, flash, -4, -23, 7 + sfrega, -8);
+    trattoD6(2.6, flash, 4, -23, 12 + sfrega, -7);
+    pannoD6(11 + sfrega, -5.5, 0, 0.7, tk, flash);
+  }
+  ctx.restore();
+};
+
+/** Fontaniere: grembiule e berretto a visiera, la chiave della saracinesca (una T di ferro alta quanto lui). */
+DISEGNI_NEMICI_D6.fontaniere = function (n, tk, flash) {
+  const T = NEMICI_D6.fontaniere, s = n.statoD6 || 'cammina';
+  const flip = player.x < n.x ? -1 : 1;
+  const k = s === 'gira' ? 1 - (n.tD6 || 0) / T.giraTick : 0;
+  ombraD6(n.x, n.y + 4, 11, 4, 0.6);
+  aloneCampioneD6(n, 12);
+  stordimentoD6(n, 44);
+  ctx.save();
+  ctx.translate(n.x, n.y);
+  if (n.champion) ctx.scale(1.18, 1.18);
+  ctx.scale(flip, 1);
+  const passo = s === 'cammina' ? Math.sin(tk * 0.3 + n.x * 0.05) : 0;
+  const oro = flash ? '#ffffff' : TINTE_D6.oro;
+  // gambe
+  trattoD6(2.4, flash, -2.5, -8, -3.5 - passo * 3, 4);
+  trattoD6(2.4, flash, 2.5, -8, 3.5 + passo * 3, 4);
+  ctx.save();
+  ctx.rotate(s === 'gira' ? 0.2 : s === 'apre' ? -0.1 : 0);
+  // grembiule di cuoio
+  chinaD6(flash);
+  ctx.beginPath(); ctx.moveTo(-6, -24); ctx.lineTo(6, -24); ctx.lineTo(7.5, -6); ctx.lineTo(-7.5, -6); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = flash ? '#ffffff' : TINTE_D6.bordo; ctx.lineWidth = 0.7; ctx.globalAlpha = 0.6;
+  ctx.beginPath(); ctx.moveTo(-4, -19); ctx.lineTo(4, -19); ctx.moveTo(-5.5, -10); ctx.lineTo(5.5, -10); ctx.stroke();
+  ctx.globalAlpha = 1;
+  // testa e berretto a visiera
+  chinaD6(flash);
+  ctx.beginPath(); ctx.arc(0.5, -29.5, 5, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-5, -31.5); ctx.quadraticCurveTo(0, -39, 5.5, -32); ctx.lineTo(10, -31); ctx.lineTo(5, -30.4); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = flash ? '#ffffff' : TINTE_D6.acqua; ctx.fillRect(-4, -32.8, 9, 1.3);
+  puntoD6(3, -29.2, 1.1, s === 'gira' ? TINTE_D6.rosso : TINTE_D6.oro);
+  ctx.restore();
+  // la chiave a T
+  if (s === 'gira') {
+    // piantata davanti a lui, due mani sulla maniglia; la maniglia gira (si vede di scorcio), sempre più svelta
+    const largo = Math.cos(tk * (0.25 + 0.45 * k)) * 7;
+    trattoD6(1.8, flash, 13, -41, 13, 5);
+    ctx.strokeStyle = oro; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(13 - largo, -41); ctx.lineTo(13 + largo, -41); ctx.stroke();
+    ctx.fillStyle = oro; ctx.fillRect(11, 3, 4, 3.5);
+    trattoD6(2.2, flash, -2, -20, 13 - Math.abs(largo) * 0.6, -40);
+    trattoD6(2.2, flash, 5, -20, 13 + Math.abs(largo) * 0.6, -40);
+    ctx.strokeStyle = TINTE_D6.acqua; ctx.lineWidth = 1; // l'acqua gorgoglia al piede della chiave
+    for (let i = 0; i < 2; i++) {
+      const kk = (tk * 0.05 + i * 0.5) % 1;
+      ctx.globalAlpha = (1 - kk) * (0.4 + 0.6 * k);
+      ctx.beginPath(); ctx.ellipse(13, 6, 3 + kk * 8, 1.2 + kk * 3, 0, 0, TAU); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  } else if (s === 'apre') {
+    trattoD6(1.8, flash, -10, -35, -6, 2);
+    ctx.strokeStyle = oro; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-15, -34); ctx.lineTo(-5, -36); ctx.stroke();
+    trattoD6(2.2, flash, -3, -21, -8, -16);
+    trattoD6(2.2, flash, 4, -21, 15, -19); // il braccio indica dove va il getto
+  } else {
+    // in spalla
+    trattoD6(1.8, flash, -11, -38 + passo, 7, -12);
+    ctx.strokeStyle = oro; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-15, -34 + passo); ctx.lineTo(-7, -42 + passo); ctx.stroke();
+    trattoD6(2.2, flash, -3, -21, -2, -15);
+    trattoD6(2.2, flash, 4, -21, 6, -14);
+  }
+  ctx.restore();
 };
 
 const disegnaNemicoPittoricoBaseD6 = disegnaNemicoPittorico;
@@ -1346,9 +1587,25 @@ const AZIONI_D6 = {
   },
 };
 
-/** Guardiano sconfitto: frase, anime che salgono, l'acqua cala, il dono garantito e la memoria della run. */
+/**
+ * IL PERCHÉ del percorso: battuto il Guardiano all'Acquedotto, un oggetto forte garantito sul piedistallo d'oro
+ * (dal pool della run, come quelli «1 su 10» delle stanze). Rende true se l'ha posato.
+ */
+function posaDonoD6(st) {
+  if (!acquedottoAttivoD6() || st.donoD6) return false;
+  const D = ACQUEDOTTO_D6.dono;
+  st.donoD6 = true;
+  let item = null;
+  try { item = estraiOggettoForte(); } catch (err) { console.error('[d6] dono', err); }
+  if (item) st.oggettoPiedistallo = { ...item, x: D.x, y: D.y, preso: false, forteGratis: true, donoD6: true };
+  else { spawnaMonetaATerra(st, D.x - 10, D.y, 3); spawnaMonetaATerra(st, D.x + 10, D.y, 3); } // pool vuoto: almeno i grani
+  return true;
+}
+
+/** Guardiano sconfitto: frase, anime che salgono, l'acqua cala, il dono garantito. */
 function guardianoSconfittoD6(st, b) {
-  mostraBanner(`${SCHEDA_D6.sconfitta} ${st.portaPattoAperta ? 'Porta del Patto d\'Ombra (😈) a destra · ' : ''}Botola aperta!`, BOSS_D6.bannerTick);
+  const dono = posaDonoD6(st);
+  mostraBanner(`${SCHEDA_D6.sconfitta} ${st.portaPattoAperta ? 'Porta del Patto d\'Ombra (😈) a destra · ' : ''}Botola aperta!${dono ? ` ${TESTI_D6.bannerDono}` : ''}`, BOSS_D6.bannerTick + (dono ? 60 : 0));
   const A = BOSS_D6.anime;
   for (let k = 0; k < A.numero; k++) {
     d6.anime.push({ x: b.x + (k - A.numero / 2) * 3.2, y: b.y - 6 - (k % 4) * 9, t0: tick + k * 3, fase: k * 1.7, colore: A.colori[k % A.colori.length] });
@@ -1363,6 +1620,7 @@ entraInStanza = function (stanza, daLato, ...resto) {
   try {
     if (stanza && statoRun.stanzaCorrente === stanza && acquedottoAttivoD6()) {
       azzeraVentoD6();
+      stanza.panniD6 = [];
       const b = stanza.tipo === 'boss' && !stanza.pulita ? stanza.nemici.find((n) => n.boss && n.bossId === SCHEDA_D6.id) : null;
       if (b) mostraBanner(`💀 ${b.nome} (${b.hp} HP) — ${SCHEDA_D6.presentazione}`, BOSS_D6.bannerTick);
     }
@@ -1525,7 +1783,10 @@ const nuovaRunBaseD6 = nuovaRun;
 nuovaRun = function (...args) {
   statoRun.percorsoD6 = null;
   statoRun.inzuppatoD6 = 0;
-  return nuovaRunBaseD6.apply(this, args);
+  intonaD6();
+  const r = nuovaRunBaseD6.apply(this, args);
+  intonaD6();
+  return r;
 };
 
 const avviaPianoBaseD6 = avviaPiano;
@@ -1533,15 +1794,90 @@ const avviaPianoBaseD6 = avviaPiano;
 avviaPiano = function (piano, ...resto) {
   statoRun.inzuppatoD6 = 0;
   const r = avviaPianoBaseD6.call(this, piano, ...resto);
-  try { if (acquedottoAttivoD6(piano)) statoRun.passatoAcquedottoD6 = statoRun.numeroRun; } catch (err) { console.error('[d6] piano', err); }
+  try {
+    intonaD6();
+    if (acquedottoAttivoD6(piano)) ricordaPercorsoD6();
+  } catch (err) { console.error('[d6] piano', err); }
   return r;
 };
+
+// ===========================================================================
+// 6. LA MEMORIA DEL PERCORSO: Registro delle notti (a7) e Diario di Ferruccio (b8)
+// ===========================================================================
+/** La run in corso è passata per l'Acquedotto: lo si scrive nella sua voce del Registro. */
+function ricordaPercorsoD6() {
+  statoRun.passatoAcquedottoD6 = statoRun.numeroRun;
+  try { if (typeof a7 === 'object' && a7 && a7.run) a7.run.percorso = 'acquedotto'; } catch (_) { /* a7 assente */ }
+}
+
+// Registro di a7: una riga in più nella pergamena di fine run (sotto la colonna di sinistra)
+if (typeof disegnaPergamenaA7 === 'function') {
+  const disegnaPergamenaBaseD6 = disegnaPergamenaA7;
+  disegnaPergamenaA7 = function (...args) {
+    const r = disegnaPergamenaBaseD6.apply(this, args);
+    try {
+      const v = a7.pergamena && a7.pergamena.voce;
+      if (v && v.percorso === 'acquedotto') {
+        const P = CONFIG_A7.pergamena, y = P.y + 70 + 12 * 17, x = P.x + 26;
+        drawTextFit(`${TESTI_D6.pergamena[0]}:`, x, y, 120, { size: 7.5, color: '#6b4423', shadow: false, align: 'left' });
+        drawTextFit(TESTI_D6.pergamena[1], x + 124, y, P.w / 2 - 36 - 124, { size: 8, color: '#3b2210', shadow: false, align: 'left' });
+      }
+    } catch (err) { console.error('[d6] pergamena', err); }
+    return r;
+  };
+}
+
+// Diario di Ferruccio di b8: una riga nella pagina di quella notte. Se la notte è finita proprio all'Acquedotto
+// prende il posto della riga «sono arrivato alla Villa Comunale» (non ci è passato).
+if (typeof componiPaginaB8 === 'function') {
+  const componiPaginaBaseD6 = componiPaginaB8;
+  componiPaginaB8 = function (v, nota, ...resto) {
+    const pagina = componiPaginaBaseD6.call(this, v, nota, ...resto);
+    try {
+      if (v && v.percorso === 'acquedotto' && v.esito !== 'piazza' && pagina && Array.isArray(pagina.righe)) {
+        const riga = TESTI_D6.diario[Math.abs(Math.floor(Number(pagina.notte) || 0)) % TESTI_D6.diario.length];
+        if (!pagina.righe.includes(riga)) {
+          const dellaVilla = (typeof DIARIO_B8 !== 'undefined' && DIARIO_B8.cammino && DIARIO_B8.cammino[ACQUEDOTTO_D6.pianoLuogo]) || [];
+          const i = pagina.righe.findIndex((r) => dellaVilla.some((t) => String(t).toLowerCase() === String(r).toLowerCase()));
+          if (i >= 0) pagina.righe[i] = riga; else pagina.righe.splice(Math.min(2, pagina.righe.length), 0, riga);
+        }
+      }
+    } catch (err) { console.error('[d6] diario', err); }
+    return pagina;
+  };
+}
+
+// ===========================================================================
+// 7. LA MUSICA DEL LUOGO (a8): un tema in più, scelto finché il piano è l'Acquedotto
+// ===========================================================================
+/** Tema «acquedotto» nel formato di MUSICA.temi (a8-musica.js): barcarola larga, arpeggi che scorrono. */
+const MUSICA_D6 = Object.freeze({
+  id: 'acquedotto',
+  tema: {
+    bpm: 66, radice: 62, scala: 'minore', basso: 'X..x..', organetto: 'tenuto', tamburello: 'x..x..', volume: 1,
+    accordi: ['i', 'VII', 'VI', 'V', 'i', 'iv', 'N', 'V'],
+    melodia: ['0 2 4 7 4 2', '6 4 2 1 2 4', '5 3 1 0 1 3', '4 - 2 4 - -', '7 4 2 0 2 4', '5 3 5 7 5 3', '1 - 3 5 - 3', '4 - - 2 - -'],
+  },
+});
+
+/** Registra il tema e punta il piano 2 del ciclo sul tema giusto (Acquedotto o quello di sempre). */
+function intonaD6() {
+  try {
+    if (typeof MUSICA !== 'object' || !MUSICA || !MUSICA.temi || !MUSICA.temaPerPiano) return;
+    if (!MUSICA.temi[MUSICA_D6.id] && !Object.isFrozen(MUSICA.temi)) MUSICA.temi[MUSICA_D6.id] = MUSICA_D6.tema;
+    if (!MUSICA.temi[MUSICA_D6.id] || Object.isFrozen(MUSICA.temaPerPiano)) return;
+    const k = ACQUEDOTTO_D6.pianoLuogo;
+    if (d6.temaVilla === undefined) d6.temaVilla = MUSICA.temaPerPiano[k];
+    MUSICA.temaPerPiano[k] = acquedottoAttivoD6() ? MUSICA_D6.id : d6.temaVilla;
+  } catch (_) { /* senza musica si gioca lo stesso */ }
+}
+intonaD6();
 
 // ===========================================================================
 // SONDA QA / SVILUPPO
 // ===========================================================================
 Object.assign(window.__teatro.interni, {
-  ACQUEDOTTO_D6, QUARTIERE_D6, NEMICI_D6, SOSTITUZIONI_D6, SCHEDA_D6, BOSS_D6, STATI_D6, TESTI_D6,
+  ACQUEDOTTO_D6, QUARTIERE_D6, NEMICI_D6, SOSTITUZIONI_D6, SCHEDA_D6, BOSS_D6, STATI_D6, TESTI_D6, MUSICA_D6,
   acquedottoD6: Object.freeze({
     /** Il piano (o quello in corso) è l'Acquedotto? */
     attivo: (piano) => acquedottoAttivoD6(piano),

@@ -112,7 +112,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   const T = await p.evaluate(() => {
     const I = window.__teatro.interni;
     return { A: I.ACQUEDOTTO_D6, nemici: I.NEMICI_D6, sost: I.SOSTITUZIONI_D6, scheda: I.SCHEDA_D6, boss: I.BOSS_D6, stati: I.STATI_D6, arena: I.ARENA,
-      quartiere: I.QUARTIERE_D6, segni: I.SEGNI_A6.map((s) => s.boss) };
+      quartiere: I.QUARTIERE_D6, segni: I.SEGNI_A6.map((s) => s.boss), testi: { diario: I.TESTI_D6.diario, pergamena: I.TESTI_D6.pergamena } };
   });
   const campiQuartiere = await p.evaluate(() => {
     const I = window.__teatro.interni; const base = getQuartierePiano(2);
@@ -185,14 +185,16 @@ const foto = (n) => `${prefisso}-${n}.png`;
     for (const s of m.stanze) if (s.tipo === 'normale') for (const n of s.nemici) tipi[n.tipo] = (tipi[n.tipo] || 0) + 1;
     return { piano: R.piano, q: getQuartierePiano(R.piano), tipi, conCanali: m.stanze.filter((s) => s.canaliD6 && s.tipo === 'normale').length,
       normali: m.stanze.filter((s) => s.tipo === 'normale').length, boss: boss.bossId, bossHp: boss.hp, bossNome: boss.nome,
-      tema: I.Musica ? I.Musica.temaCorrente().id : null, pavimentoSuo: getFloorTileCanvas(R.piano) !== getFloorTileCanvas(3) };
+      tema: I.Musica ? I.Musica.temaCorrente().id : null, pavimentoSuo: getFloorTileCanvas(R.piano) !== getFloorTileCanvas(3),
+      registro: I.runInCorsoA7 && I.runInCorsoA7() ? I.runInCorsoA7().percorso : null };
   });
   ok('luogo:piano-2-acquedotto', luogo.piano === 2 && luogo.q.id === 'acquedotto-carolino' && luogo.q.meteo === 'vento', { piano: luogo.piano, id: luogo.q.id });
   ok('luogo:nessun-nemico-della-villa-sostituibile', Object.keys(T.sost).every((t) => !luogo.tipi[t]), luogo.tipi);
   ok('luogo:nemici-del-luogo', Object.keys(T.nemici).some((t) => luogo.tipi[t] > 0), luogo.tipi);
   ok('luogo:boss-guardiano', luogo.boss === 'guardiano-acque' && luogo.bossHp === T.scheda.hpBase + 45, { boss: luogo.boss, hp: luogo.bossHp });
   ok('luogo:pavimento-suo', luogo.pavimentoSuo);
-  console.log('tema musicale all\'Acquedotto:', luogo.tema);
+  ok('luogo:registro-in-corso', luogo.registro === 'acquedotto', luogo.registro);
+  ok('musica:tema-del-luogo', luogo.tema === 'acquedotto' || luogo.tema === 'quiete-acquedotto', luogo.tema);
 
   /** Entra in una stanza di combattimento del piano con un canale (orizzontale se c'è), nemici storditi negli angoli. */
   const stanzaConCanale = () => p.evaluate(() => {
@@ -227,6 +229,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
     const fermi = () => { for (const k of Object.keys(K)) K[k] = false; P.targetX = null; P.targetY = null; P.kbx = 0; P.kby = 0; };
     const cammina = (x, y, n, premi) => {
       fermi(); P.x = x; P.y = y; P.invuln = 1e9; R.graziaIngressoC = 0;
+      ticksCongelati = 0; // nessun fermo-colpo rimasto da prima: si misurano tick pieni
       if (premi) K[tasto] = true;
       const a0 = asse(P);
       for (let i = 0; i < n; i++) passoLogico();
@@ -415,7 +418,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
       const I = window.__teatro.interni; const R = I.statoRun; const P = I.player; const K = I.keys; const st = R.stanzaCorrente;
       st.nemici.forEach((n) => { n.stunTicks = 99999; n.x = 500; n.y = 110; });
       st.ostacoli = []; st.suoloB7 = [];
-      const passo = () => { P.x = 200; P.y = 200; K.KeyD = true; for (let i = 0; i < 10; i++) passoLogico(); K.KeyD = false; return (P.x - 200) / 10; };
+      const passo = () => { ticksCongelati = 0; P.x = 200; P.y = 200; K.KeyD = true; for (let i = 0; i < 10; i++) passoLogico(); K.KeyD = false; return (P.x - 200) / 10; };
       R.proiettiliNemici.length = 0; st.panniD6 = []; R.inzuppatoD6 = 0; P.invuln = 1e9;
       const asciutto = passo();
       // un panno addosso
@@ -527,8 +530,21 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('boss:nessuna-grata-qui', fine.grata === null, fine.grata);
   ok('boss:segno-in-tabella', T.segni.includes('guardiano-acque'), T.segni);
   ok('boss:segno-registrato', (fine.segniSlot || []).includes('guardiano-acque') || (fine.segniFerruccio || []).includes('guardiano-acque'), { slot: fine.segniSlot, ferruccio: fine.segniFerruccio });
+  ok('dono:oggetto-forte-garantito', fine.donoD6 && fine.dono && fine.dono.forte && !fine.dono.preso && fine.dono.nome, fine.dono);
+  ok('dono:lontano-da-botola-e-patto', fine.dono && Math.hypot(fine.dono.x - 320, fine.dono.y - 190) > 100 && Math.hypot(fine.dono.x - 446, fine.dono.y - 188) > 100, fine.dono);
+  ok('dono:annunciato', /DONO DELL'ACQUEDOTTO/.test(fine.banner || ''), fine.banner);
+  await p.evaluate(() => { const I = window.__teatro.interni; const D = I.ACQUEDOTTO_D6.dono; I.player.x = D.x + 26; I.player.y = D.y + 30; });
   await p.waitForTimeout(500);
   await scatta('dono');
+  const preso = await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const D = I.ACQUEDOTTO_D6.dono;
+    const prima = R.oggettiEquipaggiati.length, piano = R.piano;
+    I.player.x = D.x; I.player.y = D.y + 14;
+    interagisciStanza();
+    const st = R.stanzaCorrente;
+    return { prima, dopo: R.oggettiEquipaggiati.length, piano, pianoDopo: R.piano, preso: st.oggettoPiedistallo && st.oggettoPiedistallo.preso, scambio: Boolean(R.scambioPendente) };
+  });
+  ok('dono:si-prende-con-E', preso.pianoDopo === preso.piano && (preso.dopo === preso.prima + 1 || preso.preso || preso.scambio), preso);
 
   // ------------------------------------------------------------------ G. DOPO: il piano 3 è San Leucio di sempre
   const dopo = await p.evaluate(() => {
@@ -547,7 +563,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('dopo:piano-3-san-leucio', dopo.piano === 3 && !dopo.attivo && dopo.q === 'san-leucio' && /SAN LEUCIO/.test(dopo.atto), dopo);
   ok('dopo:niente-acqua-ne-nemici-del-luogo', dopo.canali === 0 && dopo.tipi.every((t) => !nemiciLuogo.includes(t)), dopo);
   ok('dopo:boss-di-san-leucio', dopo.boss !== 'guardiano-acque' && (!dopo.rosa3 || dopo.rosa3.includes(dopo.boss)), dopo.boss);
-  console.log('tema musicale a San Leucio:', dopo.tema);
+  ok('musica:dopo-torna-san-leucio', dopo.tema === 'piano3' || dopo.tema === 'quiete-piano3', dopo.tema);
 
   // ------------------------------------------------------------------ H. LA BOTOLA NORMALE: tutto come prima
   r = await battiIlBoss(1, 0, 1);
@@ -574,7 +590,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('villa:nemici-e-boss-di-sempre', villa.tipi.every((t) => !nemiciLuogo.includes(t)) && villa.boss !== 'guardiano-acque' && (!villa.rosa2 || villa.rosa2.includes(villa.boss)), { tipi: villa.tipi, boss: villa.boss });
   ok('villa:niente-acqua-ne-vento', villa.canali === 0 && villa.deriva === 0 && villa.vento === 'calma', { canali: villa.canali, deriva: villa.deriva, vento: villa.vento });
   ok('villa:la-chiave-resta', villa.chiavi === 1, villa.chiavi);
-  console.log('tema musicale alla Villa:', villa.tema);
+  ok('musica:alla-villa-il-tema-di-sempre', villa.tema === 'piano2' || villa.tema === 'quiete-piano2', villa.tema);
 
   // ------------------------------------------------------------------ I. GENERATORE: 50 piani dell'Acquedotto
   const gen = await p.evaluate(() => {
@@ -641,6 +657,60 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('generatore:canali-nella-maggior-parte-dei-piani', gen.conta.conCanale >= 45, gen.conta.conCanale);
   ok('generatore:tutti-i-nemici-del-luogo-compaiono', nemiciLuogo.every((t) => gen.conta.tipi[t] > 0), gen.conta.tipi);
   ok('generatore:senza-percorso-resta-la-villa', gen.villaPulita);
+
+  // ------------------------------------------------------------------ M. LA MEMORIA: pergamena, Registro, Diario
+  const faseOra = () => p.evaluate(() => window.__teatro.fase);
+  const muori = async () => {
+    for (let i = 0; i < 40 && (await faseOra()) === 'in_gioco'; i++) {
+      await p.evaluate(() => {
+        const I = window.__teatro.interni, R = I.statoRun;
+        ticksCongelati = 0;
+        R.siparioAttivo = null; R.graziaIngressoC = 0; I.player.invuln = 0; R.hpHalf = 1; R.scudoRosaC = false; R.scudoStanzaD = 0; R.viteExtra = 0;
+        R.proiettiliNemici.push({ x: I.player.x, y: I.player.y - 6, vx: 0.01, vy: 0, dist: 0 });
+      });
+      await p.waitForTimeout(200);
+    }
+    for (let i = 0; i < 150 && (await faseOra()) !== 'hub'; i++) await p.waitForTimeout(100);
+    await p.waitForTimeout(700);
+  };
+  const libera = async () => {
+    for (let i = 0; i < 60; i++) {
+      const s = await p.evaluate(() => ({ perg: typeof a7 === 'object' && Boolean(a7.pergamena), d: window.__teatro.t4qa.dialogo, cart: typeof b8 === 'object' && Boolean(b8.cart) }));
+      if (!s.perg && !s.d && !s.cart) { await p.waitForTimeout(120); if (!(await p.evaluate(() => window.__teatro.t4qa.dialogo))) return; }
+      await p.keyboard.press(s.d && s.d.scelta ? 'Digit1' : 'Space');
+      await p.waitForTimeout(90);
+    }
+  };
+  const ultimaPagina = () => p.evaluate(() => {
+    const I = window.__teatro.interni;
+    const pagine = I.finaliB8 && I.finaliB8.pagine ? I.finaliB8.pagine() : [];
+    const reg = I.registroRun ? I.registroRun() : [];
+    return { pagina: pagine.length ? pagine[pagine.length - 1] : null, nPagine: pagine.length, ultima: reg.length ? reg[reg.length - 1] : null,
+      conPercorso: reg.filter((v) => v.percorso === 'acquedotto').length, senza: reg.filter((v) => v.percorso !== 'acquedotto').length };
+  });
+  // una notte finita all'Acquedotto
+  await battiIlBoss(1, 0, 1);
+  await accantoAllaGrata();
+  await p.evaluate(() => { interagisciStanza(); window.__teatro.interni.statoRun.siparioAttivo = null; });
+  await muori();
+  const perg = await p.evaluate(() => (typeof a7 === 'object' && a7.pergamena ? { tipo: a7.pergamena.tipo, percorso: a7.pergamena.voce.percorso, piano: a7.pergamena.voce.piano } : null));
+  ok('memoria:pergamena-col-percorso', perg && perg.percorso === 'acquedotto' && perg.piano === 2, perg);
+  await p.waitForTimeout(300);
+  await scatta('pergamena');
+  await libera();
+  let mem = await ultimaPagina();
+  const rigaD6 = (pg) => Boolean(pg && pg.righe.some((r) => T.testi.diario.includes(r)));
+  const rigaVilla = (pg) => Boolean(pg && pg.righe.some((r) => /Villa/.test(r)));
+  ok('memoria:registro-delle-notti', mem.ultima && mem.ultima.percorso === 'acquedotto' && mem.senza > 0, { ultima: mem.ultima && mem.ultima.percorso, con: mem.conPercorso, senza: mem.senza });
+  ok('memoria:diario-di-ferruccio', rigaD6(mem.pagina) && !rigaVilla(mem.pagina), mem.pagina);
+  // una notte finita alla Villa: nessuna riga dell'Acquedotto
+  await battiIlBoss(1, 0, 1);
+  await p.evaluate(() => { const I = window.__teatro.interni; I.player.x = 320; I.player.y = 262; interagisciStanza(); I.statoRun.siparioAttivo = null; });
+  await muori();
+  const perg2 = await p.evaluate(() => (typeof a7 === 'object' && a7.pergamena ? { percorso: a7.pergamena.voce.percorso || null, piano: a7.pergamena.voce.piano } : null));
+  await libera();
+  mem = await ultimaPagina();
+  ok('memoria:alla-villa-niente-riga', perg2 && perg2.percorso === null && perg2.piano === 2 && !rigaD6(mem.pagina), { perg2, pagina: mem.pagina });
 
   // ------------------------------------------------------------------ L. ERRORI
   const erroriTeatro = await p.evaluate(() => (typeof ERRORI_TEATRO !== 'undefined' ? ERRORI_TEATRO.map((e) => `${e.dove}: ${e.testo}`) : []));
