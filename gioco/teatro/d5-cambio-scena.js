@@ -29,7 +29,7 @@ const QUADRI_D5 = Object.freeze({
   pausaPrimaMs: 450,           // dall'ultimo nemico caduto al colpo di grancassa
   cambioMs: 1500,              // durata del cambio dei macchinisti
   fasi: Object.freeze({ buio: 0.18, giu: 0.5, su: 0.82 }), // frazioni del cambio: luci giù, arredi giù, arredi su
-  buioMax: 0.7,
+  buioMax: 0.72,
   margineGiocatore: 14,        // distanza minima di Ferruccio da un arredo che sale
   ascesaSfasaMs: 170,          // la seconda compagnia sale a una botola per volta
   profonditaGruppo2: 1,        // la seconda compagnia è scelta come se la stanza fosse un passo più in là
@@ -508,36 +508,57 @@ function disegnaScenaD5(tk, st) {
   }
   if (!q) return;
   if (q.fase === 'primo') disegnaRotoliD5();
-  if (q.fase === 'cambio') {
-    const F = QUADRI_D5.fasi, u = (q.t - (q.pausa || 0)) / (q.durata || 1), H = QUADRI_D5.altezzaFondale + 30;
-    ctx.save();
-    ctx.fillStyle = `rgba(0,0,0,${buioCambioD5(u).toFixed(3)})`;
-    ctx.fillRect(0, 0, ARENA.x2 + ARENA.x1, ARENA.y2 + ARENA.y1);
-    ctx.restore();
-    if (u >= F.buio && u < F.giu) {
-      const s = (u - F.buio) / (F.giu - F.buio);
-      disegnaFondaleD5(st.disposizioneB7 && st.disposizioneB7.id, -s * H);
-      for (const o of q.vecchi || []) {
-        disegnaBotolaD5(o.x, o.y + (o.h || 20) * 0.3, (o.w || 24) + 10, 14, Math.min(1, s * 3), 0, tk);
-        sagomaArredoD5(o, s * ((o.h || 24) + 34));
-      }
-    } else if (u >= F.giu && u < 1) {
-      const s = Math.min(1, (u - F.giu) / (F.su - F.giu));
-      disegnaFondaleD5(q.disp2 && q.disp2.id, -(1 - s) * H);
-      const chiusura = u < F.su ? 1 : Math.max(0, 1 - (u - F.su) / (1 - F.su));
-      for (const o of q.nuovi || []) {
-        disegnaBotolaD5(o.x, o.y + (o.h || 20) * 0.3, (o.w || 24) + 10, 14, chiusura, 0, tk);
-        if (u < F.su) sagomaArredoD5(o, (1 - s) * ((o.h || 24) + 34));
-      }
-    } else if (u < F.buio) {
-      disegnaRotoliD5();
-    }
-    disegnaCartelloD5('CAMBIO DI SCENA', false);
-    return;
-  }
+  if (q.fase === 'cambio') return; // il cambio lo disegna disegnaCambioD5, sopra tutta la scena
   if (q.fase === 'primo') disegnaCartelloD5('QUADRO I', q.cartello > 0);
   else if (q.fase === 'secondo' || q.fase === 'finito') disegnaCartelloD5('QUADRO II', q.cartello > 0);
 }
+
+/** Il cambio di scena, disegnato a fine frame sopra scena, figure e luci (sotto resta solo l'HUD ridisegnato). */
+function disegnaCambioD5(tk, st) {
+  const q = st.quadriD5;
+  const F = QUADRI_D5.fasi, u = (q.t - (q.pausa || 0)) / (q.durata || 1), H = QUADRI_D5.altezzaFondale + 30;
+  ctx.save();
+  ctx.fillStyle = `rgba(0,0,0,${buioCambioD5(u).toFixed(3)})`;
+  ctx.fillRect(0, 0, ARENA.x2 + ARENA.x1, ARENA.y2 + 24);
+  const P = player, lu = buioCambioD5(u) / QUADRI_D5.buioMax; // un occhio di bue resta su Ferruccio
+  ctx.globalAlpha = 0.55 * lu; ctx.globalCompositeOperation = 'lighter';
+  ctx.drawImage(alonaD5(), P.x - 40, P.y - 56, 80, 80);
+  ctx.restore();
+  if (u >= F.buio && u < F.giu) {
+    const s = (u - F.buio) / (F.giu - F.buio);
+    disegnaFondaleD5(st.disposizioneB7 && st.disposizioneB7.id, -s * H);
+    for (const o of q.vecchi || []) {
+      disegnaBotolaD5(o.x, o.y + (o.h || 20) * 0.3, (o.w || 24) + 10, 14, Math.min(1, s * 3), 0, tk);
+      sagomaArredoD5(o, s * ((o.h || 24) + 34));
+    }
+  } else if (u >= F.giu && u < 1) {
+    const s = Math.min(1, (u - F.giu) / (F.su - F.giu));
+    disegnaFondaleD5(q.disp2 && q.disp2.id, -(1 - s) * H);
+    const chiusura = u < F.su ? 1 : Math.max(0, 1 - (u - F.su) / (1 - F.su));
+    for (const o of q.nuovi || []) {
+      disegnaBotolaD5(o.x, o.y + (o.h || 20) * 0.3, (o.w || 24) + 10, 14, chiusura, 0, tk);
+      if (u < F.su) sagomaArredoD5(o, (1 - s) * ((o.h || 24) + 34));
+    }
+  } else if (u < F.buio) {
+    disegnaRotoliD5();
+  }
+  disegnaCartelloD5('CAMBIO DI SCENA', false);
+}
+
+const disegnaFrameBaseD5 = disegnaFrame;
+disegnaFrame = function disegnaFrameD5(...a) {
+  const r = disegnaFrameBaseD5.apply(this, a);
+  try {
+    const st = statoRun.stanzaCorrente;
+    if (st && st.quadriD5 && st.quadriD5.fase === 'cambio' && statoRun.fase === 'in_gioco') {
+      ctx.save();
+      ctx.setTransform(scalaBase, 0, 0, scalaBase, 0, 0);
+      disegnaCambioD5(tick, st);
+      ctx.restore();
+    }
+  } catch (err) { console.error('[d5] cambio', err); }
+  return r;
+};
 
 const disegnaStanzaPixelArtBaseD5 = disegnaStanzaPixelArt;
 disegnaStanzaPixelArt = function disegnaStanzaPixelArtD5(tk, st, ...resto) {
