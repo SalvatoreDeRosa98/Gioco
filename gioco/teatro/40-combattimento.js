@@ -1376,6 +1376,8 @@ function passoLogico() {
             n.shootCd = 58 + Math.floor(rng() * 20);
             statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 6, vx: Math.cos(ang) * 2.8, vy: Math.sin(ang) * 2.8, dist: 0 });
           }
+        } else if (comp === 'ragno_seta') {
+          if (typeof passoRagnoSetaD7 === 'function') passoRagnoSetaD7(n, ang); // (d7) scatti, pause e salto
         } else if (comp === 'bomba_ferma' || n.tipo === 'bomba_ferma') {
           // 2. BOZZOLO DI POLVERE: STA FERMO sul posto, pulsa quando ti avvicini ed ESPLODE!
           if (distPlayer < 64 || n.fuseTimer > 0) {

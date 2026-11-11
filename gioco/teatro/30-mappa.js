@@ -468,10 +468,11 @@ function popolaStanza(s, piano) {
       maschera: 'Maschera Corazzata',
       guardia: 'Guardia di Piombo',
       statua: 'Torrione di Marmo',
+      ragno_seta: 'Ragno della Seta', // (d7) d7-rifiniture.js
     };
-    const baseHpMap = { vespa_cieca: 8, lucciola: 10, bomba_ferma: 12, gatto: 12, burattino: 15, predone: 18, maschera: 16, guardia: 20, statua: 22 };
-    const stageHpMap = { vespa_cieca: 2, lucciola: 2.5, bomba_ferma: 3, gatto: 3.5, burattino: 4, predone: 4.5, maschera: 4.5, guardia: 5, statua: 6 };
-    const baseSpdMap = { vespa_cieca: 1.45, lucciola: 1.65, bomba_ferma: 0.0, gatto: 1.38, burattino: 1.15, predone: 1.35, maschera: 0.32, guardia: 0.98, statua: 0.0 };
+    const baseHpMap = { vespa_cieca: 8, lucciola: 10, bomba_ferma: 12, gatto: 12, burattino: 15, predone: 18, maschera: 16, guardia: 20, statua: 22, ragno_seta: 6 };
+    const stageHpMap = { vespa_cieca: 2, lucciola: 2.5, bomba_ferma: 3, gatto: 3.5, burattino: 4, predone: 4.5, maschera: 4.5, guardia: 5, statua: 6, ragno_seta: 1.5 };
+    const baseSpdMap = { vespa_cieca: 1.45, lucciola: 1.65, bomba_ferma: 0.0, gatto: 1.38, burattino: 1.15, predone: 1.35, maschera: 0.32, guardia: 0.98, statua: 0.0, ragno_seta: 0.0 }; // (d7) il ragno lo muove passoRagnoSetaD7
 
     // Al Piano 1 i campioni sono quasi inesistenti (5%), nei piani avanzati salgono al 18%
     const probCampione = piano === 1 ? 0.05 : 0.18;
@@ -503,7 +504,7 @@ function popolaStanza(s, piano) {
         hp: hpMax,
         maxHp: hpMax,
         speed: baseSpdMap[t] * moltVel * multSpdChamp,
-        r: t === 'statua' ? 13 : t === 'gatto' ? 14 : 11, // gatto grande (sprite scalato 1,32)
+        r: t === 'ragno_seta' ? 8 : t === 'statua' ? 13 : t === 'gatto' ? 14 : 11, // gatto grande (sprite scalato 1,32)
         flash: 0,
         burnTicks: 0,
         stunTicks: 0,
