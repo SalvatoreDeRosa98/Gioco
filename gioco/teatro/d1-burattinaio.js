@@ -61,6 +61,7 @@ const BURATTINAIO_D1 = Object.freeze({
     curaOgni: 2,                                 // ogni N marionette cadute, mezza maschera a terra
   }),
   vittoriaTick: 230,
+  secondaBattutaTick: 200,          // la battuta sui sigilli, dopo quella d'ingresso
   battitoBpm: Object.freeze([52, 68, 90]),       // il timpano sotto la tarantella del boss, per atto
 });
 
@@ -578,6 +579,8 @@ function passoD1() {
   while (d1.cicatrici.length && d1.cicatrici[0].t > BURATTINAIO_D1.forbici.squarcioTick) d1.cicatrici.shift();
   for (let i = d1.effetti.length - 1; i >= 0; i--) if (d1.effetti[i].t > 90) d1.effetti.splice(i, 1);
   if (d1.vittoria) { passoVittoriaD1(); return; }
+  // seconda battuta dopo la prima (la presentazione del boss di b8 svuota la coda: si aspetta)
+  if (d1.t === BURATTINAIO_D1.secondaBattutaTick) voceD1(Object.values(d1.sigilli).some(Boolean) ? 'conSigilli' : 'senzaSigilli');
 
   // il timpano sotto la musica: il ritmo cresce con l'atto
   const bpm = BURATTINAIO_D1.battitoBpm[d1.atto - 1] || 60;
@@ -723,6 +726,26 @@ disegnaFrame = function (...args) {
   try { return disegnaFrameBaseD1.apply(this, args); } finally { st.tipo = 'boss'; st.nemici = tutti; partiDaDisegnareD1 = null; }
 };
 let partiDaDisegnareD1 = null;
+
+/** Scontro in scena: le uniche mani sono i due guanti grandi (richiesta dell'autore). */
+const scontroInScenaD1 = () => Boolean((d1.attivo || d1.vittoria) && statoRun.stanzaCorrente && statoRun.stanzaCorrente === d1.stanza && statoRun.fase === 'in_gioco');
+let maniPiccoleD1 = 0; // QA: quante volte la resa ha disegnato le manine della balconata o i loro fili
+
+const disegnaManoMarionettaPittoricaBaseD1 = disegnaManoMarionettaPittorica;
+/** Niente manine con la crociera in alto durante lo scontro col Grande Burattinaio. */
+disegnaManoMarionettaPittorica = function (...args) {
+  if (scontroInScenaD1()) return undefined;
+  maniPiccoleD1++;
+  return disegnaManoMarionettaPittoricaBaseD1.apply(this, args);
+};
+
+const disegnaFiliMarionettaBaseD1 = disegnaFiliMarionetta;
+/** Niente fili delle manine durante lo scontro. */
+disegnaFiliMarionetta = function (...args) {
+  if (scontroInScenaD1()) return undefined;
+  maniPiccoleD1++;
+  return disegnaFiliMarionettaBaseD1.apply(this, args);
+};
 
 const disegnaHUDPixelArtBaseD1 = disegnaHUDPixelArt;
 /** Prima dell'HUD: effetti di caduta, fili che cadono a vittoria. */
@@ -1060,5 +1083,7 @@ Object.assign(window.__teatro.interni, {
     },
     /** QA: porta avanti la scena (salta intermezzi). */
     saltaIntermezzo() { d1.intermezzo = 0; },
+    /** QA: disegni delle manine piccole (e dei loro fili) passati alla resa finora. */
+    maniPiccole: () => maniPiccoleD1,
   }),
 });

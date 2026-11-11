@@ -64,6 +64,10 @@ const foto = (n) => `${prefisso}-${n}.png`;
   await senzaCartigli(); await p.screenshot({ path: foto('01-atto1') });
   const pugno = await aspetta(() => window.__teatro.interni.burattinaioD1.stato().parti.some((x) => x.fase === 'pugno'), 12000, 50);
   ok('mano-a-pugno', pugno);
+  const mp0 = await p.evaluate(() => window.__teatro.interni.burattinaioD1.maniPiccole());
+  await p.waitForTimeout(700);
+  const mp1 = await p.evaluate(() => window.__teatro.interni.burattinaioD1.maniPiccole());
+  ok('niente-manine-nello-scontro', mp0 === mp1, { mp0, mp1 });
   await senzaCartigli(); await p.screenshot({ path: foto('02-pugno') });
   const colpo = await aspetta(() => window.__teatro.interni.burattinaioD1.stato().parti.some((x) => x.fase === 'terra'), 6000, 50);
   ok('mano-a-terra', colpo);
@@ -128,6 +132,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   await p.waitForTimeout(300);
   s = await S();
   ok('tre-sigilli', s.sigilli.tenaglie && s.sigilli.punzone && s.sigilli.lima, s.sigilli);
+  ok('voce-sigilli', await aspetta(() => JSON.stringify(b8.did).includes('ferri di Gaetano'), 8000));
   await p.evaluate(() => { statoRun.hpHalf = 1; });
   const morto = await aspetta(() => statoRun.fase !== 'in_gioco', 25000, 100);
   ok('morte-dal-burattinaio', morto && (await fase()) === 'morte', await fase());
@@ -136,6 +141,14 @@ const foto = (n) => `${prefisso}-${n}.png`;
   await p.waitForTimeout(300);
   ok('stato-pulito-dopo-morte', !(await S()).attivo, await S());
   await senzaCartigli(); await p.screenshot({ path: foto('11-hub-dopo-morte') });
+  // fuori dallo scontro le manine tornano (una notte normale)
+  const mq0 = await p.evaluate(() => window.__teatro.interni.burattinaioD1.maniPiccole());
+  await p.evaluate(() => nuovaRun(false));
+  await p.waitForTimeout(800);
+  const mq1 = await p.evaluate(() => window.__teatro.interni.burattinaioD1.maniPiccole());
+  ok('manine-tornano-fuori', mq1 > mq0, { mq0, mq1 });
+  await p.evaluate(() => { statoRun.fase = 'hub'; });
+  await p.waitForTimeout(200);
 
   // ---- 3. Aggancio vero di b8 ----
   const via = await p.evaluate(() => window.__teatro.interni.entraSopraLaRibalta());
