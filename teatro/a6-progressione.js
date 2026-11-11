@@ -1,7 +1,7 @@
 /*
  * teatro/a6-progressione.js — Miglioramento 6: progressione fra una run e l'altra, legata alla storia.
  *
- *   - SBLOCCHI: Agnese, Taddeo e Pulcinella d'Ombra partono bloccati (silhouette nel menu con la condizione
+ *   - SBLOCCHI: Agnese, Taddeo e l'Ombra Senza Fili partono bloccati (silhouette nel menu con la condizione
  *     scritta) e si sbloccano con eventi della storia o del gioco; alcuni oggetti entrano nel pool della run
  *     solo dopo il loro sblocco. Ferruccio è sempre disponibile.
  *   - Notifica «SBLOCCATO: …» in un cartiglio di pergamena (stesso aspetto del cartiglio del primo raccolto, D).
@@ -73,7 +73,7 @@ const SBLOCCHI_A6 = Object.freeze([
     id: 'ombra', cosa: { personaggio: 'ombra' },
     quando: [{ boss: 'donna-luciana' }],
     condizione: 'Sconfiggi Donna Luciana, la Burattinaia del Velo',
-    testo: 'Pulcinella d\'Ombra. Spezzati i fili, la tua ombra cammina da sola.',
+    testo: 'L\'Ombra Senza Fili. Spezzati i fili, la tua ombra cammina da sola.',
   }),
   Object.freeze({
     id: 'ogg-burattino-tonino', cosa: { oggetto: 'pupo_tonino' },

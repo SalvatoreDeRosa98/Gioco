@@ -491,7 +491,7 @@ const SBLOCCHI_B5 = Object.freeze([
   ['patto_luna_nera', [{ notte: 6 }], 'Arriva alla Notte 6'],
   ['rocchetto', [{ sblocco: 'agnese' }], 'Sblocca Agnese'],
   ['guanto-sfida', [{ sblocco: 'taddeo' }], 'Sblocca Taddeo'],
-  ['maschera-porcellana', [{ sblocco: 'ombra' }], 'Sblocca Pulcinella d\'Ombra'],
+  ['maschera-porcellana', [{ sblocco: 'ombra' }], 'Sblocca l\'Ombra Senza Fili'],
   ['zecchino', [{ conosciuti: 30 }], 'Scopri 30 oggetti nel Diario'],
   ['occhio_lucia', [{ conosciuti: 60 }], 'Scopri 60 oggetti nel Diario'],
   ['presepe_intero', [{ conosciuti: 100 }], 'Scopri 100 oggetti nel Diario'],
