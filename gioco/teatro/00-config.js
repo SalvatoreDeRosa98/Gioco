@@ -311,7 +311,7 @@ const PERSONAGGI_GIOCABILI = {
   },
   agnese: {
     id: 'agnese', nome: 'Agnese', titolo: 'La Tessitrice di San Leucio',
-    hpHalf: 4, baseDmg: 3.20, baseSpd: 1.25, attivoIniziale: 'tamburello', passivoIniziale: 'doppia',
+    hpHalf: 4, baseDmg: 2.80, baseSpd: 1.25, attivoIniziale: 'tamburello', passivoIniziale: 'doppia',
   },
   taddeo: {
     id: 'taddeo', nome: 'Taddeo', titolo: 'La Guardia Pentita',
@@ -319,7 +319,7 @@ const PERSONAGGI_GIOCABILI = {
   },
   ombra: {
     id: 'ombra', nome: 'L\'Ombra Senza Fili', titolo: 'La Sagoma Fuggita dal Telone',
-    hpHalf: 1, baseDmg: 5.10, baseSpd: 1.12, attivoIniziale: 'forbici', passivoIniziale: 'anello',
+    hpHalf: 1, baseDmg: 5.10, baseSpd: 1.12, attivoIniziale: 'forbici', passivoIniziale: null, // (d2) i colpi spettrali sono il suo dono
   },
 };
 

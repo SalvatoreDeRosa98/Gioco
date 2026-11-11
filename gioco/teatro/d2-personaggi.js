@@ -70,7 +70,7 @@ const TESTI_D2 = Object.freeze({
     taddeo: 'Mena il maglio: tieni premuto per caricare',
     ombra: 'Un colpo e cade · vola · colpi spettrali',
   }),
-  dono: Object.freeze({ taddeo: '🔨 Maglio della Guardia', ombra: '🩸 Anello Cremisi' }),
+  dono: Object.freeze({ taddeo: '🔨 Maglio della Guardia', ombra: '✦ Colpi Spettrali' }),
   vitaOmbra: '½ (non si cura)',
   bottone: 'MOSSA',
   monete: (n) => `Maschera ridotta in ${n} monete`,
@@ -83,7 +83,13 @@ const d2 = {
   rotti: 0, colpiMaglio: 0, nelMaglio: false,
   rec: { tick: -1, x: 0, y: 0, mx: 0, my: 0, leva: false },
   scia: [], sciaI: 0, sorvoli: 0,
+  lampi: [],             // { x, y, t, tipo } lampi delle deviazioni e polvere del maglio (al più 24)
 };
+
+function lampoD2(x, y, tipo) {
+  if (d2.lampi.length >= 24) d2.lampi.shift();
+  d2.lampi.push({ x, y, t: tick, tipo, a: (x * 7 + y * 3) % 6.28 });
+}
 
 /** Id del personaggio della run. */
 function personaggioD2() { return (statoRun && statoRun.personaggioId) || 'ferruccio'; }
@@ -158,6 +164,7 @@ function passoPiroettaD2() {
     });
     statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
     d2.deviati++;
+    lampoD2(pr.x, pr.y, 'lampo');
     suonoD2(1700, 900, 90, 'square', 0.03);
   }
   d2.giro--;
@@ -271,8 +278,9 @@ function colpoMaglioD2(dx, dy, frac) {
     sparaBaseD2(dx, dy, M.ondaScala);
   }
   d2.arco = { ang, mezzo, r: R, t0: tick, pieno: frac >= 0.99 };
+  for (let i = 0; i < 5; i++) { const t = ang + (i / 4 - 0.5) * mezzo * 1.6; lampoD2(hx + Math.cos(t) * R * 0.8, hy + 6 + Math.sin(t) * R * 0.6, 'polvere'); }
   d2.colpiMaglio++;
-  if (colpiti > 0 || frac > 0.5) scuoti(FEEL.scossa.bomba);
+  scuoti(colpiti > 0 || frac > 0.5 ? FEEL.scossa.bomba : FEEL.scossa.ferita);
   try { AudioSys.playFendente(); } catch (_) { /* niente */ }
   suonoD2(160 + 60 * frac, 50, 160, 'sawtooth', 0.05);
 }
@@ -394,17 +402,24 @@ function bottoneMossaD2() {
 function disegnaNastroD2(g, x, y) {
   const P = STILI_D2.agnese.piroetta;
   const k = 1 - d2.giro / P.durataTick;
-  const giro = k * Math.PI * 4;
+  const giro = k * Math.PI * 5;
   g.save();
   g.globalAlpha = 1; // il nastro non lampeggia con l'invulnerabilità
   g.lineCap = 'round';
+  // tre spire di seta chiara col bordo rosso; ognuna lascia dietro una scia che sfuma
   for (let s = 0; s < 3; s++) {
-    const r = 13 + s * 4;
-    const a0 = giro - s * 0.9;
-    g.beginPath();
-    g.ellipse(x, y - 12, r, r * 0.55, 0, a0, a0 + 2.4);
-    g.strokeStyle = 'rgba(12,6,4,0.9)'; g.lineWidth = 5.5 - s; g.stroke();
-    g.strokeStyle = s === 1 ? 'rgba(220,38,38,0.95)' : 'rgba(249,203,64,0.95)'; g.lineWidth = 1.6; g.stroke();
+    const r = 12 + s * 5, cy = y - 6 - s * 7;
+    const a0 = giro + s * 2.1;
+    for (let q = 3; q >= 0; q--) {
+      const b = a0 - q * 0.45;
+      g.globalAlpha = q === 0 ? 1 : 0.5 - q * 0.12;
+      g.beginPath(); g.ellipse(x, cy, r, r * 0.42, 0, b, b + 2.2);
+      g.strokeStyle = '#7f1d1d'; g.lineWidth = 6; g.stroke();
+      g.strokeStyle = '#f3e6cf'; g.lineWidth = 3.4; g.stroke();
+    }
+    g.globalAlpha = 1;
+    g.beginPath(); g.ellipse(x, cy, r, r * 0.42, 0, a0 + 0.2, a0 + 2.0);
+    g.strokeStyle = 'rgba(249,203,64,0.9)'; g.lineWidth = 0.8; g.stroke();
   }
   g.restore();
 }
@@ -414,22 +429,92 @@ function disegnaArcoD2(g, x, y) {
   const k = (tick - A.t0) / M.animTick;
   if (k < 0 || k > 1) return;
   g.save();
-  g.globalAlpha = 1 - k * 0.8;
-  const cx = x, cy = y - 6, r0 = Math.max(6, A.r * 0.45), r1 = A.r * (0.85 + 0.15 * k);
+  g.globalAlpha = 1;
+  const cx = x, cy = y - 6, r1 = A.r * (0.92 + 0.12 * k), sp = A.r * (A.pieno ? 0.42 : 0.34);
   const a0 = A.ang - A.mezzo, a1 = A.ang + A.mezzo;
-  g.beginPath();
-  g.ellipse(cx, cy, r1, r1 * 0.8, 0, a0, a1);
-  g.ellipse(cx, cy, r0, r0 * 0.8, 0, a1, a0, true);
-  g.closePath();
-  g.fillStyle = 'rgba(14,8,5,0.78)'; g.fill();
-  g.strokeStyle = 'rgba(249,203,64,0.35)'; g.lineWidth = 0.8; g.stroke();
-  g.beginPath(); g.ellipse(cx, cy, r1, r1 * 0.8, 0, a0, a1);
-  g.strokeStyle = A.pieno ? 'rgba(239,68,68,1)' : 'rgba(249,203,64,1)'; g.lineWidth = A.pieno ? 2.8 : 2.2; g.stroke();
-  // tre righe di moto lungo l'arco
-  for (let i = 1; i <= 3; i++) {
-    const t = a0 + (a1 - a0) * (i / 4), rr = r1 * (0.62 + 0.08 * i);
-    g.beginPath(); g.ellipse(cx, cy, rr, rr * 0.8, 0, t - 0.25, t + 0.25);
-    g.strokeStyle = 'rgba(249,203,64,0.6)'; g.lineWidth = 0.9; g.stroke();
+  const fino = a0 + (a1 - a0) * Math.min(1, k * 2.2); // il maglio cala lungo l'arco nei primi tick
+  const mezzaluna = (inizio, fineA, rr, spess) => {
+    const mid = (inizio + fineA) / 2;
+    g.beginPath();
+    g.ellipse(cx, cy, rr, rr * 0.8, 0, inizio, fineA);
+    // bordo interno: più vicino al centro nel mezzo, a filo agli estremi (mezzaluna)
+    const n = 10;
+    for (let i = n; i >= 0; i--) {
+      const t = inizio + (fineA - inizio) * (i / n);
+      const sx = spess * Math.sin(Math.PI * (i / n)) * (0.4 + 0.6 * Math.cos((t - mid) * 0.5));
+      g.lineTo(cx + Math.cos(t) * (rr - sx), cy + Math.sin(t) * (rr - sx) * 0.8);
+    }
+    g.closePath();
+  };
+  // scia della mezzaluna
+  g.globalAlpha = 0.35 * (1 - k);
+  mezzaluna(a0, fino, r1 * 1.06, sp * 1.3);
+  g.fillStyle = '#7c5a1e'; g.fill();
+  g.globalAlpha = 1 - k * 0.75;
+  mezzaluna(a0, fino, r1, sp);
+  g.fillStyle = A.pieno ? '#d9a23a' : '#c8a24a'; g.fill();
+  g.strokeStyle = '#140a04'; g.lineWidth = 1.6; g.stroke();
+  if (A.pieno) { g.strokeStyle = 'rgba(220,38,38,0.9)'; g.lineWidth = 0.9; g.stroke(); }
+  // il maglio che cala: manico e testa sagomati, alla punta della mezzaluna
+  if (k < 0.6) {
+    const hxm = cx + Math.cos(fino) * r1 * 0.85, hym = cy + Math.sin(fino) * r1 * 0.68;
+    g.beginPath(); g.moveTo(cx, cy - 4); g.lineTo(hxm, hym);
+    g.strokeStyle = '#140a04'; g.lineWidth = 3; g.stroke();
+    g.strokeStyle = '#8a5a2b'; g.lineWidth = 1.4; g.stroke();
+    g.save(); g.translate(hxm, hym); g.rotate(fino + Math.PI / 2);
+    g.fillStyle = '#1a120c'; g.fillRect(-6, -4, 12, 8);
+    g.strokeStyle = '#f9cb40'; g.lineWidth = 1; g.strokeRect(-6, -4, 12, 8);
+    g.restore();
+  }
+  g.restore();
+}
+
+/** Lampi delle deviazioni (stella di luce) e sbuffi di polvere del maglio. */
+function disegnaLampiD2(g) {
+  if (!d2.lampi.length) return;
+  g.save();
+  for (const L of d2.lampi) {
+    const dur = L.tipo === 'lampo' ? 10 : 22;
+    const k = (tick - L.t) / dur;
+    if (k < 0 || k > 1) continue;
+    if (L.tipo === 'lampo') {
+      g.globalAlpha = 1 - k;
+      const r = 5 + k * 12;
+      g.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const t = L.a + i * Math.PI / 4, rr = i % 2 ? r * 0.35 : r;
+        g.lineTo(L.x + Math.cos(t) * rr, L.y + Math.sin(t) * rr);
+      }
+      g.closePath();
+      g.fillStyle = '#fff4cf'; g.fill();
+      g.strokeStyle = '#dc2626'; g.lineWidth = 1; g.stroke();
+    } else {
+      g.globalAlpha = 0.55 * (1 - k);
+      g.beginPath(); g.ellipse(L.x + Math.cos(L.a) * k * 8, L.y - k * 6, 3 + k * 7, 2 + k * 4, 0, 0, Math.PI * 2);
+      g.fillStyle = '#6b5a45'; g.fill();
+    }
+  }
+  g.restore();
+}
+
+/** Scia spettrale dei colpi dell'Ombra: coda lilla che sfuma dietro ogni colpo. */
+function disegnaColpiSpettraliD2(g) {
+  const L = statoRun.proiettili;
+  g.save();
+  g.lineCap = 'round';
+  for (let i = 0; i < L.length; i++) {
+    const q = L[i];
+    if (!q || !q.spettraleD2) continue;
+    const v = Math.hypot(q.vx, q.vy) || 1, ux = q.vx / v, uy = q.vy / v;
+    for (let s = 3; s >= 1; s--) {
+      g.globalAlpha = 0.5 - s * 0.12;
+      g.beginPath(); g.moveTo(q.x, q.y); g.lineTo(q.x - ux * s * 7, q.y - uy * s * 7 + Math.sin((tick + i * 5) * 0.4 + s) * 1.5);
+      g.strokeStyle = '#0b0710'; g.lineWidth = 7 - s; g.stroke();
+      g.strokeStyle = '#c4b5fd'; g.lineWidth = 2.6 - s * 0.5; g.stroke();
+    }
+    g.globalAlpha = 0.8;
+    g.beginPath(); g.arc(q.x, q.y, 5.5, 0, Math.PI * 2);
+    g.strokeStyle = 'rgba(196,181,253,0.85)'; g.lineWidth = 1; g.stroke();
   }
   g.restore();
 }
@@ -475,12 +560,13 @@ const disegnaFerruccioBaseD2 = disegnaFerruccioPittorico;
 disegnaFerruccioPittorico = function disegnaFerruccioD2(g, px, py) {
   const inScena = g && typeof g.save === 'function' && statoRun.fase === 'in_gioco' && px === player.x && py === player.y;
   const pid = personaggioD2();
-  if (inScena && pid === 'ombra') { try { disegnaSciaD2(g); } catch (_) { /* niente */ } }
+  if (inScena && pid === 'ombra') { try { disegnaSciaD2(g); disegnaColpiSpettraliD2(g); } catch (_) { /* niente */ } }
   const r = disegnaFerruccioBaseD2.apply(this, arguments);
   if (inScena) {
     try {
       if (pid === 'agnese') { if (d2.giro > 0) disegnaNastroD2(g, px, py); else disegnaRicaricaD2(g, px, py); }
       if (pid === 'taddeo') { if (d2.arco) disegnaArcoD2(g, px, py); disegnaCaricaD2(g, px, py); }
+      disegnaLampiD2(g);
     } catch (_) { /* il disegno non deve fermare il gioco */ }
   }
   return r;

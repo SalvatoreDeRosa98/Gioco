@@ -136,6 +136,8 @@ const foto = (n) => `${prefisso}-${n}.png`;
   await passi(1, "const st = statoRun.stanzaCorrente; const o = { tipo: 'colonna', variante: 'vaso', x: 335, y: 195, r: 11, w: 22, h: 22, fragileB7: { genere: 'comune', colpi: 3, esplode: false } }; st.ostacoli.push(o); st.fragiliB7 = [o];");
   await passi(4, 'keys.ArrowRight = true;');
   await passi(2, 'keys.ArrowRight = false;');
+  // il ciclo vero recupera i tick spesi qui: per la foto l'arco riparte da «2 tick fa»
+  await p.evaluate(() => { const D = window.__teatro.interni.personaggiD2.d2; if (D.arco) D.arco.t0 = tick - 1; for (const L of D.lampi) L.t = tick - 1; });
   await p.screenshot({ path: foto('03-taddeo-maglio') });
   await passi(10);
   const dopoVaso = await p.evaluate(() => ({ ostacoli: statoRun.stanzaCorrente.ostacoli.length, proiettili: statoRun.proiettili.length, rotti: window.__teatro.interni.personaggiD2.d2.rotti }));
