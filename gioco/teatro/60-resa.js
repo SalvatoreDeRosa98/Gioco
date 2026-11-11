@@ -1063,7 +1063,7 @@ function disegnaMenuSelezionePersonaggio(tick) {
     drawTextFit(`Dono: ${donoNome}`, pedX, cardY + 175, cardW - 10, {
       size: 7.5, color: '#4ade80',
     });
-    if (schedaD2v.stile) drawTextFit(schedaD2v.stile, pedX, cardY + 188, cardW - 10, { size: 6.5, color: '#e9d5b7', weight: '' }); // (d2)
+    if (schedaD2v.stile) drawTextFit(schedaD2v.stile, pedX, cardY + 116.5, cardW - 10, { size: 6, color: '#e9d5b7', weight: '' }); // (d2)
 
     // Indicatore di Selezione
     if (isSelected) {

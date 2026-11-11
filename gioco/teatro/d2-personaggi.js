@@ -373,8 +373,22 @@ passoLogico = function passoLogicoD2() {
       if (tick % S.ogniTick === 0) { d2.scia[d2.sciaI % S.punti] = { x: player.x, y: player.y, t: tick }; d2.sciaI++; }
     }
   } else if (st2 !== st) { d2.carica = null; d2.giro = 0; d2.scia.length = 0; }
+  bottoneMossaD2();
   return r;
 };
+
+/** Bottone MOSSA a tocco: visibile insieme alla levetta di sparo e solo per chi ha la mossa. */
+function bottoneMossaD2() {
+  try {
+    const E = typeof c2 !== 'undefined' && c2.el ? c2.el.mossa : null;
+    if (!E) return;
+    const leva = c2.leveEl && c2.leveEl.sparo;
+    const nascosto = !(stileD2().mossa && leva && !leva.hidden);
+    if (E.hidden !== nascosto) { E.hidden = nascosto; if (nascosto) for (const [id, el] of c2.puntatori) if (el === E) rilasciaBottoneC2(id); }
+    const pronto = d2.ricarica <= 0;
+    if (E.classList.contains('c2-pronto') !== pronto) { E.classList.toggle('c2-pronto', pronto); E.classList.toggle('c2-spento', !pronto); }
+  } catch (_) { /* niente */ }
+}
 
 // --- Disegni «a ombre»: nastro di seta, arco del maglio, scia spettrale ---
 function disegnaNastroD2(g, x, y) {
@@ -498,7 +512,10 @@ disponiC2 = function disponiD2() {
       const d = parseFloat(E.consuma.style.getPropertyValue('--d')) || 54;
       const x = parseFloat(E.consuma.style.left) || 0, y = parseFloat(E.consuma.style.top) || 0;
       const vert = typeof verticaleC2 === 'function' && verticaleC2();
-      mettiC2(E.mossa, vert ? x : x, vert ? y - d * 1.2 : y - d * 1.15, d);
+      // verticale: sopra CONSUMA; orizzontale: nella gronda dell'altra mano, all'altezza di AZIONE
+      const lato = c2.radice.getBoundingClientRect().width;
+      const ya = parseFloat(E.azione && E.azione.style.top) || y;
+      if (vert) mettiC2(E.mossa, x, y - d * 1.2, d); else mettiC2(E.mossa, lato - x, ya, d);
     }
   } catch (_) { /* niente */ }
   return r;
@@ -509,10 +526,8 @@ aggiornaVistaC2 = function aggiornaVistaD2(c) {
   try {
     const E = c2.el.mossa;
     if (E) {
-      E.hidden = !(c === 'gioco' && stileD2().mossa);
-      E.classList.toggle('c2-spento', d2.ricarica > 0);
-      E.classList.toggle('c2-pronto', d2.ricarica <= 0);
-      for (const [id, el] of c2.puntatori) if (el.hidden) rilasciaBottoneC2(id);
+      E.hidden = true; // lo rimette bottoneMossaD2 a ogni passo
+      bottoneMossaD2();
     }
   } catch (_) { /* niente */ }
   return r;
