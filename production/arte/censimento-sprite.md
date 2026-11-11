@@ -25,11 +25,11 @@ alfa < 90% (aloni e frange). Sat/V = saturazione e valore medi dei pixel opachi.
 
 | file | dove | celle | altezza | instabilità piedi / altezza | semi | sat / V | scelta |
 |---|---|---|---|---|---|---|---|
-| ferruccio | t2 LAYOUT | 12 | 51–124 | 1 px / 3% (spara) | 26% | 0.38 / 0.60 | leggera |
+| ferruccio | t2 LAYOUT | 12 | 51–124 | 1 px / 3% (spara) | 26% | 0.38 / 0.60 | **originale — scelta dell'autore** |
 | agnese | t2 LAYOUT | 12 | 89–126 | 1 px / 1% (cammina) | 23% | 0.42 / 0.39 | leggera |
 | taddeo | t2 LAYOUT | 12 | 68–124 | 0 px / 2% (fermo) | 19% | 0.39 / 0.12 | leggera |
 | ombra | t2 LAYOUT | 12 | 81–129 | 1 px / 7% (cammina) | 27% | 0.41 / 0.14 | leggera |
-| teste-mira | t2 LAYOUT | 4 | 63–66 | 0 px / 0% | 21% | 0.15 / 0.47 | originale (non disegnato) |
+| teste-mira | t2 LAYOUT | 4 | 63–66 | 0 px / 0% | 21% | 0.15 / 0.47 | **originale — scelta dell'autore** (parte di Ferruccio; non disegnato) |
 | gatto | t2 LAYOUT | 15 | 79–126 | 1 px / 8% (muove) | 22% | 0.52 / 0.13 | leggera |
 | vespa-cieca | t2 LAYOUT | 10 | 143–257 | 0 px / 13% (vola) | 2% | 0.44 / 0.48 | a ombre |
 | maschera | t2 LAYOUT | 12 | 111–203 | 0 px / 0% | 1% | 0.35 / 0.49 | leggera |

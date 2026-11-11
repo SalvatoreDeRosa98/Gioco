@@ -27,7 +27,8 @@ const RADICE = path.resolve(__dirname, '..');
 const SORGENTE = path.join(RADICE, 'gioco', 'teatro_marionette.html');
 const CARTELLA_GIOCO = path.join(RADICE, 'gioco');
 const SPRITE = path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro');
-const SPRITE_V2_DIR = path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro_v2');
+const CARTELLE_V2 = { leggera: path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro_v2'),
+  ombre: path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro_v2_ombre') };
 const iUscita = process.argv.indexOf('--uscita');
 const USCITA = iUscita > 0 && process.argv[iUscita + 1]
   ? path.resolve(process.argv[iUscita + 1])
@@ -53,7 +54,7 @@ function immaginiDiScenaUsate(jsB9) {
 }
 
 /**
- * La tabella SPRITE_V2 di teatro/10-sprite.js (fra i segnaposto <sprite-v2>): nome → true/false.
+ * La tabella SPRITE_V2 di teatro/10-sprite.js (fra i segnaposto <sprite-v2>): nome → false | 'leggera' | 'ombre'.
  * @returns {Object<string, boolean>} vuota se manca (allora si incorporano gli originali)
  */
 function tabellaSpriteV2(js) {
@@ -100,8 +101,9 @@ function main() {
   let alleggeriti = 0;
   for (const f of daIncorporare) {
     // versione migliorata se accesa in SPRITE_V2 (10-sprite.js) e presente in sprite_teatro_v2/
-    const v2 = path.join(SPRITE_V2_DIR, f);
-    const origine = spriteV2[f.slice(0, -4)] === true && fs.existsSync(v2) ? v2 : path.join(SPRITE, f);
+    const scelta = spriteV2[f.slice(0, -4)];
+    const v2 = CARTELLE_V2[scelta] ? path.join(CARTELLE_V2[scelta], f) : '';
+    const origine = v2 && fs.existsSync(v2) ? v2 : path.join(SPRITE, f);
     if (origine === v2) usatiV2++;
     const leggero = path.join(tmp, f.replace(/\//g, '_'));
     let dati = fs.readFileSync(origine);

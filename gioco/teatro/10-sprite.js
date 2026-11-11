@@ -856,29 +856,35 @@ function disegnaManoMarionettaPittorica() {
 // ===========================================================================
 // SISTEMA SPRITE TEATRALI 2D (MODEL SHEET APPROVATI)
 // ===========================================================================
-// Versione migliorata degli sprite (tools/migliora-sprite-teatro.py → assets/sprite_teatro_v2/, stessi nomi e
-// stesse griglie). true = si usa la v2, false = l'originale. Scelte guardando le tavole di
-// production/arte/prima-dopo-sprite/ (spenti: teste-mira, non disegnato; lucciola e regina-vespa, da decidere
-// all'autore). Spegnere tutto per una prova: window.__spriteV2 = false prima del caricamento.
-// tools/teatro-release.js legge questa tabella (fra i segnaposto) e incorpora la versione scelta.
+// Versione migliorata degli sprite (tools/migliora-sprite-teatro.py, stessi nomi e stesse griglie):
+//   'leggera' → assets/sprite_teatro_v2/        (pulizia, piedi fermi, contorno unico, gradazione leggera)
+//   'ombre'   → assets/sprite_teatro_v2_ombre/  (stessa pulizia, gradazione «a ombre» decisa)
+//   false     → l'originale di assets/sprite_teatro/.
+// Di partenza 'leggera' dove le tavole di production/arte/prima-dopo-sprite/ mostrano un miglioramento netto;
+// false per ferruccio e teste-mira (scelta dell'autore: l'originale) e per lucciola e regina-vespa (dubbio: decide l'autore). La versione
+// «a ombre» è pronta per tutti: basta scrivere 'ombre'. Prova globale: window.__spriteV2 = false | 'leggera' |
+// 'ombre' prima del caricamento. tools/teatro-release.js legge questa tabella (fra i segnaposto).
 // <sprite-v2>
 const SPRITE_V2 = Object.freeze({
-  ferruccio: true, agnese: true, taddeo: true, ombra: true, 'teste-mira': false,
-  gatto: true, 'vespa-cieca': true, maschera: true, 'bomba-ferma': true, guardia: true, statua: true, predone: true,
-  lucciola: false, burattino: true,
-  'regina-vespa': false, capitano: true, 'donna-luciana': true, 'custode-marmo': true, spezzafili: true,
-  accendilumi: true, 'cigno-latta': true, 'giostra-lucciole': true, 'tessitrice-pietra': true,
-  'boss/gatto_fermo': true, 'boss/gatto_accucciato': true, 'boss/gatto_salto': true, 'boss/gatto_cammina': true,
-  'boss/capitano_guardia_fermo': true, 'boss/colosso_statua_fermo': true, 'boss/colosso_statua_aperto': true,
-  'boss/maestro_fucina_fermo': true, 'boss/maestro_fucina_attacco': true, 'boss/donna_luciana_ferma': true,
-  'boss/regina_vespa_ferma': true,
+  ferruccio: false /* scelta dell'autore: il suo originale */, agnese: 'leggera', taddeo: 'leggera', ombra: 'leggera', 'teste-mira': false,
+  gatto: 'leggera', 'vespa-cieca': 'leggera', maschera: 'leggera', 'bomba-ferma': 'leggera', guardia: 'leggera',
+  statua: 'leggera', predone: 'leggera', lucciola: false, burattino: 'leggera',
+  'regina-vespa': false, capitano: 'leggera', 'donna-luciana': 'leggera', 'custode-marmo': 'leggera',
+  spezzafili: 'leggera', accendilumi: 'leggera', 'cigno-latta': 'leggera', 'giostra-lucciole': 'leggera',
+  'tessitrice-pietra': 'leggera',
+  'boss/gatto_fermo': 'leggera', 'boss/gatto_accucciato': 'leggera', 'boss/gatto_salto': 'leggera',
+  'boss/gatto_cammina': 'leggera', 'boss/capitano_guardia_fermo': 'leggera', 'boss/colosso_statua_fermo': 'leggera',
+  'boss/colosso_statua_aperto': 'leggera', 'boss/maestro_fucina_fermo': 'leggera',
+  'boss/maestro_fucina_attacco': 'leggera', 'boss/donna_luciana_ferma': 'leggera', 'boss/regina_vespa_ferma': 'leggera',
 });
 // </sprite-v2>
+/** Cartella della versione migliorata per valore di SPRITE_V2. */
+const CARTELLE_SPRITE_V2 = Object.freeze({ leggera: 'assets/sprite_teatro_v2/', ombre: 'assets/sprite_teatro_v2_ombre/' });
 
 /**
  * Avvia il caricamento dello sprite `nome` (senza estensione, es. 'gatto' o 'boss/gatto_fermo') in `img`.
- * Ordine: risorsa incorporata dalla release (già la versione scelta) → v2 se accesa in SPRITE_V2 → originale.
- * Se la v2 manca o non si carica, ripiega da sola sull'originale.
+ * Ordine: risorsa incorporata dalla release (già la versione scelta) → versione di SPRITE_V2 → originale.
+ * Se il file migliorato manca o non si carica, ripiega da solo sull'originale.
  * @param {HTMLImageElement} img
  * @param {string} nome
  */
@@ -886,14 +892,17 @@ function caricaSpriteTeatro(img, nome) {
   const orig = `assets/sprite_teatro/${nome}.png`;
   const incorporata = window.__risorseTeatro && window.__risorseTeatro[orig];
   if (incorporata) { img.src = incorporata; return; }
-  if (SPRITE_V2[nome] && window.__spriteV2 !== false) {
+  const forza = window.__spriteV2;
+  const scelta = forza === false ? false : (typeof forza === 'string' && SPRITE_V2[nome] !== undefined ? forza : SPRITE_V2[nome]);
+  const cartella = scelta && CARTELLE_SPRITE_V2[scelta];
+  if (cartella) {
     const ripiego = () => {
       img.removeEventListener('error', ripiego);
       console.warn('[sprite v2] manca o non si carica, uso l\'originale:', nome);
       img.src = orig;
     };
     img.addEventListener('error', ripiego);
-    img.src = `assets/sprite_teatro_v2/${nome}.png`;
+    img.src = `${cartella}${nome}.png`;
   } else {
     img.src = orig;
   }

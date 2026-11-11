@@ -3,7 +3,7 @@
 tools/migliora-sprite-teatro.py — catena di miglioramento degli sprite del Teatro (presepe d'ombre).
 
 Prende le immagini dell'autore in gioco/assets/sprite_teatro/ (NON le tocca mai) e scrive le versioni
-migliorate in gioco/assets/sprite_teatro_v2/ con gli stessi nomi e le stesse griglie (layout.json e il
+migliorate in gioco/assets/sprite_teatro_v2/ (leggera) e sprite_teatro_v2_ombre/ (a ombre decisa) con gli stessi nomi e le stesse griglie (layout.json e il
 LAYOUT di teatro/t2-sprite.js restano validi). Il gioco sceglie quale usare con la tabella SPRITE_V2 di
 teatro/10-sprite.js; tools/teatro-release.js incorpora la versione scelta.
 
@@ -103,11 +103,12 @@ PREDEFINITO = {'pulizia': True, 'stabile': True, 'stile': 0.6, 'contorno': True}
 # dubbio: True = scelta mia incerta, SPRITE_V2 spento finché l'autore non guarda la tavola.
 TABELLA = {
     # personaggi: la Ferruccio è il modello; «a ombre» li ingrigisce e li perde sul pavimento scuro
-    'ferruccio': {'stile': 0.15, 'scelta': 'leggera'},
+    # scelta dell'AUTORE: originale, nessun ritocco (né pulizia, né piedi, né stile, né contorno); niente file v2
+    'ferruccio': {'pulizia': False, 'stabile': False, 'stile': 0.0, 'contorno': False, 'scelta': 'prima', 'autore': True},
     'agnese': {'stile': 0.4, 'scelta': 'leggera'},
     'taddeo': {'stile': 0.3, 'scelta': 'leggera'},
     'ombra': {'stile': 0.2, 'scelta': 'leggera'},
-    'teste-mira': {'stile': 0.0, 'stabile': False, 'contorno': False, 'scelta': 'prima'},  # non disegnato dal gioco
+    'teste-mira': {'pulizia': False, 'stabile': False, 'stile': 0.0, 'contorno': False, 'scelta': 'prima', 'autore': True},  # parte di Ferruccio
     # nemici
     'gatto': {'stile': 0.4, 'scelta': 'leggera'},
     'vespa-cieca': {'stile': 0.7, 'scelta': 'ombre'},
@@ -526,7 +527,7 @@ def tavola(nome, var, layout, note):
     T = Image.new('RGBA', (W, H), (12, 10, 16, 255))
     d = ImageDraw.Draw(T)
     sc = opzioni(nome)
-    d.text((10, 6), f'{nome}  -  scelta: {sc.get("scelta", "?")}{"  (DUBBIO: decide l autore)" if sc.get("dubbio") else ""}',
+    d.text((10, 6), f'{nome}  -  scelta: {"originale (scelta dell autore)" if sc.get("autore") else sc.get("scelta", "?")}{"  (DUBBIO: decide l autore)" if sc.get("dubbio") else ""}',
            fill=(249, 203, 64), font=F)
     y = 34
     for v, sch, zoom in fasce:
@@ -580,7 +581,7 @@ def tavola_gruppo(titolo, coppie, k=3.0):
         sc = opzioni(nome)
         d.rectangle((x, 36 + 3 * hs + 2, x + max(ims[0].width, 110), H), fill=(12, 10, 16, 255))
         d.text((x, 36 + 3 * hs + 4), nome, fill=(220, 220, 220), font=F)
-        d.text((x, 36 + 3 * hs + 22), f'scelta: {sc.get("scelta", "?")}{" (?)" if sc.get("dubbio") else ""}',
+        d.text((x, 36 + 3 * hs + 22), 'scelta: originale (autore)' if sc.get('autore') else f'scelta: {sc.get("scelta", "?")}{" (?)" if sc.get("dubbio") else ""}',
                fill=(249, 203, 64), font=F)
         x += max(ims[0].width, 110) + 16
     return T.convert('RGB')
@@ -697,10 +698,17 @@ def main():
         fatti[nome] = var
         o = opzioni(nome)
         scelta = o.get('scelta', 'leggera')
-        if not arg.anteprima:
-            dest = os.path.join(V2, nome + '.png')
-            os.makedirs(os.path.dirname(dest), exist_ok=True)
-            var['pulita' if scelta == 'prima' else scelta].save(dest, optimize=True)
+        if not arg.anteprima and o.get('autore'):
+            for cartella in (V2, V2 + '_ombre'):  # l'autore tiene l'originale: nessun file migliorato
+                f = os.path.join(cartella, nome + '.png')
+                if os.path.exists(f):
+                    os.remove(f)
+        elif not arg.anteprima:
+            # sprite_teatro_v2/ = leggera (pulita se il contorno è spento), sprite_teatro_v2_ombre/ = a ombre
+            for cartella, v in ((V2, 'leggera' if o['contorno'] else 'pulita'), (V2 + '_ombre', 'ombre')):
+                dest = os.path.join(cartella, nome + '.png')
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                var[v].save(dest, optimize=True)
         if not arg.senza_tavole:
             tavola(nome, var, layout, note).save(os.path.join(TAVOLE, nome.replace('/', '_') + '.png'), optimize=True)
         print(f'{nome}: scelta {scelta}{" (dubbio)" if o.get("dubbio") else ""}, stile {o["stile"]}; ' + ('; '.join(note) or 'nessun riallineamento'))
@@ -716,9 +724,9 @@ def main():
         voci = [(n, p, fatti[n]) for n, p in TREMOLIO if n in fatti]
         if voci:
             tavola_tremolio(voci, layout).save(os.path.join(TAVOLE, '_tremolio.png'), optimize=True)
-    # tabella per teatro/10-sprite.js (SPRITE_V2): acceso solo dove la scelta è una variante e non c'è dubbio
-    print('SPRITE_V2 = ' + json.dumps({n: (opzioni(n).get('scelta', 'leggera') != 'prima' and not opzioni(n).get('dubbio'))
-                                        for n in TABELLA}))
+    # tabella per teatro/10-sprite.js (SPRITE_V2): di partenza 'leggera' dove c'è una scelta senza dubbio
+    print('SPRITE_V2 = ' + json.dumps({n: ('leggera' if opzioni(n).get('scelta', 'leggera') != 'prima'
+                                            and not opzioni(n).get('dubbio') else False) for n in TABELLA}))
 
 
 if __name__ == '__main__':
