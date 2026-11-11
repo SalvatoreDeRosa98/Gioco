@@ -5,11 +5,12 @@ Canvas 2D) può girare senza browser su una console R36S (ArkOS, aarch64, 1 GB, 
 Node.js + un Canvas 2D nativo (Skia, `@napi-rs/canvas`) + SDL2 (`@kmamal/sdl`), senza toccare i file del
 gioco, a una velocità giocabile (30 fotogrammi al secondo).
 
-**Stato.** In corso (secondo giro). Sulla console vera il pacchetto v1 parte ma fa circa 5 fotogrammi
-al secondo; il v2 (tre livelli di qualità, misura automatica) è da provare sulla console.
+**Stato.** In corso (terzo giro). Sulla console vera il v1 faceva circa 5 fotogrammi al secondo, il v2
+ne fa 20 (il suo tetto); il v3 (30 agganciati al refresh, qualità automatica, immagini ridotte in memoria,
+contatore a schermo) è da provare sulla console.
 
-**Risultati finora.** Fattibile senza toccare il gioco; troppo lento a risoluzione piena su un Cortex-A35
-(fattore vero ×30-40 rispetto al PC di prova, non ×8 come stimato). Dettagli, misure e attese in `RAPPORTO.md`.
+**Risultati finora.** Fattibile senza toccare il gioco. Su un Cortex-A35 pesano i pixel toccati e il
+JavaScript che prepara i disegni, non la logica. Dettagli, misure e attese in `RAPPORTO.md` (§8 e §9).
 
 ## Come si usa (su un PC Linux con Node 22)
 
@@ -20,7 +21,7 @@ node lanciatore/prova.js            # prova automatica: menu → hub → piano 1
 node lanciatore/prova.js --misura --sdl   # tempi per fotogramma, effetti accesi/spenti, stanza pesante
 node lanciatore/prova.js --livelli        # i tre livelli a confronto, con foto ingrandite in uscita/
 node lanciatore/prova.js --misura --ablazione   # quanto costa ogni tipo di disegno (saltandolo)
-node lanciatore/avvia.js --livello=medio  # gioca a un livello (bello, medio, veloce)
+node lanciatore/avvia.js --livello=medio  # gioca a un livello fisso (bello, medio, veloce); senza, sceglie da solo
 node lanciatore/avvia.js            # gioca in una finestra SDL (tastiera o gamepad)
 ./prepara-font.sh                   # copia in lanciatore/font i font dei testi e dei simboli
 ./prepara-pacchetto.sh              # scarica node e i moduli per linux-arm64 e monta pacchetto/ e lo zip
@@ -34,7 +35,8 @@ node lanciatore/avvia.js            # gioca in una finestra SDL (tastiera o game
 | `lanciatore/avvia.js` | ciclo in tempo reale, log con errori e fotogrammi al secondo |
 | `lanciatore/uscita-sdl.js` | schermo (640×480 con bande nere), controller, tastiera; Start+Select per uscire |
 | `lanciatore/prova.js` | prova automatica con foto, misura dei tempi, ablazione, confronto dei livelli; `--console` è la misura che gira sulla console |
-| `lanciatore/livelli.js` | i tre livelli: scala interna, fotogrammi voluti, tagli di scena |
+| `lanciatore/acceleratore.js` | quello che il finto browser fa in più di un browser: filtro nero finto, immagini ridotte in memoria, scritte e velo in memoria |
+| `lanciatore/livelli.js` | i nove scalini di qualità e il regolatore automatico |
 | `lanciatore/macchina.js` | CPU, regolatore di frequenza e memoria, per i log |
 | `modello-pacchetto/` | script di lancio PortMaster, impostazioni «leggere», istruzioni |
 | `prepara-pacchetto.sh` | monta `pacchetto/` (fuori da git) e lo zip da consegnare |

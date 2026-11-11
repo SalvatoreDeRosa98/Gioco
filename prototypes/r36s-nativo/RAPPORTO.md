@@ -1,11 +1,11 @@
 # Ferruccio sull'R36S: prova di fattibilità (2026-11-10)
 
-**Dove siamo (secondo giro).** Sulla console vera il pacchetto v1 **parte** (node, la SDL2 di sistema e lo
-schermo funzionano) ma va a **circa 5 fotogrammi al secondo** a occhio: quattro-cinque volte peggio della
-mia stima centrale. La stima del §3 era sbagliata, e il §8 dice perché. C'è un pacchetto **v2** che lavora
-solo nello strato del lanciatore: tre livelli di qualità, console alla massima potenza, velocità di gioco
-giusta anche quando disegna poco, e una misura automatica da lanciare sulla console. **Non so se arriva a
-15-20**: la mia attesa onesta è 9-14 al livello che resta leggibile e 11-20 a quello veloce (§8).
+**Dove siamo (terzo giro).** Sulla console vera il v2 arriva al tetto che gli avevo messo, **20 fotogrammi
+al secondo** (meglio della mia attesa di 9-14), e l'autore lo vuole più fluido e più leggero in memoria. Il
+**v3** punta a 30 agganciati al refresh dello schermo, sceglie da solo la qualità, mostra a schermo gli fps
+veri, tiene le immagini in memoria alla misura che serve (da 153 a 10 MB di pixel) e ridisegna il menu solo
+quattro volte al secondo quando è fermo. **Non so se nelle stanze arriva a 30**: del v2 so solo che stava
+sotto i 50 ms a fotogramma, non di quanto (§9). Niente del v3 è stato provato sulla console.
 
 **In una riga (primo giro).** Il gioco vero gira fuori dal browser (Node + Skia + SDL) su un PC, senza toccare
 `gioco/teatro/`; c'è un pacchetto autosufficiente da copiare in `ports/`.
@@ -247,3 +247,95 @@ Far provare il v2 e soprattutto **far lanciare `FerruccioMisura`**: con `misura.
 Se al livello medio la console resta sotto i 10, questo approccio (canvas software su A35) non arriva a un
 gioco fluido senza perdere le scritte, e le strade sono due: accettare 10-12 al secondo a velocità giusta,
 oppure la riscrittura del disegno sulla GPU (§7c), che resta il lavoro di mesi già detto.
+
+## 9. Terzo giro: più fluido e meno memoria (pacchetto v3)
+
+### Il dato dalla console
+Col v2 l'autore dice «20 fps non sono abbastanza: rendilo più fluido»: il v2 tocca il suo tetto (ritmo
+fisso a 20). Non so a quale livello giocava (di partenza era «medio», 480×270) né ho i file di misura.
+Quindi so solo che il lavoro di un fotogramma stava **sotto i 50 ms**; non so di quanto.
+
+### Cosa c'è nel v3 (tutto in `lanciatore/`, `gioco/teatro/` intatto)
+1. **Ritmo agganciato allo schermo.** `fps` voluti (30 di partenza; 20/30/40/60). All'avvio si misura se SDL
+   aspetta il refresh: se sì, un fotogramma ogni 2 refresh (30) o 3 (20), con la partenza calcolata perché
+   la presentazione cada sul refresh giusto; se no, a orologio. Provato sul PC con un refresh finto a
+   60 Hz: 150 fotogrammi su 150 a due refresh esatti. Se l'aggancio sulla console costa più di un refresh
+   e mezzo, si spegne da solo e lo scrive nel log.
+2. **Qualità automatica** (`"livello": "auto"`, di partenza). Nove scalini: scala 1 → 0,875 → 0,75 → 0,625
+   → 0,5 e tagli progressivi. Scende in fretta se il lavoro supera l'88 % del tempo disponibile, sale
+   piano (6 secondi di margine largo); uno scalino rimangiato subito resta chiuso sempre più a lungo. Uno
+   scalino per tipo di scena (piazza, stanze); il menu resta a scala piena perché è fatto di scritte.
+   Limite inferiore `scalaMinima` 0,625 (400×225: le scritte si leggono ancora, `prove/v3/livello-pesante-400225.png`).
+   Sul PC, con una zavorra proporzionale ai pixel che porta la stanza piena a 35 ms: da 18,5 a 30,0 fps
+   in dieci secondi, scendendo da solo a 400×225. Ogni cambio finisce nel log.
+3. **Immagini ridotte in memoria.** Il gioco carica all'avvio tutti i 51 fogli sprite: 153 MB decodificati.
+   Ora ogni immagine si decodifica in sottofondo, se ne tiene una copia a un quarto per lato (a 480×270) o
+   metà (a 640×360) e la decodifica piena si butta; se un disegno chiede più definizione, la copia si rifà
+   più grande. Il gioco riceve `onload` quando la copia è pronta, come con una rete lenta: nei primi secondi
+   può usare i suoi disegni a codice. Confronto a occhio: `prove/v3/ridotte-075.png` e `intere-075.png`.
+4. **Menu fermo**: scelta del burattino, pausa e diario si ridisegnano 4 volte al secondo finché non si
+   tocca un comando (la logica continua). Sul PC: 120-134 giri su 150 senza disegno.
+5. **Contatore a schermo** in basso a destra: fps veri (verde, giallo, rosso) e scalino in grigio; `--` quando
+   lo schermo è tenuto fermo. Si spegne con `"contatore": false`.
+6. **Velo della notte in memoria** quando non è tagliato (scalino 0): si calcola una volta e si ricopia.
+7. **`FerruccioMisura`** dura circa un minuto (5 s sul PC) e mette in testa a `misura.log` un riassunto:
+   fps possibili per livello e scena, collo di bottiglia, se le scritte in memoria convengono, memoria.
+8. **Memoria restituita al sistema**: tre regolazioni di `malloc` nello script di lancio.
+
+### Memoria (PC, release, palco 480×270)
+
+| | al menu | in piazza | pixel delle immagini |
+|---|---|---|---|
+| v2: immagini intere | 312 MB | 364 MB | 153 MB |
+| v3: immagini ridotte | 246 MB | 254 MB | 10 MB |
+| v3 più le regolazioni di `malloc` | **187 MB** | **213 MB** | 10 MB |
+
+Il tempo per fotogramma non cambia in modo misurabile (stanza piena al livello medio: 2,6-2,8 ms prima e
+dopo). Sulla console mi aspetto un risparmio simile in megabyte; se aiuti anche la velocità (meno memoria
+da leggere per ogni sprite) non lo so.
+
+### «Se ho già passato una stanza lì non ci sono mob»
+Ho misurato l'idea alla lettera e sul PC non rende:
+
+| Livello medio | ms a fotogramma | disegni |
+|---|---|---|
+| stanza normale (3-5 nemici) | 2,4 | 153 |
+| stanza piena (12 nemici, raffiche) | 2,7 | 197 |
+| stanza ripulita (nessun nemico) | 2,7 | 185 |
+
+Con le liste vuote i percorsi dei nemici non costano già niente; la stanza ripulita disegna scenografia,
+premi a terra e porte. Le liste dei nemici morti e le macchie sono pochi kilobyte su 25 MB di JavaScript.
+Quello che pesava in memoria erano i fogli sprite dei nemici, e quelli ora sono piccoli sempre, ripulita o
+no: per questo **non c'è un rilascio per stanza**.
+
+### Le ottimizzazioni rimandate, misurate una per una (PC)
+| | Esito |
+|---|---|
+| a. Memoria delle scritte | **Fatta, spenta di partenza.** Stanza piena al livello medio: 2,84 ms senza, 2,86 con. Riconoscere la scritta (font, colore, allineamento, trasformazione) costa quanto impaginarla. `FerruccioMisura` la prova sulla console; si accende con `"memoriaScritte": true`. |
+| b. Sfumature grandi | Fatto il velo. Aloni dei lumi e riflessi sono già tagliati ai livelli usati. Le ombre a terra cambiano coordinate a ogni fotogramma: non si possono riusare. |
+| c. Menu ridisegnato solo se cambia | Fatto in forma semplice: 4 disegni al secondo da fermo, tutti appena si tocca un comando. Non riconosce da sé un'animazione vera. |
+| d. Pavimento e pubblico | Già così: il pavimento è una tela sola ricopiata; il pubblico è spento. |
+| e. Tratti | Niente da prendere a 480×270: fili, pioggia, schegge e scenografia, tolti uno per uno, restano nel rumore (2,5-2,7 ms). Questo canvas non ha un interruttore per l'antialias. |
+| f. Presentazione | Una sola copia dei pixel in RGBA, il formato che SDL carica senza conversioni. Quanto costa sulla console lo dirà il log («schermo»). |
+
+### Quanto mi aspetto sulla console
+- **Stanze**: il regolatore tiene 30 se a 480×270 il lavoro stava sotto circa 33 ms; se stava fra 33 e 37 ms
+  ci arriva scendendo a 400×225; sopra, resta a 20 ma con cadenza regolare (un fotogramma ogni tre refresh).
+  Dal solo «20 al tetto» non posso dire in quale dei tre casi siamo.
+- **Menu**: da fermo mostra `--`; mentre si naviga resta lento come prima (centinaia di disegni e scritte).
+- **Memoria**: 100-150 MB in meno.
+- **Non so**: a che livello girava il v2; se SDL sulla console aspetta il refresh; se i regolatori di
+  frequenza si sono lasciati mettere su «performance»; quanto del tempo è JavaScript e quanto pixel (sul
+  PC, al livello medio: 64 % JavaScript che prepara i disegni, 30 % resa dei pixel, 6 % logica).
+
+### Prossimo giro (v4), nell'ordine in cui lo farei
+1. Leggere `misura.log` e il numero a schermo: decidono tutto il resto.
+2. Memoria delle scritte fatta senza letture di stato native (stato tenuto dal lanciatore): serve soprattutto
+   al menu mentre si naviga.
+3. Menu ridisegnato solo quando cambia davvero.
+4. Se domina il JavaScript: non c'è altro da prendere in questo strato; resta la riscrittura del disegno (§7c).
+
+### Il pacchetto v3
+`ferruccio-r36s-v3.zip`: `Ferruccio.sh`, `FerruccioMisura.sh`, `ferruccio/`. Stessi binari e stessi
+controlli del v2. Istruzioni in `modello-pacchetto/ISTRUZIONI.txt`: sostituire la cartella, giocare, dirci
+i due numeri in basso a destra, lanciare la misura, mandare i file.
