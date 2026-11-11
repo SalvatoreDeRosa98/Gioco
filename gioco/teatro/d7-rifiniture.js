@@ -376,7 +376,8 @@ function gamepadCollegatoD7() {
 const righeBaseD7 = righeB3;
 righeB3 = function righeB3D7(...a) {
   const r = righeBaseD7.apply(this, a);
-  if (!Array.isArray(r) || gamepadCollegatoD7()) return r;
+  // solo col tocco: su PC le righe restano ferme (rimappatura, cursore, clic delle prove di b3)
+  if (!Array.isArray(r) || typeof inToccoB3 !== 'function' || !inToccoB3() || gamepadCollegatoD7()) return r;
   return r.some((x) => x && x.id === 'vibrazione') ? r.filter((x) => !x || x.id !== 'vibrazione') : r;
 };
 
