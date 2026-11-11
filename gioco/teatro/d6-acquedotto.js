@@ -56,7 +56,7 @@ const ACQUEDOTTO_D6 = Object.freeze({
       Object.freeze({ id: 'due-traverse', peso: 2, canali: Object.freeze([{ x: 76, y: 114, w: 488, h: 26, dx: 1, dy: 0 }, { x: 76, y: 236, w: 488, h: 26, dx: -1, dy: 0 }]) }),
     ]),
     /** Nella stanza del Guardiano: i due condotti da cui sale la piena. */
-    boss: Object.freeze([{ x: 96, y: 78, w: 22, h: 220, dx: 0, dy: 1 }, { x: 522, y: 78, w: 22, h: 220, dx: 0, dy: 1 }]),
+    boss: Object.freeze([{ x: 126, y: 78, w: 22, h: 220, dx: 0, dy: 1 }, { x: 492, y: 78, w: 22, h: 220, dx: 0, dy: 1 }]),
   }),
   /** La raffica di vento. */
   vento: Object.freeze({
@@ -115,8 +115,8 @@ const TESTI_D6 = Object.freeze({
   cartiglioLuogo: 'ACQUEDOTTO CAROLINO',
   cartiglioChiusa: (n) => `Un'altra strada · 🗝 ${n} chiave [E]`,
   cartiglioAperta: '▼ SCENDI NEL CONDOTTO [E] ▼',
-  bannerGrata: 'A sinistra, la GRATA DEL CONDOTTO: di là si va all\'Acquedotto Carolino.',
-  bannerGrataGratis: 'A sinistra il lucchetto è saltato: la GRATA DEL CONDOTTO è aperta, di là si va all\'Acquedotto Carolino.',
+  bannerGrata: (n) => `· A sinistra la GRATA DEL CONDOTTO (🗝 ${n} chiave).`,
+  bannerGrataGratis: '· A sinistra la GRATA DEL CONDOTTO: il lucchetto è saltato!',
   serveChiave: (n) => `La grata del condotto è chiusa col lucchetto: serve ${n} chiave 🗝.`,
   grataAperta: 'La chiave gira, il lucchetto cade: sotto la grata si sente correre l\'acqua. [E] per scendere.',
   presentazione: '«Chi beve l\'acqua del Re, paga il pedaggio.»',
@@ -371,7 +371,7 @@ verificaStanzaPulita = function (...args) {
       if (pianoNelCicloD6() === ACQUEDOTTO_D6.pianoGrata && !st.grataD6) {
         const gratis = (st.persiD6 || 0) <= ACQUEDOTTO_D6.grata.mezzeGratis;
         st.grataD6 = { aperta: gratis, gratis, t0: tick };
-        mostraBanner(`${statoRun.banner || ''} ${gratis ? TESTI_D6.bannerGrataGratis : TESTI_D6.bannerGrata}`.trim(), 320);
+        mostraBanner(`${statoRun.banner || ''} ${gratis ? TESTI_D6.bannerGrataGratis : TESTI_D6.bannerGrata(ACQUEDOTTO_D6.grata.chiavi)}`.trim(), 320);
       }
       const b = st.nemici.find((n) => n.boss && n.bossId === SCHEDA_D6.id);
       if (b) guardianoSconfittoD6(st, b);
@@ -1174,14 +1174,14 @@ const DISEGNI_NEMICI_D6 = {
       ctx.beginPath(); ctx.moveTo(-12, -3); ctx.lineTo(-26, -4); ctx.moveTo(-12, 3); ctx.lineTo(-24, 4); ctx.stroke();
       ctx.globalAlpha = 1;
     }
-    // ali a falce (una per lato del corpo; sul palco si vedono di tre quarti)
+    // ali a falce, lunghe e tirate all'indietro (una per lato del corpo)
     for (const lato of [-1, 1]) {
       chinaD6(flash);
-      const ax = -1 - (1 - ap) * 9, ay = lato * (4 + ap * 13);
+      const chiuse = 1 - ap;
       ctx.beginPath();
-      ctx.moveTo(3, lato * 1.5);
-      ctx.quadraticCurveTo(2 - (1 - ap) * 4, lato * (5 + ap * 6), ax, ay);
-      ctx.quadraticCurveTo(-3 - (1 - ap) * 3, lato * (2 + ap * 3), -5, lato * 1.5);
+      ctx.moveTo(5, lato * 1.5);
+      ctx.quadraticCurveTo(6 - chiuse * 5, lato * (4 + ap * 13), -9 - chiuse * 8, lato * (4.5 + ap * 16));
+      ctx.quadraticCurveTo(-1 - chiuse * 6, lato * (3 + ap * 7), -4, lato * 1.5);
       ctx.closePath(); ctx.fill(); ctx.stroke();
     }
     // corpo a fuso, coda a forbice
