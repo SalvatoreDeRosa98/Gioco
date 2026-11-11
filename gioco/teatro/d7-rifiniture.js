@@ -278,4 +278,96 @@ popolaStanza = function popolaStanzaD7(s, piano, ...resto) {
   return r;
 };
 
-Object.assign(window.__teatro.interni, { rifinitureD7: { LUCIANA_D7, lucianaInScenaD7, disegniLuciana: () => disegniLucianaD7, RAGNO_D7, suSetaD7, stanzaAttualeD7 } });
+// ===========================================================================
+// TELEFONO: scritte senza tasti del PC, linguette del Diario, vibrazione solo col gamepad
+// ===========================================================================
+/**
+ * Col tocco attivo (inToccoB3 di b3) le scritte fisse che nominano tasti del PC si riscrivono coi bottoni a
+ * schermo di c2. Prima le frasi intere, poi le parole: i segni fra parentesi ([E], [Q], [ESC]...) li traduce b3.
+ */
+const TOCCO_D7 = Object.freeze({
+  frasi: Object.freeze([
+    Object.freeze(['WASD: Movimento · Frecce/Mouse: Spara/Attacca', 'Levetta sinistra: movimento · levetta destra: sparo']),
+    Object.freeze(['[W/S] o click: scegli lo slot · [Canc] cancella · [M] muto', 'Tocca uno slot per sceglierlo']),
+    Object.freeze(['Q: Attivo · E: Compra/Patto/Raccogli · ESC: Pausa', 'OGGETTO: attivo · AZIONE: compra/patto/raccogli · ❚❚: pausa']),
+  ]),
+  parole: Object.freeze([
+    Object.freeze([/\[(?:Click|Clic|click|clic)\s*\/\s*E\]/g, '[E]']),
+    Object.freeze([/(?:premi\s+)?(?:SPAZIO|Spazio|spazio)\s*\/\s*E\b/g, '[E]']),
+    Object.freeze([/\b(?:premi|Premi)\s+(?:SPAZIO|Spazio|spazio|INVIO|Invio)\b/g, 'tocca CONFERMA']),
+    Object.freeze([/\b(?:SPAZIO|Spazio|INVIO|Invio)\b/g, 'CONFERMA']),
+    Object.freeze([/\b(?:Click|Clic|CLICK|CLIC)\b/g, 'Tocca']),
+    Object.freeze([/\b(?:click|clic)\b/g, 'tocca']),
+    Object.freeze([/\b(?:WASD|Frecce|frecce|Mouse|mouse)\b/g, 'levette']),
+    Object.freeze([/\b(?:Esc|ESC)\s*\/\s*O\b/g, 'INDIETRO']),
+    Object.freeze([/(^|[\s·(])ESC\b/g, '$1INDIETRO']),
+    Object.freeze([/(^|[\s·(])[TNFCOL]:\s/g, '$1']), // «T: trasformazioni»: col tocco ci sono le linguette
+  ]),
+  linguette: Object.freeze({ y: 318, h: 15, w: 112, spazio: 8,
+    voci: Object.freeze([Object.freeze(['KeyT', 'TRASFORMAZIONI']), Object.freeze(['KeyN', 'DIARIO DI FERRUCCIO']), Object.freeze(['KeyF', 'FINALI'])]) }),
+});
+
+/** Riscrive per il tocco una scritta che nomina tasti del PC (identica se il tocco non è attivo). */
+function testoToccoD7(t) {
+  if (typeof t !== 'string' || typeof inToccoB3 !== 'function' || !inToccoB3()) return t;
+  if (typeof TESTI_C2 !== 'undefined' && TESTI_C2.interi && TESTI_C2.interi[t]) return t; // la traduce già c2
+  for (const [da, a] of TOCCO_D7.frasi) if (t === da) return a;
+  let r = t;
+  for (const [re, a] of TOCCO_D7.parole) r = r.replace(re, a);
+  return r;
+}
+
+const drawTextFitBaseD7 = drawTextFit;
+drawTextFit = function drawTextFitD7(t, ...a) { return drawTextFitBaseD7.call(this, testoToccoD7(t), ...a); };
+const drawPillLabelBaseD7 = drawPillLabel;
+drawPillLabel = function drawPillLabelD7(t, ...a) { return drawPillLabelBaseD7.call(this, testoToccoD7(t), ...a); };
+
+/** Rettangoli delle linguette del Diario (coordinate logiche), centrati in basso nel riquadro. */
+function linguetteDiarioD7() {
+  const L = TOCCO_D7.linguette, n = L.voci.length;
+  const x0 = Math.round(W / 2 - (n * L.w + (n - 1) * L.spazio) / 2);
+  return L.voci.map(([codice, nome], k) => ({ codice, nome, x: x0 + k * (L.w + L.spazio), y: L.y, w: L.w, h: L.h }));
+}
+
+const disegnaDiarioBaseD7 = disegnaDiarioD;
+disegnaDiarioD = function disegnaDiarioDD7(...a) {
+  const r = disegnaDiarioBaseD7.apply(this, a);
+  try {
+    if (statoRun.diarioD && typeof inToccoB3 === 'function' && inToccoB3()) {
+      ctx.save();
+      for (const l of linguetteDiarioD7()) {
+        ctx.fillStyle = 'rgba(28, 19, 12, 0.95)';
+        ctx.fillRect(l.x, l.y, l.w, l.h);
+        ctx.strokeStyle = '#f9cb40'; ctx.lineWidth = 1;
+        ctx.strokeRect(l.x + 0.5, l.y + 0.5, l.w - 1, l.h - 1);
+        drawTextFitBaseD7(l.nome, l.x + l.w / 2, l.y + l.h - 4, l.w - 8, { size: 7, color: '#f9cb40' });
+      }
+      ctx.restore();
+    }
+  } catch (err) { console.error('[d7] linguette', err); }
+  return r;
+};
+
+const clickDiarioBaseD7 = clickDiarioD;
+clickDiarioD = function clickDiarioDD7(mx, my, ...a) {
+  if (statoRun.diarioD && typeof inToccoB3 === 'function' && inToccoB3()) {
+    for (const l of linguetteDiarioD7()) {
+      if (mx >= l.x && mx <= l.x + l.w && my >= l.y && my <= l.y + l.h) { tastoDiarioD(l.codice); return undefined; }
+    }
+  }
+  return clickDiarioBaseD7.call(this, mx, my, ...a);
+};
+
+/** Vero se c'è almeno un gamepad vero collegato (il pad virtuale di c2 non conta). */
+function gamepadCollegatoD7() {
+  try { return Array.from(navigator.getGamepads ? navigator.getGamepads() : []).some((g) => g && g.connected !== false); } catch (_) { return false; }
+}
+
+const righeBaseD7 = righeB3;
+righeB3 = function righeB3D7(...a) {
+  const r = righeBaseD7.apply(this, a);
+  if (!Array.isArray(r) || gamepadCollegatoD7()) return r;
+  return r.some((x) => x && x.id === 'vibrazione') ? r.filter((x) => !x || x.id !== 'vibrazione') : r;
+};
+
+Object.assign(window.__teatro.interni, { rifinitureD7: { LUCIANA_D7, lucianaInScenaD7, disegniLuciana: () => disegniLucianaD7, RAGNO_D7, suSetaD7, stanzaAttualeD7, testoToccoD7, linguetteDiarioD7, gamepadCollegatoD7 } });
