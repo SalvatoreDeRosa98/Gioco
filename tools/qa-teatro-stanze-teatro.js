@@ -451,7 +451,7 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
       I.statoRun.numeroNotte = notte0;
       return { v: v.slice(0, 8), n: v.length, freq, attese: [1, 2, 3, 4].map((p) => D.prob(p)), primaNotte, primaNotteP2 };
     }, SEMI);
-    ok('Buca (generatore): al massimo una per piano, foglia su una stanza di combattimento, mai accanto a boss e segreta; il resto del piano non cambia', gen.n === 0, gen.v);
+    ok('Buca (generatore): al massimo una per piano, foglia su una stanza di combattimento, mai accanto a boss, segreta e vicoli ciechi; il resto del piano non cambia', gen.n === 0, gen.v);
     ok('Buca (generatore): le frequenze sono quelle della tabella', [1, 2, 3, 4].every((pn, i) => Math.abs(gen.freq[pn] - gen.attese[i]) < 0.12), gen);
     ok('Buca (generatore): mai al piano 1 la prima notte (al piano 2 sì)', gen.primaNotte === 0 && gen.primaNotteP2 > 0, gen);
 

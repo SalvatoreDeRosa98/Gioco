@@ -56,7 +56,7 @@ const TESTI_A7 = Object.freeze({
   stanze: Object.freeze({
     ingresso: 'ingresso', normale: 'di combattimento', boss: 'del boss', tesoro: 'del tesoro', fucina: 'la Fucina',
     segreta: 'segreta', patto: 'del Patto', sviluppatore: 'dello Sviluppatore', sfida: 'della Sfida',
-    sacrificio: 'del Sacrificio', maledetta: 'dei Rovi', bisca: 'la Bisca',
+    sacrificio: 'del Sacrificio', maledetta: 'i Camerini', bisca: 'la Bisca', // (d4) i Rovi sono diventati i Camerini dietro le Quinte
   }),
 });
 

@@ -83,7 +83,7 @@ const STANZE_TEATRO_D4 = Object.freeze({
       3: Object.freeze({ monete: 9, oggettoForte: true, ripiegoMonete: 7, ripiegoNonForte: 2 }),
     }),
     valoreForte: 7,            // usato solo se manca ECONOMIA_T3.prezzi.forte
-    posto: Object.freeze({ x: 500, y: 150, raggioUso: 42, r: 12 }),
+    posto: Object.freeze({ x: 500, y: 160, raggioUso: 42, r: 12 }), // sotto la minimappa (che copre l'angolo in alto a destra)
     piedistallo: Object.freeze({ x: 452, y: 236 }),
     tempi: Object.freeze({ chiamataTick: 84, esitoTick: 200 }),
     voce: Object.freeze({ note: Object.freeze([118, 132, 105, 140, 124]), formante: Object.freeze([620, 880, 520]), passoSec: 0.11, durataSec: 0.1, volume: 0.09 }),
@@ -98,11 +98,12 @@ const STANZE_TEATRO_D4 = Object.freeze({
     /**
      * Dove può stare: sempre una foglia (una porta sola, verso una stanza di combattimento). Con soloVicoloCieco
      * la cella non toccherebbe nessun'altra stanza (la regola di a3), ma dopo le stanze di a3 il posto così c'è
-     * solo in 4 piani su 10 e la tabella delle probabilità mentirebbe: qui può confinare (senza porta) con altre
-     * stanze, mai con quelle di maiAccantoA.
+     * solo in 4 piani su 10 e la tabella delle probabilità mentirebbe: qui può confinare (senza porta) con le
+     * stanze di combattimento e con l'ingresso, mai con quelle di maiAccantoA (boss, segreta, e i vicoli ciechi
+     * del piano: tesoro, Fucina e le stanze di a3, che devono restare tali).
      */
     soloVicoloCieco: false,
-    maiAccantoA: Object.freeze(['boss', 'segreta']),
+    maiAccantoA: Object.freeze(['boss', 'segreta', 'tesoro', 'fucina', 'sfida', 'sacrificio', 'maledetta', 'bisca']),
     aspetto: Object.freeze({ cornice: '#d4a24a', minimappa: '#5a3d12', velo: 'rgba(10, 6, 12, 0.42)' }),
     /**
      * Il pezzo: nome del tema in MUSICA.temi (a8) e tempo. bpm = TEMPI al minuto; una battuta di 6/8 ha 2 tempi
@@ -1122,7 +1123,8 @@ function nuovoStatoBucaD4(ondateTot) {
 
 /**
  * Appende al piano la Buca dell'Orchestra: una foglia con una sola porta attaccata a una stanza di combattimento,
- * in una cella libera che non confina col boss né con la segreta (vedi STANZE_TEATRO_D4.buca.soloVicoloCieco).
+ * in una cella libera che non confina col boss, con la segreta né con gli altri vicoli ciechi (vedi
+ * STANZE_TEATRO_D4.buca.soloVicoloCieco e maiAccantoA).
  * Al massimo una per piano; mai al piano 1 la prima notte. Se non c'è posto, questo piano non ha la Buca.
  */
 function aggiungiBucaD4(m, piano) {
