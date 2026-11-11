@@ -548,6 +548,7 @@ function disegnaLibroD3() {
   testoD3('R', B.x + 10, B.y + 24, { size: 24, color: K.rosso, weight: 'bold' });
   testoD3('egistro', B.x + 27, B.y + 14, { size: 8, color: K.inchiostro, style: 'italic' });
   testoD3('di Scena', B.x + 27, B.y + 24, { size: 8, color: K.inchiostro, style: 'italic' });
+  testoD3(TESTI_D3.sottotitolo, B.x + B.w / 2, B.y + B.h - 7, { size: 6.5, color: K.tenue, align: 'center', style: 'italic' });
   TESTI_D3.sezioni.forEach((nome, i) => {
     const r = rettSchedaD3(i);
     const attiva = i === L.sez;
@@ -573,7 +574,7 @@ function disegnaLibroD3() {
   disegnaDettaglioD3(ap);
   // piede: numeri di pagina, frecce, comandi
   const pag = `— ${L.spread * 2 + 1} · ${L.spread * 2 + 2} —`;
-  testoD3(pag, W / 2, B.y + B.h - 4, { size: 7.5, color: K.tenue, align: 'center', style: 'italic' });
+  testoD3(pag, B.x + B.w - 60, B.y + B.h - 7, { size: 7.5, color: K.tenue, align: 'center', style: 'italic' });
   if (L.spread > 0) testoD3('◀', RETT_PRIMA_D3.x + 14, RETT_PRIMA_D3.y + 12, { size: 11, color: K.rosso, align: 'center' });
   if (L.spread < aperture.length - 1) testoD3('▶', RETT_DOPO_D3.x + 14, RETT_DOPO_D3.y + 12, { size: 11, color: K.rosso, align: 'center' });
   drawTextFit(TESTI_D3.comandi, B.x + B.w * 0.27, B.y + B.h + 13, 280, { size: 7, color: '#e6d2aa', shadow: true });
@@ -639,7 +640,7 @@ function disegnaGrigliaD3() {
   const s6 = stato6D3();
   const boss = (typeof SEGNI_A6 !== 'undefined' ? SEGNI_A6 : []).map((sg) => sg.boss);
   const pg = (CONFIG_A6 && CONFIG_A6.scheda && CONFIG_A6.scheda.ids) || ['ferruccio', 'agnese', 'taddeo', 'ombra'];
-  const x0 = 140, y0 = 92, passoX = Math.min(42, (560 - x0) / Math.max(1, boss.length)), passoY = 30;
+  const x0 = 116, y0 = 104, passoX = Math.min(40, (590 - x0) / Math.max(1, boss.length)), passoY = 34; // con 10 colonne il dorso cade fra la 5ª e la 6ª
   const segni = typeof SEGNI_A6 !== 'undefined' ? SEGNI_A6 : [];
   boss.forEach((id, j) => {
     ctx.save();
@@ -702,10 +703,18 @@ function disegnaDettaglioD3(ap) {
       righe.push(preso && o ? TESTI_D3.trionfoPreso(o.nome) : TESTI_D3.trionfoMancante);
     }
   }
+  // fregio d'inchiostro in calce (la pagina non resta mai nuda)
+  ctx.save();
+  ctx.strokeStyle = 'rgba(92, 64, 36, 0.55)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W / 2 - 90, 316); ctx.quadraticCurveTo(W / 2 - 45, 308, W / 2 - 12, 316); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W / 2 + 90, 316); ctx.quadraticCurveTo(W / 2 + 45, 308, W / 2 + 12, 316); ctx.stroke();
+  ctx.restore();
+  testoD3('❦', W / 2, 320, { size: 12, color: K.rosso, align: 'center' });
   let yy = y + 10;
   const font = "italic 9px Georgia, 'Times New Roman', serif";
-  for (const r of righe.filter(Boolean)) {
-    for (const riga of righeD3(r, B.w - 60, font).slice(0, 2)) {
+  const tutte = righe.filter(Boolean).flatMap((r) => righeD3(r, B.w - 60, font).slice(0, 2)).slice(0, 3);
+  for (const r of [0]) {
+    for (const riga of tutte) {
       testoD3(riga, W / 2, yy, { size: 9, color: K.inchiostro, align: 'center', style: 'italic' });
       yy += 12;
     }
