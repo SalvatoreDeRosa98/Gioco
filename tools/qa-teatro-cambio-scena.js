@@ -78,12 +78,15 @@ fs.mkdirSync(path.dirname(foto('x')), { recursive: true });
     return { fatto, fase: st.quadriD5 && st.quadriD5.fase, nemici: st.nemici.length, arredi: window.__qa.arredi() };
   });
   ok('stanza forzata in due quadri, fase «primo»', ing.fatto && ing.fase === 'primo', ing);
+  ing.disp2 = await p.evaluate(() => JSON.parse(JSON.stringify(window.__qa.st.quadriD5.disp2)));
+  ok('la disposizione del secondo quadro è nello stato (JSON) della stanza', ing.disp2 && ing.disp2.id && ing.disp2.variante !== undefined, ing.disp2);
   await p.waitForTimeout(500);
   await p.screenshot({ path: foto('1-quadro-primo') });
   const avvio = await p.evaluate(() => {
     const I = window.__teatro.interni, st = window.__qa.st, R = I.statoRun;
     for (const n of st.nemici) n.hp = 0;
     verificaStanzaPulita();
+    if (st.quadriD5.fase === 'cambio') st.quadriD5.durata *= 6; // al rallentatore: le foto cadono dove devono
     // Ferruccio in mezzo alla scena: dove salirà un arredo deve essere spostato
     I.player.x = 320; I.player.y = 188;
     R.proiettiliNemici.push({ x: 0, y: 0, vx: 0, vy: 0 });
@@ -91,9 +94,12 @@ fs.mkdirSync(path.dirname(foto('x')), { recursive: true });
   });
   ok('primo quadro finito: porte chiuse (stanza non pulita), parte il cambio', !avvio.pulita && avvio.fase === 'cambio', avvio);
   const campioni = [];
-  for (const [i, ms] of [[1, 380], [2, 400], [3, 350], [4, 350], [5, 300]].entries()) {
-    await p.waitForTimeout(ms[1]);
-    await p.screenshot({ path: foto(`2-cambio-${ms[0]}`) });
+  for (const [nome, frazione] of [['1-quarto', 0.25], ['2-meta', 0.5], ['3-tre-quarti', 0.75], ['4-fine', 0.97]]) {
+    await p.waitForFunction((f) => {
+      const q = window.__qa.st.quadriD5;
+      return q.fase !== 'cambio' || (q.t - q.pausa) / q.durata >= f;
+    }, frazione, { timeout: 5000 });
+    await p.screenshot({ path: foto(`2-cambio-${nome}`) });
     campioni.push(await p.evaluate(() => {
       const I = window.__teatro.interni, R = I.statoRun, st = window.__qa.st;
       const hp = R.hpHalf; R.graziaIngressoC = 0;
@@ -102,12 +108,12 @@ fs.mkdirSync(path.dirname(foto('x')), { recursive: true });
       R.graziaIngressoC = 1e7;
       return { fase: st.quadriD5.fase, dentro: window.__qa.dentro(), pnem: R.proiettiliNemici.length, ricevuto, pulita: st.pulita };
     }));
-    void i;
   }
   ok('durante il cambio nessun danno e nessun proiettile nemico', campioni.every((c) => c.ricevuto !== true && (c.fase !== 'cambio' || c.pnem === 0)), campioni);
   ok('Ferruccio mai dentro un arredo', campioni.every((c) => !c.dentro), campioni);
   ok('porte chiuse per tutto il cambio', campioni.every((c) => !c.pulita), campioni);
-  await p.waitForTimeout(2200);
+  await p.waitForFunction(() => window.__qa.st.quadriD5.fase === 'secondo' && !window.__teatro.interni.d5.inAttesaBotole(window.__qa.st), null, { timeout: 15000 });
+  await p.waitForTimeout(300);
   await p.screenshot({ path: foto('3-quadro-secondo') });
   const sec = await p.evaluate(() => {
     const st = window.__qa.st;
@@ -115,6 +121,8 @@ fs.mkdirSync(path.dirname(foto('x')), { recursive: true });
   });
   ok('secondo quadro: entra la seconda compagnia', sec.fase === 'secondo' && sec.nemici > 0 && !sec.attesa && !sec.pulita, sec);
   ok('gli arredi sono cambiati', sec.arredi !== ing.arredi, { prima: ing.arredi, dopo: sec.arredi });
+  const d2 = await p.evaluate(() => window.__qa.st.disposizioneB7 && window.__qa.st.disposizioneB7.id);
+  ok('il secondo quadro usa la disposizione salvata', d2 === ing.disp2.id, { d2, salvata: ing.disp2 });
   ok('Ferruccio fuori dagli arredi nuovi', !sec.dentro);
   const fine = await p.evaluate(() => {
     const st = window.__qa.st, prima = st.oggettiATerra.length;
@@ -163,16 +171,17 @@ fs.mkdirSync(path.dirname(foto('x')), { recursive: true });
     return { fatto, prima, dopo: st.nemici.length, attesa: I.d5.inAttesaBotole(st), botole: st.botoleD5.lista.length };
   });
   ok('botole: i nemici aspettano sotto il palco', bot.fatto && bot.dopo < bot.prima && bot.attesa, bot);
-  await p.waitForTimeout(900);
+  const stato = (x) => p.waitForFunction((x) => window.__qa.sb.botoleD5.lista.some((b) => b.stato === x), x, { timeout: 6000 });
+  await stato('trema');
   await p.screenshot({ path: foto('6-botola-trema') });
-  await p.waitForTimeout(650);
-  await p.screenshot({ path: foto('7-botola-ascesa') });
+  await p.waitForFunction(() => window.__qa.sb.botoleD5.lista.some((b) => b.stato === 'ascesa' && b.t > 12), null, { timeout: 6000 });
   const asc = await p.evaluate(() => {
     const st = window.__qa.sb, b = st.botoleD5.lista.find((x) => x.stato === 'ascesa');
     return { ascesa: Boolean(b), fuori: b ? st.nemici.indexOf(b.nemico) < 0 && Boolean(b.nemico) : null };
   });
+  await p.screenshot({ path: foto('7-botola-ascesa') });
   ok('un nemico sale dalla botola e intanto non è in scena (né colpisce né è colpibile)', asc.ascesa && asc.fuori, asc);
-  await p.waitForTimeout(800);
+  await stato('aperta');
   const buco = await p.evaluate(async () => {
     const I = window.__teatro.interni, st = window.__qa.sb, P = I.player;
     const b = st.botoleD5.lista.find((x) => x.stato === 'aperta');

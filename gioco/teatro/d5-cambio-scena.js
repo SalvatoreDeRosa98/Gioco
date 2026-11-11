@@ -27,8 +27,11 @@ const QUADRI_D5 = Object.freeze({
   profonditaMin: 2,            // stanze ad almeno 2 porte dall'ingresso
   nemiciMin: 2,
   pausaPrimaMs: 450,           // dall'ultimo nemico caduto al colpo di grancassa
-  cambioMs: 1500,              // durata del cambio dei macchinisti
-  fasi: Object.freeze({ buio: 0.18, giu: 0.5, su: 0.82 }), // frazioni del cambio: luci giù, arredi giù, arredi su
+  cambioMs: 1700,              // durata del cambio dei macchinisti
+  // frazioni del cambio: luci giù e arredi che scendono (buio → scesi), scambio a telo calato (giu),
+  // arredi nuovi che salgono mentre il telo risale (salita → su)
+  fasi: Object.freeze({ buio: 0.08, scesi: 0.33, giu: 0.42, salita: 0.62, su: 0.88 }),
+  telo: Object.freeze({ calaFine: 0.36, risaleInizio: 0.6, risaleFine: 0.95, margine: 22 }),
   buioMax: 0.72,
   margineGiocatore: 14,        // distanza minima di Ferruccio da un arredo che sale
   ascesaSfasaMs: 170,          // la seconda compagnia sale a una botola per volta
@@ -210,19 +213,32 @@ function avviaCambioD5(st) {
   const q = st.quadriD5;
   q.pausa = ticksDaMs(QUADRI_D5.pausaPrimaMs);
   q.durata = Math.max(1, ticksDaMs(QUADRI_D5.cambioMs));
-  q.colpo = q.giu = q.su = q.montato = false;
+  q.colpo = q.giu = q.su = q.montato = q.salitaSuono = false;
   statoRun.proiettili = []; statoRun.proiettiliNemici = [];
+}
+/**
+ * Variante b7 del secondo quadro: quella scelta alla generazione (in memoria o, dopo un caricamento, ritrovata
+ * dagli id salvati in `st.quadriD5.disp2`); solo se manca del tutto se ne estrae una nuova e la si salva.
+ */
+function varianteSecondoQuadroD5(st, piano) {
+  const q = st.quadriD5;
+  let v = variantiD5.get(st);
+  if (!v && q.disp2 && typeof variantiB7 === 'function') {
+    v = variantiB7().find((x) => x.id === q.disp2.variante && x.disp.id === q.disp2.id) || null;
+  }
+  if (!v) v = scegliVarianteB7(piano);
+  if (v) { variantiD5.set(st, v); q.disp2 = { id: v.disp.id, variante: v.id, nome: v.disp.nome }; }
+  return v;
 }
 function fuoriDagliArrediD5(o, x, y, margine) { return Math.hypot(x - o.x, y - o.y) >= (o.r || 0) + margine; }
 /** Prepara il secondo quadro su una stanza d'appoggio: arredi, suolo, comparse, alcova; sposta Ferruccio e gli oggetti. */
 function montaSecondoQuadroD5(st) {
   const q = st.quadriD5, piano = q.piano || statoRun.piano;
-  const v2 = variantiD5.get(st) || scegliVarianteB7(piano);
+  const v2 = varianteSecondoQuadroD5(st, piano);
   const temp = { id: st.id, tipo: 'normale', porte: st.porte, muroSegreto: st.muroSegreto, nemici: [], ostacoli: [], oggettiATerra: [] };
   if (v2) applicaDisposizioneB7(temp, v2, piano);
   q.nuovi = temp.ostacoli || [];
   q.suolo2 = temp.suoloB7 || []; q.comparse2 = temp.comparseB7 || []; q.fragili2 = temp.fragiliB7 || []; q.premi2 = temp.premiB7 || [];
-  if (v2) q.disp2 = { id: v2.disp.id, variante: v2.id, nome: v2.disp.nome };
   const M = QUADRI_D5.margineGiocatore;
   if (!q.nuovi.every((o) => fuoriDagliArrediD5(o, player.x, player.y, M + 9))) {
     const p = puntoValidoB7(temp, player.x, player.y, [], []);
@@ -257,7 +273,8 @@ function passoCambioD5(st) {
     st.ostacoli = []; st.suoloB7 = []; st.fragiliB7 = []; st.premiB7 = [];
     suonoD5('argano');
   }
-  if (u >= F.giu && !q.montato) { montaSecondoQuadroD5(st); suonoD5('argano'); }
+  if (u >= F.giu && !q.montato) montaSecondoQuadroD5(st); // a telo calato: nessuno vede lo scambio
+  if (u >= F.salita && !q.salitaSuono) { q.salitaSuono = true; suonoD5('argano'); }
   if (u >= F.su && !q.su) {
     q.su = true;
     st.ostacoli = q.nuovi; st.suoloB7 = q.suolo2; st.comparseB7 = q.comparse2; st.fragiliB7 = q.fragili2; st.premiB7 = q.premi2;
@@ -430,7 +447,7 @@ function sagomaArredoD5(o, dy) {
   ctx.save();
   ctx.beginPath(); ctx.rect(o.x - w, 0, w * 2, base + 1); ctx.clip();
   ctx.translate(0, dy);
-  ctx.fillStyle = '#120b06'; ctx.strokeStyle = BOTOLE_D5.colori.contorno; ctx.lineWidth = 1.2;
+  ctx.fillStyle = '#1a110a'; ctx.strokeStyle = BOTOLE_D5.colori.contorno; ctx.lineWidth = 1.6;
   if (o.tipo === 'braciere') {
     ctx.beginPath(); ctx.moveTo(o.x - w / 2, base - h * 0.55); ctx.lineTo(o.x + w / 2, base - h * 0.55);
     ctx.lineTo(o.x + w * 0.2, base - h * 0.25); ctx.lineTo(o.x + w * 0.12, base); ctx.lineTo(o.x - w * 0.12, base);
@@ -451,21 +468,56 @@ function buioCambioD5(u) {
   return M * Math.max(0, 1 - (u - F.su) / (1 - F.su));
 }
 
-/** Telo dipinto del fondale (sagome della scena) all'altezza `dy` (negativo = issato). */
-function disegnaFondaleD5(id, dy) {
-  const x1 = ARENA.x1, x2 = ARENA.x2, H = QUADRI_D5.altezzaFondale, y0 = ARENA.y1 - H + dy;
+/**
+ * Telo dipinto che cala dall'alto su tutta l'area di gioco, appeso a due corde, con la stanga in fondo e il motivo
+ * del quartiere a ombre. `yb` = quota (coordinate 640x360) del bordo basso del telo.
+ */
+function disegnaTeloD5(yb, tk) {
+  if (yb <= 0) return;
+  const M = QUADRI_D5.telo.margine, x1 = ARENA.x1 - M, x2 = ARENA.x2 + M, w = x2 - x1, C = BOTOLE_D5.colori;
+  const quart = typeof quartiereB7 === 'function' ? quartiereB7(statoRun.piano) : 1;
+  const ondeggia = Math.sin(tk * 0.09) * 1.5;
   ctx.save();
-  ctx.fillStyle = '#1a100a'; ctx.fillRect(x1, y0, x2 - x1, H);
-  ctx.strokeStyle = BOTOLE_D5.colori.contorno; ctx.lineWidth = 1; ctx.strokeRect(x1 + 0.5, y0 + 0.5, x2 - x1 - 1, H - 1);
-  ctx.fillStyle = '#060403';
-  let seme = 0; for (const ch of String(id || '')) seme = (seme * 31 + ch.charCodeAt(0)) % 997;
-  if (seme % 2) { // il Vesuvio col pennacchio
-    ctx.beginPath(); ctx.moveTo(x1 + 30, y0 + H); ctx.lineTo((x1 + x2) / 2 - 20, y0 + 14); ctx.lineTo((x1 + x2) / 2 + 20, y0 + 14); ctx.lineTo(x2 - 30, y0 + H); ctx.fill();
-  } else { // archi e cupole
-    for (let x = x1 + 20; x < x2 - 20; x += 54) { ctx.beginPath(); ctx.arc(x + 20, y0 + H, 20, Math.PI, 0); ctx.rect(x, y0 + H - 4, 40, 4); ctx.fill(); }
+  ctx.fillStyle = '#e2b85c'; // le due corde
+  ctx.fillRect(x1 + 26, 0, 1, yb); ctx.fillRect(x2 - 27, 0, 1, yb);
+  ctx.fillStyle = '#1d130b'; ctx.fillRect(x1, 0, w, yb);
+  ctx.fillStyle = 'rgba(0,0,0,0.28)'; // pieghe della tela
+  for (let x = x1 + 18; x < x2; x += 38) ctx.fillRect(x + ondeggia, 0, 9, yb);
+  ctx.beginPath(); ctx.rect(x1, 0, w, yb); ctx.clip();
+  const cy = yb - 70, cx = (x1 + x2) / 2; // il dipinto viaggia col telo
+  ctx.fillStyle = '#080504'; ctx.strokeStyle = C.contorno; ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  if (quart === 1) { // il Vesuvio col pennacchio, sopra il golfo
+    ctx.moveTo(x1 + 20, cy + 50); ctx.lineTo(cx - 34, cy - 40); ctx.lineTo(cx - 8, cy - 32); ctx.lineTo(cx + 22, cy - 44); ctx.lineTo(x2 - 20, cy + 50); ctx.closePath();
+  } else if (quart === 2) { // gli alberi della Villa
+    for (let x = x1 + 40; x < x2 - 30; x += 70) { ctx.moveTo(x + 18, cy + 50); ctx.arc(x + 18, cy - 4, 26, 0, Math.PI * 2); ctx.rect(x + 14, cy + 10, 8, 40); }
+  } else if (quart === 3) { // cupole e campanili
+    for (let x = x1 + 30; x < x2 - 40; x += 90) { ctx.moveTo(x + 60, cy + 50); ctx.arc(x + 30, cy + 10, 30, Math.PI, 0); ctx.rect(x, cy + 10, 60, 40); ctx.rect(x + 70, cy - 30, 12, 80); }
+  } else { // il colonnato della Reggia
+    ctx.rect(x1 + 20, cy - 34, w - 40, 10);
+    for (let x = x1 + 30; x < x2 - 30; x += 34) ctx.rect(x, cy - 24, 10, 74);
   }
-  ctx.fillStyle = '#3a2410'; ctx.fillRect(x1 - 6, y0 - 3, x2 - x1 + 12, 4); // la stanga
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(226,184,92,0.5)'; ctx.font = 'bold 13px Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('~ cambio di scena ~', cx, yb - 12);
   ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = C.contorno; ctx.lineWidth = 1; ctx.strokeRect(x1 + 0.5, -1, w - 1, yb + 1);
+  ctx.fillStyle = '#4a2e14'; ctx.fillRect(x1 - 6, yb - 2, w + 12, 6); // la stanga
+  ctx.fillStyle = '#e2b85c'; ctx.fillRect(x1 - 6, yb - 2, 4, 6); ctx.fillRect(x2 + 2, yb - 2, 4, 6);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x1, yb + 4, w, 6); // ombra sul palco
+  ctx.restore();
+}
+
+/** Quota del bordo basso del telo al tempo `u` del cambio. */
+function quotaTeloD5(u) {
+  const T = QUADRI_D5.telo, giu = ARENA.y2 + 16;
+  const liscio = (x) => x * x * (3 - 2 * x);
+  if (u <= 0) return 0;
+  if (u < T.calaFine) return giu * liscio(u / T.calaFine);
+  if (u < T.risaleInizio) return giu;
+  if (u < T.risaleFine) return giu * (1 - liscio((u - T.risaleInizio) / (T.risaleFine - T.risaleInizio)));
+  return 0;
 }
 
 /** Due fondali arrotolati sotto il cielo del palco: il segno onesto di una stanza in due quadri. */
@@ -513,51 +565,49 @@ function disegnaScenaD5(tk, st) {
   else if (q.fase === 'secondo' || q.fase === 'finito') disegnaCartelloD5('QUADRO II', q.cartello > 0);
 }
 
-/** Il cambio di scena, disegnato a fine frame sopra scena, figure e luci (sotto resta solo l'HUD ridisegnato). */
+/**
+ * Il cambio di scena: buio, botole e sagome degli arredi, telo che cala e risale, Ferruccio davanti nel suo occhio
+ * di bue. Disegnato appena prima dell'HUD: sopra pavimento, arredi e nemici, sotto HUD e banner.
+ */
 function disegnaCambioD5(tk, st) {
-  const q = st.quadriD5;
-  const F = QUADRI_D5.fasi, u = (q.t - (q.pausa || 0)) / (q.durata || 1), H = QUADRI_D5.altezzaFondale + 30;
+  const q = st.quadriD5, F = QUADRI_D5.fasi, u = (q.t - (q.pausa || 0)) / (q.durata || 1);
   ctx.save();
   ctx.fillStyle = `rgba(0,0,0,${buioCambioD5(u).toFixed(3)})`;
-  ctx.fillRect(0, 0, ARENA.x2 + ARENA.x1, ARENA.y2 + 24);
-  const P = player, lu = buioCambioD5(u) / QUADRI_D5.buioMax; // un occhio di bue resta su Ferruccio
-  ctx.globalAlpha = 0.55 * lu; ctx.globalCompositeOperation = 'lighter';
-  ctx.drawImage(alonaD5(), P.x - 40, P.y - 56, 80, 80);
+  ctx.fillRect(0, 0, W, H);
   ctx.restore();
   if (u >= F.buio && u < F.giu) {
-    const s = (u - F.buio) / (F.giu - F.buio);
-    disegnaFondaleD5(st.disposizioneB7 && st.disposizioneB7.id, -s * H);
+    const s = Math.min(1, (u - F.buio) / (F.scesi - F.buio));
     for (const o of q.vecchi || []) {
       disegnaBotolaD5(o.x, o.y + (o.h || 20) * 0.3, (o.w || 24) + 10, 14, Math.min(1, s * 3), 0, tk);
-      sagomaArredoD5(o, s * ((o.h || 24) + 34));
+      if (s < 1) sagomaArredoD5(o, s * ((o.h || 24) + 34));
     }
-  } else if (u >= F.giu && u < 1) {
-    const s = Math.min(1, (u - F.giu) / (F.su - F.giu));
-    disegnaFondaleD5(q.disp2 && q.disp2.id, -(1 - s) * H);
+  } else if (u >= F.salita && u < 1) {
+    const s = Math.min(1, (u - F.salita) / (F.su - F.salita));
     const chiusura = u < F.su ? 1 : Math.max(0, 1 - (u - F.su) / (1 - F.su));
     for (const o of q.nuovi || []) {
       disegnaBotolaD5(o.x, o.y + (o.h || 20) * 0.3, (o.w || 24) + 10, 14, chiusura, 0, tk);
       if (u < F.su) sagomaArredoD5(o, (1 - s) * ((o.h || 24) + 34));
     }
-  } else if (u < F.buio) {
-    disegnaRotoliD5();
   }
+  disegnaTeloD5(quotaTeloD5(u), tk);
+  const P = player, lu = buioCambioD5(u) / QUADRI_D5.buioMax;
+  ctx.save();
+  ctx.globalAlpha = 0.6 * lu; ctx.globalCompositeOperation = 'lighter';
+  ctx.drawImage(alonaD5(), P.x - 44, P.y - 60, 88, 88);
+  ctx.restore();
+  try { // Ferruccio resta davanti al telo
+    disegnaFerruccioPittorico(ctx, P.x, P.y, { scale: 1.0, scalaA2: P.scalaA2, flipX: P.flipX, tick: tk, moving: P.moving, shootAnim: false, pickup: false, flash: false });
+  } catch (_) { /* il disegno non ferma la scena */ }
   disegnaCartelloD5('CAMBIO DI SCENA', false);
 }
 
-const disegnaFrameBaseD5 = disegnaFrame;
-disegnaFrame = function disegnaFrameD5(...a) {
-  const r = disegnaFrameBaseD5.apply(this, a);
+const disegnaHUDPixelArtBaseD5 = disegnaHUDPixelArt;
+disegnaHUDPixelArt = function disegnaHUDPixelArtD5(st, ...resto) {
   try {
-    const st = statoRun.stanzaCorrente;
-    if (st && st.quadriD5 && st.quadriD5.fase === 'cambio' && statoRun.fase === 'in_gioco') {
-      ctx.save();
-      ctx.setTransform(scalaBase, 0, 0, scalaBase, 0, 0);
-      disegnaCambioD5(tick, st);
-      ctx.restore();
-    }
+    const sc = statoRun.stanzaCorrente;
+    if (sc && sc.quadriD5 && sc.quadriD5.fase === 'cambio' && statoRun.fase === 'in_gioco') disegnaCambioD5(tick, sc);
   } catch (err) { console.error('[d5] cambio', err); }
-  return r;
+  return disegnaHUDPixelArtBaseD5.call(this, st, ...resto);
 };
 
 const disegnaStanzaPixelArtBaseD5 = disegnaStanzaPixelArt;
