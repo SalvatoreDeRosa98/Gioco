@@ -456,7 +456,8 @@ function giocaLottoA3(st) {
   statoRun.monete -= T.costo;
   B.giocate++;
   const numero = 1 + Math.floor(rng() * 90);
-  const detto = SMORFIA_A3[numero] ? ` (${SMORFIA_A3[numero]})` : '';
+  const sigD4 = typeof smorfiaD4 === 'function' ? smorfiaD4(numero) : SMORFIA_A3[numero]; // --- d4: smorfia ampliata (d4-stanze-teatro.js) ---
+  const detto = sigD4 ? ` (${sigD4})` : '';
   let esito = estraiPesataA3(T.premi);
   const px = T.banco.x, py = T.banco.y + 46;
   if (esito === 'oggetto' && !daiOggettoA3(st, 320, 236)) esito = 'monete';

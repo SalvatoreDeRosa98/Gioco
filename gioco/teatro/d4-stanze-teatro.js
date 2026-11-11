@@ -11,10 +11,18 @@
  *      perché a1 disegna dentro la catena di disegnaStanzaPixelArt prima che a3 stenda il fondo: ora si
  *      ripassano sopra (sopraIlTappetoD4).
  *
+ *   2. LA TERNA DELLA SMORFIA: nella Bisca di a3, accanto al Banco del Lotto, il cartellone di Don Gennaro.
+ *      [E] lì vicino apre il riquadro: una rosa di 15 numeri col loro significato, se ne segnano 3 (frecce +
+ *      conferma, click o tocco), si paga (STANZE_TEATRO_D4.terna.costo) e dal panariello escono 5 numeri uno
+ *      alla volta con la voce di Don Gennaro: un numero preso = pochi grani, ambo = premio buono, terno =
+ *      oggetto Forte e molti grani. Probabilità (probTernaD4) e premi in tabella. Una terna per visita.
+ *      La smorfia di a3 è ampliata da SMORFIA_D4 (solo significati innocui).
+ *
  * Integrazione: si avvolgono funzioni di primo livello (sempre chiamando la base). Di a3 si avvolgono
  * `disegnaRoviA3` (la porta), `disegnaArrediA3` (la stanza), `disegnaMinimappaA3` (il simbolo) e
  * `pagaSangueA3` (il nome della fonte); i banner di a3 passano da `mostraBanner`, dove i testi dei rovi
  * vengono sostituiti (tabella SOSTITUZIONI_D4: chiave = testo di a3). Nessuna riga cambiata in a3 per i Camerini.
+ * AGGANCI nei file altrui: a3-stanze-speciali.js › giocaLottoA3 legge il significato da `smorfiaD4` (se c'è).
  * Verifica: tools/qa-teatro-stanze-teatro.js. Script classico (teatro/LEGGIMI.md), caricato dopo c2-tocco.js.
  */
 
@@ -44,6 +52,45 @@ const STANZE_TEATRO_D4 = Object.freeze({
     /** Posa del manichino letta da shootCd (stessa IA del Burattino Scucito di 40-combattimento.js). */
     posa: Object.freeze({ anticipoDa: 18, affondoDa: 8 }),
   }),
+
+  terna: Object.freeze({
+    costo: 3,                  // 🪙 a terna (la giocata semplice di a3 ne costa 1)
+    rosa: 15,                  // numeri proposti: sono anche TUTTI i numeri nel panariello
+    scelte: 3,                 // numeri da segnare
+    estratti: 5,               // numeri che escono, uno alla volta
+    /**
+     * Premi per numeri presi. Probabilità (probTernaD4(): 5 estratti senza reimmissione da 15, 3 tuoi):
+     * nessuno 26,4% · uno 49,5% · ambo 22,0% · terno 2,2%.
+     * Valore atteso (valoreAttesoTernaD4(); l'oggetto Forte vale 7🪙, il prezzo della Fucina): un numero (2🪙) e
+     * ambo (7🪙) rendono 0,99 + 1,54 = 2,53🪙 su 3 spesi; col terno (Forte + 9🪙 = 16🪙) si arriva a 2,88🪙:
+     * poco sotto il costo. Il terno, col piedistallo occupato, paga ripiegoMonete in più al posto dell'oggetto;
+     * se il pool della notte non ha più oggetti Forti esce un oggetto base con ripiegoNonForte monete in più.
+     */
+    premi: Object.freeze({
+      0: Object.freeze({ monete: 0 }),
+      1: Object.freeze({ monete: 2 }),
+      2: Object.freeze({ monete: 7 }),
+      3: Object.freeze({ monete: 9, oggettoForte: true, ripiegoMonete: 7, ripiegoNonForte: 2 }),
+    }),
+    valoreForte: 7,            // usato solo se manca ECONOMIA_T3.prezzi.forte
+    posto: Object.freeze({ x: 500, y: 150, raggioUso: 42, r: 12 }),
+    piedistallo: Object.freeze({ x: 452, y: 236 }),
+    tempi: Object.freeze({ chiamataTick: 84, esitoTick: 200 }),
+    voce: Object.freeze({ note: Object.freeze([118, 132, 105, 140, 124]), formante: Object.freeze([620, 880, 520]), passoSec: 0.11, durataSec: 0.1, volume: 0.09 }),
+    pannello: Object.freeze({ x: 110, y: 54, w: 420, h: 254, margine: 12, colonne: 5, cellaL: 76, cellaA: 38, spazio: 4, grigliaY: 46 }),
+  }),
+});
+
+/**
+ * Aggiunte alla smorfia di a3 (SMORFIA_A3), solo numeri dal significato innocuo: servono alla rosa della terna
+ * e, con l'aggancio in giocaLottoA3, anche alla giocata semplice. Da approvare dall'autore.
+ */
+const SMORFIA_D4 = Object.freeze({
+  2: "'a piccerella", 12: "'o surdato", 15: "'o guaglione", 19: "'a resata", 20: "'a festa", 25: 'Natale',
+  31: "'o padrone 'e casa", 32: "'o capitone", 35: "l'aucelluzzo", 36: "'e castagnelle", 42: "'o ccafè", 45: "'o vino buono",
+  46: "'e denare", 50: "'o ppane", 51: "'o ciardino", 52: "'a mamma", 54: "'o cappiello", 61: "'o cacciatore",
+  68: "'a zuppa cotta", 70: "'o palazzo", 72: "'a maraviglia", 75: 'Pullecenella', 76: "'a funtana", 81: "'e sciure",
+  84: "'a chiesa", 86: "'a puteca", 89: "'a vecchia",
 });
 
 /** Testi per il giocatore (tutti da approvare dall'autore). */
@@ -57,6 +104,37 @@ const TESTI_D4 = Object.freeze({
     custodiCaduti: '🎭 I manichini tornano di legno: quel che custodivano è tuo!',
     fonte: 'il chiodo della porta di servizio',
     custode: 'Manichino dei Camerini',
+  }),
+  terna: Object.freeze({
+    cartello: (costo) => `🎫 LA TERNA: ${costo}🪙 [E]`,
+    cartelloGiocata: '🎫 TERNA GIOCATA',
+    titolo: (costo) => `LA TERNA DI DON GENNARO · ${costo}🪙`,
+    invito: "«Tre nummere, guagliò: ognuno tene 'a storia soja.»",
+    pronta: "«Chiste so' 'e tuoje? E allora paga, ca se tira.»",
+    siTira: '«Attenzione... se tira!»',
+    senzaGrani: (costo) => `🎫 «Pe' na terna ce vonno ${costo}🪙, guagliò.»`,
+    giaGiocata: "🎫 «Na terna pe' sera, guagliò: 'a furtuna nun se sfruculea.»",
+    ordini: Object.freeze(['Primo estratto...', 'Secondo estratto...', 'Terzo...', 'Quarto...', "E l'urdemo..."]),
+    chiamata: (ordine, numero, significato) => `«${ordine} ${numero}${significato ? `: ${significato}` : ''}!»`,
+    preso: " — 'o tiene!",
+    esiti: Object.freeze({
+      0: "«Niente. 'A smorfia stanotte dorme.»", 1: "«Uno solo: pigliate 'e spicce e statte buono.»",
+      2: '«AMBO! Don Gennaro pava, e pava buono.»', 3: "«TERNO SICCO! Maronna mia, 'o banco chiagne!»",
+    }),
+    titoliEsito: Object.freeze({ 0: 'NIENTE', 1: 'UN NUMERO', 2: 'AMBO!', 3: 'TERNO!' }),
+    banner: Object.freeze({
+      0: () => '🎫 La terna non esce: Don Gennaro si tiene i grani.',
+      1: (n) => `🎫 Un numero preso: Don Gennaro ti allunga ${n}🪙.`,
+      2: (n) => `🎫 AMBO! Don Gennaro paga ${n}🪙.`,
+      3: (n, nome) => (nome ? `🎫 TERNO SECCO! ${n}🪙 e una reliquia: ${nome} [Click/E]` : `🎫 TERNO SECCO! Don Gennaro svuota la cassa: ${n}🪙.`),
+    }),
+    tuoi: 'I TUOI NUMERI',
+    estratti: 'ESTRATTI',
+    bottone: (costo) => `GIOCA LA TERNA: ${costo}🪙`,
+    bottoneMancano: (n) => (n === 1 ? 'SEGNA ANCORA 1 NUMERO' : `SEGNA ANCORA ${n} NUMERI`),
+    aiutoScegli: '↑↓←→ scegli · [E / Invio] segna o gioca · [ESC] lascia senza pagare',
+    aiutoEstrazione: '[E / Invio] avanti il prossimo',
+    aiutoEsito: '[E / Invio] chiudi',
   }),
 });
 
@@ -75,7 +153,7 @@ const SOSTITUZIONI_D4 = new Map([
 const FONTE_ROVI_A3_D4 = 'i rovi della porta';
 
 /** Interruttori per la QA (foto «prima/dopo»): nel gioco restano tutti accesi. */
-const provaD4 = { sopraIlTappeto: true };
+const provaD4 = { sopraIlTappeto: true, rngTerna: null };
 
 // ===========================================================================
 // UTILITÀ DI DISEGNO
@@ -459,7 +537,420 @@ function sopraIlTappetoD4(st, t) {
   return n;
 }
 
-// %%D4-TERNA%%
+// ===========================================================================
+// 2. LA TERNA DELLA SMORFIA AL BANCO DEL LOTTO (nella Bisca di a3)
+// ===========================================================================
+
+/** Significato del numero nella smorfia (tabella di a3 più le aggiunte di SMORFIA_D4), o undefined. */
+function smorfiaD4(numero) {
+  return SMORFIA_A3[numero] || SMORFIA_D4[numero];
+}
+
+/** Coefficiente binomiale (numeri piccoli). */
+function binomialeD4(n, k) {
+  if (k < 0 || k > n) return 0;
+  let r = 1;
+  for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i;
+  return Math.round(r);
+}
+
+/**
+ * Probabilità di prendere k numeri (indice k = 0..scelte): ipergeometrica, `estratti` palline senza
+ * reimmissione da un panariello con i `rosa` numeri proposti, di cui `scelte` sono i tuoi.
+ */
+function probTernaD4(K = STANZE_TEATRO_D4.terna) {
+  const tot = binomialeD4(K.rosa, K.estratti);
+  const p = [];
+  for (let k = 0; k <= K.scelte; k++) p.push((binomialeD4(K.scelte, k) * binomialeD4(K.rosa - K.scelte, K.estratti - k)) / tot);
+  return p;
+}
+
+/**
+ * Valore atteso di una terna in monete (l'oggetto Forte vale il suo prezzo in Fucina).
+ * @returns {{ costo: number, senzaTerno: number, conTerno: number, prob: number[] }}
+ */
+function valoreAttesoTernaD4(K = STANZE_TEATRO_D4.terna) {
+  const p = probTernaD4(K);
+  const forte = (typeof ECONOMIA_T3 !== 'undefined' && ECONOMIA_T3.prezzi && ECONOMIA_T3.prezzi.forte) || K.valoreForte;
+  const vale = (k) => { const R = K.premi[k] || {}; return (R.monete || 0) + (R.oggettoForte ? forte : 0); };
+  let senza = 0;
+  for (let k = 0; k < K.scelte; k++) senza += p[k] * vale(k);
+  return { costo: K.costo, senzaTerno: senza, conTerno: senza + p[K.scelte] * vale(K.scelte), prob: p };
+}
+
+/** La rosa proposta: `rosa` numeri diversi fra quelli che hanno un significato, in ordine crescente. */
+function rosaTernaD4(rnd = rng) {
+  const K = STANZE_TEATRO_D4.terna;
+  const tutti = [...new Set(Object.keys(SMORFIA_A3).concat(Object.keys(SMORFIA_D4)).map(Number))].sort((a, b) => a - b);
+  for (let i = tutti.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const x = tutti[i]; tutti[i] = tutti[j]; tutti[j] = x; }
+  return tutti.slice(0, K.rosa).sort((a, b) => a - b);
+}
+
+/** Estrazione: `quanti` numeri diversi dalla rosa, nell'ordine in cui escono (Fisher–Yates parziale). */
+function estraiTernaD4(rosa, quanti, rnd = rng) {
+  const a = rosa.slice();
+  const n = Math.min(quanti, a.length);
+  for (let i = 0; i < n; i++) { const j = i + Math.floor(rnd() * (a.length - i)); const x = a[i]; a[i] = a[j]; a[j] = x; }
+  return a.slice(0, n);
+}
+
+/** Stato della terna nella Bisca (creato la prima volta che serve), o null fuori dalla Bisca. */
+function statoTernaD4(st) {
+  if (!st || st.tipo !== 'bisca') return null;
+  if (!st.ternaD4) st.ternaD4 = { giocata: false, aperta: false, fase: 'scegli', rosa: null, scelti: [], cursore: 0, estratti: [], mostrati: 0, t: 0, presi: 0, voce: '', pagata: false, premio: null };
+  return st.ternaD4;
+}
+
+/** Il pannello della terna aperto nella stanza corrente, o null. */
+function pannelloTernaD4() {
+  const st = statoRun.stanzaCorrente;
+  if (statoRun.fase !== 'in_gioco' || statoRun.pausa || statoRun.siparioAttivo || statoRun.pannelloB || statoRun.scambioPendente) return null;
+  return st && st.ternaD4 && st.ternaD4.aperta ? st.ternaD4 : null;
+}
+
+/** Voce di Don Gennaro: qualche sillaba grave (facoltativa: muto e OPZIONI.voceSuono la spengono). */
+function voceGennaroD4(sillabe = 3, acuto = false) {
+  const c = AudioSys.ctx;
+  if (!c || !AudioSys.attivo || (typeof OPZIONI === 'object' && OPZIONI && OPZIONI.voceSuono === false)) return;
+  try {
+    const V = STANZE_TEATRO_D4.terna.voce;
+    for (let i = 0; i < sillabe; i++) {
+      const t = c.currentTime + i * V.passoSec;
+      const o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+      o.type = 'sawtooth';
+      const nota = V.note[(i * 3 + sillabe) % V.note.length] * (acuto ? 1.5 : 1);
+      o.frequency.setValueAtTime(nota, t);
+      o.frequency.linearRampToValueAtTime(nota * 0.92, t + V.durataSec);
+      f.type = 'bandpass'; f.frequency.value = V.formante[i % V.formante.length]; f.Q.value = 2.2;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(V.volume, t + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0008, t + V.durataSec);
+      o.connect(f); f.connect(g); g.connect(AudioSys.uscita || c.destination);
+      o.onended = () => { try { o.disconnect(); f.disconnect(); g.disconnect(); } catch (_) { /* già scollegati */ } };
+      o.start(t); o.stop(t + V.durataSec + 0.02);
+    }
+  } catch (_) { /* l'audio non deve mai fermare il gioco */ }
+}
+
+/** Un suono breve (oscillatore con inviluppo), come gli altri file. */
+function suonoD4(freq, durMs, forma = 'triangle', vol = 0.07, freqFine = 0, ritardoSec = 0) {
+  const c = AudioSys.ctx;
+  if (!c || !AudioSys.attivo) return;
+  try {
+    const t = c.currentTime + ritardoSec, d = durMs / 1000;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = forma;
+    o.frequency.setValueAtTime(freq, t);
+    if (freqFine > 0) o.frequency.exponentialRampToValueAtTime(freqFine, t + d);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + d);
+    o.connect(g); g.connect(AudioSys.uscita || c.destination);
+    o.onended = () => { try { o.disconnect(); g.disconnect(); } catch (_) { /* già scollegati */ } };
+    o.start(t); o.stop(t + d + 0.02);
+  } catch (_) { /* l'audio non deve mai fermare il gioco */ }
+}
+
+/** Apre il cartellone della terna (tasto E lì vicino). Una terna per visita; servono le monete. */
+function apriTernaD4(st) {
+  const K = STANZE_TEATRO_D4.terna, X = TESTI_D4.terna;
+  const T = statoTernaD4(st);
+  if (!T) return false;
+  if (T.giocata) { avvisaA3(X.giaGiocata, 150); return false; }
+  if (statoRun.monete < K.costo) { avvisaA3(X.senzaGrani(K.costo), 150); return false; }
+  if (!T.rosa) T.rosa = rosaTernaD4(rng);
+  T.aperta = true; T.fase = 'scegli'; T.scelti = []; T.cursore = 0; T.estratti = []; T.mostrati = 0; T.t = 0; T.presi = 0;
+  T.voce = X.invito;
+  player.targetX = null; player.targetY = null;
+  voceGennaroD4(4);
+  return true;
+}
+
+/** Chiude il cartellone (solo mentre si sceglie o a esito pagato: durante l'estrazione no). */
+function chiudiTernaD4(st) {
+  const T = st && st.ternaD4;
+  if (!T || !T.aperta || T.fase === 'estrazione') return false;
+  if (T.fase === 'esito' && !T.pagata) pagaTernaD4(st);
+  T.aperta = false;
+  return true;
+}
+
+/** Segna o toglie un numero della rosa (al massimo `scelte`). */
+function segnaTernaD4(st, numero) {
+  const K = STANZE_TEATRO_D4.terna, T = st && st.ternaD4;
+  if (!T || !T.aperta || T.fase !== 'scegli' || !T.rosa.includes(numero)) return false;
+  const i = T.scelti.indexOf(numero);
+  if (i >= 0) T.scelti.splice(i, 1);
+  else if (T.scelti.length < K.scelte) T.scelti.push(numero);
+  else { suonoD4(180, 90, 'square', 0.04); return false; }
+  suonoD4(i >= 0 ? 420 : 620, 60, 'triangle', 0.05);
+  T.voce = T.scelti.length === K.scelte ? TESTI_D4.terna.pronta : TESTI_D4.terna.invito;
+  if (T.scelti.length === K.scelte) T.cursore = K.rosa; // il cursore va sul bottone «gioca»
+  return true;
+}
+
+/**
+ * Paga e fa partire l'estrazione. `rnd` è il generatore dei numeri (quello del seme; la QA ne passa uno di prova).
+ * @returns {number[]|null} i numeri estratti, nell'ordine in cui usciranno
+ */
+function giocaTernaD4(st, rnd = provaD4.rngTerna || rng) {
+  const K = STANZE_TEATRO_D4.terna, T = st && st.ternaD4;
+  if (!T || !T.aperta || T.fase !== 'scegli' || T.scelti.length !== K.scelte) return null;
+  if (statoRun.monete < K.costo) { T.voce = TESTI_D4.terna.senzaGrani(K.costo); return null; }
+  statoRun.monete -= K.costo;
+  T.giocata = true; T.pagata = false; T.premio = null;
+  T.estratti = estraiTernaD4(T.rosa, K.estratti, rnd);
+  T.fase = 'estrazione'; T.mostrati = 0; T.presi = 0; T.t = Math.round(K.tempi.chiamataTick * 0.45);
+  T.voce = TESTI_D4.terna.siTira;
+  AudioSys.playMoneta();
+  return T.estratti.slice();
+}
+
+/** Esce il prossimo numero: la voce lo chiama col suo significato. */
+function chiamaTernaD4(st) {
+  const K = STANZE_TEATRO_D4.terna, X = TESTI_D4.terna, T = st.ternaD4;
+  const numero = T.estratti[T.mostrati];
+  const preso = T.scelti.includes(numero);
+  T.voce = X.chiamata(X.ordini[Math.min(T.mostrati, X.ordini.length - 1)], numero, smorfiaD4(numero) || '') + (preso ? X.preso : '');
+  T.mostrati++;
+  if (preso) { T.presi++; suonoD4(880, 260, 'triangle', 0.08, 1320); AudioSys.playMoneta(); } else suonoD4(300, 70, 'triangle', 0.05);
+  voceGennaroD4(preso ? 4 : 3, preso);
+  T.t = 0;
+  if (T.mostrati >= T.estratti.length) { T.fase = 'esito'; T.t = -K.tempi.chiamataTick; T.attesaEsito = true; }
+}
+
+/** Consegna il premio dell'esito (una volta sola): monete a terra, e col terno un oggetto Forte. */
+function pagaTernaD4(st) {
+  const K = STANZE_TEATRO_D4.terna, X = TESTI_D4.terna, T = st.ternaD4;
+  if (!T || T.pagata) return null;
+  T.pagata = true;
+  const R = K.premi[T.presi] || K.premi[0];
+  let monete = R.monete || 0, oggetto = null;
+  if (R.oggettoForte) {
+    oggetto = daiOggettoA3(st, K.piedistallo.x, K.piedistallo.y, true);
+    if (!oggetto) monete += R.ripiegoMonete || 0;
+    else if (oggetto.tier !== 'forte') monete += R.ripiegoNonForte || 0; // il pool della notte non ha più oggetti Forti
+  }
+  if (monete > 0) daiMoneteA3(st, monete, K.posto.x - 30, K.posto.y + 50);
+  T.premio = { presi: T.presi, monete, oggetto: oggetto ? oggetto.id || true : null };
+  if (T.presi >= K.scelte) { scuoti(FEEL.scossa.evento); AudioSys.playCampana(); if (typeof reazionePubblicoB1 === 'function') { try { reazionePubblicoB1('applausoPieno'); } catch (_) { /* pubblico facoltativo */ } } }
+  else if (T.presi > 0) AudioSys.playMoneta();
+  mostraBanner(X.banner[T.presi](monete, oggetto ? nomeD(oggetto) : ''), T.presi >= 2 ? 230 : 170);
+  return T.premio;
+}
+
+/** Un tick del cartellone aperto: i numeri escono uno alla volta, poi l'esito. */
+function passoTernaD4(st) {
+  const K = STANZE_TEATRO_D4.terna, T = st.ternaD4;
+  if (!T || !T.aperta) return;
+  T.t++;
+  if (T.fase === 'estrazione') {
+    if (T.t >= K.tempi.chiamataTick) chiamaTernaD4(st);
+  } else if (T.fase === 'esito') {
+    if (T.attesaEsito && T.t >= 0) { // una pausa dopo l'ultimo numero, poi Don Gennaro tira le somme
+      T.attesaEsito = false;
+      T.voce = TESTI_D4.terna.esiti[T.presi];
+      voceGennaroD4(5, T.presi >= 2);
+      pagaTernaD4(st);
+    }
+    if (T.t >= K.tempi.esitoTick) chiudiTernaD4(st);
+  }
+}
+
+/** Riquadro della cella i della rosa nel pannello (disegno e click). */
+function rettCellaTernaD4(i) {
+  const P = STANZE_TEATRO_D4.terna.pannello;
+  const col = i % P.colonne, riga = Math.floor(i / P.colonne);
+  return { x: P.x + P.margine + col * (P.cellaL + P.spazio), y: P.y + P.grigliaY + riga * (P.cellaA + P.spazio), w: P.cellaL, h: P.cellaA };
+}
+
+function rettBottoneTernaD4() {
+  const P = STANZE_TEATRO_D4.terna.pannello;
+  return { x: P.x + P.w - P.margine - 176, y: P.y + P.h - 50, w: 176, h: 24 };
+}
+
+/** Tasti del cartellone (frecce/WASD, conferma, indietro). true = tasto preso. */
+function tastoTernaD4(st, code) {
+  const K = STANZE_TEATRO_D4.terna, T = st.ternaD4, C = K.pannello.colonne;
+  const conferma = code === 'Enter' || code === 'Space' || code === 'KeyE' || code === 'NumpadEnter';
+  const indietro = code === 'Escape' || code === 'KeyQ' || code === 'Backspace';
+  if (T.fase === 'estrazione') { if (conferma || indietro) T.t = Math.max(T.t, K.tempi.chiamataTick - 6); return true; } // «avanti, il prossimo»
+  if (T.fase === 'esito') { if ((conferma || indietro) && !T.attesaEsito) chiudiTernaD4(st); else if (conferma || indietro) T.t = Math.max(T.t, -4); return true; }
+  const sulBottone = T.cursore >= K.rosa;
+  if (indietro) { chiudiTernaD4(st); return true; }
+  if (conferma) {
+    if (sulBottone) giocaTernaD4(st); else segnaTernaD4(st, T.rosa[T.cursore]);
+    return true;
+  }
+  const righe = Math.ceil(K.rosa / C);
+  let mosso = true;
+  if (code === 'ArrowLeft' || code === 'KeyA') { if (!sulBottone) T.cursore = Math.floor(T.cursore / C) * C + ((T.cursore % C) + C - 1) % C; }
+  else if (code === 'ArrowRight' || code === 'KeyD') { if (!sulBottone) T.cursore = Math.floor(T.cursore / C) * C + ((T.cursore % C) + 1) % C; }
+  else if (code === 'ArrowUp' || code === 'KeyW') { if (sulBottone) T.cursore = K.rosa - 1; else if (T.cursore >= C) T.cursore -= C; }
+  else if (code === 'ArrowDown' || code === 'KeyS') {
+    if (!sulBottone && Math.floor(T.cursore / C) < righe - 1) T.cursore += C;
+    else if (!sulBottone && T.scelti.length === K.scelte) T.cursore = K.rosa;
+  } else mosso = false;
+  if (mosso) suonoD4(520, 30, 'triangle', 0.025);
+  return true;
+}
+
+/** Click (o tocco) sul cartellone, coordinate 640×360. */
+function clickTernaD4(st, mx, my) {
+  const K = STANZE_TEATRO_D4.terna, P = K.pannello, T = st.ternaD4;
+  const dentro = (r) => mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+  if (T.fase !== 'scegli') { tastoTernaD4(st, 'Enter'); return; }
+  for (let i = 0; i < T.rosa.length; i++) {
+    if (dentro(rettCellaTernaD4(i))) { T.cursore = i; segnaTernaD4(st, T.rosa[i]); return; }
+  }
+  if (dentro(rettBottoneTernaD4())) { T.cursore = K.rosa; giocaTernaD4(st); return; }
+  if (!dentro(P)) chiudiTernaD4(st);
+}
+
+// tasti e click del cartellone: in cattura, prima dei gestori di base (che così non muovono né attaccano);
+// gamepad e tocco arrivano da b3 come tasti sintetici (contesto «menu»: vedi il registro in fondo al file)
+window.addEventListener('keydown', (e) => {
+  const T = pannelloTernaD4();
+  if (!T || e.ctrlKey || e.metaKey || e.altKey || /^F\d+$/.test(e.code)) return;
+  try { tastoTernaD4(statoRun.stanzaCorrente, e.code); } catch (err) { console.error('[d4] tasto della terna', err); }
+  e.preventDefault(); e.stopImmediatePropagation();
+}, true);
+
+window.addEventListener('mousedown', (e) => {
+  const T = pannelloTernaD4();
+  if (!T || e.target !== canvas) return;
+  const r = canvas.getBoundingClientRect();
+  try { clickTernaD4(statoRun.stanzaCorrente, (e.clientX - r.left) * (W / r.width), (e.clientY - r.top) * (H / r.height)); } catch (err) { console.error('[d4] click della terna', err); }
+  e.preventDefault(); e.stopImmediatePropagation();
+}, true);
+
+// click sul cartellone quando sei vicino: come il tasto E
+canvas.addEventListener('mousedown', (e) => {
+  const st = statoRun.stanzaCorrente;
+  if (statoRun.fase !== 'in_gioco' || !st || st.tipo !== 'bisca' || pannelloTernaD4()) return;
+  const P = STANZE_TEATRO_D4.terna.posto;
+  const r = canvas.getBoundingClientRect();
+  const mx = (e.clientX - r.left) * (W / r.width), my = (e.clientY - r.top) * (H / r.height);
+  if (Math.hypot(mx - P.x, my - (P.y - 10)) < 26 && Math.hypot(player.x - P.x, player.y - P.y) < P.raggioUso) {
+    interagisciStanza();
+    player.targetX = null; player.targetY = null;
+  }
+});
+
+/** Tasto E nella Bisca vicino al cartellone (il piedistallo ha la precedenza, come in a3). true = gestito. */
+function interagisciTernaD4(st) {
+  if (!st || st.tipo !== 'bisca' || statoRun.fase !== 'in_gioco') return false;
+  const P = STANZE_TEATRO_D4.terna.posto, o = st.oggettoPiedistallo;
+  if (o && !o.preso && Math.hypot(player.x - o.x, player.y - o.y) < 52) return false;
+  if (Math.hypot(player.x - P.x, player.y - P.y) >= P.raggioUso) return false;
+  apriTernaD4(st);
+  return true;
+}
+
+/** Il cartellone della terna nella Bisca: cavalletto, tabella dei numeri, il panariello ai piedi. */
+function disegnaCartelloneFermoD4(g) {
+  const P = STANZE_TEATRO_D4.terna.posto, x = P.x, y = P.y;
+  ombraD4(g, x, y + 13, 20, 5);
+  astaD4(g, x - 10, y - 26, x - 15, y + 12, 1.5);
+  astaD4(g, x + 10, y - 26, x + 15, y + 12, 1.5);
+  astaD4(g, x, y - 24, x + 3, y + 9, 1.3);
+  g.fillStyle = OMBRE_D4.sagoma; g.strokeStyle = OMBRE_D4.lume; g.lineWidth = 1;
+  g.fillRect(x - 17, y - 34, 34, 28); g.strokeRect(x - 16.5, y - 33.5, 33, 27);
+  g.fillStyle = OMBRE_D4.oro; g.fillRect(x - 15, y - 32, 30, 4);
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 5; c++) {
+      g.fillStyle = (r * 5 + c) % 4 === 1 ? OMBRE_D4.rosso : '#e9dcc0';
+      g.fillRect(x - 14 + c * 6, y - 25 + r * 6, 4, 4);
+    }
+  }
+  // il panariello di vimini con le palline
+  sagomaD4(g, [[x - 28, y + 3], [x - 14, y + 3], [x - 16, y + 12], [x - 26, y + 12]], OMBRE_D4.legno, OMBRE_D4.lume, 1);
+  g.strokeStyle = 'rgba(232, 201, 138, 0.5)'; g.lineWidth = 0.7;
+  g.beginPath(); g.moveTo(x - 27, y + 6); g.lineTo(x - 15, y + 6); g.moveTo(x - 26.5, y + 9); g.lineTo(x - 15.5, y + 9); g.stroke();
+  g.fillStyle = '#e9dcc0';
+  g.beginPath(); g.arc(x - 23, y + 2, 2, 0, TAU); g.fill();
+  g.beginPath(); g.arc(x - 19, y + 1.5, 2, 0, TAU); g.fill();
+}
+
+function disegnaCartelloneD4(st, t) {
+  const K = STANZE_TEATRO_D4.terna, X = TESTI_D4.terna, P = K.posto;
+  const T = st.ternaD4;
+  ctx.drawImage(telaD4('cartellone', disegnaCartelloneFermoD4), 0, 0, W, H);
+  const giocata = Boolean(T && T.giocata);
+  drawPillLabel(giocata ? X.cartelloGiocata : X.cartello(K.costo), P.x, P.y - 44, 140, {
+    size: 7.5, color: giocata ? '#9ca3af' : '#fde68a', border: giocata ? '#4b5563' : OMBRE_D4.oro,
+  });
+}
+
+/** Una pallina numerata (i tuoi numeri, gli estratti). */
+function pallinaTernaD4(x, y, r, numero, stato) {
+  ctx.fillStyle = stato === 'presa' ? OMBRE_D4.oro : stato === 'uscita' ? '#e9dcc0' : stato === 'mia' ? '#3a2412' : '#1c120a';
+  ctx.strokeStyle = stato === 'vuota' ? '#5c4024' : stato === 'presa' ? '#fff7d6' : OMBRE_D4.lume;
+  ctx.lineWidth = stato === 'presa' ? 2 : 1;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); ctx.stroke();
+  if (numero != null) drawTextFit(String(numero), x, y + 3.5, r * 2 - 3, { size: 9.5, color: stato === 'presa' || stato === 'uscita' ? '#1c0f07' : '#fde68a', shadow: false });
+}
+
+/** Il pannello della terna sopra la scena. */
+function disegnaPannelloTernaD4(t) {
+  const T = pannelloTernaD4();
+  if (!T) return;
+  const K = STANZE_TEATRO_D4.terna, X = TESTI_D4.terna, P = K.pannello, cx = P.x + P.w / 2;
+  const usciti = T.estratti.slice(0, T.mostrati);
+  ctx.save();
+  ctx.fillStyle = 'rgba(5, 3, 2, 0.62)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#140c08'; ctx.fillRect(P.x, P.y, P.w, P.h);
+  ctx.strokeStyle = OMBRE_D4.oro; ctx.lineWidth = 2; ctx.strokeRect(P.x + 1, P.y + 1, P.w - 2, P.h - 2);
+  ctx.strokeStyle = '#7c5227'; ctx.lineWidth = 1; ctx.strokeRect(P.x + 5.5, P.y + 5.5, P.w - 11, P.h - 11);
+  drawTextFit(X.titolo(K.costo), cx, P.y + 20, P.w - 40, { size: 11, color: OMBRE_D4.oro });
+  drawTextFit(T.voce, cx, P.y + 35, P.w - 30, { size: 8.5, style: 'italic', weight: '', color: '#f1e3c4' });
+  for (let i = 0; i < T.rosa.length; i++) {
+    const r = rettCellaTernaD4(i), num = T.rosa[i];
+    const mio = T.scelti.includes(num), uscito = usciti.includes(num);
+    const ultimo = uscito && usciti[usciti.length - 1] === num && T.fase === 'estrazione';
+    ctx.fillStyle = mio && uscito ? '#6b4c0f' : mio ? '#3a2412' : uscito ? '#2a1a1a' : '#1c120a';
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.strokeStyle = mio ? OMBRE_D4.oro : uscito ? '#8a6a4a' : '#5c4024';
+    ctx.lineWidth = mio ? 2 : 1;
+    ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+    const spento = T.fase !== 'scegli' && !mio && !uscito;
+    drawTextFit(String(num), r.x + r.w / 2, r.y + 17, r.w - 24, { size: 14, color: mio ? '#fde68a' : spento ? '#6b5a44' : '#e9dcc0' });
+    drawTextFit(smorfiaD4(num) || '', r.x + r.w / 2, r.y + 31, r.w - 6, { size: 7.5, weight: '', style: 'italic', color: mio ? '#fde68a' : spento ? '#6b5a44' : '#c9a679' });
+    if (mio) drawTextFit(mio && uscito ? '★' : '✓', r.x + r.w - 7, r.y + 10, 10, { size: 7.5, color: OMBRE_D4.oro, shadow: false });
+    else if (uscito) drawTextFit('●', r.x + r.w - 7, r.y + 10, 10, { size: 7, color: '#e9dcc0', shadow: false });
+    if (ultimo) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.strokeRect(r.x - 1.5, r.y - 1.5, r.w + 3, r.h + 3); }
+    if (T.fase === 'scegli' && T.cursore === i) {
+      ctx.strokeStyle = `rgba(255, 255, 255, ${(0.7 + 0.3 * Math.sin(t * 0.2)).toFixed(2)})`;
+      ctx.lineWidth = 2; ctx.strokeRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4);
+    }
+  }
+  // riga di sotto: i tuoi tre numeri a sinistra; a destra il bottone, poi le cinque palline estratte
+  const yb = P.y + P.h - 38;
+  drawTextFit(X.tuoi, P.x + P.margine + 28, yb - 13, 70, { size: 7, weight: '', color: '#c9a679' });
+  for (let i = 0; i < K.scelte; i++) {
+    const num = T.scelti[i];
+    pallinaTernaD4(P.x + P.margine + 12 + i * 27, yb + 3, 11, num == null ? null : num, num == null ? 'vuota' : usciti.includes(num) ? 'presa' : 'mia');
+  }
+  if (T.fase === 'scegli') {
+    const B = rettBottoneTernaD4(), pronta = T.scelti.length === K.scelte, sopra = T.cursore >= K.rosa;
+    ctx.fillStyle = pronta ? '#5a1414' : '#1c120a'; ctx.fillRect(B.x, B.y, B.w, B.h);
+    ctx.strokeStyle = pronta ? OMBRE_D4.oro : '#5c4024'; ctx.lineWidth = sopra ? 2.5 : 1;
+    ctx.strokeRect(B.x + 0.5, B.y + 0.5, B.w - 1, B.h - 1);
+    if (sopra) { ctx.strokeStyle = `rgba(255, 255, 255, ${(0.7 + 0.3 * Math.sin(t * 0.2)).toFixed(2)})`; ctx.lineWidth = 2; ctx.strokeRect(B.x - 2, B.y - 2, B.w + 4, B.h + 4); }
+    drawTextFit(pronta ? X.bottone(K.costo) : X.bottoneMancano(K.scelte - T.scelti.length), B.x + B.w / 2, B.y + 15.5, B.w - 12, { size: 9, color: pronta ? '#fde68a' : '#8a7a5c' });
+  } else {
+    drawTextFit(X.estratti, P.x + P.w - P.margine - 66, yb - 13, 130, { size: 7, weight: '', color: '#c9a679' });
+    for (let i = 0; i < K.estratti; i++) {
+      const num = i < T.mostrati ? T.estratti[i] : null;
+      pallinaTernaD4(P.x + P.w - P.margine - 120 + i * 27, yb + 3, 11, num, num == null ? 'vuota' : T.scelti.includes(num) ? 'presa' : 'uscita');
+    }
+    if (T.fase === 'esito' && !T.attesaEsito) {
+      drawTextFit(X.titoliEsito[T.presi], cx - 8, yb + 8, 130, { size: 13, color: T.presi >= 2 ? OMBRE_D4.oro : T.presi === 1 ? '#fde68a' : '#9ca3af' });
+    }
+  }
+  drawTextFit(T.fase === 'scegli' ? X.aiutoScegli : T.fase === 'esito' ? X.aiutoEsito : X.aiutoEstrazione, cx, P.y + P.h - 9, P.w - 30, { size: 7, weight: '', color: '#9ca3af' });
+  ctx.restore();
+}
+
 
 // %%D4-BUCA%%
 
@@ -529,16 +1020,64 @@ generaMappaPiano = function generaMappaPianoD4(piano, ...resto) {
   return m;
 };
 
+const entraInStanzaBaseD4 = entraInStanza;
+entraInStanza = function entraInStanzaD4(stanza, daLato, ...resto) {
+  const r = entraInStanzaBaseD4.call(this, stanza, daLato, ...resto);
+  try {
+    if (stanza && statoRun.stanzaCorrente === stanza) {
+      if (stanza.ternaD4) stanza.ternaD4.aperta = false;
+      // %%D4-INGRESSO%%
+    }
+  } catch (err) { console.error('[d4] ingresso', err); }
+  return r;
+};
+
+const interagisciStanzaBaseD4 = interagisciStanza;
+interagisciStanza = function interagisciStanzaD4(...args) {
+  try {
+    if (!statoRun.scambioPendente && !statoRun.pannelloB && !statoRun.siparioAttivo && interagisciTernaD4(statoRun.stanzaCorrente)) return undefined;
+  } catch (err) { console.error('[d4] interazione', err); }
+  return interagisciStanzaBaseD4.apply(this, args);
+};
+
+const disegnaStanzaPixelArtBaseD4 = disegnaStanzaPixelArt;
+disegnaStanzaPixelArt = function disegnaStanzaPixelArtD4(t, st, ...resto) {
+  const r = disegnaStanzaPixelArtBaseD4.call(this, t, st, ...resto);
+  if (!st) return r;
+  try {
+    if (st.tipo === 'bisca' && statoRun.fase === 'in_gioco') disegnaCartelloneD4(st, t);
+    // %%D4-RESA-STANZA%%
+  } catch (err) { console.error('[d4] resa stanza', err); }
+  return r;
+};
+
+const disegnaHUDPixelArtBaseD4 = disegnaHUDPixelArt;
+disegnaHUDPixelArt = function disegnaHUDPixelArtD4(st, ...resto) {
+  const r = disegnaHUDPixelArtBaseD4.call(this, st, ...resto);
+  try {
+    // %%D4-RESA-HUD%%
+    disegnaPannelloTernaD4(tick);
+  } catch (err) { console.error('[d4] resa hud', err); }
+  return r;
+};
+
 const passoLogicoBaseD4 = passoLogico;
 passoLogico = function passoLogicoD4(...args) {
   const st = statoRun.stanzaCorrente;
   const attivo = Boolean(st) && statoRun.fase === 'in_gioco' && ticksCongelati <= 0
     && !(statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo || statoRun.pausa);
+  const pxD4 = player.x, pyD4 = player.y;
   // %%D4-PRIMA-DEL-PASSO%%
   const r = passoLogicoBaseD4.apply(this, args);
   if (attivo && statoRun.fase === 'in_gioco' && statoRun.stanzaCorrente === st) {
     try {
       if (st.tipo === 'maledetta') corpiCameriniD4();
+      else if (st.tipo === 'bisca') {
+        if (st.ternaD4 && st.ternaD4.aperta) { // cartellone aperto: Ferruccio sta fermo
+          player.x = pxD4; player.y = pyD4; player.targetX = null; player.targetY = null; player.moving = false;
+          passoTernaD4(st);
+        } else corpoSolidoD4(STANZE_TEATRO_D4.terna.posto);
+      }
       // %%D4-DOPO-IL-PASSO%%
     } catch (err) { console.error('[d4] passo', err); }
   }
@@ -554,8 +1093,18 @@ if (window.__teatro && window.__teatro.interni && Array.isArray(window.__teatro.
       aggiungi(C.stand.x, C.stand.y - 6, 26, 22); aggiungi(C.parrucche.x, C.parrucche.y - 6, 22, 18);
       aggiungi(C.baule.x, C.baule.y - 8, 26, 22); aggiungi(C.manichinoFermo.x, C.manichinoFermo.y - 12, 12, 24);
     }
+    else if (st.tipo === 'bisca') { const P = STANZE_TEATRO_D4.terna.posto; aggiungi(P.x, P.y - 10, 20, 26); }
     // %%D4-RIPARI%%
   });
+}
+
+// il cartellone della terna è un menu per b3: gamepad e tocco lo navigano con frecce, CONFERMA e INDIETRO
+if (window.__teatro && window.__teatro.interni && window.__teatro.interni.comandiB3 && Array.isArray(window.__teatro.interni.comandiB3.menuAperti)) {
+  window.__teatro.interni.comandiB3.menuAperti.push(() => Boolean(pannelloTernaD4()));
+}
+// per a1: accanto al cartellone il tasto E non posa una bomba
+if (typeof interazioniVicineA1 !== 'undefined' && Array.isArray(interazioniVicineA1)) {
+  interazioniVicineA1.push((st) => Boolean(st && st.tipo === 'bisca' && Math.hypot(player.x - STANZE_TEATRO_D4.terna.posto.x, player.y - STANZE_TEATRO_D4.terna.posto.y) < STANZE_TEATRO_D4.terna.posto.raggioUso));
 }
 
 // ===========================================================================
@@ -569,6 +1118,12 @@ if (window.__teatro && window.__teatro.interni) {
       sostituzioni: SOSTITUZIONI_D4,
       vestiCustodi: vestiCustodiD4,
       sopraIlTappeto: sopraIlTappetoD4,
+      smorfia: smorfiaD4, SMORFIA_D4,
+      terna: {
+        prob: probTernaD4, valoreAtteso: valoreAttesoTernaD4, rosa: rosaTernaD4, estrai: estraiTernaD4,
+        stato: statoTernaD4, apri: apriTernaD4, chiudi: chiudiTernaD4, segna: segnaTernaD4, gioca: giocaTernaD4,
+        passo: passoTernaD4, pannello: pannelloTernaD4, rettCella: rettCellaTernaD4, rettBottone: rettBottoneTernaD4,
+      },
       // %%D4-SONDA%%
     },
   });
