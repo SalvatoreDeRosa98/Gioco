@@ -171,7 +171,7 @@ const TESTI_D4 = Object.freeze({
     graffio: '🎭 Il chiodo della porta di servizio ti strappa un filo: -½ ❤️',
     rifiuto: "🎭 Il chiodo ti spezzerebbe l'ultimo filo: torna quando avrai più Maschere.",
     risparmia: '🎭 Il chiodo ti risparmia: sei allo stremo.',
-    ingressoQuieto: '🎭 I CAMERINI DIETRO LE QUINTE: quel che trovi è tuo, ma anche uscire dalla porta di servizio costa ½ ❤️.',
+    ingressoQuieto: '🎭 I CAMERINI DIETRO LE QUINTE: quel che trovi è tuo, ma anche uscire costa ½ ❤️.',
     ingressoCustodi: '🎭 I CAMERINI DIETRO LE QUINTE: fra gli specchi i manichini si animano!',
     custodiCaduti: '🎭 I manichini tornano di legno: quel che custodivano è tuo!',
     fonte: 'il chiodo della porta di servizio',
