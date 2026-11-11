@@ -798,7 +798,7 @@ disegnaStanzaPixelArt = function (tk, st, ...resto) {
     if (st && st.tipo === 'boss' && st.pulita && st.grataD6) disegnaGrataD6(st.grataD6, tk);
     if (st && st.donoD6 && st.oggettoPiedistallo && !st.oggettoPiedistallo.preso) {
       const o = st.oggettoPiedistallo;
-      drawPillLabel(TESTI_D6.dono, o.x, o.y - 42, 150, { size: 7.5, color: TINTE_D6.acqua, border: QUARTIERE_D6.bordoPillola });
+      drawPillLabel(TESTI_D6.dono, o.x, o.y + 60, 150, { size: 7.5, color: TINTE_D6.acqua, border: QUARTIERE_D6.bordoPillola }); // sotto il riquadro dell'effetto
     }
   } catch (err) { console.error('[d6] stanza', err); }
   return r;
