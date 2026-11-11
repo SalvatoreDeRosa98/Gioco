@@ -1109,7 +1109,7 @@ function passoLogico() {
               st.nemici.push({
                 id: `spawn-vespa-${tick}`,
                 tipo: 'vespa_cieca',
-                nome: 'Vespa Cieca (Attack Fly)',
+                nome: 'Vespa Cieca',
                 comportamento: 'volo_puro',
                 x: n.x + (rng() - 0.5) * 26,
                 y: n.y + (rng() - 0.5) * 20,
@@ -1161,7 +1161,7 @@ function passoLogico() {
               st.nemici.push({
                 id: `spawn-custode-${tick}-${k}`,
                 tipo: vespe ? 'vespa_cieca' : 'statua',
-                nome: vespe ? 'Vespa Cieca (Attack Fly)' : 'Statuetta di Marmo',
+                nome: vespe ? 'Vespa Cieca' : 'Statuetta di Marmo',
                 comportamento: vespe ? 'volo_puro' : 'torretta_croce',
                 // --- C: inizio --- anche gli spawn del boss stanno lontani dalle porte
                 ...puntoLontanoDallePorteC(n.x + lato * 58, n.y + 34, porteVietateC(st).concat([{ x: player.x, y: player.y }])),
@@ -1337,7 +1337,7 @@ function passoLogico() {
         const comp = n.comportamento || n.tipo;
 
         if (comp === 'volo_puro' || n.tipo === 'vespa_cieca') {
-          // 1. VESPA CIECA (Attack Fly): vola dritta contro di te SENZA SPARARE!
+          // 1. VESPA CIECA: vola dritta contro di te SENZA SPARARE!
           const osc = Math.sin(tick * 0.22 + n.x * 0.05) * 0.3;
           n.x = Math.max(ARENA.x1 + 12, Math.min(ARENA.x2 - 12, n.x + Math.cos(ang + osc) * n.speed));
           n.y = Math.max(ARENA.y1 + 12, Math.min(ARENA.y2 - 12, n.y + Math.sin(ang + osc) * n.speed));
@@ -1442,7 +1442,7 @@ function passoLogico() {
             }
           }
         } else {
-          // 6. SOLDATO DI PIOMBO (Knight / Clotty): pattuglia ed esegue doppi colpi mirati
+          // 6. SOLDATO DI PIOMBO: pattuglia ed esegue doppi colpi mirati
           n.x = Math.max(ARENA.x1 + 14, Math.min(ARENA.x2 - 14, n.x + Math.cos(ang) * n.speed * 0.72));
           n.y = Math.max(ARENA.y1 + 14, Math.min(ARENA.y2 - 14, n.y + Math.sin(ang) * n.speed * 0.72));
           n.shootCd--;

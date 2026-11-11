@@ -1,8 +1,8 @@
 # Roadmap «Novità nel Teatro»: portare nel Teatro delle Marionette ciò che il motore ha in più
 
 Scritta il 2026-11-09. Richiesta dell'autore: il Teatro (`gioco/teatro_marionette.html`, un solo file) è la versione
-che funziona e si gioca come Isaac; deve ricevere tutte le novità costruite nel motore (`gioco/motore`). È la
-direzione inversa di `production/roadmap-fedelta-isaac.md`. Le regole del Teatro non cambiano: si AGGIUNGE.
+che funziona e si gioca come deve; deve ricevere tutte le novità costruite nel motore (`gioco/motore`). È la
+direzione inversa di `production/roadmap-fedelta-teatro.md`. Le regole del Teatro non cambiano: si AGGIUNGE.
 
 ## Regole
 

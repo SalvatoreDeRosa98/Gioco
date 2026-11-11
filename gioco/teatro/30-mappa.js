@@ -459,7 +459,7 @@ function popolaStanza(s, piano) {
     if (rng() < effettiNotteC().probNemicoExtra) tipiGenerati.push('vespa_cieca');
 
     const nomiNem = {
-      vespa_cieca: 'Vespa Cieca (Attack Fly)',
+      vespa_cieca: 'Vespa Cieca',
       lucciola: 'Lucciola Pungente',
       bomba_ferma: 'Bozzo Esplosivo',
       gatto: 'Gatto d\'Ombra',
