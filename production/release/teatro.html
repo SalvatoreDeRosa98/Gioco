@@ -951,9 +951,9 @@ const OGGETTI_NUOVI_D = [
     lore: 'Ex voto d\'argento: ti rende lento ma inesorabile.',
     mod: { dmgMult: 2.3, bonusMaxHp: 2, healOnEquip: 2, omingForza: 0.05, cadenzaMult: 0.6 } },
   { id: 'bombarda', sprite: 'bombarda', nome: 'Bombarda di Gaeta', tier: 'forte', polarita: 'misto',
-    statsDesc: '[◐ MISTO] ★ Danno x2.6 · Colpi enormi e lenti · Cadenza x0.3',
+    statsDesc: '[◐ MISTO] ★ Danno x2.6 · Colpi enormi e lenti · Cadenza x0.36',
     lore: 'Il cannone della fortezza: un colpo ogni tanto, e la stanza trema.',
-    mod: { dmgMult: 2.6, size: 1.8, cadenzaMult: 0.3, velocitaColpo: 0.6, sparabombe: true, armaSpeciale: true } },
+    mod: { dmgMult: 2.6, size: 1.8, cadenzaMult: 0.36, velocitaColpo: 0.6, sparabombe: true, armaSpeciale: true } },
   { id: 'occhio-vetro', sprite: 'occhio-vetro', nome: 'Occhio di Vetro del Ciarlatano', tier: 'forte', polarita: 'misto',
     statsDesc: '[◐ MISTO] ★ Danno x2 da vicino, cala con la distanza · -60 Gittata · +0.5 Danno',
     lore: 'Lo vendeva un ciarlatano a Piazza Mercato: vede bene solo da vicino.',
@@ -4373,7 +4373,8 @@ function ricalcolaStatistiche() {
   const effDmg = (baseD * Math.sqrt(Math.max(0, totalDmgUps * 1.2 + 1)) + flatDmg) * dmgMult;
   statoRun.dmg = Math.max(1.0, effDmg);
 
-  const cadenzaEff = Math.max(0.85, Math.min(7.5, (2.73 + totCadenzaUp * 0.95) * cadenzaMult));
+  const cadenzaEff = Math.max(0.5, Math.min(7.5, // e3: pavimento 0,85 → 0,5 (sotto 0,85 i malus di cadenza sparivano e i moltiplicatori di danno si sommavano senza prezzo)
+     (2.73 + totCadenzaUp * 0.95) * cadenzaMult));
   statoRun.colpiAlSec = cadenzaEff;
   statoRun.cooldownMax = Math.max(7, Math.round(60 / cadenzaEff));
 
@@ -21428,7 +21429,8 @@ function applicaEffettiB4(s) {
   if (nonBlocco < 1) D.bloccoProb = Math.min(C.bloccoProb, 1 - (1 - D.bloccoProb) * nonBlocco);
   if (dmgMult !== 1) statoRun.dmg = Math.max(1.0, statoRun.dmg * dmgMult);
   if (cadenzaMult !== 1) {
-    statoRun.colpiAlSec = Math.max(0.85, Math.min(7.5, statoRun.colpiAlSec * cadenzaMult));
+    statoRun.colpiAlSec = Math.max(0.5, Math.min(7.5, // e3: stesso pavimento di 20-stato.js
+      statoRun.colpiAlSec * cadenzaMult));
     statoRun.cooldownMax = Math.max(7, Math.round(60 / statoRun.colpiAlSec));
   }
   if (speedUp) statoRun.speed = 2.0 * Math.max(0.7, Math.min(2.0, statoRun.speed / 2.0 + speedUp));
@@ -38807,7 +38809,8 @@ function colpoMaglioD2(dx, dy, frac) {
   player.shootAnimTimer = 7;
   let colpiti = 0;
   for (const nem of st.nemici) {
-    if (nem.hp <= 0 || (nem.airZ || 0) > 16) continue;
+    // stessa quota limite di danneggiaNemico: un boss posato a terra (le mani del Burattinaio stanno a 22) si colpisce
+    if (nem.hp <= 0 || (nem.airZ || 0) > (nem.boss ? 25 : 16)) continue;
     if (nelArco(nem.x, nem.y - 6, nem.r || 8)) { danneggiaNemico(nem, dmg, Math.cos(ang), Math.sin(ang)); colpiti++; }
   }
   if (st.ostacoli) {

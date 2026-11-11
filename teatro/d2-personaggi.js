@@ -254,7 +254,8 @@ function colpoMaglioD2(dx, dy, frac) {
   player.shootAnimTimer = 7;
   let colpiti = 0;
   for (const nem of st.nemici) {
-    if (nem.hp <= 0 || (nem.airZ || 0) > 16) continue;
+    // stessa quota limite di danneggiaNemico: un boss posato a terra (le mani del Burattinaio stanno a 22) si colpisce
+    if (nem.hp <= 0 || (nem.airZ || 0) > (nem.boss ? 25 : 16)) continue;
     if (nelArco(nem.x, nem.y - 6, nem.r || 8)) { danneggiaNemico(nem, dmg, Math.cos(ang), Math.sin(ang)); colpiti++; }
   }
   if (st.ostacoli) {
