@@ -856,13 +856,54 @@ function disegnaManoMarionettaPittorica() {
 // ===========================================================================
 // SISTEMA SPRITE TEATRALI 2D (MODEL SHEET APPROVATI)
 // ===========================================================================
+// Versione migliorata degli sprite (tools/migliora-sprite-teatro.py → assets/sprite_teatro_v2/, stessi nomi e
+// stesse griglie). true = si usa la v2, false = l'originale. Scelte guardando le tavole di
+// production/arte/prima-dopo-sprite/ (spenti: teste-mira, non disegnato; lucciola e regina-vespa, da decidere
+// all'autore). Spegnere tutto per una prova: window.__spriteV2 = false prima del caricamento.
+// tools/teatro-release.js legge questa tabella (fra i segnaposto) e incorpora la versione scelta.
+// <sprite-v2>
+const SPRITE_V2 = Object.freeze({
+  ferruccio: true, agnese: true, taddeo: true, ombra: true, 'teste-mira': false,
+  gatto: true, 'vespa-cieca': true, maschera: true, 'bomba-ferma': true, guardia: true, statua: true, predone: true,
+  lucciola: false, burattino: true,
+  'regina-vespa': false, capitano: true, 'donna-luciana': true, 'custode-marmo': true, spezzafili: true,
+  accendilumi: true, 'cigno-latta': true, 'giostra-lucciole': true, 'tessitrice-pietra': true,
+  'boss/gatto_fermo': true, 'boss/gatto_accucciato': true, 'boss/gatto_salto': true, 'boss/gatto_cammina': true,
+  'boss/capitano_guardia_fermo': true, 'boss/colosso_statua_fermo': true, 'boss/colosso_statua_aperto': true,
+  'boss/maestro_fucina_fermo': true, 'boss/maestro_fucina_attacco': true, 'boss/donna_luciana_ferma': true,
+  'boss/regina_vespa_ferma': true,
+});
+// </sprite-v2>
+
+/**
+ * Avvia il caricamento dello sprite `nome` (senza estensione, es. 'gatto' o 'boss/gatto_fermo') in `img`.
+ * Ordine: risorsa incorporata dalla release (già la versione scelta) → v2 se accesa in SPRITE_V2 → originale.
+ * Se la v2 manca o non si carica, ripiega da sola sull'originale.
+ * @param {HTMLImageElement} img
+ * @param {string} nome
+ */
+function caricaSpriteTeatro(img, nome) {
+  const orig = `assets/sprite_teatro/${nome}.png`;
+  const incorporata = window.__risorseTeatro && window.__risorseTeatro[orig];
+  if (incorporata) { img.src = incorporata; return; }
+  if (SPRITE_V2[nome] && window.__spriteV2 !== false) {
+    const ripiego = () => {
+      img.removeEventListener('error', ripiego);
+      console.warn('[sprite v2] manca o non si carica, uso l\'originale:', nome);
+      img.src = orig;
+    };
+    img.addEventListener('error', ripiego);
+    img.src = `assets/sprite_teatro_v2/${nome}.png`;
+  } else {
+    img.src = orig;
+  }
+}
+
 const SPRITE_TEATRO_CACHE = {};
 function getSpriteTeatro(nome) {
   if (!SPRITE_TEATRO_CACHE[nome]) {
     const im = new Image();
-    const uri = (window.__risorseTeatro && window.__risorseTeatro[`assets/sprite_teatro/${nome}.png`])
-      || `assets/sprite_teatro/${nome}.png`;
-    im.src = uri;
+    caricaSpriteTeatro(im, nome);
     SPRITE_TEATRO_CACHE[nome] = im;
   }
   const img = SPRITE_TEATRO_CACHE[nome];

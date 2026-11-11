@@ -27,6 +27,7 @@ const RADICE = path.resolve(__dirname, '..');
 const SORGENTE = path.join(RADICE, 'gioco', 'teatro_marionette.html');
 const CARTELLA_GIOCO = path.join(RADICE, 'gioco');
 const SPRITE = path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro');
+const SPRITE_V2_DIR = path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro_v2');
 const iUscita = process.argv.indexOf('--uscita');
 const USCITA = iUscita > 0 && process.argv[iUscita + 1]
   ? path.resolve(process.argv[iUscita + 1])
@@ -49,6 +50,18 @@ function immaginiDiScenaUsate(jsB9) {
   vm.runInNewContext(m[1].replace('const IMMAGINI_B9 =', 'IMMAGINI_B9 ='), ambiente);
   const T = ambiente.IMMAGINI_B9 || {};
   return Object.keys(T).filter((nome) => T[nome] && T[nome].usa === true).sort();
+}
+
+/**
+ * La tabella SPRITE_V2 di teatro/10-sprite.js (fra i segnaposto <sprite-v2>): nome → true/false.
+ * @returns {Object<string, boolean>} vuota se manca (allora si incorporano gli originali)
+ */
+function tabellaSpriteV2(js) {
+  const m = /\/\/ <sprite-v2>([\s\S]*?)\/\/ <\/sprite-v2>/.exec(js);
+  if (!m) return {};
+  const ambiente = { Object };
+  vm.runInNewContext(m[1].replace('const SPRITE_V2 =', 'SPRITE_V2 ='), ambiente);
+  return ambiente.SPRITE_V2 || {};
 }
 
 function main() {
@@ -80,11 +93,16 @@ function main() {
     if (fs.existsSync(path.join(SPRITE, 'scena', `${nome}.png`))) daIncorporare.push(`scena/${nome}.png`);
     else scenaMancanti.push(nome);
   }
+  const spriteV2 = tabellaSpriteV2(jsSprite);
+  let usatiV2 = 0;
   const risorse = {};
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'teatro-release-'));
   let alleggeriti = 0;
   for (const f of daIncorporare) {
-    const origine = path.join(SPRITE, f);
+    // versione migliorata se accesa in SPRITE_V2 (10-sprite.js) e presente in sprite_teatro_v2/
+    const v2 = path.join(SPRITE_V2_DIR, f);
+    const origine = spriteV2[f.slice(0, -4)] === true && fs.existsSync(v2) ? v2 : path.join(SPRITE, f);
+    if (origine === v2) usatiV2++;
     const leggero = path.join(tmp, f.replace(/\//g, '_'));
     let dati = fs.readFileSync(origine);
     const r = spawnSync('python3', [path.join(__dirname, 'ottimizza-png-release.py'), origine, leggero], { stdio: 'ignore' });
@@ -122,7 +140,7 @@ function main() {
   console.log(`immagini di scena incorporate: ${scena.length - scenaMancanti.length}${scenaMancanti.length ? ` (mancano i file: ${scenaMancanti.join(', ')})` : ''}`);
   console.log(`script incorporati: ${incorporati.join(', ') || 'nessuno'}`);
   if (mancanti.length) console.log(`script non trovati (lasciati come riferimento esterno): ${mancanti.join(', ')}`);
-  console.log(`immagini incorporate: ${Object.keys(risorse).length} (alleggerite: ${alleggeriti})`);
+  console.log(`immagini incorporate: ${Object.keys(risorse).length} (alleggerite: ${alleggeriti}, versione migliorata v2: ${usatiV2})`);
 }
 
 main();
