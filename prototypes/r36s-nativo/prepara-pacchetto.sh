@@ -97,7 +97,7 @@ done < <(find "$P" -type f \( -name '*.node' -o -name 'node' -o -name '*.so*' \)
 echo "binari con problemi: $guasti" | tee -a "$V"
 
 echo "== 5. zip"
-ZIP="$DEST/ferruccio-r36s-v2.zip"
+ZIP="$DEST/ferruccio-r36s-v3.zip"
 python3 - "$P" "$ZIP" <<'PY'
 import os, sys, zipfile
 radice, dest = sys.argv[1], sys.argv[2]

@@ -27,14 +27,14 @@ const dirDati = path.resolve(arg.dati || path.join(QUI, '..', 'dati'));
 const dirUscita = CONSOLE ? dirDati : path.resolve(arg.uscita || path.join(QUI, '..', 'uscita'));
 fs.mkdirSync(dirUscita, { recursive: true });
 const N = Number(arg.fotogrammi || 600);
-const { LIVELLI } = require('./livelli');
+const { LIVELLI, SCALINI } = require('./livelli');
 const { macchina, frequenzaMHz } = require('./macchina');
 if (CONSOLE) {
   const f = path.join(dirDati, 'misura.log');
   try { fs.writeFileSync(f, ''); } catch (_) { /* sola lettura */ }
   const scrivi = (...a) => { const r = a.map((v) => (v && v.stack) || String(v)).join(' '); try { fs.appendFileSync(f, r + '\n'); } catch (_) { /* niente */ } if (process.stdout.isTTY) process.stdout.write(r + '\n'); };
   console.log = scrivi; console.error = scrivi; console.warn = scrivi;
-  setTimeout(() => { console.log('tempo massimo (12 minuti) superato: la misura si ferma qui'); process.exit(0); }, 12 * 60000).unref();
+  setTimeout(() => { console.log('tempo massimo (5 minuti) superato: la misura si ferma qui'); process.exit(0); }, 5 * 60000).unref();
   process.on('uncaughtException', (err) => { console.log('ERRORE: ' + (err && err.stack || err)); });
 }
 
@@ -48,6 +48,7 @@ const { creaFintoBrowser } = require('./finto-browser');
 const tAvvio = ms();
 const browser = creaFintoBrowser({
   fileHtml, fileMemoria, log, orologio, filtroNero: !arg['senza-filtro-nero'],
+  immaginiRidotte: !arg['senza-ridotte'], memoriaScritte: Boolean(arg['con-scritte']), memoriaVelo: !arg['senza-velo'], scala: CONSOLE ? 0.75 : 1,
   dirFont: [path.join(QUI, 'font'), path.join(QUI, '..', 'node_modules', 'dejavu-fonts-ttf', 'ttf'), '/usr/share/fonts/truetype/dejavu'].find((d) => fs.existsSync(d)),
 });
 browser.carica();
@@ -57,6 +58,8 @@ const SCALA_VIAGGIO = CONSOLE ? 0.5 : 1;
 if (SCALA_VIAGGIO !== 1) browser.impostaScala(SCALA_VIAGGIO);
 
 const cedi = () => new Promise((r) => setImmediate(r));
+/** Aspetta che le immagini chieste finora siano pronte (si decodificano e si riducono in sottofondo). */
+async function attendiImmagini() { const fine = Date.now() + 20000; while (browser.immaginiInAttesa() > 0 && Date.now() < fine) await new Promise((r) => setTimeout(r, 15)); }
 const PASSO = 1000 / 60;
 // Sulla console, per arrivare alle scene, si disegna un fotogramma ogni 5 passi di logica (il massimo che il
 // gioco fa in un fotogramma) e lo si mostra: si vede il gioco che cammina da solo e non si spreca tempo.
@@ -83,21 +86,24 @@ function coloriDiversi() {
 }
 
 async function arrivaAlPiano() {
+  await attendiImmagini();
   await passo(90);
+  await attendiImmagini(); await passo(6);
   tappa('menu di selezione', T().fase === 'menu_selezione' && coloriDiversi() > 50, `fase ${T().fase}, ${coloriDiversi()} colori`);
   foto('01-menu');
   if (arg.misura) prima.push(await misura('menu (tre burattini in ombra, effetti accesi)', 90, PASSO * 2, null));
   if (arg.ablazione) ablazioni.push(await ablazione('menu', null, 60));
-  if (arg.livelli) await giroLivelli('menu', 'menu', null);
+  if (arg.livelli) await giroLivelli('menu', 'menu', null, CONSOLE);
   await premi('Space');
   await passo(40);
   for (let i = 0; i < 80 && T().t4qa && T().t4qa.dialogo; i++) await premi(T().t4qa.dialogo.scelta ? 'Digit1' : 'Space');
   await passo(90);
+  await attendiImmagini(); await passo(6);
   tappa('hub di Piazza Dante', T().fase === 'hub' && coloriDiversi() > 50, `fase ${T().fase}, ${coloriDiversi()} colori`);
   foto('02-hub');
   if (arg.misura) prima.push(await misura('hub di Piazza Dante (effetti accesi)', 90, PASSO * 2, null));
   if (arg.ablazione) ablazioni.push(await ablazione('hub di Piazza Dante', null, 60));
-  if (arg.livelli) await giroLivelli('hub di Piazza Dante', 'hub', null);
+  if (arg.livelli) await giroLivelli('hub di Piazza Dante', 'hub', null, CONSOLE);
   for (let giro = 0; giro < 6 && T().fase === 'hub'; giro++) {
     for (let i = 0; i < 80 && T().t4qa.dialogo; i++) await premi(T().t4qa.dialogo.scelta ? 'Digit1' : 'Space');
     const g = T().t4qa.ingresso; const P = T().interni.player;
@@ -277,28 +283,54 @@ function fotoIngrandita(nome, liscio) {
   g.drawImage(browser.canvas, 0, 0, 640, 360);
   const f = path.join(dirUscita, nome + '.png'); fs.writeFileSync(f, c.toBuffer('image/png')); return f;
 }
-async function giroLivelli(scena, chiave, azione) {
+async function giroLivelli(scena, chiave, azione, soloMedio) {
   const O = browser.leggi('OPZIONI'); const com = { ombre: O.ombre, grana: O.grana, vignetta: O.vignetta, pubblico: O.pubblico };
   O.ombre = false; O.grana = false; O.vignetta = false; O.pubblico = false; // come parte sulla console
   installaAblazione();
-  const n = CONSOLE ? 30 : Math.min(N, 150); const risc = CONSOLE ? 8 : 40; const q = CONSOLE ? 6 : 15;
-  for (const nome of ['bello', 'medio', 'veloce']) {
-    const L = LIVELLI[nome]; const dt = 1000 / L.fps;
+  const n = CONSOLE ? 20 : Math.min(N, 150); const risc = CONSOLE ? 6 : 40; const q = CONSOLE ? 4 : 15;
+  const giro = soloMedio ? [['medio', 4]] : [['bello', 0], ['medio', 4], ['400×225', 6], ['veloce', 8]];
+  for (const [nome, indice] of giro) {
+    const L = SCALINI[indice]; const dt = 1000 / 30;
     browser.impostaScala(L.scala); browser.impostaTagli(L.tagli);
     for (let i = 0; i < risc; i++) { if (azione) azione(i); orologio.t += dt; browser.fotogramma(orologio.t); copia(); if (i % 10 === 9) await cedi(); }
+    await attendiImmagini();
     AB.conti = {}; AB.grandi = null;
     for (let i = 0; i < q; i++) { if (azione) azione(i); orologio.t += dt; browser.fotogramma(orologio.t); copia(); }
     const conti = Object.values(AB.conti); AB.conti = null;
     const mpx = conti.reduce((a, v) => a + v.px, 0) / q / 1e6; const disegni = conti.reduce((a, v) => a + v.n, 0) / q;
     zittaMisura = true; let r; try { r = await misura('', n, dt, azione, 0); } finally { zittaMisura = false; }
-    const riga = { scena, livello: nome, tela: `${browser.canvas.width}×${browser.canvas.height}`, fpsVoluti: L.fps, totale: r.totaleMedia, p95: r.totaleP95, logica: r.logicaMedia, disegno: r.giocoMedia - r.logicaMedia, resa: r.resaMedia, schermo: r.schermoMedia, mpx, disegni, mhz: frequenzaMHz() };
+    const riga = { scena, chiave, livello: nome, scalino: indice, tela: `${browser.canvas.width}×${browser.canvas.height}`, totale: r.totaleMedia, p95: r.totaleP95, logica: r.logicaMedia, disegno: r.giocoMedia - r.logicaMedia, resa: r.resaMedia, schermo: r.schermoMedia, mpx, disegni, mhz: frequenzaMHz() };
     risultatiLivelli.push(riga);
-    console.log(`${scena.padEnd(36)} ${nome.padEnd(7)} ${riga.tela.padEnd(8)} ${riga.totale.toFixed(1).padStart(7)} ms (95° ${riga.p95.toFixed(0)}) = logica ${riga.logica.toFixed(1)} + disegno ${riga.disegno.toFixed(1)} + resa ${riga.resa.toFixed(1)} + schermo ${riga.schermo.toFixed(1)} → ${Math.min(L.fps, 1000 / riga.totale).toFixed(1)} fps su ${L.fps} voluti | ${mpx.toFixed(2)} Mpx toccati in ${disegni.toFixed(0)} disegni${riga.mhz ? ' | CPU ' + riga.mhz + ' MHz' : ''}`);
-    fotoIngrandita(`livello-${chiave}-${nome}`, L.liscio);
+    console.log(`${scena.padEnd(36)} ${nome.padEnd(8)} ${riga.tela.padEnd(8)} ${riga.totale.toFixed(1).padStart(7)} ms (95° ${riga.p95.toFixed(0)}) = logica ${riga.logica.toFixed(1)} + disegno ${riga.disegno.toFixed(1)} + resa ${riga.resa.toFixed(1)} + schermo ${riga.schermo.toFixed(1)} → ${(1000 / riga.totale).toFixed(1)} fps possibili | ${mpx.toFixed(2)} Mpx toccati in ${disegni.toFixed(0)} disegni${riga.mhz ? ' | CPU ' + riga.mhz + ' MHz' : ''}`);
+    fotoIngrandita(`livello-${chiave}-${nome.replace(/[^a-z0-9]/gi, '')}`, true);
   }
   browser.impostaScala(SCALA_VIAGGIO); browser.impostaTagli({}); Object.assign(O, com);
   for (let i = 0; i < 4; i++) { orologio.t += PASSO; browser.fotogramma(orologio.t); copia(); }
 }
+
+/** Il riassunto in poche righe, da leggere per primo (sulla console va in testa a misura.log). */
+function riassunto() {
+  const di = (chiave, livello) => risultatiLivelli.find((r) => r.chiave === chiave && r.livello === livello);
+  const fps = (r) => (r ? (1000 / r.totale).toFixed(0) : '?');
+  const righe = ['RIASSUNTO — fotogrammi al secondo POSSIBILI su questa macchina (senza tetto), palco ridotto e ingrandito dallo schermo'];
+  for (const [chiave, nome] of [['pesante', 'stanza piena (12 nemici)'], ['stanza', 'stanza normale'], ['ripulita', 'stanza ripulita']]) {
+    if (!di(chiave, 'medio')) continue;
+    righe.push(`  ${nome.padEnd(26)} bello (640×360) ${fps(di(chiave, 'bello')).padStart(3)} · medio (480×270) ${fps(di(chiave, 'medio')).padStart(3)} · 400×225 ${fps(di(chiave, '400×225')).padStart(3)} · veloce (320×180) ${fps(di(chiave, 'veloce')).padStart(3)}`);
+  }
+  if (di('menu', 'medio')) righe.push(`  menu ${fps(di('menu', 'medio'))} · piazza ${fps(di('hub', 'medio'))} (al livello medio)`);
+  const m = di('pesante', 'medio') || di('stanza', 'medio');
+  if (m) {
+    const voci = [['disegno (il JavaScript del gioco che prepara i disegni)', m.disegno], ['resa dei pixel (Skia)', m.resa], ['copia a schermo (SDL)', m.schermo], ['logica', m.logica]].sort((a, b) => b[1] - a[1]);
+    righe.push(`  collo di bottiglia al livello medio: ${voci.map((v) => `${v[0]} ${Math.round(v[1] / m.totale * 100)}%`).join(' · ')}`);
+  }
+  if (provaScritte) righe.push(`  scritte in memoria (stanza piena, medio): ${provaScritte.senza.toFixed(1)} ms senza, ${provaScritte.con.toFixed(1)} ms con → ${provaScritte.con < provaScritte.senza * 0.97 ? 'conviene accenderle' : 'non conviene'}`);
+  const mg = browser.memoriaGrafica();
+  righe.push(`  memoria: ${(process.memoryUsage().rss / 1048576).toFixed(0)} MB in tutto · immagini tenute in ${mg.immaginiMB.toFixed(0)} MB (intere sarebbero ${mg.immaginiIntereMB.toFixed(0)} MB)`);
+  righe.push(`  ${macchina()}`);
+  return righe;
+}
+let provaScritte = null;
+const tagliUnoPerUno = [];
 
 (async () => {
   console.log(`\n== PROVA: ${path.relative(process.cwd(), fileHtml)} · node ${process.version} ${process.arch} · caricamento ${msCaricamento.toFixed(0)} ms ==`);
@@ -307,6 +339,7 @@ async function giroLivelli(scena, chiave, azione) {
   await arrivaAlPiano();
   const st = stanzaDiCombattimento();
   await passo(150);
+  await attendiImmagini(); await passo(6);
   const R = T().interni.statoRun;
   tappa('stanza di combattimento del piano 1', Boolean(st) && R.stanzaCorrente === st && st.nemici.length > 0 && coloriDiversi() > 50, st ? `${st.nemici.length} nemici, ${coloriDiversi()} colori` : 'nessuna stanza normale');
   foto('04-piano1-stanza-nemici');
@@ -334,14 +367,37 @@ async function giroLivelli(scena, chiave, azione) {
     console.log(`\n== LIVELLI A CONFRONTO (effetti del gioco spenti come sulla console; copia = ${nomeCopia}) ==`);
     await giroLivelli('stanza normale', 'stanza', fermo);
     const quantiL = riempi(12);
-    await giroLivelli(`stanza pesante (${quantiL} nemici, raffiche)`, 'pesante', battaglia);
-    if (CONSOLE) {
-      accendi(false); browser.impostaScala(LIVELLI.medio.scala); browser.impostaTagli(LIVELLI.medio.tagli);
-      await ablazione('stanza pesante al livello medio', battaglia, Number(arg['fot-ablazione'] || 20));
+    await giroLivelli(`stanza piena (${quantiL} nemici, raffiche)`, 'pesante', battaglia);
+    // le scritte in memoria rendono su QUESTA macchina? (stanza piena, livello medio)
+    {
+      accendi(false); browser.impostaScala(SCALINI[4].scala); browser.impostaTagli(SCALINI[4].tagli);
+      const una = async (acceso) => { browser.stato.memoriaScritte = acceso; zittaMisura = true; try { return (await misura('', CONSOLE ? 24 : 150, 1000 / 30, battaglia, CONSOLE ? 6 : 30)).totaleMedia; } finally { zittaMisura = false; } };
+      const senza1 = await una(false); const con1 = await una(true); const senza2 = await una(false); const con2 = await una(true);
+      browser.stato.memoriaScritte = false;
+      provaScritte = { senza: (senza1 + senza2) / 2, con: (con1 + con2) / 2 };
+      console.log(`scritte in memoria (stanza piena, medio): senza ${provaScritte.senza.toFixed(2)} ms · con ${provaScritte.con.toFixed(2)} ms`);
+      // i tagli uno per uno (solo sul PC): quanto vale ciascuno al livello medio nella stanza piena
+      if (!CONSOLE) {
+        browser.impostaScala(SCALINI[4].scala);
+        const giri = [['livello medio com\'è', {}], ['senza i fili delle marionette', { fili: true }], ['senza pioggia e cerchi (atmosfera)', { atmosfera: true }], ['senza schegge e crollo', { particelle: true, crollo: true }], ['senza scenografia che cala', { scenografia: true }], ['senza tutti e quattro', { fili: true, atmosfera: true, particelle: true, crollo: true, scenografia: true }]];
+        for (const [nome, t] of giri) {
+          browser.impostaTagli(Object.assign({}, SCALINI[4].tagli, t));
+          zittaMisura = true; let r; try { r = await misura('', 200, 1000 / 30, battaglia, 30); } finally { zittaMisura = false; }
+          tagliUnoPerUno.push({ nome, ms: r.totaleMedia });
+          console.log(`   ${nome.padEnd(36)} ${r.totaleMedia.toFixed(2)} ms`);
+        }
+      }
       browser.impostaScala(SCALA_VIAGGIO); browser.impostaTagli({});
     }
     rilascia();
-    if (!CONSOLE) fs.writeFileSync(path.join(dirUscita, 'livelli.json'), JSON.stringify(risultatiLivelli, null, 1));
+    // stanza ripulita: i nemici non ci sono più (è il caso «ci sono già passato»)
+    { const st2 = R.stanzaCorrente; for (const nm of st2.nemici) nm.hp = 0; R.proiettiliNemici.length = 0; try { browser.leggi('verificaStanzaPulita')(); } catch (_) { /* si misura lo stesso */ } await passo(90); }
+    await giroLivelli('stanza ripulita (nessun nemico)', 'ripulita', null);
+    if (arg.ablazione && CONSOLE) { accendi(false); browser.impostaScala(SCALINI[4].scala); browser.impostaTagli(SCALINI[4].tagli); await ablazione('stanza al livello medio', null, Number(arg['fot-ablazione'] || 20)); browser.impostaScala(SCALA_VIAGGIO); browser.impostaTagli({}); }
+    const testa = riassunto();
+    console.log('\n' + testa.join('\n'));
+    if (CONSOLE) { try { const f = path.join(dirDati, 'misura.log'); const corpo = fs.readFileSync(f, 'utf8'); fs.writeFileSync(f, testa.join('\n') + '\n\n--- dettaglio ---\n' + corpo); } catch (_) { /* resta in coda */ } }
+    else fs.writeFileSync(path.join(dirUscita, 'livelli.json'), JSON.stringify({ livelli: risultatiLivelli, scritte: provaScritte, tagli: tagliUnoPerUno }, null, 1));
   }
   let risultati = null;
   if (arg.misura) {
@@ -388,7 +444,7 @@ async function giroLivelli(scena, chiave, azione) {
     const mem = process.memoryUsage(); const picco = process.resourceUsage().maxRSS / 1024;
     console.log(`\nmemoria: RSS ${(mem.rss / 1048576).toFixed(0)} MB (picco ${picco.toFixed(0)} MB) · heap JS ${(mem.heapUsed / 1048576).toFixed(0)} MB · esterna ${(mem.external / 1048576).toFixed(0)} MB`);
     const mg = browser.memoriaGrafica();
-    console.log(`memoria grafica del gioco: ${mg.immagini} immagini decodificate = ${mg.immaginiMB.toFixed(0)} MB · ${mg.tele} tele fuori schermo = ${mg.teleMB.toFixed(0)} MB`);
+    console.log(`memoria grafica del gioco: ${mg.immagini} immagini tenute in ${mg.immaginiMB.toFixed(1)} MB (intere sarebbero ${mg.immaginiIntereMB.toFixed(0)} MB) · ${mg.tele} tele fuori schermo = ${mg.teleMB.toFixed(0)} MB · ${JSON.stringify(mg.acceleratore)}`);
     const cpu = os.cpus()[0] || {};
     fs.writeFileSync(path.join(dirUscita, 'misura.json'), JSON.stringify({ quando: new Date().toISOString(), node: process.version, arch: process.arch, cpu: cpu.model, gioco: path.basename(fileHtml), copia: nomeCopia, caricamentoMs: msCaricamento, rssMB: mem.rss / 1048576, piccoRssMB: picco, heapMB: mem.heapUsed / 1048576, memoriaGrafica: mg, risultati }, null, 1));
     console.log('scritto ' + path.join(dirUscita, 'misura.json'));
