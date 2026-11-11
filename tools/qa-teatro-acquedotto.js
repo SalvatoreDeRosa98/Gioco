@@ -412,6 +412,22 @@ const foto = (n) => `${prefisso}-${n}.png`;
     await p.waitForTimeout(160);
     await primoPiano(`nemico-${tipo}`, pos.x, pos.y, 200, 140);
     await p.evaluate(() => { ticksCongelati = 0; });
+    // cade sotto i colpi veri (danneggiaNemico: macchie, crollo in pezzi di b2, premi del pubblico) senza errori
+    const morte = await p.evaluate(() => {
+      const I = window.__teatro.interni; const R = I.statoRun; const st = R.stanzaCorrente; const n = st.nemici[0];
+      const spinta = { x: n.x, y: n.y };
+      danneggiaNemico(n, 1, 1, 0);
+      for (let i = 0; i < 6; i++) { ticksCongelati = 0; passoLogico(); }
+      spinta.dopo = n.x - spinta.x;
+      danneggiaNemico(n, n.hp + 20, 1, 0);
+      for (let i = 0; i < 40; i++) { ticksCongelati = 0; passoLogico(); }
+      const out = { hp: n.hp, pulita: st.pulita, spinta: spinta.dopo, registro: I.runInCorsoA7 && I.runInCorsoA7() ? I.runInCorsoA7().nemiciUccisi : null };
+      st.pulita = false; // la stanza serve ancora alle prove che seguono
+      return out;
+    });
+    await p.waitForTimeout(350);
+    ok(`nemico:${tipo}:cade-senza-errori`, morte.hp <= 0 && morte.pulita && errori.length === 0, morte);
+    if (tipo === 'lavandaia_tufo') ok('nemico:lavandaia_tufo:statua-che-non-si-sposta', morte.spinta === 0, morte.spinta);
   }
   if (T.nemici.lavandaia_tufo) {
     const z = await p.evaluate(() => {
