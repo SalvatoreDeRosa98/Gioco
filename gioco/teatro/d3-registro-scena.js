@@ -139,6 +139,7 @@ const TESTI_D3 = Object.freeze({
     : q.personaggio ? `Batti ${nomeBossD3(q.boss)} con ${nomePersonaggioD3(q.personaggio)}.`
     : `Batti ${nomeBossD3(q.boss)}.`,
   griglia: 'Segni di completamento: un segno per ogni primo attore battuto con ogni burattino.',
+  contoSegni: (n, tot) => `${n} ${n === 1 ? 'segno' : 'segni'} su ${tot}.`,
   nuovo: (nome) => `Nuovo nell'attrezzeria: ${nome}`,
   calce: 'Le cronache delle notti stanno nel Registro delle notti ([L] dal menu di pausa).',
   comandi: '[←][→] sfoglia · [↑] sezioni · [ESC] chiudi',
@@ -560,7 +561,10 @@ function disegnaLibroD3() {
   testoD3('✕', RETT_CHIUDI_D3.x + 10, RETT_CHIUDI_D3.y + 13, { size: 11, color: K.rosso, align: 'center', weight: 'bold' });
   // dorso
   ctx.fillStyle = 'rgba(60, 35, 15, 0.35)';
-  ctx.fillRect(B.x + B.w / 2 - 3, B.y + 28, 6, B.h - 30);
+  ctx.fillRect(B.x + B.w / 2 - 3, B.y + 28, 6, 262 - B.y - 32);
+  // striscia di dettaglio in calce: carta piena, senza piega (le righe lunghe non cadono nel dorso)
+  ctx.fillStyle = K.fondo;
+  ctx.fillRect(B.x + 6, 264, B.w - 12, B.y + B.h - 266);
 
   if (ap.tipo === 'griglia') disegnaGrigliaD3();
   else ap.carte.forEach((c, i) => disegnaCartaD3(c, rettCartaD3(i), L.fuoco === 'carte' && i === L.sel));
@@ -636,12 +640,13 @@ function disegnaGrigliaD3() {
   const boss = (typeof SEGNI_A6 !== 'undefined' ? SEGNI_A6 : []).map((sg) => sg.boss);
   const pg = (CONFIG_A6 && CONFIG_A6.scheda && CONFIG_A6.scheda.ids) || ['ferruccio', 'agnese', 'taddeo', 'ombra'];
   const x0 = 140, y0 = 92, passoX = Math.min(42, (560 - x0) / Math.max(1, boss.length)), passoY = 30;
-  testoD3(TESTI_D3.griglia, W / 2, 66, { size: 8, color: K.inchiostro, align: 'center', style: 'italic' });
+  const segni = typeof SEGNI_A6 !== 'undefined' ? SEGNI_A6 : [];
   boss.forEach((id, j) => {
     ctx.save();
-    ctx.translate(x0 + j * passoX + passoX / 2, y0 - 6);
-    ctx.rotate(-0.6);
-    testoD3(nomeBossD3(id).replace(/^(Il|La|Lo|L') ?/, '').slice(0, 14), 0, 0, { size: 6.5, color: K.tenue });
+    ctx.translate(x0 + j * passoX + passoX / 2 - 2, y0 - 4);
+    ctx.rotate(-0.55);
+    const corto = (segni[j] && segni[j].nome) || nomeBossD3(id);
+    testoD3(corto.length > 20 ? corto.slice(0, 19) + '…' : corto, 0, 0, { size: 6.5, color: K.tenue });
     ctx.restore();
   });
   pg.forEach((pid, i) => {
@@ -674,7 +679,8 @@ function disegnaDettaglioD3(ap) {
   } else if (ap.tipo === 'griglia') {
     const s6 = stato6D3();
     const n = s6 ? Object.values(s6.segni).reduce((acc, v) => acc + (Array.isArray(v) ? v.length : 0), 0) : 0;
-    righe = [`${n} segni.`];
+    const tot = ((typeof SEGNI_A6 !== 'undefined' ? SEGNI_A6.length : 0) * ((CONFIG_A6 && CONFIG_A6.scheda && CONFIG_A6.scheda.ids.length) || 4));
+    righe = [TESTI_D3.griglia, TESTI_D3.contoSegni(n, tot)];
   } else {
     const c = ap.carte[L.sel];
     if (!c) return;
@@ -818,9 +824,9 @@ danneggiaNemico = function (nem, ...resto) {
 
 const subisciColpoGiocatoreBaseD3 = subisciColpoGiocatore;
 subisciColpoGiocatore = function (...args) {
-  const prima = player.hp;
+  const prima = player.invuln || 0;
   const r = subisciColpoGiocatoreBaseD3.apply(this, args);
-  if (prima === undefined || player.hp !== prima) d3.colpitoInStanza = true;
+  if (prima <= 0 && (player.invuln || 0) > 0) d3.colpitoInStanza = true; // colpo arrivato (anche se uno scudo l'ha preso)
   return r;
 };
 
