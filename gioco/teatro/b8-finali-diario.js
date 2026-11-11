@@ -499,7 +499,7 @@ const DIARIO_B8 = Object.freeze({
   }),
   speciali: Object.freeze({
     sacrificio: ['Ho lasciato sangue sul ceppo. Il Teatro accetta tutto.'],
-    maledetta: ['Sono passato dai Rovi. Ogni spina ricorda qualcosa.'],
+    maledetta: ['Sono passato dai Camerini, per la porta di servizio. Il chiodo si è tenuto un filo; gli specchi, la mia faccia.'], // (d4) erano i Rovi
     bisca: ['Alla Bisca ho giocato al lotto. La smorfia dà i numeri, non le ragioni.'],
     sfida: ['Ho accettato una Sfida. Il pubblico di ombre non applaude, ma guarda.'],
   }),
