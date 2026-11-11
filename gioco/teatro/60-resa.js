@@ -1043,7 +1043,8 @@ function disegnaMenuSelezionePersonaggio(tick) {
     });
 
     // Statistiche
-    const hpHearts = p.hpHalf === 8 ? '❤️❤️❤️❤️' : p.hpHalf === 6 ? '❤️❤️❤️' : p.hpHalf === 4 ? '❤️❤️' : '❤️½';
+    const schedaD2v = typeof schedaD2 === 'function' ? schedaD2(pId) : {}; // (d2) teatro/d2-personaggi.js
+    const hpHearts = schedaD2v.vita ? schedaD2v.vita : p.hpHalf === 8 ? '❤️❤️❤️❤️' : p.hpHalf === 6 ? '❤️❤️❤️' : p.hpHalf === 4 ? '❤️❤️' : '❤️½';
     drawTextFit(`Vita: ${hpHearts}`, pedX, cardY + 126, cardW - 12, {
       size: 7.5, color: '#ef4444',
     });
@@ -1058,10 +1059,11 @@ function disegnaMenuSelezionePersonaggio(tick) {
     });
 
     // Oggetto / Potere Iniziale
-    const donoNome = pId === 'agnese' ? '👓 Lente 20/20' : pId === 'taddeo' ? '🗡 Spada Gaetano' : pId === 'ombra' ? '🩸 Anello Cremisi' : '✨ Libero dai Fili';
+    const donoNome = schedaD2v.dono ? schedaD2v.dono : pId === 'agnese' ? '👓 Lente 20/20' : pId === 'taddeo' ? '🗡 Spada Gaetano' : pId === 'ombra' ? '🩸 Anello Cremisi' : '✨ Libero dai Fili';
     drawTextFit(`Dono: ${donoNome}`, pedX, cardY + 175, cardW - 10, {
       size: 7.5, color: '#4ade80',
     });
+    if (schedaD2v.stile) drawTextFit(schedaD2v.stile, pedX, cardY + 116.5, cardW - 10, { size: 6, color: '#e9d5b7', weight: '' }); // (d2)
 
     // Indicatore di Selezione
     if (isSelected) {

@@ -39,6 +39,7 @@ const COMANDI_B3 = Object.freeze({
     { id: 'consumabile', nome: 'Consumabile', canonico: 'KeyF' },
     { id: 'pausa', nome: 'Pausa', canonico: 'Escape' },
     { id: 'diario', nome: 'Diario degli oggetti', canonico: 'KeyO' },
+    { id: 'mossa', nome: 'Mossa speciale', canonico: 'ShiftLeft' }, // (d2) piroetta di Agnese: teatro/d2-personaggi.js
   ].map((a) => Object.freeze(a))),
   // Tasti che non si assegnano: Invio conferma sempre nei menu, Esc mette sempre in pausa (ed è solo della Pausa),
   // gli altri appartengono al browser o al sistema.
@@ -70,7 +71,7 @@ const PAD_B3 = Object.freeze({
   bottoni: Object.freeze({ A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, select: 8, start: 9, su: 12, giu: 13, sinistra: 14, destra: 15 }),
   quanti: 17,
   // in scena: bottone → azione (un colpo per pressione)
-  tocchi: Object.freeze({ 4: 'consumabile', 5: 'interagisci', 6: 'attivo', 7: 'interagisci', 8: 'diario', 9: 'pausa' }),
+  tocchi: Object.freeze({ 4: 'consumabile', 5: 'interagisci', 6: 'attivo', 7: 'mossa', 8: 'diario', 9: 'pausa' }), // (d2) RT = mossa
   // in scena: bottone tenuto → sparo in quella direzione (A giù, B destra, X sinistra, Y su: come sono messi sul pad)
   sparo: Object.freeze({ 0: 'sparaGiu', 1: 'sparaDestra', 2: 'sparaSinistra', 3: 'sparaSu' }),
   vibrazione: Object.freeze({ // leggera: [durata ms, motore debole 0..1, motore forte 0..1], moltiplicati per OPZIONI.vibrazione
@@ -80,7 +81,7 @@ const PAD_B3 = Object.freeze({
   simboli: Object.freeze({
     su: 'Levetta S', giu: 'Levetta S', sinistra: 'Levetta S', destra: 'Levetta S',
     sparaSu: 'Levetta D', sparaGiu: 'Levetta D', sparaSinistra: 'Levetta D', sparaDestra: 'Levetta D',
-    attivo: 'LT', interagisci: 'RB', consumabile: 'LB', pausa: 'Start', diario: 'Select',
+    attivo: 'LT', interagisci: 'RB', consumabile: 'LB', pausa: 'Start', diario: 'Select', mossa: 'RT',
   }),
 });
 

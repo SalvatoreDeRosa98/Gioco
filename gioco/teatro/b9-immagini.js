@@ -100,7 +100,7 @@ const IMMAGINI_B9 = Object.freeze({
   'clessidra': { celle: [1, 1], alt: 101, ancora: [0.5, 0.911], dove: 'b7 disegnaClessidraB7 (la sabbia resta a codice)', usa: true },
   // --- D. trasformazioni (b4-trasformazioni.js) ---
   'trasf-re-denari-corona': { celle: [1, 1], alt: 11.6, ancora: [0.5, 0.714], dove: 'b4 parteCoronaB4', usa: false,
-    motivo: 'corona d\'ebano scura: su Taddeo e su Pulcinella d\'Ombra si vedono solo i puntini d\'oro; quella a codice ha il contorno d\'oro e si legge su tutti e quattro' },
+    motivo: 'corona d\'ebano scura: su Taddeo e sull\'Ombra Senza Fili si vedono solo i puntini d\'oro; quella a codice ha il contorno d\'oro e si legge su tutti e quattro' },
   'trasf-re-denari-mantello': { celle: [1, 1], alt: 32, ancora: [0.5, 0.15], dove: 'b4 disegnaDietroB4 (dietro le spalle)', usa: false,
     motivo: 'è visto di spalle e simmetrico: dietro un burattino di tre quarti spunta solo come uno straccio rosso fra le gambe; il mantello a codice si apre dietro le spalle e si muove' },
   'trasf-pulcinella-maschera': { celle: [1, 1], alt: 12, ancora: [0.56, 0.4], dove: 'b4 parteMascheraB4', usa: false,
