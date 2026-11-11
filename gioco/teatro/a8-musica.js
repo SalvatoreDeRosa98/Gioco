@@ -150,6 +150,7 @@ const Musica = (() => {
       ({ id: base === 'quiete' ? `quiete-${nomePiano}` : base, base, radice: radice ?? MUSICA.temi[base].radice, combattimento });
     if (sr.fase === 'morte') return tema('morte');
     if (sr.fase !== 'in_gioco') return tema('hub'); // hub, menu di selezione
+    if (typeof temaMusicaD4 === 'function') { const tD4 = temaMusicaD4(sr, tema); if (tD4) return tD4; } // --- d4: la Buca dell'Orchestra ha il suo pezzo (d4-stanze-teatro.js) ---
     const st = sr.stanzaCorrente;
     const tipo = st ? st.tipo : null;
     const vivi = nemiciVivi(st);
@@ -435,6 +436,11 @@ const Musica = (() => {
     temaCorrente,
     eventiTema,
     avvia() { if (timer === null) ciclo(); },
+    /** (d4) Posizione in passi, con la frazione, del tema `base` che si SENTE adesso; null se quel tema non sta suonando. */
+    posizionePassi(base) {
+      if (!S.suona || !ac || !S.tema || S.tema.base !== base) return null;
+      return S.passo - (S.prossimaNota - ac.currentTime + (ac.outputLatency || 0)) / (60 / MUSICA.temi[base].bpm / 3);
+    },
     /** Istantanea per la QA (sola lettura). */
     get stato() {
       return {

@@ -18,11 +18,21 @@
  *      oggetto Forte e molti grani. Probabilità (probTernaD4) e premi in tabella. Una terna per visita.
  *      La smorfia di a3 è ampliata da SMORFIA_D4 (solo significati innocui).
  *
+ *   3. LA BUCA DELL'ORCHESTRA: stanza nuova (tipo `buca`, al massimo una per piano, mai al piano 1 la prima
+ *      notte): la buca sotto il palco con leggii, timpani, contrabbasso e il direttore d'ombra. Entrando parte
+ *      il pezzo (tema `orchestra` aggiunto a MUSICA.temi) e le porte si chiudono: 3-4 ondate entrano A TEMPO,
+ *      una ogni 8 battute, e i nemici suonano una «parte» (STANZE_TEATRO_D4.buca.parti): si muovono sui tempi,
+ *      caricano in levare (la posa) e colpiscono sul battere. L'orologio (avanzaOrologioD4, battitoD4) segue il
+ *      sequencer di a8 quando la musica suona davvero, altrimenti un metronomo interno a tick con lo stesso bpm:
+ *      con l'audio spento non cambia niente. Il tempo si legge dalla bacchetta del direttore e dal metronomo;
+ *      nessun segno a terra. Finite le ondate senza subire danni l'orchestra applaude e il premio è doppio.
+ *
  * Integrazione: si avvolgono funzioni di primo livello (sempre chiamando la base). Di a3 si avvolgono
  * `disegnaRoviA3` (la porta), `disegnaArrediA3` (la stanza), `disegnaMinimappaA3` (il simbolo) e
  * `pagaSangueA3` (il nome della fonte); i banner di a3 passano da `mostraBanner`, dove i testi dei rovi
  * vengono sostituiti (tabella SOSTITUZIONI_D4: chiave = testo di a3). Nessuna riga cambiata in a3 per i Camerini.
- * AGGANCI nei file altrui: a3-stanze-speciali.js › giocaLottoA3 legge il significato da `smorfiaD4` (se c'è).
+ * AGGANCI nei file altrui: a3-stanze-speciali.js › giocaLottoA3 legge il significato da `smorfiaD4` (se c'è);
+ * a8-musica.js › temaCorrente chiede il tema a `temaMusicaD4` (se c'è) ed espone `Musica.posizionePassi(base)`.
  * Verifica: tools/qa-teatro-stanze-teatro.js. Script classico (teatro/LEGGIMI.md), caricato dopo c2-tocco.js.
  */
 
@@ -78,6 +88,67 @@ const STANZE_TEATRO_D4 = Object.freeze({
     tempi: Object.freeze({ chiamataTick: 84, esitoTick: 200 }),
     voce: Object.freeze({ note: Object.freeze([118, 132, 105, 140, 124]), formante: Object.freeze([620, 880, 520]), passoSec: 0.11, durataSec: 0.1, volume: 0.09 }),
     pannello: Object.freeze({ x: 110, y: 54, w: 420, h: 254, margine: 12, colonne: 5, cellaL: 76, cellaA: 38, spazio: 4, grigliaY: 46 }),
+  }),
+
+  buca: Object.freeze({
+    /** Probabilità che la Buca compaia nel piano (oltre l'ultima chiave vale l'ultima). Al massimo una per piano. */
+    probPerPiano: Object.freeze({ 1: 0.3, 2: 0.4, 3: 0.45, 4: 0.45 }),
+    saltaPrimaNottePiano1: true, // mai al piano 1 la prima notte
+    genitori: Object.freeze(['normale']),
+    /**
+     * Dove può stare: sempre una foglia (una porta sola, verso una stanza di combattimento). Con soloVicoloCieco
+     * la cella non toccherebbe nessun'altra stanza (la regola di a3), ma dopo le stanze di a3 il posto così c'è
+     * solo in 4 piani su 10 e la tabella delle probabilità mentirebbe: qui può confinare (senza porta) con altre
+     * stanze, mai con quelle di maiAccantoA.
+     */
+    soloVicoloCieco: false,
+    maiAccantoA: Object.freeze(['boss', 'segreta']),
+    aspetto: Object.freeze({ cornice: '#d4a24a', minimappa: '#5a3d12', velo: 'rgba(10, 6, 12, 0.42)' }),
+    /**
+     * Il pezzo: nome del tema in MUSICA.temi (a8) e tempo. bpm = TEMPI al minuto; una battuta di 6/8 ha 2 tempi
+     * e 6 passi. A 96 bpm: un tempo = 0,625 s, una battuta = 1,25 s, otto battute (una ripresa del tema) = 10 s.
+     * Durata: 2 battute d'attacco + un'ondata ogni 8 battute → l'ultima di 4 entra a 32,5 s; in tutto ~40-55 s.
+     */
+    tema: 'orchestra', bpm: 96, passiPerBattuta: 6,
+    battuteAttacco: 2,           // battute a vuoto prima della prima ondata (il direttore dà l'attacco)
+    battutePerOndata: 8,         // ogni quante battute entra un'ondata
+    anticipa: true,              // a palco vuoto l'ondata dopo entra alla prossima frase invece di aspettare la sua battuta
+    fraseBattute: 2,
+    ondateMin: 3, ondateMax: 4,
+    accordaturaTempi: 2,         // tempi in cui un'ondata appena entrata sta ferma (una battuta)
+    scattoFrazione: 0.45,        // quanta parte del tempo dura lo scatto di un passo
+    posaColpoTick: 10,           // per quanto si vede la posa del colpo
+    /** Premio a concerto finito; senza nessun colpo subito tutto × moltiplicaSenzaDanni (la seconda reliquia è il «bis»). */
+    premio: Object.freeze({ monete: 3, oggetti: 1, ripiegoMonete: 5 }),
+    moltiplicaSenzaDanni: 2,
+    applausoTick: 300,
+    piedistallo: Object.freeze({ x: 320, y: 192 }),
+    direttore: Object.freeze({ x: 320, xConPortaNord: 370, y: 98, r: 9 }),
+    metronomoDx: 40,
+    timpani: Object.freeze({ x: 116, y: 118, r: 21 }),
+    contrabbasso: Object.freeze({ x: 530, y: 150, r: 12 }), // sotto la minimappa, che copre l'angolo in alto a destra
+    filaDiFondoY: 120,           // i leggii più su di qui hanno un orchestrale d'ombra seduto
+    leggii: Object.freeze([[176, 100], [226, 95], [272, 94], [414, 95], [464, 100], [108, 238], [532, 238], [156, 284], [484, 284]]),
+    /**
+     * Le parti degli orchestrali: una mossa per TEMPO (due per battuta), a ciclo; la carica cade in levare e il
+     * colpo sul battere dopo. Le ondate pari sono sfasate di una battuta.
+     *   p passo verso Ferruccio · P balzo · c carica (la POSA: l'attacco si legge da qui) · s colpo mirato ·
+     *   d doppietta · v ventaglio di tre · a stoccata corta · + croce (alternata a ×) · . fermo
+     * passo/balzo: frazione della strada che farebbe in un tempo alla sua velocità; colpo: px/tick del proiettile;
+     * posa: il valore di shootCd tenuto durante carica/colpo (è ciò che il disegno del nemico legge per la posa);
+     * rinculo: px di cui arretra caricando (i volanti non hanno una posa: si tirano indietro).
+     * I tipi senza parte (il Bozzo esplosivo) tengono la loro IA.
+     */
+    parti: Object.freeze({
+      vespa_cieca: Object.freeze({ partitura: 'pp', passo: 0.8 }),
+      lucciola: Object.freeze({ partitura: 'pcsp', passo: 0.8, colpo: 2.6, rinculo: 12 }),
+      gatto: Object.freeze({ partitura: 'pcP.', passo: 0.6, balzo: 1.3 }),
+      burattino: Object.freeze({ partitura: 'pcap', passo: 0.85, colpo: 3.5, gittata: 75, posa: Object.freeze({ carica: 14, colpo: 56 }) }),
+      predone: Object.freeze({ partitura: 'pcsP', passo: 0.7, balzo: 1.1, devia: 0.55, colpo: 2.8, posa: Object.freeze({ carica: 10, colpo: 66 }) }),
+      maschera: Object.freeze({ partitura: '.cv.', colpo: 2.25, apertura: 0.22, posa: Object.freeze({ carica: 21, colpo: 13 }) }),
+      statua: Object.freeze({ partitura: '.c+.', colpo: 2.05, posa: Object.freeze({ carica: 20, colpo: 75 }) }),
+      guardia: Object.freeze({ partitura: 'pcdp', passo: 0.7, colpo: 2.3, apertura: 0.12, posa: Object.freeze({ carica: 10, colpo: 66 }) }),
+    }),
   }),
 });
 
@@ -136,6 +207,20 @@ const TESTI_D4 = Object.freeze({
     aiutoEstrazione: '[E / Invio] avanti il prossimo',
     aiutoEsito: '[E / Invio] chiudi',
   }),
+  buca: Object.freeze({
+    segno: '♪',
+    ingresso: (n) => `♪ LA BUCA DELL'ORCHESTRA: ${n} ondate a tempo di musica. Se non ti toccano, premio doppio!`,
+    ondata: (k, n) => `♪ Ondata ${k} di ${n}!`,
+    ultima: (n) => `♪ Ondata ${n} di ${n}: gran finale!`,
+    applauso: (monete, oggetti) => (oggetti > 0
+      ? `♪ NEMMENO UN GRAFFIO: l'orchestra applaude in piedi! Premio doppio: ${monete}🪙 e due reliquie [Click/E]`
+      : `♪ NEMMENO UN GRAFFIO: l'orchestra applaude in piedi! Premio doppio: ${monete}🪙.`),
+    finita: (monete, oggetti) => (oggetti > 0
+      ? `♪ Il pezzo è finito, l'orchestra posa gli archi. Premio: ${monete}🪙 e una reliquia [Click/E]`
+      : `♪ Il pezzo è finito, l'orchestra posa gli archi. Premio: ${monete}🪙.`),
+    bis: (nome) => `♪ «BIS!» Sul piedistallo compare la seconda reliquia: ${nome} [Click/E]`,
+    bisGrani: (n) => `♪ «BIS!» La seconda reliquia non trova posto: l'orchestra te la paga ${n}🪙.`,
+  }),
 });
 
 /**
@@ -153,7 +238,7 @@ const SOSTITUZIONI_D4 = new Map([
 const FONTE_ROVI_A3_D4 = 'i rovi della porta';
 
 /** Interruttori per la QA (foto «prima/dopo»): nel gioco restano tutti accesi. */
-const provaD4 = { sopraIlTappeto: true, rngTerna: null };
+const provaD4 = { sopraIlTappeto: true, rngTerna: null, senzaMusica: false, probBuca: null, bucaVicoloCieco: null };
 
 // ===========================================================================
 // UTILITÀ DI DISEGNO
@@ -952,7 +1037,553 @@ function disegnaPannelloTernaD4(t) {
 }
 
 
-// %%D4-BUCA%%
+// ===========================================================================
+// 3. LA BUCA DELL'ORCHESTRA (stanza nuova, tipo `buca`)
+// ===========================================================================
+
+// Il pezzo della Buca nella tabella dei temi di a8 (tarantella d'orchestra, originale): si aggiunge solo se manca.
+if (typeof MUSICA !== 'undefined' && MUSICA.temi && !MUSICA.temi[STANZE_TEATRO_D4.buca.tema] && Object.isExtensible(MUSICA.temi)) {
+  MUSICA.temi[STANZE_TEATRO_D4.buca.tema] = {
+    bpm: STANZE_TEATRO_D4.buca.bpm, radice: 62, scala: 'armonica', basso: 'X..x..', organetto: '.xx.xx', tamburello: 'X..X..', strato: true, volume: 1,
+    accordi: ['i', 'i', 'iv', 'V', 'i', 'VI', 'iv', 'V'],
+    melodia: ['0 2 4 7 . 4', '5 4 2 4 - .', '3 5 7 8 . 7', '6 - 4 6 . .', '7 . 7 9 7 5', '5 . 5 7 5 3', '3 2 3 5 3 1', '4 - 6 7 - -'],
+  };
+}
+
+/**
+ * Aggancio di a8-musica.js (temaCorrente): nella Buca, a concerto in corso, suona il pezzo dell'orchestra.
+ * @param {object} sr lo stato della run @param {(base: string, radice?: number, combattimento?: boolean) => object} tema
+ */
+function temaMusicaD4(sr, tema) {
+  const st = sr && sr.stanzaCorrente;
+  if (!st || st.tipo !== 'buca' || !st.bucaD4 || !st.bucaD4.attiva) return null;
+  const nome = STANZE_TEATRO_D4.buca.tema;
+  return typeof MUSICA !== 'undefined' && MUSICA.temi[nome] ? tema(nome, null, false) : null;
+}
+
+/** Tick di logica per PASSO del pezzo (6 passi per battuta, 3 per tempo): lo stesso bpm della musica. */
+function tickPerPassoD4() {
+  return (60 / STANZE_TEATRO_D4.buca.bpm / 3) * FEEL.passo.hz;
+}
+
+/** Posizione in passi del pezzo della Buca se sta suonando davvero (audio acceso, contesto partito), o null. */
+function posizioneMusicaD4() {
+  if (provaD4.senzaMusica) return null;
+  try {
+    if (typeof Musica === 'undefined' || typeof Musica.posizionePassi !== 'function') return null;
+    const v = Musica.posizionePassi(STANZE_TEATRO_D4.buca.tema);
+    return Number.isFinite(v) && v >= 0 ? v : null;
+  } catch (_) { return null; }
+}
+
+/**
+ * L'orologio della Buca, un tick di logica alla volta: segue il sequencer di a8 quando il pezzo suona, altrimenti
+ * un metronomo interno con lo stesso bpm (il gioco non dipende dall'audio). Quando la musica manca il metronomo
+ * riparte dal punto in cui era, quando torna ci si riaggancia.
+ * @returns {number} il passo nella battuta (0..5) appena cominciato, o -1 se in questo tick non ne comincia nessuno
+ */
+function avanzaOrologioD4(B) {
+  const K = STANZE_TEATRO_D4.buca;
+  const a = posizioneMusicaD4();
+  if (a !== null) { B.pos = a; B.fonte = 'musica'; } else { B.pos += 1 / tickPerPassoD4(); B.fonte = 'metronomo'; }
+  const p = Math.floor(B.pos);
+  if (p === B.passoVisto) return -1;
+  B.passoVisto = p;
+  return ((p % K.passiPerBattuta) + K.passiPerBattuta) % K.passiPerBattuta;
+}
+
+/**
+ * Il tempo corrente della Buca, per chi vuole andare a tempo (sola lettura), o null fuori dal concerto.
+ * passo 0..5 nella battuta, battuta e tempo contati dall'ingresso, fase 0..1 dentro il tempo, fonte del battito.
+ */
+function battitoD4() {
+  const st = statoRun.stanzaCorrente, B = st && st.bucaD4;
+  if (!B || !B.attiva) return null;
+  const K = STANZE_TEATRO_D4.buca, n = K.passiPerBattuta, meta = n / 2;
+  const nellaBattuta = ((B.pos % n) + n) % n;
+  return { passo: Math.floor(nellaBattuta), battuta: B.battuta, tempo: B.tempo, fase: (nellaBattuta % meta) / meta, fonte: B.fonte, bpm: K.bpm };
+}
+
+function probBucaD4(piano) {
+  const tab = STANZE_TEATRO_D4.buca.probPerPiano;
+  const chiavi = Object.keys(tab).map(Number).sort((a, b) => a - b);
+  const k = chiavi.filter((c) => c <= piano).pop() ?? chiavi[0];
+  return tab[k] || 0;
+}
+
+function nuovoStatoBucaD4(ondateTot) {
+  return {
+    ondateTot, ondata: 0, attiva: false, finita: false, colpito: false, esito: null, premio: null, bis: 0, scambioVisto: false,
+    pos: 0, passoVisto: -1, battuta: 0, tempo: 0, tickDalTempo: 0, tickDallaBattuta: 0, battere: true, prossima: STANZE_TEATRO_D4.buca.battuteAttacco + 1,
+    ingressi: [],              // (QA) quando è entrata ogni ondata: { ondata, battuta, pos, fonte }
+    fonte: 'metronomo', hpVisto: 0, viteViste: 0, fineTick: 0,
+  };
+}
+
+/**
+ * Appende al piano la Buca dell'Orchestra: una foglia con una sola porta attaccata a una stanza di combattimento,
+ * in una cella libera che non confina col boss né con la segreta (vedi STANZE_TEATRO_D4.buca.soloVicoloCieco).
+ * Al massimo una per piano; mai al piano 1 la prima notte. Se non c'è posto, questo piano non ha la Buca.
+ */
+function aggiungiBucaD4(m, piano) {
+  const K = STANZE_TEATRO_D4.buca;
+  if (!m || m.stanze.some((s) => s.tipo === 'buca')) return null;
+  if (K.saltaPrimaNottePiano1 && piano === 1 && (Number(statoRun.numeroNotte) || 1) <= 1) return null;
+  if (!(rng() < (provaD4.probBuca ?? probBucaD4(piano)))) return null;
+  const G = MAPPA_PIANO;
+  const key = (x, y) => `${x},${y}`;
+  const griglia = new Map(m.stanze.filter((s) => s.cx >= 1 && s.cy >= 1).map((s) => [key(s.cx, s.cy), s]));
+  const dentro = (x, y) => x >= 1 && x <= G.larghezza && y >= 1 && y <= G.altezza;
+  for (const g of shuffle(m.stanze.filter((s) => K.genitori.includes(s.tipo)))) {
+    for (const d of shuffle(DIREZIONI_A3)) {
+      const nx = g.cx + d.dx, ny = g.cy + d.dy;
+      if (!dentro(nx, ny) || griglia.has(key(nx, ny))) continue;
+      if (g.porte[d.lato] || (g.muroSegreto && g.muroSegreto.lato === d.lato)) continue;
+      const vicini = DIREZIONI_A3.map((d2) => griglia.get(key(nx + d2.dx, ny + d2.dy))).filter(Boolean);
+      if (!vicini.includes(g) || vicini.some((v) => K.maiAccantoA.includes(v.tipo))) continue;
+      if ((provaD4.bucaVicoloCieco ?? K.soloVicoloCieco) && vicini.length !== 1) continue;
+      const s = creaStanzaA3(`r${m.stanze.length}`, 'buca', nx, ny);
+      g.porte[d.lato] = s.id;
+      s.porte[d.opposto] = g.id;
+      s.bucaD4 = nuovoStatoBucaD4(K.ondateMin + Math.floor(rng() * (K.ondateMax - K.ondateMin + 1)));
+      m.stanze.push(s);
+      m.perId.set(s.id, s);
+      return s;
+    }
+  }
+  return null;
+}
+
+/** Dove sta il direttore in questa stanza (si sposta se la porta è a nord). */
+function postoDirettoreD4(st) {
+  const D = STANZE_TEATRO_D4.buca.direttore;
+  return { x: st && st.porte && st.porte.N ? D.xConPortaNord : D.x, y: D.y, r: D.r };
+}
+
+/** Un colpo di timpano (seno che cade). */
+function timpanoD4(forte = 1, ritardoSec = 0) {
+  suonoD4(96, 320, 'sine', 0.22 * forte, 52, ritardoSec);
+}
+
+/** L'applauso dell'orchestra: raffiche di rumore filtrato (solo se non applaude già il pubblico di b1). */
+function applausoD4() {
+  const c = AudioSys.ctx;
+  if (!c || !AudioSys.attivo) return;
+  try {
+    const durata = 2.6, buf = c.createBuffer(1, Math.floor(c.sampleRate * 0.05), c.sampleRate);
+    const d = buf.getChannelData(0);
+    let x = 987654321;
+    for (let i = 0; i < d.length; i++) { x = (x * 1103515245 + 12345) >>> 0; d[i] = ((x / 4294967296) * 2 - 1) * (1 - i / d.length); }
+    const uscita = c.createGain();
+    uscita.gain.setValueAtTime(0.16, c.currentTime);
+    uscita.gain.linearRampToValueAtTime(0.0001, c.currentTime + durata);
+    uscita.connect(AudioSys.uscita || c.destination);
+    for (let k = 0; k < 70; k++) {
+      x = (x * 1103515245 + 12345) >>> 0;
+      const s = c.createBufferSource(), f = c.createBiquadFilter();
+      s.buffer = buf; f.type = 'bandpass'; f.frequency.value = 1400 + (x % 1800); f.Q.value = 0.9;
+      s.connect(f); f.connect(uscita);
+      s.start(c.currentTime + (k / 70) * durata * 0.92 + ((x >>> 8) % 30) / 1000);
+    }
+    setTimeout(() => { try { uscita.disconnect(); } catch (_) { /* già scollegato */ } }, (durata + 0.5) * 1000);
+  } catch (_) { /* l'audio non deve mai fermare il gioco */ }
+}
+
+/** Entrando nella Buca: se il concerto non è finito, il pezzo (ri)comincia e le porte si chiudono. */
+function dopoIngressoBucaD4(st) {
+  const B = st.bucaD4;
+  if (!B) return;
+  B.hpVisto = statoRun.hpHalf; B.viteViste = statoRun.viteExtra || 0;
+  if (B.finita) return;
+  B.attiva = true;
+  st.pulita = false;
+  B.pos = 0; B.passoVisto = -1; B.tickDalTempo = 0; B.tickDallaBattuta = 0;
+  if (B.ondata === 0) { B.battuta = 0; B.tempo = 0; B.prossima = STANZE_TEATRO_D4.buca.battuteAttacco + 1; B.ingressi = []; }
+  mostraBanner(TESTI_D4.buca.ingresso(B.ondateTot), 250);
+}
+
+/** Un comprimario dell'ondata diventa orchestrale: la sua parte al posto dell'IA di base (che resta ferma). */
+function preparaOrchestraleD4(n, B) {
+  const K = STANZE_TEATRO_D4.buca;
+  const perComportamento = { volo_puro: 'vespa_cieca', balzo: 'gatto', host_scudo: 'maschera', torretta_croce: 'statua', bomba_ferma: '' };
+  const chiave = n.comportamento ? (perComportamento[n.comportamento] ?? n.tipo) : n.tipo;
+  const parte = K.parti[chiave];
+  if (!parte) return false; // tipi senza parte (il Bozzo esplosivo): tengono la loro IA
+  n.bucaD4 = { parte, i: -K.accordaturaTempi - 1, sfasa: (B.ondata % 2) * 2, vel: n.speed, sc: 0, scTot: 1, sdx: 0, sdy: 0, sdist: 0, balzo: false, posa: '', posaTick: 0, giri: 0 };
+  n.speed = 0; n.shootCd = 999; n.leapTimer = 0; n.crouchTicks = 0; n.maskOpen = false; n.vx = 0; n.vy = 0;
+  return true;
+}
+
+/** Entra un'ondata: i comprimari del piano (gli stessi temi delle stanze di combattimento), lontano da porte e Ferruccio. */
+function entraOndataD4(st, B) {
+  const X = TESTI_D4.buca;
+  B.ondata++;
+  const finta = { id: `${st.id}-b${B.ondata}`, tipo: 'normale', porte: {}, nemici: [], ostacoli: [], oggettiATerra: [] };
+  popolaStanza(finta, statoRun.piano);
+  const vivi = st.nemici.filter((n) => n.hp > 0);
+  const vietati = porteVietateC(st).concat([{ x: player.x, y: player.y }]);
+  const posti = vivi.map((n) => ({ x: n.x, y: n.y }));
+  for (const n of finta.nemici) {
+    const p = puntoLontanoDallePorteC(n.x, n.y, vietati, posti);
+    n.x = p.x; n.y = p.y; posti.push(p);
+    preparaOrchestraleD4(n, B);
+    statoRun.ondeEsplosione.push({ x: n.x, y: n.y - 4, r: 3, maxR: 18, color: OMBRE_D4.oro, tick: 0 }); // tick: 0 serve a 60-resa.js per farla sparire
+  }
+  st.nemici = vivi.concat(finta.nemici);
+  B.ingressi.push({ ondata: B.ondata, battuta: B.battuta, pos: B.pos, fonte: B.fonte });
+  timpanoD4(1); timpanoD4(0.8, 0.14);
+  scuoti(FEEL.scossa.evento);
+  mostraBanner(B.ondata >= B.ondateTot ? X.ultima(B.ondateTot) : X.ondata(B.ondata, B.ondateTot), 120);
+  return finta.nemici.length;
+}
+
+/** Sul battere (inizio di battuta): si contano le battute e, se è ora, entra l'ondata. */
+function alBattereD4(st, B) {
+  const K = STANZE_TEATRO_D4.buca;
+  B.battuta++; B.tickDallaBattuta = 0;
+  if (B.ondata === 0) suonoD4(1650, 28, 'square', 0.035); // la bacchetta sul leggio: l'attacco
+  if (B.ondata >= B.ondateTot) return;
+  const vuoto = st.nemici.every((n) => n.hp <= 0);
+  const anticipo = K.anticipa && B.ondata > 0 && vuoto && (B.battuta - 1) % K.fraseBattute === 0;
+  if (B.battuta >= B.prossima || anticipo) {
+    entraOndataD4(st, B);
+    B.prossima = B.battuta + K.battutePerOndata;
+  }
+}
+
+/** Avvia lo scatto di un orchestrale: `dist` px nella direzione `ang`, spalmati sui primi tick del tempo. */
+function scattoD4(n, R, ang, dist, balzo) {
+  const D = Math.max(4, Math.round(tickPerPassoD4() * 3 * STANZE_TEATRO_D4.buca.scattoFrazione));
+  R.sc = D; R.scTot = D; R.sdx = Math.cos(ang); R.sdy = Math.sin(ang); R.sdist = Math.max(0, dist); R.balzo = Boolean(balzo);
+}
+
+/** Una mossa della partitura (vedi STANZE_TEATRO_D4.buca.parti). */
+function eseguiMossaD4(n, R, m) {
+  const K = STANZE_TEATRO_D4.buca, P = R.parte;
+  const tickTempo = tickPerPassoD4() * 3;
+  const ang = Math.atan2(player.y - n.y, player.x - n.x);
+  const lontano = Math.hypot(player.x - n.x, player.y - n.y);
+  const colpo = (a, extra) => {
+    const pr = { x: n.x, y: n.y - 6, vx: Math.cos(a) * P.colpo, vy: Math.sin(a) * P.colpo, dist: 0 };
+    statoRun.proiettiliNemici.push(extra ? Object.assign(pr, extra) : pr);
+  };
+  if (m === 'p' || m === 'P') {
+    const dev = P.devia ? (R.giri++ % 2 ? -P.devia : P.devia) : 0;
+    scattoD4(n, R, ang + dev, Math.min(R.vel * tickTempo * (m === 'P' ? P.balzo : P.passo), Math.max(0, lontano - 4)), m === 'P');
+  } else if (m === 'c') {
+    R.posa = 'carica'; R.posaTick = Math.round(tickTempo);
+    if (P.rinculo) scattoD4(n, R, ang + Math.PI, P.rinculo, false);
+  } else if (m === 's') colpo(ang);
+  else if (m === 'a') colpo(ang, { maxDist: P.gittata });
+  else if (m === 'd') { colpo(ang - P.apertura); colpo(ang + P.apertura); }
+  else if (m === 'v') { colpo(ang - P.apertura); colpo(ang); colpo(ang + P.apertura); }
+  else if (m === '+') {
+    const giro = (R.giri++ % 2) * (Math.PI / 4);
+    for (let k = 0; k < 4; k++) colpo(giro + (k * Math.PI) / 2);
+  }
+  if (m === 's' || m === 'a' || m === 'd' || m === 'v' || m === '+') { R.posa = 'colpo'; R.posaTick = K.posaColpoTick; }
+}
+
+/** Su ogni tempo (due per battuta): ogni orchestrale suona la mossa successiva della sua parte. */
+function alTempoD4(st, B, battere) {
+  B.tempo++; B.tickDalTempo = 0; B.battere = battere;
+  for (const n of st.nemici) {
+    const R = n.bucaD4;
+    if (!R || n.hp <= 0) continue;
+    R.i++;
+    if (R.i < 0 || n.stunTicks > 0 || statoRun.graziaIngressoC > 0) continue;
+    const P = R.parte.partitura;
+    eseguiMossaD4(n, R, P[(R.i + R.sfasa) % P.length]);
+  }
+}
+
+/** Ogni tick: gli scatti in corso e le pose (i contatori dell'IA di base restano fermi sul valore della posa). */
+function passoOrchestraliD4(st) {
+  for (const n of st.nemici) {
+    const R = n.bucaD4;
+    if (!R || n.hp <= 0) continue;
+    const posa = R.posaTick > 0 ? R.posa : '';
+    if (R.posaTick > 0) R.posaTick--;
+    const V = R.parte.posa;
+    n.speed = 0;
+    n.shootCd = posa && V && V[posa] ? V[posa] : 999;
+    if (n.tipo === 'gatto') n.crouchTicks = posa === 'carica' ? Math.max(1, R.posaTick) : 0;
+    if (n.tipo === 'maschera') n.maskOpen = posa !== '';
+    if (R.sc > 0 && !(n.stunTicks > 0)) {
+      const u0 = 1 - R.sc / R.scTot;
+      R.sc--;
+      const u1 = 1 - R.sc / R.scTot;
+      const d = R.sdist * ((1 - (1 - u1) * (1 - u1)) - (1 - (1 - u0) * (1 - u0)));
+      n.x = Math.max(ARENA.x1 + 14, Math.min(ARENA.x2 - 14, n.x + R.sdx * d));
+      n.y = Math.max(ARENA.y1 + 14, Math.min(ARENA.y2 - 14, n.y + R.sdy * d));
+      if (n.tipo === 'gatto' && R.balzo) { n.leapTimer = R.sc; n.vx = 0; n.vy = 0; }
+    }
+  }
+}
+
+/** Fine del concerto (dopo verificaStanzaPulita di base): premio normale, o doppio con l'applauso se nessun colpo è andato a segno. */
+function chiudiBucaD4(st) {
+  const K = STANZE_TEATRO_D4.buca, X = TESTI_D4.buca, B = st.bucaD4;
+  B.attiva = false; B.finita = true; B.fineTick = 0;
+  const pulito = !B.colpito;
+  B.esito = pulito ? 'applauso' : 'normale';
+  const molt = pulito ? K.moltiplicaSenzaDanni : 1;
+  const P = K.piedistallo;
+  let monete = K.premio.monete * molt, oggetti = K.premio.oggetti * molt;
+  const primo = oggetti > 0 ? daiOggettoA3(st, P.x, P.y) : null;
+  if (oggetti > 0 && !primo) { monete += K.premio.ripiegoMonete * oggetti; oggetti = 0; }
+  B.bis = Math.max(0, oggetti - 1);
+  daiMoneteA3(st, monete, P.x, P.y + 44);
+  B.premio = { doppio: pulito, monete, oggetti };
+  const pubblico = typeof reazionePubblicoB1 === 'function' && OPZIONI.pubblico;
+  if (pubblico) { try { reazionePubblicoB1(pulito ? 'ovazione' : 'applauso'); } catch (_) { /* pubblico facoltativo */ } }
+  if (pulito && !pubblico) applausoD4();
+  if (pulito) { timpanoD4(1); timpanoD4(1, 0.12); timpanoD4(1.1, 0.24); }
+  mostraBanner(pulito ? X.applauso(monete, oggetti) : X.finita(monete, oggetti), 270);
+}
+
+/** Dopo il premio doppio: presa la prima reliquia, sul piedistallo compare la seconda («bis»). */
+function bisD4(st, B) {
+  const K = STANZE_TEATRO_D4.buca, X = TESTI_D4.buca;
+  B.fineTick++;
+  if (!(B.bis > 0) || statoRun.scambioPendente) return;
+  const o = st.oggettoPiedistallo;
+  if (o && !o.preso && !B.scambioVisto) return; // la prima è ancora lì
+  B.bis--;
+  if ((!o || o.preso)) {
+    const nuovo = daiOggettoA3(st, K.piedistallo.x, K.piedistallo.y);
+    if (nuovo) { suonoD4(880, 380, 'triangle', 0.07, 1320); mostraBanner(X.bis(nomeD(nuovo)), 220); return; }
+  }
+  // piedistallo occupato dallo scambio (o pool finito): la seconda reliquia diventa grani
+  daiMoneteA3(st, K.premio.ripiegoMonete, K.piedistallo.x, K.piedistallo.y + 44);
+  mostraBanner(X.bisGrani(K.premio.ripiegoMonete), 200);
+}
+
+/** Un tick della Buca (dopo passoLogico di base). */
+function passoBucaD4(st) {
+  const K = STANZE_TEATRO_D4.buca, B = st.bucaD4;
+  if (!B) return;
+  if (B.attiva && (statoRun.hpHalf < B.hpVisto || (statoRun.viteExtra || 0) < B.viteViste)) B.colpito = true;
+  B.hpVisto = statoRun.hpHalf; B.viteViste = statoRun.viteExtra || 0;
+  if (B.attiva) {
+    if (st.pulita && B.ondata < B.ondateTot) st.pulita = false; // il concerto non è finito: le porte restano chiuse
+    B.tickDalTempo++; B.tickDallaBattuta++;
+    const s = avanzaOrologioD4(B);
+    if (s === 0 || s === K.passiPerBattuta / 2) {
+      // un tempo «vero» arriva almeno mezzo tempo dopo il precedente: più vicino è un riaggancio alla musica
+      // (il pezzo che parte o riparte dopo il muto), e non si conta due volte
+      const tickTempo = tickPerPassoD4() * (K.passiPerBattuta / 2);
+      if (B.tempo === 0 || B.tickDalTempo >= tickTempo * 0.5) {
+        if (s === 0 && (B.battuta === 0 || B.tickDallaBattuta >= tickTempo)) alBattereD4(st, B);
+        alTempoD4(st, B, s === 0);
+      }
+    }
+    passoOrchestraliD4(st);
+    if (B.ondata >= B.ondateTot && !st.pulita && st.nemici.every((n) => n.hp <= 0)) verificaStanzaPulita();
+  } else if (B.finita) bisD4(st, B);
+  corpoSolidoD4(K.timpani); corpoSolidoD4(K.contrabbasso); corpoSolidoD4(postoDirettoreD4(st));
+}
+
+// --- resa della Buca ---
+
+/** I leggii della stanza: quelli della fila di fondo lasciano il posto a direttore e metronomo. */
+function leggiiD4(portaNord) {
+  const K = STANZE_TEATRO_D4.buca;
+  const dx = portaNord ? K.direttore.xConPortaNord : K.direttore.x;
+  return K.leggii.filter(([x, y]) => y > K.filaDiFondoY || (Math.abs(x - dx) > 26 && Math.abs(x - (dx + K.metronomoDx)) > 24 && !(portaNord && Math.abs(x - 320) < 34)));
+}
+
+/** Un leggio col foglio di musica. */
+function leggioD4(g, x, y) {
+  astaD4(g, x, y + 9, x - 5, y + 12, 1.1); astaD4(g, x, y + 9, x + 5, y + 12, 1.1);
+  astaD4(g, x, y + 10, x, y - 6, 1.3);
+  sagomaD4(g, [[x - 8, y - 5], [x + 8, y - 7], [x + 8, y - 16], [x - 8, y - 14]], OMBRE_D4.sagoma, OMBRE_D4.lume, 1);
+  sagomaD4(g, [[x - 6, y - 6.5], [x + 6, y - 8], [x + 6, y - 14.5], [x - 6, y - 13]], '#e9dcc0', null);
+  g.fillStyle = '#1c0f07';
+  for (let i = 0; i < 4; i++) g.fillRect(x - 4.5 + i * 2.6, y - 11.5 - (i % 2) * 1.6 - i * 0.25, 1.4, 1.2);
+}
+
+/** Tutto ciò che nella Buca non si muove: assi del fondo, leggii, timpani, contrabbasso. */
+function disegnaBucaFermaD4(g, portaNord) {
+  const K = STANZE_TEATRO_D4.buca, A = K.aspetto;
+  g.fillStyle = A.velo; g.fillRect(ARENA.x1 - 12, ARENA.y1 - 12, ARENA.x2 - ARENA.x1 + 24, ARENA.y2 - ARENA.y1 + 24);
+  // l'orlo della buca: una ringhiera d'ottone a ferro di cavallo
+  g.strokeStyle = 'rgba(212, 162, 74, 0.34)'; g.lineWidth = 2;
+  g.beginPath(); g.ellipse(320, 188, 236, 104, 0, 0, TAU); g.stroke();
+  g.strokeStyle = 'rgba(212, 162, 74, 0.16)'; g.lineWidth = 1;
+  g.beginPath(); g.ellipse(320, 188, 228, 97, 0, 0, TAU); g.stroke();
+  for (const [x, y] of leggiiD4(portaNord)) { ombraD4(g, x, y + 12, 8, 2.6); leggioD4(g, x, y); }
+
+  // i timpani: due caldaie di rame sulle gambe
+  const T = K.timpani;
+  ombraD4(g, T.x, T.y + 15, 30, 6);
+  for (const [dx, dy, r] of [[-12, 0, 14], [13, 4, 12]]) {
+    const x = T.x + dx, y = T.y + dy;
+    astaD4(g, x - r * 0.6, y + 4, x - r * 0.8, y + 14, 1.2); astaD4(g, x + r * 0.6, y + 4, x + r * 0.8, y + 14, 1.2);
+    g.fillStyle = '#3a2412'; g.strokeStyle = OMBRE_D4.lume; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x - r, y - 4); g.quadraticCurveTo(x - r * 0.9, y + 11, x, y + 11); g.quadraticCurveTo(x + r * 0.9, y + 11, x + r, y - 4); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#e9dcc0';
+    g.beginPath(); g.ellipse(x, y - 4, r, r * 0.36, 0, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = OMBRE_D4.oro;
+    for (const s of [-0.7, 0, 0.7]) g.fillRect(x + s * r - 0.8, y - 1, 1.6, 3);
+  }
+  astaD4(g, T.x - 2, T.y - 12, T.x + 8, T.y - 22, 1); // le mazze appoggiate
+  g.fillStyle = '#e9dcc0'; g.beginPath(); g.arc(T.x + 8, T.y - 22, 2.2, 0, TAU); g.fill();
+
+  // il contrabbasso appoggiato alla parete
+  const C = K.contrabbasso;
+  ombraD4(g, C.x + 2, C.y + 15, 16, 4.5);
+  g.save();
+  g.translate(C.x, C.y + 12); g.rotate(0.2);
+  astaD4(g, 0, 0, 0, 5, 1.2);
+  g.fillStyle = '#3a1a10'; g.strokeStyle = OMBRE_D4.lume; g.lineWidth = 1;
+  g.beginPath();
+  g.moveTo(-9, -2); g.quadraticCurveTo(-12, -12, -7, -17); g.quadraticCurveTo(-5, -20, -7.5, -24); g.quadraticCurveTo(-8, -33, 0, -34);
+  g.quadraticCurveTo(8, -33, 7.5, -24); g.quadraticCurveTo(5, -20, 7, -17); g.quadraticCurveTo(12, -12, 9, -2); g.quadraticCurveTo(0, 2, -9, -2);
+  g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = OMBRE_D4.sagoma; g.fillRect(-1.5, -52, 3, 22); g.strokeRect(-1.5, -52, 3, 22);
+  g.beginPath(); g.arc(0, -54, 2.6, 0, TAU); g.fill(); g.stroke();
+  g.strokeStyle = 'rgba(232, 201, 138, 0.7)'; g.lineWidth = 0.6;
+  for (const s of [-1.2, 0, 1.2]) { g.beginPath(); g.moveTo(s, -50); g.lineTo(s * 1.6, -6); g.stroke(); }
+  g.strokeStyle = OMBRE_D4.buio; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(-5, -13); g.quadraticCurveTo(-3.5, -10, -5, -7); g.moveTo(5, -13); g.quadraticCurveTo(3.5, -10, 5, -7); g.stroke();
+  g.restore();
+}
+
+/** Il direttore d'ombra sul podio: la bacchetta scende sul tempo (più ampia sul battere). */
+function disegnaDirettoreD4(st, t) {
+  const B = st.bucaD4, P = postoDirettoreD4(st), x = P.x, y = P.y;
+  const tempo = battitoD4();
+  const fase = tempo ? tempo.fase : 0;
+  const ampio = B.battere ? 1 : 0.62;
+  const alta = tempo ? Math.sin(Math.PI * fase) * ampio : 0; // 0 sul tempo (la bacchetta è giù), 1 a metà
+  const inchino = B.finita ? Math.min(1, B.fineTick / 30) * (B.esito === 'applauso' ? 1 : 0.5) : 0;
+  ctx.save();
+  ombraD4(ctx, x, y + 9, 14, 3.5);
+  // podio con le tacche delle ondate
+  ctx.fillStyle = OMBRE_D4.legno; ctx.strokeStyle = OMBRE_D4.lume; ctx.lineWidth = 1;
+  ctx.fillRect(x - 13, y + 2, 26, 7); ctx.strokeRect(x - 12.5, y + 2.5, 25, 6);
+  for (let i = 0; i < B.ondateTot; i++) {
+    ctx.fillStyle = i < B.ondata ? OMBRE_D4.oro : '#5c4024';
+    ctx.beginPath(); ctx.arc(x - (B.ondateTot - 1) * 2.5 + i * 5, y + 5.5, 1.4, 0, TAU); ctx.fill();
+  }
+  ctx.translate(x, y + 2);
+  ctx.rotate(inchino * 0.5);
+  // marsina con le code, testa, colletto
+  sagomaD4(ctx, [[-6, -19], [6, -19], [7.5, -6], [4, -6], [5.5, 0], [1.5, -1], [0, -5], [-1.5, -1], [-5.5, 0], [-4, -6], [-7.5, -6]], OMBRE_D4.sagoma, OMBRE_D4.lume, 1);
+  ctx.fillStyle = OMBRE_D4.sagoma; ctx.strokeStyle = OMBRE_D4.lume; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(0, -24, 4.4, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#e9dcc0'; ctx.fillRect(-1.5, -19.5, 3, 2.5);
+  // braccio sinistro che tiene il tempo largo, destro con la bacchetta
+  astaD4(ctx, -6, -17, -12, -15 - alta * 3, 1.3);
+  const bx = 12, by = -13 - alta * 9;
+  astaD4(ctx, 6, -17, bx, by, 1.3);
+  ctx.strokeStyle = '#fff7d6'; ctx.lineWidth = 1.1; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 9, by - 5 - alta * 7); ctx.stroke();
+  ctx.restore();
+  // il lampo del tempo sulla punta (discreto: due fotogrammi d'oro, più grande sul battere)
+  if (tempo && B.tickDalTempo < 5) {
+    ctx.save();
+    ctx.globalAlpha = 0.85 - B.tickDalTempo * 0.15;
+    ctx.fillStyle = OMBRE_D4.oro;
+    ctx.beginPath(); ctx.arc(x + 21, y - 16, B.battere ? 3 : 1.8, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+}
+
+/** Il metronomo sul bordo: l'asta tocca gli estremi sui tempi. */
+function disegnaMetronomoD4(st, t) {
+  const B = st.bucaD4, D = postoDirettoreD4(st);
+  const x = D.x + STANZE_TEATRO_D4.buca.metronomoDx, y = D.y + 4;
+  const tempo = battitoD4();
+  const ang = tempo ? Math.cos(Math.PI * (B.pos / (STANZE_TEATRO_D4.buca.passiPerBattuta / 2))) * 0.5 : 0;
+  ctx.save();
+  ombraD4(ctx, x, y + 6, 8, 2.4);
+  sagomaD4(ctx, [[x - 6.5, y + 5], [x + 6.5, y + 5], [x + 3, y - 14], [x - 3, y - 14]], OMBRE_D4.legno, OMBRE_D4.lume, 1);
+  ctx.fillStyle = '#e9dcc0'; ctx.fillRect(x - 1.2, y - 11, 2.4, 12);
+  ctx.translate(x, y + 2); ctx.rotate(ang);
+  ctx.strokeStyle = OMBRE_D4.buio; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -19); ctx.stroke();
+  ctx.fillStyle = tempo && B.tickDalTempo < 5 ? '#fff7d6' : OMBRE_D4.oro;
+  ctx.fillRect(-2.2, -14, 4.4, 3.2);
+  ctx.restore();
+}
+
+/** Gli orchestrali d'ombra seduti ai leggii del fondo: dondolano a tempo; all'applauso si alzano e battono le mani. */
+function disegnaOrchestraliD4(st, t) {
+  const K = STANZE_TEATRO_D4.buca, B = st.bucaD4;
+  const tempo = battitoD4();
+  const applaude = B.finita && B.esito === 'applauso' && B.fineTick < K.applausoTick;
+  let i = 0;
+  for (const [x, y] of leggiiD4(Boolean(st.porte.N))) {
+    if (y > K.filaDiFondoY) continue;
+    const su = applaude ? 5 : tempo ? (B.tickDalTempo < 6 ? 1.2 : 0) : 0;
+    const bx = x, by = y - 14 - su;
+    ctx.fillStyle = OMBRE_D4.buio; ctx.strokeStyle = 'rgba(232, 201, 138, 0.55)'; ctx.lineWidth = 0.9;
+    ctx.beginPath(); ctx.moveTo(bx - 7, by + 4); ctx.quadraticCurveTo(bx, by - 8, bx + 7, by + 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(bx, by - 7, 3.4, 0, TAU); ctx.fill(); ctx.stroke();
+    if (applaude) {
+      const batte = Math.floor((t + i * 5) / 6) % 2 === 0;
+      ctx.strokeStyle = OMBRE_D4.lume; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(bx - 5, by - 1); ctx.lineTo(bx - (batte ? 1 : 4), by - 12); ctx.moveTo(bx + 5, by - 1); ctx.lineTo(bx + (batte ? 1 : 4), by - 12); ctx.stroke();
+      if (batte) { ctx.fillStyle = OMBRE_D4.oro; ctx.fillRect(bx - 1, by - 15, 2, 2); }
+    }
+    i++;
+  }
+}
+
+/** La Buca: fondo e arredi dalla tela, poi orchestrali, direttore e metronomo vivi. */
+function disegnaBucaD4(st, t) {
+  const nord = Boolean(st.porte.N);
+  ctx.drawImage(telaD4(nord ? 'buca-n' : 'buca', (g) => disegnaBucaFermaD4(g, nord)), 0, 0, W, H);
+  ctx.save();
+  disegnaOrchestraliD4(st, t);
+  ctx.restore();
+  disegnaDirettoreD4(st, t);
+  disegnaMetronomoD4(st, t);
+}
+
+/** La porta verso la Buca: cornice d'ottone e la nota (come i segni delle porte di a3). */
+function disegnaPorteBucaD4(st, t) {
+  if (!statoRun.mappa) return;
+  const A = STANZE_TEATRO_D4.buca.aspetto;
+  for (const [lato, id] of Object.entries(st.porte || {})) {
+    const dest = statoRun.mappa.perId.get(id);
+    const p = PORTE_A3[lato];
+    if (!p || !dest || dest.tipo !== 'buca') continue;
+    ctx.fillStyle = A.cornice;
+    ctx.fillRect(p.x - p.w / 2, p.y - p.h / 2, p.w, 3); ctx.fillRect(p.x - p.w / 2, p.y + p.h / 2 - 3, p.w, 3);
+    ctx.fillRect(p.x - p.w / 2, p.y - p.h / 2, 3, p.h); ctx.fillRect(p.x + p.w / 2 - 3, p.y - p.h / 2, 3, p.h);
+    if (st.pulita) {
+      const finita = Boolean(dest.bucaD4 && dest.bucaD4.finita);
+      drawTextFit(TESTI_D4.buca.segno, p.x, p.y + 4, p.w - 4, { size: 11, color: finita ? '#9ca3af' : '#fff7d6' });
+      if (!finita) { // due righe di pentagramma che pulsano piano: di là si suona
+        ctx.strokeStyle = `rgba(249, 203, 64, ${(0.35 + 0.25 * Math.sin(t * 0.1)).toFixed(2)})`; ctx.lineWidth = 1;
+        ctx.strokeRect(p.x - p.w / 2 - 3.5, p.y - p.h / 2 - 3.5, p.w + 7, p.h + 7);
+      }
+    }
+  }
+}
+
+/** Minimappa: la cella della Buca con la nota (stessa geometria di a3). */
+function minimappaBucaD4(st) {
+  const m = statoRun.mappa;
+  if (!m || !st || maledizioneD('mappa')) return;
+  const A = STANZE_TEATRO_D4.buca.aspetto;
+  const cell = 12, x0 = W - 118, y0 = 24, mw = 114, mh = 92;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0 - 5, y0 - 15, mw - 2, mh - 2); ctx.clip();
+  for (const s of m.stanze) {
+    if (!s.visitata || s.tipo !== 'buca') continue;
+    const px = x0 + (s.cx - 1) * cell, py = y0 + (s.cy - 1) * cell;
+    const corr = st.id === s.id;
+    ctx.fillStyle = corr ? OMBRE_D4.oro : A.minimappa;
+    ctx.fillRect(px + 1, py + 1, cell - 2, cell - 2);
+    drawTextFit(TESTI_D4.buca.segno, px + cell / 2, py + cell - 2.5, cell - 2, { size: 8, color: corr ? '#0a0604' : '#fff7d6', shadow: false });
+  }
+  ctx.restore();
+}
+
 
 // ===========================================================================
 // AVVOLGIMENTI (chiamano sempre la base; altre squadre avvolgono le stesse funzioni)
@@ -1015,7 +1646,7 @@ generaMappaPiano = function generaMappaPianoD4(piano, ...resto) {
   if (!m) return m;
   try {
     for (const s of m.stanze) if (s.tipo === 'maledetta') vestiCustodiD4(s, piano);
-    // %%D4-GENERA%%
+    aggiungiBucaD4(m, piano);
   } catch (err) { console.error('[d4] generazione', err); }
   return m;
 };
@@ -1026,9 +1657,20 @@ entraInStanza = function entraInStanzaD4(stanza, daLato, ...resto) {
   try {
     if (stanza && statoRun.stanzaCorrente === stanza) {
       if (stanza.ternaD4) stanza.ternaD4.aperta = false;
-      // %%D4-INGRESSO%%
+      if (stanza.tipo === 'buca') dopoIngressoBucaD4(stanza);
     }
   } catch (err) { console.error('[d4] ingresso', err); }
+  return r;
+};
+
+const verificaStanzaPulitaBaseD4 = verificaStanzaPulita;
+verificaStanzaPulita = function verificaStanzaPulitaD4(...args) {
+  const st = statoRun.stanzaCorrente;
+  const B = st && st.tipo === 'buca' ? st.bucaD4 : null;
+  if (B && B.attiva && !st.pulita && B.ondata < B.ondateTot) return undefined; // il concerto non è finito
+  const eraPulita = !st || st.pulita;
+  const r = verificaStanzaPulitaBaseD4.apply(this, args);
+  try { if (B && B.attiva && !eraPulita && st.pulita) chiudiBucaD4(st); } catch (err) { console.error('[d4] fine del concerto', err); }
   return r;
 };
 
@@ -1046,7 +1688,8 @@ disegnaStanzaPixelArt = function disegnaStanzaPixelArtD4(t, st, ...resto) {
   if (!st) return r;
   try {
     if (st.tipo === 'bisca' && statoRun.fase === 'in_gioco') disegnaCartelloneD4(st, t);
-    // %%D4-RESA-STANZA%%
+    if (st.tipo === 'buca') disegnaBucaD4(st, t);
+    disegnaPorteBucaD4(st, t);
   } catch (err) { console.error('[d4] resa stanza', err); }
   return r;
 };
@@ -1055,7 +1698,7 @@ const disegnaHUDPixelArtBaseD4 = disegnaHUDPixelArt;
 disegnaHUDPixelArt = function disegnaHUDPixelArtD4(st, ...resto) {
   const r = disegnaHUDPixelArtBaseD4.call(this, st, ...resto);
   try {
-    // %%D4-RESA-HUD%%
+    minimappaBucaD4(st);
     disegnaPannelloTernaD4(tick);
   } catch (err) { console.error('[d4] resa hud', err); }
   return r;
@@ -1067,7 +1710,7 @@ passoLogico = function passoLogicoD4(...args) {
   const attivo = Boolean(st) && statoRun.fase === 'in_gioco' && ticksCongelati <= 0
     && !(statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo || statoRun.pausa);
   const pxD4 = player.x, pyD4 = player.y;
-  // %%D4-PRIMA-DEL-PASSO%%
+  if (st && st.bucaD4 && statoRun.scambioPendente) st.bucaD4.scambioVisto = true; // la reliquia è stata scambiata: vedi bisD4
   const r = passoLogicoBaseD4.apply(this, args);
   if (attivo && statoRun.fase === 'in_gioco' && statoRun.stanzaCorrente === st) {
     try {
@@ -1078,7 +1721,7 @@ passoLogico = function passoLogicoD4(...args) {
           passoTernaD4(st);
         } else corpoSolidoD4(STANZE_TEATRO_D4.terna.posto);
       }
-      // %%D4-DOPO-IL-PASSO%%
+      else if (st.tipo === 'buca') passoBucaD4(st);
     } catch (err) { console.error('[d4] passo', err); }
   }
   return r;
@@ -1094,7 +1737,11 @@ if (window.__teatro && window.__teatro.interni && Array.isArray(window.__teatro.
       aggiungi(C.baule.x, C.baule.y - 8, 26, 22); aggiungi(C.manichinoFermo.x, C.manichinoFermo.y - 12, 12, 24);
     }
     else if (st.tipo === 'bisca') { const P = STANZE_TEATRO_D4.terna.posto; aggiungi(P.x, P.y - 10, 20, 26); }
-    // %%D4-RIPARI%%
+    else if (st.tipo === 'buca') {
+      const K = STANZE_TEATRO_D4.buca, D = postoDirettoreD4(st);
+      aggiungi(K.timpani.x, K.timpani.y - 2, 30, 20); aggiungi(K.contrabbasso.x, K.contrabbasso.y - 16, 16, 36);
+      aggiungi(D.x, D.y - 12, 14, 24); aggiungi(D.x + K.metronomoDx, D.y - 4, 8, 14);
+    }
   });
 }
 
@@ -1124,7 +1771,10 @@ if (window.__teatro && window.__teatro.interni) {
         stato: statoTernaD4, apri: apriTernaD4, chiudi: chiudiTernaD4, segna: segnaTernaD4, gioca: giocaTernaD4,
         passo: passoTernaD4, pannello: pannelloTernaD4, rettCella: rettCellaTernaD4, rettBottone: rettBottoneTernaD4,
       },
-      // %%D4-SONDA%%
+      buca: {
+        aggiungi: aggiungiBucaD4, prob: probBucaD4, battito: battitoD4, tickPerPasso: tickPerPassoD4, posizioneMusica: posizioneMusicaD4,
+        passo: passoBucaD4, entraOndata: entraOndataD4, chiudi: chiudiBucaD4, temaMusica: temaMusicaD4, postoDirettore: postoDirettoreD4,
+      },
     },
   });
 }

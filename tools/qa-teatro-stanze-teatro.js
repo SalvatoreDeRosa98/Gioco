@@ -295,9 +295,13 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
     await p.waitForTimeout(100);
     t = await terna();
     ok('Terna: giocarla costa 3 monete e fa partire l\'estrazione di cinque numeri', t.monete === 7 && t.fase === 'estrazione' && t.estratti.length === 5 && t.giocata, t);
-    await p.waitForTimeout(2300); // i primi numeri escono a tempo, uno alla volta
-    t = await terna();
-    ok('Terna: i numeri escono uno alla volta (dopo ~2,3 s non sono ancora tutti fuori)', t.mostrati >= 1 && t.mostrati < 5 && /estratto|Terzo/.test((await p.evaluate(() => window.__teatro.interni.statoRun.stanzaCorrente.ternaD4.voce))), t.mostrati);
+    const unoAllaVolta = await p.evaluate(() => { // a tick contati: il primo numero dopo ~46 tick, poi uno ogni 84
+      const I = window.__teatro.interni; const T = I.statoRun.stanzaCorrente.ternaD4; const K = I.STANZE_TEATRO_D4.terna; const visti = [];
+      for (let t = 1; t <= K.tempi.chiamataTick * 2; t++) { passoLogico(); if (visti[visti.length - 1] !== T.mostrati) visti.push(T.mostrati); }
+      return { visti, mostrati: T.mostrati, voce: T.voce, fase: T.fase };
+    });
+    ok('Terna: i numeri escono uno alla volta, chiamati con la voce di Don Gennaro', unoAllaVolta.fase === 'estrazione' && unoAllaVolta.mostrati >= 2 && unoAllaVolta.mostrati < 5
+      && unoAllaVolta.visti.every((v, i) => i === 0 || v === unoAllaVolta.visti[i - 1] + 1) && /«(Primo|Secondo|Terzo|Quarto)[^»]*\d+: /.test(unoAllaVolta.voce), unoAllaVolta);
     await scatta('terna-estrazione', 100);
     for (let k = 0; k < 12 && (await terna()).fase === 'estrazione'; k++) { await p.keyboard.press('Enter'); await p.waitForTimeout(160); }
     await p.keyboard.press('Enter'); await p.waitForTimeout(250);
@@ -396,7 +400,269 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
   }
 
 
-  // %%QA-BUCA%%
+
+  // =========================================================================
+  // B. LA BUCA DELL'ORCHESTRA
+  // =========================================================================
+  if (SOLO.includes('B')) {
+    // generatore: al massimo una per piano, foglia attaccata a una stanza di combattimento, mai al piano 1 la prima notte
+    const gen = await p.evaluate((SEMI) => {
+      const I = window.__teatro.interni; const v = []; const freq = {}; const D = I.stanzeTeatroD4.buca;
+      const opp = { N: 'S', S: 'N', E: 'W', W: 'E' };
+      const notte0 = I.statoRun.numeroNotte;
+      I.statoRun.numeroNotte = 3;
+      for (const piano of [1, 2, 3, 4]) {
+        let quante = 0;
+        for (let seme = 1; seme <= SEMI; seme++) {
+          const m = I.mappaConSeme(piano, seme * 2654435761);
+          const err = (msg) => v.push(`piano ${piano} seme ${seme}: ${msg}`);
+          if (!m) { err('mappa nulla'); continue; }
+          const conta = (t) => m.stanze.filter((s) => s.tipo === t).length;
+          if (conta('normale') !== I.STANZE_COMBATTIMENTO_PER_PIANO[piano]) err('stanze di combattimento cambiate');
+          for (const t of ['ingresso', 'tesoro', 'fucina', 'boss', 'segreta', 'patto']) if (conta(t) !== 1) err(`${t} × ${conta(t)}`);
+          const celle = new Map(m.stanze.filter((s) => s.tipo !== 'patto').map((s) => [`${s.cx},${s.cy}`, s]));
+          if (celle.size !== m.stanze.length - 1) err('celle duplicate');
+          const buche = m.stanze.filter((s) => s.tipo === 'buca');
+          if (buche.length > 1) err(`buca × ${buche.length}`);
+          quante += buche.length;
+          for (const s of buche) {
+            const porte = Object.entries(s.porte);
+            if (porte.length !== 1) { err(`buca con ${porte.length} porte`); continue; }
+            const [lato, id] = porte[0]; const g = m.perId.get(id);
+            if (!g || g.tipo !== 'normale') err(`buca attaccata a ${g && g.tipo}`);
+            if (!g || g.porte[opp[lato]] !== s.id) err('porta non simmetrica');
+            for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+              const o = celle.get(`${s.cx + dx},${s.cy + dy}`);
+              if (o && I.STANZE_TEATRO_D4.buca.maiAccantoA.includes(o.tipo)) err(`buca accanto a ${o.tipo}`);
+            }
+            if (s.cx < 1 || s.cy < 1 || s.cx > MAPPA_PIANO.larghezza || s.cy > MAPPA_PIANO.altezza) err('buca fuori dalla griglia');
+            if (!s.bucaD4 || s.bucaD4.ondateTot < 3 || s.bucaD4.ondateTot > 4) err('ondate fuori da 3-4');
+            if (s.nemici.length || !s.pulita) err('buca non vuota alla generazione');
+          }
+        }
+        freq[piano] = quante / SEMI;
+      }
+      I.statoRun.numeroNotte = 1;
+      let primaNotte = 0, primaNotteP2 = 0;
+      for (let seme = 1; seme <= SEMI; seme++) {
+        primaNotte += I.mappaConSeme(1, seme * 2654435761).stanze.filter((s) => s.tipo === 'buca').length;
+        primaNotteP2 += I.mappaConSeme(2, seme * 2654435761).stanze.filter((s) => s.tipo === 'buca').length;
+      }
+      I.statoRun.numeroNotte = notte0;
+      return { v: v.slice(0, 8), n: v.length, freq, attese: [1, 2, 3, 4].map((p) => D.prob(p)), primaNotte, primaNotteP2 };
+    }, SEMI);
+    ok('Buca (generatore): al massimo una per piano, foglia su una stanza di combattimento, mai accanto a boss e segreta; il resto del piano non cambia', gen.n === 0, gen.v);
+    ok('Buca (generatore): le frequenze sono quelle della tabella', [1, 2, 3, 4].every((pn, i) => Math.abs(gen.freq[pn] - gen.attese[i]) < 0.12), gen);
+    ok('Buca (generatore): mai al piano 1 la prima notte (al piano 2 sì)', gen.primaNotte === 0 && gen.primaNotteP2 > 0, gen);
+
+    // --- audio SPENTO: il metronomo interno porta le ondate a tempo ---
+    await prepara(2);
+    await p.evaluate(() => { const I = window.__teatro.interni; AudioSys.attivo = false; I.stanzeTeatroD4.prova.senzaMusica = true; });
+    const fuori = await p.evaluate(() => { // la porta della Buca vista dalla stanza accanto
+      const I = window.__teatro.interni;
+      for (let k = 0; k < 900 && !I.statoRun.mappa.stanze.some((x) => x.tipo === 'buca'); k++) avviaPiano(I.statoRun.piano, false);
+      I.statoRun.siparioAttivo = null;
+      const s = I.statoRun.mappa.stanze.find((x) => x.tipo === 'buca');
+      const [, idG] = Object.entries(s.porte)[0]; const g = I.statoRun.mappa.perId.get(idG);
+      I.statoRun.stanzaCorrente = g; g.pulita = true; g.nemici = []; g.visitata = true;
+      I.player.x = 320; I.player.y = 200; I.statoRun.banner = ''; I.statoRun.bannerTimer = 0;
+      return { tipo: g.tipo };
+    });
+    ok('Buca: c\'è nel piano e la sua porta dà su una stanza di combattimento', fuori.tipo === 'normale', fuori);
+    await scatta('buca-porta-da-fuori', 300);
+    const dentro = await vaiIn('buca');
+    const ing = await p.evaluate(() => {
+      const I = window.__teatro.interni; const st = I.statoRun.stanzaCorrente; const B = st.bucaD4;
+      verificaStanzaPulita(); // senza nemici in scena: non deve aprire le porte
+      return { attiva: B.attiva, pulita: st.pulita, ondateTot: B.ondateTot, banner: I.statoRun.banner, nemici: st.nemici.length,
+        tema: I.Musica.temaCorrente().base, temaInTabella: Boolean(I.MUSICA.temi.orchestra), battute: I.MUSICA.temi.orchestra.melodia.map((b) => b.trim().split(/\s+/).length),
+        accordi: I.MUSICA.temi.orchestra.accordi.length, bpm: I.MUSICA.temi.orchestra.bpm, bpmBuca: I.STANZE_TEATRO_D4.buca.bpm, tpp: I.stanzeTeatroD4.buca.tickPerPasso(), posMusica: typeof I.Musica.posizionePassi };
+    });
+    ok('Buca: entrando il concerto parte, le porte si chiudono e lo dice il banner', dentro.dentro && ing.attiva && !ing.pulita && ing.nemici === 0 && /BUCA DELL'ORCHESTRA/.test(ing.banner) && ing.ondateTot >= 3 && ing.ondateTot <= 4, ing);
+    ok('Buca: il pezzo «orchestra» è nei temi di a8 (8 battute da 6 passi, stesso bpm) ed è il tema richiesto', ing.tema === 'orchestra' && ing.temaInTabella && ing.battute.length === 8 && ing.battute.every((n) => n === 6) && ing.accordi === 8 && ing.bpm === ing.bpmBuca && ing.posMusica === 'function', ing);
+    ok('Buca: a 96 bpm un passo dura 12,5 tick (battuta = 75 tick = 1,25 s)', Math.abs(ing.tpp - 12.5) < 1e-9, ing.tpp);
+    await scatta('buca-attacco', 500);
+
+    // si lasciano entrare tutte le ondate senza uccidere nessuno: ogni 8 battute, sul battere
+    const tempo = await p.evaluate(() => {
+      const I = window.__teatro.interni; const st = I.statoRun.stanzaCorrente; const B = st.bucaD4; const K = I.STANZE_TEATRO_D4.buca;
+      // ricomincia da capo, per contare i tick dall'ingresso
+      const [lato, idG] = Object.entries(st.porte)[0];
+      B.attiva = false; st.pulita = true; entraInStanza(st, lato);
+      I.player.invuln = 999999; I.player.x = 100; I.player.y = 290; I.statoRun.graziaIngressoC = 0;
+      const tickBattuta = I.stanzeTeatroD4.buca.tickPerPasso() * K.passiPerBattuta;
+      const ingressi = []; const fonti = new Set(); const colpi = []; const mosse = []; let fuoriTempo = 0, colpiFuoriBattere = 0, mossiFuoriScatto = 0;
+      const scattoTick = Math.max(4, Math.round(I.stanzeTeatroD4.buca.tickPerPasso() * 3 * K.scattoFrazione));
+      let nProiettili = 0; const pos = new Map();
+      const durata = Math.round(tickBattuta * (K.battuteAttacco + K.battutePerOndata * B.ondateTot + 2));
+      for (let t = 1; t <= durata; t++) {
+        const ondataPrima = B.ondata;
+        const prima = new Set(I.statoRun.proiettiliNemici);
+        I.player.x = 100; I.player.y = 290; // fermo in un angolo, invulnerabile
+        passoLogico();
+        fonti.add(B.fonte);
+        if (B.ondata !== ondataPrima) { ingressi.push({ ondata: B.ondata, tick: t, battuta: B.battuta, passo: I.stanzeTeatroD4.buca.battito().passo, nemici: st.nemici.filter((n) => n.hp > 0).length }); }
+        const nuovi = I.statoRun.proiettiliNemici.filter((x) => !prima.has(x));
+        if (nuovi.length) { nProiettili += nuovi.length; colpi.push(t); if (B.tickDalTempo !== 0) fuoriTempo++; if (!B.battere) colpiFuoriBattere++; }
+        for (const n of st.nemici) {
+          if (!n.bucaD4 || n.hp <= 0) continue;
+          const q = pos.get(n.id);
+          if (q && (Math.abs(q.x - n.x) > 0.001 || Math.abs(q.y - n.y) > 0.001)) { mosse.push(B.tickDalTempo); if (B.tickDalTempo >= scattoTick) mossiFuoriScatto++; }
+          pos.set(n.id, { x: n.x, y: n.y });
+        }
+      }
+      const conParte = st.nemici.filter((n) => n.bucaD4).length, senzaParte = st.nemici.filter((n) => !n.bucaD4).length;
+      return { ingressi, fonti: [...fonti], tickBattuta, nProiettili, fuoriTempo, colpiFuoriBattere, nMosse: mosse.length, mossiFuoriScatto, scattoTick, conParte, senzaParte,
+        tipi: [...new Set(st.nemici.map((n) => n.tipo))], pulita: st.pulita, hp: I.statoRun.hpHalf, colpito: B.colpito, ondateTot: B.ondateTot };
+    });
+    const attesi = tempo.ingressi.map((_, i) => Math.round((2 + 8 * i) * tempo.tickBattuta) + 1);
+    ok('Buca (audio spento): l\'orologio è il metronomo interno', tempo.fonti.length === 1 && tempo.fonti[0] === 'metronomo', tempo.fonti);
+    ok('Buca (audio spento): le ondate entrano tutte, una ogni 8 battute dopo 2 d\'attacco, sul battere (tick 151, 751, 1351…)',
+      tempo.ingressi.length === tempo.ondateTot && tempo.ingressi.every((x, i) => Math.abs(x.tick - attesi[i]) <= 2 && x.passo === 0 && x.battuta === 3 + 8 * i && x.nemici > 0), { ingressi: tempo.ingressi, attesi });
+    ok('Buca: i nemici attaccano solo SUL BATTERE (ogni colpo nasce nel tick di un battere)', tempo.nProiettili > 0 && tempo.fuoriTempo === 0 && tempo.colpiFuoriBattere === 0, { n: tempo.nProiettili, fuoriTempo: tempo.fuoriTempo, fuoriBattere: tempo.colpiFuoriBattere, tipi: tempo.tipi });
+    ok('Buca: i nemici si muovono a scatti sui tempi (fermi fra uno scatto e l\'altro)', tempo.nMosse > 20 && tempo.mossiFuoriScatto === 0 && tempo.conParte > 0, { mosse: tempo.nMosse, fuori: tempo.mossiFuoriScatto, scattoTick: tempo.scattoTick, conParte: tempo.conParte, senzaParte: tempo.senzaParte });
+    ok('Buca: finché restano nemici le porte restano chiuse', !tempo.pulita, tempo.pulita);
+    await p.evaluate(() => { const I = window.__teatro.interni; I.player.x = 320; I.player.y = 250; });
+    await scatta('buca-ondate', 400);
+
+    // finale senza danni: applauso e premio doppio (col bis)
+    const doppio = await p.evaluate(() => {
+      const I = window.__teatro.interni; const st = I.statoRun.stanzaCorrente; const B = st.bucaD4; const K = I.STANZE_TEATRO_D4.buca;
+      I.statoRun.poolRunB = null; st.oggettiATerra = [];
+      for (const n of st.nemici) n.hp = 0;
+      verificaStanzaPulita();
+      const r = { pulita: st.pulita, finita: B.finita, attiva: B.attiva, esito: B.esito, colpito: B.colpito, banner: I.statoRun.banner, premio: B.premio, bis: B.bis,
+        monete: st.oggettiATerra.filter((o) => o.tipo === 'moneta').length, primo: st.oggettoPiedistallo && st.oggettoPiedistallo.id, tema: I.Musica.temaCorrente().base };
+      I.player.invuln = 0;
+      return r;
+    });
+    ok('Buca: finite le ondate SENZA danni → applauso e premio doppio (monete × 2, due reliquie)', doppio.pulita && doppio.finita && !doppio.attiva && doppio.esito === 'applauso' && doppio.premio.doppio
+      && doppio.premio.monete === 6 && doppio.monete >= 6 && doppio.primo && doppio.bis === 1 && /applaude/.test(doppio.banner) && doppio.tema !== 'orchestra', doppio);
+    await p.evaluate(() => { const I = window.__teatro.interni; I.player.x = 250; I.player.y = 262; });
+    await scatta('buca-applauso', 700);
+    const bis = await p.evaluate(() => {
+      const I = window.__teatro.interni; const st = I.statoRun.stanzaCorrente; const B = st.bucaD4;
+      const primo = st.oggettoPiedistallo.id;
+      for (let t = 0; t < 30; t++) passoLogico();
+      const ancora = st.oggettoPiedistallo.id === primo && B.bis === 1;
+      st.oggettoPiedistallo.preso = true; // presa la prima reliquia
+      for (let t = 0; t < 5; t++) passoLogico();
+      return { ancora, secondo: st.oggettoPiedistallo && !st.oggettoPiedistallo.preso ? st.oggettoPiedistallo.id : null, primo, bis: B.bis, banner: I.statoRun.banner };
+    });
+    ok('Buca: presa la prima reliquia compare il «bis» (la seconda)', bis.ancora && bis.secondo && bis.bis === 0 && /BIS/.test(bis.banner), bis);
+
+    // rientrando a concerto finito non riparte niente
+    const rientro = await p.evaluate(() => {
+      const I = window.__teatro.interni; const st = I.statoRun.stanzaCorrente;
+      const [lato, idG] = Object.entries(st.porte)[0]; const g = I.statoRun.mappa.perId.get(idG);
+      entraInStanza(g, { N: 'S', S: 'N', E: 'W', W: 'E' }[lato]); g.pulita = true; g.nemici = [];
+      entraInStanza(st, lato);
+      for (let t = 0; t < 200; t++) passoLogico();
+      return { pulita: st.pulita, attiva: st.bucaD4.attiva, nemici: st.nemici.filter((n) => n.hp > 0).length };
+    });
+    ok('Buca: a concerto finito la stanza resta aperta e vuota', rientro.pulita && !rientro.attiva && rientro.nemici === 0, rientro);
+
+    // con un colpo subito: premio normale. E il palco vuoto anticipa l'ondata alla prossima frase.
+    await prepara(3);
+    await p.evaluate(() => { const I = window.__teatro.interni; AudioSys.attivo = false; I.stanzeTeatroD4.prova.senzaMusica = true; });
+    await vaiIn('buca');
+    const normale = await p.evaluate(() => {
+      const I = window.__teatro.interni; const st = I.statoRun.stanzaCorrente; const B = st.bucaD4; const K = I.STANZE_TEATRO_D4.buca;
+      I.statoRun.poolRunB = null;
+      I.player.invuln = 999999; I.statoRun.graziaIngressoC = 0;
+      const ingressi = [];
+      let colpitoPrima = null;
+      for (let t = 1; t <= 6000 && !B.finita; t++) {
+        const o = B.ondata;
+        I.player.x = 100; I.player.y = 290;
+        passoLogico();
+        if (B.ondata !== o) {
+          ingressi.push({ ondata: B.ondata, tick: t, battuta: B.battuta });
+          if (B.ondata === 2) { colpitoPrima = B.colpito; I.statoRun.hpHalf -= 1; } // un colpo a segno durante la seconda ondata
+          for (const n of st.nemici) n.hp = 0; // l'ondata cade subito: palco vuoto
+          verificaStanzaPulita();
+        }
+      }
+      st.oggettiATerra = st.oggettiATerra.filter((x) => x.tipo === 'moneta');
+      return { ingressi, finita: B.finita, esito: B.esito, colpitoPrima, colpito: B.colpito, premio: B.premio, bis: B.bis, banner: I.statoRun.banner,
+        oggetto: Boolean(st.oggettoPiedistallo), ondateTot: B.ondateTot, frase: K.fraseBattute };
+    });
+    ok('Buca: a palco vuoto l\'ondata dopo entra alla frase successiva (2 battute) invece di aspettarne 8', normale.ingressi.length === normale.ondateTot
+      && normale.ingressi.slice(1).every((x, i) => x.battuta - normale.ingressi[i].battuta === normale.frase), normale.ingressi);
+    ok('Buca: con un colpo subito il premio è quello normale (3 monete, una reliquia, niente bis)', normale.finita && normale.esito === 'normale' && normale.colpitoPrima === false && normale.colpito
+      && normale.premio.monete === 3 && !normale.premio.doppio && normale.bis === 0 && normale.oggetto && /Il pezzo è finito/.test(normale.banner), normale);
+    await p.evaluate(() => { const I = window.__teatro.interni; I.player.invuln = 0; I.statoRun.hpHalf = I.statoRun.maxHpHalf; });
+
+    // --- audio ACCESO: se il contesto parte, l'orologio segue il sequencer di a8 ---
+    await prepara(2);
+    await p.evaluate(() => { const I = window.__teatro.interni; AudioSys.attivo = true; I.stanzeTeatroD4.prova.senzaMusica = false; });
+    await p.keyboard.press('KeyM'); await p.keyboard.press('KeyM'); // un gesto vero: il contesto audio può partire (e il muto torna com'era)
+    await p.evaluate(() => { AudioSys.attivo = true; });
+    await p.mouse.click(640, 700);
+    await p.waitForTimeout(300);
+    await vaiIn('buca');
+    await p.evaluate(() => { const I = window.__teatro.interni; I.player.invuln = 999999; I.player.x = 100; I.player.y = 290; });
+    // (a) a tick contati, con un sequencer finto al posto di Musica.posizionePassi: parte in ritardo (prima va il
+    //     metronomo), poi tace per 100 tick (muto) e riprende da dov'era, come fa a8
+    const finto = await p.evaluate(() => {
+      const I = window.__teatro.interni; const st = I.statoRun.stanzaCorrente; const B = st.bucaD4; const K = I.STANZE_TEATRO_D4.buca;
+      const [lato] = Object.entries(st.porte)[0];
+      const vera = I.Musica.posizionePassi;
+      let t = 0, pos = 0;
+      const perTick = 1 / I.stanzeTeatroD4.buca.tickPerPasso();
+      const muta = (k) => k <= 80 || (k > 700 && k <= 800);
+      I.Musica.posizionePassi = () => (muta(t) ? null : pos);
+      B.attiva = false; st.pulita = true; st.nemici = []; B.ondata = 0; entraInStanza(st, lato);
+      I.player.invuln = 999999; I.statoRun.graziaIngressoC = 0;
+      const fonti = []; const battute = [];
+      for (t = 1; t <= 1700; t++) {
+        if (!muta(t)) pos += perTick;
+        I.player.x = 100; I.player.y = 290;
+        const b0 = B.battuta;
+        passoLogico();
+        if (fonti[fonti.length - 1] !== B.fonte) fonti.push(B.fonte);
+        if (B.battuta !== b0) battute.push(t);
+      }
+      I.Musica.posizionePassi = vera;
+      const r = { fonti, battute: battute.slice(0, 5), ingressi: B.ingressi.slice(0, 2), perTick };
+      B.attiva = false; st.pulita = true; st.nemici = []; B.ondata = 0; entraInStanza(st, lato); // da capo per la prova col contesto vero
+      I.player.invuln = 999999;
+      return r;
+    });
+    ok('Buca (sequencer di a8): l\'orologio passa dal metronomo alla musica, al metronomo nel muto e di nuovo alla musica', JSON.stringify(finto.fonti) === JSON.stringify(['metronomo', 'musica', 'metronomo', 'musica']), finto.fonti);
+    ok('Buca (sequencer di a8): quando il pezzo parte in ritardo il battere non si conta due volte', finto.battute[0] === 1 && Math.abs(finto.battute[1] - 75.5) < 1 && finto.battute[2] > 140 && finto.battute[2] < 160, finto.battute);
+    ok('Buca (sequencer di a8): le ondate entrano sul battere della MUSICA, a 8 battute (48 passi) una dall\'altra anche attraverso il muto',
+      finto.ingressi.length === 2 && finto.ingressi[0].fonte === 'musica' && (finto.ingressi[0].pos % 6) < 0.09 && (finto.ingressi[1].pos % 6) < 0.09
+      && Math.abs(finto.ingressi[1].pos - finto.ingressi[0].pos - 48) < 6.5, finto.ingressi);
+    // (b) col contesto audio vero (se in questo browser parte): la fonte è la musica e la posizione è la sua
+    const leggi = () => p.evaluate(() => {
+      const I = window.__teatro.interni; const st = I.statoRun.stanzaCorrente; const B = st.bucaD4; const M = I.Musica.stato;
+      return { ctx: M.ctx, suona: M.suona, base: M.base, fonte: B.fonte, pos: I.Musica.posizionePassi('orchestra'), posBuca: B.pos, ondata: B.ondata, battuta: B.battuta };
+    });
+    await p.waitForTimeout(1200);
+    const avvio = await leggi();
+    await p.waitForTimeout(600);
+    const poi = await leggi();
+    if (avvio.ctx === 'running' && avvio.suona) {
+      ok('Buca (audio acceso, contesto vero): l\'orologio è il sequencer di a8 e avanza con lui', avvio.base === 'orchestra' && avvio.fonte === 'musica' && poi.fonte === 'musica' && avvio.pos > 0 && poi.pos > avvio.pos && poi.posBuca > avvio.posBuca && poi.posBuca <= poi.pos + 0.01, { avvio, poi });
+    } else {
+      ok('Buca (audio acceso ma contesto fermo in questo browser): il metronomo interno fa lo stesso lavoro', poi.fonte === 'metronomo' && poi.posBuca > avvio.posBuca, { avvio, poi });
+    }
+    await p.evaluate(() => { const I = window.__teatro.interni; I.player.x = 300; I.player.y = 240; });
+    await scatta('buca-musica', 900);
+    const muto = await p.evaluate(async () => { // si spegne l'audio a metà: il metronomo riprende da dov'era la musica
+      const I = window.__teatro.interni; const B = I.statoRun.stanzaCorrente.bucaD4;
+      const prima = { pos: B.pos, fonte: B.fonte, battuta: B.battuta };
+      AudioSys.attivo = false;
+      await new Promise((r) => setTimeout(r, 700));
+      const dopo = { pos: B.pos, fonte: B.fonte, battuta: B.battuta };
+      I.player.invuln = 0;
+      return { prima, dopo };
+    });
+    ok('Buca: spento l\'audio a metà il metronomo riparte da dov\'era la musica (nessun salto indietro)', muto.dopo.fonte === 'metronomo' && muto.dopo.pos > muto.prima.pos && muto.dopo.pos - muto.prima.pos < 6, muto);
+    await p.evaluate(() => { window.__teatro.interni.stanzeTeatroD4.prova.senzaMusica = false; });
+  }
+
 
   const erroriTeatro = await p.evaluate(() => (typeof ERRORI_TEATRO !== 'undefined' ? ERRORI_TEATRO.map((e) => `${e.dove}: ${e.testo}`) : ['ERRORI_TEATRO assente']));
   ok('nessun errore in ERRORI_TEATRO', erroriTeatro.length === 0, erroriTeatro);
