@@ -1,5 +1,5 @@
 #!/bin/bash
-# Ferruccio — La Notte Immobile · script di lancio per R36S / ArkOS (aarch64) · pacchetto v2.
+# Ferruccio — La Notte Immobile · script di lancio per R36S / ArkOS (aarch64) · pacchetto v3.
 # Va copiato in  ports/  insieme alla cartella  ferruccio/ : è la stessa forma dei port di PortMaster
 # (uno script .sh più la sua cartella), ma è AUTOSUFFICIENTE: non usa nessun file di PortMaster
 # (né control.txt, né gptokeyb, né runtime da scaricare). Tutto quello che serve sta in  ferruccio/ .
@@ -35,7 +35,7 @@ GLIBC_V="$(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $2}')"
 [ -z "$GLIBC_V" ] && GLIBC_V="$(ldd --version 2>/dev/null | head -n 1 | grep -o '[0-9]*\.[0-9]*$')"
 
 {
-  echo "=== Ferruccio v2: lancio del $(date) · modo: ${FERRUCCIO_MODO:-gioco} ==="
+  echo "=== Ferruccio v3: lancio del $(date) · modo: ${FERRUCCIO_MODO:-gioco} ==="
   echo "cartella: $GAMEDIR · utente: $(id 2>/dev/null) · macchina: $(uname -m)"
   uname -a
   head -n 4 /etc/os-release 2>/dev/null
@@ -84,6 +84,11 @@ if [ "$usa_dotazione" = "1" ]; then
 else
   echo "SDL2: quella della console (SDL_SCELTA=$SDL_SCELTA, glibc $GLIBC_V)" >> "$LOG"
 fi
+
+# Memoria: il gioco chiede e rende di continuo blocchi grandi (immagini da decodificare, fotogrammi). Con
+# queste regolazioni la libreria di sistema restituisce al sistema quelli grandi appena liberi, invece di
+# tenerseli: sul PC di prova il gioco occupa 190-210 MB invece di 310-360.
+export MALLOC_ARENA_MAX=2 MALLOC_MMAP_THRESHOLD_=1048576 MALLOC_TRIM_THRESHOLD_=4194304
 
 # node: prima direttamente; se il sistema rifiuta di eseguirlo, attraverso il caricatore di sistema
 NODE="$GAMEDIR/node/node"

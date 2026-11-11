@@ -63,7 +63,7 @@ function installaAcceleratore(p) {
   const completo = Boolean(dFiltro.set && dPieno.set && dTratto.set && dFont.set && dFont.get && dAll.get && dBase.get);
   if (!completo) log.riga('avviso: il contesto 2D non lascia agganciare le sue proprietà: niente acceleratore (lento)');
   const ST = Symbol('stato'); const PILA = Symbol('pila'); // bit 1 = brightness(0) finto, bit 2 = un altro filtro vero
-  const S = { fotogramma: 0, cottureTesto: 0, scritteUsate: 0, scritteVere: 0, veloUsato: 0 };
+  const S = { fotogramma: 0, cottureTesto: 0, scritteUsate: 0, scritteVere: 0, veloUsato: 0, immaginiSaltate: 0, immaginiDisegnate: 0 };
   stato.acceleratore = S;
 
   // --- 1. font dei simboli ---------------------------------------------------------------------------------
@@ -234,7 +234,7 @@ function installaAcceleratore(p) {
   }
   if (completo && opz.memoriaTesto !== false) proto.measureText = function (testo) { return misura(this, dFont.get.call(this), testo); };
   // Spenta di partenza: sul PC non rende (riconoscere la scritta costa quanto impaginarla). Si accende con memoriaScritte: true.
-  const memScritte = completo && opz.memoriaScritte === true;
+  stato.memoriaScritte = completo && opz.memoriaScritte === true; // si può cambiare in corsa (la misura lo fa)
   const scritte = new Map(); let viste = new Map();
   let gMisura = null;
   function cuociScritta(font, stile, all, base, s, testo) {
@@ -301,8 +301,8 @@ function installaAcceleratore(p) {
       if (nero) dFiltro.set.call(this, 'brightness(0)');
       try {
         if (v === undefined) return N.drawImage.apply(this, arguments);
-        if (!v || !v.tela) return undefined; // immagine non ancora pronta
-        const n = arguments.length; let r;
+        if (!v || !v.tela) { S.immaginiSaltate++; return undefined; } // immagine non ancora pronta (di norma il gioco non la disegna: complete è false)
+        const n = arguments.length; let r; S.immaginiDisegnate++;
         if (n >= 9) {
           const sw = arguments[3], sh = arguments[4], dw = arguments[7], dh = arguments[8];
           r = Math.max(Math.abs(dw / sw), Math.abs(dh / sh)) * stato.scala; if (r > v.richiesto) v.richiesto = r;
@@ -319,7 +319,7 @@ function installaAcceleratore(p) {
     proto.fillText = function (testo, x, y, maxW) {
       const st = this[ST] | 0;
       if (st & 1) return inNero(this, N.fillText, arguments, dPieno);
-      if (st || !memScritte || typeof testo !== 'string' || testo.length === 0 || testo.length > 96) return N.fillText.apply(this, arguments);
+      if (st || !stato.memoriaScritte || typeof testo !== 'string' || testo.length === 0 || testo.length > 96) return N.fillText.apply(this, arguments);
       const stile = dPieno.get.call(this);
       if (typeof stile !== 'string') return N.fillText.apply(this, arguments);
       const m = N.getTransform.call(this);
@@ -358,7 +358,7 @@ function installaAcceleratore(p) {
       let px = 0, pronte = 0; for (const v of R.voci) { if (v.tela) { px += v.px; pronte++; } }
       return { immagini: R.voci.length, pronte, tenuteMB: px * 4 / 1048576, intereMB: R.pxPieni * 4 / 1048576, decodifiche: R.decodifiche };
     },
-    statistiche() { return { scritteInMemoria: scritte.size, scritteUsate: S.scritteUsate, scritteVere: S.scritteVere, veli: veli.size, veloUsato: S.veloUsato }; },
+    statistiche() { return { scritteInMemoria: scritte.size, scritteUsate: S.scritteUsate, scritteVere: S.scritteVere, veli: veli.size, veloUsato: S.veloUsato, immaginiDisegnate: S.immaginiDisegnate, immaginiSaltate: S.immaginiSaltate }; },
   };
 }
 

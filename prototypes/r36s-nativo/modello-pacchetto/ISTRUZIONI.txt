@@ -1,114 +1,80 @@
-FERRUCCIO — LA NOTTE IMMOBILE sulla tua R36S · SECONDA PROVA (pacchetto v2)
+FERRUCCIO — LA NOTTE IMMOBILE sulla tua R36S · TERZA PROVA (pacchetto v3)
 ==========================================================================
 
-La prima prova è partita ma andava a circa 5 immagini al secondo. Questa è fatta per andare più
-veloce: disegna il palco un po' più piccolo e lo ingrandisce, toglie qualche effetto di luce, e
-mette la console alla massima potenza mentre giochi. Quanto più veloce, lo dirà la tua console.
+Cosa cambia rispetto alla seconda prova:
+  - prova ad andare a 30 immagini al secondo (prima il tetto era 20) e sceglie DA SOLO la qualità:
+    se la console ce la fa tiene l'immagine più bella, se fatica la abbassa un poco. Non devi toccare file;
+  - il ritmo è agganciato allo schermo: anche quando non arriva a 30, le immagini escono a intervalli
+    regolari (meno scatti);
+  - usa molta meno memoria: i disegni dei burattini e dei nemici si tengono piccoli come servono a schermo;
+  - il menu dei burattini non viene più ridisegnato di continuo quando non tocchi niente;
+  - in basso a destra c'è un NUMERO: sono le immagini al secondo vere. Verde = ci siamo, giallo = quasi,
+    rosso = lento. Il numerino grigio accanto è il «gradino» di qualità (0 = il più bello, 7 = il più
+    leggero). Nel menu il numero diventa grigio: lì il gioco sta fermo apposta.
 Il sonoro è ancora spento.
 
 --------------------------------------------------------------------------
 1 · SOSTITUISCI LA VECCHIA PROVA (sul PC)
 --------------------------------------------------------------------------
-  a. Metti la scheda nel PC e apri  EASYROMS (H:)  →  ports .
-     (Non toccare «R36S OS». Se Windows chiede di formattare, rispondi ANNULLA.)
-  b. Se vuoi mandarci i vecchi log, prima copia sul PC la cartella  H:\ports\ferruccio\dati .
-  c. CANCELLA da  H:\ports\  la vecchia cartella  ferruccio  e il vecchio  Ferruccio.sh .
-  d. Estrai  ferruccio-r36s-v2.zip  e copia in  H:\ports\  le TRE cose che contiene:
-         Ferruccio.sh          il gioco
-         FerruccioMisura.sh    una misura automatica (vedi punto 3)
-         ferruccio             la cartella con tutto il resto
+  a. Scheda nel PC, apri  EASYROMS (H:)  →  ports .  (Non toccare «R36S OS»; se Windows chiede di
+     formattare rispondi ANNULLA.)
+  b. Se non ce li hai ancora mandati, copia prima sul PC i file di  H:\ports\ferruccio\dati .
+  c. CANCELLA da  H:\ports\  la cartella  ferruccio  e i file  Ferruccio.sh  e  FerruccioMisura.sh .
+  d. Estrai  ferruccio-r36s-v3.zip  e copia in  H:\ports\  le tre cose che contiene:
+         Ferruccio.sh        FerruccioMisura.sh        ferruccio  (cartella)
      Non aprire i file .sh: copiali e basta.
   e. «Rimozione sicura», poi rimetti la scheda nella console.
 
 --------------------------------------------------------------------------
-2 · GIOCA (sulla console)
+2 · GIOCA E GUARDA IL NUMERO
 --------------------------------------------------------------------------
-  Ports → Ferruccio. Lo schermo resta nero per un po' (anche un minuto): aspetta.
-  Comandi come prima:
-     croce o levetta sinistra   muoversi          Start    conferma nei menu / pausa in gioco
-     levetta destra             sparare           R1       azione (porte, forzieri, parlare)
-     i quattro tasti a destra   sparare giù, a destra, a sinistra, in su, secondo dove sta il tasto
-     L1 consumabile   L2 oggetto attivo   Select diario
-     PER USCIRE: START + SELECT insieme per un secondo (oppure sei tasti insieme per due secondi).
-  Gioca tre o quattro minuti, entra in due o tre stanze coi nemici, poi esci con Start+Select.
-  Dicci: va meglio di prima? Si leggono le scritte? I tasti fanno quello che devono?
-  Una cosa è cambiata di sicuro: anche se l'immagine va a scatti, il gioco ora cammina alla
-  velocità giusta (prima andava anche al rallentatore).
+  Ports → Ferruccio. Schermo nero per un po' (anche un minuto): aspetta.
+  Nei primi secondi alcuni burattini possono apparire disegnati «a mano»: le loro figure arrivano
+  subito dopo.
+  Comandi come prima: croce o levetta sinistra per muoversi, levetta destra o i quattro tasti per
+  sparare, R1 azione, L1 consumabile, L2 oggetto attivo, Start pausa/conferma, Select diario.
+  PER USCIRE: START + SELECT insieme per un secondo.
 
---------------------------------------------------------------------------
-3 · LA MISURA AUTOMATICA (facoltativa, ma ci aiuta moltissimo)
---------------------------------------------------------------------------
-  Ports → FerruccioMisura. Non devi toccare niente: il gioco si gioca da solo per qualche minuto
-  (menu, piazza, una stanza, una stanza piena di nemici, più volte e con qualità diverse), poi
-  torna da solo all'elenco dei Ports. Se dopo 12 minuti non è tornato, spegni pure.
-  Serve a noi: scrive quanto ci mette la TUA console a fare ogni cosa, così sappiamo dove
-  intervenire invece di tirare a indovinare.
+  Quello che ci serve sapere (bastano due righe):
+     - il numero colorato in una stanza CON i nemici, e in una stanza già ripulita;
+     - il numerino grigio accanto (il gradino);
+     - se le scritte si leggono e se ti sembra più fluido di prima.
 
 --------------------------------------------------------------------------
-4 · MANDACI I FILE (sul PC)
+3 · LA MISURA AUTOMATICA (un minuto, ci aiuta molto)
 --------------------------------------------------------------------------
-  Tutti i file che trovi in  H:\ports\ferruccio\dati\ . Di solito sono:
-     lancio.log  e  ferruccio.log      (la partita)
-     lancio-misura.log  e  misura.log  (la misura automatica, se l'hai fatta)
+  Ports → FerruccioMisura. Non toccare niente: il gioco si gioca da solo per circa un minuto e
+  torna all'elenco dei Ports. Scrive un file con i tempi veri della tua console.
 
 --------------------------------------------------------------------------
-5 · PIÙ VELOCE O PIÙ BELLO: I TRE LIVELLI
+4 · MANDACI I FILE
 --------------------------------------------------------------------------
-  Sul PC apri  H:\ports\ferruccio\impostazioni.json  col Blocco note. La prima riga utile è
-        "livello": "medio",
-  Puoi scrivere al posto di  medio  una di queste tre parole (tra virgolette, minuscole):
+  Tutti i file di  H:\ports\ferruccio\dati\ . Il più utile è  misura.log : le prime righe sono un
+  riassunto che si legge anche a occhio.
 
-     "veloce"   palco a 320×180 ingrandito. Il più rapido, ma le scritte piccole NON si leggono
-                e l'immagine è sfocata. Senza luci, riflessi, pioggia, schegge.
-     "medio"    palco a 480×270 ingrandito. Le scritte si leggono, l'immagine è un po' morbida.
-                Senza luci della ribalta, riflessi e velo della notte; la pioggia resta.
-                È il livello con cui parte.
-     "bello"    palco a 640×360 pieno, con tutto: è quello della prima prova (lento).
+--------------------------------------------------------------------------
+SE VUOI CAMBIARE QUALCOSA (non serve)
+--------------------------------------------------------------------------
+  File  H:\ports\ferruccio\impostazioni.json , col Blocco note. Le prime righe:
 
-  Salva il file, rimetti la scheda nella console e rilancia. Prova «medio»; se è ancora troppo a
-  scatti prova «veloce» e dicci com'è.
+     "livello": "auto",      auto = sceglie da solo. Oppure fisso: "bello" (640×360, tutto),
+                             "medio" (480×270), "veloce" (320×180: le scritte piccole non si leggono)
+     "fps": 30,              immagini al secondo da tenere: 20, 30, 40 o 60
+     "scalaMinima": 0.625,   fin dove «auto» può rimpicciolire il palco: 0.75 = scritte nitide,
+                             0.625 = si leggono ancora (di partenza), 0.5 = più veloce ma non si leggono
+     "contatore": true,      false = toglie il numero in basso a destra
 
-  Per chi vuole regolare di fino, nello stesso file si possono AGGIUNGERE queste voci (vincono
-  sul livello). Ogni voce va su una riga sua, con la virgola in fondo, subito dopo "livello":
-
-        "scala": 0.6,         grandezza del palco: 1 = pieno, 0.75, 0.6, 0.5 … (più piccolo = più veloce)
-        "fps": 15,            quante immagini al secondo provare a fare (il gioco non rallenta:
-                              sotto ne disegna di meno, la velocità di gioco resta giusta fino a 12)
-        "tagli": { "fili": true, "atmosfera": true },
-                              cose da NON disegnare (true = tolta). Si possono mettere:
-                                luci         le luci della ribalta
-                                riflessi     i riflessi sul bagnato
-                                velo         il velo scuro della notte
-                                atmosfera    pioggia e velo insieme
-                                particelle   schegge e scintille
-                                crollo       i burattini che cadono a pezzi
-                                scenografia  gli arredi che calano dall'alto
-                                fili         i fili delle marionette
-
-  Se dopo una modifica il gioco non parte più, hai probabilmente tolto una virgola o una
-  virgoletta: rimetti il file  impostazioni.json  preso dallo zip.
+  Se dopo una modifica il gioco non parte, rimetti il file preso dallo zip.
 
 --------------------------------------------------------------------------
 SE QUALCOSA VA STORTO
 --------------------------------------------------------------------------
   Schermo nero per più di due minuti, o torna subito all'elenco: spegni e mandaci i log.
-  I quattro tasti sparano dalla parte sbagliata: in impostazioni.json metti "scambiaAB": true
-     (e, se serve, "scambiaXY": true).
-  I tasti non rispondono: premili tutti uno alla volta, esci o spegni, e mandaci i log
-     (il gioco scrive il numero di ogni tasto premuto).
+  Va PEGGIO della seconda prova: in impostazioni.json cambia  "vsync": true  in  "vsync": false
+     e riprova (è l'aggancio allo schermo: su qualche console può dare fastidio). Dicci com'è andata.
+  I quattro tasti sparano dalla parte sbagliata: "scambiaAB": true (e, se serve, "scambiaXY": true).
   La console non risponde più: tieni premuto il tasto di accensione finché si spegne.
   Ricominciare da capo: cancella la cartella  H:\ports\ferruccio\dati .
 
 PER TOGLIERE TUTTO
   Cancella da  H:\ports\  i file  Ferruccio.sh  e  FerruccioMisura.sh  e la cartella  ferruccio .
-
---------------------------------------------------------------------------
-NOTA TECNICA (per chi ti aiuta)
---------------------------------------------------------------------------
-  - Autosufficiente: nessun file di PortMaster; tasti dal joystick via SDL con la mappa per posizione
-    scritta in impostazioni.json ("joystick").
-  - Potenza: lo script porta su «performance» i regolatori di CPU, memoria (dmc) e GPU con sudo, se
-    il sistema lo permette, e all'uscita li rimette com'erano; il log dice cosa è riuscito a fare.
-  - Librerie: node chiede GLIBC 2.28, i moduli 2.17/2.18; si usa la SDL2 della console (quella nel
-    pacchetto chiede GLIBC 2.34). Dettagli in ferruccio/verifica-binari.txt.
-  - Fine riga: i .sh e lancio.conf sono LF; impostazioni.json si può salvare da Windows.

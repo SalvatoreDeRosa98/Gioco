@@ -50,7 +50,8 @@ function apriSdl(p) {
   });
   log.riga(`finestra ${finestra.pixelWidth}×${finestra.pixelHeight} · resa SDL ${finestra.accelerated ? 'ACCELERATA (GPU)' : 'SOFTWARE (senza GPU: lenta)'} · vsync ${finestra.vsync}`);
 
-  const stato = { liscio: p.liscio !== undefined ? Boolean(p.liscio) : Boolean(sch.liscio) };
+  const stato = { liscio: p.liscio !== undefined ? Boolean(p.liscio) : Boolean(sch.liscio), vsync: false, refreshMs: 0, attivita: false };
+  const fintoRefresh = Number(p.fintoRefreshMs) || 0; const dormi = new Int32Array(new SharedArrayBuffer(4));
   let rett = null;
   function rettangolo() {
     const pw = finestra.pixelWidth, ph = finestra.pixelHeight;
@@ -107,7 +108,7 @@ function apriSdl(p) {
   // Odroid Go / R36S (0 = tasto in basso, 1 = a destra, 2 = in alto, 3 = a sinistra, 4-7 dorsali, 8-11
   // croce, 12 Select, 13 Start). Si cambia in impostazioni.json → "joystick"; il log scrive ogni tasto premuto.
   const J = Object.assign({ tastoSotto: 0, tastoDestra: 1, tastoSopra: 2, tastoSinistra: 3, L1: 4, R1: 5, L2: 6, R2: 7, croceSu: 8, croceGiu: 9, croceSinistra: 10, croceDestra: 11, select: 12, start: 13, assi: [0, 1, 2, 3] }, imp.joystick || {});
-  let insiemeDa = 0; let uscitaChiesta = false; let tantiDa = 0;
+  let insiemeDa = 0; let uscitaChiesta = false; let tantiDa = 0; let firmaPrima = 0;
 
   /** Legge il controller e aggiorna il gamepad «standard» del finto browser. Da chiamare a ogni fotogramma. */
   function ingressi(oraMs) {
@@ -138,6 +139,11 @@ function apriSdl(p) {
     }
     if (imp.scambiaAB) { const t = B[0]; B[0] = B[1]; B[1] = t; }
     if (imp.scambiaXY) { const t = B[2]; B[2] = B[3]; B[3] = t; }
+    // c'è attività sui comandi? (serve a chi tiene fermo il disegno dei menu finché non si tocca niente)
+    let firma = 0;
+    for (let i = 0; i < 17; i++) if (B[i] > 0.5) firma |= 1 << i;
+    for (let i = 0; i < 4; i++) { const v = pad.assi[i] || 0; if (v > 0.4) firma |= 1 << (17 + i * 2); else if (v < -0.4) firma |= 1 << (18 + i * 2); }
+    stato.attivita = firma !== 0 || firma !== firmaPrima; firmaPrima = firma;
     // Start + Select tenuti insieme: si esce (sulla console non c'è altro modo di chiudere)
     if (B[8] && B[9]) { if (!insiemeDa) insiemeDa = oraMs; else if (!uscitaChiesta && oraMs - insiemeDa > (imp.uscitaMs || 1000)) { uscitaChiesta = true; p.esci('Start + Select'); } } else insiemeDa = 0;
   }
@@ -151,11 +157,34 @@ function apriSdl(p) {
     if (finestra.destroyed) return;
     const tl = l || L, ta = a || A;
     finestra.render(tl, ta, tl * 4, 'rgba32', pixel, { scaling: stato.liscio && tl !== rett.width ? 'linear' : 'nearest', dstRect: rett });
+    if (fintoRefresh) { // solo per le prove sul PC: finge uno schermo che aspetta il suo refresh
+      const ora = performance.now(); const attesa = Math.ceil(ora / fintoRefresh) * fintoRefresh - ora;
+      if (attesa > 0.05) Atomics.wait(dormi, 0, 0, attesa);
+    }
+  }
+
+  /**
+   * Lo schermo aspetta davvero il suo refresh quando si presenta un fotogramma? Si presentano alcuni
+   * fotogrammi uguali e si guarda ogni quanto tornano: ~16,7 ms = aggancio a 60 Hz (si può tenere un ritmo
+   * esatto, un fotogramma ogni 2 o 3 refresh); quasi zero = nessun aggancio (si va a orologio).
+   */
+  function calibraVsync(pixel, l, a) {
+    const misura = () => { const t = []; let prima = performance.now(); for (let i = 0; i < 14; i++) { mostra(pixel, l, a); const ora = performance.now(); if (i >= 4) t.push(ora - prima); prima = ora; } t.sort((x, y) => x - y); return t[t.length >> 1]; };
+    let ms = misura(); let agganciato = ms >= 5 && ms <= 25;
+    if (ms > 25 && finestra.vsync) { // presentare costa più di un refresh e mezzo: si prova senza aggancio
+      try { finestra.setVsync(false); } catch (_) { /* non si può cambiare */ }
+      const senza = misura();
+      log.riga(`schermo: con l'aggancio al refresh un fotogramma torna dopo ${ms.toFixed(1)} ms, senza dopo ${senza.toFixed(1)} ms: si resta senza`);
+      ms = senza; agganciato = false;
+    }
+    stato.vsync = agganciato; stato.refreshMs = agganciato ? ms : 0;
+    log.riga(agganciato ? `schermo agganciato al refresh: un fotogramma ogni ${ms.toFixed(2)} ms (${(1000 / ms).toFixed(1)} Hz)` : `schermo NON agganciato al refresh (presentare un fotogramma costa ${ms.toFixed(2)} ms): il ritmo lo tiene l'orologio`);
+    return stato;
   }
 
   function chiudi() { try { if (!finestra.destroyed) finestra.destroy(); } catch (_) { /* già chiusa */ } }
 
-  return { ingressi, mostra, chiudi, finestra, sdl, stato };
+  return { ingressi, mostra, chiudi, calibraVsync, finestra, sdl, stato };
 }
 
 module.exports = { apriSdl, codiceDaScancode };

@@ -6,7 +6,7 @@
  * impostaTagli). I tre livelli fissi «bello», «medio», «veloce» sono tre scalini; con "livello": "auto"
  * (di partenza) il lanciatore misura il tempo vero dei fotogrammi e sale o scende da solo fra gli scalini
  * per tenere i fotogrammi al secondo voluti, senza scendere sotto la scala in cui le scritte si leggono
- * ("scalaMinima", di partenza 0.75). In impostazioni.json si possono anche fissare "scala", "fps", "tagli".
+ * ancora ("scalaMinima", di partenza 0.625 = 400×225; a 0.75 si leggono bene, a 0.5 no). In impostazioni.json si possono anche fissare "scala", "fps", "tagli".
  */
 const T1 = { velo: true, riflessi: true };
 const T2 = { velo: true, riflessi: true, luci: true };
@@ -38,13 +38,14 @@ function risolviLivello(imp) {
   const nome = auto ? 'auto' : (FISSI[imp.livello] !== undefined ? imp.livello : 'medio');
   const voluti = Number(imp.fps) || 30;
   const fps = FPS_AMMESSI.reduce((m, v) => (Math.abs(v - voluti) < Math.abs(m - voluti) ? v : m), 30);
-  const scalaMinima = Math.max(0.5, Math.min(1, Number(imp.scalaMinima) || 0.75));
+  const scalaMinima = Math.max(0.5, Math.min(1, Number(imp.scalaMinima) || 0.625));
   let ultimo = SCALINI.length - 1;
   while (ultimo > 0 && SCALINI[ultimo].scala < scalaMinima - 1e-6) ultimo--;
   const partenza = auto ? Math.min(ultimo, FISSI.medio) : FISSI[nome];
   const schermo = imp.schermo || {};
   return {
     nome, auto, fps, scalaMinima, primo: 0, ultimo: auto ? ultimo : partenza, partenza,
+    menu: auto ? 2 : partenza, // il menu è fatto di scritte e sta quasi fermo: lì conta leggerle, non la velocità
     scalaFissa: imp.scala !== undefined ? Number(imp.scala) : null,
     tagliFissi: imp.tagli || null,
     liscio: schermo.liscio !== undefined ? Boolean(schermo.liscio) : true,
@@ -62,7 +63,7 @@ function creaRegolatore(liv, periodoMs) {
   const C = { finestraMs: 1500, minFot: 12, giu: 0.88, su: 0.5, attesaSuMs: 6000, assestamentoMs: 1200, pentimentoMs: 15000, chiusuraMs: 45000 };
   function statoDi(scena, ora) {
     let s = scene.get(scena);
-    if (!s) { s = { indice: liv.partenza, da: ora + C.assestamentoMs, n: 0, lavoro: 0, sforati: 0, beneDa: 0, chiusi: {}, salitoA: 0, salitoIl: 0, volteGiu: {} }; scene.set(scena, s); }
+    if (!s) { s = { indice: scena === 'menu' ? liv.menu : liv.partenza, da: ora + C.assestamentoMs, n: 0, lavoro: 0, sforati: 0, beneDa: 0, chiusi: {}, salitoA: 0, salitoIl: 0, volteGiu: {} }; scene.set(scena, s); }
     return s;
   }
   function azzera(s, ora) { s.da = ora + C.assestamentoMs; s.n = 0; s.lavoro = 0; s.sforati = 0; s.beneDa = 0; }
@@ -71,7 +72,7 @@ function creaRegolatore(liv, periodoMs) {
     /** Quando si cambia scena i conti ripartono (le cache si rifanno: i primi fotogrammi non contano). */
     cambiaScena(scena, ora) { azzera(statoDi(scena, ora), ora); },
     nota(scena, lavoroMs, intervalloMs, ora) {
-      if (!liv.auto) return null;
+      if (!liv.auto || scena === 'menu') return null;
       const s = statoDi(scena, ora);
       if (ora < s.da) return null;
       s.n++; s.lavoro += lavoroMs; if (intervalloMs > periodoMs * 1.25) s.sforati++;
