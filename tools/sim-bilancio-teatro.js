@@ -11,8 +11,10 @@
  * Politica della chiave: le chiavi si portano da un piano all'altro; a ogni piano si aprono prima i
  * lucchetti (tesoro, poi Fucina), poi i forzieri chiusi con le chiavi avanzate. Si raccoglie tutto.
  *
- * Uso: node tools/sim-bilancio-teatro.js [file html] [run=400] [piani=4] [--json file]
- * Esce con 1 se la media delle monete al piano 1 è fuori da [5, 8].
+ * Uso: node tools/sim-bilancio-teatro.js [file html] [run=400] [piani=4] [--json file] [--controllo] [--solo-economia]
+ * Esce con 1 se la media delle monete al piano 1 è fuori da [5, 8]. Con --controllo esce con 1 se un valore
+ * qualsiasi (economia e combattimento, vedi FASCE) esce dalla sua fascia: il bilancio come prova ripetibile.
+ * Parte «combattimento» (e3): DPS misurato col codice vero per i 4 personaggi, boss e Grande Burattinaio.
  */
 'use strict';
 const path = require('path');
@@ -22,8 +24,11 @@ const RADICE = path.resolve(__dirname, '..');
 const argv = process.argv.slice(2);
 const iJson = argv.indexOf('--json');
 const fileJson = iJson >= 0 ? argv.splice(iJson, 2)[1] : null;
+const CONTROLLO = argv.includes('--controllo');
+const SOLO_ECONOMIA = argv.includes('--solo-economia');
+for (const o of ['--controllo', '--solo-economia']) { const i = argv.indexOf(o); if (i >= 0) argv.splice(i, 1); }
 const file = path.resolve(RADICE, argv[0] || 'gioco/teatro_marionette.html');
-const NRUN = Math.max(1, parseInt(argv[1], 10) || 400);
+const NRUN = Math.max(1, parseInt(argv[1], 10) || (CONTROLLO ? 200 : 400));
 const NPIANI = Math.max(1, parseInt(argv[2], 10) || 4);
 const OBIETTIVO_P1 = { min: 5, max: 8 };
 
@@ -159,6 +164,278 @@ function valoreMonete(E, { monete = 0, cura = 0, oggetti = 0 }) {
   return monete + (cura / 2) * E.prezzi.cuore + oggetti * E.prezzi.base;
 }
 
+
+// ===========================================================================
+// COMBATTIMENTO (e3): danno al secondo misurato col codice VERO del gioco
+// ===========================================================================
+/*
+ * Per ogni prova: run nuova col personaggio, stanza normale svuotata, un bersaglio fermo da 1e6 di vita a
+ * `dist` px a destra; si equipaggiano gli oggetti (catalogo vero, ricalcolaStatistiche con tutti gli
+ * involucri: B4 trasformazioni e sinergie, B5, D2), si tiene premuta la freccia destra (Taddeo: anche a
+ * tocchi brevi, vince il migliore) e si fanno girare `tick` passi di logica. DPS = vita tolta / secondi.
+ * Il giocatore è invulnerabile e a vita piena (gli oggetti «a vita piena» contano: stima ottimista).
+ */
+function misuraDpsNelGioco({ prove, tick }) {
+  const I = window.__teatro.interni;
+  try { if (I.progressione && I.progressione.sbloccaTutto) I.progressione.sbloccaTutto(); else if (I.sbloccaTutto) I.sbloccaTutto(); } catch (_) {}
+  const salvaBanner = mostraBanner;
+  mostraBanner = () => {};
+  const esiti = [];
+  for (const pr of prove) {
+    const misura = (modo) => {
+      selezionaPersonaggio(pr.pid);
+      statoRun.fase = 'in_gioco';
+      nuovaRun(false);
+      statoRun.siparioAttivo = null;
+      const s = statoRun.mappa.stanze.find((x) => x.tipo === 'normale');
+      entraInStanza(s, null);
+      statoRun.siparioAttivo = null; statoRun.pausa = false;
+      const st = statoRun.stanzaCorrente;
+      const modello = st.nemici.find((n) => !n.boss && (n.patternMob || n.tipo) !== 'bomba_ferma') || st.nemici[0];
+      st.nemici = []; st.ostacoli = []; st.fragiliB7 = []; st.oggettiATerra = []; st.muroSegreto = null; st.suoloB7 = [];
+      statoRun.proiettili.length = 0; statoRun.proiettiliNemici.length = 0;
+      for (const id of pr.ids) { const o = trovaOggettoB(id); if (o) statoRun.oggettiEquipaggiati.push({ ...o }); }
+      ricalcolaStatistiche();
+      statoRun.hpHalf = statoRun.maxHpHalf;
+      player.x = 260; player.y = 190; player.targetX = null; player.targetY = null; player.cooldown = 0;
+      player.dirX = 1; player.dirY = 0; player.flipX = false;
+      statoRun.graziaIngressoC = 0;
+      const dist = pr.pid === 'taddeo' ? 30 : 60;
+      const n = Object.assign({}, modello, { id: 'sim-bersaglio', x: player.x + dist, y: player.y, hp: 1e6, maxHp: 1e6, vx: 0, vy: 0, boss: false });
+      st.nemici.push(n); st.pulita = false;
+      let giu = false, durata = 0;
+      for (let t = 0; t < tick; t++) {
+        if (modo === 'tocchi') {
+          if (giu && ++durata >= 3) { giu = false; }
+          else if (!giu && player.cooldown <= 0) { giu = true; durata = 0; }
+          keys.ArrowRight = giu;
+        } else keys.ArrowRight = true;
+        player.invuln = 1e9; player.x = 260; player.y = 190;
+        statoRun.hpHalf = statoRun.maxHpHalf;
+        n.x = 260 + dist; n.y = 190; n.vx = 0; n.vy = 0;
+        if (!st.nemici.includes(n)) st.nemici.push(n);
+        if (n.hp < 1e5) n.hp += 5e5; // non deve mai cadere (si conta a parte)
+        statoRun.proiettiliNemici.length = 0;
+        ticksCongelati = 0;
+        if (statoRun.fase !== 'in_gioco') statoRun.fase = 'in_gioco';
+        passoLogico();
+      }
+      keys.ArrowRight = false;
+      let tolto = 0;
+      // tolto = 1e6 − hp (+ le ricariche fatte sopra)
+      return { n, st };
+    };
+    const una = (modo) => {
+      // si misura la vita tolta con un contatore per non dipendere dalle ricariche
+      const r = { tolto: 0 };
+      const baseDanneggia = danneggiaNemico;
+      danneggiaNemico = function (bers, dmg, ...resto) {
+        const prima = bers && bers.id === 'sim-bersaglio' ? bers.hp : null;
+        const out = baseDanneggia.call(this, bers, dmg, ...resto);
+        if (prima != null) r.tolto += Math.max(0, prima - bers.hp);
+        return out;
+      };
+      try { misura(modo); } finally { danneggiaNemico = baseDanneggia; }
+      return r.tolto / (tick / 60);
+    };
+    let dps = 0, modo = 'tenuto';
+    try {
+      dps = una('tenuto');
+      if (pr.pid === 'taddeo') { const t2 = una('tocchi'); if (t2 > dps) { dps = t2; modo = 'tocchi'; } }
+    } catch (err) { esiti.push({ ...pr, errore: String(err && err.stack || err) }); continue; }
+    esiti.push({ ...pr, dps, modo, dmg: statoRun.dmg, colpiAlSec: statoRun.colpiAlSec, cooldownMax: statoRun.cooldownMax,
+      maxHpHalf: statoRun.maxHpHalf, trasf: Object.keys(statoRun.trasformazioniB4 || {}).length });
+  }
+  mostraBanner = salvaBanner;
+  statoRun.fase = 'menu';
+  return esiti;
+}
+
+/** Catalogo per le prove: passivi base/forte (niente negativi, patti, segreti), temi, nomi. Più i dati dei boss. */
+function catalogoNelGioco() {
+  const tutti = (typeof tuttiGliOggettiB5 === 'function' ? tuttiGliOggettiB5() : CATALOGO_OGGETTI);
+  const visti = new Set();
+  const voci = [];
+  for (const o of tutti) {
+    if (!o || !o.id || visti.has(o.id)) continue;
+    visti.add(o.id);
+    const voce = trovaOggettoB(o.id) || o;
+    voci.push({ id: o.id, nome: voce.nome, tier: voce.tier, polarita: voce.polarita || null, attivo: Boolean(voce.attivo || voce.maxCarica || o.attivo),
+      temi: (typeof temiDi === 'function' ? temiDi(voce) : []).slice(), mod: voce.mod ? JSON.parse(JSON.stringify(voce.mod)) : {} });
+  }
+  const boss = [];
+  for (const [piano, ids] of Object.entries(ROSA_B6.perPiano)) for (const id of ids) {
+    const b = POOL_BOSS.find((x) => x.id === id) || SCHEDE_B6[id];
+    boss.push({ piano: Number(piano), id, nome: b.nome, hp: Math.round(b.hpBase + (Number(piano) - 1) * 45) });
+  }
+  boss.push({ piano: 4, id: BOSS_FINALE.id, nome: BOSS_FINALE.nome, hp: Math.round(BOSS_FINALE.hpBase + 3 * 45) });
+  const V = BURATTINAIO_D1.vita, M = BURATTINAIO_D1.marionette;
+  const marionette = M.perOndata.reduce((a, k) => a + k, 0) * 2 * ((M.vita.burattino + M.vita.guardia + M.vita.predone) / 3);
+  boss.push({ piano: 4, id: BURATTINAIO_D1.idCapo, nome: BURATTINAIO_D1.nome, hp: V.mano1 + V.mano2 + V.mano3 + V.forbici, extra: Math.round(marionette) });
+  // vita dei nemici delle stanze di combattimento, per piano (mappa vera, 20 semi)
+  const vitaStanze = {};
+  for (let p = 1; p <= 4; p++) {
+    const L = [];
+    for (let k = 0; k < 20; k++) {
+      statoRun.piano = p;
+      const m = window.__teatro.interni.mappaConSeme(p, (k * 7919 + p * 104729 + 999) >>> 0);
+      for (const s of m.stanze) if (s.tipo === 'normale' && s.nemici.length) L.push(s.nemici.reduce((a, n) => a + (n.maxHp || n.hp || 0), 0));
+    }
+    vitaStanze[p] = L.length ? L.reduce((a, b) => a + b, 0) / L.length : 0;
+  }
+  return { voci, boss, vitaStanze, stanze: STANZE_COMBATTIMENTO_PER_PIANO, bossDannoHalf: BOSS_B6.dannoHalf,
+    personaggi: Object.fromEntries(Object.entries(PERSONAGGI_GIOCABILI).map(([k, v]) => [k, { hpHalf: v.hpHalf, baseDmg: v.baseDmg }])),
+    ombra: { maxHpHalf: STILI_D2.ombra.maxHpHalf, monetePerMezza: STILI_D2.ombra.monetePerMezza } };
+}
+
+/** Generatore deterministico (mulberry32). */
+function rng(seme) { let a = seme >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const quantile = (a, f) => { const o = a.slice().sort((x, y) => x - y); return o.length ? o[Math.min(o.length - 1, Math.floor(f * o.length))] : 0; };
+
+/**
+ * FASCE del controllo (--controllo esce con 1 se una misura ne esce). Bussola: una notte 25-35 minuti; boss
+ * fra 15 s e 2 minuti con una dotazione normale; nessuna dotazione «tipica» oltre 6 volte il danno di partenza.
+ */
+const FASCE = Object.freeze({
+  moneteP1: [5, 8],
+  ttkBossSec: [15, 120],          // mediana, dotazione normale del piano (2 × piano − 1 oggetti)
+  dpsPartenzaRispettoFerruccio: [0.7, 1.5], // l'Ombra (1,46×) paga con mezza Maschera sola
+  dps6SuPartenzaP90: [1, 6],      // 6 oggetti tipici, 90° percentile, rispetto allo stesso personaggio a mani vuote
+  notteMin: [12, 40],             // ALLARME sulla stima (il bersaglio di genere è 25-35: vedi rapporto)
+  comboMaxSuPartenza: 9,          // le combinazioni peggiori provate (sotto) non oltre 12× la partenza
+});
+/** Tempi della stima di durata (dichiarati): s per stanza oltre ai nemici, frazione di tempo in cui si colpisce. */
+const STIMA = Object.freeze({ transitoStanzaSec: 9, stanzeNonCombattimento: 5, secPerStanzaQuieta: 14, colpireFrazione: 0.45,
+  colpireFrazioneBoss: 0.55, intermezziSec: 60, bossExtraSec: 15 });
+/** Combinazioni sospette provate a mano (id veri del catalogo). */
+const COMBO = Object.freeze([
+  { nome: 'Piombo + Bombarda + Cuore Sacro (moltiplicatori di danno)', ids: ['piombo', 'bombarda', 'cuore-sacro'] },
+  { nome: 'Raggio Cremisi + Bombarda + Cuore Sacro', ids: ['patto_raggio', 'bombarda', 'cuore-sacro'] },
+  { nome: 'Raggio Cremisi + Piombo + Anello', ids: ['patto_raggio', 'piombo', 'anello'] },
+  { nome: 'Triplo + Ragno + Venti (ventagli)', ids: ['triplo', 'ragno', 'venti'] },
+  { nome: 'Latte + Ranocchio (cadenza)', ids: ['latte', 'ranocchio'] },
+]);
+
+async function combattimento(p, { nCampioni, tick }) {
+  const cat = await p.evaluate(catalogoNelGioco);
+  const pool = cat.voci.filter((v) => (v.tier === 'base' || v.tier === 'forte') && v.polarita !== 'negativo' && !v.attivo);
+  const pg = ['ferruccio', 'agnese', 'taddeo', 'ombra'];
+  const prove = [];
+  for (const pid of pg) {
+    prove.push({ pid, n: 0, k: 0, ids: [] });
+    for (const n of [3, 6]) for (let k = 0; k < nCampioni; k++) {
+      const r = rng(1000 * n + k + 17); const scelti = new Set();
+      while (scelti.size < n) scelti.add(pool[Math.floor(r() * pool.length)].id);
+      prove.push({ pid, n, k, ids: [...scelti] });
+    }
+    for (const c of COMBO) prove.push({ pid, n: -1, combo: c.nome, ids: c.ids });
+  }
+  // un oggetto alla volta su Ferruccio: oggetti che non cambiano nulla o tolgono danno
+  for (const v of pool) prove.push({ pid: 'ferruccio', n: 1, singolo: v.id, ids: [v.id] });
+  const esiti = [];
+  for (let i = 0; i < prove.length; i += 40) esiti.push(...await p.evaluate(misuraDpsNelGioco, { prove: prove.slice(i, i + 40), tick }));
+  return { cat, pool, esiti };
+}
+
+/** Copia di t3-economia-salvataggi.js CONFIG.raggio (ogniTick 5 → 12 impulsi/s, dannoPerImpulso). */
+const LASER_T3 = Object.freeze({ impulsiAlSec: 12, frazione: 0.18 });
+/** Le combinazioni col raggio si contano con la stima del raggio, non con la freccia (che col raggio non spara). */
+function P0fix(P) { P.combo = P.combo.map((c) => P.raggio.find((r) => r.nome === c.nome) || c); }
+
+function analisiCombattimento({ cat, pool, esiti }) {
+  const pg = ['ferruccio', 'agnese', 'taddeo', 'ombra'];
+  const errori = esiti.filter((e) => e.errore);
+  const ok = esiti.filter((e) => !e.errore);
+  const per = {};
+  for (const pid of pg) {
+    const di = ok.filter((e) => e.pid === pid);
+    const zero = (di.find((e) => e.n === 0) || {}).dps || 0;
+    const tre = di.filter((e) => e.n === 3).map((e) => e.dps), sei = di.filter((e) => e.n === 6).map((e) => e.dps);
+    const hp0 = (di.find((e) => e.n === 0) || {}).maxHpHalf || cat.personaggi[pid].hpHalf;
+    const hp6 = quantile(di.filter((e) => e.n === 6).map((e) => e.maxHpHalf), 0.5);
+    per[pid] = { dps0: zero, dps3: { p50: quantile(tre, 0.5), p90: quantile(tre, 0.9) }, dps6: { p50: quantile(sei, 0.5), p90: quantile(sei, 0.9), max: Math.max(...sei) },
+      colpiRetti0: Math.floor(hp0 / cat.bossDannoHalf), colpiRetti6: Math.floor(hp6 / cat.bossDannoHalf), hp0, hp6,
+      combo: di.filter((e) => e.n === -1).map((e) => ({ nome: e.combo, dps: e.dps, volte: zero ? e.dps / zero : 0 })),
+      // Raggio Cremisi (t3): si stima da statoRun.dmg perché il raggio non passa dalla freccia della prova
+      raggio: di.filter((e) => e.n === -1 && e.ids.includes('patto_raggio')).map((e) => ({ nome: e.combo, dps: LASER_T3.impulsiAlSec * LASER_T3.frazione * e.dmg,
+        volte: zero ? LASER_T3.impulsiAlSec * LASER_T3.frazione * e.dmg / zero : 0 })) };
+    P0fix(per[pid]);
+  }
+  // DPS «a inizio piano p»: oggetti posseduti ≈ 2 (p − 1) (tesoro + boss per piano), interpolati fra 0, 3 e 6
+  const dpsAOggetti = (pid, n) => { const P = per[pid]; const pts = [[0, P.dps0], [3, P.dps3.p50], [6, P.dps6.p50]];
+    if (n >= 6) return P.dps6.p50 + (n - 6) * (P.dps6.p50 - P.dps3.p50) / 3;
+    const [a, b] = n <= 3 ? [pts[0], pts[1]] : [pts[1], pts[2]]; return a[1] + (b[1] - a[1]) * (n - a[0]) / (b[0] - a[0]); };
+  const inizioPiano = {};
+  for (const pid of pg) inizioPiano[pid] = [1, 2, 3, 4].map((pp) => dpsAOggetti(pid, 2 * (pp - 1)));
+  // tempo per uccidere i boss: dotazione del piano (2p − 1 oggetti), frazione di tempo in cui si colpisce
+  const ttk = cat.boss.map((b) => {
+    const r = { ...b, perPg: {} };
+    for (const pid of pg) { const d = dpsAOggetti(pid, 2 * b.piano - 1) * STIMA.colpireFrazioneBoss;
+      r.perPg[pid] = d > 0 ? (b.hp + (b.extra || 0)) / d + (b.id === 'grande-burattinaio' ? STIMA.intermezziSec / 2 : 0) : Infinity; }
+    return r;
+  });
+  // durata della notte: stanze di combattimento (vita dei nemici / dps) + transiti + stanze quiete + boss
+  const notte = {};
+  for (const pid of pg) {
+    let sec = 0;
+    for (let pp = 1; pp <= 4; pp++) {
+      const d = dpsAOggetti(pid, 2 * (pp - 1) + 1) * STIMA.colpireFrazione;
+      const nSt = cat.stanze[pp];
+      sec += nSt * (cat.vitaStanze[pp] / d + STIMA.transitoStanzaSec) + STIMA.stanzeNonCombattimento * STIMA.secPerStanzaQuieta;
+      const bp = ttk.filter((b) => b.piano === pp && b.id !== 'grande-burattinaio');
+      sec += bp.reduce((a, b) => a + b.perPg[pid], 0) / bp.length + STIMA.bossExtraSec;
+    }
+    notte[pid] = sec / 60;
+  }
+  // oggetti singoli su Ferruccio
+  const base = per.ferruccio.dps0;
+  const singoli = ok.filter((e) => e.singolo).map((e) => ({ id: e.singolo, nome: (pool.find((v) => v.id === e.singolo) || {}).nome, dps: e.dps, rel: base ? e.dps / base : 0, hp: e.maxHpHalf }));
+  // trasformazioni: probabilità di completarne una con 8 oggetti presi a caso dal pool (Monte Carlo)
+  const temi = {};
+  for (const v of pool) for (const t of v.temi) (temi[t] = temi[t] || []).push(v.id);
+  const r = rng(4242), prov = 4000, completate = {};
+  for (let i = 0; i < prov; i++) {
+    const presi = new Set(); while (presi.size < 8) presi.add(pool[Math.floor(r() * pool.length)].id);
+    for (const [t, ids] of Object.entries(temi)) if (ids.filter((x) => presi.has(x)).length >= 3) completate[t] = (completate[t] || 0) + 1;
+  }
+  const trasf = Object.entries(temi).map(([t, ids]) => ({ tema: t, oggetti: ids.length, prob8: (completate[t] || 0) / prov })).sort((a, b) => b.prob8 - a.prob8);
+  return { per, inizioPiano, ttk, notte, singoli, trasf, errori: errori.map((e) => ({ pid: e.pid, ids: e.ids, errore: e.errore.slice(0, 300) })) };
+}
+
+function stampaCombattimento(A) {
+  const f = (x, d = 1) => (Number.isFinite(x) ? Number(x).toFixed(d) : '∞');
+  console.log('\nCombattimento (codice del gioco, bersaglio fermo; DPS = danno al secondo tenendo premuto)');
+  console.log('  personaggio | DPS 0 ogg | 3 ogg p50/p90 | 6 ogg p50/p90/max | inizio piano 1-4 | colpi di boss retti 0/6 ogg');
+  for (const [pid, P] of Object.entries(A.per)) console.log(`  ${pid.padEnd(10)} | ${f(P.dps0)} | ${f(P.dps3.p50)}/${f(P.dps3.p90)} | ${f(P.dps6.p50)}/${f(P.dps6.p90)}/${f(P.dps6.max)} | ${A.inizioPiano[pid].map((x) => f(x)).join(' ')} | ${P.colpiRetti0}/${P.colpiRetti6}`);
+  console.log('  boss (vita) → secondi per abbatterlo con la dotazione del piano [ferruccio agnese taddeo ombra]');
+  for (const b of A.ttk) console.log(`  P${b.piano} ${b.id.padEnd(18)} ${String(b.hp + (b.extra ? '+' + b.extra : '')).padEnd(8)} ${Object.values(b.perPg).map((x) => f(x, 0)).join(' ')}`);
+  console.log(`  notte stimata (min): ${Object.entries(A.notte).map(([k, v]) => `${k} ${f(v)}`).join(' · ')}`);
+  console.log('  combinazioni (× DPS a mani vuote):');
+  for (const [pid, P] of Object.entries(A.per)) console.log(`   ${pid}: ${P.combo.map((c) => `${c.nome.split(' (')[0]} ${f(c.volte)}×`).join(' | ')}`);
+  const s = A.singoli.slice().sort((a, b) => a.rel - b.rel);
+  console.log(`  oggetti singoli (Ferruccio): peggiori ${s.slice(0, 8).map((x) => `${x.id} ${f(x.rel, 2)}`).join(', ')}`);
+  console.log(`                               migliori ${s.slice(-8).map((x) => `${x.id} ${f(x.rel, 2)}`).join(', ')}`);
+  console.log(`  trasformazioni (prob. con 8 oggetti a caso): ${A.trasf.map((t) => `${t.tema} ${t.oggetti}ogg ${f(t.prob8 * 100, 0)}%`).join(' · ')}`);
+  if (A.errori.length) console.log(`  ERRORI nelle prove: ${A.errori.length} (primo: ${A.errori[0].errore.split('\n')[0]})`);
+}
+
+/** Confronta con le FASCE: ritorna l'elenco dei valori fuori. */
+function controllaFasce(A, m1) {
+  const fuori = [];
+  const dentro = (v, [a, b]) => v >= a && v <= b;
+  if (m1 != null && !dentro(m1, FASCE.moneteP1)) fuori.push(`monete al piano 1 ${m1.toFixed(2)} fuori da ${FASCE.moneteP1}`);
+  const F = A.per.ferruccio.dps0;
+  for (const [pid, P] of Object.entries(A.per)) {
+    if (!dentro(P.dps0 / F, FASCE.dpsPartenzaRispettoFerruccio)) fuori.push(`${pid}: DPS di partenza ${(P.dps0 / F).toFixed(2)}× Ferruccio`);
+    if (!dentro(P.dps6.p90 / P.dps0, FASCE.dps6SuPartenzaP90)) fuori.push(`${pid}: 6 oggetti p90 = ${(P.dps6.p90 / P.dps0).toFixed(2)}× la partenza`);
+    for (const c of P.combo) if (c.volte > FASCE.comboMaxSuPartenza) fuori.push(`${pid}: ${c.nome} = ${c.volte.toFixed(1)}× la partenza`);
+    if (!dentro(A.notte[pid], FASCE.notteMin)) fuori.push(`${pid}: notte stimata ${A.notte[pid].toFixed(1)} min`);
+  }
+  for (const b of A.ttk) for (const [pid, t] of Object.entries(b.perPg)) if (!dentro(t, FASCE.ttkBossSec)) fuori.push(`${b.id} con ${pid}: ${Number.isFinite(t) ? t.toFixed(0) : '∞'} s`);
+  if (A.errori.length) fuori.push(`${A.errori.length} prove con errore`);
+  return fuori;
+}
+
 (async () => {
   const browser = await chromium.launch();
   const p = await browser.newPage();
@@ -170,6 +447,11 @@ function valoreMonete(E, { monete = 0, cura = 0, oggetti = 0 }) {
   await p.waitForTimeout(400);
   const t0 = Date.now();
   const ris = await p.evaluate(simulaNelGioco, { nRun: NRUN, nPiani: NPIANI });
+  let comb = null;
+  if (!SOLO_ECONOMIA) {
+    await p.reload(); await p.waitForTimeout(400);
+    comb = analisiCombattimento(await combattimento(p, { nCampioni: CONTROLLO ? 8 : 16, tick: 480 }));
+  }
   await browser.close();
   const { runs, tabelle } = ris;
   const E = tabelle.ECONOMIA_T3;
@@ -225,6 +507,7 @@ function valoreMonete(E, { monete = 0, cura = 0, oggetti = 0 }) {
       monetePerConsumabile: pC * moneteCarta,
     },
   };
+  report.combattimento = comb;
   if (fileJson) fs.writeFileSync(path.resolve(fileJson), JSON.stringify(report, null, 1));
   const f = (x, d = 2) => Number(x).toFixed(d);
   console.log(`Simulazione del Teatro: ${NRUN} run × ${NPIANI} piani (codice del gioco, ${report.ms} ms)`);
@@ -245,5 +528,12 @@ function valoreMonete(E, { monete = 0, cura = 0, oggetti = 0 }) {
   const m1 = perPiano[0].monete.media;
   const ok = m1 >= OBIETTIVO_P1.min && m1 <= OBIETTIVO_P1.max && !errori.length;
   console.log(ok ? `  OK: piano 1 = ${f(m1)} monete in [${OBIETTIVO_P1.min}, ${OBIETTIVO_P1.max}]` : `  FUORI: piano 1 = ${f(m1)} monete (obiettivo ${OBIETTIVO_P1.min}-${OBIETTIVO_P1.max})${errori.length ? ` · errori: ${errori[0]}` : ''}`);
-  process.exitCode = ok ? 0 : 1;
+  if (comb) stampaCombattimento(comb);
+  if (CONTROLLO) {
+    const fuori = comb ? controllaFasce(comb, m1) : [];
+    if (errori.length) fuori.push(`errori di pagina: ${errori[0]}`);
+    if (!comb && !ok) fuori.push('monete al piano 1 fuori fascia');
+    console.log(fuori.length ? `\nCONTROLLO: ${fuori.length} valori fuori fascia\n  - ${fuori.join('\n  - ')}` : '\nCONTROLLO: tutto nelle fasce');
+    process.exitCode = fuori.length ? 1 : 0;
+  } else process.exitCode = ok ? 0 : 1;
 })();
