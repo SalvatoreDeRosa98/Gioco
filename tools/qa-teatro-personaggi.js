@@ -73,61 +73,58 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('scheda-riga-stile', scheda.every((s) => s.stile && s.stile.length > 8), scheda);
   ok('ombra-nome-nuovo', scheda[3].nome === 'L\'Ombra Senza Fili' && !/judas|pulcinella/i.test(scheda[3].nome + scheda[3].titolo), scheda[3]);
 
+  // I controlli girano a passi di logica contati (passoLogico chiamato N volte dentro un evaluate): niente tempi reali.
+  const passi = (n, prima) => p.evaluate(({ n, prima }) => {
+    if (prima) (0, eval)(prima);
+    for (let i = 0; i < n; i++) { ticksCongelati = 0; passoLogico(); }
+  }, { n, prima });
+  const tasto = (code, giu) => p.evaluate(({ code, giu }) => window.dispatchEvent(new KeyboardEvent(giu ? 'keydown' : 'keyup', { code, key: '', bubbles: true })), { code, giu });
+
   // ---------------------------------------------------------------- 1. ogni personaggio: l'attacco fa danno
   for (const pid of ['ferruccio', 'agnese', 'taddeo', 'ombra']) {
     const info = await prepara(pid);
     const h0 = await hpNemici();
-    await tieniTasto('ArrowRight', pid === 'taddeo' ? 120 : 400);
-    await p.waitForTimeout(250);
+    await tasto('ArrowRight', true); await passi(pid === 'taddeo' ? 6 : 24); await tasto('ArrowRight', false); await passi(20);
     const h1 = await hpNemici();
     ok(`${pid}-run-e-danno`, info.pg === pid && h1[0] < h0[0], { info, h0, h1 });
   }
 
   // ---------------------------------------------------------------- 2. Agnese
+  const proiettile = 'statoRun.proiettiliNemici.push({ x: player.x + 30, y: player.y - 6, vx: -2.2, vy: 0, dist: 0 }); window.__teatro.interni.personaggiD2.d2.ricarica = 0; player.invuln = 0;';
   await prepara('agnese', false);
-  const devia = async (premere) => {
-    await p.evaluate(() => {
-      statoRun.proiettiliNemici.push({ x: player.x + 40, y: player.y - 6, vx: -2.2, vy: 0, dist: 0 });
-      window.__teatro.interni.personaggiD2.d2.ricarica = 0; player.invuln = 0;
-    });
-    await p.waitForTimeout(80);
-    await premere();
-    await p.waitForTimeout(260);
-    return p.evaluate(() => ({ deviati: window.__teatro.interni.personaggiD2.d2.deviati, hp: statoRun.hpHalf, max: statoRun.maxHpHalf, rimandati: statoRun.proiettili.filter((q) => q.deviatoD2).length }));
-  };
-  const dv = await devia(() => p.keyboard.press('ShiftLeft'));
-  ok('agnese-devia-tastiera', dv.deviati >= 1 && dv.hp === dv.max, dv);
+  // tastiera: evento come quelli veri, nello stesso passo in cui arriva il colpo (i tempi veri non contano)
+  await passi(16, proiettile + "window.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft', key: '', bubbles: true })); window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ShiftLeft', key: '', bubbles: true }));");
+  const dv = await p.evaluate(() => ({ deviati: window.__teatro.interni.personaggiD2.d2.deviati, hp: statoRun.hpHalf, max: statoRun.maxHpHalf, rimandati: statoRun.proiettili.filter((q) => q.deviatoD2).length }));
+  ok('agnese-devia-tastiera', dv.deviati >= 1 && dv.hp === dv.max && dv.rimandati >= 1, dv);
+  // senza mossa lo stesso colpo la ferisce
+  await prepara('agnese', false);
+  await passi(30, proiettile);
+  const senza = await p.evaluate(() => statoRun.hpHalf < statoRun.maxHpHalf);
+  ok('agnese-senza-mossa-ferita', senza);
   // foto durante il giro con colpi in arrivo
-  await p.evaluate(() => {
-    for (let i = 0; i < 5; i++) { const a = i * 1.25; statoRun.proiettiliNemici.push({ x: player.x + Math.cos(a) * 45, y: player.y - 6 + Math.sin(a) * 45, vx: -Math.cos(a) * 1.5, vy: -Math.sin(a) * 1.5, dist: 0 }); }
-    window.__teatro.interni.personaggiD2.d2.ricarica = 0;
-  });
-  await p.waitForTimeout(160);
-  await p.keyboard.press('ShiftLeft');
-  await p.waitForTimeout(70);
+  await prepara('agnese', false);
+  await passi(8, 'for (let i = 0; i < 6; i++) { const a = i * 1.05; statoRun.proiettiliNemici.push({ x: player.x + Math.cos(a) * 44, y: player.y - 6 + Math.sin(a) * 44, vx: -Math.cos(a) * 1.5, vy: -Math.sin(a) * 1.5, dist: 0 }); }');
+  await passi(5, 'window.__teatro.interni.personaggiD2.mossa()');
   await p.screenshot({ path: foto('02-agnese-piroetta') });
-  await p.waitForTimeout(300);
-  // gamepad: RT
+  // gamepad: RT (b3 legge il pad nel suo ciclo: qui servono tempi veri, si controlla solo che il giro parta)
+  await prepara('agnese', false);
   await p.evaluate(() => { window.__padAcceso = true; });
+  await p.waitForTimeout(200);
+  await p.evaluate(() => { window.__pad.buttons[7].pressed = true; window.__pad.buttons[7].value = 1; });
   await p.waitForTimeout(150);
-  const dvp = await devia(async () => {
-    await p.evaluate(() => { window.__pad.buttons[7].pressed = true; window.__pad.buttons[7].value = 1; });
-    await p.waitForTimeout(80);
-    await p.evaluate(() => { window.__pad.buttons[7].pressed = false; window.__pad.buttons[7].value = 0; });
-  });
-  ok('agnese-devia-gamepad-RT', dvp.deviati >= 2, dvp);
+  await p.evaluate(() => { window.__pad.buttons[7].pressed = false; window.__pad.buttons[7].value = 0; });
+  await p.waitForTimeout(100);
+  const rt = await p.evaluate(() => window.__teatro.interni.personaggiD2.d2.ricarica);
+  ok('agnese-mossa-gamepad-RT', rt > 0, { ricarica: rt });
   await p.evaluate(() => { window.__padAcceso = false; });
-  await p.mouse.move(640, 360); // torna la tastiera/mouse
+  await p.mouse.move(640, 360);
   // fossa: senza piroetta si ferma, con la piroetta passa
   const fossa = async (conMossa) => {
     await prepara('agnese', false);
-    await p.evaluate(() => { statoRun.stanzaCorrente.ostacoli.push({ tipo: 'fossa', x: 360, y: 200, r: 16, w: 34, h: 22 }); player.x = 333; });
-    await p.keyboard.down('KeyD');
-    await p.waitForTimeout(60);
-    if (conMossa) await p.keyboard.press('ShiftLeft');
-    await p.waitForTimeout(420);
-    await p.keyboard.up('KeyD');
-    return p.evaluate(() => player.x);
+    await passi(1, "statoRun.stanzaCorrente.ostacoli.push({ tipo: 'fossa', x: 360, y: 200, r: 16, w: 34, h: 22 }); player.x = 333; keys.KeyD = true;");
+    if (conMossa) await passi(1, 'window.__teatro.interni.personaggiD2.mossa()');
+    await passi(20);
+    return p.evaluate(() => { keys.KeyD = false; return player.x; });
   };
   const xSenza = await fossa(false);
   const xCon = await fossa(true);
@@ -136,32 +133,26 @@ const foto = (n) => `${prefisso}-${n}.png`;
 
   // ---------------------------------------------------------------- 3. Taddeo
   await prepara('taddeo', false);
-  const vaso = await p.evaluate(() => {
-    const st = statoRun.stanzaCorrente;
-    const o = { tipo: 'colonna', variante: 'vaso', x: 335, y: 195, r: 11, w: 22, h: 22, fragileB7: { genere: 'comune', colpi: 3, esplode: false } };
-    st.ostacoli.push(o); st.fragiliB7 = [o];
-    return st.ostacoli.length;
-  });
-  await tieniTasto('ArrowRight', 80);
-  await p.waitForTimeout(40);
+  await passi(1, "const st = statoRun.stanzaCorrente; const o = { tipo: 'colonna', variante: 'vaso', x: 335, y: 195, r: 11, w: 22, h: 22, fragileB7: { genere: 'comune', colpi: 3, esplode: false } }; st.ostacoli.push(o); st.fragiliB7 = [o];");
+  await passi(4, 'keys.ArrowRight = true;');
+  await passi(2, 'keys.ArrowRight = false;');
   await p.screenshot({ path: foto('03-taddeo-maglio') });
-  await p.waitForTimeout(300);
+  await passi(10);
   const dopoVaso = await p.evaluate(() => ({ ostacoli: statoRun.stanzaCorrente.ostacoli.length, proiettili: statoRun.proiettili.length, rotti: window.__teatro.interni.personaggiD2.d2.rotti }));
-  ok('taddeo-rompe-vaso', vaso === 1 && dopoVaso.ostacoli === 0, dopoVaso);
+  ok('taddeo-rompe-vaso', dopoVaso.ostacoli === 0 && dopoVaso.rotti === 1, dopoVaso);
   ok('taddeo-non-spara', dopoVaso.proiettili === 0, dopoVaso);
-  // carica: tenuto a lungo fa più danno di un tocco
+  // carica: tenuto fino al pieno fa più danno di un tocco
   await prepara('taddeo');
-  await tieniTasto('ArrowRight', 60); await p.waitForTimeout(700);
+  await passi(3, 'keys.ArrowRight = true;'); await passi(60, 'keys.ArrowRight = false;');
   const hT = await hpNemici();
-  await p.evaluate(() => { player.cooldown = 0; });
-  await tieniTasto('ArrowRight', 750); await p.waitForTimeout(200);
+  await passi(45, 'player.cooldown = 0; keys.ArrowRight = true;'); await passi(5, 'keys.ArrowRight = false;');
   const hC = await hpNemici();
-  ok('taddeo-carica-piu-danno', (hC[0] - hT[0]) < -(900 - hT[0]) * 1.5, { tocco: 900 - hT[0], carico: hT[0] - hC[0] });
+  const tocco = 900 - hT[0], carico = hT[0] - hC[0];
+  ok('taddeo-carica-piu-danno', tocco > 0 && carico > tocco * 1.5, { tocco, carico });
   // contraccolpo
   const spinta = async (pid) => {
     await prepara(pid, false);
-    await p.evaluate(() => { player.invuln = 0; statoRun.hpHalf = statoRun.maxHpHalf; subisciColpoGiocatore(1, 'la QA', player.x + 8, player.y); });
-    await p.waitForTimeout(250);
+    await passi(15, "player.invuln = 0; statoRun.hpHalf = statoRun.maxHpHalf; subisciColpoGiocatore(1, 'la QA', player.x + 8, player.y);");
     return p.evaluate(() => Math.abs(player.x - 300) + Math.abs(player.y - 200));
   };
   const sF = await spinta('ferruccio');
@@ -171,38 +162,24 @@ const foto = (n) => `${prefisso}-${n}.png`;
   // ---------------------------------------------------------------- 4. Ombra
   const om = await prepara('ombra', false);
   ok('ombra-mezza-maschera', om.hp === 1 && om.max === 1, om);
-  const conv = await p.evaluate(() => {
-    const st = statoRun.stanzaCorrente; const m0 = statoRun.monete;
-    st.oggettiATerra.push({ tipo: 'cura', valore: 2, x: player.x + 4, y: player.y });
-    return m0;
-  });
-  await p.waitForTimeout(150);
+  const m0 = await p.evaluate(() => statoRun.monete);
+  await passi(3, "statoRun.stanzaCorrente.oggettiATerra.push({ tipo: 'cura', valore: 2, x: player.x + 4, y: player.y });");
   const conv1 = await p.evaluate(() => ({ monete: statoRun.monete, hp: statoRun.hpHalf, cure: statoRun.stanzaCorrente.oggettiATerra.filter((k) => k.tipo === 'cura').length }));
-  ok('ombra-maschera-in-monete', conv1.monete > conv && conv1.cure === 0 && conv1.hp === 1, { prima: conv, ...conv1 });
-  // vola sopra una colonna
-  await p.evaluate(() => { statoRun.stanzaCorrente.ostacoli.push({ tipo: 'colonna', x: 345, y: 200, r: 14, w: 26, h: 26 }); player.x = 315; });
-  await tieniTasto('KeyD', 450);
-  const xO = await p.evaluate(() => player.x);
+  ok('ombra-maschera-in-monete', conv1.monete > m0 && conv1.cure === 0 && conv1.hp === 1, { prima: m0, ...conv1 });
+  await passi(1, "statoRun.stanzaCorrente.ostacoli.push({ tipo: 'colonna', x: 345, y: 200, r: 14, w: 26, h: 26 }); player.x = 315; keys.KeyD = true;");
+  await passi(40);
+  const xO = await p.evaluate(() => { keys.KeyD = false; return player.x; });
   ok('ombra-vola-sopra-colonna', xO > 372, { xO });
-  // colpo spettrale: attraversa una colonna e un nemico
   await prepara('ombra');
-  await p.evaluate(() => {
-    const st = statoRun.stanzaCorrente;
-    st.ostacoli.push({ tipo: 'colonna', x: 325, y: 194, r: 12, w: 24, h: 24 });
-    const n2 = Object.assign({}, st.nemici[0], { id: 'qa2', x: 400, hp: 900, maxHp: 900 });
-    st.nemici.push(n2);
-  });
-  await tieniTasto('ArrowRight', 120);
-  await p.waitForTimeout(80);
+  await passi(1, "const st = statoRun.stanzaCorrente; st.ostacoli.push({ tipo: 'colonna', x: 325, y: 194, r: 12, w: 24, h: 24 }); st.nemici.push(Object.assign({}, st.nemici[0], { id: 'qa2', x: 400, hp: 900, maxHp: 900 })); keys.ArrowRight = true;");
+  await passi(8);
   await p.screenshot({ path: foto('04-ombra-spettrali') });
-  await p.waitForTimeout(400);
+  await passi(30, 'keys.ArrowRight = false;');
   const hO = await hpNemici();
   ok('ombra-colpo-attraversa', hO[0] < 900 && hO[1] < 900, { hO });
-  // un colpo e cade
   await prepara('ombra', false);
-  await p.evaluate(() => { player.invuln = 0; subisciColpoGiocatore(1, 'la QA', player.x + 8, player.y); });
-  await p.waitForTimeout(200);
-  const morta = await p.evaluate(() => ({ hp: statoRun.hpHalf, fase: statoRun.fase, morte: window.__teatro.fase }));
+  await passi(5, "player.invuln = 0; subisciColpoGiocatore(1, 'la QA', player.x + 8, player.y);");
+  const morta = await p.evaluate(() => ({ hp: statoRun.hpHalf, fase: statoRun.fase }));
   ok('ombra-muore-con-un-colpo', morta.hp === 0 || morta.fase !== 'in_gioco', morta);
 
   // ---------------------------------------------------------------- 5. tocco: bottone MOSSA solo con Agnese

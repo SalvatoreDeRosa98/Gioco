@@ -396,14 +396,15 @@ function disegnaNastroD2(g, x, y) {
   const k = 1 - d2.giro / P.durataTick;
   const giro = k * Math.PI * 4;
   g.save();
+  g.globalAlpha = 1; // il nastro non lampeggia con l'invulnerabilità
   g.lineCap = 'round';
   for (let s = 0; s < 3; s++) {
     const r = 13 + s * 4;
     const a0 = giro - s * 0.9;
     g.beginPath();
     g.ellipse(x, y - 12, r, r * 0.55, 0, a0, a0 + 2.4);
-    g.strokeStyle = 'rgba(12,6,4,0.85)'; g.lineWidth = 4.5 - s; g.stroke();
-    g.strokeStyle = s === 1 ? 'rgba(200,40,40,0.8)' : 'rgba(249,203,64,0.85)'; g.lineWidth = 1.1; g.stroke();
+    g.strokeStyle = 'rgba(12,6,4,0.9)'; g.lineWidth = 5.5 - s; g.stroke();
+    g.strokeStyle = s === 1 ? 'rgba(220,38,38,0.95)' : 'rgba(249,203,64,0.95)'; g.lineWidth = 1.6; g.stroke();
   }
   g.restore();
 }
@@ -420,9 +421,16 @@ function disegnaArcoD2(g, x, y) {
   g.ellipse(cx, cy, r1, r1 * 0.8, 0, a0, a1);
   g.ellipse(cx, cy, r0, r0 * 0.8, 0, a1, a0, true);
   g.closePath();
-  g.fillStyle = 'rgba(14,8,5,0.72)'; g.fill();
+  g.fillStyle = 'rgba(14,8,5,0.78)'; g.fill();
+  g.strokeStyle = 'rgba(249,203,64,0.35)'; g.lineWidth = 0.8; g.stroke();
   g.beginPath(); g.ellipse(cx, cy, r1, r1 * 0.8, 0, a0, a1);
-  g.strokeStyle = A.pieno ? 'rgba(239,68,68,0.95)' : 'rgba(249,203,64,0.9)'; g.lineWidth = 1.6; g.stroke();
+  g.strokeStyle = A.pieno ? 'rgba(239,68,68,1)' : 'rgba(249,203,64,1)'; g.lineWidth = A.pieno ? 2.8 : 2.2; g.stroke();
+  // tre righe di moto lungo l'arco
+  for (let i = 1; i <= 3; i++) {
+    const t = a0 + (a1 - a0) * (i / 4), rr = r1 * (0.62 + 0.08 * i);
+    g.beginPath(); g.ellipse(cx, cy, rr, rr * 0.8, 0, t - 0.25, t + 0.25);
+    g.strokeStyle = 'rgba(249,203,64,0.6)'; g.lineWidth = 0.9; g.stroke();
+  }
   g.restore();
 }
 
