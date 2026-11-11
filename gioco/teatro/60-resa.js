@@ -1631,9 +1631,10 @@ function disegnaFrame(dtMs) {
 // ===========================================================================
 function disegnaHUDPixelArt(st) {
   // 1. Box alto a sinistra: Vita (Maschere intere e mezze) + Statistiche (danno, cadenza, velocità, monete)
+  // (d7) fondo semitrasparente: la balconata del pubblico si intravede dietro il riquadro
   const hx = 6, hy = 5, hw = 172, hh = 52;
   ctx.save();
-  ctx.fillStyle = 'rgba(10, 6, 4, 0.92)';
+  ctx.fillStyle = 'rgba(10, 6, 4, 0.62)';
   ctx.fillRect(hx, hy, hw, hh);
   ctx.strokeStyle = '#f9cb40';
   ctx.lineWidth = 1;
@@ -1702,21 +1703,9 @@ function disegnaHUDPixelArt(st) {
     ctx.fillStyle = '#e53222';
     ctx.fillRect(bx, by, Math.round(bw * Math.max(0, boss.hp / boss.maxHp)), 8);
     ctx.restore();
-  } else {
-    // (bug autore) il totale conta le stanze della mappa, non la segreta né il patto finché non le trovi
-    const nascosta = (s) => (s.tipo === 'segreta' || s.tipo === 'patto') && !s.visitata;
-    const nVisitate = statoRun.mappa ? statoRun.mappa.stanze.filter((s) => s.visitata).length : 1;
-    const nTot = statoRun.mappa ? statoRun.mappa.stanze.filter((s) => !nascosta(s)).length : 1;
-    const q = getQuartierePiano(statoRun.piano);
-    const cicloTxt = statoRun.ciclo > 1 ? ` (∞${statoRun.ciclo})` : '';
-    drawPillLabel(
-      `${q.nome.toUpperCase()} · ${q.atmosfera.toUpperCase()}${cicloTxt} · STANZE ${nVisitate}/${nTot}`,
-      W / 2,
-      15,
-      280,
-      { size: 8, color: q.coloreTema, border: q.bordoPillola }
-    );
   }
+  // (d7) fuori dal boss il centro in alto resta alla balconata del pubblico: quartiere e stanze scoperte
+  // stanno nell'intestazione della minimappa (il nome del quartiere e l'atmosfera li annuncia il banner).
 
   // 3. Minimappa ad ESPLORAZIONE in alto a destra:
   const m = statoRun.mappa;
@@ -1724,7 +1713,7 @@ function disegnaHUDPixelArt(st) {
     const cell = 12, x0 = W - 118, y0 = 24;
     const mw = 114, mh = 92;
     ctx.save();
-    ctx.fillStyle = 'rgba(10,6,4,0.92)';
+    ctx.fillStyle = 'rgba(10,6,4,0.62)'; // (d7) semitrasparente come il riquadro di sinistra
     ctx.fillRect(x0 - 6, y0 - 16, mw, mh);
     ctx.strokeStyle = '#f9cb40';
     ctx.strokeRect(x0 - 6, y0 - 16, mw, mh);
@@ -1735,7 +1724,7 @@ function disegnaHUDPixelArt(st) {
     const scoperte = m.stanze.filter((s) => s.visitata).length;
     const totMappa = m.stanze.filter((s) => !((s.tipo === 'segreta' || s.tipo === 'patto') && !s.visitata)).length;
     drawTextFit(
-      `MAPPA (${scoperte}/${totMappa})`,
+      `${getQuartierePiano(statoRun.piano).nome.toUpperCase()}${statoRun.ciclo > 1 ? ' ∞' + statoRun.ciclo : ''} · ${scoperte}/${totMappa}`, // (d7)
       x0 - 6 + mw / 2,
       y0 - 5,
       mw - 8,
