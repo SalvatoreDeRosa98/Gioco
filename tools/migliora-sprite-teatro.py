@@ -46,6 +46,9 @@ T2 = os.path.join(RADICE, 'gioco', 'teatro', 't2-sprite.js')
 # Costanti (colori del palco dall'art bible; spessori in px di GIOCO, canvas 640x360)
 # --------------------------------------------------------------------------------------------------
 FONDO_PALCO = (24, 19, 31)
+# fondo vero delle tavole: ritaglio del pavimento da una foto di gioco (file, riquadro)
+PAVIMENTO = ('production/qa/evidence/teatro-t2-radice-partita.png', (470, 240, 620, 320))
+TREMOLIO = [('ombra', 'cammina'), ('burattino', 'muove'), ('taddeo', 'cammina')]
 LANTERNA = np.array([249, 203, 64], dtype=np.float32) / 255.0
 SCURO = np.array([16, 11, 22], dtype=np.float32) / 255.0
 VIOLA = np.array([0.20, 0.15, 0.30], dtype=np.float32)
@@ -96,34 +99,39 @@ GRUPPI = {
 # Per file: pulizia, stabile, stile (0 = niente … 1 = pieno), contorno. Le scelte vengono dalle tavole
 # production/arte/prima-dopo-sprite/ (vedi production/arte/censimento-sprite.md, colonna «scelta»).
 PREDEFINITO = {'pulizia': True, 'stabile': True, 'stile': 0.6, 'contorno': True}
+# scelta: 'leggera' | 'ombre' | 'prima' (si scrive comunque la versione pulita, ma SPRITE_V2 resta spento);
+# dubbio: True = scelta mia incerta, SPRITE_V2 spento finché l'autore non guarda la tavola.
 TABELLA = {
-    'ferruccio': {'stile': 0.15},
-    'agnese': {'stile': 0.4},
-    'taddeo': {'stile': 0.3},
-    'ombra': {'stile': 0.2},
-    'teste-mira': {'stile': 0.0, 'stabile': False, 'contorno': False},
-    'gatto': {'stile': 0.4},
-    'vespa-cieca': {'stile': 0.7},
-    'maschera': {'stile': 0.5},
-    'bomba-ferma': {'stile': 0.6},
-    'guardia': {'stile': 0.7},
-    'statua': {'stile': 0.5},
-    'predone': {'stile': 0.4},
-    'lucciola': {'stile': 0.6},
-    'burattino': {'stile': 0.7},
-    'regina-vespa': {'stile': 0.6},
-    'capitano': {'stile': 0.5},
-    'donna-luciana': {'stile': 0.5},
-    'custode-marmo': {'stile': 0.6},
-    'spezzafili': {'stile': 0.6},
-    'accendilumi': {'stile': 0.6},
-    'cigno-latta': {'stile': 0.6},
-    'giostra-lucciole': {'stile': 0.6},
-    'tessitrice-pietra': {'stile': 0.6},
+    # personaggi: la Ferruccio è il modello; «a ombre» li ingrigisce e li perde sul pavimento scuro
+    'ferruccio': {'stile': 0.15, 'scelta': 'leggera'},
+    'agnese': {'stile': 0.4, 'scelta': 'leggera'},
+    'taddeo': {'stile': 0.3, 'scelta': 'leggera'},
+    'ombra': {'stile': 0.2, 'scelta': 'leggera'},
+    'teste-mira': {'stile': 0.0, 'stabile': False, 'contorno': False, 'scelta': 'prima'},  # non disegnato dal gioco
+    # nemici
+    'gatto': {'stile': 0.4, 'scelta': 'leggera'},
+    'vespa-cieca': {'stile': 0.7, 'scelta': 'ombre'},
+    'maschera': {'stile': 0.5, 'scelta': 'leggera'},     # il bianco della maschera è la sua identità
+    'bomba-ferma': {'stile': 0.6, 'scelta': 'leggera'},
+    'guardia': {'stile': 0.7, 'scelta': 'leggera'},
+    'statua': {'stile': 0.5, 'scelta': 'leggera'},       # marmo: «a ombre» lo fa sembrare piombo
+    'predone': {'stile': 0.4, 'scelta': 'leggera'},
+    'lucciola': {'stile': 0.6, 'scelta': 'ombre', 'dubbio': True},
+    'burattino': {'stile': 0.7, 'scelta': 'ombre'},
+    # boss (fogli t2/b6)
+    'regina-vespa': {'stile': 0.6, 'scelta': 'ombre', 'dubbio': True},
+    'capitano': {'stile': 0.5, 'scelta': 'leggera'},  # «a ombre» spegne l'armatura
+    'donna-luciana': {'stile': 0.5, 'scelta': 'leggera'},
+    'custode-marmo': {'stile': 0.6, 'scelta': 'leggera'},
+    'spezzafili': {'stile': 0.6, 'scelta': 'leggera'},
+    'accendilumi': {'stile': 0.6, 'scelta': 'leggera'},
+    'cigno-latta': {'stile': 0.6, 'scelta': 'leggera'},
+    'giostra-lucciole': {'stile': 0.6, 'scelta': 'leggera'},
+    'tessitrice-pietra': {'stile': 0.6, 'scelta': 'leggera'},
 }
 for _n in ALTEZZA_GIOCO:
     if _n.startswith('boss/'):
-        TABELLA[_n] = {'stile': 0.6, 'stabile': False}
+        TABELLA[_n] = {'stile': 0.6, 'stabile': False, 'scelta': 'leggera'}
 
 
 def opzioni(nome):
@@ -370,15 +378,22 @@ def accenti(x):
     return _liscio((sat - 0.35) / 0.25) * _liscio((mx - 0.35) / 0.25)
 
 
-def stilizza(cella, k):
+def stilizza(cella, k, deciso=False):
+    """Gradazione «a ombre». k = intensità 0..1. deciso: valori compressi nella fascia scura
+    (OMBRE_FASCIA), saturazione dimezzata; in entrambi i casi gli accenti restano com'erano."""
     if k <= 0:
         return
     x = cella[..., :3]
     accento = accenti(x)
     luma = (x[..., 0] * 0.299 + x[..., 1] * 0.587 + x[..., 2] * 0.114)[..., None]
-    y = x + (luma - x) * (0.45 * k)
-    y = np.power(np.clip(y, 0, 1), 1 + 0.6 * k)
-    y = y * (1 - 0.15 * k) + VIOLA * (0.15 * k)
+    y = x + (luma - x) * (0.5 * k)  # k = 1: saturazione dimezzata
+    if deciso:
+        lo, hi = OMBRE_FASCIA
+        y = lo + (hi - lo) * np.power(np.clip(y, 0, 1), 1.4)
+        y = y * (1 - 0.22) + VIOLA * 0.22
+    else:
+        y = np.power(np.clip(y, 0, 1), 1 + 0.6 * k)
+        y = y * (1 - 0.15 * k) + VIOLA * (0.15 * k)
     cella[..., :3] = y * (1 - accento[..., None]) + x * accento[..., None]
 
 
@@ -395,22 +410,27 @@ def contorna(cella, r_scuro, r_oro, forza):
 
 
 # --------------------------------------------------------------------------------------------------
-# Catena
+# Catena: tre varianti per figura
+#   pulita  = solo pulizia + stabilità (miglioramenti certi);
+#   leggera = pulita + gradazione all'intensità della TABELLA + contorno unico;
+#   ombre   = pulita + gradazione decisa (STILE_OMBRE) + contorno unico.
 # --------------------------------------------------------------------------------------------------
+STILE_OMBRE = 1.0
+OMBRE_FASCIA = (0.03, 0.62)  # «a ombre»: il bianco più chiaro arriva al 62%
+VARIANTI = ('prima', 'leggera', 'ombre')
+
+
 def migliora(nome, layout):
-    """Ritorna (immagine originale, immagine migliorata, note)."""
+    """Ritorna (varianti {prima, pulita, leggera, ombre} come immagini PIL, note, pulita_float per il tremolio)."""
     sorg = Image.open(os.path.join(ORIG, nome + '.png')).convert('RGBA')
     o = opzioni(nome)
     arr = np.asarray(sorg, dtype=np.float32) / 255.0
-    out = arr.copy()
     note = []
     cel = celle(nome, sorg, layout)
     s = scala_gioco(nome, sorg, layout)
     r_scuro = max(1, int(round(BORDO_SCURO_GIOCO / s)))
     r_oro = max(1, int(round(FILO_ORO_GIOCO / s)))
-    lavori = {}
-    for (r, posa, c, x0, y0, x1, y1) in cel:
-        lavori[(r, c)] = out[y0:y1, x0:x1].copy()
+    lavori = {(r, c): arr[y0:y1, x0:x1].copy() for (r, posa, c, x0, y0, x1, y1) in cel}
     if o['pulizia']:
         for (r, posa, c, *_r) in cel:
             pulisci(lavori[(r, c)], posa)
@@ -426,18 +446,24 @@ def migliora(nome, layout):
                 lavori[k] = v
             if nota:
                 note.append(f'{posa}: {nota}')
-    for (r, posa, c, x0, y0, x1, y1) in cel:
-        q = lavori[(r, c)]
-        stilizza(q, o['stile'])
-        if o['contorno']:
-            contorna(q, r_scuro, r_oro, 1.0)
-        out[y0:y1, x0:x1] = q
-    dopo = Image.fromarray((np.clip(out, 0, 1) * 255 + 0.5).astype(np.uint8), 'RGBA')
-    return sorg, dopo, note
+
+    def componi(k, contorno, deciso=False):
+        out = np.zeros_like(arr)
+        for (r, posa, c, x0, y0, x1, y1) in cel:
+            q = lavori[(r, c)].copy()
+            stilizza(q, k, deciso)
+            if contorno:
+                contorna(q, r_scuro, r_oro, 1.0)
+            out[y0:y1, x0:x1] = q
+        return Image.fromarray((np.clip(out, 0, 1) * 255 + 0.5).astype(np.uint8), 'RGBA')
+
+    var = {'prima': sorg, 'pulita': componi(0, False),
+           'leggera': componi(o['stile'], o['contorno']), 'ombre': componi(STILE_OMBRE, True, True)}
+    return var, note
 
 
 # --------------------------------------------------------------------------------------------------
-# Tavole prima|dopo
+# Tavole
 # --------------------------------------------------------------------------------------------------
 def _font(n=14):
     try:
@@ -446,76 +472,156 @@ def _font(n=14):
         return ImageFont.load_default()
 
 
-def su_palco(im, w, h):
+_PAV = {}
+
+
+def pavimento(w, h):
+    """Fondo vero del palco: ritaglio del pavimento da una foto di gioco, ripetuto (ripiego: tinta del palco)."""
+    if 'tassello' not in _PAV:
+        f = os.path.join(RADICE, PAVIMENTO[0])
+        _PAV['tassello'] = Image.open(f).convert('RGBA').crop(PAVIMENTO[1]) if os.path.exists(f) else None
+    t = _PAV['tassello']
     fondo = Image.new('RGBA', (w, h), FONDO_PALCO + (255,))
-    fondo.alpha_composite(im, ((w - im.width) // 2, (h - im.height) // 2))
+    if t is not None:
+        for y in range(0, h, t.height):
+            for x in range(0, w, t.width):
+                fondo.paste(t, (x, y))
     return fondo
 
 
 def a_schermo(nome, im, cella, layout, k=2.0):
-    """La cella come la vede il giocatore: altezza di gioco × k (palco 640x360 su schermo 1280x720)."""
+    """La cella come la vede il giocatore: altezza di gioco × k (palco 640x360 su schermo 1280x720 = ×2)."""
     x0, y0, x1, y1 = cella
     s = scala_gioco(nome, im, layout) * k
     pezzo = im.crop((x0, y0, x1, y1))
     return pezzo.resize((max(1, round(pezzo.width * s)), max(1, round(pezzo.height * s))), Image.LANCZOS)
 
 
-def tavola(nome, prima, dopo, layout, note):
+def _ingrandisci(im, k):
+    return im.resize((im.width * k, im.height * k), Image.NEAREST)
+
+
+ETICHETTA = {'prima': 'PRIMA (originale)', 'leggera': 'LEGGERA', 'ombre': 'A OMBRE (decisa)'}
+
+
+def tavola(nome, var, layout, note):
+    """Tre fasce (prima | leggera | a ombre) sul pavimento del palco: tutte le pose a grandezza di schermo
+    (×2 del palco) e la prima posa ingrandita ×3; in fondo i fogli interi prima e pulito (frammenti, scritte)."""
     F = _font(16)
-    lato = 760
-    f = min(1.0, lato / prima.width, 560 / prima.height)
-    pp = prima.resize((max(1, int(prima.width * f)), max(1, int(prima.height * f))), Image.LANCZOS)
-    dd = dopo.resize(pp.size, Image.LANCZOS)
-    cel = celle(nome, prima, layout)
-    prime = [x for x in cel if x[2] == 0]  # primo fotogramma di ogni riga
-    sp = [a_schermo(nome, prima, x[3:], layout) for x in prime]
-    sd = [a_schermo(nome, dopo, x[3:], layout) for x in prime]
-    hs = max(i.height for i in sp) + 8
-    ws = sum(i.width for i in sp) + 6 * len(sp)
-    W = max(2 * lato + 30, ws * 2 + 30)
-    H = 30 + max(pp.height, 100) + 40 + hs + 30 + 20 * len(note)
+    prima = var['prima']
+    prime = [x for x in celle(nome, prima, layout) if x[2] == 0]
+    fasce = []
+    for v in VARIANTI:
+        sch = [a_schermo(nome, var[v], x[3:], layout) for x in prime]
+        zoom = _ingrandisci(sch[0], 3)
+        fasce.append((v, sch, zoom))
+    hs = max(max(i.height for i in f[1]) for f in fasce) + 10
+    ws = sum(i.width for i in fasce[0][1]) + 8 * len(prime) + 8
+    zw, zh = fasce[0][2].width + 16, fasce[0][2].height + 10
+    hb = max(hs, zh)
+    f = min(1.0, 700 / prima.width, 360 / prima.height)
+    th = (max(1, int(prima.width * f)), max(1, int(prima.height * f)))
+    W = max(ws + zw + 30, 2 * th[0] + 40, 700)
+    H = 34 + 3 * (hb + 30) + th[1] + 40 + 18 * len(note)
     T = Image.new('RGBA', (W, H), (12, 10, 16, 255))
     d = ImageDraw.Draw(T)
-    d.text((10, 6), f'{nome}  —  PRIMA (originale)', fill=(220, 210, 190), font=F)
-    d.text((W // 2 + 10, 6), 'DOPO (sprite_teatro_v2)', fill=(249, 203, 64), font=F)
-    T.alpha_composite(su_palco(pp, lato, pp.height), (10, 30))
-    T.alpha_composite(su_palco(dd, lato, pp.height), (W // 2 + 10, 30))
-    y = 30 + pp.height + 10
-    d.text((10, y), 'a grandezza di gioco (x2, come su schermo 1280x720):', fill=(200, 200, 200), font=F)
-    y += 24
-    for col, serie in ((10, sp), (W // 2 + 10, sd)):
-        barra = Image.new('RGBA', (ws, hs), FONDO_PALCO + (255,))
-        x = 3
-        for im in serie:
-            barra.alpha_composite(im, (x, hs - im.height - 4))
-            x += im.width + 6
-        T.alpha_composite(barra, (col, y))
-    y += hs + 6
+    sc = opzioni(nome)
+    d.text((10, 6), f'{nome}  -  scelta: {sc.get("scelta", "?")}{"  (DUBBIO: decide l autore)" if sc.get("dubbio") else ""}',
+           fill=(249, 203, 64), font=F)
+    y = 34
+    for v, sch, zoom in fasce:
+        d.text((10, y), ETICHETTA[v] + ' - a grandezza di schermo | prima posa x3', fill=(220, 210, 190), font=F)
+        y += 22
+        barra = pavimento(ws, hb)
+        x = 4
+        for im in sch:
+            barra.alpha_composite(im, (x, hb - im.height - 5))
+            x += im.width + 8
+        T.alpha_composite(barra, (10, y))
+        z = pavimento(zw, hb)
+        z.alpha_composite(zoom, (8, hb - zoom.height - 5))
+        T.alpha_composite(z, (20 + ws, y))
+        y += hb + 8
+    d.text((10, y), 'foglio intero: originale | pulito (senza frammenti, scritte, aloni; piedi allineati)', fill=(200, 200, 200), font=F)
+    y += 22
+    for i, v in enumerate(('prima', 'pulita')):
+        im = var[v].resize(th, Image.LANCZOS)
+        fo = Image.new('RGBA', th, FONDO_PALCO + (255,))
+        fo.alpha_composite(im)
+        T.alpha_composite(fo, (10 + i * (th[0] + 20), y))
+    y += th[1] + 6
     for n in note:
         d.text((10, y), n, fill=(180, 180, 180), font=_font(13))
-        y += 20
+        y += 18
     return T.convert('RGB')
 
 
 def tavola_gruppo(titolo, coppie, k=3.0):
-    """coppie: [(nome, prima, dopo)]: fila PRIMA sopra, fila DOPO sotto, primo fotogramma a k× il gioco."""
+    """coppie: [(nome, varianti, layout)]: tre file (prima, leggera, a ombre), prima posa a k× il palco,
+    sotto ogni figura la scelta."""
     F = _font(14)
     pezzi = []
-    for nome, prima, dopo, layout in coppie:
-        c = celle(nome, prima, layout)[0][3:]
-        pezzi.append((nome, a_schermo(nome, prima, c, layout, k), a_schermo(nome, dopo, c, layout, k)))
-    hs = max(p[1].height for p in pezzi) + 10
-    W = sum(p[1].width + 16 for p in pezzi) + 20
-    H = 40 + 2 * (hs + 24)
-    T = Image.new('RGBA', (W, H), FONDO_PALCO + (255,))
+    for nome, var, layout in coppie:
+        c = celle(nome, var['prima'], layout)[0][3:]
+        pezzi.append((nome, [a_schermo(nome, var[v], c, layout, k) for v in VARIANTI]))
+    hs = max(max(i.height for i in p[1]) for p in pezzi) + 10
+    W = sum(max(p[1][0].width, 110) + 16 for p in pezzi) + 130
+    H = 36 + 3 * hs + 44
+    T = pavimento(W, H)
     d = ImageDraw.Draw(T)
-    d.text((10, 8), f'{titolo}: sopra PRIMA, sotto DOPO (x{k:g} della grandezza di gioco)', fill=(249, 203, 64), font=F)
-    x = 10
-    for nome, p, q in pezzi:
-        T.alpha_composite(p, (x, 40 + hs - p.height))
-        d.text((x, 40 + hs + 2), nome, fill=(200, 200, 200), font=F)
-        T.alpha_composite(q, (x, 40 + hs + 24 + hs - q.height))
-        x += p.width + 16
+    d.rectangle((0, 0, W, 30), fill=(12, 10, 16, 255))
+    d.text((10, 8), f'{titolo}: file PRIMA / LEGGERA / A OMBRE (x{k:g} del palco); sotto, la scelta', fill=(249, 203, 64), font=F)
+    for i, v in enumerate(VARIANTI):
+        d.text((8, 36 + i * hs + hs // 2), v.upper(), fill=(249, 203, 64), font=F)
+    x = 120
+    for nome, ims in pezzi:
+        for i, im in enumerate(ims):
+            T.alpha_composite(im, (x, 36 + i * hs + hs - im.height))
+        sc = opzioni(nome)
+        d.rectangle((x, 36 + 3 * hs + 2, x + max(ims[0].width, 110), H), fill=(12, 10, 16, 255))
+        d.text((x, 36 + 3 * hs + 4), nome, fill=(220, 220, 220), font=F)
+        d.text((x, 36 + 3 * hs + 22), f'scelta: {sc.get("scelta", "?")}{" (?)" if sc.get("dubbio") else ""}',
+               fill=(249, 203, 64), font=F)
+        x += max(ims[0].width, 110) + 16
+    return T.convert('RGB')
+
+
+def tavola_tremolio(voci, layout):
+    """Fotogrammi di una riga sovrapposti con trasparenza, prima e dopo: contorni sdoppiati = tremolio."""
+    F = _font(15)
+    blocchi = []
+    for nome, posa, var in voci:
+        L = layout[nome]
+        r = L['righe'].index(next(x for x in L['righe'] if x[0] == posa))
+        n = L['righe'][r][1]
+        out = []
+        for v in ('prima', 'pulita'):
+            acc = np.zeros((L['cella_a'], L['cella_l'], 4), dtype=np.float32)
+            for c in range(n):
+                q = np.asarray(var[v].crop((c * L['cella_l'], r * L['cella_a'], (c + 1) * L['cella_l'], (r + 1) * L['cella_a'])), dtype=np.float32) / 255.0
+                acc[..., :3] += q[..., :3] * q[..., 3:4] / n
+                acc[..., 3] += q[..., 3] / n
+            rgb = np.where(acc[..., 3:4] > 0, acc[..., :3] / np.maximum(acc[..., 3:4], 1e-4), 0)
+            im = Image.fromarray((np.clip(np.dstack([rgb, np.minimum(1, acc[..., 3] * 1.0)]), 0, 1) * 255).astype(np.uint8), 'RGBA')
+            k = 2 if L['cella_a'] < 180 else 1
+            out.append(im.resize((im.width * k, im.height * k), Image.LANCZOS))
+        blocchi.append((f'{nome} «{posa}» ({n} fotogrammi sovrapposti)', out))
+    W = max(b[1][0].width * 2 + 40 for b in blocchi)
+    H = sum(b[1][0].height + 40 for b in blocchi) + 30
+    T = Image.new('RGBA', (W, H), (12, 10, 16, 255))
+    d = ImageDraw.Draw(T)
+    d.text((10, 6), 'TREMOLIO: a sinistra PRIMA (contorni sdoppiati), a destra DOPO (piedi e asse fermi)', fill=(249, 203, 64), font=F)
+    y = 30
+    for titolo, (p, q) in blocchi:
+        d.text((10, y), titolo, fill=(220, 220, 220), font=F)
+        y += 20
+        for i, im in enumerate((p, q)):
+            fo = Image.new('RGBA', im.size, (60, 50, 70, 255))
+            fo.alpha_composite(im)
+            dd = ImageDraw.Draw(fo)
+            dd.line((0, im.height - 4 * (2 if im.height < 360 else 1), im.width, im.height - 4 * (2 if im.height < 360 else 1)), fill=(249, 203, 64, 120))
+            T.alpha_composite(fo, (10 + i * (p.width + 20), y))
+        y += p.height + 20
     return T.convert('RGB')
 
 
@@ -587,21 +693,32 @@ def main():
         if not os.path.exists(os.path.join(ORIG, nome + '.png')):
             print(f'[salto] {nome}: originale mancante')
             continue
-        prima, dopo, note = migliora(nome, layout)
-        fatti[nome] = (prima, dopo)
+        var, note = migliora(nome, layout)
+        fatti[nome] = var
+        o = opzioni(nome)
+        scelta = o.get('scelta', 'leggera')
         if not arg.anteprima:
             dest = os.path.join(V2, nome + '.png')
             os.makedirs(os.path.dirname(dest), exist_ok=True)
-            dopo.save(dest, optimize=True)
+            var['pulita' if scelta == 'prima' else scelta].save(dest, optimize=True)
         if not arg.senza_tavole:
-            tavola(nome, prima, dopo, layout, note).save(os.path.join(TAVOLE, nome.replace('/', '_') + '.png'), optimize=True)
-        o = opzioni(nome)
-        print(f'{nome}: stile {o["stile"]}, ' + ('; '.join(note) or 'nessun riallineamento'))
+            tavola(nome, var, layout, note).save(os.path.join(TAVOLE, nome.replace('/', '_') + '.png'), optimize=True)
+        print(f'{nome}: scelta {scelta}{" (dubbio)" if o.get("dubbio") else ""}, stile {o["stile"]}; ' + ('; '.join(note) or 'nessun riallineamento'))
     if not arg.senza_tavole:
         for g, lista in GRUPPI.items():
-            coppie = [(n, *fatti[n], layout) for n in lista if n in fatti]
+            coppie = [(n, fatti[n], layout) for n in lista if n in fatti]
             if coppie:
                 tavola_gruppo(g, coppie).save(os.path.join(TAVOLE, f'_{g}.png'), optimize=True)
+        boss_img = [n for n in fatti if n.startswith('boss/')]
+        if boss_img:
+            tavola_gruppo('boss (immagini ferme, ripiego)', [(n, fatti[n], layout) for n in boss_img], k=2.0).save(
+                os.path.join(TAVOLE, '_boss-ripiego.png'), optimize=True)
+        voci = [(n, p, fatti[n]) for n, p in TREMOLIO if n in fatti]
+        if voci:
+            tavola_tremolio(voci, layout).save(os.path.join(TAVOLE, '_tremolio.png'), optimize=True)
+    # tabella per teatro/10-sprite.js (SPRITE_V2): acceso solo dove la scelta è una variante e non c'è dubbio
+    print('SPRITE_V2 = ' + json.dumps({n: (opzioni(n).get('scelta', 'leggera') != 'prima' and not opzioni(n).get('dubbio'))
+                                        for n in TABELLA}))
 
 
 if __name__ == '__main__':
