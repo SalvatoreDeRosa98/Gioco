@@ -51,14 +51,14 @@ const STANZE_B7 = Object.freeze({
    * Fragili: si rompono coi colpi (proiettili, fendente, bombe, scoppi) e a volte lasciano qualcosa.
    * pelle: aspetto del fragile comune secondo il quartiere. tipi.*.premi: pesi di ciò che cade.
    * I Vasi di Capodimonte (richiesta dell'autore) sono più ricchi, ma ogni tanto ne esce un ragno
-   * arrabbiato: `ragno` è il tipo del nemico piccolo che compare (oggi la Vespa Cieca).
+   * arrabbiato: `ragno` è il tipo del nemico piccolo che compare (il Ragno della Seta di d7-rifiniture.js).
    */
   fragili: Object.freeze({
     pelle: Object.freeze({ 1: 'botte', 2: 'vaso', 3: 'balla', 4: 'baule' }),
     tipi: Object.freeze({
       comune: Object.freeze({ colpi: 2, premi: Object.freeze({ niente: 0.89, moneta: 0.08, mezzaMaschera: 0.03, ragno: 0 }) }),
       capodimonte: Object.freeze({ colpi: 1, premi: Object.freeze({ niente: 0.5, moneta: 0.25, mezzaMaschera: 0.1, ragno: 0.15 }),
-        ragno: 'vespa_cieca', stordimentoRagnoTick: 36 }),
+        ragno: 'ragno_seta', stordimentoRagnoTick: 36 }),
     }),
   }),
   /** Fendente di base (come in passoLogico): portata e avanzamento del colpo, per rompere i fragili. */
@@ -714,7 +714,7 @@ const TESTI_B7 = Object.freeze({
   ciarlatanoOggetto: (nome) => `🎩 Sotto la scatola c'era una reliquia: ${nome} [Click/E]`,
   ciarlatanoRipiego: (n) => `🎩 La reliquia non trova posto: il ciarlatano te la paga ${n}🪙.`,
   titoloCiarlatano: 'LE TRE SCATOLE DEL CIARLATANO',
-  ragno: '🕷 Dal vaso di Capodimonte salta fuori un ragno arrabbiato!',
+  ragno: '🕷 Dal vaso di Capodimonte salta fuori un Ragno della Seta, arrabbiato!',
   leva: '⚙ La carrucola gira: i sacchi di sabbia vengono giù!',
   levaInvito: '⚙ LEVA [E]',
   sacco: 'il sacco di sabbia',
@@ -1200,7 +1200,7 @@ function liberaRagnoB7(st, o, T) {
   const n = creaNemiciB7({ id: `${st.id}-ragno${st.ragniB7}` }, statoRun.piano, [T.ragno])[0];
   if (!n) return null;
   n.x = o.x; n.y = o.y;
-  n.nome = 'Ragno arrabbiato';
+  n.nome = 'Ragno della Seta';
   n.ragnoB7 = true;
   n.stunTicks = T.stordimentoRagnoTick;
   st.nemici.push(n);

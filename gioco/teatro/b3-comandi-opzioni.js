@@ -937,7 +937,7 @@ function cambiaPaginaB3(pagina) {
   const o = b3.opz;
   if (!o || o.pagina === pagina) return;
   o.pagina = pagina;
-  o.sel = pagina !== 'scena' ? 0 : RIGHE_B3.scena.findIndex((r) => r.id === 'vaiTasti');
+  o.sel = pagina !== 'scena' ? 0 : righeB3('scena').findIndex((r) => r.id === 'vaiTasti');
   suonoB3('playPasso');
 }
 

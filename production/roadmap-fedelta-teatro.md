@@ -8,7 +8,7 @@ poi `gioco/README.md` e `PASSAGGIO-CONSEGNE.md`. Branch di lavoro: `claude/brave
 Il motore (`gioco/motore`) ha l'estetica e i sistemi del Teatro (`gioco/teatro_marionette.html`, prototipo
 dell'autore, FONTE DELLE REGOLE, da non modificare), ma il suo nucleo di sensazioni è ancora quello del design
 precedente (spada, parata, telegrafo in tre tempi, direttore dei gettoni, contatto innocuo, allarme di stanza).
-L'autore lo ha detto chiaro: «il Teatro mi sembra molto più simile a Isaac del gioco col nuovo motore». Questa
+L'autore lo ha detto chiaro: il Teatro gli sembra molto più vicino al gioco a stanze che vuole di quanto lo sia il gioco col nuovo motore. Questa
 roadmap elenca, in ordine, i cambiamenti al nucleo. Ogni passo ha file, numeri da prendere dal Teatro (con il
 numero di riga), test e criterio di accettazione misurabile. Nessun passo aggiunge sistemi nuovi.
 
@@ -53,30 +53,30 @@ rientra nelle tolleranze: è il metro di tutta la roadmap.
   «superata dal Teatro, 2026-11-09».
 
 ### 2. Via il direttore dei gettoni e le durate minime del telegrafo per i nemici del Teatro
-- Teatro: ogni nemico attacca per conto suo con il suo cooldown (`popolaStanzaIsaac` ~3229 e `loop()`):
+- Teatro: ogni nemico attacca per conto suo con il suo cooldown (`popolaStanza` ~3229 e `loop()`):
   vespa cieca vola addosso, gatto balza, maschera spara a ventaglio, guardia doppietta, statua croci, bomba
   esplode. Nessun turno.
 - Motore: `nemici.json › direttore` (`gettoni`, `attaccanti_max` 2, `gap_impatti_min`), `t_allarme` 4000,
   `t_lamp_min_parabile` 280 / `t_lamp_min_imparabile` 350 (R2/R4), `attori/ia/direttore.js`. Mettere
   `senza_gettone: 1` su tutti gli archetipi del Teatro e `attaccanti_max` al numero dei nemici in stanza; portare
   `t_lamp_min_*` a 0 e ricopiare i cicli del Teatro in ms: gatto, vespa, maschera, guardia, statua, bomba (il
-  numero di frame di ciascuno è in `loop()` e nei commenti «(Isaac Trite/Hopper)» ~851-914 e ~2604-2609: leggere
+  numero di frame di ciascuno è in `loop()` e nei commenti sui nemici che saltano ~851-914 e ~2604-2609: leggere
   e trascrivere, NON stimare). La parata resta possibile ma non vincola più i tempi.
 - Test: `nemici.test.mjs` (cadenze = JSON; tre nemici attaccano nello stesso secondo), `fedelta.test.mjs`.
 
-### 3. Ritmo delle stanze alla Isaac
+### 3. Ritmo delle stanze del Teatro
 - Teatro: entri, i nemici ci sono già, le porte si chiudono subito, si riaprono alla morte dell'ultimo.
 - Motore: `nemici.json › t_allarme` 4000 → 0 (o il valore del Teatro se c'è un'attesa), `stanze.json`:
   ondate = 1 (tutti insieme), `t_ritardo_apertura` al valore del Teatro, emersione dei nemici ≤ 300 ms, niente
-  intervallo fra ondate. Camera: transizione 250 ms va bene (Isaac scorre), ma niente pausa logica.
+  intervallo fra ondate. Camera: transizione 250 ms va bene (nel Teatro scorre), ma niente pausa logica.
 - Test: `mondo.test.mjs` (stanza con nemici attivi entro 300 ms dall'entrata).
 
 ### 4. Densità e velocità prese dal Teatro numero per numero
-- Teatro: `popolaStanzaIsaac` (~3229-3424): quanti nemici per stanza e per piano, quali archetipi, hp, speed;
+- Teatro: `popolaStanza` (~3229-3424): quanti nemici per stanza e per piano, quali archetipi, hp, speed;
   `player.speed 2.0`, `tearsPerSec 2.73`, `cooldownMax 22`, `range 170` (~2620-2630); proiettili
   `sparaProiettiliDirezione` (~3546: velocità, raggio, gittata); `danneggiaNemico` (~3621: knockback).
 - Motore: `generazione.json`/`stanze.json` (n_nemici per piano), `nemici.json › archetipi` (vita, velocità ×87,
-  r), `personaggi.json › isaac` (già esiste: verificare che i valori effettivi coincidano con il Teatro dopo
+  r), la voce del personaggio base in `personaggi.json` (già esiste: verificare che i valori effettivi coincidano con il Teatro dopo
   la conversione), `combattimento.json` (velocità e gittata dei proiettili, cadenza), `ferruccio.json › v_base`.
   Vespa cieca: contatto che ferisce (passo 1) e volo dritto, niente picchiata telegrafata (`nemici.json ›
   archetipi.vespa`, `attori/ia/base.js`).
