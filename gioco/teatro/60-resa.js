@@ -1571,7 +1571,7 @@ function disegnaFrame(dtMs) {
     // Proiettili Nemici
     for (const pr of statoRun.proiettiliNemici) {
       if (typeof aloneProiettileD7 === 'function') aloneProiettileD7(pr); // (d7) leggibili sugli scacchi
-      drawPixelSprite(SPRITE_PROIETTILI.nemico, pr.x, pr.y, pr.bossShot ? 1.85 : 1.55);
+      drawPixelSprite(SPRITE_PROIETTILI.nemico, pr.x, pr.y, pr.bossShot ? PROIETTILE_NEMICO_J1.scalaBoss : PROIETTILE_NEMICO_J1.scalaBase); // j1: base più piccoli (prima 1.55)
     }
 
     // Splash di impatto a 4 frame
