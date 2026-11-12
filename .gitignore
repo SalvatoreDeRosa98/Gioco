@@ -179,3 +179,13 @@ $RECYCLE.BIN/
 production/qa/evidence/teatro-bug-avvio-/
 production/qa/evidence/teatro-bug-morte-/
 production/qa/evidence/teatro-t4r-/
+
+# graphify (mappa del codice del Teatro, tools/grafo-teatro.py): si tengono rapporto, avvolgimenti, grafo e pagina;
+# il resto è lavoro interno dello strumento e si rigenera
+graphify-out/cache/
+graphify-out/20*/
+graphify-out/.graphify_analysis.json
+graphify-out/.graphify_build.json
+graphify-out/.graphify_root
+graphify-out/.graphify_labels.json.sig
+graphify-out/manifest.json

@@ -55,3 +55,17 @@ Le dichiarazioni di primo livello (`const`/`let`/`function`) stanno nello scope 
 - Nuovo file: aggiungere il `<script src="teatro/NN-nome.js">` nell'HTML nella posizione giusta. `tools/teatro-release.js` incorpora tutti gli `<script src="teatro/*.js">` in `production/release/teatro.html`.
 - Per la QA, i nuovi interni vanno esposti in `80-ciclo.js` con `Object.assign(window.__teatro.interni, {...})`.
 - Dopo ogni modifica: `node tools/qa-teatro-{generatore,avvio,morte,c,d}.js` sia su `gioco/teatro_marionette.html` sia su `production/release/teatro.html`.
+
+## Mappa del codice (graphify)
+
+Prima di leggere i file interi, guarda la mappa: è fatta con graphify e completata da `tools/grafo-teatro.py`.
+
+- `graphify-out/AVVOLGIMENTI.md` — per ogni funzione globale «avvolta», chi la avvolge e in che ordine
+  (es. `passoLogico()` ha 20 strati). **Leggilo prima di avvolgere una funzione o di cambiarne il comportamento.**
+- `graphify-out/GRAPH_REPORT.md` — i gruppi del codice (uno o più per file), le funzioni più collegate, i legami
+  fra file che non ti aspetti.
+- `graphify-out/graph.html` — la mappa da esplorare nel browser (si apre anche senza rete).
+- Domande puntuali, con graphify installato (`pip install graphifyy`):
+  `graphify explain "passoLogico()"` · `graphify affected "danneggiaNemico()"` · `graphify query "chi apre le porte"`.
+- Dopo aver cambiato il codice: `python3 tools/grafo-teatro.py` rigenera tutto (solo codice, in locale, nessuna chiave).
+  graphify da solo non vede le chiamate fra file (script classici, niente import): le aggiunge lo script.
