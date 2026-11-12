@@ -1218,8 +1218,8 @@ const SCHEDA_H6 = Object.freeze({
   presentazione: TESTI_BOSS_H6.presentazione,
   sconfitta: TESTI_BOSS_H6.sconfitta,
   segno: Object.freeze({ sprite: 'segnoCampanaH6', nome: 'Campanaro Senza Volto' }),
-  /** Foglio PNG facoltativo (una riga, una cella per posa); `attivo: false` finché non c'è. */
-  foglio: Object.freeze({ attivo: false, nome: 'h6_campanaro', celle: 7, w: 64, h: 80, pose: Object.freeze({
+  /** Foglio PNG (una riga, una cella per posa): c'è dal 2026-11-12; `attivo: false` torna al disegno a canvas. */
+  foglio: Object.freeze({ attivo: true, nome: 'h6_campanaro', celle: 7, w: 64, h: 80, pose: Object.freeze({
     cammina: 0, alzaCorda: 1, suona: 2, avvolge: 3, sferza: 4, prega: 5, tendeCorde: 1, risuona: 2, cambiaFase: 6 }) }),
 });
 
@@ -1850,3 +1850,11 @@ Object.defineProperties(window.__teatro.interni.casertavecchiaH6, Object.getOwnP
   apriSagrato: () => apriSagratoH6(statoRun.stanzaCorrente),
   get tema() { try { return MUSICA.temaPerPiano[CASERTAVECCHIA_H6.pianoLuogo]; } catch (_) { return null; } },
 }));
+
+// I fogli accesi si caricano all'avvio (niente scambio a vista col disegno a codice entrando nella stanza).
+try {
+  if (typeof getSpriteTeatro === 'function') {
+    if (SCHEDA_H6.foglio.attivo) getSpriteTeatro(SCHEDA_H6.foglio.nome);
+    for (const g of Object.values(PNG_H6)) if (g.attivo) getSpriteTeatro(g.nome);
+  }
+} catch (_) { /* si disegna sul canvas */ }

@@ -1154,10 +1154,13 @@ function cellaH7(tipo, posa, flip, flash) {
   if (!F || !F.presente || typeof disegnaCellaTeatro !== 'function') return false;
   const col = Math.max(0, F.pose.indexOf(posa)), A = F.altezza;
   ctx.save(); ctx.scale(flip, 1);
-  const ok = disegnaCellaTeatro(ctx, F.nome, col, F.pose.length, -A * 0.6, -A + F.piedi, A * 1.2, A, flash ? '#fff' : null, flash ? 0.6 : 0);
+  const L = A * larghezzaCellaH7(F);
+  const ok = disegnaCellaTeatro(ctx, F.nome, col, F.pose.length, -L / 2, -A + F.piedi, L, A, flash ? '#fff' : null, flash ? 0.6 : 0);
   ctx.restore();
   return ok;
 }
+/** Larghezza della cella per unità d'altezza: quella vera del foglio (qualunque misura abbia), 1,2 se non è carico. */
+function larghezzaCellaH7(F) { return (typeof rapportoCellaTeatro === 'function' && rapportoCellaTeatro(F.nome, F.pose.length)) || 1.2; }
 
 const DISEGNI_NEMICI_H7 = {
   mirmillone_latta(n, t, flash) {
@@ -1534,7 +1537,7 @@ const SCHEDA_H7 = Object.freeze({
   id: 'giudice-arena', nome: 'Il Giudice dell\'Arena', tipo: 'giudice', pattern: 'pollice_giudice',
   hpBase: 230, speed: 0.8, raggio: 18,
   segno: Object.freeze({ sprite: 'segnoAlloroH7', nome: 'Giudice dell\'Arena' }),
-  foglio: Object.freeze({ nome: 'giudice-arena', presente: false, altezza: 78, piedi: 6,
+  foglio: Object.freeze({ nome: 'giudice-arena', presente: true, altezza: 78, piedi: 1, // foglio dell'autore dal 2026-11-12
     pose: Object.freeze(['sentenzia', 'pollice-su', 'pollice-verso', 'scende', 'mira', 'fendente', 'affanno', 'indica', 'sentenza', 'cambiaFase']) }),
 });
 
@@ -1826,7 +1829,8 @@ function disegnaGiudiceH7(b, t) {
     const posa = s === 'pollice' ? `pollice-${b.gestoH7 || 'su'}` : s;
     const col = Math.max(0, F.pose.indexOf(posa)), A = F.altezza;
     ctx.save(); ctx.scale(flip, 1);
-    const ok = disegnaCellaTeatro(ctx, F.nome, col, F.pose.length, -A * 0.6, -A + F.piedi, A * 1.2, A, flash ? '#fff' : null, flash ? 0.6 : 0);
+    const L = A * larghezzaCellaH7(F);
+    const ok = disegnaCellaTeatro(ctx, F.nome, col, F.pose.length, -L / 2, -A + F.piedi, L, A, flash ? '#fff' : null, flash ? 0.6 : 0);
     ctx.restore();
     if (ok) { ctx.restore(); return; }
   }
@@ -2234,3 +2238,11 @@ Object.assign(window.__teatro.interni, {
     get tema() { try { return MUSICA.temaPerPiano[ANFITEATRO_H7.pianoLuogo]; } catch (_) { return null; } },
   }),
 });
+
+// I fogli accesi si caricano all'avvio (niente scambio a vista col disegno a codice entrando nella stanza).
+try {
+  if (typeof getSpriteTeatro === 'function') {
+    if (SCHEDA_H7.foglio.presente) getSpriteTeatro(SCHEDA_H7.foglio.nome);
+    for (const F of Object.values(FOGLI_H7)) if (F.presente) getSpriteTeatro(F.nome);
+  }
+} catch (_) { /* si disegna sul canvas */ }

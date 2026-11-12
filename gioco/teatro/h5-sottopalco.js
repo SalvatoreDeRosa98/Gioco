@@ -592,16 +592,23 @@ function pngH5(chiave, cella, x, y, alto) {
     const F = SPRITE_H5[chiave];
     if (!F || !F.presente) return false; // il PNG c'è solo quando l'autore lo consegna: niente richieste a vuoto
     const celle = F.celle;
-    return disegnaCellaTeatro(ctx, chiave, Math.min(celle - 1, cella), celle, x - alto / 2, y - alto * 0.85, alto, alto) !== false;
+    const larg = alto * ((typeof rapportoCellaTeatro === 'function' && rapportoCellaTeatro(chiave, celle)) || 1); // la cella vera, non per forza quadrata
+    const col = Math.min(celle - 1, cella), dx = x - larg / 2, dy = y - alto * 0.85;
+    // sotto il palco è buio: un filo color lanterna attorno alla sagoma, come nei disegni a codice, o la figura sparisce
+    for (const [ox, oy] of CONTORNO_PNG_H5.passi) disegnaCellaTeatro(ctx, chiave, col, celle, dx + ox, dy + oy, larg, alto, CONTORNO_PNG_H5.colore, CONTORNO_PNG_H5.alfa);
+    return disegnaCellaTeatro(ctx, chiave, col, celle, dx, dy, larg, alto) !== false;
   } catch (_) { return false; }
 }
+
+/** Il contorno color lanterna dei fogli PNG al buio: la sagoma velata, spostata di un punto nei quattro versi. */
+const CONTORNO_PNG_H5 = Object.freeze({ colore: '#d9a456', alfa: 0.9, passi: Object.freeze([[-1, 0], [1, 0], [0, -1], [0, 1]]) });
 
 /** Fogli PNG facoltativi in assets/sprite_teatro/ (una riga di celle uguali): `presente: true` quando ci sono. */
 const SPRITE_H5 = Object.freeze({
   marionetta_h5: Object.freeze({ celle: 2, presente: false }),   // striscia, si rialza
   topo_h5: Object.freeze({ celle: 3, presente: false }),         // corsa 1, corsa 2, sosta
-  macchinista_h5: Object.freeze({ celle: 4, presente: false }),
-  sacco_h5: Object.freeze({ celle: 1, presente: false }),  // cammina, leva, corda, ruota
+  macchinista_h5: Object.freeze({ celle: 4, presente: true }),   // cammina, leva, corda, ruota (foglio dell'autore dal 2026-11-12)
+  sacco_h5: Object.freeze({ celle: 1, presente: false }),
 });
 
 /** Le marionette a terra (morte la prima volta) e i contrappesi. */
@@ -997,3 +1004,6 @@ if (window.__teatro && window.__teatro.interni) {
     stato: () => ({ sotto: sottoH5(), stanza: statoRun.stanzaCorrente && statoRun.stanzaCorrente.id, fatte: [...h5.fatte], buio: h5.buioFessure }),
   };
 }
+
+// I fogli accesi si caricano all'avvio (niente scambio a vista col disegno a codice scendendo sotto).
+try { if (typeof getSpriteTeatro === 'function') for (const [k, F] of Object.entries(SPRITE_H5)) if (F.presente) getSpriteTeatro(k); } catch (_) { /* si disegna sul canvas */ }

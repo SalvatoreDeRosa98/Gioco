@@ -95,8 +95,8 @@ const STATI_H3 = Object.freeze({
 
 /** Foglio PNG facoltativo: una riga di 7 celle uguali, nell'ordine delle pose. */
 const FOGLIO_H3 = Object.freeze({
-  nome: 'gregorio', presente: false, // true quando assets/sprite_teatro/gregorio.png c'è (senza: niente richiesta, si disegna sul canvas)
-  altezza: 82, piedi: 8,
+  nome: 'gregorio', presente: true, // il foglio dell'autore c'è dal 2026-11-12 (false: si disegna sul canvas, senza richieste a vuoto)
+  altezza: 82, piedi: 1, // piedi: quanto sta sopra il fondo della cella la suola (nel foglio dell'autore quasi niente)
   pose: Object.freeze(['fermo', 'cammina', 'anticipo', 'attacco', 'colpito', 'aTerra', 'ginocchio']),
 });
 
@@ -692,7 +692,8 @@ function disegnaGregorioH3(posa, t, flash, flip, angLama) {
   const A = FOGLIO_H3.altezza;
   if (FOGLIO_H3.presente && typeof disegnaCellaTeatro === 'function' && col >= 0) {
     ctx.save(); ctx.scale(flip, 1);
-    const ok = disegnaCellaTeatro(ctx, FOGLIO_H3.nome, col, FOGLIO_H3.pose.length, -A * 0.6, -A + FOGLIO_H3.piedi, A * 1.2, A, flash ? '#fff' : null, flash ? 0.6 : 0);
+    const L = A * ((typeof rapportoCellaTeatro === 'function' && rapportoCellaTeatro(FOGLIO_H3.nome, FOGLIO_H3.pose.length)) || 1.2);
+    const ok = disegnaCellaTeatro(ctx, FOGLIO_H3.nome, col, FOGLIO_H3.pose.length, -L / 2, -A + FOGLIO_H3.piedi, L, A, flash ? '#fff' : null, flash ? 0.6 : 0);
     ctx.restore();
     if (ok) return;
   }
@@ -958,3 +959,6 @@ Object.assign(window.__teatro.interni, {
     },
   }),
 });
+
+// Il foglio di Gregorio si carica all'avvio: al Cortile è già pronto e non si vede lo scambio col disegno a codice.
+try { if (FOGLIO_H3.presente && typeof getSpriteTeatro === 'function') getSpriteTeatro(FOGLIO_H3.nome); } catch (_) { /* si disegna sul canvas */ }

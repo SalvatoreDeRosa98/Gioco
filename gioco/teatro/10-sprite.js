@@ -875,6 +875,9 @@ const SPRITE_V2 = Object.freeze({
   'regina-vespa': 'leggera', capitano: 'leggera', 'donna-luciana': 'ombre', 'custode-marmo': 'ombre',
   spezzafili: 'ombre', accendilumi: 'leggera', 'cigno-latta': 'leggera', 'giostra-lucciole': 'leggera',
   'tessitrice-pietra': 'leggera',
+  // figure della terza ondata disegnate dall'autore: fogli a una riga ripuliti da tools/pulisci-fogli-riga.py
+  gregorio: 'leggera', h6_campanaro: 'leggera', 'giudice-arena': 'leggera', macchinista_h5: 'leggera',
+  assunta: 'leggera', agnese_telaio: 'leggera',
   'boss/gatto_fermo': 'ombre', 'boss/gatto_accucciato': 'ombre', 'boss/gatto_salto': 'ombre',
   'boss/gatto_cammina': 'ombre', 'boss/capitano_guardia_fermo': 'ombre', 'boss/colosso_statua_fermo': 'ombre',
   'boss/colosso_statua_aperto': 'ombre', 'boss/maestro_fucina_fermo': 'ombre',
@@ -920,6 +923,16 @@ function getSpriteTeatro(nome) {
   }
   const img = SPRITE_TEATRO_CACHE[nome];
   return (img && img.complete && img.naturalWidth > 0) ? img : null;
+}
+
+/**
+ * Rapporto larghezza/altezza di una cella di un foglio a una riga di `celle` colonne: chi disegna la cella alta A la
+ * fa larga A × rapporto, così la figura non si deforma qualunque misura abbia il foglio dell'autore.
+ * @returns {number|null} null se il PNG manca o non è ancora carico
+ */
+function rapportoCellaTeatro(nome, celle) {
+  const img = getSpriteTeatro(nome);
+  return img ? (img.naturalWidth / Math.max(1, celle)) / img.naturalHeight : null;
 }
 
 let appoggioCellaTeatro = null;
