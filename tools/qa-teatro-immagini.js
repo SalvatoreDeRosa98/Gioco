@@ -222,6 +222,8 @@ async function apri(browser, fileHtml, errori) {
   const p = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   p.on('console', (m) => { if (m.type() === 'error') errori.push(m.text()); });
   p.on('pageerror', (e) => errori.push(String(e)));
+  // Un ERR_FILE_NOT_FOUND in console non dice QUALE file: si registrano gli indirizzi delle richieste fallite.
+  p.on('requestfailed', (r) => (errori.fallite = errori.fallite || []).push({ url: r.url(), perche: (r.failure() || {}).errorText || '?' }));
   await p.goto('file://' + fileHtml);
   await p.evaluate(() => localStorage.clear());
   await p.reload();
@@ -329,7 +331,17 @@ async function affianca(browser, gruppo, scene) {
     ok('le immagini scartate non sono mai disegnate con la tabella così com\'è', scartate.every((n) => !stato[n].disegni), scartate.filter((n) => stato[n].disegni));
   }
   for (const g of [...new Set(scene.map((s) => s.gruppo))]) await affianca(browser, g, scene.filter((s) => s.gruppo === g));
-  ok('nessun errore di console con le immagini', errori.length === 0, errori.slice(0, 6));
+  // La fase PROVA accende apposta anche le immagini scartate (forzaTutte): la release giustamente non le incorpora,
+  // quindi lì quelle richieste falliscono. Si tolgono SOLO quelle (e il «Failed to load resource» che ognuna
+  // stampa in console); ogni altra richiesta fallita resta un errore.
+  const scartataRichiesta = (u) => scartate.some((n) => decodeURIComponent(u).endsWith(`/scena/${n}.png`));
+  const fallite = errori.fallite || [];
+  const attese = fallite.filter((f) => scartataRichiesta(f.url));
+  const inattese = fallite.filter((f) => !scartataRichiesta(f.url)).map((f) => `richiesta fallita: ${f.url.slice(0, 200)} (${f.perche})`);
+  let daTogliere = attese.length;
+  const restanti = errori.filter((e) => !(daTogliere > 0 && /Failed to load resource: net::ERR_FILE_NOT_FOUND/.test(e) && daTogliere--));
+  if (attese.length) console.log(`richieste di immagini scartate fallite nella fase PROVA (attese sulla release): ${attese.map((f) => f.url.split('/').pop()).join(', ')}`);
+  ok('nessun errore di console con le immagini', restanti.length === 0 && inattese.length === 0, inattese.concat(restanti).slice(0, 6));
   const guasti = await p.evaluate(() => window.__teatro.interni.immaginiB9.errori());
   ok('nessun disegno di b9 è caduto sul ripiego per un errore', guasti === 0, guasti);
   await p.close();
