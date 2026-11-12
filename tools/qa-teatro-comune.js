@@ -50,6 +50,29 @@ async function passi(p, n) {
   }, n);
 }
 
+/**
+ * Aspetta `n` fotogrammi veri della pagina (requestAnimationFrame), al massimo `tetto` ms. Serve dopo un
+ * input vero (tasto, dito, gamepad): il gioco lo legge al fotogramma successivo, e a macchina carica un
+ * fotogramma può durare più di 100 ms.
+ * @returns {Promise<boolean>} false se il tetto è scaduto prima degli n fotogrammi
+ */
+function aspettaFotogrammi(p, n, tetto = 15000) {
+  return p.evaluate(([k, t]) => new Promise((fine) => {
+    let c = 0; const f = () => { if (++c >= k) fine(true); else requestAnimationFrame(f); };
+    requestAnimationFrame(f); setTimeout(() => fine(false), t);
+  }), [Math.max(1, n), tetto]);
+}
+
+/**
+ * Sostituto di `page.waitForTimeout(ms)` per le attese DOPO un'azione: aspetta almeno `ms` ms reali E almeno
+ * ms/16,7 fotogrammi (+1), così a macchina carica il gioco ha avuto almeno il tempo di gioco previsto. Non
+ * accorcia mai un'attesa, la allunga solo quando i fotogrammi rallentano. Le durate di un INPUT (dito tenuto
+ * premuto per 80 ms) restano `waitForTimeout`: sono parte della prova.
+ */
+async function aspetta(p, ms) {
+  await Promise.all([p.waitForTimeout(ms), aspettaFotogrammi(p, Math.ceil(ms / (1000 / 60)) + 1)]);
+}
+
 /** Tick logico corrente del gioco (variabile globale `tick` di 80-ciclo.js). */
 const leggiTick = (p) => p.evaluate(() => tick);
 
@@ -61,4 +84,4 @@ function mediana(v) {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
-module.exports = { TEMPI_STRETTI, aspettaCondizione, passi, leggiTick, mediana };
+module.exports = { TEMPI_STRETTI, aspettaCondizione, aspettaFotogrammi, aspetta, passi, leggiTick, mediana };
