@@ -52,6 +52,10 @@ const BURATTINAIO_D1 = Object.freeze({
   }),
   forbici: Object.freeze({
     raggio: 30, lunghezza: 380,                  // lame lunghe quasi mezza arena, manici fuori quadro
+    // foglio dell'autore gb_forbici.png (1×3 celle 640×256): chiuse, aperte, piantate. Il disegno intero
+    // (manici + lame, `lunghezzaPx` px del foglio) è lungo `lunghezza`×lunghezza come le forbici a canvas.
+    immagine: Object.freeze({ nome: 'gb_forbici', lunghezza: 0.94, lunghezzaPx: 498, sogliaAperte: 0.35, lampo: 0.5,
+      pernoChiuse: Object.freeze([290, 128]), pernoAperte: Object.freeze([300, 128]), puntaPiantate: Object.freeze([362, 248]) }),
     posa: 44, apre: 46, apreLima: 80, taglio: 24, piantate: 80, moltLima: 1.9, stacca: 22,
     larghezzaTaglio: 15, danno: 2, cicatriciMax: 4, squarcioTick: 300, tremitoApre: 2.2,
   }),
@@ -998,14 +1002,42 @@ function disegnaManoD1(m) {
   disegnaGuantoD1(m.x, m.y, m.h || 0, m.lato, m.posa === 'piatta' ? 'taglio' : m.posa, m.flash > 0, 1, rot); // 'taglio': a canvas è la mano aperta
 }
 
-/** Forbici colossali d'ottone (centro sul perno). */
-function disegnaForbiciSagomaD1(x, y, ang, apertura, h, flash, alfa = 1) {
+/**
+ * Le forbici dal foglio dell'autore (gb_forbici.png, 1×3 celle 640×256, punta verso destra): chiuse e aperte
+ * ruotate lungo la direzione del taglio col perno sull'origine; piantate dritte nelle tavole con la punta a terra,
+ * girate verso il verso del taglio. Nel sistema già traslato sul perno (non ancora ruotato).
+ * @returns {boolean} false se il PNG non è carico (ripiego sulle forbici a canvas).
+ */
+function disegnaForbiciFoglioD1(ang, apertura, h, flash, posa) {
+  const I = BURATTINAIO_D1.forbici.immagine;
+  if (typeof disegnaCellaTeatro !== 'function' || typeof getSpriteTeatro !== 'function' || !getSpriteTeatro(I.nome)) return false;
+  const k = (BURATTINAIO_D1.forbici.lunghezza * I.lunghezza) / I.lunghezzaPx; // px a schermo per px del foglio
+  const cw = 640 * k, ch = 256 * k, tinta = flash ? '#fff1c0' : null;
+  ctx.save();
+  let ok;
+  if (posa === 'piantate') {
+    ctx.translate(0, h + 6); // punta sulle tavole
+    if (Math.cos(ang) < 0) ctx.scale(-1, 1);
+    ok = disegnaCellaTeatro(ctx, I.nome, 2, 3, -I.puntaPiantate[0] * k, -I.puntaPiantate[1] * k, cw, ch, tinta, I.lampo);
+  } else {
+    const aperte = apertura > I.sogliaAperte;
+    const perno = aperte ? I.pernoAperte : I.pernoChiuse;
+    ctx.rotate(ang);
+    ok = disegnaCellaTeatro(ctx, I.nome, aperte ? 1 : 0, 3, -perno[0] * k, -perno[1] * k, cw, ch, tinta, I.lampo);
+  }
+  ctx.restore();
+  return ok;
+}
+
+/** Forbici colossali d'ottone (centro sul perno). `posa` 'piantate' quando sono infisse nelle tavole. */
+function disegnaForbiciSagomaD1(x, y, ang, apertura, h, flash, alfa = 1, posa = null) {
   const L = BURATTINAIO_D1.forbici.lunghezza;
   ctx.save();
   ctx.globalAlpha *= alfa;
   ctx.fillStyle = `rgba(0,0,0,${0.3 * Math.max(0, 1 - h / 60)})`;
   ctx.beginPath(); ctx.ellipse(x, y + 2, 30, 6, 0, 0, TAU); ctx.fill();
   ctx.translate(x, y - h - 6);
+  if (disegnaForbiciFoglioD1(ang, apertura, h, flash, posa)) { ctx.restore(); return; }
   ctx.rotate(ang);
   const lama = (segno) => {
     ctx.save(); ctx.rotate(segno * apertura * 0.5);
@@ -1030,7 +1062,8 @@ function disegnaForbiciSagomaD1(x, y, ang, apertura, h, flash, alfa = 1) {
 
 function disegnaForbiciD1(f) {
   const tr = f.tremaD1 ? Math.sin(tick * 1.9) * f.tremaD1 : 0;
-  disegnaForbiciSagomaD1(f.x + tr, f.y, f.ang || 0, f.apertura || 0, f.h || 0, f.flash > 0);
+  const piantate = f.faseD1 === 'piantate' || f.faseD1 === 'stacca';
+  disegnaForbiciSagomaD1(f.x + tr, f.y, f.ang || 0, f.apertura || 0, f.h || 0, f.flash > 0, 1, piantate ? 'piantate' : null);
   if (f.faseD1 === 'apre' && f.tD1 % 12 < 3) { // bagliore sulla lama aperta (sulla forbice, non a terra)
     ctx.save(); ctx.globalAlpha = 0.8; ctx.fillStyle = '#fff6d0';
     ctx.beginPath(); ctx.arc(f.x + Math.cos(f.ang) * 30, f.y - (f.h || 0) - 6 + Math.sin(f.ang) * 30, 2.4, 0, TAU); ctx.fill(); ctx.restore();
