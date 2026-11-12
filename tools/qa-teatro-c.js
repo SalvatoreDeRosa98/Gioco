@@ -215,7 +215,7 @@ const foto = (n) => path.join(RADICE, 'production', 'qa', 'evidence', `teatro-c-
   oss.toninoNotte = await p.evaluate(() => window.__teatro.t4qa.dialogo);
   await p.screenshot({ path: foto('10-cartiglio-tonino-benedizione') });
   await chiudi();
-  const fest = await p.evaluate(() => window.__teatro.t4qa.presenze.find((x) => x.id === 'festaiola'));
+  const fest = await p.evaluate(() => window.__teatro.t4qa.presenze.find((x) => x.id === 'assunta' || x.id === 'festaiola'));
   if (fest) {
     await p.evaluate((t) => { const P = window.__teatro.interni.player; P.x = t.x - 26; P.y = t.y + 4; }, fest);
     await p.waitForTimeout(120);
