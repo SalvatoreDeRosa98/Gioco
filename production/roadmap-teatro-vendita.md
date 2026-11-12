@@ -1,6 +1,6 @@
 # Roadmap del Teatro delle Marionette — verso un gioco da vendere
 
-Aggiornata il 2026-11-10. Decisioni dell'autore: Caserta 1845 (come la bibbia), quattro personaggi (nessun quinto),
+Aggiornata il 2026-11-12. Decisioni dell'autore: Caserta 1845 (come la bibbia), quattro personaggi (nessun quinto),
 Agnese resta la tessitrice di San Leucio, nessun nome o riferimento ad altri giochi dentro il gioco.
 
 ## Fatto
@@ -10,7 +10,7 @@ Agnese resta la tessitrice di San Leucio, nessun nome o riferimento ad altri gio
 - Quartieri della bibbia per i quattro piani; fogli sprite animati di nemici e boss (autore).
 - Via ogni nome e riferimento ad altri giochi; opzioni condivise (`OPZIONI`) e uscita comune degli effetti sonori.
 
-## Prima ondata (in corso, otto squadre)
+## Prima ondata — FATTA (2026-11-10)
 1. Pubblico nei palchetti che reagisce, premi lanciati dal pubblico, sipario di velluto.
 2. Luci della ribalta con ombre lunghe, scenografia che scende dai cavi, marionette che crollano coi fili
    spezzati, trucioli e scintille, grana e vignettatura.
@@ -21,7 +21,7 @@ Agnese resta la tessitrice di San Leucio, nessun nome o riferimento ad altri gio
 7. 40 disposizioni di stanza, elementi di scena, Gioco del Ciarlatano, Clessidra della Ribalta.
 8. Finale vero, finale segreto della porta della bottega (3 sigilli), diario notte per notte, voce del Burattinaio.
 
-## Seconda ondata (dopo aver unito la prima)
+## Seconda ondata — FATTA (2026-11-12)
 1. Lo scontro col Grande Burattinaio «Sopra la Ribalta» (mani guantate, forbici colossali), dietro i 3 sigilli.
 2. Personaggi con stili di gioco diversi: Agnese (piroette di seta che rimandano i colpi, due Maschere, scatto
    oltre i baratri), Taddeo (pesante, maglio, non respinto, spacca gli ostacoli), l'Ombra Senza Fili (muore con un
@@ -32,6 +32,23 @@ Agnese resta la tessitrice di San Leucio, nessun nome o riferimento ad altri gio
 5. Cambio di scena a metà stanza (al posto delle stanze giganti che scorrono); leve con sacchi di sabbia,
    botole, pozze d'olio e candele.
 6. L'Acquedotto Carolino sotterraneo: percorso alternativo dal piano 2 (un quartiere in più).
+
+## Migliorie dopo la seconda ondata — FATTE (2026-11-12)
+- Rifiniture: HUD ai lati con la balconata visibile, Donna Luciana leggibile, Ragno della Seta, scritte a tocco.
+- Aiuti: riprendi la notte dall'inizio del piano, mira assistita, il conto della notte.
+- Sprite: pulizia, piedi fermi, contorno unico e versione «a ombre» per tutte le figure (Ferruccio originale).
+- Prestazioni sul telefono (menu e Donna Luciana alleggeriti, qualità automatica); primo ritocco di bilancio;
+  revisione degli incroci fra le parti (maglio di Taddeo contro il Burattinaio); prove rese stabili
+  (`tools/qa-teatro-tutte.sh`); mappa del codice (`graphify-out/`, `tools/grafo-teatro.py`).
+
+## Aperto dentro ciò che è fatto (decisioni dell'autore)
+- Testi nuovi da approvare (battute del Burattinaio, trionfi e aneddoti, Don Gennaro, Acquedotto, consigli del conto).
+- Bilancio: Raggio Cremisi coi moltiplicatori, tetto al danno, oggetti di vita per l'Ombra, oggetti di cadenza per
+  Taddeo, premio della Buca, durata della notte (stima 14-16 minuti contro 25-35): `production/bilancio-teatro.md`.
+- Immagini definitive per le parti nuove (oggi disegnate col codice): mani e forbici del Burattinaio, Acquedotto e
+  suoi nemici, Camerini, Buca, botole, Ragno della Seta; figure da rigenerare: `production/arte/richieste-sprite-v2.md`.
+- Piccole cose note: all'Acquedotto compaiono ancora gli arredi della Villa; col tocco non si può cancellare uno slot;
+  il Registro di Scena è pesante sul telefono; nessuna partita giocata da una persona dopo la seconda ondata.
 
 ## Per arrivare in negozio
 - Tutorial leggero della prima notte; inglese; sfida del giorno.
