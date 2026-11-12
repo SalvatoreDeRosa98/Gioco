@@ -164,6 +164,14 @@ const TESTI_H3 = Object.freeze({
     attacco: ['gregorio', 'Anche io avevo paura di perderla.'], // [bibbia]
   }),
   // Le notti dopo la scelta: la conseguenza in breve.
+  diario: Object.freeze({ // [nuovo] una riga nel Diario di Ferruccio, la notte in cui ha incontrato il Custode
+    attacco: 'Nel Cortile d\'Onore ho abbattuto il Custode. Sotto l\'elmo c\'era un vecchio.',
+    dialogo: 'Nel Cortile d\'Onore il Custode ha abbassato l\'alabarda. Mi ha lasciato le sue chiavi.',
+  }),
+  registro: Object.freeze({ // [nuovo] scheda dei Primi attori (d3)
+    battuta: '«Un altro figlio viene a chiedermi conto dei padri.»', // [bibbia]
+    aneddoto: 'Custode della Reggia, rispettato dalle famiglie degli operai. Quando volle fermare sua moglie, lei lo legò al giglio d\'oro.', // [nuovo, dalla bibbia §VII]
+  }),
   breveAttacco: Object.freeze([
     ['gregorio', 'Un altro figlio viene a chiedermi conto dei padri.'], // [bibbia]
   ]),
@@ -492,7 +500,7 @@ function chiudiCortileH3(st) {
   const p = C.figura || postoGregorioH3(C);
   C.figura = { x: p.x, y: p.y, posa: 'aTerra' };
   const esito = C.esito || flagH3().gregorio || 'attacco';
-  statoRun.gregorioH3 = { run: statoRun.numeroRun, esito, piano: statoRun.piano };
+  statoRun.gregorioH3 = { run: statoRun.numeroRun, esito, piano: statoRun.piano, notte: statoRun.numeroNotte || 1 };
   const A = GREGORIO_H3.anime;
   for (let k = 0; k < A.numero; k++) h3.anime.push({ x: p.x + (k - A.numero / 2) * 2.5, y: p.y - 10 - (k % 4) * 8, t0: tick + k * 4, fase: k * 1.3 });
   if (esito === 'dialogo') {
@@ -750,6 +758,38 @@ disegnaBossPittorico = function (...args) {
   } catch (err) { console.error('[h3] disegno', err); }
   return undefined;
 };
+
+// ===========================================================================
+// 7. DIARIO (b8) E REGISTRO DI SCENA (d3)
+// ===========================================================================
+if (typeof componiPaginaB8 === 'function') {
+  const componiPaginaBaseH3 = componiPaginaB8;
+  /** La pagina della notte in cui Ferruccio ha incontrato il Custode prende una riga sul Cortile. */
+  componiPaginaB8 = function (v, nota, ...resto) {
+    const pagina = componiPaginaBaseH3.call(this, v, nota, ...resto);
+    try {
+      const r = statoRun.gregorioH3;
+      const notte = Number(v && v.notte);
+      if (r && r.esito && pagina && Array.isArray(pagina.righe) && Number.isFinite(notte) && notte === Number(r.notte)) {
+        const riga = TESTI_H3.diario[r.esito];
+        if (riga && !pagina.righe.includes(riga)) pagina.righe.splice(Math.max(0, pagina.righe.length - 1), 0, riga);
+      }
+    } catch (err) { console.error('[h3] diario', err); }
+    return pagina;
+  };
+}
+
+/** Scheda del Custode per i Primi attori del Registro di Scena (d3 legge id, nome, tipo, presentazione). */
+const SCHEDA_REGISTRO_H3 = Object.freeze({ id: GREGORIO_H3.bossId, nome: TESTI_H3.nome, tipo: 'guardia',
+  presentazione: TESTI_H3.registro.battuta, aneddoto: TESTI_H3.registro.aneddoto });
+if (typeof primiAttoriD3 === 'function') {
+  const primiAttoriBaseH3 = primiAttoriD3;
+  primiAttoriD3 = function (...a) {
+    const out = primiAttoriBaseH3.apply(this, a);
+    try { if (Array.isArray(out) && !out.some((b) => b.id === SCHEDA_REGISTRO_H3.id)) out.push(SCHEDA_REGISTRO_H3); } catch (_) { /* idem */ }
+    return out;
+  };
+}
 
 // ===========================================================================
 // SONDA QA / SVILUPPO

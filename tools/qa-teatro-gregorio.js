@@ -236,6 +236,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   L = await leggiTutto();
   ok('F. le mani cercano qualcosa che non c\'è', L.visti.some((t) => t.includes('qualcosa che non c\'è')));
 
+  ok('G. Registro di Scena: il Custode fra i Primi attori', await p.evaluate(() => primiAttoriD3().some((b) => b.id === 'gregorio-custode')));
   // G. errori
   const et = await p.evaluate(() => (typeof ERRORI_TEATRO !== 'undefined' ? ERRORI_TEATRO.map((e) => `${e.dove}: ${e.testo}`) : []));
   ok('G. nessun errore in ERRORI_TEATRO', et.length === 0, et);
