@@ -108,7 +108,8 @@ const B = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, select: 8, start
   // levetta tenuta: il cursore si ripete da solo
   const riga0 = (await stato()).opzioni.riga;
   await assi([0, 1], 900); await assi([0, 0], 80);
-  const righeScena = ['volumeEffetti', 'volumeMusica', 'scossa', 'vibrazione', 'grana', 'vignetta', 'pubblico', 'lampi', 'schermoIntero', 'testoGrande', 'vaiTasti', 'predefiniti', 'chiudi'];
+  // l'elenco delle righe viene dal gioco: altri file ne aggiungono (ombre, voce, mira assistita, qualità automatica…)
+  const righeScena = await p.evaluate(() => righeB3('scena').map((r) => r.id || r.chiave || r.k));
   const passi = (righeScena.indexOf((await stato()).opzioni.riga) - righeScena.indexOf(riga0) + righeScena.length) % righeScena.length;
   ok('pad-levetta-ripetizione', passi >= 3 && passi <= 7, { passi });
   ok('pad-riga-scossa', await vaiARiga('scossa', () => premi(B.su)));
