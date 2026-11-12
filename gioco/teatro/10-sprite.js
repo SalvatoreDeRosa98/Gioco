@@ -860,22 +860,22 @@ function disegnaManoMarionettaPittorica() {
 //   'leggera' → assets/sprite_teatro_v2/        (pulizia, piedi fermi, contorno unico, gradazione leggera)
 //   'ombre'   → assets/sprite_teatro_v2_ombre/  (stessa pulizia, gradazione «a ombre» decisa)
 //   false     → l'originale di assets/sprite_teatro/.
-// Di partenza 'leggera' dove le tavole di production/arte/prima-dopo-sprite/ mostrano un miglioramento netto;
-// false per ferruccio e teste-mira (scelta dell'autore: l'originale) e per lucciola e regina-vespa (dubbio: decide l'autore). La versione
-// «a ombre» è pronta per tutti: basta scrivere 'ombre'. Prova globale: window.__spriteV2 = false | 'leggera' |
-// 'ombre' prima del caricamento. tools/teatro-release.js legge questa tabella (fra i segnaposto).
+// Scelta dell'autore (2026-11-12): 'ombre' per TUTTE le figure, la versione più vicina alla Ferruccio a ombre;
+// false solo per ferruccio e teste-mira («Ferruccio mi piace più il mio»: resta il suo originale, senza ritocchi).
+// La 'leggera' resta pronta: basta scriverla. Prova globale: window.__spriteV2 = false | 'leggera' | 'ombre'
+// prima del caricamento. tools/teatro-release.js legge questa tabella (fra i segnaposto).
 // <sprite-v2>
 const SPRITE_V2 = Object.freeze({
-  ferruccio: false /* scelta dell'autore: il suo originale */, agnese: 'leggera', taddeo: 'leggera', ombra: 'leggera', 'teste-mira': false,
-  gatto: 'leggera', 'vespa-cieca': 'leggera', maschera: 'leggera', 'bomba-ferma': 'leggera', guardia: 'leggera',
-  statua: 'leggera', predone: 'leggera', lucciola: false, burattino: 'leggera',
-  'regina-vespa': false, capitano: 'leggera', 'donna-luciana': 'leggera', 'custode-marmo': 'leggera',
-  spezzafili: 'leggera', accendilumi: 'leggera', 'cigno-latta': 'leggera', 'giostra-lucciole': 'leggera',
-  'tessitrice-pietra': 'leggera',
-  'boss/gatto_fermo': 'leggera', 'boss/gatto_accucciato': 'leggera', 'boss/gatto_salto': 'leggera',
-  'boss/gatto_cammina': 'leggera', 'boss/capitano_guardia_fermo': 'leggera', 'boss/colosso_statua_fermo': 'leggera',
-  'boss/colosso_statua_aperto': 'leggera', 'boss/maestro_fucina_fermo': 'leggera',
-  'boss/maestro_fucina_attacco': 'leggera', 'boss/donna_luciana_ferma': 'leggera', 'boss/regina_vespa_ferma': 'leggera',
+  ferruccio: false /* scelta dell'autore: il suo originale */, agnese: 'ombre', taddeo: 'ombre', ombra: 'ombre', 'teste-mira': false,
+  gatto: 'ombre', 'vespa-cieca': 'ombre', maschera: 'ombre', 'bomba-ferma': 'ombre', guardia: 'ombre',
+  statua: 'ombre', predone: 'ombre', lucciola: 'ombre', burattino: 'ombre',
+  'regina-vespa': 'ombre', capitano: 'ombre', 'donna-luciana': 'ombre', 'custode-marmo': 'ombre',
+  spezzafili: 'ombre', accendilumi: 'ombre', 'cigno-latta': 'ombre', 'giostra-lucciole': 'ombre',
+  'tessitrice-pietra': 'ombre',
+  'boss/gatto_fermo': 'ombre', 'boss/gatto_accucciato': 'ombre', 'boss/gatto_salto': 'ombre',
+  'boss/gatto_cammina': 'ombre', 'boss/capitano_guardia_fermo': 'ombre', 'boss/colosso_statua_fermo': 'ombre',
+  'boss/colosso_statua_aperto': 'ombre', 'boss/maestro_fucina_fermo': 'ombre',
+  'boss/maestro_fucina_attacco': 'ombre', 'boss/donna_luciana_ferma': 'ombre', 'boss/regina_vespa_ferma': 'ombre',
 });
 // </sprite-v2>
 /** Cartella della versione migliorata per valore di SPRITE_V2. */
