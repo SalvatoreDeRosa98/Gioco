@@ -891,7 +891,7 @@ const passoLogicoBaseH6 = passoLogico;
 /** Attorno al passo di base: i rintocchi, il fumo d'incenso, il boss del luogo. */
 passoLogico = function (...args) {
   const st = statoRun.stanzaCorrente;
-  const attivo = Boolean(st) && statoRun.fase === 'in_gioco' && casertavecchiaAttivaH6() && ticksCongelati <= 0
+  const attivo = Boolean(st) && statoRun.fase === 'in_gioco' && (casertavecchiaAttivaH6() || Boolean(bossH6(st))) && ticksCongelati <= 0
     && !(statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo || statoRun.pausa);
   const px = player.x, py = player.y;
   if (attivo) { for (const n of st.nemici) n.ptH6 = n.phaseTick || 0; }
@@ -1198,3 +1198,435 @@ if (typeof disegnaOstacoloB9 === 'function') {
     return disegnaOstacoloBaseH6.call(this, o, t, ...resto);
   };
 }
+
+// ===========================================================================
+// 4. IL BOSS: Il Campanaro Senza Volto (macchina a stati nello schema di b6-boss.js e d6)
+// ===========================================================================
+/** Testi del boss (DA APPROVARE DALL'AUTORE; nuovi: la bibbia dà solo il nome e il «risveglia i rimorsi»). */
+const TESTI_BOSS_H6 = Object.freeze({
+  presentazione: '«Ogni rintocco è una parola che non hai detto.»',
+  sconfitta: 'Il Campanaro lascia andare la corda. Le campane tacciono: per la prima volta il borgo dorme davvero.',
+  fase2: 'Le campane si staccano dalla graticcia e cadono sul sagrato!',
+  rivelazione: 'Il Campanaro era il sagrestano del duomo. Suonava a morto per chi se n\'era andato senza chiedere perdono, e teneva per sé le parole che nessuno aveva detto. Il Velo gli ha preso il volto: gli ha lasciato solo le corde.',
+});
+
+/** SCHEDA del boss (stessi campi di SCHEDE_B6). */
+const SCHEDA_H6 = Object.freeze({
+  id: 'campanaro-senza-volto', nome: 'Il Campanaro Senza Volto', tipo: 'campanaro', pattern: 'rintocco_campanaro',
+  hpBase: 215, speed: 0.7, raggio: 17, ombra: Object.freeze([22, 7]),
+  presentazione: TESTI_BOSS_H6.presentazione,
+  sconfitta: TESTI_BOSS_H6.sconfitta,
+  segno: Object.freeze({ sprite: 'segnoCampanaH6', nome: 'Campanaro Senza Volto' }),
+  /** Foglio PNG facoltativo (una riga, una cella per posa); `attivo: false` finché non c'è. */
+  foglio: Object.freeze({ attivo: false, nome: 'h6_campanaro', celle: 7, w: 64, h: 80, pose: Object.freeze({
+    cammina: 0, alzaCorda: 1, suona: 2, avvolge: 3, sferza: 4, prega: 5, tendeCorde: 1, risuona: 2, cambiaFase: 6 }) }),
+});
+
+/**
+ * BOSS_H6 — numeri dell'IA. Una chiave <nome>Fase2 sostituisce <nome> sotto la soglia della fase 2.
+ * Fase 1: RINTOCCO (alza la corda a due mani sopra il cappuccio → la tira giù: un anello di schegge con un
+ * varco, e i rimorsi di pietra si svegliano) → FRUSTA (si avvolge la corda al braccio e la fa girare sopra la
+ * testa, punta e si blocca → la sferza: una fila di colpi lungo la corda) → RINTOCCO → REQUIE (s'inginocchia:
+ * la finestra). Fase 2: le campane cadono e restano sul sagrato; RISUONA: tende le braccia verso una campana,
+ * che comincia a oscillare (la posa è della campana) e poi suona: un anello di schegge dalla campana.
+ */
+const BOSS_H6 = Object.freeze({
+  sogliaFase2: 0.5,
+  tettoProiettili: 28,
+  bannerTick: 250,
+  sequenza: Object.freeze(['rintocco', 'frusta', 'rintocco', 'requie']),
+  sequenzaFase2: Object.freeze(['rintocco', 'risuona', 'frusta', 'risuona', 'requie']),
+  moltVelFase2: 1.25,
+  cammina: Object.freeze({ tick: 84, tickFase2: 60, passo: 0.7, distanzaPx: 128, giro: 0.55 }),
+  rintocco: Object.freeze({ anticipoTick: 44, anticipoTickFase2: 36, suonaTick: 26, schegge: 14, scheggeFase2: 18, varco: 3, velocita: 1.8, velocitaFase2: 2.1 }),
+  frusta: Object.freeze({ anticipoTick: 38, anticipoTickFase2: 32, bloccoTick: 10, colpi: 7, colpiFase2: 9, velMin: 1.8, velMax: 3.6, sferzaTick: 16 }),
+  risuona: Object.freeze({ anticipoTick: 48, anticipoTickFase2: 42, suonaTick: 24, schegge: 10, velocita: 1.7 }),
+  /** I rimorsi: a ogni rintocco del Campanaro si alza un penitente di pietra, fino a `massimi` vivi. */
+  rimorsi: Object.freeze({ massimi: 1, massimiFase2: 2, hpBase: 10, hpPiano: 2, distanzaPx: 150 }),
+  requieTick: 116, requieTickFase2: 88, dannoRequie: 1.25,
+  cambioFaseTick: 64,
+  /** Le campane che cadono nella fase 2: dove restano (ostacoli rotondi). */
+  campane: Object.freeze({ posti: Object.freeze([[176, 136], [464, 136], [320, 262]]), raggio: 15, cadutaTick: 34, quota: 150 }),
+  scala: SCALA_H6,
+});
+
+/**
+ * STATI_H6 — tabella esplicita della macchina a stati (come STATI_B6 e STATI_D6):
+ *   inizio  stato iniziale; mosse  mossa della sequenza → stato d'anticipo con cui comincia;
+ *   stati   stato → { durata: chiave di BOSS_H6 (null = la calcola l'azione d'ingresso), poi: stato successivo
+ *                     ('prossima' = la mossa successiva della sequenza) }.
+ * 'cambiaFase' interrompe qualunque altro stato quando la vita scende sotto la soglia della fase 2.
+ */
+const STATI_H6 = Object.freeze({
+  inizio: 'cammina',
+  mosse: Object.freeze({ rintocco: 'alzaCorda', frusta: 'avvolge', risuona: 'tendeCorde', requie: 'prega' }),
+  stati: Object.freeze({
+    cammina: Object.freeze({ durata: 'cammina.tick', poi: 'prossima' }),
+    alzaCorda: Object.freeze({ durata: 'rintocco.anticipoTick', poi: 'suona' }),   // anticipo: la corda alta a due mani
+    suona: Object.freeze({ durata: 'rintocco.suonaTick', poi: 'cammina' }),        // la tira giù: anello di schegge
+    avvolge: Object.freeze({ durata: 'frusta.anticipoTick', poi: 'sferza' }),      // anticipo: la corda gira sopra la testa
+    sferza: Object.freeze({ durata: 'frusta.sferzaTick', poi: 'cammina' }),        // la fila di colpi lungo la corda
+    tendeCorde: Object.freeze({ durata: 'risuona.anticipoTick', poi: 'risuona' }), // anticipo: una campana oscilla
+    risuona: Object.freeze({ durata: 'risuona.suonaTick', poi: 'cammina' }),       // la campana suona
+    prega: Object.freeze({ durata: 'requieTick', poi: 'cammina' }),                // finestra: in ginocchio
+    cambiaFase: Object.freeze({ durata: 'cambioFaseTick', poi: 'cammina' }),       // le campane cadono
+  }),
+});
+
+// Icona 12×12 del segno di completamento (stessa palette degli oggetti).
+SPRITE_OGGETTI.segnoCampanaH6 = ['............', '.....k......', '....yyy.....', '...yyyyy....', '...yyyyy....', '...yyyyy....',
+  '..yyyyyyy...', '.yyyyyyyyy..', '.....k......', '............', '............', '............'];
+
+if (!POOL_BOSS.some((x) => x.id === SCHEDA_H6.id)) {
+  POOL_BOSS.push({ id: SCHEDA_H6.id, nome: SCHEDA_H6.nome, tipo: SCHEDA_H6.tipo, hpBase: SCHEDA_H6.hpBase, speed: SCHEDA_H6.speed, pattern: SCHEDA_H6.pattern });
+}
+if (typeof SEGNI_A6 !== 'undefined' && Array.isArray(SEGNI_A6) && !Object.isFrozen(SEGNI_A6) && !SEGNI_A6.some((s) => s.boss === SCHEDA_H6.id)) {
+  SEGNI_A6.push(Object.freeze({ boss: SCHEDA_H6.id, sprite: SCHEDA_H6.segno.sprite, nome: SCHEDA_H6.segno.nome }));
+}
+
+Object.assign(h6, { anime: [] });
+
+/** Numero di BOSS_H6 dalla chiave ('a.b'); in fase 2 vince la chiave <chiave>Fase2 se esiste. */
+function valoreH6(chiave, fase2) {
+  const leggi = (k) => k.split('.').reduce((o, p) => (o == null ? undefined : o[p]), BOSS_H6);
+  const v2 = fase2 ? leggi(`${chiave}Fase2`) : undefined;
+  return v2 !== undefined ? v2 : leggi(chiave);
+}
+const nomeCampanaroH6 = (n) => String(n.nome || '').replace(/\s*\(.*?\)/g, '');
+const bossH6 = (st) => (st && st.nemici ? st.nemici.find((n) => n.boss && n.bossId === SCHEDA_H6.id) : null);
+
+/** Veste il boss della stanza: il Campanaro al posto di quello di San Leucio; la scorta diventa rimorsi di pietra. */
+function vestiBossH6(s, piano, moltCiclo, moltVel) {
+  const b = s.nemici.find((n) => n.boss);
+  const forzato = typeof b6 !== 'undefined' && b6 && b6.forzato;
+  if (!b || forzato || pianoNelCicloH6(piano) === 4) return;
+  const ciclo = Math.floor((piano - 1) / 4) + 1;
+  b.bossId = SCHEDA_H6.id; b.tipo = SCHEDA_H6.tipo; b.pattern = SCHEDA_H6.pattern;
+  b.nome = ciclo > 1 ? `${SCHEDA_H6.nome} (Ciclo ${ciclo})` : SCHEDA_H6.nome;
+  b.maxHp = Math.round((SCHEDA_H6.hpBase + (pianoNelCicloH6(piano) - 1) * SCALA_H6.hpBossPerPiano) * moltCiclo);
+  b.hp = b.maxHp;
+  b.speed = SCHEDA_H6.speed * moltVel;
+  b.r = SCHEDA_H6.raggio;
+  const T = NEMICI_H6.penitente_pietra;
+  for (const n of s.nemici) {
+    if (n.boss) continue;
+    n.tipo = 'penitente_pietra'; n.patternMob = n.tipo; n.comportamento = n.tipo; n.nome = T.nome;
+    n.maxHp = Math.round((T.hpBase + (piano - 1) * T.hpPiano) * moltCiclo); n.hp = n.maxHp; n.speed = 0; n.velH6 = moltVel; n.r = T.raggio;
+  }
+}
+
+/** Un colpo del Campanaro, col tetto e il nome per il Registro (a7). */
+function sparaCampanaroH6(n, x, y, ang, vel, cosa = 'una scheggia') {
+  if (statoRun.proiettiliNemici.length >= BOSS_H6.tettoProiettili) return false;
+  statoRun.proiettiliNemici.push({ x, y, vx: Math.cos(ang) * vel, vy: Math.sin(ang) * vel, dist: 0, bossShot: true, schegiaH6: true, fonteA7: `${cosa} del ${nomeCampanaroH6(n)}` });
+  return true;
+}
+
+/** Un anello di schegge da (x, y) con un varco di `varco` colpi verso `angVarco` (null = nessun varco). */
+function anelloH6(n, x, y, quante, vel, angVarco, varco, cosa) {
+  for (let k = 0; k < quante; k++) {
+    const a = (TAU * k) / quante + (n.giroAnelloH6 || 0);
+    if (angVarco !== null) {
+      let d = Math.abs(((a - angVarco) % TAU + TAU + Math.PI) % TAU - Math.PI);
+      if (d < (Math.PI * varco) / quante) continue;
+    }
+    sparaCampanaroH6(n, x, y, a, vel, cosa);
+  }
+  n.giroAnelloH6 = (n.giroAnelloH6 || 0) + Math.PI / quante;
+}
+
+function entraStatoH6(n, stato, st) {
+  const riga = STATI_H6.stati[stato];
+  const f2 = Boolean(n.fase2H6);
+  n.statoH6 = stato; n.tStatoH6 = 0;
+  n.timerH6 = riga.durata ? Math.max(1, Math.round(valoreH6(riga.durata, f2))) : 1;
+  n.durataH6 = n.timerH6;
+  const az = AZIONI_H6.entra[stato];
+  if (az) az(n, BOSS_H6, f2, st);
+}
+
+function prossimoStatoH6(n) {
+  const riga = STATI_H6.stati[n.statoH6];
+  if (riga.poi !== 'prossima') return riga.poi;
+  const seq = n.fase2H6 ? BOSS_H6.sequenzaFase2 : BOSS_H6.sequenza;
+  const mossa = seq[(n.indiceH6 || 0) % seq.length];
+  n.indiceH6 = (n.indiceH6 || 0) + 1;
+  return STATI_H6.mosse[mossa];
+}
+
+/** Un tick dell'IA del Campanaro. */
+function iaCampanaroH6(n, st) {
+  if (!st.cordaH6) st.cordaH6 = nuovaCordaH6(st);
+  if (!n.statoH6) { n.fase2H6 = false; n.indiceH6 = 0; n.giroH6 = rng() < 0.5 ? -1 : 1; n.angH6 = 0; entraStatoH6(n, STATI_H6.inizio, st); }
+  if (!n.fase2H6 && n.hp < n.maxHp * BOSS_H6.sogliaFase2) {
+    n.fase2H6 = true; n.indiceH6 = 0; n.flash = 12;
+    try { scuoti(FEEL.scossa.schiantoCapitano); } catch (_) { /* */ }
+    entraStatoH6(n, 'cambiaFase', st);
+  }
+  const passo = AZIONI_H6.passo[n.statoH6];
+  if (passo) passo(n, BOSS_H6, n.fase2H6, st);
+  n.tStatoH6++;
+  if (--n.timerH6 <= 0) entraStatoH6(n, prossimoStatoH6(n), st);
+}
+
+const AZIONI_H6 = {
+  entra: {
+    alzaCorda(n, C, f2, st) { if (st.cordaH6) Object.assign(st.cordaH6, { fase: 'posa', t: n.timerH6, durata: n.timerH6 }); },
+    suona(n, C, f2, st) {
+      const R = C.rintocco;
+      anelloH6(n, n.x, n.y - 20, f2 ? R.scheggeFase2 : R.schegge, f2 ? R.velocitaFase2 : R.velocita, Math.atan2(player.y - n.y, player.x - n.x) + Math.PI * (rng() < 0.5 ? 0.5 : -0.5), R.varco, 'una scheggia');
+      alzaRimorsoH6(n, st, C.rimorsi, f2);
+      rintoccoH6(st, f2 ? 1.4 : 1.1);
+      if (st.cordaH6) Object.assign(st.cordaH6, { fase: 'suona', t: RINTOCCHI_H6.suonaTick });
+      for (const c of st.campaneH6 || []) c.oscilla = Math.max(c.oscilla || 0, 0.5);
+      statoRun.ondeEsplosione.push({ x: n.x, y: n.y - 24, r: 6, maxR: 52, tick: 0, color: TINTE_H6.luna });
+    },
+    avvolge(n) { n.angH6 = Math.atan2(player.y - 6 - (n.y - 20), player.x - n.x); },
+    sferza(n, C, f2) {
+      const F = C.frusta, colpi = f2 ? F.colpiFase2 : F.colpi;
+      for (let k = 0; k < colpi; k++) sparaCampanaroH6(n, n.x + Math.cos(n.angH6) * 14, n.y - 20 + Math.sin(n.angH6) * 10, n.angH6, F.velMin + (F.velMax - F.velMin) * (k / (colpi - 1)), 'la corda');
+      try { scuoti(FEEL.scossa.colpo); } catch (_) { /* */ }
+    },
+    tendeCorde(n, C, f2, st) {
+      const cs = st.campaneH6 || [];
+      if (!cs.length) { n.timerH6 = 1; n.campanaH6 = -1; return; }
+      // la campana più vicina al giocatore (la posa si legge da lei: comincia a oscillare)
+      let i = 0, d = Infinity;
+      cs.forEach((c, k) => { const dd = Math.hypot(player.x - c.x, player.y - c.y); if (dd < d) { d = dd; i = k; } });
+      n.campanaH6 = i; cs[i].posa = n.timerH6; cs[i].posaDurata = n.timerH6;
+    },
+    risuona(n, C, f2, st) {
+      const c = (st.campaneH6 || [])[n.campanaH6];
+      if (!c) return;
+      c.posa = 0; c.oscilla = 1;
+      anelloH6(n, c.x, c.y - 10, C.risuona.schegge, C.risuona.velocita, null, 0, 'il rintocco di una campana');
+      rintoccoH6(st, 1);
+      statoRun.ondeEsplosione.push({ x: c.x, y: c.y - 10, r: 6, maxR: 44, tick: 0, color: TINTE_H6.oro });
+    },
+    cambiaFase(n, C, f2, st) {
+      const K = C.campane;
+      st.campaneH6 = K.posti.map(([x, y], k) => ({ x, y, z: K.quota + k * 30, vz: 0, oscilla: 0, posa: 0, caduta: false }));
+      mostraBanner(TESTI_BOSS_H6.fase2, 180);
+    },
+  },
+  passo: {
+    cammina(n, C, f2) {
+      const G = C.cammina;
+      const ang = Math.atan2(player.y - n.y, player.x - n.x), dist = Math.hypot(player.x - n.x, player.y - n.y);
+      const rad = limitaH6((dist - G.distanzaPx) / 40, -1, 1);
+      const dx = Math.cos(ang) * rad + Math.cos(ang + n.giroH6 * Math.PI / 2) * G.giro;
+      const dy = Math.sin(ang) * rad + Math.sin(ang + n.giroH6 * Math.PI / 2) * G.giro;
+      const l = Math.hypot(dx, dy) || 1, v = n.speed * G.passo * (f2 ? C.moltVelFase2 : 1);
+      if (muoviH6(n, (dx / l) * v, (dy / l) * v, 24) && n.tStatoH6 % 30 === 0) n.giroH6 = -n.giroH6;
+    },
+    avvolge(n, C) { if (n.timerH6 > C.frusta.bloccoTick) n.angH6 = Math.atan2(player.y - 6 - (n.y - 20), player.x - n.x); },
+  },
+};
+
+/** Un rimorso: penitente di pietra che si alza lontano dal giocatore (stessi campi degli spawn del boss di base). */
+function alzaRimorsoH6(n, st, M, f2) {
+  const vivi = st.nemici.filter((x) => x.hp > 0 && x.tipo === 'penitente_pietra').length;
+  if (vivi >= (f2 ? M.massimiFase2 : M.massimi)) return null;
+  const T = NEMICI_H6.penitente_pietra;
+  const a = Math.atan2(n.y - player.y, n.x - player.x) + (rng() - 0.5) * 1.4;
+  const x = limitaH6(player.x + Math.cos(a) * M.distanzaPx, ARENA.x1 + 30, ARENA.x2 - 30);
+  const y = limitaH6(player.y + Math.sin(a) * M.distanzaPx, ARENA.y1 + 30, ARENA.y2 - 30);
+  const hp = Math.round(M.hpBase + (statoRun.piano - 1) * M.hpPiano);
+  const r = { tipo: 'penitente_pietra', patternMob: 'penitente_pietra', comportamento: 'penitente_pietra', nome: T.nome, x, y, vx: 0, vy: 0,
+    r: T.raggio, hp, maxHp: hp, speed: 0, velH6: 1, shootCd: 999, boss: false, flash: 6, burnTicks: 0, stunTicks: 0,
+    state: 'idle', stateTimer: 20, maskOpen: false, rimorsoH6: true };
+  st.nemici.push(r);
+  return r;
+}
+
+/** Le campane cadute: cadono, oscillano, tengono fuori giocatore e nemici, fermano i colpi del giocatore. */
+function passoCampaneH6(st) {
+  const cs = st.campaneH6;
+  if (!cs) return;
+  const K = BOSS_H6.campane;
+  for (const c of cs) {
+    if (c.z > 0) {
+      c.vz += K.quota / (K.cadutaTick * K.cadutaTick) * 2; c.z = Math.max(0, c.z - c.vz);
+      if (c.z === 0 && !c.caduta) { c.caduta = true; c.oscilla = 1; suonoCampanaH6(0.7, 0.07); try { scuoti(FEEL.scossa.colpo); } catch (_) { /* */ } }
+      continue;
+    }
+    if (c.posa > 0) c.posa--;
+    c.oscilla *= 0.97;
+    const spingi = (o, r) => {
+      const d = Math.hypot(o.x - c.x, o.y - c.y), min = K.raggio + r;
+      if (d < min && d > 0.01) { o.x = c.x + ((o.x - c.x) / d) * min; o.y = c.y + ((o.y - c.y) / d) * min; }
+    };
+    spingi(player, 8);
+    for (const n of st.nemici) if (n.hp > 0) spingi(n, n.r || 10);
+    for (let i = statoRun.proiettili.length - 1; i >= 0; i--) {
+      const p = statoRun.proiettili[i];
+      if (Math.hypot(p.x - c.x, p.y - (c.y - 10)) < K.raggio) { statoRun.proiettili.splice(i, 1); c.oscilla = Math.max(c.oscilla, 0.3); }
+    }
+  }
+}
+
+/** Dopo il passo di base: l'IA del Campanaro nei tick in cui la base ha fatto agire il boss; le campane. */
+function passoBossH6(st) {
+  const b = bossH6(st);
+  if (st.campaneH6 && !(b && b.hp > 0)) st.campaneH6 = null; // il boss è caduto: le campane tacciono e si tolgono
+  passoCampaneH6(st);
+  if (!b || b.hp <= 0 || (b.phaseTick || 0) === b.ptH6 || statoRun.hpHalf <= 0) return;
+  try { iaCampanaroH6(b, st); } catch (err) { console.error('[h6] ia campanaro', err); }
+}
+
+/** In ginocchio (REQUIE) il Campanaro prende un poco di più: è la finestra. */
+function dannoBossH6(n, dmg) {
+  if (n.bossId === SCHEDA_H6.id && n.statoH6 === 'prega') return dmg * BOSS_H6.dannoRequie;
+  return dmg;
+}
+
+/** Ingresso nella stanza del Campanaro: si presenta. */
+function ingressoBossH6(stanza) {
+  const b = stanza.tipo === 'boss' && !stanza.pulita ? bossH6(stanza) : null;
+  if (b) mostraBanner(`💀 ${b.nome} (${b.hp} HP) — ${SCHEDA_H6.presentazione}`, BOSS_H6.bannerTick);
+}
+
+/**
+ * Campanaro sconfitto: frase, anime che salgono (quelle di h2), e la rivelazione la prima volta nello slot
+ * (ricordata nella memoria dello slot di h2, campo `campanaroH6`, fuori dalla tabella congelata di h2).
+ */
+function campanaroSconfittoH6(st, b) {
+  if (b.liberatoH6) return;
+  b.liberatoH6 = true;
+  st.campaneH6 = null;
+  mostraBanner(`${SCHEDA_H6.sconfitta} ${st.portaPattoAperta ? 'Porta del Patto d\'Ombra (😈) a destra · ' : ''}Botola aperta!`, BOSS_H6.bannerTick);
+  if (typeof liberaAnimeH2 === 'function') { try { liberaAnimeH2(b); } catch (err) { console.error('[h6] anime', err); } }
+  try {
+    if (typeof memoriaH2 === 'function' && typeof scriviMemoriaH2 === 'function') {
+      const m = memoriaH2();
+      if (!m.campanaroH6) {
+        m.campanaroH6 = typeof notteH2 === 'function' ? notteH2() : 1;
+        scriviMemoriaH2(m);
+        if (typeof didascaliaH2 === 'function') didascaliaH2(TESTI_BOSS_H6.rivelazione); else mostraBanner(TESTI_BOSS_H6.rivelazione, 300);
+        h6.rivelazioneVista = true;
+      }
+    }
+  } catch (err) { console.error('[h6] rivelazione', err); }
+  if (typeof premioH6 === 'function') premioH6(st, b);
+}
+
+/** Chiamata alla stanza del boss appena ripulita (da verificaStanzaPulita di questo file). */
+function dopoStanzaPulitaH6(st) {
+  const b = st.nemici.find((n) => n.boss && n.bossId === SCHEDA_H6.id);
+  if (b) campanaroSconfittoH6(st, b);
+}
+
+// --------------------------------------------------------------------------- disegno del Campanaro
+/** Una campana a terra (o in caduta): bronzo scuro col filo d'oro, oscillazione e posa. */
+function disegnaCampanaH6(c, tk) {
+  const K = BOSS_H6.campane, T = TINTE_H6;
+  let a = Math.sin(tk * 0.3) * 0.25 * (c.oscilla || 0);
+  if (c.posa > 0) { const k = 1 - c.posa / (c.posaDurata || 1); a = Math.sin(tk * (0.25 + 0.3 * k)) * (0.1 + 0.4 * k); }
+  if (c.z <= 0) ombraH6(c.x, c.y + 1, K.raggio, 4.5, 0.6);
+  ctx.save(); ctx.translate(c.x, c.y - c.z); ctx.rotate(a);
+  ctx.fillStyle = '#2a2018'; ctx.strokeStyle = T.bordo; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(-14, 0); ctx.quadraticCurveTo(-12, -8, -9, -18); ctx.quadraticCurveTo(-7, -26, 0, -26); ctx.quadraticCurveTo(7, -26, 9, -18);
+  ctx.quadraticCurveTo(12, -8, 14, 0); ctx.lineTo(15, 2); ctx.lineTo(-15, 2); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = T.oro; ctx.globalAlpha = 0.7; ctx.fillRect(-12, -4, 24, 1.2); ctx.fillRect(-9, -18, 18, 0.9); ctx.globalAlpha = 1;
+  ctx.fillStyle = T.ferro; ctx.fillRect(-3, -30, 6, 4);
+  ctx.restore();
+}
+
+/** Il Campanaro: figura di pietra incappucciata, senza volto, la corda fra le mani. Posa per stato. */
+function disegnaCampanaroH6(b, tk) {
+  const T = TINTE_H6, st = statoRun.stanzaCorrente;
+  const flash = b.flash > 0 && OPZIONI.lampi !== false;
+  for (const c of (st && st.campaneH6) || []) if (c.y <= b.y) disegnaCampanaH6(c, tk);
+  const s = b.statoH6 || 'cammina', k = b.durataH6 ? 1 - b.timerH6 / b.durataH6 : 0;
+  ombraH6(b.x, b.y + 2, 22, 7);
+  const F = SCHEDA_H6.foglio;
+  if (F.attivo && typeof disegnaCellaTeatro === 'function'
+    && disegnaCellaTeatro(ctx, F.nome, F.pose[s] || 0, F.celle, b.x - F.w / 2, b.y + 4 - F.h, F.w, F.h, flash ? '#ffffff' : null, flash ? 0.6 : 0)) {
+    for (const c of (st && st.campaneH6) || []) if (c.y > b.y) disegnaCampanaH6(c, tk);
+    return;
+  }
+  const prega = s === 'prega', basso = prega ? 12 : 0;
+  const resp = Math.sin(tk * 0.05) * 0.8;
+  ctx.save(); ctx.translate(Math.round(b.x), Math.round(b.y));
+  // il manto di pietra, largo alla base
+  ctx.fillStyle = flash ? T.lampo : '#5a5853'; ctx.strokeStyle = flash ? '#fff' : T.bordo; ctx.lineWidth = 1.3; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(-20, 2); ctx.quadraticCurveTo(-18, -26 + basso, -11, -44 + basso + resp); ctx.lineTo(11, -44 + basso + resp); ctx.quadraticCurveTo(18, -26 + basso, 20, 2);
+  for (let i = 0; i < 5; i++) ctx.lineTo(16 - i * 8, 2 + (i % 2 ? 2 : 0));
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // le pieghe
+  ctx.strokeStyle = 'rgba(20, 20, 24, 0.55)'; ctx.lineWidth = 1;
+  ctx.beginPath(); for (const x of [-9, 0, 9]) { ctx.moveTo(x * 0.6, -36 + basso); ctx.lineTo(x, 0); } ctx.stroke();
+  // il cappuccio a punta, e dentro il buio: nessun volto
+  const hy = -44 + basso + resp + (s === 'cambiaFase' ? -3 : 0);
+  ctx.fillStyle = flash ? T.lampo : '#4a4844'; ctx.strokeStyle = flash ? '#fff' : T.bordo; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(-12, hy + 4); ctx.quadraticCurveTo(-13, hy - 14, 0, hy - 26); ctx.quadraticCurveTo(13, hy - 14, 12, hy + 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#030305'; ctx.beginPath(); ctx.ellipse(0, hy - 6, 6.5, 8.5, 0, 0, TAU); ctx.fill();
+  if (b.fase2H6) { ctx.fillStyle = `rgba(249, 203, 64, ${(0.35 + 0.3 * Math.sin(tk * 0.2)).toFixed(2)})`; ctx.fillRect(-0.6, hy - 9, 1.2, 6); } // la crepa d'oro
+  // braccia e corda, per posa
+  const mano = (x, y) => { ctx.fillStyle = flash ? '#fff' : '#8c8a86'; ctx.beginPath(); ctx.arc(x, y, 3, 0, TAU); ctx.fill(); };
+  const braccio = (x1, y1, x2, y2) => {
+    ctx.strokeStyle = flash ? '#fff' : T.bordo; ctx.lineWidth = 6.4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.strokeStyle = flash ? T.lampo : '#55534f'; ctx.lineWidth = 4.8; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  };
+  const corda = (pts) => {
+    ctx.strokeStyle = '#120f0c'; ctx.lineWidth = 2.6; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.stroke();
+    ctx.strokeStyle = '#8a6a3c'; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.stroke();
+  };
+  const sy = hy + 12;
+  if (s === 'alzaCorda' || s === 'suona') {
+    // anticipo: la corda alta a due mani sopra il cappuccio (più alta col passare della posa); suona: tirata giù
+    const yM = s === 'alzaCorda' ? hy - 14 - 12 * k : sy + 6;
+    braccio(-9, sy, -4, yM); braccio(9, sy, 4, yM);
+    corda([[0, -b.y + 52], [0, yM], [2, yM + 14 + (s === 'suona' ? 14 : 4)]]);
+    mano(-4, yM); mano(4, yM);
+  } else if (s === 'avvolge' || s === 'sferza') {
+    const a = b.angH6 || 0, ca = Math.cos(a), sa = Math.sin(a);
+    if (s === 'avvolge') {
+      const g = tk * (0.25 + 0.25 * k), r = 14 + 6 * k;
+      braccio(8, sy, 8, hy - 10); mano(8, hy - 10);
+      corda([[8, hy - 10], [8 + Math.cos(g) * r, hy - 14 + Math.sin(g) * r * 0.35]]);
+      ctx.strokeStyle = 'rgba(138, 106, 60, 0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(8, hy - 14, r, r * 0.35, 0, 0, TAU); ctx.stroke();
+      braccio(-9, sy, -12, sy + 14); mano(-12, sy + 14);
+    } else {
+      braccio(8, sy, 8 + ca * 16, sy + sa * 10); mano(8 + ca * 16, sy + sa * 10);
+      corda([[8 + ca * 16, sy + sa * 10], [8 + ca * 60, sy + sa * 40 - 2], [8 + ca * 96, sy + sa * 64 + 3]]);
+      braccio(-9, sy, -12, sy + 14); mano(-12, sy + 14);
+    }
+  } else if (s === 'tendeCorde' || s === 'risuona') {
+    braccio(-9, sy, -24, sy - 4); braccio(9, sy, 24, sy - 4); mano(-24, sy - 4); mano(24, sy - 4);
+    const c = ((st && st.campaneH6) || [])[b.campanaH6];
+    if (c) corda([[c.x > b.x ? 24 : -24, sy - 4], [c.x - b.x, c.y - b.y - 26]]);
+  } else if (prega) {
+    braccio(-8, sy, -2, sy + 4); braccio(8, sy, 2, sy + 4); mano(0, sy + 4);
+    corda([[0, sy + 4], [6, 2], [14, 3]]);
+  } else {
+    braccio(-9, sy, -6, sy + 12); braccio(9, sy, 6, sy + 12); mano(-5, sy + 12); mano(5, sy + 12);
+    corda([[0, -b.y + 52], [0, sy + 12], [-2, 2]]);
+  }
+  ctx.restore();
+  for (const c of (st && st.campaneH6) || []) if (c.y > b.y) disegnaCampanaH6(c, tk);
+}
+
+const disegnaBossPittoricoBaseH6 = disegnaBossPittorico;
+/** Il Campanaro si disegna qui; gli altri boss restano alla base. Stessa firma: ([ctx], boss, tick). */
+disegnaBossPittorico = function (...args) {
+  const a = args[0] && typeof args[0].save === 'function' ? args.slice(1) : args;
+  const b = a[0];
+  if (!b || b.bossId !== SCHEDA_H6.id) return disegnaBossPittoricoBaseH6.apply(this, args);
+  try { ctx.save(); ctx.imageSmoothingEnabled = true; disegnaCampanaroH6(b, a[1] || 0); ctx.restore(); } catch (err) { console.error('[h6] disegno campanaro', err); }
+  return undefined;
+};
+
+Object.assign(window.__teatro.interni, { SCHEDA_H6, BOSS_H6, STATI_H6, TESTI_BOSS_H6 });
+Object.defineProperties(window.__teatro.interni.casertavecchiaH6, Object.getOwnPropertyDescriptors({
+  /** Il Campanaro della stanza corrente: stato dell'IA, fase, campane. */
+  get boss() {
+    const st = statoRun.stanzaCorrente, n = bossH6(st);
+    if (!n) return null;
+    return { bossId: n.bossId, nome: n.nome, stato: n.statoH6 || null, fase2: Boolean(n.fase2H6), hp: n.hp, maxHp: n.maxHp, x: n.x, y: n.y,
+      campane: ((st.campaneH6) || []).map((c) => ({ x: c.x, y: c.y, z: c.z, posa: c.posa })), proiettili: statoRun.proiettiliNemici.length };
+  },
+  get rivelazioneVista() { try { return Boolean(memoriaH2().campanaroH6); } catch (_) { return false; } },
+}));
