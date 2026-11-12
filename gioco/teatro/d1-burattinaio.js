@@ -33,6 +33,10 @@ const BURATTINAIO_D1 = Object.freeze({
   /** Vita delle parti per atto (0 sigilli: le stesse; i sigilli cambiano i tempi, non la vita). */
   vita: Object.freeze({ mano1: 110, mano2: 85, mano3: 70, forbici: 190 }),
   intermezzoTick: 110,                 // pausa fra un atto e l'altro (nessun attacco)
+  /** Ombra del capo (assets/sprite_teatro/gb_ombra_capo.png, 640×240) in alto al centro dietro travi e corde. */
+  ombraCapo: Object.freeze({ nome: 'gb_ombra_capo', larghezza: 300, alto: 26, alfa: 0.42, // occhi sotto la barra della vita
+    occhi: Object.freeze([Object.freeze([303, 68]), Object.freeze([337, 68])]), // nel PNG
+    occhiBase: 0.12, occhiVoce: 0.85, occhiVoceTick: 200 }),
   inizioTick: 120,                     // le mani calano prima del primo colpo
   pausaFraColpiTick: Object.freeze([26, 18, 34]),
   mano: Object.freeze({
@@ -198,6 +202,7 @@ function suonoD1(tipo, forza = 1) {
 function voceD1(chiave) {
   if (d1.voceDetta[chiave]) return;
   d1.voceDetta[chiave] = true;
+  d1.occhiT = tick; // gli occhi dell'ombra del capo si accendono quando parla la Voce
   const testo = TESTI_D1.voce[chiave];
   try {
     if (typeof OPZIONI === 'object' && OPZIONI && OPZIONI.voce === false) return;
@@ -273,6 +278,7 @@ function scontroSopraLaRibaltaD1(opz = {}) {
 }
 
 function avviaAttoD1(n) {
+  d1.occhiT = tick; // ...e a ogni cambio d'atto
   const st = d1.stanza;
   const V = BURATTINAIO_D1.vita;
   d1.atto = n;
@@ -842,9 +848,44 @@ function preparaTraviD1() {
 }
 
 /** Il capo: un'ombra enorme dietro le travi, solo spalle e due bagliori d'occhi. Non si vede mai intero. */
+/**
+ * L'ombra del capo dal PNG dell'autore: quasi fusa col buio; gli occhi si accendono (luce additiva) quando parla la
+ * Voce e ai cambi d'atto, poi tornano fiochi; alla vittoria si spengono e l'ombra si ritira.
+ * @returns {boolean} false se il PNG non è carico (ripiego sull'ombra a canvas).
+ */
+function disegnaOmbraCapoFoglioD1(fiato, via) {
+  const O = BURATTINAIO_D1.ombraCapo;
+  const img = typeof getSpriteTeatro === 'function' ? getSpriteTeatro(O.nome) : null;
+  if (!img) return false;
+  const k = O.larghezza / img.naturalWidth, w = O.larghezza, h = img.naturalHeight * k;
+  const x0 = (W - w) / 2, y0 = O.alto + fiato - via * 30;
+  ctx.save();
+  ctx.globalAlpha = O.alfa * (1 - via * 0.8);
+  ctx.drawImage(img, x0, y0, w, h);
+  ctx.globalAlpha = 1;
+  const dt = d1.occhiT !== undefined ? tick - d1.occhiT : Infinity;
+  const voce = dt >= 0 && dt < O.occhiVoceTick ? 1 - dt / O.occhiVoceTick : 0;
+  const luce = d1.vittoria ? 0 : O.occhiBase + (O.occhiVoce - O.occhiBase) * voce * voce * (0.9 + 0.1 * Math.sin(tick * 0.3));
+  if (luce > 0.01) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (const [ox, oy] of O.occhi) {
+      const ex = x0 + ox * k, ey = y0 + oy * k;
+      const g = ctx.createRadialGradient(ex, ey, 0, ex, ey, 7);
+      g.addColorStop(0, `rgba(255,226,140,${luce})`); g.addColorStop(0.35, `rgba(249,190,64,${luce * 0.55})`); g.addColorStop(1, 'rgba(249,190,64,0)');
+      ctx.fillStyle = g; ctx.fillRect(ex - 7, ey - 7, 14, 14);
+    }
+  } else if (d1.vittoria) { // occhi spenti: il buio li richiude
+    ctx.fillStyle = `rgba(3,2,5,${Math.min(1, via * 1.5)})`;
+    for (const [ox, oy] of O.occhi) { ctx.beginPath(); ctx.ellipse(x0 + ox * k, y0 + oy * k, 4, 2.2, 0, 0, TAU); ctx.fill(); }
+  }
+  ctx.restore();
+  return true;
+}
+
 function disegnaCapoD1() {
   const fiato = Math.sin(tick * 0.02) * 2;
   const via = d1.vittoria ? Math.min(1, d1.vittoria.t / 120) : 0;
+  if (disegnaOmbraCapoFoglioD1(fiato, via)) return;
   ctx.save();
   ctx.globalAlpha = 0.92 * (1 - via * 0.7);
   ctx.fillStyle = '#030205';
