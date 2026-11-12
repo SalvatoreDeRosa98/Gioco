@@ -7,37 +7,37 @@ Prima di avvolgere una di queste funzioni, o di cambiarne il comportamento, guar
 
 | Funzione | Definita in | Strati | Chi la avvolge (in ordine di caricamento) |
 |---|---|---|---|
-| `passoLogico()` | 40-combattimento.js:661 | 20 | a1-bombe-chiavi:538 → a2-consumabili:477 → a3-stanze-speciali:598 → a7-registro-bilancio:285 → a7-registro-bilancio:626 → b6-boss:769 → b7-stanze:1912 → b4-trasformazioni:612 → b5-oggetti:1538 → b2-ribalta:1733 → b1-pubblico:2003 → c1-partenza-segreta:1082 → d5-cambio-scena:348 → d7-rifiniture:209 → d3-registro-scena:872 → d1-burattinaio:665 → d2-personaggi:363 → d4-stanze-teatro:1709 → d6-acquedotto:1005 → e6-assistenza:598 |
+| `passoLogico()` | 40-combattimento.js:661 | 20 | a1-bombe-chiavi:538 → a2-consumabili:477 → a3-stanze-speciali:598 → a7-registro-bilancio:285 → a7-registro-bilancio:626 → b6-boss:769 → b7-stanze:1912 → b4-trasformazioni:612 → b5-oggetti:1538 → b2-ribalta:1733 → b1-pubblico:2003 → c1-partenza-segreta:1082 → d5-cambio-scena:348 → d7-rifiniture:213 → d3-registro-scena:872 → d1-burattinaio:680 → d2-personaggi:363 → d4-stanze-teatro:1709 → d6-acquedotto:1005 → e6-assistenza:598 |
 | `entraInStanza()` | 30-mappa.js:578 | 12 | a1-bombe-chiavi:499 → a2-consumabili:395 → a3-stanze-speciali:567 → a7-registro-bilancio:272 → b6-boss:367 → b7-stanze:1846 → b8-finali-diario:1855 → b2-ribalta:1740 → d5-cambio-scena:322 → d3-registro-scena:894 → d4-stanze-teatro:1656 → d6-acquedotto:1616 |
-| `disegnaStanzaPixelArt()` | 60-resa.js:793 | 11 | a1-bombe-chiavi:552 → a3-stanze-speciali:788 → b7-stanze:2494 → b8-finali-diario:1885 → b2-ribalta:1695 → b1-pubblico:2062 → b9-immagini:551 → d5-cambio-scena:613 → d1-burattinaio:685 → d4-stanze-teatro:1687 → d6-acquedotto:793 |
-| `disegnaHUDPixelArt()` | 60-resa.js:1636 | 10 | a2-consumabili:518 → a3-stanze-speciali:817 → b6-boss:1349 → b7-stanze:2506 → b4-trasformazioni:1331 → b1-pubblico:2071 → d5-cambio-scena:604 → d1-burattinaio:750 → d4-stanze-teatro:1699 → d6-acquedotto:807 |
+| `disegnaStanzaPixelArt()` | 60-resa.js:793 | 11 | a1-bombe-chiavi:552 → a3-stanze-speciali:788 → b7-stanze:2494 → b8-finali-diario:1885 → b2-ribalta:1695 → b1-pubblico:2062 → b9-immagini:551 → d5-cambio-scena:613 → d1-burattinaio:700 → d4-stanze-teatro:1687 → d6-acquedotto:793 |
+| `disegnaHUDPixelArt()` | 60-resa.js:1636 | 10 | a2-consumabili:518 → a3-stanze-speciali:817 → b6-boss:1349 → b7-stanze:2506 → b4-trasformazioni:1331 → b1-pubblico:2071 → d5-cambio-scena:604 → d1-burattinaio:778 → d4-stanze-teatro:1699 → d6-acquedotto:807 |
 | `verificaStanzaPulita()` | 40-combattimento.js:463 | 9 | a1-bombe-chiavi:521 → a2-consumabili:404 → a3-stanze-speciali:574 → b6-boss:383 → b7-stanze:1853 → b4-trasformazioni:567 → d5-cambio-scena:301 → d4-stanze-teatro:1668 → d6-acquedotto:373 |
-| `disegnaFrame()` | 60-resa.js:1114 | 7 | a6-progressione:511 → b2-ribalta:1676 → b1-pubblico:2099 → d3-registro-scena:916 → d1-burattinaio:713 → e6-assistenza:451 → e4-prestazioni:95 |
+| `disegnaFrame()` | 60-resa.js:1114 | 7 | a6-progressione:511 → b2-ribalta:1676 → b1-pubblico:2099 → d3-registro-scena:916 → d1-burattinaio:728 → e6-assistenza:451 → e4-prestazioni:95 |
 | `generaMappaPiano()` | 30-mappa.js:41 | 7 | a1-bombe-chiavi:485 → a3-stanze-speciali:561 → b7-stanze:1129 → d5-cambio-scena:141 → d4-stanze-teatro:1645 → d6-acquedotto:877 → d6-acquedotto:2051 |
 | `interagisciStanza()` | 40-combattimento.js:523 | 7 | a1-bombe-chiavi:530 → a2-consumabili:455 → a3-stanze-speciali:592 → b7-stanze:1870 → b8-finali-diario:1870 → d4-stanze-teatro:1679 → d6-acquedotto:353 |
 | `t4Gancio()` | 80-ciclo.js:90 | 7 | a6-progressione:313 → a7-registro-bilancio:350 → b8-finali-diario:1814 → b2-ribalta:1726 → c1-partenza-segreta:1099 → d3-registro-scena:900 → e6-assistenza:321 |
 | `nuovaRun()` | 20-stato.js:278 | 6 | a2-consumabili:508 → a6-progressione:333 → a7-registro-bilancio:257 → b8-finali-diario:1845 → c1-partenza-segreta:1092 → d6-acquedotto:1781 |
 | `subisciColpoGiocatore()` | 40-combattimento.js:598 | 6 | a7-registro-bilancio:292 → b4-trasformazioni:552 → b5-oggetti:1071 → b1-pubblico:2052 → d5-cambio-scena:362 → d3-registro-scena:886 |
 | `avviaPiano()` | 30-mappa.js:553 | 5 | a1-bombe-chiavi:490 → a7-registro-bilancio:264 → b1-pubblico:2077 → d6-acquedotto:1792 → e6-assistenza:309 |
-| `clickDiarioD()` | 50-oggetti.js:356 | 5 | a2-consumabili:596 → b4-trasformazioni:1371 → b5-oggetti:2073 → b8-finali-diario:1933 → d7-rifiniture:366 |
-| `disegnaDiarioD()` | 60-resa.js:289 | 5 | a2-consumabili:603 → b4-trasformazioni:1466 → b5-oggetti:2057 → b8-finali-diario:1940 → d7-rifiniture:347 |
+| `clickDiarioD()` | 50-oggetti.js:356 | 5 | a2-consumabili:596 → b4-trasformazioni:1371 → b5-oggetti:2073 → b8-finali-diario:1933 → d7-rifiniture:400 |
+| `disegnaDiarioD()` | 60-resa.js:289 | 5 | a2-consumabili:603 → b4-trasformazioni:1466 → b5-oggetti:2057 → b8-finali-diario:1940 → d7-rifiniture:381 |
 | `eseguiAttacco4Direzioni()` | 40-combattimento.js:7 | 5 | t3-economia-salvataggi:263 → b4-trasformazioni:511 → b5-oggetti:888 → d2-personaggi:289 → e6-assistenza:532 |
-| `popolaStanza()` | 30-mappa.js:252 | 5 | a2-consumabili:430 → b6-boss:351 → b5-oggetti:1594 → d7-rifiniture:280 → d6-acquedotto:1059 |
+| `popolaStanza()` | 30-mappa.js:252 | 5 | a2-consumabili:430 → b6-boss:351 → b5-oggetti:1594 → d7-rifiniture:314 → d6-acquedotto:1059 |
 | `danneggiaNemico()` | 40-combattimento.js:392 | 4 | b4-trasformazioni:440 → b5-oggetti:993 → b2-ribalta:1751 → d3-registro-scena:879 |
-| `disegnaBossPittorico()` | 10-sprite.js:1623 | 4 | b6-boss:1340 → d7-rifiniture:58 → d1-burattinaio:699 → d6-acquedotto:1768 |
+| `disegnaBossPittorico()` | 10-sprite.js:1664 | 4 | b6-boss:1340 → d7-rifiniture:58 → d1-burattinaio:714 → d6-acquedotto:1768 |
 | `ricalcolaStatistiche()` | 20-stato.js:120 | 4 | a2-consumabili:373 → b4-trasformazioni:416 → b5-oggetti:739 → d2-personaggi:336 |
 | `tastoDiarioD()` | 50-oggetti.js:344 | 4 | a2-consumabili:585 → b4-trasformazioni:1355 → b5-oggetti:2064 → b8-finali-diario:1924 |
 | `disegnaFerruccioPittorico()` | 10-sprite.js:105 | 3 | b4-trasformazioni:1197 → b2-ribalta:1783 → d2-personaggi:560 |
 | `disegnaMenuPausa()` | 60-resa.js:1984 | 3 | a7-registro-bilancio:561 → b3-comandi-opzioni:568 → b8-finali-diario:1907 |
-| `disegnaNemicoPittorico()` | 10-sprite.js:1015 | 3 | d7-rifiniture:270 → d4-stanze-teatro:1635 → d6-acquedotto:1442 |
+| `disegnaNemicoPittorico()` | 10-sprite.js:1056 | 3 | d7-rifiniture:304 → d4-stanze-teatro:1635 → d6-acquedotto:1442 |
 | `disegnaPergamenaA7()` | a7-registro-bilancio.js:467 | 3 | c1-partenza-segreta:1146 → d6-acquedotto:1815 → e6-assistenza:823 |
-| `drawPillLabel()` | 10-sprite.js:37 | 3 | b3-comandi-opzioni:642 → b2-ribalta:1689 → d7-rifiniture:337 |
-| `drawTextFit()` | 10-sprite.js:10 | 3 | b3-comandi-opzioni:633 → b9-immagini:1103 → d7-rifiniture:335 |
+| `drawPillLabel()` | 10-sprite.js:37 | 3 | b3-comandi-opzioni:642 → b2-ribalta:1689 → d7-rifiniture:371 |
+| `drawTextFit()` | 10-sprite.js:10 | 3 | b3-comandi-opzioni:633 → b9-immagini:1103 → d7-rifiniture:369 |
 | `gestisciClickMenuPausa()` | 60-resa.js:1939 | 3 | a7-registro-bilancio:580 → b8-finali-diario:1914 → c2-tocco:902 |
-| `righeB3()` | b3-comandi-opzioni.js:329 | 3 | d7-rifiniture:381 → e6-assistenza:632 → e4-prestazioni:120 |
+| `righeB3()` | b3-comandi-opzioni.js:329 | 3 | d7-rifiniture:415 → e6-assistenza:632 → e4-prestazioni:120 |
 | `sparaProiettiliDirezione()` | 40-combattimento.js:32 | 3 | b5-oggetti:880 → d2-personaggi:312 → e6-assistenza:553 |
 | `componiPaginaB8()` | b8-finali-diario.js:968 | 2 | c1-partenza-segreta:1163 → d6-acquedotto:1833 |
-| `disegnaAtmosferaQuartiere()` | 60-resa.js:631 | 2 | d1-burattinaio:693 → d6-acquedotto:691 |
+| `disegnaAtmosferaQuartiere()` | 60-resa.js:631 | 2 | d1-burattinaio:708 → d6-acquedotto:691 |
 | `disegnaFamigliOrbitaliD()` | 60-resa.js:246 | 2 | b5-oggetti:1940 → b2-ribalta:1716 |
 | `disegnaMacchie()` | 60-resa.js:329 | 2 | b5-oggetti:1882 → d7-rifiniture:50 |
 | `disegnaMenuSelezionePersonaggio()` | 60-resa.js:910 | 2 | a6-progressione:454 → b3-comandi-opzioni:578 |
@@ -67,10 +67,10 @@ Prima di avvolgere una di queste funzioni, o di cambiarne il comportamento, guar
 | `disegnaCiarlatanoB7()` | b7-stanze.js:2370 | 1 | b9-immagini:884 |
 | `disegnaClessidraB7()` | b7-stanze.js:2309 | 1 | b9-immagini:839 |
 | `disegnaDietroB4()` | b4-trasformazioni.js:956 | 1 | b9-immagini:951 |
-| `disegnaFiliMarionetta()` | 60-resa.js:357 | 1 | d1-burattinaio:742 |
+| `disegnaFiliMarionetta()` | 60-resa.js:357 | 1 | d1-burattinaio:757 |
 | `disegnaForziereA1()` | a1-bombe-chiavi.js:399 | 1 | b9-immagini:736 |
 | `disegnaLucchettoA1()` | a1-bombe-chiavi.js:372 | 1 | b9-immagini:751 |
-| `disegnaManoMarionettaPittorica()` | 10-sprite.js:783 | 1 | d1-burattinaio:734 |
+| `disegnaManoMarionettaPittorica()` | 10-sprite.js:783 | 1 | d1-burattinaio:749 |
 | `disegnaMinimappaA3()` | a3-stanze-speciali.js:799 | 1 | d4-stanze-teatro:1627 |
 | `disegnaRoviA3()` | a3-stanze-speciali.js:630 | 1 | d4-stanze-teatro:1607 |
 | `disegnaSegniA6()` | a6-progressione.js:372 | 1 | b9-immagini:1068 |
@@ -110,7 +110,9 @@ errore: l'aggancio smette di funzionare in silenzio.
 
 | Funzione | Definita in | Chi la chiama se esiste |
 |---|---|---|
-| `caricaSpriteTeatro()` | 10-sprite.js:891 | t2-sprite:100 |
+| `caricaSpriteTeatro()` | 10-sprite.js:894 | t2-sprite:100 |
+| `disegnaCellaTeatro()` | 10-sprite.js:933 | d7-rifiniture:276 |
+| `getSpriteTeatro()` | 10-sprite.js:915 | d1-burattinaio:878 |
 | `mostraBanner()` | 20-stato.js:237 | d3-registro-scena:399, d2-personaggi:350 |
 | `colpisciMuroSegretoC()` | 30-mappa.js:7 | d2-personaggi:269 |
 | `conosciutiD()` | 50-oggetti.js:277 | d3-registro-scena:499 |
@@ -132,7 +134,7 @@ errore: l'aggancio smette di funzionare in silenzio.
 | `reazionePubblicoB1()` | b1-pubblico.js:262 | d5-cambio-scena:270, d4-stanze-teatro:821 |
 | `adattaTestoB3()` | b3-comandi-opzioni.js:602 | b9-immagini:1112 |
 | `filtroIngressiB3()` | b3-comandi-opzioni.js:415 | 70-input:12 |
-| `inToccoB3()` | b3-comandi-opzioni.js:326 | t3-economia-salvataggi:348, d7-rifiniture:351, d2-personaggi:106 |
+| `inToccoB3()` | b3-comandi-opzioni.js:326 | t3-economia-salvataggi:348, d7-rifiniture:385, d2-personaggi:106 |
 | `simboloB3()` | b3-comandi-opzioni.js:297 | d2-personaggi:107 |
 | `statoB4()` | b4-trasformazioni.js:209 | e6-assistenza:284 |
 | `temiDi()` | b4-trasformazioni.js:199 | d3-registro-scena:508 |
@@ -144,11 +146,11 @@ errore: l'aggancio smette di funzionare in silenzio.
 | `gruppoNemiciB7()` | b7-stanze.js:1022 | 30-mappa:457 |
 | `quartiereB7()` | b7-stanze.js:947 | d5-cambio-scena:478 |
 | `variantiB7()` | b7-stanze.js:752 | d5-cambio-scena:226 |
-| `accodaDidB8()` | b8-finali-diario.js:859 | d1-burattinaio:195 |
-| `registraVoceBossB8()` | b8-finali-diario.js:893 | d1-burattinaio:1050 |
+| `accodaDidB8()` | b8-finali-diario.js:859 | d1-burattinaio:209 |
+| `registraVoceBossB8()` | b8-finali-diario.js:893 | d1-burattinaio:1172 |
 | `statoB8()` | b8-finali-diario.js:715 | d3-registro-scena:344 |
-| `suonoVoceB8()` | b8-finali-diario.js:786 | d1-burattinaio:196 |
-| `tornaInPiazzaB8()` | b8-finali-diario.js:1578 | d1-burattinaio:1065 |
+| `suonoVoceB8()` | b8-finali-diario.js:786 | d1-burattinaio:210 |
+| `tornaInPiazzaB8()` | b8-finali-diario.js:1578 | d1-burattinaio:1187 |
 | `disegnaCavoB9()` | b9-immagini.js:605 | b2-ribalta:1121 |
 | `disegnaLumeB9()` | b9-immagini.js:591 | b2-ribalta:648 |
 | `disegnaOstacoloB9()` | b9-immagini.js:676 | 60-resa:1169, d6-acquedotto:2044 |
@@ -165,8 +167,8 @@ errore: l'aggancio smette di funzionare in silenzio.
 | `iaNemicoD6()` | d6-acquedotto.js:1128 | 40-combattimento:1339 |
 | `aloneProiettileD7()` | d7-rifiniture.js:99 | 60-resa:1573 |
 | `lucianaInScenaD7()` | d7-rifiniture.js:33 | 60-resa:1389 |
-| `passoRagnoSetaD7()` | d7-rifiniture.js:152 | 40-combattimento:1382 |
-| `testoToccoD7()` | d7-rifiniture.js:326 | t3-economia-salvataggi:436 |
+| `passoRagnoSetaD7()` | d7-rifiniture.js:156 | 40-combattimento:1382 |
+| `testoToccoD7()` | d7-rifiniture.js:360 | t3-economia-salvataggi:436 |
 
 ## Cose che la mappa non dice
 
