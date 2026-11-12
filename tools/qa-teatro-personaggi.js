@@ -47,7 +47,12 @@ const foto = (n) => `${prefisso}-${n}.png`;
     Date.now = () => 1845; performance.now = () => 0;
     try { nuovaRun(false); } finally { Date.now = oraVera; performance.now = perfVera; }
     statoRun.siparioAttivo = null;
-    const s = statoRun.mappa.stanze.find((x) => x.tipo === 'normale');
+    // La prima stanza normale che ha un bersaglio adatto (non solo la prima in assoluto: col seme fisso basta una
+    // parte nuova che usa il caso per cambiarla), senza i due quadri né le botole di d5, che nascondono i nemici.
+    const bozzoQui = (n) => [n.comportamento, n.patternMob, n.tipo].includes('bomba_ferma');
+    const normali = statoRun.mappa.stanze.filter((x) => x.tipo === 'normale');
+    const s = normali.find((x) => x.nemici.some((n) => !n.boss && !bozzoQui(n))) || normali[0];
+    delete s.quadriD5; delete s.botoleD5;
     entraInStanza(s, null);
     statoRun.siparioAttivo = null; statoRun.pausa = false;
     const st = statoRun.stanzaCorrente;
