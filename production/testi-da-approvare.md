@@ -625,12 +625,216 @@ Dove: `gioco/teatro/t3-economia-salvataggi.js, d6-acquedotto.js, d7-rifiniture.j
 - I Fontanieri del Condotto
 - 🗡 I FONTANIERI DEL CONDOTTO: tre ombre fra le chiuse. Chi le stana trova qualcosa in più.
 
-## Agnese al telaio e il confronto con Taddeo (1)
+## Agnese al telaio e il confronto con Taddeo (103)
 
 Dove: `gioco/teatro/h1-agnese-taddeo.js`
 
-- (tabella non trovata nel gioco)  
-  <sub>TESTI_H1</sub>
+- [E] Avvicinati al telaio  
+  <sub>TESTI_H1.avvicinati</sub>
+- [E] Guarda il telaio  
+  <sub>TESTI_H1.agneseGiocata</sub>
+- Restituiscile i ricordi  
+  <sub>TESTI_H1.scelta.risveglia</sub>
+- Lasciala sognare  
+  <sub>TESTI_H1.scelta.sogna</sub>
+- Perdonalo  
+  <sub>TESTI_H1.scelta.perdona</sub>
+- Accusalo  
+  <sub>TESTI_H1.scelta.accusa</sub>
+- Ferruccio urta il telaio. Una piccola ruota salta via e rotola sulle assi.  
+  <sub>TESTI_H1.telaio.primo[0][1]</sub>
+- Siete venuto ad aggiustarlo o a finirlo?  
+  <sub>TESTI_H1.telaio.primo[1][1]</sub>
+- Ferruccio cerca di spiegarsi.  
+  <sub>TESTI_H1.telaio.primo[2][1]</sub>
+- Ah, siete pure un uomo di poche parole. Almeno quelle non le rompete.  
+  <sub>TESTI_H1.telaio.primo[3][1]</sub>
+- Sul telaio c'è una lunga sciarpa rossa, quasi finita. Agnese non sa per chi la sta tessendo.  
+  <sub>TESTI_H1.telaio.primo[4][1]</sub>
+- In tasca Ferruccio ha la lettera che lei gli scrisse prima della maledizione. È la stessa calligrafia dei cartellini appesi al telaio.  
+  <sub>TESTI_H1.telaio.lettera[1]</sub>
+- Quella sciarpa che portate al collo... il punto è il mio. Lo riconoscerei fra mille.  
+  <sub>TESTI_H1.telaio.sciarpa[0][1]</sub>
+- Strano. Non ricordo di averla mai venduta.  
+  <sub>TESTI_H1.telaio.sciarpa[1][1]</sub>
+- Ancora voi? Il telaio sta bene, grazie. Sono le mie dita che non si fermano.  
+  <sub>TESTI_H1.telaio.notti[0][1]</sub>
+- Se cercate la ruota che avete rotto, l'ho rimessa. Gira meglio di prima. Non montatevi la testa.  
+  <sub>TESTI_H1.telaio.notti[1][1]</sub>
+- Ogni mattina la finisco, ogni sera la ricomincio. Non chiedetemi perché: non lo so nemmeno io.  
+  <sub>TESTI_H1.telaio.notti[2][1]</sub>
+- Avete una faccia che... no, niente. All'alba le maschere si somigliano tutte.  
+  <sub>TESTI_H1.telaio.notti[3][1]</sub>
+- Dicono che a San Leucio la seta non dorme mai. Nemmeno noi, a quanto pare.  
+  <sub>TESTI_H1.telaio.notti[4][1]</sub>
+- Agnese gli fascia la mano con un ritaglio di seta, senza chiedere. Una maschera torna al suo posto.  
+  <sub>TESTI_H1.telaio.donoCura[1]</sub>
+- Agnese gli annoda al polso un filo rosso. «Per la prossima stanza. Poi me lo riportate.»  
+  <sub>TESTI_H1.telaio.donoFilo[1]</sub>
+- Questa seta... certe notti, quando la tocco, mi pare di ricordare una faccia. Poi passa.  
+  <sub>TESTI_H1.telaio.primaScelta[0][1]</sub>
+- Ora Ferruccio sa che il Velo nasce da questa seta. Tirando il filo giusto, ad Agnese tornerebbero i ricordi: anche quello della notte in cui glieli hanno tolti.  
+  <sub>TESTI_H1.telaio.primaScelta[1][1]</sub>
+- Agnese taglia l'ultimo filo. La sciarpa rossa è appena finita, come ogni notte.  
+  <sub>TESTI_H1.telaio.sognanteNotti[0][1]</sub>
+- Guardate: finita. Domani la ricomincio, non so perché. Sento che qualcuno verrà a prenderla.  
+  <sub>TESTI_H1.telaio.sognanteNotti[1][1]</sub>
+- Il telaio è fermo. Sulla trama c'è un biglietto: «Sono sotto il portico di Piazza Dante. Non farmi aspettare un'altra volta.»  
+  <sub>TESTI_H1.telaio.risvegliataVuoto[0][1]</sub>
+- Il telaio è vuoto. Sulla trama c'è una sciarpa rossa lasciata a metà.  
+  <sub>TESTI_H1.telaio.giocataAgnese[0][1]</sub>
+- Agnese passa le dita dove il filo si interrompe. Non ricorda di averlo lasciato lì.  
+  <sub>TESTI_H1.telaio.giocataAgnese[1][1]</sub>
+- Ferruccio tira il filo. Agnese lo guarda a lungo, come si guarda una parola sulla punta della lingua.  
+  <sub>TESTI_H1.esiti.neutroRisvegliata[0][1]</sub>
+- C'è qualcosa che devo ricordare. Datemi tempo. Aspettatemi sotto il portico di Piazza Dante.  
+  <sub>TESTI_H1.esiti.neutroRisvegliata[1][1]</sub>
+- Ferruccio lascia il filo dove sta. Agnese torna a tessere, canticchiando.  
+  <sub>TESTI_H1.esiti.neutroSognante[0][1]</sub>
+- Taddeo ha raccontato ad Agnese gli ultimi giorni trascorsi insieme. Lei riconosce Ferruccio e gli si avvicina.  
+  <sub>TESTI_H1.esiti.A[0][1]</sub>
+- Non sapevo più il tuo nome.  
+  <sub>TESTI_H1.esiti.A[1][1]</sub>
+- Ma ricordavo come mi guardavi.  
+  <sub>TESTI_H1.esiti.A[2][1]</sub>
+- Gli toglie delicatamente la polvere dalla maschera.  
+  <sub>TESTI_H1.esiti.A[3][1]</sub>
+- Torna da me. Anche se non puoi più essere quello di prima.  
+  <sub>TESTI_H1.esiti.A[4][1]</sub>
+- Agnese recupera i ricordi, ma scopre che Ferruccio ha scelto la vendetta contro il suo vecchio amico.  
+  <sub>TESTI_H1.esiti.B[0][1]</sub>
+- Ho aspettato un uomo per anni.  
+  <sub>TESTI_H1.esiti.B[1][1]</sub>
+- Adesso ho paura che sia tornata soltanto la sua rabbia.  
+  <sub>TESTI_H1.esiti.B[2][1]</sub>
+- Ferruccio le mostra la sciarpa consumata e tenta di prenderle la mano.  
+  <sub>TESTI_H1.esiti.B[3][1]</sub>
+- Lei gliela stringe, ma non gli promette di aspettarlo.  
+  <sub>TESTI_H1.esiti.B[4][1]</sub>
+- Ferruccio decide di non restituirle i ricordi: sa quanto dolore contengono. Taddeo cerca di convincerlo a cambiare idea.  
+  <sub>TESTI_H1.esiti.C[0][1]</sub>
+- Stai facendo esattamente quello che ha fatto Donna Luciana.  
+  <sub>TESTI_H1.esiti.C[1][1]</sub>
+- Stai scegliendo al posto suo.  
+  <sub>TESTI_H1.esiti.C[2][1]</sub>
+- Ferruccio abbassa lo sguardo.  
+  <sub>TESTI_H1.esiti.C[3][1]</sub>
+- Nessuno è venuto con lui. Agnese non lo riconosce e gli offre soltanto la sciarpa appena terminata.  
+  <sub>TESTI_H1.esiti.D[0][1]</sub>
+- Prendila. Non so perché, ma credo che debba averla tu.  
+  <sub>TESTI_H1.esiti.D[1][1]</sub>
+- Ferruccio prende la sciarpa, la piega accuratamente e le fa un inchino.  
+  <sub>TESTI_H1.esiti.D[2][1]</sub>
+- Agnese sorride.  
+  <sub>TESTI_H1.esiti.D[3][1]</sub>
+- Che tipo buffo.  
+  <sub>TESTI_H1.esiti.D[4][1]</sub>
+- Dopo la sua partenza, si accorge di stare piangendo senza conoscerne il motivo.  
+  <sub>TESTI_H1.esiti.D[5][1]</sub>
+- Agnese tocca la sciarpa rossa al collo di Ferruccio.  
+  <sub>TESTI_H1.portico.sciarpa[0][1]</sub>
+- Dicono che il rosso protegga dal malocchio.  
+  <sub>TESTI_H1.portico.sciarpa[1][1]</sub>
+- Io non ci credo. Però con te non si sa mai.  
+  <sub>TESTI_H1.portico.sciarpa[2][1]</sub>
+- Stanotte ho sognato la bottega. C'era la tua insegna, storta. L'avevi montata tu.  
+  <sub>TESTI_H1.portico.A[0][1]</sub>
+- Vai. Il posto sotto il portico te lo tengo io.  
+  <sub>TESTI_H1.portico.A[1][1]</sub>
+- Mi tocco il polso come facevi tu. Me n'ero dimenticata, e invece le mani no.  
+  <sub>TESTI_H1.portico.A[2][1]</sub>
+- Sono qui. Non ti prometto altro.  
+  <sub>TESTI_H1.portico.B[0][1]</sub>
+- La rabbia ti tiene in piedi, lo so. Ma poi, quando è finita, chi resta?  
+  <sub>TESTI_H1.portico.B[1][1]</sub>
+- Quando avrai finito con Taddeo, torna a dirmi chi sei diventato.  
+  <sub>TESTI_H1.portico.B[2][1]</sub>
+- Ogni tanto mi torna un pezzo di te. Come una spola che rientra nel filo.  
+  <sub>TESTI_H1.portico.neutro[0][1]</sub>
+- Agnese gli annoda al polso un filo rosso: nella prima stanza della notte farà da scudo.  
+  <sub>TESTI_H1.portico.dono[1]</sub>
+- Fra i pezzi d'armatura del Capitano, una guardia si toglie l'elmo. È Taddeo.  
+  <sub>TESTI_H1.confronto.apertura[0][1]</sub>
+- Il giovane riconosce la spada.  
+  <sub>TESTI_H1.confronto.apertura[1][1]</sub>
+- No... Quella l'abbiamo forgiata insieme.  
+  <sub>TESTI_H1.confronto.apertura[2][1]</sub>
+- Ti prego, lascia che ti spieghi.  
+  <sub>TESTI_H1.confronto.apertura[3][1]</sub>
+- Taddeo confessa di aver denunciato Ferruccio per salvare Mariella.  
+  <sub>TESTI_H1.confronto.perdonato[0][1]</sub>
+- Mi aveva promesso che mia sorella sarebbe stata bene.  
+  <sub>TESTI_H1.confronto.perdonato[1][1]</sub>
+- E io le ho creduto. Che Dio mi perdoni.  
+  <sub>TESTI_H1.confronto.perdonato[2][1]</sub>
+- Ferruccio rinfodera la spada.  
+  <sub>TESTI_H1.confronto.perdonato[3][1]</sub>
+- D'ora in poi Taddeo gli segna sulla mappa la stanza del guardiano di ogni piano; ma la spada rinfoderata colpisce un poco più piano.  
+  <sub>TESTI_H1.confronto.perdonato[4][1]</sub>
+- Ferruccio gli punta la spada alla gola.  
+  <sub>TESTI_H1.confronto.accusato[0][1]</sub>
+- Taddeo arretra.  
+  <sub>TESTI_H1.confronto.accusato[1][1]</sub>
+- Se mi uccidi, lei resterà comunque là dentro!  
+  <sub>TESTI_H1.confronto.accusato[2][1]</sub>
+- Ferruccio non lo uccide, ma rifiuta di ascoltarlo. Taddeo fugge a cercare i documenti che potrebbero incriminarlo.  
+  <sub>TESTI_H1.confronto.accusato[3][1]</sub>
+- D'ora in poi la rabbia fa colpire più forte; ma le guardie, avvisate da Taddeo, resistono di più.  
+  <sub>TESTI_H1.confronto.accusato[4][1]</sub>
+- Ti ho lasciato un biglietto sotto la porta della bottega. Leggilo e brucialo.  
+  <sub>TESTI_H1.piazzaTaddeo.perdonato[0][1]</sub>
+- Mariella stanotte ha dormito. Non so se ringraziare te o lei.  
+  <sub>TESTI_H1.piazzaTaddeo.perdonato[1][1]</sub>
+- Ho trovato le carte della guardia. Dove sta il prossimo guardiano, te lo segno io.  
+  <sub>TESTI_H1.piazzaTaddeo.perdonato[2][1]</sub>
+- Taddeo vede Ferruccio e abbassa lo sguardo. Si allontana senza una parola.  
+  <sub>TESTI_H1.piazzaTaddeo.accusato[0][1]</sub>
+- Non ti avvicinare. Ho da fare.  
+  <sub>TESTI_H1.piazzaTaddeo.accusato[1][1]</sub>
+- Taddeo fruga fra le carte della guardia. Quando Ferruccio passa, le nasconde sotto il mantello.  
+  <sub>TESTI_H1.piazzaTaddeo.accusato[2][1]</sub>
+- Tonino mi ha ridato una lettera. È di Agnese, scritta prima della notte immobile. La copio qui per non perderla:  
+  <sub>TESTI_H1.diario.lettera[0]</sub>
+- «Ferruccio, ti scrivo perché a voce ridi e non mi lasci finire.  
+  <sub>TESTI_H1.diario.lettera[1]</sub>
+- Alla manifattura tessiamo una seta strana, per Donna Luciana. I fili si scaldano quando penso a te. Non ridere.  
+  <sub>TESTI_H1.diario.lettera[2]</sub>
+- Se una notte non mi riconosci, o io non riconosco te, cercami al telaio. Avrò in mano la stessa sciarpa.  
+  <sub>TESTI_H1.diario.lettera[3]</sub>
+- Il rosso protegge dal malocchio. Io non ci credo. Però con te non si sa mai. — A.»  
+  <sub>TESTI_H1.diario.lettera[4]</sub>
+- Ho rinfoderato la spada davanti a Taddeo. Non so se l'ho perdonato o se ero soltanto stanco.  
+  <sub>TESTI_H1.diario.taddeo.perdonato</sub>
+- Ho puntato la spada alla gola di Taddeo. Non l'ho ucciso. Non so se sia peggio.  
+  <sub>TESTI_H1.diario.taddeo.accusato</sub>
+- Agnese ricorda. Insieme al mio nome le è tornato anche tutto il resto.  
+  <sub>TESTI_H1.diario.agnese.risvegliata</sub>
+- Ho lasciato Agnese al suo telaio. Sorrideva. Io no.  
+  <sub>TESTI_H1.diario.agnese.sognante</sub>
+- Agnese riconosce immediatamente Ferruccio tra la folla. Vederlo con la spada davanti al corpo della benefattrice la sconvolge.  
+  <sub>TESTI_H1.finale.uccisa.agneseRisvegliata</sub>
+- Il Velo si spezza e Agnese recupera ogni ricordo. Lo riconosce soltanto adesso, con la spada davanti al corpo della benefattrice.  
+  <sub>TESTI_H1.finale.uccisa.agneseSognante</sub>
+- Fermati! Non voglio perderti un'altra volta!  
+  <sub>TESTI_H1.finale.uccisa.agneseAma</sub>
+- Agnese tenta di fermarlo per costringerlo a consegnarsi alle guardie. Ferruccio deve scattare oltre di lei.  
+  <sub>TESTI_H1.finale.uccisa.agneseAmaDid</sub>
+- Hai liberato tutti. Ma chi ti ha dato il diritto di decidere chi deve morire?  
+  <sub>TESTI_H1.finale.uccisa.agneseAccusa</sub>
+- Una volta ti ho consegnato per paura. Stavolta vieni con me di tua volontà!  
+  <sub>TESTI_H1.finale.uccisa.taddeoPerdonato</sub>
+- Taddeo partecipa apertamente alla caccia, usando la colpa di Ferruccio per distogliere l'attenzione dalla propria.  
+  <sub>TESTI_H1.finale.uccisa.taddeoAccusato</sub>
+- A San Leucio, quando Ferruccio le passa davanti, Agnese si tocca istintivamente il polso, proprio come faceva lui.  
+  <sub>TESTI_H1.finale.risparmiata.agneseRisvegliata</sub>
+- A San Leucio, Agnese continua semplicemente a tessere.  
+  <sub>TESTI_H1.finale.risparmiata.agneseSognante</sub>
+- Devo finire una sciarpa. Sento che qualcuno verrà a prenderla.  
+  <sub>TESTI_H1.finale.risparmiata.agneseUltima</sub>
+- Taddeo continua a essere una guardia. Ricorda a tratti di aver tradito qualcuno, ma il Velo gli impedisce di sostenerne il peso.  
+  <sub>TESTI_H1.finale.risparmiata.taddeoPerdonato</sub>
+- Taddeo continua a essere una guardia. Quando incrocia Ferruccio, abbassa lo sguardo.  
+  <sub>TESTI_H1.finale.risparmiata.taddeoAccusato</sub>
 
 ## Rivelazioni dei boss, Bianca, Assunta (47)
 
