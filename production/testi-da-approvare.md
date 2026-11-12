@@ -1100,3 +1100,54 @@ Dove: `gioco/teatro/h4-ritorno-piazza.js`
   <sub>TESTI_H4.rastrelliera.aiuto</sub>
 - N ferri di Gaetano · passo −N%  
   <sub>TESTI_H4.scontro(N)</sub>
+
+## Il Sottopalco e il Macchinista (23)
+
+Dove: `gioco/teatro/h5-sottopalco.js`
+
+- Sottopalco  
+  <sub>TESTI_H5.luogo</sub>
+- [E] Calati sotto  
+  <sub>TESTI_H5.calati</sub>
+- [E] Risali la scala  
+  <sub>TESTI_H5.risali</sub>
+- [E] Apri la cassa  
+  <sub>TESTI_H5.apri</sub>
+- IL SOTTOPALCO — sotto il tavolato, dove il teatro si regge.  
+  <sub>TESTI_H5.entrata</sub>
+- Di nuovo sul palco. La botola si richiude.  
+  <sub>TESTI_H5.ritorno</sub>
+- Pezzo di copione — mai messo in scena  
+  <sub>TESTI_H5.titoloCopione</sub>
+- IL MACCHINISTA — mezzo secolo sotto le assi. Le corde le conosce tutte.  
+  <sub>TESTI_H5.macchinistaEntra</sub>
+- Il Macchinista si siede su una cassa e non si rialza. In fondo, una cassa è rimasta chiusa.  
+  <sub>TESTI_H5.macchinistaCade</sub>
+- ATTO TERZO, SCENA ULTIMA. Il bambino apre la porta della bottega. Fuori è giorno. — Cancellato con due righe d'inchiostro.  
+  <sub>TESTI_H5.copione[0]</sub>
+- Il Burattinaio si siede sul panchetto. Si guarda le mani. Dice: «Basta.» — Nessuno ha mai detto questa battuta.  
+  <sub>TESTI_H5.copione[1]</sub>
+- Didascalia: la piazza si riempie di gente vera. Nessuno ha i fili. — In margine: «Troppo cara da mettere in scena.»  
+  <sub>TESTI_H5.copione[2]</sub>
+- Donna Luciana si toglie la maschera. Sotto non c'è niente da vedere: una donna stanca. — Pagina strappata a metà.  
+  <sub>TESTI_H5.copione[3]</sub>
+- La campana batte le sei. Poi le sette. Il tempo riprende. — Sopra, a matita: «No.»  
+  <sub>TESTI_H5.copione[4]</sub>
+- Il Macchinista sale sul palco e s'inchina. Nessuno applaude. Lui ride lo stesso. — Scena tagliata.  
+  <sub>TESTI_H5.copione[5]</sub>
+- Tonino conta le monete della serata. Sono abbastanza. Chiude il baule e se ne va a casa. — Mai provata.  
+  <sub>TESTI_H5.copione[6]</sub>
+- FINALE SECONDO. Le marionette vanno a dormire. Il teatro resta al buio, e va bene così. — Il foglio è piegato in quattro.  
+  <sub>TESTI_H5.copione[7]</sub>
+- Marionetta scartata  
+  <sub>TESTI_H5.nomi.marionetta_h5</sub>
+- Topo di cartapesta  
+  <sub>TESTI_H5.nomi.topo_h5</sub>
+- il contrappeso  
+  <sub>TESTI_H5.nomi.contrappeso</sub>
+- Il Macchinista  
+  <sub>TESTI_H5.nomi.macchinista</sub>
+- un sacco di sabbia  
+  <sub>TESTI_H5.nomi.sacco</sub>
+- una quinta  
+  <sub>TESTI_H5.nomi.quinta</sub>
