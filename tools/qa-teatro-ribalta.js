@@ -46,6 +46,8 @@ if (pref.endsWith('/')) fs.mkdirSync(pref, { recursive: true });
         st = R.mappa.stanze.find((s) => s.tipo === 'normale' && !s.pulita && (!vuole || s.nemici.some((n) => n.tipo === vuole)));
       }
       if (!st) return null;
+      // niente botole né secondo quadro nella stanza di prova: nascondono i nemici all'ingresso e il controllo balla
+      delete st.botoleD5; delete st.quadriD5;
       if (ostacoli) st.ostacoli = ostacoli.map((o) => ({ tipo: o[0], x: o[1], y: o[2], r: o[0] === 'colonna' ? 14 : o[0] === 'braciere' ? 10 : 16, acceso: o[0] === 'braciere', w: o[0] === 'fossa' ? 34 : 26, h: o[0] === 'fossa' ? 22 : 26 }));
       entraInStanza(st, 'W');
       R.siparioAttivo = null; R.banner = null; R.bannerTimer = 0;
@@ -203,6 +205,8 @@ if (pref.endsWith('/')) fs.mkdirSync(pref, { recursive: true });
     const sc = await p.evaluate(() => {
       const I = window.__teatro.interni; const B = I.ribaltaB2; const st = I.statoRun.stanzaCorrente;
       const n = st.nemici.find((q) => q.tipo === 'guardia');
+      // la guardia può sparire nell'attesa (una volta su molte): meglio un esito leggibile che un'eccezione
+      if (!n) return { assente: true, tipi: st.nemici.map((q) => q.tipo), piano: I.statoRun.piano };
       n.x = 340; n.y = 210; I.player.x = 290; I.player.y = 212;
       const a = B.stato().conteggi;
       n.hp = n.maxHp = 500;
@@ -217,7 +221,7 @@ if (pref.endsWith('/')) fs.mkdirSync(pref, { recursive: true });
     const rf2 = await p.evaluate(() => window.__teatro.interni.ribaltaB2.stato().conteggi.riflessi);
     ok('guardia colpita: scintille metalliche', sc.scintille > 0, sc);
     ok('riflessi bagnati solo al piano 1', rf2 === rf, { piano: sc.piano, rf, rf2 });
-    await p.evaluate(() => { const st = window.__teatro.interni.statoRun.stanzaCorrente; const n = st.nemici.find((q) => q.tipo === 'guardia'); danneggiaNemico(n, 99999, 1, 0); });
+    await p.evaluate(() => { const st = window.__teatro.interni.statoRun.stanzaCorrente; const n = st.nemici.find((q) => q.tipo === 'guardia'); if (n) danneggiaNemico(n, 99999, 1, 0); });
     await p.waitForTimeout(260);
     await p.screenshot({ path: foto('crollo-guardia') });
   } else ok('una stanza con la guardia ai piani 3-4', false, 'non trovata');
