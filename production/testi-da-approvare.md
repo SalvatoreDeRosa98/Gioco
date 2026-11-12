@@ -3,7 +3,7 @@
 Generato da `tools/elenco-testi-teatro.js` il 2026-11-12: i testi sono letti dalle tabelle del gioco, quindi sono
 quelli che il giocatore vede. Dove compare **N** il gioco mette un numero. Per cambiare un testo basta dirlo
 («nel Burattinaio la battuta dell'atto II diventa …»): si corregge nella tabella indicata e l'elenco si rigenera.
-**Approvati dall'autore il 2026-11-12** («i testi vanno bene»). Le voci scritte dopo sono segnate **NUOVO**: sono le sole da guardare (5 voci nuove).
+**Approvati dall'autore il 2026-11-12** («i testi vanno bene»). Le voci scritte dopo sono segnate **NUOVO**: sono le sole da guardare (12 voci nuove).
 
 Altri testi della prima ondata ancora da approvare stanno nei loro documenti: `production/finali-teatro.md`
 (finali, voci segnate [nuovo]), `production/oggetti-200.md` (nomi e descrizioni degli oggetti), i nomi dei boss
@@ -935,7 +935,7 @@ Dove: `gioco/teatro/h2-memorie.js`
 - Il giglio brilla ancora, e la scatola suona da sola.  
   <sub>TESTI_BIANCA_H2.pagina.risparmiata</sub>
 
-## Gregorio, il Custode (Cortile d'Onore) (56)
+## Gregorio, il Custode (Cortile d'Onore) (62)
 
 Dove: `gioco/teatro/h3-gregorio.js`
 
@@ -963,6 +963,8 @@ Dove: `gioco/teatro/h3-gregorio.js`
   <sub>TESTI_H3.scelta.dialogo</sub>
 - Cerca le prove nella giubba  
   <sub>TESTI_H3.scelta.senzaProve</sub>
+- **NUOVO** Le prove non bastano (N su N)  
+  <sub>TESTI_H3.scelta.nonBastano(N)</sub>
 - Attacca il Custode  
   <sub>TESTI_H3.scelta.attacco</sub>
 - Le mani di Ferruccio cercano nella giubba qualcosa che non c'è. Poi stringono la spada.  
@@ -1033,6 +1035,16 @@ Dove: `gioco/teatro/h3-gregorio.js`
   <sub>TESTI_H3.morteSe.dialogo[1]</sub>
 - Anche io avevo paura di perderla.  
   <sub>TESTI_H3.morteSe.attacco[1]</sub>
+- **NUOVO** Pagina del registro di Gaetano (N di N)  
+  <sub>TESTI_H3.prove.presa(N)</sub>
+- **NUOVO** Prove N/N  
+  <sub>TESTI_H3.prove.contatore(N)</sub>
+- **NUOVO** · Taddeo  
+  <sub>TESTI_H3.prove.taddeo</sub>
+- **NUOVO** Il registro è completo: hai qualcosa da mostrare al Custode.  
+  <sub>TESTI_H3.prove.tutte</sub>
+- **NUOVO** Prove del registro  
+  <sub>TESTI_H3.prove.conto</sub>
 - Nel Cortile d'Onore ho abbattuto il Custode. Sotto l'elmo c'era un vecchio.  
   <sub>TESTI_H3.diario.attacco</sub>
 - Nel Cortile d'Onore il Custode ha abbassato l'alabarda. Mi ha lasciato le sue chiavi.  
@@ -1045,7 +1057,7 @@ Dove: `gioco/teatro/h3-gregorio.js`
   <sub>TESTI_H3.breveAttaccoMorte[0][1]</sub>
 - Il Custode muore. Sul selciato resta il mantello rosso, vuoto.  
   <sub>TESTI_H3.breveAttaccoMorte[2][1]</sub>
-- Il Custode guarda Ferruccio come chi lo aspettava. Pianta l'alabarda prima ancora di vedere le prove.  
+- **NUOVO** Ferruccio mostra le pagine del registro. Il Custode le riconosce prima ancora di leggerle, e pianta l'alabarda.  
   <sub>TESTI_H3.breveDialogo[0][1]</sub>
 - Il giglio, sul petto di lei. Va'.  
   <sub>TESTI_H3.breveDialogo[2][1]</sub>

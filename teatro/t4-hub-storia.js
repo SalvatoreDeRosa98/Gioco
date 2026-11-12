@@ -1110,6 +1110,7 @@
   }
 
   function disegnaPortaBottega(p) {
+    if (typeof T.portaImmagineI2 === 'function' && T.portaImmagineI2(p)) return; // --- i2: il portone dell'autore ---
     const { x } = p;
     const y = 62;
     ctx.fillStyle = '#0a0604';
@@ -1137,6 +1138,7 @@
   function disegnaBanchetto(t) {
     if (!RETT_BANCO) return;
     const r = RETT_BANCO;
+    if (typeof T.banchettoImmagineI2 === 'function' && T.banchettoImmagineI2(r, t, S.flag.tonino_ricordo === DATI.ricordo.valore_restituzione)) return; // --- i2 ---
     ctx.fillStyle = 'rgba(8, 5, 3, 0.6)';
     ctx.fillRect(r.x1 + 2, r.y2, r.x2 - r.x1, 6);
     ctx.fillStyle = '#0a0604';

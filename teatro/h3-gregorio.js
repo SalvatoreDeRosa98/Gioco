@@ -49,6 +49,21 @@ const GREGORIO_H3 = Object.freeze({
   bannerTick: 230,
 });
 
+/**
+ * PROVE_H3 — le pagine del registro di Gaetano (bibbia §VII: «Ferruccio mostra il registro o il messaggio di
+ * Taddeo»). Una pagina per piano nei piani `piani` del ciclo, in una stanza `normale` scelta alla prima occhiata
+ * alla mappa (mai il Cortile, mai una stanza con i campi di altre squadre in `campiVietati`). Il conto sta in
+ * statoRun.percorsoProveH3 (il prefisso «percorso» lo fa copiare all'istantanea di «Riprendi la notte», e6).
+ */
+const PROVE_H3 = Object.freeze({
+  servono: 3,
+  piani: Object.freeze([1, 2, 3]), // piani del ciclo con una pagina
+  taddeo: 1, // prove che vale la testimonianza di Taddeo (flag taddeo = perdonato)
+  raggioPresa: 16,
+  campiVietati: /^(quadriD5|botoleD5|ternaD4|bucaD4|cortileH3|telaioH1|confrontoH1|capitanoH1|biancaH2|botolaH5|sagratoH6|premioH6|cancelloH6|campaneH6|condottoH7|mcH7|ritornoH4)$/,
+  posti: Object.freeze([[320, 188], [250, 160], [390, 220], [200, 230], [440, 150]]),
+});
+
 /** Conseguenze sullo scontro con Donna Luciana. */
 const LUCIANA_H3 = Object.freeze({
   bossId: 'donna-luciana',
@@ -80,8 +95,8 @@ const STATI_H3 = Object.freeze({
 
 /** Foglio PNG facoltativo: una riga di 7 celle uguali, nell'ordine delle pose. */
 const FOGLIO_H3 = Object.freeze({
-  nome: 'gregorio', presente: false, // true quando assets/sprite_teatro/gregorio.png c'è (senza: niente richiesta, si disegna sul canvas)
-  altezza: 82, piedi: 8,
+  nome: 'gregorio', presente: true, // il foglio dell'autore c'è dal 2026-11-12 (false: si disegna sul canvas, senza richieste a vuoto)
+  altezza: 82, piedi: 1, // piedi: quanto sta sopra il fondo della cella la suola (nel foglio dell'autore quasi niente)
   pose: Object.freeze(['fermo', 'cammina', 'anticipo', 'attacco', 'colpito', 'aTerra', 'ginocchio']),
 });
 
@@ -112,7 +127,8 @@ const TESTI_H3 = Object.freeze({
   ]),
   scelta: Object.freeze({
     dialogo: 'Mostragli le prove', // [storia]
-    senzaProve: 'Cerca le prove nella giubba', // [nuovo]
+    senzaProve: 'Cerca le prove nella giubba', // [nuovo] (non più usata: vedi nonBastano)
+    nonBastano: (n, k) => `Le prove non bastano (${n} su ${k})`, // [nuovo]
     attacco: 'Attacca il Custode', // [storia]
   }),
   senzaProve: Object.freeze([
@@ -164,6 +180,13 @@ const TESTI_H3 = Object.freeze({
     attacco: ['gregorio', 'Anche io avevo paura di perderla.'], // [bibbia]
   }),
   // Le notti dopo la scelta: la conseguenza in breve.
+  prove: Object.freeze({
+    presa: (n, k) => `Pagina del registro di Gaetano (${n} di ${k})`, // [nuovo] banner
+    contatore: (n, k) => `Prove ${n}/${k}`, // [nuovo] HUD
+    taddeo: ' · Taddeo', // [nuovo] HUD: la testimonianza conta
+    tutte: 'Il registro è completo: hai qualcosa da mostrare al Custode.', // [nuovo] banner alla terza
+    conto: 'Prove del registro', // [nuovo] conto della notte (e6)
+  }),
   diario: Object.freeze({ // [nuovo] una riga nel Diario di Ferruccio, la notte in cui ha incontrato il Custode
     attacco: 'Nel Cortile d\'Onore ho abbattuto il Custode. Sotto l\'elmo c\'era un vecchio.',
     dialogo: 'Nel Cortile d\'Onore il Custode ha abbassato l\'alabarda. Mi ha lasciato le sue chiavi.',
@@ -181,7 +204,7 @@ const TESTI_H3 = Object.freeze({
     ['didascalia', 'Il Custode muore. Sul selciato resta il mantello rosso, vuoto.'], // [bibbia, ridotta]
   ]),
   breveDialogo: Object.freeze([
-    ['didascalia', 'Il Custode guarda Ferruccio come chi lo aspettava. Pianta l\'alabarda prima ancora di vedere le prove.'], // [nuovo]
+    ['didascalia', 'Ferruccio mostra le pagine del registro. Il Custode le riconosce prima ancora di leggerle, e pianta l\'alabarda.'], // [nuovo]
     ['gregorio', 'Gaetano...'], // [bibbia]
     ['gregorio', 'Il giglio, sul petto di lei. Va\'.'], // [nuovo]
     ['didascalia', 'Il mazzo di chiavi cade ai piedi di Ferruccio. Il giglio si spezza.'], // [nuovo]
@@ -200,8 +223,52 @@ function impostaFlagH3(parz) { try { const q = window.__teatro && window.__teatr
 const pncH3 = (piano) => ((Math.max(1, piano || 1) - 1) % 4) + 1;
 
 /** true se Ferruccio ha qualcosa da mostrare al Custode (storia.json: prove = vera, o le sue due fonti). */
-function haProveH3(f = flagH3()) {
-  return f.prove === 'vera' || f.registro === 'conservato' || f.taddeo === 'perdonato';
+function haProveH3() { return proveH3() >= PROVE_H3.servono; }
+
+/** Stato delle prove della notte in corso (si azzera a ogni notte e a ogni ciclo). */
+function statoProveH3() {
+  const ciclo = Math.floor((Math.max(1, statoRun.piano || 1) - 1) / 4) + 1;
+  let P = statoRun.percorsoProveH3;
+  if (!P || P.run !== statoRun.numeroRun || P.ciclo !== ciclo) {
+    P = statoRun.percorsoProveH3 = { run: statoRun.numeroRun, ciclo, prese: [] };
+  }
+  return P;
+}
+
+/** Prove della notte: pagine prese in questo ciclo + Taddeo perdonato; al massimo PROVE_H3.servono. */
+function proveH3() {
+  const P = statoProveH3();
+  const t = flagH3().taddeo === 'perdonato' ? PROVE_H3.taddeo : 0;
+  return Math.min(PROVE_H3.servono, P.prese.length + t);
+}
+
+/** Sceglie la stanza della pagina in una mappa del piano (una volta per mappa). */
+function scegliPaginaH3(m, piano) {
+  if (!m || m.paginaH3 !== undefined) return;
+  m.paginaH3 = null;
+  if (!PROVE_H3.piani.includes(pncH3(piano)) || !m.stanze.some((s) => s.tipo === 'boss')) return; // niente Sottopalco
+  const ok = m.stanze.filter((s) => s.tipo === 'normale' && !Object.keys(s).some((k) => PROVE_H3.campiVietati.test(k)));
+  if (!ok.length) return;
+  const st = ok[Math.floor(rng() * ok.length)];
+  const libero = ([x, y]) => !(st.ostacoli || []).some((o) => o && o.x != null && Math.hypot((o.x + (o.w || 0) / 2) - x, (o.y + (o.h || 0) / 2) - y) < 30);
+  const [x, y] = PROVE_H3.posti.find(libero) || PROVE_H3.posti[0];
+  st.paginaH3 = { x, y, piano };
+  m.paginaH3 = st.id;
+}
+
+/** Ogni tick: la pagina si sceglie, compare a stanza pulita e si raccoglie passandoci sopra. */
+function passoPagineH3(st) {
+  const m = statoRun.mappa;
+  scegliPaginaH3(m, statoRun.piano);
+  const pg = st && st.paginaH3;
+  if (!pg || !st.pulita) return;
+  const P = statoProveH3();
+  if (P.prese.includes(pg.piano)) return;
+  if (Math.hypot(player.x - pg.x, player.y - pg.y) > PROVE_H3.raggioPresa) return;
+  P.prese.push(pg.piano);
+  const n = proveH3();
+  try { AudioSys.playMoneta(); } catch (_) { /* audio facoltativo */ }
+  mostraBanner(n >= PROVE_H3.servono ? `${TESTI_H3.prove.presa(P.prese.length, PROVE_H3.piani.length)} — ${TESTI_H3.prove.tutte}` : TESTI_H3.prove.presa(P.prese.length, PROVE_H3.piani.length), GREGORIO_H3.bannerTick);
 }
 
 /** Esito del Custode che vale per lo scontro con Donna Luciana: quello di questa run, altrimenti il flag. */
@@ -280,35 +347,32 @@ function apriConfrontoH3(st) {
   const C = st.cortileH3;
   C.daAprire = false;
   const f = flagH3();
-  if (f.gregorio === 'attacco' || f.gregorio === 'dialogo') {
-    C.breve = true;
-    if (f.gregorio === 'attacco') apriH3(TESTI_H3.breveAttacco, { poi: () => avviaScontroH3(st) });
-    else if (GREGORIO_H3.dialogoSenzaScontro) apriH3(TESTI_H3.breveDialogo, { poi: () => doniH3(st, 'dialogo') });
-    else apriH3(TESTI_H3.breveAttacco, { poi: () => avviaScontroH3(st) });
-    return;
-  }
-  const prove = haProveH3(f);
+  C.breve = f.gregorio === 'attacco' || f.gregorio === 'dialogo'; // la scena intera solo la prima volta nello slot
+  const n = proveH3(), k = PROVE_H3.servono;
   const opzioni = [
-    { valore: prove ? 'dialogo' : 'senzaProve', etichetta: prove ? TESTI_H3.scelta.dialogo : TESTI_H3.scelta.senzaProve },
+    n >= k ? { valore: 'dialogo', etichetta: TESTI_H3.scelta.dialogo } : { valore: 'senzaProve', etichetta: TESTI_H3.scelta.nonBastano(n, k) },
     { valore: 'attacco', etichetta: TESTI_H3.scelta.attacco },
   ];
-  apriH3(TESTI_H3.ingresso, { scelta: { ancoraggio: 'h3:cortile', ordine: 0,
+  apriH3(C.breve ? [] : TESTI_H3.ingresso, { scelta: { ancoraggio: 'h3:cortile', ordine: 0,
     scelta: { flag: null, opzioni, alScegliere: (v) => sceltaH3(st, v) } } });
 }
 
-/** La scelta del Cortile: resta nello slot (flag `gregorio` di T4). */
+/** La scelta del Cortile, ogni notte. Il flag `gregorio` dello slot si scrive solo alla prima risoluzione. */
 function sceltaH3(st, valore) {
   const C = st.cortileH3;
-  if (valore === 'dialogo') {
-    impostaFlagH3({ gregorio: 'dialogo' });
-    C.esito = 'dialogo';
-    if (GREGORIO_H3.dialogoSenzaScontro) apriH3(TESTI_H3.dialogo.concat(TESTI_H3.dialogoResiste), { poi: () => avviaMorteH3(st) });
+  const esito = valore === 'dialogo' ? 'dialogo' : 'attacco';
+  if (!C.breve) impostaFlagH3({ gregorio: esito });
+  C.esito = esito;
+  if (esito === 'dialogo') {
+    if (C.breve) {
+      if (GREGORIO_H3.dialogoSenzaScontro) apriH3(TESTI_H3.breveDialogo, { poi: () => doniH3(st, 'dialogo') });
+      else apriH3(TESTI_H3.breveAttacco, { poi: () => avviaScontroH3(st) });
+    } else if (GREGORIO_H3.dialogoSenzaScontro) apriH3(TESTI_H3.dialogo.concat(TESTI_H3.dialogoResiste), { poi: () => avviaMorteH3(st) });
     else apriH3(TESTI_H3.dialogo.concat(TESTI_H3.dialogoCombatte), { poi: () => avviaScontroH3(st) });
     return;
   }
-  impostaFlagH3({ gregorio: 'attacco' });
-  C.esito = 'attacco';
-  const righe = valore === 'senzaProve' ? TESTI_H3.senzaProve.concat(TESTI_H3.attacco) : TESTI_H3.attacco;
+  const attacco = C.breve ? TESTI_H3.breveAttacco : TESTI_H3.attacco;
+  const righe = valore === 'senzaProve' ? TESTI_H3.senzaProve.concat(attacco) : attacco;
   apriH3(righe, { poi: () => avviaScontroH3(st) });
 }
 
@@ -435,6 +499,7 @@ passoLogico = function (...args) {
       const n = st.nemici.find((x) => x.bossId === GREGORIO_H3.bossId && x.hp > 0);
       if (n) attesa = [n, n.phaseTick || 0];
     } else if (inGioco && st.tipo === 'boss') rabbiaLucianaH3(st);
+    if (inGioco) passoPagineH3(st);
   } catch (err) { console.error('[h3] passo', err); }
   const r = passoLogicoBaseH3.apply(this, args);
   if (attesa) {
@@ -627,7 +692,8 @@ function disegnaGregorioH3(posa, t, flash, flip, angLama) {
   const A = FOGLIO_H3.altezza;
   if (FOGLIO_H3.presente && typeof disegnaCellaTeatro === 'function' && col >= 0) {
     ctx.save(); ctx.scale(flip, 1);
-    const ok = disegnaCellaTeatro(ctx, FOGLIO_H3.nome, col, FOGLIO_H3.pose.length, -A * 0.6, -A + FOGLIO_H3.piedi, A * 1.2, A, flash ? '#fff' : null, flash ? 0.6 : 0);
+    const L = A * ((typeof rapportoCellaTeatro === 'function' && rapportoCellaTeatro(FOGLIO_H3.nome, FOGLIO_H3.pose.length)) || 1.2);
+    const ok = disegnaCellaTeatro(ctx, FOGLIO_H3.nome, col, FOGLIO_H3.pose.length, -L / 2, -A + FOGLIO_H3.piedi, L, A, flash ? '#fff' : null, flash ? 0.6 : 0);
     ctx.restore();
     if (ok) return;
   }
@@ -723,6 +789,7 @@ disegnaStanzaPixelArt = function (t, st, ...resto) {
       ctx.restore();
     }
     disegnaAnimeH3();
+    disegnaPaginaH3(st, t || tick);
   } catch (err) { console.error('[h3] resa', err); }
   return r;
 };
@@ -758,6 +825,77 @@ disegnaBossPittorico = function (...args) {
   } catch (err) { console.error('[h3] disegno', err); }
   return undefined;
 };
+
+/** La pagina del registro a terra: un foglio chiaro con un luccichio (solo a stanza pulita, se non presa). */
+function disegnaPaginaH3(st, t) {
+  const pg = st && st.paginaH3;
+  if (!pg || !st.pulita || statoProveH3().prese.includes(pg.piano)) return;
+  const k = 0.5 + 0.5 * Math.sin(t * 0.09);
+  ctx.save();
+  ctx.translate(pg.x, pg.y + Math.sin(t * 0.05) * 1.2);
+  const gr = ctx.createRadialGradient(0, 0, 1, 0, 0, 16);
+  gr.addColorStop(0, `rgba(255, 236, 170, ${(0.35 + 0.3 * k).toFixed(3)})`); gr.addColorStop(1, 'rgba(255, 220, 120, 0)');
+  ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, 16, 0, TAU); ctx.fill();
+  ctx.rotate(-0.18);
+  ctx.fillStyle = '#efe2c2'; ctx.strokeStyle = TINTE_H3.ombra; ctx.lineWidth = 1;
+  ctx.fillRect(-6, -8, 12, 15); ctx.strokeRect(-6, -8, 12, 15);
+  ctx.strokeStyle = 'rgba(60, 40, 25, 0.75)';
+  for (let r = 0; r < 4; r++) { ctx.beginPath(); ctx.moveTo(-4, -5 + r * 3); ctx.lineTo(4 - (r % 2) * 2, -5 + r * 3); ctx.stroke(); }
+  ctx.fillStyle = TINTE_H3.rosso; ctx.beginPath(); ctx.arc(3, 4, 1.6, 0, TAU); ctx.fill(); // sigillo
+  ctx.rotate(0.18);
+  ctx.fillStyle = `rgba(255, 250, 220, ${k.toFixed(3)})`; // luccichio a croce
+  ctx.fillRect(7, -12, 1, 6); ctx.fillRect(4.5, -9.5, 6, 1);
+  ctx.restore();
+}
+
+/** Prove sul palco: visibili dal piano 1 del ciclo fino al Cortile risolto. */
+function proveVisibiliH3() {
+  if (statoRun.fase !== 'in_gioco') return false;
+  const pnc = pncH3(statoRun.piano);
+  if (pnc === 4) {
+    const r = statoRun.gregorioH3;
+    return !(r && r.run === statoRun.numeroRun && r.piano === statoRun.piano);
+  }
+  return PROVE_H3.piani.includes(pnc);
+}
+
+const disegnaHUDPixelArtBaseH3 = disegnaHUDPixelArt;
+disegnaHUDPixelArt = function (st, ...resto) {
+  const r = disegnaHUDPixelArtBaseH3.call(this, st, ...resto);
+  try {
+    if (proveVisibiliH3()) {
+      const n = proveH3(), k = PROVE_H3.servono;
+      const testo = TESTI_H3.prove.contatore(n, k) + (flagH3().taddeo === 'perdonato' ? TESTI_H3.prove.taddeo : '');
+      // sotto il riquadro della minimappa (x da W−124, fondo a y 100)
+      ctx.save();
+      ctx.fillStyle = 'rgba(10, 6, 4, 0.62)'; ctx.fillRect(W - 124, 102, 114, 12);
+      ctx.strokeStyle = n >= k ? TINTE_H3.oro : 'rgba(240, 180, 90, 0.45)'; ctx.lineWidth = 1; ctx.strokeRect(W - 123.5, 102.5, 113, 11);
+      drawTextFit(testo, W - 67, 110.5, 108, { size: 6.5, color: n >= k ? '#f9cb40' : '#e6d2aa' });
+      ctx.restore();
+    }
+    // la stanza vista con la pagina ancora a terra: un segno piccolo sulla minimappa
+    const m = statoRun.mappa;
+    const s = m && m.paginaH3 && m.perId && m.perId.get(m.paginaH3);
+    if (s && s.visitata && s.paginaH3 && !statoProveH3().prese.includes(s.paginaH3.piano) && statoRun.fase === 'in_gioco' && !maledizioneD('mappa')) {
+      const cell = 12, px = W - 118 + (s.cx - 1) * cell, py = 24 + (s.cy - 1) * cell;
+      ctx.save(); ctx.fillStyle = '#efe2c2'; ctx.fillRect(px + 7, py + 1, 3, 4); ctx.fillStyle = TINTE_H3.rosso; ctx.fillRect(px + 8, py + 4, 1, 1); ctx.restore();
+    }
+  } catch (err) { console.error('[h3] hud', err); }
+  return r;
+};
+
+if (typeof noteVoceE6 === 'function') {
+  const noteVoceBaseH3 = noteVoceE6;
+  /** Conto della notte di e6: una riga con le prove raccolte (solo per la notte in corso). */
+  noteVoceE6 = function (v, ...resto) {
+    const note = noteVoceBaseH3.call(this, v, ...resto);
+    try {
+      const P = statoRun.percorsoProveH3;
+      if (Array.isArray(note) && P && P.run === statoRun.numeroRun) note.push([TESTI_H3.prove.conto, `${proveH3()} di ${PROVE_H3.servono}`]);
+    } catch (_) { /* idem */ }
+    return note;
+  };
+}
 
 // ===========================================================================
 // 7. DIARIO (b8) E REGISTRO DI SCENA (d3)
@@ -799,6 +937,8 @@ Object.assign(window.__teatro.interni, {
   gregorioH3: Object.freeze({
     marcaCortile: marcaCortileH3,
     haProve: haProveH3,
+    get prove() { return { n: proveH3(), ...JSON.parse(JSON.stringify(statoProveH3())), pagina: statoRun.mappa ? statoRun.mappa.paginaH3 : undefined }; },
+    scegliPagina: scegliPaginaH3,
     /** Cortile della stanza corrente: fase, esito, Custode (stato IA, fase 2, vita). */
     get stato() {
       const st = statoRun.stanzaCorrente;
@@ -819,3 +959,6 @@ Object.assign(window.__teatro.interni, {
     },
   }),
 });
+
+// Il foglio di Gregorio si carica all'avvio: al Cortile è già pronto e non si vede lo scambio col disegno a codice.
+try { if (FOGLIO_H3.presente && typeof getSpriteTeatro === 'function') getSpriteTeatro(FOGLIO_H3.nome); } catch (_) { /* si disegna sul canvas */ }

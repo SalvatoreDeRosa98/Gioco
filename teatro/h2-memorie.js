@@ -281,7 +281,7 @@ const ASSUNTA_H2 = Object.freeze({
   daNotte: 1,
   // PNG facoltativo: assets/sprite_teatro/assunta.png, una riga di 4 pose (ferma, scialle, ventaglio, cesto),
   // celle 96×128, piedi in basso al centro. `png: true` quando l'autore lo aggiunge (evita la richiesta a vuoto).
-  png: Object.freeze({ attivo: false, nome: 'assunta', celle: 4, w: 34, h: 46 }),
+  png: Object.freeze({ attivo: true, nome: 'assunta', celle: 4, w: 34, h: 46 }), // foglio dell'autore dal 2026-11-12
   gesto: Object.freeze({ cicloTick: 420, scialle: Object.freeze([40, 110]), ventaglio: Object.freeze([230, 330]) }),
   tinte: Object.freeze({
     ombra: '#0a0604', panno: '#1f1510', scialle: '#2b1d16', frangia: '#4a3526', piega: '#3a2a1c',
@@ -713,3 +713,6 @@ window.__teatro.h2 = {
   get ultimaScatola() { return h2.ultimaScatola || 0; },
   TESTI: TESTI_H2,
 };
+
+// Il foglio di Assunta si carica all'avvio: in piazza è già pronto.
+try { if (ASSUNTA_H2.png.attivo && typeof getSpriteTeatro === 'function') getSpriteTeatro(ASSUNTA_H2.png.nome); } catch (_) { /* si disegna sul canvas */ }

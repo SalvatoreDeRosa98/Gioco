@@ -19,6 +19,7 @@
  *     dell'elemento (campo `alt` della tabella), non il contrario.
  *
  * SCELTE (2026-11-10, guardando ogni immagine nel gioco accanto al disegno a codice): 28 usate, 24 a codice.
+ * 2026-11-12 (i2): il portone della bottega rifatto dall'autore, Tonino e il banchetto: 33 usate, 21 a codice.
  * Le scartate restano collegate ma spente: se l'autore le rigenera basta rimettere `usa: true` nella tabella.
  * Le immagini scure prendono un filo di luce calda sul contorno (opzione `filo`), come le sagome «a ombre».
  *
@@ -107,10 +108,12 @@ const IMMAGINI_B9 = Object.freeze({
     motivo: 'macchia nera senza bordo né occhi: sul viso dei burattini non si distingue; la maschera a codice ha il cuoio bruno, il bordo chiaro e il naso a becco' },
   'trasf-ombra-velo': { celle: [1, 1], alt: 38, ancora: [0.5, 0.3], dove: 'b4 disegnaDietroB4 (dietro il burattino)', usa: false,
     motivo: 'un alone grigio con una spirale di tratti rossi e neri: dietro il burattino quasi non si vede e non si legge come un velo; i fili neri a codice bastano' },
-  // --- E. porta della bottega (hub: t4-hub-storia.js, di un'altra squadra) ---
-  'porta-bottega-chiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 1], dove: 'nessuno (hub)', usa: false, motivo: 'porta la scritta «LA BOTTEGA» ed è un abbozzo a tinte piatte; l\'hub è di un\'altra squadra' },
-  'porta-bottega-socchiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 1], dove: 'nessuno (hub)', usa: false, motivo: 'porta la scritta «LA BOTTEGA» ed è un abbozzo a tinte piatte; l\'hub è di un\'altra squadra' },
-  'porta-bottega-aperta': { celle: [1, 1], alt: 60, ancora: [0.5, 1], dove: 'nessuno (hub)', usa: false, motivo: 'porta la scritta «LA BOTTEGA» ed è un abbozzo a tinte piatte; l\'hub è di un\'altra squadra' },
+  // --- E. la piazza (hub: t4-hub-storia.js; il disegno è in i2-piazza.js) ---
+  'porta-bottega-chiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 0.99], dove: 'i2 portaImmagineI2 (sigilli, spranga, ferri e luce di b8 sopra)', usa: true },
+  'porta-bottega-socchiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 0.99], dove: 'i2 portaImmagineI2 (porta pronta: si può bussare)', usa: true },
+  'porta-bottega-aperta': { celle: [1, 1], alt: 60, ancora: [0.5, 0.99], dove: 'i2 portaImmagineI2 (fucina aperta)', usa: true },
+  'npc-tonino': { celle: [1, 2], alt: 50, ancora: [0.5, 0.984], dove: 'i2 disegnaToninoI2 (avvolge T.disegnaToninoC1; posa 0 indica, 1 lanterna)', usa: true },
+  'banchetto-tonino': { celle: [1, 1], alt: 62, ancora: [0.5, 0.984], dove: 'i2 banchettoImmagineI2 (specchiato: lo sgabello a sinistra)', usa: true },
   // --- G. interfaccia (b3-comandi-opzioni.js, a6-progressione.js) ---
   'ui-pad-simboli': { celle: [1, 13], alt: 10, ancora: [0.5, 0.5], dove: 'drawTextFit col gamepad: simboli al posto di Ⓐ Ⓑ Ⓧ Ⓨ ✥ [LT] [RB]…', usa: false,
     motivo: 'alla misura delle scritte (7-9 px) sono dischetti scuri con la lettera illeggibile: i caratteri Ⓐ Ⓑ Ⓧ Ⓨ si leggono meglio' },
@@ -120,8 +123,9 @@ const IMMAGINI_B9 = Object.freeze({
   'ui-cursore-mano': { celle: [1, 1], alt: 13, ancora: [0.5, 0.47], dove: 'b3 cursore del menu di pausa e delle Opzioni (cursoreB9)', usa: true },
   'ui-interruttore-lanterna': { celle: [1, 2], alt: 13, ancora: [0.5, 0.5], dove: 'b3 righe «spunta» delle Opzioni (interruttoreB9)', usa: false,
     motivo: 'in una riga alta 13 px la lanterna è una macchiolina e accesa/spenta si distinguono poco: la levetta a codice lo dice meglio' },
-  'segni-boss': { celle: [1, 4], alt: 11, ancora: [0.5, 0.5], dove: 'a6 disegnaSegniA6 (i quattro boss nuovi di b6)', usa: false,
-    motivo: 'sono solo quattro medaglioni su dieci segni: nella stessa riga stanno accanto a sei icone a pixel senza medaglione, e la riga si spezza in due stili' },
+  'segni-boss': { celle: [1, 10], alt: 11, ancora: [0.5, 0.5], usa: true,
+    dove: 'a6 disegnaSegniA6: dieci medaglioni (i quattro boss di b6, poi gatto, chiave, ago, campana, forbici, maschera); '
+      + 'i segni senza medaglione (Guardiano, Campanaro, Giudice) hanno un medaglione a codice nello stesso stile' },
 });
 // </tabella-immagini>
 
@@ -202,7 +206,10 @@ const CONFIG_B9 = Object.freeze({
   cartiglio: Object.freeze({ cornice: Object.freeze([116, 32, 1230, 1003]), rotolo: 112, veloRotoli: 'rgba(24, 6, 4, 0.3)' }), // riquadro scuro e larghezza di un rotolo, px d'origine
   tasto: Object.freeze({ capo: 62, bordo: Object.freeze([8, 8, 377, 89]) }), // estremi decorati (larghezza) e riquadro pieno del tasto, px d'origine
   cursore: Object.freeze({ altOpzioni: 15, altPausa: 21, spintaPausa: 3, dondolio: 0.8 }),
-  segni: Object.freeze({ segnoLumeB6: 0, segnoCignoB6: 1, segnoGiostraB6: 2, segnoSpolaB6: 3 }),
+  // sprite del segno (SEGNI_A6) → colonna del foglio segni-boss.png dell'autore (dieci medaglioni dal 2026-11-12)
+  segni: Object.freeze({ segnoLumeB6: 0, segnoCignoB6: 1, segnoGiostraB6: 2, segnoSpolaB6: 3, gatto: 4, chiave: 5, ago: 6, campana: 7, forbici: 8, cuoio: 9 }),
+  /** Medaglione a codice per i segni che non hanno ancora il loro nel foglio (stesso disco scuro con l'anello d'oro). */
+  medaglione: Object.freeze({ fondo: '#0a0604', anello: '#c9992e', spessore: 0.55, margine: 1.1, icona: 0.55 }),
 });
 
 // ===========================================================================
@@ -1066,7 +1073,7 @@ function cursoreB9(x, y, verso = 1) {
 
 if (typeof disegnaSegniA6 === 'function') {
   const disegnaSegniBaseB9 = disegnaSegniA6;
-  /** I segni di completamento: quelli dei quattro boss nuovi con l'immagine dell'autore, gli altri come prima. */
+  /** I segni di completamento: i medaglioni dell'autore; chi non ne ha uno lo riceve a codice, nello stesso stile. */
   disegnaSegniA6 = function disegnaSegniB9(cx, charId, s) {
     try {
       if (scenaB9('segni-boss')) {
@@ -1083,8 +1090,13 @@ if (typeof disegnaSegniA6 === 'function') {
             ctx.fillStyle = 'rgba(249, 203, 64, 0.22)';
             ctx.beginPath(); ctx.arc(x, y, Math.min(7, passo / 2 + 0.5), 0, TAU); ctx.fill();
           }
-          if (M[sg.sprite] === undefined || !timbraB9('segni-boss', 0, M[sg.sprite], x, y, { alt: Math.min(IMMAGINI_B9['segni-boss'].alt, passo) })) {
-            drawPixelSprite(SPRITE_OGGETTI[sg.sprite] || SPRITE_OGGETTI.spada, x, y, G.scala);
+          const alt = Math.min(IMMAGINI_B9['segni-boss'].alt, passo);
+          if (M[sg.sprite] === undefined || !timbraB9('segni-boss', 0, M[sg.sprite], x, y, { alt })) {
+            // nessun medaglione dell'autore per questo segno: lo stesso disco con l'anello, e dentro l'icona a punti
+            const D = CONFIG_B9.medaglione;
+            ctx.fillStyle = D.fondo; ctx.strokeStyle = D.anello; ctx.lineWidth = D.spessore;
+            ctx.beginPath(); ctx.arc(x, y, alt / 2 - D.margine, 0, TAU); ctx.fill(); ctx.stroke();
+            drawPixelSprite(SPRITE_OGGETTI[sg.sprite] || SPRITE_OGGETTI.spada, x, y, G.scala * D.icona);
           }
         }
         ctx.restore();
