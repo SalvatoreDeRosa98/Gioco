@@ -1,0 +1,260 @@
+#!/usr/bin/env node
+/*
+ * tools/qa-teatro-sottopalco.js — verifica Playwright della squadra h5 (gioco/teatro/h5-sottopalco.js):
+ *   1. botola socchiusa solo in stanze con le botole di d5, mai al primo piano del ciclo, una volta per notte;
+ *   2. «Calati sotto»: piccolo piano di tre stanze, nome del luogo SOTTOPALCO, minimappa solo del Sottopalco,
+ *      flag dello slot, luce del luogo di b2;
+ *   3. le tre stanze: nemici del luogo (marionetta che si rialza una volta, topi), contrappeso;
+ *   4. il Macchinista: barra e nome, sacchi, quinta, fessure spente nella seconda metà; premio e pezzo di copione;
+ *   5. la scala riporta nella stanza di partenza ripulita, porte aperte; mappa di sopra intatta;
+ *   6. ogni quartiere e ciclo 2; morte sotto = morte normale; nessun errore.
+ * Passi di logica contati (passi), niente attese a tempo reale per la logica.
+ *
+ * Uso: node tools/qa-teatro-sottopalco.js <file html> [prefisso screenshot]
+ */
+'use strict';
+const path = require('path');
+const fs = require('fs');
+const { chromium } = require('playwright');
+const { fermaCiclo, passi } = require('./qa-teatro-comune');
+const RADICE = path.resolve(__dirname, '..');
+const file = path.resolve(RADICE, process.argv[2] || 'gioco/teatro_marionette.html');
+const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evidence', 'teatro-h5');
+fs.mkdirSync(path.dirname(prefisso + '-x'), { recursive: true });
+const foto = (n) => `${prefisso}-${n}.png`;
+
+(async () => {
+  const browser = await chromium.launch();
+  const p = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const errori = [];
+  p.on('console', (m) => { if (m.type() === 'error') errori.push(m.text()); });
+  p.on('pageerror', (e) => errori.push(String(e)));
+  const esiti = [];
+  const ok = (caso, cond, dati) => esiti.push({ caso, ok: Boolean(cond), ...(dati !== undefined ? { dati } : {}) });
+  const disegna = () => p.evaluate(() => { try { disegnaFrame(16); } catch (e) { console.error(e); } });
+  const scatta = async (n) => { await p.evaluate(() => { try { a6.coda.length = 0; a6.notifica = null; } catch (_) { /* a6 */ } }); await disegna(); await p.screenshot({ path: foto(n) }); };
+
+  const avvio = async (pid = 'ferruccio') => {
+    await p.goto('file://' + file);
+    await p.evaluate(() => { localStorage.clear(); localStorage.setItem('ferruccio.teatro.sbloccaTutto', '1'); });
+    await p.reload();
+    await p.waitForTimeout(400);
+    await fermaCiclo(p, true);
+    await p.evaluate((id) => { statoRun.personaggioId = id; avviaPartitaConPersonaggio(id); }, pid);
+    await passi(p, 5);
+  };
+  /** Avvia il piano, porta Ferruccio in una stanza normale con le botole (forzate se mancano) e la ripulisce. */
+  const stanzaConBotole = (piano, forza) => p.evaluate(([pi, fz]) => {
+    if (statoRun.fase !== 'in_gioco') nuovaRun(false);
+    statoRun.fase = 'in_gioco';
+    avviaPiano(pi, false);
+    statoRun.siparioAttivo = null;
+    const I = window.__teatro.interni;
+    let st = statoRun.mappa.stanze.find((s) => s.botoleD5 && s.tipo === 'normale');
+    if (!st) { st = statoRun.mappa.stanze.find((s) => s.tipo === 'normale' && !s.quadriD5); I.d5.forzaBotole(st); }
+    entraInStanza(st, 'S');
+    statoRun.siparioAttivo = null;
+    for (const b of st.botoleD5.lista) { if (b.nemico) { st.nemici.push(b.nemico); b.nemico = null; } b.stato = 'chiusa'; }
+    for (const n of st.nemici) n.hp = 0;
+    const H5 = I.sottopalcoH5;
+    if (fz) H5.provaBotolaH5(st, true);
+    verificaStanzaPulita();
+    return { id: st.id, pulita: st.pulita, botola: st.botolaH5 || null, piano: statoRun.piano };
+  }, [piano, forza]);
+  const H = () => p.evaluate(() => window.__teatro.interni.sottopalcoH5.stato());
+  const errTeatro = () => p.evaluate(() => (window.ERRORI_TEATRO || []).length);
+
+  await avvio();
+  // ---- 1. regole della botola ----
+  const nomeD5 = await p.evaluate(() => Object.keys(window.__teatro.interni).filter((k) => k === "d5"));
+  ok('sonda di d5 presente', nomeD5.length > 0, nomeD5);
+  let r = await p.evaluate(() => { const H5 = window.__teatro.interni.sottopalcoH5; H5.h5.fatte.clear(); return H5.SOTTOPALCO_H5.probabilita; });
+  // piano 1: mai
+  await p.evaluate(() => { window.__teatro.interni.sottopalcoH5.h5.fatte.clear(); });
+  r = await stanzaConBotole(1, false);
+  ok('piano 1: nessuna botola socchiusa', !r.botola, r);
+  // piano 2 forzata
+  r = await stanzaConBotole(2, true);
+  ok('piano 2: botola socchiusa (forzata)', r.botola && r.pulita, r);
+  await p.evaluate(() => { const b = statoRun.stanzaCorrente.botolaH5; player.x = b.x + 24; player.y = b.y + 4; });
+  await scatta('1-botola');
+  // ---- 2. discesa ----
+  const sopra = await p.evaluate(() => ({ n: statoRun.mappa.stanze.length, id: statoRun.stanzaCorrente.id }));
+  await p.evaluate(() => interagisciStanza());
+  let h = await H();
+  const info = await p.evaluate(() => ({ n: statoRun.mappa.stanze.length, ids: statoRun.mappa.stanze.map((s) => s.id), luogo: statoRun.stanzaCorrente.nomeLuogoHud,
+    luce: luceLuogoB2() === window.__teatro.interni.sottopalcoH5.h5 ? 0 : luceLuogoB2(), flag: window.__teatro.t4qa.flag.sottopalcoH5, discese: window.__teatro.t4qa.flag.sottopalcoDisceseH5 }));
+  ok('discesa: nel Sottopalco', h.sotto, h);
+  ok('discesa: tre stanze nella mappa (solo il Sottopalco)', info.n === 3 && info.ids.every((x) => x.startsWith('h5-')), info);
+  ok('discesa: nome del luogo SOTTOPALCO', info.luogo === 'Sottopalco', info.luogo);
+  ok('discesa: luce del luogo di b2', info.luce && info.luce.luce < 1, info.luce);
+  ok('discesa: flag dello slot', info.flag === true && info.discese === 1, info);
+  await p.evaluate(() => { player.x = 300; player.y = 200; player.invuln = 9999; });
+  await passi(p, 80);
+  await scatta('2-sotto');
+  // ---- 3. nemici del luogo ----
+  const n1 = await p.evaluate(() => { const st = statoRun.stanzaCorrente; return { pulita: st.pulita, tipi: st.nemici.map((n) => n.tipo), fili: st.nemici.every((n) => n.senzaFili) }; });
+  ok('stanza 1: marionette e topi, porte chiuse', !n1.pulita && n1.tipi.includes('marionetta_h5') && n1.tipi.includes('topo_h5') && n1.fili, n1);
+  const mossi = await p.evaluate(() => statoRun.stanzaCorrente.nemici.map((n) => n.statoH5));
+  ok('stanza 1: IA del luogo attiva', mossi.every((s) => s && s !== 'avvio'), mossi);
+  let riz = await p.evaluate(() => {
+    const st = statoRun.stanzaCorrente;
+    for (const n of st.nemici) n.hp = 0;
+    verificaStanzaPulita();
+    return { pulita: st.pulita, cadute: st.sottopalcoH5.cadute.length };
+  });
+  ok('marionette cadute: la stanza non è ancora ripulita', !riz.pulita && riz.cadute > 0, riz);
+  await passi(p, 50);
+  await scatta('2b-cadute');
+  await passi(p, 60);
+  riz = await p.evaluate(() => { const st = statoRun.stanzaCorrente; return { vive: st.nemici.filter((n) => n.hp > 0).map((n) => [n.tipo, n.rialzataH5]), pulita: st.pulita }; });
+  ok('marionette: si rialzano una volta', riz.vive.length > 0 && riz.vive.every(([t, r]) => t === 'marionetta_h5' && r), riz);
+  riz = await p.evaluate(() => { const st = statoRun.stanzaCorrente; for (const n of st.nemici) n.hp = 0; verificaStanzaPulita(); return { pulita: st.pulita }; });
+  ok('seconda caduta: stanza ripulita', riz.pulita, riz);
+  await p.evaluate(() => { player.x = ARENA.x2 - 3; player.y = 188; });
+  await passi(p, 3);
+  const st2 = await p.evaluate(() => ({ id: statoRun.stanzaCorrente.id, pesi: statoRun.stanzaCorrente.sottopalcoH5.pesi.length }));
+  ok('porta est: stanza 2 con il contrappeso', st2.id === 'h5-sotto-2' && st2.pesi === 1, st2);
+  const colpo = await p.evaluate(async () => {
+    const w = statoRun.stanzaCorrente.sottopalcoH5.pesi[0];
+    for (const n of statoRun.stanzaCorrente.nemici) n.hp = 0;
+    player.invuln = 0; const hp0 = statoRun.hpHalf;
+    // Ferruccio sotto il punto più basso del dondolio
+    player.x = w.x; player.y = w.y;
+    return { hp0, x: w.x };
+  });
+  let preso = false;
+  for (let k = 0; k < 30 && !preso; k++) { await passi(p, 10); preso = await p.evaluate((h0) => statoRun.hpHalf < h0, colpo.hp0); }
+  ok('contrappeso: colpisce chi sta sotto quando passa basso', preso, colpo);
+  await p.evaluate(() => { statoRun.hpHalf = statoRun.maxHpHalf; player.invuln = 9999; });
+  // ---- 4. il Macchinista ----
+  await p.evaluate(() => {
+    const m = statoRun.mappa;
+    for (const s of m.stanze.slice(0, -1)) { for (const n of s.nemici) n.hp = 0; s.pulita = true; }
+    entraInStanza(m.stanze[m.stanze.length - 1], 'W');
+    player.invuln = 0; statoRun.hpHalf = statoRun.maxHpHalf = 40;
+  });
+  const boss = await p.evaluate(() => { const b = statoRun.stanzaCorrente.nemici.find((n) => n.boss); return b && { nome: b.nome, hp: b.hp, fili: b.senzaFili, stato: b.statoH5, tipoStanza: statoRun.stanzaCorrente.tipo }; });
+  ok('Macchinista: mezzo-boss con nome e barra, stanza normale, senza fili', boss && boss.nome === 'Il Macchinista' && boss.fili && boss.tipoStanza === 'normale', boss);
+  const visti = await p.evaluate(() => {
+    const st = statoRun.stanzaCorrente, b = st.nemici.find((n) => n.boss), S = st.sottopalcoH5, v = { stati: {}, sacchi: 0, quinta: 0, buio: 0 };
+    return { b: Boolean(b), S: Boolean(S), v };
+  });
+  ok('Macchinista presente', visti.b && visti.S);
+  // passi contati: raccoglie stati, sacchi, quinte
+  const oss = { stati: new Set(), sacchi: 0, quinta: false, buio: false, segni: 0, colpi: 0 };
+  let fotoLeva = false, fotoQuinta = false;
+  for (let k = 0; k < 90; k++) {
+    await passi(p, 6);
+    const o = await p.evaluate(() => {
+      const st = statoRun.stanzaCorrente, b = st.nemici.find((n) => n.boss), S = st.sottopalcoH5;
+      if (statoRun.hpHalf < 10) statoRun.hpHalf = 40;
+      return { stato: b && b.hp > 0 ? b.statoH5 : 'caduto', t: b ? b.tH5 : 0, sacchi: (S.sacchi || []).filter((x) => x.quota > 0).length, quinta: Boolean(S.quinta), buio: window.__teatro.interni.sottopalcoH5.h5.buioFessure > 0, hp: b ? b.hp : 0, max: b ? b.maxHp : 1 };
+    });
+    oss.stati.add(o.stato); oss.sacchi = Math.max(oss.sacchi, o.sacchi); oss.quinta = oss.quinta || o.quinta; oss.buio = oss.buio || o.buio;
+    if (!fotoLeva && o.stato === 'leva' && o.t > 30) { fotoLeva = true; await scatta('3a-leva'); }
+    if (!fotoQuinta && o.quinta) { fotoQuinta = true; await scatta('3b-quinta'); }
+    if (k === 45) await p.evaluate(() => { const b = statoRun.stanzaCorrente.nemici.find((n) => n.boss); b.hp = Math.floor(b.maxHp * 0.4); });
+    if (oss.buio && oss.quinta && oss.sacchi) break;
+  }
+  ok('Macchinista: tira la leva e un sacco cala dall\'alto', oss.stati.has('leva') && oss.sacchi > 0, [...oss.stati]);
+  ok('Macchinista: fa scorrere una quinta', oss.quinta, [...oss.stati]);
+  ok('Macchinista: seconda metà, gira la ruota e spegne le fessure', oss.stati.has('ruota') && oss.buio, [...oss.stati]);
+  await scatta('3c-buio');
+  const fin = await p.evaluate(() => {
+    const st = statoRun.stanzaCorrente;
+    for (const n of st.nemici) n.hp = 0;
+    verificaStanzaPulita();
+    const C = window.__teatro.interni.sottopalcoH5.SOTTOPALCO_H5.cassa;
+    player.x = C.x; player.y = C.y + 14;
+    const prima = Boolean(st.oggettoPiedistallo);
+    interagisciStanza();
+    const h = window.__teatro.interni.sottopalcoH5.h5;
+    return { pulita: st.pulita, prima, ogg: st.oggettoPiedistallo && st.oggettoPiedistallo.nome, copione: h.copione && h.copione.testo, buio: h.buioFessure };
+  });
+  ok('caduto il Macchinista: stanza ripulita, fessure di nuovo accese', fin.pulita && fin.buio === 0, fin);
+  ok('cassa: un oggetto sul piedistallo', !fin.prima && fin.ogg, fin);
+  const T5 = await p.evaluate(() => window.__teatro.interni.sottopalcoH5.TESTI_H5.copione);
+  ok('cassa: il pezzo di copione della prima discesa', fin.copione === T5[0] && T5.length >= 6 && T5.length <= 8, fin.copione);
+  await passi(p, 40);
+  await scatta('3d-cassa');
+  await p.evaluate(() => { player.invuln = 9999; });
+  await p.evaluate(() => { const S = window.__teatro.interni.sottopalcoH5.SOTTOPALCO_H5.scala; player.x = S.x; player.y = S.y + 6; });
+  await scatta('3-scala');
+  await p.evaluate(() => interagisciStanza());
+  h = await H();
+  const dopo = await p.evaluate(() => ({ n: statoRun.mappa.stanze.length, id: statoRun.stanzaCorrente.id, pulita: statoRun.stanzaCorrente.pulita, usata: statoRun.stanzaCorrente.botolaH5 && statoRun.stanzaCorrente.botolaH5.usata }));
+  ok('scala: di nuovo sopra, stessa stanza', !h.sotto && dopo.id === sopra.id && dopo.n === sopra.n, { sopra, dopo });
+  ok('scala: stanza ripulita, botola richiusa', dopo.pulita && dopo.usata, dopo);
+  // una volta per notte
+  r = await p.evaluate(() => { const H5 = window.__teatro.interni.sottopalcoH5; const st = statoRun.mappa.stanze.find((s) => s.tipo === 'normale' && !s.botolaH5); delete st.botolaH5; return H5.provaBotolaH5(Object.assign(st, { botoleD5: st.botoleD5 || { lista: [{ x: 300, y: 200, w: 26, h: 18 }] } })); });
+  ok('una volta per notte', r === false, r);
+  await passi(p, 10);
+  await scatta('4-ritorno');
+
+  // ---- 6. ogni quartiere, ciclo 2, stanze non ammesse, e6, seconda discesa, morte ----
+  const giro = async (piano) => {
+    await p.evaluate(() => { window.__teatro.interni.sottopalcoH5.h5.fatte.clear(); });
+    const a = await stanzaConBotole(piano, false); // probabilità vera: se non esce, la si forza (la regola è già provata)
+    if (!a.botola) await p.evaluate(() => window.__teatro.interni.sottopalcoH5.provaBotolaH5(statoRun.stanzaCorrente, true));
+    return p.evaluate(() => {
+      const H5 = window.__teatro.interni.sottopalcoH5;
+      const snap = localStorage.getItem(Object.keys(localStorage).find((k) => /ripresa|e6/i.test(k)) || '');
+      const sopra = statoRun.stanzaCorrente, quartiere = getQuartierePiano(statoRun.piano).nome;
+      const b = sopra.botolaH5; player.x = b.x; player.y = b.y + 8;
+      interagisciStanza();
+      const giu = H5.sottoH5(), nomi = statoRun.mappa.stanze.map((s) => s.id);
+      const errori = [];
+      for (const s of statoRun.mappa.stanze) {
+        entraInStanza(s, 'W');
+        for (let k = 0; k < 30; k++) { try { passoLogico(); disegnaFrame(16); } catch (e) { errori.push(String(e)); break; } }
+        for (const n of s.nemici) n.hp = 0;
+        for (let k = 0; k < 200 && !s.pulita; k++) { for (const n of s.nemici) n.hp = 0; passoLogico(); }
+      }
+      verificaStanzaPulita(); const dbg = { pul: statoRun.stanzaCorrente.pulita, id: statoRun.stanzaCorrente.id, hp: statoRun.stanzaCorrente.nemici.map((n) => n.hp), fase: statoRun.fase, pausa: statoRun.pausa, sip: Boolean(statoRun.siparioAttivo) };
+      H5.apriCassaH5();
+      const cop = H5.h5.copione && H5.h5.copione.testo;
+      const S = H5.SOTTOPALCO_H5.scala; player.x = S.x; player.y = S.y + 6;
+      interagisciStanza();
+      const snap2 = localStorage.getItem(Object.keys(localStorage).find((k) => /ripresa|e6/i.test(k)) || '');
+      return { quartiere, giu, nomi: nomi.length, su: !H5.sottoH5() && statoRun.stanzaCorrente === sopra && sopra.pulita, cop, errori, snapUguale: snap === snap2, ciclo: statoRun.ciclo, dbg };
+    });
+  };
+  const T = await p.evaluate(() => window.__teatro.interni.sottopalcoH5.TESTI_H5.copione);
+  const quartieri = [];
+  for (const piano of [2, 3, 4, 5, 6]) {
+    const g = await giro(piano);
+    quartieri.push(g.quartiere);
+    ok(`piano ${piano} (${g.quartiere}, ciclo ${g.ciclo}): giù, tre stanze, su, nessun errore`, g.giu && g.nomi === 3 && g.su && !g.errori.length, g);
+    ok(`piano ${piano}: istantanea di e6 non toccata dalla discesa`, g.snapUguale, g.snapUguale);
+    if (piano === 3) ok('seconda discesa: secondo pezzo di copione', g.cop === T[2] || g.cop === T[1], g.cop);
+  }
+  ok('quattro quartieri visitati', new Set(quartieri).size >= 4, quartieri);
+  r = await p.evaluate(() => {
+    const H5 = window.__teatro.interni.sottopalcoH5;
+    const fuori = statoRun.mappa.stanze.filter((s) => s.tipo !== 'normale').map((s) => { s.botoleD5 = s.botoleD5 || { lista: [{ x: 300, y: 200, w: 26, h: 18 }] }; return H5.provaBotolaH5(s, true); });
+    return fuori.every((x) => x === false);
+  });
+  ok('mai nelle stanze di boss o speciali', r);
+  // morte sotto: morte normale
+  await p.evaluate(() => { window.__teatro.interni.sottopalcoH5.h5.fatte.clear(); });
+  await stanzaConBotole(2, true);
+  const morte = await p.evaluate(() => {
+    const b = statoRun.stanzaCorrente.botolaH5; player.x = b.x; player.y = b.y + 8; interagisciStanza();
+    const giu = window.__teatro.interni.sottopalcoH5.sottoH5();
+    statoRun.graziaIngressoC = 0; player.invuln = 0; statoRun.hpHalf = 1;
+    subisciColpoGiocatore(2, 'prova', player.x, player.y);
+    return { giu, fase: statoRun.fase, hp: statoRun.hpHalf };
+  });
+  await passi(p, 30);
+  const dopoMorte = await p.evaluate(() => ({ fase: statoRun.fase, sotto: window.__teatro.interni.sottopalcoH5.sottoH5() }));
+  ok('morte sotto: morte normale', morte.giu && morte.hp <= 0 && dopoMorte.fase !== 'in_gioco', { morte, dopoMorte });
+
+  ok('nessun errore in console', errori.length === 0, errori.slice(0, 5));
+  ok('nessun errore in ERRORI_TEATRO', (await errTeatro()) === 0);
+  await browser.close();
+  const falliti = esiti.filter((e) => !e.ok);
+  for (const e of esiti) console.log(`${e.ok ? 'OK ' : 'NO '} ${e.caso}${e.ok ? '' : ' ' + JSON.stringify(e.dati)}`);
+  console.log(`\n${esiti.length - falliti.length}/${esiti.length} superati`);
+  process.exit(falliti.length ? 1 : 0);
+})().catch((e) => { console.error(e); process.exit(2); });
