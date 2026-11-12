@@ -1,4 +1,4 @@
-# Testi nuovi da approvare — seconda ondata e migliorie
+# Testi nuovi da approvare — seconda ondata, migliorie e trama (terza ondata)
 
 Generato da `tools/elenco-testi-teatro.js` il 2026-11-12: i testi sono letti dalle tabelle del gioco, quindi sono
 quelli che il giocatore vede. Dove compare **N** il gioco mette un numero. Per cambiare un testo basta dirlo
@@ -624,3 +624,275 @@ Dove: `gioco/teatro/t3-economia-salvataggi.js, d6-acquedotto.js, d7-rifiniture.j
 - 🪶 LO STORMO DEI RONDONI: sotto gli archi si alza tutto il nido di latta. Chi lo abbatte trova qualcosa in più.
 - I Fontanieri del Condotto
 - 🗡 I FONTANIERI DEL CONDOTTO: tre ombre fra le chiuse. Chi le stana trova qualcosa in più.
+
+## Agnese al telaio e il confronto con Taddeo (1)
+
+Dove: `gioco/teatro/h1-agnese-taddeo.js`
+
+- (tabella non trovata nel gioco)  
+  <sub>TESTI_H1</sub>
+
+## Rivelazioni dei boss, Bianca, Assunta (47)
+
+Dove: `gioco/teatro/h2-memorie.js`
+
+- Dal Gatto salgono una culla, un mestolo, una ninna nanna: ricordi di casa rubati alle famiglie. Le creature d'ombra custodiscono qualcosa di umano.  
+  <sub>TESTI_H2.rivelazioni.re-gatto</sub>
+- Le vespe portavano promesse mai mantenute dei lavori della Reggia. Desideri rubati, trascinati verso il palazzo.  
+  <sub>TESTI_H2.rivelazioni.regina-vespa</sub>
+- Il marmo custodiva gli operai morti al cantiere. Nel loro ricordo Gaetano non causò l'incidente: tentò di salvare gli altri.  
+  <sub>TESTI_H2.rivelazioni.colosso-statua</sub>
+- La guardiana dei telai si scioglie in fili di seta. Il Velo nasce dalla seta, e il giglio lega i guardiani a Donna Luciana.  
+  <sub>TESTI_H2.rivelazioni.tessitrice-pietra</sub>
+- Sotto il piombo c'era una guardia di Palazzo che fece il turno di notte per trent'anni. Il Velo gli ha lasciato solo la ronda.  
+  <sub>TESTI_H2.rivelazioni.capitano-guardia</sub>
+- L'ottone ricorda un garzone di bottega che affilava forbici in Via San Carlo. Tagliava i fili perché nessuno gli aveva insegnato a cucirli.  
+  <sub>TESTI_H2.rivelazioni.maestro-fucina</sub>
+- Era l'uomo che accendeva i lumi di Corso Trieste ogni sera. Quando Caserta si è addormentata, ha continuato ad accenderli per nessuno.  
+  <sub>TESTI_H2.rivelazioni.lampionaio</sub>
+- Il cigno era un giocattolo di latta, regalo di un padre a una bambina della Villa. La bambina è cresciuta; il cigno no.  
+  <sub>TESTI_H2.rivelazioni.cigno-latta</sub>
+- La giostra girava per i bambini della festa del 1845. Le lucciole sono le risate di quella sera, chiuse dentro.  
+  <sub>TESTI_H2.rivelazioni.giostra-lucciole</sub>
+- Il Guardiano ha la voce degli scalpellini dell'Acquedotto: tufo e acqua per la Reggia, e i nomi di chi c'è rimasto sotto.  
+  <sub>TESTI_H2.rivelazioni.guardiano-acque</sub>
+- Ferruccio guarda le anime salire. Non erano mostri. Erano quello che resta di Caserta, e lui li sta lasciando andare.  
+  <sub>TESTI_H2.svolta</sub>
+- Rivelazione:  
+  <sub>TESTI_H2.registroEtichetta</sub>
+- Quando N è caduto, ho capito una cosa: n  
+  <sub>TESTI_H2.diario(N)</sub>
+- Stanotte ho smesso di chiamarli mostri.  
+  <sub>TESTI_H2.diarioSvolta</sub>
+- Assunta  
+  <sub>TESTI_ASSUNTA_H2.nome</sub>
+- Tu si' 'o guaglione nuovo d'a piazza? Chella porta llà è 'a bottega 'e Gaetano, 'o fabbro. Da 'a sera d'a festa nun s'è aperta cchiù.  
+  <sub>TESTI_ASSUNTA_H2.notte1[0][1]</sub>
+- Ha ancora la coccarda della festa appuntata allo scialle. Il cesto è pieno di nastri che nessuno ha comprato.  
+  <sub>TESTI_ASSUNTA_H2.notte1[1][1]</sub>
+- 'A sera d'a festa, 'o '45, stèvemo tutte a ballà. Po' 'e lanterne se so' fermate, e Caserta s'è addurmuta cu 'o sorriso 'nfaccia.  
+  <sub>TESTI_ASSUNTA_H2.notti[0][0][1]</sub>
+- Gaetano batteva 'o fierro pure 'e notte. Tonino 'o sape: si 'o martello se sente ancora, vuol dire ca isso nun s'è scurdato.  
+  <sub>TESTI_ASSUNTA_H2.notti[1][0][1]</sub>
+- Vennevo nastri p' 'a festa. Mo' 'e tengo tutte cca: nisciuno se ricorda cchiù 'e se fa' bello.  
+  <sub>TESTI_ASSUNTA_H2.notti[2][0][1]</sub>
+- Hê rotto 'nu sigillo d' 'a bottega? Mamma mia... 'o giglio 'ncopp' 'a ceralacca è chillo d' 'a Reggia. Statte accorto, guagliò.  
+  <sub>TESTI_ASSUNTA_H2.sigilli12[0][1]</sub>
+- Tre sigilli 'nterra. Io 'o sento, 'o martello: tre colpe, 'na pausa, uno. Gaetano te sta aspettanno.  
+  <sub>TESTI_ASSUNTA_H2.sigilli3[0][1]</sub>
+- Sotto 'a fenesta 'e Mariella ce sta ancora scritta 'na filastrocca p' 'e criature. Nun l'aggio maie capita.  
+  <sub>TESTI_BIANCA_H2.piazza[0][1]</sub>
+- Vicino a una finestra si trova una vecchia filastrocca dedicata ai bambini.  
+  <sub>TESTI_BIANCA_H2.piazza[1][1]</sub>
+- «Quando il giglio si addormenta, la luna ascolta e non si lamenta.»  
+  <sub>TESTI_BIANCA_H2.piazza[2][1]</sub>
+- Non è ancora chiaro cosa significhi.  
+  <sub>TESTI_BIANCA_H2.piazza[3][1]</sub>
+- Una memoria conservata nel marmo mostra Gregorio mentre insegna a Bianca a fare un inchino. La bambina ride e sbaglia apposta.  
+  <sub>TESTI_BIANCA_H2.villa[0]</sub>
+- Bianca: «Ancora! Ma stavolta fallo tu!»  
+  <sub>TESTI_BIANCA_H2.villa[1]</sub>
+- Il ricordo svanisce quando Gregorio cerca di prenderle la mano. A terra resta un foglio: un disegno della Reggia ancora incompleta.  
+  <sub>TESTI_BIANCA_H2.villa[2]</sub>
+- Accanto ai telai si trova un piccolo fazzoletto ricamato con un giglio incompleto.  
+  <sub>TESTI_BIANCA_H2.leucio[0]</sub>
+- Agnese spiega che Donna Luciana chiedeva spesso di riprodurre quel disegno. Agnese: «Nessuno riusciva a farlo uguale.»  
+  <sub>TESTI_BIANCA_H2.leucio[1]</sub>
+- Agnese: «Forse perché era stato fatto da una bambina.»  
+  <sub>TESTI_BIANCA_H2.leucio[2]</sub>
+- Ferruccio trova una scatola musicale. La melodia è la stessa che si sente, debolmente, durante tutti gli incontri con le statue.  
+  <sub>TESTI_BIANCA_H2.reggia[0]</sub>
+- Donna Luciana la apre. «Aveva promesso di imparare a suonarla.» «Non ne ha avuto il tempo.»  
+  <sub>TESTI_BIANCA_H2.reggia[1]</sub>
+- Il Velo non è stato creato per riportare Bianca in vita. È stato creato perché sua madre non potesse più provare il dolore di averla perduta.  
+  <sub>TESTI_BIANCA_H2.reggia[2]</sub>
+- Il ricordo di Bianca viene liberato. Il giglio ricamato perde la sua luce.  
+  <sub>TESTI_BIANCA_H2.chiusura.uccisa[0]</sub>
+- Rimane un semplice fazzoletto.  
+  <sub>TESTI_BIANCA_H2.chiusura.uccisa[1]</sub>
+- Il giglio continua a brillare. La scatola musicale suona da sola.  
+  <sub>TESTI_BIANCA_H2.chiusura.risparmiata[0]</sub>
+- Donna Luciana ascolta una voce che ripete sempre lo stesso verso: «Quando il giglio si addormenta, la luna ascolta e non si lamenta.»  
+  <sub>TESTI_BIANCA_H2.chiusura.risparmiata[1]</sub>
+- [E] Guarda  
+  <sub>TESTI_BIANCA_H2.prompt</sub>
+- Bianca  
+  <sub>TESTI_BIANCA_H2.pagina.titolo</sub>
+- Una filastrocca sotto la finestra di Mariella: «Quando il giglio si addormenta, la luna ascolta e non si lamenta.»  
+  <sub>TESTI_BIANCA_H2.pagina.piazza</sub>
+- Un disegno della Reggia ancora incompleta, rimasto dopo il ricordo di Gregorio e della bambina che sbagliava apposta l'inchino.  
+  <sub>TESTI_BIANCA_H2.pagina.villa</sub>
+- Un piccolo fazzoletto con un giglio incompleto. Nessuno riusciva a farlo uguale.  
+  <sub>TESTI_BIANCA_H2.pagina.leucio</sub>
+- Una piccola scatola musicale. Aveva promesso di imparare a suonarla.  
+  <sub>TESTI_BIANCA_H2.pagina.reggia</sub>
+- Il giglio si è spento. È rimasto un fazzoletto.  
+  <sub>TESTI_BIANCA_H2.pagina.uccisa</sub>
+- Il giglio brilla ancora, e la scatola suona da sola.  
+  <sub>TESTI_BIANCA_H2.pagina.risparmiata</sub>
+
+## Gregorio, il Custode (Cortile d'Onore) (56)
+
+Dove: `gioco/teatro/h3-gregorio.js`
+
+- Gregorio, il Custode della Reggia  
+  <sub>TESTI_H3.nome</sub>
+- CORTILE D'ONORE — Gregorio sbarra la porta della Signora.  
+  <sub>TESTI_H3.banner.cortile</sub>
+- Il Custode solleva l'alabarda: guardagli le spalle e il giglio.  
+  <sub>TESTI_H3.banner.scontro</sub>
+- Il giglio sul petto del Custode lampeggia: la mano che lo tiene si fa più dura.  
+  <sub>TESTI_H3.banner.fase2</sub>
+- Il Cortile è libero: la porta della Signora è aperta.  
+  <sub>TESTI_H3.banner.via</sub>
+- Il mazzo di chiavi del Custode: +1 chiave. E sai dove colpire Donna Luciana.  
+  <sub>TESTI_H3.banner.dono</sub>
+- Il Custode è caduto: Donna Luciana combatte con rabbia. Nessuna guardia con lei.  
+  <sub>TESTI_H3.banner.lucianaRabbia</sub>
+- Donna Luciana sa che arrivi: le guardie ti aspettano. Il giglio sul petto: lì passano i fili.  
+  <sub>TESTI_H3.banner.lucianaGuardie</sub>
+- Cortile d'Onore · Notte · Poche luci calde  
+  <sub>TESTI_H3.ingresso[0][1]</sub>
+- Davanti al portone dello scalone un vecchio in armatura sbarra la strada. Mantello rosso, chiavi alla cintura, un giglio d'oro sul petto.  
+  <sub>TESTI_H3.ingresso[1][1]</sub>
+- Mostragli le prove  
+  <sub>TESTI_H3.scelta.dialogo</sub>
+- Cerca le prove nella giubba  
+  <sub>TESTI_H3.scelta.senzaProve</sub>
+- Attacca il Custode  
+  <sub>TESTI_H3.scelta.attacco</sub>
+- Le mani di Ferruccio cercano nella giubba qualcosa che non c'è. Poi stringono la spada.  
+  <sub>TESTI_H3.senzaProve[0][1]</sub>
+- Gregorio solleva immediatamente l'alabarda.  
+  <sub>TESTI_H3.attacco[0][1]</sub>
+- Un altro figlio viene a chiedermi conto dei padri.  
+  <sub>TESTI_H3.attacco[1][1]</sub>
+- Il combattimento comincia.  
+  <sub>TESTI_H3.attacco[2][1]</sub>
+- Ferruccio mostra il registro o il messaggio di Taddeo.  
+  <sub>TESTI_H3.dialogo[0][1]</sub>
+- Gregorio si ferma per un istante.  
+  <sub>TESTI_H3.dialogo[1][1]</sub>
+- Gaetano...  
+  <sub>TESTI_H3.dialogo[2][1]</sub>
+- Gli abbiamo fatto un torto terribile.  
+  <sub>TESTI_H3.dialogo[3][1]</sub>
+- Poi il giglio si illumina.  
+  <sub>TESTI_H3.dialogo[4][1]</sub>
+- Va' via. Prima che mi faccia ucciderti.  
+  <sub>TESTI_H3.dialogo[5][1]</sub>
+- Ferruccio non va via. Resta fermo, la spada bassa.  
+  <sub>TESTI_H3.dialogoResiste[0][1]</sub>
+- Il Custode pianta l'alabarda nel selciato e la tiene giù con tutte e due le mani. Il giglio lampeggia, una volta, due volte.  
+  <sub>TESTI_H3.dialogoResiste[1][1]</sub>
+- Il giglio che porta lei, sul petto. Lì passano i fili. Colpisci lì, prima che ti veda stanco.  
+  <sub>TESTI_H3.dialogoResiste[2][1]</sub>
+- Gregorio stacca dalla cintura il mazzo di chiavi e lo lascia cadere ai piedi di Ferruccio.  
+  <sub>TESTI_H3.dialogoResiste[3][1]</sub>
+- Al termine dello scontro, l'armatura si spezza. Gregorio cade sulle ginocchia.  
+  <sub>TESTI_H3.morte[0][1]</sub>
+- L'alabarda tocca il pavimento con un rumore metallico.  
+  <sub>TESTI_H3.morte[1][1]</sub>
+- Il giglio sul suo petto si incrina, poi si spezza.  
+  <sub>TESTI_H3.morte[2][1]</sub>
+- Dall'armatura esce una piccola luce azzurra.  
+  <sub>TESTI_H3.morte[3][1]</sub>
+- Per la prima volta, dietro l'elmo, c'è un volto umano.  
+  <sub>TESTI_H3.morte[4][1]</sub>
+- Non era un ordine del Re...  
+  <sub>TESTI_H3.morte[5][1]</sub>
+- Era una promessa fatta a mia moglie.  
+  <sub>TESTI_H3.morte[6][1]</sub>
+- Ho protetto la porta per tutta la vita...  
+  <sub>TESTI_H3.morte[8][1]</sub>
+- E non ho visto cosa entrava.  
+  <sub>TESTI_H3.morte[9][1]</sub>
+- Gregorio tende una mano verso il balcone.  
+  <sub>TESTI_H3.morte[10][1]</sub>
+- Lei... crede ancora di poterla salvare.  
+  <sub>TESTI_H3.morte[11][1]</sub>
+- Gregorio muore e la sua anima sale lentamente verso il balcone.  
+  <sub>TESTI_H3.morte[12][1]</sub>
+- Ferruccio solleva lo sguardo.  
+  <sub>TESTI_H3.morte[13][1]</sub>
+- Donna Luciana è lì.  
+  <sub>TESTI_H3.morte[14][1]</sub>
+- Gregorio?  
+  <sub>TESTI_H3.morte[15][1]</sub>
+- Avevi promesso che saremmo rimasti insieme.  
+  <sub>TESTI_H3.morte[16][1]</sub>
+- Sul selciato resta il mantello rosso, vuoto, sopra l'armatura.  
+  <sub>TESTI_H3.morte[17][1]</sub>
+- L'armatura si spezza. Gregorio cade sulle ginocchia.  
+  <sub>TESTI_H3.senzaScontro[1]</sub>
+- Tuo padre era innocente.  
+  <sub>TESTI_H3.morteSe.dialogo[1]</sub>
+- Anche io avevo paura di perderla.  
+  <sub>TESTI_H3.morteSe.attacco[1]</sub>
+- Nel Cortile d'Onore ho abbattuto il Custode. Sotto l'elmo c'era un vecchio.  
+  <sub>TESTI_H3.diario.attacco</sub>
+- Nel Cortile d'Onore il Custode ha abbassato l'alabarda. Mi ha lasciato le sue chiavi.  
+  <sub>TESTI_H3.diario.dialogo</sub>
+- «Un altro figlio viene a chiedermi conto dei padri.»  
+  <sub>TESTI_H3.registro.battuta</sub>
+- Custode della Reggia, rispettato dalle famiglie degli operai. Quando volle fermare sua moglie, lei lo legò al giglio d'oro.  
+  <sub>TESTI_H3.registro.aneddoto</sub>
+- Gregorio cade in ginocchio. Il giglio si spezza.  
+  <sub>TESTI_H3.breveAttaccoMorte[0][1]</sub>
+- Il Custode muore. Sul selciato resta il mantello rosso, vuoto.  
+  <sub>TESTI_H3.breveAttaccoMorte[2][1]</sub>
+- Il Custode guarda Ferruccio come chi lo aspettava. Pianta l'alabarda prima ancora di vedere le prove.  
+  <sub>TESTI_H3.breveDialogo[0][1]</sub>
+- Il giglio, sul petto di lei. Va'.  
+  <sub>TESTI_H3.breveDialogo[2][1]</sub>
+- Il mazzo di chiavi cade ai piedi di Ferruccio. Il giglio si spezza.  
+  <sub>TESTI_H3.breveDialogo[3][1]</sub>
+
+## Ritorno in piazza e ferri di Gaetano (22)
+
+Dove: `gioco/teatro/h4-ritorno-piazza.js`
+
+- TORNA IN PIAZZA [E]  
+  <sub>TESTI_H4.uscita</sub>
+- la notte non è finita  
+  <sub>TESTI_H4.uscitaSotto</sub>
+- con tutto: Maschere piene, la porta della bottega aspetta  
+  <sub>TESTI_H4.uscitaSotto2</sub>
+- ★ DONNA LUCIANA È CADUTA! Botola: NOTTE SENZA FINE (ciclo N) · A sinistra: torna in piazza, la notte non è finita  
+  <sub>TESTI_H4.banner(N)</sub>
+- In basso a sinistra: torna in piazza, la notte non è finita  
+  <sub>TESTI_H4.bannerAggiunta</sub>
+- Piazza Dante · la notte è ancora viva · Maschere piene  
+  <sub>TESTI_H4.rientro</sub>
+- Ancora 'n giro, guagliò? Stanotte 'a porta 'e Gaetano nun s'è chiusa. Vai, ca t'aspetta.  
+  <sub>TESTI_H4.tonino</sub>
+- LA NOTTE È VIVA · la porta della bottega aspetta  
+  <sub>TESTI_H4.piazzaViva</sub>
+- a destra: la botola, ciclo seguente  
+  <sub>TESTI_H4.piazzaVivaSotto</sub>
+- ☾ La notte è ancora viva: «Ricomincia notte» o «Menù personaggi» la chiudono  
+  <sub>TESTI_H4.pausa</sub>
+- NOTTE SENZA FINE · CICLO N — la notte continua  
+  <sub>TESTI_H4.continua(N)</sub>
+- I ferri di Gaetano  
+  <sub>TESTI_H4.rastrelliera.titolo</sub>
+- Prendi quanti ferri vuoi. Aiutano contro le Mani, ma ognuno pesa.  
+  <sub>TESTI_H4.rastrelliera.sotto</sub>
+- Ogni ferro preso: passo −N% per tutto lo scontro  
+  <sub>TESTI_H4.rastrelliera.costo(N)</sub>
+- Le Tenaglie — le mani restano a terra più a lungo  
+  <sub>TESTI_H4.rastrelliera.ferri.tenaglie</sub>
+- Il Punzone — scendono meno marionette  
+  <sub>TESTI_H4.rastrelliera.ferri.punzone</sub>
+- La Lima — le forbici s'aprono più piano  
+  <sub>TESTI_H4.rastrelliera.ferri.lima</sub>
+- [preso]  
+  <sub>TESTI_H4.rastrelliera.preso</sub>
+- [lasciato]  
+  <sub>TESTI_H4.rastrelliera.lasciato</sub>
+- Sali sopra la ribalta (N ferri)  
+  <sub>TESTI_H4.rastrelliera.sali(N)</sub>
+- [↑↓] scegli · [E] prendi/lascia · [Esc] resta in piazza  
+  <sub>TESTI_H4.rastrelliera.aiuto</sub>
+- N ferri di Gaetano · passo −N%  
+  <sub>TESTI_H4.scontro(N)</sub>

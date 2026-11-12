@@ -40,6 +40,12 @@ const PARTI = [
       'Tocca uno slot per sceglierlo, il cestino per cancellarlo',
       'Lo Stormo dei Rondoni', '🪶 LO STORMO DEI RONDONI: sotto gli archi si alza tutto il nido di latta. Chi lo abbatte trova qualcosa in più.',
       'I Fontanieri del Condotto', '🗡 I FONTANIERI DEL CONDOTTO: tre ombre fra le chiuse. Chi le stana trova qualcosa in più.'] },
+  // --- terza ondata (trama): le battute prese dalla bibbia sono parola per parola, le altre sono nuove ---
+  { titolo: 'Agnese al telaio e il confronto con Taddeo', dove: 'gioco/teatro/h1-agnese-taddeo.js', tabelle: ['TESTI_H1'] },
+  { titolo: 'Rivelazioni dei boss, Bianca, Assunta', dove: 'gioco/teatro/h2-memorie.js',
+    tabelle: ['TESTI_H2', 'TESTI_ASSUNTA_H2', 'TESTI_BIANCA_H2'] },
+  { titolo: 'Gregorio, il Custode (Cortile d\'Onore)', dove: 'gioco/teatro/h3-gregorio.js', tabelle: ['TESTI_H3'] },
+  { titolo: 'Ritorno in piazza e ferri di Gaetano', dove: 'gioco/teatro/h4-ritorno-piazza.js', tabelle: ['TESTI_H4'] },
 ];
 
 (async () => {
@@ -79,7 +85,7 @@ const PARTI = [
   await b.close();
 
   const righe = [
-    '# Testi nuovi da approvare — seconda ondata e migliorie',
+    '# Testi nuovi da approvare — seconda ondata, migliorie e trama (terza ondata)',
     '',
     `Generato da \`tools/elenco-testi-teatro.js\` il ${new Date().toISOString().slice(0, 10)}: i testi sono letti dalle tabelle del gioco, quindi sono`,
     'quelli che il giocatore vede. Dove compare **N** il gioco mette un numero. Per cambiare un testo basta dirlo',

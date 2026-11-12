@@ -747,6 +747,7 @@ function disegnaDettaglioD3(ap) {
       const extra = PRIMI_ATTORI_D3[c.voce.id] || {};
       const battuta = (typeof SCHEDE_B6 === 'object' && SCHEDE_B6[c.voce.id] && SCHEDE_B6[c.voce.id].presentazione) || extra.battuta || '';
       righe = v.battuti >= CONFIG_D3.rivelaPrimoAttore ? [battuta, extra.aneddoto || ''] : [TESTI_D3.primoAttoreIgnoto];
+      if (typeof rivelazioneRegistroH2 === 'function') righe = rivelazioneRegistroH2(c.voce.id, righe); // h2: la rivelazione letta
     } else if (c.tipo === 'trionfo') {
       const preso = trionfoOttenutoD3(c.voce.id);
       righe = [TESTI_D3.condizione(c.voce.quando)];

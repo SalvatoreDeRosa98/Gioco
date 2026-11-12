@@ -11237,10 +11237,10 @@ requestAnimationFrame(loop);
       voce('tonino', "Stanotte 'a luna sta cchiù 'a llà, uagliò. Rosa diceva ca quanno 'a luna cammina, quaccheduno se ricorda."),
     ]),
     festaiola: Object.freeze([
-      voce('festaiola', "Che bella festa, giovanotto! 'A Reggia è fernuta... nun s'ha da piangere cchiù."),
+      voce('assunta', "Che bella festa, giovanotto! 'A Reggia è fernuta... nun s'ha da piangere cchiù."),
       voce('didascalia', "Porta ancora la coccarda della festa del 1845. Sorride, e non sbatte mai le ciglia."),
     ]),
-    nomi: Object.freeze({ festaiola: 'Una festaiola' }),
+    nomi: Object.freeze({ assunta: 'Assunta', festaiola: 'Assunta' }), // h2: la festaiola ora è Assunta (vecchio id tenuto)
   });
   /** Presenza del NPC nuovo della notte 4 (cella libera della griglia dell'hub). */
   /**
@@ -11266,7 +11266,8 @@ requestAnimationFrame(loop);
     return ef;
   }
   T.effettoMedaglioneC = effettoMedaglioneC;
-  const PRESENZA_NUOVA_C = Object.freeze({ id: 'festaiola', tipo: 'npc', personaggio: 'festaiola', ancoraggio: 'hub:festaiola', c: 10, r: 5 });
+  T.dialogoH3 = { apri: apriDialogo, voce }; // h3: il Cortile d'Onore apre i suoi cartigli (teatro/h3-gregorio.js)
+  const PRESENZA_NUOVA_C = Object.freeze({ id: 'assunta', tipo: 'npc', personaggio: 'assunta', ancoraggio: 'hub:assunta', c: 10, r: 5 }); // h2: era la festaiola
   // --- C: fine ---
   const scena = (id) => DATI.scene.find((s) => s.id === id);
 
@@ -11347,7 +11348,7 @@ requestAnimationFrame(loop);
     // --- c1: quello che Tonino dice al posto delle battute solite (teatro/c1-partenza-segreta.js) ---
     if (npc === 'tonino' && typeof T.toninoParlaC1 === 'function' && T.toninoParlaC1(apriDialogo, voce)) return;
     // --- C: inizio --- novità delle notti: la festaiola (notte 4) e la battuta nuova di Tonino (notte 3)
-    if (npc === 'festaiola') { apriDialogo(TESTI_NOTTI_C.festaiola.slice()); return; }
+    if (npc === 'assunta' || npc === 'festaiola') { apriDialogo(typeof battuteAssuntaH2 === 'function' ? battuteAssuntaH2(S.flag, notteCorrente()) : TESTI_NOTTI_C.festaiola.slice()); return; } // h2
     if (npc === 'tonino' && notteC().battutaTonino && S.battutaNotteC !== notteCorrente()) {
       S.battutaNotteC = notteCorrente(); // una volta per notte, poi le ripetizioni di sempre
       apriDialogo(TESTI_NOTTI_C.tonino.slice());
@@ -11388,7 +11389,8 @@ requestAnimationFrame(loop);
   /** Presenze del modello risolte contro i flag (motore/mondo/hub.js › presenze()). */
   function presenze() {
     // --- C: dalla notte 4 un NPC nuovo (NOTTI_C.npcNuovo) ---
-    const base = notteC().npcNuovo === PRESENZA_NUOVA_C.id ? DATI.modelloHub.presenze.concat([PRESENZA_NUOVA_C]) : DATI.modelloHub.presenze;
+    const conAssunta = typeof assuntaInPiazzaH2 === 'function' ? assuntaInPiazzaH2(notteCorrente(), S.flag) : notteC().npcNuovo === 'festaiola'; // h2
+    const base = conAssunta ? DATI.modelloHub.presenze.concat([PRESENZA_NUOVA_C]) : DATI.modelloHub.presenze;
     return base.map((p) => ({
       ...p, ...pos(p.c, p.r),
       presente: valuta(p.quando, S.flag),
@@ -11900,7 +11902,7 @@ requestAnimationFrame(loop);
     for (const p of pr) {
       if (p.tipo !== 'npc') continue;
       if (p.personaggio === 'tonino') cose.push({ y: p.y + 10, d: () => disegnaTonino(p.x, p.y, t) });
-      else if (p.personaggio === 'festaiola') cose.push({ y: p.y + 10, d: () => disegnaFestaiolaC(p.x, p.y, t) }); // C
+      else if (p.personaggio === 'assunta') cose.push({ y: p.y + 10, d: () => { if (!(typeof disegnaAssuntaH2 === 'function' && disegnaAssuntaH2(ctx, p.x, p.y, t))) disegnaFestaiolaC(p.x, p.y, t); } }); // C, h2
       else if (I.PERSONAGGI_GIOCABILI[p.personaggio]) {
         cose.push({ y: p.y + 10, d: () => I.disegnaFerruccioPittorico(ctx, p.x, p.y, { scale: 0.9, tick: t, charInfo: I.PERSONAGGI_GIOCABILI[p.personaggio], flipX: p.x > 320, sinergie: {} }) });
       }
@@ -37470,6 +37472,7 @@ function disegnaDettaglioD3(ap) {
       const extra = PRIMI_ATTORI_D3[c.voce.id] || {};
       const battuta = (typeof SCHEDE_B6 === 'object' && SCHEDE_B6[c.voce.id] && SCHEDE_B6[c.voce.id].presentazione) || extra.battuta || '';
       righe = v.battuti >= CONFIG_D3.rivelaPrimoAttore ? [battuta, extra.aneddoto || ''] : [TESTI_D3.primoAttoreIgnoto];
+      if (typeof rivelazioneRegistroH2 === 'function') righe = rivelazioneRegistroH2(c.voce.id, righe); // h2: la rivelazione letta
     } else if (c.tipo === 'trionfo') {
       const preso = trionfoOttenutoD3(c.voce.id);
       righe = [TESTI_D3.condizione(c.voce.quando)];
@@ -37936,8 +37939,11 @@ function nuovaManoD1(lato, vita) {
 }
 
 /** Costruisce la stanza della graticcia (una sola stanza 'boss', senza porte). */
+/** Vita delle parti in questo scontro: la tabella, o quella scalata da h4 (opz.vita) quando si sale con la notte viva. */
+function vitaD1() { return (d1.opz && d1.opz.vita) || BURATTINAIO_D1.vita; }
+
 function creaStanzaD1() {
-  const V = BURATTINAIO_D1.vita;
+  const V = vitaD1();
   const capo = nuovaParteD1(BURATTINAIO_D1.idCapo, {
     nome: BURATTINAIO_D1.nome, x: 320, y: -600, airZ: 999, r: 1,
     hp: V.mano1 * 2 + V.mano2 * 2 + V.forbici + V.mano3, maxHp: V.mano1 * 2 + V.mano2 * 2 + V.forbici + V.mano3,
@@ -37957,12 +37963,14 @@ function scontroSopraLaRibaltaD1(opz = {}) {
     let veri = null;
     try { const s8 = window.__teatro.interni.finaliB8 && window.__teatro.interni.finaliB8.stato(); veri = s8 && s8.ferri; } catch (_) { veri = null; }
     if (opz.soloNumero) veri = null;
-    nuovaRun(false);
+    if (opz.ferri && typeof opz.ferri === 'object') veri = opz.ferri; // (h4) i ferri presi stanotte
+    d1.opz = opz;
+    if (!opz.notteViva) nuovaRun(false); // (h4) con la notte viva si sale con la dotazione della run
     statoRun.fase = 'in_gioco';
     statoRun.pausa = false;
     statoRun.siparioAttivo = null;
     statoRun.piano = BURATTINAIO_D1.pianoFinto;
-    statoRun.ciclo = 1;
+    if (!opz.notteViva) statoRun.ciclo = 1;
     const st = creaStanzaD1();
     statoRun.mappa = Object.assign({}, statoRun.mappa || {}, { stanze: [st] });
     Object.assign(d1, {
@@ -37985,7 +37993,7 @@ function scontroSopraLaRibaltaD1(opz = {}) {
 function avviaAttoD1(n) {
   d1.occhiT = tick; // ...e a ogni cambio d'atto
   const st = d1.stanza;
-  const V = BURATTINAIO_D1.vita;
+  const V = vitaD1();
   d1.atto = n;
   d1.turnoMano = 0;
   if (n === 1) st.nemici.push(nuovaManoD1(-1, V.mano1), nuovaManoD1(1, V.mano1));
@@ -38281,7 +38289,7 @@ function iaMarionetteD1() {
 // 8. REGIA: atti, vita del capo, vittoria
 // ===========================================================================
 function vitaRestanteD1() {
-  const V = BURATTINAIO_D1.vita;
+  const V = vitaD1();
   let somma = 0;
   for (const n of d1.stanza.nemici) if (n.bossId === 'gb-mano' || n.bossId === 'gb-forbici') somma += Math.max(0, n.hp);
   if (d1.atto <= 1) somma += V.mano2 * 2 + V.forbici + V.mano3;
@@ -38334,7 +38342,7 @@ function passoD1() {
     if (libero && d1.atto === 2 && m.faseD1 === 'riposo' && inAzione === 0 && mani.some((o) => o !== m && o.faseD1 === 'terra') && d1.pausaColpo <= 0) puo = true;
     const prima = m.faseD1;
     iaManoD1(m, puo);
-    if (prima === 'riposo' && m.faseD1 !== 'riposo') { d1.turnoMano++; d1.pausaColpo = BURATTINAIO_D1.pausaFraColpiTick[d1.atto - 1]; }
+    if (prima === 'riposo' && m.faseD1 !== 'riposo') { d1.turnoMano++; d1.pausaColpo = Math.round(BURATTINAIO_D1.pausaFraColpiTick[d1.atto - 1] * ((d1.opz && d1.opz.ritmo) || 1)); }
   }
   for (const f of forbici) iaForbiciD1(f, libero);
   iaMarionetteD1();
@@ -44423,6 +44431,2012 @@ Object.assign(window.__teatro.interni, {
     stato: () => ({ attiva: qualitaAutoAttivaE4(), media: e4.media, spenti: [...e4.spenti], toccati: [...e4.toccati], attesaAccendi: e4.attesaAccendi, cambi: e4.cambi }),
     azzera() { riaccendiTuttoE4(); e4.toccati.clear(); e4.media = null; e4.ultimo = null; e4.altaDa = null; e4.bassaDa = null; e4.attesaAccendi = QUALITA_E4.attesaAccendiMs; },
   },
+});
+
+</script>
+<script>
+/* teatro/h3-gregorio.js (incorporato da tools/teatro-release.js) */
+/*
+ * teatro/h3-gregorio.js — Squadra h3: Gregorio, il Custode della Reggia, e il Cortile d'Onore (bibbia §VII, §XVI sc. 1).
+ *
+ *   - IL CORTILE D'ONORE: al piano 4 di ogni ciclo (la Reggia con le torce) la stanza della catena principale
+ *     subito prima del boss diventa il Cortile (resta tipo 'normale' per il generatore: st.cortileH3). Notte,
+ *     poche luci calde, colonnato e balcone dipinti; Gregorio sbarra la porta della Signora.
+ *   - IL CONFRONTO: la prima volta nello slot, cartiglio di T4 con la scelta a due risposte che decide il flag
+ *     `gregorio` ('dialogo' | 'attacco', storia.json reggia.scelta-gregorio). Senza prove (prove≠vera: registro
+ *     bruciato e Taddeo accusato) la prima risposta è «cerca le prove nella giubba»: non trova niente e vale
+ *     'attacco' (storia.json reggia.attacco-senza-prove). Le notti dopo: niente scelta, la conseguenza in breve.
+ *   - ATTACCO: mezzo-boss «Gregorio, il Custode» con barra e nome, due fasi, IA a stati con tabella esplicita
+ *     (STATI_H3): spazzata d'alabarda, carica di spalla, mazzo di chiavi che chiama le Guardie di Piombo,
+ *     in fase 2 l'esitazione (abbassa l'alabarda, una forza la rialza). Poi la morte del Custode.
+ *   - DIALOGO: niente scontro (GREGORIO_H3.dialogoSenzaScontro; false = come la bibbia, si combatte lo stesso):
+ *     il Custode tiene giù l'alabarda contro il giglio, confessa, lascia il mazzo di chiavi (una chiave) e
+ *     il punto debole della Signora; poi muore.
+ *   - CONSEGUENZE su Donna Luciana: 'attacco' → più rabbia (spara e muove le Mani più spesso), niente guardie;
+ *     'dialogo' → le guardie ci sono (lei sa che arrivi), ma la prima fase prende più danno (il giglio).
+ *
+ * Agganci altrui: t4-hub-storia.js (T.dialogoH3 = apriDialogo e voce). Il resto avvolge function globali:
+ * generaMappaPiano, entraInStanza, verificaStanzaPulita, passoLogico, danneggiaNemico, disegnaStanzaPixelArt,
+ * disegnaBossPittorico. Foglio facoltativo: assets/sprite_teatro/gregorio.png (7 celle in una riga, vedi FOGLIO_H3).
+ * QA: tools/qa-teatro-gregorio.js. Sonda: window.__teatro.interni.gregorioH3.
+ */
+
+// ===========================================================================
+// TABELLE (numeri). Tick a 60 Hz, distanze in px, velocità in px/tick.
+// ===========================================================================
+/** Valori di gioco del Cortile e del Custode. */
+const GREGORIO_H3 = Object.freeze({
+  pianoNelCiclo: 4,
+  bossId: 'gregorio-custode',
+  dialogoSenzaScontro: true, // decisione aperta per l'autore: la bibbia fa combattere anche dopo le prove
+  hpBase: 300, // vita = hpBase × 1,45^(ciclo−1) (come i boss: 30-mappa.js popolaStanza)
+  speed: 0.55,
+  raggio: 17,
+  distanzaPorta: 46, // Gregorio sta a tanti px dalla porta della Signora
+  sogliaFase2: 0.5,
+  spazzata: Object.freeze({ portata: 70, apertura: 1.25, larghezzaLama: 0.34, durata: 16, durataFase2: 13 }),
+  carica: Object.freeze({ velocita: 4.1, velocitaFase2: 4.8, maxTick: 60 }),
+  chiavi: Object.freeze({ guardie: 2, guardieFase2: 2, maxGuardie: 3, hpGuardia: 26 }),
+  durate: Object.freeze({
+    avanza: 64, avanzaFase2: 44, alza: 34, alzaFase2: 26, riposo: 34, riposoFase2: 24,
+    abbassa: 40, abbassaFase2: 30, stordito: 54, storditoFase2: 40, chiavi: 46, esita: 56, cambiaFase: 60,
+  }),
+  sequenza: Object.freeze(['spazzata', 'carica', 'spazzata', 'chiavi']),
+  sequenzaFase2: Object.freeze(['carica', 'spazzata', 'esita', 'spazzata', 'carica', 'chiavi']),
+  anime: Object.freeze({ numero: 14, durataTick: 150, salita: 0.9 }),
+  bannerTick: 230,
+});
+
+/** Conseguenze sullo scontro con Donna Luciana. */
+const LUCIANA_H3 = Object.freeze({
+  bossId: 'donna-luciana',
+  rabbiaOgniTick: 3, // 'attacco': ogni N tick un tick in più ai suoi tempi di sparo e delle Mani (+33%)
+  guardieIngresso: 2, // 'dialogo': guardie all'ingresso
+  guardieMeta: 2, // 'dialogo': altre guardie quando scende sotto metà vita
+  puntoDebole: 1.4, // 'dialogo': danno × in prima fase
+  sogliaPuntoDebole: 0.5,
+  hpGuardia: 30,
+});
+
+/** Tabella esplicita degli stati del Custode: durata (chiave di GREGORIO_H3.durate), posa, stato seguente. */
+const STATI_H3 = Object.freeze({
+  inizio: 'avanza',
+  stati: Object.freeze({
+    avanza: Object.freeze({ durata: 'avanza', posa: 'cammina', poi: 'prossima' }),
+    alza: Object.freeze({ durata: 'alza', posa: 'anticipo', poi: 'spazzata' }),
+    spazzata: Object.freeze({ durata: null, posa: 'attacco', poi: 'riposo', ripeti: 'alza' }),
+    abbassa: Object.freeze({ durata: 'abbassa', posa: 'anticipo', poi: 'carica' }),
+    carica: Object.freeze({ durata: null, posa: 'attacco', poi: 'stordito' }),
+    stordito: Object.freeze({ durata: 'stordito', posa: 'colpito', poi: 'riposo' }),
+    chiavi: Object.freeze({ durata: 'chiavi', posa: 'anticipo', poi: 'riposo' }),
+    esita: Object.freeze({ durata: 'esita', posa: 'ginocchio', poi: 'alza' }),
+    riposo: Object.freeze({ durata: 'riposo', posa: 'fermo', poi: 'avanza' }),
+    cambiaFase: Object.freeze({ durata: 'cambiaFase', posa: 'colpito', poi: 'chiavi' }),
+  }),
+  mosse: Object.freeze({ spazzata: 'alza', carica: 'abbassa', chiavi: 'chiavi', esita: 'esita' }),
+});
+
+/** Foglio PNG facoltativo: una riga di 7 celle uguali, nell'ordine delle pose. */
+const FOGLIO_H3 = Object.freeze({
+  nome: 'gregorio', presente: false, // true quando assets/sprite_teatro/gregorio.png c'è (senza: niente richiesta, si disegna sul canvas)
+  altezza: 82, piedi: 8,
+  pose: Object.freeze(['fermo', 'cammina', 'anticipo', 'attacco', 'colpito', 'aTerra', 'ginocchio']),
+});
+
+/** Colori «a ombre». */
+const TINTE_H3 = Object.freeze({
+  ombra: '#120b08', ombra2: '#1f140e', lanterna: '#f0b45a', oro: '#e8b84a', oroVivo: '#fff1b8',
+  rosso: '#9e1b1b', rossoScuro: '#5c0f0f', azzurro: '#9fd8ff', notte: 'rgba(8, 10, 26, 0.38)',
+});
+
+/**
+ * TESTI A SCHERMO. [bibbia] = parola per parola da trama/ferruccio-bibbia.md (Violante → Donna Luciana);
+ * [storia] = da trama/storia.json; [nuovo] = da approvare dall'autore.
+ */
+const TESTI_H3 = Object.freeze({
+  nome: 'Gregorio, il Custode della Reggia', // [nuovo] barra del mezzo-boss
+  banner: Object.freeze({
+    cortile: 'CORTILE D\'ONORE — Gregorio sbarra la porta della Signora.', // [nuovo]
+    scontro: 'Il Custode solleva l\'alabarda: guardagli le spalle e il giglio.', // [nuovo]
+    fase2: 'Il giglio sul petto del Custode lampeggia: la mano che lo tiene si fa più dura.', // [nuovo]
+    via: 'Il Cortile è libero: la porta della Signora è aperta.', // [nuovo]
+    dono: 'Il mazzo di chiavi del Custode: +1 chiave. E sai dove colpire Donna Luciana.', // [nuovo]
+    lucianaRabbia: 'Il Custode è caduto: Donna Luciana combatte con rabbia. Nessuna guardia con lei.', // [nuovo]
+    lucianaGuardie: 'Donna Luciana sa che arrivi: le guardie ti aspettano. Il giglio sul petto: lì passano i fili.', // [nuovo]
+  }),
+  ingresso: Object.freeze([
+    ['didascalia', 'Cortile d\'Onore · Notte · Poche luci calde'], // [bibbia]
+    ['didascalia', 'Davanti al portone dello scalone un vecchio in armatura sbarra la strada. Mantello rosso, chiavi alla cintura, un giglio d\'oro sul petto.'], // [nuovo]
+  ]),
+  scelta: Object.freeze({
+    dialogo: 'Mostragli le prove', // [storia]
+    senzaProve: 'Cerca le prove nella giubba', // [nuovo]
+    attacco: 'Attacca il Custode', // [storia]
+  }),
+  senzaProve: Object.freeze([
+    ['didascalia', 'Le mani di Ferruccio cercano nella giubba qualcosa che non c\'è. Poi stringono la spada.'], // [storia, sommario]
+  ]),
+  attacco: Object.freeze([
+    ['didascalia', 'Gregorio solleva immediatamente l\'alabarda.'], // [bibbia]
+    ['gregorio', 'Un altro figlio viene a chiedermi conto dei padri.'], // [bibbia]
+    ['didascalia', 'Il combattimento comincia.'], // [bibbia]
+  ]),
+  dialogo: Object.freeze([
+    ['didascalia', 'Ferruccio mostra il registro o il messaggio di Taddeo.'], // [bibbia]
+    ['didascalia', 'Gregorio si ferma per un istante.'], // [bibbia]
+    ['gregorio', 'Gaetano...'], // [bibbia]
+    ['gregorio', 'Gli abbiamo fatto un torto terribile.'], // [bibbia]
+    ['didascalia', 'Poi il giglio si illumina.'], // [bibbia]
+    ['gregorio', 'Va\' via. Prima che mi faccia ucciderti.'], // [bibbia]
+  ]),
+  dialogoCombatte: Object.freeze([['didascalia', 'Il combattimento comincia.']]), // [bibbia]
+  dialogoResiste: Object.freeze([
+    ['didascalia', 'Ferruccio non va via. Resta fermo, la spada bassa.'], // [nuovo]
+    ['didascalia', 'Il Custode pianta l\'alabarda nel selciato e la tiene giù con tutte e due le mani. Il giglio lampeggia, una volta, due volte.'], // [nuovo]
+    ['gregorio', 'Il giglio che porta lei, sul petto. Lì passano i fili. Colpisci lì, prima che ti veda stanco.'], // [nuovo] il dono: l'informazione
+    ['didascalia', 'Gregorio stacca dalla cintura il mazzo di chiavi e lo lascia cadere ai piedi di Ferruccio.'], // [nuovo] il dono: la chiave
+  ]),
+  morte: Object.freeze([
+    ['didascalia', 'Al termine dello scontro, l\'armatura si spezza. Gregorio cade sulle ginocchia.'], // [bibbia]
+    ['didascalia', 'L\'alabarda tocca il pavimento con un rumore metallico.'], // [bibbia]
+    ['didascalia', 'Il giglio sul suo petto si incrina, poi si spezza.'], // [bibbia]
+    ['didascalia', 'Dall\'armatura esce una piccola luce azzurra.'], // [bibbia]
+    ['didascalia', 'Per la prima volta, dietro l\'elmo, c\'è un volto umano.'], // [bibbia, adattata: «il giocatore vede…»]
+    ['gregorio', 'Non era un ordine del Re...'], // [bibbia]
+    ['gregorio', 'Era una promessa fatta a mia moglie.'], // [bibbia]
+    ['?', ''], // segnaposto: la riga che dipende dal flag (TESTI_H3.morteSe)
+    ['gregorio', 'Ho protetto la porta per tutta la vita...'], // [bibbia]
+    ['gregorio', 'E non ho visto cosa entrava.'], // [bibbia]
+    ['didascalia', 'Gregorio tende una mano verso il balcone.'], // [bibbia]
+    ['gregorio', 'Lei... crede ancora di poterla salvare.'], // [bibbia]
+    ['didascalia', 'Gregorio muore e la sua anima sale lentamente verso il balcone.'], // [bibbia]
+    ['didascalia', 'Ferruccio solleva lo sguardo.'], // [bibbia]
+    ['didascalia', 'Donna Luciana è lì.'], // [bibbia]
+    ['luciana', 'Gregorio?'], // [bibbia]
+    ['luciana', 'Avevi promesso che saremmo rimasti insieme.'], // [bibbia]
+    ['didascalia', 'Sul selciato resta il mantello rosso, vuoto, sopra l\'armatura.'], // [bibbia, adattata]
+  ]),
+  senzaScontro: ['didascalia', 'L\'armatura si spezza. Gregorio cade sulle ginocchia.'], // [bibbia, ridotta]
+  morteSe: Object.freeze({
+    dialogo: ['gregorio', 'Tuo padre era innocente.'], // [bibbia]
+    attacco: ['gregorio', 'Anche io avevo paura di perderla.'], // [bibbia]
+  }),
+  // Le notti dopo la scelta: la conseguenza in breve.
+  diario: Object.freeze({ // [nuovo] una riga nel Diario di Ferruccio, la notte in cui ha incontrato il Custode
+    attacco: 'Nel Cortile d\'Onore ho abbattuto il Custode. Sotto l\'elmo c\'era un vecchio.',
+    dialogo: 'Nel Cortile d\'Onore il Custode ha abbassato l\'alabarda. Mi ha lasciato le sue chiavi.',
+  }),
+  registro: Object.freeze({ // [nuovo] scheda dei Primi attori (d3)
+    battuta: '«Un altro figlio viene a chiedermi conto dei padri.»', // [bibbia]
+    aneddoto: 'Custode della Reggia, rispettato dalle famiglie degli operai. Quando volle fermare sua moglie, lei lo legò al giglio d\'oro.', // [nuovo, dalla bibbia §VII]
+  }),
+  breveAttacco: Object.freeze([
+    ['gregorio', 'Un altro figlio viene a chiedermi conto dei padri.'], // [bibbia]
+  ]),
+  breveAttaccoMorte: Object.freeze([
+    ['didascalia', 'Gregorio cade in ginocchio. Il giglio si spezza.'], // [bibbia, ridotta]
+    ['gregorio', 'Anche io avevo paura di perderla.'], // [bibbia]
+    ['didascalia', 'Il Custode muore. Sul selciato resta il mantello rosso, vuoto.'], // [bibbia, ridotta]
+  ]),
+  breveDialogo: Object.freeze([
+    ['didascalia', 'Il Custode guarda Ferruccio come chi lo aspettava. Pianta l\'alabarda prima ancora di vedere le prove.'], // [nuovo]
+    ['gregorio', 'Gaetano...'], // [bibbia]
+    ['gregorio', 'Il giglio, sul petto di lei. Va\'.'], // [nuovo]
+    ['didascalia', 'Il mazzo di chiavi cade ai piedi di Ferruccio. Il giglio si spezza.'], // [nuovo]
+    ['gregorio', 'Tuo padre era innocente.'], // [bibbia]
+    ['didascalia', 'Il Custode muore. Sul selciato resta il mantello rosso, vuoto.'], // [bibbia, ridotta]
+  ]),
+});
+
+// ===========================================================================
+// STATO
+// ===========================================================================
+const h3 = { anime: [], tela: null, telaW: 0 };
+
+const flagH3 = () => { try { return (window.__teatro && window.__teatro.t4qa && window.__teatro.t4qa.flag) || {}; } catch (_) { return {}; } };
+function impostaFlagH3(parz) { try { const q = window.__teatro && window.__teatro.t4qa; if (q) q.impostaFlag(parz); } catch (err) { console.warn('[h3] flag', err); } }
+const pncH3 = (piano) => ((Math.max(1, piano || 1) - 1) % 4) + 1;
+
+/** true se Ferruccio ha qualcosa da mostrare al Custode (storia.json: prove = vera, o le sue due fonti). */
+function haProveH3(f = flagH3()) {
+  return f.prove === 'vera' || f.registro === 'conservato' || f.taddeo === 'perdonato';
+}
+
+/** Esito del Custode che vale per lo scontro con Donna Luciana: quello di questa run, altrimenti il flag. */
+function esitoGregorioH3() {
+  const r = statoRun.gregorioH3;
+  if (r && r.run === statoRun.numeroRun && r.esito) return r.esito;
+  return null;
+}
+
+function apriH3(righe, opz = {}) {
+  const T = window.__teatro && window.__teatro.dialogoH3;
+  if (!T) return false;
+  T.apri(righe.map(([chi, testo]) => T.voce(chi, testo)), opz);
+  return true;
+}
+
+// ===========================================================================
+// 1. LA MAPPA: il Cortile sulla catena, subito prima del boss del piano 4
+// ===========================================================================
+/** Marca come Cortile la stanza che dà sul boss (piano 4 del ciclo). @returns {object|null} la stanza */
+function marcaCortileH3(m, piano) {
+  if (!m || pncH3(piano) !== GREGORIO_H3.pianoNelCiclo) return null;
+  const boss = m.stanze.find((s) => s.tipo === 'boss');
+  if (!boss) return null;
+  const [lato, idPrec] = Object.entries(boss.porte)[0] || [];
+  const prec = idPrec && m.stanze.find((s) => s.id === idPrec);
+  if (!prec || prec.tipo !== 'normale') return null;
+  const opp = { N: 'S', S: 'N', E: 'W', W: 'E' };
+  prec.cortileH3 = { verso: opp[lato], fase: 'attesa', risolto: false, daAprire: true };
+  prec.nemici = [];
+  prec.ostacoli = [];
+  prec.temaB7 = null;
+  prec.muroSegreto = null;
+  delete prec.canaliD6;
+  delete prec.quadriD5; // niente cambio di scena né botole: il Cortile ha la sua scena
+  delete prec.botoleD5;
+  return prec;
+}
+
+const generaMappaPianoBaseH3 = generaMappaPiano;
+generaMappaPiano = function (piano, ...resto) {
+  const m = generaMappaPianoBaseH3.call(this, piano, ...resto);
+  try { marcaCortileH3(m, piano); } catch (err) { console.error('[h3] mappa', err); }
+  return m;
+};
+
+/** Punto davanti alla porta della Signora. */
+function postoGregorioH3(C) {
+  const d = GREGORIO_H3.distanzaPorta;
+  if (C.verso === 'N') return { x: 320, y: ARENA.y1 + d };
+  if (C.verso === 'S') return { x: 320, y: ARENA.y2 - d };
+  if (C.verso === 'W') return { x: ARENA.x1 + d, y: 188 };
+  return { x: ARENA.x2 - d, y: 188 };
+}
+
+// ===========================================================================
+// 2. IL CONFRONTO
+// ===========================================================================
+const entraInStanzaBaseH3 = entraInStanza;
+entraInStanza = function (stanza, daLato, ...resto) {
+  const r = entraInStanzaBaseH3.call(this, stanza, daLato, ...resto);
+  try {
+    if (stanza && statoRun.stanzaCorrente === stanza) {
+      if (stanza.cortileH3) {
+        const C = stanza.cortileH3;
+        if (!C.figura) C.figura = { ...postoGregorioH3(C), posa: 'fermo' };
+        if (!C.risolto) mostraBanner(TESTI_H3.banner.cortile, GREGORIO_H3.bannerTick);
+      } else if (stanza.tipo === 'boss' && !stanza.pulita) preparaLucianaH3(stanza);
+    }
+  } catch (err) { console.error('[h3] ingresso', err); }
+  return r;
+};
+
+/** Apre la scena del Cortile (prima volta: scelta; notti dopo: la conseguenza in breve). */
+function apriConfrontoH3(st) {
+  const C = st.cortileH3;
+  C.daAprire = false;
+  const f = flagH3();
+  if (f.gregorio === 'attacco' || f.gregorio === 'dialogo') {
+    C.breve = true;
+    if (f.gregorio === 'attacco') apriH3(TESTI_H3.breveAttacco, { poi: () => avviaScontroH3(st) });
+    else if (GREGORIO_H3.dialogoSenzaScontro) apriH3(TESTI_H3.breveDialogo, { poi: () => doniH3(st, 'dialogo') });
+    else apriH3(TESTI_H3.breveAttacco, { poi: () => avviaScontroH3(st) });
+    return;
+  }
+  const prove = haProveH3(f);
+  const opzioni = [
+    { valore: prove ? 'dialogo' : 'senzaProve', etichetta: prove ? TESTI_H3.scelta.dialogo : TESTI_H3.scelta.senzaProve },
+    { valore: 'attacco', etichetta: TESTI_H3.scelta.attacco },
+  ];
+  apriH3(TESTI_H3.ingresso, { scelta: { ancoraggio: 'h3:cortile', ordine: 0,
+    scelta: { flag: null, opzioni, alScegliere: (v) => sceltaH3(st, v) } } });
+}
+
+/** La scelta del Cortile: resta nello slot (flag `gregorio` di T4). */
+function sceltaH3(st, valore) {
+  const C = st.cortileH3;
+  if (valore === 'dialogo') {
+    impostaFlagH3({ gregorio: 'dialogo' });
+    C.esito = 'dialogo';
+    if (GREGORIO_H3.dialogoSenzaScontro) apriH3(TESTI_H3.dialogo.concat(TESTI_H3.dialogoResiste), { poi: () => avviaMorteH3(st) });
+    else apriH3(TESTI_H3.dialogo.concat(TESTI_H3.dialogoCombatte), { poi: () => avviaScontroH3(st) });
+    return;
+  }
+  impostaFlagH3({ gregorio: 'attacco' });
+  C.esito = 'attacco';
+  const righe = valore === 'senzaProve' ? TESTI_H3.senzaProve.concat(TESTI_H3.attacco) : TESTI_H3.attacco;
+  apriH3(righe, { poi: () => avviaScontroH3(st) });
+}
+
+// ===========================================================================
+// 3. LO SCONTRO (mezzo-boss, due fasi)
+// ===========================================================================
+function nuovaGuardiaH3(st, x, y, hp, idx) {
+  const p = typeof puntoLontanoDallePorteC === 'function'
+    ? puntoLontanoDallePorteC(x, y, porteVietateC(st).concat([{ x: player.x, y: player.y }])) : { x, y };
+  return { id: `h3-guardia-${tick}-${idx}`, tipo: 'guardia', patternMob: 'guardia', nome: 'Guardia di Piombo', ...p,
+    vx: 0, vy: 0, r: 11, hp, maxHp: hp, speed: 0.98, shootCd: 50 + idx * 17, boss: false, flash: 6, burnTicks: 0,
+    stunTicks: 0, state: 'idle', stateTimer: 20, maskOpen: false, guardiaH3: true };
+}
+
+/** Gregorio entra in scena come nemico (barra del boss, IA di questo file). */
+function avviaScontroH3(st) {
+  const C = st.cortileH3;
+  const ciclo = Math.floor((statoRun.piano - 1) / 4) + 1;
+  const hp = Math.round(GREGORIO_H3.hpBase * Math.pow(1.45, ciclo - 1));
+  const p = C.figura || postoGregorioH3(C);
+  C.fase = 'scontro';
+  st.nemici.push({ id: `${st.id}-gregorio`, bossId: GREGORIO_H3.bossId, nome: ciclo > 1 ? `${TESTI_H3.nome} (Ciclo ${ciclo})` : TESTI_H3.nome,
+    tipo: 'guardia', pattern: 'alabarda_custode', boss: true, mezzoBossH3: true, x: p.x, y: p.y, vx: 0, vy: 0, airZ: 0,
+    hp, maxHp: hp, speed: GREGORIO_H3.speed, r: GREGORIO_H3.raggio, flash: 0, burnTicks: 0, stunTicks: 0, shootCd: 999,
+    phaseTick: 0, state: 'idle', stateTimer: 0 });
+  C.figura = null;
+  mostraBanner(TESTI_H3.banner.scontro, GREGORIO_H3.bannerTick);
+}
+
+const valoreH3 = (chiave, f2) => {
+  const D = GREGORIO_H3.durate;
+  return f2 && D[chiave + 'Fase2'] != null ? D[chiave + 'Fase2'] : D[chiave];
+};
+const angoloAH3 = (n) => Math.atan2((player.y - 6) - (n.y - 6), player.x - n.x);
+const diffAngH3 = (a, b) => { let d = a - b; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; };
+
+function entraStatoH3(n, stato, st) {
+  const riga = STATI_H3.stati[stato];
+  const f2 = Boolean(n.fase2H3);
+  n.statoH3 = stato; n.tH3 = 0;
+  n.timerH3 = riga.durata ? valoreH3(riga.durata, f2) : 1;
+  const S = GREGORIO_H3.spazzata, K = GREGORIO_H3.carica;
+  if (stato === 'alza') { n.angH3 = angoloAH3(n); if (n.ripetiH3 == null || n.ripetiH3 < 0) n.ripetiH3 = f2 ? 1 : 0; }
+  else if (stato === 'spazzata') { n.versoH3 = (n.versoH3 || 1) * -1; n.timerH3 = f2 ? S.durataFase2 : S.durata; n.colpitoH3 = false; }
+  else if (stato === 'abbassa') n.angH3 = angoloAH3(n);
+  else if (stato === 'carica') { n.angH3 = angoloAH3(n); n.timerH3 = K.maxTick; }
+  else if (stato === 'cambiaFase') { n.flash = 14; scuoti(FEEL.scossa.schiantoCapitano); statoRun.ondeEsplosione.push({ x: n.x, y: n.y - 12, r: 8, maxR: 60, tick: 0 }); }
+  if (stato === 'riposo') n.ripetiH3 = -1;
+  if (!st) return;
+}
+
+function prossimoStatoH3(n) {
+  const riga = STATI_H3.stati[n.statoH3];
+  if (riga.ripeti && n.ripetiH3 > 0) { n.ripetiH3--; return riga.ripeti; }
+  if (riga.poi !== 'prossima') return riga.poi;
+  const seq = n.fase2H3 ? GREGORIO_H3.sequenzaFase2 : GREGORIO_H3.sequenza;
+  const mossa = seq[(n.indiceH3 || 0) % seq.length];
+  n.indiceH3 = (n.indiceH3 || 0) + 1;
+  return STATI_H3.mosse[mossa];
+}
+
+function chiamaGuardieH3(n, st) {
+  const K = GREGORIO_H3.chiavi;
+  const vive = st.nemici.filter((m) => !m.boss && m.hp > 0).length;
+  const quante = Math.min(n.fase2H3 ? K.guardieFase2 : K.guardie, K.maxGuardie - vive);
+  const ciclo = Math.floor((statoRun.piano - 1) / 4) + 1;
+  for (let k = 0; k < quante; k++) {
+    st.nemici.push(nuovaGuardiaH3(st, n.x + (k === 0 ? -64 : 64), n.y + 30, Math.round(K.hpGuardia * Math.pow(1.45, ciclo - 1)), k));
+  }
+  try { AudioSys.playCampana(); } catch (_) { /* audio facoltativo */ }
+}
+
+/** Un tick dell'IA del Custode (solo nei tick in cui la base ha fatto agire il boss). */
+function iaGregorioH3(n, st) {
+  if (!n.statoH3) { n.indiceH3 = 0; n.versoH3 = 1; entraStatoH3(n, STATI_H3.inizio, st); }
+  if (!n.fase2H3 && n.hp < n.maxHp * GREGORIO_H3.sogliaFase2) {
+    n.fase2H3 = true; n.ripetiH3 = -1;
+    mostraBanner(TESTI_H3.banner.fase2, GREGORIO_H3.bannerTick);
+    entraStatoH3(n, 'cambiaFase', st);
+  }
+  const f2 = n.fase2H3;
+  const lim = (v, a, b) => Math.max(a, Math.min(b, v));
+  const s = n.statoH3;
+  if (s === 'avanza') {
+    const a = Math.atan2(player.y - n.y, player.x - n.x);
+    const v = n.speed * (f2 ? 1.3 : 1);
+    n.x = lim(n.x + Math.cos(a) * v, ARENA.x1 + 20, ARENA.x2 - 20);
+    n.y = lim(n.y + Math.sin(a) * v, ARENA.y1 + 20, ARENA.y2 - 20);
+    // da vicino non aspetta: alza subito l'alabarda
+    if (Math.hypot(player.x - n.x, player.y - n.y) < GREGORIO_H3.spazzata.portata * 0.8 && n.tH3 > 18) n.timerH3 = Math.min(n.timerH3, 1);
+  } else if (s === 'alza' || s === 'abbassa') {
+    n.angH3 += diffAngH3(angoloAH3(n), n.angH3) * 0.08; // segue il giocatore con lo sguardo, lento
+  } else if (s === 'spazzata') {
+    const S = GREGORIO_H3.spazzata;
+    const durata = f2 ? S.durataFase2 : S.durata;
+    const k = n.tH3 / Math.max(1, durata - 1);
+    n.lamaH3 = n.angH3 - n.versoH3 * S.apertura + n.versoH3 * 2 * S.apertura * k;
+    const ap = angoloAH3(n), d = Math.hypot(player.x - n.x, (player.y - 6) - (n.y - 6));
+    if (!n.colpitoH3 && d < S.portata && Math.abs(diffAngH3(ap, n.lamaH3)) < S.larghezzaLama && player.invuln <= 0 && statoRun.hpHalf > 0) {
+      n.colpitoH3 = true;
+      subisciColpoGiocatore(2, 'l\'alabarda del Custode', n.x, n.y);
+    }
+  } else if (s === 'carica') {
+    const K = GREGORIO_H3.carica;
+    const v = f2 ? K.velocitaFase2 : K.velocita;
+    n.x = lim(n.x + Math.cos(n.angH3) * v, ARENA.x1 + 18, ARENA.x2 - 18);
+    n.y = lim(n.y + Math.sin(n.angH3) * v, ARENA.y1 + 18, ARENA.y2 - 18);
+    const muro = n.x <= ARENA.x1 + 19 || n.x >= ARENA.x2 - 19 || n.y <= ARENA.y1 + 19 || n.y >= ARENA.y2 - 19;
+    if (muro) { scuoti(FEEL.scossa.schiantoCapitano); n.timerH3 = 0; }
+  } else if (s === 'chiavi' && n.tH3 === valoreH3('chiavi', f2) - 8) chiamaGuardieH3(n, st);
+  n.tH3++;
+  if (--n.timerH3 <= 0) entraStatoH3(n, prossimoStatoH3(n), st);
+}
+
+const passoLogicoBaseH3 = passoLogico;
+passoLogico = function (...args) {
+  const st = statoRun.stanzaCorrente;
+  let attesa = null;
+  const inGioco = Boolean(st) && statoRun.fase === 'in_gioco';
+  try {
+    if (inGioco && st.cortileH3) {
+      const C = st.cortileH3;
+      if (C.daAprire && !statoRun.siparioAttivo && !statoRun.pausa && !(window.__teatro.t4qa && window.__teatro.t4qa.dialogo)) apriConfrontoH3(st);
+      const n = st.nemici.find((x) => x.bossId === GREGORIO_H3.bossId && x.hp > 0);
+      if (n) attesa = [n, n.phaseTick || 0];
+    } else if (inGioco && st.tipo === 'boss') rabbiaLucianaH3(st);
+  } catch (err) { console.error('[h3] passo', err); }
+  const r = passoLogicoBaseH3.apply(this, args);
+  if (attesa) {
+    const [n, prima] = attesa;
+    if (statoRun.stanzaCorrente === st && statoRun.fase === 'in_gioco' && statoRun.hpHalf > 0 && n.hp > 0 && (n.phaseTick || 0) !== prima) {
+      try { iaGregorioH3(n, st); } catch (err) { console.error('[h3] ia', err); }
+    }
+  }
+  try { if (inGioco && st.tipo === 'boss') guardieMetaLucianaH3(st); } catch (err) { console.error('[h3] guardie', err); }
+  return r;
+};
+
+// ===========================================================================
+// 4. LA MORTE DEL CUSTODE E IL DONO
+// ===========================================================================
+const verificaStanzaPulitaBaseH3 = verificaStanzaPulita;
+verificaStanzaPulita = function (...args) {
+  const st = statoRun.stanzaCorrente;
+  try {
+    if (st && st.cortileH3 && !st.cortileH3.risolto) {
+      const C = st.cortileH3;
+      if (C.fase === 'scontro' && !st.nemici.some((n) => n.bossId === GREGORIO_H3.bossId && n.hp > 0)) avviaMorteH3(st);
+      return undefined; // finché la scena non è chiusa, le porte restano chiuse
+    }
+  } catch (err) { console.error('[h3] verifica', err); }
+  return verificaStanzaPulitaBaseH3.apply(this, args);
+};
+
+/** Il Custode cade: la scena della morte (lunga la prima volta, breve dopo). */
+function avviaMorteH3(st) {
+  const C = st.cortileH3;
+  if (C.fase === 'morte' || C.risolto) return;
+  const g = st.nemici.find((n) => n.bossId === GREGORIO_H3.bossId);
+  const pos = g ? { x: g.x, y: g.y } : (C.figura || postoGregorioH3(C));
+  for (const n of st.nemici) n.hp = 0; // le guardie si fermano con lui
+  statoRun.proiettiliNemici = [];
+  C.fase = 'morte';
+  C.figura = { x: pos.x, y: pos.y, posa: 'ginocchio' };
+  const esito = C.esito || flagH3().gregorio || 'attacco';
+  C.esito = esito;
+  let righe;
+  if (C.breve) righe = TESTI_H3.breveAttaccoMorte;
+  else {
+    righe = TESTI_H3.morte.map((r) => (r[0] === '?' ? TESTI_H3.morteSe[esito] || TESTI_H3.morteSe.attacco : r));
+    if (!g) righe = [TESTI_H3.senzaScontro].concat(righe.slice(1)); // dialogo senza scontro: niente «al termine dello scontro»
+  }
+  apriH3(righe, { poi: () => chiudiCortileH3(st) });
+}
+
+/** Il dono del ramo «dialogo» (breve: la scena e il dono insieme). */
+function doniH3(st, esito) {
+  const C = st.cortileH3;
+  C.esito = esito;
+  C.figura = { ...(C.figura || postoGregorioH3(C)), posa: 'ginocchio' };
+  chiudiCortileH3(st);
+}
+
+function chiudiCortileH3(st) {
+  const C = st.cortileH3;
+  if (C.risolto) return;
+  C.risolto = true;
+  C.fase = 'fine';
+  const p = C.figura || postoGregorioH3(C);
+  C.figura = { x: p.x, y: p.y, posa: 'aTerra' };
+  const esito = C.esito || flagH3().gregorio || 'attacco';
+  statoRun.gregorioH3 = { run: statoRun.numeroRun, esito, piano: statoRun.piano, notte: statoRun.numeroNotte || 1 };
+  const A = GREGORIO_H3.anime;
+  for (let k = 0; k < A.numero; k++) h3.anime.push({ x: p.x + (k - A.numero / 2) * 2.5, y: p.y - 10 - (k % 4) * 8, t0: tick + k * 4, fase: k * 1.3 });
+  if (esito === 'dialogo') {
+    try { if (typeof aggiungiChiavi === 'function') aggiungiChiavi(1); } catch (err) { console.warn('[h3] chiave', err); }
+    mostraBanner(TESTI_H3.banner.dono, GREGORIO_H3.bannerTick);
+  } else mostraBanner(TESTI_H3.banner.via, GREGORIO_H3.bannerTick);
+  verificaStanzaPulitaBaseH3();
+  if (!st.pulita && st.nemici.every((n) => n.hp <= 0)) st.pulita = true; // un altro strato aspettava i suoi nemici
+}
+
+// ===========================================================================
+// 5. CONSEGUENZE SU DONNA LUCIANA
+// ===========================================================================
+function preparaLucianaH3(st) {
+  if (pncH3(statoRun.piano) !== 4) return;
+  const L = st.nemici.find((n) => n.bossId === LUCIANA_H3.bossId && n.hp > 0);
+  const esito = esitoGregorioH3();
+  if (!L || !esito || L.esitoH3) return;
+  L.esitoH3 = esito;
+  const ciclo = Math.floor((statoRun.piano - 1) / 4) + 1;
+  if (esito === 'attacco') { L.rabbiaH3 = true; mostraBanner(TESTI_H3.banner.lucianaRabbia, GREGORIO_H3.bannerTick); }
+  else {
+    L.puntoDeboleH3 = true;
+    const hp = Math.round(LUCIANA_H3.hpGuardia * Math.pow(1.45, ciclo - 1));
+    for (let k = 0; k < LUCIANA_H3.guardieIngresso; k++) st.nemici.push(nuovaGuardiaH3(st, k === 0 ? 170 : 470, 240, hp, k));
+    mostraBanner(TESTI_H3.banner.lucianaGuardie, GREGORIO_H3.bannerTick);
+  }
+}
+
+function rabbiaLucianaH3(st) {
+  if (statoRun.pausa || statoRun.siparioAttivo || ticksCongelati > 0) return;
+  for (const n of st.nemici) {
+    if (!n.rabbiaH3 || n.hp <= 0 || tick % LUCIANA_H3.rabbiaOgniTick !== 0) continue;
+    if (n.shootCd > 1) n.shootCd--;
+    if (n.attesaManiA > 1) n.attesaManiA--;
+  }
+}
+
+function guardieMetaLucianaH3(st) {
+  const L = st.nemici.find((n) => n.puntoDeboleH3 && n.hp > 0);
+  if (!L || L.guardieMetaH3 || L.hp >= L.maxHp * 0.5) return;
+  L.guardieMetaH3 = true;
+  const ciclo = Math.floor((statoRun.piano - 1) / 4) + 1;
+  const hp = Math.round(LUCIANA_H3.hpGuardia * Math.pow(1.45, ciclo - 1));
+  for (let k = 0; k < LUCIANA_H3.guardieMeta; k++) st.nemici.push(nuovaGuardiaH3(st, k === 0 ? 130 : 510, 150, hp, k + 2));
+}
+
+const danneggiaNemicoBaseH3 = danneggiaNemico;
+danneggiaNemico = function (nem, dmg, ...resto) {
+  try {
+    if (nem && nem.puntoDeboleH3 && nem.hp > nem.maxHp * LUCIANA_H3.sogliaPuntoDebole) dmg *= LUCIANA_H3.puntoDebole;
+  } catch (_) { /* idem */ }
+  return danneggiaNemicoBaseH3.call(this, nem, dmg, ...resto);
+};
+
+// ===========================================================================
+// 6. DISEGNO «A OMBRE»
+// ===========================================================================
+/** Tela fissa del Cortile: colonnato, balcone, scalone (si ridisegna solo se cambia la dimensione). */
+function telaCortileH3() {
+  if (h3.tela) return h3.tela;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  // notte sul selciato
+  g.fillStyle = TINTE_H3.notte; g.fillRect(ARENA.x1, ARENA.y1, ARENA.x2 - ARENA.x1, ARENA.y2 - ARENA.y1);
+  // colonnato sulla parete di fondo
+  g.fillStyle = TINTE_H3.ombra;
+  for (let i = 0; i < 9; i++) {
+    const x = 96 + i * 56;
+    if (Math.abs(x - 320) < 40) continue;
+    g.fillRect(x - 5, 26, 10, 50);
+    g.fillRect(x - 8, 24, 16, 4); g.fillRect(x - 8, 72, 16, 4);
+    g.beginPath(); g.arc(x + 28, 30, 24, Math.PI, 0); g.lineTo(x + 52, 24); g.lineTo(x + 4, 24); g.fill();
+  }
+  g.strokeStyle = 'rgba(240, 180, 90, 0.35)'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(80, 23.5); g.lineTo(560, 23.5); g.stroke();
+  // balcone sopra la porta della Signora
+  g.fillStyle = TINTE_H3.ombra2; g.fillRect(270, 14, 100, 14);
+  g.fillStyle = TINTE_H3.ombra;
+  for (let k = 0; k < 9; k++) g.fillRect(274 + k * 11, 28, 3, 10);
+  g.fillRect(266, 38, 108, 3);
+  g.strokeStyle = 'rgba(232, 184, 74, 0.55)'; g.strokeRect(266.5, 14.5, 107, 26);
+  h3.tela = c;
+  return c;
+}
+
+/** Due bracieri, poca luce calda che respira (gradienti radiali, niente filtri). */
+function luciCortileH3(t) {
+  for (const [x, y] of [[ARENA.x1 + 26, ARENA.y1 + 18], [ARENA.x2 - 26, ARENA.y1 + 18]]) {
+    const r = 70 + Math.sin(t * 0.07 + x) * 4;
+    const gr = ctx.createRadialGradient(x, y, 2, x, y, r);
+    gr.addColorStop(0, 'rgba(255, 190, 100, 0.30)'); gr.addColorStop(1, 'rgba(255, 150, 60, 0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    ctx.fillStyle = TINTE_H3.ombra; ctx.fillRect(x - 7, y, 14, 4); ctx.fillRect(x - 2, y + 4, 4, 12);
+    ctx.fillStyle = TINTE_H3.lanterna;
+    ctx.beginPath(); ctx.moveTo(x - 6, y); ctx.quadraticCurveTo(x, y - 14 - Math.sin(t * 0.2 + x) * 3, x + 6, y); ctx.fill();
+  }
+}
+
+/** Giglio d'oro sul petto (lampeggia quando il Custode è colpito: bibbia §VII). */
+function giglioH3(x, y, s, acceso) {
+  ctx.fillStyle = acceso ? TINTE_H3.oroVivo : TINTE_H3.oro;
+  ctx.beginPath();
+  ctx.moveTo(x, y - 5 * s); ctx.quadraticCurveTo(x + 2 * s, y - 1 * s, x, y + 2 * s); ctx.quadraticCurveTo(x - 2 * s, y - 1 * s, x, y - 5 * s);
+  ctx.moveTo(x - 1 * s, y); ctx.quadraticCurveTo(x - 5 * s, y - 3 * s, x - 4 * s, y + 1 * s); ctx.lineTo(x - 1 * s, y + 1 * s);
+  ctx.moveTo(x + 1 * s, y); ctx.quadraticCurveTo(x + 5 * s, y - 3 * s, x + 4 * s, y + 1 * s); ctx.lineTo(x + 1 * s, y + 1 * s);
+  ctx.fill();
+  ctx.fillRect(x - 3 * s, y + 2 * s, 6 * s, 1.2 * s);
+  if (acceso) {
+    const gr = ctx.createRadialGradient(x, y, 1, x, y, 14 * s);
+    gr.addColorStop(0, 'rgba(255, 240, 180, 0.7)'); gr.addColorStop(1, 'rgba(255, 220, 120, 0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, 14 * s, 0, TAU); ctx.fill();
+  }
+}
+
+/**
+ * Disegna Gregorio a sagoma d'ombra. (0,0) = piedi. Pose: fermo, cammina, anticipo, attacco, colpito, aTerra, ginocchio.
+ * @param {string} posa @param {number} t tick @param {boolean} flash colpito ora @param {number} flip 1 o −1
+ * @param {number} angLama angolo dell'alabarda in attacco (radianti, nel sistema del palco)
+ */
+function disegnaGregorioH3(posa, t, flash, flip, angLama) {
+  const col = FOGLIO_H3.pose.indexOf(posa);
+  const A = FOGLIO_H3.altezza;
+  if (FOGLIO_H3.presente && typeof disegnaCellaTeatro === 'function' && col >= 0) {
+    ctx.save(); ctx.scale(flip, 1);
+    const ok = disegnaCellaTeatro(ctx, FOGLIO_H3.nome, col, FOGLIO_H3.pose.length, -A * 0.6, -A + FOGLIO_H3.piedi, A * 1.2, A, flash ? '#fff' : null, flash ? 0.6 : 0);
+    ctx.restore();
+    if (ok) return;
+  }
+  const O = TINTE_H3.ombra, bordo = 'rgba(240, 180, 90, 0.85)';
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  if (posa === 'aTerra') {
+    // armatura vuota col mantello rosso sopra (l'ultima immagine della sottotrama)
+    ctx.fillStyle = TINTE_H3.rossoScuro;
+    ctx.beginPath(); ctx.ellipse(0, -4, 26, 7, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = O;
+    ctx.beginPath(); ctx.ellipse(-6, -6, 12, 6, -0.2, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(14, -8, 6, 0, TAU); ctx.fill();
+    ctx.strokeStyle = bordo; ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = O; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(-30, -1); ctx.lineTo(30, -3); ctx.stroke();
+    return;
+  }
+  const passo = posa === 'cammina' ? Math.sin(t * 0.18) : 0;
+  const giu = posa === 'ginocchio' ? 16 : posa === 'anticipo' ? 3 : posa === 'colpito' ? 2 : 0;
+  ctx.save(); ctx.scale(flip, 1);
+  // mantello (dietro)
+  ctx.fillStyle = TINTE_H3.rossoScuro;
+  ctx.beginPath(); ctx.moveTo(-9, -54 + giu); ctx.quadraticCurveTo(-20, -24 + giu, -16 - passo * 2, -2); ctx.lineTo(4, -4); ctx.lineTo(6, -52 + giu); ctx.fill();
+  ctx.fillStyle = O; ctx.strokeStyle = bordo; ctx.lineWidth = 1.1;
+  // gambe
+  if (posa === 'ginocchio') {
+    ctx.beginPath(); ctx.moveTo(-8, -20); ctx.lineTo(-12, -2); ctx.lineTo(-2, -2); ctx.lineTo(0, -16); ctx.lineTo(14, -14); ctx.lineTo(14, -2); ctx.lineTo(20, -2); ctx.lineTo(20, -18); ctx.lineTo(6, -24); ctx.closePath(); ctx.fill(); ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.moveTo(-9, -26); ctx.lineTo(-10 + passo * 4, 0); ctx.lineTo(-3 + passo * 4, 0); ctx.lineTo(-1, -22); ctx.lineTo(2, -22); ctx.lineTo(4 - passo * 4, 0); ctx.lineTo(11 - passo * 4, 0); ctx.lineTo(9, -26); ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  // busto pesante, un po' curvo (anziano)
+  const curvo = posa === 'anticipo' ? 5 : posa === 'colpito' ? -3 : 2;
+  ctx.beginPath();
+  ctx.moveTo(-12, -26 + giu); ctx.lineTo(-14 + curvo, -50 + giu); ctx.quadraticCurveTo(curvo, -58 + giu, 13 + curvo, -50 + giu); ctx.lineTo(12, -26 + giu); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  // cintura e mazzo di chiavi
+  ctx.strokeStyle = TINTE_H3.oro; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(-12, -28 + giu); ctx.lineTo(12, -28 + giu); ctx.stroke();
+  const tin = posa === 'cammina' || posa === 'attacco' ? Math.sin(t * 0.4) * 1.5 : 0;
+  ctx.strokeStyle = TINTE_H3.oro; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(-7, -24 + giu, 3, 0, TAU); ctx.stroke();
+  for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.moveTo(-8 + k * 1.5, -21 + giu); ctx.lineTo(-9 + k * 2 + tin, -15 + giu); ctx.stroke(); }
+  // testa con elmo a cresta
+  ctx.fillStyle = O; ctx.strokeStyle = bordo; ctx.lineWidth = 1.1;
+  ctx.beginPath(); ctx.arc(3 + curvo, -62 + giu, 7.5, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-3 + curvo, -68 + giu); ctx.quadraticCurveTo(4 + curvo, -78 + giu, 11 + curvo, -66 + giu); ctx.lineTo(9 + curvo, -64 + giu); ctx.fill();
+  ctx.fillStyle = TINTE_H3.rosso; ctx.fillRect(1 + curvo, -79 + giu, 3, 6); // pennacchio
+  // barba bianca (anziano)
+  ctx.fillStyle = 'rgba(226, 214, 196, 0.85)';
+  ctx.beginPath(); ctx.moveTo(4 + curvo, -58 + giu); ctx.lineTo(10 + curvo, -57 + giu); ctx.lineTo(7 + curvo, -51 + giu); ctx.fill();
+  giglioH3(1 + curvo / 2, -42 + giu, 1, flash);
+  ctx.restore();
+  // alabarda: posa per posa (in attacco segue la lama)
+  let a;
+  if (posa === 'attacco' && angLama != null) a = angLama;
+  else if (posa === 'anticipo') a = flip > 0 ? -2.5 : -0.64; // alzata dietro la spalla
+  else if (posa === 'ginocchio') a = flip > 0 ? 0.25 : Math.PI - 0.25; // abbassata, punta a terra
+  else if (posa === 'colpito') a = flip > 0 ? -0.9 : -2.24;
+  else a = -Math.PI / 2 + 0.12 * flip; // dritta
+  const mx = 10 * flip, my = -40 + giu;
+  const L = posa === 'attacco' ? 58 : 50;
+  const cx = mx + Math.cos(a) * L, cy = my + Math.sin(a) * L;
+  ctx.strokeStyle = O; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(mx - Math.cos(a) * 16, my - Math.sin(a) * 16); ctx.lineTo(cx, cy); ctx.stroke();
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(a);
+  ctx.fillStyle = O; ctx.strokeStyle = bordo; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-2, -3); ctx.quadraticCurveTo(-6, -14, -14, -12); ctx.lineTo(-8, 0); ctx.lineTo(-14, 5); ctx.lineTo(-2, 3); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+  if (posa === 'attacco' && angLama != null) {
+    ctx.strokeStyle = 'rgba(255, 230, 170, 0.35)'; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(mx, my, L, angLama - 0.5 * flip, angLama, flip < 0); ctx.stroke();
+  }
+}
+
+/** Posa del Custode dallo stato dell'IA. */
+function posaGregorioH3(n) {
+  const riga = n.statoH3 && STATI_H3.stati[n.statoH3];
+  return riga ? riga.posa : 'fermo';
+}
+
+const disegnaStanzaPixelArtBaseH3 = disegnaStanzaPixelArt;
+disegnaStanzaPixelArt = function (t, st, ...resto) {
+  const r = disegnaStanzaPixelArtBaseH3.call(this, t, st, ...resto);
+  try {
+    if (st && st.cortileH3) {
+      ctx.save();
+      ctx.drawImage(telaCortileH3(), 0, 0);
+      luciCortileH3(t || tick);
+      const F = st.cortileH3.figura;
+      if (F) {
+        ctx.fillStyle = 'rgba(8, 5, 3, 0.6)'; ctx.beginPath(); ctx.ellipse(F.x, F.y + 4, 20, 6, 0, 0, TAU); ctx.fill();
+        ctx.translate(F.x, F.y + 4);
+        disegnaGregorioH3(F.posa, t || tick, false, player.x < F.x ? -1 : 1, null);
+      }
+      ctx.restore();
+    }
+    disegnaAnimeH3();
+  } catch (err) { console.error('[h3] resa', err); }
+  return r;
+};
+
+function disegnaAnimeH3() {
+  const A = GREGORIO_H3.anime;
+  for (let i = h3.anime.length - 1; i >= 0; i--) {
+    const p = h3.anime[i];
+    const eta = tick - p.t0;
+    if (eta < 0) continue;
+    if (eta > A.durataTick || !statoRun.stanzaCorrente || !statoRun.stanzaCorrente.cortileH3) { h3.anime.splice(i, 1); continue; }
+    const k = eta / A.durataTick;
+    const x = p.x + (320 - p.x) * k * k + Math.sin(eta * 0.08 + p.fase) * 5, y = p.y - eta * A.salita;
+    ctx.save(); ctx.globalAlpha = 1 - k;
+    ctx.fillStyle = TINTE_H3.azzurro; ctx.beginPath(); ctx.arc(x, y, 2.2, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, 0.9, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+}
+
+const disegnaBossPittoricoBaseH3 = disegnaBossPittorico;
+disegnaBossPittorico = function (...args) {
+  const a = args[0] && typeof args[0].save === 'function' ? args.slice(1) : args;
+  const b = a[0];
+  if (!b || b.bossId !== GREGORIO_H3.bossId) return disegnaBossPittoricoBaseH3.apply(this, args);
+  try {
+    ctx.save();
+    ctx.fillStyle = 'rgba(8, 5, 3, 0.68)'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 8, 22, 7, 0, 0, TAU); ctx.fill();
+    ctx.translate(b.x, b.y + 8);
+    const flip = player.x < b.x ? -1 : 1;
+    disegnaGregorioH3(posaGregorioH3(b), a[1] || tick, b.flash > 0 && OPZIONI.lampi !== false, flip, b.statoH3 === 'spazzata' ? b.lamaH3 : null);
+    ctx.restore();
+  } catch (err) { console.error('[h3] disegno', err); }
+  return undefined;
+};
+
+// ===========================================================================
+// 7. DIARIO (b8) E REGISTRO DI SCENA (d3)
+// ===========================================================================
+if (typeof componiPaginaB8 === 'function') {
+  const componiPaginaBaseH3 = componiPaginaB8;
+  /** La pagina della notte in cui Ferruccio ha incontrato il Custode prende una riga sul Cortile. */
+  componiPaginaB8 = function (v, nota, ...resto) {
+    const pagina = componiPaginaBaseH3.call(this, v, nota, ...resto);
+    try {
+      const r = statoRun.gregorioH3;
+      const notte = Number(v && v.notte);
+      if (r && r.esito && pagina && Array.isArray(pagina.righe) && Number.isFinite(notte) && notte === Number(r.notte)) {
+        const riga = TESTI_H3.diario[r.esito];
+        if (riga && !pagina.righe.includes(riga)) pagina.righe.splice(Math.max(0, pagina.righe.length - 1), 0, riga);
+      }
+    } catch (err) { console.error('[h3] diario', err); }
+    return pagina;
+  };
+}
+
+/** Scheda del Custode per i Primi attori del Registro di Scena (d3 legge id, nome, tipo, presentazione). */
+const SCHEDA_REGISTRO_H3 = Object.freeze({ id: GREGORIO_H3.bossId, nome: TESTI_H3.nome, tipo: 'guardia',
+  presentazione: TESTI_H3.registro.battuta, aneddoto: TESTI_H3.registro.aneddoto });
+if (typeof primiAttoriD3 === 'function') {
+  const primiAttoriBaseH3 = primiAttoriD3;
+  primiAttoriD3 = function (...a) {
+    const out = primiAttoriBaseH3.apply(this, a);
+    try { if (Array.isArray(out) && !out.some((b) => b.id === SCHEDA_REGISTRO_H3.id)) out.push(SCHEDA_REGISTRO_H3); } catch (_) { /* idem */ }
+    return out;
+  };
+}
+
+// ===========================================================================
+// SONDA QA / SVILUPPO
+// ===========================================================================
+Object.assign(window.__teatro.interni, {
+  GREGORIO_H3, LUCIANA_H3, STATI_H3, TESTI_H3, FOGLIO_H3,
+  gregorioH3: Object.freeze({
+    marcaCortile: marcaCortileH3,
+    haProve: haProveH3,
+    /** Cortile della stanza corrente: fase, esito, Custode (stato IA, fase 2, vita). */
+    get stato() {
+      const st = statoRun.stanzaCorrente;
+      if (!st) return null;
+      const n = st.nemici.find((x) => x.bossId === GREGORIO_H3.bossId);
+      const C = st.cortileH3;
+      return { cortile: Boolean(C), fase: C ? C.fase : null, esito: C ? C.esito || null : null, risolto: C ? C.risolto : null,
+        breve: C ? Boolean(C.breve) : null, pulita: st.pulita, figura: C && C.figura ? C.figura.posa : null,
+        custode: n ? { stato: n.statoH3 || null, fase2: Boolean(n.fase2H3), hp: n.hp, maxHp: n.maxHp, x: n.x, y: n.y } : null,
+        guardie: st.nemici.filter((x) => x.guardiaH3 && x.hp > 0).length };
+    },
+    get run() { return statoRun.gregorioH3 || null; },
+    get luciana() {
+      const st = statoRun.stanzaCorrente;
+      const L = st && st.nemici.find((n) => n.bossId === LUCIANA_H3.bossId);
+      return L ? { esito: L.esitoH3 || null, rabbia: Boolean(L.rabbiaH3), puntoDebole: Boolean(L.puntoDeboleH3), hp: L.hp, maxHp: L.maxHp,
+        guardie: st.nemici.filter((x) => x.guardiaH3 && x.hp > 0).length } : null;
+    },
+  }),
+});
+
+</script>
+<script>
+/* teatro/h2-memorie.js (incorporato da tools/teatro-release.js) */
+/**
+ * teatro/h2-memorie.js — (squadra h2) LE MEMORIE: tre cose di trama che la bibbia prevede.
+ *
+ *   1. LE RIVELAZIONI DEI BOSS (bibbia §XII, righe 849-867). Alla caduta di ogni boss di piano (POOL_BOSS di
+ *      00-config.js, la rosa di b6-boss.js, il Guardiano di d6-acquedotto.js; NON Donna Luciana né il Grande
+ *      Burattinaio) il corpo si dissolve in piccole anime colorate che salgono piano e svaniscono. La prima
+ *      volta per slot che cade un certo boss: una didascalia con la sua rivelazione. Dopo tre rivelazioni
+ *      diverse, una volta sola, la riga «non erano mostri». Le rivelazioni lette restano nel Registro di Scena
+ *      (d3, Primi attori: aggancio `rivelazioneRegistroH2`) e nel Diario di Ferruccio di quella notte.
+ *      Il Guardiano ha già le sue anime (d6): qui riceve solo la rivelazione.
+ *
+ * Agganci: avvolge verificaStanzaPulita (dopo d6), disegnaHUDPixelArt (le anime, sotto l'HUD), componiPaginaB8.
+ * Salvataggio: localStorage `ferruccio.teatro.memorieH2.<slot>` → { epoca, rivelazioni: {id: notte}, svolta }.
+ * L'«epoca» è quella di b8: uno slot cancellato e ricominciato non ricorda le rivelazioni vecchie.
+ */
+
+// ===========================================================================
+// 0. NUMERI E TESTI
+// ===========================================================================
+/** Numeri delle anime che salgono (tutti in tick logici). */
+const ANIME_H2 = Object.freeze({
+  numero: 16,            // anime per boss (metà se OPZIONI.lampi è spento)
+  durataTick: 150,       // vita di un'anima (≈ 2,5 s a 60 tick/s)
+  scaglionaTick: 4,      // ritardo fra la partenza di un'anima e la successiva
+  salita: 0.42,          // px per tick verso l'alto
+  ondeggio: 5,           // ampiezza dell'ondeggiare laterale (px)
+  sparsoX: 26, sparsoY: 22, // da dove partono, attorno al corpo
+  raggio: 2.3,
+  maxVive: 64,
+  coloriPerBoss: Object.freeze({
+    're-gatto': Object.freeze(['#fde68a', '#fca5a5', '#fbcfe8', '#fef3c7']),
+    'regina-vespa': Object.freeze(['#fcd34d', '#fdba74', '#fef08a', '#fde68a']),
+    'colosso-statua': Object.freeze(['#e0f2fe', '#bfdbfe', '#f5f5f4', '#c7d2fe']),
+    'tessitrice-pietra': Object.freeze(['#fecaca', '#f9a8d4', '#fde68a', '#fef2f2']),
+  }),
+  coloriComuni: Object.freeze(['#fde68a', '#a7f3d0', '#bfdbfe', '#fbcfe8', '#fed7aa']),
+  // il corpo che sbiadisce: un alone color lanterna che si spegne sul punto in cui è caduto
+  alone: Object.freeze({ durataTick: 70, raggio: 30, colore: 'rgba(255, 214, 140, ' }),
+});
+
+/** Regole delle rivelazioni. */
+const RIVELAZIONI_H2 = Object.freeze({
+  chiave: 'ferruccio.teatro.memorieH2', // + '.' + slot
+  sogliaSvolta: 3,                       // rivelazioni diverse prima della riga «non erano mostri»
+  pianoFinale: 4,                        // il piano del ciclo di Donna Luciana: nessuna rivelazione qui
+});
+
+/**
+ * TESTI_H2 — tutti i testi a schermo di h2.
+ * rivelazioni: per i quattro boss della bibbia (§XII) il contenuto della tabella, scritto come didascalia;
+ *   per gli altri (NUOVI, da approvare) una persona o un ricordo di Caserta dietro la marionetta.
+ */
+const TESTI_H2 = Object.freeze({
+  rivelazioni: Object.freeze({
+    // --- dalla bibbia (§XII) ---
+    're-gatto': 'Dal Gatto salgono una culla, un mestolo, una ninna nanna: ricordi di casa rubati alle famiglie. Le creature d\'ombra custodiscono qualcosa di umano.',
+    'regina-vespa': 'Le vespe portavano promesse mai mantenute dei lavori della Reggia. Desideri rubati, trascinati verso il palazzo.',
+    'colosso-statua': 'Il marmo custodiva gli operai morti al cantiere. Nel loro ricordo Gaetano non causò l\'incidente: tentò di salvare gli altri.',
+    'tessitrice-pietra': 'La guardiana dei telai si scioglie in fili di seta. Il Velo nasce dalla seta, e il giglio lega i guardiani a Donna Luciana.',
+    // --- NUOVI (non nella bibbia) ---
+    'capitano-guardia': 'Sotto il piombo c\'era una guardia di Palazzo che fece il turno di notte per trent\'anni. Il Velo gli ha lasciato solo la ronda.',
+    'maestro-fucina': 'L\'ottone ricorda un garzone di bottega che affilava forbici in Via San Carlo. Tagliava i fili perché nessuno gli aveva insegnato a cucirli.',
+    'lampionaio': 'Era l\'uomo che accendeva i lumi di Corso Trieste ogni sera. Quando Caserta si è addormentata, ha continuato ad accenderli per nessuno.',
+    'cigno-latta': 'Il cigno era un giocattolo di latta, regalo di un padre a una bambina della Villa. La bambina è cresciuta; il cigno no.',
+    'giostra-lucciole': 'La giostra girava per i bambini della festa del 1845. Le lucciole sono le risate di quella sera, chiuse dentro.',
+    'guardiano-acque': 'Il Guardiano ha la voce degli scalpellini dell\'Acquedotto: tufo e acqua per la Reggia, e i nomi di chi c\'è rimasto sotto.',
+  }),
+  svolta: 'Ferruccio guarda le anime salire. Non erano mostri. Erano quello che resta di Caserta, e lui li sta lasciando andare.', // NUOVO
+  registroEtichetta: 'Rivelazione: ', // NUOVO (prefisso nella scheda del Registro)
+  diario: (nome, testo) => `Quando ${nome} è caduto, ho capito una cosa: ${testo.charAt(0).toLowerCase()}${testo.slice(1)}`, // NUOVO
+  diarioSvolta: 'Stanotte ho smesso di chiamarli mostri.', // NUOVO
+});
+
+// ===========================================================================
+// 1. STATO E SALVATAGGIO
+// ===========================================================================
+const h2 = {
+  anime: [],   // { x, y, t0, fase, colore, r }
+  aloni: [],   // { x, y, t0 }
+  cache: null, cacheChiave: null,
+  casuale: Math.random, // il caso degli indizi di Bianca (sostituibile nelle prove)
+};
+
+function slotH2() {
+  const sv = window.__teatroT3 && window.__teatroT3.salvataggi;
+  return sv && sv.slotAttivo != null ? sv.slotAttivo : 0;
+}
+function epocaH2() {
+  try { return typeof statoB8 === 'function' ? (statoB8().epoca || null) : null; } catch (_) { return null; }
+}
+function chiaveH2() { return `${RIVELAZIONI_H2.chiave}.${slotH2()}`; }
+
+/**
+ * Memoria dello slot attivo: { epoca, rivelazioni: {bossId: notte}, svolta: notte|0, bianca: {...} }.
+ * @returns {object}
+ */
+function memoriaH2() {
+  const k = chiaveH2();
+  const ep = epocaH2();
+  // un'epoca che nasce adesso (b8 la scrive al primo salvataggio dello slot) non cancella ciò che c'era
+  if (h2.cache && h2.cacheChiave === k && (h2.cache.epoca === ep || h2.cache.epoca === null)) { h2.cache.epoca = ep; return h2.cache; }
+  let m = null;
+  try { m = JSON.parse(localStorage.getItem(k) || 'null'); } catch (_) { m = null; }
+  if (m && typeof m === 'object' && (m.epoca || null) === null) m.epoca = ep;
+  if (!m || typeof m !== 'object' || (m.epoca || null) !== ep) m = { epoca: ep, rivelazioni: {}, svolta: 0 };
+  if (!m.rivelazioni || typeof m.rivelazioni !== 'object') m.rivelazioni = {};
+  h2.cache = m; h2.cacheChiave = k;
+  return m;
+}
+function scriviMemoriaH2(m) {
+  h2.cache = m; h2.cacheChiave = chiaveH2();
+  try { localStorage.setItem(h2.cacheChiave, JSON.stringify(m)); } catch (_) { /* memoria negata: vale per la sessione */ }
+}
+function notteH2() { try { return getNumeroNotte(); } catch (_) { return 1; } }
+
+// ===========================================================================
+// 2. LE ANIME CHE SALGONO
+// ===========================================================================
+/** true se il boss è uno dei «boss di piano» liberati (ha una rivelazione in TESTI_H2). */
+function bossDiPianoH2(n) { return Boolean(n && n.boss && TESTI_H2.rivelazioni[n.bossId]); }
+
+/**
+ * Fa salire le anime dal corpo del boss caduto. Non blocca nulla: sono solo disegni.
+ * @param {object} b nemico boss (x, y, bossId)
+ */
+function liberaAnimeH2(b) {
+  const A = ANIME_H2;
+  const pocheLuci = typeof OPZIONI === 'object' && OPZIONI && OPZIONI.lampi === false;
+  const n = pocheLuci ? Math.ceil(A.numero / 2) : A.numero;
+  const colori = A.coloriPerBoss[b.bossId] || A.coloriComuni;
+  for (let k = 0; k < n; k++) {
+    const u = (k * 0.618034) % 1, v = (k * 0.381966 + 0.25) % 1; // sparso deterministico
+    h2.anime.push({ x: b.x + (u - 0.5) * 2 * A.sparsoX, y: b.y - 4 + (v - 0.5) * 2 * A.sparsoY,
+      t0: tick + k * A.scaglionaTick, fase: k * 1.37, colore: colori[k % colori.length], r: A.raggio * (0.75 + 0.5 * v) });
+  }
+  if (h2.anime.length > A.maxVive) h2.anime.splice(0, h2.anime.length - A.maxVive);
+  if (!pocheLuci) h2.aloni.push({ x: b.x, y: b.y, t0: tick });
+}
+
+/** Disegna (e consuma) anime e aloni; chiamato sotto l'HUD. */
+function disegnaAnimeH2() {
+  const A = ANIME_H2;
+  const st = statoRun.stanzaCorrente;
+  if (!st || st.tipo !== 'boss' || statoRun.fase !== 'in_gioco') { h2.anime.length = 0; h2.aloni.length = 0; return; }
+  ctx.save();
+  for (let i = h2.aloni.length - 1; i >= 0; i--) {
+    const a = h2.aloni[i], eta = tick - a.t0;
+    if (eta > A.alone.durataTick) { h2.aloni.splice(i, 1); continue; }
+    const f = 1 - eta / A.alone.durataTick;
+    const g = ctx.createRadialGradient(a.x, a.y, 2, a.x, a.y, A.alone.raggio * (1 + 0.4 * (1 - f)));
+    g.addColorStop(0, `${A.alone.colore}${(0.45 * f).toFixed(3)})`);
+    g.addColorStop(1, `${A.alone.colore}0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(a.x, a.y, A.alone.raggio * 1.4, 0, Math.PI * 2); ctx.fill();
+  }
+  for (let i = h2.anime.length - 1; i >= 0; i--) {
+    const p = h2.anime[i], eta = tick - p.t0;
+    if (eta < 0) continue;
+    if (eta > A.durataTick) { h2.anime.splice(i, 1); continue; }
+    const f = eta / A.durataTick;
+    const x = p.x + Math.sin(eta * 0.06 + p.fase) * A.ondeggio * (0.4 + f);
+    const y = p.y - eta * A.salita * (1 - 0.35 * f);
+    const alfa = f < 0.12 ? f / 0.12 : 1 - (f - 0.12) / 0.88;
+    ctx.globalAlpha = Math.max(0, alfa) * 0.35;
+    ctx.fillStyle = p.colore;
+    ctx.beginPath(); ctx.arc(x, y, p.r * 2.4, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = Math.max(0, alfa);
+    ctx.beginPath(); ctx.arc(x, y, p.r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fffbeb';
+    ctx.beginPath(); ctx.arc(x, y - p.r * 0.3, p.r * 0.4, 0, Math.PI * 2); ctx.fill();
+    // una scia breve, verso il basso: salgono
+    ctx.strokeStyle = p.colore; ctx.lineWidth = 1; ctx.globalAlpha = Math.max(0, alfa) * 0.5;
+    ctx.beginPath(); ctx.moveTo(x, y + p.r); ctx.quadraticCurveTo(x + Math.sin(eta * 0.1 + p.fase) * 3, y + p.r * 3, x, y + p.r * 5); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ===========================================================================
+// 3. LA RIVELAZIONE (prima caduta per slot) E LA SVOLTA
+// ===========================================================================
+function didascaliaH2(testo) {
+  if (typeof notaDidB8 === 'function') notaDidB8(testo);
+  else if (typeof mostraBanner === 'function') mostraBanner(testo, 300);
+}
+
+/**
+ * Boss di piano caduto: anime (salvo il Guardiano, che ha le sue), e la rivelazione se è la prima volta nello slot.
+ * @returns {string|null} il testo della rivelazione mostrata, o null
+ */
+function bossLiberatoH2(st, b) {
+  if (!bossDiPianoH2(b) || b.liberatoH2) return null;
+  b.liberatoH2 = true;
+  const pnc = ((statoRun.piano - 1) % 4) + 1;
+  if (pnc === RIVELAZIONI_H2.pianoFinale) return null;
+  const dalD6 = typeof SCHEDA_D6 === 'object' && SCHEDA_D6 && b.bossId === SCHEDA_D6.id;
+  if (!dalD6) liberaAnimeH2(b);
+  const m = memoriaH2();
+  if (m.rivelazioni[b.bossId]) return null;
+  m.rivelazioni[b.bossId] = notteH2();
+  const testo = TESTI_H2.rivelazioni[b.bossId];
+  didascaliaH2(testo);
+  if (!m.svolta && Object.keys(m.rivelazioni).length >= RIVELAZIONI_H2.sogliaSvolta) {
+    m.svolta = notteH2();
+    didascaliaH2(TESTI_H2.svolta);
+  }
+  scriviMemoriaH2(m);
+  return testo;
+}
+
+const verificaStanzaPulitaBaseH2 = verificaStanzaPulita;
+/** Stanza del boss ripulita: libera le anime del boss di piano e, la prima volta, la sua rivelazione. */
+verificaStanzaPulita = function (...args) {
+  const st = statoRun.stanzaCorrente;
+  const era = Boolean(st && st.pulita);
+  const r = verificaStanzaPulitaBaseH2.apply(this, args);
+  try {
+    if (st && !era && st.pulita && st.tipo === 'boss') {
+      for (const n of st.nemici) if (bossDiPianoH2(n) && n.hp <= 0) bossLiberatoH2(st, n);
+    }
+  } catch (err) { console.error('[h2] boss', err); }
+  return r;
+};
+
+const disegnaHUDPixelArtBaseH2 = disegnaHUDPixelArt;
+/** Sotto l'HUD: le anime che salgono dal boss caduto. */
+disegnaHUDPixelArt = function (...args) {
+  try { if (h2.anime.length || h2.aloni.length) disegnaAnimeH2(); } catch (err) { console.error('[h2] anime', err); }
+  return disegnaHUDPixelArtBaseH2.apply(this, args);
+};
+
+/**
+ * Aggancio del Registro di Scena (d3, scheda di un Primo attore): mette davanti la rivelazione letta.
+ * @param {string} id bossId · @param {string[]} righe righe già pronte della scheda
+ * @returns {string[]}
+ */
+function rivelazioneRegistroH2(id, righe) {
+  try {
+    const m = memoriaH2();
+    if (!m.rivelazioni[id] || !TESTI_H2.rivelazioni[id]) return righe;
+    return [TESTI_H2.registroEtichetta + TESTI_H2.rivelazioni[id], ...righe.filter(Boolean).slice(0, 1)];
+  } catch (_) { return righe; }
+}
+
+function nomeBossH2(id) {
+  try {
+    const b = POOL_BOSS.find((x) => x.id === id) || (typeof SCHEDE_B6 === 'object' && SCHEDE_B6[id]) || null;
+    return b ? String(b.nome).split(' — ')[0] : 'il guardiano';
+  } catch (_) { return 'il guardiano'; }
+}
+
+// Diario di Ferruccio (b8): una riga per rivelazione letta in quella notte, e la svolta.
+if (typeof componiPaginaB8 === 'function') {
+  const componiPaginaBaseH2 = componiPaginaB8;
+  componiPaginaB8 = function (v, ...resto) {
+    const pagina = componiPaginaBaseH2.call(this, v, ...resto);
+    try {
+      if (pagina && Array.isArray(pagina.righe)) {
+        const m = memoriaH2();
+        const n = Number(pagina.notte) || 0;
+        const nuove = [];
+        for (const [id, notte] of Object.entries(m.rivelazioni)) {
+          if (Number(notte) === n && TESTI_H2.rivelazioni[id]) nuove.push(TESTI_H2.diario(nomeBossH2(id), TESTI_H2.rivelazioni[id]));
+        }
+        if (Number(m.svolta) === n) nuove.push(TESTI_H2.diarioSvolta);
+        const dove = Math.max(1, pagina.righe.length - 1); // prima della chiusa
+        for (const r of nuove) if (!pagina.righe.includes(r)) pagina.righe.splice(dove, 0, r);
+        aggiuntaDiarioH2(pagina, n);
+      }
+    } catch (err) { console.error('[h2] diario', err); }
+    return pagina;
+  };
+}
+
+// ===========================================================================
+// 4. ASSUNTA (al posto della «festaiola» di t4): la popolana che con Tonino introduce la bottega di Gaetano
+//    (trama/inizio-memoria-e-doni.md). In piazza dalla prima notte. Aggancio in t4-hub-storia.js:
+//    assuntaInPiazzaH2 (presenze), battuteAssuntaH2 (dialogo), disegnaAssuntaH2 (figura).
+// ===========================================================================
+/** Numeri di Assunta. */
+const ASSUNTA_H2 = Object.freeze({
+  daNotte: 1,
+  // PNG facoltativo: assets/sprite_teatro/assunta.png, una riga di 4 pose (ferma, scialle, ventaglio, cesto),
+  // celle 96×128, piedi in basso al centro. `png: true` quando l'autore lo aggiunge (evita la richiesta a vuoto).
+  png: Object.freeze({ attivo: false, nome: 'assunta', celle: 4, w: 34, h: 46 }),
+  gesto: Object.freeze({ cicloTick: 420, scialle: Object.freeze([40, 110]), ventaglio: Object.freeze([230, 330]) }),
+  tinte: Object.freeze({
+    ombra: '#0a0604', panno: '#1f1510', scialle: '#2b1d16', frangia: '#4a3526', piega: '#3a2a1c',
+    volto: '#c9a679', cesto: '#3d2b1a', vimini: '#6b4f33', contorno: 'rgba(249, 203, 64, 0.55)',
+    coccarda: '#b91c1c', coccardaCuore: '#f9cb40',
+  }),
+});
+
+/**
+ * Battute di Assunta (tutte NUOVE: la bibbia non le scrive). Si sceglie il gruppo per sigilli rotti della
+ * porta (interni.sigilli) e notte; dentro il gruppo ruotano.
+ */
+const TESTI_ASSUNTA_H2 = Object.freeze({
+  nome: 'Assunta',
+  notte1: Object.freeze([
+    ['assunta', "Tu si' 'o guaglione nuovo d'a piazza? Chella porta llà è 'a bottega 'e Gaetano, 'o fabbro. Da 'a sera d'a festa nun s'è aperta cchiù."],
+    ['didascalia', 'Ha ancora la coccarda della festa appuntata allo scialle. Il cesto è pieno di nastri che nessuno ha comprato.'],
+  ]),
+  notti: Object.freeze([
+    Object.freeze([['assunta', "'A sera d'a festa, 'o '45, stèvemo tutte a ballà. Po' 'e lanterne se so' fermate, e Caserta s'è addurmuta cu 'o sorriso 'nfaccia."]]),
+    Object.freeze([['assunta', "Gaetano batteva 'o fierro pure 'e notte. Tonino 'o sape: si 'o martello se sente ancora, vuol dire ca isso nun s'è scurdato."]]),
+    Object.freeze([['assunta', "Vennevo nastri p' 'a festa. Mo' 'e tengo tutte cca: nisciuno se ricorda cchiù 'e se fa' bello."]]),
+  ]),
+  sigilli12: Object.freeze([['assunta', "Hê rotto 'nu sigillo d' 'a bottega? Mamma mia... 'o giglio 'ncopp' 'a ceralacca è chillo d' 'a Reggia. Statte accorto, guagliò."]]),
+  sigilli3: Object.freeze([['assunta', "Tre sigilli 'nterra. Io 'o sento, 'o martello: tre colpe, 'na pausa, uno. Gaetano te sta aspettanno."]]),
+});
+const assuntaH2 = { giro: 0 };
+
+/** true se Assunta sta in piazza stanotte (dalla notte ASSUNTA_H2.daNotte). */
+function assuntaInPiazzaH2(notte) { return (Number(notte) || 1) >= ASSUNTA_H2.daNotte; }
+
+function sigilliH2() {
+  try { const I = window.__teatro && window.__teatro.interni; return Math.max(0, Math.min(3, Number(I && I.sigilli) || 0)); } catch (_) { return 0; }
+}
+
+/**
+ * Battute di Assunta per il dialogo di t4 (array di {chi, testo}).
+ * @param {object} flag flag della storia (non usati per ora) · @param {number} notte
+ */
+function battuteAssuntaH2(flag, notte) {
+  const T = TESTI_ASSUNTA_H2;
+  const s = sigilliH2();
+  let righe;
+  if (typeof filastroccaAssuntaH2 === 'function' && (assuntaH2.giro >= 1 || (Number(notte) || 1) > 1) && !biancaTrovatoH2('piazza')) {
+    assuntaH2.giro++;
+    return filastroccaAssuntaH2();
+  }
+  if (s >= 3) righe = T.sigilli3;
+  else if (s >= 1 && assuntaH2.giro % 2 === 0) righe = T.sigilli12;
+  else if ((Number(notte) || 1) <= 1 && assuntaH2.giro === 0) righe = T.notte1;
+  else righe = T.notti[(assuntaH2.giro + (Number(notte) || 1)) % T.notti.length];
+  assuntaH2.giro++;
+  return righe.map(([chi, testo]) => ({ chi, testo }));
+}
+
+/** Posa del gesto nel ciclo: 'ferma' | 'scialle' | 'ventaglio' e la sua fase 0..1. */
+function posaAssuntaH2(t) {
+  const G = ASSUNTA_H2.gesto, k = ((t % G.cicloTick) + G.cicloTick) % G.cicloTick;
+  if (k >= G.scialle[0] && k < G.scialle[1]) return { posa: 'scialle', u: (k - G.scialle[0]) / (G.scialle[1] - G.scialle[0]), col: 1 };
+  if (k >= G.ventaglio[0] && k < G.ventaglio[1]) return { posa: 'ventaglio', u: (k - G.ventaglio[0]) / (G.ventaglio[1] - G.ventaglio[0]), col: 2 };
+  return { posa: 'ferma', u: 0, col: 0 };
+}
+
+/**
+ * Disegna Assunta a sagoma d'ombra: fazzoletto annodato, scialle con la frangia, gonna a pieghe che si muovono
+ * appena, cesto al braccio, la coccarda rossa come unico colore; ogni tanto si sistema lo scialle o si sventola.
+ * Se c'è il PNG (ASSUNTA_H2.png.attivo) usa quello.
+ * @returns {boolean} true se ha disegnato
+ */
+function disegnaAssuntaH2(c, x, y, t) {
+  const K = ASSUNTA_H2.tinte;
+  const P = posaAssuntaH2(t);
+  c.save();
+  c.fillStyle = 'rgba(8, 5, 3, 0.6)';
+  c.beginPath(); c.ellipse(x, y + 10, 13, 4, 0, 0, Math.PI * 2); c.fill();
+  const g = ASSUNTA_H2.png;
+  if (g.attivo && typeof disegnaCellaTeatro === 'function'
+    && disegnaCellaTeatro(c, g.nome, P.col, g.celle, x - g.w / 2, y + 11 - g.h, g.w, g.h)) { c.restore(); return true; }
+  c.translate(Math.round(x), Math.round(y));
+  const resp = Math.sin(t * 0.045) * 0.6;           // il respiro
+  const onda = (i) => Math.sin(t * 0.05 + i * 1.3) * 0.9; // le pieghe della gonna
+  // --- il contorno color lanterna: le sagome esterne disegnate un poco più larghe ---
+  const gonna = () => {
+    c.beginPath(); c.moveTo(-6, -8);
+    c.quadraticCurveTo(-10, 0, -12 + onda(0), 10);
+    for (let i = 1; i <= 4; i++) c.lineTo(-12 + i * 6 + onda(i) * 0.6, 10 + (i % 2 ? 1 : 0));
+    c.quadraticCurveTo(10, 0, 6, -8); c.closePath();
+  };
+  const busto = () => { c.beginPath(); c.moveTo(-5, -9); c.lineTo(-6, -20 + resp); c.lineTo(6, -20 + resp); c.lineTo(5, -9); c.closePath(); };
+  const testa = () => { c.beginPath(); c.ellipse(0, -27 + resp, 4.6, 5.6, 0, 0, Math.PI * 2); };
+  const alzaScialle = P.posa === 'scialle' ? Math.sin(P.u * Math.PI) : 0;
+  const scialle = () => {
+    c.beginPath(); c.moveTo(-8, -18 + resp);
+    c.quadraticCurveTo(-9, -12, -4, -6 - alzaScialle * 2);
+    c.lineTo(0, -4); c.lineTo(4, -6);
+    c.quadraticCurveTo(9, -12, 8, -18 + resp);
+    c.quadraticCurveTo(0, -23 + resp, -8, -18 + resp); c.closePath();
+  };
+  c.strokeStyle = K.contorno; c.lineWidth = 2; c.lineJoin = 'round';
+  for (const f of [gonna, busto, scialle, testa]) { f(); c.stroke(); }
+  // gonna e pieghe
+  c.fillStyle = K.ombra; gonna(); c.fill();
+  c.strokeStyle = K.piega; c.lineWidth = 0.8;
+  for (let i = 0; i < 4; i++) { const px = -6 + i * 4; c.beginPath(); c.moveTo(px * 0.6, -6); c.quadraticCurveTo(px + onda(i) * 0.5, 2, px * 1.5 + onda(i), 9.5); c.stroke(); }
+  // grembiule scuro
+  c.fillStyle = K.panno; c.beginPath(); c.moveTo(-4, -7); c.lineTo(-6, 7); c.lineTo(6, 7); c.lineTo(4, -7); c.closePath(); c.fill();
+  // busto
+  c.fillStyle = K.ombra; busto(); c.fill();
+  // cesto al braccio sinistro (di chi guarda: a sinistra)
+  c.fillStyle = K.cesto; c.strokeStyle = K.vimini; c.lineWidth = 0.8;
+  c.beginPath(); c.moveTo(-17, -8); c.lineTo(-7, -8); c.lineTo(-8.5, -2); c.lineTo(-15.5, -2); c.closePath(); c.fill(); c.stroke();
+  c.beginPath(); c.moveTo(-16, -6); c.lineTo(-8, -6); c.moveTo(-15.6, -4); c.lineTo(-8.4, -4); c.stroke();
+  c.beginPath(); c.arc(-12, -8, 4.5, Math.PI, 0); c.stroke(); // il manico
+  c.fillStyle = K.frangia; c.fillRect(-15, -10, 2, 2); c.fillRect(-11, -11, 2, 3); // nastri nel cesto
+  // scialle con la frangia
+  c.fillStyle = K.scialle; scialle(); c.fill();
+  c.strokeStyle = K.frangia; c.lineWidth = 0.7;
+  for (let i = -3; i <= 3; i++) { const fx = i * 1.3; c.beginPath(); c.moveTo(fx, -5 + Math.abs(i) * -0.4); c.lineTo(fx + Math.sin(t * 0.06 + i) * 0.6, -2.5 + Math.abs(i) * -0.4); c.stroke(); }
+  // braccio destro: a riposo sul grembiule, oppure sullo scialle, oppure col ventaglio davanti al viso
+  c.fillStyle = K.ombra;
+  let mx = 5, my = -7;
+  if (P.posa === 'scialle') { mx = 7 - alzaScialle * 3; my = -8 - alzaScialle * 9; }
+  else if (P.posa === 'ventaglio') { mx = 9; my = -20 + resp; }
+  c.strokeStyle = K.ombra; c.lineWidth = 3; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(6, -17 + resp); c.quadraticCurveTo(9, -12, mx, my); c.stroke();
+  if (P.posa === 'ventaglio') {
+    const a = Math.sin(P.u * Math.PI * 8) * 0.35;
+    c.save(); c.translate(mx, my); c.rotate(-0.6 + a);
+    c.fillStyle = K.ombra; c.strokeStyle = K.contorno; c.lineWidth = 0.8;
+    c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, 6, -Math.PI * 0.9, -Math.PI * 0.2); c.closePath(); c.fill(); c.stroke();
+    c.restore();
+  }
+  c.fillStyle = K.ombra; c.beginPath(); c.arc(mx, my, 1.6, 0, Math.PI * 2); c.fill();
+  // testa: volto e fazzoletto annodato
+  c.fillStyle = K.volto; testa(); c.fill();
+  c.fillStyle = K.ombra;
+  c.beginPath(); c.moveTo(-5.6, -26 + resp); c.quadraticCurveTo(-6, -34 + resp, 0, -34 + resp);
+  c.quadraticCurveTo(6, -34 + resp, 5.6, -25 + resp); c.quadraticCurveTo(0, -29 + resp, -5.6, -25 + resp); c.fill();
+  c.beginPath(); c.moveTo(-5.4, -25 + resp); c.lineTo(-7.5, -19 + resp); c.lineTo(-3.5, -22 + resp); c.closePath(); c.fill(); // la falda dietro
+  // il nodo, dietro la nuca: due cocche che pendono di lato
+  c.beginPath(); c.moveTo(-5, -28 + resp); c.lineTo(-9.5, -26 + resp); c.lineTo(-8, -23.5 + resp); c.closePath(); c.fill();
+  c.beginPath(); c.moveTo(-5, -28 + resp); c.lineTo(-8.5, -30.5 + resp); c.lineTo(-9.5, -27.5 + resp); c.closePath(); c.fill();
+  c.strokeStyle = K.contorno; c.lineWidth = 0.6;
+  c.beginPath(); c.moveTo(-9.5, -26 + resp); c.lineTo(-8, -23.5 + resp); c.moveTo(-8.5, -30.5 + resp); c.lineTo(-9.5, -27.5 + resp); c.stroke();
+  c.fillRect(-2.4, -26 + resp, 1.2, 1.2); c.fillRect(1.2, -26 + resp, 1.2, 1.2); // occhi aperti, fissi
+  c.fillRect(-1, -23.5 + resp, 2, 0.8);
+  // la coccarda della festa: l'unico colore
+  c.fillStyle = K.coccarda; c.beginPath(); c.arc(-3, -15 + resp, 2.2, 0, Math.PI * 2); c.fill();
+  c.fillStyle = K.coccardaCuore; c.beginPath(); c.arc(-3, -15 + resp, 0.9, 0, Math.PI * 2); c.fill();
+  c.fillStyle = K.coccarda; c.fillRect(-4, -13 + resp, 0.9, 2.5); c.fillRect(-2.8, -13 + resp, 0.9, 2.2);
+  c.restore();
+  return true;
+}
+
+// ===========================================================================
+// 5. BIANCA (bibbia §XI, righe 787-848). Non torna in vita e non è un boss: tre oggetti e quattro indizi.
+//    Piazza Dante: la filastrocca vicino alla finestra (la indica Assunta). Villa Comunale (piano 2): la memoria
+//    nel marmo e il disegno della Reggia incompleta. San Leucio (piano 3): il fazzoletto col giglio. Reggia
+//    (piano 4, solo dopo gli altri tre): la scatola musicale, che suona. Uno per slot, in una stanza normale
+//    già ripulita, a probabilità che cresce. Chiusura dopo il finale vero (uccisa / risparmiata).
+// ===========================================================================
+/** Regole degli indizi di Bianca. */
+const BIANCA_H2 = Object.freeze({
+  // pianoNelCiclo → luogo; prob: base e crescita per ogni notte in cui il piano è stato raggiunto senza trovarlo
+  luoghi: Object.freeze({
+    2: Object.freeze({ id: 'villa', prob: 0.45, crescita: 0.25 }),
+    3: Object.freeze({ id: 'leucio', prob: 0.45, crescita: 0.25 }),
+    4: Object.freeze({ id: 'reggia', prob: 0.6, crescita: 0.4, dopo: Object.freeze(['piazza', 'villa', 'leucio']) }),
+  }),
+  punti: Object.freeze([[118, 112], [522, 112], [118, 262], [522, 262]]), // angoli discreti della stanza
+  raggio: 26,                 // distanza per [E]
+  ritardoChiusuraTick: 120,   // in piazza, dopo il ritorno dal finale
+  scatola: Object.freeze({    // la melodia della scatola musicale (Hz, durata in s)
+    note: Object.freeze([[784, 0.32], [659, 0.32], [698, 0.32], [587, 0.5], [659, 0.32], [523, 0.32], [587, 0.7]]),
+    volume: 0.09,
+  }),
+});
+
+/**
+ * Testi di Bianca. Le righe senza «NUOVO» sono della bibbia, parola per parola (Violante → Donna Luciana).
+ */
+const TESTI_BIANCA_H2 = Object.freeze({
+  piazza: Object.freeze([
+    ['assunta', "Sotto 'a fenesta 'e Mariella ce sta ancora scritta 'na filastrocca p' 'e criature. Nun l'aggio maie capita."], // NUOVO
+    ['didascalia', 'Vicino a una finestra si trova una vecchia filastrocca dedicata ai bambini.'],
+    ['didascalia', '«Quando il giglio si addormenta, la luna ascolta e non si lamenta.»'],
+    ['didascalia', 'Non è ancora chiaro cosa significhi.'],
+  ]),
+  villa: Object.freeze([
+    'Una memoria conservata nel marmo mostra Gregorio mentre insegna a Bianca a fare un inchino. La bambina ride e sbaglia apposta.',
+    'Bianca: «Ancora! Ma stavolta fallo tu!»',
+    'Il ricordo svanisce quando Gregorio cerca di prenderle la mano. A terra resta un foglio: un disegno della Reggia ancora incompleta.', // seconda frase NUOVA
+  ]),
+  leucio: Object.freeze([
+    'Accanto ai telai si trova un piccolo fazzoletto ricamato con un giglio incompleto.',
+    'Agnese spiega che Donna Luciana chiedeva spesso di riprodurre quel disegno. Agnese: «Nessuno riusciva a farlo uguale.»',
+    'Agnese: «Forse perché era stato fatto da una bambina.»',
+  ]),
+  reggia: Object.freeze([
+    'Ferruccio trova una scatola musicale. La melodia è la stessa che si sente, debolmente, durante tutti gli incontri con le statue.',
+    'Donna Luciana la apre. «Aveva promesso di imparare a suonarla.» «Non ne ha avuto il tempo.»',
+    'Il Velo non è stato creato per riportare Bianca in vita. È stato creato perché sua madre non potesse più provare il dolore di averla perduta.',
+  ]),
+  chiusura: Object.freeze({
+    uccisa: Object.freeze(['Il ricordo di Bianca viene liberato. Il giglio ricamato perde la sua luce.', 'Rimane un semplice fazzoletto.']),
+    risparmiata: Object.freeze(['Il giglio continua a brillare. La scatola musicale suona da sola.',
+      'Donna Luciana ascolta una voce che ripete sempre lo stesso verso: «Quando il giglio si addormenta, la luna ascolta e non si lamenta.»']),
+  }),
+  prompt: '[E] Guarda', // NUOVO
+  // la pagina «Bianca» del Diario di Ferruccio (NUOVI)
+  pagina: Object.freeze({
+    titolo: 'Bianca',
+    piazza: 'Una filastrocca sotto la finestra di Mariella: «Quando il giglio si addormenta, la luna ascolta e non si lamenta.»',
+    villa: 'Un disegno della Reggia ancora incompleta, rimasto dopo il ricordo di Gregorio e della bambina che sbagliava apposta l\'inchino.',
+    leucio: 'Un piccolo fazzoletto con un giglio incompleto. Nessuno riusciva a farlo uguale.',
+    reggia: 'Una piccola scatola musicale. Aveva promesso di imparare a suonarla.',
+    manca: '…',
+    uccisa: 'Il giglio si è spento. È rimasto un fazzoletto.',
+    risparmiata: 'Il giglio brilla ancora, e la scatola suona da sola.',
+  }),
+  diario: (luogo) => ({ villa: 'Nel marmo della Villa ho visto ridere una bambina.', leucio: 'A San Leucio ho trovato un fazzoletto col giglio a metà.',
+    reggia: 'Alla Reggia una scatola musicale ha suonato la melodia delle statue.', piazza: 'Assunta mi ha mostrato una filastrocca per bambini.' }[luogo]), // NUOVI
+});
+
+/** Memoria di Bianca dello slot: { trovati: {luogo: notte}, tentativi: {luogo: n}, chiusura: scelta|null }. */
+function biancaH2() {
+  const m = memoriaH2();
+  if (!m.bianca || typeof m.bianca !== 'object') m.bianca = { trovati: {}, tentativi: {}, chiusura: null };
+  return m.bianca;
+}
+/** true se l'indizio del luogo è già stato trovato nello slot. */
+function biancaTrovatoH2(luogo) { return Boolean(biancaH2().trovati[luogo]); }
+
+function segnaTrovatoH2(luogo) {
+  const B = biancaH2();
+  if (B.trovati[luogo]) return false;
+  B.trovati[luogo] = notteH2();
+  scriviMemoriaH2(memoriaH2());
+  aggiornaPaginaBiancaH2();
+  return true;
+}
+
+/** Battute della filastrocca per il dialogo di Assunta; segna l'indizio di Piazza Dante. */
+function filastroccaAssuntaH2() {
+  segnaTrovatoH2('piazza');
+  return TESTI_BIANCA_H2.piazza.map(([chi, testo]) => ({ chi, testo }));
+}
+
+/** La pagina «Bianca» del Diario di Ferruccio (b8): una sola, aggiornata a ogni oggetto trovato. */
+function aggiornaPaginaBiancaH2() {
+  if (typeof aggiungiPaginaB8 !== 'function') return null;
+  try {
+    const B = biancaH2(), P = TESTI_BIANCA_H2.pagina;
+    const righe = ['piazza', 'villa', 'leucio', 'reggia'].map((k) => (B.trovati[k] ? P[k] : P.manca));
+    if (B.chiusura && P[B.chiusura]) righe.push(P[B.chiusura]);
+    const notti = Object.values(B.trovati).map(Number).filter(Boolean);
+    return aggiungiPaginaB8({ id: 'bianca-h2', notte: notti.length ? Math.max(...notti) : notteH2(), titolo: P.titolo, righe,
+      esito: 'bianca', personaggio: '', data: new Date().toISOString() });
+  } catch (err) { console.error('[h2] pagina Bianca', err); return null; }
+}
+
+/** Righe della pagina della notte: un oggetto di Bianca trovato stanotte (chiamata dal Diario). */
+function aggiuntaDiarioH2(pagina, n) {
+  const B = biancaH2();
+  for (const [k, notte] of Object.entries(B.trovati)) {
+    const r = Number(notte) === n ? TESTI_BIANCA_H2.diario(k) : null;
+    if (r && !pagina.righe.includes(r)) pagina.righe.splice(Math.max(1, pagina.righe.length - 1), 0, r);
+  }
+}
+
+/** Piano avviato: forse stanotte l'indizio del luogo è in una stanza normale. */
+function preparaIndizioH2() {
+  const pnc = ((statoRun.piano - 1) % 4) + 1;
+  const L = BIANCA_H2.luoghi[pnc];
+  if (!L || !statoRun.mappa || biancaTrovatoH2(L.id)) return null;
+  if (L.id === 'villa' && typeof acquedottoAttivoD6 === 'function' && acquedottoAttivoD6()) return null; // stanotte niente Villa
+  if (L.dopo && !L.dopo.every((k) => biancaTrovatoH2(k))) return null;
+  const B = biancaH2();
+  const n = B.tentativi[L.id] || 0;
+  const prob = Math.min(1, L.prob + L.crescita * n);
+  const stanze = statoRun.mappa.stanze.filter((s) => s.tipo === 'normale');
+  if (!stanze.length) return null;
+  if (h2.casuale() >= prob) { B.tentativi[L.id] = n + 1; scriviMemoriaH2(memoriaH2()); return null; }
+  const st = stanze[Math.floor(h2.casuale() * stanze.length) % stanze.length];
+  const [x, y] = BIANCA_H2.punti[Math.floor(h2.casuale() * BIANCA_H2.punti.length) % BIANCA_H2.punti.length];
+  st.biancaH2 = { luogo: L.id, x, y, preso: false };
+  return st;
+}
+
+function indizioQuiH2() {
+  const st = statoRun.stanzaCorrente;
+  const b = st && st.biancaH2;
+  return b && !b.preso && st.pulita ? b : null;
+}
+function vicinoIndizioH2() {
+  const b = indizioQuiH2();
+  return b && Math.hypot(player.x - b.x, player.y - b.y) <= BIANCA_H2.raggio ? b : null;
+}
+
+/** [E] accanto all'oggetto di Bianca: le parole della bibbia in didascalia, l'oggetto nel Diario. */
+function raccogliIndizioH2() {
+  const b = vicinoIndizioH2();
+  if (!b) return false;
+  b.preso = true;
+  if (!segnaTrovatoH2(b.luogo)) return true;
+  for (const t of TESTI_BIANCA_H2[b.luogo]) didascaliaH2(t);
+  if (b.luogo === 'reggia') suonaScatolaH2();
+  return true;
+}
+
+/** La scatola musicale: poche note di carillon (Web Audio su AudioSys.uscita). */
+function suonaScatolaH2() {
+  try {
+    const ac = AudioSys.ctx, out = AudioSys.uscita;
+    if (!ac || !out) return false;
+    let t = ac.currentTime + 0.05;
+    for (const [f, d] of BIANCA_H2.scatola.note) {
+      for (const [molt, vol] of [[1, 1], [2.01, 0.25]]) {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = f * molt;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(BIANCA_H2.scatola.volume * vol, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0005, t + d * 2.2);
+        o.connect(g); g.connect(out); o.start(t); o.stop(t + d * 2.3);
+      }
+      t += d;
+    }
+    h2.ultimaScatola = performance.now();
+    return true;
+  } catch (err) { console.warn('[h2] scatola', err); return false; }
+}
+
+/** Disegna l'oggetto (a ombra, con un luccichio color lanterna) e la scritta [E] quando sei vicino. */
+function disegnaIndizioH2(tk) {
+  const b = indizioQuiH2();
+  if (!b) return;
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  const luce = 0.35 + 0.25 * Math.sin(tk * 0.07);
+  const g = ctx.createRadialGradient(0, 0, 1, 0, 0, 16);
+  g.addColorStop(0, `rgba(255, 226, 160, ${luce.toFixed(3)})`); g.addColorStop(1, 'rgba(255, 226, 160, 0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#0a0604'; ctx.strokeStyle = 'rgba(249, 203, 64, 0.7)'; ctx.lineWidth = 1;
+  if (b.luogo === 'villa') { // il foglio arrotolato a metà, col profilo della Reggia
+    ctx.beginPath(); ctx.rect(-8, -5, 16, 10); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(249, 203, 64, 0.5)';
+    ctx.beginPath(); ctx.moveTo(-6, 3); ctx.lineTo(-6, -1); ctx.lineTo(-2, -1); ctx.lineTo(-2, -3); ctx.lineTo(2, -3); ctx.lineTo(2, 0); ctx.stroke();
+  } else if (b.luogo === 'leucio') { // il fazzoletto piegato, col giglio rosso a metà
+    ctx.beginPath(); ctx.moveTo(-8, 4); ctx.lineTo(0, -6); ctx.lineTo(8, 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(-2, 2); ctx.lineTo(0, 1); ctx.closePath(); ctx.fill();
+  } else { // la scatola musicale con la manovella
+    ctx.beginPath(); ctx.rect(-7, -4, 14, 9); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(7, 0); ctx.lineTo(10, 0); ctx.lineTo(10, -3); ctx.stroke();
+    ctx.fillStyle = '#f9cb40'; ctx.fillRect(-2, -1, 4, 2);
+  }
+  ctx.restore();
+  if (vicinoIndizioH2() && typeof drawPillLabel === 'function') drawPillLabel(TESTI_BIANCA_H2.prompt, b.x, b.y - 18, 70, { size: 7.5 });
+}
+
+/** In piazza dopo il finale vero: la chiusura dell'arco (una volta per slot, se il fazzoletto è stato trovato). */
+function chiusuraBiancaH2() {
+  const B = biancaH2();
+  if (B.chiusura || !biancaTrovatoH2('leucio')) return false;
+  let scelta = null;
+  try { scelta = typeof statoB8 === 'function' ? statoB8().scelta : null; } catch (_) { scelta = null; }
+  const testi = scelta && TESTI_BIANCA_H2.chiusura[scelta];
+  if (!testi) return false;
+  B.chiusura = scelta;
+  scriviMemoriaH2(memoriaH2());
+  for (const t of testi) didascaliaH2(t);
+  if (scelta === 'risparmiata' && biancaTrovatoH2('reggia')) suonaScatolaH2();
+  aggiornaPaginaBiancaH2();
+  return true;
+}
+
+const avviaPianoBaseH2 = avviaPiano;
+/** Piano avviato: forse l'indizio di Bianca del luogo. */
+avviaPiano = function (...args) {
+  const r = avviaPianoBaseH2.apply(this, args);
+  try { preparaIndizioH2(); } catch (err) { console.error('[h2] indizio', err); }
+  return r;
+};
+
+const interagisciStanzaBaseH2 = interagisciStanza;
+/** [E] (tastiera, gamepad, tocco: l'azione «interagisci» di sempre): prima l'oggetto di Bianca, se sei accanto. */
+interagisciStanza = function (...args) {
+  try { if (raccogliIndizioH2()) return undefined; } catch (err) { console.error('[h2] raccogli', err); }
+  return interagisciStanzaBaseH2.apply(this, args);
+};
+
+const disegnaStanzaPixelArtBaseH2 = disegnaStanzaPixelArt;
+/** Nella stanza: l'oggetto di Bianca (sopra il pavimento). */
+disegnaStanzaPixelArt = function (...args) {
+  const r = disegnaStanzaPixelArtBaseH2.apply(this, args);
+  try { if (statoRun.fase === 'in_gioco') disegnaIndizioH2(tick); } catch (err) { console.error('[h2] disegno indizio', err); }
+  return r;
+};
+
+const passoLogicoBaseH2 = passoLogico;
+/** In piazza: la chiusura dell'arco di Bianca, qualche istante dopo il ritorno dal finale. */
+passoLogico = function (...args) {
+  const r = passoLogicoBaseH2.apply(this, args);
+  try {
+    if (statoRun.fase === 'hub') {
+      h2.inPiazza = (h2.inPiazza || 0) + 1;
+      if (h2.inPiazza === BIANCA_H2.ritardoChiusuraTick) chiusuraBiancaH2();
+    } else h2.inPiazza = 0;
+  } catch (err) { console.error('[h2] chiusura', err); }
+  return r;
+};
+
+// ===========================================================================
+// 9. QA
+// ===========================================================================
+if (Object.isFrozen(window.__teatro)) {
+  window.__teatro = Object.defineProperties({}, Object.getOwnPropertyDescriptors(window.__teatro));
+}
+window.__teatro.h2 = {
+  get anime() { return h2.anime.length; },
+  memoria: () => JSON.parse(JSON.stringify(memoriaH2())),
+  azzera() { try { localStorage.removeItem(chiaveH2()); } catch (_) { /* idem */ } h2.cache = null; h2.anime.length = 0; },
+  rivelazioneRegistro: rivelazioneRegistroH2,
+  bianca: () => JSON.parse(JSON.stringify(biancaH2())),
+  fissaCaso(v) { h2.casuale = v == null ? Math.random : () => v; },
+  preparaIndizio: () => { const st = preparaIndizioH2(); return st ? { id: st.id, ...st.biancaH2 } : null; },
+  get vicino() { return Boolean(vicinoIndizioH2()); },
+  chiusura: chiusuraBiancaH2,
+  get ultimaScatola() { return h2.ultimaScatola || 0; },
+  TESTI: TESTI_H2,
+};
+
+</script>
+<script>
+/* teatro/h4-ritorno-piazza.js (incorporato da tools/teatro-release.js) */
+/*
+ * (h4) RITORNO IN PIAZZA — «la notte non è finita».
+ *
+ * Richiesta dell'autore: dopo Donna Luciana, se si continua, si torna almeno una volta in Piazza Dante proprio per
+ * combattere il Grande Burattinaio, con le vite rigenerate e con tutto ciò che si è costruito nella notte.
+ *
+ * Come si incontra:
+ *  1. Caduta Donna Luciana, se la porta della bottega è apribile o già aperta (tre sigilli rotti e finale vero visto,
+ *     stato di b8), il cordone del sipario lascia il posto alla «seconda uscita» di h4: [E] «Torna in piazza».
+ *     Ferruccio rientra in Piazza Dante con la notte VIVA: stessa run (oggetti, trasformazioni, monete, attivo,
+ *     consumabile, personaggio) e le Maschere piene. Niente pergamena nuova, niente notte in più.
+ *     Si ripresenta a OGNI ciclo della notte senza fine.
+ *  2. In piazza Tonino dice una battuta e la porta pulsa. Dalla porta (bussata / Fucina di b8) «Sali sopra la
+ *     ribalta» apre la rastrelliera dei ferri di Gaetano: si prendono quanti ferri si vuole, ognuno pesa (passo più
+ *     lento nello scontro, RITORNO_H4.ferri). Poi lo scontro di d1 parte SENZA nuovaRun, con la dotazione della run,
+ *     e il Burattinaio scalato sulla forza della dotazione e sul ciclo (RITORNO_H4.scala).
+ *     Rinuncia: la porta di destra della piazza riporta al primo piano del ciclo successivo (la botola);
+ *     il menu di pausa («Ricomincia notte», «Menù personaggi») chiude la notte come un abbandono.
+ *  3. Vittoria: il finale segreto di b8 (fine()) e la notte si chiude con il conto della notte (a7/e6).
+ *     Morte: la morte normale della run.
+ *  Senza notte viva (una sera nuova, a mani nude) lo scontro resta quello di prima: d1 fa nuovaRun.
+ *
+ * Agganci: d1-burattinaio.js (opz.notteViva / opz.vita / opz.ritmo / opz.ferri, righe segnate «(h4)»).
+ * Avvolge: t4Gancio, interagisciStanza, disegnaStanzaPixelArt, ricalcolaStatistiche,
+ * interni.nuovaRun (l'uscita della piazza di T4), interni.scontroSopraLaRibalta (lo chiama b8).
+ * Sonda QA: window.__teatro.interni.ritornoH4.
+ */
+'use strict';
+
+// ===========================================================================
+// 1. TABELLE
+// ===========================================================================
+const RITORNO_H4 = Object.freeze({
+  bossFinale: 'donna-luciana',
+  /** La seconda uscita nella stanza di Donna Luciana: a sinistra, sotto il cordone del sipario di b8 (112, 128). */
+  uscita: Object.freeze({ x: 112, y: 236, raggio: 40 }),
+  /**
+   * Scala del Burattinaio. forza = (danno × colpi al secondo) della dotazione / quella di Ferruccio a mani nude
+   * (3,50 × 2,73 ≈ 9,6, lo stesso DPS 0 oggetti misurato da tools/sim-bilancio-teatro.js), tenuta fra forzaMin e
+   * forzaMax. Vita delle parti × max(1, forza × perForza) × ciclo; il ciclo conta
+   * 1 + perCiclo × (ciclo − 1) fino a cicloMax. Ritmo: pausa fra i colpi × (1 − ritmoPerForza × (forza − 1)
+   * − ritmoPerCiclo × (ciclo − 1)), mai sotto ritmoMin. Taratura (modello della sim: tempo = vita / (DPS × 0,55)
+   * + 30 s di intermezzi + marionette): perForza 0,5 → 100-115 s da DPS 21 (6-7 oggetti) a DPS 43 (tetto);
+   * sotto forza 2 il Burattinaio resta quello di oggi (650).
+   */
+  scala: Object.freeze({
+    dpsRiferimento: 3.5 * 2.73, forzaMin: 1, forzaMax: 4.5, perForza: 0.5,
+    perCiclo: 0.25, cicloMax: 2,
+    ritmoPerForza: 0.06, ritmoPerCiclo: 0.08, ritmoMin: 0.6,
+  }),
+  /** I ferri presi dalla rastrelliera: ognuno pesa, il passo cala di questa frazione nello scontro. */
+  ferri: Object.freeze({ passoPerFerro: 0.1, ordine: Object.freeze(['tenaglie', 'punzone', 'lima']) }),
+  /** Rastrelliera (riquadro 640×360). */
+  pannello: Object.freeze({ x: 150, y: 70, w: 340, h: 220, riga0: 140, rigaH: 28 }),
+  pulsaTick: 64,
+});
+
+/** Testi a schermo (nuovi, da approvare dall'autore). */
+const TESTI_H4 = Object.freeze({
+  uscita: 'TORNA IN PIAZZA [E]',
+  uscitaSotto: 'la notte non è finita',
+  uscitaSotto2: 'con tutto: Maschere piene, la porta della bottega aspetta',
+  banner: (ciclo) => `★ DONNA LUCIANA È CADUTA! Botola: NOTTE SENZA FINE (ciclo ${ciclo}) · A sinistra: torna in piazza, la notte non è finita`,
+  bannerAggiunta: 'In basso a sinistra: torna in piazza, la notte non è finita',
+  rientro: 'Piazza Dante · la notte è ancora viva · Maschere piene',
+  tonino: "Ancora 'n giro, guagliò? Stanotte 'a porta 'e Gaetano nun s'è chiusa. Vai, ca t'aspetta.",
+  piazzaViva: 'LA NOTTE È VIVA · la porta della bottega aspetta',
+  piazzaVivaSotto: 'a destra: la botola, ciclo seguente',
+  pausa: '☾ La notte è ancora viva: «Ricomincia notte» o «Menù personaggi» la chiudono',
+  continua: (ciclo) => `NOTTE SENZA FINE · CICLO ${ciclo} — la notte continua`,
+  rastrelliera: Object.freeze({
+    titolo: 'I ferri di Gaetano',
+    sotto: 'Prendi quanti ferri vuoi. Aiutano contro le Mani, ma ognuno pesa.',
+    costo: (pct) => `Ogni ferro preso: passo −${pct}% per tutto lo scontro`,
+    ferri: Object.freeze({
+      tenaglie: 'Le Tenaglie — le mani restano a terra più a lungo',
+      punzone: 'Il Punzone — scendono meno marionette',
+      lima: 'La Lima — le forbici s\'aprono più piano',
+    }),
+    preso: '[preso]', lasciato: '[lasciato]',
+    sali: (n) => `Sali sopra la ribalta (${n} ${n === 1 ? 'ferro' : 'ferri'})`,
+    aiuto: '[↑↓] scegli · [E] prendi/lascia · [Esc] resta in piazza',
+  }),
+  scontro: (n, pct) => n ? `${n} ${n === 1 ? 'ferro' : 'ferri'} di Gaetano · passo −${pct}%` : 'Senza i ferri di Gaetano',
+});
+
+// ===========================================================================
+// 2. STATO
+// ===========================================================================
+const h4 = {
+  viva: null,        // { run, piano, ciclo, personaggio } — la notte tornata in piazza
+  battuta: null,     // run per cui Tonino ha già parlato
+  rast: null,        // { sel, presi, opz } — rastrelliera aperta
+  scontro: null,     // { run, ferri, n, forza, ciclo, molt, ritmo, vita } — Burattinaio con la dotazione
+};
+
+const IH4 = () => window.__teatro.interni;
+
+/** true se la notte tornata in piazza è ancora quella in corso. */
+function notteVivaH4() {
+  return Boolean(h4.viva && h4.viva.run === statoRun.numeroRun && h4.viva.personaggio === statoRun.personaggioId);
+}
+
+/** La porta della bottega è apribile (tre sigilli e finale vero visto) o già aperta? (stato di b8) */
+function portaProntaH4() {
+  try {
+    if (typeof statoB8 !== 'function') return false;
+    const s = statoB8();
+    if (s.portaAperta) return true;
+    const k = typeof sigilliB8 === 'function' ? sigilliB8(s) : 0;
+    return k >= 3 && (s.finaleVisto || !(typeof SEGRETO_B8 === 'object' && SEGRETO_B8.serveFinaleVero));
+  } catch (_) { return false; }
+}
+
+// ===========================================================================
+// 3. LA SECONDA USCITA E IL RITORNO
+// ===========================================================================
+function vicinoUscitaH4() {
+  const U = RITORNO_H4.uscita;
+  return Math.hypot(player.x - U.x, player.y - U.y) < U.raggio;
+}
+
+/** Caduta Donna Luciana con la porta pronta: il cordone di b8 diventa «Torna in piazza». */
+function dopoLucianaH4(st) {
+  const b = st && st.nemici && (st.nemici.find((n) => n.boss) || st.nemici[0]);
+  if (!b || b.bossId !== RITORNO_H4.bossFinale || !portaProntaH4()) return;
+  st.ritornoH4 = true; // il cordone di b8 resta: l'ultimo atto si può ancora rimettere in scena
+  try {
+    if (typeof b8 === 'object' && b8) {
+      const bp = b8.bannerPendente;
+      if (bp && bp.st === st) bp.testo = `${bp.testo} · ${TESTI_H4.bannerAggiunta}`;
+      else b8.bannerPendente = { st, testo: TESTI_H4.banner((statoRun.ciclo || 1) + 1) };
+    }
+  } catch (_) { /* b8 assente */ }
+}
+
+/**
+ * Ferruccio torna in Piazza Dante con la notte viva: stessa run, Maschere piene. Non chiude la run.
+ * @returns {boolean}
+ */
+function tornaInPiazzaH4() {
+  if (statoRun.fase !== 'in_gioco') return false;
+  h4.viva = { run: statoRun.numeroRun, piano: (statoRun.piano || 4) + 1, ciclo: statoRun.ciclo || 1, personaggio: statoRun.personaggioId };
+  h4.battuta = null;
+  statoRun.hpHalf = statoRun.maxHpHalf; // «le vite si rigenerano»
+  statoRun.proiettiliNemici = [];
+  statoRun.pausa = false; statoRun.siparioAttivo = null; statoRun.diarioD = null; statoRun.scambioPendente = null;
+  try { if (typeof a7 === 'object' && a7) a7.inAttesaHub = null; } catch (_) { /* a7 assente */ }
+  statoRun.fase = 'menu_selezione';
+  if (!t4Gancio('avvio', statoRun.personaggioId)) statoRun.fase = 'hub';
+  mostraBanner(TESTI_H4.rientro, 220);
+  return true;
+}
+
+/** Dalla porta di destra della piazza con la notte viva: si riprende dal primo piano del ciclo seguente. */
+function continuaNotteH4() {
+  const v = h4.viva;
+  h4.viva = null;
+  h4.rast = null;
+  statoRun.fase = 'in_gioco';
+  statoRun.pausa = false;
+  avviaPiano(v.piano, true);
+  mostraBanner(TESTI_H4.continua(statoRun.ciclo || Math.floor((v.piano - 1) / 4) + 1), 200);
+}
+
+// ===========================================================================
+// 4. LA RASTRELLIERA E LO SCONTRO CON LA DOTAZIONE
+// ===========================================================================
+/** Forza della dotazione: danno al secondo nominale rispetto a Ferruccio a mani nude, nei limiti della tabella. */
+function forzaH4() {
+  const S = RITORNO_H4.scala;
+  const dps = (statoRun.dmg || 1) * (statoRun.colpiAlSec || 2.73);
+  return Math.max(S.forzaMin, Math.min(S.forzaMax, dps / S.dpsRiferimento));
+}
+
+/**
+ * Vita e ritmo del Burattinaio per una forza e un ciclo.
+ * @param {number} forza @param {number} ciclo
+ * @returns {{molt:number, ritmo:number, vita:object}}
+ */
+function scalaBurattinaioH4(forza, ciclo) {
+  const S = RITORNO_H4.scala;
+  const c = Math.max(1, Math.floor(ciclo || 1));
+  const moltCiclo = Math.min(S.cicloMax, 1 + S.perCiclo * (c - 1));
+  const molt = Math.max(1, forza * S.perForza) * moltCiclo;
+  const ritmo = Math.max(S.ritmoMin, 1 - S.ritmoPerForza * (forza - 1) - S.ritmoPerCiclo * (c - 1));
+  const base = BURATTINAIO_D1.vita;
+  const vita = {};
+  for (const k of Object.keys(base)) vita[k] = Math.round(base[k] * molt);
+  return { molt, ritmo, vita: Object.freeze(vita) };
+}
+
+function apriRastrellieraH4(opz) {
+  h4.rast = { sel: 3, presi: { tenaglie: false, punzone: false, lima: false }, opz };
+  statoRun.fase = 'hub';
+}
+
+function ferriPresiH4(r = h4.rast) { return RITORNO_H4.ferri.ordine.filter((k) => r && r.presi[k]); }
+
+/** Parte lo scontro di d1 con la dotazione della run e i ferri presi. */
+function saliConDotazioneH4() {
+  const r = h4.rast;
+  if (!r) return false;
+  h4.rast = null;
+  const presi = ferriPresiH4(r);
+  const forza = forzaH4();
+  const ciclo = (h4.viva && h4.viva.ciclo) || statoRun.ciclo || 1;
+  const sc = scalaBurattinaioH4(forza, ciclo);
+  const ferri = { tenaglie: presi.includes('tenaglie'), punzone: presi.includes('punzone'), lima: presi.includes('lima') };
+  h4.scontro = { run: statoRun.numeroRun, ferri, n: presi.length, forza, ciclo, molt: sc.molt, ritmo: sc.ritmo, vita: sc.vita };
+  h4.viva = null;
+  statoRun.hpHalf = statoRun.maxHpHalf;
+  const opz = r.opz || {};
+  const fine = opz.fine;
+  const ok = scontroBaseH4({
+    ...opz, notteViva: true, ferri, sigilli: presi.length, vita: sc.vita, ritmo: sc.ritmo,
+    fine: () => { chiudiNotteVittoriaH4(); if (typeof fine === 'function') fine(); },
+  });
+  try { ricalcolaStatistiche(); } catch (err) { console.error('[h4] statistiche', err); }
+  const pct = Math.round(RITORNO_H4.ferri.passoPerFerro * 100 * presi.length);
+  if (ok) h4.scontro.bannerFerri = TESTI_H4.scontro(presi.length, pct);
+  return ok;
+}
+
+/** Vittoria sul Burattinaio salito con la notte viva: la notte si chiude qui, con il conto della notte. */
+function chiudiNotteVittoriaH4() {
+  h4.scontro = null;
+  try {
+    if (typeof a7 === 'object' && a7 && a7.run) {
+      const v = a7.run;
+      v.esito = 'vittoria'; v.vittoria = true; v.fine = new Date().toISOString();
+      v.hpFine = statoRun.hpHalf; v.maxHpFine = statoRun.maxHpHalf; v.moneteFine = statoRun.monete || 0;
+      v.burattinaioH4 = true;
+      if (typeof salvaVoceA7 === 'function') salvaVoceA7(v);
+      a7.inAttesaHub = { voce: JSON.parse(JSON.stringify(v)), tipo: 'vittoria' };
+      a7.run = null;
+      try {
+        if (typeof b8 === 'object' && b8 && b8.nota && !b8.nota.paginaScritta && typeof scriviPaginaRunB8 === 'function') {
+          b8.nota.paginaScritta = true; scriviPaginaRunB8(v, { nota: b8.nota });
+        }
+      } catch (err) { console.warn('[h4] pagina del diario', err); }
+    }
+  } catch (err) { console.warn('[h4] conto della notte', err); }
+  try { statoRun.numeroNotte = incrementaNumeroNotte(); } catch (err) { console.warn('[h4] notte', err); }
+}
+
+function tastoRastrellieraH4(e) {
+  const r = h4.rast;
+  const c = e.code;
+  if (e.repeat) return true;
+  if (c === 'ArrowUp' || c === 'KeyW') r.sel = (r.sel + 3) % 4;
+  else if (c === 'ArrowDown' || c === 'KeyS') r.sel = (r.sel + 1) % 4;
+  else if (c === 'Escape' || c === 'Backspace') { h4.rast = null; }
+  else if (c === 'KeyE' || c === 'Enter' || c === 'Space') scegliRigaH4(r.sel);
+  return true;
+}
+
+function scegliRigaH4(i) {
+  const r = h4.rast;
+  if (!r) return;
+  r.sel = i;
+  if (i < 3) { const k = RITORNO_H4.ferri.ordine[i]; r.presi[k] = !r.presi[k]; try { if (typeof suonoFerroB8 === 'function') suonoFerroB8(0.08); } catch (_) { /* suono facoltativo */ } }
+  else saliConDotazioneH4();
+}
+
+function rigaClickH4(mx, my) {
+  const P = RITORNO_H4.pannello;
+  if (mx < P.x || mx > P.x + P.w) return -1;
+  const i = Math.floor((my - (P.riga0 - P.rigaH / 2)) / P.rigaH);
+  return i >= 0 && i < 4 ? i : -1;
+}
+
+// ===========================================================================
+// 5. DISEGNO
+// ===========================================================================
+function disegnaUscitaH4() {
+  const U = RITORNO_H4.uscita;
+  const vicino = vicinoUscitaH4();
+  const p = 0.5 + 0.5 * Math.sin(tick / 14);
+  ctx.save();
+  // arco di una quinta aperta: la piazza dietro, un filo di luce di lanterna
+  ctx.fillStyle = '#07060a';
+  ctx.beginPath(); ctx.moveTo(U.x - 18, U.y + 22); ctx.lineTo(U.x - 18, U.y - 14); ctx.quadraticCurveTo(U.x, U.y - 34, U.x + 18, U.y - 14); ctx.lineTo(U.x + 18, U.y + 22); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = `rgba(242,192,107,${0.55 + 0.4 * p})`; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = `rgba(242,192,107,${0.16 + 0.14 * p})`;
+  ctx.fillRect(U.x - 12, U.y - 8, 24, 30);
+  ctx.fillStyle = '#d4a017'; // la lanterna appesa
+  ctx.fillRect(U.x - 3, U.y - 24, 6, 7);
+  ctx.restore();
+  drawPillLabel(TESTI_H4.uscita, U.x + 6, U.y + 36, 170, { size: 7.5, color: vicino ? '#ffffff' : '#f9cb40', border: '#f9cb40' });
+  drawPillLabel(TESTI_H4.uscitaSotto, U.x + 6, U.y + 49, 170, { size: 6.5, color: '#c9a679', border: '#5c3a1e' });
+  if (vicino) drawPillLabel(TESTI_H4.uscitaSotto2, U.x + 60, U.y + 62, 280, { size: 6.5, color: '#e6d2aa', border: '#5c3a1e' });
+}
+
+/** In piazza con la notte viva: la porta della bottega pulsa. */
+function disegnaPiazzaVivaH4() {
+  const P = (typeof SEGRETO_B8 === 'object' && SEGRETO_B8.porta) || { x: 320, y: 62 };
+  const p = 0.5 + 0.5 * Math.sin((tick / RITORNO_H4.pulsaTick) * Math.PI * 2);
+  ctx.save();
+  ctx.strokeStyle = `rgba(242,192,107,${0.35 + 0.5 * p})`;
+  ctx.lineWidth = 2 + 2 * p;
+  ctx.strokeRect(P.x - 20 - 3 * p, P.y - 26 - 3 * p, 40 + 6 * p, 50 + 6 * p);
+  ctx.restore();
+  drawPillLabel(TESTI_H4.piazzaViva, W / 2, 14, 300, { size: 7.5, color: '#f9cb40', border: '#f9cb40' });
+  drawPillLabel(TESTI_H4.piazzaVivaSotto, W / 2, 27, 220, { size: 6.5, color: '#c9a679', border: '#5c3a1e' });
+}
+
+function disegnaRastrellieraH4() {
+  const r = h4.rast;
+  const P = RITORNO_H4.pannello;
+  const T = TESTI_H4.rastrelliera;
+  ctx.save();
+  ctx.fillStyle = 'rgba(6,4,3,0.72)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#140c08'; ctx.fillRect(P.x, P.y, P.w, P.h);
+  ctx.strokeStyle = '#f2c06b'; ctx.lineWidth = 2; ctx.strokeRect(P.x, P.y, P.w, P.h);
+  ctx.strokeStyle = '#5a3818'; ctx.lineWidth = 1; ctx.strokeRect(P.x + 4, P.y + 4, P.w - 8, P.h - 8);
+  ctx.restore();
+  drawTextFit(T.titolo, W / 2, P.y + 22, P.w - 20, { size: 12, color: '#f9cb40', weight: 'bold' });
+  drawTextFit(T.sotto, W / 2, P.y + 38, P.w - 20, { size: 7.5, color: '#e6d2aa' });
+  drawTextFit(T.costo(Math.round(RITORNO_H4.ferri.passoPerFerro * 100)), W / 2, P.y + 51, P.w - 20, { size: 7.5, color: '#e0796b', weight: 'bold' });
+  RITORNO_H4.ferri.ordine.forEach((k, i) => {
+    const y = P.riga0 + i * P.rigaH;
+    const sel = r.sel === i;
+    ctx.save();
+    ctx.fillStyle = sel ? '#3a2412' : '#1d130b'; ctx.fillRect(P.x + 12, y - 11, P.w - 24, 22);
+    ctx.strokeStyle = r.presi[k] ? '#d4a017' : '#5a3818'; ctx.strokeRect(P.x + 12, y - 11, P.w - 24, 22);
+    // il ferro: sagoma scura con il filo di lanterna
+    ctx.strokeStyle = r.presi[k] ? '#f2c06b' : '#6b4e14'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(P.x + 24, y + 6); ctx.lineTo(P.x + 38, y - 6); ctx.stroke();
+    ctx.restore();
+    drawTextFit(T.ferri[k], P.x + 46 + (P.w - 130) / 2, y + 3, P.w - 130, { size: 7.5, color: sel ? '#ffffff' : '#e6d2aa' });
+    drawTextFit(r.presi[k] ? T.preso : T.lasciato, P.x + P.w - 44, y + 3, 60, { size: 7, color: r.presi[k] ? '#f9cb40' : '#8a7a62', weight: 'bold' });
+  });
+  const ys = P.riga0 + 3 * P.rigaH;
+  ctx.save();
+  ctx.fillStyle = r.sel === 3 ? '#6b1a14' : '#3a120e'; ctx.fillRect(P.x + 40, ys - 11, P.w - 80, 22);
+  ctx.strokeStyle = '#f2c06b'; ctx.strokeRect(P.x + 40, ys - 11, P.w - 80, 22);
+  ctx.restore();
+  drawTextFit(T.sali(ferriPresiH4(r).length), W / 2, ys + 3, P.w - 90, { size: 8.5, color: '#ffffff', weight: 'bold' });
+  drawTextFit(T.aiuto, W / 2, P.y + P.h - 10, P.w - 20, { size: 6.5, color: '#c9a679' });
+}
+
+// ===========================================================================
+// 6. AVVOLGIMENTI
+// ===========================================================================
+const scontroBaseH4 = (...a) => {
+  const f = scontroBaseRifH4;
+  return typeof f === 'function' ? f(...a) : false;
+};
+let scontroBaseRifH4 = IH4().scontroSopraLaRibalta;
+/** b8 chiama interni.scontroSopraLaRibalta salendo dalla Fucina: con la notte viva prima la rastrelliera. */
+IH4().scontroSopraLaRibalta = function scontroSopraLaRibaltaH4(opz = {}) {
+  if (notteVivaH4() && !opz.notteViva) { apriRastrellieraH4(opz); return true; }
+  return scontroBaseH4(opz);
+};
+
+const nuovaRunInterniBaseH4 = IH4().nuovaRun;
+/** T4 esce dalla piazza con interni.nuovaRun: con la notte viva si continua la run (ciclo seguente). */
+IH4().nuovaRun = function nuovaRunPiazzaH4(...args) {
+  try { if (statoRun.fase === 'hub' && notteVivaH4()) { continuaNotteH4(); return undefined; } } catch (err) { console.error('[h4] continua', err); }
+  return nuovaRunInterniBaseH4.apply(this, args);
+};
+
+const t4GancioBaseH4 = t4Gancio;
+t4Gancio = function t4GancioH4(nome, ...args) {
+  try {
+    if (statoRun.fase === 'hub' && h4.rast) {
+      if (nome === 'logica') return true; // la piazza è ferma mentre si scelgono i ferri
+      if (nome === 'tasto') return tastoRastrellieraH4(args[0]);
+      if (nome === 'click') { const i = rigaClickH4(args[0], args[1]); if (i >= 0) scegliRigaH4(i); return true; }
+    }
+    // «Ricomincia notte» dalla piazza con la notte viva: la notte si chiude come una run lasciata a metà
+    if (nome === 'ricomincia' && statoRun.fase === 'hub' && notteVivaH4()) { h4.viva = null; statoRun.fase = 'in_gioco'; }
+  } catch (err) { console.error('[h4]', nome, err); }
+  const r = t4GancioBaseH4(nome, ...args);
+  try {
+    if (nome === 'bossSconfitto') dopoLucianaH4(args[0]);
+    else if (nome === 'logica') logicaH4();
+    else if (nome === 'sopra' && statoRun.fase === 'hub') {
+      if (notteVivaH4() && !statoRun.pausa) disegnaPiazzaVivaH4();
+      // menu di pausa (b3 lo disegna sopra il frame): una riga in cima dice che la notte è ancora viva
+      if (notteVivaH4() && statoRun.pausa && !statoRun.diarioD) drawPillLabel(TESTI_H4.pausa, W / 2, 10, 520, { size: 7.5, color: '#f9cb40', border: '#f9cb40' });
+      if (h4.rast) disegnaRastrellieraH4();
+    }
+  } catch (err) { console.error('[h4]', nome, err); }
+  return r;
+};
+
+/** A ogni tick: la battuta di Tonino in piazza, la pulizia dello stato a fine notte. */
+function logicaH4() {
+  const f = statoRun.fase;
+  if (f === 'morte' || f === 'menu_selezione') { h4.viva = null; h4.rast = null; }
+  if (h4.scontro && (f === 'morte' || f === 'menu_selezione' || (f === 'in_gioco' && !d1.attivo && !d1.vittoria))) {
+    h4.scontro = null;
+    try { ricalcolaStatistiche(); } catch (_) { /* niente */ }
+  }
+  if (h4.scontro && h4.scontro.bannerFerri && d1.attivo && d1.t > 20) { mostraBanner(h4.scontro.bannerFerri, 200); h4.scontro.bannerFerri = null; }
+  if (f === 'hub' && notteVivaH4() && h4.battuta !== h4.viva.run && !statoRun.pausa) {
+    let libero = true;
+    try { libero = !dialogoT4B8() && !b8.cart; } catch (_) { libero = true; }
+    if (libero) {
+      h4.battuta = h4.viva.run;
+      try { b8.cart = { voci: [bB8('tonino', TESTI_H4.tonino)], idx: 0, t: 0 }; } catch (_) { mostraBanner(TESTI_H4.tonino, 260); }
+    }
+  }
+}
+
+const interagisciStanzaBaseH4 = interagisciStanza;
+/** [E] alla seconda uscita dopo Donna Luciana: si torna in piazza con la notte viva. */
+interagisciStanza = function (...args) {
+  try {
+    const st = statoRun.stanzaCorrente;
+    if (st && st.ritornoH4 && statoRun.fase === 'in_gioco' && !statoRun.siparioAttivo && !statoRun.scambioPendente && vicinoUscitaH4()) {
+      tornaInPiazzaH4();
+      return undefined;
+    }
+  } catch (err) { console.error('[h4] uscita', err); }
+  return interagisciStanzaBaseH4.apply(this, args);
+};
+
+const disegnaStanzaBaseH4 = disegnaStanzaPixelArt;
+disegnaStanzaPixelArt = function (t, st, ...resto) {
+  const r = disegnaStanzaBaseH4.call(this, t, st, ...resto);
+  try { const s = st || statoRun.stanzaCorrente; if (s && s.ritornoH4 && statoRun.fase === 'in_gioco') disegnaUscitaH4(); } catch (err) { console.error('[h4] uscita (disegno)', err); }
+  return r;
+};
+
+const ricalcolaStatisticheBaseH4 = ricalcolaStatistiche;
+/** I ferri presi pesano: passo più lento per tutto lo scontro col Burattinaio. */
+ricalcolaStatistiche = function (...args) {
+  const r = ricalcolaStatisticheBaseH4.apply(this, args);
+  try {
+    if (h4.scontro && h4.scontro.n > 0 && d1.attivo) statoRun.speed *= Math.max(0.3, 1 - RITORNO_H4.ferri.passoPerFerro * h4.scontro.n);
+  } catch (err) { console.error('[h4] passo', err); }
+  return r;
+};
+
+try { if (typeof b3 === 'object' && b3 && Array.isArray(b3.menuAperti)) b3.menuAperti.push(() => Boolean(h4.rast) && statoRun.fase === 'hub'); } catch (_) { /* b3 assente */ }
+
+// ===========================================================================
+// 7. SONDA QA
+// ===========================================================================
+Object.assign(window.__teatro.interni, {
+  RITORNO_H4, TESTI_H4,
+  ritornoH4: Object.freeze({
+    stato: () => ({
+      viva: h4.viva ? { ...h4.viva } : null, notteViva: notteVivaH4(), portaPronta: portaProntaH4(),
+      rastrelliera: h4.rast ? { sel: h4.rast.sel, presi: { ...h4.rast.presi } } : null,
+      scontro: h4.scontro ? { ...h4.scontro, ferri: { ...h4.scontro.ferri } } : null, battuta: h4.battuta,
+    }),
+    forza: forzaH4,
+    scala: scalaBurattinaioH4,
+    vicinoUscita: vicinoUscitaH4,
+    tornaInPiazza: tornaInPiazzaH4,
+    sali: saliConDotazioneH4,
+    scegli: scegliRigaH4,
+    apriRastrelliera: (opz) => apriRastrellieraH4(opz || {}),
+  }),
 });
 
 </script>
