@@ -41,14 +41,23 @@ const foto = (n) => `${prefisso}-${n}.png`;
     if (I.progressione && I.progressione.sbloccaTutto) I.progressione.sbloccaTutto(); else if (I.sbloccaTutto) I.sbloccaTutto();
     selezionaPersonaggio(pid);
     statoRun.fase = 'in_gioco';
-    nuovaRun(false);
+    // Seme fisso: nuovaRun lo prende da Date.now/performance.now, quindi stanza e nemico modello cambiavano
+    // a ogni giro. Con l'orologio fermo per la sola chiamata la mappa (e il bersaglio) è sempre la stessa.
+    const oraVera = Date.now, perfVera = performance.now;
+    Date.now = () => 1845; performance.now = () => 0;
+    try { nuovaRun(false); } finally { Date.now = oraVera; performance.now = perfVera; }
     statoRun.siparioAttivo = null;
     const s = statoRun.mappa.stanze.find((x) => x.tipo === 'normale');
     entraInStanza(s, null);
     statoRun.siparioAttivo = null; statoRun.pausa = false;
     const st = statoRun.stanzaCorrente;
     // mai il Bozzo Esplosivo come bersaglio di prova: scoppia da solo e falsa le misure di danno
-    const modello = st.nemici.find((n) => !n.boss && (n.patternMob || n.tipo) !== 'bomba_ferma') || st.nemici.find((n) => !n.boss) || st.nemici[0];
+    // Il ciclo decide il comportamento con `n.comportamento || n.tipo` (40-combattimento.js): un nemico col
+    // comportamento del Bozzo ma un altro tipo/patternMob passava il vecchio filtro, scoppiava da solo
+    // (fuseTimer → hp = 0) e il bersaglio da 900 PF finiva a 0 dopo «un colpo». Si esclude da tutti e tre.
+    const bozzo = (n) => [n.comportamento, n.patternMob, n.tipo].includes('bomba_ferma');
+    const modello = st.nemici.find((n) => !n.boss && !bozzo(n) && n.tipo !== 'maschera') || st.nemici.find((n) => !n.boss && !bozzo(n));
+    if (conNemico && !modello) throw new Error('stanza di prova senza un bersaglio adatto (seme fisso da cambiare)');
     st.nemici = []; st.ostacoli = []; st.fragiliB7 = []; st.oggettiATerra = []; st.muroSegreto = null; st.suoloB7 = [];
     statoRun.proiettili.length = 0; statoRun.proiettiliNemici.length = 0;
     player.x = 300; player.y = 200; player.targetX = null; player.targetY = null; player.invuln = 0; player.cooldown = 0;
@@ -59,7 +68,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
       st.nemici.push(n); st.pulita = false;
     }
     const D = I.personaggiD2.d2; D.giro = 0; D.ricarica = 0; D.carica = null; D.deviati = 0; D.rotti = 0;
-    return { pg: statoRun.personaggioId, hp: statoRun.hpHalf, max: statoRun.maxHpHalf, nemici: st.nemici.length };
+    return { modello: modello && (modello.comportamento || modello.tipo), pg: statoRun.personaggioId, hp: statoRun.hpHalf, max: statoRun.maxHpHalf, nemici: st.nemici.length };
   }, { pid, conNemico });
   const tieniTasto = async (k, ms) => { await p.keyboard.down(k); await p.waitForTimeout(ms); await p.keyboard.up(k); };
   const hpNemici = () => p.evaluate(() => statoRun.stanzaCorrente.nemici.map((n) => n.hp));
