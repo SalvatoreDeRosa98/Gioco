@@ -443,7 +443,7 @@ if (typeof luceLuogoB2 === 'function') {
 const nuovaRunBaseH6 = nuovaRun;
 /** Run nuova: nessun percorso scelto. */
 nuovaRun = function (...args) {
-  statoRun.percorsoH6 = null;
+  statoRun.percorsoH6 = null; statoRun.sagratoH6 = null; statoRun.premioH6 = false;
   delete statoRun.zonaP3;
   return nuovaRunBaseH6.apply(this, args);
 };
@@ -1484,6 +1484,7 @@ function dannoBossH6(n, dmg) {
 function ingressoBossH6(stanza) {
   const b = stanza.tipo === 'boss' && !stanza.pulita ? bossH6(stanza) : null;
   if (b) mostraBanner(`💀 ${b.nome} (${b.hp} HP) — ${SCHEDA_H6.presentazione}`, BOSS_H6.bannerTick);
+  if (b && b.avvisatoH6 && stanza.cordaH6) Object.assign(stanza.cordaH6, { fase: 'posa', t: RINTOCCHI_H6.posaTick, durata: RINTOCCHI_H6.posaTick }); // Taddeo l'ha avvisato
 }
 
 /**
@@ -1629,4 +1630,216 @@ Object.defineProperties(window.__teatro.interni.casertavecchiaH6, Object.getOwnP
       campane: ((st.campaneH6) || []).map((c) => ({ x: c.x, y: c.y, z: c.z, posa: c.posa })), proiettili: statoRun.proiettiliNemici.length };
   },
   get rivelazioneVista() { try { return Boolean(memoriaH2().campanaroH6); } catch (_) { return false; } },
+}));
+
+// ===========================================================================
+// 5. TADDEO SUL SAGRATO (bibbia: «potrebbe ricomparire per chiedere perdono o per completare il proprio
+//    tradimento, a seconda delle scelte precedenti»), IL PREMIO DEL LUOGO, LA MUSICA
+// ===========================================================================
+/**
+ * Taddeo compare nella stanza accanto a quella del boss (il sagrato), una volta ripulita, secondo il flag
+ * `taddeo` dello slot (scritto da h1): perdonato → chiede perdono e lascia un aiuto; accusato → completa il
+ * tradimento (il Campanaro è avvisato: più vita e la corda già in posa); nessun flag → una guardia di spalle
+ * che non si volta. Giocando con Taddeo la scena non c'è. Ferruccio non parla.
+ */
+const SAGRATO_H6 = Object.freeze({
+  posto: Object.freeze({ x: 452, y: 150 }), raggio: 44,
+  aiuto: Object.freeze({ mezzeMaschere: 2, chiavi: 1 }),       // perdonato
+  tradimento: Object.freeze({ moltVitaBoss: 1.2 }),           // accusato
+  premio: Object.freeze({ x: 456, y: 104 }),                  // il dono del luogo, lontano da botola e porte
+});
+
+/** Testi del sagrato e del premio (DA APPROVARE DALL'AUTORE; tutti nuovi, nel tono di h1). */
+const TESTI_SAGRATO_H6 = Object.freeze({
+  perdonato: Object.freeze([
+    ['Taddeo', 'Ferruccio. Sei salito fin quassù.'],
+    ['Taddeo', 'A San Leucio mi hai lasciato andare. Non me lo meritavo, e lo sapevamo tutti e due.'],
+    ['Taddeo', 'Queste campane suonano per le parole che uno non ha detto. Io una ce l\'ho in gola da vent\'anni: perdonami.'],
+    ['', 'Ferruccio non risponde. Gli posa una mano sulla spalla.'],
+    ['Taddeo', 'Il Campanaro è là dietro. Prendi questa, è della sagrestia. E tieni dritta la testa: io la mia l\'ho tenuta bassa troppo a lungo.'],
+  ]),
+  accusato: Object.freeze([
+    ['Taddeo', 'Ancora tu.'],
+    ['Taddeo', 'A San Leucio mi hai guardato come si guarda un traditore. E allora traditore sia.'],
+    ['Taddeo', 'Il Campanaro sa che stai arrivando. Gliel\'ho detto io.'],
+    ['', 'Taddeo tira la corda una volta sola, e se ne va per il vicolo senza voltarsi.'],
+  ]),
+  diSpalle: 'Una guardia, di spalle sul parapetto del sagrato, guarda giù verso la valle. Non si volta.',
+  bannerAiuto: (m, c) => `Taddeo ti lascia ${m / 2} Maschera e ${c} chiave della sagrestia.`,
+  bannerTradimento: 'Il Campanaro ti aspetta: la corda è già tesa.',
+  premio: '★ IL DONO DELLE CAMPANE',
+  bannerPremio: '· Dove pendeva la campana grande è rimasto un DONO DELLE CAMPANE.',
+  diario: 'Al duomo il Campanaro ha lasciato andare la corda. Ho sentito il silenzio, dopo: pesava meno di tutte quelle parole.',
+});
+
+const flagH6 = () => (typeof flagH1 === 'function' ? flagH1() : {});
+const apiDialogoH6 = () => (window.__teatro && window.__teatro.h1api) || null;
+
+/** Prepara Taddeo sul sagrato nella mappa del piano (la stanza normale accanto a quella del boss). */
+function preparaSagratoH6(m) {
+  if (!m || statoRun.personaggioId === 'taddeo') return null;
+  const boss = m.stanze.find((s) => s.tipo === 'boss');
+  if (!boss) return null;
+  const ids = Object.values(boss.porte || {});
+  const st = m.stanze.find((s) => ids.includes(s.id) && s.tipo === 'normale') || m.stanze.find((s) => ids.includes(s.id) && s.tipo !== 'segreta');
+  if (!st) return null;
+  st.sagratoH6 = { visto: false };
+  return st;
+}
+
+const generaMappaPianoSagratoH6 = generaMappaPiano;
+/** Mappa di Casertavecchia: Taddeo sul sagrato. */
+generaMappaPiano = function (piano, ...resto) {
+  const m = generaMappaPianoSagratoH6.call(this, piano, ...resto);
+  try { if (m && casertavecchiaAttivaH6(piano)) preparaSagratoH6(m); } catch (err) { console.error('[h6] sagrato', err); }
+  return m;
+};
+
+/** Quale scena: 'perdonato' | 'accusato' | 'spalle' (o null se Taddeo è giocato). */
+function variaSagratoH6() {
+  if (statoRun.personaggioId === 'taddeo') return null;
+  const f = flagH6().taddeo;
+  return f === 'perdonato' || f === 'accusato' ? f : 'spalle';
+}
+
+/** Taddeo è in scena nella stanza (ripulita)? */
+function taddeoQuiH6(st = statoRun.stanzaCorrente) {
+  return st && st.sagratoH6 && (st.pulita || !st.nemici.some((n) => n.hp > 0)) && casertavecchiaAttivaH6() && variaSagratoH6() ? st.sagratoH6 : null;
+}
+
+/** Apre la scena del sagrato (una volta per notte). Rende la variante, o null. */
+function apriSagratoH6(st) {
+  const S = st.sagratoH6, v = variaSagratoH6();
+  if (!S || S.visto || !v) return null;
+  S.visto = true; S.variante = v;
+  if (v === 'spalle') { mostraBanner(TESTI_SAGRATO_H6.diSpalle, 260); return v; }
+  const a = apiDialogoH6();
+  const effetto = () => (v === 'perdonato' ? aiutoTaddeoH6() : tradimentoTaddeoH6());
+  if (!a) { effetto(); return v; }
+  a.apri(TESTI_SAGRATO_H6[v].map(([chi, t]) => a.voce(chi, t)), { poi: effetto });
+  return v;
+}
+
+/** Perdonato: un aiuto concreto (Maschere e una chiave). */
+function aiutoTaddeoH6() {
+  const A = SAGRATO_H6.aiuto;
+  statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + A.mezzeMaschere);
+  if (typeof aggiungiChiavi === 'function') aggiungiChiavi(A.chiavi); else statoRun.chiavi = (statoRun.chiavi || 0) + A.chiavi;
+  mostraBanner(TESTI_SAGRATO_H6.bannerAiuto(A.mezzeMaschere, A.chiavi), 200);
+  statoRun.sagratoH6 = 'perdonato';
+}
+
+/** Accusato: il tradimento si compie (il Campanaro è avvisato: più vita, la corda già in posa). */
+function tradimentoTaddeoH6() {
+  const boss = statoRun.mappa && statoRun.mappa.stanze.find((s) => s.tipo === 'boss');
+  const b = bossH6(boss);
+  if (b && !b.avvisatoH6) {
+    b.avvisatoH6 = true;
+    b.maxHp = Math.round(b.maxHp * SAGRATO_H6.tradimento.moltVitaBoss); b.hp = b.maxHp;
+  }
+  suonoCampanaH6(0.9, 0.06);
+  mostraBanner(TESTI_SAGRATO_H6.bannerTradimento, 200);
+  statoRun.sagratoH6 = 'accusato';
+}
+
+/** Taddeo sul sagrato: la figura del personaggio (la stessa di h1), di spalle se non c'è flag. */
+function disegnaTaddeoH6(st, tk) {
+  const S = taddeoQuiH6(st);
+  if (!S || (S.visto && S.variante === 'accusato') || typeof disegnaFerruccioPittorico !== 'function' || !PERSONAGGI_GIOCABILI.taddeo) return;
+  const P = SAGRATO_H6.posto;
+  const spalle = variaSagratoH6() === 'spalle';
+  ombraH6(P.x, P.y + 10, 10, 3.4, 0.55);
+  disegnaFerruccioPittorico(ctx, P.x, P.y, { scale: 1, tick: spalle ? 0 : tk, charInfo: PERSONAGGI_GIOCABILI.taddeo, flipX: spalle ? P.x < player.x : P.x > player.x, sinergie: {} });
+  if (spalle) { ctx.fillStyle = 'rgba(8, 10, 22, 0.35)'; ctx.beginPath(); ctx.ellipse(P.x, P.y - 12, 11, 20, 0, 0, TAU); ctx.fill(); }
+}
+
+/** Il premio del luogo (al posto della lima): un oggetto forte garantito sul piedistallo, e la riga del Diario. */
+function premioH6(st) {
+  if (st.premioH6 || !casertavecchiaAttivaH6()) return false;
+  const D = SAGRATO_H6.premio;
+  st.premioH6 = true;
+  let item = null;
+  try { item = estraiOggettoForte(); } catch (err) { console.error('[h6] premio', err); }
+  if (item) st.oggettoPiedistallo = { ...item, x: D.x, y: D.y, preso: false, forteGratis: true, premioH6: true };
+  else { spawnaMonetaATerra(st, D.x - 10, D.y, 3); spawnaMonetaATerra(st, D.x + 10, D.y, 3); }
+  try { if (typeof a7 === 'object' && a7 && a7.run) a7.run.premioH6 = true; } catch (_) { /* a7 assente */ }
+  statoRun.premioH6 = true;
+  mostraBanner(`${statoRun.banner || ''} ${TESTI_SAGRATO_H6.bannerPremio}`.trim(), 300);
+  return true;
+}
+
+if (typeof componiPaginaB8 === 'function') {
+  const componiPaginaPremioH6 = componiPaginaB8;
+  /** Diario: la riga del Campanaro battuto. */
+  componiPaginaB8 = function (v, ...resto) {
+    const pagina = componiPaginaPremioH6.call(this, v, ...resto);
+    try {
+      if (v && v.premioH6 && pagina && Array.isArray(pagina.righe) && !pagina.righe.includes(TESTI_SAGRATO_H6.diario)) pagina.righe.push(TESTI_SAGRATO_H6.diario);
+    } catch (err) { console.error('[h6] diario premio', err); }
+    return pagina;
+  };
+}
+
+const passoLogicoSagratoH6 = passoLogico;
+/** Avvicinarsi a Taddeo apre la scena (una volta). */
+passoLogico = function (...args) {
+  const r = passoLogicoSagratoH6.apply(this, args);
+  try {
+    const st = statoRun.stanzaCorrente;
+    const S = statoRun.fase === 'in_gioco' && !statoRun.siparioAttivo && !statoRun.pausa ? taddeoQuiH6(st) : null;
+    if (S && !S.visto) {
+      const P = SAGRATO_H6.posto;
+      const aperto = window.__teatro.h1api && window.__teatro.h1api.aperto();
+      if (!aperto && Math.hypot(player.x - P.x, player.y - P.y) < SAGRATO_H6.raggio) apriSagratoH6(st);
+    }
+  } catch (err) { console.error('[h6] sagrato passo', err); }
+  return r;
+};
+
+const disegnaStanzaPixelArtSagratoH6 = disegnaStanzaPixelArt;
+/** Dopo la stanza: Taddeo sul sagrato e il cartiglio del premio. */
+disegnaStanzaPixelArt = function (tk, st, ...resto) {
+  const r = disegnaStanzaPixelArtSagratoH6.call(this, tk, st, ...resto);
+  try {
+    if (st && st.sagratoH6) disegnaTaddeoH6(st, tk);
+    if (st && st.premioH6 && st.oggettoPiedistallo && !st.oggettoPiedistallo.preso) {
+      const o = st.oggettoPiedistallo;
+      drawPillLabel(TESTI_SAGRATO_H6.premio, o.x, o.y + 60, 150, { size: 7.5, color: TINTE_H6.oro, border: QUARTIERE_H6.bordoPillola });
+    }
+  } catch (err) { console.error('[h6] sagrato disegno', err); }
+  return r;
+};
+
+// --------------------------------------------------------------------------- la musica del luogo (a8)
+/** Tema «casertavecchia» nel formato di MUSICA.temi (a8-musica.js): lento, organetto tenuto, rintocchi nel basso. */
+const MUSICA_H6 = Object.freeze({
+  id: 'casertavecchia',
+  tema: {
+    bpm: 50, radice: 59, scala: 'armonica', basso: 'X.....', organetto: 'tenuto', tamburello: null, volume: 0.9,
+    accordi: ['i', 'iv', 'i', 'V', 'VI', 'iv', 'V', 'i'],
+    melodia: ['0 - 2 3 - 2', '3 - 5 3 2 -', '0 - - 2 - -', '4 - 2 1 - -', '5 - 4 3 - 2', '3 - 2 0 - -', '1 - 2 4 - 2', '0 - - - - -'],
+  },
+});
+
+/** Registra il tema e punta il piano 3 del ciclo sul tema giusto (Casertavecchia, o restituisce quello di prima). */
+function intonaH6() {
+  try {
+    if (typeof MUSICA !== 'object' || !MUSICA || !MUSICA.temi || !MUSICA.temaPerPiano) return;
+    if (!MUSICA.temi[MUSICA_H6.id] && !Object.isFrozen(MUSICA.temi)) MUSICA.temi[MUSICA_H6.id] = MUSICA_H6.tema;
+    if (!MUSICA.temi[MUSICA_H6.id] || Object.isFrozen(MUSICA.temaPerPiano)) return;
+    const k = CASERTAVECCHIA_H6.pianoLuogo;
+    if (casertavecchiaAttivaH6()) {
+      if (MUSICA.temaPerPiano[k] !== MUSICA_H6.id) { h6.temaPrima = MUSICA.temaPerPiano[k]; MUSICA.temaPerPiano[k] = MUSICA_H6.id; }
+    } else if (MUSICA.temaPerPiano[k] === MUSICA_H6.id) MUSICA.temaPerPiano[k] = h6.temaPrima;
+  } catch (_) { /* senza musica si gioca lo stesso */ }
+}
+intonaH6();
+
+Object.assign(window.__teatro.interni, { SAGRATO_H6, TESTI_SAGRATO_H6, MUSICA_H6 });
+Object.defineProperties(window.__teatro.interni.casertavecchiaH6, Object.getOwnPropertyDescriptors({
+  /** Il sagrato della stanza corrente: { visto, variante } o null; e la variante che toccherebbe. */
+  get sagrato() { const st = statoRun.stanzaCorrente; return st && st.sagratoH6 ? { ...st.sagratoH6, qui: Boolean(taddeoQuiH6(st)) } : null; },
+  get variante() { return variaSagratoH6(); },
+  apriSagrato: () => apriSagratoH6(statoRun.stanzaCorrente),
+  get tema() { try { return MUSICA.temaPerPiano[CASERTAVECCHIA_H6.pianoLuogo]; } catch (_) { return null; } },
 }));
