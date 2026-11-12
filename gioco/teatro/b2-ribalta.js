@@ -183,7 +183,7 @@ const RIBALTA_B2 = Object.freeze({
   }),
 
   crollo: Object.freeze({
-    senzaCrollo: Object.freeze(['bomba_ferma']), // il Bozzo esplode: resta l'animazione del suo foglio
+    senzaCrollo: Object.freeze(['bomba_ferma', 'marionetta_h5', 'macchinista_h5']), // il Bozzo esplode: resta l'animazione del suo foglio; (h5) cadono a modo loro
     ritardoGiocatoreMs: 1600,  // Ferruccio crolla quando la sequenza di morte spezza i fili (t4: fasiMs.lanterne)
     risoluzioneMax: 3,         // pixel per px logico delle tele dei pezzi
     cattureMax: 8,             // tele dei caduti tenute in memoria

@@ -76,7 +76,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   // piano 2 forzata
   r = await stanzaConBotole(2, true);
   ok('piano 2: botola socchiusa (forzata)', r.botola && r.pulita, r);
-  await p.evaluate(() => { const b = statoRun.stanzaCorrente.botolaH5; player.x = b.x; player.y = b.y + 10; });
+  await p.evaluate(() => { const b = statoRun.stanzaCorrente.botolaH5; player.x = b.x + 24; player.y = b.y + 4; });
   await scatta('1-botola');
   // ---- 2. discesa ----
   const sopra = await p.evaluate(() => ({ n: statoRun.mappa.stanze.length, id: statoRun.stanzaCorrente.id }));
@@ -191,6 +191,64 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('una volta per notte', r === false, r);
   await passi(p, 10);
   await scatta('4-ritorno');
+
+  // ---- 6. ogni quartiere, ciclo 2, stanze non ammesse, e6, seconda discesa, morte ----
+  const giro = async (piano) => {
+    await p.evaluate(() => { window.__teatro.interni.sottopalcoH5.h5.fatte.clear(); });
+    const a = await stanzaConBotole(piano, false); // probabilità vera: se non esce, la si forza (la regola è già provata)
+    if (!a.botola) await p.evaluate(() => window.__teatro.interni.sottopalcoH5.provaBotolaH5(statoRun.stanzaCorrente, true));
+    return p.evaluate(() => {
+      const H5 = window.__teatro.interni.sottopalcoH5;
+      const snap = localStorage.getItem(Object.keys(localStorage).find((k) => /ripresa|e6/i.test(k)) || '');
+      const sopra = statoRun.stanzaCorrente, quartiere = getQuartierePiano(statoRun.piano).nome;
+      const b = sopra.botolaH5; player.x = b.x; player.y = b.y + 8;
+      interagisciStanza();
+      const giu = H5.sottoH5(), nomi = statoRun.mappa.stanze.map((s) => s.id);
+      const errori = [];
+      for (const s of statoRun.mappa.stanze) {
+        entraInStanza(s, 'W');
+        for (let k = 0; k < 30; k++) { try { passoLogico(); disegnaFrame(16); } catch (e) { errori.push(String(e)); break; } }
+        for (const n of s.nemici) n.hp = 0;
+        for (let k = 0; k < 200 && !s.pulita; k++) { for (const n of s.nemici) n.hp = 0; passoLogico(); }
+      }
+      verificaStanzaPulita(); const dbg = { pul: statoRun.stanzaCorrente.pulita, id: statoRun.stanzaCorrente.id, hp: statoRun.stanzaCorrente.nemici.map((n) => n.hp), fase: statoRun.fase, pausa: statoRun.pausa, sip: Boolean(statoRun.siparioAttivo) };
+      H5.apriCassaH5();
+      const cop = H5.h5.copione && H5.h5.copione.testo;
+      const S = H5.SOTTOPALCO_H5.scala; player.x = S.x; player.y = S.y + 6;
+      interagisciStanza();
+      const snap2 = localStorage.getItem(Object.keys(localStorage).find((k) => /ripresa|e6/i.test(k)) || '');
+      return { quartiere, giu, nomi: nomi.length, su: !H5.sottoH5() && statoRun.stanzaCorrente === sopra && sopra.pulita, cop, errori, snapUguale: snap === snap2, ciclo: statoRun.ciclo, dbg };
+    });
+  };
+  const T = await p.evaluate(() => window.__teatro.interni.sottopalcoH5.TESTI_H5.copione);
+  const quartieri = [];
+  for (const piano of [2, 3, 4, 5, 6]) {
+    const g = await giro(piano);
+    quartieri.push(g.quartiere);
+    ok(`piano ${piano} (${g.quartiere}, ciclo ${g.ciclo}): giù, tre stanze, su, nessun errore`, g.giu && g.nomi === 3 && g.su && !g.errori.length, g);
+    ok(`piano ${piano}: istantanea di e6 non toccata dalla discesa`, g.snapUguale, g.snapUguale);
+    if (piano === 3) ok('seconda discesa: secondo pezzo di copione', g.cop === T[2] || g.cop === T[1], g.cop);
+  }
+  ok('quattro quartieri visitati', new Set(quartieri).size >= 4, quartieri);
+  r = await p.evaluate(() => {
+    const H5 = window.__teatro.interni.sottopalcoH5;
+    const fuori = statoRun.mappa.stanze.filter((s) => s.tipo !== 'normale').map((s) => { s.botoleD5 = s.botoleD5 || { lista: [{ x: 300, y: 200, w: 26, h: 18 }] }; return H5.provaBotolaH5(s, true); });
+    return fuori.every((x) => x === false);
+  });
+  ok('mai nelle stanze di boss o speciali', r);
+  // morte sotto: morte normale
+  await p.evaluate(() => { window.__teatro.interni.sottopalcoH5.h5.fatte.clear(); });
+  await stanzaConBotole(2, true);
+  const morte = await p.evaluate(() => {
+    const b = statoRun.stanzaCorrente.botolaH5; player.x = b.x; player.y = b.y + 8; interagisciStanza();
+    const giu = window.__teatro.interni.sottopalcoH5.sottoH5();
+    statoRun.graziaIngressoC = 0; player.invuln = 0; statoRun.hpHalf = 1;
+    subisciColpoGiocatore(2, 'prova', player.x, player.y);
+    return { giu, fase: statoRun.fase, hp: statoRun.hpHalf };
+  });
+  await passi(p, 30);
+  const dopoMorte = await p.evaluate(() => ({ fase: statoRun.fase, sotto: window.__teatro.interni.sottopalcoH5.sottoH5() }));
+  ok('morte sotto: morte normale', morte.giu && morte.hp <= 0 && dopoMorte.fase !== 'in_gioco', { morte, dopoMorte });
 
   ok('nessun errore in console', errori.length === 0, errori.slice(0, 5));
   ok('nessun errore in ERRORI_TEATRO', (await errTeatro()) === 0);

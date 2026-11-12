@@ -1,7 +1,7 @@
 /*
  * teatro/h5-sottopalco.js — (h5) IL SOTTOPALCO: il piano segreto sotto il tavolato del palcoscenico.
  *
- * Come si incontra: una volta per notte (per ogni ciclo della notte senza fine), mai al primo piano del ciclo, quando
+ * Come si incontra: una volta per notte (per ogni ciclo della notte senza fine), mai al primo piano della notte, quando
  * una stanza normale con le botole di d5 (`st.botoleD5`) viene ripulita, con probabilità SOTTOPALCO_H5.probabilita
  * UNA botola resta socchiusa con un filo di luce che sale (`st.botolaH5`). Avvicinandosi: «[E] Calati sotto».
  *
@@ -23,7 +23,7 @@
 /** Valori di gioco del Sottopalco (tutti qui: si accordano senza toccare il codice). */
 const SOTTOPALCO_H5 = Object.freeze({
   probabilita: 0.6,               // una stanza con le botole ripulita: probabilità che una resti socchiusa
-  pianiNelCiclo: Object.freeze([2, 3, 4]), // piani del ciclo ammessi (mai il primo)
+  pianoMinimo: 2,                 // mai al primo piano della notte (dal ciclo 2 anche la Villa, piano 5)
   raggioBotola: 30,               // px: distanza per «Calati sotto»
   raggioScala: 30,                // px: distanza per «Risali»
   scala: Object.freeze({ x: 500, y: 112 }), // la scala a pioli nell'ultima stanza
@@ -130,7 +130,7 @@ function provaBotolaH5(st, forza = false) {
   if (!lista.length) return false;
   if (!forza) {
     if (h5.fatte.has(chiaveNotteH5())) return false;
-    if (SOTTOPALCO_H5.pianiNelCiclo.indexOf(pianoNelCicloH5()) < 0) return false;
+    if ((statoRun.piano || 1) < SOTTOPALCO_H5.pianoMinimo) return false;
     if (rng() >= SOTTOPALCO_H5.probabilita) return false;
   }
   const b = lista[Math.floor(rng() * lista.length) % lista.length];
@@ -357,8 +357,11 @@ function disegnaBotolaSocchiusaH5(st, tk) {
   ctx.globalAlpha = pulsa;
   ctx.fillStyle = 'rgba(255,214,140,0.8)';
   ctx.fillRect(b.x - 1, b.y - b.h / 2, 2, b.h);
-  ctx.globalAlpha = 0.35 * pulsa;
-  ctx.drawImage(aloneH5(), b.x - 18, b.y - 30, 36, 40);
+  ctx.globalAlpha = 0.7 * pulsa;
+  ctx.drawImage(aloneH5(), b.x - 26, b.y - 44, 52, 56);
+  ctx.fillStyle = 'rgba(255,214,140,0.35)'; // la lama di luce che sale dalla fessura
+  ctx.beginPath(); ctx.moveTo(b.x - 2, b.y + b.h / 2); ctx.lineTo(b.x + 2, b.y + b.h / 2); ctx.lineTo(b.x + 7, b.y - 46); ctx.lineTo(b.x - 7, b.y - 46); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(255,214,140,0.8)';
   for (let i = 0; i < 4; i++) { // granelli che salgono nel filo di luce
     const f = ((tk * 0.6 + i * 9) % 30) / 30;
     ctx.globalAlpha = 0.6 * (1 - f);
@@ -387,7 +390,11 @@ function disegnaStanzaSottoH5(st, tk) {
   }
   disegnaPorteH5(st);
   disegnaCaduteEPesiH5(st, tk);
-  if (S.ultima) { disegnaScalaH5(tk, scalaProntaH5(st)); disegnaCassaH5(st); }
+  if (S.ultima) {
+    disegnaScalaH5(tk, scalaProntaH5(st)); disegnaCassaH5(st);
+    const m = st.nemici.find((n) => n.bossId === 'macchinista-h5' && n.hp <= 0);
+    if (m) disegnaMacchinistaSedutoH5(m);
+  }
 }
 
 /** La scala a pioli che risale al palco (accostata al muro dell'ultima stanza). */
@@ -768,6 +775,17 @@ function disegnaMacchinistaH5(n, tk) {
   ctx.restore();
 }
 
+/** Il Macchinista caduto: seduto per terra contro una cassa, la testa bassa (niente corpo che si spezza). */
+function disegnaMacchinistaSedutoH5(n) {
+  ctx.save(); ctx.translate(n.x, n.y); ctx.scale(n.versoH5 || -1, 1);
+  ctx.fillStyle = '#1c130c'; ctx.fillRect(-26, -16, 20, 16); ctx.strokeStyle = '#d9a456'; ctx.globalAlpha = 0.6; ctx.strokeRect(-25.5, -15.5, 19, 15); ctx.globalAlpha = 1;
+  sagomaH5(() => { ctx.moveTo(-8, 0); ctx.lineTo(14, 0); ctx.lineTo(14, -4); ctx.lineTo(0, -6); ctx.lineTo(-4, -22); ctx.quadraticCurveTo(-8, -28, -12, -22); ctx.closePath(); }, false);
+  sagomaH5(() => { ctx.arc(-3, -27, 5, 0, TAU); }, false);
+  ctx.fillStyle = '#e8d2a4'; ctx.fillRect(-1, -25, 4, 3);
+  ctx.fillStyle = '#c0392b'; ctx.fillRect(-8, -21, 7, 2);
+  ctx.restore();
+}
+
 /** Sacchi in aria (corda dal tavolato, sacco che cala) e a terra, e la quinta che scorre: sopra le figure. */
 function disegnaMacchineH5(st, tk) {
   const S = st.sottopalcoH5, M = SOTTOPALCO_H5.macchinista;
@@ -914,6 +932,7 @@ passoLogico = function passoLogicoH5(...a) {
       const m = st.nemici.find((n) => n.bossId === 'macchinista-h5' && n.hp > 0);
       if (m) passoMacchinistaH5(st, m);
       passoMacchineH5(st);
+      if (!st.pulita && !st.sottopalcoH5.cadute.length && st.nemici.every((n) => n.hp <= 0)) verificaStanzaPulita(); // rete di sicurezza
     }
     if (h5.copione && h5.copione.t > 0 && !statoRun.pausa) h5.copione.t--;
   } catch (err) { console.error('[h5] passo', err); }
