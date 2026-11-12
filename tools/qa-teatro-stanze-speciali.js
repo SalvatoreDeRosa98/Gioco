@@ -37,7 +37,7 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
   const gen = await p.evaluate((SEMI) => {
     const I = window.__teatro.interni;
     const tipi = I.STANZE_SPECIALI_A3.ordine;
-    const out = {}; const v = [];
+    const out = {}; const v = []; let telaiAccanto = 0;
     for (const piano of [1, 2, 3, 4]) {
       const freq = Object.fromEntries(tipi.map((t) => [t, 0]));
       for (let seme = 1; seme <= SEMI; seme++) {
@@ -65,6 +65,9 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
           let vicini = 0; let boss = false;
           for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
             const o = celle.get(`${s.cx + dx},${s.cy + dy}`);
+            // il Telaio di Agnese (h1) c'è sempre a San Leucio e viene piazzato per ultimo: in poche mappe l'unico
+            // posto libero è accanto a una stanza speciale. Non conta come vicino, ma si tiene il conto (sotto).
+            if (o && o.tipo === 'telaio') { telaiAccanto++; continue; }
             if (o) { vicini++; if (o.tipo === 'boss') boss = true; }
           }
           if (vicini !== 1) err(`${s.tipo} tocca ${vicini} stanze`);
@@ -73,7 +76,9 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
       }
       out[piano] = freq;
     }
-    return { frequenze: out, violazioni: v };
+    // il Telaio accanto a una stanza speciale deve restare un caso raro: al più una mappa su dieci del suo piano
+    if (telaiAccanto > SEMI / 10) v.push(`il Telaio di Agnese è accanto a una stanza speciale in ${telaiAccanto} mappe su ${SEMI}`);
+    return { frequenze: out, violazioni: v, telaiAccanto };
   }, SEMI);
   violazioni.push(...gen.violazioni);
 

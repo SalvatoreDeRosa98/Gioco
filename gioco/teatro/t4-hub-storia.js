@@ -679,7 +679,7 @@
   // ===========================================================================
   function apriDialogo(voci, { scene = [], scelta = null, poi = null } = {}) {
     if (!voci.length && !scelta) { segnaViste(scene); if (poi) poi(); return; }
-    S.dialogo = { voci, idx: 0, scelta, sel: 0, scene, poi, inScelta: !voci.length && Boolean(scelta), fase: statoRun.fase };
+    S.dialogo = { voci, idx: 0, scelta, sel: 0, scene, poi, inScelta: !voci.length && Boolean(scelta), fase: statoRun.fase, run: statoRun.numeroRun };
   }
   function segnaViste(ids) {
     let cambiato = false;
@@ -1502,6 +1502,9 @@
       // il dialogo lasciato a metà si chiude senza esito (nessuna scena segnata vista).
       if (S.dialogo && S.dialogo.fase !== statoRun.fase) S.dialogo = null;
       // La rivelazione di Luciana è una per run, anche per le run nuove avviate dal menu ESC.
+      // Un cartiglio nato in sala (il confronto con Taddeo, il Cortile) non segue la notte nuova: senza questa riga
+      // restava aperto dopo «nuovaRun» e fermava i passi di Ferruccio.
+      if (S.dialogo && S.dialogo.fase === 'in_gioco' && S.dialogo.run !== statoRun.numeroRun) S.dialogo = null;
       if (statoRun.numeroRun !== S.runCorrente) { S.runCorrente = statoRun.numeroRun; S.rivelazioneRun = false; }
       if (statoRun.fase === 'hub') { if (!statoRun.pausa) aggiornaHub(); return true; }
       if (statoRun.fase === 'morte') { if (S.morte) aggiornaMorte(); else concludiMorte(); return true; }

@@ -159,7 +159,7 @@ const foto = (n) => (fs.existsSync(prefisso) && fs.statSync(prefisso).isDirector
           perProf[k] = perProf[k] || { stanze: 0, nemici: 0, grado: 0, conGrado: 0 };
           perProf[k].stanze++; perProf[k].nemici += s.nemici.length; nemici += s.nemici.length;
           if (g) { perProf[k].grado += g.diff; perProf[k].conGrado++; }
-          if (!s.nemici.length) err(`${s.id} senza nemici`);
+          if (!s.nemici.length && !s.cortileH3) err(`${s.id} senza nemici`); // il Cortile d'Onore (h3) è una stanza di scena: Gregorio arriva col confronto
           const vietati = Object.keys(s.porte).map((l) => I.PORTE_C[l]);
           if (s.muroSegreto) vietati.push(I.PORTE_C[s.muroSegreto.lato]);
           const controlla = (dove, extra) => {

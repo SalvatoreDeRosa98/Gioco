@@ -112,7 +112,8 @@ const foto = (n) => `${prefisso}-${n}.png`;
   const T = await p.evaluate(() => {
     const I = window.__teatro.interni;
     return { A: I.ACQUEDOTTO_D6, nemici: I.NEMICI_D6, sost: I.SOSTITUZIONI_D6, scheda: I.SCHEDA_D6, boss: I.BOSS_D6, stati: I.STATI_D6, arena: I.ARENA,
-      quartiere: I.QUARTIERE_D6, segni: I.SEGNI_A6.map((s) => s.boss), testi: { diario: I.TESTI_D6.diario, pergamena: I.TESTI_D6.pergamena } };
+      quartiere: I.QUARTIERE_D6, segni: I.SEGNI_A6.map((s) => s.boss), testi: { diario: I.TESTI_D6.diario, pergamena: I.TESTI_D6.pergamena,
+        villa: (typeof DIARIO_B8 !== 'undefined' && DIARIO_B8.cammino && DIARIO_B8.cammino[I.ACQUEDOTTO_D6.pianoLuogo]) || [] } };
   });
   const campiQuartiere = await p.evaluate(() => {
     const I = window.__teatro.interni; const base = getQuartierePiano(2);
@@ -716,7 +717,11 @@ const foto = (n) => `${prefisso}-${n}.png`;
   await libera();
   let mem = await ultimaPagina();
   const rigaD6 = (pg) => Boolean(pg && pg.righe.some((r) => T.testi.diario.includes(r)));
-  const rigaVilla = (pg) => Boolean(pg && pg.righe.some((r) => /Villa/.test(r)));
+  // la riga «sono arrivato alla Villa» del cammino di b8, non una riga qualsiasi che nomina la Villa
+  // (le rivelazioni dei boss di h2 la nominano: «…una bambina della Villa…»)
+  const rigaVilla = (pg) => Boolean(pg && pg.righe.some((r) => (T.testi.villa.length
+    ? T.testi.villa.some((t) => String(t).toLowerCase() === String(r).toLowerCase())
+    : /Villa/.test(r) && !/è caduto/.test(r))));
   ok('memoria:registro-delle-notti', mem.ultima && mem.ultima.percorso === 'acquedotto' && mem.senza > 0, { ultima: mem.ultima && mem.ultima.percorso, con: mem.conPercorso, senza: mem.senza });
   ok('memoria:diario-di-ferruccio', rigaD6(mem.pagina) && !rigaVilla(mem.pagina), mem.pagina);
   // una notte finita alla Villa: nessuna riga dell'Acquedotto

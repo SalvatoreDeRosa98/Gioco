@@ -33,6 +33,7 @@ const CONFIG_H1 = Object.freeze({
   bossCapitano: 'capitano-guardia',
   bossLeucio: Object.freeze(['capitano-guardia', 'tessitrice-pietra']), // per la condizione della scelta (a6)
   genitori: Object.freeze(['normale']),
+  vicini: Object.freeze(['normale', 'ingresso']), // le sole stanze che il telaio può toccare oltre a quella da cui si entra
   maiAccantoA: Object.freeze(['boss', 'segreta', 'patto']),
   telaio: Object.freeze({ x: 320, y: 150, raggioParla: 90 }),
   agnese: Object.freeze({ x: 372, y: 172 }),
@@ -295,13 +296,21 @@ function aggiungiTelaioH1(m, piano) {
   const key = (x, y) => `${x},${y}`;
   const griglia = new Map(m.stanze.filter((s) => s.cx >= 1 && s.cy >= 1).map((s) => [key(s.cx, s.cy), s]));
   const dentro = (x, y) => x >= 1 && x <= G.larghezza && y >= 1 && y <= G.altezza;
-  // tre passate, sempre più larghe: il telaio c'è SEMPRE a San Leucio (mai attaccato al boss né accanto a lui)
+  // passate sempre più larghe: il telaio c'è SEMPRE a San Leucio (mai attaccato al boss né accanto a lui)
+  const foglieA3 = (typeof STANZE_SPECIALI_A3 === 'object' && STANZE_SPECIALI_A3 && STANZE_SPECIALI_A3.ordine) || [];
   const passate = [
     { soloCieco: true, gen: (t) => CONFIG_H1.genitori.includes(t), mai: CONFIG_H1.maiAccantoA },
-    { soloCieco: false, gen: (t) => CONFIG_H1.genitori.includes(t), mai: CONFIG_H1.maiAccantoA },
+    // seconda passata: può toccare più stanze, ma solo di combattimento. Le stanze speciali (sfida, bisca,
+    // sacrificio, maledetta…) devono restare foglie che toccano una stanza sola: il telaio non ci si appoggia.
+    { soloCieco: false, gen: (t) => CONFIG_H1.genitori.includes(t), mai: CONFIG_H1.maiAccantoA, soloFra: CONFIG_H1.vicini },
+    // poi anche attaccato all'ingresso, sempre senza appoggiarsi a una stanza speciale
+    { soloCieco: true, gen: (t) => CONFIG_H1.vicini.includes(t), mai: CONFIG_H1.maiAccantoA },
+    { soloCieco: false, gen: (t) => CONFIG_H1.vicini.includes(t), mai: CONFIG_H1.maiAccantoA, soloFra: CONFIG_H1.vicini },
+    // poi accanto anche a tesoro, fucina e simili, ma mai alle foglie di a3 (sfida, sacrificio, maledetta, bisca)
+    { soloCieco: false, gen: (t) => CONFIG_H1.vicini.includes(t), mai: CONFIG_H1.maiAccantoA.concat(foglieA3) },
     { soloCieco: false, gen: (t) => !CONFIG_H1.maiAccantoA.includes(t), mai: ['boss'] },
   ];
-  for (const { soloCieco, gen, mai } of passate) {
+  for (const { soloCieco, gen, mai, soloFra } of passate) {
     for (const g of m.stanze.filter((s) => gen(s.tipo) && s.cx >= 1 && s.cy >= 1)) {
       for (const d of DIREZIONI_A3) {
         const nx = g.cx + d.dx, ny = g.cy + d.dy;
@@ -310,6 +319,7 @@ function aggiungiTelaioH1(m, piano) {
         const vicini = DIREZIONI_A3.map((d2) => griglia.get(key(nx + d2.dx, ny + d2.dy))).filter(Boolean);
         if (vicini.some((v) => mai.includes(v.tipo))) continue;
         if (soloCieco && vicini.length !== 1) continue;
+        if (soloFra && vicini.some((v) => !soloFra.includes(v.tipo))) continue;
         const s = creaStanzaA3(`r${m.stanze.length}`, CONFIG_H1.tipoStanza, nx, ny);
         g.porte[d.lato] = s.id;
         s.porte[d.opposto] = g.id;
