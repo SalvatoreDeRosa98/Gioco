@@ -668,6 +668,7 @@
     return ef;
   }
   T.effettoMedaglioneC = effettoMedaglioneC;
+  T.dialogoH3 = { apri: apriDialogo, voce }; // h3: il Cortile d'Onore apre i suoi cartigli (teatro/h3-gregorio.js)
   const PRESENZA_NUOVA_C = Object.freeze({ id: 'festaiola', tipo: 'npc', personaggio: 'festaiola', ancoraggio: 'hub:festaiola', c: 10, r: 5 });
   // --- C: fine ---
   const scena = (id) => DATI.scene.find((s) => s.id === id);
