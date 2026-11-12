@@ -25,7 +25,15 @@ sul codice attuale (tocco 88/88 per tre volte sulla release, verificato dal coor
 | burattinaio | marionette-cadute | a | cambio d'atto a ciclo fermo e passi contati, controllo nello stesso tick | stabile |
 | comandi | pad-levetta-ripetizione | c | corretta dal coordinatore (righe lette dal gioco) | stabile |
 
+## Prova sotto carico finto
+Undici suite (tocco errori oggetti200 trasformazioni morte pubblico boss-nuovi burattinaio ribalta personaggi
+immagini), due giri di fila con 4 processi `yes` (carico 4-6): giro 1 11/11 verdi, giro 2 10/11, rossa
+**ribalta** («morte: i due fili si spezzano»). Corretta in parte (Bozzi tolti, bersaglio sempre presente);
+resta un fallimento raro (1 su 4 anche a carico 1,6) col bersaglio «gatto»: pezzi 10 e fili 2 ma la condizione
+cade, quindi è `catture` ≠ 1. La causa è da capire (forse il gatto conta due crolli): la suite ora la stampa.
+
 ## Restano da guardare (non toccate)
+- **ribalta**, «morte: i due fili si spezzano»: vedi sopra, causa **c** probabile (tipo del bersaglio).
 - **stanze-teatro** (ondate della Buca ai tick attesi), **registro-scena** (`gamepad`), **avvio** (`dopo-morte`):
   non riprodotte rosse da sole in questo giro; probabilmente causa **a** (attese reali). Da rifare con
   `aspettaCondizione`/`passi`/`fermaCiclo` se tornano rosse.
