@@ -21,7 +21,7 @@
  *  Senza notte viva (una sera nuova, a mani nude) lo scontro resta quello di prima: d1 fa nuovaRun.
  *
  * Agganci: d1-burattinaio.js (opz.notteViva / opz.vita / opz.ritmo / opz.ferri, righe segnate «(h4)»).
- * Avvolge: t4Gancio, interagisciStanza, disegnaStanzaPixelArt, disegnaMenuPausa, ricalcolaStatistiche,
+ * Avvolge: t4Gancio, interagisciStanza, disegnaStanzaPixelArt, ricalcolaStatistiche,
  * interni.nuovaRun (l'uscita della piazza di T4), interni.scontroSopraLaRibalta (lo chiama b8).
  * Sonda QA: window.__teatro.interni.ritornoH4.
  */
@@ -368,7 +368,9 @@ t4Gancio = function t4GancioH4(nome, ...args) {
     if (nome === 'bossSconfitto') dopoLucianaH4(args[0]);
     else if (nome === 'logica') logicaH4();
     else if (nome === 'sopra' && statoRun.fase === 'hub') {
-      if (notteVivaH4()) disegnaPiazzaVivaH4();
+      if (notteVivaH4() && !statoRun.pausa) disegnaPiazzaVivaH4();
+      // menu di pausa (b3 lo disegna sopra il frame): una riga in cima dice che la notte è ancora viva
+      if (notteVivaH4() && statoRun.pausa && !statoRun.diarioD) drawPillLabel(TESTI_H4.pausa, W / 2, 10, 520, { size: 7.5, color: '#f9cb40', border: '#f9cb40' });
       if (h4.rast) disegnaRastrellieraH4();
     }
   } catch (err) { console.error('[h4]', nome, err); }
@@ -411,13 +413,6 @@ const disegnaStanzaBaseH4 = disegnaStanzaPixelArt;
 disegnaStanzaPixelArt = function (t, st, ...resto) {
   const r = disegnaStanzaBaseH4.call(this, t, st, ...resto);
   try { const s = st || statoRun.stanzaCorrente; if (s && s.ritornoH4 && statoRun.fase === 'in_gioco') disegnaUscitaH4(); } catch (err) { console.error('[h4] uscita (disegno)', err); }
-  return r;
-};
-
-const disegnaMenuPausaBaseH4 = disegnaMenuPausa;
-disegnaMenuPausa = function (...args) {
-  const r = disegnaMenuPausaBaseH4.apply(this, args);
-  try { if (statoRun.fase === 'hub' && notteVivaH4() && !statoRun.diarioD) drawTextFit(TESTI_H4.pausa, W / 2, 20, 600, { size: 8, color: '#f9cb40', weight: 'bold' }); } catch (err) { console.error('[h4] pausa', err); }
   return r;
 };
 
