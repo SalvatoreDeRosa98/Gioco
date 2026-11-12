@@ -671,6 +671,7 @@
   const PRESENZA_NUOVA_C = Object.freeze({ id: 'festaiola', tipo: 'npc', personaggio: 'festaiola', ancoraggio: 'hub:festaiola', c: 10, r: 5 });
   // --- C: fine ---
   const scena = (id) => DATI.scene.find((s) => s.id === id);
+  T.h1api = { apri: apriDialogo, voce, presenze: DATI.modelloHub.presenze, aperto: () => Boolean(S.dialogo) }; // --- h1: Agnese e Taddeo (teatro/h1-agnese-taddeo.js) ---
 
   // ===========================================================================
   // CARTIGLIO (dialogo): una battuta alla volta, Spazio/E avanza, scelta con frecce/1-2
@@ -748,6 +749,7 @@
     }
     // --- c1: quello che Tonino dice al posto delle battute solite (teatro/c1-partenza-segreta.js) ---
     if (npc === 'tonino' && typeof T.toninoParlaC1 === 'function' && T.toninoParlaC1(apriDialogo, voce)) return;
+    if (typeof T.npcParlaH1 === 'function' && T.npcParlaH1(npc)) return; // --- h1: Agnese e Taddeo in piazza ---
     // --- C: inizio --- novità delle notti: la festaiola (notte 4) e la battuta nuova di Tonino (notte 3)
     if (npc === 'festaiola') { apriDialogo(TESTI_NOTTI_C.festaiola.slice()); return; }
     if (npc === 'tonino' && notteC().battutaTonino && S.battutaNotteC !== notteCorrente()) {
