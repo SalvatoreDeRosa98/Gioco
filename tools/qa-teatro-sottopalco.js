@@ -127,15 +127,58 @@ const foto = (n) => `${prefisso}-${n}.png`;
   for (let k = 0; k < 30 && !preso; k++) { await passi(p, 10); preso = await p.evaluate((h0) => statoRun.hpHalf < h0, colpo.hp0); }
   ok('contrappeso: colpisce chi sta sotto quando passa basso', preso, colpo);
   await p.evaluate(() => { statoRun.hpHalf = statoRun.maxHpHalf; player.invuln = 9999; });
-  // ---- 5. fino in fondo e scala ----
+  // ---- 4. il Macchinista ----
   await p.evaluate(() => {
     const m = statoRun.mappa;
-    for (const s of m.stanze) { for (const n of s.nemici) n.hp = 0; }
+    for (const s of m.stanze.slice(0, -1)) { for (const n of s.nemici) n.hp = 0; s.pulita = true; }
     entraInStanza(m.stanze[m.stanze.length - 1], 'W');
-    for (const n of statoRun.stanzaCorrente.nemici) n.hp = 0;
-    verificaStanzaPulita();
+    player.invuln = 0; statoRun.hpHalf = statoRun.maxHpHalf = 40;
   });
-  await passi(p, 5);
+  const boss = await p.evaluate(() => { const b = statoRun.stanzaCorrente.nemici.find((n) => n.boss); return b && { nome: b.nome, hp: b.hp, fili: b.senzaFili, stato: b.statoH5, tipoStanza: statoRun.stanzaCorrente.tipo }; });
+  ok('Macchinista: mezzo-boss con nome e barra, stanza normale, senza fili', boss && boss.nome === 'Il Macchinista' && boss.fili && boss.tipoStanza === 'normale', boss);
+  const visti = await p.evaluate(() => {
+    const st = statoRun.stanzaCorrente, b = st.nemici.find((n) => n.boss), S = st.sottopalcoH5, v = { stati: {}, sacchi: 0, quinta: 0, buio: 0 };
+    return { b: Boolean(b), S: Boolean(S), v };
+  });
+  ok('Macchinista presente', visti.b && visti.S);
+  // passi contati: raccoglie stati, sacchi, quinte
+  const oss = { stati: new Set(), sacchi: 0, quinta: false, buio: false, segni: 0, colpi: 0 };
+  let fotoLeva = false, fotoQuinta = false;
+  for (let k = 0; k < 90; k++) {
+    await passi(p, 6);
+    const o = await p.evaluate(() => {
+      const st = statoRun.stanzaCorrente, b = st.nemici.find((n) => n.boss), S = st.sottopalcoH5;
+      if (statoRun.hpHalf < 10) statoRun.hpHalf = 40;
+      return { stato: b && b.hp > 0 ? b.statoH5 : 'caduto', t: b ? b.tH5 : 0, sacchi: (S.sacchi || []).filter((x) => x.quota > 0).length, quinta: Boolean(S.quinta), buio: window.__teatro.interni.sottopalcoH5.h5.buioFessure > 0, hp: b ? b.hp : 0, max: b ? b.maxHp : 1 };
+    });
+    oss.stati.add(o.stato); oss.sacchi = Math.max(oss.sacchi, o.sacchi); oss.quinta = oss.quinta || o.quinta; oss.buio = oss.buio || o.buio;
+    if (!fotoLeva && o.stato === 'leva' && o.t > 30) { fotoLeva = true; await scatta('3a-leva'); }
+    if (!fotoQuinta && o.quinta) { fotoQuinta = true; await scatta('3b-quinta'); }
+    if (k === 45) await p.evaluate(() => { const b = statoRun.stanzaCorrente.nemici.find((n) => n.boss); b.hp = Math.floor(b.maxHp * 0.4); });
+    if (oss.buio && oss.quinta && oss.sacchi) break;
+  }
+  ok('Macchinista: tira la leva e un sacco cala dall\'alto', oss.stati.has('leva') && oss.sacchi > 0, [...oss.stati]);
+  ok('Macchinista: fa scorrere una quinta', oss.quinta, [...oss.stati]);
+  ok('Macchinista: seconda metà, gira la ruota e spegne le fessure', oss.stati.has('ruota') && oss.buio, [...oss.stati]);
+  await scatta('3c-buio');
+  const fin = await p.evaluate(() => {
+    const st = statoRun.stanzaCorrente;
+    for (const n of st.nemici) n.hp = 0;
+    verificaStanzaPulita();
+    const C = window.__teatro.interni.sottopalcoH5.SOTTOPALCO_H5.cassa;
+    player.x = C.x; player.y = C.y + 14;
+    const prima = Boolean(st.oggettoPiedistallo);
+    interagisciStanza();
+    const h = window.__teatro.interni.sottopalcoH5.h5;
+    return { pulita: st.pulita, prima, ogg: st.oggettoPiedistallo && st.oggettoPiedistallo.nome, copione: h.copione && h.copione.testo, buio: h.buioFessure };
+  });
+  ok('caduto il Macchinista: stanza ripulita, fessure di nuovo accese', fin.pulita && fin.buio === 0, fin);
+  ok('cassa: un oggetto sul piedistallo', !fin.prima && fin.ogg, fin);
+  const T5 = await p.evaluate(() => window.__teatro.interni.sottopalcoH5.TESTI_H5.copione);
+  ok('cassa: il pezzo di copione della prima discesa', fin.copione === T5[0] && T5.length >= 6 && T5.length <= 8, fin.copione);
+  await passi(p, 40);
+  await scatta('3d-cassa');
+  await p.evaluate(() => { player.invuln = 9999; });
   await p.evaluate(() => { const S = window.__teatro.interni.sottopalcoH5.SOTTOPALCO_H5.scala; player.x = S.x; player.y = S.y + 6; });
   await scatta('3-scala');
   await p.evaluate(() => interagisciStanza());

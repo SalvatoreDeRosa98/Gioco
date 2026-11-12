@@ -40,7 +40,7 @@ const SOTTOPALCO_H5 = Object.freeze({
   composizione: Object.freeze([
     Object.freeze({ marionette: 2, topi: 3, contrappesi: 0 }),
     Object.freeze({ marionette: 1, topi: 4, contrappesi: 1 }),
-    Object.freeze({ marionette: 0, topi: 0, contrappesi: 0 }),
+    Object.freeze({ marionette: 0, topi: 0, contrappesi: 0, macchinista: true }),
   ]),
   extraCiclo: Object.freeze({ marionette: 1, topi: 1 }), // dal ciclo 2 in su, per ciclo (con un tetto)
   extraMax: 2,
@@ -52,6 +52,18 @@ const SOTTOPALCO_H5 = Object.freeze({
     raggio: 13,                   // px: chi è sotto il peso quando passa basso
     quotaColpo: 16,               // sotto questa quota il peso colpisce
     danno: 1,                     // mezze maschere
+  }),
+  macchinista: Object.freeze({
+    hp: 90,                       // vita di base (scalata da scalaH5 per piano e ciclo)
+    vel: 0.55, raggio: 14, distanza: 140, // passo, ingombro, distanza che tiene da Ferruccio
+    sogliaFase2: 0.5,             // sotto questa frazione di vita: seconda metà (fessure spente, più sacchi)
+    camminaTick: 80, camminaTick2: 50,
+    levaTick: 44,                 // posa: tira la leva
+    sacco: Object.freeze({ quota: 230, gravita: 0.45, raggio: 18, danno: 2, aTerraTick: 110, quanti2: 3, intervallo: 16 }),
+    cordaTick: 52,                // posa: tira la corda della quinta
+    quinta: Object.freeze({ vel: 3.1, varco: 66, spessore: 14, danno: 1, spinta: 14 }),
+    ruotaTick: 46,                // posa: gira la ruota delle fessure (solo nella seconda metà)
+    buioTick: 240, buioOgniTick: 620,
   }),
 });
 
@@ -73,8 +85,20 @@ const TESTI_H5 = Object.freeze({
   entrata: 'IL SOTTOPALCO — sotto il tavolato, dove il teatro si regge.',
   ritorno: 'Di nuovo sul palco. La botola si richiude.',
   titoloCopione: 'Pezzo di copione — mai messo in scena',
-  copione: Object.freeze([]),
-  nomi: Object.freeze({ marionetta_h5: 'Marionetta scartata', topo_h5: 'Topo di cartapesta', contrappeso: 'il contrappeso' }),
+  macchinistaEntra: 'IL MACCHINISTA — mezzo secolo sotto le assi. Le corde le conosce tutte.',
+  macchinistaCade: 'Il Macchinista si siede su una cassa e non si rialza. In fondo, una cassa è rimasta chiusa.',
+  copione: Object.freeze([
+    'ATTO TERZO, SCENA ULTIMA. Il bambino apre la porta della bottega. Fuori è giorno. — Cancellato con due righe d\'inchiostro.',
+    'Il Burattinaio si siede sul panchetto. Si guarda le mani. Dice: «Basta.» — Nessuno ha mai detto questa battuta.',
+    'Didascalia: la piazza si riempie di gente vera. Nessuno ha i fili. — In margine: «Troppo cara da mettere in scena.»',
+    'Donna Luciana si toglie la maschera. Sotto non c\'è niente da vedere: una donna stanca. — Pagina strappata a metà.',
+    'La campana batte le sei. Poi le sette. Il tempo riprende. — Sopra, a matita: «No.»',
+    'Il Macchinista sale sul palco e s\'inchina. Nessuno applaude. Lui ride lo stesso. — Scena tagliata.',
+    'Tonino conta le monete della serata. Sono abbastanza. Chiude il baule e se ne va a casa. — Mai provata.',
+    'FINALE SECONDO. Le marionette vanno a dormire. Il teatro resta al buio, e va bene così. — Il foglio è piegato in quattro.',
+  ]),
+  nomi: Object.freeze({ marionetta_h5: 'Marionetta scartata', topo_h5: 'Topo di cartapesta', contrappeso: 'il contrappeso',
+    macchinista: 'Il Macchinista', sacco: 'un sacco di sabbia', quinta: 'una quinta' }),
 });
 
 // ===========================================================================
@@ -127,7 +151,8 @@ function nuovaStanzaH5(i) {
     id: `h5-sotto-${i + 1}`, tipo: 'normale', cx: i + 1, cy: 1, porte: {}, muroSegreto: null,
     pulita: true, visitata: false, nemici: [], ostacoli: [], oggettiATerra: [], oggettoPiedistallo: null,
     ricompensaOggetto: null, slotFucina: [], slotPatto: [], uscitaAperta: false, portaPattoAperta: false,
-    sottopalcoH5: { indice: i, ultima: i === SOTTOPALCO_H5.stanze - 1, lame: lameH5(i), polvere: [], cadute: [], pesi: [] },
+    sottopalcoH5: { indice: i, ultima: i === SOTTOPALCO_H5.stanze - 1, lame: lameH5(i), polvere: [], cadute: [], pesi: [], sacchi: [], quinta: null,
+      cassa: i === SOTTOPALCO_H5.stanze - 1 ? { aperta: false } : null },
     nomeLuogoHud: TESTI_H5.luogo,
   };
   popolaStanzaH5(s, i);
@@ -161,7 +186,21 @@ function popolaStanzaH5(s, i) {
   for (let k = 0; k < nt; k++) s.nemici.push(nuovoNemicoH5('topo_h5', gx + (k % 2) * 14, gy + Math.floor(k / 2) * 12, `${s.id}-t${k}`));
   const CP = SOTTOPALCO_H5.contrappeso;
   for (let k = 0; k < C.contrappesi; k++) s.sottopalcoH5.pesi.push({ x: 300 + k * 90, y: 176 + k * 50, fase: rng() * TAU, periodo: CP.periodoTick * (0.9 + rng() * 0.2), quota: 99, dx: 0 });
+  if (C.macchinista) s.nemici.push(nuovoMacchinistaH5(s));
   if (s.nemici.length) s.pulita = false;
+}
+
+/** Il Macchinista: mezzo-boss (barra e nome dal motore con `boss: true`; la stanza resta 'normale'). */
+function nuovoMacchinistaH5(s) {
+  const M = SOTTOPALCO_H5.macchinista, K = scalaH5(), hp = Math.round(M.hp * K.hp);
+  const ciclo = statoRun.ciclo || 1;
+  return {
+    id: `${s.id}-macchinista`, bossId: 'macchinista-h5', tipo: 'macchinista_h5', pattern: 'macchinista_h5',
+    nome: ciclo > 1 ? `${TESTI_H5.nomi.macchinista} (Ciclo ${ciclo})` : TESTI_H5.nomi.macchinista,
+    boss: true, x: 420, y: 150, vx: 0, vy: 0, airZ: 0, hp, maxHp: hp, speed: M.vel * K.vel, r: M.raggio,
+    flash: 0, burnTicks: 0, stunTicks: 0, state: 'idle', stateTimer: 45, senzaFili: true,
+    statoH5: 'cammina', tH5: 0, fase2H5: false, giroH5: 0, buioCdH5: 0, dirH5: -1, sacchiDaH5: 0,
+  };
 }
 
 /** Lame di luce fisse di una stanza (da fessure del tavolato: posizioni deterministiche per indice). */
@@ -213,6 +252,9 @@ function risaliH5() {
   suonoH5('risali');
   return true;
 }
+
+/** Vero se la cassa del premio si può aprire (ultima stanza ripulita, cassa chiusa). */
+function cassaProntaH5(st = statoRun.stanzaCorrente) { return Boolean(st && st.sottopalcoH5 && st.sottopalcoH5.cassa && !st.sottopalcoH5.cassa.aperta && st.pulita); }
 
 /** Vero se la scala dell'ultima stanza è disponibile (stanza ripulita). */
 function scalaProntaH5(st = statoRun.stanzaCorrente) { return Boolean(st && st.sottopalcoH5 && st.sottopalcoH5.ultima && st.pulita); }
@@ -345,7 +387,7 @@ function disegnaStanzaSottoH5(st, tk) {
   }
   disegnaPorteH5(st);
   disegnaCaduteEPesiH5(st, tk);
-  if (S.ultima) disegnaScalaH5(tk, scalaProntaH5(st));
+  if (S.ultima) { disegnaScalaH5(tk, scalaProntaH5(st)); disegnaCassaH5(st); }
 }
 
 /** La scala a pioli che risale al palco (accostata al muro dell'ultima stanza). */
@@ -400,6 +442,7 @@ function disegnaBuioH5(st, tk) {
 function disegnaEtichetteH5(st) {
   let testo = null, x = 0, y = 0;
   if (st.botolaH5 && !st.botolaH5.usata && st.pulita && vicinoH5(st.botolaH5.x, st.botolaH5.y, SOTTOPALCO_H5.raggioBotola)) { testo = TESTI_H5.calati; x = st.botolaH5.x; y = st.botolaH5.y - 22; }
+  else if (cassaProntaH5(st) && vicinoH5(SOTTOPALCO_H5.cassa.x, SOTTOPALCO_H5.cassa.y, SOTTOPALCO_H5.raggioScala)) { testo = TESTI_H5.apri; x = SOTTOPALCO_H5.cassa.x; y = SOTTOPALCO_H5.cassa.y - 24; }
   else if (scalaProntaH5(st) && vicinoH5(SOTTOPALCO_H5.scala.x, SOTTOPALCO_H5.scala.y, SOTTOPALCO_H5.raggioScala)) { testo = TESTI_H5.risali; x = SOTTOPALCO_H5.scala.x; y = SOTTOPALCO_H5.scala.y - 84; }
   if (!testo) return;
   if (typeof drawPillLabel === 'function') drawPillLabel(testo, x, y, 150);
@@ -550,7 +593,8 @@ function pngH5(chiave, cella, x, y, alto) {
 const SPRITE_H5 = Object.freeze({
   marionetta_h5: Object.freeze({ celle: 2, presente: false }),   // striscia, si rialza
   topo_h5: Object.freeze({ celle: 3, presente: false }),         // corsa 1, corsa 2, sosta
-  macchinista_h5: Object.freeze({ celle: 4, presente: false }),  // cammina, leva, corda, ruota
+  macchinista_h5: Object.freeze({ celle: 4, presente: false }),
+  sacco_h5: Object.freeze({ celle: 1, presente: false }),  // cammina, leva, corda, ruota
 });
 
 /** Le marionette a terra (morte la prima volta) e i contrappesi. */
@@ -594,6 +638,216 @@ function disegnaPorteH5(st) {
 }
 
 // ===========================================================================
+// 6. IL MACCHINISTA (mezzo-boss). Tabella delle transizioni:
+//   cammina → leva | corda | ruota (ruota solo nella seconda metà, quando il buio è pronto)
+//   leva  → cammina  (alla fine della posa: un sacco cala dove stava Ferruccio; nella seconda metà altri due)
+//   corda → cammina  (alla fine della posa: una quinta attraversa la stanza, il varco è la porta dipinta)
+//   ruota → cammina  (alla fine della posa: le fessure si spengono per buioTick)
+// Niente segni a terra: si legge dalla posa (leva, corda, ruota) e dagli oggetti in aria.
+// ===========================================================================
+const TRANSIZIONI_H5 = Object.freeze({ cammina: Object.freeze(['leva', 'corda', 'ruota']), leva: Object.freeze(['cammina']), corda: Object.freeze(['cammina']), ruota: Object.freeze(['cammina']) });
+
+/** Passa il Macchinista a un nuovo stato (solo se la tabella lo permette). */
+function passaMacchinistaH5(n, nuovo) {
+  if (TRANSIZIONI_H5[n.statoH5].indexOf(nuovo) < 0) { console.warn('[h5] transizione vietata', n.statoH5, nuovo); return false; }
+  n.statoH5 = nuovo; n.tH5 = 0;
+  if (nuovo === 'leva' || nuovo === 'corda') suonoH5(nuovo === 'leva' ? 'leva' : 'corda');
+  return true;
+}
+
+/** Un sacco di sabbia che cala dall'alto su (x, y). */
+function calaSaccoH5(st, x, y) {
+  st.sottopalcoH5.sacchi = st.sottopalcoH5.sacchi || [];
+  st.sottopalcoH5.sacchi.push({ x, y, quota: SOTTOPALCO_H5.macchinista.sacco.quota, vz: 0, aTerra: 0 });
+}
+
+/** Un passo del Macchinista (dopo la logica del motore). */
+function passoMacchinistaH5(st, n) {
+  const M = SOTTOPALCO_H5.macchinista, S = st.sottopalcoH5;
+  if (statoRun.graziaIngressoC > 0 || n.stunTicks > 0) return;
+  n.tH5++;
+  if (!n.fase2H5 && n.hp < n.maxHp * M.sogliaFase2) { n.fase2H5 = true; n.buioCdH5 = 0; }
+  if (n.buioCdH5 > 0) n.buioCdH5--;
+  if (n.statoH5 === 'cammina') {
+    const d = Math.hypot(player.x - n.x, player.y - n.y), a = Math.atan2(player.y - n.y, player.x - n.x);
+    const verso = d > M.distanza + 20 ? 1 : d < M.distanza - 20 ? -1 : 0;
+    n.x += Math.cos(a) * n.speed * verso + Math.cos(a + Math.PI / 2) * n.speed * 0.4 * n.dirH5;
+    n.y += Math.sin(a) * n.speed * verso + Math.sin(a + Math.PI / 2) * n.speed * 0.4 * n.dirH5;
+    n.x = Math.max(ARENA.x1 + 30, Math.min(ARENA.x2 - 30, n.x)); n.y = Math.max(ARENA.y1 + 24, Math.min(ARENA.y2 - 20, n.y));
+    n.versoH5 = player.x < n.x ? -1 : 1;
+    if (n.tH5 >= (n.fase2H5 ? M.camminaTick2 : M.camminaTick)) {
+      n.dirH5 = -n.dirH5;
+      if (n.fase2H5 && n.buioCdH5 <= 0) passaMacchinistaH5(n, 'ruota');
+      else passaMacchinistaH5(n, (n.giroH5++ % 3 === 2) ? 'corda' : 'leva');
+    }
+  } else if (n.statoH5 === 'leva') {
+    if (n.tH5 >= M.levaTick) {
+      calaSaccoH5(st, player.x, player.y); // dove sta Ferruccio ORA: quando il sacco arriva, lui si è già mosso (o no)
+      n.sacchiDaH5 = n.fase2H5 ? M.sacco.quanti2 - 1 : 0;
+      n.prossimoSaccoH5 = M.sacco.intervallo;
+      passaMacchinistaH5(n, 'cammina');
+    }
+  } else if (n.statoH5 === 'corda') {
+    if (n.tH5 >= M.cordaTick) {
+      const daSinistra = n.x > 320;
+      const varco = ARENA.y1 + 30 + rng() * (ARENA.y2 - ARENA.y1 - 60);
+      S.quinta = { x: daSinistra ? ARENA.x1 - 10 : ARENA.x2 + 10, v: (daSinistra ? 1 : -1) * M.quinta.vel, varco, colpito: false };
+      suonoH5('quinta');
+      passaMacchinistaH5(n, 'cammina');
+    }
+  } else if (n.statoH5 === 'ruota') {
+    if (n.tH5 >= M.ruotaTick) { h5.buioFessure = M.buioTick; n.buioCdH5 = M.buioOgniTick; suonoH5('tonfo'); passaMacchinistaH5(n, 'cammina'); }
+  }
+  if (n.sacchiDaH5 > 0 && --n.prossimoSaccoH5 <= 0) { calaSaccoH5(st, player.x, player.y); n.sacchiDaH5--; n.prossimoSaccoH5 = M.sacco.intervallo; }
+}
+
+/** Sacchi che cadono, quinta che scorre, buio che finisce (anche dopo la caduta del Macchinista finiscono la corsa). */
+function passoMacchineH5(st) {
+  const M = SOTTOPALCO_H5.macchinista, S = st.sottopalcoH5;
+  if (h5.buioFessure > 0) h5.buioFessure--;
+  for (let i = (S.sacchi || []).length - 1; i >= 0; i--) {
+    const k = S.sacchi[i];
+    if (k.quota > 0) {
+      k.vz += M.sacco.gravita; k.quota -= k.vz;
+      if (k.quota <= 0) {
+        k.quota = 0; suonoH5('tonfo');
+        try { statoRun.ondeEsplosione.push({ x: k.x, y: k.y, r: 4, maxR: 26, colore: 'rgba(216,195,154,0.6)' }); } catch (_) { /* niente */ }
+        if (player.invuln <= 0 && statoRun.hpHalf > 0 && Math.hypot(player.x - k.x, player.y - k.y) < M.sacco.raggio) subisciColpoGiocatore(M.sacco.danno, TESTI_H5.nomi.sacco, k.x, k.y);
+      }
+    } else if (++k.aTerra > M.sacco.aTerraTick) S.sacchi.splice(i, 1);
+  }
+  const q = S.quinta;
+  if (q) {
+    q.x += q.v;
+    const Q = M.quinta;
+    if (!q.colpito && player.invuln <= 0 && statoRun.hpHalf > 0 && Math.abs(player.x - q.x) < Q.spessore && Math.abs(player.y - q.varco) > Q.varco / 2) {
+      q.colpito = true;
+      player.x = Math.max(ARENA.x1 + 10, Math.min(ARENA.x2 - 10, player.x + Math.sign(q.v) * Q.spinta));
+      subisciColpoGiocatore(Q.danno, TESTI_H5.nomi.quinta, q.x, player.y);
+    }
+    if (q.x < ARENA.x1 - 20 || q.x > ARENA.x2 + 20) S.quinta = null;
+  }
+}
+
+/** Il Macchinista a sagoma d'ombra: vecchio, curvo, berretto, maniche arrotolate. Posa per stato. */
+function disegnaMacchinistaH5(n, tk) {
+  const posa = n.statoH5, flash = n.flash > 0 && OPZIONI.lampi !== false;
+  if (pngH5('macchinista_h5', ['cammina', 'leva', 'corda', 'ruota'].indexOf(posa), n.x, n.y, 64)) return;
+  const M = SOTTOPALCO_H5.macchinista, u = posa === 'leva' ? n.tH5 / M.levaTick : posa === 'corda' ? n.tH5 / M.cordaTick : posa === 'ruota' ? n.tH5 / M.ruotaTick : 0;
+  const passo = posa === 'cammina' ? Math.sin(tk * 0.16) : 0, v = n.versoH5 || -1;
+  ctx.save(); ctx.translate(n.x, n.y);
+  ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(0, 2, 15, 5, 0, 0, TAU); ctx.fill();
+  // l'attrezzo della posa, accanto a lui
+  ctx.strokeStyle = '#d9a456'; ctx.lineWidth = 2;
+  if (posa === 'leva') { const a = -1.2 + u * 1.6; ctx.fillStyle = '#0b0806'; ctx.fillRect(v * 16 - 4, -6, 8, 8); ctx.beginPath(); ctx.moveTo(v * 16, -4); ctx.lineTo(v * 16 + Math.cos(a) * 26 * v, -4 + Math.sin(a) * 26); ctx.stroke(); }
+  if (posa === 'corda') { ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(v * 8, -300); ctx.lineTo(v * 8, -30 + u * 18); ctx.stroke(); }
+  if (posa === 'ruota') { ctx.save(); ctx.translate(v * 20, -22); ctx.rotate(u * TAU * 1.5); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, 12, 0, TAU); for (let k = 0; k < 4; k++) { ctx.moveTo(0, 0); ctx.lineTo(Math.cos(k * Math.PI / 2) * 12, Math.sin(k * Math.PI / 2) * 12); } ctx.stroke(); ctx.restore(); }
+  ctx.scale(v, 1);
+  const curvo = posa === 'leva' ? u * 6 : posa === 'corda' ? -2 - u * 4 : 0;
+  sagomaH5(() => {
+    // gambe
+    ctx.moveTo(-6, 0); ctx.lineTo(-4 + passo * 3, -18); ctx.lineTo(3, -18); ctx.lineTo(6 - passo * 3, 0); ctx.lineTo(2, 0); ctx.lineTo(0, -12); ctx.lineTo(-2, 0); ctx.closePath();
+    // busto curvo
+    ctx.moveTo(-9, -18); ctx.quadraticCurveTo(-11, -34, -3 + curvo, -42); ctx.lineTo(7 + curvo, -40); ctx.quadraticCurveTo(9, -28, 8, -18); ctx.closePath();
+  }, flash);
+  // braccia secondo la posa
+  ctx.strokeStyle = flash ? '#fff4dc' : '#0b0806'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath();
+  if (posa === 'leva') { ctx.moveTo(4 + curvo, -36); ctx.lineTo(14, -22 + u * 14); }
+  else if (posa === 'corda') { ctx.moveTo(4 + curvo, -38); ctx.lineTo(8, -54 + u * 18); ctx.moveTo(0 + curvo, -38); ctx.lineTo(8, -46 + u * 18); }
+  else if (posa === 'ruota') { ctx.moveTo(4, -36); ctx.lineTo(16 + Math.cos(u * 9) * 4, -24 + Math.sin(u * 9) * 4); }
+  else { ctx.moveTo(4, -36); ctx.lineTo(8 + passo * 2, -22); }
+  ctx.stroke();
+  ctx.strokeStyle = '#d9a456'; ctx.lineWidth = 0.8; ctx.stroke();
+  // testa col berretto, il naso lungo, la barba bianca
+  sagomaH5(() => { ctx.arc(3 + curvo, -47, 6, 0, TAU); }, flash);
+  sagomaH5(() => { ctx.moveTo(-3 + curvo, -50); ctx.lineTo(10 + curvo, -51); ctx.lineTo(8 + curvo, -55); ctx.lineTo(-1 + curvo, -55); ctx.closePath(); }, flash);
+  ctx.fillStyle = '#e8d2a4'; ctx.fillRect(5 + curvo, -44, 4, 3);
+  ctx.fillStyle = '#f9cb40'; ctx.fillRect(6 + curvo, -48, 1.5, 1.5);
+  ctx.fillStyle = '#c0392b'; ctx.fillRect(-2 + curvo, -38, 8, 2); // il fazzoletto al collo
+  ctx.restore();
+}
+
+/** Sacchi in aria (corda dal tavolato, sacco che cala) e a terra, e la quinta che scorre: sopra le figure. */
+function disegnaMacchineH5(st, tk) {
+  const S = st.sottopalcoH5, M = SOTTOPALCO_H5.macchinista;
+  for (const k of S.sacchi || []) {
+    const y = k.y - k.quota;
+    ctx.save();
+    if (k.quota > 0) { ctx.strokeStyle = '#d9a456'; ctx.globalAlpha = 0.8; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(k.x, ARENA.y1 - 46); ctx.lineTo(k.x, y - 14); ctx.stroke(); ctx.globalAlpha = 1; }
+    if (pngH5('sacco_h5', 0, k.x, y, 26)) { ctx.restore(); continue; }
+    sagomaH5(() => { ctx.moveTo(k.x - 9, y); ctx.quadraticCurveTo(k.x - 11, y - 12, k.x - 3, y - 15); ctx.lineTo(k.x + 3, y - 15); ctx.quadraticCurveTo(k.x + 11, y - 12, k.x + 9, y); ctx.closePath(); }, false);
+    ctx.fillStyle = '#d9a456'; ctx.fillRect(k.x - 4, y - 16, 8, 2);
+    if (!k.quota) { ctx.fillStyle = 'rgba(216,195,154,0.5)'; ctx.fillRect(k.x - 12, y - 1, 24, 2); }
+    ctx.restore();
+  }
+  const q = S.quinta;
+  if (q) { // una quinta dipinta che scorre sul binario: la porta dipinta è il varco
+    const Q = M.quinta, alto = ARENA.y2 - ARENA.y1 + 30;
+    ctx.save(); ctx.translate(q.x, 0);
+    ctx.fillStyle = '#3c3324'; ctx.fillRect(-Q.spessore / 2, ARENA.y1 - 30, Q.spessore, alto);
+    ctx.fillStyle = 'rgba(70,96,74,0.7)'; ctx.fillRect(-Q.spessore / 2, ARENA.y1 - 30, Q.spessore, alto * 0.4);
+    ctx.fillStyle = '#050304'; ctx.fillRect(-Q.spessore / 2 - 1, q.varco - Q.varco / 2, Q.spessore + 2, Q.varco);
+    ctx.strokeStyle = '#f9cb40'; ctx.lineWidth = 1.2; ctx.strokeRect(-Q.spessore / 2 - 1.5, q.varco - Q.varco / 2 - 0.5, Q.spessore + 3, Q.varco + 1); // la cornice della porta dipinta
+    ctx.strokeStyle = '#d9a456'; ctx.globalAlpha = 0.7; ctx.strokeRect(-Q.spessore / 2 + 0.5, ARENA.y1 - 29.5, Q.spessore - 1, alto - 1);
+    ctx.restore();
+  }
+}
+
+// ===========================================================================
+// 7. LA CASSA, IL PREMIO E IL PEZZO DI COPIONE
+// ===========================================================================
+/** Pezzo di copione di questa discesa (uno per discesa, a giro sulla lista). */
+function testoCopioneH5(discesa) { const L = TESTI_H5.copione; return L[((discesa % L.length) + L.length) % L.length]; }
+
+/** [E] sulla cassa: oggetto dal fondo (piedistallo del motore) e pezzo di copione. @returns {boolean} */
+function apriCassaH5(st = statoRun.stanzaCorrente) {
+  const S = st && st.sottopalcoH5;
+  if (!S || !S.ultima || !st.pulita || !S.cassa || S.cassa.aperta) return false;
+  S.cassa.aperta = true;
+  const C = SOTTOPALCO_H5.cassa;
+  try {
+    const item = tiraOggettoGratisStanza(true);
+    st.oggettoPiedistallo = { ...item, x: C.x, y: C.y + 26, preso: false };
+  } catch (err) { console.error('[h5] premio', err); }
+  h5.copione = { testo: testoCopioneH5(h5.sotto ? h5.sotto.discesa : 0), t: SOTTOPALCO_H5.copioneTick };
+  suonoH5('leva');
+  return true;
+}
+
+/** La cassa in fondo (chiusa / aperta). */
+function disegnaCassaH5(st) {
+  const S = st.sottopalcoH5;
+  if (!S.cassa) return;
+  const { x, y } = SOTTOPALCO_H5.cassa;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(x - 24, y + 10, 48, 5);
+  ctx.fillStyle = '#1c130c'; ctx.fillRect(x - 22, y - 12, 44, 24);
+  ctx.strokeStyle = '#d9a456'; ctx.globalAlpha = 0.8; ctx.strokeRect(x - 21.5, y - 11.5, 43, 23); ctx.globalAlpha = 1;
+  ctx.fillStyle = '#f9cb40'; ctx.fillRect(x - 2, y - 4, 4, 5);
+  if (S.cassa.aperta) { ctx.fillStyle = '#120c08'; ctx.save(); ctx.translate(x - 22, y - 12); ctx.rotate(-0.9); ctx.fillRect(0, -4, 44, 5); ctx.restore(); }
+  else { ctx.fillStyle = '#120c08'; ctx.fillRect(x - 23, y - 15, 46, 5); }
+  ctx.restore();
+}
+
+/** Il pezzo di copione a schermo (cartiglio in basso, non blocca il gioco). */
+function disegnaCopioneH5() {
+  const c = h5.copione;
+  if (!c || c.t <= 0) return;
+  const a = Math.min(1, c.t / 40, (SOTTOPALCO_H5.copioneTick - c.t + 1) / 20);
+  const w = 440, h = 66, x = (W - w) / 2, y = H - 128;
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.fillStyle = '#e8d9b4'; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = 'rgba(120,90,50,0.25)'; for (let k = 0; k < 5; k++) ctx.fillRect(x, y + 14 + k * 11, w, 1);
+  ctx.strokeStyle = '#6b4a22'; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  drawTextFit(TESTI_H5.titoloCopione, W / 2, y + 12, w - 20, { size: 7, color: '#7a2e1c', shadow: false });
+  const parole = c.testo.split(' '), righe = [''];
+  for (const p of parole) { const prova = (righe[righe.length - 1] + ' ' + p).trim(); if (prova.length > 78) righe.push(p); else righe[righe.length - 1] = prova; }
+  righe.slice(0, 4).forEach((r, i) => drawTextFit(r, W / 2, y + 26 + i * 11, w - 20, { size: 7.5, color: '#2a1a0c', shadow: false }));
+  ctx.restore();
+}
+
+// ===========================================================================
 // AGGANCI
 // ===========================================================================
 const verificaStanzaPulitaBaseH5 = verificaStanzaPulita;
@@ -604,7 +858,10 @@ verificaStanzaPulita = function verificaStanzaPulitaH5(...a) {
   } catch (err) { console.error('[h5] cadute', err); }
   const era = Boolean(st && st.pulita);
   const r = verificaStanzaPulitaBaseH5.apply(this, a);
-  try { if (st && !era && st.pulita && st.botoleD5 && !st.sottopalcoH5) provaBotolaH5(st); } catch (err) { console.error('[h5] botola', err); }
+  try {
+    if (st && !era && st.pulita && st.botoleD5 && !st.sottopalcoH5) provaBotolaH5(st);
+    if (st && !era && st.pulita && st.sottopalcoH5 && st.sottopalcoH5.ultima) { h5.buioFessure = 0; st.sottopalcoH5.quinta = null; st.sottopalcoH5.sacchi = (st.sottopalcoH5.sacchi || []).filter((k) => k.quota <= 0); mostraBanner(TESTI_H5.macchinistaCade, 220); }
+  } catch (err) { console.error('[h5] botola', err); }
   return r;
 };
 
@@ -615,6 +872,7 @@ interagisciStanza = function interagisciStanzaH5(...a) {
     if (st && statoRun.fase === 'in_gioco' && !statoRun.siparioAttivo && !statoRun.scambioPendente) {
       const b = st.botolaH5;
       if (b && !b.usata && st.pulita && vicinoH5(b.x, b.y, SOTTOPALCO_H5.raggioBotola)) { scendiH5(); return undefined; }
+      if (cassaProntaH5(st) && vicinoH5(SOTTOPALCO_H5.cassa.x, SOTTOPALCO_H5.cassa.y, SOTTOPALCO_H5.raggioScala)) { apriCassaH5(st); return undefined; }
       if (scalaProntaH5(st) && vicinoH5(SOTTOPALCO_H5.scala.x, SOTTOPALCO_H5.scala.y, SOTTOPALCO_H5.raggioScala)) { risaliH5(); return undefined; }
     }
   } catch (err) { console.error('[h5] interazione', err); }
@@ -636,10 +894,12 @@ const disegnaHUDBaseH5 = disegnaHUDPixelArt;
 disegnaHUDPixelArt = function disegnaHUDH5(st, ...resto) {
   try {
     const s = st || statoRun.stanzaCorrente;
-    if (s && s.sottopalcoH5 && statoRun.fase === 'in_gioco') { disegnaPesiH5(s); disegnaBuioH5(s, tick); }
+    if (s && s.sottopalcoH5 && statoRun.fase === 'in_gioco') { disegnaPesiH5(s); disegnaBuioH5(s, tick); disegnaMacchineH5(s, tick); } // sacchi e quinta prendono la luce: si leggono anche al buio
     if (s && statoRun.fase === 'in_gioco') disegnaEtichetteH5(s);
   } catch (err) { console.error('[h5] buio', err); }
-  return disegnaHUDBaseH5.call(this, st, ...resto);
+  const r = disegnaHUDBaseH5.call(this, st, ...resto);
+  try { if (statoRun.fase === 'in_gioco') disegnaCopioneH5(); } catch (err) { console.error('[h5] copione', err); }
+  return r;
 };
 
 const passoLogicoBaseH5 = passoLogico;
@@ -651,7 +911,11 @@ passoLogico = function passoLogicoH5(...a) {
       passoPolvereH5(st);
       caduteH5(st);
       passoPesiH5(st);
+      const m = st.nemici.find((n) => n.bossId === 'macchinista-h5' && n.hp > 0);
+      if (m) passoMacchinistaH5(st, m);
+      passoMacchineH5(st);
     }
+    if (h5.copione && h5.copione.t > 0 && !statoRun.pausa) h5.copione.t--;
   } catch (err) { console.error('[h5] passo', err); }
   return r;
 };
@@ -681,6 +945,26 @@ disegnaNemicoPittorico = function disegnaNemicoH5(...args) {
   return undefined;
 };
 
+const disegnaBossBaseH5 = disegnaBossPittorico;
+/** Il Macchinista si disegna qui; gli altri boss restano agli altri file. Stessa firma: ([ctx], boss, tick). */
+disegnaBossPittorico = function disegnaBossH5(...args) {
+  const a = args[0] && typeof args[0].save === 'function' ? args.slice(1) : args;
+  const b = a[0];
+  if (!b || b.bossId !== 'macchinista-h5') return disegnaBossBaseH5.apply(this, args);
+  try { ctx.save(); disegnaMacchinistaH5(b, a[1] || 0); ctx.restore(); } catch (err) { console.error('[h5] disegno Macchinista', err); }
+  return undefined;
+};
+
+const entraInStanzaBaseH5 = entraInStanza;
+entraInStanza = function entraInStanzaH5(stanza, ...resto) {
+  h5.buioFessure = 0;
+  const r = entraInStanzaBaseH5.call(this, stanza, ...resto);
+  try {
+    if (stanza && stanza.sottopalcoH5 && stanza.sottopalcoH5.ultima && !stanza.pulita) mostraBanner(TESTI_H5.macchinistaEntra, 220);
+  } catch (err) { console.error('[h5] ingresso', err); }
+  return r;
+};
+
 const avviaPianoBaseH5 = avviaPiano;
 avviaPiano = function avviaPianoH5(...a) { h5.sotto = null; h5.buioFessure = 0; return avviaPianoBaseH5.apply(this, a); };
 
@@ -690,7 +974,7 @@ nuovaRun = function nuovaRunH5(...a) { h5.sotto = null; h5.buioFessure = 0; h5.c
 // --- sonda QA (tools/qa-teatro-sottopalco.js) ---
 if (window.__teatro && window.__teatro.interni) {
   window.__teatro.interni.sottopalcoH5 = {
-    SOTTOPALCO_H5, TESTI_H5, h5, provaBotolaH5, scendiH5, risaliH5, sottoH5, scalaProntaH5,
+    SOTTOPALCO_H5, TESTI_H5, NEMICI_H5, TRANSIZIONI_H5, h5, provaBotolaH5, scendiH5, risaliH5, sottoH5, scalaProntaH5, cassaProntaH5, apriCassaH5, testoCopioneH5, passaMacchinistaH5,
     stato: () => ({ sotto: sottoH5(), stanza: statoRun.stanzaCorrente && statoRun.stanzaCorrente.id, fatte: [...h5.fatte], buio: h5.buioFessure }),
   };
 }
