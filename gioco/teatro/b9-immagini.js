@@ -112,7 +112,7 @@ const IMMAGINI_B9 = Object.freeze({
   'porta-bottega-socchiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 0.99], dove: 'i2 portaImmagineI2 (porta pronta: si può bussare)', usa: true },
   'porta-bottega-aperta': { celle: [1, 1], alt: 60, ancora: [0.5, 0.99], dove: 'i2 portaImmagineI2 (fucina aperta)', usa: true },
   'npc-tonino': { celle: [1, 2], alt: 50, ancora: [0.5, 0.984], dove: 'i2 disegnaToninoI2 (avvolge T.disegnaToninoC1; posa 0 indica, 1 lanterna)', usa: true },
-  'banchetto-tonino': { celle: [1, 1], alt: 52, ancora: [0.5, 0.984], dove: 'i2 banchettoImmagineI2 (specchiato: lo sgabello a sinistra)', usa: true },
+  'banchetto-tonino': { celle: [1, 1], alt: 62, ancora: [0.5, 0.984], dove: 'i2 banchettoImmagineI2 (specchiato: lo sgabello a sinistra)', usa: true },
   // --- G. interfaccia (b3-comandi-opzioni.js, a6-progressione.js) ---
   'ui-pad-simboli': { celle: [1, 13], alt: 10, ancora: [0.5, 0.5], dove: 'drawTextFit col gamepad: simboli al posto di Ⓐ Ⓑ Ⓧ Ⓨ ✥ [LT] [RB]…', usa: false,
     motivo: 'alla misura delle scritte (7-9 px) sono dischetti scuri con la lettera illeggibile: i caratteri Ⓐ Ⓑ Ⓧ Ⓨ si leggono meglio' },

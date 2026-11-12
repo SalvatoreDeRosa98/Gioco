@@ -149,6 +149,11 @@ function banchettoImmagineI2(r, t, duePiatti) {
   return true;
 }
 
+// precarica: la prima piazza ha già le immagini (immagineScena avvia il caricamento e mette in cache)
+for (const n of ['porta-bottega-chiusa', 'porta-bottega-socchiusa', 'porta-bottega-aperta', 'npc-tonino', 'banchetto-tonino']) {
+  try { if (usaImmagineB9(n)) immagineScena(n); } catch (_) { /* b9 non c'è: resta il codice */ }
+}
+
 if (window.__teatro) {
   const T = window.__teatro;
   T.portaImmagineI2 = (p) => { try { return portaImmagineI2(p); } catch (err) { guastoB9('porta i2', err); return false; } };
@@ -158,5 +163,5 @@ if (window.__teatro) {
     if (typeof toninoBase === 'function' && toninoBase.call(this, x, y, t)) return true;
     try { return disegnaToninoI2(x, y, t); } catch (err) { guastoB9('tonino i2', err); return false; }
   };
-  if (T.interni) T.interni.piazzaI2 = { stato: () => ({ ...statoI2 }), statoPorta: statoPortaI2, posaTonino: posaToninoI2, CONFIG_I2 };
+  if (T.interni) T.interni.piazzaI2 = { stato: () => ({ ...statoI2 }), statoGrezzo: statoI2, statoPorta: statoPortaI2, posaTonino: posaToninoI2, CONFIG_I2 };
 }
