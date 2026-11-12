@@ -860,18 +860,21 @@ function disegnaManoMarionettaPittorica() {
 //   'leggera' → assets/sprite_teatro_v2/        (pulizia, piedi fermi, contorno unico, gradazione leggera)
 //   'ombre'   → assets/sprite_teatro_v2_ombre/  (stessa pulizia, gradazione «a ombre» decisa)
 //   false     → l'originale di assets/sprite_teatro/.
-// Scelta dell'autore (2026-11-12): 'ombre' per TUTTE le figure, la versione più vicina alla Ferruccio a ombre;
+// Scelta dell'autore (2026-11-12): 'ombre' per le figure, la versione più vicina alla Ferruccio a ombre;
 // false solo per ferruccio e teste-mira («Ferruccio mi piace più il mio»: resta il suo originale, senza ritocchi).
+// Gli otto fogli che l'autore ha RIDISEGNATO lo stesso giorno già nello stile di Ferruccio (vespa-cieca, lucciola,
+// regina-vespa, capitano, accendilumi, cigno-latta, giostra-lucciole, tessitrice-pietra) usano 'leggera': solo
+// pulizia, piedi fermi e contorno, senza scurirli una seconda volta.
 // La 'leggera' resta pronta: basta scriverla. Prova globale: window.__spriteV2 = false | 'leggera' | 'ombre'
 // prima del caricamento. tools/teatro-release.js legge questa tabella (fra i segnaposto).
 // <sprite-v2>
 const SPRITE_V2 = Object.freeze({
   ferruccio: false /* scelta dell'autore: il suo originale */, agnese: 'ombre', taddeo: 'ombre', ombra: 'ombre', 'teste-mira': false,
-  gatto: 'ombre', 'vespa-cieca': 'ombre', maschera: 'ombre', 'bomba-ferma': 'ombre', guardia: 'ombre',
-  statua: 'ombre', predone: 'ombre', lucciola: 'ombre', burattino: 'ombre',
-  'regina-vespa': 'ombre', capitano: 'ombre', 'donna-luciana': 'ombre', 'custode-marmo': 'ombre',
-  spezzafili: 'ombre', accendilumi: 'ombre', 'cigno-latta': 'ombre', 'giostra-lucciole': 'ombre',
-  'tessitrice-pietra': 'ombre',
+  gatto: 'ombre', 'vespa-cieca': 'leggera', maschera: 'ombre', 'bomba-ferma': 'ombre', guardia: 'ombre',
+  statua: 'ombre', predone: 'ombre', lucciola: 'leggera', burattino: 'ombre',
+  'regina-vespa': 'leggera', capitano: 'leggera', 'donna-luciana': 'ombre', 'custode-marmo': 'ombre',
+  spezzafili: 'ombre', accendilumi: 'leggera', 'cigno-latta': 'leggera', 'giostra-lucciole': 'leggera',
+  'tessitrice-pietra': 'leggera',
   'boss/gatto_fermo': 'ombre', 'boss/gatto_accucciato': 'ombre', 'boss/gatto_salto': 'ombre',
   'boss/gatto_cammina': 'ombre', 'boss/capitano_guardia_fermo': 'ombre', 'boss/colosso_statua_fermo': 'ombre',
   'boss/colosso_statua_aperto': 'ombre', 'boss/maestro_fucina_fermo': 'ombre',
