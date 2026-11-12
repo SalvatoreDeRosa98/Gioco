@@ -34,7 +34,7 @@ const CONFIG_H1 = Object.freeze({
   bossLeucio: Object.freeze(['capitano-guardia', 'tessitrice-pietra']), // per la condizione della scelta (a6)
   genitori: Object.freeze(['normale']),
   maiAccantoA: Object.freeze(['boss', 'segreta', 'patto']),
-  telaio: Object.freeze({ x: 320, y: 150, raggioParla: 78 }),
+  telaio: Object.freeze({ x: 320, y: 150, raggioParla: 90 }),
   agnese: Object.freeze({ x: 372, y: 172 }),
   dono: Object.freeze({ curaHalf: 2, filoScudi: 1 }),   // cura = una maschera intera; filo = 1 colpo parato
   // posizione di Taddeo in piazza (celle del modello dell'hub) secondo la scelta
@@ -295,14 +295,20 @@ function aggiungiTelaioH1(m, piano) {
   const key = (x, y) => `${x},${y}`;
   const griglia = new Map(m.stanze.filter((s) => s.cx >= 1 && s.cy >= 1).map((s) => [key(s.cx, s.cy), s]));
   const dentro = (x, y) => x >= 1 && x <= G.larghezza && y >= 1 && y <= G.altezza;
-  for (const soloCieco of [true, false]) {
-    for (const g of m.stanze.filter((s) => CONFIG_H1.genitori.includes(s.tipo))) {
+  // tre passate, sempre più larghe: il telaio c'è SEMPRE a San Leucio (mai attaccato al boss né accanto a lui)
+  const passate = [
+    { soloCieco: true, gen: (t) => CONFIG_H1.genitori.includes(t), mai: CONFIG_H1.maiAccantoA },
+    { soloCieco: false, gen: (t) => CONFIG_H1.genitori.includes(t), mai: CONFIG_H1.maiAccantoA },
+    { soloCieco: false, gen: (t) => !CONFIG_H1.maiAccantoA.includes(t), mai: ['boss'] },
+  ];
+  for (const { soloCieco, gen, mai } of passate) {
+    for (const g of m.stanze.filter((s) => gen(s.tipo) && s.cx >= 1 && s.cy >= 1)) {
       for (const d of DIREZIONI_A3) {
         const nx = g.cx + d.dx, ny = g.cy + d.dy;
         if (!dentro(nx, ny) || griglia.has(key(nx, ny))) continue;
         if (g.porte[d.lato] || (g.muroSegreto && g.muroSegreto.lato === d.lato)) continue;
         const vicini = DIREZIONI_A3.map((d2) => griglia.get(key(nx + d2.dx, ny + d2.dy))).filter(Boolean);
-        if (vicini.some((v) => CONFIG_H1.maiAccantoA.includes(v.tipo))) continue;
+        if (vicini.some((v) => mai.includes(v.tipo))) continue;
         if (soloCieco && vicini.length !== 1) continue;
         const s = creaStanzaA3(`r${m.stanze.length}`, CONFIG_H1.tipoStanza, nx, ny);
         g.porte[d.lato] = s.id;
@@ -401,6 +407,13 @@ function apriConfrontoH1() {
       apriH1(TESTI_H1.confronto[v].slice());
     },
   } });
+}
+
+/** Taddeo nella stanza del Capitano mentre dura il confronto (accanto al punto in cui è caduto il boss). */
+function disegnaTaddeoConfrontoH1(st, t) {
+  if (!st.confrontoH1 || !dialogoApertoH1() || !PERSONAGGI_GIOCABILI.taddeo) return;
+  const x = Math.max(ARENA.x1 + 30, Math.min(ARENA.x2 - 30, player.x + (player.x < 320 ? -60 : 60)));
+  disegnaFerruccioPittorico(ctx, x, player.y, { scale: 1, tick: t, charInfo: PERSONAGGI_GIOCABILI.taddeo, flipX: x > player.x, sinergie: {} });
 }
 
 function controllaConfrontoH1(st) {
@@ -651,6 +664,7 @@ disegnaStanzaPixelArt = function disegnaStanzaPixelArtH1(t, st, ...resto) {
   if (!st) return r;
   try {
     if (st.tipo === CONFIG_H1.tipoStanza) disegnaTelaioH1(st, t);
+    if (st.tipo === 'boss') disegnaTaddeoConfrontoH1(st, t);
     disegnaPorteTelaioH1(st);
   } catch (err) { console.error('[h1] resa', err); }
   return r;
@@ -748,7 +762,7 @@ window.__teatro.h1qa = {
   sceltaDisponibile: () => sceltaAgneseDisponibileH1(),
   sanLeucio: (p) => pianoÈSanLeucioH1(p),
   telaio: () => (statoRun.mappa ? statoRun.mappa.stanze.find((s) => s.tipo === CONFIG_H1.tipoStanza) || null : null),
-  vaiAlTelaio() { const s = this.telaio(); if (!s) return false; entraInStanza(s, null); player.x = CONFIG_H1.telaio.x; player.y = CONFIG_H1.telaio.y + 40; return true; },
+  vaiAlTelaio() { const s = this.telaio(); if (!s) return false; entraInStanza(s, null); player.x = CONFIG_H1.telaio.x; player.y = CONFIG_H1.telaio.y + 70; return true; },
   parla() { interagisciStanza(); return dialogoApertoH1(); },
   testi: TESTI_H1,
 };
