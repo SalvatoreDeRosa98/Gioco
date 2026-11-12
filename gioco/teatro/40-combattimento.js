@@ -13,7 +13,8 @@ function eseguiAttacco4Direzioni(dx, dy) {
   if (dx !== 0) player.flipX = dx < 0;
 
   if (statoRun.haSpada) {
-    player.cooldown = Math.max(9, Math.round(statoRun.cooldownMax * 0.75));
+    // j1: dopo il fendente un breve recupero (SPADA_J1.recupero)
+    player.cooldown = Math.max(SPADA_J1.cooldownMin, Math.round(statoRun.cooldownMax * SPADA_J1.cooldownFrazione)) + SPADA_J1.recupero;
     player.swordAnimTick = 0;
     player.swordAngle = Math.atan2(dy, dx);
     player.swordHitIds = new Set();
@@ -798,11 +799,21 @@ function passoLogico() {
 
     // Fendente di Spada animato in 6 frame
     if (player.swordAnimTick >= 0) {
-      const frameIdx = Math.floor(player.swordAnimTick / 3);
-      if (frameIdx >= 1 && frameIdx <= 4) {
-        const reach = 38;
-        const hx = player.x + Math.cos(player.swordAngle) * 20;
-        const hy = (player.y - 6) + Math.sin(player.swordAngle) * 20;
+      // j1: anticipo, fendente ad arco (colpisce solo qui), recupero: misure in SPADA_J1 (00-config.js)
+      const SJ = SPADA_J1, tS = player.swordAnimTick;
+      if (tS >= SJ.anticipo && tS < SJ.fineFendente) {
+        const reach = SJ.portata;
+        const hx = player.x + Math.cos(player.swordAngle) * SJ.avanti;
+        const hy = (player.y - 6) + Math.sin(player.swordAngle) * SJ.avanti;
+        /** Nemico dentro l'arco: entro portataArco dal busto e a meno di arcoMezzo dalla direzione del colpo. */
+        const nellArcoJ1 = (x, y, r) => {
+          const ddx = x - player.x, ddy = y - (player.y - 6), d = Math.hypot(ddx, ddy);
+          if (d > SJ.portataArco + r) return false;
+          if (d <= r + 6) return true; // a contatto
+          let da = Math.atan2(ddy, ddx) - player.swordAngle;
+          da = Math.atan2(Math.sin(da), Math.cos(da));
+          return Math.abs(da) <= SJ.arcoMezzo + Math.asin(Math.min(1, r / d));
+        };
         // Se la spada colpisce un braciere acceso, lo fa esplodere!
         if (st.ostacoli && st.ostacoli.length > 0) {
           for (const o of st.ostacoli) {
@@ -826,21 +837,21 @@ function passoLogico() {
         }
         for (const nem of st.nemici) {
           if (nem.hp <= 0 || (nem.airZ || 0) > 16 || player.swordHitIds.has(nem.id)) continue;
-          if (Math.hypot(nem.x - hx, (nem.y - 6) - hy) <= reach + nem.r) {
+          if (nellArcoJ1(nem.x, nem.y - 6, nem.r)) {
             player.swordHitIds.add(nem.id);
             danneggiaNemico(nem, statoRun.dmg, Math.cos(player.swordAngle), Math.sin(player.swordAngle));
           }
         }
         for (let i = statoRun.proiettiliNemici.length - 1; i >= 0; i--) {
           const pr = statoRun.proiettiliNemici[i];
-          if (Math.hypot(pr.x - hx, pr.y - hy) <= reach * 0.85) {
+          if (nellArcoJ1(pr.x, pr.y, 2)) {
             statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
             statoRun.proiettiliNemici.splice(i, 1);
           }
         }
       }
       player.swordAnimTick++;
-      if (player.swordAnimTick >= 18) player.swordAnimTick = -1;
+      if (player.swordAnimTick >= SJ.durata) player.swordAnimTick = -1;
     }
 
     // Proiettili di Ferruccio
@@ -958,7 +969,9 @@ function passoLogico() {
           continue;
         }
       }
-      if (Math.hypot(player.x - pr.x, (player.y - 6) - pr.y) < 9 * (player.scalaA2 || 1) && player.invuln <= 0) {
+      // j1: raggio del colpo dei proiettili nemici (base più piccoli, boss come prima): PROIETTILE_NEMICO_J1
+      const raggioPrJ1 = pr.bossShot ? PROIETTILE_NEMICO_J1.raggioBoss : PROIETTILE_NEMICO_J1.raggioBase;
+      if (Math.hypot(player.x - pr.x, (player.y - 6) - pr.y) < raggioPrJ1 * (player.scalaA2 || 1) && player.invuln <= 0) {
         statoRun.effettiSplash.push({ x: pr.x, y: pr.y, tick: 0 });
         statoRun.proiettiliNemici.splice(i, 1);
         // --- D: Maschera di Cuoio: probabilità di parare il proiettile (1 − Π(1−p), max 0.5) ---

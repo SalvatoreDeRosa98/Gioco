@@ -111,7 +111,29 @@ const MS_PER_TICK = 1000 / FEEL.passo.hz;
 //   voce (didascalie della Voce del Burattinaio)
 // Salvate in localStorage 'ferruccio.teatro.opzioni'. Chi le cambia chiama salvaOpzioni().
 // ---------------------------------------------------------------------------
-const OPZIONI_PREDEFINITE = Object.freeze({ volumeEffetti: 1, volumeMusica: 1, scossa: 1, grana: true, vignetta: true, pubblico: true, lampi: true, ombre: true, voce: true });
+const OPZIONI_PREDEFINITE = Object.freeze({ volumeEffetti: 1, volumeMusica: 1, scossa: 1, grana: true, vignetta: true, pubblico: true, lampi: true, ombre: true, voce: true, hudLeggero: true }); // j1: hudLeggero = HUD leggero (j1-ritocchi.js)
+// --- j1 (feedback di prova): misure condivise da 60-resa.js, 40-combattimento.js e j1-ritocchi.js ---
+/** HUD leggero: fondo e bordo dei riquadri (pieno = aspetto di prima), attenuazione quando c'è qualcosa sotto. */
+const HUD_J1 = Object.freeze({
+  fondoLeggero: 0.4, fondoPieno: 0.62,           // alfa del fondo dei riquadri (prima 0.62)
+  bordoLeggero: 'rgba(249, 203, 64, 0.5)', bordoPieno: '#f9cb40',
+  spessoreLeggero: 0.75, spessorePieno: 1,
+  alfaSotto: 0.3,                                 // alfa complessiva del riquadro con un pericolo sotto
+  tenuta: 24, rampa: 18,                          // tick: resta attenuato, poi torna pieno in rampa
+  margine: 6,                                     // px logici intorno al riquadro per "sta sotto"
+  maschere: Object.freeze({ max: 8, passo: 11, scala: 1 }), // fila di maschere della vita
+});
+/** Proiettili nemici: scala del disegno e raggio del colpo su Ferruccio (base ridotti di ~1/3, prima 1.55 e 9). */
+const PROIETTILE_NEMICO_J1 = Object.freeze({ scalaBase: 1.05, scalaBoss: 1.85, raggioBase: 6, raggioBoss: 9 });
+/** Spada di Gaetano: fendente ad arco (prima: cerchio di 38 a 20 davanti, colpi nei tick 3..14, senza recupero). */
+const SPADA_J1 = Object.freeze({
+  avanti: 15, portata: 28,          // centro dei bracieri/muri e raggio (prima 20 e 38)
+  portataArco: 43,                  // distanza massima dal busto per i nemici (prima ~58)
+  arcoMezzo: 1.4,                   // radianti per lato (~80°; prima ~110° effettivi)
+  durata: 18, anticipo: 4, fineFendente: 10, // tick: anticipo 0..3, fendente 4..9 (colpisce), recupero 10..17
+  cooldownMin: 9, cooldownFrazione: 0.75, recupero: 6, // tick in più dopo il fendente
+  lama: 21, raggioScia: 34, spessoreScia: 11,
+});
 const OPZIONI = (() => {
   let salvate = {};
   try { salvate = JSON.parse(localStorage.getItem('ferruccio.teatro.opzioni') || '{}') || {}; } catch (_) { salvate = {}; }
@@ -254,7 +276,7 @@ const QUARTIERI_PIANI = Object.freeze({
       titolo: '«SAN LEUCIO ALL\'ALBA»',
       testo1: 'Il primo raggio radente dell\'aurora dorata penetra tra i telai del setificio reale.',
       testo2: 'Fili dorati vibrano nell\'aria. Maschere d\'osso e spezzafili sorvegliano i ricordi di Agnese.',
-      testo3: 'Qui ogni colpo subito spezza 1 Maschera intera (-1 ❤️): prepara il tuo attacco prima della Reggia!',
+      testo3: 'Qui ogni colpo subito spezza 1 Maschera intera: prepara il tuo attacco prima della Reggia!',
     }),
   }),
   4: Object.freeze({
@@ -336,7 +358,7 @@ const OGGETTI_ATTIVI = {
   },
   ampolla: {
     id: 'ampolla', sprite: 'ampolla', nome: 'Ampolla di San Gennaro', maxCarica: 4,
-    desc: '[Q] Miracolo cremisi: rigenera subito +1 ❤️ Maschera intera!',
+    desc: '[Q] Miracolo cremisi: rigenera subito +1 Maschera intera!',
   },
 };
 
@@ -450,10 +472,10 @@ const CATALOGO_OGGETTI = [
   // --- OGGETTI FORTI (TIER 'forte': 1 stanza su 10 gratis, oppure 15-18🪙 ne La Fucina) ---
   {
     id: 'spada', sprite: 'spada', nome: 'Spada di Gaetano', tier: 'forte',
-    statsDesc: '[★ FORTE] Equipa Spada (6 frame) · Danno x1.45 · +1.0 Danno fisso',
+    statsDesc: '[★ FORTE] Fendente ad arco davanti a te · Danno x1.2', // j1: prima x1.45 +1.0 fisso
     lore: 'Forgiata con gli ultimi attrezzi di tuo padre prima del crollo del 1839.',
     prezzo: 15,
-    mod: { spada: true, flatDmg: 1.0, dmgMult: 1.45, armaSpeciale: true },
+    mod: { spada: true, dmgMult: 1.2, armaSpeciale: true }, // j1: prima flatDmg 1.0, dmgMult 1.45
   },
   {
     id: 'piombo', sprite: 'piombo', nome: 'Pallino di Piombo', tier: 'forte',
