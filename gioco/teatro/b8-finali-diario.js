@@ -11,7 +11,7 @@
  *      del sipario: [E] rimette in scena l'ultimo atto. Si rivede dal Diario.
  *   2. FINALE SEGRETO. La porta della bottega di Gaetano nell'hub (t4-hub-storia.js › disegnaPortaBottega) è
  *      chiusa da 3 SIGILLI: uno per quartiere, ciascuno rotto da un ferro di Gaetano (tenaglie nella stanza
- *      segreta del piano 1; punzone G. F. alla fontana dell'ingresso del piano 2 dopo il boss; lima dal boss
+ *      segreta del piano 1; punzone G. F. alla fontana dell'ingresso del piano 2 dopo il boss; ago dal boss
  *      del piano 3 battuto senza perdere maschere). Poi serve il finale vero e bussare col ritmo del martello
  *      (tre colpi, una pausa, uno). Dietro: la Fucina del Ricordo (Gaetano rende il volto: ricompensa «Il Volto
  *      Ritrovato», registrata in a6) e la scala che sale SOPRA LA RIBALTA, dal Grande Burattinaio.
@@ -71,7 +71,7 @@ const SEGRETO_B8 = Object.freeze({
   ferri: Object.freeze([
     Object.freeze({ id: 'tenaglie', nome: 'Le Tenaglie di Gaetano', breve: 'le tenaglie', quartiere: 'Corso Trieste', pianoNelCiclo: 1, sprite: 'b8Tenaglie' }),
     Object.freeze({ id: 'punzone', nome: 'Il Punzone G. F.', breve: 'il punzone', quartiere: 'Villa Comunale', pianoNelCiclo: 2, sprite: 'b8Punzone' }),
-    Object.freeze({ id: 'lima', nome: 'La Lima di Gaetano', breve: 'la lima', quartiere: 'San Leucio', pianoNelCiclo: 3, sprite: 'b8Lima' }),
+    Object.freeze({ id: 'ago', nome: 'L\'Ago di Gaetano', breve: 'l\'ago', quartiere: 'San Leucio', pianoNelCiclo: 3, sprite: 'b8Ago' }),
   ]),
   prefissoRaccolta: 'b8-ferro-',             // id dei raccoglibili a terra (tipo 'ricordo')
   tenaglie: Object.freeze({ x: 150, y: 246 }), // nella stanza segreta
@@ -84,7 +84,7 @@ const SEGRETO_B8 = Object.freeze({
   bussata: Object.freeze({ rapidoMaxTick: 36, pausaMinTick: 45, pausaMaxTick: 180, silenzioTick: 50 }),
 });
 
-// Sprite pixel-art dei tre ferri (palette del Teatro: k nero, G/g acciaio, y oro, m/M legno).
+// Sprite pixel-art dei tre ferri (palette del Teatro: k nero, G/g acciaio, y oro, m/M legno, r filo rosso).
 SPRITE_OGGETTI.b8Tenaglie = [
   '.kk...kk.',
   'kGGk.kGGk',
@@ -111,18 +111,19 @@ SPRITE_OGGETTI.b8Punzone = [
   '...kGk...',
   '....k....',
 ];
-SPRITE_OGGETTI.b8Lima = [
+// L'ago di Gaetano (fino al 2026-11-12 era una lima): la cruna d'oro in alto, un filo rosso che ci passa.
+SPRITE_OGGETTI.b8Ago = [
+  '...kyk...',
+  '..ky.yk..',
+  '..kg.gkr.',
+  '...kgk.r.',
+  '...kGk.r.',
+  '...kgkr..',
+  '...kGk...',
+  '...kgk...',
+  '...kGk...',
+  '...kgk...',
   '....k....',
-  '...kgk...',
-  '...kGk...',
-  '...kgk...',
-  '...kGk...',
-  '...kgk...',
-  '...kGk...',
-  '..kkykk..',
-  '..kmmmk..',
-  '..kmMmk..',
-  '...kkk...',
 ];
 
 // ===========================================================================
@@ -162,7 +163,7 @@ const TESTI_B8 = Object.freeze({
   ferroTrovato: Object.freeze({
     tenaglie: 'Le tenaglie di mio padre. Con queste io e Taddeo tenemmo il ferro della spada.',
     punzone: 'Il punzone: G. F. L\'acqua lo ha tenuto per sei anni.',
-    lima: 'La lima di mio padre, sul telaio. «Almeno quelle non le rompete.»',
+    ago: 'L\'ago di mio padre, infilato nel telaio. «Almeno quelle non le rompete.»',
   }),
   porta: Object.freeze({
     pillBussa: 'E: bussa alla bottega',
@@ -176,7 +177,7 @@ const TESTI_B8 = Object.freeze({
     indizio: Object.freeze({
       tenaglie: 'La ceralacca non si rompe con le mani: ci vogliono i ferri di chi abitava qui.',
       punzone: 'Mio padre firmava ogni ferro: G. F. Il punzone lo perse alla Villa, vicino all\'acqua. L\'acqua tace finché il suo guardiano è in piedi.',
-      lima: 'A San Leucio una ragazza rideva: «Almeno quelle non le rompete.» Lì il ferro si arrende solo a chi non rompe niente. Nemmeno una maschera.',
+      ago: 'A San Leucio una ragazza rideva: «Almeno quelle non le rompete.» Lì il ferro si arrende solo a chi non rompe niente. Nemmeno una maschera.',
     }),
     filo: Object.freeze([
       'I tre sigilli sono a terra. Ma un filo d\'oro scende dall\'alto e tiene chiusa la porta.',
@@ -517,7 +518,7 @@ const DIARIO_B8 = Object.freeze({
   ferri: Object.freeze({
     tenaglie: ['Dietro un muro di Corso Trieste c\'erano le tenaglie di mio padre. Con quelle io e Taddeo tenemmo il ferro della spada.'],
     punzone: ['Caduto il guardiano, la fontana della Villa ha ripreso a parlare. Sul fondo c\'era il punzone: G. F.'],
-    lima: ['A San Leucio non ho rotto niente, per una volta. Sul telaio c\'era la lima di mio padre. «Siete venuto ad aggiustarlo o a finirlo?»'],
+    ago: ['A San Leucio non ho rotto niente, per una volta. Sul telaio c\'era l\'ago di mio padre. «Siete venuto ad aggiustarlo o a finirlo?»'],
   }),
   segreto: Object.freeze({
     fucina: ['La porta della bottega si è aperta. Dentro c\'era mio padre che batteva. Mi ha tolto la maschera. Sotto c\'ero io.', 'Non sono salito. Non ancora. Il fuoco resta acceso.'],
@@ -537,7 +538,7 @@ const DIARIO_B8 = Object.freeze({
       'Mio padre firmava ogni ferro: G. F. Il punzone lo perse alla Villa, vicino all\'acqua.',
       'L\'acqua della Villa tace finché il suo guardiano è in piedi. Dopo, bisogna tornare dove si è entrati.',
     ],
-    lima: [
+    ago: [
       'Mi è tornata una frase: «Almeno quelle non le rompete.» Era a San Leucio.',
       'A San Leucio il ferro si arrende solo a chi non rompe niente. Nemmeno una maschera.',
     ],
@@ -706,6 +707,8 @@ function normalizzaB8(d) {
   for (const k of ['epoca', 'scelta', 'toninoVisto']) if (typeof d[k] === 'string') s[k] = d[k];
   for (const k of ['finaleVisto', 'senzaFine', 'portaAperta', 'fucinaVista', 'volto', 'segretoVisto']) s[k] = Boolean(d[k]);
   for (const k of ['finali', 'contesti', 'ferri', 'indizi']) if (d[k] && typeof d[k] === 'object') s[k] = JSON.parse(JSON.stringify(d[k]));
+  // il terzo ferro era «la lima»: l'autore l'ha rinominato «l'ago». I salvataggi di prima tengono il loro sigillo.
+  if ('lima' in s.ferri) { if (!s.ferri.ago) s.ferri.ago = s.ferri.lima; delete s.ferri.lima; }
   s.recordCiclo = Math.max(1, Math.floor(Number(d.recordCiclo) || 1));
   s.sigilliMostrati = Math.max(0, Math.floor(Number(d.sigilliMostrati) || 0));
   return s;
@@ -997,7 +1000,7 @@ function componiPaginaB8(v, nota, s, memoria, opz = {}) {
     if (sp) righe.push(prendi(`speciale:${sp}`, D.speciali[sp]));
     for (const t of (nota.trasformazioni || []).slice(0, 2)) righe.push(prendi('trasformazione', D.trasformazione, { nome: t }));
     if (nota.medaglione) righe.push(prendi('medaglione', D.scelte.medaglione));
-    for (const f of nota.ferri || []) if (D.ferri[f]) righe.push(prendi(`ferro:${f}`, D.ferri[f]));
+    for (const f0 of nota.ferri || []) { const f = f0 === 'lima' ? 'ago' : f0; if (D.ferri[f]) righe.push(prendi(`ferro:${f}`, D.ferri[f])); } // 'lima': note di prima del nome nuovo
     if (nota.finale && D.finale[nota.finale]) { righe.push(prendi(`finale:${nota.finale}`, D.finale[nota.finale])); righe.push(prendi('bis', D.finale.bis)); }
     else if (/morte/.test(v.esito || '')) righe.push(rigaMorteB8(v, prendi));
     else if (v.esito !== 'vittoria') righe.push(prendi('abbandono', D.morte.abbandono));
@@ -1139,7 +1142,7 @@ function bossSconfittoB8(st) {
     else { st.cordoneB8 = true; b8.bannerPendente = { st, testo: TESTI_B8.senzaFine.banner((statoRun.ciclo || 1) + 1) }; }
     return;
   }
-  if (pc === 3 && senzaDanni && !s.ferri.lima && !statoRun.zonaP3) posaFerroB8(st, 'lima', b.x + 28, b.y + 30); // (h6/h7) la lima solo a San Leucio
+  if (pc === 3 && senzaDanni && !s.ferri.ago && !statoRun.zonaP3) posaFerroB8(st, 'ago', b.x + 28, b.y + 30); // (h6/h7) la ago solo a San Leucio
   if (senzaDanni) diciB8('senzaDanni'); else diciB8('fineAtto', { atto: pc });
 }
 
@@ -2495,7 +2498,7 @@ function fondaleFucinaB8(f, sc, st) {
     }
     ctx.globalAlpha = 1;
   }
-  const ferri = ['b8Tenaglie', 'b8Punzone', 'b8Lima']; // la rastrelliera dei ferri
+  const ferri = ['b8Tenaglie', 'b8Punzone', 'b8Ago']; // la rastrelliera dei ferri
   ferri.forEach((sp, i) => { ctx.fillStyle = '#475569'; ctx.fillRect(309 + i * 34, 82, 2, 3); drawPixelSprite(SPRITE_OGGETTI[sp], 310 + i * 34, 100, 2); });
   ctx.fillStyle = '#1a0f08'; ctx.fillRect(0, 236, W, 26);
   ctx.fillStyle = '#3d2614'; ctx.fillRect(0, 236, W, 1);

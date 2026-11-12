@@ -1933,8 +1933,14 @@ Object.assign(window.__teatro.interni, {
 const RICORDI_H7 = Object.freeze({
   /** Il posto di Agnese sulle gradinate della stanza del Giudice (sul fondale) e il filo rosso. */
   agnese: Object.freeze({ x: 404, y: 68, filoTick: 46, invulnTick: 60 }),
-  /** La tessera, il premio del luogo, dove cade il Giudice; una volta per slot (flag `h7_tessera`). */
-  tessera: Object.freeze({ dx: 26, dy: 26, raggio: 16 }),
+  /**
+   * La tessera, il premio del luogo, dove cade il Giudice. È un oggetto della notte: chi la raccoglie la tiene
+   * fino all'alba come ogni altro oggetto (`mod`: danno ×1,2, una Maschera in più, già piena). Cade a ogni
+   * vittoria sul Giudice; il flag `h7_tessera` ricorda solo la prima volta (didascalia e riga del Diario).
+   * Se Ferruccio l'ha già addosso (secondo ciclo della notte senza fine) la seconda vale una Maschera curata.
+   */
+  tessera: Object.freeze({ dx: 26, dy: 26, raggio: 16, id: 'tessera-gladiatore-h7', sprite: 'tesseraH7', tier: 'forte',
+    mod: Object.freeze({ dmgMult: 1.2, bonusMaxHp: 2, ceraExtra: 2 }), curaSeDoppia: 2 }),
   /** La nicchia nel tufo dell'Acquedotto: in una stanza normale per notte, visibile a stanza ripulita. */
   nicchia: Object.freeze({ x: 112, y: 96, raggio: 40 }),
 });
@@ -1944,6 +1950,10 @@ const TESTI_RICORDI_H7 = Object.freeze({
   filo: 'Dalle gradinate un filo rosso si tende davanti a Ferruccio: il colpo si ferma sul filo. Agnese, lassù, non dice niente.',
   tessera: '★ LA TESSERA DEL GLADIATORE',
   tesseraPresa: 'Una tessera d\'osso, con un nome inciso. Nessuno se lo ricorda più. Ferruccio la mette in tasca.',
+  /** La tessera come oggetto della notte (NUOVI: nome, effetto e riga di colore nel cartiglio degli oggetti). */
+  tesseraOggetto: Object.freeze({ nome: 'Tessera del Gladiatore', statsDesc: '[ARENA] Danno ×1,2 · +1 Maschera · fino all\'alba',
+    lore: 'Un nome inciso nell\'osso. Chi la porta combatte anche per lui.' }),
+  tesseraAncora: 'Un\'altra tessera, un altro nome. Ferruccio la stringe: una Maschera torna intera.',
   diarioTessera: 'Sotto l\'arena ho trovato una tessera d\'osso con un nome inciso. Nessuno se lo ricordava più. Adesso me lo ricordo io.',
   nicchia: '[E] Leggi',
   /** Il messaggio di Gaetano (testo NUOVO, sul senso della bibbia, Espansione II: la vendetta non è la verità). */
@@ -2027,10 +2037,31 @@ subisciColpoGiocatore = function (danno, fonte, daX, daY, ...resto) {
 };
 
 // --------------------------------------------------------------------------- il premio del luogo: la tessera
-/** Il Giudice caduto lascia la tessera del gladiatore, una volta per slot (il ferro della lima resta a San Leucio). */
+// La tessera disegnata a punti per il cartiglio e il Diario degli oggetti (osso chiaro, foro del cordino, tre tacche).
+SPRITE_OGGETTI.tesseraH7 = [
+  '...kkk...',
+  '..kcdck..',
+  '..kccck..',
+  '..kceck..',
+  '..kccck..',
+  '..kceck..',
+  '..kccck..',
+  '..kceck..',
+  '..kccck..',
+  '..ksssk..',
+  '...kkk...',
+];
+
+/** La tessera come oggetto da equipaggiare (stessa forma degli oggetti del gioco). */
+function oggettoTesseraH7() {
+  const R = RICORDI_H7.tessera, T = TESTI_RICORDI_H7.tesseraOggetto;
+  return { id: R.id, sprite: R.sprite, nome: T.nome, tier: R.tier, statsDesc: T.statsDesc, lore: T.lore, prezzo: 0, mod: { ...R.mod } };
+}
+
+/** Il Giudice caduto lascia la tessera del gladiatore, a ogni vittoria (l'ago resta a San Leucio). */
 function premioLuogoH7(st) {
   const b = giudiceDiH7(st);
-  if (!b || st.tesseraH7 || flagH7().h7_tessera) return false;
+  if (!b || st.tesseraH7) return false;
   const R = RICORDI_H7.tessera;
   st.tesseraH7 = { x: limitaH7(b.x + R.dx, ARENA.x1 + 20, ARENA.x2 - 20), y: limitaH7(b.y + R.dy, ARENA.y1 + 20, ARENA.y2 - 20), preso: false };
   return true;
@@ -2041,9 +2072,20 @@ function passoTesseraH7(st) {
   const t = st.tesseraH7;
   if (!t || t.preso || Math.hypot(player.x - t.x, player.y - t.y) > RICORDI_H7.tessera.raggio) return;
   t.preso = true;
-  impostaFlagH7({ h7_tessera: (typeof getNumeroNotte === 'function' ? getNumeroNotte() : 1) });
+  const prima = !flagH7().h7_tessera; // la didascalia e la riga del Diario valgono una volta per slot
+  if (prima) impostaFlagH7({ h7_tessera: (typeof getNumeroNotte === 'function' ? getNumeroNotte() : 1) });
   try { if (typeof a7 === 'object' && a7 && a7.run) a7.run.tesseraH7 = true; } catch (_) { /* a7 assente */ }
-  if (typeof didascaliaH2 === 'function') didascaliaH2(TESTI_RICORDI_H7.tesseraPresa); else mostraBanner(TESTI_RICORDI_H7.tesseraPresa, 240);
+  // l'effetto dura tutta la notte: la tessera entra fra gli oggetti di Ferruccio
+  const R = RICORDI_H7.tessera;
+  const giaAddosso = (statoRun.oggettiEquipaggiati || []).some((o) => o && o.id === R.id);
+  if (!giaAddosso) {
+    acquisisciOggettoConLimite5Slot(oggettoTesseraH7(), 'tessera', null);
+    // non è nel catalogo degli oggetti, quindi niente cartiglio: l'effetto lo dice il cartello
+    mostraBanner(`★ ${TESTI_RICORDI_H7.tesseraOggetto.nome}: ${TESTI_RICORDI_H7.tesseraOggetto.statsDesc}`, 300);
+  }
+  else statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + R.curaSeDoppia);
+  const testo = giaAddosso ? TESTI_RICORDI_H7.tesseraAncora : TESTI_RICORDI_H7.tesseraPresa;
+  if (prima || giaAddosso) { if (typeof didascaliaH2 === 'function') didascaliaH2(testo); else mostraBanner(testo, 240); }
   if (typeof AudioSys.playCampana === 'function') AudioSys.playCampana();
 }
 

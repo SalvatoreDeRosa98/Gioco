@@ -5,7 +5,7 @@
  *   A. LA SCELTA: il cancelletto solo dopo il boss della Villa (non dopo l'Acquedotto, non agli altri piani);
  *      [E] porta a Casertavecchia (zonaP3, quartiere, cartellone, luce, pavimento, musica).
  *   B. LA BOTOLA: il piano 3 è San Leucio intatto (telaio di h1, indizio di Bianca possibile, Capitano).
- *   C. IN ZONA niente Telaio di Agnese, niente confronto di h1, niente fazzoletto di Bianca, niente lima.
+ *   C. IN ZONA niente Telaio di Agnese, niente confronto di h1, niente fazzoletto di Bianca, niente ago.
  *   D. I RINTOCCHI e i NEMICI: tutti i tipi, tutti i loro stati; posa → suona; pietra sveglia, vivi storditi;
  *      corda tirata con un colpo e con [E], ricarica.
  *   E. IL CAMPANARO: tutti gli stati della tabella, fase 2 con le campane a terra che risuonano, sconfitta,
@@ -266,7 +266,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
     R.dannoSubitoNelBoss = false;
     window.__qa6.pulisci(st);
     const anime = h2.anime.length - anime0;
-    const lima = JSON.stringify(st.oggettiATerra || []).includes('lima') || Boolean(statoB8().ferri.lima);
+    const ago = JSON.stringify(st.oggettiATerra || []).includes('ago') || Boolean(statoB8().ferri.ago);
     const premio = Boolean(st.oggettoPiedistallo && st.oggettoPiedistallo.premioH6);
     const did = JSON.stringify(typeof b8 === 'object' ? (b8.didascalie || b8.dida || '') : '');
     const confronto = Boolean(st.confrontoH1) || Boolean(window.__teatro.t4qa.dialogo);
@@ -277,7 +277,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
     let chiamate = 0; const base = window.didascaliaH2; window.didascaliaH2 = function (...a) { chiamate++; return base.apply(this, a); };
     window.__qa6.pulisci(st2);
     window.didascaliaH2 = base;
-    return { anime, lima, premio, confronto, primaVolta, vista0, chiamate, campane: st.campaneH6, banner: R.banner };
+    return { anime, ago, premio, confronto, primaVolta, vista0, chiamate, campane: st.campaneH6, banner: R.banner };
   });
   const CONFIG_H1_BOSS_ = 0; const tutti = ['cammina', 'alzaCorda', 'suona', 'avvolge', 'sferza', 'prega', 'cambiaFase', 'tendeCorde', 'risuona'];
   const visti = new Set([...e.stati1, ...e2.stati2]);
@@ -288,7 +288,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('boss:fase2-campane', e2.fase2 && e2.campane === 3 && e2.posaCampana && e2.risuona && e2.fermati, e2);
   ok('boss:anime-di-h2', e3.anime > 0, e3.anime);
   ok('boss:rivelazione-una-volta', !e3.vista0 && e3.primaVolta && e3.chiamate === 0, e3);
-  ok('boss:niente-lima-niente-confronto', !e3.lima && !e3.confronto, e3);
+  ok('boss:niente-ago-niente-confronto', !e3.ago && !e3.confronto, e3);
   ok('boss:premio-e-campane-via', e3.premio && !e3.campane, e3);
 
   // ------------------------------------------------------------------ F. TADDEO SUL SAGRATO

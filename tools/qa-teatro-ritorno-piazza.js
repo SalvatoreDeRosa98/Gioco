@@ -48,7 +48,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
     await fermaCiclo(p, true);
     await p.evaluate(([id, pr]) => {
       statoRun.personaggioId = id;
-      if (pr) { const s = statoB8(); s.ferri = { tenaglie: 1, punzone: 1, lima: 1 }; s.finaleVisto = true; s.senzaFine = true; s.sigilliMostrati = 3; scriviB8(s); }
+      if (pr) { const s = statoB8(); s.ferri = { tenaglie: 1, punzone: 1, ago: 1 }; s.finaleVisto = true; s.senzaFine = true; s.sigilliMostrati = 3; scriviB8(s); }
       else { const s = statoB8(); s.finaleVisto = true; s.senzaFine = true; s.ferri = { tenaglie: 1 }; scriviB8(s); }
       avviaPartitaConPersonaggio(id);
     }, [pid, pronta]);
@@ -119,10 +119,10 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('rastrelliera-aperta', Boolean(h.rastrelliera), h.rastrelliera);
   await tasto('ArrowUp'); await tasto('ArrowUp'); await tasto('ArrowUp'); // tenaglie
   await tasto('KeyE');
-  await tasto('ArrowDown'); await tasto('ArrowDown'); // lima
+  await tasto('ArrowDown'); await tasto('ArrowDown'); // ago
   await tasto('Enter');
   h = await H();
-  ok('rastrelliera-tastiera', h.rastrelliera && h.rastrelliera.presi.tenaglie && h.rastrelliera.presi.lima && !h.rastrelliera.presi.punzone, h.rastrelliera);
+  ok('rastrelliera-tastiera', h.rastrelliera && h.rastrelliera.presi.tenaglie && h.rastrelliera.presi.ago && !h.rastrelliera.presi.punzone, h.rastrelliera);
   const padMenu = await p.evaluate(() => (window.__teatro.interni.comandiB3 || {}).menuAperti.some((f) => f()));
   ok('rastrelliera-registrata-nei-menu-b3', padMenu);
   await scatta('04-rastrelliera');
@@ -134,7 +134,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('scontro-senza-nuovaRun', s1.attivo && inScontro.run === salita.run && inScontro.ogg === salita.ogg, { salita, inScontro });
   ok('scontro-statistiche-uguali', inScontro.dmg === salita.dmg && inScontro.colpi === salita.colpi && inScontro.max === salita.max && inScontro.hp === salita.max, { salita, inScontro });
   ok('ferri-costano-passo', Math.abs(inScontro.speed - salita.speed * 0.8) < 0.01, { prima: salita.speed, dopo: inScontro.speed });
-  ok('ferri-nello-scontro', s1.sigilli.tenaglie && s1.sigilli.lima && !s1.sigilli.punzone, s1.sigilli);
+  ok('ferri-nello-scontro', s1.sigilli.tenaglie && s1.sigilli.ago && !s1.sigilli.punzone, s1.sigilli);
   ok('boss-scalato', h.scontro && s1.capo.maxHp > 650 && h.scontro.forza >= 1 && h.scontro.forza <= 4.5, { forza: h.scontro && h.scontro.forza, max: s1.capo.maxHp });
   await passi(p, 200);
   await scatta('05-scontro-dotazione');

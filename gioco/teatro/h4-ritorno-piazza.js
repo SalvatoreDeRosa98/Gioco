@@ -49,7 +49,7 @@ const RITORNO_H4 = Object.freeze({
     ritmoPerForza: 0.06, ritmoPerCiclo: 0.08, ritmoMin: 0.6,
   }),
   /** I ferri presi dalla rastrelliera: ognuno pesa, il passo cala di questa frazione nello scontro. */
-  ferri: Object.freeze({ passoPerFerro: 0.1, ordine: Object.freeze(['tenaglie', 'punzone', 'lima']) }),
+  ferri: Object.freeze({ passoPerFerro: 0.1, ordine: Object.freeze(['tenaglie', 'punzone', 'ago']) }),
   /** Rastrelliera (riquadro 640×360). */
   pannello: Object.freeze({ x: 150, y: 70, w: 340, h: 220, riga0: 140, rigaH: 28 }),
   pulsaTick: 64,
@@ -75,7 +75,7 @@ const TESTI_H4 = Object.freeze({
     ferri: Object.freeze({
       tenaglie: 'Le Tenaglie — le mani restano a terra più a lungo',
       punzone: 'Il Punzone — scendono meno marionette',
-      lima: 'La Lima — le forbici s\'aprono più piano',
+      ago: 'L\'Ago — le forbici s\'aprono più piano',
     }),
     preso: '[preso]', lasciato: '[lasciato]',
     sali: (n) => `Sali sopra la ribalta (${n} ${n === 1 ? 'ferro' : 'ferri'})`,
@@ -191,7 +191,7 @@ function scalaBurattinaioH4(forza, ciclo) {
 }
 
 function apriRastrellieraH4(opz) {
-  h4.rast = { sel: 3, presi: { tenaglie: false, punzone: false, lima: false }, opz };
+  h4.rast = { sel: 3, presi: { tenaglie: false, punzone: false, ago: false }, opz };
   statoRun.fase = 'hub';
 }
 
@@ -206,7 +206,7 @@ function saliConDotazioneH4() {
   const forza = forzaH4();
   const ciclo = (h4.viva && h4.viva.ciclo) || statoRun.ciclo || 1;
   const sc = scalaBurattinaioH4(forza, ciclo);
-  const ferri = { tenaglie: presi.includes('tenaglie'), punzone: presi.includes('punzone'), lima: presi.includes('lima') };
+  const ferri = { tenaglie: presi.includes('tenaglie'), punzone: presi.includes('punzone'), ago: presi.includes('ago') };
   h4.scontro = { run: statoRun.numeroRun, ferri, n: presi.length, forza, ciclo, molt: sc.molt, ritmo: sc.ritmo, vita: sc.vita };
   h4.viva = null;
   statoRun.hpHalf = statoRun.maxHpHalf;

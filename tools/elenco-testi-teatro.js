@@ -5,14 +5,20 @@
  * (TESTI_D1, TRIONFI_D3, CONSIGLI_E6…) aprendo la pagina con Playwright: niente copie a mano.
  * Le voci che sono funzioni (testi con un numero dentro) vengono chiamate con «N» al posto dei numeri.
  * Uso: node tools/elenco-testi-teatro.js [file html] [file di uscita]
+ *      node tools/elenco-testi-teatro.js [file html] --approva   segna come approvati dall'autore i testi di quel file:
+ *        li scrive in production/testi-approvati.json. Da allora l'elenco segna «NUOVO» solo ciò che non c'era.
  */
 const path = require('path');
 const fs = require('fs');
 const { chromium } = require('playwright');
 
 const RADICE = path.resolve(__dirname, '..');
-const file = path.resolve(process.argv[2] || path.join(RADICE, 'gioco', 'teatro_marionette.html'));
-const uscita = path.resolve(process.argv[3] || path.join(RADICE, 'production', 'testi-da-approvare.md'));
+const APPROVA = process.argv.includes('--approva');
+const argomenti = process.argv.slice(2).filter((a) => a !== '--approva');
+const file = path.resolve(argomenti[0] || path.join(RADICE, 'gioco', 'teatro_marionette.html'));
+const uscita = path.resolve(argomenti[1] || path.join(RADICE, 'production', 'testi-da-approvare.md'));
+const FILE_APPROVATI = path.join(RADICE, 'production', 'testi-approvati.json');
+const pulisci = (t) => String(t).replace(/\s+/g, ' ').trim();
 
 /** Le parti, con le tabelle del gioco da cui leggere e i testi che stanno fuori dalle tabelle. */
 const PARTI = [
@@ -88,33 +94,52 @@ const PARTI = [
   }, PARTI);
   await b.close();
 
+  if (APPROVA) {
+    const tutti = new Set();
+    for (const parte of dati) { for (const [, t] of parte.testi) tutti.add(pulisci(t)); for (const t of parte.fissi) tutti.add(pulisci(t)); }
+    fs.writeFileSync(FILE_APPROVATI, JSON.stringify({ data: new Date().toISOString().slice(0, 10), testi: [...tutti].sort() }, null, 1) + '\n');
+    console.log(`scritto ${path.relative(RADICE, FILE_APPROVATI)}: ${tutti.size} testi approvati`);
+    return;
+  }
+  let approvati = null;
+  try { approvati = JSON.parse(fs.readFileSync(FILE_APPROVATI, 'utf8')); } catch (_) { /* nessuna approvazione registrata */ }
+  const giaVisti = approvati ? new Set(approvati.testi) : null;
   const righe = [
-    '# Testi nuovi da approvare — seconda ondata, migliorie e trama (terza ondata)',
+    '# Testi del Teatro — seconda ondata, migliorie e trama (terza ondata)',
     '',
     `Generato da \`tools/elenco-testi-teatro.js\` il ${new Date().toISOString().slice(0, 10)}: i testi sono letti dalle tabelle del gioco, quindi sono`,
     'quelli che il giocatore vede. Dove compare **N** il gioco mette un numero. Per cambiare un testo basta dirlo',
     '(«nel Burattinaio la battuta dell\'atto II diventa …»): si corregge nella tabella indicata e l\'elenco si rigenera.',
-    'Per approvare tutto com\'è basta un «va bene».',
+    approvati
+      ? `**Approvati dall'autore il ${approvati.data}** («i testi vanno bene»). Le voci scritte dopo sono segnate **NUOVO**: sono le sole da guardare (__NUOVI__).`
+      : 'Per approvare tutto com\'è basta un «va bene».',
     '',
     'Altri testi della prima ondata ancora da approvare stanno nei loro documenti: `production/finali-teatro.md`',
     '(finali, voci segnate [nuovo]), `production/oggetti-200.md` (nomi e descrizioni degli oggetti), i nomi dei boss',
     'e delle trasformazioni in `gioco/teatro/b6-boss.js` e `b4-trasformazioni.js`, le battute di Tonino della',
     'partenza segreta (`TESTI_C1`), le esclamazioni del pubblico (`b1-pubblico.js`) e le scritte a tocco (`TESTI_C2`).',
   ];
-  let totale = 0;
+  let totale = 0; let nuovi = 0;
   for (const parte of dati) {
     const visti = new Set();
     const voci = [];
     for (const [via, testo] of parte.testi) {
-      const pulito = testo.replace(/\s+/g, ' ').trim();
+      const pulito = pulisci(testo);
       if (visti.has(pulito)) continue;
       visti.add(pulito);
-      voci.push(`- ${pulito}  \n  <sub>${via}</sub>`);
+      const nuovo = giaVisti && !giaVisti.has(pulito);
+      if (nuovo) nuovi++;
+      voci.push(`- ${nuovo ? '**NUOVO** ' : ''}${pulito}  \n  <sub>${via}</sub>`);
     }
-    for (const testo of parte.fissi) if (!visti.has(testo)) { visti.add(testo); voci.push(`- ${testo}`); }
+    for (const testo of parte.fissi) if (!visti.has(testo)) {
+      visti.add(testo);
+      const nuovo = giaVisti && !giaVisti.has(pulisci(testo));
+      if (nuovo) nuovi++;
+      voci.push(`- ${nuovo ? '**NUOVO** ' : ''}${testo}`);
+    }
     totale += voci.length;
     righe.push('', `## ${parte.titolo} (${voci.length})`, '', `Dove: \`${parte.dove}\``, '', ...voci);
   }
-  fs.writeFileSync(uscita, righe.join('\n') + '\n');
-  console.log(`scritto ${path.relative(RADICE, uscita)}: ${totale} testi in ${dati.length} parti`);
+  fs.writeFileSync(uscita, (righe.join('\n') + '\n').replace('__NUOVI__', nuovi === 1 ? '1 voce nuova' : `${nuovi} voci nuove`));
+  console.log(`scritto ${path.relative(RADICE, uscita)}: ${totale} testi in ${dati.length} parti${giaVisti ? `, ${nuovi} nuovi dopo l'approvazione` : ''}`);
 })();

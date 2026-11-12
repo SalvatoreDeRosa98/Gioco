@@ -32,7 +32,7 @@ poi J, K, L (nemici delle zone); M è facoltativa.
 | I2 | `telaio_agnese.png` | immagine singola, 800×600 | Il telaio reale di San Leucio a ombre: montanti di legno, ordito chiaro, pettine, ruota laterale, gigli d'oro sulla trave. **Senza la sciarpa**: la sciarpa rossa la disegna il gioco, lunga quanto la parte già tessuta. |
 | I3 | `agnese_telaio.png` (facoltativa) | 1 riga × 2 pose, celle 256×320 | Agnese al telaio: oggi il gioco usa la figura giocabile di Agnese. Pose: tesse (seduta, mani sull'ordito); porge (in piedi, un filo rosso fra le dita). |
 | I4 | `h4_uscita_piazza.png` | immagine singola, 384×512 | L'uscita verso Piazza Dante dopo Donna Luciana: un arco di quinta aperto con una lanterna appesa, sagoma scura col contorno color lanterna. |
-| I5 | `h4_rastrelliera.png` | 1 riga × 3 celle, celle 512×256 | I ferri di Gaetano appesi a una rastrelliera di bottega, uno per cella: tenaglie; punzone; lima. Ferro scuro, manici di legno, un filo d'oro sul bordo. |
+| I5 | `h4_rastrelliera.png` | 1 riga × 3 celle, celle 512×256 | I ferri di Gaetano appesi a una rastrelliera di bottega, uno per cella: tenaglie; punzone; ago (un grosso ago da burattinaio con la cruna d'oro e un filo rosso). Ferro scuro, manici di legno, un filo d'oro sul bordo. |
 
 ## J. Il Sottopalco
 

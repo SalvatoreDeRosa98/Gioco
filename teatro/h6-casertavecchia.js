@@ -1760,7 +1760,7 @@ function disegnaTaddeoH6(st, tk) {
   if (spalle) { ctx.fillStyle = 'rgba(8, 10, 22, 0.35)'; ctx.beginPath(); ctx.ellipse(P.x, P.y - 12, 11, 20, 0, 0, TAU); ctx.fill(); }
 }
 
-/** Il premio del luogo (al posto della lima): un oggetto forte garantito sul piedistallo, e la riga del Diario. */
+/** Il premio del luogo (al posto dell'ago): un oggetto forte garantito sul piedistallo, e la riga del Diario. */
 function premioH6(st) {
   if (st.premioH6 || !casertavecchiaAttivaH6()) return false;
   const D = SAGRATO_H6.premio;

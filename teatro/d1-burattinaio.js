@@ -15,7 +15,7 @@
  *   - marionette d'élite: nemici normali rinforzati (burattino, guardia, predone) calati appesi ai fili.
  * Tre atti: I Le Mani · II I Fili (mani + presa + marionette) · III Le Forbici (forbici + una mano).
  * Sigilli (ferri di Gaetano): tenaglie = le mani restano a terra di più; punzone = meno marionette;
- * lima = le forbici si inceppano (piantate più a lungo, niente doppio taglio, apertura più lenta).
+ * ago = le forbici si inceppano (piantate più a lungo, niente doppio taglio, apertura più lenta).
  * Niente segni a terra: gli attacchi si leggono dalla posa (la mano si alza, si chiude a pugno, si gira di
  * taglio), dal suono e dal tremito delle corde.
  *
@@ -60,7 +60,7 @@ const BURATTINAIO_D1 = Object.freeze({
     // (manici + lame, `lunghezzaPx` px del foglio) è lungo `lunghezza`×lunghezza come le forbici a canvas.
     immagine: Object.freeze({ nome: 'gb_forbici', lunghezza: 0.94, lunghezzaPx: 498, sogliaAperte: 0.35, lampo: 0.5,
       pernoChiuse: Object.freeze([290, 128]), pernoAperte: Object.freeze([300, 128]), puntaPiantate: Object.freeze([362, 248]) }),
-    posa: 44, apre: 46, apreLima: 80, taglio: 24, piantate: 80, moltLima: 1.9, stacca: 22,
+    posa: 44, apre: 46, apreAgo: 80, taglio: 24, piantate: 80, moltAgo: 1.9, stacca: 22,
     larghezzaTaglio: 15, danno: 2, cicatriciMax: 4, squarcioTick: 300, tremitoApre: 2.2,
   }),
   marionette: Object.freeze({
@@ -116,7 +116,7 @@ const TINTE_D1 = Object.freeze({
 // ===========================================================================
 const d1 = {
   attivo: false, stanza: null, opz: null, atto: 0, t: 0, intermezzo: 0, pausaColpo: 0,
-  turnoMano: 0, ondata: 0, cadute: 0, tremito: 0, prossimoBattito: 0, sigilli: { tenaglie: false, punzone: false, lima: false },
+  turnoMano: 0, ondata: 0, cadute: 0, tremito: 0, prossimoBattito: 0, sigilli: { tenaglie: false, punzone: false, ago: false },
   effetti: [], cicatrici: [], vittoria: null, presa: null, esito: null, voceDetta: {},
 };
 
@@ -125,8 +125,8 @@ const partiD1 = (id) => (d1.stanza ? d1.stanza.nemici.filter((n) => n.bossId ===
 
 /** Quali ferri contano: quelli veri dello slot (se b8 li espone), altrimenti i primi `n` nell'ordine della bibbia. */
 function sigilliDaNumeroD1(n, veri) {
-  const ordine = ['tenaglie', 'punzone', 'lima'];
-  const s = { tenaglie: false, punzone: false, lima: false };
+  const ordine = ['tenaglie', 'punzone', 'ago'];
+  const s = { tenaglie: false, punzone: false, ago: false };
   if (veri && typeof veri === 'object' && ordine.some((k) => veri[k])) { for (const k of ordine) s[k] = Boolean(veri[k]); return s; }
   const k = Math.max(0, Math.min(3, Math.floor(Number(n) || 0)));
   for (let i = 0; i < k; i++) s[ordine[i]] = true;
@@ -456,7 +456,7 @@ function iaManoD1(m, puoAttaccare) {
 // ===========================================================================
 function iaForbiciD1(f, puoAttaccare) {
   const F = BURATTINAIO_D1.forbici;
-  const lima = d1.sigilli.lima;
+  const ago = d1.sigilli.ago;
   f.tD1++;
   f.airZ = 40;
   switch (f.faseD1) {
@@ -476,7 +476,7 @@ function iaForbiciD1(f, puoAttaccare) {
       break;
     }
     case 'apre': { // le lame si aprono piano verso il bersaglio: l'avviso è la posa
-      const dur = lima ? F.apreLima : F.apre;
+      const dur = ago ? F.apreAgo : F.apre;
       f.apertura = 0.12 + 0.75 * Math.min(1, f.tD1 / dur) + (f.tD1 > dur * 0.5 ? Math.sin(f.tD1 * 2.3) * 0.03 : 0);
       f.tremaD1 = f.tD1 > dur * 0.5 ? F.tremitoApre : 0;
       if (f.tD1 === Math.round(dur * 0.5)) suonoD1('lama', 0.6);
@@ -508,17 +508,17 @@ function iaForbiciD1(f, puoAttaccare) {
         if (d1.cicatrici.length > F.cicatriciMax) d1.cicatrici.shift();
         scuoti(FEEL.scossa.evento); suonoD1('tonfo', 0.7); d1.tremito = 1;
         f.tagli++;
-        if (!lima && f.tagli % 2 === 1) { // senza lima: secondo taglio subito, dal punto d'arrivo
+        if (!ago && f.tagli % 2 === 1) { // senza ago: secondo taglio subito, dal punto d'arrivo
           f.da = { x: f.x, y: f.y }; f.faseD1 = 'apre'; f.tD1 = Math.round(F.apre * 0.35);
         } else {
-          f.faseD1 = 'piantate'; f.tD1 = 0; f.durTerra = Math.round(F.piantate * (lima ? F.moltLima : 1));
+          f.faseD1 = 'piantate'; f.tD1 = 0; f.durTerra = Math.round(F.piantate * (ago ? F.moltAgo : 1));
         }
       }
       break;
     }
-    case 'piantate': { // conficcate nelle tavole: colpibili (con la lima scricchiolano, inceppate)
-      f.h = 0; f.airZ = 22; f.apertura = lima ? 0.05 + Math.abs(Math.sin(f.tD1 * 0.5)) * 0.04 : 0.02;
-      if (lima && f.tD1 % 40 === 0) suonoD1('scricchio', 0.5);
+    case 'piantate': { // conficcate nelle tavole: colpibili (con l'ago scricchiolano, inceppate)
+      f.h = 0; f.airZ = 22; f.apertura = ago ? 0.05 + Math.abs(Math.sin(f.tD1 * 0.5)) * 0.04 : 0.02;
+      if (ago && f.tD1 % 40 === 0) suonoD1('scricchio', 0.5);
       if (f.tD1 >= f.durTerra) { f.faseD1 = 'stacca'; f.tD1 = 0; }
       break;
     }

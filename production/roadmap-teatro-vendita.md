@@ -66,7 +66,7 @@ Albero dei percorsi di una notte: P1 Corso Trieste → P2 Villa Comunale **oppur
 - Terza ondata: Gregorio con le prove evita lo scontro (la bibbia fa combattere comunque: interruttore
   `GREGORIO_H3.dialogoSenzaScontro`); costo dei ferri di Gaetano (passo −10% l'uno); effetti di Taddeo perdonato o
   accusato; premi delle zone nuove (oggi un oggetto forte a Casertavecchia, la Tessera del Gladiatore senza effetto
-  all'Anfiteatro); la lima resta solo a San Leucio; testo della lettera di Agnese e del messaggio del padre (nuovi);
+  all'Anfiteatro); l'ago (il terzo ferro, prima «la lima») resta solo a San Leucio; testo della lettera di Agnese e del messaggio del padre (nuovi);
   le rivelazioni del Campanaro e del Giudice non contano per «la svolta» delle memorie; mancano gli indizi su
   Gregorio ai piani 2-3 e le sue battute nel finale vero. Niente di tutto questo è stato giocato da una persona.
 - Testi nuovi da approvare (battute del Burattinaio, trionfi e aneddoti, Don Gennaro, Acquedotto, consigli del conto).

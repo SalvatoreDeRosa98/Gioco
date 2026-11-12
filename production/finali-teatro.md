@@ -188,7 +188,7 @@ appeso a un chiodo accanto alla porta**. Lo stato è `sigilli` (0..3).
 |---|---|---|---|---|
 | 1 | **Le Tenaglie** | Corso Trieste (piano 1) | Sono a terra nella **stanza segreta** del piano 1. | Indizio canonico di Mariella: il ferro risuona «dietro una porta» sul Corso — una porta che non c'è: il muro segreto. Con le tenaglie Ferruccio e Taddeo tennero il ferro della spada («Quella l'abbiamo forgiata insieme»). |
 | 2 | **Il Punzone G. F.** | Villa Comunale (piano 2) | Nella stanza d'ingresso del piano c'è una **fontana muta**. Battuto il boss del piano, invece di scendere nella botola si **torna all'ingresso**: l'acqua scorre e il punzone è sul fondo. | Bibbia §VI: il punzone è «accanto alla fontana della Villa Comunale»; il marmo «custodisce i ricordi degli operai morti» e li libera quando cade. |
-| 3 | **La Lima** | San Leucio (piano 3) | Cade quando si batte il boss del piano 3 **senza perdere nemmeno una maschera nella sua stanza**. | Agnese, primo incontro: «Siete venuto ad aggiustarlo o a finirlo?» … «Almeno quelle non le rompete.» A San Leucio non si rompe niente. (Stesso criterio che il gioco già usa per la Porta del Patto sicura.) |
+| 3 | **L'Ago** | San Leucio (piano 3) | Cade quando si batte il boss del piano 3 **senza perdere nemmeno una maschera nella sua stanza**. | Agnese, primo incontro: «Siete venuto ad aggiustarlo o a finirlo?» … «Almeno quelle non le rompete.» A San Leucio non si rompe niente. (Stesso criterio che il gioco già usa per la Porta del Patto sicura.) |
 
 **Il quarto passo è la Reggia.** Rotti i tre sigilli, un filo d'oro teso dall'alto tiene ancora chiusa la porta:
 si allenta solo dopo che Donna Luciana è caduta e si è visto l'epilogo «Bis» del finale vero (è lì che si scopre

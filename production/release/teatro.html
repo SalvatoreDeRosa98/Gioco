@@ -25204,7 +25204,7 @@ Object.assign(window.__teatro.interni, {
  *      del sipario: [E] rimette in scena l'ultimo atto. Si rivede dal Diario.
  *   2. FINALE SEGRETO. La porta della bottega di Gaetano nell'hub (t4-hub-storia.js › disegnaPortaBottega) è
  *      chiusa da 3 SIGILLI: uno per quartiere, ciascuno rotto da un ferro di Gaetano (tenaglie nella stanza
- *      segreta del piano 1; punzone G. F. alla fontana dell'ingresso del piano 2 dopo il boss; lima dal boss
+ *      segreta del piano 1; punzone G. F. alla fontana dell'ingresso del piano 2 dopo il boss; ago dal boss
  *      del piano 3 battuto senza perdere maschere). Poi serve il finale vero e bussare col ritmo del martello
  *      (tre colpi, una pausa, uno). Dietro: la Fucina del Ricordo (Gaetano rende il volto: ricompensa «Il Volto
  *      Ritrovato», registrata in a6) e la scala che sale SOPRA LA RIBALTA, dal Grande Burattinaio.
@@ -25264,7 +25264,7 @@ const SEGRETO_B8 = Object.freeze({
   ferri: Object.freeze([
     Object.freeze({ id: 'tenaglie', nome: 'Le Tenaglie di Gaetano', breve: 'le tenaglie', quartiere: 'Corso Trieste', pianoNelCiclo: 1, sprite: 'b8Tenaglie' }),
     Object.freeze({ id: 'punzone', nome: 'Il Punzone G. F.', breve: 'il punzone', quartiere: 'Villa Comunale', pianoNelCiclo: 2, sprite: 'b8Punzone' }),
-    Object.freeze({ id: 'lima', nome: 'La Lima di Gaetano', breve: 'la lima', quartiere: 'San Leucio', pianoNelCiclo: 3, sprite: 'b8Lima' }),
+    Object.freeze({ id: 'ago', nome: 'L\'Ago di Gaetano', breve: 'l\'ago', quartiere: 'San Leucio', pianoNelCiclo: 3, sprite: 'b8Ago' }),
   ]),
   prefissoRaccolta: 'b8-ferro-',             // id dei raccoglibili a terra (tipo 'ricordo')
   tenaglie: Object.freeze({ x: 150, y: 246 }), // nella stanza segreta
@@ -25277,7 +25277,7 @@ const SEGRETO_B8 = Object.freeze({
   bussata: Object.freeze({ rapidoMaxTick: 36, pausaMinTick: 45, pausaMaxTick: 180, silenzioTick: 50 }),
 });
 
-// Sprite pixel-art dei tre ferri (palette del Teatro: k nero, G/g acciaio, y oro, m/M legno).
+// Sprite pixel-art dei tre ferri (palette del Teatro: k nero, G/g acciaio, y oro, m/M legno, r filo rosso).
 SPRITE_OGGETTI.b8Tenaglie = [
   '.kk...kk.',
   'kGGk.kGGk',
@@ -25304,18 +25304,19 @@ SPRITE_OGGETTI.b8Punzone = [
   '...kGk...',
   '....k....',
 ];
-SPRITE_OGGETTI.b8Lima = [
+// L'ago di Gaetano (fino al 2026-11-12 era una lima): la cruna d'oro in alto, un filo rosso che ci passa.
+SPRITE_OGGETTI.b8Ago = [
+  '...kyk...',
+  '..ky.yk..',
+  '..kg.gkr.',
+  '...kgk.r.',
+  '...kGk.r.',
+  '...kgkr..',
+  '...kGk...',
+  '...kgk...',
+  '...kGk...',
+  '...kgk...',
   '....k....',
-  '...kgk...',
-  '...kGk...',
-  '...kgk...',
-  '...kGk...',
-  '...kgk...',
-  '...kGk...',
-  '..kkykk..',
-  '..kmmmk..',
-  '..kmMmk..',
-  '...kkk...',
 ];
 
 // ===========================================================================
@@ -25355,7 +25356,7 @@ const TESTI_B8 = Object.freeze({
   ferroTrovato: Object.freeze({
     tenaglie: 'Le tenaglie di mio padre. Con queste io e Taddeo tenemmo il ferro della spada.',
     punzone: 'Il punzone: G. F. L\'acqua lo ha tenuto per sei anni.',
-    lima: 'La lima di mio padre, sul telaio. «Almeno quelle non le rompete.»',
+    ago: 'L\'ago di mio padre, infilato nel telaio. «Almeno quelle non le rompete.»',
   }),
   porta: Object.freeze({
     pillBussa: 'E: bussa alla bottega',
@@ -25369,7 +25370,7 @@ const TESTI_B8 = Object.freeze({
     indizio: Object.freeze({
       tenaglie: 'La ceralacca non si rompe con le mani: ci vogliono i ferri di chi abitava qui.',
       punzone: 'Mio padre firmava ogni ferro: G. F. Il punzone lo perse alla Villa, vicino all\'acqua. L\'acqua tace finché il suo guardiano è in piedi.',
-      lima: 'A San Leucio una ragazza rideva: «Almeno quelle non le rompete.» Lì il ferro si arrende solo a chi non rompe niente. Nemmeno una maschera.',
+      ago: 'A San Leucio una ragazza rideva: «Almeno quelle non le rompete.» Lì il ferro si arrende solo a chi non rompe niente. Nemmeno una maschera.',
     }),
     filo: Object.freeze([
       'I tre sigilli sono a terra. Ma un filo d\'oro scende dall\'alto e tiene chiusa la porta.',
@@ -25710,7 +25711,7 @@ const DIARIO_B8 = Object.freeze({
   ferri: Object.freeze({
     tenaglie: ['Dietro un muro di Corso Trieste c\'erano le tenaglie di mio padre. Con quelle io e Taddeo tenemmo il ferro della spada.'],
     punzone: ['Caduto il guardiano, la fontana della Villa ha ripreso a parlare. Sul fondo c\'era il punzone: G. F.'],
-    lima: ['A San Leucio non ho rotto niente, per una volta. Sul telaio c\'era la lima di mio padre. «Siete venuto ad aggiustarlo o a finirlo?»'],
+    ago: ['A San Leucio non ho rotto niente, per una volta. Sul telaio c\'era l\'ago di mio padre. «Siete venuto ad aggiustarlo o a finirlo?»'],
   }),
   segreto: Object.freeze({
     fucina: ['La porta della bottega si è aperta. Dentro c\'era mio padre che batteva. Mi ha tolto la maschera. Sotto c\'ero io.', 'Non sono salito. Non ancora. Il fuoco resta acceso.'],
@@ -25730,7 +25731,7 @@ const DIARIO_B8 = Object.freeze({
       'Mio padre firmava ogni ferro: G. F. Il punzone lo perse alla Villa, vicino all\'acqua.',
       'L\'acqua della Villa tace finché il suo guardiano è in piedi. Dopo, bisogna tornare dove si è entrati.',
     ],
-    lima: [
+    ago: [
       'Mi è tornata una frase: «Almeno quelle non le rompete.» Era a San Leucio.',
       'A San Leucio il ferro si arrende solo a chi non rompe niente. Nemmeno una maschera.',
     ],
@@ -25899,6 +25900,8 @@ function normalizzaB8(d) {
   for (const k of ['epoca', 'scelta', 'toninoVisto']) if (typeof d[k] === 'string') s[k] = d[k];
   for (const k of ['finaleVisto', 'senzaFine', 'portaAperta', 'fucinaVista', 'volto', 'segretoVisto']) s[k] = Boolean(d[k]);
   for (const k of ['finali', 'contesti', 'ferri', 'indizi']) if (d[k] && typeof d[k] === 'object') s[k] = JSON.parse(JSON.stringify(d[k]));
+  // il terzo ferro era «la lima»: l'autore l'ha rinominato «l'ago». I salvataggi di prima tengono il loro sigillo.
+  if ('lima' in s.ferri) { if (!s.ferri.ago) s.ferri.ago = s.ferri.lima; delete s.ferri.lima; }
   s.recordCiclo = Math.max(1, Math.floor(Number(d.recordCiclo) || 1));
   s.sigilliMostrati = Math.max(0, Math.floor(Number(d.sigilliMostrati) || 0));
   return s;
@@ -26190,7 +26193,7 @@ function componiPaginaB8(v, nota, s, memoria, opz = {}) {
     if (sp) righe.push(prendi(`speciale:${sp}`, D.speciali[sp]));
     for (const t of (nota.trasformazioni || []).slice(0, 2)) righe.push(prendi('trasformazione', D.trasformazione, { nome: t }));
     if (nota.medaglione) righe.push(prendi('medaglione', D.scelte.medaglione));
-    for (const f of nota.ferri || []) if (D.ferri[f]) righe.push(prendi(`ferro:${f}`, D.ferri[f]));
+    for (const f0 of nota.ferri || []) { const f = f0 === 'lima' ? 'ago' : f0; if (D.ferri[f]) righe.push(prendi(`ferro:${f}`, D.ferri[f])); } // 'lima': note di prima del nome nuovo
     if (nota.finale && D.finale[nota.finale]) { righe.push(prendi(`finale:${nota.finale}`, D.finale[nota.finale])); righe.push(prendi('bis', D.finale.bis)); }
     else if (/morte/.test(v.esito || '')) righe.push(rigaMorteB8(v, prendi));
     else if (v.esito !== 'vittoria') righe.push(prendi('abbandono', D.morte.abbandono));
@@ -26332,7 +26335,7 @@ function bossSconfittoB8(st) {
     else { st.cordoneB8 = true; b8.bannerPendente = { st, testo: TESTI_B8.senzaFine.banner((statoRun.ciclo || 1) + 1) }; }
     return;
   }
-  if (pc === 3 && senzaDanni && !s.ferri.lima && !statoRun.zonaP3) posaFerroB8(st, 'lima', b.x + 28, b.y + 30); // (h6/h7) la lima solo a San Leucio
+  if (pc === 3 && senzaDanni && !s.ferri.ago && !statoRun.zonaP3) posaFerroB8(st, 'ago', b.x + 28, b.y + 30); // (h6/h7) la ago solo a San Leucio
   if (senzaDanni) diciB8('senzaDanni'); else diciB8('fineAtto', { atto: pc });
 }
 
@@ -27688,7 +27691,7 @@ function fondaleFucinaB8(f, sc, st) {
     }
     ctx.globalAlpha = 1;
   }
-  const ferri = ['b8Tenaglie', 'b8Punzone', 'b8Lima']; // la rastrelliera dei ferri
+  const ferri = ['b8Tenaglie', 'b8Punzone', 'b8Ago']; // la rastrelliera dei ferri
   ferri.forEach((sp, i) => { ctx.fillStyle = '#475569'; ctx.fillRect(309 + i * 34, 82, 2, 3); drawPixelSprite(SPRITE_OGGETTI[sp], 310 + i * 34, 100, 2); });
   ctx.fillStyle = '#1a0f08'; ctx.fillRect(0, 236, W, 26);
   ctx.fillStyle = '#3d2614'; ctx.fillRect(0, 236, W, 1);
@@ -37728,7 +37731,7 @@ Object.assign(window.__teatro.interni, {
  *   - marionette d'élite: nemici normali rinforzati (burattino, guardia, predone) calati appesi ai fili.
  * Tre atti: I Le Mani · II I Fili (mani + presa + marionette) · III Le Forbici (forbici + una mano).
  * Sigilli (ferri di Gaetano): tenaglie = le mani restano a terra di più; punzone = meno marionette;
- * lima = le forbici si inceppano (piantate più a lungo, niente doppio taglio, apertura più lenta).
+ * ago = le forbici si inceppano (piantate più a lungo, niente doppio taglio, apertura più lenta).
  * Niente segni a terra: gli attacchi si leggono dalla posa (la mano si alza, si chiude a pugno, si gira di
  * taglio), dal suono e dal tremito delle corde.
  *
@@ -37773,7 +37776,7 @@ const BURATTINAIO_D1 = Object.freeze({
     // (manici + lame, `lunghezzaPx` px del foglio) è lungo `lunghezza`×lunghezza come le forbici a canvas.
     immagine: Object.freeze({ nome: 'gb_forbici', lunghezza: 0.94, lunghezzaPx: 498, sogliaAperte: 0.35, lampo: 0.5,
       pernoChiuse: Object.freeze([290, 128]), pernoAperte: Object.freeze([300, 128]), puntaPiantate: Object.freeze([362, 248]) }),
-    posa: 44, apre: 46, apreLima: 80, taglio: 24, piantate: 80, moltLima: 1.9, stacca: 22,
+    posa: 44, apre: 46, apreAgo: 80, taglio: 24, piantate: 80, moltAgo: 1.9, stacca: 22,
     larghezzaTaglio: 15, danno: 2, cicatriciMax: 4, squarcioTick: 300, tremitoApre: 2.2,
   }),
   marionette: Object.freeze({
@@ -37829,7 +37832,7 @@ const TINTE_D1 = Object.freeze({
 // ===========================================================================
 const d1 = {
   attivo: false, stanza: null, opz: null, atto: 0, t: 0, intermezzo: 0, pausaColpo: 0,
-  turnoMano: 0, ondata: 0, cadute: 0, tremito: 0, prossimoBattito: 0, sigilli: { tenaglie: false, punzone: false, lima: false },
+  turnoMano: 0, ondata: 0, cadute: 0, tremito: 0, prossimoBattito: 0, sigilli: { tenaglie: false, punzone: false, ago: false },
   effetti: [], cicatrici: [], vittoria: null, presa: null, esito: null, voceDetta: {},
 };
 
@@ -37838,8 +37841,8 @@ const partiD1 = (id) => (d1.stanza ? d1.stanza.nemici.filter((n) => n.bossId ===
 
 /** Quali ferri contano: quelli veri dello slot (se b8 li espone), altrimenti i primi `n` nell'ordine della bibbia. */
 function sigilliDaNumeroD1(n, veri) {
-  const ordine = ['tenaglie', 'punzone', 'lima'];
-  const s = { tenaglie: false, punzone: false, lima: false };
+  const ordine = ['tenaglie', 'punzone', 'ago'];
+  const s = { tenaglie: false, punzone: false, ago: false };
   if (veri && typeof veri === 'object' && ordine.some((k) => veri[k])) { for (const k of ordine) s[k] = Boolean(veri[k]); return s; }
   const k = Math.max(0, Math.min(3, Math.floor(Number(n) || 0)));
   for (let i = 0; i < k; i++) s[ordine[i]] = true;
@@ -38169,7 +38172,7 @@ function iaManoD1(m, puoAttaccare) {
 // ===========================================================================
 function iaForbiciD1(f, puoAttaccare) {
   const F = BURATTINAIO_D1.forbici;
-  const lima = d1.sigilli.lima;
+  const ago = d1.sigilli.ago;
   f.tD1++;
   f.airZ = 40;
   switch (f.faseD1) {
@@ -38189,7 +38192,7 @@ function iaForbiciD1(f, puoAttaccare) {
       break;
     }
     case 'apre': { // le lame si aprono piano verso il bersaglio: l'avviso è la posa
-      const dur = lima ? F.apreLima : F.apre;
+      const dur = ago ? F.apreAgo : F.apre;
       f.apertura = 0.12 + 0.75 * Math.min(1, f.tD1 / dur) + (f.tD1 > dur * 0.5 ? Math.sin(f.tD1 * 2.3) * 0.03 : 0);
       f.tremaD1 = f.tD1 > dur * 0.5 ? F.tremitoApre : 0;
       if (f.tD1 === Math.round(dur * 0.5)) suonoD1('lama', 0.6);
@@ -38221,17 +38224,17 @@ function iaForbiciD1(f, puoAttaccare) {
         if (d1.cicatrici.length > F.cicatriciMax) d1.cicatrici.shift();
         scuoti(FEEL.scossa.evento); suonoD1('tonfo', 0.7); d1.tremito = 1;
         f.tagli++;
-        if (!lima && f.tagli % 2 === 1) { // senza lima: secondo taglio subito, dal punto d'arrivo
+        if (!ago && f.tagli % 2 === 1) { // senza ago: secondo taglio subito, dal punto d'arrivo
           f.da = { x: f.x, y: f.y }; f.faseD1 = 'apre'; f.tD1 = Math.round(F.apre * 0.35);
         } else {
-          f.faseD1 = 'piantate'; f.tD1 = 0; f.durTerra = Math.round(F.piantate * (lima ? F.moltLima : 1));
+          f.faseD1 = 'piantate'; f.tD1 = 0; f.durTerra = Math.round(F.piantate * (ago ? F.moltAgo : 1));
         }
       }
       break;
     }
-    case 'piantate': { // conficcate nelle tavole: colpibili (con la lima scricchiolano, inceppate)
-      f.h = 0; f.airZ = 22; f.apertura = lima ? 0.05 + Math.abs(Math.sin(f.tD1 * 0.5)) * 0.04 : 0.02;
-      if (lima && f.tD1 % 40 === 0) suonoD1('scricchio', 0.5);
+    case 'piantate': { // conficcate nelle tavole: colpibili (con l'ago scricchiolano, inceppate)
+      f.h = 0; f.airZ = 22; f.apertura = ago ? 0.05 + Math.abs(Math.sin(f.tD1 * 0.5)) * 0.04 : 0.02;
+      if (ago && f.tD1 % 40 === 0) suonoD1('scricchio', 0.5);
       if (f.tD1 >= f.durTerra) { f.faseD1 = 'stacca'; f.tD1 = 0; }
       break;
     }
@@ -46036,7 +46039,7 @@ const RITORNO_H4 = Object.freeze({
     ritmoPerForza: 0.06, ritmoPerCiclo: 0.08, ritmoMin: 0.6,
   }),
   /** I ferri presi dalla rastrelliera: ognuno pesa, il passo cala di questa frazione nello scontro. */
-  ferri: Object.freeze({ passoPerFerro: 0.1, ordine: Object.freeze(['tenaglie', 'punzone', 'lima']) }),
+  ferri: Object.freeze({ passoPerFerro: 0.1, ordine: Object.freeze(['tenaglie', 'punzone', 'ago']) }),
   /** Rastrelliera (riquadro 640×360). */
   pannello: Object.freeze({ x: 150, y: 70, w: 340, h: 220, riga0: 140, rigaH: 28 }),
   pulsaTick: 64,
@@ -46062,7 +46065,7 @@ const TESTI_H4 = Object.freeze({
     ferri: Object.freeze({
       tenaglie: 'Le Tenaglie — le mani restano a terra più a lungo',
       punzone: 'Il Punzone — scendono meno marionette',
-      lima: 'La Lima — le forbici s\'aprono più piano',
+      ago: 'L\'Ago — le forbici s\'aprono più piano',
     }),
     preso: '[preso]', lasciato: '[lasciato]',
     sali: (n) => `Sali sopra la ribalta (${n} ${n === 1 ? 'ferro' : 'ferri'})`,
@@ -46178,7 +46181,7 @@ function scalaBurattinaioH4(forza, ciclo) {
 }
 
 function apriRastrellieraH4(opz) {
-  h4.rast = { sel: 3, presi: { tenaglie: false, punzone: false, lima: false }, opz };
+  h4.rast = { sel: 3, presi: { tenaglie: false, punzone: false, ago: false }, opz };
   statoRun.fase = 'hub';
 }
 
@@ -46193,7 +46196,7 @@ function saliConDotazioneH4() {
   const forza = forzaH4();
   const ciclo = (h4.viva && h4.viva.ciclo) || statoRun.ciclo || 1;
   const sc = scalaBurattinaioH4(forza, ciclo);
-  const ferri = { tenaglie: presi.includes('tenaglie'), punzone: presi.includes('punzone'), lima: presi.includes('lima') };
+  const ferri = { tenaglie: presi.includes('tenaglie'), punzone: presi.includes('punzone'), ago: presi.includes('ago') };
   h4.scontro = { run: statoRun.numeroRun, ferri, n: presi.length, forza, ciclo, molt: sc.molt, ritmo: sc.ritmo, vita: sc.vita };
   h4.viva = null;
   statoRun.hpHalf = statoRun.maxHpHalf;
@@ -49995,7 +49998,7 @@ function disegnaTaddeoH6(st, tk) {
   if (spalle) { ctx.fillStyle = 'rgba(8, 10, 22, 0.35)'; ctx.beginPath(); ctx.ellipse(P.x, P.y - 12, 11, 20, 0, 0, TAU); ctx.fill(); }
 }
 
-/** Il premio del luogo (al posto della lima): un oggetto forte garantito sul piedistallo, e la riga del Diario. */
+/** Il premio del luogo (al posto dell'ago): un oggetto forte garantito sul piedistallo, e la riga del Diario. */
 function premioH6(st) {
   if (st.premioH6 || !casertavecchiaAttivaH6()) return false;
   const D = SAGRATO_H6.premio;
@@ -52024,8 +52027,14 @@ Object.assign(window.__teatro.interni, {
 const RICORDI_H7 = Object.freeze({
   /** Il posto di Agnese sulle gradinate della stanza del Giudice (sul fondale) e il filo rosso. */
   agnese: Object.freeze({ x: 404, y: 68, filoTick: 46, invulnTick: 60 }),
-  /** La tessera, il premio del luogo, dove cade il Giudice; una volta per slot (flag `h7_tessera`). */
-  tessera: Object.freeze({ dx: 26, dy: 26, raggio: 16 }),
+  /**
+   * La tessera, il premio del luogo, dove cade il Giudice. È un oggetto della notte: chi la raccoglie la tiene
+   * fino all'alba come ogni altro oggetto (`mod`: danno ×1,2, una Maschera in più, già piena). Cade a ogni
+   * vittoria sul Giudice; il flag `h7_tessera` ricorda solo la prima volta (didascalia e riga del Diario).
+   * Se Ferruccio l'ha già addosso (secondo ciclo della notte senza fine) la seconda vale una Maschera curata.
+   */
+  tessera: Object.freeze({ dx: 26, dy: 26, raggio: 16, id: 'tessera-gladiatore-h7', sprite: 'tesseraH7', tier: 'forte',
+    mod: Object.freeze({ dmgMult: 1.2, bonusMaxHp: 2, ceraExtra: 2 }), curaSeDoppia: 2 }),
   /** La nicchia nel tufo dell'Acquedotto: in una stanza normale per notte, visibile a stanza ripulita. */
   nicchia: Object.freeze({ x: 112, y: 96, raggio: 40 }),
 });
@@ -52035,6 +52044,10 @@ const TESTI_RICORDI_H7 = Object.freeze({
   filo: 'Dalle gradinate un filo rosso si tende davanti a Ferruccio: il colpo si ferma sul filo. Agnese, lassù, non dice niente.',
   tessera: '★ LA TESSERA DEL GLADIATORE',
   tesseraPresa: 'Una tessera d\'osso, con un nome inciso. Nessuno se lo ricorda più. Ferruccio la mette in tasca.',
+  /** La tessera come oggetto della notte (NUOVI: nome, effetto e riga di colore nel cartiglio degli oggetti). */
+  tesseraOggetto: Object.freeze({ nome: 'Tessera del Gladiatore', statsDesc: '[ARENA] Danno ×1,2 · +1 Maschera · fino all\'alba',
+    lore: 'Un nome inciso nell\'osso. Chi la porta combatte anche per lui.' }),
+  tesseraAncora: 'Un\'altra tessera, un altro nome. Ferruccio la stringe: una Maschera torna intera.',
   diarioTessera: 'Sotto l\'arena ho trovato una tessera d\'osso con un nome inciso. Nessuno se lo ricordava più. Adesso me lo ricordo io.',
   nicchia: '[E] Leggi',
   /** Il messaggio di Gaetano (testo NUOVO, sul senso della bibbia, Espansione II: la vendetta non è la verità). */
@@ -52118,10 +52131,31 @@ subisciColpoGiocatore = function (danno, fonte, daX, daY, ...resto) {
 };
 
 // --------------------------------------------------------------------------- il premio del luogo: la tessera
-/** Il Giudice caduto lascia la tessera del gladiatore, una volta per slot (il ferro della lima resta a San Leucio). */
+// La tessera disegnata a punti per il cartiglio e il Diario degli oggetti (osso chiaro, foro del cordino, tre tacche).
+SPRITE_OGGETTI.tesseraH7 = [
+  '...kkk...',
+  '..kcdck..',
+  '..kccck..',
+  '..kceck..',
+  '..kccck..',
+  '..kceck..',
+  '..kccck..',
+  '..kceck..',
+  '..kccck..',
+  '..ksssk..',
+  '...kkk...',
+];
+
+/** La tessera come oggetto da equipaggiare (stessa forma degli oggetti del gioco). */
+function oggettoTesseraH7() {
+  const R = RICORDI_H7.tessera, T = TESTI_RICORDI_H7.tesseraOggetto;
+  return { id: R.id, sprite: R.sprite, nome: T.nome, tier: R.tier, statsDesc: T.statsDesc, lore: T.lore, prezzo: 0, mod: { ...R.mod } };
+}
+
+/** Il Giudice caduto lascia la tessera del gladiatore, a ogni vittoria (l'ago resta a San Leucio). */
 function premioLuogoH7(st) {
   const b = giudiceDiH7(st);
-  if (!b || st.tesseraH7 || flagH7().h7_tessera) return false;
+  if (!b || st.tesseraH7) return false;
   const R = RICORDI_H7.tessera;
   st.tesseraH7 = { x: limitaH7(b.x + R.dx, ARENA.x1 + 20, ARENA.x2 - 20), y: limitaH7(b.y + R.dy, ARENA.y1 + 20, ARENA.y2 - 20), preso: false };
   return true;
@@ -52132,9 +52166,20 @@ function passoTesseraH7(st) {
   const t = st.tesseraH7;
   if (!t || t.preso || Math.hypot(player.x - t.x, player.y - t.y) > RICORDI_H7.tessera.raggio) return;
   t.preso = true;
-  impostaFlagH7({ h7_tessera: (typeof getNumeroNotte === 'function' ? getNumeroNotte() : 1) });
+  const prima = !flagH7().h7_tessera; // la didascalia e la riga del Diario valgono una volta per slot
+  if (prima) impostaFlagH7({ h7_tessera: (typeof getNumeroNotte === 'function' ? getNumeroNotte() : 1) });
   try { if (typeof a7 === 'object' && a7 && a7.run) a7.run.tesseraH7 = true; } catch (_) { /* a7 assente */ }
-  if (typeof didascaliaH2 === 'function') didascaliaH2(TESTI_RICORDI_H7.tesseraPresa); else mostraBanner(TESTI_RICORDI_H7.tesseraPresa, 240);
+  // l'effetto dura tutta la notte: la tessera entra fra gli oggetti di Ferruccio
+  const R = RICORDI_H7.tessera;
+  const giaAddosso = (statoRun.oggettiEquipaggiati || []).some((o) => o && o.id === R.id);
+  if (!giaAddosso) {
+    acquisisciOggettoConLimite5Slot(oggettoTesseraH7(), 'tessera', null);
+    // non è nel catalogo degli oggetti, quindi niente cartiglio: l'effetto lo dice il cartello
+    mostraBanner(`★ ${TESTI_RICORDI_H7.tesseraOggetto.nome}: ${TESTI_RICORDI_H7.tesseraOggetto.statsDesc}`, 300);
+  }
+  else statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + R.curaSeDoppia);
+  const testo = giaAddosso ? TESTI_RICORDI_H7.tesseraAncora : TESTI_RICORDI_H7.tesseraPresa;
+  if (prima || giaAddosso) { if (typeof didascaliaH2 === 'function') didascaliaH2(testo); else mostraBanner(testo, 240); }
   if (typeof AudioSys.playCampana === 'function') AudioSys.playCampana();
 }
 

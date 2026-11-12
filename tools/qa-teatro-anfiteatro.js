@@ -321,24 +321,33 @@ const foto = (n) => `${prefisso}-${n}.png`;
   // la musica del luogo
   const tema = await p.evaluate(() => { const I = window.__teatro.interni; const a = I.ricordiH7.tema; const R = I.statoRun; nuovaRun(false); avviaPiano(3, false); R.siparioAttivo = null; return { anf: a, leucio: I.ricordiH7.tema }; });
   ok('D: il tema dell\'Anfiteatro al piano 3 solo lì', tema.anf === 'anfiteatro' && tema.leucio !== 'anfiteatro', tema);
-  // la tessera: una volta per slot
+  // la tessera: cade a ogni vittoria; didascalia e riga del Diario una volta per slot
   await flag({ h7_tessera: null, agnese: null });
   await alAnfiteatro();
   const tes = await p.evaluate(() => {
     const I = window.__teatro.interni; const R = I.statoRun; const P = I.player;
     const st = R.mappa.stanze.find((s) => s.tipo === 'boss'); entraInStanza(st, 'S'); R.siparioAttivo = null;
     const b = st.nemici.find((n) => n.boss); b.hp = 0; verificaStanzaPulita(); passoLogico();
-    const t = I.ricordiH7.tessera; const lima = (st.oggettiATerra || []).some((o) => /lima/.test(o.id || ''));
-    return { t, lima };
+    const t = I.ricordiH7.tessera; const ago = (st.oggettiATerra || []).some((o) => /ago/.test(o.id || ''));
+    return { t, ago };
   });
-  ok('D: il Giudice lascia la tessera (e non la lima)', tes.t && !tes.t.preso && !tes.lima, tes);
+  ok('D: il Giudice lascia la tessera (e non l\'ago)', tes.t && !tes.t.preso && !tes.ago, tes);
   await disegna(); await scatta('d-tessera');
   const presa = await p.evaluate(() => {
-    const I = window.__teatro.interni; const P = I.player; const t = I.ricordiH7.tessera;
+    const I = window.__teatro.interni; const R = I.statoRun; const P = I.player; const t = I.ricordiH7.tessera;
+    const prima = { dmg: R.dmg, max: R.maxHpHalf, hp: R.hpHalf, n: R.oggettiEquipaggiati.length };
     P.x = t.x; P.y = t.y; passoLogico(); passoLogico();
-    return { preso: I.ricordiH7.tessera.preso, flag: window.__teatro.t4qa.flag.h7_tessera };
+    const ogg = R.oggettiEquipaggiati.find((o) => o.id === 'tessera-gladiatore-h7') || null;
+    return { preso: I.ricordiH7.tessera.preso, flag: window.__teatro.t4qa.flag.h7_tessera, prima,
+      dopo: { dmg: R.dmg, max: R.maxHpHalf, hp: R.hpHalf, n: R.oggettiEquipaggiati.length }, ogg: ogg && { nome: ogg.nome, mod: ogg.mod } };
   });
   ok('D: la tessera si raccoglie e resta nello slot', presa.preso && presa.flag, presa);
+  // l'effetto dura tutta la notte: è un oggetto di Ferruccio (danno ×1,2, una Maschera in più già piena)
+  ok('D: la tessera è un oggetto della notte: più danno e una Maschera in più', Boolean(presa.ogg) && presa.dopo.n === presa.prima.n + 1
+    && presa.dopo.dmg > presa.prima.dmg * 1.15 && presa.dopo.max === presa.prima.max + 2 && presa.dopo.hp === presa.prima.hp + 2, presa);
+  const restaAlPiano4 = await p.evaluate(() => { const R = window.__teatro.interni.statoRun; const d = R.dmg; avviaPiano(4, false); R.siparioAttivo = null; ricalcolaStatistiche();
+    return { dmg: R.dmg, prima: d, ha: R.oggettiEquipaggiati.some((o) => o.id === 'tessera-gladiatore-h7') }; });
+  ok('D: la tessera resta anche al piano dopo', restaAlPiano4.ha && Math.abs(restaAlPiano4.dmg - restaAlPiano4.prima) < 0.01, restaAlPiano4);
   const diario = await p.evaluate((n) => { try { const pg = componiPaginaB8({ notte: n, esito: 'caduta', piano: 3, zonaP3H7: 'anfiteatro' }, {}, statoB8(), {}); return pg && pg.righe; } catch (e) { return String(e); } }, presa.flag);
   ok('D: riga nel Diario per la tessera', Array.isArray(diario) && diario.some((r) => /tessera/.test(r)), diario);
   await alAnfiteatro();
@@ -348,7 +357,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
     const b = st.nemici.find((n) => n.boss); b.hp = 0; verificaStanzaPulita(); passoLogico();
     return I.ricordiH7.tessera;
   });
-  ok('D: la seconda volta niente tessera', !tes2, tes2);
+  ok('D: il Giudice lascia la tessera a ogni vittoria (in una notte nuova)', Boolean(tes2) && !tes2.preso, tes2);
   // il messaggio del padre all'Acquedotto
   await flag({ messaggio_padre: null });
   const nic = await p.evaluate(() => {

@@ -1,9 +1,9 @@
-# Testi nuovi da approvare — seconda ondata, migliorie e trama (terza ondata)
+# Testi del Teatro — seconda ondata, migliorie e trama (terza ondata)
 
 Generato da `tools/elenco-testi-teatro.js` il 2026-11-12: i testi sono letti dalle tabelle del gioco, quindi sono
 quelli che il giocatore vede. Dove compare **N** il gioco mette un numero. Per cambiare un testo basta dirlo
 («nel Burattinaio la battuta dell'atto II diventa …»): si corregge nella tabella indicata e l'elenco si rigenera.
-Per approvare tutto com'è basta un «va bene».
+**Approvati dall'autore il 2026-11-12** («i testi vanno bene»). Le voci scritte dopo sono segnate **NUOVO**: sono le sole da guardare (5 voci nuove).
 
 Altri testi della prima ondata ancora da approvare stanno nei loro documenti: `production/finali-teatro.md`
 (finali, voci segnate [nuovo]), `production/oggetti-200.md` (nomi e descrizioni degli oggetti), i nomi dei boss
@@ -1088,8 +1088,8 @@ Dove: `gioco/teatro/h4-ritorno-piazza.js`
   <sub>TESTI_H4.rastrelliera.ferri.tenaglie</sub>
 - Il Punzone — scendono meno marionette  
   <sub>TESTI_H4.rastrelliera.ferri.punzone</sub>
-- La Lima — le forbici s'aprono più piano  
-  <sub>TESTI_H4.rastrelliera.ferri.lima</sub>
+- **NUOVO** L'Ago — le forbici s'aprono più piano  
+  <sub>TESTI_H4.rastrelliera.ferri.ago</sub>
 - [preso]  
   <sub>TESTI_H4.rastrelliera.preso</sub>
 - [lasciato]  
@@ -1217,7 +1217,7 @@ Dove: `gioco/teatro/h6-casertavecchia.js`
 - Al duomo il Campanaro ha lasciato andare la corda. Ho sentito il silenzio, dopo: pesava meno di tutte quelle parole.  
   <sub>TESTI_SAGRATO_H6.diario</sub>
 
-## Anfiteatro Campano, il Giudice dell'Arena, Agnese e il messaggio del padre (27)
+## Anfiteatro Campano, il Giudice dell'Arena, Agnese e il messaggio del padre (31)
 
 Dove: `gioco/teatro/h7-anfiteatro.js`
 
@@ -1265,6 +1265,14 @@ Dove: `gioco/teatro/h7-anfiteatro.js`
   <sub>TESTI_RICORDI_H7.tessera</sub>
 - Una tessera d'osso, con un nome inciso. Nessuno se lo ricorda più. Ferruccio la mette in tasca.  
   <sub>TESTI_RICORDI_H7.tesseraPresa</sub>
+- **NUOVO** Tessera del Gladiatore  
+  <sub>TESTI_RICORDI_H7.tesseraOggetto.nome</sub>
+- **NUOVO** [ARENA] Danno ×1,2 · +1 Maschera · fino all'alba  
+  <sub>TESTI_RICORDI_H7.tesseraOggetto.statsDesc</sub>
+- **NUOVO** Un nome inciso nell'osso. Chi la porta combatte anche per lui.  
+  <sub>TESTI_RICORDI_H7.tesseraOggetto.lore</sub>
+- **NUOVO** Un'altra tessera, un altro nome. Ferruccio la stringe: una Maschera torna intera.  
+  <sub>TESTI_RICORDI_H7.tesseraAncora</sub>
 - Sotto l'arena ho trovato una tessera d'osso con un nome inciso. Nessuno se lo ricordava più. Adesso me lo ricordo io.  
   <sub>TESTI_RICORDI_H7.diarioTessera</sub>
 - [E] Leggi  

@@ -227,19 +227,19 @@ const foto = (n) => `${prefisso}-${n}.png`;
   await B((k) => { if (k) { const P = window.__teatro.interni.player; P.x = k.x; P.y = k.y; } }, pun);
   await p.waitForTimeout(300);
   ok('punzone-alla-fontana-dopo-il-boss', primaFontana === false && pun && (await B(() => window.__teatro.interni.sigilli)) === 2, { primaFontana, pun });
-  // 2d. la lima: boss del piano 3 con danni → niente; senza danni → cade
+  // 2d. l'ago: boss del piano 3 con danni → niente; senza danni → cade
   await bossDelPiano(3, { conDanni: true });
-  const limaNo = await B(() => (window.__teatro.interni.statoRun.stanzaCorrente.oggettiATerra || []).some((o) => o.id === 'b8-ferro-lima'));
+  const agoNo = await B(() => (window.__teatro.interni.statoRun.stanzaCorrente.oggettiATerra || []).some((o) => o.id === 'b8-ferro-ago'));
   await bossDelPiano(3, { conDanni: false });
-  const lima = await B(() => {
-    const pk = (window.__teatro.interni.statoRun.stanzaCorrente.oggettiATerra || []).find((o) => o.id === 'b8-ferro-lima');
+  const ago = await B(() => {
+    const pk = (window.__teatro.interni.statoRun.stanzaCorrente.oggettiATerra || []).find((o) => o.id === 'b8-ferro-ago');
     if (pk) { const P = window.__teatro.interni.player; P.x = pk.x; P.y = pk.y; }
     return Boolean(pk);
   });
   await p.waitForTimeout(300);
   const tre = await B(() => ({ n: window.__teatro.interni.sigilli, nota: window.__teatro.interni.finaliB8.notaRun }));
-  ok('lima-solo-senza-danni', limaNo === false && lima === true && tre.n === 3, { limaNo, lima, n: tre.n });
-  ok('nota-della-run-coi-ferri', tre.nota && ['tenaglie', 'punzone', 'lima'].every((f) => tre.nota.ferri.includes(f)), tre.nota && tre.nota.ferri);
+  ok('ago-solo-senza-danni', agoNo === false && ago === true && tre.n === 3, { agoNo, ago, n: tre.n });
+  ok('nota-della-run-coi-ferri', tre.nota && ['tenaglie', 'punzone', 'ago'].every((f) => tre.nota.ferri.includes(f)), tre.nota && tre.nota.ferri);
 
   // ------------------------------------------------------------------ 3. finale vero (prima caduta di Donna Luciana)
   await B(() => window.__teatro.t4qa.impostaFlag({ tonino_ricordo: 'restituito' }));
@@ -409,7 +409,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   await p.screenshot({ path: foto('23-diario-pagina-prima') });
   const idx = await B(() => window.__teatro.interni.statoRun.diarioD.paginaIdx);
   await p.keyboard.press('KeyF'); await p.waitForTimeout(150);
-  await B(() => window.__teatro.interni.finaliB8.impostaStato({ ferri: { tenaglie: 4, punzone: 4, lima: 4 }, segretoVisto: true, portaAperta: true, finaleVisto: true }));
+  await B(() => window.__teatro.interni.finaliB8.impostaStato({ ferri: { tenaglie: 4, punzone: 4, ago: 4 }, segretoVisto: true, portaAperta: true, finaleVisto: true }));
   await p.waitForTimeout(350);
   await p.screenshot({ path: foto('24-diario-finali') });
   ok('diario-sfoglia-e-finali', idx >= 0 && (await B(() => window.__teatro.interni.statoRun.diarioD.paginaB8)) === 'finali', idx);
