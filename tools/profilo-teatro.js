@@ -45,7 +45,7 @@ const VISTE = {
   orizz4: { viewport: { width: 657, height: 416 }, dpr: 3, tocco: true, cpu: 4 },
   orizz6: { viewport: { width: 657, height: 416 }, dpr: 3, tocco: true, cpu: 6 },
 };
-const SCENE = ['hub', 'normale', 'boss1', 'luciana', 'buca', 'cambio', 'burattinaio', 'menu', 'registro'];
+const SCENE = ['hub', 'normale', 'colpiti', 'boss1', 'luciana', 'buca', 'cambio', 'burattinaio', 'menu', 'registro'];
 const STRATI = ['ombre', 'grana', 'vignetta', 'pubblico', 'lampi'];
 const N_FRAME = Number(env('PROFILO_FRAME', 40));
 const N_RISCALDO = Number(env('PROFILO_RISCALDO', 8));
@@ -151,6 +151,8 @@ const STRUMENTI = () => {
       P().x = 320; P().y = 260;
       return { tieni: tieniNormale, nemici: s.nemici.length };
     },
+    /** La stessa stanza coi 6 nemici che lampeggiano (colpiti) a ogni fotogramma. */
+    colpiti() { const e = SCENE.normale(); if (!e) return null; const st = R().stanzaCorrente; return { ...e, tieni: () => { e.tieni(); for (const n of st.nemici) n.flash = 6; } }; },
     boss1() { I.bossB6.forza(null); const s = inStanza('boss', 1); return s && { tieni: immortale, boss: (s.nemici.find((n) => n.boss) || {}).bossId }; },
     luciana() { I.bossB6.forza(null); const s = inStanza('boss', 4); return s && { tieni: immortale, boss: (s.nemici.find((n) => n.boss) || {}).bossId }; },
     buca() { const s = inStanza('buca', 2); return s && { tieni: immortale, tipo: s.tipo }; },
@@ -305,7 +307,7 @@ const STRUMENTI = () => {
         fase: base[0].fase, errori: base[base.length - 1].errori,
         strati: {},
       };
-      for (const k of STRATI) if (prove[k].length) s.strati[k] = r2(s.disegno.media - mediana(prove[k].map((x) => x.disegno.media)));
+      for (const k of STRATI) if (prove[k] && prove[k].length) s.strati[k] = r2(s.disegno.media - mediana(prove[k].map((x) => x.disegno.media)));
       if (funzioni) s.funzioni = Object.fromEntries(Object.entries(funzioni).sort((a, b) => b[1].ms - a[1].ms).slice(0, 25).map(([k, v]) => [k, { ms: r2(v.ms), chiamate: r2(v.chiamate) }]));
       vista.scene[scena] = s;
       console.log(`   ${scena.padEnd(12)} logica ${String(s.logica.media).padStart(6)} (p95 ${s.logica.p95})  disegno ${String(s.disegno.media).padStart(6)} (p95 ${s.disegno.p95})  heap ${s.heapKBperFrame} KB/f  tele/f ${s.teleCreatePerFrame}`
