@@ -408,7 +408,6 @@ function disegnaLuogoH6(tk, st) {
   for (const fx of [150, 490]) ctx.drawImage(tela, (fx - 13) * k, 52 * k, 26 * k, 18 * k, fx - 13, 52, 26, 18);
   disegnaLuminoH6(58, 186, tk, 0);
   disegnaLuminoH6(582, 186, tk, 1);
-  if (typeof disegnaRintocchiH6 === 'function') disegnaRintocchiH6(tk, st);
   if (OPZIONI.vignetta !== false) {
     const vg = ctx.createRadialGradient(W / 2, H / 2, 140, W / 2, H / 2, 330);
     vg.addColorStop(0, 'rgba(8, 10, 22, 0)');
@@ -520,3 +519,682 @@ Object.assign(window.__teatro.interni, {
     get cancello() { return cancelloQuiH6() ? { x: CASERTAVECCHIA_H6.cancello.x, y: CASERTAVECCHIA_H6.cancello.y } : null; },
   },
 });
+
+// ===========================================================================
+// 3. LA REGOLA DEL LUOGO: I RINTOCCHI
+// ===========================================================================
+/**
+ * RINTOCCHI_H6 — in ogni stanza di combattimento (e in quella del boss) pende una corda dalla graticcia.
+ * Ciclo: ATTESA → POSA (la corda si tende, la campana oscilla sempre più: è l'annuncio) → SUONA (il rintocco:
+ * le figure di pietra si svegliano per `svegliaTick`, quelle vive restano stordite `stordisceTick`) → ATTESA.
+ * Colpire la corda (un colpo del giocatore, o [E] accanto) fa suonare subito, con una posa corta e la ricarica.
+ */
+const RINTOCCHI_H6 = Object.freeze({
+  primaAttesaTick: 300, attesaMinTick: 520, attesaMaxTick: 860,
+  posaTick: 66,          // la corda si tende e la campana oscilla
+  posaColpoTick: 14,     // posa corta quando la corda la tira il giocatore
+  suonaTick: 40,         // la campana resta in alto (disegno, cerchi del suono)
+  svegliaTick: 150,      // ~2,5 s: le figure di pietra si muovono
+  stordisceTick: 75,     // ~1,25 s: le figure vive restano stordite
+  ricaricaTick: 420,     // dopo un rintocco tirato a mano
+  corda: Object.freeze({ yCima: 52, yFondo: 150, raggioColpo: 7, raggioE: 30 }),
+  /** Posti possibili della corda (x); la stanza ne prende uno lontano dal centro e dalle porte. */
+  posti: Object.freeze([150, 222, 418, 490]),
+});
+
+/** I nemici del luogo. hp = (hpBase + (piano − 1) × hpPiano) × ciclo × campione. sostituisce: tipi di San Leucio. */
+const NEMICI_H6 = Object.freeze({
+  penitente_pietra: Object.freeze({
+    nome: 'Penitente di Pietra', sostituisce: 'burattino', pari: true, hpBase: 14, hpPiano: 4, vel: 0, raggio: 11, massa: Infinity,
+    pietra: true, dannoPietra: 0.35, velSveglio: 1.7, giroSveglio: 0.25,
+  }),
+  battaglio: Object.freeze({
+    nome: 'Battaglio Rotolante', sostituisce: 'burattino', pari: false, hpBase: 12, hpPiano: 3.5, vel: 0.4, raggio: 10, massa: 2.2,
+    fermoTick: Object.freeze([60, 110]), oscillaTick: 34, bloccoTick: 10, velRotola: 3.3, rotolaTickMax: 80, rimbalzoTick: 20,
+  }),
+  sagrestano: Object.freeze({
+    nome: 'Sagrestano col Turibolo', sostituisce: 'guardia', hpBase: 18, hpPiano: 5, vel: 0.7, raggio: 11, massa: 1.4,
+    distanzaPx: 96, bandaPx: 26, camminaTick: Object.freeze([110, 160]), dondolaTick: 40, bloccoTick: 10,
+    braci: Object.freeze({ numero: 3, apertura: 0.5, velocita: 1.7 }),
+    fumo: Object.freeze({ raggio: 26, vitaTick: 300, deriva: 0.12, rallenta: 0.62, massimi: 4 }),
+  }),
+  corvo_campanile: Object.freeze({
+    nome: 'Corvo del Campanile', sostituisce: 'maschera', anche: Object.freeze(['vespa_cieca']), hpBase: 8, hpPiano: 2.5, vel: 0, raggio: 9, massa: 0.4, vola: true,
+    posatoTick: Object.freeze([70, 130]), aliTick: 26, bloccoTick: 8, velVolo: 3.6, voloPx: 230, quota: 4, quotaVolo: 16,
+  }),
+});
+
+/** Tipo di San Leucio → tipi di Casertavecchia (il burattino si alterna fra penitente e battaglio). */
+const SOSTITUZIONI_H6 = Object.freeze((() => {
+  const m = {};
+  for (const [tipo, T] of Object.entries(NEMICI_H6)) {
+    for (const da of [T.sostituisce].concat(T.anche || [])) (m[da] = m[da] || []).push(tipo);
+  }
+  return m;
+})());
+
+/** Scala come popolaStanza di 30-mappa.js (stessi numeri di d6). */
+const SCALA_H6 = Object.freeze({ moltCiclo: 1.45, velPerPiano: 0.045, velMax: 1.55, hpCremisi: 1.6, hpCampione: 1.35, velDorato: 1.2, hpBossPerPiano: 45 });
+
+/** Fogli PNG facoltativi (una riga di pose); `attivo: false` finché l'autore non li disegna: si usa il canvas. */
+const PNG_H6 = Object.freeze({
+  penitente_pietra: Object.freeze({ attivo: false, nome: 'h6_penitente', celle: 2, w: 30, h: 34 }),   // pietra, sveglio
+  battaglio: Object.freeze({ attivo: false, nome: 'h6_battaglio', celle: 2, w: 26, h: 22 }),          // fermo, rotola
+  sagrestano: Object.freeze({ attivo: false, nome: 'h6_sagrestano', celle: 2, w: 30, h: 38 }),        // cammina, dondola
+  corvo_campanile: Object.freeze({ attivo: false, nome: 'h6_corvo', celle: 3, w: 30, h: 24 }),        // posato, ali, volo
+});
+
+Object.assign(h6, { alterna: 0, corde: 0 });
+
+/** Il rintocco: parziali inarmoniche di campana con decadimento lungo (Web Audio, rispetta il muto). */
+function suonoCampanaH6(grave = 1, vol = 0.09) {
+  const c = AudioSys.ctx;
+  if (!c || !AudioSys.attivo) return;
+  try {
+    const t = c.currentTime, f0 = 196 * grave;
+    for (const [k, a, d] of [[0.5, 0.5, 3.2], [1, 1, 2.6], [1.19, 0.5, 2], [1.5, 0.4, 1.6], [2, 0.35, 1.3], [2.74, 0.2, 0.9]]) {
+      const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f0 * k;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol * a, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(AudioSys.uscita || c.destination); o.start(t); o.stop(t + d + 0.05);
+    }
+  } catch (_) { /* l'audio non deve mai fermare il gioco */ }
+}
+
+const fraH6 = (coppia) => coppia[0] + Math.floor(rng() * (coppia[1] - coppia[0]));
+
+/** Corda e stato dei rintocchi nuovi per una stanza. */
+function nuovaCordaH6(st) {
+  const R = RINTOCCHI_H6, P = R.posti;
+  const x = P[(h6.corde++) % P.length];
+  return { x, fase: 'attesa', t: R.primaAttesaTick, ricarica: 0, suoni: 0, oscilla: 0 };
+}
+
+/** La stanza ha la corda? (combattimento e boss, a Casertavecchia) */
+function cordaQuiH6(st = statoRun.stanzaCorrente) {
+  return st && casertavecchiaAttivaH6() && st.cordaH6 ? st.cordaH6 : null;
+}
+
+/** Fa partire la posa (annuncio) del rintocco; `aMano`: tirata dal giocatore (posa corta, ricarica). */
+function tiraCordaH6(st, aMano) {
+  const c = st && st.cordaH6;
+  if (!c || c.fase !== 'attesa') return false;
+  if (aMano && c.ricarica > 0) return false;
+  c.fase = 'posa'; c.t = aMano ? RINTOCCHI_H6.posaColpoTick : RINTOCCHI_H6.posaTick; c.durata = c.t; c.aMano = Boolean(aMano);
+  if (aMano) c.ricarica = RINTOCCHI_H6.ricaricaTick;
+  return true;
+}
+
+/** Il rintocco vero: la pietra si sveglia, i vivi restano storditi. Lo usa anche il boss (forza 1..2). */
+function rintoccoH6(st, forza = 1) {
+  const R = RINTOCCHI_H6;
+  for (const n of st.nemici) {
+    if (n.hp <= 0 || n.boss) continue;
+    const T = NEMICI_H6[n.tipo];
+    if (T && T.pietra) n.sveglioH6 = Math.round(R.svegliaTick * forza);
+    else n.stunTicks = Math.max(n.stunTicks || 0, R.stordisceTick);
+  }
+  if (st.cordaH6) st.cordaH6.suoni++;
+  suonoCampanaH6(forza > 1 ? 0.84 : 1);
+  try { scuoti(FEEL.scossa.colpo); } catch (_) { /* senza scossa */ }
+}
+
+/** Un tick dei rintocchi nella stanza corrente. */
+function passoRintocchiH6(st) {
+  const c = st.cordaH6, R = RINTOCCHI_H6;
+  if (!c) return;
+  if (c.ricarica > 0) c.ricarica--;
+  // un colpo del giocatore sulla corda la tira
+  if (c.fase === 'attesa' && c.ricarica <= 0) {
+    const C = R.corda;
+    const i = statoRun.proiettili.findIndex((p) => Math.abs(p.x - c.x) < C.raggioColpo && p.y > C.yCima + 6 && p.y < C.yFondo + 4);
+    if (i >= 0 && tiraCordaH6(st, true)) statoRun.proiettili.splice(i, 1);
+  }
+  const vivi = st.nemici.some((n) => n.hp > 0);
+  if (c.fase === 'attesa') { if (vivi && --c.t <= 0) tiraCordaH6(st, false); }
+  else if (c.fase === 'posa') { if (--c.t <= 0) { c.fase = 'suona'; c.t = R.suonaTick; rintoccoH6(st, 1); } }
+  else if (--c.t <= 0) { c.fase = 'attesa'; c.t = fraH6([R.attesaMinTick, R.attesaMaxTick]); }
+  for (const n of st.nemici) if (n.sveglioH6 > 0) n.sveglioH6--;
+}
+
+/** [E] accanto alla corda: la tira. */
+function usaCordaH6() {
+  if (statoRun.fase !== 'in_gioco' || statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo) return false;
+  const st = statoRun.stanzaCorrente, c = cordaQuiH6(st);
+  if (!c) return false;
+  if (Math.hypot(player.x - c.x, player.y - RINTOCCHI_H6.corda.yFondo) >= RINTOCCHI_H6.corda.raggioE) return false;
+  tiraCordaH6(st, true);
+  return true;
+}
+
+const interagisciStanzaCordaH6 = interagisciStanza;
+/** [E]: la corda della campana (se ci sei sotto), poi il resto. */
+interagisciStanza = function (...args) {
+  try { if (usaCordaH6()) return undefined; } catch (err) { console.error('[h6] corda', err); }
+  return interagisciStanzaCordaH6.apply(this, args);
+};
+
+/** La corda e la campana, sotto le figure (dentro l'atmosfera del luogo). */
+function disegnaRintocchiH6(tk, st) {
+  const c = st && st.cordaH6;
+  if (!c) return;
+  const R = RINTOCCHI_H6, C = R.corda, T = TINTE_H6;
+  let amp = 0.04 * Math.sin(tk * 0.03), tesa = 0;
+  if (c.fase === 'posa') { const k = 1 - c.t / (c.durata || 1); amp = Math.sin(tk * 0.32) * (0.12 + 0.5 * k); tesa = k; }
+  else if (c.fase === 'suona') { const k = c.t / R.suonaTick; amp = Math.sin(tk * 0.25) * 0.7 * k; tesa = 0.4 * k; }
+  // la corda: lenta pende a curva, tesa si raddrizza e si allunga di un poco
+  const yb = C.yFondo + tesa * 8;
+  ctx.strokeStyle = '#120f0c'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(c.x, C.yCima + 10); ctx.quadraticCurveTo(c.x + (1 - tesa) * 5 * Math.sin(tk * 0.02), (C.yCima + yb) / 2, c.x, yb); ctx.stroke();
+  ctx.strokeStyle = '#8a6a3c'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(c.x, C.yCima + 10); ctx.quadraticCurveTo(c.x + (1 - tesa) * 5 * Math.sin(tk * 0.02), (C.yCima + yb) / 2, c.x, yb); ctx.stroke();
+  // il nodo con la nappa rossa
+  ctx.fillStyle = T.rosso; ctx.beginPath(); ctx.moveTo(c.x - 3, yb + 7); ctx.lineTo(c.x, yb - 1); ctx.lineTo(c.x + 3, yb + 7); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = c.ricarica > 0 ? T.tufoOmbra : T.oro; ctx.beginPath(); ctx.arc(c.x, yb, 2, 0, TAU); ctx.fill();
+  // la campana appesa al ceppo della graticcia
+  ctx.fillStyle = T.ferro; ctx.fillRect(c.x - 9, C.yCima - 2, 18, 3);
+  ctx.save(); ctx.translate(c.x, C.yCima + 1); ctx.rotate(amp);
+  ctx.fillStyle = T.china; ctx.strokeStyle = T.bordo; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(-7, 11); ctx.quadraticCurveTo(-6, 1, 0, 0); ctx.quadraticCurveTo(6, 1, 7, 11); ctx.lineTo(8, 12.5); ctx.lineTo(-8, 12.5); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = T.oro; ctx.globalAlpha = 0.6; ctx.fillRect(-6.5, 10, 13, 1); ctx.globalAlpha = 1;
+  ctx.fillStyle = T.ferro; ctx.beginPath(); ctx.arc(Math.sin(tk * 0.3) * amp * 6, 13, 1.6, 0, TAU); ctx.fill();
+  ctx.restore();
+  // il suono: archi che si allargano dalla campana (nella fascia alta, non a terra)
+  if (c.fase === 'suona') {
+    const k = 1 - c.t / R.suonaTick;
+    ctx.strokeStyle = T.luna; ctx.lineWidth = 1;
+    for (let i = 0; i < 3; i++) {
+      const kk = (k + i / 3) % 1;
+      ctx.globalAlpha = 0.55 * (1 - kk);
+      ctx.beginPath(); ctx.arc(c.x, C.yCima + 8, 10 + kk * 46, Math.PI * 0.1, Math.PI * 0.9, true); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+// --------------------------------------------------------------------------- i nemici: vestizione e IA
+/** Veste una stanza appena popolata: i nemici di San Leucio diventano quelli di Casertavecchia; la corda. */
+function vestiStanzaH6(s, piano) {
+  const K = SCALA_H6;
+  const ciclo = Math.floor((piano - 1) / 4) + 1;
+  const moltCiclo = Math.pow(K.moltCiclo, ciclo - 1);
+  const moltVel = Math.min(K.velMax, 1 + (piano - 1) * K.velPerPiano);
+  if (s.tipo !== 'boss') {
+    for (const n of s.nemici || []) {
+      const scelte = !n.boss && SOSTITUZIONI_H6[n.tipo];
+      if (!scelte) continue;
+      const nuovo = scelte.length > 1 ? scelte[(h6.alterna++) % scelte.length] : scelte[0];
+      const T = NEMICI_H6[nuovo];
+      const hpC = n.champion === 'cremisi' ? K.hpCremisi : n.champion ? K.hpCampione : 1;
+      n.tipo = nuovo; n.patternMob = nuovo; n.comportamento = nuovo;
+      n.nome = n.champion ? `${T.nome} [Campione ${n.champion}]` : T.nome;
+      n.maxHp = Math.round((T.hpBase + (piano - 1) * T.hpPiano) * moltCiclo * hpC);
+      n.hp = n.maxHp;
+      n.speed = T.vel * moltVel * (n.champion === 'dorato' ? K.velDorato : 1);
+      n.velH6 = moltVel * (n.champion === 'dorato' ? K.velDorato : 1);
+      n.r = T.raggio;
+    }
+    if (s.tipo === 'normale' && s.nemici && s.nemici.length) s.cordaH6 = nuovaCordaH6(s);
+  } else if (s.tipo === 'boss') {
+    if (typeof vestiBossH6 === 'function') vestiBossH6(s, piano, moltCiclo, moltVel);
+    s.cordaH6 = nuovaCordaH6(s);
+  }
+}
+
+const popolaStanzaBaseH6 = popolaStanza;
+/** Dopo popolaStanza di base: a Casertavecchia si vestono nemici e boss del luogo. */
+popolaStanza = function (s, piano, ...resto) {
+  const r = popolaStanzaBaseH6.call(this, s, piano, ...resto);
+  try { if (s && casertavecchiaAttivaH6(piano)) vestiStanzaH6(s, piano); } catch (err) { console.error('[h6] popola', err); }
+  return r;
+};
+
+const massaNemicoBaseH6 = massaNemico;
+/** Massa per le spinte: quella della tabella per i nemici del luogo (il penitente sveglio si sposta). */
+massaNemico = function (nem, ...resto) {
+  const T = nem && !nem.boss ? NEMICI_H6[nem.tipo] : null;
+  if (T && T.massa !== undefined) return T.pietra && nem.sveglioH6 > 0 ? 2.5 : T.massa;
+  return massaNemicoBaseH6.call(this, nem, ...resto);
+};
+
+const danneggiaNemicoBaseH6 = danneggiaNemico;
+/** La pietra addormentata si scalfisce appena: il penitente prende danno pieno solo quando è sveglio. */
+danneggiaNemico = function (nem, dmg, ...resto) {
+  try {
+    const T = nem && !nem.boss ? NEMICI_H6[nem.tipo] : null;
+    if (T && T.pietra && !(nem.sveglioH6 > 0)) dmg *= T.dannoPietra;
+    if (nem && nem.boss && typeof dannoBossH6 === 'function') dmg = dannoBossH6(nem, dmg);
+  } catch (err) { console.error('[h6] danno', err); }
+  return danneggiaNemicoBaseH6.call(this, nem, dmg, ...resto);
+};
+
+/** Sposta un nemico tenendolo nell'arena; rende true se ha toccato un muro. */
+function muoviH6(n, dx, dy, margine = 14) {
+  const x = n.x + dx, y = n.y + dy;
+  n.x = limitaH6(x, ARENA.x1 + margine, ARENA.x2 - margine);
+  n.y = limitaH6(y, ARENA.y1 + margine, ARENA.y2 - margine);
+  return n.x !== x || n.y !== y;
+}
+
+/** Un colpo nemico comune del Teatro, col nome del tiratore per il Registro (a7). */
+function sparaH6(x, y, ang, vel, fonte, extra = {}) {
+  if (statoRun.proiettiliNemici.length >= 30) return false;
+  statoRun.proiettiliNemici.push({ x, y, vx: Math.cos(ang) * vel, vy: Math.sin(ang) * vel, dist: 0, fonteA7: fonte, ...extra });
+  return true;
+}
+
+/** IA dei nemici del luogo, per tipo: (n, st, ang, dist, T). Stati in n.statoH6, timer in n.tH6. */
+const IA_H6 = {
+  // PENITENTE DI PIETRA: inginocchiato, fermo come una statua (e duro come la pietra). Al rintocco si alza e
+  // ti viene addosso finché la campana non tace.
+  penitente_pietra(n, st, ang, dist, T) {
+    if (!(n.sveglioH6 > 0)) { n.statoH6 = 'pietra'; return; }
+    n.statoH6 = 'sveglio';
+    const v = T.velSveglio * (n.velH6 || 1);
+    const a = ang + Math.sin(tick * 0.07 + n.x) * T.giroSveglio;
+    muoviH6(n, Math.cos(a) * v, Math.sin(a) * v);
+    n.versoH6 = Math.cos(ang) < 0 ? -1 : 1;
+  },
+  // BATTAGLIO ROTOLANTE: il battaglio caduto da una campana. FERMO; poi OSCILLA dondolando sul fianco (punta e
+  // si blocca) e ROTOLA dritto fino al muro; RIMBALZA e si ferma.
+  battaglio(n, st, ang, dist, T) {
+    if (!n.statoH6) { n.statoH6 = 'fermo'; n.tH6 = fraH6(T.fermoTick); n.angH6 = ang; n.giroH6 = 0; }
+    if (n.statoH6 === 'fermo') {
+      if (--n.tH6 <= 0) { n.statoH6 = 'oscilla'; n.tH6 = T.oscillaTick; }
+    } else if (n.statoH6 === 'oscilla') {
+      if (n.tH6 > T.bloccoTick) n.angH6 = ang;
+      if (--n.tH6 <= 0) { n.statoH6 = 'rotola'; n.tH6 = T.rotolaTickMax; }
+    } else if (n.statoH6 === 'rotola') {
+      const v = T.velRotola * (n.velH6 || 1);
+      n.giroH6 += v * 0.18;
+      const muro = muoviH6(n, Math.cos(n.angH6) * v, Math.sin(n.angH6) * v, 12);
+      if (muro || --n.tH6 <= 0) { n.statoH6 = 'rimbalza'; n.tH6 = T.rimbalzoTick; if (muro) { try { scuoti(FEEL.scossa.colpo * 0.5); } catch (_) { /* */ } } }
+    } else {
+      muoviH6(n, -Math.cos(n.angH6) * 0.6, -Math.sin(n.angH6) * 0.6, 12);
+      if (--n.tH6 <= 0) { n.statoH6 = 'fermo'; n.tH6 = fraH6(T.fermoTick); }
+    }
+  },
+  // SAGRESTANO COL TURIBOLO: CAMMINA tenendo la distanza; poi DONDOLA il turibolo sempre più largo (punta e si
+  // blocca) e lo SLANCIA: tre braci a ventaglio e una nuvola d'incenso che resta, va alla deriva e fa camminare piano.
+  sagrestano(n, st, ang, dist, T) {
+    if (!n.statoH6) { n.statoH6 = 'cammina'; n.tH6 = fraH6(T.camminaTick); n.giroH6 = rng() < 0.5 ? -1 : 1; n.angH6 = ang; }
+    if (n.statoH6 === 'cammina') {
+      const rad = limitaH6((dist - T.distanzaPx) / T.bandaPx, -1, 1);
+      const dx = Math.cos(ang) * rad + Math.cos(ang + n.giroH6 * Math.PI / 2) * 0.5;
+      const dy = Math.sin(ang) * rad + Math.sin(ang + n.giroH6 * Math.PI / 2) * 0.5;
+      const l = Math.hypot(dx, dy) || 1;
+      if (muoviH6(n, (dx / l) * n.speed, (dy / l) * n.speed) && n.tH6 % 20 === 0) n.giroH6 = -n.giroH6;
+      n.versoH6 = Math.cos(ang) < 0 ? -1 : 1;
+      if (--n.tH6 <= 0) { n.statoH6 = 'dondola'; n.tH6 = T.dondolaTick; }
+    } else {
+      if (n.tH6 > T.bloccoTick) { n.angH6 = ang; n.versoH6 = Math.cos(ang) < 0 ? -1 : 1; }
+      if (--n.tH6 <= 0) {
+        const B = T.braci, ox = n.x + n.versoH6 * 10, oy = n.y - 10;
+        for (let k = 0; k < B.numero; k++) sparaH6(ox, oy, n.angH6 + (k / (B.numero - 1) - 0.5) * B.apertura, B.velocita, `una brace del ${T.nome}`, { braceH6: true });
+        const F = T.fumo;
+        st.fumoH6 = (st.fumoH6 || []).slice(-(F.massimi - 1));
+        st.fumoH6.push({ x: ox, y: n.y, t: 0, vita: F.vitaTick, vx: Math.cos(n.angH6) * F.deriva, vy: Math.sin(n.angH6) * F.deriva });
+        n.statoH6 = 'cammina'; n.tH6 = fraH6(T.camminaTick);
+      }
+    }
+  },
+  // CORVO DEL CAMPANILE: POSATO a terra, saltella; apre le ALI (punta e si blocca) e attraversa il palco in VOLO
+  // radente dritto, oltre il punto in cui eri, poi si riposa. Al rintocco si spaventa e parte subito.
+  corvo_campanile(n, st, ang, dist, T) {
+    if (!n.statoH6) { n.statoH6 = 'posato'; n.tH6 = fraH6(T.posatoTick); n.angH6 = ang; }
+    if (n.statoH6 === 'posato') {
+      n.versoH6 = Math.cos(ang) < 0 ? -1 : 1;
+      const c = st.cordaH6;
+      if (c && c.fase === 'suona' && n.tH6 > T.aliTick) n.tH6 = 1; // spaventato dal rintocco
+      if (--n.tH6 <= 0) { n.statoH6 = 'ali'; n.tH6 = T.aliTick; }
+    } else if (n.statoH6 === 'ali') {
+      if (n.tH6 > T.bloccoTick) n.angH6 = ang;
+      if (--n.tH6 <= 0) { n.statoH6 = 'volo'; n.restaH6 = T.voloPx; }
+    } else {
+      const v = T.velVolo;
+      const muro = muoviH6(n, Math.cos(n.angH6) * v, Math.sin(n.angH6) * v, 12);
+      n.restaH6 -= v;
+      n.versoH6 = Math.cos(n.angH6) < 0 ? -1 : 1;
+      if (muro || n.restaH6 <= 0) { n.statoH6 = 'posato'; n.tH6 = fraH6(T.posatoTick); }
+    }
+  },
+};
+
+if (typeof iaNemicoD6 === 'function') {
+  const iaNemicoBaseH6 = iaNemicoD6;
+  /** AGGANCIO di 40-combattimento.js (via iaNemicoD6): i nemici di Casertavecchia agiscono qui e rendono true. */
+  iaNemicoD6 = function (n, st, ang, dist, ...resto) {
+    const ia = n && IA_H6[n.tipo];
+    if (!ia) return iaNemicoBaseH6.call(this, n, st, ang, dist, ...resto);
+    try { ia(n, st, ang, dist, NEMICI_H6[n.tipo]); } catch (err) { console.error('[h6] ia', n.tipo, err); }
+    return true;
+  };
+}
+
+/** Il fumo d'incenso: deriva, si dirada; dentro si cammina piano. Rende il fattore di passo del giocatore. */
+function passoFumoH6(st) {
+  const F = NEMICI_H6.sagrestano.fumo;
+  let resta = 1;
+  const fumo = st.fumoH6 || [];
+  for (let i = fumo.length - 1; i >= 0; i--) {
+    const f = fumo[i];
+    f.t++; f.x = limitaH6(f.x + f.vx, ARENA.x1, ARENA.x2); f.y = limitaH6(f.y + f.vy, ARENA.y1, ARENA.y2);
+    if (f.t > f.vita) { fumo.splice(i, 1); continue; }
+    if (Math.hypot(player.x - f.x, (player.y - 4) - f.y) < F.raggio * raggioFumoH6(f)) resta = F.rallenta;
+  }
+  return resta;
+}
+const raggioFumoH6 = (f) => Math.min(1, f.t / 24) * (1 - Math.max(0, f.t - f.vita + 60) / 120);
+
+const passoLogicoBaseH6 = passoLogico;
+/** Attorno al passo di base: i rintocchi, il fumo d'incenso, il boss del luogo. */
+passoLogico = function (...args) {
+  const st = statoRun.stanzaCorrente;
+  const attivo = Boolean(st) && statoRun.fase === 'in_gioco' && casertavecchiaAttivaH6() && ticksCongelati <= 0
+    && !(statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo || statoRun.pausa);
+  const px = player.x, py = player.y;
+  if (attivo) { for (const n of st.nemici) n.ptH6 = n.phaseTick || 0; }
+  const r = passoLogicoBaseH6.apply(this, args);
+  try {
+    if (attivo && statoRun.fase === 'in_gioco' && statoRun.stanzaCorrente === st) {
+      passoRintocchiH6(st);
+      const resta = passoFumoH6(st);
+      if (resta < 1) { player.x = px + (player.x - px) * resta; player.y = py + (player.y - py) * resta; }
+      if (typeof passoBossH6 === 'function') passoBossH6(st);
+    }
+  } catch (err) { console.error('[h6] passo', err); }
+  return r;
+};
+
+const entraInStanzaBaseH6 = entraInStanza;
+/** Ingresso in una stanza di Casertavecchia: la campana riparte dall'attesa, il fumo si dirada. */
+entraInStanza = function (stanza, daLato, ...resto) {
+  const r = entraInStanzaBaseH6.call(this, stanza, daLato, ...resto);
+  try {
+    if (stanza && statoRun.stanzaCorrente === stanza && casertavecchiaAttivaH6()) {
+      stanza.fumoH6 = [];
+      if (stanza.cordaH6) Object.assign(stanza.cordaH6, { fase: 'attesa', t: RINTOCCHI_H6.primaAttesaTick, ricarica: 0 });
+      if (typeof ingressoBossH6 === 'function') ingressoBossH6(stanza);
+    }
+  } catch (err) { console.error('[h6] ingresso', err); }
+  return r;
+};
+
+// --------------------------------------------------------------------------- disegno dei nemici (a ombre)
+function chinaH6(flash) {
+  ctx.fillStyle = flash ? TINTE_H6.lampo : TINTE_H6.china;
+  ctx.strokeStyle = flash ? '#ffffff' : TINTE_H6.bordo;
+  ctx.lineWidth = 1.1; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+}
+function ombraH6(x, y, rx, ry, alfa = 0.6) {
+  ctx.fillStyle = `rgba(6, 6, 10, ${alfa})`;
+  ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, TAU); ctx.fill();
+}
+function aloneCampioneH6(n, quota) {
+  if (!n.champion) return;
+  const col = n.champion === 'cremisi' ? 'rgba(239,68,68,0.45)' : n.champion === 'dorato' ? 'rgba(250,204,21,0.48)' : 'rgba(56,189,248,0.48)';
+  const g = ctx.createRadialGradient(n.x, n.y - quota, 2, n.x, n.y - quota, n.r + 12);
+  g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(n.x, n.y - quota, n.r + 12, 0, TAU); ctx.fill();
+}
+function stordimentoH6(n, quota) {
+  if (!(n.stunTicks > 0)) return;
+  ctx.fillStyle = TINTE_H6.oro;
+  for (let k = 0; k < 3; k++) { const a = tick * 0.12 + k * TAU / 3; ctx.fillRect(n.x + Math.cos(a) * 8 - 1, n.y - quota + Math.sin(a) * 3 - 1, 2, 2); }
+}
+/** Il PNG della figura, se c'è: rende true se l'ha disegnato. */
+function pngH6(n, col) {
+  const g = PNG_H6[n.tipo];
+  if (!g || !g.attivo || typeof disegnaCellaTeatro !== 'function') return false;
+  return disegnaCellaTeatro(ctx, g.nome, col, g.celle, n.x - g.w / 2, n.y + 3 - g.h, g.w, g.h, n.flash > 0 ? '#ffffff' : null, n.flash > 0 ? 0.6 : 0);
+}
+
+const DISEGNI_NEMICI_H6 = {
+  penitente_pietra(n, tk, flash) {
+    const sveglio = n.sveglioH6 > 0;
+    ombraH6(n.x, n.y + 2, 11, 3.6);
+    aloneCampioneH6(n, 12);
+    if (pngH6(n, sveglio ? 1 : 0)) return;
+    const s = sveglio ? Math.sin(tk * 0.4) * 1.2 : 0, alto = sveglio ? 6 : 0; // sveglio: si alza dalle ginocchia
+    ctx.save(); ctx.translate(n.x, n.y); ctx.scale(n.versoH6 || 1, 1);
+    ctx.fillStyle = flash ? TINTE_H6.lampo : (sveglio ? '#4d4b48' : '#6e6c68');
+    ctx.strokeStyle = flash ? '#fff' : TINTE_H6.bordo; ctx.lineWidth = 1.1; ctx.lineJoin = 'round';
+    // il saio di pietra, la schiena curva e il cappuccio a punta
+    ctx.beginPath(); ctx.moveTo(-10, 2); ctx.quadraticCurveTo(-11, -10 - alto, -4, -16 - alto); ctx.lineTo(-1 + s, -27 - alto); ctx.lineTo(4, -17 - alto);
+    ctx.quadraticCurveTo(9, -10 - alto, 9, 2); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // le mani giunte sotto il mento
+    ctx.fillStyle = flash ? '#fff' : '#8c8a86'; ctx.beginPath(); ctx.ellipse(5, -11 - alto, 2.4, 3.4, 0.3, 0, TAU); ctx.fill();
+    // il volto in ombra; sveglio, due braci negli occhi
+    ctx.fillStyle = TINTE_H6.china; ctx.beginPath(); ctx.ellipse(1.5, -19 - alto, 2.6, 3, 0, 0, TAU); ctx.fill();
+    if (sveglio) { ctx.fillStyle = TINTE_H6.rosso; ctx.fillRect(1.2, -20 - alto, 1.4, 1.2); ctx.fillRect(3.2, -20 - alto, 1.2, 1.2); }
+    // le crepe: si accendono d'oro quando la campana sta per suonare (la posa) e mentre è sveglio
+    const c = statoRun.stanzaCorrente && statoRun.stanzaCorrente.cordaH6;
+    const vena = sveglio ? 0.9 : c && c.fase === 'posa' ? 0.25 + 0.6 * (1 - c.t / (c.durata || 1)) : 0;
+    ctx.strokeStyle = vena > 0 ? `rgba(249, 203, 64, ${vena.toFixed(2)})` : 'rgba(20, 20, 24, 0.7)'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(-6, -8 - alto); ctx.lineTo(-3, -4 - alto); ctx.lineTo(-5, 0); ctx.moveTo(4, -6 - alto); ctx.lineTo(2, -1); ctx.stroke();
+    ctx.restore();
+    stordimentoH6(n, 30);
+  },
+  battaglio(n, tk, flash) {
+    ombraH6(n.x, n.y + 2, 11, 3.2);
+    aloneCampioneH6(n, 6);
+    if (pngH6(n, n.statoH6 === 'rotola' ? 1 : 0)) return;
+    const osc = n.statoH6 === 'oscilla' ? Math.sin(tk * 0.55) * 0.35 * (1 - n.tH6 / NEMICI_H6.battaglio.oscillaTick + 0.3) : 0;
+    ctx.save(); ctx.translate(n.x, n.y - 6);
+    ctx.rotate((n.angH6 || 0) + osc);
+    chinaH6(flash); ctx.fillStyle = flash ? TINTE_H6.lampo : TINTE_H6.ferro;
+    // il battaglio sdraiato lungo la sua direzione: la pera di ferro davanti, l'anello dietro
+    ctx.beginPath(); ctx.ellipse(4, 0, 7, 6, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-3, -2.2); ctx.lineTo(-10, -1.4); ctx.lineTo(-10, 1.4); ctx.lineTo(-3, 2.2); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.lineWidth = 1.6; ctx.strokeStyle = flash ? '#fff' : TINTE_H6.bordo;
+    ctx.beginPath(); ctx.arc(-12.5, 0, 2.6, 0, TAU); ctx.stroke();
+    // il riflesso che gira quando rotola
+    const g = n.giroH6 || 0;
+    ctx.fillStyle = TINTE_H6.oro; ctx.globalAlpha = 0.7;
+    ctx.beginPath(); ctx.ellipse(4 + Math.cos(g) * 2, Math.sin(g) * 4, 1.6, 1, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.restore();
+    stordimentoH6(n, 18);
+  },
+  sagrestano(n, tk, flash) {
+    ombraH6(n.x, n.y + 2, 10, 3.4);
+    aloneCampioneH6(n, 14);
+    if (pngH6(n, n.statoH6 === 'dondola' ? 1 : 0)) return;
+    const T = NEMICI_H6.sagrestano, d = n.statoH6 === 'dondola';
+    const k = d ? 1 - n.tH6 / T.dondolaTick : 0;
+    const passo = d ? 0 : Math.sin(tk * 0.2 + n.x) * 1;
+    ctx.save(); ctx.translate(n.x, n.y); ctx.scale(n.versoH6 || 1, 1);
+    chinaH6(flash);
+    // la veste nera fino ai piedi e la cotta bianca
+    ctx.beginPath(); ctx.moveTo(-7, 2); ctx.lineTo(-5, -18); ctx.lineTo(5, -18); ctx.lineTo(7, 2); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = flash ? '#fff' : '#d8d2c4'; ctx.beginPath(); ctx.moveTo(-6, -6); ctx.lineTo(-5, -18); ctx.lineTo(5, -18); ctx.lineTo(6, -6); ctx.lineTo(3, -4.5); ctx.lineTo(0, -6); ctx.lineTo(-3, -4.5); ctx.closePath(); ctx.fill();
+    // la testa calva e china
+    ctx.fillStyle = flash ? TINTE_H6.lampo : TINTE_H6.china; ctx.beginPath(); ctx.arc(1, -22 + passo * 0.3, 4.2, 0, TAU); ctx.fill(); ctx.stroke();
+    // il braccio con la catena e il turibolo: dondolo che si allarga nella posa
+    const amp = d ? 0.4 + 1.3 * k : 0.25;
+    const a = Math.PI / 2 + Math.sin(tk * (d ? 0.32 : 0.1)) * amp;
+    const hx = 6, hy = -14, tx = hx + Math.cos(a) * 13, ty = hy + Math.sin(a) * 13;
+    ctx.strokeStyle = flash ? '#fff' : '#7a6a4a'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(tx, ty); ctx.stroke();
+    ctx.fillStyle = flash ? '#fff' : '#b08a3a'; ctx.strokeStyle = TINTE_H6.china; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.arc(tx, ty + 2, 3, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = `rgba(255, 140, 40, ${(0.5 + 0.4 * k).toFixed(2)})`; ctx.fillRect(tx - 1.4, ty + 1, 2.8, 1.2);
+    // il filo di fumo che sale dal turibolo
+    ctx.strokeStyle = 'rgba(200, 200, 210, 0.45)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(tx, ty - 1); ctx.quadraticCurveTo(tx + 3 * Math.sin(tk * 0.1), ty - 8, tx - 1, ty - 14); ctx.stroke();
+    ctx.restore();
+    stordimentoH6(n, 30);
+  },
+  corvo_campanile(n, tk, flash) {
+    const T = NEMICI_H6.corvo_campanile, vola = n.statoH6 === 'volo', ali = n.statoH6 === 'ali';
+    const q = vola ? T.quotaVolo : T.quota;
+    ombraH6(n.x, n.y + 2, vola ? 7 : 8, 2.6, vola ? 0.35 : 0.55);
+    aloneCampioneH6(n, q + 4);
+    if (pngH6(n, vola ? 2 : ali ? 1 : 0)) return;
+    ctx.save(); ctx.translate(n.x, n.y - q); ctx.scale(n.versoH6 || 1, 1);
+    chinaH6(flash);
+    // il corpo e la testa col becco
+    ctx.beginPath(); ctx.ellipse(0, 0, 7, 4.2, -0.15, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(6, -3, 3, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = flash ? '#fff' : '#3a3530'; ctx.beginPath(); ctx.moveTo(8.5, -3.8); ctx.lineTo(13, -2.4); ctx.lineTo(8.5, -1.6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = TINTE_H6.oro; ctx.fillRect(6.4, -4.2, 1.1, 1.1);
+    // la coda
+    chinaH6(flash); ctx.beginPath(); ctx.moveTo(-6, -1); ctx.lineTo(-12, -3); ctx.lineTo(-11, 2); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // le ali: chiuse da posato, alte e aperte nella posa, battute in volo
+    const batti = vola ? Math.sin(tk * 0.8) : ali ? -1 : 0.6;
+    ctx.beginPath(); ctx.moveTo(-3, -2); ctx.quadraticCurveTo(-4, -2 - 10 * Math.max(0.2, -batti + 0.2), -12, -4 - 8 * (-batti)); ctx.lineTo(2, -2); ctx.closePath(); ctx.fill(); ctx.stroke();
+    if (!vola) { ctx.strokeStyle = flash ? '#fff' : '#3a3530'; ctx.lineWidth = 0.9; ctx.beginPath(); ctx.moveTo(-1, 4); ctx.lineTo(-1.5, q - 1); ctx.moveTo(2, 4); ctx.lineTo(2.5, q - 1); ctx.stroke(); }
+    ctx.restore();
+    stordimentoH6(n, q + 10);
+  },
+};
+
+const disegnaNemicoPittoricoBaseH6 = disegnaNemicoPittorico;
+/** I nemici di Casertavecchia si disegnano qui; gli altri restano alla base. Stessa firma: ([ctx], nemico, tick). */
+disegnaNemicoPittorico = function (...args) {
+  const a = args[0] && typeof args[0].save === 'function' ? args.slice(1) : args;
+  const n = a[0];
+  const disegno = n && DISEGNI_NEMICI_H6[n.tipo];
+  if (!disegno) return disegnaNemicoPittoricoBaseH6.apply(this, args);
+  try {
+    ctx.save(); ctx.imageSmoothingEnabled = true;
+    disegno(n, a[1] || 0, n.flash > 0 && OPZIONI.lampi !== false);
+    ctx.restore();
+  } catch (err) { console.error('[h6] disegno', n.tipo, err); }
+  return undefined;
+};
+
+/** Sopra il pavimento e sotto le figure: le nuvole d'incenso. */
+function disegnaSopraStanzaH6(tk, st) {
+  if (!st || !casertavecchiaAttivaH6()) return;
+  disegnaRintocchiH6(tk, st);
+  const F = NEMICI_H6.sagrestano.fumo;
+  for (const f of st.fumoH6 || []) {
+    const k = raggioFumoH6(f);
+    if (k <= 0) continue;
+    for (let i = 0; i < 4; i++) {
+      const a = i * 1.7 + f.t * 0.01, rr = F.raggio * k * (0.55 + 0.15 * i);
+      ctx.fillStyle = `rgba(190, 192, 204, ${(0.13 * k).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(f.x + Math.cos(a) * 6 * k, f.y - 6 + Math.sin(a) * 3 * k, rr, 0, TAU); ctx.fill();
+    }
+  }
+}
+
+Object.assign(window.__teatro.interni, { RINTOCCHI_H6, NEMICI_H6, SOSTITUZIONI_H6 });
+Object.defineProperties(window.__teatro.interni.casertavecchiaH6, Object.getOwnPropertyDescriptors({
+  /** La corda della stanza corrente (copia) o null. */
+  get corda() { const c = cordaQuiH6(); return c ? { ...c } : null; },
+  /** Sviluppo/QA: tira la corda (aMano = come il giocatore). */
+  tira: (aMano = true) => tiraCordaH6(statoRun.stanzaCorrente, aMano),
+  get fumo() { const st = statoRun.stanzaCorrente; return ((st && st.fumoH6) || []).length; },
+}));
+
+// --------------------------------------------------------------------------- arredi del borgo
+/**
+ * Le disposizioni di b7 del piano 3 sono quelle di San Leucio (telai, arcolai). A Casertavecchia restano le
+ * stesse colonne (stesse misure e collisioni: cambia solo il disegno), vestite da borgo: un pozzo, un rocchio
+ * di colonna, un'edicola col lumino, un sarcofago. Sempre lo stesso arredo nello stesso punto.
+ */
+/** I temi rari di b7 del piano 3, col nome del borgo (i nemici li veste già vestiStanzaH6). TESTI DA APPROVARE. */
+const TEMI_H6 = Object.freeze({
+  teatrino: Object.freeze({ nome: 'I Penitenti del Sagrato',
+    avviso: '🔔 I PENITENTI DEL SAGRATO: inginocchiati sulla pietra, aspettano la campana. Chi li sveglia e li batte trova qualcosa in più.' }),
+  'corte-delle-maschere': Object.freeze({ nome: 'Lo Stormo del Campanile',
+    avviso: '🪶 LO STORMO DEL CAMPANILE: i corvi del duomo sono scesi tutti. Chi li abbatte trova qualcosa in più.' }),
+  plotone: Object.freeze({ nome: 'La Processione dei Sagrestani',
+    avviso: '🔔 LA PROCESSIONE DEI SAGRESTANI: tre turiboli in fila per il vicolo. Chi la scompiglia trova qualcosa in più.' }),
+});
+
+const generaMappaPianoTemiH6 = generaMappaPiano;
+/** I temi rari di b7 a Casertavecchia prendono il nome del luogo. */
+generaMappaPiano = function (piano, ...resto) {
+  const m = generaMappaPianoTemiH6.call(this, piano, ...resto);
+  try {
+    if (m && casertavecchiaAttivaH6(piano)) {
+      for (const st of m.stanze) {
+        const T = st.temaB7 && TEMI_H6[st.temaB7.id];
+        if (T) st.temaB7 = Object.assign({}, st.temaB7, { nome: T.nome, avviso: T.avviso });
+      }
+    }
+  } catch (err) { console.error('[h6] temi', err); }
+  return m;
+};
+
+const ARREDI_H6 = Object.freeze({ colonne: Object.freeze(['pozzo', 'rocchio', 'edicola', 'sarcofago']) });
+
+/** Un blocco squadrato di tufo grigio coi piedi in (cx, yb). */
+function bloccoH6(g, cx, yb, l, a, chiaro = TINTE_H6.tufo) {
+  g.fillStyle = chiaro; g.fillRect(cx - l / 2, yb - a, l, a);
+  g.fillStyle = TINTE_H6.tufoChiaro; g.fillRect(cx - l / 2, yb - a, l, 2);
+  g.fillStyle = TINTE_H6.tufoOmbra; g.fillRect(cx + l / 2 - 3, yb - a + 2, 3, a - 2);
+  g.strokeStyle = TINTE_H6.china; g.lineWidth = 1; g.strokeRect(cx - l / 2, yb - a, l, a);
+}
+
+const PELLI_H6 = Object.freeze({
+  pozzo: { l: 44, a: 46, ax: 22, ay: 36, disegna(g) {
+    ombraB7(g, 17, 5);
+    g.fillStyle = '#5a5853'; g.beginPath(); g.ellipse(0, -4, 16, 9, 0, 0, TAU); g.fill();
+    g.fillStyle = TINTE_H6.tufo; g.fillRect(-16, -14, 32, 10);
+    g.fillStyle = '#5a5853'; g.beginPath(); g.ellipse(0, -14, 16, 6, 0, 0, TAU); g.fill();
+    g.fillStyle = '#07080c'; g.beginPath(); g.ellipse(0, -14, 12, 4, 0, 0, TAU); g.fill();
+    g.strokeStyle = TINTE_H6.china; g.lineWidth = 1; g.beginPath(); g.ellipse(0, -14, 16, 6, 0, 0, TAU); g.stroke();
+    g.strokeStyle = TINTE_H6.ferro; g.lineWidth = 1.6; g.beginPath(); g.moveTo(-13, -14); g.lineTo(-13, -32); g.lineTo(13, -32); g.lineTo(13, -14); g.stroke();
+    g.strokeStyle = '#8a6a3c'; g.lineWidth = 0.8; g.beginPath(); g.moveTo(0, -32); g.lineTo(0, -20); g.stroke();
+  } },
+  rocchio: { l: 40, a: 52, ax: 20, ay: 40, disegna(g) {
+    ombraB7(g, 15, 5);
+    g.fillStyle = TINTE_H6.tufo; g.fillRect(-10, -30, 20, 30);
+    g.fillStyle = TINTE_H6.tufoOmbra; for (const x of [-5, 0, 5]) g.fillRect(x, -28, 1.2, 28);
+    g.fillStyle = TINTE_H6.tufoChiaro; g.beginPath(); g.moveTo(-10, -30); g.lineTo(-4, -35); g.lineTo(3, -31); g.lineTo(10, -34); g.lineTo(10, -30); g.closePath(); g.fill();
+    g.strokeStyle = TINTE_H6.china; g.lineWidth = 1; g.strokeRect(-10, -30, 20, 30);
+    bloccoH6(g, 0, 2, 26, 6, '#6e6c68');
+  } },
+  edicola: { l: 38, a: 56, ax: 19, ay: 44, disegna(g) {
+    ombraB7(g, 14, 4.5);
+    bloccoH6(g, 0, 0, 24, 36);
+    g.fillStyle = '#16141a'; g.beginPath(); g.moveTo(-7, -8); g.lineTo(-7, -24); g.arc(0, -24, 7, Math.PI, 0); g.lineTo(7, -8); g.closePath(); g.fill();
+    g.fillStyle = '#c9a15a'; g.globalAlpha = 0.55; g.beginPath(); g.arc(0, -22, 3.4, 0, TAU); g.fill(); g.globalAlpha = 1; // l'immaginetta
+    g.fillStyle = '#7a1d14'; g.fillRect(-2, -12, 4, 4);
+    g.fillStyle = TINTE_H6.lumino; g.beginPath(); g.ellipse(0, -14, 1.3, 2.4, 0, 0, TAU); g.fill();
+    g.fillStyle = TINTE_H6.tufoChiaro; g.beginPath(); g.moveTo(-14, -36); g.lineTo(0, -42); g.lineTo(14, -36); g.closePath(); g.fill();
+    g.strokeStyle = TINTE_H6.china; g.lineWidth = 1; g.stroke();
+  } },
+  sarcofago: { l: 50, a: 38, ax: 25, ay: 28, disegna(g) {
+    ombraB7(g, 20, 5);
+    bloccoH6(g, 0, 0, 40, 16, '#7a7874');
+    g.fillStyle = TINTE_H6.tufoChiaro; g.beginPath(); g.moveTo(-22, -16); g.lineTo(-18, -22); g.lineTo(18, -22); g.lineTo(22, -16); g.closePath(); g.fill();
+    g.strokeStyle = TINTE_H6.china; g.lineWidth = 1; g.stroke();
+    g.strokeStyle = TINTE_H6.tufoOmbra; for (const x of [-12, -4, 4, 12]) { g.beginPath(); g.arc(x, -6, 3, Math.PI, 0); g.stroke(); }
+  } },
+});
+
+/** L'arredo del borgo per un ostacolo, o null (gli ostacoli che non sono colonne restano alla base). */
+function arredoH6(o) {
+  if (o.tipo !== 'colonna') return null;
+  const L = ARREDI_H6.colonne;
+  return L[Math.abs(Math.round(o.x) * 7 + Math.round(o.y) * 13) % L.length];
+}
+
+/** Disegna l'arredo del luogo; true se l'ha disegnato. */
+function disegnaArredoH6(o, t) {
+  const nome = arredoH6(o);
+  if (!nome || typeof timbroB7 !== 'function') return false;
+  const P = PELLI_H6[nome];
+  const c = timbroB7('h6-' + nome, P);
+  const dx = o.scossoB7 > 0 ? (o.scossoB7 % 2 ? 1 : -1) : 0;
+  ctx.drawImage(c, Math.round(o.x) - P.ax + dx, Math.round(o.y) - P.ay, P.l, P.a);
+  if (nome === 'edicola') {
+    const a = 0.12 + 0.05 * Math.sin(t * 0.21 + o.x);
+    ctx.fillStyle = `rgba(255, 179, 71, ${a.toFixed(2)})`; ctx.beginPath(); ctx.arc(o.x, o.y - 14, 12, 0, TAU); ctx.fill();
+  }
+  return true;
+}
+
+if (typeof disegnaOstacoloB9 === 'function') {
+  const disegnaOstacoloBaseH6 = disegnaOstacoloB9;
+  /** Ostacoli del palco (prima b9, poi b7 in 60-resa.js): a Casertavecchia gli arredi del borgo. */
+  disegnaOstacoloB9 = function (o, t, ...resto) {
+    try { if (casertavecchiaAttivaH6() && disegnaArredoH6(o, t)) return true; } catch (err) { console.error('[h6] arredo', err); }
+    return disegnaOstacoloBaseH6.call(this, o, t, ...resto);
+  };
+}
