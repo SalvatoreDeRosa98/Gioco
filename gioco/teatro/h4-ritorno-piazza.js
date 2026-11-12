@@ -32,8 +32,8 @@
 // ===========================================================================
 const RITORNO_H4 = Object.freeze({
   bossFinale: 'donna-luciana',
-  /** La seconda uscita nella stanza di Donna Luciana (dove b8 metteva il cordone del sipario). */
-  uscita: Object.freeze({ x: 112, y: 128, raggio: 42 }),
+  /** La seconda uscita nella stanza di Donna Luciana: a sinistra, sotto il cordone del sipario di b8 (112, 128). */
+  uscita: Object.freeze({ x: 112, y: 236, raggio: 40 }),
   /**
    * Scala del Burattinaio. forza = (danno × colpi al secondo) della dotazione / quella di Ferruccio a mani nude
    * (3,50 × 2,73 ≈ 9,6, lo stesso DPS 0 oggetti misurato da tools/sim-bilancio-teatro.js), tenuta fra forzaMin e
@@ -61,6 +61,7 @@ const TESTI_H4 = Object.freeze({
   uscitaSotto: 'la notte non è finita',
   uscitaSotto2: 'con tutto: Maschere piene, la porta della bottega aspetta',
   banner: (ciclo) => `★ DONNA LUCIANA È CADUTA! Botola: NOTTE SENZA FINE (ciclo ${ciclo}) · A sinistra: torna in piazza, la notte non è finita`,
+  bannerAggiunta: 'In basso a sinistra: torna in piazza, la notte non è finita',
   rientro: 'Piazza Dante · la notte è ancora viva · Maschere piene',
   tonino: "Ancora 'n giro, guagliò? Stanotte 'a porta 'e Gaetano nun s'è chiusa. Vai, ca t'aspetta.",
   piazzaViva: 'LA NOTTE È VIVA · la porta della bottega aspetta',
@@ -123,9 +124,14 @@ function vicinoUscitaH4() {
 function dopoLucianaH4(st) {
   const b = st && st.nemici && (st.nemici.find((n) => n.boss) || st.nemici[0]);
   if (!b || b.bossId !== RITORNO_H4.bossFinale || !portaProntaH4()) return;
-  st.cordoneB8 = false;
-  st.ritornoH4 = true;
-  try { if (typeof b8 === 'object' && b8) b8.bannerPendente = { st, testo: TESTI_H4.banner((statoRun.ciclo || 1) + 1) }; } catch (_) { /* b8 assente */ }
+  st.ritornoH4 = true; // il cordone di b8 resta: l'ultimo atto si può ancora rimettere in scena
+  try {
+    if (typeof b8 === 'object' && b8) {
+      const bp = b8.bannerPendente;
+      if (bp && bp.st === st) bp.testo = `${bp.testo} · ${TESTI_H4.bannerAggiunta}`;
+      else b8.bannerPendente = { st, testo: TESTI_H4.banner((statoRun.ciclo || 1) + 1) };
+    }
+  } catch (_) { /* b8 assente */ }
 }
 
 /**

@@ -88,7 +88,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   l = await finoALuciana();
   await passi(p, 80);
   st = await p.evaluate(() => ({ cordone: Boolean(statoRun.stanzaCorrente.cordoneB8), ritorno: Boolean(statoRun.stanzaCorrente.ritornoH4) }));
-  ok('pronta-uscita-al-posto-del-cordone', st.ritorno && !st.cordone, st);
+  ok('pronta-uscita-accanto-al-cordone', st.ritorno && st.cordone, st);
   await p.evaluate(() => { try { a7.pergamena = null; } catch (_) { /* a7 */ } statoRun.hpHalf = 1; const U = window.__teatro.interni.RITORNO_H4.uscita; player.x = U.x; player.y = U.y + 4; });
   await scatta('01-seconda-uscita');
   const prima = await dotazione();
