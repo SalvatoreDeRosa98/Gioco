@@ -1912,3 +1912,160 @@ Object.assign(window.__teatro.interni, {
     get anime() { return d6.anime.length; },
   }),
 });
+
+// ===========================================================================
+// (f1) ARREDI, TEMI E LUCE DEL LUOGO: niente giardino della Villa all'Acquedotto
+// ===========================================================================
+/**
+ * Le disposizioni di b7 per il piano 2 sono quelle della Villa (aiuole, fontane, vasi, alberi e panchine di b9).
+ * All'Acquedotto restano le stesse (stesse misure e collisioni: cambia solo il disegno) ma vestite da cantiere
+ * di tufo. `varianti`: pelle di b7 → arredo del luogo; `colonne`: le colonne senza pelle, una per posizione.
+ */
+const ARREDI_D6 = Object.freeze({
+  varianti: Object.freeze({ aiuola: 'scavo', fontana: 'blocchiGrandi', vaso: 'cassa' }),
+  colonne: Object.freeze(['tufo', 'botte', 'carriola', 'lanterna', 'corda']),
+  botteB7: 'botte', // la botte di b7 (e la sua immagine in b9) va già bene per il cantiere
+  tufo: Object.freeze({ chiaro: '#7a6744', medio: '#5c4d32', scuro: '#2b2418', filo: '#120e08' }),
+  lanterna: Object.freeze({ dy: -46, alone: 13, colore: 'rgba(186, 214, 240, ALFA)' }), // luce fredda del condotto
+});
+
+/** Luce della ribalta di b2 all'Acquedotto: fredda e notturna (blu-grigio), come il quartiere QUARTIERE_D6. */
+const LUCE_D6 = Object.freeze({ lume: Object.freeze([150, 176, 214]), luce: 0.9, ombra: 1.05, vignetta: 1.15 });
+
+/** I temi rari di b7 del piano 2, col nome del luogo. TESTI DA APPROVARE DALL'AUTORE. */
+const TEMI_D6 = Object.freeze({
+  'ballo-delle-lucciole': Object.freeze({ nome: 'Lo Stormo dei Rondoni',
+    avviso: '🪶 LO STORMO DEI RONDONI: sotto gli archi si alza tutto il nido di latta. Chi lo abbatte trova qualcosa in più.' }),
+  'predoni-della-villa': Object.freeze({ nome: 'I Fontanieri del Condotto',
+    avviso: '🗡 I FONTANIERI DEL CONDOTTO: tre ombre fra le chiuse. Chi le stana trova qualcosa in più.' }),
+});
+
+/** Blocco di tufo squadrato coi piedi in (cx, yb): faccia, cima più chiara, venature. */
+function bloccoTufoD6(g, cx, yb, l, a) {
+  const T = ARREDI_D6.tufo, x = cx - l / 2, y = yb - a;
+  g.fillStyle = T.medio; g.fillRect(x, y + 3, l, a - 3);
+  g.fillStyle = T.chiaro; g.fillRect(x + 1, y, l - 2, 4);
+  g.strokeStyle = T.filo; g.lineWidth = 1; g.strokeRect(x, y, l, a);
+  g.strokeStyle = 'rgba(18, 14, 8, 0.55)'; g.lineWidth = 0.6;
+  g.beginPath(); g.moveTo(x + l * 0.3, y + 6); g.lineTo(x + l * 0.42, y + a - 2); g.moveTo(x + l * 0.7, y + 5); g.lineTo(x + l * 0.62, y + a * 0.6); g.stroke();
+  g.fillStyle = 'rgba(18, 14, 8, 0.35)';
+  for (const [px, py] of [[0.2, 0.55], [0.55, 0.4], [0.8, 0.75]]) g.fillRect(x + l * px, y + a * py, 1.4, 1.2); // pori del tufo
+}
+
+/** Le pelli del luogo (stesso formato di PELLI_B7: tela l×a, ancora ax/ay sul punto dell'ostacolo). */
+const PELLI_D6 = Object.freeze({
+  tufo: { l: 40, a: 48, ax: 20, ay: 36, disegna(g) {
+    ombraB7(g, 15, 5);
+    bloccoTufoD6(g, -6, 6, 20, 14); bloccoTufoD6(g, 8, 6, 16, 12); bloccoTufoD6(g, 0, -8, 22, 14);
+  } },
+  blocchiGrandi: { l: 60, a: 54, ax: 30, ay: 40, disegna(g) {
+    ombraB7(g, 22, 6);
+    bloccoTufoD6(g, -11, 6, 24, 16); bloccoTufoD6(g, 12, 6, 22, 14); bloccoTufoD6(g, -2, -10, 26, 16);
+    rettB7(g, 6, -20, 2, 12, '#3b2414', null); // un cuneo di legno fra i blocchi
+  } },
+  cassa: { l: 34, a: 40, ax: 17, ay: 30, disegna(g) {
+    ombraB7(g, 12, 4);
+    rettB7(g, -11, -20, 22, 22, '#3b2a18');
+    g.strokeStyle = '#120e08'; g.lineWidth = 1;
+    for (const y of [-13, -6]) { g.beginPath(); g.moveTo(-11, y); g.lineTo(11, y); g.stroke(); }
+    g.strokeStyle = '#5c4528'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(-10, 1); g.lineTo(10, -19); g.stroke();
+    g.fillStyle = '#8a7650'; g.fillRect(-11, -21, 22, 1.6);
+  } },
+  carriola: { l: 46, a: 36, ax: 23, ay: 26, disegna(g) {
+    ombraB7(g, 17, 4.5);
+    sagomaB7(g, [[-14, -14], [10, -14], [6, -3], [-12, -3]], '#2b1d10');
+    g.fillStyle = ARREDI_D6.tufo.chiaro; g.beginPath(); g.ellipse(-2, -14, 10, 3, 0, Math.PI, TAU); g.fill(); // tufo nel cassone
+    g.strokeStyle = '#120e08'; g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(-12, -6); g.lineTo(-21, -10); g.moveTo(-10, -4); g.lineTo(-19, -8); g.stroke(); // stanghe
+    g.beginPath(); g.moveTo(-11, -3); g.lineTo(-12, 4); g.stroke();
+    g.fillStyle = '#120e08'; g.beginPath(); g.arc(9, 0, 5, 0, TAU); g.fill();
+    g.fillStyle = '#5c4528'; g.beginPath(); g.arc(9, 0, 1.6, 0, TAU); g.fill();
+  } },
+  lanterna: { l: 28, a: 62, ax: 14, ay: 52, disegna(g) {
+    ombraB7(g, 8, 3);
+    sagomaB7(g, [[-6, 2], [6, 2], [2, -4], [-2, -4]], '#1c1410');
+    rettB7(g, -1.2, -40, 2.4, 37, '#1c1410', null);
+    g.fillStyle = '#1c1410'; g.fillRect(-1, -42, 8, 2); // braccio
+    rettB7(g, 3, -50, 7, 9, '#2a3440', '#050302', 0.9);
+    g.fillStyle = 'rgba(200, 224, 245, 0.75)'; g.fillRect(4.4, -48.6, 4.2, 6.2);
+    g.fillStyle = '#050302'; g.fillRect(2.4, -52, 8.2, 2);
+  } },
+  corda: { l: 38, a: 30, ax: 19, ay: 20, disegna(g) {
+    ombraB7(g, 14, 4);
+    rettB7(g, -14, -4, 28, 5, '#3b2414'); // l'asse
+    for (const [x, r] of [[-6, 7], [6, 6]]) {
+      g.fillStyle = '#6b5434'; g.beginPath(); g.ellipse(x, -9, r, r * 0.75, 0, 0, TAU); g.fill();
+      g.strokeStyle = '#120e08'; g.lineWidth = 1; g.stroke();
+      g.strokeStyle = 'rgba(18, 14, 8, 0.6)'; g.lineWidth = 0.7;
+      g.beginPath(); g.ellipse(x, -9, r * 0.55, r * 0.4, 0, 0, TAU); g.stroke();
+    }
+    g.strokeStyle = '#6b5434'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(12, -6); g.quadraticCurveTo(17, 0, 13, 3); g.stroke();
+  } },
+  scavo: { l: 48, a: 36, ax: 24, ay: 24, disegna(g) {
+    g.fillStyle = '#050302'; g.fillRect(-17, -9, 34, 18); // la buca (stessa misura della fossa)
+    g.fillStyle = 'rgba(13, 42, 61, 0.7)'; g.fillRect(-14, 2, 28, 5); // acqua in fondo
+    const T = ARREDI_D6.tufo;
+    for (const [x, y, l] of [[-17, -12, 12], [-4, -12, 9], [6, -12, 11], [-17, 8, 10], [-6, 8, 13], [8, 8, 9]]) {
+      g.fillStyle = T.medio; g.fillRect(x, y, l, 4); g.strokeStyle = T.filo; g.lineWidth = 0.8; g.strokeRect(x, y, l, 4);
+    }
+    g.fillStyle = '#3b2414'; g.fillRect(-20, -6, 3, 14); g.fillRect(17, -6, 3, 14); // due paletti
+    g.strokeStyle = '#6b5434'; g.lineWidth = 0.9; g.beginPath(); g.moveTo(-18, -6); g.quadraticCurveTo(0, -2, 18, -6); g.stroke(); // corda tesa
+  } },
+});
+
+/** L'arredo del luogo per un ostacolo (null = resta quello di sempre). */
+function arredoD6(o) {
+  if (o.variante) return ARREDI_D6.varianti[o.variante] || null;
+  if (o.tipo !== 'colonna') return null;
+  const L = ARREDI_D6.colonne;
+  return L[Math.abs(Math.round(o.x) * 7 + Math.round(o.y) * 13) % L.length]; // sempre lo stesso nello stesso punto
+}
+
+/** Disegna l'arredo del luogo; true se l'ha disegnato. */
+function disegnaArredoD6(o, t) {
+  const nome = arredoD6(o);
+  if (!nome) return false;
+  if (nome === 'botte') { // la botte di b7/b9, con l'ostacolo intatto
+    const finta = Object.assign({}, o, { variante: ARREDI_D6.botteB7 });
+    return disegnaOstacoloBaseD6(finta, t) || disegnaOstacoloB7(finta, t);
+  }
+  const P = PELLI_D6[nome];
+  const c = timbroB7('d6-' + nome, P);
+  const dx = o.scossoB7 > 0 ? (o.scossoB7 % 2 ? 1 : -1) : 0;
+  ctx.drawImage(c, Math.round(o.x) - P.ax + dx, Math.round(o.y) - P.ay, P.l, P.a);
+  if (nome === 'lanterna') {
+    const L = ARREDI_D6.lanterna, a = 0.13 + 0.04 * Math.sin(t * 0.19 + o.x);
+    ctx.fillStyle = L.colore.replace('ALFA', a.toFixed(2));
+    ctx.beginPath(); ctx.arc(o.x + 6, o.y + L.dy, L.alone, 0, TAU); ctx.fill();
+  }
+  return true;
+}
+
+const disegnaOstacoloBaseD6 = typeof disegnaOstacoloB9 === 'function' ? disegnaOstacoloB9 : () => false;
+/** Ostacoli del palco (prima b9, poi b7 in 60-resa.js): all'Acquedotto gli arredi del luogo. */
+disegnaOstacoloB9 = function (o, t, ...resto) {
+  try { if (acquedottoAttivoD6() && disegnaArredoD6(o, t)) return true; } catch (err) { console.error('[d6] arredo', err); }
+  return disegnaOstacoloBaseD6.call(this, o, t, ...resto);
+};
+
+const generaMappaPianoTemiD6 = generaMappaPiano;
+/** I temi rari di b7 all'Acquedotto prendono il nome del luogo (i nemici li veste già vestiStanzaD6). */
+generaMappaPiano = function (piano, ...resto) {
+  const m = generaMappaPianoTemiD6.call(this, piano, ...resto);
+  try {
+    if (m && acquedottoAttivoD6(piano)) {
+      for (const st of m.stanze) {
+        const T = st.temaB7 && TEMI_D6[st.temaB7.id];
+        if (T) st.temaB7 = Object.assign({}, st.temaB7, { nome: T.nome, avviso: T.avviso });
+      }
+    }
+  } catch (err) { console.error('[d6] temi', err); }
+  return m;
+};
+
+const luceLuogoBaseD6 = luceLuogoB2;
+/** La luce della ribalta (b2): all'Acquedotto fredda e notturna. */
+luceLuogoB2 = function (...a) {
+  if (statoRun && acquedottoAttivoD6()) return LUCE_D6;
+  return luceLuogoBaseD6.apply(this, a);
+};

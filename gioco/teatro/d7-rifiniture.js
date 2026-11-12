@@ -303,7 +303,7 @@ popolaStanza = function popolaStanzaD7(s, piano, ...resto) {
 const TOCCO_D7 = Object.freeze({
   frasi: Object.freeze([
     Object.freeze(['WASD: Movimento · Frecce/Mouse: Spara/Attacca', 'Levetta sinistra: movimento · levetta destra: sparo']),
-    Object.freeze(['[W/S] o click: scegli lo slot · [Canc] cancella · [M] muto', 'Tocca uno slot per sceglierlo']),
+    Object.freeze(['[W/S] o click: scegli lo slot · [Canc] cancella · [M] muto', 'Tocca uno slot per sceglierlo, il cestino per cancellarlo']),
     Object.freeze(['Q: Attivo · E: Compra/Patto/Raccogli · ESC: Pausa', 'OGGETTO: attivo · AZIONE: compra/patto/raccogli · ❚❚: pausa']),
   ]),
   parole: Object.freeze([
