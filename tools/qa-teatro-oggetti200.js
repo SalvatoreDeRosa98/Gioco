@@ -14,6 +14,7 @@
 const path = require('path');
 const fs = require('fs');
 const { chromium } = require('playwright');
+const { TEMPI_STRETTI } = require('./qa-teatro-comune');
 const RADICE = path.resolve(__dirname, '..');
 const file = path.resolve(RADICE, process.argv[2] || 'gioco/teatro_marionette.html');
 const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evidence', 'teatro-oggetti200');
@@ -404,7 +405,9 @@ const TEMI = ['denari', 'ombra', 'maschera', 'fili', 'sacro', 'fuoco', 'bestia',
     const orig = console.error;
     console.error = (...a) => { err.push(a.map(String).join(' ')); };
     const N = 900;
+    const med = (v) => { const q = [...v].sort((a, b) => a - b); const m = q.length >> 1; return q.length % 2 ? q[m] : (q[m - 1] + q[m]) / 2; };
     let msTick = 0, msFrame = 0;
+    const campTick = [], campTot = [];
     try {
       for (let i = 0; i < N; i++) {
         const tasto = ['ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown'][Math.floor(i / 40) % 4];
@@ -416,7 +419,8 @@ const TEMI = ['denari', 'ombra', 'maschera', 'fili', 'sacro', 'fuoco', 'bestia',
         passoLogico();
         const t1 = performance.now();
         iniziaFrame(); disegnaFrame(16.7);
-        msTick += t1 - t0; msFrame += performance.now() - t1;
+        const t2 = performance.now();
+        msTick += t1 - t0; msFrame += t2 - t1; campTick.push(t1 - t0); campTot.push(t2 - t0);
         keys[tasto] = false;
         colpiMax = Math.max(colpiMax, statoRun.proiettili.length);
         scieMax = Math.max(scieMax, I.statoB5().scie.length);
@@ -424,7 +428,7 @@ const TEMI = ['denari', 'ombra', 'maschera', 'fili', 'sacro', 'fuoco', 'bestia',
         nemMax = Math.max(nemMax, statoRun.proiettiliNemici.length);
       }
     } catch (e) { err.push(String((e && e.stack) || e)); } finally { console.error = orig; keys.KeyD = false; keys.KeyA = false; }
-    return { oggetti: statoRun.oggettiEquipaggiati.length, msTick: +(msTick / N).toFixed(3), msFrame: +(msFrame / N).toFixed(2), colpiMax, scieMax, famMax, nemMax, err: err.slice(0, 5),
+    return { oggetti: statoRun.oggettiEquipaggiati.length, msTick: +(msTick / N).toFixed(3), msFrame: +(msFrame / N).toFixed(2), medTick: +med(campTick).toFixed(3), medTot: +med(campTot).toFixed(2), colpiMax, scieMax, famMax, nemMax, err: err.slice(0, 5),
       danno: +statoRun.dmg.toFixed(1), cadenza: +statoRun.colpiAlSec.toFixed(2), tettoColpi: I.OGGETTI_D.clamp.proiettiliGiocatore + I.OGGETTI_B5.tetti.proiettiliExtra, fase: statoRun.fase };
   }, conOggetti);
   oss.caricoVuoto = await carico(false);
@@ -433,8 +437,14 @@ const TEMI = ['denari', 'ombra', 'maschera', 'fili', 'sacro', 'fuoco', 'bestia',
   viola('tutto addosso: tetti rispettati', oss.carico.colpiMax <= oss.carico.tettoColpi && oss.carico.scieMax <= 36 && oss.carico.famMax <= 4 + 4 + 3 + 3, oss.carico);
   // 60 fps = 16,7 ms a frame: la logica con tutto il catalogo addosso deve restare una piccola parte del frame,
   // e il frame intero (disegno software del browser di prova compreso) sotto il tempo di un frame.
-  viola('tutto addosso: logica < 2 ms per tick', oss.carico.msTick < 2, oss.carico.msTick);
-  viola('tutto addosso: tick + frame < 16 ms', oss.carico.msTick + oss.carico.msFrame < 16, [oss.carico.msTick, oss.carico.msFrame]);
+  // Misura a macchina carica: la MEDIA di 900 campioni la gonfiano i fotogrammi in cui il processo è stato
+  // sospeso (sotto carico la media del frame vuoto passa da 2 a 11 ms), la MEDIANA no. Di norma si usa la
+  // mediana con le stesse soglie di 60 fps; con QA_TEMPI=stretti (macchina libera) la media, come prima.
+  const C = oss.carico;
+  const tick = TEMPI_STRETTI ? C.msTick : C.medTick, tot = TEMPI_STRETTI ? C.msTick + C.msFrame : C.medTot;
+  const misura = TEMPI_STRETTI ? 'media' : 'mediana';
+  viola(`tutto addosso: logica < 2 ms per tick (${misura})`, tick < 2, { tick, media: C.msTick, mediana: C.medTick });
+  viola(`tutto addosso: tick + frame < 16 ms (${misura})`, tot < 16, { tot, media: +(C.msTick + C.msFrame).toFixed(2), mediana: C.medTot, vuoto: oss.caricoVuoto.medTot });
 
   // ------------------------------------------------------------------ 7. sblocchi
   oss.sblocchi = await p.evaluate(() => {

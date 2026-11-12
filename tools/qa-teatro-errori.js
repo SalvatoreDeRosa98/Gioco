@@ -12,6 +12,7 @@
  * Uso: node tools/qa-teatro-errori.js <html> [prefisso screenshot]. Esce con 1 se un controllo fallisce.
  */
 const path = require('path');
+const { aspettaCondizione } = require('./qa-teatro-comune');
 const { chromium } = require('playwright');
 
 const file = path.resolve(process.argv[2] || 'gioco/teatro_marionette.html');
@@ -39,7 +40,9 @@ const prefisso = process.argv[3] || null;
 
   // 2. errore di disegno per 2 fotogrammi (sotto la soglia del fusibile)
   await p.evaluate(() => { const base = disegnaFrame; let n = 0; disegnaFrame = function (...a) { if (n++ < 2) throw new Error('prova di disegno'); return base.apply(this, a); }; });
-  let t0 = await tick(); await p.waitForTimeout(600); let t1 = await tick();
+  // Non «600 ms e poi conta»: a macchina carica 600 ms reali possono essere pochi fotogrammi. Si aspetta
+  // che passino 21 tick (tetto largo): se il gioco si è fermato non arrivano mai.
+  let t0 = await tick(); await aspettaCondizione(p, (a) => tick - a > 20, t0); let t1 = await tick();
   s = await stato();
   ok('errore di disegno: il gioco va avanti', t1 - t0 > 20, t1 - t0);
   ok('errore di disegno: nel riquadro', s.riquadro && s.testo.includes('prova di disegno') && s.testo.includes('[disegno]'), s.testo.slice(0, 200));
@@ -52,22 +55,22 @@ const prefisso = process.argv[3] || null;
 
   // 3. errore di logica una volta
   await p.evaluate(() => { const base = passoLogico; let n = 0; passoLogico = function (...a) { if (n++ < 3) throw new Error('prova di logica'); return base.apply(this, a); }; });
-  t0 = await tick(); await p.waitForTimeout(600); t1 = await tick();
+  t0 = await tick(); await aspettaCondizione(p, (a) => tick - a > 20, t0); t1 = await tick();
   s = await stato();
   ok('errore di logica: il ciclo non si ferma', (await p.evaluate(() => ERRORI_TEATRO.some((e) => e.dove === 'logica'))) && t1 >= t0, t1 - t0);
-  const vivo = await p.evaluate(() => new Promise((r) => { let n = 0; const f = () => { if (++n >= 5) r(true); else requestAnimationFrame(f); }; requestAnimationFrame(f); setTimeout(() => r(false), 2000); }));
+  const vivo = await p.evaluate(() => new Promise((r) => { let n = 0; const f = () => { if (++n >= 5) r(true); else requestAnimationFrame(f); }; requestAnimationFrame(f); setTimeout(() => r(false), 10000); }));
   ok('i fotogrammi continuano', vivo);
 
   // 4. disegno che fallisce sempre finché le ombre sono accese: il fusibile le spegne e il gioco riparte
   await p.evaluate(() => { const base = disegnaFrame; disegnaFrame = function (...a) { if (OPZIONI.ombre !== false) throw new Error('prova: le ombre rompono il disegno'); return base.apply(this, a); }; });
-  await p.waitForTimeout(700);
+  await aspettaCondizione(p, () => OPZIONI.ombre === false); // il fusibile scatta dopo qualche fotogramma rotto
   s = await stato();
   ok('fusibile: spegne le ombre', s.opz.ombre === false && s.testo.includes('ombre'), s.opz);
   ok('fusibile: non salva le opzioni', await p.evaluate(() => { try { return JSON.parse(localStorage.getItem('ferruccio.teatro.opzioni') || '{}').ombre !== false; } catch (_) { return true; } }));
 
   // 5. errore in un gestore di eventi
   await p.evaluate(() => { window.addEventListener('keydown', (e) => { if (e.code === 'F9') throw new Error('prova di gestore'); }); });
-  await p.keyboard.press('F9'); await p.waitForTimeout(200);
+  await p.keyboard.press('F9'); await aspettaCondizione(p, () => ERRORI_TEATRO.some((e) => String(e.testo).includes('prova di gestore')), undefined, { tetto: 5000 });
   s = await stato();
   ok('errore di un gestore: nel riquadro', s.testo.includes('prova di gestore'), s.testo.slice(-300));
 
