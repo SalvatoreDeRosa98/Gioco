@@ -209,7 +209,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
     entraInStanza(st, 'S'); R.siparioAttivo = null;
     for (let i = 0; i < 3000 && I.giuramentiH7.qui.stato !== 'fatto'; i++) {
       P.x = 320; P.y = 190;
-      if (i === 5) { R.graziaIngressoC = 0; P.invuln = 0; subisciColpoGiocatore(1, 'prova', 300, 190); }
+      if (i === 5) { R.graziaIngressoC = 0; R.scudoRosaC = false; R.scudoStanzaD = 0; P.invuln = 0; subisciColpoGiocatore(1, 'prova', 300, 190); }
       if (i > 5) P.invuln = 999;
       try { passoLogico(); } catch (_) { /* */ }
       if (i === 60) { /* foto a metà */ }

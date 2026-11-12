@@ -453,12 +453,6 @@ function telaPavimentoH7() {
     x.fillRect(68 + r() * 504, 70 + r() * 234, 1, 1);
   }
   x.globalAlpha = 1;
-  // le botole dei montacarichi (chiuse, a filo della sabbia): assi scure appena visibili
-  for (const [bx, by] of [[150, 112], [490, 112], [150, 266], [490, 266]]) {
-    x.fillStyle = 'rgba(60, 40, 22, 0.35)'; x.fillRect(bx - 13, by - 9, 26, 18);
-    x.strokeStyle = 'rgba(40, 26, 14, 0.5)'; x.lineWidth = 0.8; x.strokeRect(bx - 13, by - 9, 26, 18);
-    for (let k = -1; k <= 1; k++) { x.beginPath(); x.moveTo(bx - 13, by + k * 6); x.lineTo(bx + 13, by + k * 6); x.stroke(); }
-  }
   // l'ombra del muro di fondo sulla sabbia
   const om = x.createLinearGradient(0, 70, 0, 92);
   om.addColorStop(0, 'rgba(20, 12, 6, 0.55)'); om.addColorStop(1, 'rgba(20, 12, 6, 0)');
@@ -687,8 +681,15 @@ const NEMICI_H7 = Object.freeze({
 /** Tipo di San Leucio → tipo dell'Anfiteatro (costruita da NEMICI_H7). */
 const SOSTITUZIONI_H7 = Object.freeze(Object.fromEntries(Object.entries(NEMICI_H7).map(([tipo, T]) => [T.sostituisce, tipo])));
 
-/** I montacarichi dei sotterranei: botole a filo della sabbia (le stesse dipinte sul pavimento). */
-const MONTACARICHI_H7 = Object.freeze([Object.freeze([150, 112]), Object.freeze([490, 112]), Object.freeze([150, 266]), Object.freeze([490, 266])]);
+/**
+ * I montacarichi dei sotterranei: botole a filo della sabbia. Ogni stanza ne prende `quanti`, i primi posti di
+ * questa lista lontani almeno `distanzaOstacoli` px dagli ostacoli della stanza.
+ */
+const MONTACARICHI_H7 = Object.freeze({
+  quanti: 4, distanzaOstacoli: 36,
+  posti: Object.freeze([[150, 112], [490, 112], [150, 266], [490, 266], [320, 104], [320, 276], [112, 190], [528, 190],
+    [236, 146], [404, 146], [236, 240], [404, 240]].map((p) => Object.freeze(p))),
+});
 
 /** Le stanze-giuramento. */
 const GIURAMENTI_H7 = Object.freeze({
@@ -771,7 +772,7 @@ function vestiNemicoH7(n, tipo, piano) {
  * @param {number} [ritardo] tick prima che il montacarichi parta
  */
 function creaCombattenteH7(st, tipo, m, ritardo = 0) {
-  const M = MONTACARICHI_H7[m % MONTACARICHI_H7.length];
+  const mc = montacarichiH7(st), M = mc[m % mc.length];
   st.contaH7 = (st.contaH7 || 0) + 1;
   const n = { id: `${st.id}-h7-${st.contaH7}`, tipo, patternMob: tipo, nome: '', boss: false, mobSoldi: false, champion: null,
     x: M[0], y: M[1] + 6, hp: 1, maxHp: 1, speed: 0, r: 11, flash: 0, burnTicks: 0, stunTicks: 0, state: 'idle', stateTimer: 20,
@@ -798,6 +799,15 @@ function passoSalitaH7(n) {
   if (n.saleH7 <= 0) { n.airZ = 0; n.saleH7 = 0; return false; }
   n.airZ = 30;
   return true;
+}
+
+/** I montacarichi della stanza (scelti una volta, lontani dagli ostacoli). */
+function montacarichiH7(st) {
+  if (st.mcH7) return st.mcH7;
+  const M = MONTACARICHI_H7;
+  const liberi = M.posti.filter(([x, y]) => !(st.ostacoli || []).some((o) => Math.hypot(o.x - x, o.y - y) < M.distanzaOstacoli + (o.r || 12)));
+  st.mcH7 = (liberi.length >= M.quanti ? liberi : M.posti).slice(0, M.quanti);
+  return st.mcH7;
 }
 
 /** Vivi (o in salita) nella stanza. */
@@ -888,7 +898,7 @@ const IA_H7 = {
         if (n.chiamateH7 < T.chiamate && viviH7(st).length < T.tettoVivi) {
           n.chiamateH7++;
           let m = 0, best = Infinity;
-          MONTACARICHI_H7.forEach((M, i) => { const d = Math.hypot(M[0] - player.x, M[1] - player.y); if (d > 90 && Math.hypot(M[0] - n.x, M[1] - n.y) < best) { best = Math.hypot(M[0] - n.x, M[1] - n.y); m = i; } });
+          montacarichiH7(st).forEach((M, i) => { const d = Math.hypot(M[0] - player.x, M[1] - player.y); if (d > 90 && Math.hypot(M[0] - n.x, M[1] - n.y) < best) { best = Math.hypot(M[0] - n.x, M[1] - n.y); m = i; } });
           creaCombattenteH7(st, T.chiama[Math.floor(rng() * T.chiama.length)], m);
         } else {
           const S = T.squillo;
@@ -912,11 +922,11 @@ if (typeof iaNemicoD6 === 'function') {
   iaNemicoD6 = function (n, st, ang, dist, ...resto) {
     const ia = IA_H7[n && n.tipo];
     if (!ia) {
-      if (n && n.saleH7 > 0) { passoSalitaH7(n); return true; }
+      if (n && n.saleH7 > 0) return true; // sale ancora: la salita avanza in passoLogico
       return iaNemicoBaseH7.call(this, n, st, ang, dist, ...resto);
     }
     if (n.paraH7 > 0) n.paraH7--;
-    try { if (!passoSalitaH7(n)) ia(n, st, ang, dist, NEMICI_H7[n.tipo]); } catch (err) { console.error('[h7] ia', n.tipo, err); }
+    try { if (!(n.saleH7 > 0)) ia(n, st, ang, dist, NEMICI_H7[n.tipo]); } catch (err) { console.error('[h7] ia', n.tipo, err); }
     return true;
   };
 }
@@ -1000,7 +1010,8 @@ generaMappaPiano = function (piano, ...resto) {
 function iniziaGiuramentoH7(st) {
   const G = st.giuramentoH7;
   G.stato = 'in_corso'; G.ondata = 1; G.persi = 0; G.t0 = tick; G.pausa = 0; G.hpUltimo = statoRun.hpHalf;
-  viviH7(st).forEach((n, i) => avviaSalitaH7(n, MONTACARICHI_H7[i % MONTACARICHI_H7.length], i * GIURAMENTI_H7.scaglionaTick));
+  const mc = montacarichiH7(st);
+  viviH7(st).forEach((n, i) => avviaSalitaH7(n, mc[i % mc.length], i * GIURAMENTI_H7.scaglionaTick));
   mostraBanner(`${TESTI_NEMICI_H7.giuramento} ${TESTI_NEMICI_H7.ondata(1, G.ondate)}`, 220);
   tonoH7(98, 0.6, 0.06, 'square', 80);
 }
@@ -1011,7 +1022,7 @@ function ondataGiuramentoH7(st) {
   G.ondata++;
   const quanti = fraH7([C.perOndata[0], C.perOndata[1] + 1]);
   const pesi = Object.entries(C.pesi), tot = pesi.reduce((a, [, p]) => a + p, 0);
-  const lontani = MONTACARICHI_H7.map((M, i) => ({ i, d: Math.hypot(M[0] - player.x, M[1] - player.y) })).sort((a, b) => b.d - a.d);
+  const lontani = montacarichiH7(st).map((M, i) => ({ i, d: Math.hypot(M[0] - player.x, M[1] - player.y) })).sort((a, b) => b.d - a.d);
   for (let k = 0; k < quanti; k++) {
     let x = rng() * tot, tipo = pesi[0][0];
     for (const [t, p] of pesi) { if ((x -= p) < 0) { tipo = t; break; } }
@@ -1116,6 +1127,7 @@ passoLogico = function (...args) {
         const k = NEMICI_H7.reziario_ombra.rete.rallenta;
         player.x = px + (player.x - px) * k; player.y = py + (player.y - py) * k;
       }
+      for (const n of st.nemici) if (n.saleH7 > 0) passoSalitaH7(n); // i montacarichi salgono anche nella grazia d'ingresso
       passoRetiH7(st);
       passoGiuramentoH7(st, hpPrima);
       dopoIlPassoGiudiceH7(st, hpPrima);
@@ -1131,6 +1143,8 @@ function dopoIlPassoGiudiceH7() { /* sezione 5 */ }
 // 3-4. DISEGNO «a ombre» di nemici, montacarichi, reti e grate
 // ===========================================================================
 const BORDO_H7 = 'rgba(240, 180, 90, 0.85)';
+/** Le sagome dei nemici sono disegnate a misura 1 e ingrandite di tanto (stessa altezza dei nemici di base). */
+const SCALA_FIGURE_H7 = 1.35;
 /** Prepara il tratto delle sagome: china piena, contorno di lanterna (bianco se colpito). */
 function chinaH7(flash) { ctx.fillStyle = flash ? '#f5e6c8' : TINTE_H7.china; ctx.strokeStyle = flash ? '#fff' : BORDO_H7; ctx.lineWidth = 1; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; }
 function ombraTerraH7(x, y, rx, ry, a = 0.5) { ctx.fillStyle = `rgba(30, 18, 8, ${a})`; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, TAU); ctx.fill(); }
@@ -1290,14 +1304,14 @@ const DISEGNI_NEMICI_H7 = {
 function disegnaSalitaH7(n, t, disegno, flash) {
   const k = 1 - n.saleH7 / n.saleDurataH7;
   if (k <= 0) return; // aspetta il suo turno: la botola è ancora chiusa
-  const M = n.mcH7, alt = 44;
+  const M = n.mcH7, alt = 44 * SCALA_FIGURE_H7;
   ctx.save();
   // la botola aperta: buio
   ctx.fillStyle = TINTE_H7.china; ctx.fillRect(M[0] - 13, M[1] - 3, 26, 14);
   // la figura sale (tagliata dal bordo della botola)
   ctx.save();
-  ctx.beginPath(); ctx.rect(M[0] - 40, M[1] - 80, 80, 86); ctx.clip();
-  ctx.translate(n.x, n.y + (1 - k) * alt);
+  ctx.beginPath(); ctx.rect(M[0] - 50, M[1] - 100, 100, 106); ctx.clip();
+  ctx.translate(n.x, n.y + (1 - k) * alt); ctx.scale(SCALA_FIGURE_H7, SCALA_FIGURE_H7);
   disegno(n, t, flash);
   ctx.restore();
   // la piattaforma e le funi delle carrucole
@@ -1323,7 +1337,7 @@ disegnaNemicoPittorico = function (...args) {
     if (n.saleH7 > 0) { disegnaSalitaH7(n, a[1] || 0, disegno, flash); return undefined; }
     ctx.save();
     ctx.imageSmoothingEnabled = true;
-    ctx.translate(Math.round(n.x), Math.round(n.y));
+    ctx.translate(Math.round(n.x), Math.round(n.y)); ctx.scale(SCALA_FIGURE_H7, SCALA_FIGURE_H7);
     disegno(n, a[1] || 0, flash);
     ctx.restore();
   } catch (err) { console.error('[h7] disegno', n.tipo, err); }
@@ -1378,11 +1392,26 @@ function disegnaRetiH7(st, tk) {
   ctx.restore();
 }
 
+/** Le botole dei montacarichi della stanza, a filo della sabbia (sotto le figure). */
+function disegnaBotoleH7(st) {
+  ctx.save();
+  for (const [bx, by] of montacarichiH7(st)) {
+    ctx.fillStyle = 'rgba(60, 40, 22, 0.42)'; ctx.fillRect(bx - 13, by - 3, 26, 14);
+    ctx.strokeStyle = 'rgba(40, 26, 14, 0.6)'; ctx.lineWidth = 0.8; ctx.strokeRect(bx - 13, by - 3, 26, 14);
+    ctx.beginPath(); for (const k of [1.6, 6.3]) { ctx.moveTo(bx - 13, by + k); ctx.lineTo(bx + 13, by + k); } ctx.stroke();
+    ctx.fillStyle = 'rgba(30, 20, 10, 0.7)'; ctx.fillRect(bx - 1, by + 2, 2, 2); // l'anello
+  }
+  ctx.restore();
+}
+
 const disegnaStanzaGrateBaseH7 = disegnaStanzaPixelArt;
 /** Dopo la stanza: le grate del giuramento sulle uscite. */
 disegnaStanzaPixelArt = function (tk, st, ...resto) {
   const r = disegnaStanzaGrateBaseH7.call(this, tk, st, ...resto);
-  try { if (st && st.giuramentoH7 && st.giuramentoH7.stato !== 'attesa') disegnaGrateH7(st, tk); } catch (err) { console.error('[h7] grate', err); }
+  try {
+    if (st && anfiteatroAttivoH7() && st.tipo !== 'boss') disegnaBotoleH7(st);
+    if (st && st.giuramentoH7 && st.giuramentoH7.stato !== 'attesa') disegnaGrateH7(st, tk);
+  } catch (err) { console.error('[h7] grate', err); }
   return r;
 };
 
@@ -1408,3 +1437,82 @@ Object.assign(window.__teatro.interni, {
     get reti() { const st = statoRun.stanzaCorrente; return ((st && st.retiH7) || []).length; },
   }),
 });
+
+// ===========================================================================
+// ARREDI DEL LUOGO: niente telai di San Leucio nell'arena (stesse misure e collisioni, cambia il disegno)
+// ===========================================================================
+/** `varianti`: pelle di b7 → arredo del luogo; `colonne`: le colonne senza pelle, una per posizione. */
+const ARREDI_H7 = Object.freeze({
+  varianti: Object.freeze({ telaio: 'gabbia', marmo: 'colonnaRotta', statua: 'colonnaRotta' }),
+  colonne: Object.freeze(['colonnaRotta', 'argano', 'rastrelliera', 'gabbia']),
+});
+
+/** Pelli «a ombre» degli arredi (origine ai piedi, come le pelli di b7; disegnate una volta su timbroB7). */
+const PELLI_H7 = Object.freeze({
+  gabbia: { l: 50, a: 56, ax: 25, ay: 44, disegna(g) {
+    ombraB7(g, 20, 5);
+    rettB7(g, -19, -4, 38, 6, '#3b2414');                       // il pianale
+    rettB7(g, -19, -40, 38, 5, '#3b2414');                      // il tetto
+    g.fillStyle = 'rgba(8, 5, 3, 0.75)'; g.fillRect(-17, -35, 34, 31);
+    g.strokeStyle = TINTE_H7.ferro; g.lineWidth = 2;
+    g.beginPath(); for (let x = -16; x <= 16; x += 5.3) { g.moveTo(x, -35); g.lineTo(x, -4); } g.stroke();
+    g.strokeStyle = TINTE_H7.bordo; g.lineWidth = 0.5; g.globalAlpha = 0.6;
+    g.beginPath(); for (let x = -16; x <= 16; x += 5.3) { g.moveTo(x + 0.9, -35); g.lineTo(x + 0.9, -4); } g.stroke(); g.globalAlpha = 1;
+    g.fillStyle = TINTE_H7.oro; g.fillRect(8, -22, 3, 4);       // il lucchetto aperto
+    g.strokeStyle = '#8a7650'; g.lineWidth = 0.8; g.beginPath(); g.moveTo(0, -40); g.lineTo(0, -52); g.stroke(); // la fune della carrucola
+  } },
+  colonnaRotta: { l: 36, a: 56, ax: 18, ay: 46, disegna(g) {
+    ombraB7(g, 13, 4.5);
+    rettB7(g, -12, -6, 24, 7, TINTE_H7.travertinoOmbra);        // la base
+    g.fillStyle = TINTE_H7.travertino; g.strokeStyle = '#050302'; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(-8, -6); g.lineTo(-8, -38); g.lineTo(-3, -42); g.lineTo(1, -36); g.lineTo(5, -40); g.lineTo(8, -34); g.lineTo(8, -6); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = TINTE_H7.travertinoOmbra; g.lineWidth = 0.8;
+    g.beginPath(); for (const x of [-4, 0, 4]) { g.moveTo(x, -8); g.lineTo(x, -34); } g.stroke(); // le scanalature
+    g.fillStyle = TINTE_H7.travertinoOmbra; g.fillRect(10, -4, 6, 4);   // un rocchio a terra
+  } },
+  argano: { l: 46, a: 52, ax: 23, ay: 42, disegna(g) {
+    ombraB7(g, 17, 4.5);
+    g.strokeStyle = '#050302'; g.lineWidth = 1.2; g.fillStyle = '#3b2414';
+    for (const x of [-14, 10]) { g.fillRect(x, -30, 4, 30); g.strokeRect(x, -30, 4, 30); }   // i montanti
+    g.fillStyle = '#5c3d22'; g.beginPath(); g.arc(0, -22, 9, 0, TAU); g.fill(); g.stroke();   // il tamburo con la fune
+    g.strokeStyle = '#a08a5c'; g.lineWidth = 0.7; g.beginPath(); for (let k = -6; k <= 6; k += 2.4) { g.moveTo(-6, -22 + k); g.lineTo(6, -22 + k); } g.stroke();
+    g.strokeStyle = TINTE_H7.ferro; g.lineWidth = 1.6; g.beginPath();                       // le stanghe
+    for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + 0.4; g.moveTo(0, -22); g.lineTo(Math.cos(a) * 15, -22 + Math.sin(a) * 15); } g.stroke();
+  } },
+  rastrelliera: { l: 40, a: 56, ax: 20, ay: 46, disegna(g) {
+    ombraB7(g, 15, 4.5);
+    rettB7(g, -14, -4, 28, 5, '#3b2414'); rettB7(g, -14, -26, 28, 3, '#3b2414');
+    g.strokeStyle = '#d6c9a6'; g.lineWidth = 1.1; g.beginPath();
+    for (const x of [-10, -4, 2, 8]) { g.moveTo(x, -2); g.lineTo(x + 1, -44); } g.stroke();    // le lance
+    g.fillStyle = '#d6c9a6'; for (const x of [-10, -4, 2, 8]) { g.beginPath(); g.moveTo(x + 1, -48); g.lineTo(x - 1, -43); g.lineTo(x + 3, -43); g.closePath(); g.fill(); }
+    g.fillStyle = TINTE_H7.china; g.strokeStyle = TINTE_H7.bordo; g.lineWidth = 0.6;          // uno scudo appoggiato
+    g.beginPath(); g.arc(-12, -12, 7, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = TINTE_H7.rosso; g.beginPath(); g.arc(-12, -12, 2, 0, TAU); g.fill();
+  } },
+});
+
+/** L'arredo del luogo per un ostacolo, o null se resta quello di base. */
+function arredoH7(o) {
+  if (o.tipo === 'fossa' || o.tipo === 'braciere') return null;
+  if (o.variante) return ARREDI_H7.varianti[o.variante] || null;
+  if (o.tipo !== 'colonna') return null;
+  const L = ARREDI_H7.colonne;
+  return L[Math.abs(Math.round(o.x) * 7 + Math.round(o.y) * 13) % L.length]; // sempre lo stesso nello stesso punto
+}
+
+if (typeof disegnaOstacoloB9 === 'function' && typeof timbroB7 === 'function') {
+  const disegnaOstacoloBaseH7 = disegnaOstacoloB9;
+  /** Ostacoli del palco: all'Anfiteatro gabbie, colonne spezzate, argani e rastrelliere al posto dei telai. */
+  disegnaOstacoloB9 = function (o, t, ...resto) {
+    try {
+      const nome = anfiteatroAttivoH7() && arredoH7(o);
+      if (nome) {
+        const P = PELLI_H7[nome], c = timbroB7('h7-' + nome, P);
+        const dx = o.scossoB7 > 0 ? (o.scossoB7 % 2 ? 1 : -1) : 0;
+        ctx.drawImage(c, Math.round(o.x) - P.ax + dx, Math.round(o.y) - P.ay, P.l, P.a);
+        return true;
+      }
+    } catch (err) { console.error('[h7] arredo', err); }
+    return disegnaOstacoloBaseH7.call(this, o, t, ...resto);
+  };
+}
