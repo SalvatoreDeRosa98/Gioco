@@ -11,6 +11,7 @@
 const path = require('path');
 const fs = require('fs');
 const { chromium } = require('playwright');
+const { fermaCiclo, TEMPI_STRETTI } = require('./qa-teatro-comune');
 const RADICE = path.resolve(__dirname, '..');
 const file = path.resolve(RADICE, process.argv[2] || 'gioco/teatro_marionette.html');
 const pref = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evidence', 'teatro-trasformazioni-');
@@ -113,6 +114,9 @@ const TERNE = {
   await avanza(3);
   await p.waitForTimeout(120);
   await p.screenshot({ path: foto('00-hud-due-su-tre') });
+  // Il lampo dura 18 tick: col ciclo vero acceso, a macchina carica fra due evaluate ne passavano di più.
+  // Da qui al lampo il ciclo è fermo e la logica avanza solo a passi contati.
+  await fermaCiclo(p, true);
   await dai(['dado']);
   s = await stato();
   ok('al terzo oggetto diverso: Re di Denari', s.attive.join() === 'denari' && (s.inCoda === 1 || Boolean(s.annuncio)), s); // (il gioco gira: l'annuncio può essere già partito)
@@ -121,6 +125,7 @@ const TERNE = {
   ok('annuncio grande in corso', s.annuncio && s.annuncio.tipo === 'trasformazione' && s.annuncio.titolo === 'Re di Denari', s.annuncio);
   const lampo = await p.evaluate(() => window.__teatro.interni.statoB4().lampo);
   ok('lampo acceso all\'annuncio', lampo > 0, lampo);
+  await fermaCiclo(p, false);
   await avanza(28);
   await p.waitForTimeout(120);
   await p.screenshot({ path: foto('01-annuncio-re-di-denari') });
@@ -484,20 +489,31 @@ const TERNE = {
     const scarico = document.createElement('canvas'); scarico.width = scarico.height = 1;
     const svuota = () => scarico.getContext('2d').drawImage(window.__teatroInterno.canvas, 0, 0, 1, 1);
     svuota();
+    // 20 blocchi da 100: la media la gonfiano i blocchi in cui il processo è stato sospeso (macchina carica),
+    // la mediana dei blocchi no.
+    const blocchi = [];
     const t0 = performance.now();
-    for (let i = 0; i < N; i++) {
-      opts.tick = i;
-      window.disegnaDietroB4(s, P.x, P.y, opts, true); window.disegnaSopraB4(s, P.x, P.y, opts, true); window.disegnaStrisciaTemiB4(s);
+    for (let b = 0; b < N / 100; b++) {
+      const tb = performance.now();
+      for (let i = b * 100; i < (b + 1) * 100; i++) {
+        opts.tick = i;
+        window.disegnaDietroB4(s, P.x, P.y, opts, true); window.disegnaSopraB4(s, P.x, P.y, opts, true); window.disegnaStrisciaTemiB4(s);
+      }
+      svuota(); // i disegni si eseguono dentro la misura
+      blocchi.push((performance.now() - tb) / 100);
     }
-    svuota(); // i disegni si eseguono dentro la misura
     const costume = (performance.now() - t0) / N;
+    blocchi.sort((a, b) => a - b);
+    const costumeMediana = (blocchi[9] + blocchi[10]) / 2;
     const t1 = performance.now();
     for (let i = 0; i < 100; i++) { window.iniziaFrame(); window.disegnaFrame(16.7); }
-    return { costumeMs: Number(costume.toFixed(3)), frameInteroMs: Number(((performance.now() - t1) / 100).toFixed(2)), buffer: document.querySelector('canvas').width };
+    return { costumeMs: Number(costume.toFixed(3)), costumeMedianaMs: Number(costumeMediana.toFixed(3)), frameInteroMs: Number(((performance.now() - t1) / 100).toFixed(2)), buffer: document.querySelector('canvas').width };
   });
   // tetto: 1,5 ms = meno del 10% di un frame a 60 fps nel caso peggiore (otto costumi insieme, buffer di 2560 px,
   // Chromium senza GPU). Misure di riferimento: ~1,0 ms a 2560 px, ~0,5 ms a 1280 px; un costume solo 0,02-0,3 ms.
-  ok('costo del disegno b4 (otto costumi + striscia dei temi) sotto 1,5 ms a frame', tempo.costumeMs < 1.5, tempo);
+  // Di norma la mediana dei 20 blocchi (stabile a macchina carica), con QA_TEMPI=stretti la media come prima.
+  const costoB4 = TEMPI_STRETTI ? tempo.costumeMs : tempo.costumeMedianaMs;
+  ok(`costo del disegno b4 (otto costumi + striscia dei temi) sotto 1,5 ms a frame (${TEMPI_STRETTI ? 'media' : 'mediana'})`, costoB4 < 1.5, tempo);
   console.log('   osservazione tempi di disegno:', JSON.stringify(tempo));
 
   // ---------------------------------------------------------------- 6. altri personaggi e sipario
