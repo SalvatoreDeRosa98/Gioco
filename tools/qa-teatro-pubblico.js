@@ -13,6 +13,7 @@
 const path = require('path');
 const fs = require('fs');
 const { chromium } = require('playwright');
+const { TEMPI_STRETTI } = require('./qa-teatro-comune');
 const RADICE = path.resolve(__dirname, '..');
 const file = path.resolve(RADICE, process.argv[2] || 'gioco/teatro_marionette.html');
 const pref = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evidence', 'teatro-pubblico-');
@@ -25,6 +26,10 @@ const LIMITI = Object.freeze({
   chiusuraMs: Object.freeze([250, 1100]),
   costoFermoMs: 2,               // costo in più per frame col pubblico acceso, a pubblico calmo
   costoReazioneMs: 3,            // idem durante un'ovazione (tutti in movimento)
+  // Di norma (macchina forse carica) le soglie sono RELATIVE al frame senza pubblico misurato nella stessa
+  // pagina: 2 e 3 ms su un frame di ~10 ms. Le soglie in ms valgono con QA_TEMPI=stretti (macchina libera).
+  quotaFermo: 0.2,               // costo in più ≤ 20% del frame senza pubblico, a pubblico calmo
+  quotaReazione: 0.3,            // ≤ 30% durante un'ovazione
   moneteP1: Object.freeze([5, 8]),
   pianiEconomia: 200,
   giriVoci: 40,
@@ -103,14 +108,24 @@ const LIMITI = Object.freeze({
   await immaginiDiScena(true); // (b9) da qui in poi il teatro è quello vero, con le immagini dell'autore
 
   // un tasto chiude il cartellone e il sipario si apre
+  // La durata si misura NELLA PAGINA, dall'inizio dell'apertura (S.inizioMs) al primo fotogramma che la vede
+  // finita: dal lato della prova i ritardi di tastiera, evaluate e polling a macchina carica la allungavano.
+  await p.evaluate(() => {
+    window.__aperturaMs = null;
+    const S = window.__teatro.interni.pubblicoB1.sipario;
+    const f = () => { if (S.stato === 'aperto' && S.inizioMs) window.__aperturaMs = performance.now() - S.inizioMs; else requestAnimationFrame(f); };
+    requestAnimationFrame(f);
+  });
   const t0 = Date.now();
   await p.keyboard.press('Space');
-  await p.waitForTimeout(380);
+  // a metà apertura: si aspetta che sia partita (non 380 ms reali, che a macchina carica erano pochi fotogrammi)
+  await p.waitForFunction(() => { const S = window.__teatro.interni.pubblicoB1.sipario; return S.stato !== 'chiuso' && S.k > 0.1; }, null, { timeout: 8000, polling: 20 }).catch(() => {});
   const meta = await stato();
   ok('un tasto chiude il cartellone e il sipario si apre', meta.stato === 'apertura' && !meta.attivo && meta.k > 0.1 && meta.k < 0.95, meta);
-  await aspettaSipario('aperto');
-  const durataApertura = Date.now() - t0;
-  ok('apertura entro 1,2 s', durataApertura <= LIMITI.aperturaMaxMs, { durataApertura });
+  await p.waitForFunction(() => window.__aperturaMs !== null, null, { timeout: 15000 }).catch(() => {});
+  const durataApertura = await p.evaluate(() => (window.__aperturaMs === null ? null : Math.round(window.__aperturaMs)));
+  const durataReale = Date.now() - t0;
+  ok('apertura entro 1,2 s', durataApertura !== null && durataApertura <= LIMITI.aperturaMaxMs && (!TEMPI_STRETTI || durataReale <= LIMITI.aperturaMaxMs), { durataApertura, durataReale });
 
   // da codice (gamepad): chi chiude il cartellone chiama prima gestoSiparioB1(); senza gesto il sipario sparisce subito
   await p.evaluate(() => { avviaPiano(1, true); });
@@ -538,8 +553,11 @@ const LIMITI = Object.freeze({
     OPZIONI.pubblico = true; P.stato.umore.t = 0; P.stato.umore.priorita = 0; P.stato.fiori.length = 0; P.stato.voci.length = 0;
     return { fermo, reazione, zoneFermo, zoneReazione, buffer: `${c.width}x${c.height}` };
   });
-  ok(`costo del disegno: pubblico calmo ≤ ${LIMITI.costoFermoMs} ms in più per frame (una zona ricomposta per frame), in ovazione ≤ ${LIMITI.costoReazioneMs} ms`,
-    tempi.fermo.inPiuMs <= LIMITI.costoFermoMs && tempi.reazione.inPiuMs <= LIMITI.costoReazioneMs && tempi.zoneFermo > 0 && tempi.zoneFermo <= 1.5, tempi);
+  const sogliaFermo = TEMPI_STRETTI ? LIMITI.costoFermoMs : LIMITI.quotaFermo * tempi.fermo.senzaMs;
+  const sogliaReazione = TEMPI_STRETTI ? LIMITI.costoReazioneMs : LIMITI.quotaReazione * tempi.reazione.senzaMs;
+  const comeSoglia = TEMPI_STRETTI ? `${LIMITI.costoFermoMs} / ${LIMITI.costoReazioneMs} ms` : `${LIMITI.quotaFermo * 100}% / ${LIMITI.quotaReazione * 100}% del frame senza pubblico`;
+  ok(`costo del disegno in più (una zona ricomposta per frame): pubblico calmo / in ovazione ≤ ${comeSoglia}`,
+    tempi.fermo.inPiuMs <= sogliaFermo && tempi.reazione.inPiuMs <= sogliaReazione && tempi.zoneFermo > 0 && tempi.zoneFermo <= 1.5, { ...tempi, sogliaFermo: +sogliaFermo.toFixed(3), sogliaReazione: +sogliaReazione.toFixed(3) });
 
   ok('nessun errore di console', errori.length === 0, errori.slice(0, 6));
   console.log(JSON.stringify(esiti, null, 1));
