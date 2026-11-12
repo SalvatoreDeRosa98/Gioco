@@ -14,6 +14,7 @@
 'use strict';
 const path = require('path');
 const { chromium } = require('playwright');
+const { TEMPI_STRETTI } = require('./qa-teatro-comune');
 
 const RADICE = path.resolve(__dirname, '..');
 const file = path.resolve(RADICE, process.argv[2] || 'gioco/teatro_marionette.html');
@@ -42,7 +43,8 @@ const CASI = [
   for (const caso of CASI) {
     const p = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     const err = [];
-    p.on('console', (m) => { if (m.type() === 'error') err.push(m.text()); });
+    const avvisi = [];
+    p.on('console', (m) => { if (m.type() === 'error') err.push(m.text()); else if (m.type() === 'warning') avvisi.push(m.text()); });
     p.on('pageerror', (e) => err.push(String(e)));
     await p.goto('file://' + file);
     await p.evaluate(() => localStorage.clear());
@@ -111,10 +113,11 @@ const CASI = [
     }
     const t0 = Date.now();
     const fasi = [];
-    let messaggio = null; let fotoFatta = false; let bloccata = false; let tMorte = null;
+    let messaggio = null; let fotoFatta = false; let bloccata = false; let tMorte = null; let tickMorte = null; let tickHub = null;
     while (Date.now() - t0 < 20000) {
-      const s = await p.evaluate(() => ({ f: window.__teatro.fase, m: window.__teatro.t4qa.morte }));
-      if (s.f === 'morte' && tMorte === null) tMorte = Date.now();
+      const s = await p.evaluate(() => ({ f: window.__teatro.fase, m: window.__teatro.t4qa.morte, tick }));
+      if (s.f === 'morte' && tMorte === null) { tMorte = Date.now(); tickMorte = s.tick; }
+      if (s.f === 'hub' && tickHub === null) tickHub = s.tick;
       if (fasi[fasi.length - 1] !== s.f) fasi.push(s.f);
       if (s.f === 'morte' && caso.blocca && !bloccata) bloccata = await p.evaluate(() => window.__teatro.t4qa.bloccaMorte());
       if (s.f === 'morte' && s.m && s.m.f === 'fili' && !fotoFatta) { fotoFatta = true; messaggio = s.m; await p.screenshot({ path: foto(caso.id) }); }
@@ -125,10 +128,17 @@ const CASI = [
       }
       await p.waitForTimeout(100);
     }
-    const ms = tMorte === null ? null : Date.now() - tMorte; // durata della sequenza, fino all'hub
+    const ms = tMorte === null ? null : Date.now() - tMorte; // durata della sequenza in tempo reale, fino all'hub
+    // Durata in TEMPO DI GIOCO (tick a 60 Hz): a macchina carica i ms reali si allungano anche se la sequenza
+    // è giusta. La sequenza normale deve finire entro 6 s di gioco (360 tick). Il caso «watchdog» blocca la
+    // logica apposta, quindi lì conta il tempo reale: deve tornare all'hub col ritorno forzato del watchdog
+    // (avviso in console) e, con QA_TEMPI=stretti, entro 7,5 s reali.
+    const msGioco = tickMorte === null || tickHub === null ? null : Math.round(((tickHub - tickMorte) * 1000) / 60);
+    const forzato = avvisi.some((a) => a.includes('ritorno all\'hub forzato'));
+    const tempoOk = caso.blocca ? forzato && (!TEMPI_STRETTI || ms < 7500) : (TEMPI_STRETTI ? ms < 6000 : msGioco !== null && msGioco < 6000);
     const fasiOk = fasi.includes('morte') && fasi[fasi.length - 1] === 'hub' && !fasi.slice(fasi.indexOf('morte')).includes('in_gioco');
-    const ok = fasiOk && ms !== null && (caso.blocca ? ms < 7500 : ms < 6000) && !err.length;
-    esiti.push({ caso: caso.id, ok, fasi: fasi.join('>'), ms, fotoFase: messaggio && messaggio.f, errori: err });
+    const ok = fasiOk && ms !== null && tempoOk && !err.length;
+    esiti.push({ caso: caso.id, ok, fasi: fasi.join('>'), ms, msGioco, forzato, fotoFase: messaggio && messaggio.f, errori: err });
     errori = errori.concat(err);
     if (caso.id === 'proiettile') { await p.waitForTimeout(900); await p.screenshot({ path: foto('ritorno-hub') }); }
     await p.close();

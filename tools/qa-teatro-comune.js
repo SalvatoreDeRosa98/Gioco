@@ -73,6 +73,29 @@ async function aspetta(p, ms) {
   await Promise.all([p.waitForTimeout(ms), aspettaFotogrammi(p, Math.ceil(ms / (1000 / 60)) + 1)]);
 }
 
+/**
+ * Ferma (vero) o fa ripartire (falso) il ciclo vero del gioco (`loop` di 80-ciclo.js): da fermo né logica né
+ * disegno avanzano da soli, e la prova li fa avanzare a passi contati (`passi`). Serve dove si controlla uno
+ * stato che dura pochi tick (un lampo di 18 tick): a macchina carica, fra due `evaluate` il ciclo vero
+ * recupera di colpo decine di tick e lo stato è già passato. Alla ripartenza il ciclo non recupera il tempo
+ * passato da fermo.
+ */
+async function fermaCiclo(p, fermo) {
+  await p.evaluate((f) => {
+    if (!window.__qaCicloAvvolto) {
+      window.__qaCicloAvvolto = true;
+      const base = loop;
+      loop = function loopQA(t) {
+        if (!window.__qaCicloFermo) return base(t);
+        requestAnimationFrame(loop);
+        ultimoFrameMs = null; accumuloMs = 0;
+        return undefined;
+      };
+    }
+    window.__qaCicloFermo = f;
+  }, Boolean(fermo));
+}
+
 /** Tick logico corrente del gioco (variabile globale `tick` di 80-ciclo.js). */
 const leggiTick = (p) => p.evaluate(() => tick);
 
@@ -84,4 +107,4 @@ function mediana(v) {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
-module.exports = { TEMPI_STRETTI, aspettaCondizione, aspettaFotogrammi, aspetta, passi, leggiTick, mediana };
+module.exports = { TEMPI_STRETTI, aspettaCondizione, aspettaFotogrammi, aspetta, fermaCiclo, passi, leggiTick, mediana };
