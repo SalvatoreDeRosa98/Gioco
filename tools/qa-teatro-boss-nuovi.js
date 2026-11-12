@@ -86,14 +86,30 @@ const NUOVI = [
     return { bossId: b.bossId, nome: b.nome, hp: b.hp, raggio: b.r, banner: R.banner, stanza: R.stanzaCorrente.tipo,
       tema: I.Musica ? I.Musica.temaCorrente().base : null, personaggio: R.personaggioId };
   }, { ...c, invulnerabile: opz.invulnerabile !== false });
+  // Gli stati del boss si registrano NELLA PAGINA a ogni passo di logica (passoLogico avvolto), con l'indice
+  // del registro. Leggerli da Node ogni 16 ms perdeva uno stato breve: a macchina carica il ciclo fa più tick
+  // per fotogramma e fra due letture un «attacco» di pochi tick era già finito. `aspettaStato` accetta lo stato
+  // se è comparso dopo l'ultimo stato trovato (segno), anche se intanto è già passato.
+  let segnoStati = 0;
   const aspettaStato = async (stato, ms = 15000) => {
-    const fine = Date.now() + ms;
-    while (Date.now() < fine) {
-      const s = await p.evaluate(() => { const x = window.__teatro.interni.bossB6.stato; return x && x.stato; });
-      if (s === stato) return true;
-      await p.waitForTimeout(16);
-    }
-    return false;
+    const nuovo = await p.evaluate(() => {
+      if (window.__qaStatiB6) return false;
+      window.__qaStatiB6 = [];
+      const base = passoLogico;
+      passoLogico = function passoLogicoQaStati(...a) {
+        const r = base.apply(this, a);
+        const x = window.__teatro.interni.bossB6.stato; const st = x && x.stato; const L = window.__qaStatiB6;
+        if (st && L[L.length - 1] !== st) L.push(st);
+        return r;
+      };
+      return true;
+    });
+    if (nuovo) segnoStati = 0; // pagina nuova (ricaricata): registro vuoto
+    const trova = (q) => window.__qaStatiB6.indexOf(q[0], q[1]);
+    const ok = await p.waitForFunction((q) => window.__qaStatiB6.indexOf(q[0], q[1]) >= 0, [stato, segnoStati], { timeout: ms, polling: 16 }).then(() => true, () => false);
+    if (ok) segnoStati = await p.evaluate(trova, [stato, segnoStati]);
+    else segnoStati = await p.evaluate(() => window.__qaStatiB6.length);
+    return ok;
   };
   /** Per le foto: il giocatore (invulnerabile) si mette lontano dal boss, nell'angolo opposto. */
   const allontana = () => p.evaluate(() => {
