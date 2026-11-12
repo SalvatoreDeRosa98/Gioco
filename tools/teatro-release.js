@@ -76,10 +76,13 @@ function main() {
   const leggiJs = (rel) => { const f = path.join(CARTELLA_GIOCO, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : ''; };
   const jsT2 = leggiJs('teatro/t2-sprite.js');
   const jsSprite = leggiJs('teatro/10-sprite.js');
+  //    - immagini singole o a una riga disegnate da altri file con getSpriteTeatro/disegnaCellaTeatro (il Ragno
+  //      della Seta di d7, guanto, forbici e ombra del capo del Grande Burattinaio di d1): i nomi fra apici.
+  const jsSingole = ['teatro/d1-burattinaio.js', 'teatro/d7-rifiniture.js'].map(leggiJs).join('\n');
   const daIncorporare = [];
   for (const f of fs.readdirSync(SPRITE).filter((n) => n.endsWith('.png')).sort()) {
     const nome = f.slice(0, -4);
-    if (citato(jsT2, nome) && !FOGLI_NON_USATI.includes(nome)) daIncorporare.push(f);
+    if ((citato(jsT2, nome) || citato(jsSingole, nome)) && !FOGLI_NON_USATI.includes(nome)) daIncorporare.push(f);
   }
   const cartellaBoss = path.join(SPRITE, 'boss');
   if (fs.existsSync(cartellaBoss)) {
