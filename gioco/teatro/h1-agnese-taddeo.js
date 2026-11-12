@@ -51,7 +51,26 @@ const EFFETTI_H1 = Object.freeze({
 });
 
 /** Nomi dei PNG che sostituiscono il disegno a canvas (null = non ancora disegnato: si usa il canvas). */
-const SPRITE_H1 = { telaio: null };
+const SPRITE_H1 = { telaio: null, agnese: 'agnese_telaio' };
+/** Agnese al telaio dal PNG dell'autore (2 pose in riga: 0 porge il filo, 1 col telaietto). false = figura di prima. */
+const AGNESE_IMG_H1 = Object.freeze({
+  attiva: true,
+  celle: 2,
+  alt: 66,          // px a schermo della cella intera (256×320): la figura visibile (~68%) è alta ~45 px come la marionetta di prima
+  piedi: 12,        // dai suoi (x, y) alla pianta dei piedi, come disegnaFerruccioPittorico
+  fondo: 314 / 320, // riga dei piedi dentro la cella
+  posaPorge: 0, posaTesse: 1,
+});
+
+/** Agnese dal PNG; posa 0 (porge) con la finestra di dialogo aperta, 1 (tesse) altrimenti. @returns {boolean} */
+function disegnaAgneseImmagineH1(x, y) {
+  const A = AGNESE_IMG_H1;
+  if (!A.attiva || !SPRITE_H1.agnese || typeof disegnaCellaTeatro !== 'function') return false;
+  const posa = dialogoApertoH1() ? A.posaPorge : A.posaTesse;
+  const h = A.alt, w = h * 256 / 320;
+  return disegnaCellaTeatro(ctx, SPRITE_H1.agnese, posa, A.celle, Math.round(x - w / 2), Math.round(y + A.piedi - h * A.fondo), w, h);
+}
+if (SPRITE_H1.agnese && typeof getSpriteTeatro === 'function') getSpriteTeatro(SPRITE_H1.agnese); // precarica
 
 // ===========================================================================
 // 2. TESTI (bibbia alla lettera dove c'è; «nuovo» = scritto qui, da approvare)
@@ -558,7 +577,8 @@ function disegnaTelaioH1(st, t) {
   if (agneseAlTelaioH1(f) && PERSONAGGI_GIOCABILI.agnese) {
     const A = CONFIG_H1.agnese;
     try {
-      disegnaFerruccioPittorico(ctx, A.x, A.y, { scale: 0.9, tick: t, charInfo: PERSONAGGI_GIOCABILI.agnese, flipX: true, sinergie: {} });
+      if (!disegnaAgneseImmagineH1(A.x, A.y)) // --- i2: il PNG dell'autore, ripiego sulla marionetta ---
+        disegnaFerruccioPittorico(ctx, A.x, A.y, { scale: 0.9, tick: t, charInfo: PERSONAGGI_GIOCABILI.agnese, flipX: true, sinergie: {} });
     } catch (err) { console.error('[h1] Agnese', err); }
   }
   if (statoRun.fase === 'in_gioco' && !dialogoApertoH1() && vicinoTelaioH1()) {
