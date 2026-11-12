@@ -3,7 +3,7 @@
 Generato da `tools/elenco-testi-teatro.js` il 2026-11-12: i testi sono letti dalle tabelle del gioco, quindi sono
 quelli che il giocatore vede. Dove compare **N** il gioco mette un numero. Per cambiare un testo basta dirlo
 («nel Burattinaio la battuta dell'atto II diventa …»): si corregge nella tabella indicata e l'elenco si rigenera.
-**Approvati dall'autore il 2026-11-12** («i testi vanno bene»). Le voci scritte dopo sono segnate **NUOVO**: sono le sole da guardare (12 voci nuove).
+**Approvati dall'autore il 2026-11-12** («i testi vanno bene»). Le voci scritte dopo sono segnate **NUOVO**: sono le sole da guardare (19 voci nuove).
 
 Altri testi della prima ondata ancora da approvare stanno nei loro documenti: `production/finali-teatro.md`
 (finali, voci segnate [nuovo]), `production/oggetti-200.md` (nomi e descrizioni degli oggetti), i nomi dei boss
@@ -1295,3 +1295,18 @@ Dove: `gioco/teatro/h7-anfiteatro.js`
   <sub>TESTI_RICORDI_H7.messaggio[1]</sub>
 - In una nicchia dell'Acquedotto c'era un foglio di mio padre. Dice di cercare che cosa è successo, non chi.  
   <sub>TESTI_RICORDI_H7.diarioMessaggio</sub>
+
+## Ritocchi dalla prova con un giocatore (HUD, Maschere, spada) (7)
+
+Dove: `gioco/teatro/j1-ritocchi.js, 00-config.js`
+
+- **NUOVO** Vita:  
+  <sub>TESTI_J1.vita</sub>
+- **NUOVO** Maschera  
+  <sub>TESTI_J1.maschera</sub>
+- **NUOVO** -1 Maschera max  
+  <sub>TESTI_J1.pattoMax</sub>
+- **NUOVO** [★ FORTE] Fendente ad arco davanti a te · Danno x1.2
+- **NUOVO** [😈 PATTO] 6 Maschere di Cera che nessuna cura ripara · +1.5 Danno · +0.2 Velocità
+- **NUOVO** 💀 MANTO DELL'ABISSO: le Maschere diventano di cera. Nessuna cura le ripara più.
+- **NUOVO** Diagnosi salvata in un file: mandalo a chi ha fatto il gioco.

@@ -868,9 +868,9 @@ disegnaHUDPixelArt = function (st, ...resto) {
       const testo = TESTI_H3.prove.contatore(n, k) + (flagH3().taddeo === 'perdonato' ? TESTI_H3.prove.taddeo : '');
       // sotto il riquadro della minimappa (x da W−124, fondo a y 100)
       ctx.save();
-      ctx.fillStyle = 'rgba(10, 6, 4, 0.62)'; ctx.fillRect(W - 124, 102, 114, 12);
-      ctx.strokeStyle = n >= k ? TINTE_H3.oro : 'rgba(240, 180, 90, 0.45)'; ctx.lineWidth = 1; ctx.strokeRect(W - 123.5, 102.5, 113, 11);
-      drawTextFit(testo, W - 67, 110.5, 108, { size: 6.5, color: n >= k ? '#f9cb40' : '#e6d2aa' });
+      ctx.fillStyle = `rgba(10, 6, 4, ${typeof stileHudJ1 === 'function' ? stileHudJ1().fondo : 0.62})`; const yJ1 = typeof hudJ1 !== 'undefined' ? hudJ1.fondoMinimappa + 2 : 102; ctx.fillRect(W - 124, yJ1, 114, 12); // j1: HUD leggero, sotto la minimappa compatta
+      ctx.strokeStyle = n >= k ? TINTE_H3.oro : 'rgba(240, 180, 90, 0.45)'; ctx.lineWidth = 1; ctx.strokeRect(W - 123.5, yJ1 + 0.5, 113, 11);
+      drawTextFit(testo, W - 67, yJ1 + 8.5, 108, { size: 6.5, color: n >= k ? '#f9cb40' : '#e6d2aa' });
       ctx.restore();
     }
     // la stanza vista con la pagina ancora a terra: un segno piccolo sulla minimappa

@@ -56,6 +56,9 @@ const PARTI = [
   { titolo: 'Casertavecchia, il Campanaro e Taddeo sul sagrato', dove: 'gioco/teatro/h6-casertavecchia.js', tabelle: ['TESTI_H6', 'TESTI_BOSS_H6', 'TESTI_SAGRATO_H6'] },
   { titolo: 'Anfiteatro Campano, il Giudice dell\'Arena, Agnese e il messaggio del padre', dove: 'gioco/teatro/h7-anfiteatro.js',
     tabelle: ['TESTI_H7', 'TESTI_NEMICI_H7', 'TESTI_GIUDICE_H7', 'TESTI_RICORDI_H7'] },
+  { titolo: 'Ritocchi dalla prova con un giocatore (HUD, Maschere, spada)', dove: 'gioco/teatro/j1-ritocchi.js, 00-config.js', tabelle: ['TESTI_J1'],
+    fissi: ['[★ FORTE] Fendente ad arco davanti a te · Danno x1.2', '[😈 PATTO] 6 Maschere di Cera che nessuna cura ripara · +1.5 Danno · +0.2 Velocità',
+      '💀 MANTO DELL\'ABISSO: le Maschere diventano di cera. Nessuna cura le ripara più.', 'Diagnosi salvata in un file: mandalo a chi ha fatto il gioco.'] },
 ];
 
 (async () => {
