@@ -48,7 +48,7 @@ const RITORNO_H4 = Object.freeze({
   /** I ferri presi dalla rastrelliera: ognuno pesa, il passo cala di questa frazione nello scontro. */
   ferri: Object.freeze({ passoPerFerro: 0.1, ordine: Object.freeze(['tenaglie', 'punzone', 'lima']) }),
   /** Rastrelliera (riquadro 640×360). */
-  pannello: Object.freeze({ x: 150, y: 70, w: 340, h: 220, riga0: 132, rigaH: 30 }),
+  pannello: Object.freeze({ x: 150, y: 70, w: 340, h: 220, riga0: 140, rigaH: 28 }),
   pulsaTick: 64,
 });
 
