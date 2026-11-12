@@ -558,6 +558,7 @@ function preparaIndizioH2() {
   const L = BIANCA_H2.luoghi[pnc];
   if (!L || !statoRun.mappa || biancaTrovatoH2(L.id)) return null;
   if (L.id === 'villa' && typeof acquedottoAttivoD6 === 'function' && acquedottoAttivoD6()) return null; // stanotte niente Villa
+  if (L.id === 'leucio' && statoRun.zonaP3) return null;
   if (L.dopo && !L.dopo.every((k) => biancaTrovatoH2(k))) return null;
   const B = biancaH2();
   const n = B.tentativi[L.id] || 0;
