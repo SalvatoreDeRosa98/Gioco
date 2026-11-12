@@ -47,6 +47,7 @@ const PARTI = [
   { titolo: 'Gregorio, il Custode (Cortile d\'Onore)', dove: 'gioco/teatro/h3-gregorio.js', tabelle: ['TESTI_H3'] },
   { titolo: 'Ritorno in piazza e ferri di Gaetano', dove: 'gioco/teatro/h4-ritorno-piazza.js', tabelle: ['TESTI_H4'] },
   { titolo: 'Il Sottopalco e il Macchinista', dove: 'gioco/teatro/h5-sottopalco.js', tabelle: ['TESTI_H5'] },
+  { titolo: 'Casertavecchia, il Campanaro e Taddeo sul sagrato', dove: 'gioco/teatro/h6-casertavecchia.js', tabelle: ['TESTI_H6', 'TESTI_BOSS_H6', 'TESTI_SAGRATO_H6'] },
 ];
 
 (async () => {
