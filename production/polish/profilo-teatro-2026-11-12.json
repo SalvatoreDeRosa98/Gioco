@@ -1,0 +1,1656 @@
+{
+ "quando": "2026-11-12T00:18:22.729Z",
+ "html": "gioco/teatro_marionette.html",
+ "frame": 20,
+ "ripeti": 3,
+ "viste": {
+  "vert4": {
+   "viewport": {
+    "width": 416,
+    "height": 657
+   },
+   "dpr": 3,
+   "tocco": true,
+   "cpu": 4,
+   "risoluzione": {
+    "w": 1280,
+    "h": 720,
+    "scalaBase": 2
+   },
+   "scene": {
+    "hub": {
+     "info": {},
+     "logica": {
+      "media": 0.23,
+      "p95": 3.3
+     },
+     "disegno": {
+      "media": 13.42,
+      "p95": 21.1
+     },
+     "heapKBperFrame": 23,
+     "teleCreatePerFrame": 0,
+     "fase": "hub",
+     "errori": 0,
+     "strati": {
+      "ombre": 0.65,
+      "grana": 0.76,
+      "vignetta": 0.19,
+      "pubblico": 1.11,
+      "lampi": -0.39
+     },
+     "funzioni": {
+      "60-resa.js:disegnaFrame": {
+       "ms": 1.7,
+       "chiamate": 1
+      },
+      "b8-finali-diario.js:disegnaPortaB8": {
+       "ms": 0.17,
+       "chiamate": 1
+      },
+      "b8-finali-diario.js:disegnaSopraHubB8": {
+       "ms": 0.08,
+       "chiamate": 1
+      },
+      "d3-registro-scena.js:disegnaLeggioD3": {
+       "ms": 0.02,
+       "chiamate": 1
+      },
+      "a6-progressione.js:disegnaNotificaA6": {
+       "ms": 0.01,
+       "chiamate": 1
+      }
+     }
+    },
+    "normale": {
+     "info": {
+      "nemici": 6
+     },
+     "logica": {
+      "media": 0.54,
+      "p95": 2
+     },
+     "disegno": {
+      "media": 53.61,
+      "p95": 67.7
+     },
+     "heapKBperFrame": 77.25,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": 5.5,
+      "grana": 0.11,
+      "vignetta": 5.16,
+      "pubblico": 7.35,
+      "lampi": 6.9
+     },
+     "funzioni": {
+      "60-resa.js:disegnaStanzaPixelArt": {
+       "ms": 6.33,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaTeatroB1": {
+       "ms": 2.15,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaFrame": {
+       "ms": 0.9,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaHUDPixelArt": {
+       "ms": 0.72,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaNemicoPittorico": {
+       "ms": 0.51,
+       "chiamate": 6
+      },
+      "10-sprite.js:disegnaFerruccioPittorico": {
+       "ms": 0.28,
+       "chiamate": 1.05
+      },
+      "b7-stanze.js:disegnaSacchiB7": {
+       "ms": 0.22,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaSpettatoreB1": {
+       "ms": 0.21,
+       "chiamate": 12
+      },
+      "b9-immagini.js:disegnaLumeB9": {
+       "ms": 0.17,
+       "chiamate": 8
+      },
+      "b4-trasformazioni.js:disegnaStrisciaTemiB4": {
+       "ms": 0.13,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaIconeOggettiB": {
+       "ms": 0.1,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaAtmosferaQuartiere": {
+       "ms": 0.1,
+       "chiamate": 1
+      },
+      "b7-stanze.js:disegnaPannelloCiarlatanoB7": {
+       "ms": 0.07,
+       "chiamate": 1
+      },
+      "b7-stanze.js:disegnaSuoloB7": {
+       "ms": 0.05,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaFiliMarionetta": {
+       "ms": 0.04,
+       "chiamate": 6
+      },
+      "b1-pubblico.js:disegnaLumiZonaB1": {
+       "ms": 0.04,
+       "chiamate": 1
+      },
+      "a2-consumabili.js:disegnaSlotA2": {
+       "ms": 0.04,
+       "chiamate": 1
+      },
+      "a3-stanze-speciali.js:disegnaPorteA3": {
+       "ms": 0.03,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaManoMarionettaPittorica": {
+       "ms": 0.03,
+       "chiamate": 2
+      },
+      "b9-immagini.js:disegnaCavoB9": {
+       "ms": 0.02,
+       "chiamate": 2
+      },
+      "b1-pubblico.js:ridisegnaZonaB1": {
+       "ms": 0.02,
+       "chiamate": 1
+      },
+      "b8-finali-diario.js:disegnaSopraGiocoB8": {
+       "ms": 0.01,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaFondoZonaB1": {
+       "ms": 0.01,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaFamigliOrbitaliD": {
+       "ms": 0.01,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaFronteZonaB1": {
+       "ms": 0.01,
+       "chiamate": 1
+      }
+     }
+    },
+    "colpiti": {
+     "info": {
+      "nemici": 6
+     },
+     "logica": {
+      "media": 0.63,
+      "p95": 3.6
+     },
+     "disegno": {
+      "media": 54.55,
+      "p95": 69.4
+     },
+     "heapKBperFrame": 83.31,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": 6.79,
+      "grana": 3.08,
+      "vignetta": -0.87,
+      "pubblico": 4.7,
+      "lampi": 0.63
+     },
+     "funzioni": {
+      "60-resa.js:disegnaStanzaPixelArt": {
+       "ms": 6.84,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaNemicoPittorico": {
+       "ms": 2.51,
+       "chiamate": 6
+      },
+      "b1-pubblico.js:disegnaTeatroB1": {
+       "ms": 2.15,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaFrame": {
+       "ms": 1.05,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaHUDPixelArt": {
+       "ms": 0.82,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaFerruccioPittorico": {
+       "ms": 0.31,
+       "chiamate": 1.05
+      },
+      "b9-immagini.js:disegnaLumeB9": {
+       "ms": 0.24,
+       "chiamate": 8
+      },
+      "60-resa.js:disegnaAtmosferaQuartiere": {
+       "ms": 0.21,
+       "chiamate": 1
+      },
+      "b9-immagini.js:disegnaOstacoloB9": {
+       "ms": 0.19,
+       "chiamate": 4
+      },
+      "b1-pubblico.js:disegnaSpettatoreB1": {
+       "ms": 0.17,
+       "chiamate": 12
+      },
+      "a2-consumabili.js:disegnaSlotA2": {
+       "ms": 0.12,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaIconeOggettiB": {
+       "ms": 0.11,
+       "chiamate": 1
+      },
+      "a3-stanze-speciali.js:disegnaMinimappaA3": {
+       "ms": 0.11,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaManoMarionettaPittorica": {
+       "ms": 0.1,
+       "chiamate": 2
+      },
+      "60-resa.js:disegnaFamigliOrbitaliD": {
+       "ms": 0.06,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaFiliMarionetta": {
+       "ms": 0.05,
+       "chiamate": 6
+      },
+      "b4-trasformazioni.js:disegnaAnnuncioB4": {
+       "ms": 0.05,
+       "chiamate": 1
+      },
+      "d4-stanze-teatro.js:disegnaPorteBucaD4": {
+       "ms": 0.05,
+       "chiamate": 1
+      },
+      "b4-trasformazioni.js:disegnaStrisciaTemiB4": {
+       "ms": 0.04,
+       "chiamate": 1
+      },
+      "b7-stanze.js:disegnaSuoloB7": {
+       "ms": 0.03,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:ridisegnaZonaB1": {
+       "ms": 0.03,
+       "chiamate": 1
+      },
+      "a1-bombe-chiavi.js:disegnaA1": {
+       "ms": 0.03,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaFondoZonaB1": {
+       "ms": 0.02,
+       "chiamate": 1
+      },
+      "d7-rifiniture.js:disegnaSetaD7": {
+       "ms": 0.02,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaMacchie": {
+       "ms": 0.01,
+       "chiamate": 1
+      }
+     }
+    },
+    "boss1": {
+     "info": {
+      "boss": "re-gatto"
+     },
+     "logica": {
+      "media": 0.39,
+      "p95": 1.4
+     },
+     "disegno": {
+      "media": 42.36,
+      "p95": 64.1
+     },
+     "heapKBperFrame": 46,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": 3.95,
+      "grana": 0.66,
+      "vignetta": -1.62,
+      "pubblico": 2.81,
+      "lampi": -1.67
+     },
+     "funzioni": {
+      "60-resa.js:disegnaStanzaPixelArt": {
+       "ms": 3.69,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaTeatroB1": {
+       "ms": 2.07,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaHUDPixelArt": {
+       "ms": 0.63,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaFrame": {
+       "ms": 0.58,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaBossPittorico": {
+       "ms": 0.54,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaFerruccioPittorico": {
+       "ms": 0.29,
+       "chiamate": 1.05
+      },
+      "b1-pubblico.js:disegnaSpettatoreB1": {
+       "ms": 0.15,
+       "chiamate": 12
+      },
+      "10-sprite.js:disegnaBossDaImmagineA": {
+       "ms": 0.14,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaAtmosferaQuartiere": {
+       "ms": 0.14,
+       "chiamate": 1
+      },
+      "b9-immagini.js:disegnaLumeB9": {
+       "ms": 0.14,
+       "chiamate": 8
+      },
+      "60-resa.js:disegnaIconeOggettiB": {
+       "ms": 0.13,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:ridisegnaZonaB1": {
+       "ms": 0.06,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaLumiZonaB1": {
+       "ms": 0.06,
+       "chiamate": 1
+      },
+      "a2-consumabili.js:disegnaSlotA2": {
+       "ms": 0.04,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaFronteZonaB1": {
+       "ms": 0.04,
+       "chiamate": 1
+      },
+      "a2-consumabili.js:disegnaMappaRivelataA2": {
+       "ms": 0.04,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaFondoZonaB1": {
+       "ms": 0.03,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaManoMarionettaPittorica": {
+       "ms": 0.03,
+       "chiamate": 2
+      },
+      "a3-stanze-speciali.js:disegnaMinimappaA3": {
+       "ms": 0.03,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaFamigliOrbitaliD": {
+       "ms": 0.02,
+       "chiamate": 1
+      },
+      "d2-personaggi.js:disegnaLampiD2": {
+       "ms": 0.02,
+       "chiamate": 1.05
+      },
+      "b5-oggetti.js:disegnaSopraB5": {
+       "ms": 0.01,
+       "chiamate": 1
+      },
+      "a1-bombe-chiavi.js:disegnaA1": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "d4-stanze-teatro.js:disegnaPorteBucaD4": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaFiliMarionetta": {
+       "ms": 0,
+       "chiamate": 1
+      }
+     }
+    },
+    "luciana": {
+     "info": {
+      "boss": "donna-luciana"
+     },
+     "logica": {
+      "media": 0.51,
+      "p95": 1.1
+     },
+     "disegno": {
+      "media": 83.16,
+      "p95": 106.2
+     },
+     "heapKBperFrame": 45.93,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": 5.24,
+      "grana": 3.6,
+      "vignetta": 10.53,
+      "pubblico": 7.76,
+      "lampi": -5
+     },
+     "funzioni": {
+      "60-resa.js:disegnaStanzaPixelArt": {
+       "ms": 4.21,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaTeatroB1": {
+       "ms": 2.22,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaHUDPixelArt": {
+       "ms": 1.28,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaBossPittorico": {
+       "ms": 0.78,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaFerruccioPittorico": {
+       "ms": 0.39,
+       "chiamate": 1.05
+      },
+      "60-resa.js:disegnaFrame": {
+       "ms": 0.35,
+       "chiamate": 1
+      },
+      "b9-immagini.js:disegnaLumeB9": {
+       "ms": 0.26,
+       "chiamate": 8
+      },
+      "60-resa.js:disegnaFiliMarionetta": {
+       "ms": 0.2,
+       "chiamate": 1
+      },
+      "a6-progressione.js:disegnaNotificaA6": {
+       "ms": 0.19,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaAtmosferaQuartiere": {
+       "ms": 0.19,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaSpettatoreB1": {
+       "ms": 0.16,
+       "chiamate": 12
+      },
+      "b5-oggetti.js:disegnaScieB5": {
+       "ms": 0.15,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaManoMarionettaPittorica": {
+       "ms": 0.12,
+       "chiamate": 2
+      },
+      "10-sprite.js:disegnaBossDaImmagineA": {
+       "ms": 0.11,
+       "chiamate": 1
+      },
+      "d7-rifiniture.js:disegnaArenaLucianaD7": {
+       "ms": 0.11,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:ridisegnaZonaB1": {
+       "ms": 0.09,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaFamigliOrbitaliD": {
+       "ms": 0.07,
+       "chiamate": 1
+      },
+      "a2-consumabili.js:disegnaSlotA2": {
+       "ms": 0.07,
+       "chiamate": 1
+      },
+      "a1-bombe-chiavi.js:disegnaA1": {
+       "ms": 0.06,
+       "chiamate": 1
+      },
+      "d7-rifiniture.js:disegnaSetaD7": {
+       "ms": 0.06,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaIconeOggettiB": {
+       "ms": 0.05,
+       "chiamate": 1
+      },
+      "d4-stanze-teatro.js:disegnaPannelloTernaD4": {
+       "ms": 0.05,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaLumiZonaB1": {
+       "ms": 0.04,
+       "chiamate": 1
+      },
+      "b4-trasformazioni.js:disegnaStrisciaTemiB4": {
+       "ms": 0.03,
+       "chiamate": 1
+      },
+      "a2-consumabili.js:disegnaMappaRivelataA2": {
+       "ms": 0.02,
+       "chiamate": 1
+      }
+     }
+    },
+    "buca": {
+     "info": {
+      "tipo": "buca"
+     },
+     "logica": {
+      "media": 0.34,
+      "p95": 1.1
+     },
+     "disegno": {
+      "media": 41.99,
+      "p95": 53.9
+     },
+     "heapKBperFrame": 48.04,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": -1.19,
+      "grana": -1.89,
+      "vignetta": -4.08,
+      "pubblico": -2.02,
+      "lampi": -3.43
+     },
+     "funzioni": {
+      "60-resa.js:disegnaStanzaPixelArt": {
+       "ms": 1.95,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaTeatroB1": {
+       "ms": 1.84,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaHUDPixelArt": {
+       "ms": 0.61,
+       "chiamate": 1
+      },
+      "a6-progressione.js:disegnaNotificaA6": {
+       "ms": 0.36,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaAtmosferaQuartiere": {
+       "ms": 0.35,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaFerruccioPittorico": {
+       "ms": 0.29,
+       "chiamate": 1.05
+      },
+      "60-resa.js:disegnaFrame": {
+       "ms": 0.25,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaSpettatoreB1": {
+       "ms": 0.24,
+       "chiamate": 12
+      },
+      "b9-immagini.js:disegnaLumeB9": {
+       "ms": 0.21,
+       "chiamate": 8
+      },
+      "10-sprite.js:disegnaManoMarionettaPittorica": {
+       "ms": 0.11,
+       "chiamate": 2
+      },
+      "d4-stanze-teatro.js:disegnaOrchestraliD4": {
+       "ms": 0.1,
+       "chiamate": 1
+      },
+      "a3-stanze-speciali.js:disegnaMinimappaA3": {
+       "ms": 0.1,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:ridisegnaZonaB1": {
+       "ms": 0.09,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaIconeOggettiB": {
+       "ms": 0.08,
+       "chiamate": 1
+      },
+      "d4-stanze-teatro.js:disegnaDirettoreD4": {
+       "ms": 0.08,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaCartiglioD": {
+       "ms": 0.05,
+       "chiamate": 1
+      },
+      "a2-consumabili.js:disegnaSlotA2": {
+       "ms": 0.05,
+       "chiamate": 1
+      },
+      "d4-stanze-teatro.js:disegnaBucaD4": {
+       "ms": 0.04,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaLumiZonaB1": {
+       "ms": 0.04,
+       "chiamate": 1
+      },
+      "d4-stanze-teatro.js:disegnaMetronomoD4": {
+       "ms": 0.04,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaFondoZonaB1": {
+       "ms": 0.01,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaVoliB1": {
+       "ms": 0.01,
+       "chiamate": 1
+      },
+      "b7-stanze.js:disegnaSuoloB7": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "d4-stanze-teatro.js:disegnaPorteBucaD4": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "d7-rifiniture.js:disegnaArenaLucianaD7": {
+       "ms": 0,
+       "chiamate": 1
+      }
+     }
+    },
+    "cambio": {
+     "info": {
+      "fase": "cambio"
+     },
+     "logica": {
+      "media": 0.43,
+      "p95": 1.1
+     },
+     "disegno": {
+      "media": 49.36,
+      "p95": 63.7
+     },
+     "heapKBperFrame": 50.02,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": 2.81,
+      "grana": -1.05,
+      "vignetta": 0.18,
+      "pubblico": 3.48,
+      "lampi": 2.1
+     },
+     "funzioni": {
+      "b1-pubblico.js:disegnaTeatroB1": {
+       "ms": 2.16,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaStanzaPixelArt": {
+       "ms": 2.08,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaHUDPixelArt": {
+       "ms": 0.88,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaFerruccioPittorico": {
+       "ms": 0.63,
+       "chiamate": 2.05
+      },
+      "60-resa.js:disegnaFrame": {
+       "ms": 0.29,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaAtmosferaQuartiere": {
+       "ms": 0.28,
+       "chiamate": 1
+      },
+      "b9-immagini.js:disegnaLumeB9": {
+       "ms": 0.25,
+       "chiamate": 8
+      },
+      "d5-cambio-scena.js:disegnaCambioD5": {
+       "ms": 0.21,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaManoMarionettaPittorica": {
+       "ms": 0.2,
+       "chiamate": 2
+      },
+      "d5-cambio-scena.js:disegnaTeloD5": {
+       "ms": 0.2,
+       "chiamate": 1
+      },
+      "a2-consumabili.js:disegnaSlotA2": {
+       "ms": 0.12,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaFondoZonaB1": {
+       "ms": 0.09,
+       "chiamate": 1
+      },
+      "d5-cambio-scena.js:disegnaCartelloD5": {
+       "ms": 0.08,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaSpettatoreB1": {
+       "ms": 0.08,
+       "chiamate": 12
+      },
+      "b1-pubblico.js:disegnaFronteZonaB1": {
+       "ms": 0.06,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:disegnaLumiZonaB1": {
+       "ms": 0.05,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaCartiglioD": {
+       "ms": 0.04,
+       "chiamate": 1
+      },
+      "a3-stanze-speciali.js:disegnaMinimappaA3": {
+       "ms": 0.04,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaMacchie": {
+       "ms": 0.03,
+       "chiamate": 1
+      },
+      "b7-stanze.js:disegnaSacchiB7": {
+       "ms": 0.02,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaFamigliOrbitaliD": {
+       "ms": 0.02,
+       "chiamate": 1
+      },
+      "b1-pubblico.js:ridisegnaZonaB1": {
+       "ms": 0.01,
+       "chiamate": 1
+      },
+      "d5-cambio-scena.js:disegnaScenaD5": {
+       "ms": 0.01,
+       "chiamate": 1
+      },
+      "a1-bombe-chiavi.js:disegnaA1": {
+       "ms": 0.01,
+       "chiamate": 1
+      },
+      "b4-trasformazioni.js:disegnaStrisciaTemiB4": {
+       "ms": 0.01,
+       "chiamate": 1
+      }
+     }
+    },
+    "burattinaio": {
+     "info": {
+      "boss": "Il Grande Burattinaio"
+     },
+     "logica": {
+      "media": 0.43,
+      "p95": 1.5
+     },
+     "disegno": {
+      "media": 17.74,
+      "p95": 22.3
+     },
+     "heapKBperFrame": 27.39,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": -0.36,
+      "grana": 2.9,
+      "vignetta": 1.42,
+      "pubblico": -0.39,
+      "lampi": 3.25
+     },
+     "funzioni": {
+      "60-resa.js:disegnaHUDPixelArt": {
+       "ms": 0.83,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaFerruccioPittorico": {
+       "ms": 0.37,
+       "chiamate": 1
+      },
+      "a2-consumabili.js:disegnaSlotA2": {
+       "ms": 0.22,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaFrame": {
+       "ms": 0.19,
+       "chiamate": 1
+      },
+      "d1-burattinaio.js:disegnaCordeD1": {
+       "ms": 0.15,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaIconeOggettiB": {
+       "ms": 0.12,
+       "chiamate": 1
+      },
+      "d1-burattinaio.js:disegnaGuantoD1": {
+       "ms": 0.1,
+       "chiamate": 2
+      },
+      "d1-burattinaio.js:disegnaArenaD1": {
+       "ms": 0.09,
+       "chiamate": 1
+      },
+      "d1-burattinaio.js:disegnaEffettiD1": {
+       "ms": 0.08,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaBossPittorico": {
+       "ms": 0.07,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaStanzaPixelArt": {
+       "ms": 0.05,
+       "chiamate": 1
+      },
+      "a3-stanze-speciali.js:disegnaMinimappaA3": {
+       "ms": 0.05,
+       "chiamate": 1
+      },
+      "d1-burattinaio.js:disegnaCapoD1": {
+       "ms": 0.02,
+       "chiamate": 1
+      },
+      "d7-rifiniture.js:disegnaArenaLucianaD7": {
+       "ms": 0.01,
+       "chiamate": 1
+      },
+      "d4-stanze-teatro.js:disegnaPorteBucaD4": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaFamigliOrbitaliD": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaManoMarionettaPittorica": {
+       "ms": 0,
+       "chiamate": 2
+      },
+      "a2-consumabili.js:disegnaMappaRivelataA2": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "b7-stanze.js:disegnaPannelloCiarlatanoB7": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "d4-stanze-teatro.js:disegnaPannelloTernaD4": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "b5-oggetti.js:disegnaScieB5": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "d7-rifiniture.js:disegnaSetaD7": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "60-resa.js:disegnaMacchie": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "d2-personaggi.js:disegnaLampiD2": {
+       "ms": 0,
+       "chiamate": 1
+      },
+      "b5-oggetti.js:disegnaSopraB5": {
+       "ms": 0,
+       "chiamate": 1
+      }
+     }
+    },
+    "menu": {
+     "info": {},
+     "logica": {
+      "media": 0.2,
+      "p95": 0.9
+     },
+     "disegno": {
+      "media": 128.78,
+      "p95": 154
+     },
+     "heapKBperFrame": 49,
+     "teleCreatePerFrame": 0,
+     "fase": "menu_selezione",
+     "errori": 0,
+     "strati": {
+      "ombre": -2.25,
+      "grana": 11.87,
+      "vignetta": 24.54,
+      "pubblico": 0.88,
+      "lampi": 4.62
+     },
+     "funzioni": {
+      "60-resa.js:disegnaMenuSelezionePersonaggio": {
+       "ms": 4.12,
+       "chiamate": 1
+      },
+      "10-sprite.js:disegnaFerruccioPittorico": {
+       "ms": 3.03,
+       "chiamate": 6
+      },
+      "a6-progressione.js:disegnaSchedaBloccataA6": {
+       "ms": 1.14,
+       "chiamate": 2
+      },
+      "60-resa.js:disegnaFrame": {
+       "ms": 0.46,
+       "chiamate": 1
+      },
+      "a6-progressione.js:disegnaSegniA6": {
+       "ms": 0.41,
+       "chiamate": 2
+      },
+      "10-sprite.js:disegnaManoMarionettaPittorica": {
+       "ms": 0.21,
+       "chiamate": 2
+      },
+      "a6-progressione.js:disegnaNotificaA6": {
+       "ms": 0,
+       "chiamate": 1
+      }
+     }
+    },
+    "registro": {
+     "info": {
+      "aperto": true
+     },
+     "logica": {
+      "media": 0.19,
+      "p95": 1.2
+     },
+     "disegno": {
+      "media": 46.72,
+      "p95": 63.3
+     },
+     "heapKBperFrame": 51.85,
+     "teleCreatePerFrame": 0,
+     "fase": "hub",
+     "errori": 0,
+     "strati": {
+      "ombre": 1.01,
+      "grana": 5.47,
+      "vignetta": 0.62,
+      "pubblico": -0.79,
+      "lampi": -0.18
+     },
+     "funzioni": {
+      "10-sprite.js:disegnaNemicoPittorico": {
+       "ms": 38.23,
+       "chiamate": 8
+      },
+      "60-resa.js:disegnaFrame": {
+       "ms": 1.92,
+       "chiamate": 1
+      },
+      "d3-registro-scena.js:disegnaCartaD3": {
+       "ms": 1.74,
+       "chiamate": 8
+      },
+      "d3-registro-scena.js:disegnaLibroD3": {
+       "ms": 0.7,
+       "chiamate": 1
+      },
+      "d3-registro-scena.js:disegnaDettaglioD3": {
+       "ms": 0.3,
+       "chiamate": 1
+      },
+      "b8-finali-diario.js:disegnaPortaB8": {
+       "ms": 0.2,
+       "chiamate": 1
+      },
+      "d3-registro-scena.js:disegnaLeggioD3": {
+       "ms": 0.08,
+       "chiamate": 1
+      },
+      "b8-finali-diario.js:disegnaSopraHubB8": {
+       "ms": 0.07,
+       "chiamate": 1
+      },
+      "a6-progressione.js:disegnaNotificaA6": {
+       "ms": 0.01,
+       "chiamate": 1
+      }
+     }
+    }
+   },
+   "tele": {
+    "t2-sprite.js": {
+     "create": 1,
+     "vive": 1,
+     "MB": 0.171661376953125
+    },
+    "10-sprite.js": {
+     "create": 25,
+     "vive": 25,
+     "MB": 0.011627197265625
+    },
+    "b2-ribalta.js": {
+     "create": 15,
+     "vive": 14,
+     "MB": 3.4458160400390625
+    },
+    "b1-pubblico.js": {
+     "create": 29,
+     "vive": 29,
+     "MB": 7.420257568359375
+    },
+    "60-resa.js": {
+     "create": 3,
+     "vive": 3,
+     "MB": 10.546875
+    },
+    "b9-immagini.js": {
+     "create": 15,
+     "vive": 15,
+     "MB": 0.6239471435546875
+    },
+    "d4-stanze-teatro.js": {
+     "create": 1,
+     "vive": 1,
+     "MB": 3.515625
+    },
+    "d5-cambio-scena.js": {
+     "create": 1,
+     "vive": 1,
+     "MB": 0.015625
+    },
+    "d1-burattinaio.js": {
+     "create": 2,
+     "vive": 2,
+     "MB": 1.7578125
+    }
+   },
+   "erroriPagina": []
+  },
+  "pc": {
+   "viewport": {
+    "width": 1280,
+    "height": 720
+   },
+   "dpr": 1,
+   "tocco": false,
+   "cpu": 1,
+   "risoluzione": {
+    "w": 1280,
+    "h": 720,
+    "scalaBase": 2
+   },
+   "scene": {
+    "hub": {
+     "info": {},
+     "logica": {
+      "media": 0.06,
+      "p95": 0.2
+     },
+     "disegno": {
+      "media": 3.4,
+      "p95": 4.7
+     },
+     "heapKBperFrame": 18.49,
+     "teleCreatePerFrame": 0,
+     "fase": "hub",
+     "errori": 0,
+     "strati": {
+      "ombre": 0.64,
+      "grana": 0.64,
+      "vignetta": 0.27,
+      "pubblico": 0.48,
+      "lampi": 0.73
+     }
+    },
+    "normale": {
+     "info": {
+      "nemici": 6
+     },
+     "logica": {
+      "media": 0.09,
+      "p95": 0.2
+     },
+     "disegno": {
+      "media": 12.32,
+      "p95": 14
+     },
+     "heapKBperFrame": 72.47,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": 1.61,
+      "grana": 1.46,
+      "vignetta": 2.13,
+      "pubblico": 0.71,
+      "lampi": -0.01
+     }
+    },
+    "colpiti": {
+     "info": {
+      "nemici": 6
+     },
+     "logica": {
+      "media": 0.07,
+      "p95": 0.4
+     },
+     "disegno": {
+      "media": 12.62,
+      "p95": 15.4
+     },
+     "heapKBperFrame": 86.05,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": 1.88,
+      "grana": 1.53,
+      "vignetta": 1.75,
+      "pubblico": 1.26,
+      "lampi": 0.37
+     }
+    },
+    "boss1": {
+     "info": {
+      "boss": "re-gatto"
+     },
+     "logica": {
+      "media": 0.07,
+      "p95": 0.2
+     },
+     "disegno": {
+      "media": 8.62,
+      "p95": 11.2
+     },
+     "heapKBperFrame": 39.94,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": -0.21,
+      "grana": -1.08,
+      "vignetta": -1.78,
+      "pubblico": 0.13,
+      "lampi": -1.22
+     }
+    },
+    "luciana": {
+     "info": {
+      "boss": "donna-luciana"
+     },
+     "logica": {
+      "media": 0.07,
+      "p95": 0.1
+     },
+     "disegno": {
+      "media": 17.55,
+      "p95": 25.4
+     },
+     "heapKBperFrame": 30.5,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": 0.51,
+      "grana": 1.64,
+      "vignetta": 2.64,
+      "pubblico": 2.59,
+      "lampi": -1.82
+     }
+    },
+    "buca": {
+     "info": {
+      "tipo": "buca"
+     },
+     "logica": {
+      "media": 0.06,
+      "p95": 0.1
+     },
+     "disegno": {
+      "media": 10.95,
+      "p95": 13.2
+     },
+     "heapKBperFrame": 41.31,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": 1.49,
+      "grana": 0.78,
+      "vignetta": 1.8,
+      "pubblico": 2.07,
+      "lampi": 1.29
+     }
+    },
+    "cambio": {
+     "info": {
+      "fase": "cambio"
+     },
+     "logica": {
+      "media": 0.07,
+      "p95": 0.2
+     },
+     "disegno": {
+      "media": 10.92,
+      "p95": 13.1
+     },
+     "heapKBperFrame": 41.3,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": 0.23,
+      "grana": 1.14,
+      "vignetta": 0.67,
+      "pubblico": -0.25,
+      "lampi": -0.8
+     }
+    },
+    "burattinaio": {
+     "info": {
+      "boss": "Il Grande Burattinaio"
+     },
+     "logica": {
+      "media": 0.05,
+      "p95": 0.1
+     },
+     "disegno": {
+      "media": 3.59,
+      "p95": 4.1
+     },
+     "heapKBperFrame": 16.01,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {
+      "ombre": -0.15,
+      "grana": -0.19,
+      "vignetta": -0.67,
+      "pubblico": -0.32,
+      "lampi": -0.38
+     }
+    },
+    "menu": {
+     "info": {},
+     "logica": {
+      "media": 0.02,
+      "p95": 0.1
+     },
+     "disegno": {
+      "media": 26.9,
+      "p95": 33.3
+     },
+     "heapKBperFrame": 31.39,
+     "teleCreatePerFrame": 0,
+     "fase": "menu_selezione",
+     "errori": 0,
+     "strati": {
+      "ombre": 3.2,
+      "grana": 2.14,
+      "vignetta": 0.93,
+      "pubblico": 0.7,
+      "lampi": 1.3
+     }
+    },
+    "registro": {
+     "info": {
+      "aperto": true
+     },
+     "logica": {
+      "media": 0.04,
+      "p95": 0.2
+     },
+     "disegno": {
+      "media": 9.8,
+      "p95": 11.8
+     },
+     "heapKBperFrame": 26.99,
+     "teleCreatePerFrame": 0,
+     "fase": "hub",
+     "errori": 0,
+     "strati": {
+      "ombre": -0.58,
+      "grana": -0.25,
+      "vignetta": -0.09,
+      "pubblico": -0.18,
+      "lampi": 0.46
+     }
+    }
+   },
+   "tele": {
+    "t2-sprite.js": {
+     "create": 1,
+     "vive": 1,
+     "MB": 0.171661376953125
+    },
+    "10-sprite.js": {
+     "create": 25,
+     "vive": 25,
+     "MB": 0.011627197265625
+    },
+    "b2-ribalta.js": {
+     "create": 15,
+     "vive": 14,
+     "MB": 3.4458160400390625
+    },
+    "b1-pubblico.js": {
+     "create": 29,
+     "vive": 29,
+     "MB": 7.420257568359375
+    },
+    "60-resa.js": {
+     "create": 3,
+     "vive": 3,
+     "MB": 10.546875
+    },
+    "b9-immagini.js": {
+     "create": 14,
+     "vive": 14,
+     "MB": 0.639007568359375
+    },
+    "d4-stanze-teatro.js": {
+     "create": 1,
+     "vive": 1,
+     "MB": 3.515625
+    },
+    "d5-cambio-scena.js": {
+     "create": 1,
+     "vive": 1,
+     "MB": 0.015625
+    },
+    "d1-burattinaio.js": {
+     "create": 2,
+     "vive": 2,
+     "MB": 1.7578125
+    }
+   },
+   "erroriPagina": []
+  },
+  "orizz6": {
+   "viewport": {
+    "width": 657,
+    "height": 416
+   },
+   "dpr": 3,
+   "tocco": true,
+   "cpu": 6,
+   "risoluzione": {
+    "w": 1280,
+    "h": 720,
+    "scalaBase": 2
+   },
+   "scene": {
+    "hub": {
+     "info": {},
+     "logica": {
+      "media": 0.43,
+      "p95": 1.9
+     },
+     "disegno": {
+      "media": 20.87,
+      "p95": 28.3
+     },
+     "heapKBperFrame": 26.5,
+     "teleCreatePerFrame": 0,
+     "fase": "hub",
+     "errori": 0,
+     "strati": {}
+    },
+    "normale": {
+     "info": {
+      "nemici": 6
+     },
+     "logica": {
+      "media": 1.39,
+      "p95": 2.8
+     },
+     "disegno": {
+      "media": 89.48,
+      "p95": 114.3
+     },
+     "heapKBperFrame": 41.1,
+     "teleCreatePerFrame": 0.05,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {}
+    },
+    "colpiti": {
+     "info": {
+      "nemici": 6
+     },
+     "logica": {
+      "media": 1.18,
+      "p95": 5.3
+     },
+     "disegno": {
+      "media": 82.12,
+      "p95": 102.1
+     },
+     "heapKBperFrame": 94.47,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {}
+    },
+    "boss1": {
+     "info": {
+      "boss": "re-gatto"
+     },
+     "logica": {
+      "media": 0.97,
+      "p95": 2.3
+     },
+     "disegno": {
+      "media": 69.36,
+      "p95": 86.4
+     },
+     "heapKBperFrame": 54.82,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {}
+    },
+    "luciana": {
+     "info": {
+      "boss": "donna-luciana"
+     },
+     "logica": {
+      "media": 0.99,
+      "p95": 2
+     },
+     "disegno": {
+      "media": 148.75,
+      "p95": 177.8
+     },
+     "heapKBperFrame": 59.18,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {}
+    },
+    "buca": {
+     "info": {
+      "tipo": "buca"
+     },
+     "logica": {
+      "media": 0.59,
+      "p95": 2.4
+     },
+     "disegno": {
+      "media": 58.2,
+      "p95": 87
+     },
+     "heapKBperFrame": 15.9,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {}
+    },
+    "cambio": {
+     "info": {
+      "fase": "cambio"
+     },
+     "logica": {
+      "media": 0.71,
+      "p95": 2.1
+     },
+     "disegno": {
+      "media": 68.37,
+      "p95": 89.1
+     },
+     "heapKBperFrame": 23.82,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {}
+    },
+    "burattinaio": {
+     "info": {
+      "boss": "Il Grande Burattinaio"
+     },
+     "logica": {
+      "media": 0.63,
+      "p95": 1.7
+     },
+     "disegno": {
+      "media": 26.02,
+      "p95": 41.7
+     },
+     "heapKBperFrame": 45.4,
+     "teleCreatePerFrame": 0,
+     "fase": "in_gioco",
+     "errori": 0,
+     "strati": {}
+    },
+    "menu": {
+     "info": {},
+     "logica": {
+      "media": 0.27,
+      "p95": 1.6
+     },
+     "disegno": {
+      "media": 160.17,
+      "p95": 201.3
+     },
+     "heapKBperFrame": 49.49,
+     "teleCreatePerFrame": 0,
+     "fase": "menu_selezione",
+     "errori": 0,
+     "strati": {}
+    },
+    "registro": {
+     "info": {
+      "aperto": true
+     },
+     "logica": {
+      "media": 0.32,
+      "p95": 1.7
+     },
+     "disegno": {
+      "media": 71.86,
+      "p95": 91
+     },
+     "heapKBperFrame": 13.89,
+     "teleCreatePerFrame": 0,
+     "fase": "hub",
+     "errori": 0,
+     "strati": {}
+    }
+   },
+   "tele": {
+    "t2-sprite.js": {
+     "create": 1,
+     "vive": 1,
+     "MB": 0.171661376953125
+    },
+    "b2-ribalta.js": {
+     "create": 17,
+     "vive": 14,
+     "MB": 3.4458160400390625
+    },
+    "10-sprite.js": {
+     "create": 22,
+     "vive": 22,
+     "MB": 0.009979248046875
+    },
+    "b1-pubblico.js": {
+     "create": 29,
+     "vive": 29,
+     "MB": 7.420257568359375
+    },
+    "60-resa.js": {
+     "create": 3,
+     "vive": 3,
+     "MB": 10.546875
+    },
+    "b9-immagini.js": {
+     "create": 12,
+     "vive": 12,
+     "MB": 0.4535064697265625
+    },
+    "d4-stanze-teatro.js": {
+     "create": 1,
+     "vive": 1,
+     "MB": 3.515625
+    },
+    "d5-cambio-scena.js": {
+     "create": 1,
+     "vive": 1,
+     "MB": 0.015625
+    },
+    "d1-burattinaio.js": {
+     "create": 2,
+     "vive": 2,
+     "MB": 1.7578125
+    }
+   },
+   "erroriPagina": []
+  }
+ },
+ "release": {
+  "byte": 5822956,
+  "gzip": 3403537
+ }
+}
