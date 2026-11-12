@@ -93,6 +93,7 @@ def completa():
 
     gia = {(l['source'], l['target'], l.get('relation')) for l in collegamenti}
     avvolgimenti = collections.defaultdict(list)   # id della funzione avvolta -> [(file, riga, nome del nuovo strato)]
+    agganci = collections.defaultdict(list)        # id della funzione -> [(file, riga)] di chi la chiama «se esiste»
     aggiunte = collections.Counter()
 
     def dentro(file, riga):
@@ -134,6 +135,14 @@ def completa():
             avvolgimenti[bersaglio].append((file, riga, strato.group(1) or '(senza nome)'))
             aggiungi(nodo_file.get(file), bersaglio, 'indirect_call', 'avvolge', 'teatro-avvolge', file, riga, 0.95)
 
+        # 1b. agganci facoltativi: `typeof nome === 'function'` verso una funzione di un altro file
+        for m in re.finditer(r"typeof\s+([A-Za-z_$][\w$]*)\s*===?\s*'function'", testo):
+            bersaglio = unici.get(m.group(1))
+            if bersaglio and file_di.get(bersaglio) != file and m.group(1) not in avvolte_qui:
+                riga = riga_di(testo, m.start())
+                if not agganci[bersaglio] or agganci[bersaglio][-1][0] != file:
+                    agganci[bersaglio].append((file, riga))
+
         # 2. chiamate a funzioni globali definite in un ALTRO file
         for m in CHIAMATA.finditer(testo):
             nome = m.group(1)
@@ -151,10 +160,10 @@ def completa():
                    and file_di[l['source']] != file_di[l['target']])
     print(f'[grafo-teatro] aggiunti {aggiunte["teatro-globale"]} collegamenti di chiamata fra file e '
           f'{aggiunte["teatro-avvolge"]} avvolgimenti; ora {fra_file} collegamenti su {len(collegamenti)} sono fra file diversi')
-    return avvolgimenti, {n['id']: n for n in nodi}
+    return avvolgimenti, agganci, {n['id']: n for n in nodi}
 
 
-def scrivi_avvolgimenti(avvolgimenti, nodi):
+def scrivi_avvolgimenti(avvolgimenti, agganci, nodi):
     """graphify-out/AVVOLGIMENTI.md: chi avvolge che cosa, in ordine di caricamento."""
     ordine = {f: i for i, f in enumerate(ordine_di_caricamento())}
     righe = [
@@ -174,9 +183,34 @@ def scrivi_avvolgimenti(avvolgimenti, nodi):
         dove = f"{os.path.basename(n.get('source_file') or '?')}:{str(n.get('source_location') or '').lstrip('L')}"
         elenco = ' → '.join(f"{f.replace('.js', '')}:{r}" for f, r, _ in strati)
         righe.append(f"| `{n['label']}` | {dove} | {len(strati)} | {elenco} |")
+    righe += [
+        '',
+        '## Agganci facoltativi',
+        '',
+        'Funzioni di un file chiamate da un ALTRO file solo «se esistono» (`typeof f === \'function\'`): sono i punti in cui',
+        'un file di base lascia entrare un\'estensione senza conoscerla. Togliere o rinominare una di queste funzioni non dà',
+        'errore: l\'aggancio smette di funzionare in silenzio.',
+        '',
+        '| Funzione | Definita in | Chi la chiama se esiste |',
+        '|---|---|---|',
+    ]
+    for bersaglio, chiamanti in sorted(agganci.items(), key=lambda kv: (os.path.basename(nodi[kv[0]].get('source_file') or ''), nodi[kv[0]]['label'])):
+        n = nodi[bersaglio]
+        dove = f"{os.path.basename(n.get('source_file') or '?')}:{str(n.get('source_location') or '').lstrip('L')}"
+        elenco = ', '.join(f"{f.replace('.js', '')}:{r}" for f, r in sorted(chiamanti, key=lambda c: (ordine.get(c[0], 999), c[1])))
+        righe.append(f"| `{n['label']}` | {dove} | {elenco} |")
+    righe += [
+        '',
+        '## Cose che la mappa non dice',
+        '',
+        '- Alcuni file tengono il loro stato chiuso dentro una funzione (`(() => { ... })()`, per esempio in',
+        '  `t3-economia-salvataggi.js` e `b2-ribalta.js`): da fuori non si avvolge, bisogna toccare il file stesso.',
+        '- Le `const` globali (`ctx`, le tabelle `Object.freeze`) non si possono riassegnare né estendere da un altro file:',
+        '  si avvolgono le `function`, non le costanti.',
+    ]
     with open(os.path.join(USCITA, 'AVVOLGIMENTI.md'), 'w', encoding='utf-8') as f:
         f.write('\n'.join(righe) + '\n')
-    print(f'[grafo-teatro] scritto graphify-out/AVVOLGIMENTI.md: {len(avvolgimenti)} funzioni avvolte')
+    print(f'[grafo-teatro] scritto graphify-out/AVVOLGIMENTI.md: {len(avvolgimenti)} funzioni avvolte, {len(agganci)} agganci facoltativi')
 
 
 # Cosa fa ogni file, in due parole: diventa il nome del suo gruppo nel rapporto e nella pagina del grafo.
@@ -276,12 +310,12 @@ def rendi_autonoma():
 def main():
     if '--solo-aggiunte' not in sys.argv:
         graphify('extract', 'gioco/teatro', '--code-only', '--out', '.')
-    avvolgimenti, nodi = completa()
+    avvolgimenti, agganci, nodi = completa()
     graphify('cluster-only', '.', '--no-label')   # raggruppa col grafo completo
     nomina_i_gruppi()
     graphify('cluster-only', '.', '--no-label')   # riscrive rapporto e pagina coi nomi
     rendi_autonoma()
-    scrivi_avvolgimenti(avvolgimenti, nodi)
+    scrivi_avvolgimenti(avvolgimenti, agganci, nodi)
 
 
 if __name__ == '__main__':

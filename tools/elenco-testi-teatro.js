@@ -35,6 +35,11 @@ const PARTI = [
   { titolo: 'Riprendi la notte, mira assistita, conto della notte', dove: 'gioco/teatro/e6-assistenza.js',
     tabelle: ['TESTI_E6', 'CONSIGLI_E6'] },
   { titolo: 'Qualità automatica', dove: 'gioco/teatro/e4-prestazioni.js', tabelle: ['RIGA_E4'] },
+  { titolo: 'Ultime correzioni (cestino degli slot, temi dell\'Acquedotto)', dove: 'gioco/teatro/t3-economia-salvataggi.js, d6-acquedotto.js, d7-rifiniture.js',
+    fissi: ['Cancellare questo salvataggio?', 'Il salvataggio si perde per sempre.', 'Sì', 'No',
+      'Tocca uno slot per sceglierlo, il cestino per cancellarlo',
+      'Lo Stormo dei Rondoni', '🪶 LO STORMO DEI RONDONI: sotto gli archi si alza tutto il nido di latta. Chi lo abbatte trova qualcosa in più.',
+      'I Fontanieri del Condotto', '🗡 I FONTANIERI DEL CONDOTTO: tre ombre fra le chiuse. Chi le stana trova qualcosa in più.'] },
 ];
 
 (async () => {

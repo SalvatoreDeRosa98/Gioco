@@ -472,7 +472,7 @@ Dove: `gioco/teatro/d7-rifiniture.js, b7-stanze.js`
   <sub>TOCCO_D7.frasi[0][1]</sub>
 - [W/S] o click: scegli lo slot · [Canc] cancella · [M] muto  
   <sub>TOCCO_D7.frasi[1][0]</sub>
-- Tocca uno slot per sceglierlo  
+- Tocca uno slot per sceglierlo, il cestino per cancellarlo  
   <sub>TOCCO_D7.frasi[1][1]</sub>
 - Q: Attivo · E: Compra/Patto/Raccogli · ESC: Pausa  
   <sub>TOCCO_D7.frasi[2][0]</sub>
@@ -610,3 +610,17 @@ Dove: `gioco/teatro/e4-prestazioni.js`
   <sub>RIGA_E4.nome</sub>
 - Sul telefono, se il teatro rallenta spegne da sé grana, ombre lunghe, pubblico e vignetta, e li riaccende quando torna fluido.  
   <sub>RIGA_E4.nota</sub>
+
+## Ultime correzioni (cestino degli slot, temi dell'Acquedotto) (9)
+
+Dove: `gioco/teatro/t3-economia-salvataggi.js, d6-acquedotto.js, d7-rifiniture.js`
+
+- Cancellare questo salvataggio?
+- Il salvataggio si perde per sempre.
+- Sì
+- No
+- Tocca uno slot per sceglierlo, il cestino per cancellarlo
+- Lo Stormo dei Rondoni
+- 🪶 LO STORMO DEI RONDONI: sotto gli archi si alza tutto il nido di latta. Chi lo abbatte trova qualcosa in più.
+- I Fontanieri del Condotto
+- 🗡 I FONTANIERI DEL CONDOTTO: tre ombre fra le chiuse. Chi le stana trova qualcosa in più.

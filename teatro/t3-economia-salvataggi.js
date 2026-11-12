@@ -61,6 +61,10 @@
     cancellaAvviso: 'Il salvataggio si perde per sempre.',
     cancellaSi: '[S / Invio] Sì, cancella',
     cancellaNo: '[N / Esc] No',
+    // (f1) col tocco e col gamepad: domanda semplice, «No» scelto in partenza
+    cancellaSicuraTitolo: 'Cancellare questo salvataggio?',
+    cancellaSicuraSi: 'Sì',
+    cancellaSicuraNo: 'No',
     aiuto: '[W/S] o click: scegli lo slot · [Canc] cancella · [M] muto',
     muto: 'Audio: muto [M]',
     sonoro: 'Audio: attivo [M]',
@@ -336,6 +340,41 @@
   const BOX_CANC = { x: 150, y: 110, w: 340, h: 140 };
   const BTN_CANC_SI = { x: 172, y: 210, w: 150, h: 26 };
   const BTN_CANC_NO = { x: 336, y: 210, w: 132, h: 26 };
+  // (f1) Cancellazione sicura col tocco e col gamepad: il tasto [Canc] lì non c'è (o sta sotto il pollice).
+  // Col tocco al posto della ✕ c'è un cestino con un'area di tocco più larga dello slot; la conferma parte su «No»
+  // e [Invio]/A conferma la scelta evidenziata. Con tastiera e mouse resta tutto com'era.
+  const CESTINO = Object.freeze({ w: 14, tocco: Object.freeze({ sx: 26, dx: 4, su: 8, giu: 8 }) });
+  const modoSicuroCanc = () => typeof b3 !== 'undefined' && (b3.dispositivo === 'tocco' || b3.dispositivo === 'pad');
+  const cestinoAlTocco = () => typeof inToccoB3 === 'function' && inToccoB3();
+  const boxCestinoTocco = (n) => {
+    const b = boxSlot(n), t = CESTINO.tocco;
+    return { x: b.x + b.w - CESTINO.w - t.sx / 2, y: b.y - t.su, w: CESTINO.w + t.sx / 2 + t.dx, h: b.h + t.su + t.giu };
+  };
+  let cancSicura = false; // la conferma aperta è quella sicura
+  let cancScelta = 'no';  // bottone evidenziato nella conferma sicura
+  function apriCancella(n) {
+    confermaCancella = n;
+    cancSicura = modoSicuroCanc();
+    cancScelta = 'no';
+  }
+  function chiudiCancella(si) {
+    const n = confermaCancella;
+    confermaCancella = null;
+    cancSicura = false;
+    if (si && n) { cancellaSlot(n); mostraAvviso(`Slot ${n} cancellato`); }
+  }
+  /** Cestino a ombre (coperchio, maniglia, corpo a tronco con le doghe) centrato in (x, y). */
+  function disegnaCestino(ctx, x, y, colore) {
+    ctx.save();
+    ctx.fillStyle = colore; ctx.strokeStyle = colore; ctx.lineWidth = 1;
+    ctx.fillRect(x - 4.5, y - 4, 9, 1.6);           // coperchio
+    ctx.fillRect(x - 1.5, y - 5.5, 3, 1.5);          // maniglia
+    ctx.beginPath(); ctx.moveTo(x - 3.6, y - 1.8); ctx.lineTo(x + 3.6, y - 1.8);
+    ctx.lineTo(x + 2.8, y + 5); ctx.lineTo(x - 2.8, y + 5); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(28, 20, 14, 0.85)'; ctx.lineWidth = 0.7;
+    for (const dx of [-1.3, 1.3]) { ctx.beginPath(); ctx.moveTo(x + dx, y - 0.6); ctx.lineTo(x + dx * 0.85, y + 4); ctx.stroke(); }
+    ctx.restore();
+  }
 
   function nomeBreve(id) {
     return id === 'ombra' ? 'Ombra' : (T.PERSONAGGI_GIOCABILI[id] || T.PERSONAGGI_GIOCABILI.ferruccio).nome;
@@ -384,13 +423,14 @@
       ctx.lineWidth = att ? 1.4 : 1;
       ctx.strokeRect(b.x, b.y, b.w, b.h);
       const testo = d ? `${n} ${nomeBreve(d.personaggio)} P${d.pianoMassimo} ✦${d.scintille}` : `${n} · vuoto`;
-      const spazio = d ? b.w - 18 : b.w - 6;
+      const spazio = d ? b.w - (cestinoAlTocco() ? CESTINO.w + 6 : 18) : b.w - 6;
       drawTextFit(testo, b.x + 3 + spazio / 2, b.y + 10, spazio, {
         size: 7, color: att ? '#f9cb40' : d ? '#f3dfc1' : '#78716c', shadow: false,
       });
       if (d) {
         const c = boxCroce(n);
-        drawTextFit('✕', c.x + c.w / 2, c.y + 9, c.w, { size: 7, color: '#ef4444', shadow: false });
+        if (cestinoAlTocco()) disegnaCestino(ctx, b.x + b.w - CESTINO.w / 2 - 1, b.y + b.h / 2, '#ef4444');
+        else drawTextFit('✕', c.x + c.w / 2, c.y + 9, c.w, { size: 7, color: '#ef4444', shadow: false });
       }
     }
     drawTextFit(typeof testoToccoD7 === 'function' ? testoToccoD7(TESTI.aiuto) : TESTI.aiuto, // (d7) col tocco
@@ -400,15 +440,20 @@
       const n = confermaCancella;
       const d = slots[n];
       disegnaRiquadro(ctx, BOX_CANC, '#ef4444');
-      drawTextFit(TESTI.cancellaTitolo(n), W / 2, BOX_CANC.y + 26, BOX_CANC.w - 20, { size: 10, color: '#ef4444' });
+      drawTextFit(cancSicura ? TESTI.cancellaSicuraTitolo : TESTI.cancellaTitolo(n), W / 2, BOX_CANC.y + 26, BOX_CANC.w - 20, { size: 10, color: '#ef4444' });
       if (d) {
         drawTextFit(`${nomeBreve(d.personaggio)} · piano massimo ${d.pianoMassimo} · ✦ ${d.scintille} scintille`,
           W / 2, BOX_CANC.y + 50, BOX_CANC.w - 20, { size: 8, color: '#f3dfc1' });
         drawTextFit(`salvato il ${dataBreve(d.data)}`, W / 2, BOX_CANC.y + 66, BOX_CANC.w - 20, { size: 7.5, color: '#a8a29e' });
       }
       drawTextFit(TESTI.cancellaAvviso, W / 2, BOX_CANC.y + 84, BOX_CANC.w - 20, { size: 8, color: '#f9cb40' });
-      disegnaBottone(ctx, BTN_CANC_SI, TESTI.cancellaSi, true);
-      disegnaBottone(ctx, BTN_CANC_NO, TESTI.cancellaNo, false);
+      if (cancSicura) {
+        disegnaBottone(ctx, BTN_CANC_SI, TESTI.cancellaSicuraSi, cancScelta === 'si');
+        disegnaBottone(ctx, BTN_CANC_NO, TESTI.cancellaSicuraNo, cancScelta === 'no');
+      } else {
+        disegnaBottone(ctx, BTN_CANC_SI, TESTI.cancellaSi, true);
+        disegnaBottone(ctx, BTN_CANC_NO, TESTI.cancellaNo, false);
+      }
     }
     disegnaAvviso();
     ctx.restore();
@@ -444,16 +489,17 @@
       else if (['Escape', 'KeyN', 'Backspace'].includes(e.code)) rispondiPatto(false);
       return;
     }
+    if (confermaCancella && cancSicura) { // (f1) tocco/gamepad: [Invio]/A sceglie il bottone evidenziato
+      blocca(e);
+      if (['Enter', 'NumpadEnter', 'KeyE', 'Space'].includes(e.code)) chiudiCancella(cancScelta === 'si');
+      else if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyA', 'KeyD'].includes(e.code)) cancScelta = cancScelta === 'si' ? 'no' : 'si';
+      else if (['Escape', 'KeyN', 'Backspace'].includes(e.code)) chiudiCancella(false);
+      return;
+    }
     if (confermaCancella) {
       blocca(e);
-      if (['KeyS', 'Enter', 'NumpadEnter', 'KeyY'].includes(e.code)) {
-        const n = confermaCancella;
-        confermaCancella = null;
-        cancellaSlot(n);
-        mostraAvviso(`Slot ${n} cancellato`);
-      } else if (['Escape', 'KeyN', 'Backspace'].includes(e.code)) {
-        confermaCancella = null;
-      }
+      if (['KeyS', 'Enter', 'NumpadEnter', 'KeyY'].includes(e.code)) chiudiCancella(true);
+      else if (['Escape', 'KeyN', 'Backspace'].includes(e.code)) chiudiCancella(false);
       return;
     }
     if (e.code === 'KeyM' && !e.repeat) {
@@ -465,7 +511,7 @@
       else if (['ArrowDown', 'KeyS'].includes(e.code)) { blocca(e); scegliSlot((slotAttivo % S.numero) + 1); }
       else if (['Delete', 'Backspace'].includes(e.code)) {
         blocca(e);
-        if (slots[slotAttivo]) confermaCancella = slotAttivo;
+        if (slots[slotAttivo]) apriCancella(slotAttivo);
         else mostraAvviso(`Lo slot ${slotAttivo} è già vuoto`);
       }
     }
@@ -482,21 +528,22 @@
     }
     if (confermaCancella) {
       blocca(e);
-      if (dentro(p, BTN_CANC_SI)) {
-        const n = confermaCancella;
-        confermaCancella = null;
-        cancellaSlot(n);
-        mostraAvviso(`Slot ${n} cancellato`);
-      } else if (dentro(p, BTN_CANC_NO) || !dentro(p, BOX_CANC)) {
-        confermaCancella = null;
-      }
+      if (dentro(p, BTN_CANC_SI)) chiudiCancella(true);
+      else if (dentro(p, BTN_CANC_NO) || !dentro(p, BOX_CANC)) chiudiCancella(false);
       return;
     }
     if (statoRun.fase !== 'menu_selezione') return;
+    if (cestinoAlTocco()) { // (f1) il cestino col tocco: area larga, prima della scelta dello slot
+      for (let n = 1; n <= S.numero; n++) {
+        if (!slots[n] || !dentro(p, boxCestinoTocco(n))) continue;
+        blocca(e); scegliSlot(n); apriCancella(n);
+        return;
+      }
+    }
     for (let n = 1; n <= S.numero; n++) {
       if (!dentro(p, boxSlot(n))) continue;
       blocca(e);
-      if (slots[n] && dentro(p, boxCroce(n))) { scegliSlot(n); confermaCancella = n; }
+      if (slots[n] && dentro(p, boxCroce(n))) { scegliSlot(n); apriCancella(n); }
       else scegliSlot(n);
       return;
     }
