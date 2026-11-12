@@ -85,6 +85,150 @@ const foto = (n) => `${prefisso}-${n}.png`;
   });
   ok('A: la botola porta a San Leucio di sempre', leucio.piano === 3 && leucio.zona === null && leucio.q === 'san-leucio' && leucio.telaio, leucio);
 
+  // ---- B. NEMICI E GIURAMENTI ----
+  /** Run nuova direttamente al piano 3 dell'Anfiteatro (dall'Acquedotto). */
+  const alAnfiteatro = (piano = 3) => p.evaluate((piano) => {
+    const I = window.__teatro.interni; const R = I.statoRun;
+    selezionaPersonaggio('ferruccio'); R.fase = 'in_gioco'; nuovaRun(false); R.siparioAttivo = null;
+    I.anfiteatroH7.segna(piano, true); avviaPiano(piano, false); R.siparioAttivo = null; R.cartiglioD = null;
+    return { zona: R.zonaP3, q: getQuartierePiano(piano).id };
+  }, piano);
+  const gen = await p.evaluate(async () => {
+    const I = window.__teatro.interni; const R = I.statoRun;
+    const tipi = {}; let giur = 0, piani = 0, senza = 0;
+    for (let k = 0; k < 30; k++) {
+      selezionaPersonaggio('ferruccio'); R.fase = 'in_gioco'; nuovaRun(false);
+      I.anfiteatroH7.segna(3, true); avviaPiano(3, false); R.siparioAttivo = null; piani++;
+      const g = R.mappa.stanze.filter((s) => s.giuramentoH7).length; giur += g; if (!g) senza++;
+      for (const s of R.mappa.stanze) for (const n of s.nemici) if (!n.boss) { tipi[n.tipo] = (tipi[n.tipo] || 0) + 1; if (n.tipo === 'burattino') tipi['in-' + s.tipo + (n.evocatoD || n.evocato ? '-evocato' : '')] = 1; }
+    }
+    return { tipi, giur, piani, senza };
+  });
+  const tipiLuogo = ['mirmillone_latta', 'reziario_ombra', 'belva_cartapesta', 'suonatore_corno'];
+  ok('B: nessun nemico di San Leucio sostituibile resta', !['burattino', 'maschera', 'guardia', 'vespa_cieca'].some((t) => gen.tipi[t]), gen.tipi);
+  ok('B: i tipi del luogo compaiono', tipiLuogo.filter((t) => t !== 'suonatore_corno').every((t) => gen.tipi[t] > 0), gen.tipi);
+  ok('B: almeno un giuramento per piano', gen.senza === 0 && gen.giur >= gen.piani, gen);
+
+  // ogni tipo visita i suoi stati (passi contati, giocatore fermo e invulnerabile)
+  const statiAttesi = { mirmillone_latta: ['avanza', 'alza', 'affondo', 'scoperto'], reziario_ombra: ['gira', 'rotea', 'recupera'],
+    belva_cartapesta: ['aggira', 'acquatta', 'carica'], suonatore_corno: ['tiene', 'gonfia', 'suona'] };
+  for (const tipo of tipiLuogo) {
+    await alAnfiteatro();
+    const visti = await p.evaluate((tipo) => {
+      const I = window.__teatro.interni; const R = I.statoRun; const P = I.player;
+      const st = R.mappa.stanze.find((s) => s.tipo === 'normale' && !s.giuramentoH7) || R.mappa.stanze.find((s) => s.tipo === 'normale');
+      st.giuramentoH7 = null;
+      entraInStanza(st, 'S'); R.siparioAttivo = null;
+      for (const n of st.nemici) n.hp = 0;
+      I.giuramentiH7.crea(tipo, 200, 180);
+      st.pulita = false;
+      P.x = 400; P.y = 200;
+      const visti = new Set();
+      for (let i = 0; i < 900; i++) {
+        P.invuln = 999; R.hpHalf = Math.max(R.hpHalf, 4); P.x = 400; P.y = 200;
+        try { passoLogico(); } catch (_) { /* */ }
+        const n = st.nemici.find((x) => x.tipo === tipo && x.hp > 0);
+        if (n && n.statoH7) visti.add(n.statoH7);
+      }
+      return { visti: [...visti], vivi: st.nemici.filter((x) => x.hp > 0).length, reti: I.giuramentiH7.reti };
+    }, tipo);
+    ok(`B: ${tipo} visita i suoi stati`, statiAttesi[tipo].every((s) => visti.visti.includes(s)), visti);
+  }
+  // foto: tutti e quattro in posa, e uno che sale dal montacarichi
+  await alAnfiteatro();
+  await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const P = I.player;
+    const st = R.mappa.stanze.find((s) => s.tipo === 'normale');
+    st.giuramentoH7 = null; entraInStanza(st, 'S'); R.siparioAttivo = null;
+    for (const n of st.nemici) n.hp = 0;
+    const pose = [['mirmillone_latta', 200, 170, 'alza'], ['reziario_ombra', 280, 150, 'rotea'], ['belva_cartapesta', 380, 170, 'acquatta'], ['suonatore_corno', 450, 230, 'suona']];
+    for (const [t, x, y, s] of pose) { I.giuramentiH7.crea(t, x, y); const n = st.nemici[st.nemici.length - 1]; n.statoH7 = s; n.tH7 = 20; n.angH7 = Math.PI; }
+    const sale = st.nemici[st.nemici.length - 1]; void sale;
+    I.giuramentiH7.crea('mirmillone_latta', 0, 0, true); const m = st.nemici[st.nemici.length - 1]; m.saleH7 = 20;
+    P.x = 320; P.y = 260; P.invuln = 0;
+  });
+  await disegna(); await scatta('b-nemici');
+
+  // lo scudo del Mirmillone: di fronte para, alle spalle no, scoperto no
+  const scudo = await p.evaluate(() => {
+    const I = window.__teatro.interni; const st = I.statoRun.stanzaCorrente;
+    const n = st.nemici.find((x) => x.tipo === 'mirmillone_latta' && x.hp > 0 && !x.saleH7);
+    const hp0 = n.hp; n.statoH7 = 'avanza'; n.angH7 = 0;
+    danneggiaNemico(n, 3, -2, 0); const fronte = n.hp; // colpo che arriva da destra (davanti)
+    danneggiaNemico(n, 3, 2, 0); const spalle = n.hp;   // da sinistra (alle spalle)
+    n.statoH7 = 'scoperto'; danneggiaNemico(n, 3, -2, 0); const scoperto = n.hp;
+    return { hp0, fronte, spalle, scoperto };
+  });
+  ok('B: lo scudo para di fronte', scudo.fronte === scudo.hp0, scudo);
+  ok('B: alle spalle e scoperto si ferisce', scudo.spalle < scudo.fronte && scudo.scoperto < scudo.spalle, scudo);
+  // la rete rallenta
+  const rete = await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const P = I.player; const st = R.stanzaCorrente;
+    for (const n of st.nemici) n.hp = 0; st.pulita = false;
+    I.giuramentiH7.crea('reziario_ombra', 120, 100); const n = st.nemici[st.nemici.length - 1]; n.stunTicks = 9999;
+    P.x = 320; P.y = 200; P.invuln = 0;
+    ticksCongelati = 0; R.graziaIngressoC = 0;
+    st.retiH7 = [{ x: 314, y: 192, vx: 2, vy: 0, vita: 50, t: 0 }];
+    passoLogico();
+    return { irretito: I.giuramentiH7.irretito };
+  });
+  ok('B: la rete prende Ferruccio', rete.irretito > 0, rete);
+  await disegna(); await scatta('b-rete');
+
+  // un giuramento intero senza perdere Maschere: ondate, grate, favore
+  await alAnfiteatro();
+  const giur = await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const P = I.player;
+    const st = R.mappa.stanze.find((s) => s.giuramentoH7);
+    const ondate = st.giuramentoH7.ondate;
+    entraInStanza(st, 'S'); R.siparioAttivo = null;
+    const g0 = I.giuramentiH7.qui;
+    const oggetti0 = (st.oggettiATerra || []).length;
+    let maxOndata = 0, chiusa = 0, sale = 0;
+    for (let i = 0; i < 3000 && I.giuramentiH7.qui.stato !== 'fatto'; i++) {
+      P.invuln = 999; P.x = 320; P.y = 190;
+      try { passoLogico(); } catch (_) { /* */ }
+      if (!st.pulita) chiusa++;
+      if (st.nemici.some((n) => n.saleH7 > 0)) sale++;
+      for (const n of st.nemici) if (n.hp > 0 && !(n.saleH7 > 0) && i % 30 === 29) n.hp = 0; // li abbatte, senza fretta
+      maxOndata = Math.max(maxOndata, I.giuramentiH7.qui.ondata);
+    }
+    for (let i = 0; i < 10; i++) { P.invuln = 999; passoLogico(); }
+    const g1 = I.giuramentiH7.qui;
+    return { ondate, inizio: g0.stato, fine: g1.stato, maxOndata, pulita: st.pulita, chiusa, sale, favore: g1.favoreDato, persi: g1.persi, nuovi: (st.oggettiATerra || []).length - oggetti0 };
+  });
+  ok('B: il giuramento parte all\'ingresso', giur.inizio === 'in_corso', giur);
+  ok('B: salgono tutte le ondate dai montacarichi', giur.maxOndata === giur.ondate && giur.sale > 0, giur);
+  ok('B: le uscite restano chiuse finché dura', giur.chiusa > 100 && giur.fine === 'fatto' && giur.pulita, giur);
+  ok('B: senza Maschere perse, il favore delle gradinate', giur.favore && giur.persi === 0 && giur.nuovi >= 2, giur);
+  // con un colpo preso: niente favore
+  await alAnfiteatro();
+  const giur2 = await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const P = I.player;
+    const st = R.mappa.stanze.find((s) => s.giuramentoH7);
+    entraInStanza(st, 'S'); R.siparioAttivo = null;
+    for (let i = 0; i < 3000 && I.giuramentiH7.qui.stato !== 'fatto'; i++) {
+      P.x = 320; P.y = 190;
+      if (i === 5) { R.graziaIngressoC = 0; P.invuln = 0; subisciColpoGiocatore(1, 'prova', 300, 190); }
+      if (i > 5) P.invuln = 999;
+      try { passoLogico(); } catch (_) { /* */ }
+      if (i === 60) { /* foto a metà */ }
+      for (const n of st.nemici) if (n.hp > 0 && !(n.saleH7 > 0) && i % 30 === 29) n.hp = 0;
+    }
+    const g = I.giuramentiH7.qui;
+    return { fine: g.stato, favore: g.favoreDato, persi: g.persi, pulita0: st.pulitaQA, vivi: st.nemici.length };
+  });
+  ok('B: una Maschera persa, niente favore', giur2.fine === 'fatto' && !giur2.favore && giur2.persi > 0, giur2);
+  // foto: grate giù e montacarichi che salgono
+  await alAnfiteatro();
+  await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const P = I.player;
+    const st = R.mappa.stanze.find((s) => s.giuramentoH7);
+    entraInStanza(st, 'S'); R.siparioAttivo = null; P.x = 320; P.y = 200;
+    for (let i = 0; i < 40; i++) { P.invuln = 999; passoLogico(); }
+  });
+  await disegna(); await scatta('b-giuramento');
+
   // ---- Z. ERRORI ----
   const erroriTeatro = await p.evaluate(() => (window.ERRORI_TEATRO || []).map((e) => String(e.messaggio || e.msg || e)));
   ok('Z: nessun errore in console', err.length === 0, err.slice(0, 5));

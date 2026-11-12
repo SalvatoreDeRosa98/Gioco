@@ -642,3 +642,769 @@ Object.assign(window.__teatro.interni, {
     get condotto() { const c = condottoQuiH7(); return c ? { x: ANFITEATRO_H7.condotto.x, y: ANFITEATRO_H7.condotto.y } : null; },
   }),
 });
+
+// ===========================================================================
+// 3-4. I NEMICI DEL LUOGO E I GIURAMENTI — tabelle
+// ===========================================================================
+/**
+ * NEMICI del luogo. hp = (hpBase + (piano − 1) × hpPiano) × ciclo × campione, come popolaStanza.
+ * sostituisce: il tipo di San Leucio di cui prendono il posto (gruppi e disposizioni di b7 restano validi).
+ * Tick a coppie [min, max]: durata a caso fra i due. Gli attacchi si leggono dalla posa (nessun segno a terra).
+ */
+const NEMICI_H7 = Object.freeze({
+  // MIRMILLONE DI LATTA: avanza con lo scudo davanti (para i colpi di fronte); ALZA il gladio dietro la testa,
+  // poi AFFONDO dritto; dopo resta SCOPERTO, scudo di lato: è il momento di colpirlo.
+  mirmillone_latta: Object.freeze({
+    nome: 'Mirmillone di Latta', sostituisce: 'burattino', hpBase: 16, hpPiano: 4, vel: 0.72, raggio: 12, massa: 2.2,
+    avanzaTick: Object.freeze([70, 120]), portataPx: 150, vicinoPx: 34, giro: 0.06, alzaTick: 34, bloccoTick: 10,
+    affondoTick: 14, velAffondo: 3.3, scopertoTick: 48, paraSemiampiezza: 1.15, // ±66° attorno allo scudo
+  }),
+  // RETIARIO D'OMBRA: gira al largo; ROTEA la rete sopra la testa e la LANCIA (chi ne è preso cammina piano);
+  // da vicino tira indietro il tridente (PUNTA) e STOCCA.
+  reziario_ombra: Object.freeze({
+    nome: 'Reziario d\'Ombra', sostituisce: 'maschera', hpBase: 13, hpPiano: 3.5, vel: 0.95, raggio: 11, massa: 1,
+    giraTick: Object.freeze([90, 140]), distanzaPx: 118, giro: 0.75, vicinoPx: 56, roteaTick: 44, bloccoTick: 10,
+    recuperaTick: 54, puntaTick: 22, stoccaTick: 10, velStocca: 2.8,
+    rete: Object.freeze({ velocita: 2.3, raggio: 10, vitaTick: 96, tick: 120, rallenta: 0.55, massime: 2 }),
+  }),
+  // BELVA DI CARTAPESTA: aggira; si ACQUATTA (coda alta, muso basso: la direzione si blocca) e CARICA dritta;
+  // se sbatte contro il muro resta STORDITA, la carta che si apre.
+  belva_cartapesta: Object.freeze({
+    nome: 'Belva di Cartapesta', sostituisce: 'guardia', hpBase: 21, hpPiano: 5, vel: 0.8, raggio: 14, massa: 3,
+    aggiraTick: Object.freeze([90, 140]), acquattaTick: 44, bloccoTick: 10, caricaTick: 46, velCarica: 4.1,
+    frenaTick: 20, storditaTick: 58,
+  }),
+  // SUONATORE DI CORNO: sta lontano; GONFIA le guance col corno alla bocca e SUONA: chiama un combattente dal
+  // montacarichi (al massimo `chiamate` volte), poi solo lo squillo, un anello di note lente.
+  suonatore_corno: Object.freeze({
+    nome: 'Suonatore di Corno', sostituisce: 'vespa_cieca', hpBase: 11, hpPiano: 3, vel: 0.7, raggio: 10, massa: 1,
+    tieneTick: Object.freeze([150, 210]), distanzaPx: 160, gonfiaTick: 52, suonaTick: 26, chiamate: 2, tettoVivi: 6,
+    chiama: Object.freeze(['mirmillone_latta', 'reziario_ombra', 'belva_cartapesta']),
+    squillo: Object.freeze({ note: 6, velocita: 1.5 }),
+  }),
+});
+
+/** Tipo di San Leucio → tipo dell'Anfiteatro (costruita da NEMICI_H7). */
+const SOSTITUZIONI_H7 = Object.freeze(Object.fromEntries(Object.entries(NEMICI_H7).map(([tipo, T]) => [T.sostituisce, tipo])));
+
+/** I montacarichi dei sotterranei: botole a filo della sabbia (le stesse dipinte sul pavimento). */
+const MONTACARICHI_H7 = Object.freeze([Object.freeze([150, 112]), Object.freeze([490, 112]), Object.freeze([150, 266]), Object.freeze([490, 266])]);
+
+/** Le stanze-giuramento. */
+const GIURAMENTI_H7 = Object.freeze({
+  prob: 0.36, minimo: 1, massimo: 3,      // per piano, fra le stanze normali con nemici
+  ondate: Object.freeze([2, 3]),          // la prima è la squadra della stanza, le altre salgono dopo
+  perOndata: Object.freeze([2, 4]),
+  pesi: Object.freeze({ mirmillone_latta: 3, reziario_ombra: 3, belva_cartapesta: 2, suonatore_corno: 1 }),
+  saleTick: 48,                           // quanto ci mette un montacarichi a portare su un combattente
+  pausaTick: 54,                          // fra un'ondata e l'altra
+  grataTick: 18,                          // le grate che cadono sulle uscite
+  scaglionaTick: 10,                      // i montacarichi di una stessa ondata partono uno dopo l'altro
+});
+
+/** Testi dei nemici e dei giuramenti (DA APPROVARE DALL'AUTORE). */
+const TESTI_NEMICI_H7 = Object.freeze({
+  giuramento: '⚔ GIURAMENTO: le grate cadono sulle uscite. Dai montacarichi salgono i combattenti.',
+  ondata: (k, n) => `⚔ Ondata ${k} di ${n}: i montacarichi cigolano.`,
+  fatto: '⚔ Giuramento mantenuto: le grate si alzano.',
+  favore: '★ IL FAVORE DELLE GRADINATE: nessuna Maschera persa. Le ombre si alzano in piedi e lanciano qualcosa.',
+  irretito: 'Preso nella rete! Cammini piano finché non te la scrolli di dosso.',
+});
+
+/** I temi rari di b7 del piano 3, col nome del luogo. TESTI DA APPROVARE DALL'AUTORE. */
+const TEMI_H7 = Object.freeze({
+  teatrino: Object.freeze({ nome: 'La Schiera dei Mirmilloni',
+    avviso: '🛡 LA SCHIERA DEI MIRMILLONI: quattro scudi di latta in fila. Chi li prende alle spalle trova qualcosa in più.' }),
+  plotone: Object.freeze({ nome: 'Le Belve del Sotterraneo',
+    avviso: '🦁 LE BELVE DEL SOTTERRANEO: tre gabbie aperte. Chi le fa sbattere contro il muro trova qualcosa in più.' }),
+});
+
+/** Fogli PNG facoltativi (assets/sprite_teatro/<nome>.png, una riga di pose): `presente` quando l'autore li aggiunge. */
+const FOGLI_H7 = Object.freeze({
+  mirmillone_latta: Object.freeze({ nome: 'mirmillone-latta', presente: false, altezza: 40, piedi: 3, pose: Object.freeze(['avanza', 'alza', 'affondo', 'scoperto']) }),
+  reziario_ombra: Object.freeze({ nome: 'reziario-ombra', presente: false, altezza: 40, piedi: 3, pose: Object.freeze(['gira', 'rotea', 'recupera', 'punta', 'stocca']) }),
+  belva_cartapesta: Object.freeze({ nome: 'belva-cartapesta', presente: false, altezza: 34, piedi: 3, pose: Object.freeze(['aggira', 'acquatta', 'carica', 'frena', 'stordita']) }),
+  suonatore_corno: Object.freeze({ nome: 'suonatore-corno', presente: false, altezza: 38, piedi: 3, pose: Object.freeze(['tiene', 'gonfia', 'suona']) }),
+});
+
+// ===========================================================================
+// 3-4. I NEMICI DEL LUOGO — vestizione, creazione, IA
+// ===========================================================================
+const fraH7 = (c) => c[0] + Math.floor(rng() * (c[1] - c[0]));
+/** Ruota l'angolo `a` verso `b` di al massimo `max` radianti. */
+function ruotaVersoH7(a, b, max) {
+  let d = b - a;
+  while (d > Math.PI) d -= TAU;
+  while (d < -Math.PI) d += TAU;
+  return a + limitaH7(d, -max, max);
+}
+/** Sposta un nemico tenendolo nell'arena; rende true se ha toccato un muro. */
+function muoviH7(n, dx, dy, margine = 14) {
+  const x = n.x + dx, y = n.y + dy;
+  n.x = limitaH7(x, ARENA.x1 + margine, ARENA.x2 - margine);
+  n.y = limitaH7(y, ARENA.y1 + margine, ARENA.y2 - margine);
+  return n.x !== x || n.y !== y;
+}
+
+/** Numeri di scala (gli stessi di popolaStanza, come in d6). */
+function scalaH7(piano) {
+  const ciclo = Math.floor((piano - 1) / 4) + 1;
+  return { ciclo, moltCiclo: Math.pow(1.45, ciclo - 1), moltVel: Math.min(1.55, 1 + (piano - 1) * 0.045) };
+}
+
+/** Dà a un nemico il tipo del luogo `tipo`, con vita e passo del piano. */
+function vestiNemicoH7(n, tipo, piano) {
+  const T = NEMICI_H7[tipo], K = scalaH7(piano);
+  const hpC = n.champion === 'cremisi' ? 1.6 : n.champion ? 1.35 : 1;
+  n.tipo = tipo; n.patternMob = tipo;
+  n.nome = n.champion ? `${T.nome} [Campione ${n.champion}]` : T.nome;
+  n.maxHp = Math.round((T.hpBase + (piano - 1) * T.hpPiano) * K.moltCiclo * hpC);
+  n.hp = n.maxHp;
+  n.speed = T.vel * K.moltVel * (n.champion === 'dorato' ? 1.2 : 1);
+  n.r = T.raggio;
+  n.statoH7 = null;
+}
+
+/**
+ * Un combattente nuovo che sale da un montacarichi (giuramenti e corno). Rende il nemico, già nella stanza.
+ * @param {object} st stanza @param {string} tipo chiave di NEMICI_H7 @param {number} m indice in MONTACARICHI_H7
+ * @param {number} [ritardo] tick prima che il montacarichi parta
+ */
+function creaCombattenteH7(st, tipo, m, ritardo = 0) {
+  const M = MONTACARICHI_H7[m % MONTACARICHI_H7.length];
+  st.contaH7 = (st.contaH7 || 0) + 1;
+  const n = { id: `${st.id}-h7-${st.contaH7}`, tipo, patternMob: tipo, nome: '', boss: false, mobSoldi: false, champion: null,
+    x: M[0], y: M[1] + 6, hp: 1, maxHp: 1, speed: 0, r: 11, flash: 0, burnTicks: 0, stunTicks: 0, state: 'idle', stateTimer: 20,
+    maskOpen: false, shootCd: 60, vx: 0, vy: 0, airZ: 0 };
+  vestiNemicoH7(n, tipo, statoRun.piano);
+  avviaSalitaH7(n, M, ritardo);
+  st.nemici.push(n);
+  return n;
+}
+
+/** Il nemico sale dal montacarichi M: finché sale non si colpisce e non ferisce (airZ alto, come i boss in volo). */
+function avviaSalitaH7(n, M, ritardo = 0) {
+  const G = GIURAMENTI_H7;
+  n.x = M[0]; n.y = M[1] + 6;
+  n.saleH7 = G.saleTick + ritardo; n.saleDurataH7 = G.saleTick; n.mcH7 = M;
+  n.airZ = 30;
+}
+
+/** Passo della salita: true finché il nemico è ancora sul montacarichi. */
+function passoSalitaH7(n) {
+  if (!(n.saleH7 > 0)) return false;
+  n.saleH7--;
+  if (n.saleH7 === n.saleDurataH7 - 1) suonoSabbiaH7(0.5);
+  if (n.saleH7 <= 0) { n.airZ = 0; n.saleH7 = 0; return false; }
+  n.airZ = 30;
+  return true;
+}
+
+/** Vivi (o in salita) nella stanza. */
+const viviH7 = (st) => st.nemici.filter((n) => n.hp > 0);
+
+/** IA dei nemici del luogo, per tipo: (n, st, ang, dist, T). Stati in n.statoH7, timer in n.tH7, verso in n.angH7. */
+const IA_H7 = {
+  mirmillone_latta(n, st, ang, dist, T) {
+    if (!n.statoH7) { n.statoH7 = 'avanza'; n.tH7 = fraH7(T.avanzaTick); n.angH7 = ang; }
+    const s = n.statoH7;
+    if (s === 'avanza') {
+      n.angH7 = ruotaVersoH7(n.angH7, ang, T.giro);
+      if (dist > T.vicinoPx) muoviH7(n, Math.cos(n.angH7) * n.speed, Math.sin(n.angH7) * n.speed);
+      if (--n.tH7 <= 0 && dist < T.portataPx) { n.statoH7 = 'alza'; n.tH7 = T.alzaTick; }
+      else if (n.tH7 <= 0) n.tH7 = 20;
+    } else if (s === 'alza') {
+      if (n.tH7 > T.bloccoTick) n.angH7 = ruotaVersoH7(n.angH7, ang, T.giro * 2);
+      if (--n.tH7 <= 0) { n.statoH7 = 'affondo'; n.tH7 = T.affondoTick; n.vx = Math.cos(n.angH7) * T.velAffondo; n.vy = Math.sin(n.angH7) * T.velAffondo; }
+    } else if (s === 'affondo') {
+      const muro = muoviH7(n, n.vx, n.vy);
+      if (--n.tH7 <= 0 || muro) { n.statoH7 = 'scoperto'; n.tH7 = T.scopertoTick; }
+    } else if (--n.tH7 <= 0) { n.statoH7 = 'avanza'; n.tH7 = fraH7(T.avanzaTick); }
+  },
+  reziario_ombra(n, st, ang, dist, T) {
+    if (!n.statoH7) { n.statoH7 = 'gira'; n.tH7 = fraH7(T.giraTick); n.giroH7 = rng() < 0.5 ? -1 : 1; n.angH7 = ang; }
+    const s = n.statoH7;
+    if (s === 'gira' || s === 'recupera') {
+      const rad = limitaH7((dist - T.distanzaPx) / 40, -1, 1);
+      const dx = Math.cos(ang) * rad + Math.cos(ang + n.giroH7 * Math.PI / 2) * T.giro;
+      const dy = Math.sin(ang) * rad + Math.sin(ang + n.giroH7 * Math.PI / 2) * T.giro;
+      const l = Math.hypot(dx, dy) || 1, v = n.speed * (s === 'recupera' ? 0.5 : 1);
+      if (muoviH7(n, (dx / l) * v, (dy / l) * v) && n.tH7 % 20 === 0) n.giroH7 = -n.giroH7;
+      n.angH7 = ang;
+      if (--n.tH7 <= 0) {
+        if (s === 'recupera') { n.statoH7 = 'gira'; n.tH7 = fraH7(T.giraTick); }
+        else if (dist < T.vicinoPx) { n.statoH7 = 'punta'; n.tH7 = T.puntaTick; }
+        else if ((st.retiH7 || []).length < T.rete.massime) { n.statoH7 = 'rotea'; n.tH7 = T.roteaTick; }
+        else n.tH7 = 30;
+      }
+    } else if (s === 'rotea') {
+      if (n.tH7 > T.bloccoTick) n.angH7 = ang;
+      if (--n.tH7 <= 0) {
+        const R = T.rete;
+        (st.retiH7 = st.retiH7 || []).push({ x: n.x, y: n.y - 18, vx: Math.cos(n.angH7) * R.velocita, vy: Math.sin(n.angH7) * R.velocita, vita: R.vitaTick, t: 0 });
+        soffioH7(0.25, 700, 300, 0.04, 1.4);
+        n.statoH7 = 'recupera'; n.tH7 = T.recuperaTick;
+      }
+    } else if (s === 'punta') {
+      if (n.tH7 > 8) n.angH7 = ang;
+      if (--n.tH7 <= 0) { n.statoH7 = 'stocca'; n.tH7 = T.stoccaTick; n.vx = Math.cos(n.angH7) * T.velStocca; n.vy = Math.sin(n.angH7) * T.velStocca; }
+    } else if (s === 'stocca') {
+      muoviH7(n, n.vx, n.vy);
+      if (--n.tH7 <= 0) { n.statoH7 = 'recupera'; n.tH7 = Math.round(T.recuperaTick / 2); }
+    }
+  },
+  belva_cartapesta(n, st, ang, dist, T) {
+    if (!n.statoH7) { n.statoH7 = 'aggira'; n.tH7 = fraH7(T.aggiraTick); n.giroH7 = rng() < 0.5 ? -1 : 1; n.angH7 = ang; }
+    const s = n.statoH7;
+    if (s === 'aggira') {
+      const a = ang + n.giroH7 * 1.1;
+      if (muoviH7(n, Math.cos(a) * n.speed, Math.sin(a) * n.speed, 16)) n.giroH7 = -n.giroH7;
+      n.angH7 = ruotaVersoH7(n.angH7, ang, 0.1);
+      if (--n.tH7 <= 0) { n.statoH7 = 'acquatta'; n.tH7 = T.acquattaTick; }
+    } else if (s === 'acquatta') {
+      if (n.tH7 > T.bloccoTick) n.angH7 = ang;
+      if (--n.tH7 <= 0) { n.statoH7 = 'carica'; n.tH7 = T.caricaTick; n.vx = Math.cos(n.angH7) * T.velCarica; n.vy = Math.sin(n.angH7) * T.velCarica; tonoH7(110, 0.35, 0.05, 'sawtooth', 70); }
+    } else if (s === 'carica') {
+      const muro = muoviH7(n, n.vx, n.vy, 16);
+      if (muro) { n.statoH7 = 'stordita'; n.tH7 = T.storditaTick; scuoti(FEEL.scossa.colpo); }
+      else if (--n.tH7 <= 0) { n.statoH7 = 'frena'; n.tH7 = T.frenaTick; }
+    } else if (s === 'frena') {
+      muoviH7(n, n.vx * 0.15, n.vy * 0.15, 16);
+      if (--n.tH7 <= 0) { n.statoH7 = 'aggira'; n.tH7 = fraH7(T.aggiraTick); }
+    } else if (--n.tH7 <= 0) { n.statoH7 = 'aggira'; n.tH7 = fraH7(T.aggiraTick); }
+  },
+  suonatore_corno(n, st, ang, dist, T) {
+    if (!n.statoH7) { n.statoH7 = 'tiene'; n.tH7 = fraH7(T.tieneTick); n.angH7 = ang; n.chiamateH7 = 0; }
+    const s = n.statoH7;
+    n.angH7 = ang;
+    if (s === 'tiene') {
+      const rad = limitaH7((dist - T.distanzaPx) / 40, -1, 1);
+      muoviH7(n, Math.cos(ang) * rad * n.speed, Math.sin(ang) * rad * n.speed);
+      if (--n.tH7 <= 0) { n.statoH7 = 'gonfia'; n.tH7 = T.gonfiaTick; }
+    } else if (s === 'gonfia') {
+      if (--n.tH7 <= 0) {
+        n.statoH7 = 'suona'; n.tH7 = T.suonaTick;
+        tonoH7(146.8, 0.9, 0.07, 'sawtooth', 138);
+        if (n.chiamateH7 < T.chiamate && viviH7(st).length < T.tettoVivi) {
+          n.chiamateH7++;
+          let m = 0, best = Infinity;
+          MONTACARICHI_H7.forEach((M, i) => { const d = Math.hypot(M[0] - player.x, M[1] - player.y); if (d > 90 && Math.hypot(M[0] - n.x, M[1] - n.y) < best) { best = Math.hypot(M[0] - n.x, M[1] - n.y); m = i; } });
+          creaCombattenteH7(st, T.chiama[Math.floor(rng() * T.chiama.length)], m);
+        } else {
+          const S = T.squillo;
+          for (let k = 0; k < S.note; k++) {
+            if (statoRun.proiettiliNemici.length >= 40) break;
+            const a = ang + (TAU * k) / S.note;
+            statoRun.proiettiliNemici.push({ x: n.x, y: n.y - 16, vx: Math.cos(a) * S.velocita, vy: Math.sin(a) * S.velocita, dist: 0, notaH7: true, fonteA7: `lo squillo del ${T.nome}` });
+          }
+        }
+      }
+    } else if (--n.tH7 <= 0) { n.statoH7 = 'tiene'; n.tH7 = fraH7(T.tieneTick); }
+  },
+};
+
+if (typeof iaNemicoD6 === 'function') {
+  const iaNemicoBaseH7 = iaNemicoD6;
+  /**
+   * Aggancio dell'IA dei nemici comuni (40-combattimento.js chiama iaNemicoD6): i nemici dell'Anfiteatro agiscono
+   * qui; chi sale ancora dal montacarichi sta fermo. Gli altri passano a d6.
+   */
+  iaNemicoD6 = function (n, st, ang, dist, ...resto) {
+    const ia = IA_H7[n && n.tipo];
+    if (!ia) {
+      if (n && n.saleH7 > 0) { passoSalitaH7(n); return true; }
+      return iaNemicoBaseH7.call(this, n, st, ang, dist, ...resto);
+    }
+    if (n.paraH7 > 0) n.paraH7--;
+    try { if (!passoSalitaH7(n)) ia(n, st, ang, dist, NEMICI_H7[n.tipo]); } catch (err) { console.error('[h7] ia', n.tipo, err); }
+    return true;
+  };
+}
+
+const danneggiaNemicoBaseH7 = danneggiaNemico;
+/** Lo scudo del Mirmillone: i colpi che arrivano di fronte, mentre avanza o alza il gladio, sono parati. */
+danneggiaNemico = function (nem, dmg, kx, ky, ...resto) {
+  try {
+    if (nem && nem.tipo === 'mirmillone_latta' && (nem.statoH7 === 'avanza' || nem.statoH7 === 'alza') && dmg > 0) {
+      const l = Math.hypot(kx || 0, ky || 0);
+      const da = l > 0.01 ? Math.atan2(-ky, -kx) : Math.atan2(player.y - nem.y, player.x - nem.x); // da dove arriva il colpo
+      let d = da - (nem.angH7 || 0);
+      while (d > Math.PI) d -= TAU;
+      while (d < -Math.PI) d += TAU;
+      if (Math.abs(d) < NEMICI_H7.mirmillone_latta.paraSemiampiezza) {
+        nem.paraH7 = 10; nem.parateH7 = (nem.parateH7 || 0) + 1;
+        tonoH7(1250, 0.12, 0.05, 'square', 900);
+        return undefined;
+      }
+    }
+  } catch (err) { console.error('[h7] scudo', err); }
+  return danneggiaNemicoBaseH7.call(this, nem, dmg, kx, ky, ...resto);
+};
+
+const popolaStanzaBaseH7 = popolaStanza;
+/** Dopo popolaStanza di base: all'Anfiteatro i nemici di San Leucio diventano quelli del luogo. */
+popolaStanza = function (s, piano, ...resto) {
+  const r = popolaStanzaBaseH7.call(this, s, piano, ...resto);
+  try { if (s && anfiteatroAttivoH7(piano)) vestiStanzaH7(s, piano); } catch (err) { console.error('[h7] popola', err); }
+  return r;
+};
+
+/** Veste una stanza appena popolata (il boss si veste nella sezione del Giudice). */
+function vestiStanzaH7(s, piano) {
+  if (s.tipo === 'boss') return;
+  for (const n of s.nemici) {
+    const nuovo = !n.boss && SOSTITUZIONI_H7[n.tipo];
+    if (nuovo) vestiNemicoH7(n, nuovo, piano);
+  }
+}
+
+const massaNemicoBaseH7 = massaNemico;
+/** Massa per le spinte: quella della tabella per i nemici del luogo. */
+massaNemico = function (nem, ...resto) {
+  const T = nem && !nem.boss ? NEMICI_H7[nem.tipo] : null;
+  if (T && T.massa !== undefined) return T.massa;
+  return massaNemicoBaseH7.call(this, nem, ...resto);
+};
+
+// ===========================================================================
+// 3. I GIURAMENTI
+// ===========================================================================
+/** Sceglie le stanze-giuramento del piano (deterministico col seme della run). */
+function scegliGiuramentiH7(m) {
+  const G = GIURAMENTI_H7;
+  const adatte = m.stanze.filter((s) => s.tipo === 'normale' && s.nemici.length > 0 && !s.temaB7 && !s.pulita);
+  const scelte = adatte.filter(() => rng() < G.prob);
+  while (scelte.length < Math.min(G.minimo, adatte.length)) { const s = adatte[Math.floor(rng() * adatte.length)]; if (!scelte.includes(s)) scelte.push(s); }
+  for (const s of scelte.slice(0, G.massimo)) s.giuramentoH7 = { stato: 'attesa', ondate: fraH7([G.ondate[0], G.ondate[1] + 1]), ondata: 0, persi: 0, pausa: 0, t0: 0 };
+}
+
+const generaMappaPianoBaseH7 = generaMappaPiano;
+/** Mappa del piano: all'Anfiteatro alcune stanze diventano giuramenti. */
+generaMappaPiano = function (piano, ...resto) {
+  const m = generaMappaPianoBaseH7.call(this, piano, ...resto);
+  try {
+    if (m && anfiteatroAttivoH7(piano)) {
+      m.anfiteatroH7 = true;
+      for (const st of m.stanze) {
+        vestiStanzaH7(st, piano); // anche chi è entrato dopo popolaStanza (i temi rari di b7)
+        const T = st.temaB7 && TEMI_H7[st.temaB7.id];
+        if (T) st.temaB7 = Object.assign({}, st.temaB7, { nome: T.nome, avviso: T.avviso });
+      }
+      scegliGiuramentiH7(m);
+    }
+  } catch (err) { console.error('[h7] mappa', err); }
+  return m;
+};
+
+/** Il giuramento comincia: grate giù, la squadra della stanza sale dai montacarichi. */
+function iniziaGiuramentoH7(st) {
+  const G = st.giuramentoH7;
+  G.stato = 'in_corso'; G.ondata = 1; G.persi = 0; G.t0 = tick; G.pausa = 0; G.hpUltimo = statoRun.hpHalf;
+  viviH7(st).forEach((n, i) => avviaSalitaH7(n, MONTACARICHI_H7[i % MONTACARICHI_H7.length], i * GIURAMENTI_H7.scaglionaTick));
+  mostraBanner(`${TESTI_NEMICI_H7.giuramento} ${TESTI_NEMICI_H7.ondata(1, G.ondate)}`, 220);
+  tonoH7(98, 0.6, 0.06, 'square', 80);
+}
+
+/** Un'ondata nuova dai montacarichi. */
+function ondataGiuramentoH7(st) {
+  const G = st.giuramentoH7, C = GIURAMENTI_H7;
+  G.ondata++;
+  const quanti = fraH7([C.perOndata[0], C.perOndata[1] + 1]);
+  const pesi = Object.entries(C.pesi), tot = pesi.reduce((a, [, p]) => a + p, 0);
+  const lontani = MONTACARICHI_H7.map((M, i) => ({ i, d: Math.hypot(M[0] - player.x, M[1] - player.y) })).sort((a, b) => b.d - a.d);
+  for (let k = 0; k < quanti; k++) {
+    let x = rng() * tot, tipo = pesi[0][0];
+    for (const [t, p] of pesi) { if ((x -= p) < 0) { tipo = t; break; } }
+    creaCombattenteH7(st, tipo, lontani[k % 3].i, k * C.scaglionaTick); // mai dal montacarichi sotto i piedi
+  }
+  mostraBanner(TESTI_NEMICI_H7.ondata(G.ondata, G.ondate), 160);
+  tonoH7(110, 0.5, 0.05, 'square', 90);
+}
+
+/** Il giuramento è mantenuto: grate su, e il favore delle gradinate se non si è persa una Maschera. */
+function chiudiGiuramentoH7(st) {
+  const G = st.giuramentoH7;
+  G.stato = 'fatto'; G.t1 = tick;
+  G.favore = G.persi === 0;
+  if (G.favore) favoreGradinateH7(st);
+  mostraBanner(G.favore ? TESTI_NEMICI_H7.favore : TESTI_NEMICI_H7.fatto, 240);
+  verificaStanzaPulita();
+}
+
+/** Il favore delle gradinate: un premio in più, lanciato dai palchetti (b1) se c'è il pubblico. */
+function favoreGradinateH7(st) {
+  const piena = statoRun.hpHalf >= (statoRun.maxHpHalf || 6);
+  const pk = piena ? { tipo: 'chiave', valore: 1, sprite: 'chiaveA1', x: 320, y: 150 } : { tipo: 'cura', valore: 2, sprite: 'cuore', x: 320, y: 150 };
+  st.oggettiATerra = st.oggettiATerra || [];
+  st.oggettiATerra.push(pk);
+  const prima = st.oggettiATerra.length;
+  spawnaMonetaATerra(st, 296, 156, 3);
+  const nuovi = [pk].concat(st.oggettiATerra.slice(prima));
+  if (typeof lanciaPremioB1 === 'function') nuovi.forEach((x, i) => { try { lanciaPremioB1(st, x, i); } catch (_) { /* resta dov'è */ } });
+  st.favoreH7 = true;
+  if (typeof AudioSys.playCampana === 'function') AudioSys.playCampana();
+}
+
+/** Passo del giuramento della stanza corrente (dopo il passo di base). */
+function passoGiuramentoH7(st, hpPrima) {
+  const G = st.giuramentoH7;
+  if (G && G.stato === 'attesa' && !st.pulita && viviH7(st).length) iniziaGiuramentoH7(st); // se l'ingresso non l'ha fatto partire
+  if (!G || G.stato !== 'in_corso') return;
+  const prima = Math.max(hpPrima, G.hpUltimo == null ? hpPrima : G.hpUltimo); // anche i colpi presi fuori dal passo
+  if (statoRun.hpHalf < prima) G.persi += prima - statoRun.hpHalf;
+  G.hpUltimo = statoRun.hpHalf;
+  if (viviH7(st).length > 0) return;
+  if (G.ondata < G.ondate) {
+    if (++G.pausa >= GIURAMENTI_H7.pausaTick) { G.pausa = 0; ondataGiuramentoH7(st); }
+    return;
+  }
+  chiudiGiuramentoH7(st);
+}
+
+/** Le reti del Reziario in volo, e chi ne è preso. */
+function passoRetiH7(st) {
+  const R = NEMICI_H7.reziario_ombra.rete;
+  if (statoRun.irretitoH7 > 0) statoRun.irretitoH7--;
+  const reti = st.retiH7 || [];
+  for (let i = reti.length - 1; i >= 0; i--) {
+    const r = reti[i];
+    r.x += r.vx; r.y += r.vy; r.t++;
+    const fuori = r.x < ARENA.x1 || r.x > ARENA.x2 || r.y < ARENA.y1 - 10 || r.y > ARENA.y2;
+    if (Math.hypot(player.x - r.x, player.y - 8 - r.y) < R.raggio + 8 && !(player.invuln > 0) && !player.volo) {
+      if (!(statoRun.irretitoH7 > 0)) mostraBanner(TESTI_NEMICI_H7.irretito, 120);
+      statoRun.irretitoH7 = R.tick; reti.splice(i, 1); soffioH7(0.2, 500, 200, 0.05);
+      continue;
+    }
+    if (--r.vita <= 0 || fuori) reti.splice(i, 1);
+  }
+}
+
+const verificaStanzaPulitaGiuramentoH7 = verificaStanzaPulita;
+/** Durante un giuramento la stanza non è pulita finché non salgono tutte le ondate. */
+verificaStanzaPulita = function (...args) {
+  const st = statoRun.stanzaCorrente;
+  if (st && st.giuramentoH7 && st.giuramentoH7.stato === 'in_corso') return undefined;
+  return verificaStanzaPulitaGiuramentoH7.apply(this, args);
+};
+
+const entraInStanzaBaseH7 = entraInStanza;
+/** Ingresso in una stanza dell'Anfiteatro: il giuramento parte; le reti in volo si perdono. */
+entraInStanza = function (stanza, daLato, ...resto) {
+  const r = entraInStanzaBaseH7.call(this, stanza, daLato, ...resto);
+  try {
+    if (stanza && statoRun.stanzaCorrente === stanza && anfiteatroAttivoH7()) {
+      stanza.retiH7 = [];
+      statoRun.irretitoH7 = 0;
+      const G = stanza.giuramentoH7;
+      if (G && G.stato === 'attesa' && !stanza.pulita && viviH7(stanza).length) iniziaGiuramentoH7(stanza);
+    }
+  } catch (err) { console.error('[h7] ingresso', err); }
+  return r;
+};
+
+const passoLogicoBaseH7 = passoLogico;
+/** Attorno al passo di base: reti, giocatore irretito, giuramenti. */
+passoLogico = function (...args) {
+  const st = statoRun.stanzaCorrente;
+  const attivo = Boolean(st) && statoRun.fase === 'in_gioco' && anfiteatroAttivoH7() && ticksCongelati <= 0
+    && !(statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo || statoRun.pausa);
+  const hpPrima = statoRun.hpHalf, px = player.x, py = player.y;
+  const r = passoLogicoBaseH7.apply(this, args);
+  try {
+    if (attivo && statoRun.fase === 'in_gioco' && statoRun.stanzaCorrente === st) {
+      if (statoRun.irretitoH7 > 0) {
+        const k = NEMICI_H7.reziario_ombra.rete.rallenta;
+        player.x = px + (player.x - px) * k; player.y = py + (player.y - py) * k;
+      }
+      passoRetiH7(st);
+      passoGiuramentoH7(st, hpPrima);
+      dopoIlPassoGiudiceH7(st, hpPrima);
+    }
+  } catch (err) { console.error('[h7] dopo il passo', err); }
+  return r;
+};
+
+/** Il passo del boss (sezione del Giudice): qui un segnaposto che la sezione 5 sostituisce. */
+function dopoIlPassoGiudiceH7() { /* sezione 5 */ }
+
+// ===========================================================================
+// 3-4. DISEGNO «a ombre» di nemici, montacarichi, reti e grate
+// ===========================================================================
+const BORDO_H7 = 'rgba(240, 180, 90, 0.85)';
+/** Prepara il tratto delle sagome: china piena, contorno di lanterna (bianco se colpito). */
+function chinaH7(flash) { ctx.fillStyle = flash ? '#f5e6c8' : TINTE_H7.china; ctx.strokeStyle = flash ? '#fff' : BORDO_H7; ctx.lineWidth = 1; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; }
+function ombraTerraH7(x, y, rx, ry, a = 0.5) { ctx.fillStyle = `rgba(30, 18, 8, ${a})`; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, TAU); ctx.fill(); }
+/** Disegna una cella del foglio PNG del tipo, se c'è; true se l'ha disegnata. */
+function cellaH7(tipo, posa, flip, flash) {
+  const F = FOGLI_H7[tipo];
+  if (!F || !F.presente || typeof disegnaCellaTeatro !== 'function') return false;
+  const col = Math.max(0, F.pose.indexOf(posa)), A = F.altezza;
+  ctx.save(); ctx.scale(flip, 1);
+  const ok = disegnaCellaTeatro(ctx, F.nome, col, F.pose.length, -A * 0.6, -A + F.piedi, A * 1.2, A, flash ? '#fff' : null, flash ? 0.6 : 0);
+  ctx.restore();
+  return ok;
+}
+
+const DISEGNI_NEMICI_H7 = {
+  mirmillone_latta(n, t, flash) {
+    const s = n.statoH7 || 'avanza', flip = Math.cos(n.angH7 || 0) < 0 ? -1 : 1;
+    ombraTerraH7(0, 1, 12, 4);
+    if (cellaH7(n.tipo, s, flip, flash)) return;
+    ctx.scale(flip, 1);
+    const passo = s === 'avanza' ? Math.sin(t * 0.25) * 1.5 : 0, lean = s === 'affondo' ? 4 : s === 'alza' ? -1.5 : 0;
+    chinaH7(flash);
+    // gambe e schinieri
+    ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(-3 + passo, -10); ctx.lineTo(2, -10); ctx.lineTo(4 - passo, 0); ctx.lineTo(1, 0); ctx.lineTo(0, -6); ctx.lineTo(-1.5, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // busto in latta, cintura rossa
+    ctx.beginPath(); ctx.moveTo(-6 + lean, -10); ctx.lineTo(-5 + lean, -24); ctx.lineTo(6 + lean, -24); ctx.lineTo(6 + lean, -10); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = TINTE_H7.rosso; ctx.fillRect(-6 + lean, -12.5, 12, 2.2);
+    // elmo a tesa larga con la cresta a pesce, visiera a grata
+    chinaH7(flash);
+    ctx.beginPath(); ctx.arc(lean + 0.5, -28, 5, Math.PI, 0); ctx.lineTo(6.5 + lean, -27); ctx.lineTo(-5.5 + lean, -27); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-8 + lean, -25.5); ctx.lineTo(9 + lean, -25.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-3 + lean, -33); ctx.quadraticCurveTo(lean + 2, -38, 7 + lean, -33); ctx.lineTo(lean + 2, -32); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = TINTE_H7.oro; ctx.lineWidth = 0.6;
+    ctx.beginPath(); for (let k = 0; k < 3; k++) { ctx.moveTo(lean + 1 + k * 1.6, -29.5); ctx.lineTo(lean + 1 + k * 1.6, -26.5); } ctx.stroke();
+    // il gladio: in alto dietro la testa (alza), avanti (affondo), basso (altrimenti)
+    ctx.strokeStyle = flash ? '#fff' : '#e7e2d2'; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    if (s === 'alza') { ctx.moveTo(-3, -26); ctx.lineTo(-11, -38); }
+    else if (s === 'affondo') { ctx.moveTo(6 + lean, -18); ctx.lineTo(20 + lean, -18); }
+    else { ctx.moveTo(-5, -14); ctx.lineTo(-9, -4); }
+    ctx.stroke();
+    // lo scudo: davanti (avanza, alza), aperto di lato (affondo, scoperto)
+    chinaH7(flash);
+    ctx.save();
+    if (s === 'scoperto' || s === 'affondo') { ctx.translate(-8 + lean, -16); ctx.rotate(-0.5); } else ctx.translate(8 + lean, -16);
+    ctx.beginPath(); ctx.rect(-3, -10, 6, 20); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = TINTE_H7.rosso; ctx.fillRect(-2, -8, 4, 16);
+    ctx.fillStyle = (n.paraH7 > 0) ? '#fff3d6' : TINTE_H7.oro; ctx.beginPath(); ctx.arc(0, 0, n.paraH7 > 0 ? 2.6 : 1.6, 0, TAU); ctx.fill();
+    ctx.restore();
+    if (n.paraH7 > 0) { // la scintilla della parata, sullo scudo
+      ctx.strokeStyle = '#fff3d6'; ctx.lineWidth = 1; ctx.beginPath();
+      for (let k = 0; k < 5; k++) { const a = k * 1.256 + t * 0.3; ctx.moveTo(12 + lean, -16); ctx.lineTo(12 + lean + Math.cos(a) * 6, -16 + Math.sin(a) * 6); }
+      ctx.stroke();
+    }
+  },
+  reziario_ombra(n, t, flash) {
+    const s = n.statoH7 || 'gira', flip = Math.cos(n.angH7 || 0) < 0 ? -1 : 1;
+    ombraTerraH7(0, 1, 10, 3.5);
+    if (cellaH7(n.tipo, s, flip, flash)) return;
+    ctx.scale(flip, 1);
+    const passo = (s === 'gira' || s === 'recupera') ? Math.sin(t * 0.3) * 2 : 0;
+    chinaH7(flash);
+    // gambe nude, perizoma, torso snello, testa scoperta coi capelli legati
+    ctx.beginPath(); ctx.moveTo(-3.5 + passo, 0); ctx.lineTo(-2, -11); ctx.lineTo(2, -11); ctx.lineTo(3.5 - passo, 0); ctx.lineTo(1.6, 0); ctx.lineTo(0, -7); ctx.lineTo(-1.6, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-4, -11); ctx.lineTo(-4.5, -24); ctx.lineTo(4.5, -24); ctx.lineTo(4, -11); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, -28, 3.8, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-3.4, -29, 1.4, 0, TAU); ctx.fill();
+    // la manica e il galero (spalla alta) sul braccio della rete
+    ctx.fillStyle = flash ? '#fff' : TINTE_H7.travertinoOmbra; ctx.fillRect(-6.5, -25, 3, 5);
+    // il tridente
+    ctx.strokeStyle = flash ? '#fff' : '#d6c9a6'; ctx.lineWidth = 1.2;
+    const tri = s === 'punta' ? [-14, -16, 6, -18] : s === 'stocca' ? [0, -17, 26, -17] : [6, -2, 9, -40];
+    ctx.beginPath(); ctx.moveTo(tri[0], tri[1]); ctx.lineTo(tri[2], tri[3]);
+    const a = Math.atan2(tri[3] - tri[1], tri[2] - tri[0]);
+    for (const d of [-0.35, 0, 0.35]) { ctx.moveTo(tri[2], tri[3]); ctx.lineTo(tri[2] + Math.cos(a + d) * 4.5, tri[3] + Math.sin(a + d) * 4.5); }
+    ctx.stroke();
+    // la rete: in mano (gira), che rotea sopra la testa (rotea), la corda che torna (recupera)
+    ctx.strokeStyle = flash ? '#fff' : TINTE_H7.bordo; ctx.lineWidth = 0.7;
+    if (s === 'rotea') {
+      const rot = t * 0.45, rx = 11, ry = 4;
+      ctx.beginPath(); ctx.ellipse(-2, -38, rx, ry, 0, 0, TAU); ctx.stroke();
+      ctx.beginPath(); for (let k = 0; k < 6; k++) { const q = rot + (k * Math.PI) / 3; ctx.moveTo(-2, -38); ctx.lineTo(-2 + Math.cos(q) * rx, -38 + Math.sin(q) * ry); } ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-5, -24); ctx.lineTo(-2, -37); ctx.stroke();
+    } else if (s === 'recupera') {
+      ctx.beginPath(); ctx.moveTo(-5, -20); ctx.quadraticCurveTo(-14, -10, -20, -14); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(-6, -20); ctx.quadraticCurveTo(-12, -14, -8, -6); ctx.quadraticCurveTo(-4, -10, -6, -20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-9, -15); ctx.lineTo(-5, -11); ctx.moveTo(-8, -9); ctx.lineTo(-6, -17); ctx.stroke();
+    }
+  },
+  belva_cartapesta(n, t, flash) {
+    const s = n.statoH7 || 'aggira', flip = Math.cos(n.angH7 || 0) < 0 ? -1 : 1;
+    ombraTerraH7(0, 1, 16, 4.5);
+    if (cellaH7(n.tipo, s, flip, flash)) return;
+    ctx.scale(flip, 1);
+    const basso = s === 'acquatta' ? 4 : s === 'stordita' ? 3 : 0, lungo = s === 'carica' ? 4 : 0;
+    const zampa = (s === 'aggira' || s === 'carica') ? Math.sin(t * (s === 'carica' ? 0.7 : 0.28)) * 3 : 0;
+    chinaH7(flash);
+    // zampe
+    for (const [zx, f] of [[-9, 1], [-5, -1], [7, 1], [10, -1]]) {
+      ctx.beginPath(); ctx.moveTo(zx - 1.5, -9 + basso * 0.5); ctx.lineTo(zx + zampa * f, 0); ctx.lineTo(zx + 2 + zampa * f, 0); ctx.lineTo(zx + 1.5, -9 + basso * 0.5); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    // corpo: la groppa alta quando si acquatta (muso giù)
+    ctx.beginPath();
+    ctx.moveTo(-13 - lungo, -9 - (s === 'acquatta' ? 5 : 0)); ctx.quadraticCurveTo(-2, -20 + basso, 9 + lungo, -15 + basso);
+    ctx.lineTo(10 + lungo, -8 + basso * 0.5); ctx.quadraticCurveTo(0, -6, -12 - lungo, -6); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // giunture di carta (cuciture chiare), che si aprono quando è stordita
+    ctx.strokeStyle = flash ? '#fff' : TINTE_H7.travertino; ctx.lineWidth = 0.6; ctx.globalAlpha = 0.7;
+    ctx.beginPath(); ctx.moveTo(-4, -16 + basso); ctx.lineTo(-3, -7); ctx.moveTo(3, -16 + basso); ctx.lineTo(4, -7); ctx.stroke();
+    ctx.globalAlpha = 1;
+    if (s === 'stordita') { ctx.fillStyle = TINTE_H7.travertino; ctx.save(); ctx.translate(-2, -16); ctx.rotate(-0.6 + Math.sin(t * 0.2) * 0.2); ctx.fillRect(0, -1, 7, 3); ctx.restore(); }
+    // testa con la criniera (raggi di carta), mascella
+    chinaH7(flash);
+    const hx = 12 + lungo, hy = -15 + basso + (s === 'acquatta' ? 3 : 0) + (s === 'stordita' ? 4 : 0);
+    ctx.beginPath(); for (let k = 0; k < 9; k++) { const q = (k / 9) * TAU, rr = k % 2 ? 6 : 8.5; ctx.lineTo(hx + Math.cos(q) * rr, hy + Math.sin(q) * rr); } ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(hx + 3, hy - 2); ctx.lineTo(hx + 9, hy); ctx.lineTo(hx + 3, hy + 3); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = s === 'acquatta' || s === 'carica' ? TINTE_H7.rosso : TINTE_H7.oro; ctx.fillRect(hx + 2, hy - 2.5, 1.6, 1.4);
+    // coda: alta e tesa quando si acquatta
+    ctx.strokeStyle = flash ? '#fff' : BORDO_H7; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(-13 - lungo, -10);
+    if (s === 'acquatta') ctx.quadraticCurveTo(-20, -18, -17, -27); else ctx.quadraticCurveTo(-20, -10, -21 - lungo, -4);
+    ctx.stroke();
+    if (s === 'stordita') { ctx.fillStyle = TINTE_H7.oro; for (let k = 0; k < 3; k++) { const q = t * 0.12 + k * 2.1; ctx.fillRect(hx + Math.cos(q) * 7 - 1, hy - 11 + Math.sin(q) * 2 - 1, 2, 2); } }
+  },
+  suonatore_corno(n, t, flash) {
+    const s = n.statoH7 || 'tiene', flip = Math.cos(n.angH7 || 0) < 0 ? -1 : 1;
+    ombraTerraH7(0, 1, 10, 3.5);
+    if (cellaH7(n.tipo, s, flip, flash)) return;
+    ctx.scale(flip, 1);
+    const passo = s === 'tiene' ? Math.sin(t * 0.22) * 1.5 : 0;
+    chinaH7(flash);
+    // tunica lunga, gambe corte
+    ctx.beginPath(); ctx.moveTo(-3 + passo, 0); ctx.lineTo(-2, -6); ctx.lineTo(2, -6); ctx.lineTo(3 - passo, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-6, -6); ctx.lineTo(-4, -24); ctx.lineTo(4, -24); ctx.lineTo(6, -6); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // testa: le guance gonfie quando soffia
+    const gonfio = s === 'gonfia' ? Math.min(1, (NEMICI_H7.suonatore_corno.gonfiaTick - (n.tH7 || 0)) / 30) : s === 'suona' ? 1 : 0;
+    ctx.beginPath(); ctx.arc(0.5, -28, 3.8, 0, TAU); ctx.fill(); ctx.stroke();
+    if (gonfio > 0) { ctx.beginPath(); ctx.arc(3.6, -27, 1.6 + gonfio * 1.4, 0, TAU); ctx.fill(); ctx.stroke(); }
+    // il corno (cornu): grande G attorno al corpo; alzato alla bocca quando gonfia e suona
+    ctx.strokeStyle = flash ? '#fff' : TINTE_H7.oro; ctx.lineWidth = 1.6;
+    const su = gonfio > 0 ? 1 : 0;
+    ctx.beginPath(); ctx.arc(-1, -18 - su * 6, 8, 0.6, Math.PI * 1.75); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(5 - su, -23 - su * 4); ctx.lineTo(4, -27); ctx.stroke(); // il bocchino
+    // il padiglione in alto, che luccica quando suona
+    ctx.fillStyle = s === 'suona' ? '#fff3d6' : TINTE_H7.oro;
+    const bx = -1 + Math.cos(Math.PI * 1.75) * 8, by = -18 - su * 6 + Math.sin(Math.PI * 1.75) * 8;
+    ctx.beginPath(); ctx.moveTo(bx - 1, by + 1); ctx.lineTo(bx + 4, by - 5); ctx.lineTo(bx + 6, by - 1); ctx.closePath(); ctx.fill();
+    if (s === 'suona') { // il suono si vede nell'aria, attorno al padiglione (non a terra)
+      ctx.strokeStyle = '#fde68a'; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.7;
+      for (let k = 0; k < 3; k++) { const rr = 4 + ((t * 0.5 + k * 4) % 12); ctx.beginPath(); ctx.arc(bx + 5, by - 4, rr, -1.4, 0.2); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+    }
+  },
+};
+
+/** Il montacarichi che sale: piattaforma di assi, funi, e la figura che spunta dal buio sotto la sabbia. */
+function disegnaSalitaH7(n, t, disegno, flash) {
+  const k = 1 - n.saleH7 / n.saleDurataH7;
+  if (k <= 0) return; // aspetta il suo turno: la botola è ancora chiusa
+  const M = n.mcH7, alt = 44;
+  ctx.save();
+  // la botola aperta: buio
+  ctx.fillStyle = TINTE_H7.china; ctx.fillRect(M[0] - 13, M[1] - 3, 26, 14);
+  // la figura sale (tagliata dal bordo della botola)
+  ctx.save();
+  ctx.beginPath(); ctx.rect(M[0] - 40, M[1] - 80, 80, 86); ctx.clip();
+  ctx.translate(n.x, n.y + (1 - k) * alt);
+  disegno(n, t, flash);
+  ctx.restore();
+  // la piattaforma e le funi delle carrucole
+  const py = M[1] + 6 + (1 - k) * alt * 0.2;
+  ctx.fillStyle = '#5c3d22'; ctx.fillRect(M[0] - 13, Math.min(py, M[1] + 10), 26, 3);
+  ctx.strokeStyle = '#8a7650'; ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.moveTo(M[0] - 12, M[1] + 8); ctx.lineTo(M[0] - 12, M[1] - 40); ctx.moveTo(M[0] + 12, M[1] + 8); ctx.lineTo(M[0] + 12, M[1] - 40); ctx.stroke();
+  // la sabbia che scivola dal bordo
+  ctx.fillStyle = TINTE_H7.sabbia;
+  for (let i = 0; i < 5; i++) { const q = ((t * 0.08 + i * 0.2) % 1); ctx.globalAlpha = 0.8 * (1 - q); ctx.fillRect(M[0] - 12 + i * 6, M[1] - 3 + q * 10, 1.2, 1.4); }
+  ctx.restore();
+}
+
+const disegnaNemicoPittoricoBaseH7 = disegnaNemicoPittorico;
+/** I nemici del luogo (e chi sale dai montacarichi) si disegnano qui; gli altri restano alla base. */
+disegnaNemicoPittorico = function (...args) {
+  const a = args[0] && typeof args[0].save === 'function' ? args.slice(1) : args;
+  const n = a[0];
+  const disegno = n && DISEGNI_NEMICI_H7[n.tipo];
+  if (!disegno) return disegnaNemicoPittoricoBaseH7.apply(this, args);
+  try {
+    const flash = n.flash > 0 && OPZIONI.lampi !== false;
+    if (n.saleH7 > 0) { disegnaSalitaH7(n, a[1] || 0, disegno, flash); return undefined; }
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.translate(Math.round(n.x), Math.round(n.y));
+    disegno(n, a[1] || 0, flash);
+    ctx.restore();
+  } catch (err) { console.error('[h7] disegno', n.tipo, err); }
+  return undefined;
+};
+
+/** Le grate di ferro che chiudono le uscite durante il giuramento (cadono dall'alto). */
+function disegnaGrateH7(st, tk) {
+  const G = st.giuramentoH7, C = GIURAMENTI_H7;
+  const giu = G.stato === 'in_corso' ? Math.min(1, (tk - G.t0) / C.grataTick) : Math.max(0, 1 - (tk - (G.t1 || 0)) / C.grataTick);
+  if (giu <= 0) return;
+  const P = { N: { x: 320, y: 61, w: 36, h: 18 }, S: { x: 320, y: 313, w: 36, h: 18 }, W: { x: 59, y: 187, w: 18, h: 36 }, E: { x: 581, y: 187, w: 18, h: 36 } };
+  ctx.save();
+  for (const lato of Object.keys(st.porte || {})) {
+    const p = P[lato];
+    if (!p) continue;
+    const x0 = p.x - p.w / 2, y0 = p.y - p.h / 2, h = p.h * giu;
+    ctx.fillStyle = 'rgba(10, 6, 4, 0.35)'; ctx.fillRect(x0, y0, p.w, h);
+    ctx.strokeStyle = TINTE_H7.ferro; ctx.lineWidth = 2;
+    ctx.beginPath();
+    const passo = p.w > p.h ? 6 : 4.5;
+    for (let xx = x0 + 2; xx < x0 + p.w; xx += passo) { ctx.moveTo(xx, y0); ctx.lineTo(xx, y0 + h); }
+    ctx.moveTo(x0, y0 + h * 0.5); ctx.lineTo(x0 + p.w, y0 + h * 0.5);
+    ctx.stroke();
+    ctx.strokeStyle = BORDO_H7; ctx.lineWidth = 0.6; ctx.globalAlpha = 0.6;
+    ctx.beginPath(); for (let xx = x0 + 2; xx < x0 + p.w; xx += passo) { ctx.moveTo(xx + 0.8, y0); ctx.lineTo(xx + 0.8, y0 + h); } ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = TINTE_H7.ferro; ctx.fillRect(x0, y0 + h - 1.5, p.w, 2.5); // la traversa in fondo
+  }
+  ctx.restore();
+}
+
+/** Le reti in volo e quella addosso a Ferruccio (sopra le figure). */
+function disegnaRetiH7(st, tk) {
+  ctx.save();
+  ctx.strokeStyle = TINTE_H7.bordo; ctx.lineWidth = 0.7;
+  for (const r of st.retiH7 || []) {
+    const ap = Math.min(1, r.t / 14), R = 4 + ap * NEMICI_H7.reziario_ombra.rete.raggio;
+    ombraTerraH7(r.x, r.y + 18, R * 0.8, 2.5, 0.3);
+    ctx.beginPath(); ctx.arc(r.x, r.y, R, 0, TAU); ctx.stroke();
+    ctx.beginPath();
+    for (let k = 0; k < 4; k++) { const q = r.t * 0.1 + (k * Math.PI) / 4; ctx.moveTo(r.x - Math.cos(q) * R, r.y - Math.sin(q) * R); ctx.lineTo(r.x + Math.cos(q) * R, r.y + Math.sin(q) * R); }
+    ctx.stroke();
+    ctx.fillStyle = TINTE_H7.ferro; for (let k = 0; k < 6; k++) { const q = (k / 6) * TAU + r.t * 0.1; ctx.fillRect(r.x + Math.cos(q) * R - 0.8, r.y + Math.sin(q) * R - 0.8, 1.6, 1.6); }
+  }
+  if (statoRun.irretitoH7 > 0) {
+    const x = player.x, y = player.y - 12;
+    ctx.beginPath();
+    for (let k = -2; k <= 2; k++) { ctx.moveTo(x - 9, y + k * 4); ctx.lineTo(x + 9, y + k * 4 + 2); ctx.moveTo(x + k * 4, y - 10); ctx.lineTo(x + k * 4 - 2, y + 9); }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+const disegnaStanzaGrateBaseH7 = disegnaStanzaPixelArt;
+/** Dopo la stanza: le grate del giuramento sulle uscite. */
+disegnaStanzaPixelArt = function (tk, st, ...resto) {
+  const r = disegnaStanzaGrateBaseH7.call(this, tk, st, ...resto);
+  try { if (st && st.giuramentoH7 && st.giuramentoH7.stato !== 'attesa') disegnaGrateH7(st, tk); } catch (err) { console.error('[h7] grate', err); }
+  return r;
+};
+
+const disegnaHUDPixelArtBaseH7 = disegnaHUDPixelArt;
+/** Prima dell'HUD: le reti in volo e quella addosso. */
+disegnaHUDPixelArt = function (st, ...resto) {
+  try { if (st && anfiteatroAttivoH7() && statoRun.fase === 'in_gioco') disegnaRetiH7(st, tick); } catch (err) { console.error('[h7] reti', err); }
+  return disegnaHUDPixelArtBaseH7.call(this, st, ...resto);
+};
+
+Object.assign(window.__teatro.interni, {
+  NEMICI_H7, SOSTITUZIONI_H7, GIURAMENTI_H7, MONTACARICHI_H7, TESTI_NEMICI_H7,
+  giuramentiH7: Object.freeze({
+    /** Il giuramento della stanza corrente (copia) o null. */
+    get qui() { const st = statoRun.stanzaCorrente; return st && st.giuramentoH7 ? { ...st.giuramentoH7, favoreDato: Boolean(st.favoreH7) } : null; },
+    /** Sviluppo/QA: crea un combattente del luogo nella stanza corrente, già salito (o in salita se `sale`). */
+    crea(tipo, x, y, sale = false) {
+      const st = statoRun.stanzaCorrente; const n = creaCombattenteH7(st, tipo, 0);
+      if (!sale) { n.saleH7 = 0; n.airZ = 0; n.x = x; n.y = y; }
+      return n.id;
+    },
+    get irretito() { return statoRun.irretitoH7 || 0; },
+    get reti() { const st = statoRun.stanzaCorrente; return ((st && st.retiH7) || []).length; },
+  }),
+});
