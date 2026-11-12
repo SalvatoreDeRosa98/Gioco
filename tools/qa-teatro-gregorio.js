@@ -57,17 +57,19 @@ const foto = (n) => `${prefisso}-${n}.png`;
     return { visti, scelta: null };
   };
   /** Run nuova fino dentro il Cortile del piano `piano`. */
-  const nelCortile = (piano) => p.evaluate((piano) => {
+  /** Run nuova fino dentro il Cortile, con `prese` pagine del registro raccolte stanotte. */
+  const nelCortile = (piano, prese = 3) => p.evaluate(([piano, prese]) => {
     const I = window.__teatro.interni; const R = I.statoRun;
     nuovaRun(false);
     avviaPiano(piano, false);
+    R.percorsoProveH3 = { run: R.numeroRun, ciclo: Math.floor((piano - 1) / 4) + 1, prese: [1, 2, 3].slice(0, prese) };
     R.siparioAttivo = null; R.cartiglioD = null;
     const st = R.mappa.stanze.find((s) => s.cortileH3);
     entraInStanza(st, 'S');
     R.graziaIngressoC = 0;
     I.player.invuln = 1e9;
     return Boolean(st);
-  }, piano);
+  }, [piano, prese]);
   const entraNelBoss = () => p.evaluate(() => {
     const I = window.__teatro.interni; const R = I.statoRun;
     const st = R.mappa.stanze.find((s) => s.tipo === 'boss');
@@ -110,7 +112,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('A. mai ai piani 1-3', gen.altrove === 0);
 
   // B. PRIMO CONFRONTO (tastiera), con le prove
-  await p.evaluate(() => { const q = window.__teatro.t4qa; q.azzeraFlag(); q.impostaFlag({ prove: 'vera' }); });
+  await p.evaluate(() => { const q = window.__teatro.t4qa; q.azzeraFlag(); });
   ok('B. nel Cortile', await nelCortile(4));
   await passi(p, 3);
   await aspetta(p, 300);
@@ -182,14 +184,27 @@ const foto = (n) => `${prefisso}-${n}.png`;
   // D. NOTTE DOPO (attacco): niente scelta, la conseguenza in breve
   await p.evaluate(() => { const d = window.__teatro.t4qa; if (d.dialogo) window.__teatro.interni.statoRun.fase = 'in_gioco'; });
   await leggiTutto();
-  await nelCortile(4);
+  await nelCortile(4, 3);
   await passi(p, 3);
   L = await leggiTutto();
+  ok('D. notte dopo (3 prove): di nuovo la scelta, senza la scena d\'ingresso', L.scelta && L.scelta[0] === 'Mostragli le prove' && L.visti.length === 0, L);
+  await p.keyboard.press('Digit2'); await aspetta(p, 60);
+  L = await leggiTutto();
   s = await stato();
-  ok('D. notte dopo: nessuna scelta, scontro diretto', !L.scelta && s.breve && s.fase === 'scontro', { L, s });
+  ok('D. attacca: scontro, in breve', s.breve && s.fase === 'scontro' && L.visti.length === 1, { L, s });
+  await p.evaluate(() => { window.__teatro.interni.statoRun.fase = 'in_gioco'; });
+  await nelCortile(4, 3);
+  await passi(p, 3);
+  L = await leggiTutto();
+  await p.keyboard.press('Digit1'); await aspetta(p, 60);
+  L = await leggiTutto();
+  s = await stato();
+  ok('D. chi aveva attaccato può mostrare le prove una notte dopo: niente scontro', !s.custode && s.esito === 'dialogo' && L.visti.includes('Tuo padre era innocente.'), { L, s });
+  ok('D. il flag dello slot resta quello della prima volta', (await p.evaluate(() => window.__teatro.t4qa.flag.gregorio)) === 'attacco');
+  await passi(p, 2);
 
   // E. RAMO DIALOGO col gamepad simulato
-  await p.evaluate(() => { const q = window.__teatro.t4qa; q.azzeraFlag(); q.impostaFlag({ prove: 'vera' }); window.__padAcceso = true; });
+  await p.evaluate(() => { const q = window.__teatro.t4qa; q.azzeraFlag(); window.__padAcceso = true; });
   await nelCortile(4);
   const chiavi0 = await p.evaluate(() => window.__teatro.interni.statoRun.chiavi || 0);
   await passi(p, 3);
@@ -217,24 +232,81 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('E. prima fase: il giglio prende più danno (×1,4)', Math.abs(danno - 14) < 0.6, danno);
   await leggiTutto(true);
   await scatta('luciana-guardie');
-  await nelCortile(4);
+  await nelCortile(4, 2);
   await passi(p, 3);
   L = await leggiTutto(true);
+  ok('E. notte dopo con 2 prove: «Le prove non bastano (2 su 3)»', L.scelta && L.scelta[0] === 'Le prove non bastano (2 su 3)', L);
+  await premiPad(0);
+  L = await leggiTutto(true);
   s = await stato();
-  ok('E. notte dopo: breve, nessuna scelta, nessuno scontro', !L.scelta && s.breve && !s.custode && L.visti.includes('Tuo padre era innocente.'), { L, s });
+  ok('E. senza le pagine si combatte, anche dopo il dialogo', s.breve && s.fase === 'scontro' && L.visti.some((t) => t.includes('qualcosa che non c\'è')), { L, s });
+  ok('E. il flag dello slot resta dialogo', (await p.evaluate(() => window.__teatro.t4qa.flag.gregorio)) === 'dialogo');
   await p.evaluate(() => { window.__padAcceso = false; });
 
   // F. SENZA PROVE
-  await p.evaluate(() => { const q = window.__teatro.t4qa; q.azzeraFlag(); q.impostaFlag({ prove: 'falsa', registro: 'bruciato', taddeo: 'accusato' }); });
-  await nelCortile(4);
+  await p.evaluate(() => { const q = window.__teatro.t4qa; q.azzeraFlag(); q.impostaFlag({ taddeo: 'accusato' }); });
+  await nelCortile(4, 0);
   await passi(p, 3);
   L = await leggiTutto();
-  ok('F. senza prove: prima risposta «Cerca le prove nella giubba»', L.scelta && L.scelta[0] === 'Cerca le prove nella giubba', L.scelta);
+  ok('F. prima volta senza prove: «Le prove non bastano (0 su 3)»', L.scelta && L.scelta[0] === 'Le prove non bastano (0 su 3)', L.scelta);
   await p.keyboard.press('Digit1');
   await aspetta(p, 60);
   ok('F. e vale attacco', (await p.evaluate(() => window.__teatro.t4qa.flag.gregorio)) === 'attacco');
   L = await leggiTutto();
   ok('F. le mani cercano qualcosa che non c\'è', L.visti.some((t) => t.includes('qualcosa che non c\'è')));
+
+  // H. LE PAGINE DEL REGISTRO
+  await p.evaluate(() => { window.__teatro.interni.statoRun.fase = 'in_gioco'; const q = window.__teatro.t4qa; q.azzeraFlag(); });
+  const pag = await p.evaluate(() => {
+    const I = window.__teatro.interni; const G = I.gregorioH3; const out = { ok: 0, viol: [] };
+    nuovaRun(false);
+    for (const piano of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      for (let k = 0; k < 6; k++) {
+        const m = generaMappaPiano(piano); m.paginaH3 = undefined; G.scegliPagina(m, piano);
+        const st = m.paginaH3 && m.perId.get(m.paginaH3);
+        const atteso = piano % 4 !== 0;
+        const buona = atteso ? Boolean(st && st.tipo === 'normale' && !st.cortileH3 && !st.quadriD5 && !st.botoleD5 && st.paginaH3.piano === piano) : m.paginaH3 === null;
+        if (buona) out.ok++; else out.viol.push({ piano, pagina: m.paginaH3 });
+      }
+    }
+    return out;
+  });
+  ok('H. una pagina per piano ai piani 1-3 e 5-7, mai al 4 e all\'8', pag.ok === 48, pag);
+  const presa = async (piano) => p.evaluate((piano) => {
+    const I = window.__teatro.interni; const R = I.statoRun;
+    if (piano === 1) nuovaRun(false);
+    avviaPiano(piano, false); R.siparioAttivo = null;
+    I.gregorioH3.scegliPagina(R.mappa, piano);
+    const st = R.mappa.perId.get(R.mappa.paginaH3);
+    delete st.quadriD5; delete st.botoleD5; st.nemici = [];
+    entraInStanza(st, 'S'); R.graziaIngressoC = 0; I.player.invuln = 1e9;
+    return { x: st.paginaH3.x, y: st.paginaH3.y, prima: I.gregorioH3.prove.n };
+  }, piano);
+  let pp = await presa(1);
+  await passi(p, 2);
+  ok('H. la pagina compare a stanza pulita', await p.evaluate(() => window.__teatro.interni.statoRun.stanzaCorrente.pulita));
+  await aspetta(p, 200);
+  await scatta('prove-pagina');
+  await p.evaluate((g) => { const P = window.__teatro.interni.player; P.x = g.x; P.y = g.y; }, pp);
+  await passi(p, 2);
+  let pv = await p.evaluate(() => ({ ...window.__teatro.interni.gregorioH3.prove, banner: window.__teatro.interni.statoRun.banner }));
+  ok('H. raccolta: 1 su 3 e il banner', pv.n === 1 && JSON.stringify(pv.banner || '').includes('1 di 3'), pv);
+  await aspetta(p, 200);
+  await scatta('prove-presa');
+  await p.evaluate(() => window.__teatro.t4qa.impostaFlag({ taddeo: 'perdonato' }));
+  ok('H. Taddeo perdonato vale una prova', (await p.evaluate(() => window.__teatro.interni.gregorioH3.prove.n)) === 2);
+  pp = await presa(2);
+  // stanza vista senza prendere la pagina: segno sulla minimappa (foto) e la si prende tornando
+  await p.evaluate(() => { const R = window.__teatro.interni.statoRun; entraInStanza(R.mappa.stanze.find((s) => s.tipo === 'ingresso'), 'S'); });
+  await aspetta(p, 200);
+  await scatta('prove-minimappa');
+  ok('H. tre su tre con Taddeo e due pagine', await (async () => { await presa(2); await p.evaluate((g) => { const P = window.__teatro.interni.player; P.x = g.x; P.y = g.y; }, pp); await passi(p, 2); return (await p.evaluate(() => window.__teatro.interni.gregorioH3.prove.n)) === 3; })());
+  const e6 = await p.evaluate(() => ({ note: noteVoceE6({}), snap: istantaneaE6().percorso }));
+  ok('H. conto della notte (e6) e istantanea di «Riprendi la notte»', e6.note.some((r) => r[0] === 'Prove del registro' && r[1] === '3 di 3') && e6.snap && e6.snap.percorsoProveH3 && e6.snap.percorsoProveH3.prese.length === 2, e6);
+  await p.evaluate(() => { avviaPiano(5, false); });
+  ok('H. ciclo 2: le pagine ripartono (resta Taddeo)', (await p.evaluate(() => window.__teatro.interni.gregorioH3.prove.n)) === 1);
+  await p.evaluate(() => { nuovaRun(false); avviaPiano(1, false); });
+  ok('H. notte nuova: si riparte (resta Taddeo)', (await p.evaluate(() => window.__teatro.interni.gregorioH3.prove.n)) === 1);
 
   ok('G. Registro di Scena: il Custode fra i Primi attori', await p.evaluate(() => primiAttoriD3().some((b) => b.id === 'gregorio-custode')));
   // G. errori
