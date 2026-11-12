@@ -19,6 +19,7 @@
  *     dell'elemento (campo `alt` della tabella), non il contrario.
  *
  * SCELTE (2026-11-10, guardando ogni immagine nel gioco accanto al disegno a codice): 28 usate, 24 a codice.
+ * 2026-11-12 (i2): il portone della bottega rifatto dall'autore, Tonino e il banchetto: 33 usate, 21 a codice.
  * Le scartate restano collegate ma spente: se l'autore le rigenera basta rimettere `usa: true` nella tabella.
  * Le immagini scure prendono un filo di luce calda sul contorno (opzione `filo`), come le sagome «a ombre».
  *

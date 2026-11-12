@@ -187,6 +187,11 @@ const SCENE = [
     prepara: (qq) => __qaB9.ostacoli(qq), arg: q })),
   { gruppo: 'forzieri-lucchetto', nome: 'forzieri', ritaglio: [200, 160, 240, 80], zoom: 1.25, attesa: 400,
     prepara: () => { __qaB9.avvia(2); const st = __qaB9.stanzaVuota(); const a = generaForziere('comune', 240, 205, st), b = generaForziere('comune', 290, 205, st), c = generaForziere('chiuso', 350, 205, st), d = generaForziere('chiuso', 400, 205, st); for (const f of [b, d]) if (f) f.aperto = true; if (!a || !c) throw new Error('generaForziere non restituisce il forziere'); player.x = 320; player.y = 260; } },
+  // --- piazza (i2-piazza.js): il portone nei tre stati, Tonino e il banchetto ---
+  ...[['chiusa', { tenaglie: 1 }, false, false], ['socchiusa', { tenaglie: 1, punzone: 1, ago: 1 }, true, false], ['aperta', { tenaglie: 1, punzone: 1, ago: 1 }, true, true]].map(([nome, ferri, fin, ap]) => ({
+    gruppo: 'piazza', nome: `porta-${nome}`, ritaglio: [100, 0, 300, 160], zoom: 1.2, attesa: 500, arg: [ferri, fin, ap],
+    prepara: ([fe, fi, a]) => { statoRun.pausa = false; b3.opz = null; __qaB9.mostra = null; const s = statoB8(); s.ferri = { ...fe }; s.finaleVisto = fi; s.portaAperta = a; scriviB8(s);
+      statoRun.personaggioId = 'ferruccio'; avviaPartitaConPersonaggio('ferruccio'); player.x = 420; player.y = 160; } })),
   { gruppo: 'forzieri-lucchetto', nome: 'lucchetto', zoom: 2, attesa: 400,
     prepara: () => { __qaB9.avvia(2); const st = __qaB9.stanzaVuota(); const [lato, id] = Object.entries(st.porte)[0]; statoRun.mappa.perId.get(id).chiusaA1 = true; window.__qaB9.porta = PORTE_C[lato]; player.x = 320; player.y = 200; },
     ritaglioDa: () => { const P = window.__qaB9.porta; return [Math.max(0, Math.min(520, P.x - 60)), Math.max(0, Math.min(280, P.y - 40)), 120, 80]; } },
