@@ -639,10 +639,10 @@
       voce('tonino', "Stanotte 'a luna sta cchiù 'a llà, uagliò. Rosa diceva ca quanno 'a luna cammina, quaccheduno se ricorda."),
     ]),
     festaiola: Object.freeze([
-      voce('festaiola', "Che bella festa, giovanotto! 'A Reggia è fernuta... nun s'ha da piangere cchiù."),
+      voce('assunta', "Che bella festa, giovanotto! 'A Reggia è fernuta... nun s'ha da piangere cchiù."),
       voce('didascalia', "Porta ancora la coccarda della festa del 1845. Sorride, e non sbatte mai le ciglia."),
     ]),
-    nomi: Object.freeze({ festaiola: 'Una festaiola' }),
+    nomi: Object.freeze({ assunta: 'Assunta', festaiola: 'Assunta' }), // h2: la festaiola ora è Assunta (vecchio id tenuto)
   });
   /** Presenza del NPC nuovo della notte 4 (cella libera della griglia dell'hub). */
   /**
@@ -668,7 +668,7 @@
     return ef;
   }
   T.effettoMedaglioneC = effettoMedaglioneC;
-  const PRESENZA_NUOVA_C = Object.freeze({ id: 'festaiola', tipo: 'npc', personaggio: 'festaiola', ancoraggio: 'hub:festaiola', c: 10, r: 5 });
+  const PRESENZA_NUOVA_C = Object.freeze({ id: 'assunta', tipo: 'npc', personaggio: 'assunta', ancoraggio: 'hub:assunta', c: 10, r: 5 }); // h2: era la festaiola
   // --- C: fine ---
   const scena = (id) => DATI.scene.find((s) => s.id === id);
 
@@ -749,7 +749,7 @@
     // --- c1: quello che Tonino dice al posto delle battute solite (teatro/c1-partenza-segreta.js) ---
     if (npc === 'tonino' && typeof T.toninoParlaC1 === 'function' && T.toninoParlaC1(apriDialogo, voce)) return;
     // --- C: inizio --- novità delle notti: la festaiola (notte 4) e la battuta nuova di Tonino (notte 3)
-    if (npc === 'festaiola') { apriDialogo(TESTI_NOTTI_C.festaiola.slice()); return; }
+    if (npc === 'assunta' || npc === 'festaiola') { apriDialogo(typeof battuteAssuntaH2 === 'function' ? battuteAssuntaH2(S.flag, notteCorrente()) : TESTI_NOTTI_C.festaiola.slice()); return; } // h2
     if (npc === 'tonino' && notteC().battutaTonino && S.battutaNotteC !== notteCorrente()) {
       S.battutaNotteC = notteCorrente(); // una volta per notte, poi le ripetizioni di sempre
       apriDialogo(TESTI_NOTTI_C.tonino.slice());
@@ -790,7 +790,8 @@
   /** Presenze del modello risolte contro i flag (motore/mondo/hub.js › presenze()). */
   function presenze() {
     // --- C: dalla notte 4 un NPC nuovo (NOTTI_C.npcNuovo) ---
-    const base = notteC().npcNuovo === PRESENZA_NUOVA_C.id ? DATI.modelloHub.presenze.concat([PRESENZA_NUOVA_C]) : DATI.modelloHub.presenze;
+    const conAssunta = typeof assuntaInPiazzaH2 === 'function' ? assuntaInPiazzaH2(notteCorrente(), S.flag) : notteC().npcNuovo === 'festaiola'; // h2
+    const base = conAssunta ? DATI.modelloHub.presenze.concat([PRESENZA_NUOVA_C]) : DATI.modelloHub.presenze;
     return base.map((p) => ({
       ...p, ...pos(p.c, p.r),
       presente: valuta(p.quando, S.flag),
@@ -1302,7 +1303,7 @@
     for (const p of pr) {
       if (p.tipo !== 'npc') continue;
       if (p.personaggio === 'tonino') cose.push({ y: p.y + 10, d: () => disegnaTonino(p.x, p.y, t) });
-      else if (p.personaggio === 'festaiola') cose.push({ y: p.y + 10, d: () => disegnaFestaiolaC(p.x, p.y, t) }); // C
+      else if (p.personaggio === 'assunta') cose.push({ y: p.y + 10, d: () => { if (!(typeof disegnaAssuntaH2 === 'function' && disegnaAssuntaH2(ctx, p.x, p.y, t))) disegnaFestaiolaC(p.x, p.y, t); } }); // C, h2
       else if (I.PERSONAGGI_GIOCABILI[p.personaggio]) {
         cose.push({ y: p.y + 10, d: () => I.disegnaFerruccioPittorico(ctx, p.x, p.y, { scale: 0.9, tick: t, charInfo: I.PERSONAGGI_GIOCABILI[p.personaggio], flipX: p.x > 320, sinergie: {} }) });
       }

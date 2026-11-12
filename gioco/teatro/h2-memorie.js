@@ -271,6 +271,167 @@ if (typeof componiPaginaB8 === 'function') {
 function aggiuntaDiarioH2() { /* vedi sotto */ }
 
 // ===========================================================================
+// 4. ASSUNTA (al posto della «festaiola» di t4): la popolana che con Tonino introduce la bottega di Gaetano
+//    (trama/inizio-memoria-e-doni.md). In piazza dalla prima notte. Aggancio in t4-hub-storia.js:
+//    assuntaInPiazzaH2 (presenze), battuteAssuntaH2 (dialogo), disegnaAssuntaH2 (figura).
+// ===========================================================================
+/** Numeri di Assunta. */
+const ASSUNTA_H2 = Object.freeze({
+  daNotte: 1,
+  // PNG facoltativo: assets/sprite_teatro/assunta.png, una riga di 4 pose (ferma, scialle, ventaglio, cesto),
+  // celle 96×128, piedi in basso al centro. `png: true` quando l'autore lo aggiunge (evita la richiesta a vuoto).
+  png: Object.freeze({ attivo: false, nome: 'assunta', celle: 4, w: 34, h: 46 }),
+  gesto: Object.freeze({ cicloTick: 420, scialle: Object.freeze([40, 110]), ventaglio: Object.freeze([230, 330]) }),
+  tinte: Object.freeze({
+    ombra: '#0a0604', panno: '#1f1510', scialle: '#2b1d16', frangia: '#4a3526', piega: '#3a2a1c',
+    volto: '#c9a679', cesto: '#3d2b1a', vimini: '#6b4f33', contorno: 'rgba(249, 203, 64, 0.55)',
+    coccarda: '#b91c1c', coccardaCuore: '#f9cb40',
+  }),
+});
+
+/**
+ * Battute di Assunta (tutte NUOVE: la bibbia non le scrive). Si sceglie il gruppo per sigilli rotti della
+ * porta (interni.sigilli) e notte; dentro il gruppo ruotano.
+ */
+const TESTI_ASSUNTA_H2 = Object.freeze({
+  nome: 'Assunta',
+  notte1: Object.freeze([
+    ['assunta', "Tu si' 'o guaglione nuovo d'a piazza? Chella porta llà è 'a bottega 'e Gaetano, 'o fabbro. Da 'a sera d'a festa nun s'è aperta cchiù."],
+    ['didascalia', 'Ha ancora la coccarda della festa appuntata allo scialle. Il cesto è pieno di nastri che nessuno ha comprato.'],
+  ]),
+  notti: Object.freeze([
+    Object.freeze([['assunta', "'A sera d'a festa, 'o '45, stèvemo tutte a ballà. Po' 'e lanterne se so' fermate, e Caserta s'è addurmuta cu 'o sorriso 'nfaccia."]]),
+    Object.freeze([['assunta', "Gaetano batteva 'o fierro pure 'e notte. Tonino 'o sape: si 'o martello se sente ancora, vuol dire ca isso nun s'è scurdato."]]),
+    Object.freeze([['assunta', "Vennevo nastri p' 'a festa. Mo' 'e tengo tutte cca: nisciuno se ricorda cchiù 'e se fa' bello."]]),
+  ]),
+  sigilli12: Object.freeze([['assunta', "Hê rotto 'nu sigillo d' 'a bottega? Mamma mia... 'o giglio 'ncopp' 'a ceralacca è chillo d' 'a Reggia. Statte accorto, guagliò."]]),
+  sigilli3: Object.freeze([['assunta', "Tre sigilli 'nterra. Io 'o sento, 'o martello: tre colpe, 'na pausa, uno. Gaetano te sta aspettanno."]]),
+});
+const assuntaH2 = { giro: 0 };
+
+/** true se Assunta sta in piazza stanotte (dalla notte ASSUNTA_H2.daNotte). */
+function assuntaInPiazzaH2(notte) { return (Number(notte) || 1) >= ASSUNTA_H2.daNotte; }
+
+function sigilliH2() {
+  try { const I = window.__teatro && window.__teatro.interni; return Math.max(0, Math.min(3, Number(I && I.sigilli) || 0)); } catch (_) { return 0; }
+}
+
+/**
+ * Battute di Assunta per il dialogo di t4 (array di {chi, testo}).
+ * @param {object} flag flag della storia (non usati per ora) · @param {number} notte
+ */
+function battuteAssuntaH2(flag, notte) {
+  const T = TESTI_ASSUNTA_H2;
+  const s = sigilliH2();
+  let righe;
+  if (s >= 3) righe = T.sigilli3;
+  else if (s >= 1 && assuntaH2.giro % 2 === 0) righe = T.sigilli12;
+  else if ((Number(notte) || 1) <= 1 && assuntaH2.giro === 0) righe = T.notte1;
+  else righe = T.notti[(assuntaH2.giro + (Number(notte) || 1)) % T.notti.length];
+  assuntaH2.giro++;
+  return righe.map(([chi, testo]) => ({ chi, testo }));
+}
+
+/** Posa del gesto nel ciclo: 'ferma' | 'scialle' | 'ventaglio' e la sua fase 0..1. */
+function posaAssuntaH2(t) {
+  const G = ASSUNTA_H2.gesto, k = ((t % G.cicloTick) + G.cicloTick) % G.cicloTick;
+  if (k >= G.scialle[0] && k < G.scialle[1]) return { posa: 'scialle', u: (k - G.scialle[0]) / (G.scialle[1] - G.scialle[0]), col: 1 };
+  if (k >= G.ventaglio[0] && k < G.ventaglio[1]) return { posa: 'ventaglio', u: (k - G.ventaglio[0]) / (G.ventaglio[1] - G.ventaglio[0]), col: 2 };
+  return { posa: 'ferma', u: 0, col: 0 };
+}
+
+/**
+ * Disegna Assunta a sagoma d'ombra: fazzoletto annodato, scialle con la frangia, gonna a pieghe che si muovono
+ * appena, cesto al braccio, la coccarda rossa come unico colore; ogni tanto si sistema lo scialle o si sventola.
+ * Se c'è il PNG (ASSUNTA_H2.png.attivo) usa quello.
+ * @returns {boolean} true se ha disegnato
+ */
+function disegnaAssuntaH2(c, x, y, t) {
+  const K = ASSUNTA_H2.tinte;
+  const P = posaAssuntaH2(t);
+  c.save();
+  c.fillStyle = 'rgba(8, 5, 3, 0.6)';
+  c.beginPath(); c.ellipse(x, y + 10, 13, 4, 0, 0, Math.PI * 2); c.fill();
+  const g = ASSUNTA_H2.png;
+  if (g.attivo && typeof disegnaCellaTeatro === 'function'
+    && disegnaCellaTeatro(c, g.nome, P.col, g.celle, x - g.w / 2, y + 11 - g.h, g.w, g.h)) { c.restore(); return true; }
+  c.translate(Math.round(x), Math.round(y));
+  const resp = Math.sin(t * 0.045) * 0.6;           // il respiro
+  const onda = (i) => Math.sin(t * 0.05 + i * 1.3) * 0.9; // le pieghe della gonna
+  // --- il contorno color lanterna: le sagome esterne disegnate un poco più larghe ---
+  const gonna = () => {
+    c.beginPath(); c.moveTo(-6, -8);
+    c.quadraticCurveTo(-10, 0, -12 + onda(0), 10);
+    for (let i = 1; i <= 4; i++) c.lineTo(-12 + i * 6 + onda(i) * 0.6, 10 + (i % 2 ? 1 : 0));
+    c.quadraticCurveTo(10, 0, 6, -8); c.closePath();
+  };
+  const busto = () => { c.beginPath(); c.moveTo(-5, -9); c.lineTo(-6, -20 + resp); c.lineTo(6, -20 + resp); c.lineTo(5, -9); c.closePath(); };
+  const testa = () => { c.beginPath(); c.ellipse(0, -27 + resp, 4.6, 5.6, 0, 0, Math.PI * 2); };
+  const alzaScialle = P.posa === 'scialle' ? Math.sin(P.u * Math.PI) : 0;
+  const scialle = () => {
+    c.beginPath(); c.moveTo(-8, -18 + resp);
+    c.quadraticCurveTo(-9, -12, -4, -6 - alzaScialle * 2);
+    c.lineTo(0, -4); c.lineTo(4, -6);
+    c.quadraticCurveTo(9, -12, 8, -18 + resp);
+    c.quadraticCurveTo(0, -23 + resp, -8, -18 + resp); c.closePath();
+  };
+  c.strokeStyle = K.contorno; c.lineWidth = 2; c.lineJoin = 'round';
+  for (const f of [gonna, busto, scialle, testa]) { f(); c.stroke(); }
+  // gonna e pieghe
+  c.fillStyle = K.ombra; gonna(); c.fill();
+  c.strokeStyle = K.piega; c.lineWidth = 0.8;
+  for (let i = 0; i < 4; i++) { const px = -6 + i * 4; c.beginPath(); c.moveTo(px * 0.6, -6); c.quadraticCurveTo(px + onda(i) * 0.5, 2, px * 1.5 + onda(i), 9.5); c.stroke(); }
+  // grembiule scuro
+  c.fillStyle = K.panno; c.beginPath(); c.moveTo(-4, -7); c.lineTo(-6, 7); c.lineTo(6, 7); c.lineTo(4, -7); c.closePath(); c.fill();
+  // busto
+  c.fillStyle = K.ombra; busto(); c.fill();
+  // cesto al braccio sinistro (di chi guarda: a sinistra)
+  c.fillStyle = K.cesto; c.strokeStyle = K.vimini; c.lineWidth = 0.8;
+  c.beginPath(); c.moveTo(-17, -8); c.lineTo(-7, -8); c.lineTo(-8.5, -2); c.lineTo(-15.5, -2); c.closePath(); c.fill(); c.stroke();
+  c.beginPath(); c.moveTo(-16, -6); c.lineTo(-8, -6); c.moveTo(-15.6, -4); c.lineTo(-8.4, -4); c.stroke();
+  c.beginPath(); c.arc(-12, -8, 4.5, Math.PI, 0); c.stroke(); // il manico
+  c.fillStyle = K.frangia; c.fillRect(-15, -10, 2, 2); c.fillRect(-11, -11, 2, 3); // nastri nel cesto
+  // scialle con la frangia
+  c.fillStyle = K.scialle; scialle(); c.fill();
+  c.strokeStyle = K.frangia; c.lineWidth = 0.7;
+  for (let i = -3; i <= 3; i++) { const fx = i * 1.3; c.beginPath(); c.moveTo(fx, -5 + Math.abs(i) * -0.4); c.lineTo(fx + Math.sin(t * 0.06 + i) * 0.6, -2.5 + Math.abs(i) * -0.4); c.stroke(); }
+  // braccio destro: a riposo sul grembiule, oppure sullo scialle, oppure col ventaglio davanti al viso
+  c.fillStyle = K.ombra;
+  let mx = 5, my = -7;
+  if (P.posa === 'scialle') { mx = 7 - alzaScialle * 3; my = -8 - alzaScialle * 9; }
+  else if (P.posa === 'ventaglio') { mx = 9; my = -20 + resp; }
+  c.strokeStyle = K.ombra; c.lineWidth = 3; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(6, -17 + resp); c.quadraticCurveTo(9, -12, mx, my); c.stroke();
+  if (P.posa === 'ventaglio') {
+    const a = Math.sin(P.u * Math.PI * 8) * 0.35;
+    c.save(); c.translate(mx, my); c.rotate(-0.6 + a);
+    c.fillStyle = K.ombra; c.strokeStyle = K.contorno; c.lineWidth = 0.8;
+    c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, 6, -Math.PI * 0.9, -Math.PI * 0.2); c.closePath(); c.fill(); c.stroke();
+    c.restore();
+  }
+  c.fillStyle = K.ombra; c.beginPath(); c.arc(mx, my, 1.6, 0, Math.PI * 2); c.fill();
+  // testa: volto e fazzoletto annodato
+  c.fillStyle = K.volto; testa(); c.fill();
+  c.fillStyle = K.ombra;
+  c.beginPath(); c.moveTo(-5.6, -26 + resp); c.quadraticCurveTo(-6, -34 + resp, 0, -34 + resp);
+  c.quadraticCurveTo(6, -34 + resp, 5.6, -25 + resp); c.quadraticCurveTo(0, -29 + resp, -5.6, -25 + resp); c.fill();
+  c.beginPath(); c.moveTo(-5.4, -25 + resp); c.lineTo(-7.5, -19 + resp); c.lineTo(-3.5, -22 + resp); c.closePath(); c.fill(); // la falda dietro
+  // il nodo, dietro la nuca: due cocche che pendono di lato
+  c.beginPath(); c.moveTo(-5, -28 + resp); c.lineTo(-9.5, -26 + resp); c.lineTo(-8, -23.5 + resp); c.closePath(); c.fill();
+  c.beginPath(); c.moveTo(-5, -28 + resp); c.lineTo(-8.5, -30.5 + resp); c.lineTo(-9.5, -27.5 + resp); c.closePath(); c.fill();
+  c.strokeStyle = K.contorno; c.lineWidth = 0.6;
+  c.beginPath(); c.moveTo(-9.5, -26 + resp); c.lineTo(-8, -23.5 + resp); c.moveTo(-8.5, -30.5 + resp); c.lineTo(-9.5, -27.5 + resp); c.stroke();
+  c.fillRect(-2.4, -26 + resp, 1.2, 1.2); c.fillRect(1.2, -26 + resp, 1.2, 1.2); // occhi aperti, fissi
+  c.fillRect(-1, -23.5 + resp, 2, 0.8);
+  // la coccarda della festa: l'unico colore
+  c.fillStyle = K.coccarda; c.beginPath(); c.arc(-3, -15 + resp, 2.2, 0, Math.PI * 2); c.fill();
+  c.fillStyle = K.coccardaCuore; c.beginPath(); c.arc(-3, -15 + resp, 0.9, 0, Math.PI * 2); c.fill();
+  c.fillStyle = K.coccarda; c.fillRect(-4, -13 + resp, 0.9, 2.5); c.fillRect(-2.8, -13 + resp, 0.9, 2.2);
+  c.restore();
+  return true;
+}
+
+// ===========================================================================
 // 9. QA
 // ===========================================================================
 if (Object.isFrozen(window.__teatro)) {

@@ -115,6 +115,51 @@ const SOLO = (process.env.QA_PARTI || '1 2 3').split(/\s+/);
     ok('diario', pag.some((r) => r.includes('Gatto')) && pag.some((r) => r.includes('smesso di chiamarli mostri')), pag);
   }
 
+  // ------------------------------------------------------------------ 3. Assunta
+  if (SOLO.includes('3')) {
+    await avvia();
+    const trova = () => p.evaluate(() => window.__teatro.t4qa.presenze.find((x) => x.id === 'assunta'));
+    const a = await trova();
+    ok('assunta:notte1-in-piazza', Boolean(a), await p.evaluate(() => window.__teatro.t4qa.presenze));
+    ok('assunta:niente-festaiola', !(await p.evaluate(() => window.__teatro.t4qa.presenze.some((x) => x.id === 'festaiola'))));
+    if (a) {
+      // si allontana Ferruccio per la foto, poi «prima» (disegno vecchio) e «dopo»
+      await p.evaluate(() => { const P = window.__teatro.interni.player; P.x = 200; P.y = 250; });
+      await p.waitForTimeout(150);
+      await zoom('3-assunta-dopo', a.x - 40, a.y - 50, 80, 70);
+      await p.evaluate(() => { window.__qaAssunta = window.disegnaAssuntaH2; window.disegnaAssuntaH2 = () => false; });
+      await p.waitForTimeout(150);
+      await zoom('3-assunta-prima', a.x - 40, a.y - 50, 80, 70);
+      await p.evaluate(() => { window.disegnaAssuntaH2 = window.__qaAssunta; });
+      // il gesto: un fotogramma col ventaglio
+      await p.evaluate(() => { window.__qaFermo = true; });
+      const parla = async () => {
+        await p.evaluate((t) => { const P = window.__teatro.interni.player; P.x = t.x - 26; P.y = t.y + 4; }, a);
+        await p.waitForTimeout(100);
+        await p.keyboard.press('KeyE');
+        await p.waitForTimeout(150);
+        const d = await p.evaluate(() => window.__teatro.t4qa.dialogo);
+        await chiudiDialoghi();
+        return d;
+      };
+      const d1 = await parla();
+      ok('assunta:nome', d1 && /assunta/i.test(JSON.stringify(d1)), d1);
+      const d2 = await parla();
+      ok('assunta:battute-cambiano', d1 && d2 && JSON.stringify(d1) !== JSON.stringify(d2), [d1, d2]);
+      await p.evaluate(() => { Object.defineProperty(window.__teatro.interni, 'sigilli', { get: () => 3, configurable: true }); });
+      const d3 = await parla();
+      ok('assunta:sigilli', d3 && /sigilli/.test(JSON.stringify(d3)), d3);
+      await p.evaluate((t) => { const P = window.__teatro.interni.player; P.x = t.x - 26; P.y = t.y + 4; }, a);
+      await p.keyboard.press('KeyE'); await p.waitForTimeout(200);
+      await scatta('3-assunta-dialogo');
+      await chiudiDialoghi();
+    }
+    // salvataggio «vecchio»: notte 4 come quando c'era la festaiola, flag della storia di allora
+    await avvia(() => { localStorage.setItem('ferruccio_notte', '4'); });
+    const a4 = await trova();
+    ok('assunta:notte4-salvataggio-vecchio', Boolean(a4));
+  }
+
   const errT = await p.evaluate(() => (typeof ERRORI_TEATRO !== 'undefined' ? ERRORI_TEATRO : []).map(String));
   ok('nessun-errore-teatro', errT.length === 0, errT);
   ok('nessun-errore-console', errori.length === 0, errori.slice(0, 5));
