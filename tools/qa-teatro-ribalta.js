@@ -279,7 +279,17 @@ if (pref.endsWith('/')) fs.mkdirSync(pref, { recursive: true });
   // 9d. raggio del patto (T3): i colpi dal riferimento window.__teatroInterno fanno schegge, senza doppioni
   const rg = await p.evaluate(() => {
     const I = window.__teatro.interni; const B = I.ribaltaB2; const st = I.statoRun.stanzaCorrente;
-    const n = st.nemici.find((q) => q.hp > 0 && q.tipo !== 'maschera' && q.tipo !== 'bomba_ferma');
+    const adatto = (q) => q.hp > 0 && q.tipo !== 'maschera' && q.tipo !== 'bomba_ferma';
+    let n = st.nemici.find(adatto);
+    // Dopo il crollo del boss (9) la stanza corrente può non avere più nemici vivi: se ne aggiunge uno di prova
+    // (mai il Bozzo Esplosivo né la maschera), invece di dipendere da ciò che è rimasto in piedi.
+    for (let k = 0; !n && k < 30; k++) {
+      const finta = { id: st.id, tipo: 'normale', porte: {}, muroSegreto: null, nemici: [], ostacoli: [], oggettiATerra: [] };
+      popolaStanza(finta, 1);
+      n = finta.nemici.find(adatto);
+      if (n) st.nemici.push(n);
+    }
+    if (!n) return { mancaBersaglio: true };
     const hp0 = n.hp, max0 = n.maxHp;
     n.hp = n.maxHp = 5000; n.x = 380; n.y = 200; I.player.x = 300; I.player.y = 200;
     const T = window.__teatroInterno;
