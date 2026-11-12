@@ -172,7 +172,8 @@ function ricalcolaStatistiche() {
   const effDmg = (baseD * Math.sqrt(Math.max(0, totalDmgUps * 1.2 + 1)) + flatDmg) * dmgMult;
   statoRun.dmg = Math.max(1.0, effDmg);
 
-  const cadenzaEff = Math.max(0.85, Math.min(7.5, (2.73 + totCadenzaUp * 0.95) * cadenzaMult));
+  const cadenzaEff = Math.max(0.5, Math.min(7.5, // e3: pavimento 0,85 → 0,5 (sotto 0,85 i malus di cadenza sparivano e i moltiplicatori di danno si sommavano senza prezzo)
+     (2.73 + totCadenzaUp * 0.95) * cadenzaMult));
   statoRun.colpiAlSec = cadenzaEff;
   statoRun.cooldownMax = Math.max(7, Math.round(60 / cadenzaEff));
 

@@ -1336,7 +1336,9 @@ function passoLogico() {
         // IA DIFFERENZIATA DEI NEMICI COMUNI:
         const comp = n.comportamento || n.tipo;
 
-        if (comp === 'volo_puro' || n.tipo === 'vespa_cieca') {
+        if (typeof iaNemicoD6 === 'function' && iaNemicoD6(n, st, ang, distPlayer)) {
+          // --- d6: nemici dell'Acquedotto Carolino, IA in teatro/d6-acquedotto.js ---
+        } else if (comp === 'volo_puro' || n.tipo === 'vespa_cieca') {
           // 1. VESPA CIECA: vola dritta contro di te SENZA SPARARE!
           const osc = Math.sin(tick * 0.22 + n.x * 0.05) * 0.3;
           n.x = Math.max(ARENA.x1 + 12, Math.min(ARENA.x2 - 12, n.x + Math.cos(ang + osc) * n.speed));

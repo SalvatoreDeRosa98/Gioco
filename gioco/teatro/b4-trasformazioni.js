@@ -390,7 +390,8 @@ function applicaEffettiB4(s) {
   if (nonBlocco < 1) D.bloccoProb = Math.min(C.bloccoProb, 1 - (1 - D.bloccoProb) * nonBlocco);
   if (dmgMult !== 1) statoRun.dmg = Math.max(1.0, statoRun.dmg * dmgMult);
   if (cadenzaMult !== 1) {
-    statoRun.colpiAlSec = Math.max(0.85, Math.min(7.5, statoRun.colpiAlSec * cadenzaMult));
+    statoRun.colpiAlSec = Math.max(0.5, Math.min(7.5, // e3: stesso pavimento di 20-stato.js
+      statoRun.colpiAlSec * cadenzaMult));
     statoRun.cooldownMax = Math.max(7, Math.round(60 / statoRun.colpiAlSec));
   }
   if (speedUp) statoRun.speed = 2.0 * Math.max(0.7, Math.min(2.0, statoRun.speed / 2.0 + speedUp));
