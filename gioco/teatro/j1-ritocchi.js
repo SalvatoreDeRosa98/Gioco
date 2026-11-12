@@ -18,6 +18,9 @@ const TESTI_J1 = Object.freeze({
   pattoMax: '-1 Maschera max', // [nuovo] Stanza del Patto
 });
 
+/** PNG facoltativi: mettere true quando l'immagine c'è in assets (finché è false non si chiede, niente 404). */
+const IMMAGINI_J1 = { 'maschera-vita': false, 'spada-lama': false };
+
 /** Colori delle figure di j1 (stile a ombre: sagoma, contorno lanterna, pochi accenti). */
 const TINTE_J1 = Object.freeze({
   cartapesta: '#efe2c4', ombraMaschera: '#2a1a12', lanterna: '#f9cb40', lanternaTenue: 'rgba(249, 203, 64, 0.45)',
@@ -36,7 +39,7 @@ const TINTE_J1 = Object.freeze({
  */
 function disegnaMascheraJ1(x, y, riemp, s = 1) {
   const cella = riemp >= 1 ? 0 : riemp > 0 ? 1 : 2;
-  if (typeof disegnaCellaTeatro === 'function' && disegnaCellaTeatro(ctx, 'maschera-vita', cella, 3, x - 5 * s, y - 5 * s, 10 * s, 10 * s)) return;
+  if (IMMAGINI_J1['maschera-vita'] && typeof disegnaCellaTeatro === 'function' && disegnaCellaTeatro(ctx, 'maschera-vita', cella, 3, x - 5 * s, y - 5 * s, 10 * s, 10 * s)) return;
   const T = TINTE_J1;
   const sagoma = () => {
     ctx.beginPath();
@@ -246,7 +249,7 @@ function disegnaLamaJ1(cx, cy, a) {
   ctx.save();
   ctx.translate(cx + Math.cos(a) * 5, cy + Math.sin(a) * 5);
   ctx.rotate(a - Math.PI / 2); // la lama scende lungo +y
-  if (!(typeof disegnaCellaTeatro === 'function' && disegnaCellaTeatro(ctx, 'spada-lama', 0, 1, -3, -5, 6, S.lama + 6))) {
+  if (!(IMMAGINI_J1['spada-lama'] && typeof disegnaCellaTeatro === 'function' && disegnaCellaTeatro(ctx, 'spada-lama', 0, 1, -3, -5, 6, S.lama + 6))) {
     ctx.fillStyle = T.elsa; ctx.fillRect(-0.9, -4.5, 1.8, 4.5);
     ctx.fillStyle = T.lanterna; ctx.fillRect(-3, -0.6, 6, 1.4); // guardia
     ctx.beginPath(); ctx.arc(0, -4.8, 1.1, 0, TAU); ctx.fill();
