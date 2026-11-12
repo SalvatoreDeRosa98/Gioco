@@ -181,6 +181,9 @@ const foto = (n) => `${prefisso}-${n}.png`;
     const fumo = (st.fumoH6 || []).length > 0 || stati.sagrestano && stati.sagrestano.has('dondola');
     // un colpo del giocatore sulla corda la tira; e [E] sotto la corda
     Object.assign(st.cordaH6, { fase: 'attesa', t: 9999, ricarica: 0 });
+    // niente fra il colpo e la corda: un arredo o un nemico lì davanti si prendeva il colpo (rossa ogni tanto)
+    st.ostacoli = (st.ostacoli || []).filter((o) => Math.hypot(o.x - st.cordaH6.x, o.y - 120) > 40);
+    for (const n of st.nemici) if (Math.hypot(n.x - st.cordaH6.x, n.y - 120) < 40) n.x += n.x < 320 ? 60 : -60;
     R.proiettili.push({ x: st.cordaH6.x, y: 120, vx: 0, vy: 0, dist: 0, dmg: 1, r: 3, maxDist: 400, hitIds: new Set() });
     passoLogico();
     const colpo = st.cordaH6.fase;

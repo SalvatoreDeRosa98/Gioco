@@ -78,6 +78,8 @@ const CASI = [
         if (id === 're-gatto') { b.pattern = 'salto_gatto'; b.nome = 'Il Gatto dei Quattro Canti'; b.tipo = 'gatto'; }
       }
       if (c.come === 'bomba') {
+        // niente arredi fra Ferruccio e il Bozzo e niente cambio di scena: il colpo deve arrivare (cadeva ogni tanto)
+        st.ostacoli = []; st.suoloB7 = []; delete st.quadriD5; delete st.botoleD5;
         st.nemici = [{ id: 'qa-bozzo', tipo: 'bomba_ferma', patternMob: 'bomba_ferma', nome: 'Bozzo Esplosivo', boss: false,
           x: 360, y: 188, hp: 1, maxHp: 12, speed: 0, r: 11, flash: 0, burnTicks: 0, stunTicks: 0, state: 'idle', stateTimer: 30, shootCd: 999 }];
       }

@@ -203,6 +203,9 @@ const foto = (n) => `${prefisso}-${n}.png`;
     const st = R.mappa.stanze.find((s) => s.tipo === 'normale' && s.canaliD6 && s.canaliD6[0].dx !== 0 && s.canaliD6.length === 1)
       || R.mappa.stanze.find((s) => s.tipo === 'normale' && s.canaliD6);
     if (!st) return null;
+    // niente cambio di scena né botole (d5) nella stanza di prova: tengono i nemici fuori da st.nemici e la
+    // stanza non si ripulisce quando cade il nemico della prova (rossa una volta su tre)
+    delete st.quadriD5; delete st.botoleD5;
     entraInStanza(st, 'S');
     R.graziaIngressoC = 0; I.player.invuln = 1e9;
     st.nemici.forEach((n, i) => { n.stunTicks = 99999; n.x = i % 2 ? A.x2 - 30 : A.x1 + 30; n.y = A.y2 - 20 - Math.floor(i / 2) * 26; });
@@ -422,7 +425,8 @@ const foto = (n) => `${prefisso}-${n}.png`;
       spinta.dopo = n.x - spinta.x;
       danneggiaNemico(n, n.hp + 20, 1, 0);
       for (let i = 0; i < 40; i++) { ticksCongelati = 0; passoLogico(); }
-      const out = { hp: n.hp, pulita: st.pulita, spinta: spinta.dopo, registro: I.runInCorsoA7 && I.runInCorsoA7() ? I.runInCorsoA7().nemiciUccisi : null };
+      const out = { hp: n.hp, pulita: st.pulita, spinta: spinta.dopo, registro: I.runInCorsoA7 && I.runInCorsoA7() ? I.runInCorsoA7().nemiciUccisi : null,
+        stanza: { botole: Boolean(st.botoleD5), quadri: st.quadriD5 ? st.quadriD5.fase : null, socchiusa: Boolean(st.botolaH5), nemici: st.nemici.length } };
       st.pulita = false; // la stanza serve ancora alle prove che seguono
       return out;
     });
