@@ -735,7 +735,7 @@ function vestiStanzaH6(s, piano) {
       n.velH6 = moltVel * (n.champion === 'dorato' ? K.velDorato : 1);
       n.r = T.raggio;
     }
-    if (s.tipo === 'normale' && s.nemici && s.nemici.length) s.cordaH6 = nuovaCordaH6(s);
+    if (s.tipo === 'normale' && s.nemici && s.nemici.length && !s.cordaH6) s.cordaH6 = nuovaCordaH6(s);
   } else if (s.tipo === 'boss') {
     if (typeof vestiBossH6 === 'function') vestiBossH6(s, piano, moltCiclo, moltVel);
     s.cordaH6 = nuovaCordaH6(s);
@@ -914,6 +914,7 @@ entraInStanza = function (stanza, daLato, ...resto) {
   try {
     if (stanza && statoRun.stanzaCorrente === stanza && casertavecchiaAttivaH6()) {
       stanza.fumoH6 = [];
+      if (stanza.tipo !== 'boss') vestiStanzaH6(stanza, statoRun.piano); // chi entra in scena dopo la mappa
       if (stanza.cordaH6) Object.assign(stanza.cordaH6, { fase: 'attesa', t: RINTOCCHI_H6.primaAttesaTick, ricarica: 0 });
       if (typeof ingressoBossH6 === 'function') ingressoBossH6(stanza);
     }
@@ -1432,7 +1433,8 @@ function alzaRimorsoH6(n, st, M, f2) {
   const x = limitaH6(player.x + Math.cos(a) * M.distanzaPx, ARENA.x1 + 30, ARENA.x2 - 30);
   const y = limitaH6(player.y + Math.sin(a) * M.distanzaPx, ARENA.y1 + 30, ARENA.y2 - 30);
   const hp = Math.round(M.hpBase + (statoRun.piano - 1) * M.hpPiano);
-  const r = { tipo: 'penitente_pietra', patternMob: 'penitente_pietra', comportamento: 'penitente_pietra', nome: T.nome, x, y, vx: 0, vy: 0,
+  h6.rimorsi = (h6.rimorsi || 0) + 1;
+  const r = { id: `rimorsoH6-${h6.rimorsi}`, tipo: 'penitente_pietra', patternMob: 'penitente_pietra', comportamento: 'penitente_pietra', nome: T.nome, x, y, vx: 0, vy: 0,
     r: T.raggio, hp, maxHp: hp, speed: 0, velH6: 1, shootCd: 999, boss: false, flash: 6, burnTicks: 0, stunTicks: 0,
     state: 'idle', stateTimer: 20, maskOpen: false, rimorsoH6: true };
   st.nemici.push(r);
@@ -1691,7 +1693,12 @@ const generaMappaPianoSagratoH6 = generaMappaPiano;
 /** Mappa di Casertavecchia: Taddeo sul sagrato. */
 generaMappaPiano = function (piano, ...resto) {
   const m = generaMappaPianoSagratoH6.call(this, piano, ...resto);
-  try { if (m && casertavecchiaAttivaH6(piano)) preparaSagratoH6(m); } catch (err) { console.error('[h6] sagrato', err); }
+  try {
+    if (m && casertavecchiaAttivaH6(piano)) {
+      for (const st of m.stanze) if (st.tipo !== 'boss') vestiStanzaH6(st, piano); // nemici aggiunti dopo popolaStanza (temi, stanze speciali)
+      preparaSagratoH6(m);
+    }
+  } catch (err) { console.error('[h6] sagrato', err); }
   return m;
 };
 
