@@ -33,6 +33,10 @@ const BURATTINAIO_D1 = Object.freeze({
   /** Vita delle parti per atto (0 sigilli: le stesse; i sigilli cambiano i tempi, non la vita). */
   vita: Object.freeze({ mano1: 110, mano2: 85, mano3: 70, forbici: 190 }),
   intermezzoTick: 110,                 // pausa fra un atto e l'altro (nessun attacco)
+  /** Ombra del capo (assets/sprite_teatro/gb_ombra_capo.png, 640×240) in alto al centro dietro travi e corde. */
+  ombraCapo: Object.freeze({ nome: 'gb_ombra_capo', larghezza: 300, alto: 26, alfa: 0.42, // occhi sotto la barra della vita
+    occhi: Object.freeze([Object.freeze([303, 68]), Object.freeze([337, 68])]), // nel PNG
+    occhiBase: 0.12, occhiVoce: 0.85, occhiVoceTick: 200 }),
   inizioTick: 120,                     // le mani calano prima del primo colpo
   pausaFraColpiTick: Object.freeze([26, 18, 34]),
   mano: Object.freeze({
@@ -44,9 +48,18 @@ const BURATTINAIO_D1 = Object.freeze({
     spazzata: Object.freeze({ scende: 32, gira: 30, corsa: 52, terra: 50, risale: 24, mezzaAltezza: 22, danno: 1 }),
     presa: Object.freeze({ segui: 46, chiude: 16, durata: 96, terra: 60, risale: 24, raggio: 28, liberati: 22, danno: 1, trascina: 1.1 }),
     moltTenaglie: 1.7,                 // sigillo delle tenaglie: tempo a terra ×
+    // foglio dell'autore assets/sprite_teatro/gb_guanto.png (1×5 celle 384×384): aperta, pugno, presa, di taglio
+    // (dita in alto, polsino in basso: qui ruotate di 180°), floscia (pende già in giù, com'è). `lato` = cella in
+    // unità della mano (×scala px), `punta` = dove arrivano le dita sotto l'origine della mano, come il disegno a canvas.
+    immagine: Object.freeze({ nome: 'gb_guanto', celle: 5, lato: 84, punta: 30, ditaRuotate: 354 / 384, ditaFloscia: 355 / 384, lampo: 0.5, manica: 11,
+      pose: Object.freeze({ aperta: 0, pugno: 1, presa: 2, taglio: 3, floscia: 4 }) }),
   }),
   forbici: Object.freeze({
     raggio: 30, lunghezza: 380,                  // lame lunghe quasi mezza arena, manici fuori quadro
+    // foglio dell'autore gb_forbici.png (1×3 celle 640×256): chiuse, aperte, piantate. Il disegno intero
+    // (manici + lame, `lunghezzaPx` px del foglio) è lungo `lunghezza`×lunghezza come le forbici a canvas.
+    immagine: Object.freeze({ nome: 'gb_forbici', lunghezza: 0.94, lunghezzaPx: 498, sogliaAperte: 0.35, lampo: 0.5,
+      pernoChiuse: Object.freeze([290, 128]), pernoAperte: Object.freeze([300, 128]), puntaPiantate: Object.freeze([362, 248]) }),
     posa: 44, apre: 46, apreLima: 80, taglio: 24, piantate: 80, moltLima: 1.9, stacca: 22,
     larghezzaTaglio: 15, danno: 2, cicatriciMax: 4, squarcioTick: 300, tremitoApre: 2.2,
   }),
@@ -189,6 +202,7 @@ function suonoD1(tipo, forza = 1) {
 function voceD1(chiave) {
   if (d1.voceDetta[chiave]) return;
   d1.voceDetta[chiave] = true;
+  d1.occhiT = tick; // gli occhi dell'ombra del capo si accendono quando parla la Voce
   const testo = TESTI_D1.voce[chiave];
   try {
     if (typeof OPZIONI === 'object' && OPZIONI && OPZIONI.voce === false) return;
@@ -264,6 +278,7 @@ function scontroSopraLaRibaltaD1(opz = {}) {
 }
 
 function avviaAttoD1(n) {
+  d1.occhiT = tick; // ...e a ogni cambio d'atto
   const st = d1.stanza;
   const V = BURATTINAIO_D1.vita;
   d1.atto = n;
@@ -747,6 +762,19 @@ disegnaFiliMarionetta = function (...args) {
   return disegnaFiliMarionettaBaseD1.apply(this, args);
 };
 
+/**
+ * Riquadri dell'HUD sotto cui le parti del Burattinaio non si disegnano (stesse misure di 60-resa.js ›
+ * disegnaHUDPixelArt): statistiche, barra della vita, minimappa e, finché c'è, il banner.
+ * @returns {number[][]} [x, y, w, h] in coordinate logiche
+ */
+function zoneHudD1() {
+  const z = [[6, 5, 172, 52], [W / 2 - 108, 4, 216, 26], [W - 124, 8, 114, 92]];
+  try {
+    if (statoRun.bannerTimer > 0 && typeof STANZE_C !== 'undefined' && STANZE_C.banner) { const b = STANZE_C.banner; z.push([b.x, b.y, b.w, b.h]); }
+  } catch (_) { /* banner assente */ }
+  return z;
+}
+
 const disegnaHUDPixelArtBaseD1 = disegnaHUDPixelArt;
 /** Prima dell'HUD: effetti di caduta, fili che cadono a vittoria. */
 disegnaHUDPixelArt = function (...args) {
@@ -754,8 +782,15 @@ disegnaHUDPixelArt = function (...args) {
     if (statoRun.stanzaCorrente && statoRun.stanzaCorrente.arenaD1) {
       // forbici sotto, mani sopra (calano dall'alto); per y crescente fra le mani
       const parti = (partiDaDisegnareD1 || []).slice().sort((a, b) => (a.bossId === 'gb-forbici' ? -1 : 0) - (b.bossId === 'gb-forbici' ? -1 : 0) || a.y - b.y);
-      for (const n of parti) { if (n.bossId === 'gb-mano') disegnaManoD1(n); else disegnaForbiciD1(n); }
-      disegnaEffettiD1();
+      // i riquadri dell'HUD sono semitrasparenti: le parti (enormi) non devono vedersi attraverso
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, 0, W, H);
+      for (const [x, y, w, h] of zoneHudD1()) ctx.rect(x, y, w, h);
+      ctx.clip('evenodd');
+      try {
+        for (const n of parti) { if (n.bossId === 'gb-mano') disegnaManoD1(n); else disegnaForbiciD1(n); }
+        disegnaEffettiD1();
+      } finally { ctx.restore(); }
     }
   } catch (err) { console.error('[D1] effetti', err); }
   return disegnaHUDPixelArtBaseD1.apply(this, args);
@@ -833,9 +868,44 @@ function preparaTraviD1() {
 }
 
 /** Il capo: un'ombra enorme dietro le travi, solo spalle e due bagliori d'occhi. Non si vede mai intero. */
+/**
+ * L'ombra del capo dal PNG dell'autore: quasi fusa col buio; gli occhi si accendono (luce additiva) quando parla la
+ * Voce e ai cambi d'atto, poi tornano fiochi; alla vittoria si spengono e l'ombra si ritira.
+ * @returns {boolean} false se il PNG non è carico (ripiego sull'ombra a canvas).
+ */
+function disegnaOmbraCapoFoglioD1(fiato, via) {
+  const O = BURATTINAIO_D1.ombraCapo;
+  const img = typeof getSpriteTeatro === 'function' ? getSpriteTeatro(O.nome) : null;
+  if (!img) return false;
+  const k = O.larghezza / img.naturalWidth, w = O.larghezza, h = img.naturalHeight * k;
+  const x0 = (W - w) / 2, y0 = O.alto + fiato - via * 30;
+  ctx.save();
+  ctx.globalAlpha = O.alfa * (1 - via * 0.8);
+  ctx.drawImage(img, x0, y0, w, h);
+  ctx.globalAlpha = 1;
+  const dt = d1.occhiT !== undefined ? tick - d1.occhiT : Infinity;
+  const voce = dt >= 0 && dt < O.occhiVoceTick ? 1 - dt / O.occhiVoceTick : 0;
+  const luce = d1.vittoria ? 0 : O.occhiBase + (O.occhiVoce - O.occhiBase) * voce * voce * (0.9 + 0.1 * Math.sin(tick * 0.3));
+  if (luce > 0.01) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (const [ox, oy] of O.occhi) {
+      const ex = x0 + ox * k, ey = y0 + oy * k;
+      const g = ctx.createRadialGradient(ex, ey, 0, ex, ey, 7);
+      g.addColorStop(0, `rgba(255,226,140,${luce})`); g.addColorStop(0.35, `rgba(249,190,64,${luce * 0.55})`); g.addColorStop(1, 'rgba(249,190,64,0)');
+      ctx.fillStyle = g; ctx.fillRect(ex - 7, ey - 7, 14, 14);
+    }
+  } else if (d1.vittoria) { // occhi spenti: il buio li richiude
+    ctx.fillStyle = `rgba(3,2,5,${Math.min(1, via * 1.5)})`;
+    for (const [ox, oy] of O.occhi) { ctx.beginPath(); ctx.ellipse(x0 + ox * k, y0 + oy * k, 4, 2.2, 0, 0, TAU); ctx.fill(); }
+  }
+  ctx.restore();
+  return true;
+}
+
 function disegnaCapoD1() {
   const fiato = Math.sin(tick * 0.02) * 2;
   const via = d1.vittoria ? Math.min(1, d1.vittoria.t / 120) : 0;
+  if (disegnaOmbraCapoFoglioD1(fiato, via)) return;
   ctx.save();
   ctx.globalAlpha = 0.92 * (1 - via * 0.7);
   ctx.fillStyle = '#030205';
@@ -914,6 +984,25 @@ function disegnaSquarcioD1(c) {
   ctx.restore();
 }
 
+/**
+ * Il guanto dal foglio dell'autore, nel sistema della mano (origine al polso, dita verso +y, già scalato e
+ * specchiato per lato). Le prime quattro pose sono ruotate di 180° (polsino in alto, attaccato alla manica);
+ * la floscia pende già. Nessuna tinta sopra il bianco, salvo il lampo quando è colpita.
+ * @returns {boolean} false se il PNG non è carico (ripiego sul guanto a canvas).
+ */
+function disegnaGuantoFoglioD1(posa, flash) {
+  const I = BURATTINAIO_D1.mano.immagine;
+  if (typeof disegnaCellaTeatro !== 'function' || typeof getSpriteTeatro !== 'function' || !getSpriteTeatro(I.nome)) return false;
+  const col = I.pose[posa] !== undefined ? I.pose[posa] : I.pose.aperta;
+  const C = I.lato, tinta = flash ? TINTE_D1.guantoFlash : null;
+  if (col === I.pose.floscia) return disegnaCellaTeatro(ctx, I.nome, col, I.celle, -C / 2, I.punta - C * I.ditaFloscia, C, C, tinta, I.lampo);
+  const alto = I.punta - C * I.ditaRuotate; // bordo alto della cella dopo la rotazione
+  ctx.save(); ctx.rotate(Math.PI);
+  const ok = disegnaCellaTeatro(ctx, I.nome, col, I.celle, -C / 2, -(alto + C), C, C, tinta, I.lampo);
+  ctx.restore();
+  return ok;
+}
+
 /** Guanto bianco. (x, y) = punto dove tocca le tavole; h = altezza da terra. */
 function disegnaGuantoD1(x, y, h, lato, posa, flash, alfa = 1, rot = 0) {
   const s = BURATTINAIO_D1.mano.scala;
@@ -929,8 +1018,12 @@ function disegnaGuantoD1(x, y, h, lato, posa, flash, alfa = 1, rot = 0) {
   const bianco = flash ? TINTE_D1.guantoFlash : TINTE_D1.guanto;
   // manica nera che sale nel buio (il braccio non finisce mai)
   ctx.fillStyle = TINTE_D1.manica;
-  ctx.beginPath(); ctx.moveTo(-15, -14); ctx.lineTo(-24, -420); ctx.lineTo(24, -420); ctx.lineTo(15, -14); ctx.closePath(); ctx.fill();
+  // col foglio dell'autore la manica è larga quanto il suo polsino (più stretto del guanto a canvas)
+  const I = BURATTINAIO_D1.mano.immagine;
+  const mb = typeof getSpriteTeatro === 'function' && getSpriteTeatro(I.nome) ? I.manica : 15, ma = mb + 9;
+  ctx.beginPath(); ctx.moveTo(-mb, -14); ctx.lineTo(-ma, -420); ctx.lineTo(ma, -420); ctx.lineTo(mb, -14); ctx.closePath(); ctx.fill();
   ctx.strokeStyle = 'rgba(242,192,107,0.35)'; ctx.lineWidth = 0.8; ctx.stroke();
+  if (disegnaGuantoFoglioD1(posa, flash)) { ctx.restore(); return; }
   ctx.lineJoin = 'round';
   const contorno = () => { ctx.strokeStyle = TINTE_D1.china; ctx.lineWidth = 1.6; ctx.stroke(); };
   // polsino con l'impuntura d'oro
@@ -967,17 +1060,45 @@ function disegnaGuantoD1(x, y, h, lato, posa, flash, alfa = 1, rot = 0) {
 
 function disegnaManoD1(m) {
   const rot = m.posa === 'piatta' ? (m.dirSpazza || 1) * -1.25 : 0;
-  disegnaGuantoD1(m.x, m.y, m.h || 0, m.lato, m.posa === 'piatta' ? 'aperta' : m.posa, m.flash > 0, 1, rot);
+  disegnaGuantoD1(m.x, m.y, m.h || 0, m.lato, m.posa === 'piatta' ? 'taglio' : m.posa, m.flash > 0, 1, rot); // 'taglio': a canvas è la mano aperta
 }
 
-/** Forbici colossali d'ottone (centro sul perno). */
-function disegnaForbiciSagomaD1(x, y, ang, apertura, h, flash, alfa = 1) {
+/**
+ * Le forbici dal foglio dell'autore (gb_forbici.png, 1×3 celle 640×256, punta verso destra): chiuse e aperte
+ * ruotate lungo la direzione del taglio col perno sull'origine; piantate dritte nelle tavole con la punta a terra,
+ * girate verso il verso del taglio. Nel sistema già traslato sul perno (non ancora ruotato).
+ * @returns {boolean} false se il PNG non è carico (ripiego sulle forbici a canvas).
+ */
+function disegnaForbiciFoglioD1(ang, apertura, h, flash, posa) {
+  const I = BURATTINAIO_D1.forbici.immagine;
+  if (typeof disegnaCellaTeatro !== 'function' || typeof getSpriteTeatro !== 'function' || !getSpriteTeatro(I.nome)) return false;
+  const k = (BURATTINAIO_D1.forbici.lunghezza * I.lunghezza) / I.lunghezzaPx; // px a schermo per px del foglio
+  const cw = 640 * k, ch = 256 * k, tinta = flash ? '#fff1c0' : null;
+  ctx.save();
+  let ok;
+  if (posa === 'piantate') {
+    ctx.translate(0, h + 6); // punta sulle tavole
+    if (Math.cos(ang) < 0) ctx.scale(-1, 1);
+    ok = disegnaCellaTeatro(ctx, I.nome, 2, 3, -I.puntaPiantate[0] * k, -I.puntaPiantate[1] * k, cw, ch, tinta, I.lampo);
+  } else {
+    const aperte = apertura > I.sogliaAperte;
+    const perno = aperte ? I.pernoAperte : I.pernoChiuse;
+    ctx.rotate(ang);
+    ok = disegnaCellaTeatro(ctx, I.nome, aperte ? 1 : 0, 3, -perno[0] * k, -perno[1] * k, cw, ch, tinta, I.lampo);
+  }
+  ctx.restore();
+  return ok;
+}
+
+/** Forbici colossali d'ottone (centro sul perno). `posa` 'piantate' quando sono infisse nelle tavole. */
+function disegnaForbiciSagomaD1(x, y, ang, apertura, h, flash, alfa = 1, posa = null) {
   const L = BURATTINAIO_D1.forbici.lunghezza;
   ctx.save();
   ctx.globalAlpha *= alfa;
   ctx.fillStyle = `rgba(0,0,0,${0.3 * Math.max(0, 1 - h / 60)})`;
   ctx.beginPath(); ctx.ellipse(x, y + 2, 30, 6, 0, 0, TAU); ctx.fill();
   ctx.translate(x, y - h - 6);
+  if (disegnaForbiciFoglioD1(ang, apertura, h, flash, posa)) { ctx.restore(); return; }
   ctx.rotate(ang);
   const lama = (segno) => {
     ctx.save(); ctx.rotate(segno * apertura * 0.5);
@@ -1002,7 +1123,8 @@ function disegnaForbiciSagomaD1(x, y, ang, apertura, h, flash, alfa = 1) {
 
 function disegnaForbiciD1(f) {
   const tr = f.tremaD1 ? Math.sin(tick * 1.9) * f.tremaD1 : 0;
-  disegnaForbiciSagomaD1(f.x + tr, f.y, f.ang || 0, f.apertura || 0, f.h || 0, f.flash > 0);
+  const piantate = f.faseD1 === 'piantate' || f.faseD1 === 'stacca';
+  disegnaForbiciSagomaD1(f.x + tr, f.y, f.ang || 0, f.apertura || 0, f.h || 0, f.flash > 0, 1, piantate ? 'piantate' : null);
   if (f.faseD1 === 'apre' && f.tD1 % 12 < 3) { // bagliore sulla lama aperta (sulla forbice, non a terra)
     ctx.save(); ctx.globalAlpha = 0.8; ctx.fillStyle = '#fff6d0';
     ctx.beginPath(); ctx.arc(f.x + Math.cos(f.ang) * 30, f.y - (f.h || 0) - 6 + Math.sin(f.ang) * 30, 2.4, 0, TAU); ctx.fill(); ctx.restore();

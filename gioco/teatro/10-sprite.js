@@ -922,6 +922,44 @@ function getSpriteTeatro(nome) {
   return (img && img.complete && img.naturalWidth > 0) ? img : null;
 }
 
+let appoggioCellaTeatro = null;
+/**
+ * Disegna la cella `col` di un foglio a una riga di `celle` colonne uguali (es. 'ragno_seta', 'gb_guanto')
+ * nel rettangolo (dx, dy, dw, dh) del contesto `c`, con la sua trasformazione corrente.
+ * Con `tinta` la sola sagoma è velata di quel colore ad alfa `alfa` (il lampo quando è colpita), su una tela
+ * d'appoggio alla risoluzione reale del palco, come i fogli di t2-sprite.js.
+ * @returns {boolean} false se il PNG manca o non è ancora carico: chi chiama ripiega sul disegno a canvas.
+ */
+function disegnaCellaTeatro(c, nome, col, celle, dx, dy, dw, dh, tinta = null, alfa = 0) {
+  const img = getSpriteTeatro(nome);
+  if (!img) return false;
+  const cl = img.naturalWidth / celle, ca = img.naturalHeight, sx = col * cl;
+  c.save();
+  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+  if (tinta && alfa > 0) {
+    const m = c.getTransform();
+    const k = Math.max(1, Math.min(6, Math.max(Math.hypot(m.a, m.b), Math.hypot(m.c, m.d))));
+    const w = Math.max(1, Math.ceil(Math.abs(dw) * k)), h = Math.max(1, Math.ceil(Math.abs(dh) * k));
+    if (!appoggioCellaTeatro) appoggioCellaTeatro = document.createElement('canvas');
+    const a = appoggioCellaTeatro;
+    if (a.width < w) a.width = w;
+    if (a.height < h) a.height = h;
+    const ac = a.getContext('2d');
+    ac.clearRect(0, 0, a.width, a.height);
+    ac.globalCompositeOperation = 'source-over'; ac.globalAlpha = 1;
+    ac.imageSmoothingEnabled = true; ac.imageSmoothingQuality = 'high';
+    ac.drawImage(img, sx, 0, cl, ca, 0, 0, w, h);
+    ac.globalCompositeOperation = 'source-atop'; ac.globalAlpha = alfa; ac.fillStyle = tinta;
+    ac.fillRect(0, 0, w, h);
+    ac.globalCompositeOperation = 'source-over'; ac.globalAlpha = 1;
+    c.drawImage(a, 0, 0, w, h, dx, dy, dw, dh);
+  } else {
+    c.drawImage(img, sx, 0, cl, ca, dx, dy, dw, dh);
+  }
+  c.restore();
+  return true;
+}
+
 function getGattoImage(posa) {
   return getSpriteTeatro(`gatto_${posa}`);
 }

@@ -129,6 +129,10 @@ const RAGNO_D7 = Object.freeze({
   seta: Object.freeze({ ogniTick: 3, vitaTick: 150, raggio: 6, rallenta: 0.5, max: 60 }), // filo dietro di sé
   sanLeucio: Object.freeze({ piano: 3, probabilita: 0.1 }), // raro nelle stanze normali del piano 3
   disegno: Object.freeze({ corpo: '#120a08', contorno: '#ffc45c', occhi: '#e53222', seta: 'rgba(236, 226, 200, 0.75)' }),
+  // foglio dell'autore (assets/sprite_teatro/ragno_seta.png, 1×4 celle 192×160, il ragno guarda a destra):
+  // celle 0-1 scatto a zampe alterne, 2 pausa accucciata, 3 salto. Larghezza della cella a schermo in px,
+  // scelta perché il ragno resti grande quanto la sagoma a canvas (~22 px di zampe).
+  foglio: Object.freeze({ nome: 'ragno_seta', celle: 4, larghezza: 31, piedi: 0.97, cadenzaScatto: 4, lampo: 0.75, contorno: 0.45 }),
 });
 /** Transizioni ammesse della macchina a stati del ragno. */
 const STATI_RAGNO_D7 = Object.freeze({ pausa: Object.freeze(['scatto', 'salto']), scatto: Object.freeze(['pausa']), salto: Object.freeze(['pausa']) });
@@ -238,8 +242,38 @@ function disegnaSetaD7() {
   ctx.restore();
 }
 
+/**
+ * Il Ragno della Seta dal foglio dell'autore: posa secondo lo stato dell'IA, specchiato verso dove va (in pausa
+ * verso l'ultima corsa), lampo bianco quando è colpito. false se il foglio non è carico (ripiego sulla sagoma).
+ */
+function disegnaRagnoFoglioD7(n, tick) {
+  const F = RAGNO_D7.foglio, z = n.airZ || 0;
+  if (!getSpriteTeatro(F.nome)) return false;
+  const stato = n.statoD7 || 'pausa';
+  const col = stato === 'salto' ? 3 : stato === 'scatto' ? Math.floor(tick / F.cadenzaScatto) % 2 : 2;
+  const vx = n.vxD7 || 0;
+  if (Math.abs(vx) > 0.05) n.versoD7 = vx < 0 ? -1 : 1;
+  else if (!n.versoD7) n.versoD7 = player.x < n.x ? -1 : 1;
+  const w = F.larghezza, h = w * (160 / 192);
+  ctx.save();
+  ctx.fillStyle = 'rgba(8, 5, 3, 0.55)'; // ombra a terra (sotto di lui, mai dove atterrerà)
+  ctx.beginPath(); ctx.ellipse(n.x, n.y + 5, 9 - z * 0.15, 3, 0, 0, TAU); ctx.fill();
+  ctx.translate(n.x, n.y + 6 - z);
+  ctx.scale(n.versoD7, 1);
+  // contorno di lanterna come la sagoma a canvas: la cella tinta d'oro, spostata di un soffio nei quattro versi
+  ctx.globalAlpha = 0.7;
+  for (const [ox, oy] of [[-F.contorno, 0], [F.contorno, 0], [0, -F.contorno], [0, F.contorno]]) {
+    disegnaCellaTeatro(ctx, F.nome, col, F.celle, -w / 2 + ox, -h * F.piedi + oy, w, h, RAGNO_D7.disegno.contorno, 1);
+  }
+  ctx.globalAlpha = 1;
+  const ok = disegnaCellaTeatro(ctx, F.nome, col, F.celle, -w / 2, -h * F.piedi, w, h, n.flash > 0 ? '#ffffff' : null, F.lampo);
+  ctx.restore();
+  return ok;
+}
+
 /** Sagoma a ombra del Ragno della Seta: otto zampe snodate, contorno di lanterna, occhi rossi. */
 function disegnaRagnoSetaD7(n, tick) {
+  if (typeof disegnaCellaTeatro === 'function' && disegnaRagnoFoglioD7(n, tick)) return;
   const D = RAGNO_D7.disegno, z = n.airZ || 0;
   const corre = n.statoD7 === 'scatto';
   const fase = corre ? tick * 0.9 : Math.sin(tick * 0.5) * 0.15;
