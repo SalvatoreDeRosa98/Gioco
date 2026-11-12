@@ -44,6 +44,11 @@ const BURATTINAIO_D1 = Object.freeze({
     spazzata: Object.freeze({ scende: 32, gira: 30, corsa: 52, terra: 50, risale: 24, mezzaAltezza: 22, danno: 1 }),
     presa: Object.freeze({ segui: 46, chiude: 16, durata: 96, terra: 60, risale: 24, raggio: 28, liberati: 22, danno: 1, trascina: 1.1 }),
     moltTenaglie: 1.7,                 // sigillo delle tenaglie: tempo a terra ×
+    // foglio dell'autore assets/sprite_teatro/gb_guanto.png (1×5 celle 384×384): aperta, pugno, presa, di taglio
+    // (dita in alto, polsino in basso: qui ruotate di 180°), floscia (pende già in giù, com'è). `lato` = cella in
+    // unità della mano (×scala px), `punta` = dove arrivano le dita sotto l'origine della mano, come il disegno a canvas.
+    immagine: Object.freeze({ nome: 'gb_guanto', celle: 5, lato: 84, punta: 30, ditaRuotate: 354 / 384, ditaFloscia: 355 / 384, lampo: 0.5, manica: 11,
+      pose: Object.freeze({ aperta: 0, pugno: 1, presa: 2, taglio: 3, floscia: 4 }) }),
   }),
   forbici: Object.freeze({
     raggio: 30, lunghezza: 380,                  // lame lunghe quasi mezza arena, manici fuori quadro
@@ -914,6 +919,25 @@ function disegnaSquarcioD1(c) {
   ctx.restore();
 }
 
+/**
+ * Il guanto dal foglio dell'autore, nel sistema della mano (origine al polso, dita verso +y, già scalato e
+ * specchiato per lato). Le prime quattro pose sono ruotate di 180° (polsino in alto, attaccato alla manica);
+ * la floscia pende già. Nessuna tinta sopra il bianco, salvo il lampo quando è colpita.
+ * @returns {boolean} false se il PNG non è carico (ripiego sul guanto a canvas).
+ */
+function disegnaGuantoFoglioD1(posa, flash) {
+  const I = BURATTINAIO_D1.mano.immagine;
+  if (typeof disegnaCellaTeatro !== 'function' || typeof getSpriteTeatro !== 'function' || !getSpriteTeatro(I.nome)) return false;
+  const col = I.pose[posa] !== undefined ? I.pose[posa] : I.pose.aperta;
+  const C = I.lato, tinta = flash ? TINTE_D1.guantoFlash : null;
+  if (col === I.pose.floscia) return disegnaCellaTeatro(ctx, I.nome, col, I.celle, -C / 2, I.punta - C * I.ditaFloscia, C, C, tinta, I.lampo);
+  const alto = I.punta - C * I.ditaRuotate; // bordo alto della cella dopo la rotazione
+  ctx.save(); ctx.rotate(Math.PI);
+  const ok = disegnaCellaTeatro(ctx, I.nome, col, I.celle, -C / 2, -(alto + C), C, C, tinta, I.lampo);
+  ctx.restore();
+  return ok;
+}
+
 /** Guanto bianco. (x, y) = punto dove tocca le tavole; h = altezza da terra. */
 function disegnaGuantoD1(x, y, h, lato, posa, flash, alfa = 1, rot = 0) {
   const s = BURATTINAIO_D1.mano.scala;
@@ -929,8 +953,12 @@ function disegnaGuantoD1(x, y, h, lato, posa, flash, alfa = 1, rot = 0) {
   const bianco = flash ? TINTE_D1.guantoFlash : TINTE_D1.guanto;
   // manica nera che sale nel buio (il braccio non finisce mai)
   ctx.fillStyle = TINTE_D1.manica;
-  ctx.beginPath(); ctx.moveTo(-15, -14); ctx.lineTo(-24, -420); ctx.lineTo(24, -420); ctx.lineTo(15, -14); ctx.closePath(); ctx.fill();
+  // col foglio dell'autore la manica è larga quanto il suo polsino (più stretto del guanto a canvas)
+  const I = BURATTINAIO_D1.mano.immagine;
+  const mb = typeof getSpriteTeatro === 'function' && getSpriteTeatro(I.nome) ? I.manica : 15, ma = mb + 9;
+  ctx.beginPath(); ctx.moveTo(-mb, -14); ctx.lineTo(-ma, -420); ctx.lineTo(ma, -420); ctx.lineTo(mb, -14); ctx.closePath(); ctx.fill();
   ctx.strokeStyle = 'rgba(242,192,107,0.35)'; ctx.lineWidth = 0.8; ctx.stroke();
+  if (disegnaGuantoFoglioD1(posa, flash)) { ctx.restore(); return; }
   ctx.lineJoin = 'round';
   const contorno = () => { ctx.strokeStyle = TINTE_D1.china; ctx.lineWidth = 1.6; ctx.stroke(); };
   // polsino con l'impuntura d'oro
@@ -967,7 +995,7 @@ function disegnaGuantoD1(x, y, h, lato, posa, flash, alfa = 1, rot = 0) {
 
 function disegnaManoD1(m) {
   const rot = m.posa === 'piatta' ? (m.dirSpazza || 1) * -1.25 : 0;
-  disegnaGuantoD1(m.x, m.y, m.h || 0, m.lato, m.posa === 'piatta' ? 'aperta' : m.posa, m.flash > 0, 1, rot);
+  disegnaGuantoD1(m.x, m.y, m.h || 0, m.lato, m.posa === 'piatta' ? 'taglio' : m.posa, m.flash > 0, 1, rot); // 'taglio': a canvas è la mano aperta
 }
 
 /** Forbici colossali d'ottone (centro sul perno). */
