@@ -15,6 +15,7 @@
 const path = require('path');
 const fs = require('fs');
 const { chromium } = require('playwright');
+const { fermaCiclo } = require('./qa-teatro-comune');
 const RADICE = path.resolve(__dirname, '..');
 const file = path.resolve(RADICE, process.argv[2] || 'gioco/teatro_marionette.html');
 const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evidence', 'teatro-burattinaio');
@@ -97,9 +98,21 @@ const foto = (n) => `${prefisso}-${n}.png`;
   await senzaCartigli(); await p.screenshot({ path: foto('05-presa') });
 
   // atto III
-  await p.evaluate(() => window.__teatro.interni.burattinaioD1.danneggia(500));
-  ok('atto-3', await aspetta(() => window.__teatro.interni.burattinaioD1.stato().atto === 3, 3000));
-  ok('marionette-cadute', !(await S()).parti.some((x) => x.elite));
+  // Le marionette d'élite dell'atto II cadono NEL TICK del cambio d'atto; nell'atto III ne calano di nuove a
+  // ondate. Leggendo da Node dopo il cambio, a macchina carica il ciclo aveva già fatto la prima ondata del III.
+  // Qui il ciclo vero è fermo e si conta a passi di logica fino al cambio d'atto, poi si guarda subito.
+  await fermaCiclo(p, true);
+  const cambio = await p.evaluate(() => {
+    const B = window.__teatro.interni.burattinaioD1;
+    B.danneggia(500);
+    let n = 0;
+    for (; n < 600 && B.stato().atto !== 3; n++) passoLogico();
+    const st = B.stato();
+    return { atto: st.atto, passi: n, elite: st.parti.filter((x) => x.elite).length };
+  });
+  await fermaCiclo(p, false);
+  ok('atto-3', cambio.atto === 3, cambio);
+  ok('marionette-cadute', cambio.atto === 3 && cambio.elite === 0, cambio);
   await immortale();
   const apre = await aspetta(() => window.__teatro.interni.burattinaioD1.stato().parti.some((x) => x.id === 'gb-forbici' && x.fase === 'apre'), 12000, 50);
   ok('forbici-aprono', apre);
