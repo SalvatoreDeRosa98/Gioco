@@ -41,7 +41,34 @@ Agnese resta la tessitrice di San Leucio, nessun nome o riferimento ad altri gio
   revisione degli incroci fra le parti (maglio di Taddeo contro il Burattinaio); prove rese stabili
   (`tools/qa-teatro-tutte.sh`); mappa del codice (`graphify-out/`, `tools/grafo-teatro.py`).
 
+## Terza ondata — trama e zone nuove — FATTA (2026-11-12)
+Albero dei percorsi di una notte: P1 Corso Trieste → P2 Villa Comunale **oppure** Acquedotto Carolino → P3 San Leucio
+(la botola, sempre) **oppure** Casertavecchia (cancelletto, solo venendo dalla Villa) **oppure** Anfiteatro Campano
+(condotto, solo venendo dall'Acquedotto) → P4 Reggia. In una notte non si vede tutto.
+- **Agnese e Taddeo** (`h1-agnese-taddeo.js`): il Telaio a San Leucio (battute della bibbia, scelta «Restituiscile i
+  ricordi» / «Lasciala sognare»), il confronto con Taddeo alla caduta del Capitano («Perdonalo» / «Accusalo»), le loro
+  presenze in piazza, righe nel Diario e nel finale vero.
+- **Memorie** (`h2-memorie.js`): i boss si dissolvono in anime e lasciano la loro rivelazione; i quattro indizi di
+  Bianca con la pagina del Diario e la chiusura; Assunta al posto della festaiola.
+- **Gregorio, il Custode** (`h3-gregorio.js`): il Cortile d'Onore prima di Donna Luciana, «Mostragli le prove» /
+  «Attacca il Custode», scontro a due fasi, conseguenze sullo scontro con Donna Luciana.
+- **Ritorno in piazza** (`h4-ritorno-piazza.js`): dopo Donna Luciana, se la porta della bottega è pronta, si torna in
+  Piazza Dante con la notte viva e le Maschere piene; rastrelliera dei ferri di Gaetano; Grande Burattinaio tarato
+  sulla dotazione e sul ciclo.
+- **Sottopalco** (`h5-sottopalco.js`): una botola socchiusa a notte, tre stanze al buio, il Macchinista, un oggetto e
+  un pezzo di copione.
+- **Casertavecchia** (`h6-casertavecchia.js`): i rintocchi, quattro nemici, il Campanaro Senza Volto, Taddeo sul sagrato.
+- **Anfiteatro Campano** (`h7-anfiteatro.js`): le stanze-giuramento, quattro nemici, il Giudice dell'Arena, Agnese
+  sulle gradinate; il messaggio del padre all'Acquedotto.
+- Elenchi per l'autore: `production/testi-da-approvare.md` (598 testi), `production/arte/richieste-gemini-terza-ondata.md`.
+
 ## Aperto dentro ciò che è fatto (decisioni dell'autore)
+- Terza ondata: Gregorio con le prove evita lo scontro (la bibbia fa combattere comunque: interruttore
+  `GREGORIO_H3.dialogoSenzaScontro`); costo dei ferri di Gaetano (passo −10% l'uno); effetti di Taddeo perdonato o
+  accusato; premi delle zone nuove (oggi un oggetto forte a Casertavecchia, la Tessera del Gladiatore senza effetto
+  all'Anfiteatro); la lima resta solo a San Leucio; testo della lettera di Agnese e del messaggio del padre (nuovi);
+  le rivelazioni del Campanaro e del Giudice non contano per «la svolta» delle memorie; mancano gli indizi su
+  Gregorio ai piani 2-3 e le sue battute nel finale vero. Niente di tutto questo è stato giocato da una persona.
 - Testi nuovi da approvare (battute del Burattinaio, trionfi e aneddoti, Don Gennaro, Acquedotto, consigli del conto).
 - Bilancio: Raggio Cremisi coi moltiplicatori, tetto al danno, oggetti di vita per l'Ombra, oggetti di cadenza per
   Taddeo, premio della Buca, durata della notte (stima 14-16 minuti contro 25-35): `production/bilancio-teatro.md`.
