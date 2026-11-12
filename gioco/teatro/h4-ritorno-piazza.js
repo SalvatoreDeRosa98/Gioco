@@ -36,12 +36,15 @@ const RITORNO_H4 = Object.freeze({
   uscita: Object.freeze({ x: 112, y: 128, raggio: 42 }),
   /**
    * Scala del Burattinaio. forza = (danno × colpi al secondo) della dotazione / quella di Ferruccio a mani nude
-   * (3,50 × 2,73), tenuta fra forzaMin e forzaMax. Vita delle parti × forza × ciclo; il ciclo conta
+   * (3,50 × 2,73 ≈ 9,6, lo stesso DPS 0 oggetti misurato da tools/sim-bilancio-teatro.js), tenuta fra forzaMin e
+   * forzaMax. Vita delle parti × max(1, forza × perForza) × ciclo; il ciclo conta
    * 1 + perCiclo × (ciclo − 1) fino a cicloMax. Ritmo: pausa fra i colpi × (1 − ritmoPerForza × (forza − 1)
-   * − ritmoPerCiclo × (ciclo − 1)), mai sotto ritmoMin. Tarata con tools/sim-bilancio-teatro.js (vedi report h4).
+   * − ritmoPerCiclo × (ciclo − 1)), mai sotto ritmoMin. Taratura (modello della sim: tempo = vita / (DPS × 0,55)
+   * + 30 s di intermezzi + marionette): perForza 0,5 → 100-115 s da DPS 21 (6-7 oggetti) a DPS 43 (tetto);
+   * sotto forza 2 il Burattinaio resta quello di oggi (650).
    */
   scala: Object.freeze({
-    dpsRiferimento: 3.5 * 2.73, forzaMin: 1, forzaMax: 4.5,
+    dpsRiferimento: 3.5 * 2.73, forzaMin: 1, forzaMax: 4.5, perForza: 0.5,
     perCiclo: 0.25, cicloMax: 2,
     ritmoPerForza: 0.06, ritmoPerCiclo: 0.08, ritmoMin: 0.6,
   }),
@@ -173,7 +176,7 @@ function scalaBurattinaioH4(forza, ciclo) {
   const S = RITORNO_H4.scala;
   const c = Math.max(1, Math.floor(ciclo || 1));
   const moltCiclo = Math.min(S.cicloMax, 1 + S.perCiclo * (c - 1));
-  const molt = forza * moltCiclo;
+  const molt = Math.max(1, forza * S.perForza) * moltCiclo;
   const ritmo = Math.max(S.ritmoMin, 1 - S.ritmoPerForza * (forza - 1) - S.ritmoPerCiclo * (c - 1));
   const base = BURATTINAIO_D1.vita;
   const vita = {};

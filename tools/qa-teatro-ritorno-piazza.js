@@ -151,8 +151,8 @@ const foto = (n) => `${prefisso}-${n}.png`;
 
   // ---- 4. Scala: dotazione e ciclo, limiti ----
   const sc = await p.evaluate(() => { const I = window.__teatro.interni.ritornoH4; const t = (f, c) => Object.values(I.scala(f, c).vita).reduce((a, b) => a + b * 1, 0);
-    return { nudo: t(1, 1), forte: t(3, 1), ciclo2: t(3, 2), ciclo9: t(3, 9), ciclo99: t(3, 99), ritmo9: I.scala(4.5, 9).ritmo }; });
-  ok('scala-cresce-con-dotazione', sc.forte > sc.nudo, sc);
+    return { nudo: t(1, 1), debole: t(1.8, 1), forte: t(3, 1), ciclo2: t(3, 2), ciclo9: t(3, 9), ciclo99: t(3, 99), ritmo9: I.scala(4.5, 9).ritmo }; });
+  ok('scala-cresce-con-dotazione', sc.forte > sc.nudo && sc.debole === sc.nudo && sc.nudo === 455, sc); // somma della tabella (mano1+mano2+mano3+forbici); 650 col doppio delle mani
   ok('scala-cresce-col-ciclo-con-tetto', sc.ciclo2 > sc.forte && sc.ciclo9 === sc.ciclo99 && sc.ritmo9 >= 0.6, sc);
 
   // ---- 5. Quattro personaggi, morte normale, zero ferri ----
@@ -204,7 +204,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   await p.evaluate(() => { b8.cart = null; fineFucinaB8({ scelta: 'sali', cx: {} }); window.__teatro.interni.ritornoH4.sali(); });
   await passi(p, 5);
   h = await H();
-  ok('ciclo2-boss-piu-duro', h.scontro && h.scontro.ciclo === 2 && h.scontro.molt > h.scontro.forza, h.scontro && { molt: h.scontro.molt, forza: h.scontro.forza });
+  ok('ciclo2-boss-piu-duro', h.scontro && h.scontro.ciclo === 2 && h.scontro.molt > (await p.evaluate((f) => window.__teatro.interni.ritornoH4.scala(f, 1).molt, h.scontro.forza)), h.scontro && { molt: h.scontro.molt, forza: h.scontro.forza });
   // Ricomincia notte dalla piazza chiude la notte
   await avvio('ferruccio', true);
   await finoALuciana();
