@@ -251,8 +251,52 @@ function nomePersonaggioD3(pid) {
   try { return (PERSONAGGI_GIOCABILI[pid] && PERSONAGGI_GIOCABILI[pid].nome) || pid; } catch (_) { return pid; }
 }
 
-/** Disegna una comparsa coi piedi in (x, y). sagoma = tutta nera. */
-function figuraComparsaD3(tipo, x, y, scala, sagoma) {
+// (f1) Sagome in cache. ctx.filter = 'brightness(0)' in Chrome filtra tutta la tela a ogni tratto (~38 ms per
+// fotogramma sul telefono). Ogni sagoma si disegna UNA volta, senza filtro, su un riquadro della tela svuotato, si
+// copia su una tela piccola, si annerisce con 'source-in' (stesso risultato di brightness(0): nero, alfa intatta) e
+// poi si riusa. La chiave porta la scala della tela e la parte frazionaria della posizione: pixel identici.
+const cacheSagomeD3 = new Map();
+const MAX_SAGOME_D3 = 96; // oltre, si svuota (cambi di risoluzione ripetuti)
+
+/**
+ * Disegna in nero la figura di `disegna()` dentro il riquadro logico `box` (coordinate della trasformazione attuale),
+ * dalla cache se c'è. Il riquadro deve stare dentro il ritaglio del chiamante. Ritorna false se non può (si ricade
+ * sul filtro).
+ */
+function sagomaInCacheD3(chiave, box, disegna) {
+  const t = ctx.getTransform();
+  if (t.b !== 0 || t.c !== 0 || t.a <= 0 || t.d <= 0) return false;
+  const x0 = Math.ceil(t.a * box.x + t.e), y0 = Math.ceil(t.d * box.y + t.f); // arrotondato verso l'interno
+  const x1 = Math.floor(t.a * (box.x + box.w) + t.e), y1 = Math.floor(t.d * (box.y + box.h) + t.f);
+  const w = x1 - x0, h = y1 - y0;
+  if (w <= 0 || h <= 0) return false;
+  const fx = (t.a * box.x + t.e) - x0, fy = (t.d * box.y + t.f) - y0;
+  const k = `${chiave}|${t.a.toFixed(3)}|${t.d.toFixed(3)}|${w}x${h}|${fx.toFixed(2)}|${fy.toFixed(2)}`;
+  let tela = cacheSagomeD3.get(k);
+  if (!tela) {
+    const salva = document.createElement('canvas'); salva.width = w; salva.height = h;
+    salva.getContext('2d').drawImage(canvas, x0, y0, w, h, 0, 0, w, h);
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(x0, y0, w, h); ctx.restore();
+    ctx.save();
+    ctx.beginPath(); ctx.rect(box.x, box.y, box.w, box.h); ctx.clip();
+    ctx.globalAlpha = 1; ctx.filter = 'none';
+    try { disegna(); } finally { ctx.restore(); }
+    tela = document.createElement('canvas'); tela.width = w; tela.height = h;
+    const tc = tela.getContext('2d');
+    tc.drawImage(canvas, x0, y0, w, h, 0, 0, w, h);
+    tc.globalCompositeOperation = 'source-in'; tc.fillStyle = '#000'; tc.fillRect(0, 0, w, h);
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(x0, y0, w, h); ctx.drawImage(salva, x0, y0); ctx.restore();
+    if (cacheSagomeD3.size >= MAX_SAGOME_D3) cacheSagomeD3.clear();
+    cacheSagomeD3.set(k, tela);
+  }
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(tela, x0, y0); ctx.restore(); // globalAlpha del chiamante
+  return true;
+}
+
+/** Disegna una comparsa coi piedi in (x, y). sagoma = tutta nera; box = riquadro della sagoma (abilita la cache). */
+function figuraComparsaD3(tipo, x, y, scala, sagoma, box) {
+  if (sagoma && box && sagomaInCacheD3('c:' + tipo + ':' + scala + ':' + (x - box.x) + ':' + (y - box.y), box,
+    () => figuraComparsaD3(tipo, x, y, scala, false))) return;
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scala, scala);
@@ -264,8 +308,10 @@ function figuraComparsaD3(tipo, x, y, scala, sagoma) {
   ctx.restore();
 }
 
-/** Disegna un primo attore coi piedi in (x, y). */
-function figuraPrimoAttoreD3(b, x, y, scala, sagoma) {
+/** Disegna un primo attore coi piedi in (x, y). box come in figuraComparsaD3. */
+function figuraPrimoAttoreD3(b, x, y, scala, sagoma, box) {
+  if (sagoma && box && sagomaInCacheD3('p:' + b.id + ':' + scala + ':' + (x - box.x) + ':' + (y - box.y), box,
+    () => figuraPrimoAttoreD3(b, x, y, scala, false))) return;
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scala, scala);
@@ -596,14 +642,14 @@ function disegnaCartaD3(c, r, sel) {
   if (c.tipo === 'comparsa') {
     const v = reg.nemici[c.voce.tipo] || { visti: 0, battuti: 0 };
     ctx.save(); ctx.beginPath(); ctx.rect(r.x + 2, r.y + 2, r.w - 4, 64); ctx.clip();
-    figuraComparsaD3(c.voce.tipo, cx, piedi - 4, CONFIG_D3.scalaComparsa, v.battuti <= 0);
+    figuraComparsaD3(c.voce.tipo, cx, piedi - 4, CONFIG_D3.scalaComparsa, v.battuti <= 0, { x: r.x + 2, y: r.y + 2, w: r.w - 4, h: 64 });
     ctx.restore();
     if (v.visti > 0 || v.battuti > 0) nome = c.voce.nome;
     riga2 = v.battuti > 0 ? TESTI_D3.battuto(v.battuti) : v.visti > 0 ? TESTI_D3.visto : TESTI_D3.mai;
   } else if (c.tipo === 'primo') {
     const v = reg.boss[c.voce.id] || { visti: 0, battuti: 0 };
     ctx.save(); ctx.beginPath(); ctx.rect(r.x + 2, r.y + 2, r.w - 4, 64); ctx.clip();
-    figuraPrimoAttoreD3(c.voce, cx, piedi - 2, CONFIG_D3.scalaPrimoAttore, v.battuti <= 0);
+    figuraPrimoAttoreD3(c.voce, cx, piedi - 2, CONFIG_D3.scalaPrimoAttore, v.battuti <= 0, { x: r.x + 2, y: r.y + 2, w: r.w - 4, h: 64 });
     ctx.restore();
     if (v.visti > 0 || v.battuti > 0) nome = nomeBossD3(c.voce.id);
     riga2 = v.battuti > 0 ? TESTI_D3.battuto(v.battuti) : v.visti > 0 ? TESTI_D3.visto : TESTI_D3.mai;
@@ -622,8 +668,14 @@ function disegnaCartaD3(c, r, sel) {
     try { o = trovaOggettoB(c.voce.oggetto); } catch (_) { o = null; }
     const spr = o && (SPRITE_OGGETTI[o.sprite] || SPRITE_OGGETTI[o.id]);
     ctx.save();
-    if (!preso) { ctx.filter = 'brightness(0)'; ctx.globalAlpha = 0.75; }
-    try { drawPixelSprite(spr || SPRITE_OGGETTI.spada, cx, r.y + 32, 3); } catch (_) { /* icona facoltativa */ }
+    const icona = () => { try { drawPixelSprite(spr || SPRITE_OGGETTI.spada, cx, r.y + 32, 3); } catch (_) { /* icona facoltativa */ } };
+    if (preso) icona();
+    else {
+      ctx.globalAlpha = 0.75; // (f1) sagoma dalla cache, come le figure; filtro solo se la cache non si può usare
+      if (!sagomaInCacheD3('t:' + c.voce.id + ':' + (cx - r.x), { x: r.x + 2, y: r.y + 2, w: r.w - 4, h: 64 }, icona)) {
+        ctx.filter = 'brightness(0)'; icona();
+      }
+    }
     ctx.restore();
     nome = preso ? c.voce.nome : TESTI_D3.ignoto;
     riga2 = preso && o ? o.nome : '';
