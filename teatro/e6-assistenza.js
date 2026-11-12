@@ -742,6 +742,17 @@ function aCapoE6(testo, maxW, size) {
 }
 
 /** La locandina del conto: sostituisce il disegno della pergamena di a7 (stessa voce del registro). */
+/**
+ * Righe che altri file aggiungevano alla pergamena di a7 (la partenza segreta di c1, il percorso dell'Acquedotto
+ * di d6): il conto prende il posto della pergamena, quindi le riporta lui, come coppie [voce, valore].
+ */
+function noteVoceE6(v) {
+  const note = [];
+  try { if (v && v.partenzaSegreta && typeof TESTI_C1 !== 'undefined') note.push([TESTI_C1.pergamena[0], TESTI_C1.pergamena[1]]); } catch (_) { /* c1 assente */ }
+  try { if (v && v.percorso === 'acquedotto' && typeof TESTI_D6 !== 'undefined') note.push([TESTI_D6.pergamena[0], TESTI_D6.pergamena[1]]); } catch (_) { /* d6 assente */ }
+  return note;
+}
+
 function disegnaContoE6() {
   const { voce: v, tipo } = a7.pergamena;
   const C = ASSISTENZA_E6.conto;
@@ -774,22 +785,26 @@ function disegnaContoE6() {
     [TESTI_E6.voci.nemici, String(v.nemiciUccisi)],
     [TESTI_E6.voci.trasf, (v.trasfE6 && v.trasfE6.length) ? v.trasfE6.join(', ') : TESTI_E6.nessuno],
   ];
+  const note = noteVoceE6(v);            // partenza segreta, percorso dell'Acquedotto
+  for (const n of note) righe.push(n);
+  const passoRiga = note.length ? 13 : 15; // con le note le righe si stringono per lasciare posto alle icone
   righe.forEach(([k, val], i) => {
-    const y = C.y + 60 + i * 15;
+    const y = C.y + 60 + i * passoRiga;
     T(`${k}`, xs, y, 110, { size: 7.5, color: '#c9a679' });
     T(val, xs + 116, y, w2 - 116, { size: 8.5, color: '#ffffff' });
   });
-  const yO = C.y + 60 + righe.length * 15 + 2;
+  const yO = C.y + 60 + righe.length * passoRiga + 2;
+  const oggettiMax = note.length ? Math.min(C.oggettiMax, 7) : C.oggettiMax; // una riga sola di icone se ci sono note
   T(`${TESTI_E6.voci.oggetti} (${v.oggetti.length})`, xs, yO, 110, { size: 7.5, color: '#c9a679' });
   const passo = 12 * C.scalaIcona + 4;
-  v.oggetti.slice(0, C.oggettiMax).forEach((o, i) => {
+  v.oggetti.slice(0, oggettiMax).forEach((o, i) => {
     const base = typeof trovaOggettoB === 'function' ? trovaOggettoB(o.id) : null;
     const spr = (base && (SPRITE_OGGETTI[base.sprite] || SPRITE_OGGETTI[base.id])) || SPRITE_OGGETTI[o.id];
     const ix = xs + 10 + (i % 7) * passo, iy = yO + 16 + Math.floor(i / 7) * passo;
     if (spr && o.nome !== '?') drawPixelSprite(spr, ix, iy, C.scalaIcona);
     else T('?', ix, iy + 3, 12, { size: 9, color: '#a8a29e', align: 'center' });
   });
-  if (v.oggetti.length > C.oggettiMax) T(`+${v.oggetti.length - C.oggettiMax}`, xs + 10 + 7 * passo, yO + 16 + passo, 30, { size: 8, color: '#c9a679' });
+  if (v.oggetti.length > oggettiMax) T(`+${v.oggetti.length - oggettiMax}`, xs + 10 + 7 * passo, yO + 16 + (note.length ? 3 : passo), 30, { size: 8, color: '#c9a679' });
   // in basso: il momento migliore e il consiglio
   const yM = C.y + 184;
   ctx.strokeStyle = '#5a3818'; ctx.beginPath(); ctx.moveTo(C.x + 18, yM - 8); ctx.lineTo(C.x + C.w - 18, yM - 8); ctx.stroke();
