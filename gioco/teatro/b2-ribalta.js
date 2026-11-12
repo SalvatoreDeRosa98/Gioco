@@ -282,6 +282,13 @@ const RIBALTA_B2 = Object.freeze({
   }),
 });
 
+/**
+ * (f1) Aggancio per i luoghi che sostituiscono un quartiere (d6: l'Acquedotto al posto della Villa).
+ * null = la luce del quartiere di sempre; altrimenti { lume: [r, g, b], luce, ombra, vignetta } come
+ * RIBALTA_B2.luce.coloreLume e RIBALTA_B2.luce.quartieri. Chi la cambia avvolge la funzione.
+ */
+function luceLuogoB2() { return null; }
+
 (function ribaltaB2() {
   'use strict';
   const C = RIBALTA_B2;
@@ -297,7 +304,7 @@ const RIBALTA_B2 = Object.freeze({
   const ombreAccese = () => C.attivi.ombre && OPZIONI.ombre !== false;
   const QUARTIERE_NEUTRO = Object.freeze({ luce: 1, ombra: 1, vignetta: 1 });
   /** Regolazione di luce e ombre del quartiere corrente (RIBALTA_B2.luce.quartieri). */
-  const quartiere = () => C.luce.quartieri[pianoNelCiclo()] || QUARTIERE_NEUTRO;
+  const quartiere = () => luceLuogoB2() || C.luce.quartieri[pianoNelCiclo()] || QUARTIERE_NEUTRO;
 
   function nuovaTela(l, a) {
     const t = document.createElement('canvas');
@@ -490,10 +497,12 @@ const RIBALTA_B2 = Object.freeze({
   const NEUTRO = `rgb(${C.luce.neutro},${C.luce.neutro},${C.luce.neutro})`;
   /** La luce dei lumi (RGBA): una pozza calda per lume più una luce radente fino in fondo al palco. */
   function telaLumi() {
-    if (tele.lumi) return tele.lumi;
+    const luogo = luceLuogoB2(), colore = (luogo && luogo.lume) || C.luce.coloreLume; // (f1) tinta del luogo
+    if (tele.lumi && tele.lumiColore === colore) return tele.lumi;
+    tele.lumiColore = colore;
     const U = C.luce, t = nuovaTela(telaLuce.width, telaLuce.height), x = t.getContext('2d');
     x.setTransform(RL, 0, 0, RL, -LZ.x * RL, -LZ.y * RL);
-    const [cr, cg, cb] = U.coloreLume;
+    const [cr, cg, cb] = colore;
     const bagno = x.createLinearGradient(0, C.lumi.y, 0, LZ.y);
     bagno.addColorStop(0, `rgba(${cr},${cg},${cb},${U.alfaBagno})`);
     bagno.addColorStop(1, `rgba(${cr},${cg},${cb},${U.alfaBagnoFondo})`);
