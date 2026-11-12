@@ -195,7 +195,8 @@ const foto = (n) => `${prefisso}-${n}.png`;
     }
     for (let i = 0; i < 10; i++) { P.invuln = 999; passoLogico(); }
     const g1 = I.giuramentiH7.qui;
-    return { ondate, inizio: g0.stato, fine: g1.stato, maxOndata, pulita: st.pulita, chiusa, sale, favore: g1.favoreDato, persi: g1.persi, nuovi: (st.oggettiATerra || []).length - oggetti0 };
+    const resto = st.nemici.filter((n) => n.hp > 0).map((n) => [n.tipo, n.hp, n.saleH7]);
+    return { resto, ondate, inizio: g0.stato, fine: g1.stato, maxOndata, pulita: st.pulita, chiusa, sale, favore: g1.favoreDato, persi: g1.persi, nuovi: (st.oggettiATerra || []).length - oggetti0 };
   });
   ok('B: il giuramento parte all\'ingresso', giur.inizio === 'in_corso', giur);
   ok('B: salgono tutte le ondate dai montacarichi', giur.maxOndata === giur.ondate && giur.sale > 0, giur);
@@ -209,7 +210,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
     entraInStanza(st, 'S'); R.siparioAttivo = null;
     for (let i = 0; i < 3000 && I.giuramentiH7.qui.stato !== 'fatto'; i++) {
       P.x = 320; P.y = 190;
-      if (i === 5) { R.graziaIngressoC = 0; R.scudoRosaC = false; R.scudoStanzaD = 0; P.invuln = 0; subisciColpoGiocatore(1, 'prova', 300, 190); }
+      if (!st.colpitoQA && I.giuramentiH7.qui.stato === 'in_corso' && i >= 5) { st.colpitoQA = true; R.hpHalf -= 1; } // una mezza Maschera persa
       if (i > 5) P.invuln = 999;
       try { passoLogico(); } catch (_) { /* */ }
       if (i === 60) { /* foto a metà */ }
@@ -228,6 +229,66 @@ const foto = (n) => `${prefisso}-${n}.png`;
     for (let i = 0; i < 40; i++) { P.invuln = 999; passoLogico(); }
   });
   await disegna(); await scatta('b-giuramento');
+
+  // ---- C. IL GIUDICE DELL'ARENA ----
+  await alAnfiteatro();
+  await p.evaluate(() => { try { window.__teatro.t4qa.impostaFlag({ h7_rivelazione: null }); } catch (_) { /* */ } });
+  const giud = await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const P = I.player;
+    const st = R.mappa.stanze.find((s) => s.tipo === 'boss');
+    entraInStanza(st, 'S'); R.siparioAttivo = null;
+    const s0 = I.giudiceH7.stato;
+    const visti = new Set(), gesti = new Set(); let maxComb = 0, maxProi = 0, inAria = 0, foto = {};
+    const b = st.nemici.find((n) => n.boss);
+    for (let i = 0; i < 5000; i++) {
+      P.invuln = 999; R.hpHalf = Math.max(R.hpHalf, 4); P.x = 320; P.y = 250;
+      try { passoLogico(); } catch (_) { /* */ }
+      const g = I.giudiceH7.stato; if (!g) break;
+      visti.add(g.stato + (g.fase2 ? '@2' : '')); if (g.gesto) gesti.add(g.gesto);
+      maxComb = Math.max(maxComb, g.combattenti); maxProi = Math.max(maxProi, g.proiettili); if (g.airZ > 16) inAria++;
+      for (const n of st.nemici) if (!n.boss && n.hp > 0 && !(n.saleH7 > 0) && i % 40 === 39) n.hp = 0;
+      if (i === 2500 && !b.fase2H7) b.hp = Math.floor(b.maxHp * 0.45);
+    }
+    return { s0, visti: [...visti], gesti: [...gesti], maxComb, maxProi, inAria, nome: b.nome, segno: (I.SEGNI_A6 || window.SEGNI_A6 || []).length };
+  });
+  ok('C: il boss del piano 3 all\'Anfiteatro è il Giudice', giud.s0 && /Giudice/.test(giud.nome), giud.s0);
+  const statiG = ['sentenzia', 'pollice', 'scende', 'mira', 'fendente', 'affanno', 'risale', 'chiama', 'indica', 'sentenza', 'cambiaFase@2'];
+  ok('C: il Giudice visita tutti i suoi stati', statiG.every((x) => giud.visti.includes(x) || giud.visti.includes(x + '@2')), giud.visti);
+  ok('C: due gesti del pollice (su e verso)', giud.gesti.includes('su') && giud.gesti.includes('verso'), giud.gesti);
+  ok('C: pollice verso chiama i combattenti', giud.maxComb >= 2, giud.maxComb);
+  ok('C: in aria quando scende e risale', giud.inAria > 0, giud.inAria);
+  ok('C: tetto dei colpi rispettato', giud.maxProi <= 28 + 12, giud.maxProi); // anche le note dei suonatori chiamati
+  // foto: il pollice (verso) sul podio, e il Giudice in arena che mira
+  const posa = (stato, gesto, timer) => p.evaluate(({ stato, gesto, timer }) => {
+    const I = window.__teatro.interni; const R = I.statoRun; const P = I.player;
+    const st = R.stanzaCorrente; const b = st.nemici.find((n) => n.boss);
+    for (const n of st.nemici) if (!n.boss) n.hp = 0;
+    R.proiettiliNemici.length = 0;
+    b.statoH7 = stato; b.gestoH7 = gesto; b.timerH7 = timer; b.tStatoH7 = 30; b.airZ = 0;
+    if (stato === 'mira') { b.x = 300; b.y = 190; b.angH7 = Math.PI * 0.4; } else { b.x = 320; b.y = 104; }
+    P.x = 360; P.y = 260;
+  }, { stato, gesto, timer });
+  await posa('pollice', 'verso', 10); await disegna(); await scatta('c-pollice-verso');
+  await posa('pollice', 'su', 10); await disegna(); await scatta('c-pollice-su');
+  await posa('mira', null, 20); await disegna(); await scatta('c-mira');
+  // la caduta: anime e rivelazione (la prima volta sola)
+  const cade = await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const st = R.stanzaCorrente; const b = st.nemici.find((n) => n.boss);
+    b.hp = 0; verificaStanzaPulita(); for (let i = 0; i < 6; i++) passoLogico();
+    return { pulita: st.pulita, riv: st.rivelazioneH7 || null, flag: window.__teatro.t4qa.flag.h7_rivelazione, uscita: st.uscitaAperta };
+  });
+  ok('C: il Giudice cade, la stanza si apre', cade.pulita && cade.uscita, cade);
+  ok('C: la rivelazione su Donna Luciana, mai Violante', cade.riv && /Donna Luciana/.test(cade.riv) && /tramandata/.test(cade.riv) && !/Violante/.test(cade.riv), cade.riv);
+  ok('C: la rivelazione resta nello slot', Boolean(cade.flag), cade.flag);
+  await passi(p, 20); await disegna(); await scatta('c-caduta');
+  await alAnfiteatro();
+  const di2 = await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const st = R.mappa.stanze.find((s) => s.tipo === 'boss');
+    entraInStanza(st, 'S'); R.siparioAttivo = null; const b = st.nemici.find((n) => n.boss); b.hp = 0; verificaStanzaPulita();
+    for (let i = 0; i < 6; i++) passoLogico();
+    return { pulita: st.pulita, riv: st.rivelazioneH7 || null };
+  });
+  ok('C: alla seconda caduta niente rivelazione', di2.pulita && !di2.riv, di2);
 
   // ---- Z. ERRORI ----
   const erroriTeatro = await p.evaluate(() => (window.ERRORI_TEATRO || []).map((e) => String(e.messaggio || e.msg || e)));

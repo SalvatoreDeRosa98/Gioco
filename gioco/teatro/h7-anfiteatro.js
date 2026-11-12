@@ -982,7 +982,7 @@ massaNemico = function (nem, ...resto) {
 /** Sceglie le stanze-giuramento del piano (deterministico col seme della run). */
 function scegliGiuramentiH7(m) {
   const G = GIURAMENTI_H7;
-  const adatte = m.stanze.filter((s) => s.tipo === 'normale' && s.nemici.length > 0 && !s.temaB7 && !s.pulita);
+  const adatte = m.stanze.filter((s) => s.tipo === 'normale' && s.nemici.length > 0 && !s.temaB7 && !s.pulita && !s.quadriD5 && !s.botoleD5); // non le stanze col cambio di scena di d5
   const scelte = adatte.filter(() => rng() < G.prob);
   while (scelte.length < Math.min(G.minimo, adatte.length)) { const s = adatte[Math.floor(rng() * adatte.length)]; if (!scelte.includes(s)) scelte.push(s); }
   for (const s of scelte.slice(0, G.massimo)) s.giuramentoH7 = { stato: 'attesa', ondate: fraH7([G.ondate[0], G.ondate[1] + 1]), ondata: 0, persi: 0, pausa: 0, t0: 0 };
@@ -1060,6 +1060,7 @@ function favoreGradinateH7(st) {
 function passoGiuramentoH7(st, hpPrima) {
   const G = st.giuramentoH7;
   if (G && G.stato === 'attesa' && !st.pulita && viviH7(st).length) iniziaGiuramentoH7(st); // se l'ingresso non l'ha fatto partire
+  if (G && G.stato === 'fatto' && !st.pulita && !viviH7(st).length) verificaStanzaPulita(); // la base controlla solo alle uccisioni
   if (!G || G.stato !== 'in_corso') return;
   const prima = Math.max(hpPrima, G.hpUltimo == null ? hpPrima : G.hpUltimo); // anche i colpi presi fuori dal passo
   if (statoRun.hpHalf < prima) G.persi += prima - statoRun.hpHalf;
@@ -1120,6 +1121,7 @@ passoLogico = function (...args) {
   const attivo = Boolean(st) && statoRun.fase === 'in_gioco' && anfiteatroAttivoH7() && ticksCongelati <= 0
     && !(statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo || statoRun.pausa);
   const hpPrima = statoRun.hpHalf, px = player.x, py = player.y;
+  if (attivo) for (const n of st.nemici) if (n.boss) n.ptH7 = n.phaseTick || 0;
   const r = passoLogicoBaseH7.apply(this, args);
   try {
     if (attivo && statoRun.fase === 'in_gioco' && statoRun.stanzaCorrente === st) {
@@ -1136,8 +1138,6 @@ passoLogico = function (...args) {
   return r;
 };
 
-/** Il passo del boss (sezione del Giudice): qui un segnaposto che la sezione 5 sostituisce. */
-function dopoIlPassoGiudiceH7() { /* sezione 5 */ }
 
 // ===========================================================================
 // 3-4. DISEGNO «a ombre» di nemici, montacarichi, reti e grate
@@ -1516,3 +1516,413 @@ if (typeof disegnaOstacoloB9 === 'function' && typeof timbroB7 === 'function') {
     return disegnaOstacoloBaseH7.call(this, o, t, ...resto);
   };
 }
+
+// ===========================================================================
+// 5. IL BOSS: Il Giudice dell'Arena, custode di antichi giuramenti (macchina a stati nello schema di b6/d6)
+// ===========================================================================
+/** Testi del Giudice (DA APPROVARE DALL'AUTORE; nessuna battuta nella bibbia). */
+const TESTI_GIUDICE_H7 = Object.freeze({
+  presentazione: '«Ogni giuramento ha il suo giudice. Il tuo, burattino, sono io.»',
+  sconfitta: 'Il Giudice dell\'Arena scende dal podio per l\'ultima volta. Le gradinate tacciono.',
+  pollice: Object.freeze({ su: '👍 Pollice in su: il Giudice scende nell\'arena.', verso: '👎 Pollice verso: dalle gradinate scendono i combattenti.' }),
+  /** La rivelazione alla prima caduta nello slot (testo NUOVO, sul senso della bibbia, Espansione III). */
+  rivelazione: (signora) => `Dalla toga del Giudice escono anime di ogni epoca. Avevano giurato tutte alla stessa magia: quella di ${signora} non è nata a Caserta. Qualcuno gliel'ha tramandata, di mano in mano, da secoli.`,
+});
+
+/** SCHEDA del boss (stessi campi di SCHEDE_B6 / SCHEDA_D6). */
+const SCHEDA_H7 = Object.freeze({
+  id: 'giudice-arena', nome: 'Il Giudice dell\'Arena', tipo: 'giudice', pattern: 'pollice_giudice',
+  hpBase: 230, speed: 0.8, raggio: 18,
+  segno: Object.freeze({ sprite: 'segnoAlloroH7', nome: 'Giudice dell\'Arena' }),
+  foglio: Object.freeze({ nome: 'giudice-arena', presente: false, altezza: 78, piedi: 6,
+    pose: Object.freeze(['sentenzia', 'pollice-su', 'pollice-verso', 'scende', 'mira', 'fendente', 'affanno', 'indica', 'sentenza', 'cambiaFase']) }),
+});
+
+/**
+ * BOSS_H7 — numeri dell'IA del Giudice. Una chiave <nome>Fase2 sostituisce <nome> sotto la soglia della fase 2.
+ * Il Giudice siede sul podio (in alto al centro). SENTENZIA (guarda, il braccio teso, il pugno chiuso) →
+ * POLLICE (il pugno gira lentamente e il pollice si apre: in su o verso; la regola cambia per qualche secondo):
+ *   in su   → SCENDE nell'arena e combatte di persona: MIRA (la verga tirata indietro sopra la spalla) →
+ *             FENDENTE (affondo dritto), più volte; poi AFFANNO (piegato, la finestra: prende più danno) e RISALE.
+ *   verso   → CHIAMA: dalle gradinate scendono i combattenti (dai montacarichi); intanto dal podio INDICA (il
+ *             braccio alzato, l'indice puntato: la direzione si blocca) e SENTENZA (il braccio cala: un ventaglio
+ *             di colpi lenti), finché restano combattenti o per `volte` sentenze.
+ * Fase 2: la toga strappata, gesti più rapidi, un affondo e un combattente in più, ventagli più larghi.
+ */
+const BOSS_H7 = Object.freeze({
+  sogliaFase2: 0.5,
+  tettoProiettili: 28,
+  bannerTick: 260,
+  podio: Object.freeze({ x: 320, y: 104 }),          // dove stanno i piedi del Giudice seduto
+  gesti: Object.freeze(['verso', 'su']), gestiFase2: Object.freeze(['su', 'verso', 'su']),
+  sentenziaTick: 80, sentenziaTickFase2: 56,
+  polliceTick: 54, polliceTickFase2: 42, polliceApreTick: 22, // il pollice si apre a 22 tick dalla fine
+  scendeTick: 34, quotaSaltoPx: 34,
+  mira: Object.freeze({ anticipoTick: 30, anticipoTickFase2: 24, bloccoTick: 9 }),
+  fendente: Object.freeze({ tick: 14, velocita: 3.8, colpi: 3, colpiFase2: 4 }),
+  affannoTick: 96, affannoTickFase2: 76, moltAffanno: 1.5,
+  avvicina: Object.freeze({ passo: 0.9, distanzaPx: 70 }),
+  chiamaTick: 40,
+  chiama: Object.freeze({ quanti: 2, quantiFase2: 3, tipi: Object.freeze(['mirmillone_latta', 'reziario_ombra', 'belva_cartapesta']) }),
+  indica: Object.freeze({ anticipoTick: 30, anticipoTickFase2: 24, bloccoTick: 8, volte: 4, volteFase2: 5 }),
+  sentenza: Object.freeze({ tick: 22, colpi: 5, colpiFase2: 7, apertura: 0.9, aperturaFase2: 1.25, velocita: 1.9 }),
+  cambioFaseTick: 60,
+  anime: Object.freeze({ numero: 14 }),
+});
+
+/**
+ * STATI_H7 — tabella esplicita della macchina a stati:
+ *   stato → { durata: chiave di BOSS_H7 (null = la calcola l'azione d'ingresso), poi: stato successivo (o una
+ *             tabella gesto → stato), ripeti: stato in cui tornare finché restano ripetizioni (n.ripetiH7) }.
+ * 'cambiaFase' interrompe qualunque stato quando la vita scende sotto la soglia della fase 2.
+ */
+const STATI_H7 = Object.freeze({
+  inizio: 'sentenzia',
+  stati: Object.freeze({
+    sentenzia: Object.freeze({ durata: 'sentenziaTick', poi: 'pollice' }),
+    pollice: Object.freeze({ durata: 'polliceTick', poi: Object.freeze({ su: 'scende', verso: 'chiama' }) }),
+    scende: Object.freeze({ durata: 'scendeTick', poi: 'mira' }),
+    mira: Object.freeze({ durata: 'mira.anticipoTick', poi: 'fendente' }),
+    fendente: Object.freeze({ durata: 'fendente.tick', poi: 'affanno', ripeti: 'mira' }),
+    affanno: Object.freeze({ durata: 'affannoTick', poi: 'risale' }),
+    risale: Object.freeze({ durata: 'scendeTick', poi: 'sentenzia' }),
+    chiama: Object.freeze({ durata: 'chiamaTick', poi: 'indica' }),
+    indica: Object.freeze({ durata: 'indica.anticipoTick', poi: 'sentenza' }),
+    sentenza: Object.freeze({ durata: 'sentenza.tick', poi: 'sentenzia', ripeti: 'indica' }),
+    cambiaFase: Object.freeze({ durata: 'cambioFaseTick', poi: 'sentenzia' }),
+  }),
+});
+
+// Icona 12×12 del segno di completamento: una corona d'alloro (stessa palette degli oggetti).
+SPRITE_OGGETTI.segnoAlloroH7 = ['............', '...y....y...', '..y......y..', '.y........y.', '.y........y.', '.y........y.',
+  '..y......y..', '...y....y...', '....yyyy....', '............', '............', '............'];
+if (!POOL_BOSS.some((x) => x.id === SCHEDA_H7.id)) {
+  POOL_BOSS.push({ id: SCHEDA_H7.id, nome: SCHEDA_H7.nome, tipo: SCHEDA_H7.tipo, hpBase: SCHEDA_H7.hpBase, speed: SCHEDA_H7.speed, pattern: SCHEDA_H7.pattern });
+}
+if (typeof SEGNI_A6 !== 'undefined' && Array.isArray(SEGNI_A6) && !Object.isFrozen(SEGNI_A6) && !SEGNI_A6.some((x) => x.boss === SCHEDA_H7.id)) {
+  SEGNI_A6.push(Object.freeze({ boss: SCHEDA_H7.id, sprite: SCHEDA_H7.segno.sprite, nome: SCHEDA_H7.segno.nome }));
+}
+
+function valoreH7(chiave, fase2) {
+  const leggi = (k) => k.split('.').reduce((o, p) => (o == null ? undefined : o[p]), BOSS_H7);
+  const v2 = fase2 ? leggi(`${chiave}Fase2`) : undefined;
+  return v2 !== undefined ? v2 : leggi(chiave);
+}
+const giudiceDiH7 = (st) => (st ? st.nemici.find((n) => n.boss && n.bossId === SCHEDA_H7.id) : null) || null;
+const nomeGiudiceH7 = (n) => String(n.nome || '').replace(/\s*\(.*?\)/g, '');
+
+/** Il boss della stanza del piano 3 diventa il Giudice (salvo un boss forzato dalla QA di b6). */
+function vestiGiudiceH7(s, piano) {
+  const b = s.nemici.find((n) => n.boss);
+  const forzato = typeof b6 !== 'undefined' && b6 && b6.forzato;
+  if (!b || forzato || b.bossId === SCHEDA_H7.id) return;
+  const K = scalaH7(piano);
+  b.bossId = SCHEDA_H7.id; b.tipo = SCHEDA_H7.tipo; b.pattern = SCHEDA_H7.pattern;
+  b.nome = K.ciclo > 1 ? `${SCHEDA_H7.nome} (Ciclo ${K.ciclo})` : SCHEDA_H7.nome;
+  b.maxHp = Math.round((SCHEDA_H7.hpBase + (pianoNelCicloH7(piano) - 1) * 45) * K.moltCiclo);
+  b.hp = b.maxHp;
+  b.speed = SCHEDA_H7.speed * K.moltVel;
+  b.r = SCHEDA_H7.raggio;
+  b.x = BOSS_H7.podio.x; b.y = BOSS_H7.podio.y;
+}
+
+const popolaStanzaGiudiceH7 = popolaStanza;
+popolaStanza = function (s, piano, ...resto) {
+  const r = popolaStanzaGiudiceH7.call(this, s, piano, ...resto);
+  try { if (s && s.tipo === 'boss' && anfiteatroAttivoH7(piano)) vestiGiudiceH7(s, piano); } catch (err) { console.error('[h7] giudice', err); }
+  return r;
+};
+
+/** Un colpo del Giudice (proiettile comune del Teatro), col tetto e il nome per il Registro (a7). */
+function sparaGiudiceH7(n, x, y, ang, vel) {
+  if (statoRun.proiettiliNemici.length >= BOSS_H7.tettoProiettili) return false;
+  statoRun.proiettiliNemici.push({ x, y, vx: Math.cos(ang) * vel, vy: Math.sin(ang) * vel, dist: 0, bossShot: true, sentenzaH7: true, fonteA7: `una sentenza de ${nomeGiudiceH7(n)}` });
+  return true;
+}
+
+function entraStatoH7(n, stato, st) {
+  const riga = STATI_H7.stati[stato];
+  const f2 = Boolean(n.fase2H7);
+  n.statoH7 = stato; n.tStatoH7 = 0;
+  n.timerH7 = riga.durata ? Math.max(1, Math.round(valoreH7(riga.durata, f2))) : 1;
+  const az = AZIONI_H7.entra[stato];
+  if (az) az(n, BOSS_H7, f2, st);
+  n.durataH7 = n.timerH7;
+}
+
+function prossimoStatoH7(n) {
+  const riga = STATI_H7.stati[n.statoH7];
+  if (riga.ripeti && n.ripetiH7 > 0) { n.ripetiH7--; return riga.ripeti; }
+  return typeof riga.poi === 'string' ? riga.poi : riga.poi[n.gestoH7] || 'sentenzia';
+}
+
+/** Un tick dell'IA del Giudice. */
+function iaGiudiceH7(n, st) {
+  if (!n.statoH7) { n.fase2H7 = false; n.gestiH7 = 0; n.ripetiH7 = 0; n.gestoH7 = null; n.angH7 = Math.PI / 2; entraStatoH7(n, STATI_H7.inizio, st); }
+  if (!n.fase2H7 && n.hp < n.maxHp * BOSS_H7.sogliaFase2) {
+    n.fase2H7 = true; n.ripetiH7 = 0; n.flash = 12; n.airZ = 0;
+    scuoti(FEEL.scossa.schiantoCapitano);
+    statoRun.ondeEsplosione.push({ x: n.x, y: n.y - 30, r: 8, maxR: 60, tick: 0, color: TINTE_H7.rosso });
+    entraStatoH7(n, 'cambiaFase', st);
+  }
+  const passo = AZIONI_H7.passo[n.statoH7];
+  if (passo) passo(n, BOSS_H7, n.fase2H7, st);
+  n.tStatoH7++;
+  if (--n.timerH7 <= 0) entraStatoH7(n, prossimoStatoH7(n), st);
+}
+
+const sulPodioH7 = (s) => ['sentenzia', 'pollice', 'chiama', 'indica', 'sentenza', 'cambiaFase'].includes(s);
+
+const AZIONI_H7 = {
+  entra: {
+    pollice(n, C, f2) {
+      const seq = f2 ? C.gestiFase2 : C.gesti;
+      n.gestoH7 = seq[(n.gestiH7 || 0) % seq.length]; n.gestiH7 = (n.gestiH7 || 0) + 1;
+    },
+    scende(n, C) { mostraBanner(TESTI_GIUDICE_H7.pollice.su, 150); n.daH7 = { x: n.x, y: n.y }; n.aH7 = { x: limitaH7(player.x, ARENA.x1 + 60, ARENA.x2 - 60), y: limitaH7(Math.max(player.y - 50, 170), 150, ARENA.y2 - 40) }; },
+    mira(n) { n.angH7 = Math.atan2(player.y - n.y, player.x - n.x); },
+    fendente(n, C, f2) {
+      if (n.ripetiH7 <= 0 && !n.colpiFattiH7) n.ripetiH7 = (f2 ? C.fendente.colpiFase2 : C.fendente.colpi) - 1;
+      n.colpiFattiH7 = true;
+      n.vx = Math.cos(n.angH7) * C.fendente.velocita; n.vy = Math.sin(n.angH7) * C.fendente.velocita;
+      tonoH7(180, 0.18, 0.05, 'sawtooth', 90);
+    },
+    affanno(n) { n.colpiFattiH7 = false; },
+    risale(n, C) { n.daH7 = { x: n.x, y: n.y }; n.aH7 = { x: C.podio.x, y: C.podio.y }; },
+    chiama(n, C, f2, st) {
+      mostraBanner(TESTI_GIUDICE_H7.pollice.verso, 150);
+      const quanti = f2 ? C.chiama.quantiFase2 : C.chiama.quanti;
+      for (let k = 0; k < quanti; k++) creaCombattenteH7(st, C.chiama.tipi[Math.floor(rng() * C.chiama.tipi.length)], k + 1, k * 8);
+      tonoH7(130, 0.8, 0.07, 'sawtooth', 120);
+    },
+    indica(n, C, f2) { if (n.ripetiH7 <= 0 && !n.sentenzeH7) n.ripetiH7 = (f2 ? C.indica.volteFase2 : C.indica.volte) - 1; n.sentenzeH7 = true; },
+    sentenza(n, C, f2, st) {
+      const S = C.sentenza, colpi = f2 ? S.colpiFase2 : S.colpi, ap = f2 ? S.aperturaFase2 : S.apertura;
+      for (let k = 0; k < colpi; k++) sparaGiudiceH7(n, n.x, n.y - 40, n.angH7 + (k / (colpi - 1) - 0.5) * ap, S.velocita);
+      // finiti i combattenti, la sentenza è l'ultima
+      if (!st.nemici.some((x) => !x.boss && x.hp > 0)) n.ripetiH7 = 0;
+      if (n.ripetiH7 <= 0) n.sentenzeH7 = false;
+    },
+    sentenzia(n, C) { n.x = C.podio.x; n.y = C.podio.y; n.airZ = 0; n.sentenzeH7 = false; },
+    cambiaFase(n, C) { n.daH7 = { x: n.x, y: n.y }; n.aH7 = { x: C.podio.x, y: C.podio.y }; },
+  },
+  passo: {
+    sentenzia(n, C) { n.x = C.podio.x; n.y = C.podio.y; n.angH7 = Math.atan2(player.y - n.y, player.x - n.x); },
+    pollice(n, C) { n.x = C.podio.x; n.y = C.podio.y; },
+    chiama(n, C) { n.x = C.podio.x; n.y = C.podio.y; },
+    indica(n, C) { n.x = C.podio.x; n.y = C.podio.y; if (n.timerH7 > C.indica.bloccoTick) n.angH7 = Math.atan2(player.y - (n.y - 40), player.x - n.x); },
+    sentenza(n, C) { n.x = C.podio.x; n.y = C.podio.y; },
+    scende(n, C) { saltoH7(n, C); },
+    risale(n, C) { saltoH7(n, C); },
+    cambiaFase(n, C) { const k = Math.min(1, n.tStatoH7 / 20); n.x = n.daH7.x + (n.aH7.x - n.daH7.x) * k; n.y = n.daH7.y + (n.aH7.y - n.daH7.y) * k; n.airZ = 0; },
+    mira(n, C) {
+      const d = Math.hypot(player.x - n.x, player.y - n.y);
+      if (n.timerH7 > C.mira.bloccoTick) n.angH7 = Math.atan2(player.y - n.y, player.x - n.x);
+      if (d > C.avvicina.distanzaPx && n.timerH7 > C.mira.bloccoTick) muoviH7(n, Math.cos(n.angH7) * n.speed * C.avvicina.passo, Math.sin(n.angH7) * n.speed * C.avvicina.passo, 24);
+    },
+    fendente(n) { if (muoviH7(n, n.vx, n.vy, 24)) n.timerH7 = Math.min(n.timerH7, 1); },
+  },
+};
+
+/** Il salto fra il podio e l'arena (arco: in aria non si colpisce e non ferisce). */
+function saltoH7(n, C) {
+  const k = Math.min(1, n.tStatoH7 / Math.max(1, n.durataH7 - 1)), e = k * k * (3 - 2 * k);
+  n.x = n.daH7.x + (n.aH7.x - n.daH7.x) * e;
+  n.y = n.daH7.y + (n.aH7.y - n.daH7.y) * e;
+  n.airZ = Math.round(Math.sin(k * Math.PI) * C.quotaSaltoPx);
+  if (k >= 1) n.airZ = 0;
+}
+
+/** Dopo il passo di base: il Giudice agisce nei tick in cui la base ha fatto agire il boss. */
+function dopoIlPassoGiudiceH7(st) {
+  const n = giudiceDiH7(st);
+  if (!n) return;
+  if (n.hp <= 0) { // il Giudice cade: i suoi combattenti con lui (la base controlla la stanza solo a ogni uccisione)
+    if (!st.pulita) { for (const x of st.nemici) if (!x.boss && x.hp > 0) { x.hp = 0; x.saleH7 = 0; } verificaStanzaPulita(); }
+    return;
+  }
+  if ((n.phaseTick || 0) === n.ptH7 || statoRun.hpHalf <= 0) return;
+  try { iaGiudiceH7(n, st); } catch (err) { console.error('[h7] ia giudice', err); }
+}
+
+const danneggiaNemicoGiudiceH7 = danneggiaNemico;
+/** Il Giudice affannato prende più danno; in aria (il salto) non si colpisce. */
+danneggiaNemico = function (nem, dmg, ...resto) {
+  if (nem && nem.bossId === SCHEDA_H7.id) {
+    if ((nem.airZ || 0) > 16) return undefined;
+    if (nem.statoH7 === 'affanno') dmg *= BOSS_H7.moltAffanno;
+  }
+  return danneggiaNemicoGiudiceH7.call(this, nem, dmg, ...resto);
+};
+
+// --------------------------------------------------------------------------- caduta: anime, rivelazione, segno
+/** Flag di trama dello slot (T4) — lettura e scrittura. */
+function flagH7() { try { return (window.__teatro && window.__teatro.t4qa && window.__teatro.t4qa.flag) || {}; } catch (_) { return {}; } }
+function impostaFlagH7(parz) { try { const q = window.__teatro && window.__teatro.t4qa; if (q) q.impostaFlag(parz); } catch (_) { /* senza T4 */ } }
+const nomeSignoraH7 = () => (typeof TESTI_B8 !== 'undefined' && TESTI_B8 && TESTI_B8.nomeSignora) || 'Donna Luciana';
+
+/** Il Giudice cade: anime (h2), la rivelazione alla prima volta nello slot, il premio del luogo. */
+function giudiceSconfittoH7(st, b) {
+  if (b.liberatoH7) return;
+  b.liberatoH7 = true;
+  try { if (typeof liberaAnimeH2 === 'function') liberaAnimeH2(b); } catch (err) { console.error('[h7] anime', err); }
+  mostraBanner(`${TESTI_GIUDICE_H7.sconfitta} ${st.portaPattoAperta ? 'Porta del Patto d\'Ombra (😈) a destra · ' : ''}Botola aperta!`, BOSS_H7.bannerTick);
+  if (!flagH7().h7_rivelazione) {
+    const testo = TESTI_GIUDICE_H7.rivelazione(nomeSignoraH7());
+    if (typeof didascaliaH2 === 'function') didascaliaH2(testo); else mostraBanner(testo, 300);
+    impostaFlagH7({ h7_rivelazione: (typeof getNumeroNotte === 'function' ? getNumeroNotte() : 1) });
+    st.rivelazioneH7 = testo;
+  }
+  try { premioLuogoH7(st); } catch (err) { console.error('[h7] premio', err); }
+}
+/** Il premio del luogo (sezione 6). */
+function premioLuogoH7() { /* sezione 6 */ }
+
+const verificaStanzaPulitaGiudiceH7 = verificaStanzaPulita;
+verificaStanzaPulita = function (...args) {
+  const st = statoRun.stanzaCorrente;
+  const era = Boolean(st && st.pulita);
+  const r = verificaStanzaPulitaGiudiceH7.apply(this, args);
+  try {
+    if (st && !era && st.pulita && st.tipo === 'boss') { const b = giudiceDiH7(st); if (b) giudiceSconfittoH7(st, b); }
+  } catch (err) { console.error('[h7] giudice caduto', err); }
+  return r;
+};
+
+const entraInStanzaGiudiceH7 = entraInStanza;
+entraInStanza = function (stanza, daLato, ...resto) {
+  const r = entraInStanzaGiudiceH7.call(this, stanza, daLato, ...resto);
+  try {
+    const b = stanza && statoRun.stanzaCorrente === stanza && stanza.tipo === 'boss' && !stanza.pulita ? giudiceDiH7(stanza) : null;
+    if (b) { b.x = BOSS_H7.podio.x; b.y = BOSS_H7.podio.y; mostraBanner(`💀 ${b.nome} (${b.hp} HP) — ${TESTI_GIUDICE_H7.presentazione}`, BOSS_H7.bannerTick); }
+  } catch (err) { console.error('[h7] ingresso giudice', err); }
+  return r;
+};
+
+// --------------------------------------------------------------------------- disegno del Giudice e del podio
+/** Il podio (pulvinare) di travertino col drappo rosso, nella stanza del Giudice: sotto le figure. */
+function disegnaPodioH7() {
+  const P = BOSS_H7.podio, T = TINTE_H7;
+  ctx.save();
+  ctx.fillStyle = 'rgba(20, 12, 6, 0.45)'; ctx.beginPath(); ctx.ellipse(P.x, P.y + 10, 52, 9, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = T.travertinoOmbra; ctx.strokeStyle = T.china; ctx.lineWidth = 1.2;
+  ctx.fillRect(P.x - 46, P.y - 6, 92, 16); ctx.strokeRect(P.x - 46, P.y - 6, 92, 16);
+  ctx.fillStyle = T.travertino; ctx.fillRect(P.x - 46, P.y - 6, 92, 3);
+  for (let k = 0; k < 3; k++) { ctx.fillStyle = k % 2 ? T.travertino : '#b5a57f'; ctx.fillRect(P.x - 30 + k * 8, P.y + 10 + k * 4, 60 - k * 16, 4); } // i gradini
+  ctx.fillStyle = T.rosso; ctx.fillRect(P.x - 18, P.y - 3, 36, 12);
+  ctx.fillStyle = T.oro; ctx.fillRect(P.x - 18, P.y - 3, 36, 1.2); ctx.fillRect(P.x - 18, P.y + 8, 36, 1);
+  ctx.restore();
+}
+
+/** Disegna il Giudice a sagoma d'ombra. (0,0) = piedi. */
+function disegnaGiudiceH7(b, t) {
+  const s = b.statoH7 || 'sentenzia', f2 = Boolean(b.fase2H7), T = TINTE_H7;
+  const flash = b.flash > 0 && OPZIONI.lampi !== false;
+  const flip = Math.cos(b.angH7 || 0) < -0.2 ? -1 : 1;
+  const z = b.airZ || 0;
+  ctx.save();
+  ctx.fillStyle = 'rgba(20, 12, 6, 0.5)'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 2, 18 - z * 0.2, 5, 0, 0, TAU); ctx.fill();
+  ctx.translate(Math.round(b.x), Math.round(b.y - z));
+  const F = SCHEDA_H7.foglio;
+  if (F.presente && typeof disegnaCellaTeatro === 'function') {
+    const posa = s === 'pollice' ? `pollice-${b.gestoH7 || 'su'}` : s;
+    const col = Math.max(0, F.pose.indexOf(posa)), A = F.altezza;
+    ctx.save(); ctx.scale(flip, 1);
+    const ok = disegnaCellaTeatro(ctx, F.nome, col, F.pose.length, -A * 0.6, -A + F.piedi, A * 1.2, A, flash ? '#fff' : null, flash ? 0.6 : 0);
+    ctx.restore();
+    if (ok) { ctx.restore(); return; }
+  }
+  ctx.scale(flip * 1.25, 1.25);
+  const piega = s === 'affanno' ? 6 : s === 'fendente' ? 5 : s === 'mira' ? -2 : 0;
+  chinaH7(flash);
+  // la toga: lunga fino a terra, pieghe diagonali; in fase 2 strappata in basso
+  ctx.beginPath();
+  ctx.moveTo(-11, 0);
+  if (f2) { ctx.lineTo(-8, -4); ctx.lineTo(-5, 0); ctx.lineTo(-1, -5); ctx.lineTo(3, 0); ctx.lineTo(7, -4); ctx.lineTo(11, 0); } else ctx.lineTo(11, 0);
+  ctx.lineTo(9 + piega, -30); ctx.lineTo(6 + piega, -40); ctx.lineTo(-6 + piega, -40); ctx.lineTo(-9 + piega * 0.5, -28); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = flash ? '#fff' : 'rgba(240, 180, 90, 0.4)'; ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.moveTo(-6 + piega, -38); ctx.quadraticCurveTo(0, -24, 8, -6); ctx.moveTo(-2 + piega, -39); ctx.quadraticCurveTo(4, -28, 9, -18); ctx.stroke();
+  // il laticlavio: la striscia rossa dalla spalla
+  ctx.strokeStyle = T.rosso; ctx.lineWidth = 2.2;
+  ctx.beginPath(); ctx.moveTo(-5 + piega, -40); ctx.quadraticCurveTo(0 + piega, -26, -2, -2); ctx.stroke();
+  // la testa con la corona d'alloro (gli occhi rossi in fase 2)
+  chinaH7(flash);
+  const hx = 0.5 + piega, hy = -45 + (s === 'affanno' ? 4 : 0);
+  ctx.beginPath(); ctx.arc(hx, hy, 4.6, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = T.oro; ctx.lineWidth = 1.1;
+  ctx.beginPath(); ctx.arc(hx, hy, 5.4, Math.PI * 0.95, Math.PI * 2.05); ctx.stroke();
+  ctx.fillStyle = T.oro; for (let k = 0; k < 5; k++) { const a = Math.PI * (1 + k * 0.25); ctx.beginPath(); ctx.ellipse(hx + Math.cos(a) * 5.6, hy + Math.sin(a) * 5.6, 1.6, 0.8, a + 1.2, 0, TAU); ctx.fill(); }
+  if (f2) { ctx.fillStyle = T.rosso; ctx.fillRect(hx + 1.2, hy - 0.8, 1.4, 1.2); }
+  // il braccio: teso col pugno (sentenzia), il pugno che gira e il pollice (pollice), alzato a indicare (indica),
+  // che cala (sentenza), la verga tirata indietro (mira) o in avanti (fendente)
+  chinaH7(flash);
+  const sx = 5 + piega, sy = -37;
+  let ax = sx + 14, ay = sy + 2;
+  if (s === 'indica') { ax = sx + 9; ay = sy - 14; } else if (s === 'sentenza') { ax = sx + 15; ay = sy + 10; }
+  else if (s === 'mira') { ax = sx - 8; ay = sy - 10; } else if (s === 'fendente') { ax = sx + 16; ay = sy + 4; }
+  else if (s === 'affanno' || s === 'scende' || s === 'risale') { ax = sx + 6; ay = sy + 12; }
+  else if (s === 'chiama') { ax = sx + 10; ay = sy - 12; }
+  ctx.strokeStyle = flash ? '#fff' : T.china; ctx.lineWidth = 3.4;
+  ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ax, ay); ctx.stroke();
+  ctx.strokeStyle = flash ? '#fff' : BORDO_H7; ctx.lineWidth = 0.6;
+  ctx.beginPath(); ctx.moveTo(sx, sy - 1.6); ctx.lineTo(ax, ay - 1.6); ctx.stroke();
+  // la mano
+  chinaH7(flash);
+  ctx.beginPath(); ctx.arc(ax, ay, 2.6, 0, TAU); ctx.fill(); ctx.stroke();
+  if (s === 'pollice') {
+    const apre = b.timerH7 <= BOSS_H7.polliceApreTick;
+    const giro = Math.min(1, (b.tStatoH7 || 0) / 20);
+    ctx.save(); ctx.translate(ax, ay); ctx.rotate(giro * (b.gestoH7 === 'verso' ? 0.5 : -0.5));
+    if (apre) {
+      const su = b.gestoH7 === 'su';
+      ctx.fillStyle = flash ? '#fff' : T.lampo; ctx.strokeStyle = T.china; ctx.lineWidth = 0.6;
+      ctx.beginPath(); ctx.rect(-1.1, su ? -8 : 2, 2.2, 6); ctx.fill(); ctx.stroke(); // il pollice, chiaro: si legge da lontano
+    }
+    ctx.restore();
+  } else if (s === 'indica') {
+    const a = Math.atan2(ay - sy, ax - sx);
+    ctx.strokeStyle = flash ? '#fff' : T.lampo; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + Math.cos(a) * 5, ay + Math.sin(a) * 5); ctx.stroke();
+  } else if (s === 'mira' || s === 'fendente' || s === 'affanno') {
+    // la verga del giudice
+    const a = s === 'mira' ? -2.3 : s === 'fendente' ? 0 : 1.3;
+    ctx.strokeStyle = flash ? '#fff' : '#7a4a22'; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + Math.cos(a) * 18, ay + Math.sin(a) * 18); ctx.stroke();
+    ctx.fillStyle = T.oro; ctx.beginPath(); ctx.arc(ax + Math.cos(a) * 18, ay + Math.sin(a) * 18, 1.8, 0, TAU); ctx.fill();
+  }
+  // l'altro braccio, sotto la toga
+  ctx.strokeStyle = flash ? '#fff' : 'rgba(240, 180, 90, 0.5)'; ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(-6 + piega, -36); ctx.quadraticCurveTo(-10, -26, -6, -20); ctx.stroke();
+  ctx.restore();
+}
+
+const disegnaBossPittoricoBaseH7 = disegnaBossPittorico;
+/** Il Giudice si disegna qui; gli altri boss restano alla base. Stessa firma: ([ctx], boss, tick). */
+disegnaBossPittorico = function (...args) {
+  const a = args[0] && typeof args[0].save === 'function' ? args.slice(1) : args;
+  const b = a[0];
+  if (!b || b.bossId !== SCHEDA_H7.id) return disegnaBossPittoricoBaseH7.apply(this, args);
+  try { disegnaGiudiceH7(b, a[1] || 0); } catch (err) { console.error('[h7] disegno giudice', err); }
+  return undefined;
+};
+
+const disegnaStanzaPodioBaseH7 = disegnaStanzaPixelArt;
+/** Dopo la stanza: il podio del Giudice, sotto le figure. */
+disegnaStanzaPixelArt = function (tk, st, ...resto) {
+  const r = disegnaStanzaPodioBaseH7.call(this, tk, st, ...resto);
+  try { if (st && st.tipo === 'boss' && giudiceDiH7(st)) disegnaPodioH7(); } catch (err) { console.error('[h7] podio', err); }
+  return r;
+};
+
+Object.assign(window.__teatro.interni, {
+  SCHEDA_H7, BOSS_H7, STATI_H7, TESTI_GIUDICE_H7,
+  giudiceH7: Object.freeze({
+    /** Il Giudice della stanza corrente: stato dell'IA, gesto, fase. */
+    get stato() {
+      const st = statoRun.stanzaCorrente, n = giudiceDiH7(st);
+      if (!n) return null;
+      return { nome: n.nome, stato: n.statoH7 || null, gesto: n.gestoH7 || null, fase2: Boolean(n.fase2H7), hp: n.hp, maxHp: n.maxHp, x: n.x, y: n.y, airZ: n.airZ || 0,
+        combattenti: st.nemici.filter((x) => !x.boss && x.hp > 0).length, proiettili: statoRun.proiettiliNemici.length };
+    },
+  }),
+});
