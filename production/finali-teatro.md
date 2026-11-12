@@ -479,3 +479,22 @@ Suite: `tools/qa-teatro-finali.js`.
 8. La porta chiede anche il finale vero (Donna Luciana caduta) prima di aprirsi: il finale più vero viene dopo
    quello vero. Se l'autore vuole solo i 3 sigilli, è una costante (`SEGRETO_B8.serveFinaleVero`).
 9. Venature napoletane della Voce solo nel lessico teatrale.
+
+## Agnese e Taddeo nel finale vero (h1, `gioco/teatro/h1-agnese-taddeo.js`)
+
+Righe aggiunte ai due rami senza riscrivere le scene (bibbia §IV «Il destino di Agnese», §V «Il destino finale di Taddeo»);
+testi in `TESTI_H1.finale`, condizioni `h1:*` in `condizioneB8` secondo i flag `agnese` e `taddeo`.
+
+| Ramo | Condizione | Riga |
+|---|---|---|
+| Spezza il Velo (scena «folla», prima di «Ferruccio riesce a fuggire.») | agnese risvegliata | Agnese riconosce immediatamente Ferruccio tra la folla… [bibbia] |
+| | agnese sognante / non decisa | Il Velo si spezza e Agnese recupera ogni ricordo. Lo riconosce soltanto adesso… [adattato] |
+| | Taddeo non accusato | Agnese tenta di fermarlo… · Agnese: «Fermati! Non voglio perderti un'altra volta!» [bibbia] |
+| | Taddeo accusato | Agnese: «Hai liberato tutti. Ma chi ti ha dato il diritto di decidere chi deve morire?» [bibbia] |
+| | Taddeo perdonato | Taddeo: «Una volta ti ho consegnato per paura. Stavolta vieni con me di tua volontà!» [bibbia] |
+| | Taddeo accusato | Taddeo partecipa apertamente alla caccia… [adattato] |
+| Risparmia (scena «piazza-grigia», in coda) | agnese risvegliata | …Agnese si tocca istintivamente il polso, proprio come faceva lui. [bibbia] |
+| | altrimenti | A San Leucio, Agnese continua semplicemente a tessere. [bibbia] |
+| | sempre (non giocando Agnese) | Agnese: «Devo finire una sciarpa. Sento che qualcuno verrà a prenderla.» [bibbia] |
+| | Taddeo perdonato | Taddeo continua a essere una guardia. Ricorda a tratti di aver tradito qualcuno… [bibbia] |
+| | Taddeo accusato | Taddeo continua a essere una guardia. Quando incrocia Ferruccio, abbassa lo sguardo. [nuovo] |
