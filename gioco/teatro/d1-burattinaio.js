@@ -762,6 +762,19 @@ disegnaFiliMarionetta = function (...args) {
   return disegnaFiliMarionettaBaseD1.apply(this, args);
 };
 
+/**
+ * Riquadri dell'HUD sotto cui le parti del Burattinaio non si disegnano (stesse misure di 60-resa.js ›
+ * disegnaHUDPixelArt): statistiche, barra della vita, minimappa e, finché c'è, il banner.
+ * @returns {number[][]} [x, y, w, h] in coordinate logiche
+ */
+function zoneHudD1() {
+  const z = [[6, 5, 172, 52], [W / 2 - 108, 4, 216, 26], [W - 124, 8, 114, 92]];
+  try {
+    if (statoRun.bannerTimer > 0 && typeof STANZE_C !== 'undefined' && STANZE_C.banner) { const b = STANZE_C.banner; z.push([b.x, b.y, b.w, b.h]); }
+  } catch (_) { /* banner assente */ }
+  return z;
+}
+
 const disegnaHUDPixelArtBaseD1 = disegnaHUDPixelArt;
 /** Prima dell'HUD: effetti di caduta, fili che cadono a vittoria. */
 disegnaHUDPixelArt = function (...args) {
@@ -769,8 +782,15 @@ disegnaHUDPixelArt = function (...args) {
     if (statoRun.stanzaCorrente && statoRun.stanzaCorrente.arenaD1) {
       // forbici sotto, mani sopra (calano dall'alto); per y crescente fra le mani
       const parti = (partiDaDisegnareD1 || []).slice().sort((a, b) => (a.bossId === 'gb-forbici' ? -1 : 0) - (b.bossId === 'gb-forbici' ? -1 : 0) || a.y - b.y);
-      for (const n of parti) { if (n.bossId === 'gb-mano') disegnaManoD1(n); else disegnaForbiciD1(n); }
-      disegnaEffettiD1();
+      // i riquadri dell'HUD sono semitrasparenti: le parti (enormi) non devono vedersi attraverso
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, 0, W, H);
+      for (const [x, y, w, h] of zoneHudD1()) ctx.rect(x, y, w, h);
+      ctx.clip('evenodd');
+      try {
+        for (const n of parti) { if (n.bossId === 'gb-mano') disegnaManoD1(n); else disegnaForbiciD1(n); }
+        disegnaEffettiD1();
+      } finally { ctx.restore(); }
     }
   } catch (err) { console.error('[D1] effetti', err); }
   return disegnaHUDPixelArtBaseD1.apply(this, args);
