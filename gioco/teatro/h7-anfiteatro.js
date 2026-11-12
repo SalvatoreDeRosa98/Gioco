@@ -2062,7 +2062,7 @@ function disegnaTesseraH7(t, tk) {
 // --------------------------------------------------------------------------- il messaggio del padre all'Acquedotto
 /** Sceglie la stanza della nicchia all'Acquedotto (una per notte, non quella del boss). */
 function scegliNicchiaH7(m) {
-  const adatte = m.stanze.filter((s) => s.tipo === 'normale' && !(s.ostacoli || []).some((o) => Math.hypot(o.x - RICORDI_H7.nicchia.x, o.y - RICORDI_H7.nicchia.y) < 36));
+  const adatte = m.stanze.filter((s) => s.tipo === 'normale' && !s.quadriD5 && !s.botoleD5 && !(s.ostacoli || []).some((o) => Math.hypot(o.x - RICORDI_H7.nicchia.x, o.y - RICORDI_H7.nicchia.y) < 36));
   if (!adatte.length) return;
   adatte[Math.floor(rng() * adatte.length)].nicchiaH7 = { letta: false };
 }

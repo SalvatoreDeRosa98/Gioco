@@ -265,7 +265,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
     for (const n of st.nemici) if (!n.boss) n.hp = 0;
     R.proiettiliNemici.length = 0;
     b.statoH7 = stato; b.gestoH7 = gesto; b.timerH7 = timer; b.tStatoH7 = 30; b.airZ = 0;
-    if (stato === 'mira') { b.x = 300; b.y = 190; b.angH7 = Math.PI * 0.4; } else { b.x = 320; b.y = 104; }
+    if (stato === 'mira') { b.x = 300; b.y = 190; b.angH7 = Math.PI * 0.4; } else { b.x = I.BOSS_H7.podio.x; b.y = I.BOSS_H7.podio.y; }
     P.x = 360; P.y = 260;
   }, { stato, gesto, timer });
   await posa('pollice', 'verso', 10); await disegna(); await scatta('c-pollice-verso');
@@ -359,8 +359,8 @@ const foto = (n) => `${prefisso}-${n}.png`;
     if (!st) return { st: false };
     entraInStanza(st, 'S'); R.siparioAttivo = null;
     const prima = I.ricordiH7.nicchia.visibile;
-    for (const n of st.nemici) n.hp = 0; verificaStanzaPulita(); for (let i = 0; i < 5; i++) passoLogico();
-    P.x = I.ricordiH7.nicchia.x; P.y = I.ricordiH7.nicchia.y + 16;
+    for (let i = 0; i < 900 && !st.pulita; i++) { P.invuln = 999; for (const n of st.nemici) if (n.hp > 0) { n.hp = 0; verificaStanzaPulita(); } passoLogico(); }
+    P.x = I.ricordiH7.nicchia.x + 34; P.y = I.ricordiH7.nicchia.y + 20;
     return { st: true, tipo: st.tipo, nelBoss: Boolean(boss.nicchiaH7), prima, dopo: I.ricordiH7.nicchia.visibile, quante: R.mappa.stanze.filter((s) => s.nicchiaH7).length };
   });
   ok('D: una nicchia per notte in una stanza normale dell\'Acquedotto, visibile a stanza ripulita', nic.st && nic.tipo === 'normale' && !nic.nelBoss && nic.quante === 1 && !nic.prima && nic.dopo, nic);
