@@ -78,6 +78,7 @@ const h2 = {
   anime: [],   // { x, y, t0, fase, colore, r }
   aloni: [],   // { x, y, t0 }
   cache: null, cacheChiave: null,
+  casuale: Math.random, // il caso degli indizi di Bianca (sostituibile nelle prove)
 };
 
 function slotH2() {
@@ -96,9 +97,11 @@ function chiaveH2() { return `${RIVELAZIONI_H2.chiave}.${slotH2()}`; }
 function memoriaH2() {
   const k = chiaveH2();
   const ep = epocaH2();
-  if (h2.cache && h2.cacheChiave === k && h2.cache.epoca === ep) return h2.cache;
+  // un'epoca che nasce adesso (b8 la scrive al primo salvataggio dello slot) non cancella ciò che c'era
+  if (h2.cache && h2.cacheChiave === k && (h2.cache.epoca === ep || h2.cache.epoca === null)) { h2.cache.epoca = ep; return h2.cache; }
   let m = null;
   try { m = JSON.parse(localStorage.getItem(k) || 'null'); } catch (_) { m = null; }
+  if (m && typeof m === 'object' && (m.epoca || null) === null) m.epoca = ep;
   if (!m || typeof m !== 'object' || (m.epoca || null) !== ep) m = { epoca: ep, rivelazioni: {}, svolta: 0 };
   if (!m.rivelazioni || typeof m.rivelazioni !== 'object') m.rivelazioni = {};
   h2.cache = m; h2.cacheChiave = k;
@@ -267,8 +270,6 @@ if (typeof componiPaginaB8 === 'function') {
     return pagina;
   };
 }
-/** Posto per le righe della parte 2 (Bianca) nella pagina del Diario. */
-function aggiuntaDiarioH2() { /* vedi sotto */ }
 
 // ===========================================================================
 // 4. ASSUNTA (al posto della «festaiola» di t4): la popolana che con Tonino introduce la bottega di Gaetano
@@ -324,6 +325,10 @@ function battuteAssuntaH2(flag, notte) {
   const T = TESTI_ASSUNTA_H2;
   const s = sigilliH2();
   let righe;
+  if (typeof filastroccaAssuntaH2 === 'function' && (assuntaH2.giro >= 1 || (Number(notte) || 1) > 1) && !biancaTrovatoH2('piazza')) {
+    assuntaH2.giro++;
+    return filastroccaAssuntaH2();
+  }
   if (s >= 3) righe = T.sigilli3;
   else if (s >= 1 && assuntaH2.giro % 2 === 0) righe = T.sigilli12;
   else if ((Number(notte) || 1) <= 1 && assuntaH2.giro === 0) righe = T.notte1;
@@ -432,6 +437,263 @@ function disegnaAssuntaH2(c, x, y, t) {
 }
 
 // ===========================================================================
+// 5. BIANCA (bibbia §XI, righe 787-848). Non torna in vita e non è un boss: tre oggetti e quattro indizi.
+//    Piazza Dante: la filastrocca vicino alla finestra (la indica Assunta). Villa Comunale (piano 2): la memoria
+//    nel marmo e il disegno della Reggia incompleta. San Leucio (piano 3): il fazzoletto col giglio. Reggia
+//    (piano 4, solo dopo gli altri tre): la scatola musicale, che suona. Uno per slot, in una stanza normale
+//    già ripulita, a probabilità che cresce. Chiusura dopo il finale vero (uccisa / risparmiata).
+// ===========================================================================
+/** Regole degli indizi di Bianca. */
+const BIANCA_H2 = Object.freeze({
+  // pianoNelCiclo → luogo; prob: base e crescita per ogni notte in cui il piano è stato raggiunto senza trovarlo
+  luoghi: Object.freeze({
+    2: Object.freeze({ id: 'villa', prob: 0.45, crescita: 0.25 }),
+    3: Object.freeze({ id: 'leucio', prob: 0.45, crescita: 0.25 }),
+    4: Object.freeze({ id: 'reggia', prob: 0.6, crescita: 0.4, dopo: Object.freeze(['piazza', 'villa', 'leucio']) }),
+  }),
+  punti: Object.freeze([[118, 112], [522, 112], [118, 262], [522, 262]]), // angoli discreti della stanza
+  raggio: 26,                 // distanza per [E]
+  ritardoChiusuraTick: 120,   // in piazza, dopo il ritorno dal finale
+  scatola: Object.freeze({    // la melodia della scatola musicale (Hz, durata in s)
+    note: Object.freeze([[784, 0.32], [659, 0.32], [698, 0.32], [587, 0.5], [659, 0.32], [523, 0.32], [587, 0.7]]),
+    volume: 0.09,
+  }),
+});
+
+/**
+ * Testi di Bianca. Le righe senza «NUOVO» sono della bibbia, parola per parola (Violante → Donna Luciana).
+ */
+const TESTI_BIANCA_H2 = Object.freeze({
+  piazza: Object.freeze([
+    ['assunta', "Sotto 'a fenesta 'e Mariella ce sta ancora scritta 'na filastrocca p' 'e criature. Nun l'aggio maie capita."], // NUOVO
+    ['didascalia', 'Vicino a una finestra si trova una vecchia filastrocca dedicata ai bambini.'],
+    ['didascalia', '«Quando il giglio si addormenta, la luna ascolta e non si lamenta.»'],
+    ['didascalia', 'Non è ancora chiaro cosa significhi.'],
+  ]),
+  villa: Object.freeze([
+    'Una memoria conservata nel marmo mostra Gregorio mentre insegna a Bianca a fare un inchino. La bambina ride e sbaglia apposta.',
+    'Bianca: «Ancora! Ma stavolta fallo tu!»',
+    'Il ricordo svanisce quando Gregorio cerca di prenderle la mano. A terra resta un foglio: un disegno della Reggia ancora incompleta.', // seconda frase NUOVA
+  ]),
+  leucio: Object.freeze([
+    'Accanto ai telai si trova un piccolo fazzoletto ricamato con un giglio incompleto.',
+    'Agnese spiega che Donna Luciana chiedeva spesso di riprodurre quel disegno. Agnese: «Nessuno riusciva a farlo uguale.»',
+    'Agnese: «Forse perché era stato fatto da una bambina.»',
+  ]),
+  reggia: Object.freeze([
+    'Ferruccio trova una scatola musicale. La melodia è la stessa che si sente, debolmente, durante tutti gli incontri con le statue.',
+    'Donna Luciana la apre. «Aveva promesso di imparare a suonarla.» «Non ne ha avuto il tempo.»',
+    'Il Velo non è stato creato per riportare Bianca in vita. È stato creato perché sua madre non potesse più provare il dolore di averla perduta.',
+  ]),
+  chiusura: Object.freeze({
+    uccisa: Object.freeze(['Il ricordo di Bianca viene liberato. Il giglio ricamato perde la sua luce.', 'Rimane un semplice fazzoletto.']),
+    risparmiata: Object.freeze(['Il giglio continua a brillare. La scatola musicale suona da sola.',
+      'Donna Luciana ascolta una voce che ripete sempre lo stesso verso: «Quando il giglio si addormenta, la luna ascolta e non si lamenta.»']),
+  }),
+  prompt: '[E] Guarda', // NUOVO
+  // la pagina «Bianca» del Diario di Ferruccio (NUOVI)
+  pagina: Object.freeze({
+    titolo: 'Bianca',
+    piazza: 'Una filastrocca sotto la finestra di Mariella: «Quando il giglio si addormenta, la luna ascolta e non si lamenta.»',
+    villa: 'Un disegno della Reggia ancora incompleta, rimasto dopo il ricordo di Gregorio e della bambina che sbagliava apposta l\'inchino.',
+    leucio: 'Un piccolo fazzoletto con un giglio incompleto. Nessuno riusciva a farlo uguale.',
+    reggia: 'Una piccola scatola musicale. Aveva promesso di imparare a suonarla.',
+    manca: '…',
+    uccisa: 'Il giglio si è spento. È rimasto un fazzoletto.',
+    risparmiata: 'Il giglio brilla ancora, e la scatola suona da sola.',
+  }),
+  diario: (luogo) => ({ villa: 'Nel marmo della Villa ho visto ridere una bambina.', leucio: 'A San Leucio ho trovato un fazzoletto col giglio a metà.',
+    reggia: 'Alla Reggia una scatola musicale ha suonato la melodia delle statue.', piazza: 'Assunta mi ha mostrato una filastrocca per bambini.' }[luogo]), // NUOVI
+});
+
+/** Memoria di Bianca dello slot: { trovati: {luogo: notte}, tentativi: {luogo: n}, chiusura: scelta|null }. */
+function biancaH2() {
+  const m = memoriaH2();
+  if (!m.bianca || typeof m.bianca !== 'object') m.bianca = { trovati: {}, tentativi: {}, chiusura: null };
+  return m.bianca;
+}
+/** true se l'indizio del luogo è già stato trovato nello slot. */
+function biancaTrovatoH2(luogo) { return Boolean(biancaH2().trovati[luogo]); }
+
+function segnaTrovatoH2(luogo) {
+  const B = biancaH2();
+  if (B.trovati[luogo]) return false;
+  B.trovati[luogo] = notteH2();
+  scriviMemoriaH2(memoriaH2());
+  aggiornaPaginaBiancaH2();
+  return true;
+}
+
+/** Battute della filastrocca per il dialogo di Assunta; segna l'indizio di Piazza Dante. */
+function filastroccaAssuntaH2() {
+  segnaTrovatoH2('piazza');
+  return TESTI_BIANCA_H2.piazza.map(([chi, testo]) => ({ chi, testo }));
+}
+
+/** La pagina «Bianca» del Diario di Ferruccio (b8): una sola, aggiornata a ogni oggetto trovato. */
+function aggiornaPaginaBiancaH2() {
+  if (typeof aggiungiPaginaB8 !== 'function') return null;
+  try {
+    const B = biancaH2(), P = TESTI_BIANCA_H2.pagina;
+    const righe = ['piazza', 'villa', 'leucio', 'reggia'].map((k) => (B.trovati[k] ? P[k] : P.manca));
+    if (B.chiusura && P[B.chiusura]) righe.push(P[B.chiusura]);
+    const notti = Object.values(B.trovati).map(Number).filter(Boolean);
+    return aggiungiPaginaB8({ id: 'bianca-h2', notte: notti.length ? Math.max(...notti) : notteH2(), titolo: P.titolo, righe,
+      esito: 'bianca', personaggio: '', data: new Date().toISOString() });
+  } catch (err) { console.error('[h2] pagina Bianca', err); return null; }
+}
+
+/** Righe della pagina della notte: un oggetto di Bianca trovato stanotte (chiamata dal Diario). */
+function aggiuntaDiarioH2(pagina, n) {
+  const B = biancaH2();
+  for (const [k, notte] of Object.entries(B.trovati)) {
+    const r = Number(notte) === n ? TESTI_BIANCA_H2.diario(k) : null;
+    if (r && !pagina.righe.includes(r)) pagina.righe.splice(Math.max(1, pagina.righe.length - 1), 0, r);
+  }
+}
+
+/** Piano avviato: forse stanotte l'indizio del luogo è in una stanza normale. */
+function preparaIndizioH2() {
+  const pnc = ((statoRun.piano - 1) % 4) + 1;
+  const L = BIANCA_H2.luoghi[pnc];
+  if (!L || !statoRun.mappa || biancaTrovatoH2(L.id)) return null;
+  if (L.id === 'villa' && typeof acquedottoAttivoD6 === 'function' && acquedottoAttivoD6()) return null; // stanotte niente Villa
+  if (L.dopo && !L.dopo.every((k) => biancaTrovatoH2(k))) return null;
+  const B = biancaH2();
+  const n = B.tentativi[L.id] || 0;
+  const prob = Math.min(1, L.prob + L.crescita * n);
+  const stanze = statoRun.mappa.stanze.filter((s) => s.tipo === 'normale');
+  if (!stanze.length) return null;
+  if (h2.casuale() >= prob) { B.tentativi[L.id] = n + 1; scriviMemoriaH2(memoriaH2()); return null; }
+  const st = stanze[Math.floor(h2.casuale() * stanze.length) % stanze.length];
+  const [x, y] = BIANCA_H2.punti[Math.floor(h2.casuale() * BIANCA_H2.punti.length) % BIANCA_H2.punti.length];
+  st.biancaH2 = { luogo: L.id, x, y, preso: false };
+  return st;
+}
+
+function indizioQuiH2() {
+  const st = statoRun.stanzaCorrente;
+  const b = st && st.biancaH2;
+  return b && !b.preso && st.pulita ? b : null;
+}
+function vicinoIndizioH2() {
+  const b = indizioQuiH2();
+  return b && Math.hypot(player.x - b.x, player.y - b.y) <= BIANCA_H2.raggio ? b : null;
+}
+
+/** [E] accanto all'oggetto di Bianca: le parole della bibbia in didascalia, l'oggetto nel Diario. */
+function raccogliIndizioH2() {
+  const b = vicinoIndizioH2();
+  if (!b) return false;
+  b.preso = true;
+  if (!segnaTrovatoH2(b.luogo)) return true;
+  for (const t of TESTI_BIANCA_H2[b.luogo]) didascaliaH2(t);
+  if (b.luogo === 'reggia') suonaScatolaH2();
+  return true;
+}
+
+/** La scatola musicale: poche note di carillon (Web Audio su AudioSys.uscita). */
+function suonaScatolaH2() {
+  try {
+    const ac = AudioSys.ctx, out = AudioSys.uscita;
+    if (!ac || !out) return false;
+    let t = ac.currentTime + 0.05;
+    for (const [f, d] of BIANCA_H2.scatola.note) {
+      for (const [molt, vol] of [[1, 1], [2.01, 0.25]]) {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = f * molt;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(BIANCA_H2.scatola.volume * vol, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0005, t + d * 2.2);
+        o.connect(g); g.connect(out); o.start(t); o.stop(t + d * 2.3);
+      }
+      t += d;
+    }
+    h2.ultimaScatola = performance.now();
+    return true;
+  } catch (err) { console.warn('[h2] scatola', err); return false; }
+}
+
+/** Disegna l'oggetto (a ombra, con un luccichio color lanterna) e la scritta [E] quando sei vicino. */
+function disegnaIndizioH2(tk) {
+  const b = indizioQuiH2();
+  if (!b) return;
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  const luce = 0.35 + 0.25 * Math.sin(tk * 0.07);
+  const g = ctx.createRadialGradient(0, 0, 1, 0, 0, 16);
+  g.addColorStop(0, `rgba(255, 226, 160, ${luce.toFixed(3)})`); g.addColorStop(1, 'rgba(255, 226, 160, 0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#0a0604'; ctx.strokeStyle = 'rgba(249, 203, 64, 0.7)'; ctx.lineWidth = 1;
+  if (b.luogo === 'villa') { // il foglio arrotolato a metà, col profilo della Reggia
+    ctx.beginPath(); ctx.rect(-8, -5, 16, 10); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(249, 203, 64, 0.5)';
+    ctx.beginPath(); ctx.moveTo(-6, 3); ctx.lineTo(-6, -1); ctx.lineTo(-2, -1); ctx.lineTo(-2, -3); ctx.lineTo(2, -3); ctx.lineTo(2, 0); ctx.stroke();
+  } else if (b.luogo === 'leucio') { // il fazzoletto piegato, col giglio rosso a metà
+    ctx.beginPath(); ctx.moveTo(-8, 4); ctx.lineTo(0, -6); ctx.lineTo(8, 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(-2, 2); ctx.lineTo(0, 1); ctx.closePath(); ctx.fill();
+  } else { // la scatola musicale con la manovella
+    ctx.beginPath(); ctx.rect(-7, -4, 14, 9); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(7, 0); ctx.lineTo(10, 0); ctx.lineTo(10, -3); ctx.stroke();
+    ctx.fillStyle = '#f9cb40'; ctx.fillRect(-2, -1, 4, 2);
+  }
+  ctx.restore();
+  if (vicinoIndizioH2() && typeof drawPillLabel === 'function') drawPillLabel(TESTI_BIANCA_H2.prompt, b.x, b.y - 18, 70, { size: 7.5 });
+}
+
+/** In piazza dopo il finale vero: la chiusura dell'arco (una volta per slot, se il fazzoletto è stato trovato). */
+function chiusuraBiancaH2() {
+  const B = biancaH2();
+  if (B.chiusura || !biancaTrovatoH2('leucio')) return false;
+  let scelta = null;
+  try { scelta = typeof statoB8 === 'function' ? statoB8().scelta : null; } catch (_) { scelta = null; }
+  const testi = scelta && TESTI_BIANCA_H2.chiusura[scelta];
+  if (!testi) return false;
+  B.chiusura = scelta;
+  scriviMemoriaH2(memoriaH2());
+  for (const t of testi) didascaliaH2(t);
+  if (scelta === 'risparmiata' && biancaTrovatoH2('reggia')) suonaScatolaH2();
+  aggiornaPaginaBiancaH2();
+  return true;
+}
+
+const avviaPianoBaseH2 = avviaPiano;
+/** Piano avviato: forse l'indizio di Bianca del luogo. */
+avviaPiano = function (...args) {
+  const r = avviaPianoBaseH2.apply(this, args);
+  try { preparaIndizioH2(); } catch (err) { console.error('[h2] indizio', err); }
+  return r;
+};
+
+const interagisciStanzaBaseH2 = interagisciStanza;
+/** [E] (tastiera, gamepad, tocco: l'azione «interagisci» di sempre): prima l'oggetto di Bianca, se sei accanto. */
+interagisciStanza = function (...args) {
+  try { if (raccogliIndizioH2()) return undefined; } catch (err) { console.error('[h2] raccogli', err); }
+  return interagisciStanzaBaseH2.apply(this, args);
+};
+
+const disegnaStanzaPixelArtBaseH2 = disegnaStanzaPixelArt;
+/** Nella stanza: l'oggetto di Bianca (sopra il pavimento). */
+disegnaStanzaPixelArt = function (...args) {
+  const r = disegnaStanzaPixelArtBaseH2.apply(this, args);
+  try { if (statoRun.fase === 'in_gioco') disegnaIndizioH2(tick); } catch (err) { console.error('[h2] disegno indizio', err); }
+  return r;
+};
+
+const passoLogicoBaseH2 = passoLogico;
+/** In piazza: la chiusura dell'arco di Bianca, qualche istante dopo il ritorno dal finale. */
+passoLogico = function (...args) {
+  const r = passoLogicoBaseH2.apply(this, args);
+  try {
+    if (statoRun.fase === 'hub') {
+      h2.inPiazza = (h2.inPiazza || 0) + 1;
+      if (h2.inPiazza === BIANCA_H2.ritardoChiusuraTick) chiusuraBiancaH2();
+    } else h2.inPiazza = 0;
+  } catch (err) { console.error('[h2] chiusura', err); }
+  return r;
+};
+
+// ===========================================================================
 // 9. QA
 // ===========================================================================
 if (Object.isFrozen(window.__teatro)) {
@@ -442,5 +704,11 @@ window.__teatro.h2 = {
   memoria: () => JSON.parse(JSON.stringify(memoriaH2())),
   azzera() { try { localStorage.removeItem(chiaveH2()); } catch (_) { /* idem */ } h2.cache = null; h2.anime.length = 0; },
   rivelazioneRegistro: rivelazioneRegistroH2,
+  bianca: () => JSON.parse(JSON.stringify(biancaH2())),
+  fissaCaso(v) { h2.casuale = v == null ? Math.random : () => v; },
+  preparaIndizio: () => { const st = preparaIndizioH2(); return st ? { id: st.id, ...st.biancaH2 } : null; },
+  get vicino() { return Boolean(vicinoIndizioH2()); },
+  chiusura: chiusuraBiancaH2,
+  get ultimaScatola() { return h2.ultimaScatola || 0; },
   TESTI: TESTI_H2,
 };

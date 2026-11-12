@@ -115,6 +115,66 @@ const SOLO = (process.env.QA_PARTI || '1 2 3').split(/\s+/);
     ok('diario', pag.some((r) => r.includes('Gatto')) && pag.some((r) => r.includes('smesso di chiamarli mostri')), pag);
   }
 
+  // ------------------------------------------------------------------ 2. Bianca
+  if (SOLO.includes('2')) {
+    await avvia();
+    /** Piano del luogo con l'indizio garantito; entra nella stanza, la ripulisce, si mette accanto. */
+    const versoIndizio = (piano) => p.evaluate((piano) => {
+      const I = window.__teatro.interni; const R = I.statoRun; const H = window.__teatro.h2;
+      H.fissaCaso(0);
+      nuovaRun(false);
+      R.percorsoD6 = null;
+      avviaPiano(piano, false);
+      R.siparioAttivo = null; R.cartiglioD = null;
+      let st = R.mappa.stanze.find((s) => s.biancaH2);
+      if (!st) { const x = H.preparaIndizio(); st = x && R.mappa.stanze.find((s) => s.biancaH2); }
+      if (!st) return null;
+      entraInStanza(st, 'S');
+      for (const n of st.nemici) n.hp = 0;
+      verificaStanzaPulita();
+      I.player.invuln = 1e9; I.player.x = st.biancaH2.x + 14; I.player.y = st.biancaH2.y + 6;
+      return { luogo: st.biancaH2.luogo, x: st.biancaH2.x, y: st.biancaH2.y, vicino: H.vicino };
+    }, piano);
+    const v = await versoIndizio(2);
+    ok('bianca:villa-in-stanza', v && v.luogo === 'villa' && v.vicino, v);
+    if (v) {
+      await passi(p, 2);
+      await zoom('2-bianca-villa', v.x - 60, v.y - 50, 120, 85);
+      await p.keyboard.press('KeyE'); // tastiera
+      await p.waitForTimeout(120);
+      await passi(p, 30);
+      await p.waitForTimeout(2500); // la didascalia di b8 entra a tempo reale
+      await scatta('2-bianca-villa-didascalia');
+    }
+    let b = await p.evaluate(() => window.__teatro.h2.bianca());
+    ok('bianca:villa-trovata', b.trovati.villa > 0, b);
+    const di = await p.evaluate(() => JSON.stringify(b8.did));
+    ok('bianca:didascalia-bibbia', di.includes('Ancora! Ma stavolta fallo tu!'), di.slice(0, 300));
+    const v2 = await p.evaluate(() => { nuovaRun(false); window.__teatro.interni.statoRun.percorsoD6 = null; avviaPiano(2, false); return window.__teatro.interni.statoRun.mappa.stanze.some((s) => s.biancaH2); });
+    ok('bianca:villa-mai-due-volte', !v2);
+    // San Leucio con l'azione «interagisci» chiamata come fanno gamepad e tocco
+    const l = await versoIndizio(3);
+    ok('bianca:leucio-in-stanza', l && l.luogo === 'leucio', l);
+    await p.evaluate(() => interagisciStanza());
+    // la Reggia aspetta la filastrocca di Piazza Dante
+    const r0 = await p.evaluate(() => { nuovaRun(false); avviaPiano(4, false); return window.__teatro.interni.statoRun.mappa.stanze.some((s) => s.biancaH2); });
+    ok('bianca:reggia-dopo-gli-altri', !r0);
+    await p.evaluate(() => filastroccaAssuntaH2());
+    const r = await versoIndizio(4);
+    ok('bianca:reggia-in-stanza', r && r.luogo === 'reggia', r);
+    await p.evaluate(() => interagisciStanza());
+    ok('bianca:scatola-suona', (await p.evaluate(() => window.__teatro.h2.ultimaScatola)) > 0);
+    b = await p.evaluate(() => window.__teatro.h2.bianca());
+    ok('bianca:quattro-trovati', ['piazza', 'villa', 'leucio', 'reggia'].every((k) => b.trovati[k] > 0), b);
+    const pag = await p.evaluate(() => (leggiDiarioB8().pagine.find((x) => x.id === 'bianca-h2') || {}).righe || []);
+    ok('bianca:pagina-piena', pag.length >= 4 && !pag.includes('…'), pag);
+    const ch = await p.evaluate(() => { const s = statoB8(); s.scelta = 'uccisa'; scriviB8(s); return [window.__teatro.h2.chiusura(), window.__teatro.h2.chiusura()]; });
+    ok('bianca:chiusura-una-volta', ch[0] === true && ch[1] === false, ch);
+    const pag2 = await p.evaluate(() => (leggiDiarioB8().pagine.find((x) => x.id === 'bianca-h2') || {}).righe || []);
+    ok('bianca:chiusura-in-pagina', pag2.some((x) => /spento/.test(x)), pag2);
+    await p.evaluate(() => window.__teatro.h2.fissaCaso(null));
+  }
+
   // ------------------------------------------------------------------ 3. Assunta
   if (SOLO.includes('3')) {
     await avvia();
