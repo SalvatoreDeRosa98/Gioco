@@ -132,7 +132,7 @@ const SPADA_J1 = Object.freeze({
   arcoMezzo: 1.4,                   // radianti per lato (~80°; prima ~110° effettivi)
   durata: 18, anticipo: 4, fineFendente: 10, // tick: anticipo 0..3, fendente 4..9 (colpisce), recupero 10..17
   cooldownMin: 9, cooldownFrazione: 0.75, recupero: 6, // tick in più dopo il fendente
-  lama: 20, raggioScia: 34, spessoreScia: 9,
+  lama: 21, raggioScia: 34, spessoreScia: 11,
 });
 const OPZIONI = (() => {
   let salvate = {};

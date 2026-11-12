@@ -1044,10 +1044,13 @@ function disegnaMenuSelezionePersonaggio(tick) {
 
     // Statistiche
     const schedaD2v = typeof schedaD2 === 'function' ? schedaD2(pId) : {}; // (d2) teatro/d2-personaggi.js
-    const hpHearts = schedaD2v.vita ? schedaD2v.vita : p.hpHalf === 8 ? '❤️❤️❤️❤️' : p.hpHalf === 6 ? '❤️❤️❤️' : p.hpHalf === 4 ? '❤️❤️' : '❤️½';
-    drawTextFit(`Vita: ${hpHearts}`, pedX, cardY + 126, cardW - 12, {
-      size: 7.5, color: '#ef4444',
-    });
+    // j1: la vita sono Maschere disegnate, non cuori
+    if (schedaD2v.vita || typeof disegnaFilaMaschereJ1 !== 'function') {
+      drawTextFit(`Vita: ${schedaD2v.vita || p.hpHalf / 2} Maschera`, pedX, cardY + 126, cardW - 12, { size: 7.5, color: '#ef4444' });
+    } else {
+      drawTextFit(TESTI_J1.vita, pedX - 30, cardY + 126, 30, { size: 7.5, color: '#ef4444', align: 'left' });
+      disegnaFilaMaschereJ1(pedX + 12, cardY + 123, p.hpHalf, p.hpHalf, { centro: true });
+    }
     drawTextFit(`⚔ DMG: ${p.baseDmg.toFixed(2)}  🥾 SPD: ${p.baseSpd.toFixed(2)}`, pedX, cardY + 140, cardW - 12, {
       size: 7.5, color: '#f9cb40',
     });
@@ -1343,7 +1346,7 @@ function disegnaFrame(dtMs) {
     // PROPOSTA 2: Stanza del Patto d'Ombra (😈)
     if (st.tipo === 'patto') {
       drawPillLabel(
-        `😈 STANZA DEL PATTO D'OMBRA · SACRIFICA 1 MASCHERA INTERA (-1 ❤️ MAX) 😈`,
+        `😈 STANZA DEL PATTO D'OMBRA · SACRIFICA 1 MASCHERA INTERA (-1 MASCHERA MAX) 😈`,
         320,
         106,
         410,
@@ -1357,7 +1360,7 @@ function disegnaFrame(dtMs) {
           drawPillLabel(p.nomeBreve || p.nome, p.x, p.y - 24, 150, {
             size: 8, color: '#fca5a5', border: '#ef4444',
           });
-          drawPillLabel(`PATTO: -1 ❤️ MAX [Click/E]`, p.x, p.y + 28, 148, {
+          drawPillLabel(`PATTO: -1 Maschera max [Click/E]`, p.x, p.y + 28, 148, {
             size: 7.5, color: '#f87171', border: '#991b1b',
           });
           drawTextFit(p.statsDesc, p.x, p.y + 42, 170, { size: 7.5, color: '#4ade80' });
@@ -1547,12 +1550,13 @@ function disegnaFrame(dtMs) {
       shootAnim: player.shootAnimTimer > 0,
       pickup: player.pickupTimer > 0,
       flash: pFlash,
-      haSpada: statoRun.haSpada,
+      haSpada: statoRun.haSpada && !(typeof fendenteVisibileJ1 === 'function' && fendenteVisibileJ1()), // j1: il fendente lo disegna j1
       swordAnimTick: player.swordAnimTick,
       swordAngle: player.swordAngle,
       charInfo: getCharCorrente(),
       sinergie: statoRun.sinergieVisive,
     });
+    if (typeof disegnaFendenteJ1 === 'function') disegnaFendenteJ1(); // j1: anticipo, arco con scia, recupero
     ctx.restore();
 
     if (player.pickupTimer > 0 && player.pickupItem) {
@@ -1637,11 +1641,12 @@ function disegnaHUDPixelArt(st) {
   // 1. Box alto a sinistra: Vita (Maschere intere e mezze) + Statistiche (danno, cadenza, velocità, monete)
   // (d7) fondo semitrasparente: la balconata del pubblico si intravede dietro il riquadro
   const hx = 6, hy = 5, hw = 172, hh = 52;
+  const sj1 = typeof stileHudJ1 === 'function' ? stileHudJ1() : { fondo: 0.62, bordo: '#f9cb40', spessore: 1 }; // j1: HUD leggero
   ctx.save();
-  ctx.fillStyle = 'rgba(10, 6, 4, 0.62)';
+  ctx.fillStyle = `rgba(10, 6, 4, ${sj1.fondo})`;
   ctx.fillRect(hx, hy, hw, hh);
-  ctx.strokeStyle = '#f9cb40';
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = sj1.bordo;
+  ctx.lineWidth = sj1.spessore;
   ctx.strokeRect(hx, hy, hw, hh);
   ctx.beginPath();
   ctx.rect(hx + 2, hy + 2, hw - 4, hh - 4);
@@ -1653,8 +1658,10 @@ function disegnaHUDPixelArt(st) {
     size: 8.5, color: '#ffffff', align: 'left',
   });
 
-  // Barra HP + Maschere (1 Maschera = 2 mezze-maschere)
-  const hpRatio = Math.max(0, statoRun.hpHalf / statoRun.maxHpHalf);
+  // Vita: fila di Maschere (1 Maschera = 2 mezze-maschere), mai oltre il massimo (j1)
+  if (typeof disegnaFilaMaschereJ1 === 'function') disegnaFilaMaschereJ1(hx + 6, hy + 19, statoRun.hpHalf, statoRun.maxHpHalf);
+  else {
+  const hpRatio = Math.max(0, Math.min(1, statoRun.hpHalf / statoRun.maxHpHalf));
   ctx.fillStyle = '#2d1210';
   ctx.fillRect(hx + 6, hy + 15, 98, 8);
   ctx.fillStyle = '#ef4444';
@@ -1662,12 +1669,13 @@ function disegnaHUDPixelArt(st) {
   ctx.strokeStyle = '#0a0604';
   ctx.strokeRect(hx + 6, hy + 15, 98, 8);
   drawTextFit(
-    `${(statoRun.hpHalf / 2).toFixed(1)}/${(statoRun.maxHpHalf / 2).toFixed(0)} ❤️`,
+    `${(Math.min(statoRun.hpHalf, statoRun.maxHpHalf) / 2).toFixed(1)}/${(statoRun.maxHpHalf / 2).toFixed(0)} Maschere`,
     hx + 108,
     hy + 22,
     hw - 112,
     { size: 7.5, color: '#ffffff', align: 'left' }
   );
+  }
 
   // Statistiche
   drawTextFit(
@@ -1715,11 +1723,15 @@ function disegnaHUDPixelArt(st) {
   const m = statoRun.mappa;
   if (m && !maledizioneD('mappa')) { // D: Nebbia del Volturno nasconde la minimappa
     const cell = 12, x0 = W - 118, y0 = 24;
-    const mw = 114, mh = 92;
+    // j1: alto quanto le righe scoperte (prima sempre 92)
+    const righeJ1 = Math.max(1, ...m.stanze.filter((s) => s.visitata).map((s) => s.cy));
+    const mw = 114, mh = Math.min(92, 20 + righeJ1 * cell);
     ctx.save();
-    ctx.fillStyle = 'rgba(10,6,4,0.62)'; // (d7) semitrasparente come il riquadro di sinistra
+    ctx.fillStyle = `rgba(10,6,4,${sj1.fondo})`; // (d7) semitrasparente come il riquadro di sinistra; j1 più leggero
     ctx.fillRect(x0 - 6, y0 - 16, mw, mh);
-    ctx.strokeStyle = '#f9cb40';
+    if (typeof hudJ1 !== 'undefined') hudJ1.fondoMinimappa = y0 - 16 + mh; // j1: i riquadri sotto la seguono
+    ctx.lineWidth = sj1.spessore;
+    ctx.strokeStyle = sj1.bordo;
     ctx.strokeRect(x0 - 6, y0 - 16, mw, mh);
     ctx.beginPath();
     ctx.rect(x0 - 5, y0 - 15, mw - 2, mh - 2);

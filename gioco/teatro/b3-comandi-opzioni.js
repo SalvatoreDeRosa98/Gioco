@@ -186,6 +186,7 @@ const RIGHE_B3 = Object.freeze({
     { id: 'pubblico', tipo: 'spunta', nome: 'Pubblico', nota: 'Le ombre del pubblico in sala, davanti al palco.' },
     { id: 'lampi', tipo: 'spunta', nome: 'Lampi', nota: 'I lampi bianchi sui colpi. Spegnili se danno fastidio agli occhi.' },
     { id: 'ombre', tipo: 'spunta', nome: 'Ombre lunghe', nota: 'Le ombre delle marionette alla luce della ribalta. Spegnile se il gioco rallenta.' },
+    { id: 'hudLeggero', tipo: 'spunta', nome: 'HUD leggero', nota: 'Riquadri di vita e mappa trasparenti, che si fanno da parte quando sotto c\'è qualcosa. Spento: HUD pieno.' }, // j1
     { id: 'voce', tipo: 'spunta', nome: 'Voce del Burattinaio', nota: 'Le didascalie che presentano i boss e commentano la notte.' },
     { id: 'schermoIntero', tipo: 'spunta', nome: 'Schermo intero', nota: 'Il teatro a tutto schermo.' },
     { id: 'testoGrande', tipo: 'spunta', nome: 'Testo grande', nota: 'Scritte più grandi per avvisi, cartiglio degli oggetti ed etichette.' },
