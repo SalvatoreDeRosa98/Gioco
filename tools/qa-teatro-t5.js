@@ -19,7 +19,8 @@ const file = path.resolve(RADICE, process.argv[2] || 'gioco/teatro_marionette.ht
 const prefisso = process.argv[3] || '-';
 const riferimento = process.argv[4] ? path.resolve(process.argv[4]) : null;
 const EVID = path.join(RADICE, 'production', 'qa', 'evidence');
-const nomeFoto = (n) => path.join(EVID, `teatro-hd-${prefisso === '.' ? '' : prefisso + '-'}${n}.png`);
+const nomeFoto = (n) => (path.isAbsolute(prefisso) ? `${prefisso}-${n}.png` // prefisso assoluto = percorso delle foto
+  : path.join(EVID, `teatro-hd-${prefisso === '.' ? '' : prefisso + '-'}${n}.png`));
 
 /** Click in coordinate di gioco 640x360, convertite nei pixel CSS del canvas. */
 async function clickGioco(pagina, gx, gy) {

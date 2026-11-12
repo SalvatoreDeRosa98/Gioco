@@ -14,7 +14,8 @@ const { chromium } = require('playwright');
 const RADICE = path.resolve(__dirname, '..');
 const file = path.resolve(RADICE, process.argv[2] || 'gioco/teatro_marionette.html');
 const prefisso = process.argv[3] ? process.argv[3] + '-' : '';
-const foto = (n) => path.join(RADICE, 'production', 'qa', 'evidence', `teatro-bug-regatto-${prefisso}${n}.png`);
+const foto = (n) => (path.isAbsolute(process.argv[3] || '') ? `${prefisso}${n}.png` // prefisso assoluto = percorso delle foto
+  : path.join(RADICE, 'production', 'qa', 'evidence', `teatro-bug-regatto-${prefisso}${n}.png`));
 const TICK = 600;
 
 (async () => {
