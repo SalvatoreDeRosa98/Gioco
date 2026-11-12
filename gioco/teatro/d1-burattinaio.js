@@ -231,8 +231,11 @@ function nuovaManoD1(lato, vita) {
 }
 
 /** Costruisce la stanza della graticcia (una sola stanza 'boss', senza porte). */
+/** Vita delle parti in questo scontro: la tabella, o quella scalata da h4 (opz.vita) quando si sale con la notte viva. */
+function vitaD1() { return (d1.opz && d1.opz.vita) || BURATTINAIO_D1.vita; }
+
 function creaStanzaD1() {
-  const V = BURATTINAIO_D1.vita;
+  const V = vitaD1();
   const capo = nuovaParteD1(BURATTINAIO_D1.idCapo, {
     nome: BURATTINAIO_D1.nome, x: 320, y: -600, airZ: 999, r: 1,
     hp: V.mano1 * 2 + V.mano2 * 2 + V.forbici + V.mano3, maxHp: V.mano1 * 2 + V.mano2 * 2 + V.forbici + V.mano3,
@@ -252,12 +255,14 @@ function scontroSopraLaRibaltaD1(opz = {}) {
     let veri = null;
     try { const s8 = window.__teatro.interni.finaliB8 && window.__teatro.interni.finaliB8.stato(); veri = s8 && s8.ferri; } catch (_) { veri = null; }
     if (opz.soloNumero) veri = null;
-    nuovaRun(false);
+    if (opz.ferri && typeof opz.ferri === 'object') veri = opz.ferri; // (h4) i ferri presi stanotte
+    d1.opz = opz;
+    if (!opz.notteViva) nuovaRun(false); // (h4) con la notte viva si sale con la dotazione della run
     statoRun.fase = 'in_gioco';
     statoRun.pausa = false;
     statoRun.siparioAttivo = null;
     statoRun.piano = BURATTINAIO_D1.pianoFinto;
-    statoRun.ciclo = 1;
+    if (!opz.notteViva) statoRun.ciclo = 1;
     const st = creaStanzaD1();
     statoRun.mappa = Object.assign({}, statoRun.mappa || {}, { stanze: [st] });
     Object.assign(d1, {
@@ -280,7 +285,7 @@ function scontroSopraLaRibaltaD1(opz = {}) {
 function avviaAttoD1(n) {
   d1.occhiT = tick; // ...e a ogni cambio d'atto
   const st = d1.stanza;
-  const V = BURATTINAIO_D1.vita;
+  const V = vitaD1();
   d1.atto = n;
   d1.turnoMano = 0;
   if (n === 1) st.nemici.push(nuovaManoD1(-1, V.mano1), nuovaManoD1(1, V.mano1));
@@ -576,7 +581,7 @@ function iaMarionetteD1() {
 // 8. REGIA: atti, vita del capo, vittoria
 // ===========================================================================
 function vitaRestanteD1() {
-  const V = BURATTINAIO_D1.vita;
+  const V = vitaD1();
   let somma = 0;
   for (const n of d1.stanza.nemici) if (n.bossId === 'gb-mano' || n.bossId === 'gb-forbici') somma += Math.max(0, n.hp);
   if (d1.atto <= 1) somma += V.mano2 * 2 + V.forbici + V.mano3;
@@ -629,7 +634,7 @@ function passoD1() {
     if (libero && d1.atto === 2 && m.faseD1 === 'riposo' && inAzione === 0 && mani.some((o) => o !== m && o.faseD1 === 'terra') && d1.pausaColpo <= 0) puo = true;
     const prima = m.faseD1;
     iaManoD1(m, puo);
-    if (prima === 'riposo' && m.faseD1 !== 'riposo') { d1.turnoMano++; d1.pausaColpo = BURATTINAIO_D1.pausaFraColpiTick[d1.atto - 1]; }
+    if (prima === 'riposo' && m.faseD1 !== 'riposo') { d1.turnoMano++; d1.pausaColpo = Math.round(BURATTINAIO_D1.pausaFraColpiTick[d1.atto - 1] * ((d1.opz && d1.opz.ritmo) || 1)); }
   }
   for (const f of forbici) iaForbiciD1(f, libero);
   iaMarionetteD1();
