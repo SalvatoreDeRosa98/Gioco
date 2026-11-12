@@ -7,27 +7,30 @@ Prima di avvolgere una di queste funzioni, o di cambiarne il comportamento, guar
 
 | Funzione | Definita in | Strati | Chi la avvolge (in ordine di caricamento) |
 |---|---|---|---|
-| `passoLogico()` | 40-combattimento.js:661 | 24 | a1-bombe-chiavi:538 → a2-consumabili:477 → a3-stanze-speciali:598 → a7-registro-bilancio:285 → a7-registro-bilancio:626 → b6-boss:769 → b7-stanze:1912 → b4-trasformazioni:612 → b5-oggetti:1538 → b2-ribalta:1733 → b1-pubblico:2003 → c1-partenza-segreta:1082 → d5-cambio-scena:348 → d7-rifiniture:213 → d3-registro-scena:873 → d1-burattinaio:685 → d2-personaggi:363 → d4-stanze-teatro:1709 → d6-acquedotto:1005 → e6-assistenza:598 → h3-gregorio:426 → h2-memorie:683 → h1-agnese-taddeo:640 → h5-sottopalco:923 |
-| `disegnaStanzaPixelArt()` | 60-resa.js:793 | 16 | a1-bombe-chiavi:552 → a3-stanze-speciali:788 → b7-stanze:2494 → b8-finali-diario:1885 → b2-ribalta:1695 → b1-pubblico:2062 → b9-immagini:551 → d5-cambio-scena:613 → d1-burattinaio:705 → d4-stanze-teatro:1687 → d6-acquedotto:793 → h3-gregorio:709 → h2-memorie:675 → h4-ritorno-piazza:421 → h1-agnese-taddeo:671 → h5-sottopalco:900 |
-| `entraInStanza()` | 30-mappa.js:578 | 15 | a1-bombe-chiavi:499 → a2-consumabili:395 → a3-stanze-speciali:567 → a7-registro-bilancio:272 → b6-boss:367 → b7-stanze:1846 → b8-finali-diario:1855 → b2-ribalta:1740 → d5-cambio-scena:322 → d3-registro-scena:895 → d4-stanze-teatro:1656 → d6-acquedotto:1616 → h3-gregorio:263 → h1-agnese-taddeo:615 → h5-sottopalco:977 |
-| `disegnaHUDPixelArt()` | 60-resa.js:1636 | 13 | a2-consumabili:518 → a3-stanze-speciali:817 → b6-boss:1349 → b7-stanze:2506 → b4-trasformazioni:1331 → b1-pubblico:2071 → d5-cambio-scena:604 → d1-burattinaio:783 → d4-stanze-teatro:1699 → d6-acquedotto:807 → h2-memorie:224 → h1-agnese-taddeo:683 → h5-sottopalco:911 |
-| `verificaStanzaPulita()` | 40-combattimento.js:463 | 12 | a1-bombe-chiavi:521 → a2-consumabili:404 → a3-stanze-speciali:574 → b6-boss:383 → b7-stanze:1853 → b4-trasformazioni:567 → d5-cambio-scena:301 → d4-stanze-teatro:1668 → d6-acquedotto:373 → h3-gregorio:453 → h2-memorie:210 → h5-sottopalco:871 |
-| `interagisciStanza()` | 40-combattimento.js:523 | 11 | a1-bombe-chiavi:530 → a2-consumabili:455 → a3-stanze-speciali:592 → b7-stanze:1870 → b8-finali-diario:1870 → d4-stanze-teatro:1679 → d6-acquedotto:353 → h2-memorie:668 → h4-ritorno-piazza:408 → h1-agnese-taddeo:630 → h5-sottopalco:886 |
-| `generaMappaPiano()` | 30-mappa.js:41 | 9 | a1-bombe-chiavi:485 → a3-stanze-speciali:561 → b7-stanze:1129 → d5-cambio-scena:141 → d4-stanze-teatro:1645 → d6-acquedotto:877 → d6-acquedotto:2051 → h3-gregorio:244 → h1-agnese-taddeo:608 |
+| `passoLogico()` | 40-combattimento.js:661 | 28 | a1-bombe-chiavi:538 → a2-consumabili:477 → a3-stanze-speciali:598 → a7-registro-bilancio:285 → a7-registro-bilancio:626 → b6-boss:769 → b7-stanze:1912 → b4-trasformazioni:612 → b5-oggetti:1538 → b2-ribalta:1733 → b1-pubblico:2003 → c1-partenza-segreta:1082 → d5-cambio-scena:348 → d7-rifiniture:213 → d3-registro-scena:873 → d1-burattinaio:685 → d2-personaggi:363 → d4-stanze-teatro:1709 → d6-acquedotto:1005 → e6-assistenza:598 → h3-gregorio:426 → h2-memorie:684 → h1-agnese-taddeo:640 → h5-sottopalco:923 → h6-casertavecchia:890 → h6-casertavecchia:1790 → h7-anfiteatro:1117 → h7-anfiteatro:2131 |
+| `disegnaStanzaPixelArt()` | 60-resa.js:793 | 22 | a1-bombe-chiavi:552 → a3-stanze-speciali:788 → b7-stanze:2494 → b8-finali-diario:1885 → b2-ribalta:1695 → b1-pubblico:2062 → b9-immagini:551 → d5-cambio-scena:613 → d1-burattinaio:705 → d4-stanze-teatro:1687 → d6-acquedotto:793 → h3-gregorio:709 → h2-memorie:676 → h4-ritorno-piazza:421 → h1-agnese-taddeo:671 → h5-sottopalco:900 → h6-casertavecchia:420 → h6-casertavecchia:1806 → h7-anfiteatro:539 → h7-anfiteatro:1407 → h7-anfiteatro:1908 → h7-anfiteatro:2119 |
+| `entraInStanza()` | 30-mappa.js:578 | 18 | a1-bombe-chiavi:499 → a2-consumabili:395 → a3-stanze-speciali:567 → a7-registro-bilancio:272 → b6-boss:367 → b7-stanze:1846 → b8-finali-diario:1855 → b2-ribalta:1740 → d5-cambio-scena:322 → d3-registro-scena:895 → d4-stanze-teatro:1656 → d6-acquedotto:1616 → h3-gregorio:263 → h1-agnese-taddeo:615 → h5-sottopalco:977 → h6-casertavecchia:910 → h7-anfiteatro:1102 → h7-anfiteatro:1790 |
+| `verificaStanzaPulita()` | 40-combattimento.js:463 | 16 | a1-bombe-chiavi:521 → a2-consumabili:404 → a3-stanze-speciali:574 → b6-boss:383 → b7-stanze:1853 → b4-trasformazioni:567 → d5-cambio-scena:301 → d4-stanze-teatro:1668 → d6-acquedotto:373 → h3-gregorio:453 → h2-memorie:210 → h5-sottopalco:871 → h6-casertavecchia:178 → h7-anfiteatro:232 → h7-anfiteatro:1094 → h7-anfiteatro:1779 |
+| `interagisciStanza()` | 40-combattimento.js:523 | 15 | a1-bombe-chiavi:530 → a2-consumabili:455 → a3-stanze-speciali:592 → b7-stanze:1870 → b8-finali-diario:1870 → d4-stanze-teatro:1679 → d6-acquedotto:353 → h2-memorie:669 → h4-ritorno-piazza:408 → h1-agnese-taddeo:630 → h5-sottopalco:886 → h6-casertavecchia:151 → h6-casertavecchia:671 → h7-anfiteatro:212 → h7-anfiteatro:2104 |
+| `disegnaHUDPixelArt()` | 60-resa.js:1636 | 14 | a2-consumabili:518 → a3-stanze-speciali:817 → b6-boss:1349 → b7-stanze:2506 → b4-trasformazioni:1331 → b1-pubblico:2071 → d5-cambio-scena:604 → d1-burattinaio:783 → d4-stanze-teatro:1699 → d6-acquedotto:807 → h2-memorie:224 → h1-agnese-taddeo:683 → h5-sottopalco:911 → h7-anfiteatro:1418 |
+| `generaMappaPiano()` | 30-mappa.js:41 | 13 | a1-bombe-chiavi:485 → a3-stanze-speciali:561 → b7-stanze:1129 → d5-cambio-scena:141 → d4-stanze-teatro:1645 → d6-acquedotto:877 → d6-acquedotto:2051 → h3-gregorio:244 → h1-agnese-taddeo:608 → h6-casertavecchia:1109 → h6-casertavecchia:1692 → h7-anfiteatro:991 → h7-anfiteatro:2111 |
+| `avviaPiano()` | 30-mappa.js:553 | 10 | a1-bombe-chiavi:490 → a7-registro-bilancio:264 → b1-pubblico:2077 → d6-acquedotto:1792 → e6-assistenza:309 → h2-memorie:661 → h5-sottopalco:987 → h6-casertavecchia:451 → h7-anfiteatro:570 → h7-anfiteatro:2172 |
+| `nuovaRun()` | 20-stato.js:278 | 10 | a2-consumabili:508 → a6-progressione:333 → a7-registro-bilancio:257 → b8-finali-diario:1845 → c1-partenza-segreta:1092 → d6-acquedotto:1781 → h5-sottopalco:990 → h6-casertavecchia:443 → h7-anfiteatro:559 → h7-anfiteatro:2178 |
+| `componiPaginaB8()` | b8-finali-diario.js:968 | 9 | c1-partenza-segreta:1163 → d6-acquedotto:1833 → h3-gregorio:766 → h2-memorie:253 → h1-agnese-taddeo:692 → h6-casertavecchia:488 → h6-casertavecchia:1779 → h7-anfiteatro:606 → h7-anfiteatro:2140 |
+| `danneggiaNemico()` | 40-combattimento.js:392 | 8 | b4-trasformazioni:440 → b5-oggetti:993 → b2-ribalta:1751 → d3-registro-scena:880 → h3-gregorio:551 → h6-casertavecchia:761 → h7-anfiteatro:934 → h7-anfiteatro:1748 |
+| `disegnaBossPittorico()` | 10-sprite.js:1664 | 8 | b6-boss:1340 → d7-rifiniture:58 → d1-burattinaio:719 → d6-acquedotto:1768 → h3-gregorio:746 → h5-sottopalco:967 → h6-casertavecchia:1615 → h7-anfiteatro:1898 |
+| `popolaStanza()` | 30-mappa.js:252 | 8 | a2-consumabili:430 → b6-boss:351 → b5-oggetti:1594 → d7-rifiniture:314 → d6-acquedotto:1059 → h6-casertavecchia:745 → h7-anfiteatro:954 → h7-anfiteatro:1629 |
 | `t4Gancio()` | 80-ciclo.js:90 | 8 | a6-progressione:313 → a7-registro-bilancio:350 → b8-finali-diario:1814 → b2-ribalta:1726 → c1-partenza-segreta:1099 → d3-registro-scena:901 → e6-assistenza:321 → h4-ritorno-piazza:364 |
-| `avviaPiano()` | 30-mappa.js:553 | 7 | a1-bombe-chiavi:490 → a7-registro-bilancio:264 → b1-pubblico:2077 → d6-acquedotto:1792 → e6-assistenza:309 → h2-memorie:660 → h5-sottopalco:987 |
 | `disegnaFrame()` | 60-resa.js:1114 | 7 | a6-progressione:511 → b2-ribalta:1676 → b1-pubblico:2099 → d3-registro-scena:917 → d1-burattinaio:733 → e6-assistenza:451 → e4-prestazioni:95 |
-| `nuovaRun()` | 20-stato.js:278 | 7 | a2-consumabili:508 → a6-progressione:333 → a7-registro-bilancio:257 → b8-finali-diario:1845 → c1-partenza-segreta:1092 → d6-acquedotto:1781 → h5-sottopalco:990 |
-| `disegnaBossPittorico()` | 10-sprite.js:1664 | 6 | b6-boss:1340 → d7-rifiniture:58 → d1-burattinaio:719 → d6-acquedotto:1768 → h3-gregorio:746 → h5-sottopalco:967 |
+| `subisciColpoGiocatore()` | 40-combattimento.js:598 | 7 | a7-registro-bilancio:292 → b4-trasformazioni:552 → b5-oggetti:1071 → b1-pubblico:2052 → d5-cambio-scena:362 → d3-registro-scena:887 → h7-anfiteatro:2013 |
+| `disegnaNemicoPittorico()` | 10-sprite.js:1056 | 6 | d7-rifiniture:304 → d4-stanze-teatro:1635 → d6-acquedotto:1442 → h5-sottopalco:957 → h6-casertavecchia:1053 → h7-anfiteatro:1328 |
 | `ricalcolaStatistiche()` | 20-stato.js:120 | 6 | a2-consumabili:373 → b4-trasformazioni:416 → b5-oggetti:739 → d2-personaggi:336 → h4-ritorno-piazza:428 → h1-agnese-taddeo:661 |
-| `subisciColpoGiocatore()` | 40-combattimento.js:598 | 6 | a7-registro-bilancio:292 → b4-trasformazioni:552 → b5-oggetti:1071 → b1-pubblico:2052 → d5-cambio-scena:362 → d3-registro-scena:887 |
 | `clickDiarioD()` | 50-oggetti.js:356 | 5 | a2-consumabili:596 → b4-trasformazioni:1371 → b5-oggetti:2073 → b8-finali-diario:1933 → d7-rifiniture:400 |
-| `componiPaginaB8()` | b8-finali-diario.js:968 | 5 | c1-partenza-segreta:1163 → d6-acquedotto:1833 → h3-gregorio:766 → h2-memorie:253 → h1-agnese-taddeo:692 |
-| `danneggiaNemico()` | 40-combattimento.js:392 | 5 | b4-trasformazioni:440 → b5-oggetti:993 → b2-ribalta:1751 → d3-registro-scena:880 → h3-gregorio:551 |
 | `disegnaDiarioD()` | 60-resa.js:289 | 5 | a2-consumabili:603 → b4-trasformazioni:1466 → b5-oggetti:2057 → b8-finali-diario:1940 → d7-rifiniture:381 |
 | `eseguiAttacco4Direzioni()` | 40-combattimento.js:7 | 5 | t3-economia-salvataggi:263 → b4-trasformazioni:511 → b5-oggetti:888 → d2-personaggi:289 → e6-assistenza:532 |
-| `popolaStanza()` | 30-mappa.js:252 | 5 | a2-consumabili:430 → b6-boss:351 → b5-oggetti:1594 → d7-rifiniture:314 → d6-acquedotto:1059 |
-| `disegnaNemicoPittorico()` | 10-sprite.js:1056 | 4 | d7-rifiniture:304 → d4-stanze-teatro:1635 → d6-acquedotto:1442 → h5-sottopalco:957 |
+| `disegnaAtmosferaQuartiere()` | 60-resa.js:631 | 4 | d1-burattinaio:713 → d6-acquedotto:691 → h6-casertavecchia:395 → h7-anfiteatro:509 |
+| `getRaccontoAtto()` | 60-resa.js:194 | 4 | b8-finali-diario:1899 → d6-acquedotto:466 → h6-casertavecchia:246 → h7-anfiteatro:298 |
+| `luceLuogoB2()` | b2-ribalta.js:290 | 4 | d6-acquedotto:2066 → h5-sottopalco:942 → h6-casertavecchia:432 → h7-anfiteatro:549 |
 | `tastoDiarioD()` | 50-oggetti.js:344 | 4 | a2-consumabili:585 → b4-trasformazioni:1355 → b5-oggetti:2064 → b8-finali-diario:1924 |
 | `disegnaFerruccioPittorico()` | 10-sprite.js:105 | 3 | b4-trasformazioni:1197 → b2-ribalta:1783 → d2-personaggi:560 |
 | `disegnaMenuPausa()` | 60-resa.js:1984 | 3 | a7-registro-bilancio:561 → b3-comandi-opzioni:568 → b8-finali-diario:1907 |
@@ -35,18 +38,21 @@ Prima di avvolgere una di queste funzioni, o di cambiarne il comportamento, guar
 | `drawPillLabel()` | 10-sprite.js:37 | 3 | b3-comandi-opzioni:642 → b2-ribalta:1689 → d7-rifiniture:371 |
 | `drawTextFit()` | 10-sprite.js:10 | 3 | b3-comandi-opzioni:633 → b9-immagini:1103 → d7-rifiniture:369 |
 | `gestisciClickMenuPausa()` | 60-resa.js:1939 | 3 | a7-registro-bilancio:580 → b8-finali-diario:1914 → c2-tocco:902 |
+| `getFloorTileCanvas()` | 60-resa.js:381 | 3 | d6-acquedotto:598 → h6-casertavecchia:378 → h7-anfiteatro:490 |
+| `getQuartierePiano()` | 00-config.js:288 | 3 | d6-acquedotto:459 → h6-casertavecchia:239 → h7-anfiteatro:291 |
+| `iaNemicoD6()` | d6-acquedotto.js:1128 | 3 | h5-sottopalco:948 → h6-casertavecchia:865 → h7-anfiteatro:917 |
+| `massaNemico()` | 40-combattimento.js:287 | 3 | d6-acquedotto:1067 → h6-casertavecchia:753 → h7-anfiteatro:971 |
 | `righeB3()` | b3-comandi-opzioni.js:329 | 3 | d7-rifiniture:415 → e6-assistenza:632 → e4-prestazioni:120 |
 | `sparaProiettiliDirezione()` | 40-combattimento.js:32 | 3 | b5-oggetti:880 → d2-personaggi:312 → e6-assistenza:553 |
-| `disegnaAtmosferaQuartiere()` | 60-resa.js:631 | 2 | d1-burattinaio:713 → d6-acquedotto:691 |
 | `disegnaFamigliOrbitaliD()` | 60-resa.js:246 | 2 | b5-oggetti:1940 → b2-ribalta:1716 |
 | `disegnaMacchie()` | 60-resa.js:329 | 2 | b5-oggetti:1882 → d7-rifiniture:50 |
 | `disegnaMenuSelezionePersonaggio()` | 60-resa.js:910 | 2 | a6-progressione:454 → b3-comandi-opzioni:578 |
+| `disegnaOstacoloB9()` | b9-immagini.js:676 | 2 | h6-casertavecchia:1195 → h7-anfiteatro:1504 |
 | `disegnaPannelloSviluppatoreB()` | 60-resa.js:105 | 2 | b5-oggetti:2125 → c1-partenza-segreta:1137 |
 | `dopoRaccoltaD()` | 50-oggetti.js:365 | 2 | a7-registro-bilancio:319 → b5-oggetti:1287 |
-| `getRaccontoAtto()` | 60-resa.js:194 | 2 | b8-finali-diario:1899 → d6-acquedotto:466 |
 | `impostaOpzioneB3()` | b3-comandi-opzioni.js:927 | 2 | e6-assistenza:647 → e4-prestazioni:111 |
 | `loop()` | 80-ciclo.js:18 | 2 | b3-comandi-opzioni:1204 → c2-tocco:875 |
-| `luceLuogoB2()` | b2-ribalta.js:290 | 2 | d6-acquedotto:2066 → h5-sottopalco:942 |
+| `noteVoceE6()` | e6-assistenza.js:749 | 2 | h6-casertavecchia:478 → h7-anfiteatro:596 |
 | `oggettoSbloccatoA6()` | a6-progressione.js:180 | 2 | b5-oggetti:593 → d3-registro-scena:909 |
 | `pagaSangueA3()` | a3-stanze-speciali.js:198 | 2 | a7-registro-bilancio:307 → d4-stanze-teatro:1600 |
 | `scuoti()` | 40-combattimento.js:254 | 2 | b3-comandi-opzioni:688 → c2-tocco:884 |
@@ -83,13 +89,9 @@ Prima di avvolgere una di queste funzioni, o di cambiarne il comportamento, guar
 | `esplodiD()` | 40-combattimento.js:133 | 1 | b5-oggetti:934 |
 | `estraiOggettoPatto()` | 50-oggetti.js:237 | 1 | b5-oggetti:632 |
 | `estraiOggettoSegreto()` | 50-oggetti.js:244 | 1 | b5-oggetti:640 |
-| `getFloorTileCanvas()` | 60-resa.js:381 | 1 | d6-acquedotto:598 |
-| `getQuartierePiano()` | 00-config.js:288 | 1 | d6-acquedotto:459 |
-| `iaNemicoD6()` | d6-acquedotto.js:1128 | 1 | h5-sottopalco:948 |
 | `inizializzaPoolRunB()` | 50-oggetti.js:27 | 1 | a6-progressione:340 |
 | `levaToccoC2()` | c2-tocco.js:308 | 1 | d2-personaggi:174 |
 | `maledizioneD()` | 40-combattimento.js:221 | 1 | b5-oggetti:1850 |
-| `massaNemico()` | 40-combattimento.js:287 | 1 | d6-acquedotto:1067 |
 | `mostraBanner()` | 20-stato.js:237 | 1 | d4-stanze-teatro:1594 |
 | `offsetScossa()` | 40-combattimento.js:267 | 1 | b3-comandi-opzioni:662 |
 | `parteCoronaB4()` | b4-trasformazioni.js:788 | 1 | b9-immagini:915 |
@@ -115,9 +117,10 @@ errore: l'aggancio smette di funzionare in silenzio.
 | Funzione | Definita in | Chi la chiama se esiste |
 |---|---|---|
 | `caricaSpriteTeatro()` | 10-sprite.js:894 | t2-sprite:100 |
-| `disegnaCellaTeatro()` | 10-sprite.js:933 | d7-rifiniture:276, h3-gregorio:628, h2-memorie:361 |
-| `drawPillLabel()` | 10-sprite.js:37 | h2-memorie:641, h5-sottopalco:455 |
+| `disegnaCellaTeatro()` | 10-sprite.js:933 | d7-rifiniture:276, h3-gregorio:628, h2-memorie:361, h6-casertavecchia:1546, h7-anfiteatro:1825 |
+| `drawPillLabel()` | 10-sprite.js:37 | h2-memorie:642, h5-sottopalco:455 |
 | `getSpriteTeatro()` | 10-sprite.js:915 | d1-burattinaio:883, h1-agnese-taddeo:550 |
+| `getNumeroNotte()` | 20-stato.js:25 | h7-anfiteatro:1773 |
 | `mostraBanner()` | 20-stato.js:237 | d3-registro-scena:399, d2-personaggi:350, h2-memorie:183 |
 | `colpisciMuroSegretoC()` | 30-mappa.js:7 | d2-personaggi:269 |
 | `puntoLontanoDallePorteC()` | 30-mappa.js:220 | h3-gregorio:319 |
@@ -125,7 +128,7 @@ errore: l'aggancio smette di funzionare in silenzio.
 | `conosciutiD()` | 50-oggetti.js:277 | d3-registro-scena:499 |
 | `trovaOggettoB()` | 50-oggetti.js:8 | e6-assistenza:801 |
 | `aggiungiBombe()` | a1-bombe-chiavi.js:95 | b5-oggetti:1145, c1-partenza-segreta:1069 |
-| `aggiungiChiavi()` | a1-bombe-chiavi.js:101 | b5-oggetti:1146, d6-acquedotto:342, h3-gregorio:507 |
+| `aggiungiChiavi()` | a1-bombe-chiavi.js:101 | b5-oggetti:1146, d6-acquedotto:342, h3-gregorio:507, h6-casertavecchia:1734 |
 | `disegnaBombaAccesaA1()` | a1-bombe-chiavi.js:438 | c1-partenza-segreta:377, d4-stanze-teatro:622 |
 | `disegnaForziereA1()` | a1-bombe-chiavi.js:399 | d4-stanze-teatro:621 |
 | `spargiPezzoA1()` | a1-bombe-chiavi.js:126 | b5-oggetti:988 |
@@ -138,6 +141,7 @@ errore: l'aggancio smette di funzionare in silenzio.
 | `salvaVoceA7()` | a7-registro-bilancio.js:98 | b8-finali-diario:1602, h4-ritorno-piazza:234 |
 | `bordoDockB1()` | b1-pubblico.js:368 | b9-immagini:465 |
 | `invalidaTeleB1()` | b1-pubblico.js:786 | b9-immagini:264 |
+| `lanciaPremioB1()` | b1-pubblico.js:524 | h7-anfiteatro:1054 |
 | `reazionePubblicoB1()` | b1-pubblico.js:262 | d5-cambio-scena:270, d4-stanze-teatro:821 |
 | `adattaTestoB3()` | b3-comandi-opzioni.js:602 | b9-immagini:1112 |
 | `filtroIngressiB3()` | b3-comandi-opzioni.js:415 | 70-input:12 |
@@ -152,6 +156,7 @@ errore: l'aggancio smette di funzionare in silenzio.
 | `disegnaOstacoloB7()` | b7-stanze.js:2132 | 60-resa:1170 |
 | `gruppoNemiciB7()` | b7-stanze.js:1022 | 30-mappa:457 |
 | `quartiereB7()` | b7-stanze.js:947 | d5-cambio-scena:478 |
+| `timbroB7()` | b7-stanze.js:1941 | h7-anfiteatro:1503 |
 | `variantiB7()` | b7-stanze.js:752 | d5-cambio-scena:226 |
 | `accodaDidB8()` | b8-finali-diario.js:859 | d1-burattinaio:209 |
 | `notaDidB8()` | b8-finali-diario.js:891 | h2-memorie:182 |
@@ -177,16 +182,22 @@ errore: l'aggancio smette di funzionare in silenzio.
 | `temaMusicaD4()` | d4-stanze-teatro.js:1058 | a8-musica:153 |
 | `disegnaBotolaD5()` | d5-cambio-scena.js:410 | h5-sottopalco:353 |
 | `listaBotoleD5()` | d5-cambio-scena.js:160 | h5-sottopalco:129 |
-| `acquedottoAttivoD6()` | d6-acquedotto.js:259 | h2-memorie:560 |
+| `acquedottoAttivoD6()` | d6-acquedotto.js:259 | h2-memorie:560, h6-casertavecchia:174, h7-anfiteatro:2115 |
 | `iaNemicoD6()` | d6-acquedotto.js:1128 | 40-combattimento:1339 |
 | `aloneProiettileD7()` | d7-rifiniture.js:99 | 60-resa:1573 |
 | `lucianaInScenaD7()` | d7-rifiniture.js:33 | 60-resa:1389 |
 | `passoRagnoSetaD7()` | d7-rifiniture.js:156 | 40-combattimento:1382 |
 | `testoToccoD7()` | d7-rifiniture.js:360 | t3-economia-salvataggi:436 |
+| `flagH1()` | h1-agnese-taddeo.js:242 | h6-casertavecchia:1677 |
 | `assuntaInPiazzaH2()` | h2-memorie.js:314 | t4-hub-storia:796 |
 | `battuteAssuntaH2()` | h2-memorie.js:324 | t4-hub-storia:755 |
+| `didascaliaH2()` | h2-memorie.js:181 | h6-casertavecchia:1508, h7-anfiteatro:1772 |
 | `disegnaAssuntaH2()` | h2-memorie.js:354 | t4-hub-storia:1309 |
+| `liberaAnimeH2()` | h2-memorie.js:126 | h6-casertavecchia:1501, h7-anfiteatro:1768 |
+| `memoriaH2()` | h2-memorie.js:97 | h6-casertavecchia:1503 |
+| `notteH2()` | h2-memorie.js:114 | h6-casertavecchia:1506 |
 | `rivelazioneRegistroH2()` | h2-memorie.js:236 | d3-registro-scena:750 |
+| `scriviMemoriaH2()` | h2-memorie.js:110 | h6-casertavecchia:1503 |
 
 ## Cose che la mappa non dice
 

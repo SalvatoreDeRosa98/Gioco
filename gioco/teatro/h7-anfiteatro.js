@@ -69,7 +69,7 @@ const TESTI_H7 = Object.freeze({
   atto: (piano, stanze) => `ATTO III · ANFITEATRO CAMPANO (PIANO ${piano} · ${stanze} STANZE + 1 SEGRETA)`,
   cartiglioLuogo: 'ANFITEATRO CAMPANO',
   cartiglioCondotto: '▼ SCENDI ALL\'ANFITEATRO [E] ▼',
-  bannerCondotto: '· In basso a sinistra un CONDOTTO ASCIUTTO scende verso i sotterranei dell\'arena.',
+  bannerCondotto: '· In basso a sinistra il CONDOTTO: l\'Anfiteatro.',
   pergamena: Object.freeze(['Percorso', 'per l\'Anfiteatro Campano']),
   diario: Object.freeze([
     'Dal condotto asciutto sono sceso sotto l\'arena di Capua. Sulle gradinate c\'erano le ombre, e mi guardavano.',
@@ -2160,8 +2160,12 @@ function intonaH7() {
     if (!MUSICA.temi[MUSICA_H7.id] && !Object.isFrozen(MUSICA.temi)) MUSICA.temi[MUSICA_H7.id] = MUSICA_H7.tema;
     if (!MUSICA.temi[MUSICA_H7.id] || Object.isFrozen(MUSICA.temaPerPiano)) return;
     const k = ANFITEATRO_H7.pianoLuogo;
-    if (h7.temaLeucio === undefined) h7.temaLeucio = MUSICA.temaPerPiano[k];
-    MUSICA.temaPerPiano[k] = anfiteatroAttivoH7() ? MUSICA_H7.id : h7.temaLeucio;
+    // Il piano 3 ha tre luoghi (San Leucio, Casertavecchia di h6, l'Anfiteatro): qui si tocca il tema solo quando
+    // è il proprio, altrimenti si cancellava quello di Casertavecchia.
+    if (h7.temaLeucio === undefined && !statoRun.zonaP3) h7.temaLeucio = MUSICA.temaPerPiano[k];
+    if (anfiteatroAttivoH7()) {
+      if (MUSICA.temaPerPiano[k] !== MUSICA_H7.id) { if (h7.temaLeucio === undefined) h7.temaLeucio = MUSICA.temaPerPiano[k]; MUSICA.temaPerPiano[k] = MUSICA_H7.id; }
+    } else if (MUSICA.temaPerPiano[k] === MUSICA_H7.id) MUSICA.temaPerPiano[k] = h7.temaLeucio;
   } catch (_) { /* senza musica si gioca lo stesso */ }
 }
 intonaH7();

@@ -47,7 +47,7 @@ const TESTI_H6 = Object.freeze({
   atto: (piano, stanze) => `ATTO III · CASERTAVECCHIA (PIANO ${piano} · ${stanze} STANZE + 1 SEGRETA)`,
   cartiglioLuogo: 'CASERTAVECCHIA',
   cartiglioCancello: '▲ SALI A CASERTAVECCHIA [E] ▲',
-  bannerCancello: '· A sinistra un CANCELLETTO con la campanella: la mulattiera sale a Casertavecchia.',
+  bannerCancello: '· A sinistra il CANCELLETTO: Casertavecchia.',
   salita: 'Il cancelletto cigola, la campanella suona una volta. La mulattiera sale verso il borgo.',
   pergamena: Object.freeze(['Percorso', 'per Casertavecchia']),
   diario: Object.freeze([

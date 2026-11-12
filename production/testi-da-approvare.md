@@ -1151,3 +1151,127 @@ Dove: `gioco/teatro/h5-sottopalco.js`
   <sub>TESTI_H5.nomi.sacco</sub>
 - una quinta  
   <sub>TESTI_H5.nomi.quinta</sub>
+
+## Casertavecchia, il Campanaro e Taddeo sul sagrato (30)
+
+Dove: `gioco/teatro/h6-casertavecchia.js`
+
+- ATTO III · CASERTAVECCHIA (PIANO N · N STANZE + 1 SEGRETA)  
+  <sub>TESTI_H6.atto(N)</sub>
+- CASERTAVECCHIA  
+  <sub>TESTI_H6.cartiglioLuogo</sub>
+- ▲ SALI A CASERTAVECCHIA [E] ▲  
+  <sub>TESTI_H6.cartiglioCancello</sub>
+- · A sinistra il CANCELLETTO: Casertavecchia.  
+  <sub>TESTI_H6.bannerCancello</sub>
+- Il cancelletto cigola, la campanella suona una volta. La mulattiera sale verso il borgo.  
+  <sub>TESTI_H6.salita</sub>
+- Percorso  
+  <sub>TESTI_H6.pergamena[0]</sub>
+- per Casertavecchia  
+  <sub>TESTI_H6.pergamena[1]</sub>
+- Stanotte non sono sceso nella botola: ho preso la mulattiera, fino al borgo vecchio sul colle.  
+  <sub>TESTI_H6.diario[0]</sub>
+- Sono salito a Casertavecchia. Lassù le campane suonano da sole, e la pietra si ricorda di tutto.  
+  <sub>TESTI_H6.diario[1]</sub>
+- Niente San Leucio, stanotte: le vie di Casertavecchia, il duomo, e quelle campane che non stanno mai zitte.  
+  <sub>TESTI_H6.diario[2]</sub>
+- «Ogni rintocco è una parola che non hai detto.»  
+  <sub>TESTI_BOSS_H6.presentazione</sub>
+- Il Campanaro lascia andare la corda. Le campane tacciono: per la prima volta il borgo dorme davvero.  
+  <sub>TESTI_BOSS_H6.sconfitta</sub>
+- Le campane si staccano dalla graticcia e cadono sul sagrato!  
+  <sub>TESTI_BOSS_H6.fase2</sub>
+- Il Campanaro era il sagrestano del duomo. Suonava a morto per chi se n'era andato senza chiedere perdono, e teneva per sé le parole che nessuno aveva detto. Il Velo gli ha preso il volto: gli ha lasciato solo le corde.  
+  <sub>TESTI_BOSS_H6.rivelazione</sub>
+- Taddeo  
+  <sub>TESTI_SAGRATO_H6.perdonato[0][0]</sub>
+- Ferruccio. Sei salito fin quassù.  
+  <sub>TESTI_SAGRATO_H6.perdonato[0][1]</sub>
+- A San Leucio mi hai lasciato andare. Non me lo meritavo, e lo sapevamo tutti e due.  
+  <sub>TESTI_SAGRATO_H6.perdonato[1][1]</sub>
+- Queste campane suonano per le parole che uno non ha detto. Io una ce l'ho in gola da vent'anni: perdonami.  
+  <sub>TESTI_SAGRATO_H6.perdonato[2][1]</sub>
+- Ferruccio non risponde. Gli posa una mano sulla spalla.  
+  <sub>TESTI_SAGRATO_H6.perdonato[3][1]</sub>
+- Il Campanaro è là dietro. Prendi questa, è della sagrestia. E tieni dritta la testa: io la mia l'ho tenuta bassa troppo a lungo.  
+  <sub>TESTI_SAGRATO_H6.perdonato[4][1]</sub>
+- Ancora tu.  
+  <sub>TESTI_SAGRATO_H6.accusato[0][1]</sub>
+- A San Leucio mi hai guardato come si guarda un traditore. E allora traditore sia.  
+  <sub>TESTI_SAGRATO_H6.accusato[1][1]</sub>
+- Il Campanaro sa che stai arrivando. Gliel'ho detto io.  
+  <sub>TESTI_SAGRATO_H6.accusato[2][1]</sub>
+- Taddeo tira la corda una volta sola, e se ne va per il vicolo senza voltarsi.  
+  <sub>TESTI_SAGRATO_H6.accusato[3][1]</sub>
+- Una guardia, di spalle sul parapetto del sagrato, guarda giù verso la valle. Non si volta.  
+  <sub>TESTI_SAGRATO_H6.diSpalle</sub>
+- Taddeo ti lascia NaN Maschera e N chiave della sagrestia.  
+  <sub>TESTI_SAGRATO_H6.bannerAiuto(N)</sub>
+- Il Campanaro ti aspetta: la corda è già tesa.  
+  <sub>TESTI_SAGRATO_H6.bannerTradimento</sub>
+- ★ IL DONO DELLE CAMPANE  
+  <sub>TESTI_SAGRATO_H6.premio</sub>
+- · Dove pendeva la campana grande è rimasto un DONO DELLE CAMPANE.  
+  <sub>TESTI_SAGRATO_H6.bannerPremio</sub>
+- Al duomo il Campanaro ha lasciato andare la corda. Ho sentito il silenzio, dopo: pesava meno di tutte quelle parole.  
+  <sub>TESTI_SAGRATO_H6.diario</sub>
+
+## Anfiteatro Campano, il Giudice dell'Arena, Agnese e il messaggio del padre (27)
+
+Dove: `gioco/teatro/h7-anfiteatro.js`
+
+- ATTO III · ANFITEATRO CAMPANO (PIANO N · N STANZE + 1 SEGRETA)  
+  <sub>TESTI_H7.atto(N)</sub>
+- ANFITEATRO CAMPANO  
+  <sub>TESTI_H7.cartiglioLuogo</sub>
+- ▼ SCENDI ALL'ANFITEATRO [E] ▼  
+  <sub>TESTI_H7.cartiglioCondotto</sub>
+- · In basso a sinistra il CONDOTTO: l'Anfiteatro.  
+  <sub>TESTI_H7.bannerCondotto</sub>
+- Percorso  
+  <sub>TESTI_H7.pergamena[0]</sub>
+- per l'Anfiteatro Campano  
+  <sub>TESTI_H7.pergamena[1]</sub>
+- Dal condotto asciutto sono sceso sotto l'arena di Capua. Sulle gradinate c'erano le ombre, e mi guardavano.  
+  <sub>TESTI_H7.diario[0]</sub>
+- Stanotte niente San Leucio: l'Anfiteatro. La sabbia era chiara, e nessuno applaudiva.  
+  <sub>TESTI_H7.diario[1]</sub>
+- Sono passato per l'Arena dei Dimenticati. Elmi, scudi, lance: tutti fermi, tutti a guardare me.  
+  <sub>TESTI_H7.diario[2]</sub>
+- ⚔ GIURAMENTO: le grate cadono sulle uscite. Dai montacarichi salgono i combattenti.  
+  <sub>TESTI_NEMICI_H7.giuramento</sub>
+- ⚔ Ondata N di N: i montacarichi cigolano.  
+  <sub>TESTI_NEMICI_H7.ondata(N)</sub>
+- ⚔ Giuramento mantenuto: le grate si alzano.  
+  <sub>TESTI_NEMICI_H7.fatto</sub>
+- ★ IL FAVORE DELLE GRADINATE: nessuna Maschera persa. Le ombre si alzano in piedi e lanciano qualcosa.  
+  <sub>TESTI_NEMICI_H7.favore</sub>
+- Preso nella rete! Cammini piano finché non te la scrolli di dosso.  
+  <sub>TESTI_NEMICI_H7.irretito</sub>
+- «Ogni giuramento ha il suo giudice. Il tuo, burattino, sono io.»  
+  <sub>TESTI_GIUDICE_H7.presentazione</sub>
+- Il Giudice dell'Arena scende dal podio per l'ultima volta. Le gradinate tacciono.  
+  <sub>TESTI_GIUDICE_H7.sconfitta</sub>
+- 👍 Pollice in su: il Giudice scende nell'arena.  
+  <sub>TESTI_GIUDICE_H7.pollice.su</sub>
+- 👎 Pollice verso: dalle gradinate scendono i combattenti.  
+  <sub>TESTI_GIUDICE_H7.pollice.verso</sub>
+- Dalla toga del Giudice escono anime di ogni epoca. Avevano giurato tutte alla stessa magia: quella di N non è nata a Caserta. Qualcuno gliel'ha tramandata, di mano in mano, da secoli.  
+  <sub>TESTI_GIUDICE_H7.rivelazione(N)</sub>
+- Dalle gradinate un filo rosso si tende davanti a Ferruccio: il colpo si ferma sul filo. Agnese, lassù, non dice niente.  
+  <sub>TESTI_RICORDI_H7.filo</sub>
+- ★ LA TESSERA DEL GLADIATORE  
+  <sub>TESTI_RICORDI_H7.tessera</sub>
+- Una tessera d'osso, con un nome inciso. Nessuno se lo ricorda più. Ferruccio la mette in tasca.  
+  <sub>TESTI_RICORDI_H7.tesseraPresa</sub>
+- Sotto l'arena ho trovato una tessera d'osso con un nome inciso. Nessuno se lo ricordava più. Adesso me lo ricordo io.  
+  <sub>TESTI_RICORDI_H7.diarioTessera</sub>
+- [E] Leggi  
+  <sub>TESTI_RICORDI_H7.nicchia</sub>
+- «Ferruccio, se trovi queste righe, non cercare chi mi ha fatto torto. Cerca che cosa è successo.  
+  <sub>TESTI_RICORDI_H7.messaggio[0]</sub>
+- Chi cerca vendetta trova un nome. Chi cerca la verità trova tutta la storia, pure la parte che non gli piace. — G. F.»  
+  <sub>TESTI_RICORDI_H7.messaggio[1]</sub>
+- In una nicchia dell'Acquedotto c'era un foglio di mio padre. Dice di cercare che cosa è successo, non chi.  
+  <sub>TESTI_RICORDI_H7.diarioMessaggio</sub>

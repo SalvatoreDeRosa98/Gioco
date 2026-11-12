@@ -48,6 +48,8 @@ const PARTI = [
   { titolo: 'Ritorno in piazza e ferri di Gaetano', dove: 'gioco/teatro/h4-ritorno-piazza.js', tabelle: ['TESTI_H4'] },
   { titolo: 'Il Sottopalco e il Macchinista', dove: 'gioco/teatro/h5-sottopalco.js', tabelle: ['TESTI_H5'] },
   { titolo: 'Casertavecchia, il Campanaro e Taddeo sul sagrato', dove: 'gioco/teatro/h6-casertavecchia.js', tabelle: ['TESTI_H6', 'TESTI_BOSS_H6', 'TESTI_SAGRATO_H6'] },
+  { titolo: 'Anfiteatro Campano, il Giudice dell\'Arena, Agnese e il messaggio del padre', dove: 'gioco/teatro/h7-anfiteatro.js',
+    tabelle: ['TESTI_H7', 'TESTI_NEMICI_H7', 'TESTI_GIUDICE_H7', 'TESTI_RICORDI_H7'] },
 ];
 
 (async () => {
