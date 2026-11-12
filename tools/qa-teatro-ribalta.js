@@ -121,7 +121,19 @@ if (pref.endsWith('/')) fs.mkdirSync(pref, { recursive: true });
   // 4. morte di un nemico: fili spezzati, pezzi che cadono e restano
   const morte = await p.evaluate(() => {
     const I = window.__teatro.interni; const st = I.statoRun.stanzaCorrente;
-    const n = st.nemici.find((q) => q.hp > 0 && q.tipo !== 'bomba_ferma' && q.tipo !== 'maschera');
+    // Una sola morte deve finire nel conteggio dei crolli: si tolgono dalla stanza i Bozzi Esplosivi (scoppiano
+    // da soli e abbattono i vicini: a macchina carica, nei 170 ms dopo, i crolli diventavano due) e gli altri
+    // nemici restano vivi per tutta la prova.
+    const bozzo = (q) => [q.comportamento, q.patternMob, q.tipo].includes('bomba_ferma');
+    st.nemici = st.nemici.filter((q) => !bozzo(q));
+    let n = st.nemici.find((q) => q.hp > 0 && q.tipo !== 'maschera');
+    for (let k = 0; !n && k < 30; k++) { // stanza di soli Bozzi o maschere: un bersaglio di prova generato
+      const finta = { id: st.id, tipo: 'normale', porte: {}, muroSegreto: null, nemici: [], ostacoli: [], oggettiATerra: [] };
+      popolaStanza(finta, 1);
+      n = finta.nemici.find((q) => q.hp > 0 && q.tipo !== 'maschera' && !bozzo(q));
+      if (n) st.nemici.push(n);
+    }
+    for (const q of st.nemici) if (q !== n && q.hp > 0) q.hp = q.maxHp = Math.max(q.maxHp || 0, 5000);
     n.x = 330; n.y = 215; I.player.x = 270; I.player.y = 215;
     danneggiaNemico(n, 99999, 1, 0);
     return { tipo: n.tipo, hp: n.hp };
@@ -132,7 +144,7 @@ if (pref.endsWith('/')) fs.mkdirSync(pref, { recursive: true });
   await p.waitForTimeout(1500);
   await p.screenshot({ path: foto('resti') });
   const resti = await stato();
-  ok('morte: i due fili si spezzano e il corpo va in pezzi', inVolo.pezzi >= 4 && inVolo.catture === 1 && (inVolo.fili === 2 || inVolo.pezziFermi < inVolo.pezzi), { morte, inVolo: { pezzi: inVolo.pezzi, fili: inVolo.fili, fermi: inVolo.pezziFermi } });
+  ok('morte: i due fili si spezzano e il corpo va in pezzi', inVolo.pezzi >= 4 && inVolo.catture === 1 && (inVolo.fili === 2 || inVolo.pezziFermi < inVolo.pezzi), { morte, inVolo: { pezzi: inVolo.pezzi, fili: inVolo.fili, fermi: inVolo.pezziFermi, catture: inVolo.catture } });
   ok('morte: i pezzi si fermano e restano a terra', resti.pezzi === inVolo.pezzi && resti.pezziFermi === resti.pezzi && resti.fili === 0, { pezzi: resti.pezzi, fermi: resti.pezziFermi });
 
   // 5. grana e vignettatura accese e spente (OPZIONI)
