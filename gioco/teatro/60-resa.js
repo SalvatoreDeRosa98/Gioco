@@ -1429,7 +1429,7 @@ function disegnaFrame(dtMs) {
     for (const n of st.nemici) {
       if (n.hp <= 0) continue;
       const airOffset = n.airZ || 0;
-      fili.push([n.x, n.y - 18 - airOffset, n.boss ? 18 : 9]);
+      if (!n.senzaFili) fili.push([n.x, n.y - 18 - airOffset, n.boss ? 18 : 9]); // (h5) le figure del Sottopalco non hanno fili
 
       if (n.boss) {
         disegnaBossPittorico(ctx, n, tick);

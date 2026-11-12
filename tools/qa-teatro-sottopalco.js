@@ -89,8 +89,44 @@ const foto = (n) => `${prefisso}-${n}.png`;
   ok('discesa: nome del luogo SOTTOPALCO', info.luogo === 'Sottopalco', info.luogo);
   ok('discesa: luce del luogo di b2', info.luce && info.luce.luce < 1, info.luce);
   ok('discesa: flag dello slot', info.flag === true && info.discese === 1, info);
-  await passi(p, 30);
+  await p.evaluate(() => { player.x = 300; player.y = 200; player.invuln = 9999; });
+  await passi(p, 80);
   await scatta('2-sotto');
+  // ---- 3. nemici del luogo ----
+  const n1 = await p.evaluate(() => { const st = statoRun.stanzaCorrente; return { pulita: st.pulita, tipi: st.nemici.map((n) => n.tipo), fili: st.nemici.every((n) => n.senzaFili) }; });
+  ok('stanza 1: marionette e topi, porte chiuse', !n1.pulita && n1.tipi.includes('marionetta_h5') && n1.tipi.includes('topo_h5') && n1.fili, n1);
+  const mossi = await p.evaluate(() => statoRun.stanzaCorrente.nemici.map((n) => n.statoH5));
+  ok('stanza 1: IA del luogo attiva', mossi.every((s) => s && s !== 'avvio'), mossi);
+  let riz = await p.evaluate(() => {
+    const st = statoRun.stanzaCorrente;
+    for (const n of st.nemici) n.hp = 0;
+    verificaStanzaPulita();
+    return { pulita: st.pulita, cadute: st.sottopalcoH5.cadute.length };
+  });
+  ok('marionette cadute: la stanza non è ancora ripulita', !riz.pulita && riz.cadute > 0, riz);
+  await passi(p, 50);
+  await scatta('2b-cadute');
+  await passi(p, 60);
+  riz = await p.evaluate(() => { const st = statoRun.stanzaCorrente; return { vive: st.nemici.filter((n) => n.hp > 0).map((n) => [n.tipo, n.rialzataH5]), pulita: st.pulita }; });
+  ok('marionette: si rialzano una volta', riz.vive.length > 0 && riz.vive.every(([t, r]) => t === 'marionetta_h5' && r), riz);
+  riz = await p.evaluate(() => { const st = statoRun.stanzaCorrente; for (const n of st.nemici) n.hp = 0; verificaStanzaPulita(); return { pulita: st.pulita }; });
+  ok('seconda caduta: stanza ripulita', riz.pulita, riz);
+  await p.evaluate(() => { player.x = ARENA.x2 - 3; player.y = 188; });
+  await passi(p, 3);
+  const st2 = await p.evaluate(() => ({ id: statoRun.stanzaCorrente.id, pesi: statoRun.stanzaCorrente.sottopalcoH5.pesi.length }));
+  ok('porta est: stanza 2 con il contrappeso', st2.id === 'h5-sotto-2' && st2.pesi === 1, st2);
+  const colpo = await p.evaluate(async () => {
+    const w = statoRun.stanzaCorrente.sottopalcoH5.pesi[0];
+    for (const n of statoRun.stanzaCorrente.nemici) n.hp = 0;
+    player.invuln = 0; const hp0 = statoRun.hpHalf;
+    // Ferruccio sotto il punto più basso del dondolio
+    player.x = w.x; player.y = w.y;
+    return { hp0, x: w.x };
+  });
+  let preso = false;
+  for (let k = 0; k < 30 && !preso; k++) { await passi(p, 10); preso = await p.evaluate((h0) => statoRun.hpHalf < h0, colpo.hp0); }
+  ok('contrappeso: colpisce chi sta sotto quando passa basso', preso, colpo);
+  await p.evaluate(() => { statoRun.hpHalf = statoRun.maxHpHalf; player.invuln = 9999; });
   // ---- 5. fino in fondo e scala ----
   await p.evaluate(() => {
     const m = statoRun.mappa;
