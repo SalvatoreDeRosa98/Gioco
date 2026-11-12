@@ -300,7 +300,7 @@ const foto = (n) => `${prefisso}-${n}.png`;
   await p.evaluate(() => { const R = window.__teatro.interni.statoRun; entraInStanza(R.mappa.stanze.find((s) => s.tipo === 'ingresso'), 'S'); });
   await aspetta(p, 200);
   await scatta('prove-minimappa');
-  ok('H. tre su tre con Taddeo e due pagine', await (async () => { await presa(2); await p.evaluate((g) => { const P = window.__teatro.interni.player; P.x = g.x; P.y = g.y; }, pp); await passi(p, 2); return (await p.evaluate(() => window.__teatro.interni.gregorioH3.prove.n)) === 3; })());
+  ok('H. tre su tre con Taddeo e due pagine', await (async () => { await presa(2); await passi(p, 2); /* la posizione è quella della pagina di QUESTO piano (prima si usava quella del piano 1: passava una volta su due) */ await p.evaluate(() => { const I = window.__teatro.interni; const g = I.statoRun.stanzaCorrente.paginaH3; I.player.x = g.x; I.player.y = g.y; }); await passi(p, 2); return (await p.evaluate(() => window.__teatro.interni.gregorioH3.prove.n)) === 3; })());
   const e6 = await p.evaluate(() => ({ note: noteVoceE6({}), snap: istantaneaE6().percorso }));
   ok('H. conto della notte (e6) e istantanea di «Riprendi la notte»', e6.note.some((r) => r[0] === 'Prove del registro' && r[1] === '3 di 3') && e6.snap && e6.snap.percorsoProveH3 && e6.snap.percorsoProveH3.prese.length === 2, e6);
   await p.evaluate(() => { avviaPiano(5, false); });
