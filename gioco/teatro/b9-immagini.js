@@ -107,10 +107,12 @@ const IMMAGINI_B9 = Object.freeze({
     motivo: 'macchia nera senza bordo né occhi: sul viso dei burattini non si distingue; la maschera a codice ha il cuoio bruno, il bordo chiaro e il naso a becco' },
   'trasf-ombra-velo': { celle: [1, 1], alt: 38, ancora: [0.5, 0.3], dove: 'b4 disegnaDietroB4 (dietro il burattino)', usa: false,
     motivo: 'un alone grigio con una spirale di tratti rossi e neri: dietro il burattino quasi non si vede e non si legge come un velo; i fili neri a codice bastano' },
-  // --- E. porta della bottega (hub: t4-hub-storia.js, di un'altra squadra) ---
-  'porta-bottega-chiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 1], dove: 'nessuno (hub)', usa: false, motivo: 'porta la scritta «LA BOTTEGA» ed è un abbozzo a tinte piatte; l\'hub è di un\'altra squadra' },
-  'porta-bottega-socchiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 1], dove: 'nessuno (hub)', usa: false, motivo: 'porta la scritta «LA BOTTEGA» ed è un abbozzo a tinte piatte; l\'hub è di un\'altra squadra' },
-  'porta-bottega-aperta': { celle: [1, 1], alt: 60, ancora: [0.5, 1], dove: 'nessuno (hub)', usa: false, motivo: 'porta la scritta «LA BOTTEGA» ed è un abbozzo a tinte piatte; l\'hub è di un\'altra squadra' },
+  // --- E. la piazza (hub: t4-hub-storia.js; il disegno è in i2-piazza.js) ---
+  'porta-bottega-chiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 0.99], dove: 'i2 portaImmagineI2 (sigilli, spranga, ferri e luce di b8 sopra)', usa: true },
+  'porta-bottega-socchiusa': { celle: [1, 1], alt: 60, ancora: [0.5, 0.99], dove: 'i2 portaImmagineI2 (porta pronta: si può bussare)', usa: true },
+  'porta-bottega-aperta': { celle: [1, 1], alt: 60, ancora: [0.5, 0.99], dove: 'i2 portaImmagineI2 (fucina aperta)', usa: true },
+  'npc-tonino': { celle: [1, 2], alt: 50, ancora: [0.5, 0.984], dove: 'i2 disegnaToninoI2 (avvolge T.disegnaToninoC1; posa 0 indica, 1 lanterna)', usa: true },
+  'banchetto-tonino': { celle: [1, 1], alt: 52, ancora: [0.5, 0.984], dove: 'i2 banchettoImmagineI2 (specchiato: lo sgabello a sinistra)', usa: true },
   // --- G. interfaccia (b3-comandi-opzioni.js, a6-progressione.js) ---
   'ui-pad-simboli': { celle: [1, 13], alt: 10, ancora: [0.5, 0.5], dove: 'drawTextFit col gamepad: simboli al posto di Ⓐ Ⓑ Ⓧ Ⓨ ✥ [LT] [RB]…', usa: false,
     motivo: 'alla misura delle scritte (7-9 px) sono dischetti scuri con la lettera illeggibile: i caratteri Ⓐ Ⓑ Ⓧ Ⓨ si leggono meglio' },
