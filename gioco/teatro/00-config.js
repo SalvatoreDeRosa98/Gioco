@@ -372,7 +372,7 @@ const CATALOGO_PATTO = [
   },
   {
     id: 'patto_abisso', sprite: 'patto_abisso', nome: 'Manto dell\'Abisso', tier: 'patto',
-    statsDesc: '[😈 PATTO] Rimuove Maschere Massime · +1.5 Danno · +0.2 Velocità · +6 Maschere di Cera',
+    statsDesc: '[😈 PATTO] 6 Maschere di Cera che nessuna cura ripara · +1.5 Danno · +0.2 Velocità',
     lore: 'Consuma ogni residuo di vita mortale per donare pura potenza d\'ombra.',
     costoMaxHpHalf: 4,
     mod: { dmgUp: 1.5, speedUp: 0.2, ceraAbisso: true, ceraExtra: 12 },

@@ -9,6 +9,9 @@
 // ===========================================================================
 let tick = 0;
 
+/** Rete di sicurezza delle stanze: dopo quanti tick senza nessuno in piedi la stanza di un boss si apre comunque. */
+const RETE_STANZA = Object.freeze({ tickBossSenzaVivi: 300 });
+
 // (T1) Passo fisso a FEEL.passo.hz con accumulatore e tetto di tick per frame: a 120 Hz il gioco va
 // alla stessa velocità che a 60 Hz. Come motore/fondazione/ciclo.js.
 let ultimoFrameMs = null;
@@ -29,8 +32,33 @@ function loop(oraMs) {
       passoLogico();
       // Rete di sicurezza: un nemico può morire senza passare da danneggiaNemico (Bozzo che esplode, fuoco…);
       // se sono tutti a terra, la stanza si apre comunque.
+      // Manto dell'Abisso: le Maschere di cera non si riparano. In sala la vita può solo scendere; fuori dalla sala
+      // (la piazza del ritorno di h4, dove le Maschere tornano piene) il tetto si scioglie e si riforma al rientro.
+      if (statoRun.fase === 'in_gioco' && (statoRun.oggettiEquipaggiati || []).some((o) => o && o.mod && o.mod.ceraAbisso)) {
+        if (statoRun.tettoCeraHalf == null || statoRun.tettoCeraRun !== statoRun.numeroRun) { statoRun.tettoCeraHalf = statoRun.hpHalf; statoRun.tettoCeraRun = statoRun.numeroRun; }
+        else if (statoRun.hpHalf > statoRun.tettoCeraHalf) statoRun.hpHalf = statoRun.tettoCeraHalf;
+        else statoRun.tettoCeraHalf = statoRun.hpHalf;
+      } else statoRun.tettoCeraHalf = null;
+      // La vita non sta mai sopra il massimo, qualunque cosa l'abbia alzata.
+      if (statoRun.fase === 'in_gioco' && statoRun.hpHalf > statoRun.maxHpHalf) statoRun.hpHalf = statoRun.maxHpHalf;
       const st = statoRun.stanzaCorrente;
-      if (st && !st.pulita && statoRun.fase === 'in_gioco' && st.nemici.every((n) => n.hp <= 0)) verificaStanzaPulita();
+      if (st && !st.pulita && statoRun.fase === 'in_gioco') {
+        if (st.nemici.some((n) => n.hp > 0)) st.tickSenzaVivi = 0;
+        else {
+          for (const n of st.nemici) if (!(n.hp <= 0)) { notaDiagnosi('vita non numerica a terra', { nemico: n.bossId || n.tipo, vita: String(n.hp) }); n.hp = 0; }
+          verificaStanzaPulita();
+          // Stanza del boss ancora chiusa e nessuno in piedi da un pezzo: uno strato aggiunto la tiene chiusa per sbaglio.
+          // Si apre con la funzione di base e si lascia una nota per la diagnosi (non vale Sopra la Ribalta, che ha gli atti).
+          if (!st.pulita && st.tipo === 'boss' && !st.arenaD1) {
+            st.tickSenzaVivi = (st.tickSenzaVivi || 0) + 1;
+            if (st.tickSenzaVivi >= RETE_STANZA.tickBossSenzaVivi) {
+              notaDiagnosi('stanza del boss aperta dalla rete di sicurezza', { stanza: st.id, piano: statoRun.piano, campi: Object.keys(st).filter((k) => /[A-Z][0-9]$/.test(k)), nemici: st.nemici.map((n) => n.bossId || n.tipo) });
+              verificaStanzaPulitaDiBase();
+              st.tickSenzaVivi = 0;
+            }
+          }
+        }
+      }
     } catch (err) {
       segnalaErroreTeatro('logica', err);
     }

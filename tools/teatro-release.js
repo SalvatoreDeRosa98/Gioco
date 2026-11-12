@@ -65,6 +65,13 @@ function tabellaSpriteV2(js) {
   return ambiente.SPRITE_V2 || {};
 }
 
+/** Data e commit da cui nasce il file unico: chi prova il gioco la manda con la diagnosi. */
+function versioneRelease() {
+  let commit = '';
+  try { commit = require('child_process').execSync('git rev-parse --short HEAD', { cwd: RADICE, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch (_) { /* senza git resta la data */ }
+  return `${new Date().toISOString().slice(0, 16).replace('T', ' ')}${commit ? ` · ${commit}` : ''}`;
+}
+
 function main() {
   let html = fs.readFileSync(SORGENTE, 'utf8');
 
@@ -118,7 +125,8 @@ function main() {
   }
   fs.rmSync(tmp, { recursive: true, force: true });
   const blocco = `<script>\n// Risorse incorporate da tools/teatro-release.js (PNG di assets/sprite_teatro come data: URI)\n`
-    + `window.__risorseTeatro = ${JSON.stringify(risorse)};\n</script>\n`;
+    + `window.__risorseTeatro = ${JSON.stringify(risorse)};\n`
+    + `window.__teatroVersione = ${JSON.stringify(versioneRelease())}; // finisce nel file di diagnosi (F8)\n</script>\n`;
 
   // 2) script di teatro/ inline
   const rx = /<script\s+src="(teatro\/[^"]+\.js)"\s*><\/script>/g;

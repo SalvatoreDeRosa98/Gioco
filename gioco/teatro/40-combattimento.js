@@ -390,6 +390,10 @@ function innescaEsplosioneBomba(st, bx, by) {
 }
 
 function danneggiaNemico(nem, dmg, knockX, knockY) {
+  // Un danno che non è un numero (un moltiplicatore andato a vuoto) lasciava il nemico con una vita «non numerica»:
+  // non si vede, non ha barra, ma non conta come caduto, e la stanza non si apriva più. Qui si ferma.
+  if (!Number.isFinite(dmg)) { notaDiagnosi('danno non numerico', { dmg: String(dmg), nemico: nem && (nem.bossId || nem.tipo) }); dmg = dmg === Infinity ? 1e9 : 0; }
+  if (nem && !Number.isFinite(nem.hp)) { notaDiagnosi('vita non numerica', { nemico: nem.bossId || nem.tipo }); nem.hp = 0; }
   // Se il Boss Re Gatto è in volo alto (airZ > 25), non può essere colpito finché non atterra!
   if (nem.boss && (nem.airZ || 0) > 25) return;
 
@@ -463,7 +467,7 @@ function danneggiaNemico(nem, dmg, knockX, knockY) {
 function verificaStanzaPulita() {
   const st = statoRun.stanzaCorrente;
   if (!st || st.pulita) return;
-  if (st.nemici.every((n) => n.hp <= 0)) {
+  if (st.nemici.every((n) => !(n.hp > 0))) { // «non in piedi»: vale anche per una vita non numerica
     st.pulita = true;
     AudioSys.playCampana();
     // Ricarica di +1 tacca l'Oggetto Attivo [Q] a ogni stanza ripulita (Proposta 5)
@@ -519,6 +523,12 @@ function verificaStanzaPulita() {
     }
   }
 }
+
+/**
+ * La funzione qui sopra com'è nata, senza gli strati che gli altri file le mettono attorno. La usa SOLO la rete di
+ * sicurezza del ciclo (80-ciclo.js) quando la stanza di un boss resta chiusa senza più nessuno in piedi.
+ */
+const verificaStanzaPulitaDiBase = verificaStanzaPulita;
 
 function interagisciStanza() {
   // --- B: inizio ---

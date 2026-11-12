@@ -187,9 +187,14 @@ function acquisisciOggettoConLimite5Slot(nuovoItem, origine, refSlot) {
 
   // Effetti immediati di raccolta patti e stanze segrete
   if (nuovoItem.mod?.ceraAbisso) {
-    statoRun.baseMaxHpHalf = 2;
-    statoRun.hpHalf = Math.min(24, (statoRun.hpHalf || 0) + (nuovoItem.mod.ceraExtra || 12));
-    mostraBanner('💀 MANTO DELL\'ABISSO: Maschere mortali consumate, ottenute 6 Maschere d\'Ombra!', 180);
+    // Prima la vita saliva OLTRE il massimo (11 Maschere su 5: chi lo prendeva non moriva più) e il massimo scendeva
+    // a una Maschera. Ora le Maschere mortali diventano di cera: il massimo è `ceraExtra` mezze Maschere, piene
+    // subito, e nessuna cura le ripara (la vita può solo scendere: lo fa rispettare il ciclo, 80-ciclo.js).
+    statoRun.baseMaxHpHalf = nuovoItem.mod.ceraExtra || 12;
+    ricalcolaStatistiche();
+    statoRun.hpHalf = statoRun.maxHpHalf;
+    statoRun.tettoCeraHalf = statoRun.hpHalf;
+    mostraBanner('💀 MANTO DELL\'ABISSO: le Maschere diventano di cera. Nessuna cura le ripara più.', 220);
   } else if (nuovoItem.mod?.ceraExtra) {
     statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + nuovoItem.mod.ceraExtra);
   }

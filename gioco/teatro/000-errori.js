@@ -20,6 +20,73 @@ const RETE_ERRORI = Object.freeze({
 
 /** Errori raccolti in questa sessione: { dove, testo, traccia, volte }. */
 const ERRORI_TEATRO = [];
+
+/**
+ * Note di diagnosi: cose strane che il gioco ha rimediato da solo (un danno non numerico, una stanza del boss rimasta
+ * chiusa senza nessuno in piedi). Non si mostrano al giocatore: finiscono nel file di diagnosi (tasto F8).
+ */
+const NOTE_DIAGNOSI = [];
+const DIAGNOSI = Object.freeze({ massimoNote: 40, tasto: 'F8', ultimeNotti: 3 });
+function notaDiagnosi(cosa, dati) {
+  try {
+    if (NOTE_DIAGNOSI.length >= DIAGNOSI.massimoNote) return;
+    NOTE_DIAGNOSI.push({ cosa, dati: dati === undefined ? null : dati, tick: typeof tick === 'number' ? tick : null });
+    try { console.warn('[Teatro] nota di diagnosi:', cosa, dati); } catch (_) {}
+  } catch (_) { /* mai un errore da qui */ }
+}
+
+/**
+ * Fotografia dello stato del gioco per chi lo prova: notte, piano, personaggio, vita, oggetti, la stanza coi suoi nemici,
+ * le scelte dello slot, gli errori e le note. Serve all'autore per capire «che cosa era successo».
+ * @returns {object}
+ */
+function diagnosiTeatro() {
+  const prova = (f, ripiego = null) => { try { const v = f(); return v === undefined ? ripiego : v; } catch (_) { return ripiego; } };
+  const R = prova(() => statoRun, {}) || {};
+  const st = R.stanzaCorrente || null;
+  const num = (v) => (typeof v === 'number' ? (Number.isFinite(v) ? Math.round(v * 100) / 100 : String(v)) : v === undefined ? null : v);
+  return {
+    quando: new Date().toISOString(),
+    versione: prova(() => window.__teatroVersione, null) || `pagina del ${document.lastModified}`,
+    schermo: `${window.innerWidth}×${window.innerHeight}`, browser: navigator.userAgent,
+    fase: R.fase, notte: prova(() => getNumeroNotte()), piano: R.piano, ciclo: R.ciclo, run: R.numeroRun,
+    personaggio: R.personaggioId || null,
+    vita: [num(R.hpHalf), num(R.maxHpHalf)], danno: num(R.dmg), colpiAlSecondo: num(R.colpiAlSec), passo: num(R.speed),
+    monete: R.monete, chiavi: R.chiavi, bombe: R.bombe, viteExtra: R.viteExtra,
+    oggetti: prova(() => R.oggettiEquipaggiati.map((o) => o.id), []), attivo: prova(() => R.oggettoAttivo && R.oggettoAttivo.id),
+    pausa: Boolean(R.pausa), sipario: prova(() => R.siparioAttivo && R.siparioAttivo.titolo), banner: R.banner || null,
+    dialogoAperto: prova(() => Boolean(window.__teatro.t4qa.dialogo), null), zonaP3: R.zonaP3 || null,
+    stanza: st && {
+      id: st.id, tipo: st.tipo, pulita: Boolean(st.pulita), uscitaAperta: Boolean(st.uscitaAperta),
+      campi: Object.keys(st).filter((k) => /[A-Z][0-9]$/.test(k)),
+      nemici: (st.nemici || []).map((n) => ({ tipo: n.tipo, boss: Boolean(n.boss), bossId: n.bossId || null, vita: num(n.hp), vitaMax: num(n.maxHp),
+        x: num(n.x), y: num(n.y), quota: num(n.airZ || 0), stato: n.state || n.statoD6 || n.statoH3 || n.statoH6 || n.statoH7 || null })),
+      oggettiATerra: (st.oggettiATerra || []).length, proiettiliNemici: prova(() => R.proiettiliNemici.length), colpiMiei: prova(() => R.proiettili.length),
+    },
+    mappa: prova(() => R.mappa.stanze.map((s) => `${s.tipo}${s.pulita ? '✓' : ''}${s === st ? '←' : ''}`).join(' ')),
+    scelte: prova(() => window.__teatro.t4qa.flag, null),
+    bottega: prova(() => { const s = statoB8(); return { ferri: s.ferri, finaleVisto: s.finaleVisto, portaAperta: s.portaAperta, senzaFine: s.senzaFine }; }),
+    ultimeNotti: prova(() => window.__teatro.interni.registroRun().slice(-DIAGNOSI.ultimeNotti), []),
+    errori: ERRORI_TEATRO.slice(), note: NOTE_DIAGNOSI.slice(),
+  };
+}
+
+/** Salva la diagnosi in un file (e la copia negli appunti, se il browser lo permette). */
+function salvaDiagnosiTeatro() {
+  try {
+    const testo = JSON.stringify(diagnosiTeatro(), null, 1);
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(testo).catch(() => {}); } catch (_) {}
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([testo], { type: 'application/json' }));
+    a.download = `diagnosi-teatro-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => { try { URL.revokeObjectURL(a.href); } catch (_) {} }, 4000);
+    try { if (typeof mostraBanner === 'function') mostraBanner('Diagnosi salvata in un file: mandalo a chi ha fatto il gioco.', 260); } catch (_) {}
+    return true;
+  } catch (err) { try { console.error('[Teatro] diagnosi', err); } catch (_) {} return false; }
+}
+// in cattura: vale anche quando un menu o un cartiglio si prende i tasti
+window.addEventListener('keydown', (e) => { if (e.code === DIAGNOSI.tasto && !e.repeat) { e.preventDefault(); salvaDiagnosiTeatro(); } }, true);
 let disegniFallitiDiFila = 0;
 let effettiSpentiDalFusibile = 0;
 let riquadroErrori = null;
