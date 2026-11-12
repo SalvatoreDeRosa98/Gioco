@@ -1139,7 +1139,7 @@ function bossSconfittoB8(st) {
     else { st.cordoneB8 = true; b8.bannerPendente = { st, testo: TESTI_B8.senzaFine.banner((statoRun.ciclo || 1) + 1) }; }
     return;
   }
-  if (pc === 3 && senzaDanni && !s.ferri.lima) posaFerroB8(st, 'lima', b.x + 28, b.y + 30);
+  if (pc === 3 && senzaDanni && !s.ferri.lima && !statoRun.zonaP3) posaFerroB8(st, 'lima', b.x + 28, b.y + 30);
   if (senzaDanni) diciB8('senzaDanni'); else diciB8('fineAtto', { atto: pc });
 }
 

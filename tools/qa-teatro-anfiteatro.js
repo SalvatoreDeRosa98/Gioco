@@ -290,6 +290,92 @@ const foto = (n) => `${prefisso}-${n}.png`;
   });
   ok('C: alla seconda caduta niente rivelazione', di2.pulita && !di2.riv, di2);
 
+  // ---- D. AGNESE, PREMIO, MUSICA, MESSAGGIO DEL PADRE ----
+  const flag = (parz) => p.evaluate((x) => window.__teatro.t4qa.impostaFlag(x), parz);
+  const nelGiudice = () => p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const P = I.player;
+    const st = R.mappa.stanze.find((s) => s.tipo === 'boss'); entraInStanza(st, 'S'); R.siparioAttivo = null;
+    for (let i = 0; i < 200; i++) { P.invuln = 999; passoLogico(); } // passa la grazia d'ingresso
+    return true;
+  });
+  const colpo = () => p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const P = I.player;
+    R.graziaIngressoC = 0; R.scudoRosaC = false; R.scudoStanzaD = 0; P.invuln = 0; R.hpHalf = 6;
+    const h0 = R.hpHalf; subisciColpoGiocatore(2, 'prova', P.x + 20, P.y); return { perso: h0 - R.hpHalf, filo: I.ricordiH7.filo, posa: I.ricordiH7.agnese };
+  });
+  await flag({ agnese: 'risvegliata' });
+  await alAnfiteatro(); await nelGiudice();
+  const c1 = await colpo(); const c2 = await colpo();
+  ok('D: Agnese risvegliata sulle gradinate para un colpo col filo rosso', c1.posa === 'risvegliata' && c1.perso === 0 && c1.filo, c1);
+  ok('D: una volta sola', c2.perso > 0, c2);
+  await p.evaluate(() => { const I = window.__teatro.interni; const st = I.statoRun.stanzaCorrente; st.agneseH7.t0 = tick - 12; I.statoRun.proiettiliNemici.length = 0; I.player.x = 380; I.player.y = 200; });
+  await disegna(); await scatta('d-agnese-filo');
+  await flag({ agnese: 'sognante' }); await alAnfiteatro(); await nelGiudice();
+  const c3 = await colpo();
+  ok('D: Agnese sognante dorme e non interviene', c3.posa === 'sognante' && c3.perso > 0 && !c3.filo, c3);
+  await flag({ agnese: null }); await alAnfiteatro(); await nelGiudice();
+  const c4 = await colpo();
+  ok('D: senza flag un posto vuoto con la sciarpa, nessun filo', c4.posa === 'vuoto' && c4.perso > 0, c4);
+  const comeAgnese = await p.evaluate(() => { const I = window.__teatro.interni; const R = I.statoRun; selezionaPersonaggio('agnese'); const x = I.ricordiH7.agnese; selezionaPersonaggio('ferruccio'); return x; });
+  ok('D: giocando con Agnese la scena non c\'è', comeAgnese === null, comeAgnese);
+  // la musica del luogo
+  const tema = await p.evaluate(() => { const I = window.__teatro.interni; const a = I.ricordiH7.tema; const R = I.statoRun; nuovaRun(false); avviaPiano(3, false); R.siparioAttivo = null; return { anf: a, leucio: I.ricordiH7.tema }; });
+  ok('D: il tema dell\'Anfiteatro al piano 3 solo lì', tema.anf === 'anfiteatro' && tema.leucio !== 'anfiteatro', tema);
+  // la tessera: una volta per slot
+  await flag({ h7_tessera: null, agnese: null });
+  await alAnfiteatro();
+  const tes = await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const P = I.player;
+    const st = R.mappa.stanze.find((s) => s.tipo === 'boss'); entraInStanza(st, 'S'); R.siparioAttivo = null;
+    const b = st.nemici.find((n) => n.boss); b.hp = 0; verificaStanzaPulita(); passoLogico();
+    const t = I.ricordiH7.tessera; const lima = (st.oggettiATerra || []).some((o) => /lima/.test(o.id || ''));
+    return { t, lima };
+  });
+  ok('D: il Giudice lascia la tessera (e non la lima)', tes.t && !tes.t.preso && !tes.lima, tes);
+  await disegna(); await scatta('d-tessera');
+  const presa = await p.evaluate(() => {
+    const I = window.__teatro.interni; const P = I.player; const t = I.ricordiH7.tessera;
+    P.x = t.x; P.y = t.y; passoLogico(); passoLogico();
+    return { preso: I.ricordiH7.tessera.preso, flag: window.__teatro.t4qa.flag.h7_tessera };
+  });
+  ok('D: la tessera si raccoglie e resta nello slot', presa.preso && presa.flag, presa);
+  const diario = await p.evaluate((n) => { try { const pg = componiPaginaB8({ notte: n, esito: 'caduta', piano: 3, zonaP3H7: 'anfiteatro' }, {}, statoB8(), {}); return pg && pg.righe; } catch (e) { return String(e); } }, presa.flag);
+  ok('D: riga nel Diario per la tessera', Array.isArray(diario) && diario.some((r) => /tessera/.test(r)), diario);
+  await alAnfiteatro();
+  const tes2 = await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun;
+    const st = R.mappa.stanze.find((s) => s.tipo === 'boss'); entraInStanza(st, 'S'); R.siparioAttivo = null;
+    const b = st.nemici.find((n) => n.boss); b.hp = 0; verificaStanzaPulita(); passoLogico();
+    return I.ricordiH7.tessera;
+  });
+  ok('D: la seconda volta niente tessera', !tes2, tes2);
+  // il messaggio del padre all'Acquedotto
+  await flag({ messaggio_padre: null });
+  const nic = await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun; const P = I.player;
+    selezionaPersonaggio('ferruccio'); R.fase = 'in_gioco'; nuovaRun(false); I.acquedottoD6.segna(2, true); avviaPiano(2, false); R.siparioAttivo = null;
+    const st = R.mappa.stanze.find((s) => s.nicchiaH7);
+    const boss = R.mappa.stanze.find((s) => s.tipo === 'boss');
+    if (!st) return { st: false };
+    entraInStanza(st, 'S'); R.siparioAttivo = null;
+    const prima = I.ricordiH7.nicchia.visibile;
+    for (const n of st.nemici) n.hp = 0; verificaStanzaPulita(); for (let i = 0; i < 5; i++) passoLogico();
+    P.x = I.ricordiH7.nicchia.x; P.y = I.ricordiH7.nicchia.y + 16;
+    return { st: true, tipo: st.tipo, nelBoss: Boolean(boss.nicchiaH7), prima, dopo: I.ricordiH7.nicchia.visibile, quante: R.mappa.stanze.filter((s) => s.nicchiaH7).length };
+  });
+  ok('D: una nicchia per notte in una stanza normale dell\'Acquedotto, visibile a stanza ripulita', nic.st && nic.tipo === 'normale' && !nic.nelBoss && nic.quante === 1 && !nic.prima && nic.dopo, nic);
+  await disegna(); await scatta('d-nicchia');
+  const letto = await p.evaluate(() => { interagisciStanza(); return { flag: window.__teatro.t4qa.flag.messaggio_padre, piano: window.__teatro.interni.statoRun.piano }; });
+  ok('D: [E] Leggi: il messaggio del padre resta nello slot', letto.flag && letto.piano === 2, letto);
+  const vuota = await p.evaluate(() => {
+    const I = window.__teatro.interni; const R = I.statoRun;
+    nuovaRun(false); I.acquedottoD6.segna(2, true); avviaPiano(2, false); R.siparioAttivo = null;
+    return R.mappa.stanze.filter((s) => s.nicchiaH7).length;
+  });
+  ok('D: dopo la prima volta non si rigenera', vuota === 0, vuota);
+  const diario2 = await p.evaluate((n) => { try { return componiPaginaB8({ notte: n, esito: 'caduta', piano: 2 }, {}, statoB8(), {}).righe; } catch (e) { return String(e); } }, letto.flag);
+  ok('D: il messaggio del padre nel Diario', Array.isArray(diario2) && diario2.some((r) => /mio padre/.test(r)), diario2);
+
   // ---- Z. ERRORI ----
   const erroriTeatro = await p.evaluate(() => (window.ERRORI_TEATRO || []).map((e) => String(e.messaggio || e.msg || e)));
   ok('Z: nessun errore in console', err.length === 0, err.slice(0, 5));

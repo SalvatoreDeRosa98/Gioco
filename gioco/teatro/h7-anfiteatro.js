@@ -1553,7 +1553,7 @@ const BOSS_H7 = Object.freeze({
   sogliaFase2: 0.5,
   tettoProiettili: 28,
   bannerTick: 260,
-  podio: Object.freeze({ x: 320, y: 104 }),          // dove stanno i piedi del Giudice seduto
+  podio: Object.freeze({ x: 320, y: 128 }),          // dove stanno i piedi del Giudice seduto
   gesti: Object.freeze(['verso', 'su']), gestiFase2: Object.freeze(['su', 'verso', 'su']),
   sentenziaTick: 80, sentenziaTickFase2: 56,
   polliceTick: 54, polliceTickFase2: 42, polliceApreTick: 22, // il pollice si apre a 22 tick dalla fine
@@ -1775,8 +1775,6 @@ function giudiceSconfittoH7(st, b) {
   }
   try { premioLuogoH7(st); } catch (err) { console.error('[h7] premio', err); }
 }
-/** Il premio del luogo (sezione 6). */
-function premioLuogoH7() { /* sezione 6 */ }
 
 const verificaStanzaPulitaGiudiceH7 = verificaStanzaPulita;
 verificaStanzaPulita = function (...args) {
@@ -1868,7 +1866,7 @@ function disegnaGiudiceH7(b, t) {
   ctx.beginPath(); ctx.moveTo(sx, sy - 1.6); ctx.lineTo(ax, ay - 1.6); ctx.stroke();
   // la mano
   chinaH7(flash);
-  ctx.beginPath(); ctx.arc(ax, ay, 2.6, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(ax, ay, s === 'pollice' ? 3.6 : 2.6, 0, TAU); ctx.fill(); ctx.stroke();
   if (s === 'pollice') {
     const apre = b.timerH7 <= BOSS_H7.polliceApreTick;
     const giro = Math.min(1, (b.tStatoH7 || 0) / 20);
@@ -1876,7 +1874,8 @@ function disegnaGiudiceH7(b, t) {
     if (apre) {
       const su = b.gestoH7 === 'su';
       ctx.fillStyle = flash ? '#fff' : T.lampo; ctx.strokeStyle = T.china; ctx.lineWidth = 0.6;
-      ctx.beginPath(); ctx.rect(-1.1, su ? -8 : 2, 2.2, 6); ctx.fill(); ctx.stroke(); // il pollice, chiaro: si legge da lontano
+      ctx.lineWidth = 0.8; ctx.strokeStyle = T.oro;
+      ctx.beginPath(); ctx.rect(-1.8, su ? -11 : 2, 3.6, 9); ctx.fill(); ctx.stroke(); // il pollice, chiaro e grande: si legge da lontano
     }
     ctx.restore();
   } else if (s === 'indica') {
@@ -1924,5 +1923,268 @@ Object.assign(window.__teatro.interni, {
       return { nome: n.nome, stato: n.statoH7 || null, gesto: n.gestoH7 || null, fase2: Boolean(n.fase2H7), hp: n.hp, maxHp: n.maxHp, x: n.x, y: n.y, airZ: n.airZ || 0,
         combattenti: st.nemici.filter((x) => !x.boss && x.hp > 0).length, proiettili: statoRun.proiettiliNemici.length };
     },
+  }),
+});
+
+// ===========================================================================
+// 6. AGNESE SULLE GRADINATE, IL PREMIO DEL LUOGO, LA MUSICA, IL MESSAGGIO DEL PADRE
+// ===========================================================================
+/** Valori della sezione 6. */
+const RICORDI_H7 = Object.freeze({
+  /** Il posto di Agnese sulle gradinate della stanza del Giudice (sul fondale) e il filo rosso. */
+  agnese: Object.freeze({ x: 404, y: 68, filoTick: 46, invulnTick: 60 }),
+  /** La tessera, il premio del luogo, dove cade il Giudice; una volta per slot (flag `h7_tessera`). */
+  tessera: Object.freeze({ dx: 26, dy: 26, raggio: 16 }),
+  /** La nicchia nel tufo dell'Acquedotto: in una stanza normale per notte, visibile a stanza ripulita. */
+  nicchia: Object.freeze({ x: 112, y: 96, raggio: 40 }),
+});
+
+/** Testi della sezione 6 (TUTTI NUOVI, DA APPROVARE DALL'AUTORE: la bibbia non ha battute per queste scene). */
+const TESTI_RICORDI_H7 = Object.freeze({
+  filo: 'Dalle gradinate un filo rosso si tende davanti a Ferruccio: il colpo si ferma sul filo. Agnese, lassù, non dice niente.',
+  tessera: '★ LA TESSERA DEL GLADIATORE',
+  tesseraPresa: 'Una tessera d\'osso, con un nome inciso. Nessuno se lo ricorda più. Ferruccio la mette in tasca.',
+  diarioTessera: 'Sotto l\'arena ho trovato una tessera d\'osso con un nome inciso. Nessuno se lo ricordava più. Adesso me lo ricordo io.',
+  nicchia: '[E] Leggi',
+  /** Il messaggio di Gaetano (testo NUOVO, sul senso della bibbia, Espansione II: la vendetta non è la verità). */
+  messaggio: Object.freeze([
+    '«Ferruccio, se trovi queste righe, non cercare chi mi ha fatto torto. Cerca che cosa è successo.',
+    'Chi cerca vendetta trova un nome. Chi cerca la verità trova tutta la storia, pure la parte che non gli piace. — G. F.»',
+  ]),
+  diarioMessaggio: 'In una nicchia dell\'Acquedotto c\'era un foglio di mio padre. Dice di cercare che cosa è successo, non chi.',
+});
+
+/** Tema «anfiteatro» nel formato di MUSICA.temi (a8): marcia lenta in minore, corni e tamburo. */
+const MUSICA_H7 = Object.freeze({
+  id: 'anfiteatro',
+  tema: {
+    bpm: 84, radice: 57, scala: 'minore', basso: 'X.x.X.x.', organetto: 'tenuto', tamburello: 'x...x.x.', volume: 1,
+    accordi: ['i', 'i', 'VI', 'VII', 'i', 'iv', 'V', 'V'],
+    melodia: ['0 - 0 3 - 2', '0 - - 7 - 5', '3 - 2 0 - 2', '4 - - 2 - -', '7 - 7 5 - 3', '5 - 3 2 - 0', '1 - 2 4 - 2', '4 - - - - -'],
+  },
+});
+
+const giocaAgneseH7 = () => statoRun.personaggioId === 'agnese';
+
+// --------------------------------------------------------------------------- Agnese sulle gradinate
+/** Che cosa c'è al posto di Agnese sulle gradinate: 'risvegliata' | 'sognante' | 'vuoto' | null (gioca Agnese). */
+function posaAgneseH7() {
+  if (giocaAgneseH7()) return null;
+  const a = flagH7().agnese;
+  return a === 'risvegliata' ? 'risvegliata' : a === 'sognante' ? 'sognante' : 'vuoto';
+}
+
+/** Disegna Agnese (o il posto vuoto con la sciarpa rossa) fra le ombre delle gradinate. */
+function disegnaAgneseH7(st, tk) {
+  const posa = posaAgneseH7();
+  if (!posa) return;
+  const A = RICORDI_H7.agnese, T = TINTE_H7, x = A.x, y = A.y;
+  ctx.save();
+  // il posto, ripulito dalle ombre vicine
+  ctx.fillStyle = T.laterizio; ctx.fillRect(x - 7, y - 9, 14, 9);
+  if (posa === 'vuoto') { // la sciarpa rossa lasciata sul gradino
+    ctx.strokeStyle = T.rosso; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(x - 5, y - 1.5); ctx.quadraticCurveTo(x, y - 3.5, x + 4, y - 1.5); ctx.lineTo(x + 5, y + 3); ctx.stroke();
+    ctx.restore(); return;
+  }
+  const filo = st.agneseH7 && tk - st.agneseH7.t0 < A.filoTick;
+  const alzata = posa === 'risvegliata' && filo;
+  ctx.fillStyle = T.china; ctx.strokeStyle = posa === 'risvegliata' ? T.oro : BORDO_H7; ctx.lineWidth = 0.6;
+  const dy = alzata ? -3 : 0, chino = posa === 'sognante' ? 1.6 : 0;
+  ctx.beginPath(); ctx.moveTo(x - 3.2, y); ctx.quadraticCurveTo(x - 3, y - 5 + dy, x, y - 5.4 + dy); ctx.quadraticCurveTo(x + 3, y - 5 + dy, x + 3.2, y); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x + chino, y - 7 + dy + chino * 0.6, 1.9, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = T.rosso; ctx.lineWidth = 1; // la sciarpa
+  ctx.beginPath(); ctx.moveTo(x - 2, y - 5 + dy); ctx.lineTo(x + 2, y - 5 + dy); ctx.lineTo(x + 2.6, y - 2 + dy); ctx.stroke();
+  if (posa === 'sognante') { // dorme: un respiro lento di luce, niente di più
+    ctx.globalAlpha = 0.25 + 0.15 * Math.sin(tk * 0.04);
+    ctx.fillStyle = '#c7b8ff'; ctx.beginPath(); ctx.arc(x, y - 6, 5, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  if (filo) { // il filo rosso fino a Ferruccio, teso, che si scioglie
+    const k = (tk - st.agneseH7.t0) / A.filoTick;
+    ctx.globalAlpha = 1 - k * k;
+    ctx.strokeStyle = T.rosso; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(x + 2, y - 6); ctx.quadraticCurveTo((x + player.x) / 2, Math.min(y, player.y) + 30 * k, player.x, player.y - 14); ctx.stroke();
+    ctx.strokeStyle = '#fca5a5'; ctx.lineWidth = 0.5; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+const subisciColpoGiocatoreBaseH7 = subisciColpoGiocatore;
+/** Nello scontro col Giudice, se Agnese è risvegliata, il suo filo rosso para un colpo (una volta). */
+subisciColpoGiocatore = function (danno, fonte, daX, daY, ...resto) {
+  try {
+    const st = statoRun.stanzaCorrente, b = st && st.tipo === 'boss' ? giudiceDiH7(st) : null;
+    if (b && b.hp > 0 && !st.agneseH7 && posaAgneseH7() === 'risvegliata' && player.invuln <= 0 && !(statoRun.graziaIngressoC > 0) && danno > 0) {
+      st.agneseH7 = { t0: tick, fonte };
+      player.invuln = RICORDI_H7.agnese.invulnTick;
+      if (typeof didascaliaH2 === 'function') didascaliaH2(TESTI_RICORDI_H7.filo); else mostraBanner(TESTI_RICORDI_H7.filo, 240);
+      tonoH7(660, 0.5, 0.05, 'triangle', 990);
+      return undefined;
+    }
+  } catch (err) { console.error('[h7] filo di Agnese', err); }
+  return subisciColpoGiocatoreBaseH7.call(this, danno, fonte, daX, daY, ...resto);
+};
+
+// --------------------------------------------------------------------------- il premio del luogo: la tessera
+/** Il Giudice caduto lascia la tessera del gladiatore, una volta per slot (il ferro della lima resta a San Leucio). */
+function premioLuogoH7(st) {
+  const b = giudiceDiH7(st);
+  if (!b || st.tesseraH7 || flagH7().h7_tessera) return false;
+  const R = RICORDI_H7.tessera;
+  st.tesseraH7 = { x: limitaH7(b.x + R.dx, ARENA.x1 + 20, ARENA.x2 - 20), y: limitaH7(b.y + R.dy, ARENA.y1 + 20, ARENA.y2 - 20), preso: false };
+  return true;
+}
+
+/** Raccolta della tessera (passo logico). */
+function passoTesseraH7(st) {
+  const t = st.tesseraH7;
+  if (!t || t.preso || Math.hypot(player.x - t.x, player.y - t.y) > RICORDI_H7.tessera.raggio) return;
+  t.preso = true;
+  impostaFlagH7({ h7_tessera: (typeof getNumeroNotte === 'function' ? getNumeroNotte() : 1) });
+  try { if (typeof a7 === 'object' && a7 && a7.run) a7.run.tesseraH7 = true; } catch (_) { /* a7 assente */ }
+  if (typeof didascaliaH2 === 'function') didascaliaH2(TESTI_RICORDI_H7.tesseraPresa); else mostraBanner(TESTI_RICORDI_H7.tesseraPresa, 240);
+  if (typeof AudioSys.playCampana === 'function') AudioSys.playCampana();
+}
+
+function disegnaTesseraH7(t, tk) {
+  const y = t.y - 4 + Math.sin(tk * 0.08) * 1.5;
+  ctx.save();
+  ombraTerraH7(t.x, t.y + 4, 7, 2.2, 0.45);
+  ctx.fillStyle = '#efe6d2'; ctx.strokeStyle = TINTE_H7.china; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.rect(t.x - 3, y - 8, 6, 14); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = TINTE_H7.china; ctx.fillRect(t.x - 1.5, y - 10, 3, 2); // il foro per il cordino
+  ctx.strokeStyle = '#8a7650'; ctx.lineWidth = 0.6; ctx.beginPath(); for (const k of [-4, -1, 2]) { ctx.moveTo(t.x - 2, y + k); ctx.lineTo(t.x + 2, y + k); } ctx.stroke();
+  drawPillLabel(TESTI_RICORDI_H7.tessera, t.x, t.y + 16, 150, { size: 7, color: TINTE_H7.oro, border: QUARTIERE_H7.bordoPillola });
+  ctx.restore();
+}
+
+// --------------------------------------------------------------------------- il messaggio del padre all'Acquedotto
+/** Sceglie la stanza della nicchia all'Acquedotto (una per notte, non quella del boss). */
+function scegliNicchiaH7(m) {
+  const adatte = m.stanze.filter((s) => s.tipo === 'normale' && !(s.ostacoli || []).some((o) => Math.hypot(o.x - RICORDI_H7.nicchia.x, o.y - RICORDI_H7.nicchia.y) < 36));
+  if (!adatte.length) return;
+  adatte[Math.floor(rng() * adatte.length)].nicchiaH7 = { letta: false };
+}
+
+/** La nicchia della stanza corrente, se c'è e si vede (stanza ripulita). */
+function nicchiaQuiH7() {
+  const st = statoRun.stanzaCorrente;
+  return st && st.nicchiaH7 && st.pulita ? st.nicchiaH7 : null;
+}
+
+/** [E] accanto alla nicchia: il foglio del padre, una volta per slot (flag `messaggio_padre`). Dopo è vuota. */
+function usaNicchiaH7() {
+  if (statoRun.fase !== 'in_gioco' || statoRun.scambioPendente || statoRun.pannelloB || statoRun.siparioAttivo) return false;
+  const n = nicchiaQuiH7(), N = RICORDI_H7.nicchia;
+  if (!n || flagH7().messaggio_padre || Math.hypot(player.x - N.x, player.y - N.y) >= N.raggio) return false;
+  n.letta = true;
+  impostaFlagH7({ messaggio_padre: (typeof getNumeroNotte === 'function' ? getNumeroNotte() : 1) });
+  for (const riga of TESTI_RICORDI_H7.messaggio) { if (typeof didascaliaH2 === 'function') didascaliaH2(riga); else mostraBanner(riga, 300); }
+  soffioH7(0.3, 2400, 900, 0.03, 0.9); // la carta
+  return true;
+}
+
+function disegnaNicchiaH7(n, tk) {
+  const N = RICORDI_H7.nicchia, x = N.x, y = N.y, vuota = Boolean(flagH7().messaggio_padre);
+  ctx.save();
+  ctx.fillStyle = '#5c4d32'; ctx.strokeStyle = '#120e08'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(x - 13, y + 10); ctx.lineTo(x - 13, y - 6); ctx.arc(x, y - 6, 13, Math.PI, 0); ctx.lineTo(x + 13, y + 10); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#1a150e';
+  ctx.beginPath(); ctx.moveTo(x - 9, y + 8); ctx.lineTo(x - 9, y - 5); ctx.arc(x, y - 5, 9, Math.PI, 0); ctx.lineTo(x + 9, y + 8); ctx.closePath(); ctx.fill();
+  if (!vuota) {
+    ctx.fillStyle = '#e6d2aa'; ctx.save(); ctx.translate(x, y + 2); ctx.rotate(-0.12); ctx.fillRect(-5, -6, 10, 12);
+    ctx.strokeStyle = '#8a7650'; ctx.lineWidth = 0.5; ctx.beginPath(); for (const k of [-3, 0, 3]) { ctx.moveTo(-3.5, k); ctx.lineTo(3.5, k); } ctx.stroke(); ctx.restore();
+    if (Math.hypot(player.x - x, player.y - y) < RICORDI_H7.nicchia.raggio + 30) drawPillLabel(TESTI_RICORDI_H7.nicchia, x, y + 20, 60, { size: 7, color: '#e6d2aa', border: '#5c4024' });
+  }
+  ctx.restore();
+}
+
+// --------------------------------------------------------------------------- agganci della sezione 6
+const interagisciStanzaNicchiaH7 = interagisciStanza;
+/** [E]: prima la nicchia del padre (se ci sei accanto), poi tutto il resto. */
+interagisciStanza = function (...args) {
+  try { if (usaNicchiaH7()) return undefined; } catch (err) { console.error('[h7] nicchia', err); }
+  return interagisciStanzaNicchiaH7.apply(this, args);
+};
+
+const generaMappaPianoNicchiaH7 = generaMappaPiano;
+/** All'Acquedotto (d6) una stanza normale ha la nicchia del padre, finché non è stata letta. */
+generaMappaPiano = function (piano, ...resto) {
+  const m = generaMappaPianoNicchiaH7.call(this, piano, ...resto);
+  try { if (m && typeof acquedottoAttivoD6 === 'function' && acquedottoAttivoD6(piano) && !flagH7().messaggio_padre) scegliNicchiaH7(m); } catch (err) { console.error('[h7] nicchia', err); }
+  return m;
+};
+
+const disegnaStanzaRicordiH7 = disegnaStanzaPixelArt;
+/** Dopo la stanza: Agnese sulle gradinate, la tessera, la nicchia del padre (sotto le figure). */
+disegnaStanzaPixelArt = function (tk, st, ...resto) {
+  const r = disegnaStanzaRicordiH7.call(this, tk, st, ...resto);
+  try {
+    if (st && st.tipo === 'boss' && giudiceDiH7(st)) disegnaAgneseH7(st, tk);
+    if (st && st.tesseraH7 && !st.tesseraH7.preso) disegnaTesseraH7(st.tesseraH7, tk);
+    if (st && st.nicchiaH7 && st.pulita) disegnaNicchiaH7(st.nicchiaH7, tk);
+  } catch (err) { console.error('[h7] ricordi', err); }
+  return r;
+};
+
+const passoLogicoRicordiH7 = passoLogico;
+passoLogico = function (...args) {
+  const r = passoLogicoRicordiH7.apply(this, args);
+  try { const st = statoRun.stanzaCorrente; if (st && st.tesseraH7 && statoRun.fase === 'in_gioco') passoTesseraH7(st); } catch (err) { console.error('[h7] tessera', err); }
+  return r;
+};
+
+// Diario di Ferruccio (b8): la tessera e il messaggio del padre, nella pagina della notte in cui sono arrivati.
+if (typeof componiPaginaB8 === 'function') {
+  const componiPaginaRicordiH7 = componiPaginaB8;
+  componiPaginaB8 = function (v, nota, ...resto) {
+    const pagina = componiPaginaRicordiH7.call(this, v, nota, ...resto);
+    try {
+      if (pagina && Array.isArray(pagina.righe)) {
+        const f = flagH7(), notte = Number(pagina.notte);
+        for (const [k, riga] of [['h7_tessera', TESTI_RICORDI_H7.diarioTessera], ['messaggio_padre', TESTI_RICORDI_H7.diarioMessaggio]]) {
+          if (f[k] && Number(f[k]) === notte && !pagina.righe.includes(riga)) pagina.righe.splice(Math.max(1, pagina.righe.length - 1), 0, riga);
+        }
+      }
+    } catch (err) { console.error('[h7] diario ricordi', err); }
+    return pagina;
+  };
+}
+
+// --------------------------------------------------------------------------- la musica del luogo (a8)
+/** Registra il tema e punta il piano 3 del ciclo sul tema giusto (Anfiteatro o quello di sempre). */
+function intonaH7() {
+  try {
+    if (typeof MUSICA !== 'object' || !MUSICA || !MUSICA.temi || !MUSICA.temaPerPiano) return;
+    if (!MUSICA.temi[MUSICA_H7.id] && !Object.isFrozen(MUSICA.temi)) MUSICA.temi[MUSICA_H7.id] = MUSICA_H7.tema;
+    if (!MUSICA.temi[MUSICA_H7.id] || Object.isFrozen(MUSICA.temaPerPiano)) return;
+    const k = ANFITEATRO_H7.pianoLuogo;
+    if (h7.temaLeucio === undefined) h7.temaLeucio = MUSICA.temaPerPiano[k];
+    MUSICA.temaPerPiano[k] = anfiteatroAttivoH7() ? MUSICA_H7.id : h7.temaLeucio;
+  } catch (_) { /* senza musica si gioca lo stesso */ }
+}
+intonaH7();
+const avviaPianoMusicaH7 = avviaPiano;
+avviaPiano = function (...args) {
+  const r = avviaPianoMusicaH7.apply(this, args);
+  intonaH7();
+  return r;
+};
+const nuovaRunMusicaH7 = nuovaRun;
+nuovaRun = function (...args) {
+  const r = nuovaRunMusicaH7.apply(this, args);
+  intonaH7();
+  return r;
+};
+
+Object.assign(window.__teatro.interni, {
+  RICORDI_H7, TESTI_RICORDI_H7, MUSICA_H7,
+  ricordiH7: Object.freeze({
+    get agnese() { return posaAgneseH7(); },
+    get filo() { const st = statoRun.stanzaCorrente; return Boolean(st && st.agneseH7); },
+    get tessera() { const st = statoRun.stanzaCorrente; return st && st.tesseraH7 ? { ...st.tesseraH7 } : null; },
+    get nicchia() { const st = statoRun.stanzaCorrente; return st && st.nicchiaH7 ? { ...st.nicchiaH7, x: RICORDI_H7.nicchia.x, y: RICORDI_H7.nicchia.y, visibile: Boolean(st.pulita) } : null; },
+    get tema() { try { return MUSICA.temaPerPiano[ANFITEATRO_H7.pianoLuogo]; } catch (_) { return null; } },
   }),
 });
