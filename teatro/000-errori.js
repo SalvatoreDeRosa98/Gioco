@@ -51,7 +51,7 @@ function diagnosiTeatro() {
     schermo: `${window.innerWidth}×${window.innerHeight}`, browser: navigator.userAgent,
     fase: R.fase, notte: prova(() => getNumeroNotte()), piano: R.piano, ciclo: R.ciclo, run: R.numeroRun,
     personaggio: R.personaggioId || null,
-    vita: [num(R.hpHalf), num(R.maxHpHalf)], danno: num(R.dmg), colpiAlSecondo: num(R.colpiAlSec), passo: num(R.speed),
+    vita: [num(R.hpHalf), num(R.maxHpHalf)], cera: num(R.ceraHalf), danno: num(R.dmg), colpiAlSecondo: num(R.colpiAlSec), passo: num(R.speed),
     monete: R.monete, chiavi: R.chiavi, bombe: R.bombe, viteExtra: R.viteExtra,
     oggetti: prova(() => R.oggettiEquipaggiati.map((o) => o.id), []), attivo: prova(() => R.oggettoAttivo && R.oggettoAttivo.id),
     pausa: Boolean(R.pausa), sipario: prova(() => R.siparioAttivo && R.siparioAttivo.titolo), banner: R.banner || null,

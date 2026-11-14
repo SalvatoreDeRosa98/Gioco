@@ -635,7 +635,10 @@ function subisciColpoGiocatore(mezzeMaschereDanno, fonte, daX, daY) {
   }
   AudioSys.playDannoGiocatore();
   if (statoRun.stanzaCorrente?.tipo === 'boss') statoRun.dannoSubitoNelBoss = true;
-  statoRun.hpHalf = Math.max(0, statoRun.hpHalf - mezzeMaschereDanno);
+  // le Maschere di cera si sciolgono per prime; ciò che avanza del colpo arriva alle Maschere vere
+  const sciolta = Math.min(statoRun.ceraHalf || 0, mezzeMaschereDanno);
+  if (sciolta > 0) { statoRun.ceraHalf -= sciolta; statoRun.effettiSplash.push({ x: player.x, y: player.y - 10, tick: 0 }); }
+  statoRun.hpHalf = Math.max(0, statoRun.hpHalf - (mezzeMaschereDanno - sciolta));
   player.invuln = ticksDaMs(FEEL.iframes.durataMs);
   scuoti(FEEL.scossa.ferita);
   if (statoRun.hpHalf <= 0) {

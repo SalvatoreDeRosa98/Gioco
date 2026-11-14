@@ -62,6 +62,7 @@ const statoRun = {
   hpHalf: 6,
   maxHpHalf: 6,
   baseMaxHpHalf: 6,
+  ceraHalf: 0, // Maschere di cera (mezze): riserva a parte, vedi CERA in 00-config.js
   baseDmgChar: 3.50,
   baseSpdChar: 1.00,
   dmg: 3.50,
@@ -328,6 +329,7 @@ function nuovaRun(incrementaNotte = false) {
   statoRun.baseMaxHpHalf = pInfo.hpHalf;
   statoRun.maxHpHalf = pInfo.hpHalf;
   statoRun.hpHalf = pInfo.hpHalf;
+  statoRun.ceraHalf = 0; // la cera non passa da una notte all'altra
   statoRun.baseDmgChar = pInfo.baseDmg;
   statoRun.baseSpdChar = pInfo.baseSpd;
   ricalcolaStatistiche();
@@ -338,3 +340,16 @@ function nuovaRun(incrementaNotte = false) {
   avviaPiano(1, true);
   mostraBanner(`🌙 NOTTE ${statoRun.numeroNotte} — Sipario alzato!`, 180);
 }
+/**
+ * Aggiunge Maschere di cera alla riserva (mezze Maschere), fino a CERA.maxHalf. Chi ha una sola mezza Maschera per
+ * natura (l'Ombra Senza Fili) non ne riceve: la sua vita resta quella.
+ * @param {number} mezze @returns {number} quante mezze Maschere sono entrate davvero
+ */
+function aggiungiCera(mezze) {
+  if (!(mezze > 0)) return 0;
+  if (typeof stileD2 === 'function' && stileD2().maxHpHalf) return 0;
+  const prima = statoRun.ceraHalf || 0;
+  statoRun.ceraHalf = Math.min(CERA.maxHalf, prima + Math.round(mezze));
+  return statoRun.ceraHalf - prima;
+}
+

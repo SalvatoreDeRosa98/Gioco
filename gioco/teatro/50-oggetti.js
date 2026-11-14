@@ -196,7 +196,9 @@ function acquisisciOggettoConLimite5Slot(nuovoItem, origine, refSlot) {
     statoRun.tettoCeraHalf = statoRun.hpHalf;
     mostraBanner('💀 MANTO DELL\'ABISSO: le Maschere diventano di cera. Nessuna cura le ripara più.', 220);
   } else if (nuovoItem.mod?.ceraExtra) {
-    statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + nuovoItem.mod.ceraExtra);
+    // Maschere di cera: una riserva a parte, disegnata accanto alle Maschere vere (prima erano vita oltre il massimo,
+    // poi tagliata dal tetto: l'oggetto non dava più niente di visibile).
+    aggiungiCera(nuovoItem.mod.ceraExtra);
   }
   if (nuovoItem.mod?.healFull) {
     statoRun.hpHalf = statoRun.maxHpHalf;

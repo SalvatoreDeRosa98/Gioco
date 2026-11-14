@@ -108,11 +108,46 @@ const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evide
   const tetto = await p.evaluate(() => [statoRun.hpHalf, statoRun.maxHpHalf]);
   ok('la vita non resta mai sopra il massimo', tetto[0] <= tetto[1], tetto);
 
+  // 6b. Maschere di cera degli altri oggetti: una riserva a parte, visibile nel riquadro in alto a sinistra
+  const cera = await p.evaluate(async () => {
+    const pronto = (pg) => { selezionaPersonaggio(pg); statoRun.fase = 'in_gioco'; nuovaRun(false); statoRun.siparioAttivo = null; statoRun.pausa = false; statoRun.graziaIngressoC = 0; statoRun.scudoRosaC = false; statoRun.scudoStanzaD = 0; player.invuln = 0; };
+    const prendi = (id) => { acquisisciOggettoConLimite5Slot({ ...trovaOggettoB(id) }, 'piedistallo', { preso: false }); statoRun.scambioPendente = null; statoRun.cartiglioD = null; };
+    const out = {};
+    pronto('ferruccio');
+    out.inizio = statoRun.ceraHalf;
+    prendi('patto_patto'); // Giuramento di Sangue: +2 Maschere di Cera
+    out.dopoPatto = { cera: statoRun.ceraHalf, vita: statoRun.hpHalf, max: statoRun.maxHpHalf };
+    const vita0 = statoRun.hpHalf;
+    player.invuln = 0; subisciColpoGiocatore(1, 'prova');
+    out.colpo1 = { cera: statoRun.ceraHalf, vita: statoRun.hpHalf, vita0 };
+    statoRun.ceraHalf = 1; player.invuln = 0; subisciColpoGiocatore(2, 'prova');
+    out.colpo2 = { cera: statoRun.ceraHalf, vita: statoRun.hpHalf, vita0 };
+    statoRun.hpHalf = Math.min(statoRun.maxHpHalf, statoRun.hpHalf + 6);
+    out.cura = statoRun.ceraHalf;
+    for (let i = 0; i < 6; i++) aggiungiCera(4);
+    out.tetto = [statoRun.ceraHalf, CERA.maxHalf];
+    pronto('ferruccio'); out.notteNuova = statoRun.ceraHalf;
+    pronto('ombra'); prendi('patto_patto'); out.ombra = { cera: statoRun.ceraHalf, max: statoRun.maxHpHalf };
+    // il riquadro le disegna: Ferruccio con tre Maschere e mezza di cera
+    pronto('ferruccio'); prendi('patto_patto'); player.invuln = 1e9; statoRun.ceraHalf = 7;
+    let chiamate = 0; const base = disegnaFilaCeraJ1; disegnaFilaCeraJ1 = function (...a) { chiamate++; out.argomenti = a.slice(2); return base(...a); };
+    await new Promise((r) => setTimeout(r, 250));
+    disegnaFilaCeraJ1 = base; out.chiamate = chiamate;
+    return out;
+  });
+  ok('cera: l\'oggetto aggiunge le Maschere di cera alla riserva, senza portare la vita oltre il massimo', cera.inizio === 0 && cera.dopoPatto.cera === 4 && cera.dopoPatto.vita <= cera.dopoPatto.max, cera.dopoPatto);
+  ok('cera: un colpo scioglie prima la cera e non tocca le Maschere vere', cera.colpo1.cera === 3 && cera.colpo1.vita === cera.colpo1.vita0, cera.colpo1);
+  ok('cera: il colpo che avanza arriva alle Maschere vere', cera.colpo2.cera === 0 && cera.colpo2.vita === cera.colpo2.vita0 - 1, cera.colpo2);
+  ok('cera: una cura non la rifà e la riserva ha un tetto', cera.cura === 0 && cera.tetto[0] === cera.tetto[1], { cura: cera.cura, tetto: cera.tetto });
+  ok('cera: la notte nuova riparte senza, e l\'Ombra non ne riceve', cera.notteNuova === 0 && cera.ombra.cera === 0, { notte: cera.notteNuova, ombra: cera.ombra });
+  ok('cera: il riquadro in alto a sinistra la disegna in coda alle Maschere', cera.chiamate > 0 && cera.argomenti[0] === 7, { chiamate: cera.chiamate, argomenti: cera.argomenti });
+  await p.screenshot({ path: `${prefisso}-cera.png`, clip: { x: 0, y: 0, width: 640, height: 200 } });
+
   // 7. il file di diagnosi (F8)
   const [scarico] = await Promise.all([p.waitForEvent('download', { timeout: 5000 }).catch(() => null), p.keyboard.press('F8')]);
   const diag = await p.evaluate(() => diagnosiTeatro());
   ok('F8 salva un file di diagnosi', Boolean(scarico) && /^diagnosi-teatro-.*\.json$/.test(scarico.suggestedFilename()), scarico && scarico.suggestedFilename());
-  ok('la diagnosi racconta notte, personaggio, vita, oggetti e stanza', diag.personaggio && Array.isArray(diag.vita) && diag.oggetti.includes('patto_abisso') && diag.stanza && Array.isArray(diag.stanza.nemici) && Array.isArray(diag.note), diag);
+  ok('la diagnosi racconta notte, personaggio, vita, cera, oggetti e stanza', diag.personaggio && Array.isArray(diag.vita) && diag.oggetti.includes('patto_patto') && diag.cera === 7 && diag.stanza && Array.isArray(diag.stanza.nemici) && Array.isArray(diag.note), diag);
 
   ok('nessun errore di console', errori.length === 0, errori);
   ok('nessun errore in ERRORI_TEATRO', await p.evaluate(() => ERRORI_TEATRO.length === 0), await p.evaluate(() => ERRORI_TEATRO.slice(0, 3)));

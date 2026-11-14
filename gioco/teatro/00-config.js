@@ -123,6 +123,11 @@ const HUD_J1 = Object.freeze({
   margine: 6,                                     // px logici intorno al riquadro per "sta sotto"
   maschere: Object.freeze({ max: 8, passo: 11, scala: 1 }), // fila di maschere della vita
 });
+/**
+ * Maschere di cera (`mod.ceraExtra` degli oggetti, in mezze Maschere): una riserva A PARTE, accanto alle Maschere vere
+ * nel riquadro in alto a sinistra. Si perdono per prime, nessuna cura le rifà, e non contano come vita massima.
+ */
+const CERA = Object.freeze({ maxHalf: 12 }); // al più sei Maschere di cera insieme
 /** Proiettili nemici: scala del disegno e raggio del colpo su Ferruccio (base ridotti di ~1/3, prima 1.55 e 9). */
 const PROIETTILE_NEMICO_J1 = Object.freeze({ scalaBase: 1.05, scalaBoss: 1.85, raggioBase: 6, raggioBoss: 9 });
 /** Spada di Gaetano: fendente ad arco (prima: cerchio di 38 a 20 davanti, colpi nei tick 3..14, senza recupero). */

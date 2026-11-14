@@ -151,7 +151,7 @@ function istantaneaE6() {
     slot: slotE6(), scritta: new Date().toISOString(),
     personaggio: statoRun.personaggioId, notte: statoRun.numeroNotte, numeroRun: statoRun.numeroRun,
     piano: statoRun.piano, ciclo: statoRun.ciclo, seme: runSeed >>> 0,
-    hpHalf: statoRun.hpHalf, baseMaxHpHalf: statoRun.baseMaxHpHalf,
+    hpHalf: statoRun.hpHalf, ceraHalf: statoRun.ceraHalf || 0, baseMaxHpHalf: statoRun.baseMaxHpHalf,
     baseDmgChar: statoRun.baseDmgChar, baseSpdChar: statoRun.baseSpdChar,
     monete: statoRun.monete || 0, bombe: statoRun.bombe || 0, chiavi: statoRun.chiavi || 0,
     viteExtra: statoRun.viteExtra || 0, volo: Boolean(statoRun.volo), dropDoppi: Boolean(statoRun.dropDoppi),
@@ -285,6 +285,7 @@ function riprendiNotteE6(snap = leggiIstantaneaE6()) {
     if (snap.b5 && typeof B5 === 'function') Object.assign(B5(), snap.b5);
     ricalcolaStatistiche();
     statoRun.hpHalf = Math.max(1, Math.min(statoRun.maxHpHalf, snap.hpHalf));
+    statoRun.ceraHalf = Math.max(0, Math.min(CERA.maxHalf, Number(snap.ceraHalf) || 0)); // le Maschere di cera rimaste
     // registro delle notti: si continua la stessa voce, con una ripresa in più
     e6.riprese = (snap.riprese || 0) + 1;
     if (snap.registro && typeof a7 !== 'undefined') {

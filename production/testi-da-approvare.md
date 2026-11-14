@@ -1,6 +1,6 @@
 # Testi del Teatro — seconda ondata, migliorie e trama (terza ondata)
 
-Generato da `tools/elenco-testi-teatro.js` il 2026-11-12: i testi sono letti dalle tabelle del gioco, quindi sono
+Generato da `tools/elenco-testi-teatro.js` il 2026-11-14: i testi sono letti dalle tabelle del gioco, quindi sono
 quelli che il giocatore vede. Dove compare **N** il gioco mette un numero. Per cambiare un testo basta dirlo
 («nel Burattinaio la battuta dell'atto II diventa …»): si corregge nella tabella indicata e l'elenco si rigenera.
 **Approvati dall'autore il 2026-11-12** («i testi vanno bene»). Le voci scritte dopo sono segnate **NUOVO**: sono le sole da guardare (19 voci nuove).

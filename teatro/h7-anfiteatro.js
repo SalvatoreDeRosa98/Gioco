@@ -1944,7 +1944,7 @@ const RICORDI_H7 = Object.freeze({
    * Se Ferruccio l'ha già addosso (secondo ciclo della notte senza fine) la seconda vale una Maschera curata.
    */
   tessera: Object.freeze({ dx: 26, dy: 26, raggio: 16, id: 'tessera-gladiatore-h7', sprite: 'tesseraH7', tier: 'forte',
-    mod: Object.freeze({ dmgMult: 1.2, bonusMaxHp: 2, ceraExtra: 2 }), curaSeDoppia: 2 }),
+    mod: Object.freeze({ dmgMult: 1.2, bonusMaxHp: 2, healOnEquip: 2 }), curaSeDoppia: 2 }),
   /** La nicchia nel tufo dell'Acquedotto: in una stanza normale per notte, visibile a stanza ripulita. */
   nicchia: Object.freeze({ x: 112, y: 96, raggio: 40 }),
 });

@@ -1659,8 +1659,11 @@ function disegnaHUDPixelArt(st) {
   });
 
   // Vita: fila di Maschere (1 Maschera = 2 mezze-maschere), mai oltre il massimo (j1)
-  if (typeof disegnaFilaMaschereJ1 === 'function') disegnaFilaMaschereJ1(hx + 6, hy + 19, statoRun.hpHalf, statoRun.maxHpHalf);
-  else {
+  if (typeof disegnaFilaMaschereJ1 === 'function') {
+    // col Manto dell'Abisso tutte le Maschere sono di cera; le Maschere di cera degli altri oggetti stanno in coda
+    const larga = disegnaFilaMaschereJ1(hx + 6, hy + 19, statoRun.hpHalf, statoRun.maxHpHalf, { cera: statoRun.tettoCeraHalf != null });
+    if (statoRun.ceraHalf > 0 && typeof disegnaFilaCeraJ1 === 'function') disegnaFilaCeraJ1(hx + 6 + larga + 3, hy + 19, statoRun.ceraHalf, hw - 12 - larga - 3);
+  } else {
   const hpRatio = Math.max(0, Math.min(1, statoRun.hpHalf / statoRun.maxHpHalf));
   ctx.fillStyle = '#2d1210';
   ctx.fillRect(hx + 6, hy + 15, 98, 8);

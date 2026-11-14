@@ -23,7 +23,7 @@ const IMMAGINI_J1 = { 'maschera-vita': false, 'spada-lama': false };
 
 /** Colori delle figure di j1 (stile a ombre: sagoma, contorno lanterna, pochi accenti). */
 const TINTE_J1 = Object.freeze({
-  cartapesta: '#efe2c4', ombraMaschera: '#2a1a12', lanterna: '#f9cb40', lanternaTenue: 'rgba(249, 203, 64, 0.45)',
+  cartapesta: '#efe2c4', cera: '#f6cf6a', ceraChiara: '#fff1b8', ombraMaschera: '#2a1a12', lanterna: '#f9cb40', lanternaTenue: 'rgba(249, 203, 64, 0.45)',
   scuro: '#0a0604', rosso: '#b91c1c', lama: '#e8e4d8', filo: '#ffcf6b', elsa: '#1c1917', scia: '255, 214, 120',
 });
 
@@ -37,9 +37,9 @@ const TINTE_J1 = Object.freeze({
  * @param {number} riemp 1 piena, 0.5 mezza, 0 vuota
  * @param {number} [s=1] scala (1 = 10 px logici)
  */
-function disegnaMascheraJ1(x, y, riemp, s = 1) {
+function disegnaMascheraJ1(x, y, riemp, s = 1, cera = false) {
   const cella = riemp >= 1 ? 0 : riemp > 0 ? 1 : 2;
-  if (IMMAGINI_J1['maschera-vita'] && typeof disegnaCellaTeatro === 'function' && disegnaCellaTeatro(ctx, 'maschera-vita', cella, 3, x - 5 * s, y - 5 * s, 10 * s, 10 * s)) return;
+  if (!cera && IMMAGINI_J1['maschera-vita'] && typeof disegnaCellaTeatro === 'function' && disegnaCellaTeatro(ctx, 'maschera-vita', cella, 3, x - 5 * s, y - 5 * s, 10 * s, 10 * s)) return;
   const T = TINTE_J1;
   const sagoma = () => {
     ctx.beginPath();
@@ -57,9 +57,15 @@ function disegnaMascheraJ1(x, y, riemp, s = 1) {
   if (riemp > 0) {
     ctx.save();
     if (riemp < 1) { ctx.beginPath(); ctx.rect(-6, -6, 6, 12); ctx.clip(); }
-    sagoma(); ctx.fillStyle = T.cartapesta; ctx.fill();
-    ctx.fillStyle = T.rosso; // guance di belletto
-    ctx.beginPath(); ctx.arc(-2.6, 1.6, 0.9, 0, TAU); ctx.arc(2.6, 1.6, 0.9, 0, TAU); ctx.fill();
+    sagoma(); ctx.fillStyle = cera ? T.cera : T.cartapesta; ctx.fill();
+    if (cera) { // cera: color miele, un riflesso chiaro e una goccia che cola dal mento, niente belletto
+      ctx.fillStyle = T.ceraChiara; ctx.beginPath(); ctx.ellipse(-1.6, -2.9, 1.5, 0.7, -0.4, 0, TAU); ctx.fill();
+      ctx.fillStyle = T.cera; ctx.strokeStyle = T.scuro; ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.ellipse(-2.4, 5.1, 0.85, 1.5, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    } else {
+      ctx.fillStyle = T.rosso; // guance di belletto
+      ctx.beginPath(); ctx.arc(-2.6, 1.6, 0.9, 0, TAU); ctx.arc(2.6, 1.6, 0.9, 0, TAU); ctx.fill();
+    }
     ctx.restore();
   }
   ctx.fillStyle = T.scuro; // occhi a mandorla
@@ -74,7 +80,7 @@ function disegnaMascheraJ1(x, y, riemp, s = 1) {
  * diventa barra + una maschera + numero.
  * @param {number} x sinistra (o centro con o.centro) @param {number} y centro verticale
  * @param {number} hpHalf @param {number} maxHalf
- * @param {{centro?: boolean, scala?: number}} [o]
+ * @param {{centro?: boolean, scala?: number, cera?: boolean}} [o] cera: tutte di cera (Manto dell'Abisso)
  * @returns {number} larghezza occupata
  */
 function disegnaFilaMaschereJ1(x, y, hpHalf, maxHalf, o = {}) {
@@ -86,17 +92,36 @@ function disegnaFilaMaschereJ1(x, y, hpHalf, maxHalf, o = {}) {
     const x0 = o.centro ? x - w / 2 : x;
     for (let i = 0; i < max; i++) {
       const r = hp >= (i + 1) * 2 ? 1 : hp > i * 2 ? 0.5 : 0;
-      disegnaMascheraJ1(x0 + passo * i + passo / 2, y, r, s);
+      disegnaMascheraJ1(x0 + passo * i + passo / 2, y, r, s, Boolean(o.cera));
     }
     return w;
   }
   const bw = 70 * s, w = bw + passo + 34 * s;
   const x0 = o.centro ? x - w / 2 : x;
-  disegnaMascheraJ1(x0 + passo / 2, y, 1, s);
+  disegnaMascheraJ1(x0 + passo / 2, y, 1, s, Boolean(o.cera));
   ctx.fillStyle = '#2d1210'; ctx.fillRect(x0 + passo, y - 3, bw, 6);
   ctx.fillStyle = '#ef4444'; ctx.fillRect(x0 + passo, y - 3, Math.round(bw * hp / (max * 2)), 6);
   drawTextFit(`${(hp / 2).toFixed(1)}/${max}`, x0 + passo + bw + 3, y + 3, 34 * s, { size: 7.5, color: '#ffffff', align: 'left' });
   return w;
+}
+
+/**
+ * Le Maschere di cera (statoRun.ceraHalf), in coda alle Maschere vere: una per Maschera finché c'è posto, altrimenti
+ * una sola col numero accanto.
+ * @param {number} x sinistra @param {number} y centro verticale @param {number} ceraHalf @param {number} spazio px liberi
+ * @returns {number} larghezza occupata
+ */
+function disegnaFilaCeraJ1(x, y, ceraHalf, spazio) {
+  const M = HUD_J1.maschere, s = M.scala, passo = M.passo * s;
+  const n = Math.ceil(Math.max(0, ceraHalf) / 2);
+  if (n <= 0) return 0;
+  if (n * passo <= spazio) {
+    for (let i = 0; i < n; i++) disegnaMascheraJ1(x + passo * i + passo / 2, y, ceraHalf >= (i + 1) * 2 ? 1 : 0.5, s, true);
+    return n * passo;
+  }
+  disegnaMascheraJ1(x + passo / 2, y, 1, s, true);
+  drawTextFit(`+${(ceraHalf / 2).toFixed(ceraHalf % 2 ? 1 : 0)}`, x + passo + 1, y + 3, Math.max(8, spazio - passo - 1), { size: 7.5, color: TINTE_J1.cera, align: 'left' });
+  return Math.min(spazio, passo + 22);
 }
 
 // Filtro dei testi: i cuori rimasti nei testi a schermo (file degli altri, avvisi, descrizioni) diventano Maschere.
