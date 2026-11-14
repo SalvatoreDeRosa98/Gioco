@@ -24,6 +24,7 @@
  *
  * Uso: node tools/avventura-esplora.js [--max N] [--cammini] [--json file]
  *   --max N     tetto agli stati (predefinito 400000): se lo raggiunge lo dice, e il risultato è parziale
+ *   --completo  niente tappe: confronta gli stati per intero (molto più grande)
  *   --cammini   stampa anche il cammino più corto verso ogni finale
  *   --json f    scrive il riassunto in JSON
  */
@@ -59,34 +60,36 @@ function analizza(AV) {
     for (const s of lista(c.tutti).concat(lista(c.uno))) cond(s);
     if (c.non) cond(c.non);
   }
-  const rilevantiUnaVolta = new Set();
-  /** vero se le azioni cambiano lo stato (non solo presentazione); intanto raccoglie le condizioni lette */
-  function effetti(arr) {
-    let ha = false;
-    for (const a of arr || []) {
-      if (!Array.isArray(a)) continue;
-      const [n, x, y, z] = a;
-      if (n === 'se') { cond(x); const e1 = effetti(y), e2 = effetti(z); if (e1 || e2) ha = true; }
-      else if (n === 'unaVolta') { const e1 = effetti(y), e2 = effetti(z); if (e1 || e2) { rilevantiUnaVolta.add(x); ha = true; } }
-      else if (n === 'scelta') { ha = true; for (const v of x || []) { cond(v && v.se); effetti(v && v.fai); } }
-      else if (!PRESENTAZIONE.has(n)) ha = true;
-    }
-    return ha;
+  // tutte le liste di azioni dei dati, e intanto le condizioni lette
+  const tutte = [];
+  const temi = []; const dialoghi = [];
+  const raccogli = (arr) => { if (!Array.isArray(arr)) return; tutte.push(arr); for (const a of arr) if (Array.isArray(a)) {
+    if (a[0] === 'se') { cond(a[1]); raccogli(a[2]); raccogli(a[3]); } else if (a[0] === 'unaVolta') { raccogli(a[2]); raccogli(a[3]); }
+    else if (a[0] === 'scelta') for (const v of a[1] || []) { cond(v && v.se); raccogli(v && v.fai); } } };
+  for (const O of AV.dati.oggetto.values()) { raccogli(O.guarda); for (const x of Object.values(O.combina || {})) raccogli(x); }
+  for (const Q of AV.dati.quadro.values()) { raccogli(Q.entrata); for (const p of Q.punti || []) { cond(p.se); raccogli(p.guarda); raccogli(p.usa); raccogli(p.chiuso); for (const x of Object.values(p.con || {})) raccogli(x); } }
+  for (const D of AV.dati.dialogo.values()) { raccogli(D.inizio); raccogli(D.saluto); dialoghi.push(D); for (const t of D.temi || []) { cond(t.se); raccogli(t.fai); temi.push([D, t]); } }
+  for (const F of AV.dati.finale.values()) { cond(F.se); raccogli(F.scene); }
+  // punto fisso: una chiave conta se una condizione la legge o se è la chiave di un unaVolta con effetti;
+  // un 'segna' ha effetto solo se la sua chiave conta; 'posa' è solo aspetto.
+  const visti = new Set(letti);
+  const effetti = (arr) => (arr || []).some((a) => {
+    if (!Array.isArray(a)) return false;
+    const [n, x, y, z] = a;
+    if (n === 'se') return effetti(y) || effetti(z);
+    if (n === 'unaVolta') return visti.has(x) || effetti(y) || effetti(z);
+    if (n === 'segna') return visti.has(x);
+    if (n === 'scelta') return true;
+    return !PRESENTAZIONE.has(n) && n !== 'posa';
+  });
+  for (let giro = 0, cambiato = true; cambiato && giro < 50; giro++) {
+    cambiato = false;
+    for (const arr of tutte) for (const a of arr) if (Array.isArray(a) && a[0] === 'unaVolta' && !visti.has(a[1]) && (effetti(a[2]) || effetti(a[3]))) { visti.add(a[1]); cambiato = true; }
   }
-  for (const O of AV.dati.oggetto.values()) { effetti(O.guarda); for (const a of Object.values(O.combina || {})) effetti(a); }
-  for (const Q of AV.dati.quadro.values()) {
-    effetti(Q.entrata);
-    for (const p of Q.punti || []) { cond(p.se); effetti(p.guarda); effetti(p.usa); effetti(p.chiuso); for (const a of Object.values(p.con || {})) effetti(a); }
-  }
-  const temiRilevanti = new Set(); const dialoghiRilevanti = new Set();
-  for (const D of AV.dati.dialogo.values()) {
-    if (effetti(D.inizio)) dialoghiRilevanti.add('dialogo:' + D.id);
-    effetti(D.saluto);
-    for (const t of D.temi || []) { cond(t.se); const e = effetti(t.fai); if (t.unaVolta && e) temiRilevanti.add(D.id + '/' + t.id); }
-  }
-  for (const F of AV.dati.finale.values()) { cond(F.se); effetti(F.scene); }
-  const visti = new Set([...letti, ...rilevantiUnaVolta, ...dialoghiRilevanti]);
-  return { visti, temi: temiRilevanti };
+  for (const D of dialoghi) if (effetti(D.inizio) && !effetti(D.saluto)) visti.add('dialogo:' + D.id); else if (effetti(D.inizio) || effetti(D.saluto)) visti.add('dialogo:' + D.id);
+  const temiR = new Set();
+  for (const [D, t] of temi) if (t.unaVolta && effetti(t.fai)) temiR.add(D.id + '/' + t.id);
+  return { visti, temi: temiR, effetti };
 }
 
 // ---------------------------------------------------------------- esecuzione con tutti i rami delle scelte
@@ -120,20 +123,57 @@ function tuttiIRami(AV, azioni, base, prepara) {
   return esiti;
 }
 
-// ---------------------------------------------------------------- chiave dello stato
-function chiaveStato(s, dlg, R) {
-  const o = [s.quadro, dlg || '',
+// ---------------------------------------------------------------- tappe (capitoli) e chiave dello stato
+/**
+ * Lo spazio completo è troppo grande (le cose facoltative si moltiplicano), quindi si esplora PER TAPPE: la tappa di
+ * uno stato è il capitolo più avanzato in cui è entrato. Nella tappa di ordine o lo stato si confronta lasciando
+ * fuori le chiavi `visti` (e i `nascosti`/temi) che si leggono e si scrivono SOLO in capitoli di ordine < o: le cose
+ * già chiuse dei capitoli passati non moltiplicano gli stati dopo. Si tiene lo stato vero di un rappresentante, e i
+ * ritorni indietro si esplorano lo stesso. È un'approssimazione (detta nel resoconto): due giocatori che hanno chiuso
+ * la piazza in modi diversi, se in tutto il resto sono uguali, per l'esploratore sono uno solo.
+ */
+function tappe(AV, R) {
+  const ordine = new Map([...AV.dati.capitolo.values()].map((c) => [c.id, c.ordine]));
+  const lista = (v) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
+  const capDi = new Map(); // chiave → ordine massimo fra lettori e scrittori (Infinity = globale)
+  const segna = (k, o) => capDi.set(k, Math.max(capDi.has(k) ? capDi.get(k) : -Infinity, o));
+  function cond(c, o) { if (!c || typeof c !== 'object') return; for (const k of lista(c.visto).concat(lista(c.nonVisto))) segna(k, o); for (const x of lista(c.tutti).concat(lista(c.uno))) cond(x, o); if (c.non) cond(c.non, o); }
+  function az(arr, o) { for (const a of arr || []) if (Array.isArray(a)) { const [n, x, y, z] = a;
+    if (n === 'segna') segna(x, o); else if (n === 'unaVolta') { segna(x, o); az(y, o); az(z, o); } else if (n === 'se') { cond(x, o); az(y, o); az(z, o); }
+    else if (n === 'scelta') for (const v of x || []) { cond(v && v.se, o); az(v && v.fai, o); } } }
+  const dlgCap = new Map();
+  for (const Q of AV.dati.quadro.values()) {
+    const o = ordine.get(Q.capitolo);
+    for (const m of JSON.stringify(Q).matchAll(/\["dialogo","([^"]+)"\]/g)) dlgCap.set(m[1], Math.max(dlgCap.get(m[1]) || -Infinity, o));
+    az(Q.entrata, o); for (const p of Q.punti || []) { cond(p.se, o); az(p.guarda, o); az(p.usa, o); az(p.chiuso, o); for (const x of Object.values(p.con || {})) az(x, o); }
+  }
+  for (const D of AV.dati.dialogo.values()) { const o = dlgCap.has(D.id) ? dlgCap.get(D.id) : Infinity; segna('dialogo:' + D.id, o); az(D.inizio, o); az(D.saluto, o); for (const t of D.temi || []) { cond(t.se, o); az(t.fai, o); } }
+  for (const O of AV.dati.oggetto.values()) { az(O.guarda, Infinity); for (const x of Object.values(O.combina || {})) az(x, Infinity); }
+  for (const F of AV.dati.finale.values()) { cond(F.se, Infinity); az(F.scene, Infinity); }
+  const tappaDi = (s) => Math.max(0, ...s.capitoli.map((c) => ordine.get(c)).filter((x) => x !== undefined));
+  const quadroCap = (q) => { const Q = AV.dati.quadro.get(q.split('/')[0]); return Q ? ordine.get(Q.capitolo) : Infinity; };
+  return {
+    tappaDi,
+    vivaVisto: (k, o) => !capDi.has(k) || capDi.get(k) >= o,
+    vivoNascosto: (k, o) => quadroCap(k) >= o,
+    vivoTema: (k, o) => { const d = k.split('/')[0]; return (dlgCap.has(d) ? dlgCap.get(d) : Infinity) >= o; },
+  };
+}
+
+function chiaveStato(s, dlg, R, T) {
+  const o = T ? T.tappaDi(s) : -Infinity;
+  const v = (k) => !T || T.vivaVisto(k, o);
+  const t = [o, s.quadro, dlg || '',
     Object.keys(s.flag).filter((k) => s.flag[k]).sort().map((k) => k + '=' + s.flag[k]).join(','),
     [...new Set(s.inventario)].sort().join(','),
-    Object.keys(s.visti).filter((k) => s.visti[k] && R.visti.has(k)).sort().join(','),
-    Object.keys(s.nascosti).filter((k) => s.nascosti[k]).sort().join(','),
-    Object.keys(s.pose).sort().map((k) => k + '=' + s.pose[k]).join(','),
-    Object.keys(s.temiFatti).filter((k) => s.temiFatti[k] && R.temi.has(k)).sort().join(',')].join('|');
-  return crypto.createHash('sha1').update(o).digest('base64').slice(0, 16);
+    Object.keys(s.visti).filter((k) => s.visti[k] && R.visti.has(k) && v(k)).sort().join(','),
+    Object.keys(s.nascosti).filter((k) => s.nascosti[k] && (!T || T.vivoNascosto(k, o))).sort().join(','),
+    Object.keys(s.temiFatti).filter((k) => s.temiFatti[k] && R.temi.has(k) && (!T || T.vivoTema(k, o))).sort().join(',')].join('|');
+  return crypto.createHash('sha1').update(t).digest('base64').slice(0, 16);
 }
 
 // ---------------------------------------------------------------- la ricerca
-function esplora(AV, R) {
+function esplora(AV, R, T) {
   const nodi = []; // { padre, mossa, quadro, dlg, flag (solo all'arrivo a un finale), figli: [] }
   const indice = new Map();
   const finaliPresi = new Map(); // finale → { nodo, mossa, profondita }
@@ -141,11 +181,11 @@ function esplora(AV, R) {
   const combinazioni = new Map(); // "a,b,c,d,e,f" → Set(finali)
   const visto = { quadri: new Set(), punti: new Set(), temi: new Set(), oggetti: new Set() };
   const profondita = [];
-  const coda = [];
+  const code = new Map(); // tappa → { lista, testa }
   let tetto = false;
 
   function aggiungi(stato, dlg, padre, mossa) {
-    const k = chiaveStato(stato, dlg, R);
+    const k = chiaveStato(stato, dlg, R, T);
     let i = indice.get(k);
     if (i !== undefined) { if (padre >= 0) nodi[padre].figli.push(i); return; }
     if (nodi.length >= MAX) { tetto = true; return; }
@@ -154,7 +194,13 @@ function esplora(AV, R) {
     profondita.push(padre >= 0 ? profondita[padre] + 1 : 0);
     indice.set(k, i);
     if (padre >= 0) nodi[padre].figli.push(i);
-    coda.push({ i, stato, dlg });
+    const o = T ? T.tappaDi(stato) : 0;
+    if (!code.has(o)) code.set(o, { lista: [], testa: 0 });
+    code.get(o).lista.push({ i, stato, dlg });
+  }
+  function prossimoInCoda() {
+    for (const o of [...code.keys()].sort((a, b) => a - b)) { const c = code.get(o); if (c.testa < c.lista.length) { const x = c.lista[c.testa]; c.lista[c.testa++] = null; return x; } }
+    return null;
   }
 
   function arrivo(esito, padre, mossa) {
@@ -187,8 +233,8 @@ function esplora(AV, R) {
   const s0 = AV.nuovoStato();
   for (const e of tuttiIRami(AV, [['vai', AV.quadroIniziale()]], s0)) arrivo(e, -1, 'inizio');
   // il nodo -1 non esiste: i primi stati hanno padre -1
-  while (coda.length) {
-    const { i, stato, dlg } = coda.shift();
+  for (let x = prossimoInCoda(); x; x = prossimoInCoda()) {
+    const { i, stato, dlg } = x;
     visto.quadri.add(stato.quadro);
     const mosse = [];
     if (dlg) {
@@ -211,6 +257,7 @@ function esplora(AV, R) {
       for (let x = 0; x < inv.length; x++) for (let y = x + 1; y < inv.length; y++) mosse.push({ m: `combina ${inv[x]} + ${inv[y]}`, a: AV.azioniCombina(inv[x], inv[y]) });
     }
     for (const mv of mosse) {
+      if (mv.a && !R.effetti(mv.a)) continue; // solo righe e didascalie: lo stato non cambia
       const esiti = mv.f ? tuttiIRami(AV, null, stato, mv.f) : tuttiIRami(AV, mv.a, stato);
       for (const e of esiti) {
         if (mv.dlg && e.finale === undefined) {
@@ -239,12 +286,13 @@ function main() {
   const erroriCarico = AV.errori.slice();
   const R = analizza(AV);
   const t0 = Date.now();
-  const E = esplora(AV, R);
+  const completo = process.argv.includes('--completo');
+  const E = esplora(AV, R, completo ? null : tappe(AV, R));
   const { nodi, finaliPresi, finaliNulli, combinazioni, visto } = E;
   const out = []; let problemi = 0;
   const p = (s) => out.push(s);
 
-  p(`Esplorazione: ${nodi.length} stati in ${((Date.now() - t0) / 1000).toFixed(1)} s` + (E.tetto ? ` — TETTO di ${MAX} stati RAGGIUNTO: risultato parziale` : ' (spazio completo)'));
+  p(`Esplorazione: ${nodi.length} stati in ${((Date.now() - t0) / 1000).toFixed(1)} s` + (completo ? ' [spazio completo, senza tappe]' : ' [per tappe: le cose chiuse dei capitoli passati non distinguono gli stati]') + (E.tetto ? ` — TETTO di ${MAX} stati RAGGIUNTO: risultato parziale` : ' (spazio completo)'));
   if (E.tetto) problemi++;
   if (erroriCarico.length) { problemi++; p(`Errori del motore al caricamento (${erroriCarico.length}):`); for (const e of [...new Set(erroriCarico)]) p('  ' + e); }
 
@@ -265,7 +313,7 @@ function main() {
       const perQuadro = new Map();
       for (const i of primi) { const q = nodi[i].quadro; if (!perQuadro.has(q)) perQuadro.set(q, i); }
       p(`\nVICOLI CIECHI: ${morti.length} stati da cui nessun finale è raggiungibile (${primi.length} punti d'ingresso). Un esempio per quadro:`);
-      for (const [q, i] of perQuadro) { p(`  · in ${q}${nodi[i].dlg ? ' (dialogo ' + nodi[i].dlg + ')' : ''}, ${E.profondita[i]} mosse:`); for (const m of cammino(nodi, i)) p('      ' + m); }
+      for (const [q, i] of [...perQuadro].slice(-6)) { p(`  · in ${q}${nodi[i].dlg ? ' (dialogo ' + nodi[i].dlg + ')' : ''}, ${E.profondita[i]} mosse:`); for (const m of cammino(nodi, i)) p('      ' + m); }
     } else p('\nVicoli ciechi: nessuno.');
   } else p(`\nVicoli ciechi: non giudicabili con il tetto raggiunto (${morti.length} stati senza finale fra quelli visti).`);
 
