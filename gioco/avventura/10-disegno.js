@@ -531,7 +531,7 @@
     ctx.restore();
     rett(ctx, x, y, w, h); tratto(ctx, 1.2);
   };
-  E.luce = (ctx, o, X) => { X.luci.push({ x: num(o.x, 320), y: num(o.y, 150), r: num(o.r, 80), colore: o.colore || '#ffb35c', forza: 0.6, vivo: true }); };
+  E.luce = (ctx, o, X) => { X.luci.push({ x: num(o.x, 320), y: num(o.y, 150), r: num(o.r, 80), colore: o.colore || '#ffb35c', forza: 0.42, vivo: true }); };
   E.nebbia = (ctx, o, X) => {
     const a = num(o.alfa, 0.2);
     const g = ctx.createLinearGradient(0, X.suoloY - 80, 0, 300); g.addColorStop(0, 'rgba(170,178,195,0)'); g.addColorStop(1, `rgba(170,178,195,${a})`);
@@ -583,7 +583,7 @@
       for (const l of X.luci) {
         const R = l.r * 1.8, [lr, lg, lb] = rgb(l.colore && l.colore[0] === '#' ? l.colore : '#ffb35c');
         const gl = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, R);
-        gl.addColorStop(0, `rgba(${lr},${lg},${lb},${Math.min(0.95, l.forza * 1.4)})`); gl.addColorStop(1, `rgba(${lr},${lg},${lb},0)`);
+        gl.addColorStop(0, `rgba(${lr},${lg},${lb},${Math.min(0.6, l.forza)})`); gl.addColorStop(1, `rgba(${lr},${lg},${lb},0)`);
         ctx.fillStyle = gl; ctx.fillRect(l.x - R, l.y - R, R * 2, R * 2);
       }
       ctx.restore();
@@ -626,14 +626,66 @@
   // Ognuna: [larghezza naturale, altezza naturale, disegno(ctx, opzioni)] con i piedi a (nw/2, nh).
   const SAG = {};
   const testa = (ctx, x, y, r) => { ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2); };
-  SAG.uomo = [26, 60, (c, o) => { c.beginPath(); testa(c, 13, 9, 5.5); c.moveTo(6, 6); c.lineTo(20, 6); c.lineTo(17, 2); c.lineTo(9, 2); c.closePath();
-    c.moveTo(7, 16); c.lineTo(19, 16); c.lineTo(22, 36); c.lineTo(18, 36); c.lineTo(17, 60); c.lineTo(14, 60); c.lineTo(13, 40); c.lineTo(12, 60); c.lineTo(9, 60); c.lineTo(8, 36); c.lineTo(4, 36); c.closePath(); riempi(c, o.colore); }];
-  SAG.donna = [26, 58, (c, o) => { c.beginPath(); testa(c, 13, 9, 5); testa(c, 17, 5, 2.6); c.moveTo(9, 15); c.lineTo(17, 15); c.lineTo(20, 26); c.lineTo(24, 58); c.lineTo(2, 58); c.lineTo(6, 26); c.closePath(); riempi(c, o.colore);
-    c.beginPath(); c.moveTo(6, 17); c.lineTo(20, 17); c.lineTo(16, 30); c.lineTo(10, 30); c.closePath(); c.fillStyle = 'rgba(217,164,86,0.18)'; c.fill(); }];
-  SAG.bambina = [20, 44, (c, o) => { c.beginPath(); testa(c, 10, 8, 5); c.moveTo(14, 6); c.quadraticCurveTo(19, 12, 16, 20); c.lineTo(15, 12); c.moveTo(7, 14); c.lineTo(13, 14); c.lineTo(18, 32); c.lineTo(2, 32); c.closePath();
-    c.rect(6, 32, 3, 12); c.rect(11, 32, 3, 12); riempi(c, o.colore); }];
-  SAG.vecchio = [30, 58, (c, o) => { c.beginPath(); testa(c, 17, 12, 5); c.moveTo(10, 18); c.quadraticCurveTo(16, 14, 22, 20); c.lineTo(22, 36); c.lineTo(19, 36); c.lineTo(18, 58); c.lineTo(15, 58); c.lineTo(14, 40); c.lineTo(13, 58); c.lineTo(10, 58); c.lineTo(9, 34); c.closePath();
-    c.moveTo(25, 30); c.lineTo(27, 30); c.lineTo(28, 58); c.lineTo(26, 58); c.closePath(); c.moveTo(20, 30); c.lineTo(26, 31); c.lineTo(25, 33); c.lineTo(20, 33); c.closePath(); riempi(c, o.colore); }];
+  // ---- persone: figurine a colori col contorno a inchiostro (testa grande, corpo corto), abiti popolari del 1845.
+  // `o.colore` tinge il capo principale; `o.seme` (dall'id del personaggio) sceglie gli altri colori, stabili.
+  const PELLI = ['#eab994', '#d9a27a', '#c98e66', '#f0c6a2'];
+  const CAPELLI = ['#3a2416', '#5a3a20', '#2a1e18', '#7a4a26'];
+  const STOFFE = ['#8a3a2e', '#3e5a7a', '#5a6a3a', '#7a5a2e', '#6a3a5a', '#a0602e'];
+  function tav(o, k) { const s = (o.seme >>> 0) || 0; return (n) => n[(s + k * 7 + Math.floor(s / 13)) % n.length]; }
+  const forma = (c, col, f, l) => { c.beginPath(); f(); c.fillStyle = col; c.fill(); c.strokeStyle = INK; c.lineWidth = l || 1.1; c.lineJoin = 'round'; c.stroke(); };
+  function viso(c, x, y, r, pelle, capelli, o) {
+    forma(c, pelle, () => c.arc(x, y, r, 0, Math.PI * 2));
+    c.fillStyle = scuro(pelle, 0.2); c.beginPath(); c.arc(x, y, r, -0.2, Math.PI * 0.55); c.arc(x - r * 0.25, y - r * 0.1, r * 0.95, Math.PI * 0.55, -0.2, true); c.fill();
+    c.fillStyle = INK; c.beginPath(); c.arc(x + r * 0.12, y - r * 0.05, r * 0.11, 0, Math.PI * 2); c.arc(x + r * 0.55, y - r * 0.05, r * 0.11, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = INK; c.lineWidth = 0.7; c.beginPath(); c.moveTo(x + r * 0.5, y + r * 0.1); c.lineTo(x + r * 0.62, y + r * 0.3); c.lineTo(x + r * 0.45, y + r * 0.32); c.stroke();
+    c.fillStyle = 'rgba(210,90,80,0.35)'; c.beginPath(); c.arc(x - r * 0.05, y + r * 0.3, r * 0.18, 0, Math.PI * 2); c.fill();
+    if (o.sonno) { c.beginPath(); c.moveTo(x, y - r * 0.05); c.lineTo(x + r * 0.25, y - r * 0.05); c.stroke(); }
+  }
+  const gamba = (c, x, y0, y1, col) => { forma(c, col, () => c.rect(x, y0, 3.4, y1 - y0)); forma(c, '#2a1e1a', () => { c.moveTo(x - 0.5, y1); c.lineTo(x + 5, y1); c.quadraticCurveTo(x + 5.5, y1 + 3, x + 2, y1 + 3); c.lineTo(x - 0.5, y1 + 3); c.closePath(); }); };
+  const braccio = (c, x, y, l, col, pelle, a) => { c.save(); c.translate(x, y); c.rotate(a || 0); forma(c, col, () => D.rr(c, -2, 0, 4, l, 2)); forma(c, pelle, () => c.arc(0, l + 1, 2, 0, Math.PI * 2), 0.9); c.restore(); };
+  SAG.uomo = [26, 60, (c, o) => { const t = tav(o, 1), pelle = t(PELLI), gile = o.colore ? chiaro(o.colore) : t(STOFFE), calzoni = tav(o, 3)(['#4a4250', '#5a4a3a', '#3e4a5a']);
+    gamba(c, 8, 40, 57, calzoni); gamba(c, 14, 40, 57, calzoni);
+    forma(c, calzoni, () => D.rr(c, 7.5, 38, 11, 6, 1.5));
+    braccio(c, 6.5, 22, 15, '#e8dcc0', pelle, 0.12);
+    forma(c, '#e8dcc0', () => D.rr(c, 6, 21, 14, 19, 3));
+    forma(c, gile, () => { c.moveTo(6, 23); c.lineTo(11, 21); c.lineTo(13, 30); c.lineTo(15, 21); c.lineTo(20, 23); c.lineTo(20, 39); c.lineTo(6, 39); c.closePath(); });
+    c.fillStyle = scuro(gile, 0.35); c.fillRect(17, 24, 3, 15);
+    c.fillStyle = '#d9a456'; for (const y of [31, 35]) { c.beginPath(); c.arc(14.5, y, 0.9, 0, Math.PI * 2); c.fill(); }
+    forma(c, '#a8322a', () => { c.moveTo(9, 20); c.lineTo(17, 20); c.lineTo(14, 24); c.lineTo(12, 24); c.closePath(); }, 0.8);
+    braccio(c, 19.5, 22, 15, '#e8dcc0', pelle, -0.12);
+    viso(c, 13, 12, 8.5, pelle, t(CAPELLI), o);
+    forma(c, tav(o, 5)(['#5a4a3a', '#3a3a4a', '#6a2a22']), () => { c.moveTo(4.5, 9); c.quadraticCurveTo(6, 1, 14, 1.5); c.quadraticCurveTo(22, 2, 22, 8); c.lineTo(24.5, 9.5); c.lineTo(4.5, 10); c.closePath(); });
+    c.strokeStyle = INK; c.lineWidth = 0.8; c.beginPath(); c.moveTo(16, 16.5); c.quadraticCurveTo(18, 15.5, 20.5, 16.5); c.stroke(); }];
+  SAG.donna = [26, 58, (c, o) => { const t = tav(o, 2), pelle = t(PELLI), gonna = o.colore ? chiaro(o.colore) : t(STOFFE), capelli = t(CAPELLI), corpetto = tav(o, 4)(['#3e3a52', '#4a3a2e', '#2e4a4a']);
+    forma(c, '#2a1e1a', () => { c.ellipse(9, 57, 3, 1.6, 0, 0, Math.PI * 2); c.moveTo(20, 57); c.ellipse(17, 57, 3, 1.6, 0, 0, Math.PI * 2); });
+    forma(c, gonna, () => { c.moveTo(7, 33); c.lineTo(19, 33); c.quadraticCurveTo(24, 46, 24, 56); c.lineTo(2, 56); c.quadraticCurveTo(2, 46, 7, 33); c.closePath(); });
+    c.strokeStyle = scuro(gonna, 0.4); c.lineWidth = 0.7; for (const x of [6, 11, 16, 20]) { c.beginPath(); c.moveTo(x + 1, 38); c.lineTo(x, 55); c.stroke(); }
+    forma(c, '#ece2c8', () => { c.moveTo(9, 34); c.lineTo(17, 34); c.lineTo(19, 52); c.lineTo(8, 52); c.closePath(); }, 0.9);
+    braccio(c, 7, 22, 13, corpetto, pelle, 0.15);
+    forma(c, corpetto, () => D.rr(c, 7, 20, 12, 15, 3));
+    forma(c, tav(o, 6)(['#c99a4a', '#b8504a', '#6a8aa0', '#d8c8a0']), () => { c.moveTo(5.5, 21); c.quadraticCurveTo(13, 19, 20.5, 21); c.lineTo(13, 31); c.closePath(); });
+    braccio(c, 19, 22, 13, corpetto, pelle, -0.15);
+    forma(c, capelli, () => c.arc(11, 4.5, 4, 0, Math.PI * 2));
+    viso(c, 13, 12, 8, pelle, capelli, o);
+    forma(c, capelli, () => { c.moveTo(5, 12); c.quadraticCurveTo(4, 3, 13, 3.5); c.quadraticCurveTo(21, 4, 21, 9); c.quadraticCurveTo(15, 6, 9, 9); c.lineTo(7, 15); c.closePath(); }); }];
+  SAG.bambina = [20, 44, (c, o) => { const t = tav(o, 3), pelle = t(PELLI), veste = o.colore ? chiaro(o.colore) : t(STOFFE), capelli = t(CAPELLI);
+    gamba(c, 6, 31, 41, '#e8dcc0'); gamba(c, 10.5, 31, 41, '#e8dcc0');
+    forma(c, veste, () => { c.moveTo(6, 17); c.lineTo(14, 17); c.lineTo(17.5, 33); c.lineTo(2.5, 33); c.closePath(); });
+    forma(c, '#f2ead6', () => { c.moveTo(7.5, 21); c.lineTo(12.5, 21); c.lineTo(14, 31); c.lineTo(6, 31); c.closePath(); }, 0.8);
+    braccio(c, 5, 18, 10, veste, pelle, 0.25); braccio(c, 15, 18, 10, veste, pelle, -0.25);
+    forma(c, capelli, () => { c.moveTo(3, 10); c.quadraticCurveTo(1, 18, 3.5, 21); c.lineTo(5.5, 13); c.closePath(); });
+    viso(c, 10, 10, 7, pelle, capelli, o);
+    forma(c, capelli, () => { c.moveTo(3.2, 10); c.quadraticCurveTo(3, 2.5, 10, 3); c.quadraticCurveTo(17, 3, 17, 8); c.quadraticCurveTo(11, 5, 7, 9); c.lineTo(5, 13); c.closePath(); });
+    forma(c, '#c0392b', () => c.arc(4.5, 6, 1.8, 0, Math.PI * 2), 0.7); }];
+  SAG.vecchio = [30, 58, (c, o) => { const t = tav(o, 4), pelle = t(PELLI), giacca = o.colore ? chiaro(o.colore) : tav(o, 2)(['#5a4632', '#4a4a3e', '#5a3a30']);
+    forma(c, '#6a4a2a', () => c.rect(25, 30, 2, 27)); forma(c, '#6a4a2a', () => { c.moveTo(21, 31); c.quadraticCurveTo(25, 27, 27, 31); c.lineTo(26, 32); c.quadraticCurveTo(25, 30, 22, 32.5); c.closePath(); }, 0.8);
+    gamba(c, 11, 40, 55, '#4a4250'); gamba(c, 16, 40, 55, '#4a4250');
+    forma(c, giacca, () => { c.moveTo(9, 22); c.quadraticCurveTo(15, 17, 22, 22); c.lineTo(23, 42); c.lineTo(9, 42); c.closePath(); });
+    c.fillStyle = scuro(giacca, 0.35); c.fillRect(19.5, 24, 3, 18);
+    braccio(c, 20, 23, 11, giacca, pelle, -0.4);
+    viso(c, 17, 14, 8, pelle, '#d8d4cc', o);
+    forma(c, '#e8e4dc', () => { c.moveTo(15, 18); c.quadraticCurveTo(20, 27, 24, 18); c.quadraticCurveTo(20, 20, 15, 18); c.closePath(); }, 0.8);
+    forma(c, '#3a3a4a', () => { c.moveTo(9, 11); c.quadraticCurveTo(10, 4, 17, 4.5); c.quadraticCurveTo(24, 5, 25, 11); c.closePath(); }); }];
   SAG.guardia = [30, 66, (c, o) => { c.beginPath(); c.rect(10, 0, 10, 10); c.moveTo(8, 10); c.lineTo(22, 10); c.lineTo(22, 12); c.lineTo(8, 12); testa(c, 15, 16, 5); c.moveTo(8, 22); c.lineTo(22, 22); c.lineTo(24, 42); c.lineTo(19, 42); c.lineTo(18, 66); c.lineTo(15, 66); c.lineTo(15, 46); c.lineTo(14, 66); c.lineTo(11, 66); c.lineTo(11, 42); c.lineTo(6, 42); c.closePath();
     c.rect(25, 6, 2, 50); c.moveTo(25, 6); c.lineTo(26, 0); c.lineTo(27, 6); riempi(c, o.colore); c.fillStyle = C.filo; c.fillRect(13, 2, 4, 2); }];
   SAG.gatto = [34, 26, (c, o) => { c.beginPath(); c.moveTo(6, 26); c.quadraticCurveTo(4, 10, 14, 10); c.lineTo(13, 3); c.lineTo(17, 7); c.lineTo(21, 3); c.lineTo(21, 11); c.quadraticCurveTo(26, 16, 22, 26); c.closePath();
@@ -774,7 +826,7 @@
       const nome = fig.sagoma || (P && P.id === 'ferruccio' ? 'ferruccio' : 'uomo');
       const S = SAG[nome] || SAG.uomo; const w = (alt * S[0]) / S[1];
       const passo = o.cammina ? Math.abs(Math.sin((o.t || 0) * 9)) * 2 : 0;
-      D.sagoma(ctx, nome, cx - w / 2, piedi - alt - passo, w, alt, { dir: o.dir, t: o.t, posa: o.posa });
+      D.sagoma(ctx, nome, cx - w / 2, piedi - alt - passo, w, alt, { dir: o.dir, t: o.t, posa: o.posa, colore: fig.colore, seme: hash((P && P.id) || nome) });
     }
     ctx.restore();
   };
