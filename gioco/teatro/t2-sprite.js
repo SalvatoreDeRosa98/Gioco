@@ -72,6 +72,16 @@
     piediPersonaggio: 9,
     piediNemico: 5,
     piediVespa: -3, // la vespa vola: resta sollevata sopra la sua ombra
+    // Ombra di contatto: un'ellisse scura stretta proprio sotto i piedi (più un alone morbido). È quella che appoggia
+    // la figura al pavimento: senza, sotto la luce della ribalta le figure sembrano sospese.
+    ombraContatto: Object.freeze({ larghezza: 0.2, schiaccio: 0.3, alfa: 0.55, alone: 0.22 }),
+    // Il passo segue la strada fatta, non il tempo (i piedi non scivolano): strada per fotogramma di camminata,
+    // in frazione dell'altezza a schermo della figura (un ciclo di 4 fotogrammi ≈ 0,74 volte l'altezza).
+    falcata: 0.185,
+    passoMinimo: 0.25,  // px per tick contati comunque a chi cammina contro un muro (le gambe non si bloccano)
+    fermoDopoTick: 10,  // un nemico che non si sposta da tanti tick sta nella posa «fermo»
+    giraPx: 0.3,        // spostamento orizzontale per tick oltre cui un nemico guarda dove va
+    saltoPx: 12,        // uno spostamento più lungo fra due disegni è un cambio di posto, non un passo
     // Tick (60 Hz) per fotogramma, per posa.
     cadenza: Object.freeze({ fermo: 22, cammina: 8, muove: 9, vola: 4, spara: 7, colpito: 1, morto: 9,
       morte: 7, anticipo: 9, attacco: 6, carica: 5, evoca: 8, apre: 6, miccia: 6, esplode: 5, chiusa: 24, 'si-apre': 5,
@@ -157,6 +167,35 @@
 
   const fotogramma = (posa, t) => Math.floor(t / (CONFIG.cadenza[posa] || 8));
 
+  /** L'ombra di contatto sotto i piedi di `nome`, nel contesto già traslato sull'entità (piedi in (0, piediY)). */
+  function ombraContatto(ctx, nome, piediY, customH) {
+    const O = CONFIG.ombraContatto, rx = (customH || CONFIG.altezza[nome] || 40) * O.larghezza;
+    ctx.save();
+    ctx.fillStyle = `rgba(4, 2, 6, ${O.alone})`;
+    ctx.beginPath(); ctx.ellipse(0, piediY + 0.5, rx * 1.3, rx * O.schiaccio * 1.25, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = `rgba(4, 2, 6, ${O.alfa})`;
+    ctx.beginPath(); ctx.ellipse(0, piediY, rx * 0.8, rx * O.schiaccio * 0.7, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  /**
+   * Conta la strada fatta da un'entità fra un disegno e l'altro (una volta per tick: ombre e riflessi la ridisegnano).
+   * Scrive in `v`: strada (px), dx (px per tick, col segno), fermoDa (tick senza spostarsi).
+   * @param {object} v memoria dell'entità @param {boolean} cammina conta il passo minimo anche da ferma (contro un muro)
+   */
+  function avanza(v, x, y, tick, cammina) {
+    if (v.tk === tick) return v;
+    const dt = v.tk === undefined ? 1 : Math.max(1, Math.min(4, tick - v.tk));
+    const dx = v.ux === undefined ? 0 : x - v.ux, dy = v.uy === undefined ? 0 : y - v.uy;
+    const d = Math.hypot(dx, dy), passo = d < CONFIG.saltoPx ? d : 0;
+    v.ux = x; v.uy = y; v.tk = tick;
+    v.dx = passo > 0 ? dx / dt : 0;
+    v.fermoDa = passo > 0.05 ? 0 : (v.fermoDa || 0) + dt;
+    v.strada = (v.strada || 0) + (cammina ? Math.max(passo, CONFIG.passoMinimo * dt) : passo);
+    return v;
+  }
+  const passiGiocatore = {};
+
   // ---------------------------------------------------------------------------------------------
   // Personaggi giocabili
   // ---------------------------------------------------------------------------------------------
@@ -185,8 +224,12 @@
         f = opts.swordAnimTick >= 0 && opts.swordAnimTick < 14 ? (opts.swordAnimTick < 7 ? 0 : 1) : fotogramma('spara', tick);
       } else if (opts.moving) {
         posa = 'cammina'; f = fotogramma('cammina', tick);
+        // il giocatore: il fotogramma viene dalla strada fatta, così le gambe vanno al passo con la velocità
+        if (ePlayer) f = Math.floor(avanza(passiGiocatore, px, py, tick, true).strada / ((CONFIG.altezza[charId] || 56) * CONFIG.falcata));
       }
     }
+    if (ePlayer && posa !== 'cammina') avanza(passiGiocatore, px, py, tick, false);
+    if (statoRun.fase !== 'menu_selezione' && !(ePlayer && player.airZ > 0)) ombraContatto(ctx, charId, CONFIG.piediPersonaggio);
     return disegnaFotogramma(ctx, charId, posa, f, CONFIG.piediPersonaggio, opts.flash ? '#ffffff' : null, 0.7);
   }
 
@@ -242,10 +285,23 @@
     const foglio = FOGLIO_NEMICO[n.tipo];
     if (!foglio || !pronta(foglio)) return false;
     if (!visti.has(n)) visti.set(n, { foglio, morteDa: -1 });
-    const flip = I.player.x < n.x ? -1 : 1;
-    const [posa, f] = posaNemico(n, tick);
+    let flip = I.player.x < n.x ? -1 : 1;
+    let [posa, f] = posaNemico(n, tick);
     const vola = n.tipo === 'vespa_cieca' || n.tipo === 'lucciola';
     const piedi = vola ? CONFIG.piediVespa + Math.sin(tick * 0.2 + n.x * 0.05) * 1.5 : CONFIG.piediNemico;
+    if (!vola) {
+      // chi cammina a terra: gambe al passo con la strada fatta, fermo se non si sposta, e guarda dove va
+      const v = avanza(visti.get(n), n.x, n.y, tick, false);
+      if (posa === 'muove') {
+        if (v.fermoDa >= CONFIG.fermoDopoTick && LAYOUT[foglio].indice.fermo) { posa = 'fermo'; f = fotogramma('fermo', tick); v.verso = 0; }
+        else {
+          f = Math.floor(v.strada / ((CONFIG.altezza[foglio] || 40) * CONFIG.falcata));
+          if (Math.abs(v.dx) >= CONFIG.giraPx) v.verso = v.dx < 0 ? -1 : 1;
+          if (v.verso) flip = v.verso;
+        }
+      } else v.verso = 0;
+      if (!(n.airZ > 0)) ombraContatto(ctx, foglio, CONFIG.piediNemico);
+    }
     ctx.save();
     ctx.scale(flip, 1);
     const tinta = n.flash > 0 ? '#ffffff' : (n.champion ? CONFIG.tinta[n.champion] : null);
@@ -362,6 +418,7 @@
     const fluttua = vola ? Math.sin(tick * 0.08) * 3 : 0;
     const piedi = (CONFIG.piediNemico || 5) + fluttua;
     const customH = b.bossId === 're-gatto' ? 52 : undefined;
+    if (!vola && !(b.airZ > 0)) ombraContatto(ctx, foglio, CONFIG.piediNemico, customH);
 
     ctx.save();
     ctx.scale(flip, 1);
@@ -392,7 +449,9 @@
     window.__teatro = Object.defineProperties({}, Object.getOwnPropertyDescriptors(window.__teatro));
   }
   window.__teatro.t2 = {
-    personaggio, nemico, dopoNemici, boss, disegnaFotogramma, fotogramma,
+    personaggio, nemico, dopoNemici, boss, disegnaFotogramma, fotogramma, ombraContatto,
+    /** Per la QA: la memoria di un nemico (strada, dx, fermoDa, verso). */
+    memoriaNemico: (n) => visti.get(n) || null,
     /** Per la QA: quali fogli sono caricati. */
     get caricati() { return Object.keys(immagini).filter(pronta); },
     LAYOUT, CONFIG,

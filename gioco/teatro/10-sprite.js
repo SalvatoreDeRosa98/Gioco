@@ -132,7 +132,15 @@ function disegnaFerruccioPittorico() {
   ctx.save();
   ctx.imageSmoothingEnabled = true;
 
-  const bob = moving ? Math.sin(tick * 0.34) * 1.8 : Math.sin(tick * 0.09) * 1.1;
+  // camminata coi piedi a terra (CAMMINATA_T1): `bob` muove solo il corpo, `piede` dice dove sta ogni piede
+  const fasePasso = faseCamminataT1(px, py, tick, moving);
+  const bob = moving ? -Math.abs(Math.sin(fasePasso)) * CAMMINATA_T1.dondolioPx : Math.sin(tick * 0.09) * CAMMINATA_T1.respiroPx;
+  /** Un piede (lato -1 sinistro, +1 destro) nelle coordinate del corpo: x avanti/indietro a turno, y a terra (o alzato mentre avanza). */
+  const piede = (lato) => ({
+    x: moving ? Math.sin(fasePasso) * lato * CAMMINATA_T1.ampiezza : 0,
+    y: -bob - (moving ? Math.max(0, Math.cos(fasePasso) * lato) * CAMMINATA_T1.alzata : 0),
+  });
+  const pS = piede(-1), pD = piede(1);
   const wave = Math.sin(tick * 0.16) * 3.8;
   const wave2 = Math.cos(tick * 0.13) * 3.2;
 
@@ -149,6 +157,9 @@ function disegnaFerruccioPittorico() {
   ctx.arc(0, 0, shRadius, 0, TAU);
   ctx.fill();
   ctx.restore();
+  // ombra di contatto: stretta e scura proprio sotto le scarpe (è quella che appoggia la figura al pavimento)
+  ctx.fillStyle = 'rgba(4, 2, 6, 0.5)';
+  ctx.beginPath(); ctx.ellipse(px, py + 9.6, shRadius * 0.6, 2.3, 0, 0, TAU); ctx.fill();
 
   ctx.translate(px, py + bob);
   if (opts.scalaA2 && opts.scalaA2 !== 1) ctx.scale(opts.scalaA2, opts.scalaA2); // A2: consumabili (a2-consumabili.js)
@@ -189,17 +200,16 @@ function disegnaFerruccioPittorico() {
     ctx.fill(); ctx.stroke();
 
     // 2. Gambette e scarpette delicate di seta/legno
-    const walkSwing = moving ? Math.sin(tick * 0.34) * 3.2 : 0;
     ctx.strokeStyle = '#110d0a';
     ctx.lineWidth = 2.4;
     ctx.beginPath();
-    ctx.moveTo(-2.5, 0); ctx.lineTo(-3 - walkSwing * 0.5, 7.5); ctx.stroke();
-    ctx.moveTo(2.2, 0);  ctx.lineTo(2.5 + walkSwing * 0.5, 8.0); ctx.stroke();
+    ctx.moveTo(-2.5, 0); ctx.lineTo(-3 + pS.x, 7.5 + pS.y); ctx.stroke();
+    ctx.moveTo(2.2, 0);  ctx.lineTo(2.5 + pD.x, 8.0 + pD.y); ctx.stroke();
 
     ctx.fillStyle = '#1e1014';
     ctx.beginPath();
-    ctx.ellipse(-2 - walkSwing * 0.5, 8.2, 2.8, 1.3, 0.1, 0, TAU);
-    ctx.ellipse(3.6 + walkSwing * 0.5, 8.5, 3.0, 1.4, 0.12, 0, TAU);
+    ctx.ellipse(-2 + pS.x, 8.2 + pS.y, 2.8, 1.3, 0.1, 0, TAU);
+    ctx.ellipse(3.6 + pD.x, 8.5 + pD.y, 3.0, 1.4, 0.12, 0, TAU);
     ctx.fill();
 
     // 3. Gonna e Grembiule da tessitrice di San Leucio a campana
@@ -353,22 +363,21 @@ function disegnaFerruccioPittorico() {
     const colTunic = flash ? '#f87171' : '#1c1917';
 
     // 1. Gambe robuste e cosciali di cuoio/ferro
-    const walkSwingT = moving ? Math.sin(tick * 0.34) * 3.0 : 0;
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 3.6;
     ctx.beginPath();
-    ctx.moveTo(-3.5, 0); ctx.lineTo(-4.0 - walkSwingT * 0.5, 8.0); ctx.stroke();
-    ctx.moveTo(3.2, 0);  ctx.lineTo(3.5 + walkSwingT * 0.5, 8.5); ctx.stroke();
+    ctx.moveTo(-3.5, 0); ctx.lineTo(-4.0 + pS.x, 8.0 + pS.y); ctx.stroke();
+    ctx.moveTo(3.2, 0);  ctx.lineTo(3.5 + pD.x, 8.5 + pD.y); ctx.stroke();
 
     // Stivaletti borbonici con fibbia d\'ottone
     ctx.fillStyle = '#1c1917';
     ctx.beginPath();
-    ctx.ellipse(-3.5 - walkSwingT * 0.5, 8.8, 3.8, 1.8, 0.1, 0, TAU);
-    ctx.ellipse(4.2 + walkSwingT * 0.5, 9.2, 4.0, 1.9, 0.12, 0, TAU);
+    ctx.ellipse(-3.5 + pS.x, 8.8 + pS.y, 3.8, 1.8, 0.1, 0, TAU);
+    ctx.ellipse(4.2 + pD.x, 9.2 + pD.y, 4.0, 1.9, 0.12, 0, TAU);
     ctx.fill();
     ctx.fillStyle = colBrass;
-    ctx.fillRect(-4.5 - walkSwingT * 0.5, 8.0, 2.2, 1.6);
-    ctx.fillRect(3.2 + walkSwingT * 0.5, 8.4, 2.2, 1.6);
+    ctx.fillRect(-4.5 + pS.x, 8.0 + pS.y, 2.2, 1.6);
+    ctx.fillRect(3.2 + pD.x, 8.4 + pD.y, 2.2, 1.6);
 
     // 2. Corazza toracica in ferro battuto con spallacci e tunica scura
     ctx.fillStyle = colTunic;
@@ -555,35 +564,34 @@ function disegnaFerruccioPittorico() {
   }
 
   // 2. GAMBETTE SOTTILI SCURE E SCARPETTE NERE
-  const walkSwing = moving ? Math.sin(tick * 0.34) * 3.2 : 0;
   ctx.strokeStyle = '#110d0a';
   ctx.lineWidth = 2.6;
   ctx.beginPath();
   ctx.moveTo(-2.5, -1);
-  ctx.lineTo(-3 - walkSwing * 0.5, 7.5);
+  ctx.lineTo(-3 + pS.x, 7.5 + pS.y);
   ctx.stroke();
 
   ctx.fillStyle = '#0d0907';
   ctx.beginPath();
-  ctx.ellipse(-2 - walkSwing * 0.5, 8.2, 3.0, 1.4, 0.1, 0, TAU);
+  ctx.ellipse(-2 + pS.x, 8.2 + pS.y, 3.0, 1.4, 0.1, 0, TAU);
   ctx.fill();
 
   ctx.strokeStyle = '#18120e';
   ctx.lineWidth = 2.8;
   ctx.beginPath();
   ctx.moveTo(2.2, -1);
-  ctx.lineTo(2.5 + walkSwing * 0.5, 8.0);
+  ctx.lineTo(2.5 + pD.x, 8.0 + pD.y);
   ctx.stroke();
   ctx.strokeStyle = 'rgba(180, 148, 112, 0.35)';
   ctx.lineWidth = 0.8;
   ctx.beginPath();
   ctx.moveTo(2.8, 0);
-  ctx.lineTo(3.0 + walkSwing * 0.5, 7.5);
+  ctx.lineTo(3.0 + pD.x, 7.5 + pD.y);
   ctx.stroke();
 
   ctx.fillStyle = '#120d0a';
   ctx.beginPath();
-  ctx.ellipse(3.6 + walkSwing * 0.5, 8.5, 3.3, 1.5, 0.12, 0, TAU);
+  ctx.ellipse(3.6 + pD.x, 8.5 + pD.y, 3.3, 1.5, 0.12, 0, TAU);
   ctx.fill();
 
   // 3. MANTELLO / CAMICIONE A CAMPANA IN STOFFA CREMA CON PIEGHE PITTORICHE
@@ -2832,3 +2840,35 @@ Object.assign(SPRITE_OGGETTI, {
 
 SPRITE_PROIETTILI.viola = ['..kkkk..', '.kppppk.', 'kpwppPPk', 'kppppPPk', 'kpppPPPk', 'kPPPPPPk', '.kPPPPk.', '..kkkk..']; // colpi a ricerca del Cucchiaio
 // --- D: fine ---
+/**
+ * Camminata delle figure dipinte (valori di resa, non di gioco). I piedi poggiano a terra e fanno un passo ogni
+ * `passoPx` di strada, uno dopo l'altro, alzandosi mentre avanzano; il corpo si alza appena a metà passo e da fermo
+ * respira soltanto. Prima tutta la figura, piedi compresi, andava su e giù a tempo fisso: sembrava sospesa.
+ */
+const CAMMINATA_T1 = Object.freeze({
+  passoPx: 9,        // strada per ogni passo (un ciclo completo = due passi)
+  ampiezza: 2.6,     // di quanto un piede va avanti e indietro (px)
+  alzata: 1.8,       // di quanto si alza il piede che avanza (px)
+  dondolioPx: 1.1,   // di quanto si alza il corpo a metà passo
+  respiroPx: 0.5,    // respiro da fermo (solo il corpo)
+  passoMinimo: 0.3,  // px per tick contati comunque a chi spinge contro un muro
+  saltoPx: 14,       // uno spostamento più lungo fra due disegni è un cambio di posto, non un passo
+});
+const stradaGiocatoreT1 = { x: 0, y: 0, tick: -1, strada: 0 };
+/**
+ * Fase (radianti) della camminata: dalla strada fatta dal giocatore, così le gambe vanno al passo con la sua velocità;
+ * per le figure disegnate altrove (anteprime, scene) dal tempo.
+ * @param {number} px @param {number} py @param {number} tick @param {boolean} moving @returns {number}
+ */
+function faseCamminataT1(px, py, tick, moving) {
+  const P = CAMMINATA_T1, S = stradaGiocatoreT1;
+  const giocatore = typeof player !== 'undefined' && px === player.x && py === player.y;
+  if (!giocatore) return moving ? tick * 0.5 : 0;
+  if (S.tick !== tick) { // una volta per tick: ombre e riflessi ridisegnano la stessa figura
+    const d = Math.hypot(px - S.x, py - S.y), dt = Math.max(1, Math.min(4, tick - S.tick));
+    if (S.tick >= 0 && d < P.saltoPx) S.strada += moving ? Math.max(d, P.passoMinimo * dt) : d;
+    S.x = px; S.y = py; S.tick = tick;
+  }
+  return moving ? (S.strada / P.passoPx) * Math.PI : 0;
+}
+
