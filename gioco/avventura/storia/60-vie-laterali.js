@@ -30,6 +30,16 @@
  *  3. CONFRONTO — il Campanaro Senza Volto: tacciono le tre campane; resta la sua corda. L'ultima parola non detta è
  *     il suo nome, Anselmo, scritto nel registro della sagrestia. Sale un'anima, resta il ricordo delle campane.
  *     Chiavi: campane-perdono + taddeo-perdono-detto | taddeo-tradimento-compiuto. Ritorno al bivio.
+ *  ANFITEATRO — «L'Arena dei Dimenticati»
+ *  4. ENIGMA 3 — Scendere nell'ipogeo: la manovella dell'argano è nella sabbia dell'arena; con l'argano si cala il
+ *     montacarichi fino alle gabbie. Lungo la strada, tre giuramenti incisi: il compagno di Spartaco (rotto con la
+ *     fuga), il soldato longobardo (rotto aprendo la porta ai Saraceni), Felix (sciolto: il popolo gli diede la rudis).
+ *  5. CONFRONTO — il Giudice dell'Arena: «portami la prova che un giuramento si scioglie senza tradirlo». Prima la
+ *     rudis, poi la tessera col nome di chi la ricevette (in qualunque ordine). Manca il pollice del popolo:
+ *     agnese = risvegliata → Agnese, sulle gradinate, lo alza per prima e le ombre la seguono; agnese = sognante →
+ *     Ferruccio sale fra le ombre e mostra loro la tessera di Felix (un passo in più). Rivelazione obbligatoria: la
+ *     magia di Donna Luciana è tramandata da secoli; il Velo è un giuramento antico che nessuno ha saputo sciogliere.
+ *     Chiave: arena-dimenticati. Poi la scena con Agnese (risvegliata) o il gesto accanto a lei che dorme (sognante).
  *
  * Chiavi «segna» che escono dal capitolo: campane-perdono, taddeo-perdono-detto, taddeo-tradimento-compiuto,
  * arena-dimenticati. Nessun flag di decisione nuovo. Oggetti che escono: ricordo-campane, ricordo-arena.
@@ -99,7 +109,7 @@ AV.quadro({
           [['pensa', 'La mulattiera sale fra gli ulivi fino al borgo vecchio sul colle. In cima, contro la luna, un campanile. Si sente una campana: suona da sola.']]], // [nuovo]
       ] },
     { id: 'verso-anfiteatro', nome: 'La via Appia, verso Santa Maria', x: 380, y: 200, w: 150, h: 46,
-      usa: [['pensa', 'La via antica scende verso la piana di Capua. Ferruccio esita: qualcosa, laggiù, non è ancora pronto.']], // [nuovo]
+      uscita: 'anfiteatro.arcate',
       guarda: [
         ['se', { visto: 'arena-dimenticati' },
           [['pensa', 'Laggiù l\'arena è vuota, adesso. Le ombre se ne sono andate per conto loro.']], // [nuovo]
@@ -512,4 +522,330 @@ AV.quadro({
   ],
 });
 
-// USCITA DEL CAPITOLO: il viale della Reggia dal bivio (strada.bivio → reggia.cancello), sempre aperto.
+// ============================================================================================================
+// ANFITEATRO — oggetti
+// ============================================================================================================
+AV.oggetto({ id: 'manovella', nome: 'La manovella dell\'argano',
+  descrizione: 'Un manico di ferro piegato a gomito, con il foro quadro. Era sepolto nella sabbia dell\'arena.',
+  icona: { sagoma: 'ferro' },
+  guarda: [['pensa', 'Ferro romano? No: rifatto dopo, da qualche fabbro di Capua. Il foro quadro è per un perno d\'argano.']] }); // [nuovo]
+AV.oggetto({ id: 'rudis', nome: 'La rudis', descrizione: 'Una spada di legno, liscia di mani. Ai gladiatori la davano quando erano liberi.',
+  icona: { punti: [[10, 1], [13, 4], [12, 17], [16, 18], [16, 20], [12, 20], [11, 23], [9, 23], [8, 20], [4, 20], [4, 18], [8, 17], [7, 4]] },
+  guarda: [['pensa', 'Una spada di legno. Io ne facevo da bambino, per giocare coi cavalieri con Taddeo. Questa invece voleva dire: hai finito, vai.']] }); // [nuovo]
+AV.oggetto({ id: 'tessera-gladiatore', nome: 'La tessera del gladiatore',
+  descrizione: 'Una tessera d\'osso, con un nome inciso: «FELIX · SPECTATVS».',
+  icona: { sagoma: 'foglio' },
+  guarda: [['dice', 'didascalia', 'Una tessera d\'osso, con un nome inciso. Nessuno se lo ricorda più.'], // [teatro]
+    ['pensa', '«Spectatus»: visto, provato. Lo hanno guardato combattere, e hanno deciso che bastava.']] }); // [nuovo]
+AV.oggetto({ id: 'ricordo-arena', nome: 'Il ricordo dell\'arena', descrizione: 'Una luce color sabbia, salita dalla toga del Giudice. Dentro, mille pollici alzati.',
+  icona: { sagoma: 'anima' },
+  guarda: [['dice', 'didascalia', 'Dalla toga del Giudice escono anime di ogni epoca. Avevano giurato tutte alla stessa magia: quella di Donna Luciana non è nata a Caserta. Qualcuno gliel\'ha tramandata, di mano in mano, da secoli.'], // [teatro]
+    ['pensa', 'Il Velo è un giuramento. E un giuramento si può sciogliere senza tradirlo: lo deve sciogliere chi l\'ha ricevuto.']] }); // [nuovo]
+
+// ============================================================================================================
+// ANFITEATRO — 1. LE ARCATE
+// ============================================================================================================
+AV.quadro({
+  id: 'anfiteatro.arcate', capitolo: 'vie-laterali', nome: 'L\'Anfiteatro Campano, le arcate',
+  fondale: { immagine: 'avventura/anfiteatro-arcate',
+    disegno: [['cielo', { tono: 'notte', luna: true, stelle: true }], ['quinte', { colore: '#120d0a' }],
+      ['palazzo', { x: 60, w: 520, h: 200, archi: 7, finestre: 0 }],
+      ['arco', { x: 280, y: 130, w: 80, h: 120 }], ['suolo', { tipo: 'sabbia', y: 250 }],
+      ['colonna', { x: 40, y: 250, h: 90 }], ['colonna', { x: 600, y: 250, h: 70 }],
+      ['luce', { x: 320, y: 200, r: 60, colore: '#fbbf24' }], ['nebbia', { alfa: 0.1 }]],
+    luce: { tono: 'notte' } },
+  musica: 'ombra',
+  entrata: [
+    ['unaVolta', 'an-arrivo', [
+      ['dice', 'didascalia', 'Nell\'antico Anfiteatro Campano sono raccolte le memorie dei combattenti di molte epoche.'], // [bibbia]
+      ['pensa', 'Le arcate, una sopra l\'altra, travertino e mattone. Dall\'interno viene un rumore di folla: grida, battimani, un tamburo. Poi, di colpo, niente.'], // [nuovo]
+      ['diario', 'Sono sceso per la via Appia fino a Santa Maria. L\'Anfiteatro è pieno di ombre, e qualcuno, dentro, giudica.'], // [nuovo]
+      ['obiettivo', 'Entrare nell\'arena.'], // [nuovo]
+    ]],
+  ],
+  punti: [
+    { id: 'appia', nome: 'La via Appia, verso il bivio', x: 0, y: 236, w: 60, h: 56, uscita: 'strada.bivio',
+      guarda: [['pensa', 'La via antica torna su, verso il bivio e la Reggia.']] }, // [nuovo]
+    { id: 'ingresso', nome: 'L\'ingresso dell\'arena', x: 280, y: 130, w: 80, h: 120, uscita: 'anfiteatro.arena',
+      guarda: [['pensa', 'Il fornice grande. Di là, la sabbia chiara e le gradinate.']] }, // [nuovo]
+    { id: 'chiavi', nome: 'Le teste sulle arcate', x: 100, y: 60, w: 160, h: 40,
+      guarda: [['pensa', 'Sulla chiave di ogni arco c\'era una testa di dio scolpita: Giunone, Diana, Mercurio. Ne restano poche, senza naso. Guardano tutte giù, verso chi entra.']] }, // [nuovo]
+    { id: 'mura', nome: 'Il travertino', x: 400, y: 100, w: 160, h: 140,
+      guarda: [['pensa', 'Blocchi chiari, enormi, e mattone rosso dove la pietra se n\'è andata. Per secoli quelli di Capua ci hanno preso le pietre per farsi le case: mezza città vecchia è fatta d\'anfiteatro.']] }, // [nuovo]
+    { id: 'colonna', nome: 'Una colonna spezzata', x: 28, y: 160, w: 26, h: 90, sagoma: 'statua',
+      guarda: [['pensa', 'Una colonna rotta a metà, con sopra una corona d\'alloro di bronzo, verde. Qualcuno l\'ha lasciata lì, come un cappello su una sedia.']] }, // [nuovo]
+    { id: 'folla', nome: 'Il rumore della folla', x: 220, y: 30, w: 200, h: 60,
+      guarda: [['pensa', 'Il rumore torna e se ne va, a ondate. È la memoria di un rumore: duemila anni di domeniche.']] }, // [nuovo]
+  ],
+});
+
+// ============================================================================================================
+// ANFITEATRO — 2. L'ARENA (confronto: il Giudice; Agnese sulle gradinate)
+// ============================================================================================================
+
+/** La fine del confronto: il pollice in su, la rivelazione, il ricordo. */
+const FINE_ARENA = [
+  ['posa', 'giudice', 5], ['suono', 'scelta'],
+  ['pensa', 'Il Giudice guarda le gradinate. Poi, lentamente, alza il pollice anche lui.'], // [nuovo]
+  ['dice', 'giudice', 'Sciolto. Non rotto: sciolto. Ve ne potete andare, tutti.'], // [nuovo]
+  ['dice', 'didascalia', 'Il Giudice dell\'Arena scende dal podio per l\'ultima volta. Le gradinate tacciono.'], // [teatro]
+  ['effetto', 'anime'], ['suono', 'anime'],
+  ['dice', 'didascalia', 'Dalla toga del Giudice escono anime di ogni epoca. Avevano giurato tutte alla stessa magia: quella di Donna Luciana non è nata a Caserta. Qualcuno gliel\'ha tramandata, di mano in mano, da secoli.'], // [teatro]
+  ['dice', 'giudice', 'Il vostro Velo è un giuramento, burattino. Vecchio più di me. Qualcuno lo fece, prima di lei, e non lo seppe sciogliere: e allora l\'ha passato avanti, come si passa un debito.'], // [nuovo]
+  ['dice', 'giudice', 'Chi l\'ha ricevuto, lo può sciogliere. Ricordatelo, quando sarai davanti a lei.'], // [nuovo]
+  ['dice', 'didascalia', 'Ferruccio scopre che la magia utilizzata da Donna Luciana non nasceva a Caserta, ma era stata tramandata da secoli.'], // [bibbia, adattata: Violante → Donna Luciana]
+  ['nascondi', 'giudice'],
+  ['prendi', 'ricordo-arena'], ['suono', 'prendi'],
+  ['segna', 'arena-dimenticati'],
+  ['diario', 'Sono passato per l\'Arena dei Dimenticati. Elmi, scudi, lance: tutti fermi, tutti a guardare me.'], // [teatro]
+  ['diario', 'La magia di Donna Luciana non è nata a Caserta: è vecchia di secoli. Il Velo è un giuramento che nessuno ha saputo sciogliere. Chi lo riceve, lo può sciogliere.'], // [nuovo]
+  ['se', { flag: { agnese: 'risvegliata' } },
+    [['obiettivo', 'Agnese è sulle gradinate. Poi, tornare al bivio per la via Appia.']], // [nuovo]
+    [['obiettivo', 'Tornare al bivio per la via Appia. Sulle gradinate, fra le ombre, qualcuno dorme ancora.']]], // [nuovo]
+];
+
+/** Agnese risvegliata dà il passo che manca: il pollice del popolo lo alza lei per prima. */
+const PASSO_AGNESE = [
+  ['dice', 'giudice', 'Ma il pollice, stanotte, chi lo alza? Le gradinate dormono.'], // [nuovo]
+  ['posa', 'agnese', 1],
+  ['dice', 'agnese', 'Le gradinate dormono? Io no.'], // [nuovo]
+  ['pensa', 'Agnese si alza e tende il braccio, col pollice in su. Il filo rosso le scende dalle dita fino alla sabbia. Un\'ombra accanto a lei la guarda, e alza il pollice. Poi un\'altra. Poi tutte.'], // [nuovo]
+  ...FINE_ARENA,
+];
+
+AV.quadro({
+  id: 'anfiteatro.arena', capitolo: 'vie-laterali', nome: 'L\'Arena dei Dimenticati',
+  fondale: { immagine: 'avventura/anfiteatro-arena',
+    disegno: [['cielo', { tono: 'notte', luna: true, stelle: true }],
+      ['forma', { punti: [[0, 60], [640, 60], [640, 200], [0, 200]], colore: '#2a1f16' }],
+      ['forma', { punti: [[0, 90], [640, 90], [640, 96], [0, 96]], colore: '#8a7a58' }],
+      ['forma', { punti: [[0, 130], [640, 130], [640, 136], [0, 136]], colore: '#8a7a58' }],
+      ['forma', { punti: [[0, 170], [640, 170], [640, 176], [0, 176]], colore: '#8a7a58' }],
+      ['suolo', { tipo: 'sabbia', y: 210 }], ['muro', { x: 470, y: 150, w: 110, h: 60, tono: '#5e2f1b' }],
+      ['luce', { x: 150, y: 180, r: 60, colore: '#f97316' }], ['luce', { x: 490, y: 180, r: 60, colore: '#f97316' }],
+      ['nebbia', { alfa: 0.12 }]],
+    luce: { tono: 'notte' } },
+  musica: 'creatura',
+  entrata: [
+    ['unaVolta', 'an-arena', [
+      ['suono', 'colpo'],
+      ['pensa', 'La sabbia è chiara, rastrellata. Sulle gradinate siedono ombre con l\'elmo, col cappuccio, col cappello piumato, con la giubba dei Borboni: combattenti di tutte le epoche. Nessuno applaude.'], // [nuovo]
+      ['pensa', 'Sul podio, una figura in toga, con la corona d\'alloro e il braccio teso. Il pollice è girato verso la sabbia.'], // [nuovo]
+      ['dice', 'giudice', 'Ogni giuramento ha il suo giudice. Il tuo, burattino, sono io.'], // [teatro]
+      ['dice', 'giudice', 'Questi, sulle gradinate, hanno giurato tutti. E hanno rotto tutti. Pollice verso, per l\'eternità.'], // [nuovo]
+      ['dice', 'giudice', 'Tu non parli: non puoi giurare. E allora portami una prova. Che un giuramento si può sciogliere senza tradirlo. Portamela, e io alzo il pollice.'], // [nuovo]
+      ['se', { flag: { agnese: 'risvegliata' } }, [
+        ['suono', 'colpo'], ['effetto', 'scossa'],
+        ['pensa', 'Il Giudice gira il pollice verso Ferruccio, e dalle gradinate un\'ombra con la lancia scende sulla sabbia.'], // [nuovo]
+        ['dice', 'didascalia', 'Dalle gradinate un filo rosso si tende davanti a Ferruccio: il colpo si ferma sul filo. Agnese, lassù, non dice niente.'], // [teatro]
+        ['pensa', 'Agnese. È venuta dietro di lui, tutta la strada. Siede in alto, fra le ombre, con la navetta in mano e il filo rosso che le scende dalle dita.'], // [nuovo]
+      ], [
+        ['pensa', 'Fra le ombre delle gradinate, in alto, una figura che non è un\'ombra: una ragazza che dorme con la testa appoggiata alla pietra.'], // [nuovo]
+      ]],
+      ['diario', 'Il Giudice dell\'Arena vuole una prova: che un giuramento si può sciogliere senza tradirlo. Sotto l\'arena ci sono i sotterranei.'], // [nuovo]
+      ['obiettivo', 'Cercare nei sotterranei la prova che un giuramento si può sciogliere senza tradirlo.'], // [nuovo]
+    ]],
+  ],
+  punti: [
+    { id: 'giudice', nome: 'Il Giudice dell\'Arena', x: 296, y: 30, w: 56, h: 100, personaggio: 'giudice', posa: 0,
+      se: { nonVisto: 'arena-dimenticati' },
+      guarda: [['pensa', 'Una toga bianca, gessata di polvere. Sotto la corona d\'alloro, una faccia di marmo senza età. Dalla toga escono fili, come da un rocchetto.']], // [nuovo]
+      usa: [
+        ['se', { visto: 'an-prova' },
+          [['dice', 'giudice', 'La prova c\'è. Manca chi alza il pollice. Il popolo, burattino: è il popolo che scioglie.']], // [nuovo]
+          [['dice', 'giudice', 'Una prova. Non una faccia triste: qui ne ho viste abbastanza.']]], // [nuovo]
+      ],
+      con: {
+        'rudis': [['segna', 'an-rudis-mostrata'],
+          ['se', { visto: 'an-tessera-mostrata' }, [
+            ['dice', 'giudice', 'La rudis. E il nome di chi l\'ebbe: Felix. Non fuggì, non tradì: lo sciolse chi aveva ricevuto il suo giuramento.'], // [nuovo]
+            ['segna', 'an-prova'],
+          ], [
+            ['dice', 'giudice', 'Una spada di legno. La davano a chi era libero. Ma di chi era? Senza un nome è un pezzo di legno.'], // [nuovo]
+            ['obiettivo', 'La rudis non basta al Giudice: vuole sapere di chi era.'], // [nuovo]
+          ]],
+          ['se', { tutti: [{ visto: 'an-prova' }, { flag: { agnese: 'risvegliata' } }] }, PASSO_AGNESE],
+          ['se', { tutti: [{ visto: 'an-prova' }, { non: { flag: { agnese: 'risvegliata' } } }] }, [
+            ['dice', 'giudice', 'Ma il pollice, stanotte, chi lo alza? Le gradinate dormono.'], // [nuovo]
+            ['obiettivo', 'Il pollice lo alza il popolo: le ombre delle gradinate devono riconoscere Felix.'], // [nuovo]
+          ]]],
+        'tessera-gladiatore': [['segna', 'an-tessera-mostrata'],
+          ['se', { visto: 'an-rudis-mostrata' }, [
+            ['dice', 'giudice', 'Felix. Spectatus. E la rudis era sua. Non fuggì, non tradì: lo sciolse chi aveva ricevuto il suo giuramento.'], // [nuovo]
+            ['segna', 'an-prova'],
+          ], [
+            ['dice', 'giudice', 'Un nome. Felix. E che ne fece, Felix, del suo giuramento? Portami quello che gli diedero.'], // [nuovo]
+            ['obiettivo', 'Il Giudice ha il nome, Felix: vuole vedere che cosa gli diedero.'], // [nuovo]
+          ]],
+          ['se', { tutti: [{ visto: 'an-prova' }, { flag: { agnese: 'risvegliata' } }] }, PASSO_AGNESE],
+          ['se', { tutti: [{ visto: 'an-prova' }, { non: { flag: { agnese: 'risvegliata' } } }] }, [
+            ['dice', 'giudice', 'Ma il pollice, stanotte, chi lo alza? Le gradinate dormono.'], // [nuovo]
+            ['obiettivo', 'Il pollice lo alza il popolo: le ombre delle gradinate devono riconoscere Felix.'], // [nuovo]
+          ]]],
+        'ricordo-campane': [['dice', 'giudice', 'Campane. Parole non dette. Qui si giudicano le parole date.']], // [nuovo]
+        '*': [['dice', 'giudice', 'Questo non scioglie niente.']] } }, // [nuovo]
+    { id: 'agnese', nome: 'Agnese', x: 60, y: 60, w: 50, h: 70, personaggio: 'agnese', posa: 0,
+      se: { flag: { agnese: 'risvegliata' } },
+      guarda: [['pensa', 'Agnese, seduta fra le ombre, con la navetta in mano. Lo guarda come si guarda uno che è partito di casa senza salutare.']], // [nuovo]
+      usa: [
+        ['se', { visto: 'arena-dimenticati' }, [
+          ['unaVolta', 'an-agnese-scena', [
+            ['pensa', 'Ferruccio sale le gradinate, una per una, fino a lei. Si siede accanto. La pietra è ancora tiepida di folla.'], // [nuovo]
+            ['dice', 'agnese', 'Ti sono venuta dietro da San Leucio. Non dire niente: tanto non puoi.'], // [nuovo]
+            ['se', { flag: { sciarpa: 'al-collo' } },
+              [['dice', 'agnese', 'La porti ancora. Ti sta storta, come il nodo che facevi tu.'], // [nuovo]
+                ['pensa', 'Lei gliela aggiusta sul collo, con due dita, come si sistema un filo sul telaio.']], // [nuovo]
+              [['dice', 'agnese', 'Me lo ricordo, sai, il rosso. Me lo ricordo addosso a te.']]], // [nuovo]
+            ['dice', 'agnese', 'Hai sentito quello? Un giuramento si scioglie. Non si rompe. Pure il nostro, se un giorno vuoi: però me lo dici in faccia.'], // [nuovo]
+            ['pensa', 'Ferruccio scuote la testa. Poi le prende la mano, e la tiene, e non la lascia finché lei non ride.'], // [nuovo]
+            ['dice', 'agnese', 'Va bene. Vai alla Reggia. Io torno al telaio: qualcuno deve tessere, mentre voi altri fate gli eroi.'], // [nuovo]
+            ['segna', 'an-agnese-scena'],
+            ['diario', 'All\'Arena c\'era Agnese. Mi è venuta dietro. Mi ha tenuto la mano, e poi è tornata a San Leucio.'], // [nuovo]
+          ], [
+            ['dice', 'agnese', 'Vai, vai. Che la notte non passa da sola.'], // [nuovo]
+          ]],
+        ], [
+          ['dice', 'agnese', 'Lo so, lo so, non puoi parlare. Fai tu: io sto qua. Se serve, ci sono.'], // [nuovo]
+        ]],
+      ],
+      con: { 'ricordo-arena': [['dice', 'agnese', 'Tienilo tu. A me basta che te lo ricordi.']], // [nuovo]
+        '*': [['dice', 'agnese', 'Bello. Ma non è questo che vuole quello là sopra.']] } }, // [nuovo]
+    // Agnese sognante: dorme fra le ombre; si può solo lasciarle un gesto accanto.
+    { id: 'dormiente', nome: 'Una ragazza che dorme', x: 60, y: 60, w: 50, h: 70, personaggio: 'agnese', posa: 0,
+      se: { non: { flag: { agnese: 'risvegliata' } } },
+      guarda: [['pensa', 'Agnese. Dorme seduta, con la testa contro la pietra e le mani in grembo, aperte, come se ci fosse ancora la navetta. Non è venuta dietro di lui: il Velo l\'ha portata qui da sola, fra i dimenticati.']], // [nuovo]
+      usa: [
+        ['unaVolta', 'an-agnese-gesto', [
+          ['pensa', 'Ferruccio sale fino a lei. Non la sveglia: non saprebbe come. Si toglie la giacca e gliela posa sulle spalle, e le chiude le mani una sull\'altra, perché non prendano freddo.'], // [nuovo]
+          ['pensa', 'Lei, nel sonno, stringe la stoffa. Un sorriso piccolo, di quelli che si fanno a un telaio che batte giusto. Poi più niente.'], // [nuovo]
+          ['diario', 'All\'Arena c\'era Agnese, addormentata fra le ombre. Le ho lasciato la mia giacca. Non si è svegliata.'], // [nuovo]
+        ], [
+          ['pensa', 'Dorme. Tiene stretta la giacca.'], // [nuovo]
+        ]],
+      ],
+      con: { 'ricordo-arena': [['pensa', 'Ferruccio le avvicina la luce. Lei si gira dall\'altra parte, nel sonno. Non è questo il ricordo che le manca.']], // [nuovo]
+        '*': [['pensa', 'Non è una cosa che le serve. Le serve dormire, e qualcuno che la guardi mentre dorme.']] } }, // [nuovo]
+    { id: 'ombre', nome: 'Le ombre sulle gradinate', x: 140, y: 70, w: 140, h: 110,
+      guarda: [['pensa', 'Elmi da legionario, cotte di maglia, cappucci da brigante, giubbe borboniche. Tutti seduti, tutti zitti, tutti col pollice girato giù.']], // [nuovo]
+      usa: [
+        ['se', { tutti: [{ visto: 'an-prova' }, { nonVisto: 'arena-dimenticati' }, { non: { flag: { agnese: 'risvegliata' } } }] },
+          [['pensa', 'Ferruccio alza il pollice, davanti alle ombre. Nessuno lo segue: un burattino non ha popolo. Ci vorrebbe il nome di uno di loro.']], // [nuovo]
+          [['pensa', 'Le ombre non si girano. Guardano la sabbia, e aspettano un verdetto.']]], // [nuovo]
+      ],
+      con: { 'tessera-gladiatore': [
+        ['se', { tutti: [{ visto: 'an-prova' }, { nonVisto: 'arena-dimenticati' }, { non: { flag: { agnese: 'risvegliata' } } }] }, [
+          ['pensa', 'Ferruccio sale tre gradini e alza la tessera d\'osso sopra la testa, verso le ombre. FELIX. Un\'ombra con l\'elmo si volta. Si ricorda. Alza il pollice. Poi un\'altra. Poi tutte.'], // [nuovo]
+          ...FINE_ARENA,
+        ], [
+          ['pensa', 'Le ombre guardano la tessera e poi il Giudice. Prima il Giudice deve sapere di chi parla questo nome.'], // [nuovo]
+        ]]],
+        '*': [['pensa', 'Le ombre non guardano. Non è roba loro.']] } }, // [nuovo]
+    { id: 'manovella', nome: 'Un ferro nella sabbia', x: 400, y: 230, w: 30, h: 24, sagoma: 'ferro',
+      se: { nonVisto: 'an-manovella-presa' },
+      guarda: [['pensa', 'Un manico di ferro piegato a gomito spunta dalla sabbia, dove i rastrelli non arrivano.']], // [nuovo]
+      usa: [['prendi', 'manovella'], ['segna', 'an-manovella-presa'], ['nascondi', 'manovella'],
+        ['pensa', 'Ferruccio scava con le mani e lo tira fuori: una manovella d\'argano, col foro quadro.']] }, // [nuovo]
+    { id: 'botola', nome: 'La scala dei sotterranei', x: 480, y: 150, w: 90, h: 60, uscita: 'anfiteatro.sotterranei',
+      guarda: [['pensa', 'Una fenditura nella sabbia, lungo l\'asse dell\'arena, con una scala di pietra. Di là venivano su le belve e i combattenti.']] }, // [nuovo]
+    { id: 'sabbia', nome: 'La sabbia', x: 160, y: 220, w: 200, h: 60,
+      guarda: [['pensa', 'Sabbia chiara, fine, buttata sopra a tutto quello che è successo qui. Arena vuol dire questo: sabbia.']] }, // [nuovo]
+    { id: 'uscita', nome: 'Il fornice, verso le arcate', x: 0, y: 220, w: 50, h: 72, uscita: 'anfiteatro.arcate',
+      guarda: [['pensa', 'Il passaggio torna alle arcate e alla via Appia.']] }, // [nuovo]
+  ],
+});
+
+// ============================================================================================================
+// ANFITEATRO — 3. I SOTTERRANEI (due giuramenti, l'argano)
+// ============================================================================================================
+AV.quadro({
+  id: 'anfiteatro.sotterranei', capitolo: 'vie-laterali', nome: 'I sotterranei dell\'arena',
+  fondale: { immagine: 'avventura/anfiteatro-sotterranei',
+    disegno: [['cielo', { tono: 'interno' }], ['muro', { x: 0, y: 20, w: 640, h: 240, tono: '#2a1f16' }],
+      ['arco', { x: 40, y: 100, w: 90, h: 150 }], ['arco', { x: 180, y: 100, w: 90, h: 150 }], ['arco', { x: 320, y: 100, w: 90, h: 150 }],
+      ['suolo', { tipo: 'tufo', y: 250 }], ['forma', { punti: [[480, 60], [580, 60], [580, 250], [480, 250]], colore: '#1d1610', bordo: '#5e2f1b' }],
+      ['forma', { punti: [[500, 60], [560, 60], [560, 70], [500, 70]], colore: '#2a2622' }],
+      ['luce', { x: 230, y: 160, r: 70, colore: '#fbbf24' }]],
+    luce: { tono: 'interno' } },
+  musica: 'ombra',
+  entrata: [
+    ['unaVolta', 'an-sotterranei', [
+      ['pensa', 'Corridoi di mattone, gabbie aperte, e un odore di ferro vecchio. Sui muri, fra le gabbie, parole incise col coltello.'], // [nuovo]
+    ]],
+  ],
+  punti: [
+    { id: 'su', nome: 'La scala, su nell\'arena', x: 0, y: 200, w: 40, h: 90, uscita: 'anfiteatro.arena',
+      guarda: [['pensa', 'La scala torna su, nella luce della sabbia.']] }, // [nuovo]
+    { id: 'giuramento-uno', nome: 'Un\'incisione latina', x: 50, y: 110, w: 70, h: 60,
+      guarda: [['pensa', 'Lettere latine, profonde: «URI · VINCIRI · VERBERARI · FERROQUE NECARI». Il giuramento dei gladiatori al padrone: farsi bruciare, legare, battere, uccidere col ferro.']], // [nuovo]
+      usa: [['pensa', 'Sotto, più storto, a graffio: «CON SPARTACO». Uno che giurò al padrone e scappò con gli altri, una notte, dalla scuola di Capua. Rotto con la fuga.'], // [nuovo]
+        ['unaVolta', 'an-giuramento-uno', [['diario', 'Primo giuramento: un gladiatore giurò al padrone e scappò con Spartaco. Rotto con la fuga.']]]] }, // [nuovo]
+    { id: 'giuramento-due', nome: 'Un\'incisione con la croce', x: 190, y: 110, w: 70, h: 60,
+      guarda: [['pensa', 'Una croce, un nome longobardo, e una scritta: «giurai al principe di tenere la porta». E più sotto una data, l\'anno 841.']], // [nuovo]
+      usa: [['pensa', 'L\'anno che i Saraceni bruciarono Capua antica. Qualcuno quella porta la aprì, di notte, per paura. Rotto col tradimento.'], // [nuovo]
+        ['unaVolta', 'an-giuramento-due', [['diario', 'Secondo giuramento: un soldato giurò di tenere la porta di Capua e la aprì ai Saraceni. Rotto col tradimento.']]]] }, // [nuovo]
+    { id: 'gabbia', nome: 'Una gabbia', x: 330, y: 120, w: 70, h: 130,
+      guarda: [['pensa', 'Una gabbia di ferro, aperta. Dentro, l\'ombra di una belva che gira in tondo e non c\'è.']], // [nuovo]
+      usa: [['pensa', 'Ferruccio richiude lo sportello piano. L\'ombra si accuccia.']] }, // [nuovo]
+    { id: 'argano', nome: 'L\'argano del montacarichi', x: 470, y: 180, w: 40, h: 60,
+      se: { nonVisto: 'an-argano' },
+      guarda: [['pensa', 'Un argano di legno e ferro: da qui si calavano le gabbie nell\'ipogeo, più giù. Il perno è quadro, e la manovella non c\'è.']], // [nuovo]
+      usa: [['pensa', 'Ferruccio prova a girare il perno con le mani. Niente: ci vuole una manovella.']], // [nuovo]
+      con: { 'manovella': [['suono', 'ferro'], ['togli', 'manovella'], ['segna', 'an-argano'],
+        ['pensa', 'La manovella entra nel perno quadro come se ci fosse stata sempre. Ferruccio gira: le corde cigolano, il pianale del montacarichi si stacca dal fondo.']] } }, // [nuovo]
+    { id: 'montacarichi', nome: 'Il montacarichi', x: 490, y: 70, w: 80, h: 170,
+      se: { visto: 'an-argano' }, uscita: 'anfiteatro.gabbie',
+      guarda: [['pensa', 'Il pianale di legno, appeso alle corde. Scende nell\'ipogeo, dove stavano le gabbie più fonde.']], // [nuovo]
+      usa: [['pensa', 'Ferruccio sale sul pianale, e scende piano nel buio.']] }, // [nuovo]
+    { id: 'pozzo', nome: 'Il pozzo del montacarichi', x: 490, y: 70, w: 80, h: 170,
+      se: { nonVisto: 'an-argano' },
+      guarda: [['pensa', 'Un pozzo quadro, e in fondo il pianale del montacarichi, fermo. Le corde salgono fino all\'argano.']], // [nuovo]
+      usa: [['pensa', 'Troppo fondo per saltare. Il pianale va calato con l\'argano.']] }, // [nuovo]
+  ],
+});
+
+// ============================================================================================================
+// ANFITEATRO — 4. LE GABBIE DELL'IPOGEO (il terzo giuramento, la rudis)
+// ============================================================================================================
+AV.quadro({
+  id: 'anfiteatro.gabbie', capitolo: 'vie-laterali', nome: 'Le gabbie dell\'ipogeo',
+  fondale: { immagine: 'avventura/anfiteatro-gabbie',
+    disegno: [['cielo', { tono: 'interno' }], ['muro', { x: 0, y: 16, w: 640, h: 250, tono: '#1d1610' }],
+      ['suolo', { tipo: 'tufo', y: 254 }], ['porta', { x: 120, y: 150, w: 70, h: 100, stato: 'aperta' }],
+      ['porta', { x: 260, y: 150, w: 70, h: 100, stato: 'socchiusa' }], ['muro', { x: 420, y: 100, w: 140, h: 150, tono: '#2a1f16' }],
+      ['forma', { punti: [[20, 30], [90, 30], [90, 250], [20, 250]], colore: '#14100c', bordo: '#5e2f1b' }],
+      ['luce', { x: 300, y: 190, r: 80, colore: '#fbbf24' }], ['nebbia', { alfa: 0.16 }]],
+    luce: { tono: 'interno' } },
+  musica: 'velo',
+  entrata: [
+    ['unaVolta', 'an-gabbie', [
+      ['pensa', 'L\'ipogeo. Gabbie in fila, piccole, una con lo sportello socchiuso. In fondo, su un muro più vecchio degli altri, una scritta che non è latino.'], // [nuovo]
+    ]],
+  ],
+  punti: [
+    { id: 'su', nome: 'Il montacarichi, su', x: 20, y: 30, w: 70, h: 220, uscita: 'anfiteatro.sotterranei',
+      guarda: [['pensa', 'Il pianale del montacarichi, che torna su ai sotterranei.']] }, // [nuovo]
+    { id: 'giuramento-tre', nome: 'Un\'incisione con l\'alloro', x: 120, y: 100, w: 80, h: 50,
+      guarda: [['pensa', 'Sopra la prima gabbia, inciso con cura, un ramo d\'alloro e una frase: «FELIX GIURÒ DI COMBATTERE FINO ALLA MORTE».']], // [nuovo]
+      usa: [['pensa', 'E sotto, con un\'altra mano, più fresca: «IL POPOLO ALZÒ IL POLLICE. EBBE LA RUDIS». Non scappò, non aprì porte. Il suo giuramento non lo ruppe: glielo sciolsero.'], // [nuovo]
+        ['unaVolta', 'an-giuramento-tre', [
+          ['diario', 'Terzo giuramento: Felix giurò di combattere fino alla morte. Il popolo alzò il pollice e gli diede la rudis. Non l\'ha rotto: gliel\'hanno sciolto.'], // [nuovo]
+          ['obiettivo', 'Portare al Giudice la prova di Felix: la rudis, e il suo nome.'], // [nuovo]
+        ]]] },
+    { id: 'rudis', nome: 'Una spada di legno', x: 150, y: 170, w: 30, h: 60,
+      se: { nonVisto: 'an-rudis-presa' },
+      guarda: [['pensa', 'Dentro la gabbia aperta, appesa a un chiodo, una spada di legno. La rudis.']], // [nuovo]
+      usa: [['prendi', 'rudis'], ['segna', 'an-rudis-presa'], ['nascondi', 'rudis'],
+        ['pensa', 'Ferruccio la stacca dal chiodo. È leggera, e liscia come un manico d\'attrezzo.']] }, // [nuovo]
+    { id: 'tessera', nome: 'Qualcosa di bianco', x: 280, y: 220, w: 24, h: 20, sagoma: 'foglio',
+      se: { nonVisto: 'an-tessera-presa' },
+      guarda: [['pensa', 'Nella gabbia socchiusa, nella polvere, una tessera d\'osso.']], // [nuovo]
+      usa: [['prendi', 'tessera-gladiatore'], ['segna', 'an-tessera-presa'], ['nascondi', 'tessera'],
+        ['dice', 'didascalia', 'Una tessera d\'osso, con un nome inciso. Nessuno se lo ricorda più. Ferruccio la mette in tasca.']] }, // [teatro]
+    { id: 'scritta-antica', nome: 'La scritta antica', x: 430, y: 110, w: 120, h: 80,
+      guarda: [['pensa', 'Segni più vecchi del latino, a cerchi e a spirali, scavati nel tufo. In mezzo, ripetuto, un segno che Ferruccio conosce: un filo che si avvolge su se stesso, come il Velo sopra Caserta.']], // [nuovo]
+      usa: [['pensa', 'Sotto la mano il tufo vibra, come una corda tesa. Un giuramento più vecchio dell\'arena, e nessuno l\'ha mai sciolto. Non c\'è niente, sotto, che dica «fu sciolto».'], // [nuovo]
+        ['unaVolta', 'an-scritta-antica', [['diario', 'Nell\'ipogeo c\'è una scritta più vecchia dell\'arena, col segno del Velo. Un giuramento che nessuno ha sciolto.']]]] }, // [nuovo]
+    { id: 'gabbie', nome: 'Le gabbie in fila', x: 340, y: 150, w: 70, h: 100,
+      guarda: [['pensa', 'Gabbie piccole, per uomini, non per belve. Sui ferri, segni di unghie e di anelli.']] }, // [nuovo]
+  ],
+});
