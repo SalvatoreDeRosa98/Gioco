@@ -114,6 +114,8 @@ AV.quadro({
       guarda: [['pensa', 'Una vecchia seduta sull\'uscio. Le mani fanno il gesto della navetta anche a vuoto.']], // [nuovo]
       usa: [['dialogo', 'nunzia.uscio']],
       con: { 'fazzoletto-bianca': [['dice', 'nunzia', 'Chillo giglio? Ce lo facevano fare a tutte. Nisciuna l\'ha mai fatto uguale.']], // [nuovo]
+        'sciarpa-rossa': [['dice', 'nunzia', 'Uh, Madonna. La sciarpa di Agnese. Allora era pe\' te.'], // [nuovo]
+          ['pensa', 'La vecchia si asciuga gli occhi col dorso della mano, e ride.']], // [nuovo]
         '*': [['dice', 'nunzia', 'Bello. Ma io nun me ricordo niente, figlio mio. Qua nisciuno se ricorda niente.']] } }, // [nuovo]
     { id: 'case', nome: 'Le case dei tessitori', x: 20, y: 120, w: 120, h: 120,
       guarda: [['pensa', 'Tutte uguali, a schiera, ognuna col suo telaio al piano terra. Il Re le diede ai tessitori con uno statuto: niente doti, niente servi, scuola per tutti i figli.']] }, // [nuovo]
