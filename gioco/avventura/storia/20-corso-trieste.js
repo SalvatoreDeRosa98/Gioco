@@ -179,7 +179,7 @@ AV.quadro({
         [['pensa', 'Ogni vespa porta un filo di luce tra le zampe, sottile come un capello. Escono dal banco dei pegni e vanno alla Reggia.']]]] }, // [nuovo]
     { id: 'verso-piazza', nome: 'Verso Piazza Dante', x: 0, y: 120, w: 30, h: 150,
       guarda: [['pensa', 'Di là c\'è la piazza, e la bottega di mio padre.']], // [nuovo]
-      usa: [['segna', 'corso-verso-piazza']] }, // USCITA → piazza.centro
+      uscita: 'piazza.centro', usa: [['segna', 'corso-verso-piazza']] },
     { id: 'verso-guardia', nome: 'Il posto di guardia', x: 420, y: 150, w: 50, h: 100, uscita: 'corso.guardia',
       guarda: [['pensa', 'Sotto il portico, una garitta di legno e una lanterna appesa al chiodo.']] }, // [nuovo]
     { id: 'verso-bottega', nome: 'Il banco dei pegni', x: 480, y: 130, w: 30, h: 120, uscita: 'corso.bottega',
@@ -670,7 +670,7 @@ AV.quadro({
       usa: [['pensa', 'Passo il dito sulle spade incise. Una è più grande dell\'altra: quella del comandante.']] }, // [nuovo]
     { id: 'verso-piazza', nome: 'Torna verso Piazza Dante', x: 0, y: 140, w: 40, h: 120,
       guarda: [['pensa', 'La strada del ritorno: il Corso, poi la piazza e la bottega.']], // [nuovo]
-      usa: [['segna', 'corso-verso-piazza']] }, // USCITA → piazza.centro
+      uscita: 'piazza.centro', usa: [['segna', 'corso-verso-piazza']] },
     { id: 'verso-finestra', nome: 'Indietro, alla finestra di Mariella', x: 50, y: 200, w: 60, h: 60, uscita: 'corso.finestra',
       guarda: [['pensa', 'La luce di Mariella, laggiù.']] }, // [nuovo]
   ],

@@ -123,7 +123,7 @@ AV.quadro({
       guarda: [['pensa', 'Il Corso, con le sue vetrine accese e nessuno che compra.']], // [nuovo]
       usa: [
         ['pensa', 'Ferruccio torna sui suoi passi, verso il Corso.'], // [nuovo]
-        // USCITA → corso.inizio
+        ['vai', 'corso.fondo'],
       ] },
     { id: 'verso-leucio', nome: 'La strada di San Leucio', x: 600, y: 150, w: 40, h: 100,
       guarda: [['pensa', 'La strada sale verso la collina di San Leucio, dove battono i telai. Dove c\'è Agnese.']], // [nuovo]
@@ -133,7 +133,7 @@ AV.quadro({
           ['pensa', 'Ferruccio si stringe la sciarpa e prende la salita. Dietro di lui la fontana continua a parlare da sola.'], // [nuovo]
           ['diario', 'Ho lasciato la Villa. Adesso so come è morto mio padre. Non so ancora che cosa farne.'], // [nuovo]
           ['segna', 'villa-finita'],
-          // USCITA → leucio.arrivo
+          ['vai', 'leucio.arrivo'],
         ], [
           ['pensa', 'Non ancora. Ferruccio è venuto per i registri, e i registri sono ancora qui.'], // [nuovo]
         ]],

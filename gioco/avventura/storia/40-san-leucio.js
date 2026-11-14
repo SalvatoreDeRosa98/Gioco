@@ -128,7 +128,7 @@ AV.quadro({
       guarda: [['pensa', 'Acceso, e nessuno l\'ha acceso. La fiamma non si muove.']] }, // [nuovo]
     { id: 'verso-villa', nome: 'La strada per Caserta, verso la Villa', x: 0, y: 200, w: 40, h: 90,
       guarda: [['pensa', 'La strada scende verso Caserta e la Villa Comunale.']], // [nuovo]
-      // USCITA → villa.cancello (il collegamento vero lo mette l'unione dei capitoli)
+      uscita: 'villa.cancello',
       usa: [['pensa', 'Ferruccio si volta verso la Villa. Il filo d\'oro sopra di lui tira dall\'altra parte.']] }, // [nuovo]
     { id: 'verso-belvedere', nome: 'La salita al Belvedere', x: 470, y: 170, w: 70, h: 100, uscita: 'leucio.belvedere',
       guarda: [['pensa', 'La scalinata sale al Belvedere, dove c\'è la manifattura della seta.']] }, // [nuovo]
@@ -210,7 +210,7 @@ AV.quadro({
           ['diario', 'Lascio San Leucio. I fili portano alla Reggia, e alla Reggia c\'è Donna Luciana.'], // [nuovo]
           ['obiettivo', 'Seguire i fili d\'oro fino alla Reggia.'], // [nuovo]
           ['segna', 'leucio-finito'],
-          // USCITA → reggia.cancello
+          ['vai', 'reggia.cancello'],
         ],
         [['pensa', 'Non ancora. Lassù c\'è una tessitrice che non sa il mio nome.']]]] }, // [nuovo]
   ],

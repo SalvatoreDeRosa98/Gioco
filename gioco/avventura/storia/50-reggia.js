@@ -188,7 +188,7 @@ AV.quadro({
     {
       id: 'verso-leucio', nome: 'Il viale verso San Leucio', x: 0, y: 120, w: 34, h: 130,
       guarda: [['pensa', 'Dietro, la strada per San Leucio. Si può ancora tornare indietro.']], // [nuovo]
-      // USCITA → leucio.arrivo (il collegamento lo mette l'unione: nel worktree il quadro non esiste)
+      uscita: 'leucio.belvedere',
       usa: [['segna', 'reggia-verso-leucio'], ['pensa', 'Ferruccio si volta verso San Leucio.']], // [nuovo]
     },
   ],
@@ -803,11 +803,11 @@ AV.dialogo({
         ['segna', 'reggia-finita'],
         ['se', { flag: { violante: 'uccisa' } }, [
           ['attendi', 300],
-          // USCITA → epilogo.libera
+          ['vai', 'epilogo.libera'],
         ]],
         ['se', { flag: { violante: 'risparmiata' } }, [
           ['attendi', 300],
-          // USCITA → epilogo.velata
+          ['vai', 'epilogo.velata'],
         ]],
       ],
     },

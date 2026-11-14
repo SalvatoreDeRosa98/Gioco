@@ -594,12 +594,12 @@ AV.quadro({
       guarda: [['pensa', "Una Madonnina in una nicchia, col lumino spento. Davanti, qualcuno ha lasciato un fiocco di nastro rosso, di quelli di Assunta."]] }, // [nuovo]
     { id: 'verso-corso', nome: 'Verso Corso Trieste', x: 520, y: 120, w: 76, h: 136,
       guarda: [['pensa', "Sotto l'altro arco comincia il Corso Trieste. Laggiù, lontano, un suono di ferro."]], // [nuovo]
-      // USCITA → corso.inizio (all'unione: diventa `uscita: 'corso.inizio', se: PIAZZA_PRONTA` col ramo «altrimenti» come `chiuso`)
       usa: [['se', PIAZZA_PRONTA, [
         ['pensa', "Ti volti un'ultima volta verso la piazza ferma. Poi passi sotto l'arco."], // [nuovo]
         ['segna', 'piazza-finita'],
         ['diario', "Lascio Piazza Dante. Cerco il ferro che risuona dietro una porta, su Corso Trieste."], // [nuovo]
         ['obiettivo', "Percorrere Corso Trieste e trovare il ferro che risuona."], // [nuovo]
+        ['vai', 'corso.inizio'],
       ], [
         ['pensa', "Fai un passo sotto l'arco, poi ti fermi. La piazza non ha ancora finito con te."], // [nuovo]
         ['se', { flag: { tonino_ricordo: '' } }, [['pensa', "Tonino. C'è qualcosa che gli devi, o che gli devi negare."]]], // [nuovo]
