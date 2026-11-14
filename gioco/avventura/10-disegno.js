@@ -22,7 +22,10 @@
 
   // ------------------------------------------------------------------ immagini (solo quelle che esistono)
   const cache = new Map();
-  /** L'immagine pronta di un fondo ('fondi') o di un foglio ('fogli'), o null (mancante o non ancora caricata). */
+  /**
+   * L'immagine pronta di un fondo ('fondi'), di un foglio ('fogli') o di un oggetto di scena dell'autore ('arredi'),
+   * o null (mancante o non ancora caricata). Quando arriva, D.sporca() fa rifare i fondali già resi.
+   */
   D.img = function (genere, nome) {
     const el = AV.immagini && AV.immagini[genere] && AV.immagini[genere][nome];
     if (!el || typeof Image === 'undefined') return null;
@@ -83,6 +86,35 @@
     }
     return c;
   };
+
+  // ------------------------------------------------------------------ oggetti di scena dell'autore
+  /** La copia di un arredo col vetro del lume spento (la parte alta velata di blu-notte), fatta una volta. */
+  function spento(r) {
+    if (r.spento || typeof document === 'undefined') return r.spento || r.img;
+    const c = document.createElement('canvas'); c.width = r.info.w; c.height = r.info.h;
+    const g = c.getContext('2d'); g.drawImage(r.img, 0, 0);
+    const bb = r.info.bb || [0, 0, r.info.w, r.info.h];
+    g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(22,24,48,0.72)'; g.fillRect(0, 0, r.info.w, bb[1] + bb[3] * 0.46);
+    r.spento = c; return c;
+  }
+  /**
+   * Un oggetto di scena dell'autore con i piedi in (cx, base), alto h; largo w se dato, altrimenti in proporzione.
+   * Con l'ombra a terra (salvo opz.senzaOmbra). Restituisce false se il PNG non c'è (si disegna allora a codice).
+   */
+  function arredo(ctx, nome, cx, base, h, w, opz) {
+    const r = D.img('arredi', nome); if (!r) return false;
+    const o = opz || {}, bb = r.info.bb || [0, 0, r.info.w, r.info.h];
+    const ww = w || (h * bb[2]) / bb[3];
+    if (!o.senzaOmbra) {
+      ctx.fillStyle = 'rgba(12,8,14,0.42)'; ctx.beginPath();
+      ctx.ellipse(cx + ww * 0.08, base - 0.5, ww * 0.55, Math.max(2, ww * 0.09), 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.drawImage(o.spento ? spento(r) : r.img, bb[0], bb[1], bb[2], bb[3], cx - ww / 2, base - h, ww, h);
+    return true;
+  }
+  /** Il rapporto larghezza/altezza della parte disegnata di un arredo (o d se manca). */
+  function aspetto(nome, d) { const r = D.img('arredi', nome); const bb = r && r.info.bb; return bb ? bb[2] / bb[3] : d; }
+  D.arredo = arredo;
 
   // ------------------------------------------------------------------ elementi del fondale
   const CIELI = {
@@ -204,6 +236,7 @@
   };
   E.colonna = (ctx, o) => {
     const x = num(o.x, 100), y = num(o.y, 250), h = num(o.h, 120), w = Math.max(8, h / 9);
+    if (arredo(ctx, 'colonna', x, y, h, Math.max(18, h * 0.24))) return;
     rett(ctx, x - w / 2, y - h, w, h); riempi(ctx, C.ombra);
     rett(ctx, x - w * 0.8, y - h - 6, w * 1.6, 6); riempi(ctx, C.ombra);
     rett(ctx, x - w * 0.75, y - 6, w * 1.5, 6); riempi(ctx, C.ombra);
@@ -232,6 +265,10 @@
   }
   E.finestra = (ctx, o, X) => finestra(ctx, num(o.x, 300), num(o.y, 120), num(o.w, 24), num(o.h, 34), o.accesa, X);
   function lampione(ctx, x, y, h, acceso, X) {
+    if (arredo(ctx, 'lampione', x, y, h, null, { spento: !acceso })) {
+      if (acceso && X) X.luci.push({ x, y: y - h * 0.74, r: Math.max(50, h * 0.7), colore: '#ffb35c', forza: 0.75, vivo: true });
+      return;
+    }
     rett(ctx, x - 2, y - h, 4, h); riempi(ctx, C.ombra);
     rett(ctx, x - 6, y - 8, 12, 8); riempi(ctx, C.ombra);
     ctx.beginPath(); ctx.moveTo(x, y - h); ctx.quadraticCurveTo(x + 12, y - h - 4, x + 14, y - h + 6); ctx.strokeStyle = C.ombra; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1;
@@ -244,6 +281,7 @@
   E.lampione = (ctx, o, X) => lampione(ctx, num(o.x, 300), num(o.y, X.suoloY), num(o.h, 110), o.acceso !== false, X);
   E.albero = (ctx, o, X) => {
     const x = num(o.x, 300), y = num(o.y, X.suoloY), h = num(o.h, 120), tipo = o.tipo || 'leccio', r = caso(hash('albero' + x + y));
+    if (tipo === 'leccio' && arredo(ctx, 'albero', x, y, h * 1.05)) return;
     const tronco = (ww, hh, piega) => { ctx.beginPath(); ctx.moveTo(x - ww, y); ctx.quadraticCurveTo(x - ww + piega, y - hh / 2, x - ww * 0.5 + piega, y - hh); ctx.lineTo(x + ww * 0.5 + piega, y - hh); ctx.quadraticCurveTo(x + ww + piega, y - hh / 2, x + ww, y); ctx.closePath(); riempi(ctx, C.ombra); };
     if (tipo === 'pino') {
       tronco(h * 0.035, h * 0.8, h * 0.08);
@@ -266,11 +304,18 @@
   };
   E.siepe = (ctx, o) => {
     const x = num(o.x, 0), y = num(o.y, 220), w = num(o.w, 160), h = num(o.h, 30);
+    if (D.img('arredi', 'aiuola')) {
+      const hh = h * 1.25, n = Math.max(1, Math.round(w / (hh * aspetto('aiuola', 1.7)))), tw = w / n;
+      for (let i = 0; i < n; i++) arredo(ctx, 'aiuola', x + tw * (i + 0.5), y + h, hh, tw * 1.04, { senzaOmbra: i > 0 && i < n - 1 });
+      return;
+    }
     ctx.beginPath(); ctx.moveTo(x, y + h);
     const n = Math.max(2, Math.round(w / 18)); for (let i = 0; i < n; i++) ctx.quadraticCurveTo(x + (w / n) * (i + 0.5), y - 6 + (i % 2) * 4, x + (w / n) * (i + 1), y + 4);
     ctx.lineTo(x + w, y + h); ctx.closePath(); riempi(ctx, '#0f1409');
   };
-  function fontana(ctx, x, y, w) {
+  function fontana(ctx, x, y, w, vasca) {
+    // piccola = la fontanella a muro dell'autore; la fontana monumentale resta a codice
+    if (!vasca && w <= 100 && arredo(ctx, 'fontanella', x + w / 2, y, w * 1.2)) return;
     ctx.beginPath(); ctx.ellipse(x + w / 2, y - w * 0.1, w / 2, w * 0.12, 0, 0, Math.PI * 2); riempi(ctx, C.ombra);
     rett(ctx, x, y - w * 0.1, w, w * 0.1); riempi(ctx, C.ombra);
     rett(ctx, x + w * 0.45, y - w * 0.55, w * 0.1, w * 0.45); riempi(ctx, C.ombra);
@@ -280,6 +325,7 @@
   }
   E.fontana = (ctx, o, X) => fontana(ctx, num(o.x, 280), num(o.y, X.suoloY), num(o.w, 80));
   function statua(ctx, x, y, h) {
+    if (arredo(ctx, 'statua', x, y, h)) return;
     const s = h / 70;
     rett(ctx, x - 12 * s, y - 16 * s, 24 * s, 16 * s); riempi(ctx, C.ombra);
     rett(ctx, x - 14 * s, y - 19 * s, 28 * s, 3 * s); riempi(ctx, C.ombra);
@@ -290,6 +336,7 @@
   E.statua = (ctx, o, X) => statua(ctx, num(o.x, 300), num(o.y, X.suoloY), num(o.h, 70));
   E.banco = (ctx, o, X) => {
     const x = num(o.x, 200), y = num(o.y, X.suoloY), w = num(o.w, 70);
+    { const hb = Math.min(w / aspetto('banco', 1.18), 68); if (arredo(ctx, 'banco', x + w / 2, y, hb, hb * aspetto('banco', 1.18))) return; }
     rett(ctx, x, y - 26, w, 4); riempi(ctx, C.ombra); rett(ctx, x + 3, y - 22, 3, 22); riempi(ctx, C.ombra); rett(ctx, x + w - 6, y - 22, 3, 22); riempi(ctx, C.ombra);
     rett(ctx, x + 6, y - 22, w - 12, 12); riempi(ctx, C.ombra2);
     rett(ctx, x + 1, y - 58, 2, 32); riempi(ctx, C.ombra); rett(ctx, x + w - 3, y - 58, 2, 32); riempi(ctx, C.ombra);
@@ -298,6 +345,7 @@
     ctx.closePath(); riempi(ctx, '#3a1c14');
   };
   function telaio(ctx, x, y, w, h) {
+    if (arredo(ctx, 'telaio', x + w / 2, y + h, h, Math.min(w, h * aspetto('telaio', 0.6) * 1.3))) return;
     for (const px of [x, x + w - 4]) { rett(ctx, px, y, 4, h); riempi(ctx, C.ombra); }
     rett(ctx, x - 2, y, w + 4, 4); riempi(ctx, C.ombra); rett(ctx, x, y + h * 0.55, w, 4); riempi(ctx, C.ombra);
     ctx.strokeStyle = 'rgba(217,164,86,0.5)'; ctx.lineWidth = 0.6;
@@ -430,7 +478,7 @@
     const g = c.createRadialGradient(12, y, 1, 12, y, 12); g.addColorStop(0, '#fffbe8'); g.addColorStop(0.4, col); g.addColorStop(1, 'rgba(255,217,138,0)');
     c.fillStyle = g; c.beginPath(); c.arc(12, y, 12, 0, Math.PI * 2); c.fill();
     c.beginPath(); c.moveTo(8, y + 4); c.quadraticCurveTo(12 + Math.sin(t * 3) * 4, y + 16, 12, 34); c.quadraticCurveTo(14, y + 14, 16, y + 4); c.fillStyle = col + '88'; c.fill(); }];
-  SAG.lampione = [24, 100, (c, o) => lampione(c, 8, 100, 92, o.posa !== 1, null)];
+  SAG.lampione = [24, 100, (c, o) => arredo(c, 'lampione', 12, 100, 100, null, { spento: o.posa === 1 }) || lampione(c, 8, 100, 92, o.posa !== 1, null)];
   SAG.porta = [36, 64, (c, o) => porta(c, 3, 2, 30, 62, o.posa === 1 ? 'aperta' : o.posa === 2 ? 'socchiusa' : 'chiusa', null)];
   SAG.finestra = [30, 40, (c, o) => finestra(c, 4, 4, 22, 30, o.posa === 1, null)];
   SAG.foglio = [24, 30, (c) => { c.beginPath(); c.moveTo(2, 4); c.lineTo(18, 2); c.lineTo(22, 6); c.lineTo(22, 28); c.lineTo(4, 30); c.closePath(); riempi(c, '#d8c7a0', C.ombra);
@@ -493,7 +541,8 @@
   SAG.statua = [40, 70, (c) => statua(c, 20, 70, 70)];
   SAG.campana = [36, 40, (c) => { c.beginPath(); c.rect(16, 0, 4, 5); c.moveTo(18, 4); c.quadraticCurveTo(6, 5, 7, 22); c.quadraticCurveTo(6, 32, 2, 34); c.lineTo(34, 34); c.quadraticCurveTo(30, 32, 29, 22); c.quadraticCurveTo(30, 5, 18, 4); riempi(c, '#5a4320');
     c.beginPath(); c.arc(18, 37, 3, 0, Math.PI * 2); riempi(c, C.ombra); }];
-  SAG.fontana = [80, 50, (c) => fontana(c, 0, 50, 80)];
+  // la sagoma «fontana» dei punti è la vasca di una fontana grande: resta a codice
+  SAG.fontana = [80, 50, (c) => fontana(c, 0, 50, 80, true)];
   // solo di ripiego, quando il foglio di Ferruccio non c'è: cappuccio a punta, maschera a becco, sciarpa
   SAG.ferruccio = [28, 62, (c, o) => { c.beginPath(); c.moveTo(10, 14); c.lineTo(15, 0); c.lineTo(20, 14); testa(c, 15, 16, 6); c.moveTo(20, 15); c.lineTo(27, 19); c.lineTo(20, 20);
     c.moveTo(8, 23); c.lineTo(22, 23); c.lineTo(23, 42); c.lineTo(19, 42); c.lineTo(18, 62); c.lineTo(15, 62); c.lineTo(15, 46); c.lineTo(14, 62); c.lineTo(11, 62); c.lineTo(11, 42); c.lineTo(7, 42); c.closePath(); riempi(c, '#e8d8b8', C.ombra);

@@ -4,7 +4,9 @@
  *   fondi: tutti i PNG di gioco/assets/avventura/ (nome «avventura/<percorso>») e quelli nominati dagli elementi
  *          `immagine` e da `fondale.immagine` se il file c'è (nome = percorso sotto gioco/assets/, senza .png);
  *   fogli: i fogli di gioco/assets/sprite_teatro/ nominati dai personaggi (`figura.foglio`) e dalle icone (`icona.foglio`),
- *          a colori: la versione ripulita di gioco/assets/sprite_teatro_v2/ se c'è, altrimenti l'originale.
+ *          a colori: la versione ripulita di gioco/assets/sprite_teatro_v2/ se c'è, altrimenti l'originale;
+ *   arredi: gli oggetti di scena dell'autore (gioco/assets/sprite_teatro/scena/) che i fondali disegnano al posto
+ *          della sagoma a codice (lampione, albero, statua, …), con `bb` = [x, y, w, h] della parte non trasparente.
  * Con misure (letta l'intestazione del PNG). Il motore usa SOLO queste: un PNG che manca non fa una richiesta a vuoto
  * e si disegna a codice. Rilanciare dopo aver aggiunto immagini o personaggi.
  * Uso: node tools/avventura-immagini.js [--controlla]   (--controlla: esce con 1 se il file scritto sarebbe diverso)
@@ -22,6 +24,32 @@ function misure(file) {
   const b = Buffer.alloc(24); const fd = fs.openSync(file, 'r'); fs.readSync(fd, b, 0, 24, 0); fs.closeSync(fd);
   if (b.toString('ascii', 1, 4) !== 'PNG') return null;
   return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+}
+/** Il riquadro [x, y, w, h] dei pixel non trasparenti (alfa > 24) di un PNG RGBA/RGB a 8 bit, o null. */
+function riquadro(file) {
+  const b = fs.readFileSync(file); let p = 8, w = 0, h = 0, tipo = 0, prof = 0, inter = 0; const dati = [];
+  while (p < b.length) {
+    const L = b.readUInt32BE(p), t = b.toString('ascii', p + 4, p + 8), c = b.subarray(p + 8, p + 8 + L);
+    if (t === 'IHDR') { w = c.readUInt32BE(0); h = c.readUInt32BE(4); prof = c[8]; tipo = c[9]; inter = c[12]; }
+    else if (t === 'IDAT') dati.push(c); else if (t === 'IEND') break;
+    p += 12 + L;
+  }
+  const bpp = tipo === 6 ? 4 : tipo === 2 ? 3 : 0; if (!bpp || prof !== 8 || inter) return null;
+  const raw = require('zlib').inflateSync(Buffer.concat(dati)), riga = w * bpp, px = Buffer.alloc(riga * h);
+  for (let y = 0; y < h; y++) {
+    const f = raw[y * (riga + 1)], src = y * (riga + 1) + 1, o = y * riga;
+    for (let i = 0; i < riga; i++) {
+      const a = i >= bpp ? px[o + i - bpp] : 0, u = y ? px[o - riga + i] : 0, ul = y && i >= bpp ? px[o - riga + i - bpp] : 0;
+      let v = raw[src + i];
+      if (f === 1) v += a; else if (f === 2) v += u; else if (f === 3) v += (a + u) >> 1;
+      else if (f === 4) { const q = a + u - ul, pa = Math.abs(q - a), pb = Math.abs(q - u), pc = Math.abs(q - ul); v += pa <= pb && pa <= pc ? a : pb <= pc ? u : ul; }
+      px[o + i] = v & 255;
+    }
+  }
+  if (bpp === 3) return [0, 0, w, h];
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (px[y * riga + x * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  return x1 < 0 ? null : [x0, y0, x1 - x0 + 1, y1 - y0 + 1];
 }
 function voce(rel) {
   const file = path.join(ASSETS, rel + '.png');
@@ -83,11 +111,25 @@ for (const n of [...nomiFogli].sort()) {
   fogli[n] = v;
 }
 
+// gli oggetti di scena dell'autore che i fondali usano (nome = come li chiama 10-disegno.js)
+const ARREDI = {
+  lampione: 'sprite_teatro/scena/ostacolo-lampione', albero: 'sprite_teatro/scena/ostacolo-albero',
+  statua: 'sprite_teatro/scena/ostacolo-statua', telaio: 'sprite_teatro/scena/ostacolo-telaio',
+  colonna: 'sprite_teatro/scena/ostacolo-colonna', aiuola: 'sprite_teatro/scena/ostacolo-aiuola',
+  fontanella: 'sprite_teatro/scena/ostacolo-fontanella', banco: 'sprite_teatro/scena/banchetto-tonino',
+};
+const arredi = {};
+for (const [n, rel] of Object.entries(ARREDI)) {
+  const v = voce(rel); if (!v) continue;
+  const bb = riquadro(path.join(ASSETS, rel + '.png')); if (bb) v.bb = bb;
+  arredi[n] = v;
+}
+
 const testo = `/*
  * avventura/05-immagini.js — GENERATO da tools/avventura-immagini.js: non modificare a mano.
  * Le immagini che esistono davvero (con misure). Ciò che non è qui si disegna a codice.
  */
-AV.immagini = ${JSON.stringify({ fondi, fogli }, null, 1)};
+AV.immagini = ${JSON.stringify({ fondi, fogli, arredi }, null, 1)};
 `;
 if (process.argv.includes('--controlla')) {
   const ora = fs.existsSync(USCITA) ? fs.readFileSync(USCITA, 'utf8') : '';
@@ -95,4 +137,4 @@ if (process.argv.includes('--controlla')) {
   process.exit(ora === testo ? 0 : 1);
 }
 fs.writeFileSync(USCITA, testo);
-console.log(`scritto ${path.relative(RADICE, USCITA)}: fondi ${Object.keys(fondi).length}, fogli ${Object.keys(fogli).length}`);
+console.log(`scritto ${path.relative(RADICE, USCITA)}: fondi ${Object.keys(fondi).length}, fogli ${Object.keys(fogli).length}, arredi ${Object.keys(arredi).length}`);
