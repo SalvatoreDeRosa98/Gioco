@@ -402,7 +402,15 @@
     ctx.beginPath(); ctx.moveTo(lx - 7, ly + 4); ctx.lineTo(lx, ly - 2); ctx.lineTo(lx + 7, ly + 4); ctx.closePath(); riempi(ctx, F);
     if (acceso && X) X.luci.push({ x: lx, y: ly + 10, r: 70, colore: '#ffb35c', forza: 0.7, vivo: true });
   }
-  E.lampione = (ctx, o, X) => lampione(ctx, num(o.x, 300), num(o.y, X.suoloY), num(o.h, 110), o.acceso !== false, X);
+  E.lampione = (ctx, o, X) => {
+    const x = num(o.x, 300), y = num(o.y, X.suoloY), h = num(o.h, 110), acceso = o.acceso !== false;
+    // base ben sopra la terra: è un lume appeso al muro, non un lampione intero sospeso nel cielo
+    if (y < X.suoloY - 60 && arredo(ctx, 'lampione', x, y, Math.min(h, 48), null, { spento: !acceso, senzaOmbra: true })) {
+      if (acceso) X.luci.push({ x, y: y - 36, r: 50, colore: '#ffb35c', forza: 0.6, vivo: true });
+      return;
+    }
+    lampione(ctx, x, y, h, acceso, X);
+  };
   E.albero = (ctx, o, X) => {
     const x = num(o.x, 300), y = num(o.y, X.suoloY), h = num(o.h, 120), tipo = o.tipo || 'leccio', r = caso(hash('albero' + x + y));
     if (tipo === 'leccio' && arredo(ctx, 'albero', x, y, h * 1.05)) return;
