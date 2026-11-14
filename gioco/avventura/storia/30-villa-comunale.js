@@ -123,7 +123,7 @@ AV.quadro({
       usa: [
         ['se', { visto: 'registro-deciso' }, [
           ['se', { visto: 'messaggio-padre' }, [['pensa', 'Prima di andare, Ferruccio guarda indietro, verso gli archi. «Chi vuole la verità cerca che cosa è successo.»']]], // [nuovo]
-          ['pensa', 'Ferruccio si stringe la sciarpa e prende la salita. Dietro di lui la fontana continua a parlare da sola.'], // [nuovo]
+          ['pensa', 'Ferruccio si stringe la giubba e prende la salita. Dietro di lui la fontana continua a parlare da sola.'], // [nuovo]
           ['diario', 'Ho lasciato la Villa. Adesso so come è morto mio padre. Non so ancora che cosa farne.'], // [nuovo]
           ['segna', 'villa-finita'],
           ['vai', 'leucio.arrivo'],
