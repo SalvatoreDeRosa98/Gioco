@@ -292,5 +292,95 @@ AV.immagini = {
     "bot": 0.953
    }
   }
+ },
+ "arredi": {
+  "lampione": {
+   "src": "assets/sprite_teatro/scena/ostacolo-lampione.png",
+   "w": 240,
+   "h": 320,
+   "bb": [
+    72,
+    5,
+    96,
+    309
+   ]
+  },
+  "albero": {
+   "src": "assets/sprite_teatro/scena/ostacolo-albero.png",
+   "w": 240,
+   "h": 320,
+   "bb": [
+    22,
+    10,
+    196,
+    288
+   ]
+  },
+  "statua": {
+   "src": "assets/sprite_teatro/scena/ostacolo-statua.png",
+   "w": 240,
+   "h": 320,
+   "bb": [
+    67,
+    10,
+    106,
+    288
+   ]
+  },
+  "telaio": {
+   "src": "assets/sprite_teatro/scena/ostacolo-telaio.png",
+   "w": 240,
+   "h": 320,
+   "bb": [
+    37,
+    10,
+    166,
+    283
+   ]
+  },
+  "colonna": {
+   "src": "assets/sprite_teatro/scena/ostacolo-colonna.png",
+   "w": 240,
+   "h": 320,
+   "bb": [
+    52,
+    7,
+    136,
+    286
+   ]
+  },
+  "aiuola": {
+   "src": "assets/sprite_teatro/scena/ostacolo-aiuola.png",
+   "w": 320,
+   "h": 200,
+   "bb": [
+    2,
+    10,
+    306,
+    178
+   ]
+  },
+  "fontanella": {
+   "src": "assets/sprite_teatro/scena/ostacolo-fontanella.png",
+   "w": 240,
+   "h": 320,
+   "bb": [
+    60,
+    10,
+    121,
+    293
+   ]
+  },
+  "banco": {
+   "src": "assets/sprite_teatro/scena/banchetto-tonino.png",
+   "w": 384,
+   "h": 256,
+   "bb": [
+    47,
+    8,
+    289,
+    244
+   ]
+  }
  }
 };

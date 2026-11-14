@@ -16,13 +16,16 @@
   const W = 640, H = 360;
   const C = {
     ombra: '#120b08', ombra2: '#1d130d', ombra3: '#2a1c12', filo: '#d9a456', luna: '#efe2bd', calda: '#ffcf7a',
-    filoAlfa: 0.55, polvere: 46, suoloY: 250,
+    filoAlfa: 0.55, polvere: 46, suoloY: 250, inchiostro: '#2b1a12',
   };
   const D = AV.D = { W, H, C };
 
   // ------------------------------------------------------------------ immagini (solo quelle che esistono)
   const cache = new Map();
-  /** L'immagine pronta di un fondo ('fondi') o di un foglio ('fogli'), o null (mancante o non ancora caricata). */
+  /**
+   * L'immagine pronta di un fondo ('fondi'), di un foglio ('fogli') o di un oggetto di scena dell'autore ('arredi'),
+   * o null (mancante o non ancora caricata). Quando arriva, D.sporca() fa rifare i fondali già resi.
+   */
   D.img = function (genere, nome) {
     const el = AV.immagini && AV.immagini[genere] && AV.immagini[genere][nome];
     if (!el || typeof Image === 'undefined') return null;
@@ -61,10 +64,29 @@
   function caso(seme) { let s = seme >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
   D.caso = caso; D.hash = hash;
   const num = (v, d) => (typeof v === 'number' && isFinite(v) ? v : d);
+  /** Il contorno a inchiostro bruno dell'illustrazione. */
+  const INK = C.inchiostro;
+  function tratto(ctx, l) { ctx.strokeStyle = INK; ctx.lineWidth = l || 1.2; ctx.lineJoin = 'round'; ctx.stroke(); }
+  /** Riempie il tracciato e lo ripassa a inchiostro (bordo = un altro colore; il filo d'oro resta velato; false = niente). */
   function riempi(ctx, colore, bordo) {
     ctx.fillStyle = colore || C.ombra; ctx.fill();
-    if (bordo !== false) { ctx.strokeStyle = bordo || C.filo; ctx.globalAlpha *= C.filoAlfa; ctx.lineWidth = 1; ctx.stroke(); ctx.globalAlpha /= C.filoAlfa; }
+    if (bordo === false) return;
+    if (bordo === C.filo) { ctx.strokeStyle = C.filo; ctx.globalAlpha *= C.filoAlfa; ctx.lineWidth = 1; ctx.stroke(); ctx.globalAlpha /= C.filoAlfa; }
+    else { ctx.strokeStyle = bordo || INK; ctx.lineWidth = 1.1; ctx.lineJoin = 'round'; ctx.stroke(); }
   }
+  // colori: mescole verso il viola della notte (ombra) o verso la luce calda
+  function rgb(h) { h = String(h).replace('#', ''); if (h.length === 3) h = h.split('').map((c) => c + c).join(''); const n = parseInt(h.slice(0, 6), 16) || 0; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  function hex(a) { return '#' + a.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join(''); }
+  function mescola(a, b, t) { const x = rgb(a), y = rgb(b); return hex(x.map((v, i) => v + (y[i] - v) * t)); }
+  const scuro = (c, t) => mescola(c, '#1a1226', t === undefined ? 0.35 : t);
+  const caldo = (c, t) => mescola(c, '#ffd08a', t === undefined ? 0.3 : t);
+  /** Un colore dei dati: se è quasi nero (le vecchie sagome) lo schiarisce tenendone la tinta. */
+  function chiaro(c) {
+    if (typeof c !== 'string' || c[0] !== '#') return c;
+    const [r, g, b] = rgb(c), L = (0.3 * r + 0.59 * g + 0.11 * b) / 255;
+    return L < 0.22 ? mescola(c, '#8a7a7c', 0.62 - L * 1.5) : c;
+  }
+  D.colore = { mescola, scuro, caldo, chiaro };
   function rett(ctx, x, y, w, h) { ctx.beginPath(); ctx.rect(x, y, w, h); }
   D.rr = function (ctx, x, y, w, h, r) {
     ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
@@ -84,13 +106,87 @@
     return c;
   };
 
+  // ------------------------------------------------------------------ oggetti di scena dell'autore
+  /** La copia di un arredo col vetro del lume spento (la parte alta velata di blu-notte), fatta una volta. */
+  function spento(r) {
+    if (r.spento || typeof document === 'undefined') return r.spento || r.img;
+    const c = document.createElement('canvas'); c.width = r.info.w; c.height = r.info.h;
+    const g = c.getContext('2d'); g.drawImage(r.img, 0, 0);
+    const bb = r.info.bb || [0, 0, r.info.w, r.info.h];
+    g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(22,24,48,0.72)'; g.fillRect(0, 0, r.info.w, bb[1] + bb[3] * 0.46);
+    r.spento = c; return c;
+  }
+  /**
+   * Un oggetto di scena dell'autore con i piedi in (cx, base), alto h; largo w se dato, altrimenti in proporzione.
+   * Con l'ombra a terra (salvo opz.senzaOmbra). Restituisce false se il PNG non c'è (si disegna allora a codice).
+   */
+  function arredo(ctx, nome, cx, base, h, w, opz) {
+    const r = D.img('arredi', nome); if (!r) return false;
+    const o = opz || {}, bb = r.info.bb || [0, 0, r.info.w, r.info.h];
+    const ww = w || (h * bb[2]) / bb[3];
+    if (!o.senzaOmbra) {
+      ctx.fillStyle = 'rgba(12,8,14,0.42)'; ctx.beginPath();
+      ctx.ellipse(cx + ww * 0.08, base - 0.5, ww * 0.55, Math.max(2, ww * 0.09), 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.drawImage(o.spento ? spento(r) : r.img, bb[0], bb[1], bb[2], bb[3], cx - ww / 2, base - h, ww, h);
+    return true;
+  }
+  /** Il rapporto larghezza/altezza della parte disegnata di un arredo (o d se manca). */
+  function aspetto(nome, d) { const r = D.img('arredi', nome); const bb = r && r.info.bb; return bb ? bb[2] / bb[3] : d; }
+  D.arredo = arredo;
+
   // ------------------------------------------------------------------ elementi del fondale
+  // Tavolozza dell'illustrazione: notte A COLORI, muri smorzati, contorno a inchiostro bruno su ogni forma.
   const CIELI = {
-    notte: ['#070b1a', '#141a33', '#2a2340'], alba: ['#1a1f3d', '#5a3f5c', '#c98a5a'],
-    velo: ['#161c22', '#2b343c', '#46525c'], interno: ['#0d0806', '#1c120c', '#2e1d12'],
+    notte: ['#17204a', '#2e2c62', '#5a4878'], alba: ['#26305a', '#7a5a7a', '#d79a68'],
+    velo: ['#3a4656', '#56626e', '#7a848c'], interno: ['#2e2018', '#3e2a1e', '#4c3424'],
   };
-  const SUOLI = { selciato: '#2a1f18', scacchi: '#2b2420', assi: '#2e1e12', erba: '#17200f', sabbia: '#3a2c1c', tufo: '#3b301e', marmo: '#3a3632' };
-  const MURI = { tufo: '#3b301e', pietra: '#2c2a28', mattoni: '#3a1f16', scuro: '#1a120c', marmo: '#3a3632', calce: '#4a4236', legno: '#2e1e12' };
+  const SUOLI = { selciato: '#5e5660', scacchi: '#7a7068', assi: '#6a4628', erba: '#3c5a30', sabbia: '#8a7048', tufo: '#857050', marmo: '#9a958c' };
+  const MURI = { tufo: '#8a7652', pietra: '#6e6a66', mattoni: '#8a4a34', scuro: '#4e3e38', marmo: '#a8a296', calce: '#a89a80', legno: '#6a4628' };
+  /** I colori dei muri delle case: ocra, tufo, grigio-azzurro, rosa antico, calce, salvia, terra di Siena (smorzati di notte). */
+  const TINTE = ['#9a7a4a', '#8f7c5e', '#6a7888', '#956a64', '#a39478', '#7c7a5e', '#9b6e48', '#7e6a80'];
+  const TETTO = '#7b4330', PIETRA = '#8f8572', LEGNO_P = '#6a4426', VETRO_SPENTO = '#1e2846';
+
+  /** Il tetto di coppi dentro il tracciato corrente (che resta il tracciato da riempire). */
+  function coppi(ctx, x0, y0, x1, y1) {
+    ctx.fillStyle = TETTO; ctx.fill(); ctx.save(); ctx.clip();
+    ctx.strokeStyle = 'rgba(40,18,12,0.55)'; ctx.lineWidth = 0.7;
+    for (let x = x0; x < x1; x += 4) { ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(200,120,80,0.35)';
+    for (let y = y1 - 3; y > y0; y -= 4) { ctx.beginPath(); for (let x = x0; x < x1; x += 4) { ctx.moveTo(x, y); ctx.arc(x + 2, y, 2, Math.PI, 0, true); } ctx.stroke(); }
+    ctx.restore(); tratto(ctx);
+  }
+  /** Una finestra col contorno a inchiostro: cornice di stucco, vetro acceso caldo o spento blu, persiane, davanzale. */
+  function finestrina(ctx, fx, fy, fw, fh, accesa, tinta, persiane) {
+    rett(ctx, fx - 2, fy - 3, fw + 4, fh + 5); ctx.fillStyle = caldo(tinta, 0.22); ctx.fill(); tratto(ctx, 0.8);
+    rett(ctx, fx, fy, fw, fh);
+    if (accesa) { const g = ctx.createLinearGradient(0, fy, 0, fy + fh); g.addColorStop(0, '#ffe09a'); g.addColorStop(1, '#e08a3a'); ctx.fillStyle = g; }
+    else ctx.fillStyle = VETRO_SPENTO;
+    ctx.fill();
+    if (!accesa) { ctx.fillStyle = 'rgba(110,130,190,0.35)'; ctx.beginPath(); ctx.moveTo(fx + 1, fy + fh * 0.5); ctx.lineTo(fx + fw * 0.5, fy + 1); ctx.lineTo(fx + fw * 0.75, fy + 1); ctx.lineTo(fx + 1, fy + fh * 0.75); ctx.fill(); }
+    ctx.strokeStyle = INK; ctx.lineWidth = 0.9; ctx.beginPath(); ctx.moveTo(fx + fw / 2, fy); ctx.lineTo(fx + fw / 2, fy + fh); ctx.moveTo(fx, fy + fh * 0.4); ctx.lineTo(fx + fw, fy + fh * 0.4); ctx.stroke();
+    rett(ctx, fx, fy, fw, fh); tratto(ctx, 1);
+    if (persiane === 'chiuse') {
+      rett(ctx, fx, fy, fw, fh); ctx.fillStyle = '#4e6448'; ctx.fill();
+      ctx.strokeStyle = 'rgba(20,30,18,0.7)'; ctx.lineWidth = 0.6; for (let y = fy + 2; y < fy + fh; y += 2.5) { ctx.beginPath(); ctx.moveTo(fx + 1, y); ctx.lineTo(fx + fw - 1, y); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(fx + fw / 2, fy); ctx.lineTo(fx + fw / 2, fy + fh); tratto(ctx, 0.8); rett(ctx, fx, fy, fw, fh); tratto(ctx, 1);
+    } else if (persiane) {
+      for (const px of [fx - fw * 0.42 - 1, fx + fw + 1]) {
+        rett(ctx, px, fy, fw * 0.42, fh); ctx.fillStyle = persiane; ctx.fill();
+        ctx.strokeStyle = 'rgba(20,20,18,0.55)'; ctx.lineWidth = 0.5; for (let y = fy + 2; y < fy + fh; y += 2.5) { ctx.beginPath(); ctx.moveTo(px + 0.5, y); ctx.lineTo(px + fw * 0.42 - 0.5, y); ctx.stroke(); }
+        rett(ctx, px, fy, fw * 0.42, fh); tratto(ctx, 0.8);
+      }
+    }
+    rett(ctx, fx - 3, fy + fh + 1, fw + 6, 2.5); ctx.fillStyle = caldo(tinta, 0.3); ctx.fill(); tratto(ctx, 0.8);
+  }
+  /** Ombra a due toni su un rettangolo di muro: lato destro in ombra (tratteggiato) e fascia scura sotto la gronda. */
+  function ombreggia(ctx, x, y, w, h, tinta) {
+    ctx.fillStyle = scuro(tinta, 0.3); ctx.fillRect(x + w * 0.84, y, w * 0.16, h);
+    ctx.fillStyle = scuro(tinta, 0.45); ctx.fillRect(x, y, w, Math.min(6, h * 0.08));
+    ctx.save(); rett(ctx, x + w * 0.84, y, w * 0.16, h); ctx.clip(); ctx.strokeStyle = 'rgba(26,18,38,0.35)'; ctx.lineWidth = 0.6;
+    for (let k = -h; k < w; k += 4) { ctx.beginPath(); ctx.moveTo(x + w * 0.84 + k, y + h); ctx.lineTo(x + w * 0.84 + k + h * 0.5, y); ctx.stroke(); }
+    ctx.restore();
+  }
 
   const E = {};
   E.cielo = (ctx, o, X) => {
@@ -99,235 +195,354 @@
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     if (o.tono === 'interno') return;
     if (o.stelle !== false) {
-      const r = X.caso; ctx.fillStyle = '#f3e6c4';
-      for (let i = 0; i < 70; i++) { ctx.globalAlpha = 0.25 + r() * 0.6; const s = r() < 0.1 ? 1.6 : 0.9; ctx.fillRect(r() * W, r() * X.suoloY * 0.7, s, s); }
+      const r = X.caso; ctx.fillStyle = '#fff3d0';
+      for (let i = 0; i < 70; i++) { ctx.globalAlpha = 0.35 + r() * 0.6; const s = r() < 0.1 ? 1.8 : 1; ctx.fillRect(r() * W, r() * X.suoloY * 0.7, s, s); }
       ctx.globalAlpha = 1;
     }
     if (o.luna) {
       const lx = num(o.x, 520), ly = num(o.y, 58), lr = num(o.r, 20);
-      const g2 = ctx.createRadialGradient(lx, ly, lr * 0.8, lx, ly, lr * 4); g2.addColorStop(0, 'rgba(239,226,189,0.35)'); g2.addColorStop(1, 'rgba(239,226,189,0)');
+      const g2 = ctx.createRadialGradient(lx, ly, lr * 0.8, lx, ly, lr * 4); g2.addColorStop(0, 'rgba(255,240,200,0.35)'); g2.addColorStop(1, 'rgba(255,240,200,0)');
       ctx.fillStyle = g2; ctx.fillRect(lx - lr * 4, ly - lr * 4, lr * 8, lr * 8);
-      ctx.beginPath(); ctx.arc(lx, ly, lr, 0, Math.PI * 2); ctx.fillStyle = C.luna; ctx.fill();
-      ctx.fillStyle = 'rgba(160,140,110,0.35)';
-      for (const [dx, dy, rr] of [[-6, -4, 5], [5, 6, 4], [7, -7, 2.5]]) { ctx.beginPath(); ctx.arc(lx + dx, ly + dy, rr, 0, Math.PI * 2); ctx.fill(); }
+      ctx.beginPath(); ctx.arc(lx, ly, lr, 0, Math.PI * 2); ctx.fillStyle = '#f6e7b8'; ctx.fill();
+      ctx.save(); ctx.clip(); ctx.beginPath(); ctx.arc(lx + lr * 0.35, ly + lr * 0.2, lr, 0, Math.PI * 2); ctx.arc(lx, ly, lr * 1.2, 0, Math.PI * 2, true); ctx.fillStyle = '#d9c48e'; ctx.fill(); ctx.restore();
+      for (const [dx, dy, rr] of [[-6, -4, 5], [5, 6, 4], [7, -7, 2.5]]) { ctx.beginPath(); ctx.arc(lx + dx * lr / 20, ly + dy * lr / 20, rr * lr / 20, 0, Math.PI * 2); ctx.fillStyle = '#d2bb86'; ctx.fill(); tratto(ctx, 0.6); }
+      ctx.beginPath(); ctx.arc(lx, ly, lr, 0, Math.PI * 2); tratto(ctx, 1.5);
     }
   };
   E.quinte = (ctx, o) => {
-    const col = o.colore || '#3a1418';
+    const col = chiaro(o.colore || '#7a2228');
     for (const lato of [0, 1]) {
       ctx.save(); if (lato) { ctx.translate(W, 0); ctx.scale(-1, 1); }
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(58, 0);
       for (let y = 0; y <= 300; y += 30) ctx.quadraticCurveTo(46 + (y % 60 ? 8 : -2), y + 15, 42 + (y / 300) * 10, y + 30);
       ctx.lineTo(0, 330); ctx.closePath(); riempi(ctx, col);
-      ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 2;
+      ctx.strokeStyle = scuro(col, 0.45); ctx.lineWidth = 2;
       for (const fx of [14, 28, 40]) { ctx.beginPath(); ctx.moveTo(fx, 0); ctx.lineTo(fx - 3, 330); ctx.stroke(); }
       ctx.restore();
     }
     ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(W, 0); ctx.lineTo(W, 20);
     for (let x = W; x > 0; x -= 40) ctx.quadraticCurveTo(x - 20, 38, x - 40, 20);
     ctx.closePath(); riempi(ctx, col);
+    ctx.fillStyle = '#c99a4a'; ctx.fillRect(0, 4, W, 3);
   };
   E.suolo = (ctx, o, X) => {
-    const y = num(o.y, X.suoloY), tipo = o.tipo || 'selciato', base = SUOLI[tipo] || SUOLI.selciato;
-    const g = ctx.createLinearGradient(0, y, 0, H); g.addColorStop(0, base); g.addColorStop(1, '#0a0705');
+    const y = num(o.y, X.suoloY), tipo = o.tipo || 'selciato', base = SUOLI[tipo] || SUOLI.selciato, r = X.caso;
+    const g = ctx.createLinearGradient(0, y, 0, H); g.addColorStop(0, scuro(base, 0.15)); g.addColorStop(0.5, base); g.addColorStop(1, scuro(base, 0.5));
     ctx.fillStyle = g; ctx.fillRect(0, y, W, H - y);
-    ctx.strokeStyle = 'rgba(217,164,86,0.16)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); ctx.stroke();
-    const r = X.caso;
-    ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+    ctx.lineJoin = 'round';
     if (tipo === 'selciato' || tipo === 'tufo') {
-      for (let yy = y + 6, fila = 0; yy < 300; fila++) {
-        const passo = 10 + fila * 3; ctx.beginPath();
-        for (let x = -((fila * 7) % passo); x < W; x += passo) { ctx.moveTo(x, yy); ctx.arc(x + passo / 2, yy, passo / 2, Math.PI, 0); }
-        ctx.stroke(); yy += 5 + fila * 2;
+      // ciottoli uno per uno, più grandi verso chi guarda
+      for (let yy = y + 1, fila = 0; yy < H; fila++) {
+        const hh = 4 + fila * 1.6, passo = hh * 1.7;
+        for (let x = -((fila * 7) % passo) - passo / 2; x < W + passo; x += passo) {
+          const ww = passo * (0.8 + r() * 0.15), cx = x + r() * 1.5;
+          D.rr(ctx, cx, yy, ww, hh * 0.86, Math.min(ww, hh) * 0.4);
+          ctx.fillStyle = mescola(base, r() < 0.5 ? '#9a8c90' : '#2a2238', r() * 0.3); ctx.fill(); tratto(ctx, 0.7);
+          if (hh > 6) { ctx.fillStyle = 'rgba(255,240,220,0.12)'; ctx.fillRect(cx + ww * 0.2, yy + 1.5, ww * 0.4, 1.2); }
+        }
+        yy += hh;
       }
     } else if (tipo === 'scacchi' || tipo === 'marmo') {
-      for (let i = -14; i <= 14; i++) { ctx.beginPath(); ctx.moveTo(W / 2 + i * 22, y); ctx.lineTo(W / 2 + i * 70, H); ctx.stroke(); }
-      for (let k = 0, yy = y; yy < H; k++) { yy += 6 + k * 4; ctx.beginPath(); ctx.moveTo(0, yy); ctx.lineTo(W, yy); ctx.stroke(); }
+      ctx.strokeStyle = 'rgba(43,26,18,0.6)'; ctx.lineWidth = 0.8;
       if (tipo === 'scacchi') {
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillStyle = 'rgba(30,20,30,0.45)';
         for (let k = 0, yy = y; yy < H; k++) { const h = 6 + k * 4; for (let i = -14; i < 14; i++) if ((i + k) % 2 === 0) { const xa = W / 2 + i * (22 + k * 6), xb = W / 2 + (i + 1) * (22 + k * 6); ctx.fillRect(xa, yy, xb - xa, h); } yy += h; }
       } else {
-        ctx.strokeStyle = 'rgba(217,200,170,0.1)';
+        ctx.save(); ctx.strokeStyle = 'rgba(120,110,120,0.35)';
         for (let i = 0; i < 14; i++) { ctx.beginPath(); let x = r() * W, yy = y + r() * (H - y); ctx.moveTo(x, yy); for (let j = 0; j < 4; j++) { x += 10 + r() * 20; yy += (r() - 0.5) * 8; ctx.lineTo(x, yy); } ctx.stroke(); }
+        ctx.restore();
       }
+      for (let i = -14; i <= 14; i++) { ctx.beginPath(); ctx.moveTo(W / 2 + i * 22, y); ctx.lineTo(W / 2 + i * 70, H); ctx.stroke(); }
+      for (let k = 0, yy = y; yy < H; k++) { yy += 6 + k * 4; ctx.beginPath(); ctx.moveTo(0, yy); ctx.lineTo(W, yy); ctx.stroke(); }
     } else if (tipo === 'assi') {
-      for (let yy = y + 8, k = 0; yy < H; k++) { ctx.beginPath(); ctx.moveTo(0, yy); ctx.lineTo(W, yy); ctx.stroke(); for (let x = (k * 53) % 90; x < W; x += 90 + k * 10) { ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x, yy - 6 - k); ctx.stroke(); } yy += 8 + k * 3; }
+      for (let yy = y, k = 0; yy < H; k++) {
+        const hh = 6 + k * 2.5;
+        ctx.fillStyle = mescola(base, k % 2 ? '#2a1a10' : '#9a6a40', 0.15); ctx.fillRect(0, yy, W, hh);
+        ctx.strokeStyle = 'rgba(40,22,12,0.35)'; ctx.lineWidth = 0.5;
+        for (let i = 0; i < 6; i++) { const gy = yy + 1 + r() * (hh - 2), gx = r() * W; ctx.beginPath(); ctx.moveTo(gx, gy); ctx.quadraticCurveTo(gx + 20, gy - 1, gx + 40 + r() * 30, gy); ctx.stroke(); }
+        ctx.strokeStyle = INK; ctx.lineWidth = 0.9; ctx.beginPath(); ctx.moveTo(0, yy); ctx.lineTo(W, yy); ctx.stroke();
+        for (let x = (k * 53) % 90; x < W; x += 90 + k * 10) { ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x, yy + hh); ctx.stroke(); ctx.fillStyle = '#2a1a10'; ctx.fillRect(x + 2, yy + hh / 2 - 0.6, 1.2, 1.2); }
+        yy += hh;
+      }
     } else if (tipo === 'erba') {
-      ctx.strokeStyle = 'rgba(80,110,50,0.35)';
-      for (let i = 0; i < 260; i++) { const x = r() * W, yy = y + 4 + r() * (300 - y); ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + (r() - 0.5) * 4, yy - 3 - r() * 4); ctx.stroke(); }
+      for (let i = 0; i < 420; i++) {
+        const x = r() * W, yy = y + 2 + r() * (H - y), l = 3 + r() * 4 + (yy - y) * 0.04;
+        ctx.strokeStyle = r() < 0.5 ? '#557a3e' : '#2a4222'; ctx.lineWidth = 0.9; ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + (r() - 0.5) * 4, yy - l); ctx.stroke();
+      }
+      for (let i = 0; i < 18; i++) { ctx.fillStyle = r() < 0.5 ? '#e8d48a' : '#c97a8a'; ctx.beginPath(); ctx.arc(r() * W, y + 6 + r() * 40, 1.2, 0, Math.PI * 2); ctx.fill(); }
     } else if (tipo === 'sabbia') {
-      ctx.fillStyle = 'rgba(217,164,86,0.12)';
-      for (let i = 0; i < 300; i++) ctx.fillRect(r() * W, y + r() * (H - y), 1, 1);
+      ctx.fillStyle = 'rgba(255,230,180,0.18)'; for (let i = 0; i < 300; i++) ctx.fillRect(r() * W, y + r() * (H - y), 1, 1);
+      ctx.fillStyle = 'rgba(60,40,20,0.3)'; for (let i = 0; i < 200; i++) ctx.fillRect(r() * W, y + r() * (H - y), 1, 1);
     }
+    ctx.strokeStyle = INK; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); ctx.stroke();
   };
   E.case = (ctx, o, X) => {
     const n = Math.max(1, num(o.n, 6)), alto = num(o.alto, 110), fin = num(o.finestre, 2), y = X.suoloY, r = X.caso;
     const lw = W / n;
     for (let i = 0; i < n; i++) {
       const x = i * lw - 4 + r() * 6, w = lw + 6, h = alto * (0.75 + r() * 0.45), tetto = r();
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - h);
-      if (tetto < 0.4) { ctx.lineTo(x + w / 2, y - h - 18); ctx.lineTo(x + w, y - h); } else if (tetto < 0.7) { ctx.lineTo(x + w, y - h); } else { ctx.lineTo(x + w * 0.2, y - h); ctx.lineTo(x + w * 0.2, y - h - 6); ctx.lineTo(x + w * 0.8, y - h - 6); ctx.lineTo(x + w * 0.8, y - h); ctx.lineTo(x + w, y - h); }
-      ctx.lineTo(x + w, y); ctx.closePath(); riempi(ctx, i % 2 ? C.ombra : C.ombra2);
-      if (r() < 0.5) { rett(ctx, x + w * 0.7, y - h - 22, 6, 14); riempi(ctx, C.ombra); }
+      const tinta = TINTE[Math.floor(r() * TINTE.length)];
+      const pers = r() < 0.5 ? (r() < 0.5 ? '#4e6448' : '#6a4a2e') : null;
+      // il tetto prima, poi il muro che lo copre alla gronda
+      if (tetto < 0.4) { const ht = Math.min(22, w * 0.28); ctx.beginPath(); ctx.moveTo(x - 4, y - h + 1); ctx.lineTo(x + w / 2, y - h - ht); ctx.lineTo(x + w + 4, y - h + 1); ctx.closePath(); coppi(ctx, x - 4, y - h - ht, x + w + 4, y - h); }
+      else if (tetto < 0.7) { ctx.beginPath(); ctx.moveTo(x - 4, y - h + 1); ctx.lineTo(x + 3, y - h - 9); ctx.lineTo(x + w - 3, y - h - 9); ctx.lineTo(x + w + 4, y - h + 1); ctx.closePath(); coppi(ctx, x - 4, y - h - 9, x + w + 4, y - h); }
+      if (r() < 0.5) { rett(ctx, x + w * 0.7, y - h - 22, 7, 16); ctx.fillStyle = scuro(tinta, 0.2); ctx.fill(); tratto(ctx); rett(ctx, x + w * 0.7 - 1.5, y - h - 24, 10, 3); ctx.fillStyle = caldo(tinta, 0.1); ctx.fill(); tratto(ctx, 0.8); }
+      rett(ctx, x, y - h, w, h); ctx.fillStyle = tinta; ctx.fill();
+      ombreggia(ctx, x, y - h, w, h, tinta);
+      ctx.fillStyle = scuro(tinta, 0.22); ctx.fillRect(x, y - 10, w, 10);
+      rett(ctx, x, y - h, w, h); tratto(ctx);
+      if (tetto >= 0.7) { rett(ctx, x - 3, y - h - 4, w + 6, 5); ctx.fillStyle = caldo(tinta, 0.2); ctx.fill(); tratto(ctx, 0.9); rett(ctx, x + w * 0.2, y - h - 10, w * 0.6, 6); ctx.fillStyle = tinta; ctx.fill(); tratto(ctx, 0.9); }
       const righe = Math.max(1, Math.floor(h / 40));
       for (let rr = 0; rr < righe; rr++) for (let k = 0; k < fin; k++) {
         const fx = x + (w / (fin + 1)) * (k + 1) - 5, fy = y - h + 16 + rr * 36;
         if (fy > y - 26) continue;
-        const accesa = r() < 0.28;
-        ctx.fillStyle = accesa ? '#c98a3e' : '#0a0604'; ctx.fillRect(fx, fy, 10, 15);
-        if (accesa) { X.luci.push({ x: fx + 5, y: fy + 7, r: 16, colore: '#ffb35c', forza: 0.35 }); ctx.fillStyle = C.ombra; ctx.fillRect(fx + 4.5, fy, 1, 15); ctx.fillRect(fx, fy + 6, 10, 1); }
+        const accesa = r() < 0.28, chiuse = !accesa && r() < 0.3;
+        finestrina(ctx, fx, fy, 10, 15, accesa, tinta, chiuse ? 'chiuse' : pers);
+        if (accesa) X.luci.push({ x: fx + 5, y: fy + 7, r: 18, colore: '#ffb35c', forza: 0.35 });
+      }
+      if (h > 50 && r() < 0.6) {
+        const pw = 12, ph = 20, px = x + w * (0.15 + r() * 0.5);
+        ctx.beginPath(); ctx.moveTo(px, y); ctx.lineTo(px, y - ph + pw / 2); ctx.arc(px + pw / 2, y - ph + pw / 2, pw / 2, Math.PI, 0); ctx.lineTo(px + pw, y); ctx.closePath();
+        ctx.fillStyle = LEGNO_P; ctx.fill(); tratto(ctx);
+        ctx.beginPath(); ctx.moveTo(px + pw / 2, y - ph + 1); ctx.lineTo(px + pw / 2, y); tratto(ctx, 0.7);
       }
     }
   };
   E.palazzo = (ctx, o, X) => {
     const x = num(o.x, 160), w = num(o.w, 320), h = num(o.h, 150), y = X.suoloY, archi = num(o.archi, 5), fin = num(o.finestre, 5);
-    rett(ctx, x, y - h, w, h); riempi(ctx, C.ombra2);
-    rett(ctx, x - 6, y - h - 8, w + 12, 8); riempi(ctx, C.ombra);
-    rett(ctx, x - 3, y - h * 0.42, w + 6, 4); riempi(ctx, C.ombra);
+    const tinta = ['#a8946e', '#a07a62', '#9a8a70', '#8e8a84'][hash('palazzo' + x + w) % 4];
+    rett(ctx, x, y - h, w, h); ctx.fillStyle = tinta; ctx.fill();
+    ombreggia(ctx, x, y - h, w, h, tinta);
+    // lesene fra le campate
+    for (let i = 0; i <= fin; i++) { const lx = x + (w / fin) * i - 3; rett(ctx, Math.max(x, lx), y - h, 6, h * 0.58); ctx.fillStyle = caldo(tinta, 0.15); ctx.fill(); tratto(ctx, 0.6); }
+    rett(ctx, x, y - h * 0.42, w, h * 0.42); ctx.fillStyle = scuro(tinta, 0.12); ctx.fill();
+    ctx.strokeStyle = 'rgba(43,26,18,0.4)'; ctx.lineWidth = 0.6;
+    for (let yy = y - h * 0.42 + 7; yy < y; yy += 7) { ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + w, yy); ctx.stroke(); }
+    rett(ctx, x, y - h, w, h); tratto(ctx, 1.4);
+    rett(ctx, x - 6, y - h - 8, w + 12, 8); ctx.fillStyle = caldo(tinta, 0.2); ctx.fill(); tratto(ctx);
+    ctx.fillStyle = scuro(tinta, 0.4); ctx.fillRect(x - 6, y - h, w + 12, 2);
+    rett(ctx, x - 3, y - h * 0.42, w + 6, 4); ctx.fillStyle = caldo(tinta, 0.2); ctx.fill(); tratto(ctx);
     for (let i = 0; i < archi; i++) {
       const aw = w / archi, ax = x + i * aw + aw * 0.18, ww = aw * 0.64, ah = Math.min(h * 0.36, ww * 1.5);
       ctx.beginPath(); ctx.moveTo(ax, y); ctx.lineTo(ax, y - ah + ww / 2); ctx.arc(ax + ww / 2, y - ah + ww / 2, ww / 2, Math.PI, 0); ctx.lineTo(ax + ww, y); ctx.closePath();
-      ctx.fillStyle = '#080503'; ctx.fill();
+      ctx.fillStyle = '#1e1c30'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = caldo(tinta, 0.25); ctx.stroke(); tratto(ctx);
+      ctx.fillStyle = 'rgba(60,60,100,0.35)'; ctx.fillRect(ax + 2, y - ah * 0.5, ww * 0.25, ah * 0.5);
+      rett(ctx, ax + ww / 2 - 3, y - ah - 1, 6, 5); ctx.fillStyle = caldo(tinta, 0.3); ctx.fill(); tratto(ctx, 0.8);
     }
     for (const fy of [y - h * 0.8, y - h * 0.6]) for (let i = 0; i < fin; i++) {
       const fw = Math.min(14, w / fin * 0.4), fx = x + (w / fin) * (i + 0.5) - fw / 2;
-      const accesa = X.caso() < 0.25; ctx.fillStyle = accesa ? '#c98a3e' : '#0a0604'; ctx.fillRect(fx, fy, fw, fw * 1.6);
-      if (accesa) X.luci.push({ x: fx + fw / 2, y: fy + fw * 0.8, r: 18, colore: '#ffb35c', forza: 0.3 });
+      const accesa = X.caso() < 0.25;
+      finestrina(ctx, fx, fy, fw, fw * 1.6, accesa, tinta, null);
+      if (accesa) X.luci.push({ x: fx + fw / 2, y: fy + fw * 0.8, r: 20, colore: '#ffb35c', forza: 0.3 });
     }
   };
   E.arco = (ctx, o) => {
     const x = num(o.x, 0), y = num(o.y, 140), w = num(o.w, 80), h = num(o.h, 110), sp = Math.max(6, w * 0.16);
+    const cy = y + (w - 2 * sp) / 2 + sp, ri = (w - 2 * sp) / 2;
     ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w - sp, y + h);
-    ctx.lineTo(x + w - sp, y + (w - 2 * sp) / 2 + sp); ctx.arc(x + w / 2, y + (w - 2 * sp) / 2 + sp, (w - 2 * sp) / 2, 0, Math.PI, true);
-    ctx.lineTo(x + sp, y + h); ctx.closePath(); riempi(ctx, C.ombra);
+    ctx.lineTo(x + w - sp, cy); ctx.arc(x + w / 2, cy, ri, 0, Math.PI, true);
+    ctx.lineTo(x + sp, y + h); ctx.closePath(); ctx.fillStyle = PIETRA; ctx.fill();
+    // spessore: l'intradosso in ombra lungo il lato interno sinistro e in alto
+    ctx.save(); ctx.clip();
+    ctx.fillStyle = scuro(PIETRA, 0.4); ctx.fillRect(x + w - sp, y, sp, h);
+    ctx.beginPath(); ctx.arc(x + w / 2, cy, ri + 4, Math.PI, 0); ctx.lineTo(x + w - sp, cy); ctx.arc(x + w / 2, cy, ri, 0, Math.PI, true); ctx.closePath(); ctx.fillStyle = scuro(PIETRA, 0.3); ctx.fill();
+    ctx.strokeStyle = 'rgba(43,26,18,0.6)'; ctx.lineWidth = 0.8;
+    for (let a = Math.PI; a <= Math.PI * 2 + 0.01; a += Math.PI / 7) { ctx.beginPath(); ctx.moveTo(x + w / 2 + Math.cos(a) * ri, cy + Math.sin(a) * ri); ctx.lineTo(x + w / 2 + Math.cos(a) * (ri + sp), cy + Math.sin(a) * (ri + sp)); ctx.stroke(); }
+    for (let yy = cy + 10; yy < y + h; yy += 10) { ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + sp, yy); ctx.moveTo(x + w - sp, yy); ctx.lineTo(x + w, yy); ctx.stroke(); }
+    ctx.restore();
+    ctx.beginPath(); ctx.moveTo(x + w / 2 - sp * 0.35, cy - ri - 1); ctx.lineTo(x + w / 2 + sp * 0.35, cy - ri - 1); ctx.lineTo(x + w / 2 + sp * 0.5, cy - ri - sp * 0.9); ctx.lineTo(x + w / 2 - sp * 0.5, cy - ri - sp * 0.9); ctx.closePath(); ctx.fillStyle = caldo(PIETRA, 0.3); ctx.fill(); tratto(ctx, 0.8);
+    ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w - sp, y + h);
+    ctx.lineTo(x + w - sp, cy); ctx.arc(x + w / 2, cy, ri, 0, Math.PI, true); ctx.lineTo(x + sp, y + h); ctx.closePath(); tratto(ctx, 1.3);
   };
   E.colonna = (ctx, o) => {
     const x = num(o.x, 100), y = num(o.y, 250), h = num(o.h, 120), w = Math.max(8, h / 9);
-    rett(ctx, x - w / 2, y - h, w, h); riempi(ctx, C.ombra);
-    rett(ctx, x - w * 0.8, y - h - 6, w * 1.6, 6); riempi(ctx, C.ombra);
-    rett(ctx, x - w * 0.75, y - 6, w * 1.5, 6); riempi(ctx, C.ombra);
-    ctx.strokeStyle = 'rgba(217,164,86,0.12)'; for (let k = 1; k < 3; k++) { ctx.beginPath(); ctx.moveTo(x - w / 2 + (w / 3) * k, y - h + 2); ctx.lineTo(x - w / 2 + (w / 3) * k, y - 8); ctx.stroke(); }
+    if (arredo(ctx, 'colonna', x, y, h, Math.max(18, h * 0.24))) return;
+    const m = '#cfc6b2';
+    rett(ctx, x - w / 2, y - h, w, h); riempi(ctx, m); ctx.fillStyle = scuro(m, 0.3); ctx.fillRect(x + w * 0.15, y - h, w * 0.35, h);
+    ctx.strokeStyle = 'rgba(43,26,18,0.4)'; for (let k = 1; k < 3; k++) { ctx.beginPath(); ctx.moveTo(x - w / 2 + (w / 3) * k, y - h + 2); ctx.lineTo(x - w / 2 + (w / 3) * k, y - 8); ctx.stroke(); }
+    rett(ctx, x - w / 2, y - h, w, h); tratto(ctx);
+    rett(ctx, x - w * 0.8, y - h - 6, w * 1.6, 6); riempi(ctx, '#c9a24a');
+    rett(ctx, x - w * 0.75, y - 6, w * 1.5, 6); riempi(ctx, m);
   };
   function porta(ctx, x, y, w, h, stato, X) {
-    ctx.beginPath(); ctx.moveTo(x - 3, y + h); ctx.lineTo(x - 3, y + w / 2); ctx.arc(x + w / 2, y + w / 2, w / 2 + 3, Math.PI, 0); ctx.lineTo(x + w + 3, y + h); ctx.closePath(); riempi(ctx, C.ombra);
+    ctx.beginPath(); ctx.moveTo(x - 3, y + h); ctx.lineTo(x - 3, y + w / 2); ctx.arc(x + w / 2, y + w / 2, w / 2 + 3, Math.PI, 0); ctx.lineTo(x + w + 3, y + h); ctx.closePath(); riempi(ctx, PIETRA);
+    const vano = () => { ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x, y + w / 2); ctx.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); ctx.lineTo(x + w, y + h); ctx.closePath(); };
+    const assi = (ax, aw) => { ctx.strokeStyle = 'rgba(40,22,12,0.55)'; ctx.lineWidth = 0.7; for (let px = ax + aw / 4; px < ax + aw - 1; px += aw / 4) { ctx.beginPath(); ctx.moveTo(px, y + 2); ctx.lineTo(px, y + h); ctx.stroke(); } };
     if (stato === 'aperta' || stato === 'socchiusa') {
-      ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x, y + w / 2); ctx.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); ctx.lineTo(x + w, y + h); ctx.closePath();
-      ctx.fillStyle = '#e0a24e'; ctx.fill();
+      vano(); const g = ctx.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, '#ffd890'); g.addColorStop(1, '#d88a3a'); ctx.fillStyle = g; ctx.fill(); tratto(ctx);
       if (X) X.luci.push({ x: x + w / 2, y: y + h * 0.6, r: Math.max(w, h) * 0.8, colore: '#ffb35c', forza: stato === 'aperta' ? 0.5 : 0.3 });
       const anta = stato === 'aperta' ? w * 0.2 : w * 0.78;
-      rett(ctx, x, y + w / 2, anta, h - w / 2); ctx.fillStyle = C.ombra3; ctx.fill();
+      rett(ctx, x, y + w / 2, anta, h - w / 2); ctx.fillStyle = scuro(LEGNO_P, 0.15); ctx.fill(); assi(x, anta); rett(ctx, x, y + w / 2, anta, h - w / 2); tratto(ctx);
     } else {
-      ctx.strokeStyle = 'rgba(217,164,86,0.25)'; ctx.beginPath(); ctx.moveTo(x + w / 2, y + 4); ctx.lineTo(x + w / 2, y + h); ctx.stroke();
-      ctx.fillStyle = C.filo; ctx.fillRect(x + w * 0.62, y + h * 0.58, 2, 2);
+      vano(); ctx.fillStyle = LEGNO_P; ctx.fill();
+      ctx.save(); vano(); ctx.clip(); assi(x, w); ctx.fillStyle = scuro(LEGNO_P, 0.35); ctx.fillRect(x, y, w, 4); ctx.fillRect(x + w * 0.85, y, w * 0.15, h); ctx.restore();
+      vano(); tratto(ctx, 1.3);
+      ctx.beginPath(); ctx.moveTo(x + w / 2, y + 1); ctx.lineTo(x + w / 2, y + h); tratto(ctx, 1);
+      ctx.fillStyle = '#d9a456'; ctx.beginPath(); ctx.arc(x + w * 0.62, y + h * 0.58, Math.max(1.2, w * 0.04), 0, Math.PI * 2); ctx.fill(); tratto(ctx, 0.6);
+      ctx.fillStyle = '#2a2428'; for (const fy of [0.35, 0.75]) for (const fx of [0.12, 0.38, 0.62, 0.88]) ctx.fillRect(x + w * fx - 0.7, y + h * fy - 0.7, 1.4, 1.4);
     }
   }
   E.porta = (ctx, o, X) => porta(ctx, num(o.x, 300), num(o.y, 180), num(o.w, 36), num(o.h, 64), o.stato, X);
   function finestra(ctx, x, y, w, h, accesa, X) {
-    rett(ctx, x - 3, y - 3, w + 6, h + 6); riempi(ctx, C.ombra);
-    ctx.fillStyle = accesa ? '#d39142' : '#0a0705'; ctx.fillRect(x, y, w, h);
+    finestrina(ctx, x, y, w, h, !!accesa, '#9a8a70', '#4e6448');
     if (accesa && X) X.luci.push({ x: x + w / 2, y: y + h / 2, r: Math.max(w, h), colore: '#ffb35c', forza: 0.4 });
-    ctx.fillStyle = C.ombra; ctx.fillRect(x + w / 2 - 1, y, 2, h); ctx.fillRect(x, y + h / 2 - 1, w, 2);
-    rett(ctx, x - 5, y + h + 2, w + 10, 3); riempi(ctx, C.ombra);
   }
   E.finestra = (ctx, o, X) => finestra(ctx, num(o.x, 300), num(o.y, 120), num(o.w, 24), num(o.h, 34), o.accesa, X);
   function lampione(ctx, x, y, h, acceso, X) {
-    rett(ctx, x - 2, y - h, 4, h); riempi(ctx, C.ombra);
-    rett(ctx, x - 6, y - 8, 12, 8); riempi(ctx, C.ombra);
-    ctx.beginPath(); ctx.moveTo(x, y - h); ctx.quadraticCurveTo(x + 12, y - h - 4, x + 14, y - h + 6); ctx.strokeStyle = C.ombra; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1;
+    if (arredo(ctx, 'lampione', x, y, h, null, { spento: !acceso })) {
+      if (acceso && X) X.luci.push({ x, y: y - h * 0.74, r: Math.max(50, h * 0.7), colore: '#ffb35c', forza: 0.75, vivo: true });
+      return;
+    }
+    const F = '#33323a';
+    rett(ctx, x - 2, y - h, 4, h); riempi(ctx, F);
+    rett(ctx, x - 6, y - 8, 12, 8); riempi(ctx, F);
+    ctx.beginPath(); ctx.moveTo(x, y - h); ctx.quadraticCurveTo(x + 12, y - h - 4, x + 14, y - h + 6); ctx.strokeStyle = F; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1;
     const lx = x + 14, ly = y - h + 6;
-    ctx.beginPath(); ctx.moveTo(lx - 6, ly + 4); ctx.lineTo(lx + 6, ly + 4); ctx.lineTo(lx + 4, ly + 16); ctx.lineTo(lx - 4, ly + 16); ctx.closePath();
-    ctx.fillStyle = acceso ? '#ffcf7a' : '#2a2018'; ctx.fill(); ctx.strokeStyle = C.ombra; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(lx - 7, ly + 4); ctx.lineTo(lx, ly - 2); ctx.lineTo(lx + 7, ly + 4); ctx.closePath(); riempi(ctx, C.ombra);
+    ctx.beginPath(); ctx.moveTo(lx - 6, ly + 4); ctx.lineTo(lx + 6, ly + 4); ctx.lineTo(lx + 4, ly + 16); ctx.lineTo(lx - 4, ly + 16); ctx.closePath(); riempi(ctx, acceso ? '#ffcf7a' : '#2a3050');
+    ctx.beginPath(); ctx.moveTo(lx - 7, ly + 4); ctx.lineTo(lx, ly - 2); ctx.lineTo(lx + 7, ly + 4); ctx.closePath(); riempi(ctx, F);
     if (acceso && X) X.luci.push({ x: lx, y: ly + 10, r: 70, colore: '#ffb35c', forza: 0.7, vivo: true });
   }
-  E.lampione = (ctx, o, X) => lampione(ctx, num(o.x, 300), num(o.y, X.suoloY), num(o.h, 110), o.acceso !== false, X);
+  E.lampione = (ctx, o, X) => {
+    const x = num(o.x, 300), y = num(o.y, X.suoloY), h = num(o.h, 110), acceso = o.acceso !== false;
+    // base ben sopra la terra: è un lume appeso al muro, non un lampione intero sospeso nel cielo
+    if (y < X.suoloY - 60 && arredo(ctx, 'lampione', x, y, Math.min(h, 48), null, { spento: !acceso, senzaOmbra: true })) {
+      if (acceso) X.luci.push({ x, y: y - 36, r: 50, colore: '#ffb35c', forza: 0.6, vivo: true });
+      return;
+    }
+    lampione(ctx, x, y, h, acceso, X);
+  };
   E.albero = (ctx, o, X) => {
     const x = num(o.x, 300), y = num(o.y, X.suoloY), h = num(o.h, 120), tipo = o.tipo || 'leccio', r = caso(hash('albero' + x + y));
-    const tronco = (ww, hh, piega) => { ctx.beginPath(); ctx.moveTo(x - ww, y); ctx.quadraticCurveTo(x - ww + piega, y - hh / 2, x - ww * 0.5 + piega, y - hh); ctx.lineTo(x + ww * 0.5 + piega, y - hh); ctx.quadraticCurveTo(x + ww + piega, y - hh / 2, x + ww, y); ctx.closePath(); riempi(ctx, C.ombra); };
+    if (tipo === 'leccio' && arredo(ctx, 'albero', x, y, h * 1.05)) return;
+    const CORT = '#6a4630', FOG = tipo === 'palma' ? '#4a6a3a' : '#34502f';
+    const tronco = (ww, hh, piega) => { ctx.beginPath(); ctx.moveTo(x - ww, y); ctx.quadraticCurveTo(x - ww + piega, y - hh / 2, x - ww * 0.5 + piega, y - hh); ctx.lineTo(x + ww * 0.5 + piega, y - hh); ctx.quadraticCurveTo(x + ww + piega, y - hh / 2, x + ww, y); ctx.closePath(); riempi(ctx, CORT);
+      ctx.strokeStyle = 'rgba(30,16,10,0.5)'; ctx.lineWidth = 0.6; for (let k = 0; k < hh; k += 6) { ctx.beginPath(); ctx.moveTo(x - ww * 0.3 + piega * k / hh, y - k); ctx.lineTo(x + ww * 0.3 + piega * k / hh, y - k - 2); ctx.stroke(); } };
+    ctx.fillStyle = 'rgba(12,8,14,0.4)'; ctx.beginPath(); ctx.ellipse(x + 6, y, h * 0.22, h * 0.04, 0, 0, Math.PI * 2); ctx.fill();
     if (tipo === 'pino') {
       tronco(h * 0.035, h * 0.8, h * 0.08);
       ctx.beginPath(); const cx = x + h * 0.08, cy = y - h * 0.82;
       ctx.moveTo(cx - h * 0.42, cy + 6); for (let i = 0; i <= 8; i++) { const a = i / 8; ctx.quadraticCurveTo(cx - h * 0.42 + h * 0.84 * (a - 0.06), cy - h * 0.16 - r() * 10, cx - h * 0.42 + h * 0.84 * a, cy - h * 0.1); }
-      ctx.quadraticCurveTo(cx + h * 0.46, cy + 4, cx + h * 0.3, cy + 10); ctx.lineTo(cx - h * 0.3, cy + 10); ctx.closePath(); riempi(ctx, C.ombra);
+      ctx.quadraticCurveTo(cx + h * 0.46, cy + 4, cx + h * 0.3, cy + 10); ctx.lineTo(cx - h * 0.3, cy + 10); ctx.closePath(); riempi(ctx, FOG);
+      ctx.save(); ctx.clip(); ctx.fillStyle = scuro(FOG, 0.4); ctx.fillRect(cx - h * 0.5, cy - h * 0.02, h, h * 0.2);
+      ctx.fillStyle = caldo(FOG, 0.15); for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc(cx - h * 0.35 + i * h * 0.11, cy - h * 0.14, h * 0.05, 0, Math.PI * 2); ctx.fill(); } ctx.restore();
     } else if (tipo === 'palma') {
       tronco(h * 0.03, h * 0.86, -h * 0.1);
       const cx = x - h * 0.1, cy = y - h * 0.86;
-      for (let i = 0; i < 9; i++) { const a = -Math.PI + (i / 8) * Math.PI + (r() - 0.5) * 0.2, L = h * (0.32 + r() * 0.1); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.quadraticCurveTo(cx + Math.cos(a) * L * 0.6, cy + Math.sin(a) * L * 0.6 - 10, cx + Math.cos(a) * L, cy + Math.sin(a) * L * 0.5 + 12); ctx.quadraticCurveTo(cx + Math.cos(a) * L * 0.5, cy + Math.sin(a) * L * 0.4 - 2, cx, cy + 3); riempi(ctx, C.ombra); }
+      for (let i = 0; i < 9; i++) { const a = -Math.PI + (i / 8) * Math.PI + (r() - 0.5) * 0.2, L = h * (0.32 + r() * 0.1); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.quadraticCurveTo(cx + Math.cos(a) * L * 0.6, cy + Math.sin(a) * L * 0.6 - 10, cx + Math.cos(a) * L, cy + Math.sin(a) * L * 0.5 + 12); ctx.quadraticCurveTo(cx + Math.cos(a) * L * 0.5, cy + Math.sin(a) * L * 0.4 - 2, cx, cy + 3); riempi(ctx, i % 2 ? FOG : scuro(FOG, 0.25)); }
     } else if (tipo === 'spoglio') {
-      const ramo = (x0, y0, a, L, d) => { if (d > 5 || L < 3) return; const x1 = x0 + Math.cos(a) * L, y1 = y0 + Math.sin(a) * L; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineWidth = Math.max(0.8, 5 - d); ctx.strokeStyle = C.ombra; ctx.stroke(); ramo(x1, y1, a - 0.35 - r() * 0.3, L * 0.72, d + 1); ramo(x1, y1, a + 0.3 + r() * 0.3, L * 0.68, d + 1); };
+      const ramo = (x0, y0, a, L, d) => { if (d > 5 || L < 3) return; const x1 = x0 + Math.cos(a) * L, y1 = y0 + Math.sin(a) * L; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineCap = 'round'; ctx.lineWidth = Math.max(0.8, 5 - d) + 1.4; ctx.strokeStyle = INK; ctx.stroke(); ctx.lineWidth = Math.max(0.8, 5 - d); ctx.strokeStyle = CORT; ctx.stroke(); ramo(x1, y1, a - 0.35 - r() * 0.3, L * 0.72, d + 1); ramo(x1, y1, a + 0.3 + r() * 0.3, L * 0.68, d + 1); };
       ramo(x, y, -Math.PI / 2, h * 0.34, 0); ctx.lineWidth = 1;
     } else {
       tronco(h * 0.05, h * 0.5, 0);
-      ctx.beginPath(); const cy = y - h * 0.62;
-      for (let i = 0; i < 9; i++) { const a = (i / 9) * Math.PI * 2, rr = h * (0.26 + r() * 0.08); ctx.moveTo(x + Math.cos(a) * h * 0.18 + rr, cy + Math.sin(a) * h * 0.14); ctx.arc(x + Math.cos(a) * h * 0.18, cy + Math.sin(a) * h * 0.14, rr, 0, Math.PI * 2); }
-      riempi(ctx, C.ombra, false);
+      const cy = y - h * 0.62, bolle = [];
+      for (let i = 0; i < 9; i++) { const a = (i / 9) * Math.PI * 2; bolle.push([x + Math.cos(a) * h * 0.18, cy + Math.sin(a) * h * 0.14, h * (0.2 + r() * 0.06)]); }
+      ctx.beginPath(); for (const [bx, by, br] of bolle) { ctx.moveTo(bx + br, by); ctx.arc(bx, by, br, 0, Math.PI * 2); }
+      ctx.fillStyle = FOG; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 1.2; ctx.stroke(); ctx.fillStyle = FOG; ctx.fill();
+      ctx.fillStyle = caldo(FOG, 0.18); for (const [bx, by, br] of bolle.slice(4)) { ctx.beginPath(); ctx.arc(bx - br * 0.2, by - br * 0.3, br * 0.5, 0, Math.PI * 2); ctx.fill(); }
     }
   };
   E.siepe = (ctx, o) => {
     const x = num(o.x, 0), y = num(o.y, 220), w = num(o.w, 160), h = num(o.h, 30);
+    if (D.img('arredi', 'aiuola')) {
+      const hh = h * 1.25, n = Math.max(1, Math.round(w / (hh * aspetto('aiuola', 1.7)))), tw = w / n;
+      for (let i = 0; i < n; i++) arredo(ctx, 'aiuola', x + tw * (i + 0.5), y + h, hh, tw * 1.04, { senzaOmbra: i > 0 && i < n - 1 });
+      return;
+    }
     ctx.beginPath(); ctx.moveTo(x, y + h);
     const n = Math.max(2, Math.round(w / 18)); for (let i = 0; i < n; i++) ctx.quadraticCurveTo(x + (w / n) * (i + 0.5), y - 6 + (i % 2) * 4, x + (w / n) * (i + 1), y + 4);
-    ctx.lineTo(x + w, y + h); ctx.closePath(); riempi(ctx, '#0f1409');
+    ctx.lineTo(x + w, y + h); ctx.closePath(); riempi(ctx, '#36502e');
   };
-  function fontana(ctx, x, y, w) {
-    ctx.beginPath(); ctx.ellipse(x + w / 2, y - w * 0.1, w / 2, w * 0.12, 0, 0, Math.PI * 2); riempi(ctx, C.ombra);
-    rett(ctx, x, y - w * 0.1, w, w * 0.1); riempi(ctx, C.ombra);
-    rett(ctx, x + w * 0.45, y - w * 0.55, w * 0.1, w * 0.45); riempi(ctx, C.ombra);
-    ctx.beginPath(); ctx.ellipse(x + w / 2, y - w * 0.55, w * 0.22, w * 0.05, 0, 0, Math.PI * 2); riempi(ctx, C.ombra);
-    ctx.strokeStyle = 'rgba(190,210,230,0.45)';
+  function fontana(ctx, x, y, w, vasca) {
+    // piccola = la fontanella a muro dell'autore; la fontana monumentale resta a codice, nello stesso tratto
+    if (!vasca && w <= 100 && arredo(ctx, 'fontanella', x + w / 2, y, w * 1.2)) return;
+    const S = '#a49c8c', A = '#4f7fa8';
+    ctx.fillStyle = 'rgba(12,8,14,0.4)'; ctx.beginPath(); ctx.ellipse(x + w / 2 + 4, y, w * 0.55, w * 0.07, 0, 0, Math.PI * 2); ctx.fill();
+    rett(ctx, x, y - w * 0.1, w, w * 0.1); ctx.fillStyle = scuro(S, 0.25); ctx.fill(); ctx.fillStyle = scuro(S, 0.45); ctx.fillRect(x + w * 0.8, y - w * 0.1, w * 0.2, w * 0.1);
+    ctx.strokeStyle = 'rgba(43,26,18,0.45)'; ctx.lineWidth = 0.6; for (let k = 1; k < 8; k++) { ctx.beginPath(); ctx.moveTo(x + (w / 8) * k, y - w * 0.1); ctx.lineTo(x + (w / 8) * k, y); ctx.stroke(); }
+    rett(ctx, x, y - w * 0.1, w, w * 0.1); tratto(ctx);
+    ctx.beginPath(); ctx.ellipse(x + w / 2, y - w * 0.1, w / 2, w * 0.12, 0, 0, Math.PI * 2); ctx.fillStyle = S; ctx.fill(); tratto(ctx);
+    ctx.beginPath(); ctx.ellipse(x + w / 2, y - w * 0.1, w / 2 - 5, w * 0.12 - 3, 0, 0, Math.PI * 2); ctx.fillStyle = A; ctx.fill(); tratto(ctx, 0.9);
+    ctx.strokeStyle = 'rgba(200,225,245,0.55)'; ctx.lineWidth = 0.8; for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.ellipse(x + w / 2, y - w * 0.1, w * (0.08 + i * 0.07), w * (0.02 + i * 0.016), 0, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+    rett(ctx, x + w * 0.45, y - w * 0.55, w * 0.1, w * 0.45); ctx.fillStyle = S; ctx.fill(); ctx.fillStyle = scuro(S, 0.3); ctx.fillRect(x + w * 0.51, y - w * 0.55, w * 0.04, w * 0.45); rett(ctx, x + w * 0.45, y - w * 0.55, w * 0.1, w * 0.45); tratto(ctx);
+    ctx.beginPath(); ctx.ellipse(x + w / 2, y - w * 0.55, w * 0.22, w * 0.05, 0, 0, Math.PI * 2); ctx.fillStyle = S; ctx.fill(); tratto(ctx);
+    ctx.lineWidth = 1.6; ctx.strokeStyle = 'rgba(200,228,250,0.75)';
     for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(x + w / 2, y - w * 0.62); ctx.quadraticCurveTo(x + w / 2 + s * w * 0.3, y - w * 0.75, x + w / 2 + s * w * 0.36, y - w * 0.16); ctx.stroke(); }
+    ctx.lineWidth = 1;
   }
   E.fontana = (ctx, o, X) => fontana(ctx, num(o.x, 280), num(o.y, X.suoloY), num(o.w, 80));
   function statua(ctx, x, y, h) {
-    const s = h / 70;
-    rett(ctx, x - 12 * s, y - 16 * s, 24 * s, 16 * s); riempi(ctx, C.ombra);
-    rett(ctx, x - 14 * s, y - 19 * s, 28 * s, 3 * s); riempi(ctx, C.ombra);
+    if (arredo(ctx, 'statua', x, y, h)) return;
+    const s = h / 70, M = '#d4ccbc';
+    rett(ctx, x - 12 * s, y - 16 * s, 24 * s, 16 * s); riempi(ctx, '#6a6470');
+    rett(ctx, x - 14 * s, y - 19 * s, 28 * s, 3 * s); riempi(ctx, '#8a8490');
     ctx.beginPath(); ctx.moveTo(x - 7 * s, y - 19 * s); ctx.lineTo(x - 5 * s, y - 46 * s); ctx.lineTo(x - 12 * s, y - 40 * s); ctx.lineTo(x - 13 * s, y - 44 * s); ctx.lineTo(x - 4 * s, y - 54 * s);
-    ctx.lineTo(x + 4 * s, y - 54 * s); ctx.lineTo(x + 9 * s, y - 64 * s); ctx.lineTo(x + 11 * s, y - 62 * s); ctx.lineTo(x + 6 * s, y - 48 * s); ctx.lineTo(x + 7 * s, y - 19 * s); ctx.closePath(); riempi(ctx, '#2a2622');
-    ctx.beginPath(); ctx.arc(x, y - 58 * s, 4.5 * s, 0, Math.PI * 2); riempi(ctx, '#2a2622');
+    ctx.lineTo(x + 4 * s, y - 54 * s); ctx.lineTo(x + 9 * s, y - 64 * s); ctx.lineTo(x + 11 * s, y - 62 * s); ctx.lineTo(x + 6 * s, y - 48 * s); ctx.lineTo(x + 7 * s, y - 19 * s); ctx.closePath(); riempi(ctx, M);
+    ctx.beginPath(); ctx.arc(x, y - 58 * s, 4.5 * s, 0, Math.PI * 2); riempi(ctx, M);
   }
   E.statua = (ctx, o, X) => statua(ctx, num(o.x, 300), num(o.y, X.suoloY), num(o.h, 70));
   E.banco = (ctx, o, X) => {
     const x = num(o.x, 200), y = num(o.y, X.suoloY), w = num(o.w, 70);
-    rett(ctx, x, y - 26, w, 4); riempi(ctx, C.ombra); rett(ctx, x + 3, y - 22, 3, 22); riempi(ctx, C.ombra); rett(ctx, x + w - 6, y - 22, 3, 22); riempi(ctx, C.ombra);
-    rett(ctx, x + 6, y - 22, w - 12, 12); riempi(ctx, C.ombra2);
-    rett(ctx, x + 1, y - 58, 2, 32); riempi(ctx, C.ombra); rett(ctx, x + w - 3, y - 58, 2, 32); riempi(ctx, C.ombra);
+    { const hb = Math.min(w / aspetto('banco', 1.18), 68); if (arredo(ctx, 'banco', x + w / 2, y, hb, hb * aspetto('banco', 1.18))) return; }
+    const L = '#8a5a32';
+    rett(ctx, x, y - 26, w, 4); riempi(ctx, L); rett(ctx, x + 3, y - 22, 3, 22); riempi(ctx, L); rett(ctx, x + w - 6, y - 22, 3, 22); riempi(ctx, L);
+    rett(ctx, x + 6, y - 22, w - 12, 12); riempi(ctx, scuro(L, 0.2));
+    rett(ctx, x + 1, y - 58, 2, 32); riempi(ctx, L); rett(ctx, x + w - 3, y - 58, 2, 32); riempi(ctx, L);
     ctx.beginPath(); ctx.moveTo(x - 6, y - 50); ctx.lineTo(x + 4, y - 62); ctx.lineTo(x + w - 4, y - 62); ctx.lineTo(x + w + 6, y - 50);
     for (let i = 0; i < 5; i++) ctx.quadraticCurveTo(x + w + 6 - ((w + 12) / 5) * (i + 0.5), y - 44, x + w + 6 - ((w + 12) / 5) * (i + 1), y - 50);
-    ctx.closePath(); riempi(ctx, '#3a1c14');
+    ctx.closePath(); riempi(ctx, '#a8322a');
   };
   function telaio(ctx, x, y, w, h) {
-    for (const px of [x, x + w - 4]) { rett(ctx, px, y, 4, h); riempi(ctx, C.ombra); }
-    rett(ctx, x - 2, y, w + 4, 4); riempi(ctx, C.ombra); rett(ctx, x, y + h * 0.55, w, 4); riempi(ctx, C.ombra);
-    ctx.strokeStyle = 'rgba(217,164,86,0.5)'; ctx.lineWidth = 0.6;
+    if (arredo(ctx, 'telaio', x + w / 2, y + h, h, Math.min(w, h * aspetto('telaio', 0.6) * 1.3))) return;
+    const L = '#7a5230';
+    for (const px of [x, x + w - 4]) { rett(ctx, px, y, 4, h); riempi(ctx, L); }
+    rett(ctx, x - 2, y, w + 4, 4); riempi(ctx, L); rett(ctx, x, y + h * 0.55, w, 4); riempi(ctx, L);
+    ctx.strokeStyle = 'rgba(240,220,170,0.6)'; ctx.lineWidth = 0.6;
     for (let i = 1; i < w / 4; i++) { ctx.beginPath(); ctx.moveTo(x + i * 4, y + 4); ctx.lineTo(x + i * 4, y + h * 0.55); ctx.stroke(); }
-    ctx.lineWidth = 1; ctx.fillStyle = 'rgba(150,40,40,0.6)'; ctx.fillRect(x + 4, y + h * 0.3, w - 8, h * 0.25 - 1);
-    rett(ctx, x + w * 0.3, y + h - 3, w * 0.4, 3); riempi(ctx, C.ombra);
+    ctx.lineWidth = 1; rett(ctx, x + 4, y + h * 0.3, w - 8, h * 0.25 - 1); riempi(ctx, '#a8322a');
+    rett(ctx, x + w * 0.3, y + h - 3, w * 0.4, 3); riempi(ctx, L);
   }
   E.telaio = (ctx, o) => telaio(ctx, num(o.x, 300), num(o.y, 180), num(o.w, 60), num(o.h, 60));
   E.scala = (ctx, o) => {
     const x = num(o.x, 300), y = num(o.y, 200), w = num(o.w, 80), h = num(o.h, 50), n = Math.max(3, Math.round(h / 8));
+    const sw = w / n, sh = h / n;
+    for (let i = 0; i < n; i++) {
+      // pedata chiara e alzata in ombra, gradino per gradino, col fianco che dà spessore
+      const sx = x + sw * i, sy = y + h - sh * (i + 1);
+      rett(ctx, sx, sy, x + w - sx, sh * 0.35); ctx.fillStyle = caldo(PIETRA, 0.15); ctx.fill(); tratto(ctx, 0.8);
+      rett(ctx, sx, sy + sh * 0.35, x + w - sx, sh * 0.65); ctx.fillStyle = scuro(PIETRA, 0.25); ctx.fill(); tratto(ctx, 0.8);
+    }
     ctx.beginPath(); ctx.moveTo(x, y + h);
-    for (let i = 0; i < n; i++) { ctx.lineTo(x + (w / n) * i, y + h - (h / n) * (i + 1)); ctx.lineTo(x + (w / n) * (i + 1), y + h - (h / n) * (i + 1)); }
-    ctx.lineTo(x + w, y + h); ctx.closePath(); riempi(ctx, C.ombra2);
+    for (let i = 0; i < n; i++) { ctx.lineTo(x + sw * i, y + h - sh * (i + 1)); ctx.lineTo(x + sw * (i + 1), y + h - sh * (i + 1)); }
+    ctx.lineTo(x + w, y + h); ctx.closePath(); tratto(ctx, 1.3);
   };
   E.tenda = (ctx, o) => {
-    const x = num(o.x, 300), y = num(o.y, 40), w = num(o.w, 60), h = num(o.h, 120), col = o.colore || '#5a1820';
+    const x = num(o.x, 300), y = num(o.y, 40), w = num(o.w, 60), h = num(o.h, 120), col = chiaro(o.colore || '#8a2430');
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w * 0.85, y + h); ctx.quadraticCurveTo(x + w * 0.5, y + h * 0.8, x + w * 0.15, y + h); ctx.closePath(); riempi(ctx, col);
-    ctx.strokeStyle = 'rgba(0,0,0,0.4)'; for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(x + (w / 4) * i, y); ctx.quadraticCurveTo(x + (w / 4) * i + 3, y + h / 2, x + w * 0.5 + ((w / 4) * i - w / 2) * 0.6, y + h * 0.9); ctx.stroke(); }
-    rett(ctx, x - 4, y - 4, w + 8, 5); riempi(ctx, C.ombra);
+    ctx.strokeStyle = scuro(col, 0.45); ctx.lineWidth = 1.4; for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(x + (w / 4) * i, y); ctx.quadraticCurveTo(x + (w / 4) * i + 3, y + h / 2, x + w * 0.5 + ((w / 4) * i - w / 2) * 0.6, y + h * 0.9); ctx.stroke(); }
+    rett(ctx, x - 4, y - 4, w + 8, 5); riempi(ctx, '#c99a4a');
   };
-  E.muro = (ctx, o) => {
-    const x = num(o.x, 0), y = num(o.y, 200), w = num(o.w, 200), h = num(o.h, 50), col = MURI[o.tono] || (typeof o.tono === 'string' && o.tono[0] === '#' ? o.tono : MURI.scuro);
-    rett(ctx, x, y, w, h); riempi(ctx, col);
-    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-    for (let yy = y + 10, k = 0; yy < y + h; yy += 10, k++) { ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + w, yy); ctx.stroke(); for (let xx = x + (k % 2) * 11; xx < x + w; xx += 22) { ctx.beginPath(); ctx.moveTo(xx, yy - 10); ctx.lineTo(xx, yy); ctx.stroke(); } }
+  E.muro = (ctx, o, X) => {
+    const x = num(o.x, 0), y = num(o.y, 200), w = num(o.w, 200), h = num(o.h, 50), tono = o.tono || 'scuro';
+    const col = MURI[tono] || (typeof tono === 'string' && tono[0] === '#' ? chiaro(tono) : MURI.scuro), r = caso(hash('muro' + x + y + w));
+    ctx.save(); rett(ctx, x, y, w, h); ctx.fillStyle = col; ctx.fill(); ctx.clip();
+    ctx.strokeStyle = 'rgba(43,26,18,0.55)'; ctx.lineWidth = 0.6;
+    if (tono === 'legno') {
+      for (let xx = x; xx < x + w; xx += 12) { ctx.fillStyle = mescola(col, r() < 0.5 ? '#2a1a10' : '#a87a48', r() * 0.18); ctx.fillRect(xx, y, 12, h); ctx.beginPath(); ctx.moveTo(xx, y); ctx.lineTo(xx, y + h); ctx.stroke(); }
+    } else {
+      const bh = tono === 'mattoni' || tono === 'scuro' ? 6 : 10, bw = bh * 2.4;
+      for (let yy = y, k = 0; yy < y + h; yy += bh, k++) for (let xx = x - (k % 2) * bw / 2; xx < x + w; xx += bw) {
+        ctx.fillStyle = mescola(col, r() < 0.5 ? '#1a1226' : '#d8b890', r() * 0.16); ctx.fillRect(xx, yy, bw, bh);
+        ctx.strokeRect(xx + 0.3, yy + 0.3, bw - 0.6, bh - 0.6);
+      }
+    }
+    const g = ctx.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, 'rgba(20,14,30,0.35)'); g.addColorStop(0.25, 'rgba(20,14,30,0)'); g.addColorStop(1, 'rgba(20,14,30,0.25)'); ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+    ctx.restore();
+    rett(ctx, x, y, w, h); tratto(ctx, 1.2);
   };
-  E.luce = (ctx, o, X) => { X.luci.push({ x: num(o.x, 320), y: num(o.y, 150), r: num(o.r, 80), colore: o.colore || '#ffb35c', forza: 0.6, vivo: true }); };
+  E.luce = (ctx, o, X) => { X.luci.push({ x: num(o.x, 320), y: num(o.y, 150), r: num(o.r, 80), colore: o.colore || '#ffb35c', forza: 0.42, vivo: true }); };
   E.nebbia = (ctx, o, X) => {
     const a = num(o.alfa, 0.2);
-    const g = ctx.createLinearGradient(0, X.suoloY - 80, 0, 300); g.addColorStop(0, 'rgba(150,160,175,0)'); g.addColorStop(1, `rgba(150,160,175,${a})`);
+    const g = ctx.createLinearGradient(0, X.suoloY - 80, 0, 300); g.addColorStop(0, 'rgba(170,178,195,0)'); g.addColorStop(1, `rgba(170,178,195,${a})`);
     ctx.fillStyle = g; ctx.fillRect(0, X.suoloY - 80, W, 300 - X.suoloY + 80);
     X.nebbia = a;
   };
@@ -339,7 +554,7 @@
   E.forma = (ctx, o) => {
     const p = Array.isArray(o.punti) ? o.punti : []; if (p.length < 2) return;
     ctx.beginPath(); ctx.moveTo(p[0][0], p[0][1]); for (const q of p.slice(1)) ctx.lineTo(q[0], q[1]); ctx.closePath();
-    riempi(ctx, o.colore || C.ombra, o.bordo || C.filo);
+    riempi(ctx, chiaro(o.colore || '#5a4a50'));
   };
   D.ELEMENTI = E;
 
@@ -370,7 +585,16 @@
       }
       // vignetta: il palcoscenico si chiude ai lati
       const g = ctx.createRadialGradient(W / 2, H * 0.45, H * 0.35, W / 2, H * 0.45, W * 0.62);
-      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.55)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      g.addColorStop(0, 'rgba(12,8,24,0)'); g.addColorStop(1, 'rgba(12,8,24,0.45)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      // le luci scaldano davvero i muri: una velatura calda, dipinta una volta sola sul fondale
+      ctx.save(); ctx.globalCompositeOperation = 'soft-light';
+      for (const l of X.luci) {
+        const R = l.r * 1.8, [lr, lg, lb] = rgb(l.colore && l.colore[0] === '#' ? l.colore : '#ffb35c');
+        const gl = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, R);
+        gl.addColorStop(0, `rgba(${lr},${lg},${lb},${Math.min(0.6, l.forza)})`); gl.addColorStop(1, `rgba(${lr},${lg},${lb},0)`);
+        ctx.fillStyle = gl; ctx.fillRect(l.x - R, l.y - R, R * 2, R * 2);
+      }
+      ctx.restore();
     }
     if (fd.luce && fd.luce.tono === 'velo') X.velo = true;
     f = { tela, luci: X.luci, fili: X.fili, nebbia: X.nebbia, suoloY: X.suoloY, gen: generazione };
@@ -410,14 +634,66 @@
   // Ognuna: [larghezza naturale, altezza naturale, disegno(ctx, opzioni)] con i piedi a (nw/2, nh).
   const SAG = {};
   const testa = (ctx, x, y, r) => { ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2); };
-  SAG.uomo = [26, 60, (c, o) => { c.beginPath(); testa(c, 13, 9, 5.5); c.moveTo(6, 6); c.lineTo(20, 6); c.lineTo(17, 2); c.lineTo(9, 2); c.closePath();
-    c.moveTo(7, 16); c.lineTo(19, 16); c.lineTo(22, 36); c.lineTo(18, 36); c.lineTo(17, 60); c.lineTo(14, 60); c.lineTo(13, 40); c.lineTo(12, 60); c.lineTo(9, 60); c.lineTo(8, 36); c.lineTo(4, 36); c.closePath(); riempi(c, o.colore); }];
-  SAG.donna = [26, 58, (c, o) => { c.beginPath(); testa(c, 13, 9, 5); testa(c, 17, 5, 2.6); c.moveTo(9, 15); c.lineTo(17, 15); c.lineTo(20, 26); c.lineTo(24, 58); c.lineTo(2, 58); c.lineTo(6, 26); c.closePath(); riempi(c, o.colore);
-    c.beginPath(); c.moveTo(6, 17); c.lineTo(20, 17); c.lineTo(16, 30); c.lineTo(10, 30); c.closePath(); c.fillStyle = 'rgba(217,164,86,0.18)'; c.fill(); }];
-  SAG.bambina = [20, 44, (c, o) => { c.beginPath(); testa(c, 10, 8, 5); c.moveTo(14, 6); c.quadraticCurveTo(19, 12, 16, 20); c.lineTo(15, 12); c.moveTo(7, 14); c.lineTo(13, 14); c.lineTo(18, 32); c.lineTo(2, 32); c.closePath();
-    c.rect(6, 32, 3, 12); c.rect(11, 32, 3, 12); riempi(c, o.colore); }];
-  SAG.vecchio = [30, 58, (c, o) => { c.beginPath(); testa(c, 17, 12, 5); c.moveTo(10, 18); c.quadraticCurveTo(16, 14, 22, 20); c.lineTo(22, 36); c.lineTo(19, 36); c.lineTo(18, 58); c.lineTo(15, 58); c.lineTo(14, 40); c.lineTo(13, 58); c.lineTo(10, 58); c.lineTo(9, 34); c.closePath();
-    c.moveTo(25, 30); c.lineTo(27, 30); c.lineTo(28, 58); c.lineTo(26, 58); c.closePath(); c.moveTo(20, 30); c.lineTo(26, 31); c.lineTo(25, 33); c.lineTo(20, 33); c.closePath(); riempi(c, o.colore); }];
+  // ---- persone: figurine a colori col contorno a inchiostro (testa grande, corpo corto), abiti popolari del 1845.
+  // `o.colore` tinge il capo principale; `o.seme` (dall'id del personaggio) sceglie gli altri colori, stabili.
+  const PELLI = ['#eab994', '#d9a27a', '#c98e66', '#f0c6a2'];
+  const CAPELLI = ['#3a2416', '#5a3a20', '#2a1e18', '#7a4a26'];
+  const STOFFE = ['#8a3a2e', '#3e5a7a', '#5a6a3a', '#7a5a2e', '#6a3a5a', '#a0602e'];
+  function tav(o, k) { const s = (o.seme >>> 0) || 0; return (n) => n[(s + k * 7 + Math.floor(s / 13)) % n.length]; }
+  const forma = (c, col, f, l) => { c.beginPath(); f(); c.fillStyle = col; c.fill(); c.strokeStyle = INK; c.lineWidth = l || 1.1; c.lineJoin = 'round'; c.stroke(); };
+  function viso(c, x, y, r, pelle, capelli, o) {
+    forma(c, pelle, () => c.arc(x, y, r, 0, Math.PI * 2));
+    c.fillStyle = scuro(pelle, 0.2); c.beginPath(); c.arc(x, y, r, -0.2, Math.PI * 0.55); c.arc(x - r * 0.25, y - r * 0.1, r * 0.95, Math.PI * 0.55, -0.2, true); c.fill();
+    c.fillStyle = INK; c.beginPath(); c.arc(x + r * 0.12, y - r * 0.05, r * 0.11, 0, Math.PI * 2); c.arc(x + r * 0.55, y - r * 0.05, r * 0.11, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = INK; c.lineWidth = 0.7; c.beginPath(); c.moveTo(x + r * 0.5, y + r * 0.1); c.lineTo(x + r * 0.62, y + r * 0.3); c.lineTo(x + r * 0.45, y + r * 0.32); c.stroke();
+    c.fillStyle = 'rgba(210,90,80,0.35)'; c.beginPath(); c.arc(x - r * 0.05, y + r * 0.3, r * 0.18, 0, Math.PI * 2); c.fill();
+    if (o.sonno) { c.beginPath(); c.moveTo(x, y - r * 0.05); c.lineTo(x + r * 0.25, y - r * 0.05); c.stroke(); }
+  }
+  const gamba = (c, x, y0, y1, col) => { forma(c, col, () => c.rect(x, y0, 3.4, y1 - y0)); forma(c, '#2a1e1a', () => { c.moveTo(x - 0.5, y1); c.lineTo(x + 5, y1); c.quadraticCurveTo(x + 5.5, y1 + 3, x + 2, y1 + 3); c.lineTo(x - 0.5, y1 + 3); c.closePath(); }); };
+  const braccio = (c, x, y, l, col, pelle, a) => { c.save(); c.translate(x, y); c.rotate(a || 0); forma(c, col, () => D.rr(c, -2, 0, 4, l, 2)); forma(c, pelle, () => c.arc(0, l + 1, 2, 0, Math.PI * 2), 0.9); c.restore(); };
+  SAG.uomo = [26, 60, (c, o) => { const t = tav(o, 1), pelle = t(PELLI), gile = o.colore ? chiaro(o.colore) : t(STOFFE), calzoni = tav(o, 3)(['#4a4250', '#5a4a3a', '#3e4a5a']);
+    gamba(c, 8, 40, 57, calzoni); gamba(c, 14, 40, 57, calzoni);
+    forma(c, calzoni, () => D.rr(c, 7.5, 38, 11, 6, 1.5));
+    braccio(c, 6.5, 22, 15, '#e8dcc0', pelle, 0.12);
+    forma(c, '#e8dcc0', () => D.rr(c, 6, 21, 14, 19, 3));
+    forma(c, gile, () => { c.moveTo(6, 23); c.lineTo(11, 21); c.lineTo(13, 30); c.lineTo(15, 21); c.lineTo(20, 23); c.lineTo(20, 39); c.lineTo(6, 39); c.closePath(); });
+    c.fillStyle = scuro(gile, 0.35); c.fillRect(17, 24, 3, 15);
+    c.fillStyle = '#d9a456'; for (const y of [31, 35]) { c.beginPath(); c.arc(14.5, y, 0.9, 0, Math.PI * 2); c.fill(); }
+    forma(c, '#a8322a', () => { c.moveTo(9, 20); c.lineTo(17, 20); c.lineTo(14, 24); c.lineTo(12, 24); c.closePath(); }, 0.8);
+    braccio(c, 19.5, 22, 15, '#e8dcc0', pelle, -0.12);
+    viso(c, 13, 12, 8.5, pelle, t(CAPELLI), o);
+    forma(c, tav(o, 5)(['#5a4a3a', '#3a3a4a', '#6a2a22']), () => { c.moveTo(4.5, 9); c.quadraticCurveTo(6, 1, 14, 1.5); c.quadraticCurveTo(22, 2, 22, 8); c.lineTo(24.5, 9.5); c.lineTo(4.5, 10); c.closePath(); });
+    c.strokeStyle = INK; c.lineWidth = 0.8; c.beginPath(); c.moveTo(16, 16.5); c.quadraticCurveTo(18, 15.5, 20.5, 16.5); c.stroke(); }];
+  SAG.donna = [26, 58, (c, o) => { const t = tav(o, 2), pelle = t(PELLI), gonna = o.colore ? chiaro(o.colore) : t(STOFFE), capelli = t(CAPELLI), corpetto = tav(o, 4)(['#3e3a52', '#4a3a2e', '#2e4a4a']);
+    forma(c, '#2a1e1a', () => { c.ellipse(9, 57, 3, 1.6, 0, 0, Math.PI * 2); c.moveTo(20, 57); c.ellipse(17, 57, 3, 1.6, 0, 0, Math.PI * 2); });
+    forma(c, gonna, () => { c.moveTo(7, 33); c.lineTo(19, 33); c.quadraticCurveTo(24, 46, 24, 56); c.lineTo(2, 56); c.quadraticCurveTo(2, 46, 7, 33); c.closePath(); });
+    c.strokeStyle = scuro(gonna, 0.4); c.lineWidth = 0.7; for (const x of [6, 11, 16, 20]) { c.beginPath(); c.moveTo(x + 1, 38); c.lineTo(x, 55); c.stroke(); }
+    forma(c, '#ece2c8', () => { c.moveTo(9, 34); c.lineTo(17, 34); c.lineTo(19, 52); c.lineTo(8, 52); c.closePath(); }, 0.9);
+    braccio(c, 7, 22, 13, corpetto, pelle, 0.15);
+    forma(c, corpetto, () => D.rr(c, 7, 20, 12, 15, 3));
+    forma(c, tav(o, 6)(['#c99a4a', '#b8504a', '#6a8aa0', '#d8c8a0']), () => { c.moveTo(5.5, 21); c.quadraticCurveTo(13, 19, 20.5, 21); c.lineTo(13, 31); c.closePath(); });
+    braccio(c, 19, 22, 13, corpetto, pelle, -0.15);
+    forma(c, capelli, () => c.arc(11, 4.5, 4, 0, Math.PI * 2));
+    viso(c, 13, 12, 8, pelle, capelli, o);
+    forma(c, capelli, () => { c.moveTo(5, 12); c.quadraticCurveTo(4, 3, 13, 3.5); c.quadraticCurveTo(21, 4, 21, 9); c.quadraticCurveTo(15, 6, 9, 9); c.lineTo(7, 15); c.closePath(); }); }];
+  SAG.bambina = [20, 44, (c, o) => { const t = tav(o, 3), pelle = t(PELLI), veste = o.colore ? chiaro(o.colore) : t(STOFFE), capelli = t(CAPELLI);
+    gamba(c, 6, 31, 41, '#e8dcc0'); gamba(c, 10.5, 31, 41, '#e8dcc0');
+    forma(c, veste, () => { c.moveTo(6, 17); c.lineTo(14, 17); c.lineTo(17.5, 33); c.lineTo(2.5, 33); c.closePath(); });
+    forma(c, '#f2ead6', () => { c.moveTo(7.5, 21); c.lineTo(12.5, 21); c.lineTo(14, 31); c.lineTo(6, 31); c.closePath(); }, 0.8);
+    braccio(c, 5, 18, 10, veste, pelle, 0.25); braccio(c, 15, 18, 10, veste, pelle, -0.25);
+    forma(c, capelli, () => { c.moveTo(3, 10); c.quadraticCurveTo(1, 18, 3.5, 21); c.lineTo(5.5, 13); c.closePath(); });
+    viso(c, 10, 10, 7, pelle, capelli, o);
+    forma(c, capelli, () => { c.moveTo(3.2, 10); c.quadraticCurveTo(3, 2.5, 10, 3); c.quadraticCurveTo(17, 3, 17, 8); c.quadraticCurveTo(11, 5, 7, 9); c.lineTo(5, 13); c.closePath(); });
+    forma(c, '#c0392b', () => c.arc(4.5, 6, 1.8, 0, Math.PI * 2), 0.7); }];
+  SAG.vecchio = [30, 58, (c, o) => { const t = tav(o, 4), pelle = t(PELLI), giacca = o.colore ? chiaro(o.colore) : tav(o, 2)(['#5a4632', '#4a4a3e', '#5a3a30']);
+    forma(c, '#6a4a2a', () => c.rect(25, 30, 2, 27)); forma(c, '#6a4a2a', () => { c.moveTo(21, 31); c.quadraticCurveTo(25, 27, 27, 31); c.lineTo(26, 32); c.quadraticCurveTo(25, 30, 22, 32.5); c.closePath(); }, 0.8);
+    gamba(c, 11, 40, 55, '#4a4250'); gamba(c, 16, 40, 55, '#4a4250');
+    forma(c, giacca, () => { c.moveTo(9, 22); c.quadraticCurveTo(15, 17, 22, 22); c.lineTo(23, 42); c.lineTo(9, 42); c.closePath(); });
+    c.fillStyle = scuro(giacca, 0.35); c.fillRect(19.5, 24, 3, 18);
+    braccio(c, 20, 23, 11, giacca, pelle, -0.4);
+    viso(c, 17, 14, 8, pelle, '#d8d4cc', o);
+    forma(c, '#e8e4dc', () => { c.moveTo(15, 18); c.quadraticCurveTo(20, 27, 24, 18); c.quadraticCurveTo(20, 20, 15, 18); c.closePath(); }, 0.8);
+    forma(c, '#3a3a4a', () => { c.moveTo(9, 11); c.quadraticCurveTo(10, 4, 17, 4.5); c.quadraticCurveTo(24, 5, 25, 11); c.closePath(); }); }];
   SAG.guardia = [30, 66, (c, o) => { c.beginPath(); c.rect(10, 0, 10, 10); c.moveTo(8, 10); c.lineTo(22, 10); c.lineTo(22, 12); c.lineTo(8, 12); testa(c, 15, 16, 5); c.moveTo(8, 22); c.lineTo(22, 22); c.lineTo(24, 42); c.lineTo(19, 42); c.lineTo(18, 66); c.lineTo(15, 66); c.lineTo(15, 46); c.lineTo(14, 66); c.lineTo(11, 66); c.lineTo(11, 42); c.lineTo(6, 42); c.closePath();
     c.rect(25, 6, 2, 50); c.moveTo(25, 6); c.lineTo(26, 0); c.lineTo(27, 6); riempi(c, o.colore); c.fillStyle = C.filo; c.fillRect(13, 2, 4, 2); }];
   SAG.gatto = [34, 26, (c, o) => { c.beginPath(); c.moveTo(6, 26); c.quadraticCurveTo(4, 10, 14, 10); c.lineTo(13, 3); c.lineTo(17, 7); c.lineTo(21, 3); c.lineTo(21, 11); c.quadraticCurveTo(26, 16, 22, 26); c.closePath();
@@ -430,7 +706,7 @@
     const g = c.createRadialGradient(12, y, 1, 12, y, 12); g.addColorStop(0, '#fffbe8'); g.addColorStop(0.4, col); g.addColorStop(1, 'rgba(255,217,138,0)');
     c.fillStyle = g; c.beginPath(); c.arc(12, y, 12, 0, Math.PI * 2); c.fill();
     c.beginPath(); c.moveTo(8, y + 4); c.quadraticCurveTo(12 + Math.sin(t * 3) * 4, y + 16, 12, 34); c.quadraticCurveTo(14, y + 14, 16, y + 4); c.fillStyle = col + '88'; c.fill(); }];
-  SAG.lampione = [24, 100, (c, o) => lampione(c, 8, 100, 92, o.posa !== 1, null)];
+  SAG.lampione = [24, 100, (c, o) => arredo(c, 'lampione', 12, 100, 100, null, { spento: o.posa === 1 }) || lampione(c, 8, 100, 92, o.posa !== 1, null)];
   SAG.porta = [36, 64, (c, o) => porta(c, 3, 2, 30, 62, o.posa === 1 ? 'aperta' : o.posa === 2 ? 'socchiusa' : 'chiusa', null)];
   SAG.finestra = [30, 40, (c, o) => finestra(c, 4, 4, 22, 30, o.posa === 1, null)];
   SAG.foglio = [24, 30, (c) => { c.beginPath(); c.moveTo(2, 4); c.lineTo(18, 2); c.lineTo(22, 6); c.lineTo(22, 28); c.lineTo(4, 30); c.closePath(); riempi(c, '#d8c7a0', C.ombra);
@@ -493,7 +769,8 @@
   SAG.statua = [40, 70, (c) => statua(c, 20, 70, 70)];
   SAG.campana = [36, 40, (c) => { c.beginPath(); c.rect(16, 0, 4, 5); c.moveTo(18, 4); c.quadraticCurveTo(6, 5, 7, 22); c.quadraticCurveTo(6, 32, 2, 34); c.lineTo(34, 34); c.quadraticCurveTo(30, 32, 29, 22); c.quadraticCurveTo(30, 5, 18, 4); riempi(c, '#5a4320');
     c.beginPath(); c.arc(18, 37, 3, 0, Math.PI * 2); riempi(c, C.ombra); }];
-  SAG.fontana = [80, 50, (c) => fontana(c, 0, 50, 80)];
+  // la sagoma «fontana» dei punti è la vasca di una fontana grande: resta a codice
+  SAG.fontana = [80, 50, (c) => fontana(c, 0, 50, 80, true)];
   // solo di ripiego, quando il foglio di Ferruccio non c'è: cappuccio a punta, maschera a becco, sciarpa
   SAG.ferruccio = [28, 62, (c, o) => { c.beginPath(); c.moveTo(10, 14); c.lineTo(15, 0); c.lineTo(20, 14); testa(c, 15, 16, 6); c.moveTo(20, 15); c.lineTo(27, 19); c.lineTo(20, 20);
     c.moveTo(8, 23); c.lineTo(22, 23); c.lineTo(23, 42); c.lineTo(19, 42); c.lineTo(18, 62); c.lineTo(15, 62); c.lineTo(15, 46); c.lineTo(14, 62); c.lineTo(11, 62); c.lineTo(11, 42); c.lineTo(7, 42); c.closePath(); riempi(c, '#e8d8b8', C.ombra);
@@ -557,7 +834,7 @@
       const nome = fig.sagoma || (P && P.id === 'ferruccio' ? 'ferruccio' : 'uomo');
       const S = SAG[nome] || SAG.uomo; const w = (alt * S[0]) / S[1];
       const passo = o.cammina ? Math.abs(Math.sin((o.t || 0) * 9)) * 2 : 0;
-      D.sagoma(ctx, nome, cx - w / 2, piedi - alt - passo, w, alt, { dir: o.dir, t: o.t, posa: o.posa });
+      D.sagoma(ctx, nome, cx - w / 2, piedi - alt - passo, w, alt, { dir: o.dir, t: o.t, posa: o.posa, colore: fig.colore, seme: hash((P && P.id) || nome) });
     }
     ctx.restore();
   };
