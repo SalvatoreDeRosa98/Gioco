@@ -18,12 +18,12 @@ Prima di avvolgere una di queste funzioni, o di cambiarne il comportamento, guar
 | `nuovaRun()` | 20-stato.js:279 | 10 | a2-consumabili:508 → a6-progressione:333 → a7-registro-bilancio:257 → b8-finali-diario:1848 → c1-partenza-segreta:1092 → d6-acquedotto:1781 → h5-sottopalco:997 → h6-casertavecchia:443 → h7-anfiteatro:559 → h7-anfiteatro:2224 |
 | `componiPaginaB8()` | b8-finali-diario.js:971 | 9 | c1-partenza-segreta:1163 → d6-acquedotto:1833 → h3-gregorio:904 → h2-memorie:253 → h1-agnese-taddeo:712 → h6-casertavecchia:488 → h6-casertavecchia:1779 → h7-anfiteatro:606 → h7-anfiteatro:2186 |
 | `danneggiaNemico()` | 40-combattimento.js:393 | 8 | b4-trasformazioni:440 → b5-oggetti:993 → b2-ribalta:1751 → d3-registro-scena:880 → h3-gregorio:616 → h6-casertavecchia:761 → h7-anfiteatro:934 → h7-anfiteatro:1751 |
-| `disegnaBossPittorico()` | 10-sprite.js:1677 | 8 | b6-boss:1340 → d7-rifiniture:58 → d1-burattinaio:719 → d6-acquedotto:1768 → h3-gregorio:813 → h5-sottopalco:974 → h6-casertavecchia:1615 → h7-anfiteatro:1902 |
+| `disegnaBossPittorico()` | 10-sprite.js:1685 | 8 | b6-boss:1340 → d7-rifiniture:58 → d1-burattinaio:719 → d6-acquedotto:1768 → h3-gregorio:813 → h5-sottopalco:974 → h6-casertavecchia:1615 → h7-anfiteatro:1902 |
 | `popolaStanza()` | 30-mappa.js:252 | 8 | a2-consumabili:430 → b6-boss:351 → b5-oggetti:1594 → d7-rifiniture:314 → d6-acquedotto:1059 → h6-casertavecchia:745 → h7-anfiteatro:954 → h7-anfiteatro:1632 |
 | `t4Gancio()` | 80-ciclo.js:118 | 8 | a6-progressione:313 → a7-registro-bilancio:350 → b8-finali-diario:1817 → b2-ribalta:1726 → c1-partenza-segreta:1099 → d3-registro-scena:901 → e6-assistenza:322 → h4-ritorno-piazza:364 |
 | `disegnaFrame()` | 60-resa.js:1117 | 7 | a6-progressione:511 → b2-ribalta:1676 → b1-pubblico:2099 → d3-registro-scena:917 → d1-burattinaio:733 → e6-assistenza:452 → e4-prestazioni:95 |
 | `subisciColpoGiocatore()` | 40-combattimento.js:609 | 7 | a7-registro-bilancio:292 → b4-trasformazioni:552 → b5-oggetti:1071 → b1-pubblico:2052 → d5-cambio-scena:362 → d3-registro-scena:887 → h7-anfiteatro:2027 |
-| `disegnaNemicoPittorico()` | 10-sprite.js:1069 | 6 | d7-rifiniture:304 → d4-stanze-teatro:1635 → d6-acquedotto:1442 → h5-sottopalco:964 → h6-casertavecchia:1053 → h7-anfiteatro:1331 |
+| `disegnaNemicoPittorico()` | 10-sprite.js:1077 | 6 | d7-rifiniture:304 → d4-stanze-teatro:1635 → d6-acquedotto:1442 → h5-sottopalco:964 → h6-casertavecchia:1053 → h7-anfiteatro:1331 |
 | `ricalcolaStatistiche()` | 20-stato.js:121 | 6 | a2-consumabili:373 → b4-trasformazioni:416 → b5-oggetti:739 → d2-personaggi:336 → h4-ritorno-piazza:428 → h1-agnese-taddeo:681 |
 | `clickDiarioD()` | 50-oggetti.js:363 | 5 | a2-consumabili:596 → b4-trasformazioni:1371 → b5-oggetti:2073 → b8-finali-diario:1936 → d7-rifiniture:400 |
 | `disegnaDiarioD()` | 60-resa.js:289 | 5 | a2-consumabili:603 → b4-trasformazioni:1466 → b5-oggetti:2057 → b8-finali-diario:1943 → d7-rifiniture:381 |
@@ -79,7 +79,7 @@ Prima di avvolgere una di queste funzioni, o di cambiarne il comportamento, guar
 | `disegnaFiliMarionetta()` | 60-resa.js:357 | 1 | d1-burattinaio:762 |
 | `disegnaForziereA1()` | a1-bombe-chiavi.js:399 | 1 | b9-immagini:743 |
 | `disegnaLucchettoA1()` | a1-bombe-chiavi.js:372 | 1 | b9-immagini:758 |
-| `disegnaManoMarionettaPittorica()` | 10-sprite.js:783 | 1 | d1-burattinaio:754 |
+| `disegnaManoMarionettaPittorica()` | 10-sprite.js:791 | 1 | d1-burattinaio:754 |
 | `disegnaMinimappaA3()` | a3-stanze-speciali.js:799 | 1 | d4-stanze-teatro:1627 |
 | `disegnaRoviA3()` | a3-stanze-speciali.js:630 | 1 | d4-stanze-teatro:1607 |
 | `disegnaSegniA6()` | a6-progressione.js:372 | 1 | b9-immagini:1075 |
@@ -116,11 +116,11 @@ errore: l'aggancio smette di funzionare in silenzio.
 
 | Funzione | Definita in | Chi la chiama se esiste |
 |---|---|---|
-| `caricaSpriteTeatro()` | 10-sprite.js:897 | t2-sprite:100 |
-| `disegnaCellaTeatro()` | 10-sprite.js:946 | d7-rifiniture:276, h3-gregorio:693, h2-memorie:361, h6-casertavecchia:1546, h7-anfiteatro:1828, j1-ritocchi:42 |
+| `caricaSpriteTeatro()` | 10-sprite.js:905 | t2-sprite:110 |
+| `disegnaCellaTeatro()` | 10-sprite.js:954 | d7-rifiniture:276, h3-gregorio:693, h2-memorie:361, h6-casertavecchia:1546, h7-anfiteatro:1828, j1-ritocchi:42 |
 | `drawPillLabel()` | 10-sprite.js:37 | h2-memorie:642, h5-sottopalco:455 |
-| `getSpriteTeatro()` | 10-sprite.js:918 | d1-burattinaio:883, h3-gregorio:964, h2-memorie:718, h1-agnese-taddeo:73, h5-sottopalco:1009, h6-casertavecchia:1856, h7-anfiteatro:2244 |
-| `rapportoCellaTeatro()` | 10-sprite.js:933 | h3-gregorio:695, h5-sottopalco:595, h7-anfiteatro:1163 |
+| `getSpriteTeatro()` | 10-sprite.js:926 | d1-burattinaio:883, h3-gregorio:964, h2-memorie:718, h1-agnese-taddeo:73, h5-sottopalco:1009, h6-casertavecchia:1856, h7-anfiteatro:2244 |
+| `rapportoCellaTeatro()` | 10-sprite.js:941 | h3-gregorio:695, h5-sottopalco:595, h7-anfiteatro:1163 |
 | `getNumeroNotte()` | 20-stato.js:25 | h7-anfiteatro:1776, i2-piazza:107 |
 | `mostraBanner()` | 20-stato.js:238 | 000-errori:84, d3-registro-scena:399, d2-personaggi:350, h2-memorie:183 |
 | `colpisciMuroSegretoC()` | 30-mappa.js:7 | d2-personaggi:269 |

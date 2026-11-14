@@ -112,7 +112,7 @@ const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evide
       const d = g.getImageData(0, 0, 160, 120).data; const py = Math.round(n.y + T2.CONFIG.piediNemico);
       const rx = T2.CONFIG.altezza.guardia * T2.CONFIG.ombraContatto.larghezza;
       const a = (x, y) => d[(y * 160 + Math.round(x)) * 4 + 3];
-      out.ombra = [a(n.x + rx * 1.1, py), a(n.x - rx * 1.1, py), a(n.x + rx * 1.1, py - 12)];
+      out.ombra = [a(n.x + rx * 1.1, py), a(n.x - rx * 1.1, py), a(n.x + rx * 1.1, py + 7)]; // ai lati dei piedi sì, più sotto no
     } catch (e) { out.ombra = null; }
     // cammina verso sinistra, lontano dal giocatore che sta a destra: strada contata, guarda dove va
     player.x = 600;
