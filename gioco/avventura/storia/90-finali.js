@@ -204,6 +204,8 @@ AV.quadro({
       ['effetto', 'luce'],
       ['dice', 'didascalia', 'La luce della luna lascia spazio a un cielo azzurro e vivace.'], // [bibbia]
       ['pensa', 'Ferruccio osserva la città finalmente libera.'], // [bibbia]
+      // le strade di fuori (60-vie-laterali.js): chi ha sciolto le campane le sente
+      ['se', { visto: 'campane-perdono' }, [['dice', 'didascalia', 'Sul colle, le campane di Casertavecchia suonano a festa. Nessuno le tira: suonano per un sagrestano che si chiamava Anselmo.']]], // [nuovo]
       ['dice', 'didascalia', 'Poi una guardia entra nel cortile.'], // [bibbia]
       ['dice', 'guardia', 'La Signora! L\'ha ammazzata!'], // [bibbia]
       ['dice', 'guardia', 'Ha ucciso anche il Custode!'], // [bibbia] (la seconda guardia)
@@ -471,6 +473,7 @@ AV.quadro({
       ['dice', 'didascalia', 'La scena passa a Piazza Dante.'], // [bibbia]
       ['dice', 'didascalia', 'I commercianti sono tornati ai loro banchetti. I bambini giocano senza litigare. Nessuno sembra preoccupato.'], // [bibbia]
       ['pensa', 'Lo stesso emiciclo della prima notte. Ordinato, pulito, sicuro. Nessuno desidera niente di diverso.'], // [nuovo, §XX]
+      ['se', { visto: 'campane-perdono' }, [['pensa', 'Sul colle, le campane di Casertavecchia tacciono. È l\'unico silenzio vero rimasto in città.']]], // [nuovo]
       ['diario', 'Ho abbassato la spada. Caserta sorride di nuovo. Sono l\'unico a ricordare perché.'], // [nuovo]
       ['obiettivo', 'Attraversare la piazza. Qualcuno, sotto il portico, sembra cercare qualcosa.'], // [nuovo]
     ]],

@@ -121,6 +121,8 @@ AV.quadro({
         [['diario', 'Agnese mi ha chiesto di cercare la verità, non un colpevole. Ci provo.']], // [nuovo] (bibbia §III, atto III)
         [['diario', 'Qualcuno, qui dentro, deve pagare. Lo cerco.']]], // [nuovo] (bibbia §III, atto III)
       ['obiettivo', 'Entra nella Reggia. Il cancello è chiuso.'], // [nuovo]
+      // le strade di fuori (60-vie-laterali.js): il tradimento compiuto da Taddeo sul sagrato si vede qui
+      ['se', { visto: 'taddeo-tradimento-compiuto' }, [['pensa', 'Sul pilastro del cancello, un foglio fresco di colla: «Si cerca un burattino che cammina sveglio. Risponde al nome di Ferruccio.» Il nome venduto sul sagrato di Casertavecchia è arrivato prima di lui.']]], // [nuovo]
     ]],
   ],
   punti: [
@@ -791,6 +793,8 @@ AV.dialogo({
     },
     {
       id: 'spada', testo: 'Alza la spada', se: { visto: 'scatola-aperta' }, unaVolta: true, fai: [
+        // le strade di fuori (60-vie-laterali.js): ciò che ha detto il Giudice dell'Arena
+        ['se', { visto: 'arena-dimenticati' }, [['pensa', 'Il Giudice l\'aveva detto: il Velo è un giuramento vecchio di secoli. Lei l\'ha ricevuto. Chi l\'ha ricevuto, lo può sciogliere.']]], // [nuovo]
         // reggia.ultima-conversazione (bibbia §VIII, «L'ultima conversazione»)
         ['dice', 'violante', 'Guardati. Hai attraversato un\'intera città per uccidere qualcuno.'], // [bibbia]
         ['dice', 'didascalia', 'Ferruccio tiene la spada alzata.'], // [bibbia]

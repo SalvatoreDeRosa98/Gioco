@@ -15,39 +15,6 @@ AV.immagini = {
    "w": 768,
    "h": 256
   },
-  "custode-marmo": {
-   "src": "assets/sprite_teatro_v2_ombre/custode-marmo.png",
-   "w": 1568,
-   "h": 1200,
-   "griglia": {
-    "cl": 392,
-    "ca": 240,
-    "righe": [
-     [
-      "fermo",
-      2
-     ],
-     [
-      "apre",
-      2
-     ],
-     [
-      "spara",
-      3
-     ],
-     [
-      "colpito",
-      1
-     ],
-     [
-      "morte",
-      4
-     ]
-    ],
-    "top": 0.017,
-    "bot": 0.983
-   }
-  },
   "donna-luciana": {
    "src": "assets/sprite_teatro_v2_ombre/donna-luciana.png",
    "w": 1672,
