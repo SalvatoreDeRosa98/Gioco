@@ -259,6 +259,12 @@ AV.quadro({
       usa: [['se', { ha: 'scatola-musicale' },
         [
           ['pensa', 'Oltre questa porta non si torna.'], // [nuovo]
+          ['se', { uno: [{ ha: 'ferro-tenaglie' }, { ha: 'ferro-punzone' }, { ha: 'ferro-ago' }], non: { ha: ['ferro-tenaglie', 'ferro-punzone', 'ferro-ago'] } }, [
+            ['pensa', 'I ferri di mio padre pesano nella giubba. Di là non potrò più cercare quelli che mancano.'], // [nuovo]
+            ['se', { nonHa: 'ferro-tenaglie' }, [['pensa', 'Mancano le tenaglie: battevano sul Corso, dietro il muro che suona vuoto.']]], // [nuovo]
+            ['se', { nonHa: 'ferro-punzone' }, [['pensa', 'Manca il punzone: batteva alla Villa, nell\'acqua della fontana.']]], // [nuovo]
+            ['se', { nonHa: 'ferro-ago' }, [['pensa', 'Manca l\'ago: batteva a San Leucio, sul telaio.']]], // [nuovo]
+          ]],
           ['scelta', [
             { testo: 'Apri il portone', fai: [['segna', 'reggia-cortile-aperto'], ['vai', 'reggia.cortile']] }, // [nuovo]
             { testo: 'Non ancora', fai: [['pensa', 'Ferruccio ritira la mano. I passi di ferro continuano.']] }, // [nuovo]
@@ -555,7 +561,9 @@ AV.quadro({
             ]]],
             [['scelta', [
               { testo: 'Cerca le prove nella giubba', fai: [ // [nuovo]
-                ['pensa', 'Le mani di Ferruccio cercano nella giubba qualcosa che non c\'è. Il registro è cenere; Taddeo non ha lasciato nessun messaggio.'], // [nuovo] (storia.json reggia.attacco-senza-prove)
+                ['pensa', 'Le mani di Ferruccio cercano nella giubba qualcosa che non c\'è.'], // [nuovo] (storia.json reggia.attacco-senza-prove)
+                ['se', { flag: { registro: 'bruciato' } }, [['pensa', 'Il registro è cenere.']], [['pensa', 'Il registro non è nella giubba.']]], // [nuovo]
+                ['se', { flag: { taddeo: 'perdonato' } }, [], [['pensa', 'Taddeo non ha lasciato nessun messaggio.']]], // [nuovo]
                 ['pensa', 'Non c\'è niente da mostrare. La spada esce da sola dal fodero.'], // [nuovo]
                 ['flag', 'gregorio', 'attacco'],
                 ['dice', 'didascalia', 'Gregorio solleva immediatamente l\'alabarda.'], // [bibbia]
