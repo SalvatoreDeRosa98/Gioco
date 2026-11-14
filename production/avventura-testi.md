@@ -1810,6 +1810,10 @@ Entrando:
 - *guarda*
   - *Dalla sala in fondo viene un suono diverso: un telaio solo, e qualcuno che canticchia.* [nuovo]
 
+**Il portone, verso il Belvedere** (`verso-belvedere`)
+- *guarda*
+  - *Il portone da cui è entrato. Fuori, il cortile del Belvedere e la luna ferma.* [nuovo]
+
 **La porta bassa del magazzino** (`porta-magazzino`)
 - *guarda*
   - *La porta bassa del magazzino. I fili d'oro le passano sotto, tesi.* [nuovo]

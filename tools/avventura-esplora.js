@@ -25,6 +25,7 @@
  * Uso: node tools/avventura-esplora.js [--max N] [--cammini] [--json file]
  *   --max N     tetto agli stati (predefinito 400000): se lo raggiunge lo dice, e il risultato è parziale
  *   --completo  niente tappe: confronta gli stati per intero (molto più grande)
+ *   --combinazioni  elenca ogni combinazione col suo finale
  *   --cammini   stampa anche il cammino più corto verso ogni finale
  *   --json f    scrive il riassunto in JSON
  */
@@ -40,7 +41,7 @@ const DECISIONI = ['tonino_ricordo', 'taddeo', 'registro', 'agnese', 'gregorio',
 const PRESENTAZIONE = new Set(['dice', 'pensa', 'diario', 'obiettivo', 'effetto', 'suono', 'attendi', 'capitolo']);
 
 const arg = (nome, def) => { const i = process.argv.indexOf(nome); return i >= 0 ? process.argv[i + 1] : def; };
-const MAX = Number(arg('--max', 400000));
+const MAX = Number(arg('--max', 120000)); // stati al più per ogni tappa
 
 // ---------------------------------------------------------------- caricamento (motore vero + dati)
 function carica() {
@@ -137,24 +138,27 @@ function tappe(AV, R) {
   const lista = (v) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
   const capDi = new Map(); // chiave → ordine massimo fra lettori e scrittori (Infinity = globale)
   const segna = (k, o) => capDi.set(k, Math.max(capDi.has(k) ? capDi.get(k) : -Infinity, o));
-  function cond(c, o) { if (!c || typeof c !== 'object') return; for (const k of lista(c.visto).concat(lista(c.nonVisto))) segna(k, o); for (const x of lista(c.tutti).concat(lista(c.uno))) cond(x, o); if (c.non) cond(c.non, o); }
+  const oggDi = new Map(); // oggetto → ordine massimo dei capitoli che lo cercano (ha/nonHa/con/combina)
+  const ogg = (k, o) => oggDi.set(k, Math.max(oggDi.has(k) ? oggDi.get(k) : -Infinity, o));
+  function cond(c, o) { if (!c || typeof c !== 'object') return; for (const k of lista(c.visto).concat(lista(c.nonVisto))) segna(k, o); for (const k of lista(c.ha).concat(lista(c.nonHa))) ogg(k, o); for (const x of lista(c.tutti).concat(lista(c.uno))) cond(x, o); if (c.non) cond(c.non, o); }
   function az(arr, o) { for (const a of arr || []) if (Array.isArray(a)) { const [n, x, y, z] = a;
-    if (n === 'segna') segna(x, o); else if (n === 'unaVolta') { segna(x, o); az(y, o); az(z, o); } else if (n === 'se') { cond(x, o); az(y, o); az(z, o); }
+    if (n === 'unaVolta') { segna(x, o); az(y, o); az(z, o); } else if (n === 'se') { cond(x, o); az(y, o); az(z, o); }
     else if (n === 'scelta') for (const v of x || []) { cond(v && v.se, o); az(v && v.fai, o); } } }
   const dlgCap = new Map();
   for (const Q of AV.dati.quadro.values()) {
     const o = ordine.get(Q.capitolo);
     for (const m of JSON.stringify(Q).matchAll(/\["dialogo","([^"]+)"\]/g)) dlgCap.set(m[1], Math.max(dlgCap.get(m[1]) || -Infinity, o));
-    az(Q.entrata, o); for (const p of Q.punti || []) { cond(p.se, o); az(p.guarda, o); az(p.usa, o); az(p.chiuso, o); for (const x of Object.values(p.con || {})) az(x, o); }
+    az(Q.entrata, o); for (const p of Q.punti || []) { cond(p.se, o); az(p.guarda, o); az(p.usa, o); az(p.chiuso, o); for (const [k, x] of Object.entries(p.con || {})) { ogg(k, o); az(x, o); } }
   }
   for (const D of AV.dati.dialogo.values()) { const o = dlgCap.has(D.id) ? dlgCap.get(D.id) : Infinity; segna('dialogo:' + D.id, o); az(D.inizio, o); az(D.saluto, o); for (const t of D.temi || []) { cond(t.se, o); az(t.fai, o); } }
-  for (const O of AV.dati.oggetto.values()) { az(O.guarda, Infinity); for (const x of Object.values(O.combina || {})) az(x, Infinity); }
+  for (const O of AV.dati.oggetto.values()) { az(O.guarda, Infinity); for (const [k, x] of Object.entries(O.combina || {})) { ogg(k, Infinity); ogg(O.id, Infinity); az(x, Infinity); } }
   for (const F of AV.dati.finale.values()) { cond(F.se, Infinity); az(F.scene, Infinity); }
   const tappaDi = (s) => Math.max(0, ...s.capitoli.map((c) => ordine.get(c)).filter((x) => x !== undefined));
   const quadroCap = (q) => { const Q = AV.dati.quadro.get(q.split('/')[0]); return Q ? ordine.get(Q.capitolo) : Infinity; };
   return {
     tappaDi,
     vivaVisto: (k, o) => !capDi.has(k) || capDi.get(k) >= o,
+    vivoOggetto: (k, o) => !oggDi.has(k) || oggDi.get(k) >= o,
     vivoNascosto: (k, o) => quadroCap(k) >= o,
     vivoTema: (k, o) => { const d = k.split('/')[0]; return (dlgCap.has(d) ? dlgCap.get(d) : Infinity) >= o; },
   };
@@ -165,7 +169,7 @@ function chiaveStato(s, dlg, R, T) {
   const v = (k) => !T || T.vivaVisto(k, o);
   const t = [o, s.quadro, dlg || '',
     Object.keys(s.flag).filter((k) => s.flag[k]).sort().map((k) => k + '=' + s.flag[k]).join(','),
-    [...new Set(s.inventario)].sort().join(','),
+    [...new Set(s.inventario)].filter((k) => !T || T.vivoOggetto(k, o)).sort().join(','),
     Object.keys(s.visti).filter((k) => s.visti[k] && R.visti.has(k) && v(k)).sort().join(','),
     Object.keys(s.nascosti).filter((k) => s.nascosti[k] && (!T || T.vivoNascosto(k, o))).sort().join(','),
     Object.keys(s.temiFatti).filter((k) => s.temiFatti[k] && R.temi.has(k) && (!T || T.vivoTema(k, o))).sort().join(',')].join('|');
@@ -182,13 +186,16 @@ function esplora(AV, R, T) {
   const visto = { quadri: new Set(), punti: new Set(), temi: new Set(), oggetti: new Set() };
   const profondita = [];
   const code = new Map(); // tappa → { lista, testa }
+  const perTappa = new Map(); // tappa → stati
   let tetto = false;
 
   function aggiungi(stato, dlg, padre, mossa) {
     const k = chiaveStato(stato, dlg, R, T);
     let i = indice.get(k);
     if (i !== undefined) { if (padre >= 0) nodi[padre].figli.push(i); return; }
-    if (nodi.length >= MAX) { tetto = true; return; }
+    const oT = T ? T.tappaDi(stato) : 0;
+    if ((perTappa.get(oT) || 0) >= MAX) { tetto = true; return; }
+    perTappa.set(oT, (perTappa.get(oT) || 0) + 1);
     i = nodi.length;
     nodi.push({ padre, mossa, quadro: stato.quadro, dlg, figli: [], fine: false });
     profondita.push(padre >= 0 ? profondita[padre] + 1 : 0);
@@ -271,7 +278,7 @@ function esplora(AV, R, T) {
       }
     }
   }
-  return { nodi, finaliPresi, finaliNulli, combinazioni, visto, profondita, tetto };
+  return { nodi, finaliPresi, finaliNulli, combinazioni, visto, profondita, tetto, perTappa };
 }
 
 // ---------------------------------------------------------------- resoconto
@@ -292,7 +299,7 @@ function main() {
   const out = []; let problemi = 0;
   const p = (s) => out.push(s);
 
-  p(`Esplorazione: ${nodi.length} stati in ${((Date.now() - t0) / 1000).toFixed(1)} s` + (completo ? ' [spazio completo, senza tappe]' : ' [per tappe: le cose chiuse dei capitoli passati non distinguono gli stati]') + (E.tetto ? ` — TETTO di ${MAX} stati RAGGIUNTO: risultato parziale` : ' (spazio completo)'));
+  p(`Esplorazione: ${nodi.length} stati in ${((Date.now() - t0) / 1000).toFixed(1)} s` + (completo ? ' [spazio completo, senza tappe]' : ' [per tappe: le cose chiuse dei capitoli passati non distinguono gli stati]') + (E.tetto ? ` — TETTO di ${MAX} stati per tappa RAGGIUNTO: risultato parziale` : ' (spazio completo)') + '\n  stati per tappa (ordine del capitolo): ' + [...E.perTappa].sort((a, b) => a[0] - b[0]).map(([o, n]) => o + ': ' + n).join(' · '));
   if (E.tetto) problemi++;
   if (erroriCarico.length) { problemi++; p(`Errori del motore al caricamento (${erroriCarico.length}):`); for (const e of [...new Set(erroriCarico)]) p('  ' + e); }
 
@@ -343,7 +350,7 @@ function main() {
     if (combinazioni.has(k)) con.push(`${k} → ${[...combinazioni.get(k)].join(' / ')}`); else senza.push(k);
   }
   p(`\nCombinazioni delle sei decisioni (${DECISIONI.join(', ')}): ${con.length} arrivano a un finale, ${senza.length} no, ${impossibili.length} impossibili per costruzione`);
-  for (const c of con) p('  ✓ ' + c);
+  if (process.argv.includes('--combinazioni')) for (const c of con) p('  ✓ ' + c); else if (con.length) p('  (--combinazioni le elenca una per una, col finale)');
   for (const c of senza) p('  ✗ ' + c);
   p(`  impossibili per costruzione (gregorio = dialogo vuole prove = vera, che manca con taddeo = accusato e registro = bruciato):`);
   for (const c of impossibili) p('    ' + c);
@@ -384,4 +391,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { carica, analizza, esplora, tuttiIRami };
+module.exports = { carica, analizza, esplora, tuttiIRami, tappe };

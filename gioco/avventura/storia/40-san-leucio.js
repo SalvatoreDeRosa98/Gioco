@@ -269,6 +269,8 @@ AV.quadro({
       guarda: [['pensa', 'Una porticina annerita dal fumo. Là dentro si aggiustavano i ferri dei telai.']] }, // [nuovo]
     { id: 'porta-sala', nome: 'La sala del telaio grande', x: 588, y: 150, w: 52, h: 100, uscita: 'leucio.telaio',
       guarda: [['pensa', 'Dalla sala in fondo viene un suono diverso: un telaio solo, e qualcuno che canticchia.']] }, // [nuovo]
+    { id: 'verso-belvedere', nome: 'Il portone, verso il Belvedere', x: 290, y: 256, w: 60, h: 34, uscita: 'leucio.belvedere',
+      guarda: [['pensa', 'Il portone da cui è entrato. Fuori, il cortile del Belvedere e la luna ferma.']] }, // [nuovo]
     { id: 'porta-magazzino', nome: 'La porta bassa del magazzino', x: 120, y: 254, w: 70, h: 36,
       se: { visto: 'leucio-telaio-riparato' },
       guarda: [['pensa', 'La porta bassa del magazzino. I fili d\'oro le passano sotto, tesi.']], // [nuovo]
