@@ -109,3 +109,36 @@ Sagome dei punti e delle figure senza foglio: `uomo`, `donna`, `bambina`, `vecch
 | `storia/00-base.js` | Flag, personaggi e oggetti comuni a tutti i capitoli. |
 | `storia/10-piazza-dante.js` … | Un file per capitolo: quadri, dialoghi, oggetti del capitolo. |
 | `storia/90-finali.js` | I finali e gli epiloghi. |
+
+## API del motore (`avventura/01-logica.js`)
+
+Logica pura, senza DOM: nel browser è l'oggetto globale `AV`, in Node `const AV = require('gioco/avventura/01-logica.js')`
+(poi i file di storia si caricano con `vm.runInNewContext(testo, { AV, console })`). Lo stato è fatto solo di dati semplici.
+
+| Firma | Rende |
+|---|---|
+| `AV.dati.flag / personaggio / oggetto / capitolo / quadro / dialogo / finale` | `Map` id → voce registrata |
+| `AV.nuovoStato(quadro?)` | `{ quadro, flag, inventario, visti, pose, nascosti, diario, obiettivo, capitoli, temiFatti }` |
+| `AV.ripara(statoLetto)` · `AV.copia(stato)` | stato completo · copia profonda (JSON) |
+| `AV.quadroIniziale()` · `AV.primoQuadroDel(capitolo)` | id del primo quadro del capitolo con `ordine` più basso · del capitolo dato |
+| `AV.valuta(cond, stato)` | `true`/`false` (condizione assente = vera) |
+| `AV.corsa(azioni, stato, contesto?)` | `{ prossimo(risposta) }`: ogni `prossimo()` applica le azioni di stato e rende il primo evento per l'interfaccia, poi `null` |
+| `AV.esegui(azioni, stato, risposte?)` | esegue tutto senza interfaccia (le scelte prendono `risposte` in ordine, o la prima voce); rende la lista degli eventi |
+| `AV.puntiDelQuadro(quadro, stato)` | copie dei punti visibili con `attivo` e `posa` |
+| `AV.azioniDelPunto(quadro, punto, verbo, oggettoInMano, stato)` | le azioni da eseguire (`verbo` = `'usa'` \| `'guarda'`, `oggettoInMano` = id o `''`) |
+| `AV.azioniDellOggetto(id)` · `AV.azioniCombina(a, b)` | guardare un oggetto · un oggetto su un altro |
+| `AV.aperturaDialogo(id, stato)` | `inizio` la prima volta (segna `visti['dialogo:<id>']`), poi `saluto` |
+| `AV.temiDelDialogo(id, stato)` · `AV.azioniDelTema(id, tema, stato)` | temi scegliibili ora · azioni del tema (segna `temiFatti['<dialogo>/<tema>']`) |
+| `AV.finalePer(stato)` | id del finale la cui `se` vale (se più d'uno, quello con più chiavi), `''` se nessuno |
+| `AV.decisioniPrese(stato)` | `[{ id, nome, valore }]` dei flag con `nome` già decisi |
+| `AV.errori` · `AV.errore(msg)` | errori dei dati incontrati (riga rossa in console; il gioco va avanti) |
+
+Eventi di `prossimo()`: `{tipo:'dice',chi,testo}` · `{tipo:'pensa',testo}` · `{tipo:'scelta',voci:[{indice,testo}]}` (si riprende
+con `prossimo(indice)`; le voci con `se` falso non compaiono) · `{tipo:'vai',quadro,da,nuovoCapitolo}` (lo stato è già nel
+quadro nuovo; al `prossimo()` dopo si esegue la sua `entrata`, poi il resto delle azioni) · `{tipo:'dialogo',id}` (l'interfaccia
+apre il dialogo: apertura, poi temi finché il giocatore si allontana o i temi finiscono, poi `prossimo()`) · `{tipo:'effetto',nome}` ·
+`{tipo:'suono',nome}` · `{tipo:'attendi',ms}` · `{tipo:'capitolo',id}` · `{tipo:'finale',id}` (l'interfaccia recita `scene`).
+Chiavi nello stato: `pose` e `nascosti` per `'<quadro>/<punto>'`; `visti` per le chiavi di `segna`/`unaVolta` e `dialogo:<id>`.
+Regole del punto: chiuso (`se` falso, con `chiuso`) → `guarda` fa il suo `guarda` se c'è, il resto fa `chiuso`; attivo → con un
+oggetto `con[oggetto]` | `con['*']` | riga neutra; `guarda` | riga neutra; `usa` (+ `['vai', uscita]`) | `guarda` | riga neutra.
+Nuova partita: `AV.corsa([['vai', AV.quadroIniziale()]], AV.nuovoStato())`. La pagina accetta `?quadro=<id>` per partire da un quadro.
