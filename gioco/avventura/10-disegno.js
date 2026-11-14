@@ -579,7 +579,9 @@
       ctx.beginPath(); ctx.moveTo(i.punti[0][0], i.punti[0][1]);
       for (const p of i.punti.slice(1)) ctx.lineTo(p[0], p[1]); ctx.closePath(); ctx.lineWidth = 1 / k; riempi(ctx, i.colore || '#8a6a3a', C.filo); ctx.restore(); return;
     }
-    D.sagoma(ctx, i.sagoma || 'cassa', x + 3, y + 3, w - 6, h - 6, { t, colore: i.colore, posa: i.posa });
+    // le sagome poggiano in basso: nel riquadro di un oggetto si centrano
+    const S = SAG[i.sagoma || 'cassa'] || SAG.cassa, k = Math.min((w - 6) / S[0], (h - 6) / S[1]);
+    D.sagoma(ctx, i.sagoma || 'cassa', x + 3, y + 3 - (h - 6 - S[1] * k) / 2, w - 6, h - 6, { t, colore: i.colore, posa: i.posa });
   };
 
   // ------------------------------------------------------------------ effetti

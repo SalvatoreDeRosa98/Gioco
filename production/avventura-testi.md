@@ -2240,6 +2240,659 @@ Le volte dopo:
 - **La sciarpa rossa** (`sciarpa-rossa`): La sciarpa che Agnese ha finito stanotte. Ora la porto al collo. [bibbia]
   - **Agnese:** Dicono che il rosso protegga dal malocchio. [bibbia]
 
+## 4.5. Le strade di fuori — Casertavecchia e l'Arena
+
+### La strada di notte, al bivio (`strada.bivio`)
+
+Entrando:
+- *I fili d'oro tirano dritti verso la Reggia. Ma la strada, qui, si divide: su per il colle, e giù per la via antica. Due deviazioni. La Reggia può aspettare un poco: la notte non passa.* [nuovo]
+- **Diario:** Fra San Leucio e la Reggia la strada si divide. Avanti, la Reggia. Su, la mulattiera di Casertavecchia. Giù, la via Appia verso Santa Maria. Nessuno mi obbliga a deviare. [nuovo]
+- **Obiettivo:** Andare alla Reggia. Oppure, prima, salire a Casertavecchia o scendere all'Anfiteatro. [nuovo]
+
+**La pietra miliare** (`miliare`)
+- *guarda*
+  - *Una pietra miliare borbonica, col giglio scalpellato in cima. «NAPOLI M. XVI». Qualcuno ci ha appoggiato un lumino, che non si consuma.* [nuovo]
+- *usa*
+  - *Ferruccio passa le dita sul giglio. La pietra è fredda come tutto, stanotte. Ma le miglia sono ancora quelle: il mondo fuori c'è.* [nuovo]
+
+**Il viale verso la Reggia** (`verso-reggia`)
+- *guarda*
+  - *Il viale dritto, fra i platani, fino al cancello della Reggia. I fili d'oro ci entrano tutti. Oltre quel cancello non si torna indietro: le strade di fuori resteranno qui.* [nuovo]
+- *usa*
+  - *Ferruccio si stringe nella giacca e prende il viale. Dietro di lui il bivio resta al buio.* [nuovo]
+
+**La mulattiera di Casertavecchia** (`verso-casertavecchia`)
+- *guarda*
+  - *Lassù il campanile tace. È il primo silenzio buono di tutta la notte.* [nuovo]
+  - *(altrimenti)*
+    - *La mulattiera sale fra gli ulivi fino al borgo vecchio sul colle. In cima, contro la luna, un campanile. Si sente una campana: suona da sola.* [nuovo]
+
+**La via Appia, verso Santa Maria** (`verso-anfiteatro`)
+- *guarda*
+  - *Laggiù l'arena è vuota, adesso. Le ombre se ne sono andate per conto loro.* [nuovo]
+  - *(altrimenti)*
+    - *Le pietre larghe della via Appia, lisce di duemila anni di passi. Scende verso Santa Maria Capua Vetere, dove c'è l'Anfiteatro. Da laggiù viene un rumore di folla, e nessuna folla.* [nuovo]
+
+**La strada per San Leucio** (`verso-leucio`)
+- *guarda*
+  - *Indietro, verso il borgo della seta. I telai battono ancora, piano.* [nuovo]
+
+**I fili d'oro** (`fili`)
+- *guarda*
+  - *Vengono da tutte le parti, dai tetti di Caserta, da San Leucio, dal colle. Si stringono in un fascio solo, sopra il viale. Come le briglie di un cavallo.* [nuovo]
+
+**Il colle** (`colle`)
+- *guarda*
+  - *Il colle dei Tifatini. In cima c'era Caserta prima di Caserta: la Casa Hirta, il borgo vecchio. I Re l'hanno lasciato lassù e sono scesi in pianura.* [nuovo]
+
+### La mulattiera di Casertavecchia (`casertavecchia.salita`)
+
+Entrando:
+- **Didascalia:** In cima al colle il borgo antico dorme di pietra: archi, vicoli, e il campanile del duomo contro la luna. [bibbia]
+- **Didascalia:** Ferruccio raggiunge l'antico borgo di Casertavecchia, dove le campane custodiscono le parole che gli abitanti non hanno mai pronunciato. [bibbia]
+- **Diario:** Sono salito a Casertavecchia. Lassù le campane suonano da sole, e la pietra si ricorda di tutto. [nuovo]
+- **Obiettivo:** Entrare nel borgo e salire al duomo, dove suonano le campane. [nuovo]
+
+**Giù per la mulattiera** (`giu`)
+- *guarda*
+  - *La mulattiera torna giù al bivio, fra gli ulivi.* [nuovo]
+
+**La porta del borgo** (`porta-borgo`)
+- *guarda*
+  - *Un arco di tufo grigio, mangiato dal vento. Una volta c'era una porta con la sbarra: adesso c'è solo il buio del vicolo.* [nuovo]
+
+**L'edicola dei lumini** (`edicola`)
+- *guarda*
+  - *Una Madonnina nel muro, e sotto una fila di lumini votivi accesi. Fiamme ferme, che non si consumano. In mezzo, appeso a un chiodo, un ex voto.* [nuovo]
+- *usa*
+  - *Ferruccio si toglie il cappello davanti alla Madonnina. Non sa più pregare, ma le mani se lo ricordano.* [nuovo]
+
+**L'ex voto** (`exvoto`)
+- *guarda*
+  - *Un cuore di latta, e appuntato col filo un berretto da soldato, piccolo. Dietro, a matita: «Pe' Ciccillo, partito pe' Gaeta. Te l'avevo da dì e nun te l'aggio ditto.»* [nuovo]
+- *usa*
+  - *Ferruccio gira il foglietto. In fondo, scritta più piccola, la parola che la madre non disse quando il figlio partì: «Resta».* [nuovo]
+  - **Diario:** Una parola non detta: «Resta». Una madre a un figlio che partiva soldato. [nuovo]
+
+**Gli ulivi** (`ulivi`)
+- *guarda*
+  - *Ulivi vecchi, contorti come mani. Sotto, le reti stese per la raccolta, ferme a metà del lavoro da sei anni.* [nuovo]
+
+**La valle** (`valle`)
+- *guarda*
+  - *Di quassù si vede tutta la piana: Caserta, i tetti di San Leucio, e laggiù la Reggia, enorme, coi fili d'oro che ci scendono dentro come in un pozzo.* [nuovo]
+
+**Il campanile** (`campanile-lontano`)
+- *guarda*
+  - *Il campanile del duomo, sopra i tetti. Una campana oscilla, e nessuno la tira.* [nuovo]
+
+### I vicoli del borgo vecchio (`casertavecchia.borgo`)
+
+Entrando:
+- *Vicoli stretti, archi uno dietro l'altro. Nessuno. Sulle porte, qua e là, lettere scritte col gesso e lasciate a metà.* [nuovo]
+
+**Verso la porta del borgo** (`indietro`)
+- *guarda*
+  - *Indietro, alla porta e alla mulattiera.* [nuovo]
+
+**Il vicolo del duomo** (`arco`)
+- *guarda*
+  - *Sotto l'arco il vicolo sale verso il sagrato. Il rintocco viene di là.* [nuovo]
+
+**La fontana con la lapide** (`fontana`)
+- *guarda*
+  - *Una fontana di pietra, con una lapide: «A MASTRO BIAGIO CHE PORTÒ L'ACQUA AL BORGO E NON VOLLE NIENTE». Sotto c'è un graffio, piccolo.* [nuovo]
+- *usa*
+  - *Ferruccio si china. Sotto la lapide, inciso con un chiodo, a lettere storte: «gra». Poi niente. Chi lo scriveva s'è fermato, come se si vergognasse.* [nuovo]
+  - **Diario:** Una parola non detta: «Grazie». Il borgo a Mastro Biagio, che gli portò l'acqua e non volle niente. [nuovo]
+
+**La porta murata** (`porta-murata`)
+- *guarda*
+  - *Una porta chiusa con i mattoni, e una croce di gesso sopra. Sul muro nuovo, a gesso, lettere a metà: «perd».* [nuovo]
+- *usa*
+  - *Ferruccio appoggia la mano sui mattoni. Una figlia che se ne andò senza chiedere perdono al padre, e il padre che murò la porta per non vederla tornare. «Perdonami»: nessuno dei due l'ha detto.* [nuovo]
+  - **Diario:** Una parola non detta: «Perdonami». Dietro una porta murata del borgo. [nuovo]
+
+**Una scala a pioli** (`scala`)
+- *guarda*
+  - *Una scala corta di castagno, appoggiata al muro sotto un ulivo. Per le olive.* [nuovo]
+- *usa*
+  - *Ferruccio se la mette in spalla. Non pesa niente: è il castagno buono.* [nuovo]
+
+**Un gatto** (`gatto`)
+- *guarda*
+  - *Un gatto grigio, fermo a metà di un salto, sospeso sopra un gradino. Anche lui aspetta la mattina.* [nuovo]
+
+**Il lampione** (`lampione`)
+- *guarda*
+  - *Una lanterna a olio sotto l'arco. Fa una luce gialla che non trema.* [nuovo]
+
+### Il sagrato del duomo (`casertavecchia.sagrato`)
+
+Entrando:
+- *Il duomo, con la facciata di pietra a strisce e il campanile accanto. Sul sagrato c'è qualcuno.* [nuovo]
+- *Taddeo. Seduto sul parapetto, col cappello fra le mani, come chi aspetta da molto.* [nuovo]
+- *(altrimenti)*
+  - **Taddeo:** Ancora tu. [nuovo]
+  - **Taddeo:** Al Corso mi hai guardato come si guarda un traditore. E allora traditore sia. [nuovo]
+  - **Taddeo:** Il Campanaro sa che stai arrivando. Gliel'ho detto io. [nuovo]
+  - **Taddeo:** E alla guardia della Reggia ho detto pure il resto: che c'è un burattino che cammina sveglio, e come si chiama. [nuovo]
+  - **Didascalia:** Taddeo tira la corda una volta sola, e se ne va per il vicolo senza voltarsi. [nuovo]
+  - *La porta della sagrestia ha una sbarra nuova, di traverso. L'ha messa lui, prima di andarsene.* [nuovo]
+  - **Diario:** Taddeo era sul sagrato di Casertavecchia. Ha avvisato il Campanaro, ha sbarrato la sagrestia, ha venduto il mio nome alla guardia. Se n'è andato senza voltarsi. [nuovo]
+  - **Obiettivo:** La sagrestia è sbarrata. Trovare un altro modo di entrare: la finestrella è bassa. [nuovo]
+
+**Taddeo** (`taddeo`)
+- *guarda*
+  - *Taddeo, l'amico. Ha la faccia di uno che non dorme da sei anni, anche se la notte non è mai finita.* [nuovo]
+- *usa*
+  - **Taddeo:** Ferruccio. Sei salito fin quassù. [?]
+  - **Taddeo:** Al Corso mi hai lasciato andare. Non me lo meritavo, e lo sapevamo tutti e due. [?]
+  - **Taddeo:** Queste campane suonano per le parole che uno non ha detto. Io una ce l'ho in gola da vent'anni: perdonami. [?]
+  - **Didascalia:** Ferruccio non risponde. Gli posa una mano sulla spalla. [nuovo]
+  - **Taddeo:** Il Campanaro è là dietro. Prendi questa, è della sagrestia. E tieni dritta la testa: io la mia l'ho tenuta bassa troppo a lungo. [nuovo]
+  - **Diario:** Taddeo mi ha chiesto perdono, sul sagrato. Ha detto la sua parola: «Perdonami». E mi ha dato la chiave della sagrestia. [nuovo]
+  - **Obiettivo:** Aprire la sagrestia con la chiave di Taddeo e salire al campanile. [nuovo]
+  - *(altrimenti)*
+    - **Taddeo:** Vai. Io resto qua a guardare il campanile. Quando smette di suonare, scendo pure io. [nuovo]
+- *con altro oggetto*
+  - **Taddeo:** Tienilo tu. Io di cose tue in tasca ne ho tenute abbastanza. [nuovo]
+
+**La facciata del duomo** (`duomo`)
+- *guarda*
+  - *San Michele Arcangelo. Pietra grigia e pietra chiara, a fasce, e archi intrecciati come in una tela. Lo fecero i Normanni, settecento anni fa, quando Caserta stava tutta quassù.* [nuovo]
+
+**Il portale** (`portale`)
+- *guarda*
+  - *Il portone della chiesa, chiuso. Dietro si sente un mormorio, come di tante persone che pregano sottovoce. Ma è la pietra.* [nuovo]
+- *usa*
+  - *Il portone non si muove. Le campane non sono di là: sono nel campanile, e al campanile si sale dalla sagrestia.* [nuovo]
+
+**Il campanile** (`campanile`)
+- *guarda*
+  - *Il campanile, con la cella aperta in cima. Dentro, tre campane e una figura che tiene le corde. Non ha faccia: solo pietra liscia sotto il cappuccio.* [nuovo]
+
+**La porta della sagrestia** (`sagrestia-chiusa`)
+- *guarda*
+  - *La porticina della sagrestia, ai piedi del campanile. Chiusa a chiave.* [nuovo]
+  - *(altrimenti)*
+    - *La porticina della sagrestia. Una sbarra di ferro di traverso, inchiodata. Da qui non si entra.* [nuovo]
+- *usa*
+  - *Chiusa. Serve la chiave.* [nuovo]
+  - *(altrimenti)*
+    - *Ferruccio tira la sbarra. I chiodi tengono: chi l'ha messa sapeva battere. Bisogna entrare da un'altra parte.* [nuovo]
+- *con La chiave della sagrestia*
+  - *La chiave gira due volte. La porta si apre su una scaletta e sull'odore di cera.* [nuovo]
+- *con La scala a pioli*
+  - *La porta è a terra: la scala serve più in alto. La finestrella, lì accanto.* [nuovo]
+
+**La sagrestia** (`sagrestia`)
+- *guarda*
+  - *La porta della sagrestia, aperta.* [nuovo]
+
+**La finestrella della sagrestia** (`finestrella`)
+- *guarda*
+  - *Una finestrella con l'inferriata rotta, a due metri da terra. Ci passa uno magro. Ferruccio è magro.* [nuovo]
+- *usa*
+  - *Troppo alta per arrivarci con le mani. Ci vorrebbe qualcosa per salire.* [nuovo]
+- *con La scala a pioli*
+  - *Ferruccio appoggia la scala sotto la finestrella. Sette pioli: basta.* [nuovo]
+
+**La scala sotto la finestrella** (`scala-posata`)
+- *guarda*
+  - *La scala a pioli, appoggiata sotto la finestrella.* [nuovo]
+- *usa*
+  - *Ferruccio sale, si piega e passa fra i ferri dell'inferriata.* [nuovo]
+
+**Il parapetto** (`parapetto`)
+- *guarda*
+  - *Sotto il parapetto, il buio della valle. Una volta, di qui, si sentivano le campane di tutti i paesi della piana. Stanotte si sente solo questa.* [nuovo]
+
+**Il vicolo, giù al borgo** (`vicolo`)
+- *guarda*
+  - *Il vicolo scende verso la fontana e la porta del borgo.* [nuovo]
+
+### La sagrestia del duomo (`casertavecchia.sagrestia`)
+
+Entrando:
+- *Odore di cera fredda e di panni chiusi. Su un leggio, un registro aperto. Una scala di legno sale nel campanile, e le corde ci passano accanto, tese.* [nuovo]
+
+**Il registro del sagrestano** (`registro`)
+- *guarda*
+  - *Un registro grosso, con una colonna di nomi e una crocetta accanto a ognuno: le campane a morto. Quarant'anni di nomi, con la stessa mano.* [nuovo]
+- *usa*
+  - *Ferruccio torna alla prima pagina. «Io, Anselmo, sagrestano di questo duomo, suonerò per tutti.» E sotto, piccolo: «Per me, chi suonerà?»* [nuovo]
+  - *L'ultima pagina è del giorno del Velo. Il nome di Anselmo è scritto, e cancellato, e riscritto, come se la mano non sapesse più di chi era.* [nuovo]
+  - **Diario:** Il sagrestano del duomo si chiamava Anselmo. Ha suonato per tutti, quarant'anni. Il suo nome, nessuno l'ha mai detto. [nuovo]
+
+**Il cero** (`cero`)
+- *guarda*
+  - *Un cero grande, acceso, con la fiamma ferma come dipinta.* [nuovo]
+
+**L'armadio dei paramenti** (`armadio`)
+- *guarda*
+  - *Pianete viola e nere, piegate con cura. In un cassetto, le corde di ricambio e un cappuccio di lana grigia, uguale a quello della figura lassù.* [nuovo]
+- *usa*
+  - *Ferruccio richiude il cassetto piano, come in casa d'altri.* [nuovo]
+
+**Le corde** (`corde`)
+- *guarda*
+  - *Tre corde scendono dalla cella e salgono, scendono e salgono, da sole. Una quarta pende ferma: quella non la tira nessuno.* [nuovo]
+- *usa*
+  - *Le corde scottano di freddo. Da qui sotto non si capisce a quale campana va ciascuna: bisogna salire.* [nuovo]
+
+**La scala del campanile** (`su`)
+- *guarda*
+  - *Una scala di legno, ripida, che sale nel buio della torre.* [nuovo]
+
+**La porta sul sagrato** (`porta`)
+- *guarda*
+  - *La porta da cui è entrato, aperta sul sagrato.* [nuovo]
+  - *(altrimenti)*
+    - *La porta sul sagrato. Da questa parte la sbarra è solo infilata negli anelli.* [nuovo]
+- *usa*
+  - *(altrimenti)*
+    - *Ferruccio sfila la sbarra dagli anelli. Taddeo l'aveva inchiodata da fuori: da dentro bastava una mano.* [nuovo]
+
+### La cella delle campane (`casertavecchia.campanile`)
+
+Entrando:
+- *In cima alla scala, la cella. Tre campane sulla graticcia di legno, e in mezzo una figura di pietra col cappuccio, che tira le corde a turno. Ogni rintocco sveglia qualcosa nel petto.* [nuovo]
+- *(altrimenti)*
+  - **Didascalia:** Il Campanaro ti aspetta: la corda è già tesa. [nuovo]
+  - *Sapeva che arrivava. Le tre campane suonano insieme, e il rintocco entra nelle ossa: la bottega vuota, il padre che non torna, Agnese che non lo riconosce. Tutto in una volta.* [nuovo]
+- **Il Campanaro Senza Volto:** Chi sale fin qua sopra porta una parola che non ha detto. Tutti. Io la suono, e lui se la ricorda. [nuovo]
+- **Didascalia:** Il Campanaro Senza Volto: una figura di pietra che risveglia i rimorsi attraverso i rintocchi. [bibbia]
+- **Diario:** Nella cella del campanile c'è il Campanaro Senza Volto. Ogni campana tiene una parola che nessuno ha detto. Se le do la parola giusta, forse tace. [nuovo]
+- **Obiettivo:** Dare a ogni campana la sua parola non detta: leggere le scritte sul bronzo. [nuovo]
+
+**Il Campanaro Senza Volto** (`campanaro`)
+- *guarda*
+  - *Pietra grigia, un cappuccio di lana, e sotto il cappuccio niente: una faccia liscia come un sasso di fiume. Le mani, invece, sono di uno che ha lavorato tutta la vita.* [nuovo]
+- *usa*
+  - ▸ Scelta: «Prendi la sua corda e tirala pensando a «Anselmo»» [nuovo]
+    - *La campana grande suona una volta sola, piano, e il rintocco dice un nome. Anselmo. Sotto il cappuccio, nella pietra liscia, viene fuori una faccia: vecchia, stanca, sorpresa.* [nuovo]
+    - **Il Campanaro Senza Volto:** Anselmo. Quarant'anni che nessuno… Grazie, guaglio'. Mo' posso scendere pure io. [nuovo]
+    - **Didascalia:** Il Campanaro lascia andare la corda. Le campane tacciono: per la prima volta il borgo dorme davvero. [?]
+    - **Didascalia:** Il Campanaro era il sagrestano del duomo. Suonava a morto per chi se n'era andato senza chiedere perdono, e teneva per sé le parole che nessuno aveva detto. Il Velo gli ha preso il volto: gli ha lasciato solo le corde. [nuovo]
+    - *Giù, sul sagrato, una figura piccola si alza dal parapetto e si toglie il cappello. Taddeo ha sentito il silenzio.* [nuovo]
+    - *(altrimenti)*
+      - *Giù, sul sagrato, non c'è nessuno. Il nome di Ferruccio, adesso, ce l'ha la guardia della Reggia.* [nuovo]
+    - **Diario:** Al duomo il Campanaro ha lasciato andare la corda. Ho sentito il silenzio, dopo: pesava meno di tutte quelle parole. [nuovo]
+    - **Obiettivo:** Tornare al bivio: la Reggia, o l'altra strada. [nuovo]
+    - *Ferruccio scende la scala, attraversa il borgo che dorme, e torna giù per la mulattiera fino al bivio.* [nuovo]
+  - ▸ Scelta: «Tocca la pietra liscia del suo volto» [nuovo]
+    - *Sotto le dita, la pietra è tiepida. Non ha faccia perché nessuno lo ha mai chiamato. Ma un nome l'aveva: qualcuno l'avrà scritto.* [nuovo]
+    - *(altrimenti)*
+      - **Obiettivo:** Il Campanaro non ha nome. Forse nella sagrestia, nel registro, è scritto chi era. [nuovo]
+  - ▸ Scelta: «Allontanati» [nuovo]
+    - *Ferruccio fa un passo indietro. La quarta corda aspetta.* [nuovo]
+  - *(altrimenti)*
+    - **Il Campanaro Senza Volto:** Non a me. Ogni campana ha la sua parola: dàlla a lei. [nuovo]
+- *con altro oggetto*
+  - **Il Campanaro Senza Volto:** Le cose non suonano. Le parole sì. [nuovo]
+
+**La campana piccola** (`campana-piccola`)
+- *guarda*
+  - *La campana piccola è ferma. Sul bronzo la scritta pare più chiara.* [nuovo]
+  - *(altrimenti)*
+    - *La campana piccola, verde di bronzo vecchio. Sulla fascia, a lettere in rilievo: «PER CHI PARTÌ».* [nuovo]
+- *usa*
+  - *Tace. Ha avuto la sua parola.* [nuovo]
+  - *(altrimenti)*
+    - ▸ Scelta: «Pensa a «Resta» e tira la corda» [?]
+      - *La campana piccola suona una volta, chiara, e si ferma. Da qualche parte una madre ha detto «resta», con sei anni di ritardo. La corda si allenta.* [nuovo]
+      - *Le tre campane tacciono. Il Campanaro abbassa le mani. Gli resta una corda sola, la quarta, legata al polso: quella che nessuno ha mai tirato per lui.* [nuovo]
+      - **Obiettivo:** Resta la corda del Campanaro. Qual è la parola che nessuno gli ha mai detto? [nuovo]
+    - ▸ Scelta: «Pensa a «Grazie» e tira la corda» [?]
+      - *Il rintocco è storto. A Ferruccio torna in mente la mattina che suo padre uscì per la Reggia e lui, dal banco, non alzò nemmeno la testa.* [nuovo]
+    - ▸ Scelta: «Pensa a «Perdonami» e tira la corda» [?]
+      - *Il rintocco è storto. A Ferruccio torna in mente la mattina che suo padre uscì per la Reggia e lui, dal banco, non alzò nemmeno la testa.* [nuovo]
+    - ▸ Scelta: «Lascia la corda» [?]
+      - *Ferruccio lascia andare la corda. Non sa ancora che cosa dirle.* [nuovo]
+
+**La campana mezzana** (`campana-mezzana`)
+- *guarda*
+  - *La mezzana è ferma, con la corda molle.* [nuovo]
+  - *(altrimenti)*
+    - *La campana mezzana. Sulla fascia: «PER CHI DIEDE». Sotto, una fila di gocce d'acqua scolpite.* [nuovo]
+- *usa*
+  - *Tace. Ha avuto la sua parola.* [nuovo]
+  - *(altrimenti)*
+    - ▸ Scelta: «Pensa a «Resta» e tira la corda» [?]
+      - *Rintocco falso. Ferruccio rivede Agnese al telaio, il primo giorno, e se stesso che se ne va senza dire niente.* [nuovo]
+    - ▸ Scelta: «Pensa a «Grazie» e tira la corda» [?]
+      - *La mezzana suona tonda, come l'acqua che cade in una vasca. Giù nel borgo, la fontana di Mastro Biagio fa un rumore: si è mossa. La corda si allenta.* [nuovo]
+      - *Le tre campane tacciono. Il Campanaro abbassa le mani. Gli resta una corda sola, la quarta, legata al polso: quella che nessuno ha mai tirato per lui.* [nuovo]
+      - **Obiettivo:** Resta la corda del Campanaro. Qual è la parola che nessuno gli ha mai detto? [nuovo]
+    - ▸ Scelta: «Pensa a «Perdonami» e tira la corda» [?]
+      - *Rintocco falso. Ferruccio rivede Agnese al telaio, il primo giorno, e se stesso che se ne va senza dire niente.* [nuovo]
+    - ▸ Scelta: «Lascia la corda» [?]
+      - *Ferruccio lascia andare la corda. Non sa ancora che cosa dirle.* [nuovo]
+
+**La campana grande** (`campana-grande`)
+- *guarda*
+  - *La campana grande è ferma. Resta solo la quarta corda, quella del Campanaro.* [nuovo]
+  - *(altrimenti)*
+    - *La campana grande, sopra la testa del Campanaro. Sulla fascia: «PER CHI FECE TORTO». Il bronzo è crepato, e la crepa brilla.* [nuovo]
+- *usa*
+  - *Tace. Ha avuto la sua parola.* [nuovo]
+  - *(altrimenti)*
+    - ▸ Scelta: «Pensa a «Resta» e tira la corda» [?]
+      - *La campana grande rimbomba, e il rimbombo è la voce di Donna Luciana, nel giardino, la notte del Velo. Ferruccio stringe la corda fino a farsi male.* [nuovo]
+    - ▸ Scelta: «Pensa a «Grazie» e tira la corda» [?]
+      - *La campana grande rimbomba, e il rimbombo è la voce di Donna Luciana, nel giardino, la notte del Velo. Ferruccio stringe la corda fino a farsi male.* [nuovo]
+    - ▸ Scelta: «Pensa a «Perdonami» e tira la corda» [?]
+      - *La campana grande suona bassa, lunga. Dentro c'è la voce di Taddeo, quella del sagrato: «perdonami». La crepa si chiude. La corda si allenta.* [nuovo]
+      - *(altrimenti)*
+        - *La campana grande suona bassa, lunga. È la parola della porta murata, di un padre e di una figlia. Non è quella di Taddeo: quella, Taddeo se l'è portata via. La corda si allenta lo stesso.* [nuovo]
+      - *Le tre campane tacciono. Il Campanaro abbassa le mani. Gli resta una corda sola, la quarta, legata al polso: quella che nessuno ha mai tirato per lui.* [nuovo]
+      - **Obiettivo:** Resta la corda del Campanaro. Qual è la parola che nessuno gli ha mai detto? [nuovo]
+    - ▸ Scelta: «Lascia la corda» [?]
+      - *Ferruccio lascia andare la corda. Non sa ancora che cosa dirle.* [nuovo]
+
+**La luna** (`luna`)
+- *guarda*
+  - *Dall'arco della cella, la luna. Fredda, ferma, più vicina che in città.* [nuovo]
+
+**La scala, giù in sagrestia** (`giu`)
+- *guarda*
+  - *La scala ripida torna giù in sagrestia.* [nuovo]
+
+### L'Anfiteatro Campano, le arcate (`anfiteatro.arcate`)
+
+Entrando:
+- **Didascalia:** Nell'antico Anfiteatro Campano sono raccolte le memorie dei combattenti di molte epoche. [bibbia]
+- *Le arcate, una sopra l'altra, travertino e mattone. Dall'interno viene un rumore di folla: grida, battimani, un tamburo. Poi, di colpo, niente.* [nuovo]
+- **Diario:** Sono sceso per la via Appia fino a Santa Maria. L'Anfiteatro è pieno di ombre, e qualcuno, dentro, giudica. [nuovo]
+- **Obiettivo:** Entrare nell'arena. [nuovo]
+
+**La via Appia, verso il bivio** (`appia`)
+- *guarda*
+  - *La via antica torna su, verso il bivio e la Reggia.* [nuovo]
+
+**L'ingresso dell'arena** (`ingresso`)
+- *guarda*
+  - *Il fornice grande. Di là, la sabbia chiara e le gradinate.* [nuovo]
+
+**Le teste sulle arcate** (`chiavi`)
+- *guarda*
+  - *Sulla chiave di ogni arco c'era una testa di dio scolpita: Giunone, Diana, Mercurio. Ne restano poche, senza naso. Guardano tutte giù, verso chi entra.* [nuovo]
+
+**Il travertino** (`mura`)
+- *guarda*
+  - *Blocchi chiari, enormi, e mattone rosso dove la pietra se n'è andata. Per secoli quelli di Capua ci hanno preso le pietre per farsi le case: mezza città vecchia è fatta d'anfiteatro.* [nuovo]
+
+**Una colonna spezzata** (`colonna`)
+- *guarda*
+  - *Una colonna rotta a metà, con sopra una corona d'alloro di bronzo, verde. Qualcuno l'ha lasciata lì, come un cappello su una sedia.* [nuovo]
+
+**Il rumore della folla** (`folla`)
+- *guarda*
+  - *Il rumore torna e se ne va, a ondate. È la memoria di un rumore: duemila anni di domeniche.* [nuovo]
+
+### L'Arena dei Dimenticati (`anfiteatro.arena`)
+
+Entrando:
+- *La sabbia è chiara, rastrellata. Sulle gradinate siedono ombre con l'elmo, col cappuccio, col cappello piumato, con la giubba dei Borboni: combattenti di tutte le epoche. Nessuno applaude.* [nuovo]
+- *Sul podio, una figura in toga, con la corona d'alloro e il braccio teso. Il pollice è girato verso la sabbia.* [nuovo]
+- **Il Giudice dell'Arena:** Ogni giuramento ha il suo giudice. Il tuo, burattino, sono io. [nuovo]
+- **Il Giudice dell'Arena:** Questi, sulle gradinate, hanno giurato tutti. E hanno rotto tutti. Pollice verso, per l'eternità. [nuovo]
+- **Il Giudice dell'Arena:** Tu non parli: non puoi giurare. E allora portami una prova. Che un giuramento si può sciogliere senza tradirlo. Portamela, e io alzo il pollice. [nuovo]
+- *Il Giudice gira il pollice verso Ferruccio, e dalle gradinate un'ombra con la lancia scende sulla sabbia.* [nuovo]
+- **Didascalia:** Dalle gradinate un filo rosso si tende davanti a Ferruccio: il colpo si ferma sul filo. Agnese, lassù, non dice niente. [nuovo]
+- *Agnese. È venuta dietro di lui, tutta la strada. Siede in alto, fra le ombre, con la navetta in mano e il filo rosso che le scende dalle dita.* [nuovo]
+- *(altrimenti)*
+  - *Fra le ombre delle gradinate, in alto, una figura che non è un'ombra: una ragazza che dorme con la testa appoggiata alla pietra.* [nuovo]
+- **Diario:** Il Giudice dell'Arena vuole una prova: che un giuramento si può sciogliere senza tradirlo. Sotto l'arena ci sono i sotterranei. [nuovo]
+- **Obiettivo:** Cercare nei sotterranei la prova che un giuramento si può sciogliere senza tradirlo. [nuovo]
+
+**Il Giudice dell'Arena** (`giudice`)
+- *guarda*
+  - *Una toga bianca, gessata di polvere. Sotto la corona d'alloro, una faccia di marmo senza età. Dalla toga escono fili, come da un rocchetto.* [nuovo]
+- *usa*
+  - **Il Giudice dell'Arena:** La prova c'è. Manca chi alza il pollice. Il popolo, burattino: è il popolo che scioglie. [nuovo]
+  - *(altrimenti)*
+    - **Il Giudice dell'Arena:** Una prova. Non una faccia triste: qui ne ho viste abbastanza. [nuovo]
+- *con La rudis*
+  - **Il Giudice dell'Arena:** La rudis. E il nome di chi l'ebbe: Felix. Non fuggì, non tradì: lo sciolse chi aveva ricevuto il suo giuramento. [nuovo]
+  - *(altrimenti)*
+    - **Il Giudice dell'Arena:** Una spada di legno. La davano a chi era libero. Ma di chi era? Senza un nome è un pezzo di legno. [nuovo]
+    - **Obiettivo:** La rudis non basta al Giudice: vuole sapere di chi era. [nuovo]
+  - **Il Giudice dell'Arena:** Ma il pollice, stanotte, chi lo alza? Le gradinate dormono. [nuovo]
+  - **Agnese:** Le gradinate dormono? Io no. [nuovo]
+  - *Agnese si alza e tende il braccio, col pollice in su. Il filo rosso le scende dalle dita fino alla sabbia. Un'ombra accanto a lei la guarda, e alza il pollice. Poi un'altra. Poi tutte.* [nuovo]
+  - *Il Giudice guarda le gradinate. Poi, lentamente, alza il pollice anche lui.* [nuovo]
+  - **Il Giudice dell'Arena:** Sciolto. Non rotto: sciolto. Ve ne potete andare, tutti. [nuovo]
+  - **Didascalia:** Il Giudice dell'Arena scende dal podio per l'ultima volta. Le gradinate tacciono. [nuovo]
+  - **Didascalia:** Dalla toga del Giudice escono anime di ogni epoca. Avevano giurato tutte alla stessa magia: quella di Donna Luciana non è nata a Caserta. Qualcuno gliel'ha tramandata, di mano in mano, da secoli. [nuovo]
+  - **Il Giudice dell'Arena:** Il vostro Velo è un giuramento, burattino. Vecchio più di me. Qualcuno lo fece, prima di lei, e non lo seppe sciogliere: e allora l'ha passato avanti, come si passa un debito. [nuovo]
+  - **Il Giudice dell'Arena:** Chi l'ha ricevuto, lo può sciogliere. Ricordatelo, quando sarai davanti a lei. [nuovo]
+  - **Didascalia:** Ferruccio scopre che la magia utilizzata da Donna Luciana non nasceva a Caserta, ma era stata tramandata da secoli. [bibbia]
+  - **Diario:** Sono passato per l'Arena dei Dimenticati. Elmi, scudi, lance: tutti fermi, tutti a guardare me. [nuovo]
+  - **Diario:** La magia di Donna Luciana non è nata a Caserta: è vecchia di secoli. Il Velo è un giuramento che nessuno ha saputo sciogliere. Chi lo riceve, lo può sciogliere. [nuovo]
+  - **Obiettivo:** Agnese è sulle gradinate. Poi, tornare al bivio per la via Appia. [nuovo]
+  - *(altrimenti)*
+    - **Obiettivo:** Tornare al bivio per la via Appia. Sulle gradinate, fra le ombre, qualcuno dorme ancora. [nuovo]
+  - **Il Giudice dell'Arena:** Ma il pollice, stanotte, chi lo alza? Le gradinate dormono. [nuovo]
+  - **Obiettivo:** Il pollice lo alza il popolo: le ombre delle gradinate devono riconoscere Felix. [nuovo]
+- *con La tessera del gladiatore*
+  - **Il Giudice dell'Arena:** Felix. Spectatus. E la rudis era sua. Non fuggì, non tradì: lo sciolse chi aveva ricevuto il suo giuramento. [nuovo]
+  - *(altrimenti)*
+    - **Il Giudice dell'Arena:** Un nome. Felix. E che ne fece, Felix, del suo giuramento? Portami quello che gli diedero. [nuovo]
+    - **Obiettivo:** Il Giudice ha il nome, Felix: vuole vedere che cosa gli diedero. [nuovo]
+  - **Il Giudice dell'Arena:** Ma il pollice, stanotte, chi lo alza? Le gradinate dormono. [nuovo]
+  - **Agnese:** Le gradinate dormono? Io no. [nuovo]
+  - *Agnese si alza e tende il braccio, col pollice in su. Il filo rosso le scende dalle dita fino alla sabbia. Un'ombra accanto a lei la guarda, e alza il pollice. Poi un'altra. Poi tutte.* [nuovo]
+  - *Il Giudice guarda le gradinate. Poi, lentamente, alza il pollice anche lui.* [nuovo]
+  - **Il Giudice dell'Arena:** Sciolto. Non rotto: sciolto. Ve ne potete andare, tutti. [nuovo]
+  - **Didascalia:** Il Giudice dell'Arena scende dal podio per l'ultima volta. Le gradinate tacciono. [nuovo]
+  - **Didascalia:** Dalla toga del Giudice escono anime di ogni epoca. Avevano giurato tutte alla stessa magia: quella di Donna Luciana non è nata a Caserta. Qualcuno gliel'ha tramandata, di mano in mano, da secoli. [nuovo]
+  - **Il Giudice dell'Arena:** Il vostro Velo è un giuramento, burattino. Vecchio più di me. Qualcuno lo fece, prima di lei, e non lo seppe sciogliere: e allora l'ha passato avanti, come si passa un debito. [nuovo]
+  - **Il Giudice dell'Arena:** Chi l'ha ricevuto, lo può sciogliere. Ricordatelo, quando sarai davanti a lei. [nuovo]
+  - **Didascalia:** Ferruccio scopre che la magia utilizzata da Donna Luciana non nasceva a Caserta, ma era stata tramandata da secoli. [bibbia]
+  - **Diario:** Sono passato per l'Arena dei Dimenticati. Elmi, scudi, lance: tutti fermi, tutti a guardare me. [nuovo]
+  - **Diario:** La magia di Donna Luciana non è nata a Caserta: è vecchia di secoli. Il Velo è un giuramento che nessuno ha saputo sciogliere. Chi lo riceve, lo può sciogliere. [nuovo]
+  - **Obiettivo:** Agnese è sulle gradinate. Poi, tornare al bivio per la via Appia. [nuovo]
+  - *(altrimenti)*
+    - **Obiettivo:** Tornare al bivio per la via Appia. Sulle gradinate, fra le ombre, qualcuno dorme ancora. [nuovo]
+  - **Il Giudice dell'Arena:** Ma il pollice, stanotte, chi lo alza? Le gradinate dormono. [nuovo]
+  - **Obiettivo:** Il pollice lo alza il popolo: le ombre delle gradinate devono riconoscere Felix. [nuovo]
+- *con Il ricordo delle campane*
+  - **Il Giudice dell'Arena:** Campane. Parole non dette. Qui si giudicano le parole date. [nuovo]
+- *con altro oggetto*
+  - **Il Giudice dell'Arena:** Questo non scioglie niente. [nuovo]
+
+**Agnese** (`agnese`)
+- *guarda*
+  - *Agnese, seduta fra le ombre, con la navetta in mano. Lo guarda come si guarda uno che è partito di casa senza salutare.* [nuovo]
+- *usa*
+  - *Ferruccio sale le gradinate, una per una, fino a lei. Si siede accanto. La pietra è ancora tiepida di folla.* [nuovo]
+  - **Agnese:** Ti sono venuta dietro da San Leucio. Non dire niente: tanto non puoi. [nuovo]
+  - **Agnese:** La porti ancora. Ti sta storta, come il nodo che facevi tu. [nuovo]
+  - *Lei gliela aggiusta sul collo, con due dita, come si sistema un filo sul telaio.* [nuovo]
+  - *(altrimenti)*
+    - **Agnese:** Me lo ricordo, sai, il rosso. Me lo ricordo addosso a te. [nuovo]
+  - **Agnese:** Hai sentito quello? Un giuramento si scioglie. Non si rompe. Pure il nostro, se un giorno vuoi: però me lo dici in faccia. [nuovo]
+  - *Ferruccio scuote la testa. Poi le prende la mano, e la tiene, e non la lascia finché lei non ride.* [nuovo]
+  - **Agnese:** Va bene. Vai alla Reggia. Io torno al telaio: qualcuno deve tessere, mentre voi altri fate gli eroi. [nuovo]
+  - **Diario:** All'Arena c'era Agnese. Mi è venuta dietro. Mi ha tenuto la mano, e poi è tornata a San Leucio. [nuovo]
+  - *(altrimenti)*
+    - **Agnese:** Vai, vai. Che la notte non passa da sola. [nuovo]
+  - *(altrimenti)*
+    - **Agnese:** Lo so, lo so, non puoi parlare. Fai tu: io sto qua. Se serve, ci sono. [nuovo]
+- *con Il ricordo dell'arena*
+  - **Agnese:** Tienilo tu. A me basta che te lo ricordi. [nuovo]
+- *con altro oggetto*
+  - **Agnese:** Bello. Ma non è questo che vuole quello là sopra. [nuovo]
+
+**Una ragazza che dorme** (`dormiente`)
+- *guarda*
+  - *Agnese. Dorme seduta, con la testa contro la pietra e le mani in grembo, aperte, come se ci fosse ancora la navetta. Non è venuta dietro di lui: il Velo l'ha portata qui da sola, fra i dimenticati.* [nuovo]
+- *usa*
+  - *Ferruccio sale fino a lei. Non la sveglia: non saprebbe come. Si toglie la giacca e gliela posa sulle spalle, e le chiude le mani una sull'altra, perché non prendano freddo.* [nuovo]
+  - *Lei, nel sonno, stringe la stoffa. Un sorriso piccolo, di quelli che si fanno a un telaio che batte giusto. Poi più niente.* [nuovo]
+  - **Diario:** All'Arena c'era Agnese, addormentata fra le ombre. Le ho lasciato la mia giacca. Non si è svegliata. [nuovo]
+  - *(altrimenti)*
+    - *Dorme. Tiene stretta la giacca.* [nuovo]
+- *con Il ricordo dell'arena*
+  - *Ferruccio le avvicina la luce. Lei si gira dall'altra parte, nel sonno. Non è questo il ricordo che le manca.* [nuovo]
+- *con altro oggetto*
+  - *Non è una cosa che le serve. Le serve dormire, e qualcuno che la guardi mentre dorme.* [nuovo]
+
+**Le ombre sulle gradinate** (`ombre`)
+- *guarda*
+  - *Elmi da legionario, cotte di maglia, cappucci da brigante, giubbe borboniche. Tutti seduti, tutti zitti, tutti col pollice girato giù.* [nuovo]
+- *usa*
+  - *Ferruccio alza il pollice, davanti alle ombre. Nessuno lo segue: un burattino non ha popolo. Ci vorrebbe il nome di uno di loro.* [nuovo]
+  - *(altrimenti)*
+    - *Le ombre non si girano. Guardano la sabbia, e aspettano un verdetto.* [nuovo]
+- *con La tessera del gladiatore*
+  - *Ferruccio sale tre gradini e alza la tessera d'osso sopra la testa, verso le ombre. FELIX. Un'ombra con l'elmo si volta. Si ricorda. Alza il pollice. Poi un'altra. Poi tutte.* [nuovo]
+  - *Il Giudice guarda le gradinate. Poi, lentamente, alza il pollice anche lui.* [nuovo]
+  - **Il Giudice dell'Arena:** Sciolto. Non rotto: sciolto. Ve ne potete andare, tutti. [nuovo]
+  - **Didascalia:** Il Giudice dell'Arena scende dal podio per l'ultima volta. Le gradinate tacciono. [nuovo]
+  - **Didascalia:** Dalla toga del Giudice escono anime di ogni epoca. Avevano giurato tutte alla stessa magia: quella di Donna Luciana non è nata a Caserta. Qualcuno gliel'ha tramandata, di mano in mano, da secoli. [nuovo]
+  - **Il Giudice dell'Arena:** Il vostro Velo è un giuramento, burattino. Vecchio più di me. Qualcuno lo fece, prima di lei, e non lo seppe sciogliere: e allora l'ha passato avanti, come si passa un debito. [nuovo]
+  - **Il Giudice dell'Arena:** Chi l'ha ricevuto, lo può sciogliere. Ricordatelo, quando sarai davanti a lei. [nuovo]
+  - **Didascalia:** Ferruccio scopre che la magia utilizzata da Donna Luciana non nasceva a Caserta, ma era stata tramandata da secoli. [bibbia]
+  - **Diario:** Sono passato per l'Arena dei Dimenticati. Elmi, scudi, lance: tutti fermi, tutti a guardare me. [nuovo]
+  - **Diario:** La magia di Donna Luciana non è nata a Caserta: è vecchia di secoli. Il Velo è un giuramento che nessuno ha saputo sciogliere. Chi lo riceve, lo può sciogliere. [nuovo]
+  - **Obiettivo:** Agnese è sulle gradinate. Poi, tornare al bivio per la via Appia. [nuovo]
+  - *(altrimenti)*
+    - **Obiettivo:** Tornare al bivio per la via Appia. Sulle gradinate, fra le ombre, qualcuno dorme ancora. [nuovo]
+  - *(altrimenti)*
+    - *Le ombre guardano la tessera e poi il Giudice. Prima il Giudice deve sapere di chi parla questo nome.* [nuovo]
+- *con altro oggetto*
+  - *Le ombre non guardano. Non è roba loro.* [nuovo]
+
+**Un ferro nella sabbia** (`manovella`)
+- *guarda*
+  - *Un manico di ferro piegato a gomito spunta dalla sabbia, dove i rastrelli non arrivano.* [nuovo]
+- *usa*
+  - *Ferruccio scava con le mani e lo tira fuori: una manovella d'argano, col foro quadro.* [nuovo]
+
+**La scala dei sotterranei** (`botola`)
+- *guarda*
+  - *Una fenditura nella sabbia, lungo l'asse dell'arena, con una scala di pietra. Di là venivano su le belve e i combattenti.* [nuovo]
+
+**La sabbia** (`sabbia`)
+- *guarda*
+  - *Sabbia chiara, fine, buttata sopra a tutto quello che è successo qui. Arena vuol dire questo: sabbia.* [nuovo]
+
+**Il fornice, verso le arcate** (`uscita`)
+- *guarda*
+  - *Il passaggio torna alle arcate e alla via Appia.* [nuovo]
+
+### I sotterranei dell'arena (`anfiteatro.sotterranei`)
+
+Entrando:
+- *Corridoi di mattone, gabbie aperte, e un odore di ferro vecchio. Sui muri, fra le gabbie, parole incise col coltello.* [nuovo]
+
+**La scala, su nell'arena** (`su`)
+- *guarda*
+  - *La scala torna su, nella luce della sabbia.* [nuovo]
+
+**Un'incisione latina** (`giuramento-uno`)
+- *guarda*
+  - *Lettere latine, profonde: «URI · VINCIRI · VERBERARI · FERROQUE NECARI». Il giuramento dei gladiatori al padrone: farsi bruciare, legare, battere, uccidere col ferro.* [nuovo]
+- *usa*
+  - *Sotto, più storto, a graffio: «CON SPARTACO». Uno che giurò al padrone e scappò con gli altri, una notte, dalla scuola di Capua. Rotto con la fuga.* [nuovo]
+  - **Diario:** Primo giuramento: un gladiatore giurò al padrone e scappò con Spartaco. Rotto con la fuga. [nuovo]
+
+**Un'incisione con la croce** (`giuramento-due`)
+- *guarda*
+  - *Una croce, un nome longobardo, e una scritta: «giurai al principe di tenere la porta». E più sotto una data, l'anno 841.* [nuovo]
+- *usa*
+  - *L'anno che i Saraceni bruciarono Capua antica. Qualcuno quella porta la aprì, di notte, per paura. Rotto col tradimento.* [nuovo]
+  - **Diario:** Secondo giuramento: un soldato giurò di tenere la porta di Capua e la aprì ai Saraceni. Rotto col tradimento. [nuovo]
+
+**Una gabbia** (`gabbia`)
+- *guarda*
+  - *Una gabbia di ferro, aperta. Dentro, l'ombra di una belva che gira in tondo e non c'è.* [nuovo]
+- *usa*
+  - *Ferruccio richiude lo sportello piano. L'ombra si accuccia.* [nuovo]
+
+**L'argano del montacarichi** (`argano`)
+- *guarda*
+  - *Un argano di legno e ferro: da qui si calavano le gabbie nell'ipogeo, più giù. Il perno è quadro, e la manovella non c'è.* [nuovo]
+- *usa*
+  - *Ferruccio prova a girare il perno con le mani. Niente: ci vuole una manovella.* [nuovo]
+- *con La manovella dell'argano*
+  - *La manovella entra nel perno quadro come se ci fosse stata sempre. Ferruccio gira: le corde cigolano, il pianale del montacarichi si stacca dal fondo.* [nuovo]
+
+**Il montacarichi** (`montacarichi`)
+- *guarda*
+  - *Il pianale di legno, appeso alle corde. Scende nell'ipogeo, dove stavano le gabbie più fonde.* [nuovo]
+- *usa*
+  - *Ferruccio sale sul pianale, e scende piano nel buio.* [nuovo]
+
+**Il pozzo del montacarichi** (`pozzo`)
+- *guarda*
+  - *Un pozzo quadro, e in fondo il pianale del montacarichi, fermo. Le corde salgono fino all'argano.* [nuovo]
+- *usa*
+  - *Troppo fondo per saltare. Il pianale va calato con l'argano.* [nuovo]
+
+### Le gabbie dell'ipogeo (`anfiteatro.gabbie`)
+
+Entrando:
+- *L'ipogeo. Gabbie in fila, piccole, una con lo sportello socchiuso. In fondo, su un muro più vecchio degli altri, una scritta che non è latino.* [nuovo]
+
+**Il montacarichi, su** (`su`)
+- *guarda*
+  - *Il pianale del montacarichi, che torna su ai sotterranei.* [nuovo]
+
+**Un'incisione con l'alloro** (`giuramento-tre`)
+- *guarda*
+  - *Sopra la prima gabbia, inciso con cura, un ramo d'alloro e una frase: «FELIX GIURÒ DI COMBATTERE FINO ALLA MORTE».* [nuovo]
+- *usa*
+  - *E sotto, con un'altra mano, più fresca: «IL POPOLO ALZÒ IL POLLICE. EBBE LA RUDIS». Non scappò, non aprì porte. Il suo giuramento non lo ruppe: glielo sciolsero.* [nuovo]
+  - **Diario:** Terzo giuramento: Felix giurò di combattere fino alla morte. Il popolo alzò il pollice e gli diede la rudis. Non l'ha rotto: gliel'hanno sciolto. [nuovo]
+  - **Obiettivo:** Portare al Giudice la prova di Felix: la rudis, e il suo nome. [nuovo]
+
+**Una spada di legno** (`rudis`)
+- *guarda*
+  - *Dentro la gabbia aperta, appesa a un chiodo, una spada di legno. La rudis.* [nuovo]
+- *usa*
+  - *Ferruccio la stacca dal chiodo. È leggera, e liscia come un manico d'attrezzo.* [nuovo]
+
+**Qualcosa di bianco** (`tessera`)
+- *guarda*
+  - *Nella gabbia socchiusa, nella polvere, una tessera d'osso.* [nuovo]
+- *usa*
+  - **Didascalia:** Una tessera d'osso, con un nome inciso. Nessuno se lo ricorda più. Ferruccio la mette in tasca. [nuovo]
+
+**La scritta antica** (`scritta-antica`)
+- *guarda*
+  - *Segni più vecchi del latino, a cerchi e a spirali, scavati nel tufo. In mezzo, ripetuto, un segno che Ferruccio conosce: un filo che si avvolge su se stesso, come il Velo sopra Caserta.* [nuovo]
+- *usa*
+  - *Sotto la mano il tufo vibra, come una corda tesa. Un giuramento più vecchio dell'arena, e nessuno l'ha mai sciolto. Non c'è niente, sotto, che dica «fu sciolto».* [nuovo]
+  - **Diario:** Nell'ipogeo c'è una scritta più vecchia dell'arena, col segno del Velo. Un giuramento che nessuno ha sciolto. [nuovo]
+
+**Le gabbie in fila** (`gabbie`)
+- *guarda*
+  - *Gabbie piccole, per uomini, non per belve. Sui ferri, segni di unghie e di anelli.* [nuovo]
+
+### Oggetti (60-vie-laterali.js)
+
+- **La chiave della sagrestia** (`chiave-sagrestia`): Una chiave lunga, di ferro nero, con l'anello consumato. Taddeo l'ha presa dalla sagrestia del duomo. [nuovo]
+  - *Ferro battuto male, a fretta. Mio padre l'avrebbe rifatta. Apre lo stesso.* [nuovo]
+- **La scala a pioli** (`scala-pioli`): Una scala corta di castagno, di quelle per cogliere le olive. Sta in spalla. [nuovo]
+  - *Sette pioli. Basta per arrivare a una finestra bassa.* [nuovo]
+- **Il ricordo delle campane** (`ricordo-campane`): Una luce grigia e tiepida, salita dal campanile del duomo. Dentro, un rintocco solo, che non fa male. [?]
+  - **Didascalia:** Il Campanaro era il sagrestano del duomo. Suonava a morto per chi se n'era andato senza chiedere perdono, e teneva per sé le parole che nessuno aveva detto. Il Velo gli ha preso il volto: gli ha lasciato solo le corde. [nuovo]
+  - *Resta, grazie, perdonami. E un nome. Quattro parole, e il borgo dorme.* [nuovo]
+- **La manovella dell'argano** (`manovella`): Un manico di ferro piegato a gomito, con il foro quadro. Era sepolto nella sabbia dell'arena. [nuovo]
+  - *Ferro romano? No: rifatto dopo, da qualche fabbro di Capua. Il foro quadro è per un perno d'argano.* [nuovo]
+- **La rudis** (`rudis`): Una spada di legno, liscia di mani. Ai gladiatori la davano quando erano liberi. [nuovo]
+  - *Una spada di legno. Io ne facevo da bambino, per giocare coi cavalieri con Taddeo. Questa invece voleva dire: hai finito, vai.* [nuovo]
+- **La tessera del gladiatore** (`tessera-gladiatore`): Una tessera d'osso, con un nome inciso: «FELIX · SPECTATVS». [nuovo]
+  - **Didascalia:** Una tessera d'osso, con un nome inciso. Nessuno se lo ricorda più. [nuovo]
+  - *«Spectatus»: visto, provato. Lo hanno guardato combattere, e hanno deciso che bastava.* [nuovo]
+- **Il ricordo dell'arena** (`ricordo-arena`): Una luce color sabbia, salita dalla toga del Giudice. Dentro, mille pollici alzati. [nuovo]
+  - **Didascalia:** Dalla toga del Giudice escono anime di ogni epoca. Avevano giurato tutte alla stessa magia: quella di Donna Luciana non è nata a Caserta. Qualcuno gliel'ha tramandata, di mano in mano, da secoli. [nuovo]
+  - *Il Velo è un giuramento. E un giuramento si può sciogliere senza tradirlo: lo deve sciogliere chi l'ha ricevuto.* [nuovo]
+
 ## 5. La Reggia di Caserta — Il Custode e la Signora
 
 ### Il viale della Reggia (`reggia.cancello`)
@@ -2251,6 +2904,7 @@ Entrando:
 - *(altrimenti)*
   - **Diario:** Qualcuno, qui dentro, deve pagare. Lo cerco. [nuovo]
 - **Obiettivo:** Entra nella Reggia. Il cancello è chiuso. [nuovo]
+- *Sul pilastro del cancello, un foglio fresco di colla: «Si cerca un burattino che cammina sveglio. Risponde al nome di Ferruccio.» Il nome venduto sul sagrato di Casertavecchia è arrivato prima di lui.* [nuovo]
 
 **Il cancello** (`cancello`)
 - *guarda*
@@ -2787,7 +3441,8 @@ Le volte dopo:
   - *(altrimenti)*
     - **Donna Luciana:** La tua tessitrice è sveglia. Ha scelto il dolore per stare con te. Vuoi sceglierlo per tutti? [nuovo]
   - **Donna Luciana:** E nessuno, nessuno, ti dirà grazie. [nuovo]
-- ▸ Tema: «Alza la spada» [bibbia]
+- ▸ Tema: «Alza la spada» [nuovo]
+  - *Il Giudice l'aveva detto: il Velo è un giuramento vecchio di secoli. Lei l'ha ricevuto. Chi l'ha ricevuto, lo può sciogliere.* [nuovo]
   - **Donna Luciana:** Guardati. Hai attraversato un'intera città per uccidere qualcuno. [bibbia]
   - **Didascalia:** Ferruccio tiene la spada alzata. [bibbia]
   - **Donna Luciana:** Io ho fatto tutto questo affinché nessuno dovesse farlo mai più. [bibbia]
@@ -2824,6 +3479,7 @@ Entrando:
 - **Didascalia:** Un uomo ride davvero, sorpreso dalla propria risata. [bibbia]
 - **Didascalia:** La luce della luna lascia spazio a un cielo azzurro e vivace. [bibbia]
 - *Ferruccio osserva la città finalmente libera.* [bibbia]
+- **Didascalia:** Sul colle, le campane di Casertavecchia suonano a festa. Nessuno le tira: suonano per un sagrestano che si chiamava Anselmo. [nuovo]
 - **Didascalia:** Poi una guardia entra nel cortile. [bibbia]
 - **Guardia della Reggia:** La Signora! L'ha ammazzata! [bibbia]
 - **Guardia della Reggia:** Ha ucciso anche il Custode! [bibbia]
@@ -3042,6 +3698,7 @@ Entrando:
 - **Didascalia:** La scena passa a Piazza Dante. [bibbia]
 - **Didascalia:** I commercianti sono tornati ai loro banchetti. I bambini giocano senza litigare. Nessuno sembra preoccupato. [bibbia]
 - *Lo stesso emiciclo della prima notte. Ordinato, pulito, sicuro. Nessuno desidera niente di diverso.* [nuovo]
+- *Sul colle, le campane di Casertavecchia tacciono. È l'unico silenzio vero rimasto in città.* [nuovo]
 - **Diario:** Ho abbassato la spada. Caserta sorride di nuovo. Sono l'unico a ricordare perché. [nuovo]
 - **Obiettivo:** Attraversare la piazza. Qualcuno, sotto il portico, sembra cercare qualcosa. [nuovo]
 
@@ -3763,6 +4420,16 @@ Entrando:
 | La Cappella Palatina (`reggia.cappella`) | `avventura/reggia-cappella` | La Reggia di Caserta |
 | Il Cortile d'Onore (`reggia.cortile`) | `avventura/reggia-cortile` | La Reggia di Caserta |
 | Il Cortile d'Onore, dopo (`reggia.ultima`) | `avventura/reggia-ultima` | La Reggia di Caserta |
+| La strada di notte, al bivio (`strada.bivio`) | `avventura/strada-bivio` | Le strade di fuori |
+| La mulattiera di Casertavecchia (`casertavecchia.salita`) | `avventura/casertavecchia-salita` | Le strade di fuori |
+| I vicoli del borgo vecchio (`casertavecchia.borgo`) | `avventura/casertavecchia-borgo` | Le strade di fuori |
+| Il sagrato del duomo (`casertavecchia.sagrato`) | `avventura/casertavecchia-sagrato` | Le strade di fuori |
+| La sagrestia del duomo (`casertavecchia.sagrestia`) | `avventura/casertavecchia-sagrestia` | Le strade di fuori |
+| La cella delle campane (`casertavecchia.campanile`) | `avventura/casertavecchia-campanile` | Le strade di fuori |
+| L'Anfiteatro Campano, le arcate (`anfiteatro.arcate`) | `avventura/anfiteatro-arcate` | Le strade di fuori |
+| L'Arena dei Dimenticati (`anfiteatro.arena`) | `avventura/anfiteatro-arena` | Le strade di fuori |
+| I sotterranei dell'arena (`anfiteatro.sotterranei`) | `avventura/anfiteatro-sotterranei` | Le strade di fuori |
+| Le gabbie dell'ipogeo (`anfiteatro.gabbie`) | `avventura/anfiteatro-gabbie` | Le strade di fuori |
 | Il Cortile della Reggia, dopo (`epilogo.libera`) | `avventura/epilogo-cortile-libero` | Epilogo |
 | Corso Trieste, nella luce (`epilogo.libera-corso`) | `avventura/epilogo-corso-libero` | Epilogo |
 | Piazza Dante, sotto il cielo azzurro (`epilogo.libera-piazza`) | `avventura/epilogo-piazza-libera` | Epilogo |

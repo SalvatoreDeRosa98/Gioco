@@ -357,7 +357,17 @@
     ctx.fillStyle = 'rgba(217,164,86,0.55)'; ctx.fillRect(0, FASCIA, W, 1);
     const esplora = inScena();
     const inv = G.stato ? G.stato.inventario : [];
-    inv.slice(0, 11).forEach((id, i) => {
+    // la tasca a pagine: 11 riquadri; se gli oggetti sono di più, 10 per pagina e l'ultimo riquadro gira pagina
+    const tanti = inv.length > 11, perPagina = tanti ? 10 : 11, pagine = Math.max(1, Math.ceil(inv.length / perPagina));
+    if (inv.length > (G.invQuanti || 0)) G.invPagina = pagine - 1; // un oggetto nuovo: si mostra la pagina dove sta
+    G.invQuanti = inv.length; G.invPagina = Math.max(0, Math.min(pagine - 1, G.invPagina || 0));
+    if (tanti) {
+      const x = 8 + 10 * 46, y = 306, sopra = (G.sotto && G.sotto.chiave === 'inv:altri') || G.fuoco === 'inv:altri';
+      D.rr(ctx, x, y, 42, 44, 4); ctx.fillStyle = sopra ? 'rgba(217,164,86,0.3)' : 'rgba(40,26,16,0.9)'; ctx.fill(); ctx.strokeStyle = 'rgba(217,164,86,0.6)'; ctx.stroke();
+      scritta(ctx, 'altri', x + 21, y + 19, 11, '#efe2bd', 'center'); scritta(ctx, `${G.invPagina + 1} di ${pagine} ▸`, x + 21, y + 34, 9, '#d9c8a8', 'center');
+      if (esplora) zona({ chiave: 'inv:altri', x, y, w: 42, h: 44, nome: 'Altri oggetti', usa: () => { G.invPagina = (G.invPagina + 1) % pagine; suono('tic'); } });
+    }
+    inv.slice(G.invPagina * perPagina, G.invPagina * perPagina + perPagina).forEach((id, i) => {
       const O = AV.dati.oggetto.get(id) || { nome: id, icona: { sagoma: 'cassa' } };
       const x = 8 + i * 46, y = 306;
       const scelto = G.inMano === id, sopra = (G.sotto && G.sotto.chiave === 'ogg:' + id) || G.fuoco === 'ogg:' + id;

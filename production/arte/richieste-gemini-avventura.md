@@ -125,6 +125,7 @@ che scendono dall'alto dove la scena è sotto il Velo. Prompt di contesto e fras
 | `avv_guardia.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Guardia della Reggia: oggi è la sagoma «guardia». |
 | `avv_cittadino.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Cittadino di Caserta: oggi è la sagoma «uomo». |
 | `avv_gatto-canti.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Il Gatto dei Quattro Canti: oggi è la sagoma «gatto». |
+| `avv_madre-marmo.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | La Madre di Marmo: oggi è la sagoma «statua». |
 | `avv_peppe.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Peppe, il giardiniere: oggi è la sagoma «uomo». |
 | `avv_nunzia.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Nunzia, tessitrice: oggi è la sagoma «donna». |
 

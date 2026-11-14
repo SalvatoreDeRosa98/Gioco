@@ -26,7 +26,12 @@
  *   --max N     tetto agli stati (predefinito 400000): se lo raggiunge lo dice, e il risultato è parziale
  *   --completo  niente tappe: confronta gli stati per intero (molto più grande)
  *   --combinazioni  elenca ogni combinazione col suo finale
- *   --cammini   stampa anche il cammino più corto verso ogni finale
+ *   --cammini   stampa anche il cammino più corto verso ogni finale (e li mette nel JSON)
+ *   --chiudi a,b   quadri in cui l'esploratore non entra (per lasciare fuori le zone facoltative: vedi sotto)
+ *   ZONA DA SOLA (le due «strade di fuori» insieme moltiplicano gli stati oltre ogni tetto: si provano una per volta):
+ *   --da q --meta k1,k2 [--flag a=b,c=d] [--chiudi …]   parte dal quadro q coi flag dati e cerca i vicoli ciechi
+ *               rispetto alla META: tutte le chiavi `visti` k1,k2 segnate e di nuovo nel quadro q.
+ *   tools/qa-avventura-percorsi.sh lancia la storia principale e le zone, una dopo l'altra.
  *   --json f    scrive il riassunto in JSON
  */
 'use strict';
@@ -42,6 +47,10 @@ const PRESENTAZIONE = new Set(['dice', 'pensa', 'diario', 'obiettivo', 'effetto'
 
 const arg = (nome, def) => { const i = process.argv.indexOf(nome); return i >= 0 ? process.argv[i + 1] : def; };
 const MAX = Number(arg('--max', 120000)); // stati al più per ogni tappa
+const lista = (v) => String(v || '').split(',').map((x) => x.trim()).filter(Boolean);
+const CHIUSI = new Set(lista(arg('--chiudi', '')));
+/** La prova di una zona da sola (o null): { da, meta: [chiavi], flag: {…} }. */
+const ZONA = arg('--da') ? { da: arg('--da'), meta: lista(arg('--meta', '')), flag: Object.fromEntries(lista(arg('--flag', '')).map((x) => x.split('='))) } : null;
 
 // ---------------------------------------------------------------- caricamento (motore vero + dati)
 function carica() {
@@ -197,7 +206,8 @@ function esplora(AV, R, T) {
     if ((perTappa.get(oT) || 0) >= MAX) { tetto = true; return; }
     perTappa.set(oT, (perTappa.get(oT) || 0) + 1);
     i = nodi.length;
-    nodi.push({ padre, mossa, quadro: stato.quadro, dlg, figli: [], fine: false });
+    const meta = Boolean(ZONA) && !dlg && stato.quadro === ZONA.da && ZONA.meta.length > 0 && ZONA.meta.every((k) => stato.visti[k]);
+    nodi.push({ padre, mossa, quadro: stato.quadro, dlg, figli: [], fine: meta });
     profondita.push(padre >= 0 ? profondita[padre] + 1 : 0);
     indice.set(k, i);
     if (padre >= 0) nodi[padre].figli.push(i);
@@ -211,6 +221,7 @@ function esplora(AV, R, T) {
   }
 
   function arrivo(esito, padre, mossa) {
+    if (esito.finale === undefined && CHIUSI.has(esito.stato.quadro)) return; // zona lasciata fuori da questa prova
     if (esito.finale !== undefined) {
       const id = esito.finale;
       const combo = DECISIONI.map((d) => esito.stato.flag[d] || '-').join(',');
@@ -218,7 +229,8 @@ function esplora(AV, R, T) {
       if (!combinazioni.has(combo)) combinazioni.set(combo, new Set());
       combinazioni.get(combo).add(id);
       nodi[padre].fine = true;
-      if (!finaliPresi.has(id)) finaliPresi.set(id, { padre, mossa, passi: profondita[padre] + 1 });
+      const mossaIntera = mossa + (esito.scelte && esito.scelte.length ? ' → «' + esito.scelte.join('» → «') + '»' : '');
+      if (!finaliPresi.has(id)) finaliPresi.set(id, { padre, mossa: mossaIntera, passi: profondita[padre] + 1 });
       return;
     }
     let dlg = esito.dialogo;
@@ -227,10 +239,12 @@ function esplora(AV, R, T) {
       // l'interfaccia apre il dialogo: apertura (inizio la prima volta, poi saluto), poi i temi
       visto.temi.add(dlg + '/');
       const aperture = tuttiIRami(AV, null, s, (c) => AV.aperturaDialogo(dlg, c));
+      // le scelte fatte PRIMA che il dialogo si apra restano scritte nella mossa (servono a chi rifà il cammino)
+      const prima = esito.scelte.length ? ' → «' + esito.scelte.join('» → «') + '»' : '';
       for (const a of aperture) {
-        if (a.finale !== undefined || a.stato.quadro !== s.quadro) { arrivo({ ...a, dialogo: a.dialogo }, padre, mossa); continue; }
+        if (a.finale !== undefined || a.stato.quadro !== s.quadro) { arrivo({ ...a, dialogo: a.dialogo }, padre, mossa + prima); continue; }
         const aperto = AV.temiDelDialogo(dlg, a.stato).length ? dlg : null;
-        aggiungi(a.stato, aperto, padre, mossa + (a.scelte.length ? ' → ' + a.scelte.join(' → ') : ''));
+        aggiungi(a.stato, aperto, padre, mossa + prima + (a.scelte.length ? ' → «' + a.scelte.join('» → «') + '»' : ''));
       }
       return;
     }
@@ -238,7 +252,8 @@ function esplora(AV, R, T) {
   }
 
   const s0 = AV.nuovoStato();
-  for (const e of tuttiIRami(AV, [['vai', AV.quadroIniziale()]], s0)) arrivo(e, -1, 'inizio');
+  if (ZONA) Object.assign(s0.flag, ZONA.flag);
+  for (const e of tuttiIRami(AV, [['vai', ZONA ? ZONA.da : AV.quadroIniziale()]], s0)) arrivo(e, -1, 'inizio');
   // il nodo -1 non esiste: i primi stati hanno padre -1
   for (let x = prossimoInCoda(); x; x = prossimoInCoda()) {
     const { i, stato, dlg } = x;
@@ -294,7 +309,7 @@ function main() {
   const R = analizza(AV);
   const t0 = Date.now();
   const completo = process.argv.includes('--completo');
-  const E = esplora(AV, R, completo ? null : tappe(AV, R));
+  const E = esplora(AV, R, completo || ZONA ? null : tappe(AV, R));
   const { nodi, finaliPresi, finaliNulli, combinazioni, visto } = E;
   const out = []; let problemi = 0;
   const p = (s) => out.push(s);
@@ -323,6 +338,16 @@ function main() {
       for (const [q, i] of [...perQuadro].slice(-6)) { p(`  · in ${q}${nodi[i].dlg ? ' (dialogo ' + nodi[i].dlg + ')' : ''}, ${E.profondita[i]} mosse:`); for (const m of cammino(nodi, i)) p('      ' + m); }
     } else p('\nVicoli ciechi: nessuno.');
   } else p(`\nVicoli ciechi: non giudicabili con il tetto raggiunto (${morti.length} stati senza finale fra quelli visti).`);
+
+  if (ZONA) {
+    // prova di una zona: contano solo il tetto e i vicoli ciechi rispetto alla meta
+    const arrivi = nodi.filter((n) => n.fine).length;
+    p(`\nZona da «${ZONA.da}» ${JSON.stringify(ZONA.flag)} · meta ${ZONA.meta.join(' + ')}: ${arrivi ? `raggiunta (${arrivi} stati d'arrivo)` : 'MAI RAGGIUNTA'}`);
+    if (!arrivi) problemi++;
+    p(problemi ? `\n${problemi} gruppi di problemi` : '\nnessun problema');
+    console.log(out.join('\n'));
+    process.exit(problemi ? 1 : 0);
+  }
 
   // i finali
   const tutti = [...AV.dati.finale.keys()];
@@ -366,7 +391,8 @@ function main() {
   if (maiP.length) p('  punti: ' + maiP.join(', '));
   if (maiT.length) p('  temi: ' + maiT.join(', '));
   if (maiO.length) p('  oggetti: ' + maiO.join(', '));
-  if (maiQ.length || maiT.length || maiO.length) problemi++;
+  if (CHIUSI.size) p(`  (con --chiudi ${[...CHIUSI].join(',')}: ciò che sta solo oltre quei quadri non conta come problema)`);
+  else if (maiQ.length || maiT.length || maiO.length) problemi++;
 
   // cammino più corto
   let corto = null; for (const [f, x] of finaliPresi) if (!corto || x.passi < corto.passi) corto = { f, ...x };
@@ -386,7 +412,8 @@ function main() {
   p(problemi ? `\n${problemi} gruppi di problemi` : '\nnessun problema');
   console.log(out.join('\n'));
   const j = arg('--json');
-  if (j) fs.writeFileSync(j, JSON.stringify({ stati: nodi.length, tetto: E.tetto, vicoli: morti.length, finali: [...finaliPresi.keys()], mancanti, combinazioni: con, senza, impossibili, maiQ, maiP, maiT, maiO, corto: corto && corto.passi }, null, 1));
+  if (j) fs.writeFileSync(j, JSON.stringify({ stati: nodi.length, tetto: E.tetto, vicoli: morti.length, finali: [...finaliPresi.keys()], mancanti, combinazioni: con, senza, impossibili, maiQ, maiP, maiT, maiO, corto: corto && corto.passi,
+    cammini: process.argv.includes('--cammini') ? Object.fromEntries([...finaliPresi].map(([f, x]) => [f, cammino(nodi, x.padre).concat(x.mossa)])) : undefined }, null, 1));
   process.exit(problemi ? 1 : 0);
 }
 

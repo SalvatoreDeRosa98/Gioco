@@ -144,3 +144,22 @@ Chiavi nello stato: `pose` e `nascosti` per `'<quadro>/<punto>'`; `visti` per le
 Regole del punto: chiuso (`se` falso, con `chiuso`) → `guarda` fa il suo `guarda` se c'è, il resto fa `chiuso`; attivo → con un
 oggetto `con[oggetto]` | `con['*']` | riga neutra; `guarda` | riga neutra; `usa` (+ `['vai', uscita]`) | `guarda` | riga neutra.
 Nuova partita: `AV.corsa([['vai', AV.quadroIniziale()]], AV.nuovoStato())`. La pagina accetta `?quadro=<id>` per partire da un quadro.
+
+## Strumenti e prove (tutti in `tools/`)
+
+| Comando | Che cosa fa |
+|---|---|
+| `node tools/avventura-valida.js [--elenco]` | controlla il contratto dei dati: deve dire «nessun errore» prima di ogni commit |
+| `node tools/avventura-immagini.js` | riscrive `05-immagini.js` (le immagini che esistono, con misure e griglie dei fogli): dopo ogni PNG nuovo |
+| `node tools/avventura-release.js` | il gioco in un solo file: `production/release/avventura.html` (la copia alla radice è `avventura.html`) |
+| `node tools/avventura-testi.js` | tutti i testi, quadro per quadro, in `production/avventura-testi.md` ([bibbia] / [nuovo]) |
+| `node tools/avventura-richieste-immagini.js` | l'elenco dei fondali da far disegnare: `production/arte/richieste-gemini-avventura.md` |
+| `bash tools/qa-avventura-percorsi.sh` | **i percorsi**, sul motore: nessun vicolo cieco, i 17 finali, le combinazioni delle sei decisioni, le strade di fuori da sole e insieme; scrive i cammini in `production/qa/avventura-cammini.json` |
+| `node tools/qa-avventura-cammino.js [html]` | rifà coi clic, nell'interfaccia vera, tre cammini interi fino al finale (`--finali a,b` per sceglierli) |
+| `node tools/qa-avventura-storia.js [html]` | l'interfaccia con la storia vera: ingressi dei capitoli, clic a caso con seme fisso, salvataggio |
+| `node tools/qa-avventura-motore.js` | il motore e l'interfaccia sulla storia-campione di `tools/avventura-campione/` |
+
+Ordine dei capitoli: prologo → Piazza Dante → Corso Trieste → Fucina del Ricordo (dalla porta della bottega, dopo il Corso) →
+Villa Comunale (con l'Acquedotto) → San Leucio → `strada.bivio` (Le strade di fuori, facoltative: Casertavecchia e
+l'Anfiteatro) → Reggia → epilogo giocabile nei due mondi → 16 finali (8 cammini × Donna Luciana uccisa o risparmiata) più
+il finale segreto (i tre ferri di Gaetano).
