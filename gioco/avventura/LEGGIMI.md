@@ -97,7 +97,8 @@ AV.finale({ id: 'verita-condivisa.uccisa', titolo: 'La verità condivisa', perco
 `albero {x, y, h, tipo: pino|leccio|palma|spoglio}` · `siepe {x, y, w, h}` · `fontana {x, y, w}` · `statua {x, y, h}` ·
 `banco {x, y, w}` · `telaio {x, y, w, h}` · `scala {x, y, w, h}` · `tenda {x, y, w, h, colore}` · `muro {x, y, w, h, tono}` ·
 `luce {x, y, r, colore}` · `nebbia {alfa}` · `fili {n}` (fili d'oro dall'alto) · `immagine {nome, x, y, w, h}` (un PNG di `assets/`) ·
-`forma {punti: [[x,y],…], colore, bordo}` (una sagoma libera, per tutto ciò che manca).
+`forma {punti: [[x,y],…], colore, bordo}` (una sagoma libera, per tutto ciò che manca) ·
+`sciame {x, y, w, h, n}` (vespe ferme a mezz'aria).
 
 Sagome dei punti e delle figure senza foglio: `uomo`, `donna`, `bambina`, `vecchio`, `guardia`, `gatto`, `ombra`, `anima`,
 `lampione`, `porta`, `finestra`, `foglio`, `libro`, `chiave`, `ferro`, `cassa`, `telaio`, `statua`, `campana`, `fontana`.

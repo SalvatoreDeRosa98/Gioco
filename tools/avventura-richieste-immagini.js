@@ -143,8 +143,9 @@ accanto a loro senza che si noti la differenza.
 
 - **La guida.** Per ogni fondale c'è uno schema in \`production/arte/guide-avventura/<stesso nome>.jpg\`: è il luogo
   com'è abbozzato oggi dal gioco. **Serve solo a dire DOVE stanno le cose e quanto sono grandi: ridisegna la stessa
-  composizione**, con le cose nelle stesse posizioni, ma nello stile della sezione 1 (la guida è scura e a sagome: il
-  tuo disegno no).
+  composizione**, con le cose nelle stesse posizioni. La guida è un abbozzo geometrico fatto col codice: il tuo deve
+  essere un'illustrazione vera, più ricca e più viva (muri con la loro materia, tetti, insegne, panni stesi, crepe,
+  ombre portate), nello stile della sezione 1.
 - **Le posizioni contano.** Il giocatore clicca sulle cose: ogni cosa elencata sotto «Da dipingere» deve stare nel
   rettangolo indicato (percentuali della larghezza e dell'altezza, dall'angolo in alto a sinistra).
 - **La fascia in basso** (l'ultimo sesto dell'altezza, sotto l'83%) resta **scura e vuota**: il gioco ci mette gli
@@ -246,7 +247,11 @@ async function guide() {
   fs.mkdirSync(GUIDE, { recursive: true });
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1280, height: 720 } });
-  await p.goto('file://' + path.join(GIOCO, 'avventura.html'));
+  // dal file unico: lì le immagini sono dentro la pagina e la tela si può esportare (da file:// il browser lo vieta)
+  const unico = path.join(require('os').tmpdir(), `avventura-guide-${process.pid}.html`);
+  const r = require('child_process').spawnSync('node', [path.join(__dirname, 'avventura-release.js'), '--uscita', unico], { stdio: 'ignore' });
+  if (r.status !== 0 || !fs.existsSync(unico)) throw new Error('il file unico non si costruisce: tools/avventura-release.js');
+  await p.goto('file://' + unico);
   await p.waitForFunction(() => window.__avventura && window.AV && AV.D, null, { timeout: 20000 });
   const resa = (id) => p.evaluate((qid) => {
     const Q = AV.dati.quadro.get(qid); const f = AV.D.fondale(Q, 2);
@@ -263,6 +268,7 @@ async function guide() {
     fs.writeFileSync(path.join(GUIDE, Q.fondale.immagine.replace(/^avventura\//, '') + '.jpg'), Buffer.from(dati, 'base64')); n++;
   }
   await b.close();
+  fs.unlinkSync(unico);
   console.log(`scritte ${n} guide in ${path.relative(RADICE, GUIDE)}/`);
 }
 if (process.argv.includes('--guide')) guide().catch((e) => { console.error(e); process.exit(1); });

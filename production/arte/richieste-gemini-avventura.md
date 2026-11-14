@@ -58,8 +58,9 @@ accanto a loro senza che si noti la differenza.
 
 - **La guida.** Per ogni fondale c'è uno schema in `production/arte/guide-avventura/<stesso nome>.jpg`: è il luogo
   com'è abbozzato oggi dal gioco. **Serve solo a dire DOVE stanno le cose e quanto sono grandi: ridisegna la stessa
-  composizione**, con le cose nelle stesse posizioni, ma nello stile della sezione 1 (la guida è scura e a sagome: il
-  tuo disegno no).
+  composizione**, con le cose nelle stesse posizioni. La guida è un abbozzo geometrico fatto col codice: il tuo deve
+  essere un'illustrazione vera, più ricca e più viva (muri con la loro materia, tetti, insegne, panni stesi, crepe,
+  ombre portate), nello stile della sezione 1.
 - **Le posizioni contano.** Il giocatore clicca sulle cose: ogni cosa elencata sotto «Da dipingere» deve stare nel
   rettangolo indicato (percentuali della larghezza e dell'altezza, dall'angolo in alto a sinistra).
 - **La fascia in basso** (l'ultimo sesto dell'altezza, sotto l'83%) resta **scura e vuota**: il gioco ci mette gli

@@ -480,9 +480,22 @@
     ctx.beginPath(); ctx.arc(x, y - 58 * s, 4.5 * s, 0, Math.PI * 2); riempi(ctx, M);
   }
   E.statua = (ctx, o, X) => statua(ctx, num(o.x, 300), num(o.y, X.suoloY), num(o.h, 70));
+  /** Uno sciame di vespe ferme a mezz'aria: `n` vespe sparse nel riquadro (x, y, w, h), più fitte al centro. */
+  E.sciame = (ctx, o, X) => {
+    const x = num(o.x, 300), y = num(o.y, 60), w = num(o.w, 100), h = num(o.h, 40), n = Math.min(120, num(o.n, 24));
+    for (let i = 0; i < n; i++) {
+      const a = X.caso() * Math.PI * 2, r = Math.pow(X.caso(), 0.7);
+      const cx = x + w / 2 + Math.cos(a) * r * w / 2, cy = y + h / 2 + Math.sin(a) * r * h / 2, s = 0.8 + X.caso() * 0.7, dir = X.caso() < 0.5 ? -1 : 1;
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(s * dir, s);
+      ctx.beginPath(); ctx.ellipse(-0.6, -2, 2.2, 1.1, -0.5, 0, Math.PI * 2); ctx.fillStyle = 'rgba(230,235,245,0.55)'; ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0, 0, 2.6, 1.5, 0, 0, Math.PI * 2); ctx.fillStyle = '#f0b33b'; ctx.fill(); ctx.strokeStyle = '#1c120e'; ctx.lineWidth = 0.5; ctx.stroke();
+      ctx.fillStyle = '#1c120e'; ctx.fillRect(-0.9, -1.4, 0.7, 2.8); ctx.fillRect(0.6, -1.4, 0.7, 2.8); ctx.beginPath(); ctx.arc(2.6, 0, 1, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  };
   E.banco = (ctx, o, X) => {
     const x = num(o.x, 200), y = num(o.y, X.suoloY), w = num(o.w, 70);
-    { const hb = Math.min(w / aspetto('banco', 1.18), 68); if (arredo(ctx, 'banco', x + w / 2, y, hb, hb * aspetto('banco', 1.18))) return; }
+    if (X.tonino) { const hb = Math.min(w / aspetto('banco', 1.18), 68); if (arredo(ctx, 'banco', x + w / 2, y, hb, hb * aspetto('banco', 1.18))) return; }
     const L = '#8a5a32';
     rett(ctx, x, y - 26, w, 4); riempi(ctx, L); rett(ctx, x + 3, y - 22, 3, 22); riempi(ctx, L); rett(ctx, x + w - 6, y - 22, 3, 22); riempi(ctx, L);
     rett(ctx, x + 6, y - 22, w - 12, 12); riempi(ctx, scuro(L, 0.2));
@@ -573,7 +586,8 @@
     const fd = Q.fondale || {};
     const disegno = Array.isArray(fd.disegno) ? fd.disegno : [];
     const suolo = disegno.find((e) => Array.isArray(e) && e[0] === 'suolo');
-    const X = { suoloY: num(suolo && suolo[1] && suolo[1].y, C.suoloY), luci: [], fili: 0, nebbia: 0, caso: caso(hash(Q.id)) };
+    const X = { suoloY: num(suolo && suolo[1] && suolo[1].y, C.suoloY), luci: [], fili: 0, nebbia: 0, caso: caso(hash(Q.id)),
+      tonino: (Q.punti || []).some((p) => p && p.personaggio === 'tonino') }; // il banco dell'autore è quello di Tonino: sta solo dove c'è lui
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
     const pittura = fd.immagine ? D.img('fondi', fd.immagine) : null;
     if (pittura) ctx.drawImage(pittura.img, 0, 0, W, H);

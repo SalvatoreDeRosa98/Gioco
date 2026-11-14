@@ -24,7 +24,7 @@ const AZIONI = {
 const EFFETTI = ['buio', 'luce', 'lampo', 'scossa', 'velo', 'anime', 'sipario'];
 const CHI_SPECIALI = ['didascalia', 'voce'];
 const ELEMENTI = ['cielo', 'quinte', 'suolo', 'case', 'palazzo', 'arco', 'colonna', 'porta', 'finestra', 'lampione', 'albero',
-  'siepe', 'fontana', 'statua', 'banco', 'telaio', 'scala', 'tenda', 'muro', 'luce', 'nebbia', 'fili', 'immagine', 'forma'];
+  'siepe', 'fontana', 'statua', 'banco', 'telaio', 'scala', 'tenda', 'muro', 'luce', 'nebbia', 'fili', 'immagine', 'forma', 'sciame'];
 const SAGOME = ['uomo', 'donna', 'bambina', 'vecchio', 'guardia', 'gatto', 'ombra', 'anima', 'lampione', 'porta', 'finestra',
   'foglio', 'libro', 'chiave', 'ferro', 'cassa', 'telaio', 'statua', 'campana', 'fontana',
   // icone degli oggetti
