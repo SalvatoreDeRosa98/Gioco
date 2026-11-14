@@ -80,9 +80,6 @@ AV.oggetto({ id: 'lettera-agnese', nome: 'La lettera di Agnese', icona: { sagoma
     ['pensa', "Non la apri: non ancora. Sopra, una mano di donna ha scritto soltanto: «Per te.»"], // [nuovo]
     ['pensa', "Il filo rosso che la chiude ti stringe qualcosa nel petto. Non sai cosa. Lo saprai."], // [nuovo]
   ] });
-AV.oggetto({ id: 'tenaglie-di-gaetano', nome: 'Le tenaglie di Gaetano', icona: { sagoma: 'ferro' },
-  descrizione: "Tenaglie da forgia, il manico consumato dove la mano stringeva. Lungo il ferro, segni di mille prese.",
-  guarda: [['pensa', "Il manico ha preso la forma di una mano. La tua ci entra quasi tutta."]] }); // [nuovo]
 
 // --- Personaggio del capitolo (non è nei comuni) ---
 AV.personaggio({ id: 'gatto-canti', nome: 'Il Gatto dei Quattro Canti', colore: '#6b7280', figura: { sagoma: 'gatto', alt: 70 } });
@@ -424,7 +421,7 @@ AV.quadro({
   punti: [
     { id: 'mariella', nome: 'Mariella', x: 296, y: 92, w: 48, h: 66, personaggio: 'mariella', posa: 0,
       guarda: [['pensa', "Una ragazza alla finestra, il mento sulle mani. Ha un sorriso quieto, da cartolina. Gli occhi guardano lontano, ma non cercano niente."]], // [nuovo]
-      usa: [['dialogo', 'mariella.finestra']],
+      usa: [['dialogo', 'mariella.piazza']],
       con: { '*': [['dice', 'mariella', "Che bello. Non mi serve niente, però. Non mi serve più niente."]] } }, // [nuovo]
     { id: 'filastrocca', nome: 'Una filastrocca', x: 290, y: 166, w: 60, h: 24, sagoma: 'foglio',
       guarda: [
@@ -445,7 +442,7 @@ AV.quadro({
   ],
 });
 
-AV.dialogo({ id: 'mariella.finestra', con: 'mariella',
+AV.dialogo({ id: 'mariella.piazza', con: 'mariella',
   inizio: [
     ['dice', 'mariella', "Bella sera, eh? La luna sta ferma. Anch'io sto ferma. Si sta così bene."], // [nuovo]
     ['dice', 'mariella', "Prima avevo paura dei rumori. Adesso non ho più paura di niente. Non ho più voglia di niente, a dire il vero. È uguale."], // [nuovo]
@@ -459,7 +456,7 @@ AV.dialogo({ id: 'mariella.finestra', con: 'mariella',
       ['dice', 'mariella', "Giù per il Corso Trieste, dietro una porta. Un ferro che batte da solo. Tin. Tin. Come un cuore che non vuole addormentarsi."], // [nuovo]
       ['dice', 'mariella', "Mi faceva paura, una volta, un rumore così. Adesso no. Adesso è solo un suono."], // [nuovo]
       ['pensa', "Ti porti la mano alla maschera. Poi indichi la direzione del Corso."], // [nuovo, da storia.json]
-      ['segna', 'mariella-indizio'],
+      ['segna', 'mariella-indizio'], ['segna', 'indizio-ferro'], // le due chiavi valgono come una (anche al Corso)
       ['diario', "Mariella ha sentito un ferro battere da solo dietro una porta, su Corso Trieste. Lo stesso suono della bottega di Gaetano?"], // [nuovo]
       ['obiettivo', "Prima di lasciare la piazza: la lapide, e il buio dei Quattro Canti."], // [nuovo]
     ] },
@@ -594,12 +591,12 @@ AV.quadro({
       guarda: [['pensa', "Una Madonnina in una nicchia, col lumino spento. Davanti, qualcuno ha lasciato un fiocco di nastro rosso, di quelli di Assunta."]] }, // [nuovo]
     { id: 'verso-corso', nome: 'Verso Corso Trieste', x: 520, y: 120, w: 76, h: 136,
       guarda: [['pensa', "Sotto l'altro arco comincia il Corso Trieste. Laggiù, lontano, un suono di ferro."]], // [nuovo]
-      // USCITA → corso.inizio (all'unione: diventa `uscita: 'corso.inizio', se: PIAZZA_PRONTA` col ramo «altrimenti» come `chiuso`)
       usa: [['se', PIAZZA_PRONTA, [
         ['pensa', "Ti volti un'ultima volta verso la piazza ferma. Poi passi sotto l'arco."], // [nuovo]
         ['segna', 'piazza-finita'],
         ['diario', "Lascio Piazza Dante. Cerco il ferro che risuona dietro una porta, su Corso Trieste."], // [nuovo]
         ['obiettivo', "Percorrere Corso Trieste e trovare il ferro che risuona."], // [nuovo]
+        ['vai', 'corso.inizio'],
       ], [
         ['pensa', "Fai un passo sotto l'arco, poi ti fermi. La piazza non ha ancora finito con te."], // [nuovo]
         ['se', { flag: { tonino_ricordo: '' } }, [['pensa', "Tonino. C'è qualcosa che gli devi, o che gli devi negare."]]], // [nuovo]
@@ -627,9 +624,15 @@ AV.quadro({
     ['obiettivo', "Raggiungere il suono del ferro, oltre la porta in fondo."], // [nuovo]
   ]]],
   punti: [
-    { id: 'tenaglie', nome: 'Le tenaglie', x: 90, y: 70, w: 50, h: 40, sagoma: 'ferro', se: { nonHa: 'tenaglie-di-gaetano' },
-      guarda: [['pensa', "Sul muro, al loro chiodo, le tenaglie. Il manico consumato a forma di mano."]], // [nuovo]
-      usa: [['prendi', 'tenaglie-di-gaetano'], ['pensa', "Le stacchi dal chiodo. La mano sa già come tenerle."]] }, // [nuovo]
+    { id: 'tenaglie', nome: 'Il chiodo delle tenaglie', x: 90, y: 70, w: 50, h: 40, sagoma: 'ferro',
+      guarda: [['se', { ha: 'ferro-tenaglie' },
+        [['pensa', "Il chiodo delle tenaglie è vuoto: nella polvere resta la loro sagoma. Le tenaglie di tuo padre le porti tu."]], // [nuovo]
+        [['pensa', "Sul muro, al loro chiodo, le tenaglie. Il manico consumato a forma di mano."]]]], // [nuovo]
+      usa: [['se', { ha: 'ferro-tenaglie' },
+        [['se', { visto: 'tenaglie-prese' },
+          [['pensa', "Il chiodo è vuoto. Le tenaglie che erano murate nel vicolo del Corso ci entrerebbero giuste."]], // [nuovo]
+          [['pensa', "Il chiodo è vuoto. Le tenaglie le hai in mano."]]]], // [nuovo]
+        [['prendi', 'ferro-tenaglie'], ['segna', 'tenaglie-fucina'], ['pensa', "Le stacchi dal chiodo. La mano sa già come tenerle."]]]] }, // [nuovo]
     { id: 'punzone', nome: "L'impronta del punzone", x: 150, y: 70, w: 40, h: 40,
       guarda: [['pensa', "Fra le tenaglie e l'ago, nella polvere del muro, la sagoma pulita di un ferro che non c'è più: un punzone. Qualcuno l'ha portato via."]], // [nuovo]
       usa: [['pensa', "Passi il dito sull'impronta. La mano chiude il pugno su un manico che non c'è."]] }, // [nuovo]
@@ -656,7 +659,7 @@ AV.quadro({
         [['pensa', "Avvicini la mano al chiavistello e la ritrai. Scotta come la forgia."]], // [nuovo]
         [['pensa', "Il chiavistello non si muove: è grippato dalla ruggine, saldato dal freddo."]]]], // [nuovo]
       con: {
-        'tenaglie-di-gaetano': [['se', { visto: 'mantice-soffiato' }, [
+        'ferro-tenaglie': [['se', { visto: 'mantice-soffiato' }, [
           ['pensa', "Stringi il chiavistello rovente con le tenaglie e lo sollevi. La porta si apre su una luce d'oro."], // [nuovo]
           ['segna', 'fucina-aperta'],
           ['vai', 'fucina.cuore'],
@@ -685,7 +688,7 @@ AV.quadro({
     { id: 'gaetano', nome: "L'uomo all'incudine", x: 250, y: 160, w: 50, h: 96, personaggio: 'gaetano', posa: 0, se: { nonVisto: 'volto-ritrovato' },
       guarda: [['pensa', "Spalle larghe, le maniche arrotolate, un grembiule di cuoio bruciacchiato. Ha le tue mani. Non lo sai ancora, ma le guardi come si guarda uno specchio."]], // [nuovo]
       usa: [['dialogo', 'gaetano.fucina']],
-      con: { 'tenaglie-di-gaetano': [['dialogo', 'gaetano.fucina']], '*': [['dice', 'gaetano', "Dopo, guagliò. Mo' batto."]] } }, // [nuovo]
+      con: { 'ferro-tenaglie': [['dialogo', 'gaetano.fucina']], '*': [['dice', 'gaetano', "Dopo, guagliò. Mo' batto."]] } }, // [nuovo]
     { id: 'incudine', nome: "L'incudine", x: 286, y: 222, w: 70, h: 34,
       guarda: [['se', { visto: 'volto-ritrovato' },
         [['pensa', "L'incudine è rimasta calda. Il martello batte ancora, da solo, piano: tin, tin. Come un cuore che non vuole addormentarsi."]], // [nuovo]
@@ -713,7 +716,7 @@ AV.dialogo({ id: 'gaetano.fucina', con: 'gaetano',
       ['pensa', "L'uomo alza gli occhi. Guarda la tua maschera a lungo, come si guarda un lavoro venuto storto."], // [nuovo]
       ['dice', 'gaetano', "Chesta nun è 'na faccia. È 'nu lavoro fatto a metà."], // [nuovo]
       ['dice', 'gaetano', "Miettete ccà. E tienemi fermo 'o ferro, ca io sulo nun ce 'a faccio cchiù."], // [nuovo]
-      ['se', { ha: 'tenaglie-di-gaetano' }, [
+      ['se', { ha: 'ferro-tenaglie' }, [
         ['pensa', "Stringi le tenaglie sul ferro rovente. L'uomo alza il martello."], // [nuovo]
         ['effetto', 'lampo'], ['suono', 'incudine'],
         ['pensa', "Un colpo. Il nero ti si incrina sulla fronte."], // [nuovo]
@@ -727,7 +730,7 @@ AV.dialogo({ id: 'gaetano.fucina', con: 'gaetano',
         ['pensa', "Il tuo nome. Lo senti e lo riconosci, come si riconosce una porta di casa al buio."], // [nuovo]
         ['dice', 'gaetano', "Tieni 'a faccia mia quann'avevo vint'anne. Povero a te."], // [nuovo]
         ['dice', 'gaetano', "'E tenaglie tienatelle. Erano 'e mie; mo' so' 'e toje."], // [nuovo]
-        ['segna', 'volto-ritrovato'],
+        ['segna', 'volto-ritrovato'], ['segna', 'fucina-visitata'],
         ['diario', "Mi chiamo Ferruccio. Nella Fucina del Ricordo un fabbro mi ha reso il volto e il nome. Aveva le mie mani."], // [nuovo]
         ['obiettivo', "Riprendere la strada oltre Corso Trieste."], // [nuovo]
         ['effetto', 'luce'],

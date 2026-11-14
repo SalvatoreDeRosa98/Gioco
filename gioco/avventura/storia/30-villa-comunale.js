@@ -71,12 +71,6 @@ AV.oggetto({ id: 'registro-gaetano', nome: 'Il registro di Gaetano', descrizione
     ['pensa', 'Sotto ogni riga corretta si legge ancora quella vera. Il nome di suo padre c\'è due volte: una scritta, una raschiata.'], // [nuovo]
     ['pensa', 'Ci vorranno anni perché qualcuno lo legga. Ferruccio lo tiene lo stesso.'], // [nuovo]
   ] });
-AV.oggetto({ id: 'testimonianza-taddeo', nome: 'La testimonianza di Taddeo', descrizione: 'Un foglio piegato in quattro, firmato da Taddeo: il patto con Donna Luciana.',
-  icona: { sagoma: 'foglio' },
-  guarda: [
-    ['dice', 'didascalia', '«Io, Taddeo, guardia della Reggia, ho consegnato Ferruccio alle guardie. Donna Luciana mi aveva promesso di liberare mia sorella Mariella dal dolore. Lo scrivo perché resti scritto da qualche parte.»'], // [nuovo]
-    ['pensa', 'La firma è storta, come quella di chi scrive col coltello alla gola. O con la coscienza.'], // [nuovo]
-  ] });
 
 
 // =====================================================================================================
@@ -112,28 +106,27 @@ AV.quadro({
     { id: 'garitta', nome: 'La garitta del custode', x: 130, y: 150, w: 70, h: 90, sagoma: 'cassa',
       guarda: [['pensa', 'Vuota. Sul banchetto, un pane morso a metà e un orario delle chiusure: «Si chiude al tramonto». Il tramonto non viene più.']] }, // [nuovo]
     { id: 'foglio-taddeo', nome: 'Un foglio fra le sbarre', x: 404, y: 170, w: 24, h: 30, sagoma: 'foglio',
-      se: { flag: { taddeo: 'perdonato' }, nonVisto: 'testimonianza-presa' },
+      se: { flag: { taddeo: 'perdonato' } },
       guarda: [['pensa', 'Un foglio piegato in quattro, infilato fra le sbarre all\'altezza degli occhi. Qualcuno voleva che lo trovasse lui.']], // [nuovo]
       usa: [
-        ['prendi', 'testimonianza-taddeo'], ['segna', 'testimonianza-presa'], ['nascondi', 'foglio-taddeo'],
-        ['pensa', 'Ferruccio lo apre, lo legge due volte, e lo ripone accanto alla sciarpa.'], // [nuovo]
-        ['diario', 'Taddeo mi ha lasciato una testimonianza scritta del suo patto con Donna Luciana. Firmata.'], // [nuovo]
+        ['pensa', 'Ferruccio lo apre. Due righe, la mano di Taddeo: «Sono passato prima di te. Le carte del crollo stanno nella casina.»'], // [nuovo]
+        ['unaVolta', 'biglietto-taddeo-villa', [['diario', 'Al cancello della Villa, un biglietto di Taddeo: le carte del crollo sono nella casina. La sua testimonianza firmata ce l\'ho già.']]], // [nuovo]
       ] },
     { id: 'verso-corso', nome: 'Verso Corso Trieste', x: 0, y: 150, w: 40, h: 100,
       guarda: [['pensa', 'Il Corso, con le sue vetrine accese e nessuno che compra.']], // [nuovo]
       usa: [
         ['pensa', 'Ferruccio torna sui suoi passi, verso il Corso.'], // [nuovo]
-        // USCITA → corso.inizio
+        ['vai', 'corso.fondo'],
       ] },
     { id: 'verso-leucio', nome: 'La strada di San Leucio', x: 600, y: 150, w: 40, h: 100,
       guarda: [['pensa', 'La strada sale verso la collina di San Leucio, dove battono i telai. Dove c\'è Agnese.']], // [nuovo]
       usa: [
         ['se', { visto: 'registro-deciso' }, [
           ['se', { visto: 'messaggio-padre' }, [['pensa', 'Prima di andare, Ferruccio guarda indietro, verso gli archi. «Chi vuole la verità cerca che cosa è successo.»']]], // [nuovo]
-          ['pensa', 'Ferruccio si stringe la sciarpa e prende la salita. Dietro di lui la fontana continua a parlare da sola.'], // [nuovo]
+          ['pensa', 'Ferruccio si stringe la giubba e prende la salita. Dietro di lui la fontana continua a parlare da sola.'], // [nuovo]
           ['diario', 'Ho lasciato la Villa. Adesso so come è morto mio padre. Non so ancora che cosa farne.'], // [nuovo]
           ['segna', 'villa-finita'],
-          // USCITA → leucio.arrivo
+          ['vai', 'leucio.arrivo'],
         ], [
           ['pensa', 'Non ancora. Ferruccio è venuto per i registri, e i registri sono ancora qui.'], // [nuovo]
         ]],

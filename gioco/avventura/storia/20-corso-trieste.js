@@ -45,7 +45,7 @@ AV.capitolo({ id: 'corso-trieste', titolo: 'Corso Trieste', ordine: 2, sottotito
 AV.personaggio({ id: 'regina-debiti', nome: 'La Regina dei Debiti', colore: '#facc15', figura: { foglio: 'regina-vespa', alt: 96 } });
 
 // --- Oggetti del capitolo ---
-AV.oggetto({ id: 'lanterna-spenta', nome: 'Una lanterna spenta', descrizione: "La lanterna della ronda. Il vetro è pulito, lo stoppino nuovo: nessuno l'ha mai accesa, da quando la notte si è fermata.", // [nuovo]
+AV.oggetto({ id: 'lanterna-spenta', nome: 'La lanterna spenta', descrizione: "La lanterna di Assunta. Il vento del Corso l'ha spenta; il mozzicone di candela è ancora buono.", // [nuovo]
   icona: { sagoma: 'lampione' },
   guarda: [['pensa', "Tutti i lampioni del Corso sono spenti. C'è una sola luce accesa, in tutta la strada: una finestra."]] }); // [nuovo]
 AV.oggetto({ id: 'lanterna-accesa', nome: 'La lanterna accesa', descrizione: "Accesa alla lampada di Mariella. La fiamma è piccola e non trema: neanche il fuoco, qui, ha più fretta.", // [nuovo]
@@ -105,6 +105,10 @@ AV.quadro({
   entrata: [
     ['unaVolta', 'cap-corso-trieste', [['capitolo', 'corso-trieste']]],
     ['unaVolta', 'corso-arrivo', [
+      ['se', { ha: 'lanterna-di-assunta' }, [
+        ['dice', 'didascalia', 'Sotto l\'arco del Corso passa un colpo di vento, l\'unico della notte. La candela della lanterna di Assunta si spegne.'], // [nuovo]
+        ['togli', 'lanterna-di-assunta'], ['prendi', 'lanterna-spenta'], ['segna', 'lanterna-presa'],
+      ]],
       ['pensa', 'Il Corso è la strada dei negozi. Le vetrine sono accese di niente; i portoni chiusi come bocche.'], // [nuovo]
       ['pensa', 'In alto passano vespe, a file, tutte nella stessa direzione: verso la Reggia.'], // [nuovo]
       ['diario', 'Corso Trieste: le vetrine ferme, i lampioni spenti. Le vespe volano tutte verso la Reggia.'], // [nuovo]
@@ -179,7 +183,7 @@ AV.quadro({
         [['pensa', 'Ogni vespa porta un filo di luce tra le zampe, sottile come un capello. Escono dal banco dei pegni e vanno alla Reggia.']]]] }, // [nuovo]
     { id: 'verso-piazza', nome: 'Verso Piazza Dante', x: 0, y: 120, w: 30, h: 150,
       guarda: [['pensa', 'Di là c\'è la piazza, e la bottega di mio padre.']], // [nuovo]
-      usa: [['segna', 'corso-verso-piazza']] }, // USCITA → piazza.centro
+      uscita: 'piazza.centro', usa: [['segna', 'corso-verso-piazza']] },
     { id: 'verso-guardia', nome: 'Il posto di guardia', x: 420, y: 150, w: 50, h: 100, uscita: 'corso.guardia',
       guarda: [['pensa', 'Sotto il portico, una garitta di legno e una lanterna appesa al chiodo.']] }, // [nuovo]
     { id: 'verso-bottega', nome: 'Il banco dei pegni', x: 480, y: 130, w: 30, h: 120, uscita: 'corso.bottega',
@@ -290,9 +294,11 @@ AV.dialogo({ id: 'mariella.finestra', con: 'mariella',
       ['diario', 'La ragazza si chiama Mariella. Suo fratello è Taddeo, guardia degli edifici reali. Taddeo.'], // [nuovo]
     ] },
     { id: 'ferro', testo: "Porta la mano all'orecchio", unaVolta: true, fai: [
-      ['dice', 'mariella', "Sentite? No, adesso no. Ma certe notti, nel vicolo dietro casa, il ferro risuona dietro una porta murata. Tin. Tin."], // [nuovo]
-      ['dice', 'mariella', "Prima mi svegliava e mi metteva paura. Adesso lo conto, come le pecore."], // [nuovo]
-      ['segna', 'indizio-ferro'],
+      ['se', { visto: 'mariella-indizio' },
+        [['dice', 'mariella', "Il ferro? Ve l'ho detto, dall'altra finestra, sulla piazza. Batte qua dietro: nel vicolo, dietro una porta murata. Tin. Tin."]], // [nuovo]
+        [['dice', 'mariella', "Sentite? No, adesso no. Ma certe notti, nel vicolo dietro casa, il ferro risuona dietro una porta murata. Tin. Tin."], // [nuovo]
+          ['dice', 'mariella', "Prima mi svegliava e mi metteva paura. Adesso lo conto, come le pecore."]]], // [nuovo]
+      ['segna', 'indizio-ferro'], ['segna', 'mariella-indizio'],
       ['diario', 'Mariella: nel vicolo dietro casa sua il ferro risuona dietro una porta murata.'], // [nuovo]
     ] },
     { id: 'velo', testo: 'Indica la Reggia, poi le vespe', unaVolta: true, fai: [
@@ -380,10 +386,15 @@ AV.quadro({
       guarda: [['pensa', 'Un grembiule di cuoio da fabbro, bruciato in tre punti. Lo conosco.']], // [nuovo]
       usa: [
         ['pensa', 'Svolgo il grembiule. Dentro, un paio di tenaglie lunghe, col manico consumato a forma di due mani.'], // [nuovo]
-        ['prendi', 'ferro-tenaglie'], ['segna', 'tenaglie-prese'],
-        ['pensa', 'Le tenaglie di mio padre. Con queste io e Taddeo tenemmo il ferro della spada: lui da un lato, io dall\'altro, e mio padre che batteva.'], // [nuovo]
-        ['pensa', 'Qualcuno le ha murate qui, perché non si trovassero. O perché si trovassero un giorno.'], // [nuovo]
-        ['diario', 'Le tenaglie di mio padre erano murate nel vicolo dietro casa di Taddeo. È il primo dei suoi ferri.'], // [nuovo]
+        ['se', { ha: 'ferro-tenaglie' }, [
+          ['pensa', 'Il grembiule è vuoto: dentro resta solo la forma di due manici. Le tenaglie le ho già, prese al chiodo della bottega di mio padre.'], // [nuovo]
+          ['segna', 'tenaglie-prese'],
+        ], [
+          ['prendi', 'ferro-tenaglie'], ['segna', 'tenaglie-prese'],
+          ['pensa', 'Le tenaglie di mio padre. Con queste io e Taddeo tenemmo il ferro della spada: lui da un lato, io dall\'altro, e mio padre che batteva.'], // [nuovo]
+          ['pensa', 'Qualcuno le ha murate qui, perché non si trovassero. O perché si trovassero un giorno.'], // [nuovo]
+          ['diario', 'Le tenaglie di mio padre erano murate nel vicolo dietro casa di Taddeo. È il primo dei suoi ferri.'], // [nuovo]
+        ]],
       ] },
     { id: 'muro-vuoto-aperto', nome: 'La nicchia vuota', x: 300, y: 120, w: 80, h: 130,
       se: { visto: 'tenaglie-prese' },
@@ -420,13 +431,8 @@ AV.quadro({
       guarda: [['pensa', 'Una garitta di legno a strisce, coi colori del re. Dentro ci sta una persona sola, in piedi.']], // [nuovo]
       usa: [['pensa', 'Dentro, sul ripiano: un tozzo di pane duro, un rosario, un fischietto. Niente che serva a me.']] }, // [nuovo]
     { id: 'lanterna', nome: 'La lanterna', x: 200, y: 90, w: 24, h: 40, sagoma: 'lampione',
-      se: { nonVisto: 'lanterna-presa' },
-      guarda: [['pensa', 'Appesa al chiodo, la lanterna della ronda. Spenta.']], // [nuovo]
-      usa: [
-        ['prendi', 'lanterna-spenta'], ['segna', 'lanterna-presa'],
-        ['pensa', 'La stacco dal chiodo. Non ho niente per accenderla.'], // [nuovo]
-        ['obiettivo', 'Accendi la lanterna. Sul Corso c\'è una sola luce.'], // [nuovo]
-      ] },
+      guarda: [['pensa', 'Appesa al chiodo, la lanterna della ronda. Spenta, col vetro pulito: nessuno l\'ha mai accesa, da quando la notte si è fermata.']], // [nuovo]
+      usa: [['pensa', 'La lascio al suo chiodo: è della ronda. Quella di Assunta va solo riaccesa, e sul Corso c\'è una sola luce.']] }, // [nuovo]
     { id: 'guardia', nome: 'La guardia di turno', x: 250, y: 160, w: 44, h: 90, personaggio: 'guardia', posa: 0,
       guarda: [['pensa', 'Una guardia anziana, sull\'attenti da sei anni. Le hanno attaccato una mosca al naso e non se n\'è accorta.']], // [nuovo]
       usa: [['dice', 'guardia', 'Tutto in ordine. Tutto fermo. Così vuole Donna Luciana. Circolate, circolate.']], // [nuovo]
@@ -650,11 +656,14 @@ AV.quadro({
     ]],
   ],
   punti: [
-    { id: 'cancello-villa', nome: 'Il cancello della Villa', x: 440, y: 150, w: 160, h: 100,
+    { id: 'cancello-villa', nome: 'Il cancello della Villa', x: 440, y: 150, w: 160, h: 100, uscita: 'villa.cancello',
+      se: { visto: 'volto-ritrovato' },
+      chiuso: [['pensa', 'Spingo il cancello. Non cede: le lance a giglio non riconoscono la mia faccia nera.'], // [nuovo]
+        ['pensa', 'Qualcosa batte ancora, in piazza.']], // [nuovo]
       guarda: [['pensa', 'Il cancello della Villa Comunale. Lance di ferro con la punta a giglio: le ha battute mio padre, una per una.']], // [nuovo]
       usa: [
         ['pensa', 'Spingo il cancello. Cede.'], // [nuovo]
-        ['segna', 'corso-finito'], // USCITA → villa.cancello
+        ['segna', 'corso-finito'],
       ] },
     { id: 'messaggio-taddeo', nome: 'Un foglio nella grata', x: 300, y: 190, w: 40, h: 30, sagoma: 'foglio',
       se: { flag: { taddeo: 'perdonato' } },
@@ -670,7 +679,7 @@ AV.quadro({
       usa: [['pensa', 'Passo il dito sulle spade incise. Una è più grande dell\'altra: quella del comandante.']] }, // [nuovo]
     { id: 'verso-piazza', nome: 'Torna verso Piazza Dante', x: 0, y: 140, w: 40, h: 120,
       guarda: [['pensa', 'La strada del ritorno: il Corso, poi la piazza e la bottega.']], // [nuovo]
-      usa: [['segna', 'corso-verso-piazza']] }, // USCITA → piazza.centro
+      uscita: 'piazza.centro', usa: [['segna', 'corso-verso-piazza']] },
     { id: 'verso-finestra', nome: 'Indietro, alla finestra di Mariella', x: 50, y: 200, w: 60, h: 60, uscita: 'corso.finestra',
       guarda: [['pensa', 'La luce di Mariella, laggiù.']] }, // [nuovo]
   ],
