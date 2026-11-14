@@ -3,7 +3,8 @@
  * tools/avventura-immagini.js — scrive gioco/avventura/05-immagini.js, l'elenco delle immagini che ESISTONO:
  *   fondi: tutti i PNG di gioco/assets/avventura/ (nome «avventura/<percorso>») e quelli nominati dagli elementi
  *          `immagine` e da `fondale.immagine` se il file c'è (nome = percorso sotto gioco/assets/, senza .png);
- *   fogli: i fogli di gioco/assets/sprite_teatro/ nominati dai personaggi (`figura.foglio`) e dalle icone (`icona.foglio`).
+ *   fogli: i fogli di gioco/assets/sprite_teatro/ nominati dai personaggi (`figura.foglio`) e dalle icone (`icona.foglio`),
+ *          nella versione che usa anche il Teatro (tabella SPRITE_V2 di gioco/teatro/10-sprite.js).
  * Con misure (letta l'intestazione del PNG). Il motore usa SOLO queste: un PNG che manca non fa una richiesta a vuoto
  * e si disegna a codice. Rilanciare dopo aver aggiunto immagini o personaggi.
  * Uso: node tools/avventura-immagini.js [--controlla]   (--controlla: esce con 1 se il file scritto sarebbe diverso)
@@ -53,7 +54,32 @@ for (const T of [S, campione]) {
   for (const O of T.oggetto.values()) if (O.icona && O.icona.foglio) nomiFogli.add(O.icona.foglio);
 }
 for (const n of nomiFondi) { const v = voce(n); if (v) fondi[n] = v; }
-for (const n of [...nomiFogli].sort()) { const v = voce('sprite_teatro/' + n); if (v) fogli[n] = v; }
+// stessa versione dei fogli che usa il Teatro: tabella SPRITE_V2 di teatro/10-sprite.js (false = l'originale dell'autore)
+function tabellaSpriteV2() {
+  const f = path.join(GIOCO, 'teatro', '10-sprite.js');
+  const m = fs.existsSync(f) ? /\/\/ <sprite-v2>([\s\S]*?)\/\/ <\/sprite-v2>/.exec(fs.readFileSync(f, 'utf8')) : null;
+  if (!m) return {};
+  const ambiente = { Object };
+  require('vm').runInNewContext(m[1].replace('const SPRITE_V2 =', 'SPRITE_V2 ='), ambiente);
+  return ambiente.SPRITE_V2 || {};
+}
+const V2 = tabellaSpriteV2();
+const CARTELLE_V2 = { leggera: 'sprite_teatro_v2/', ombre: 'sprite_teatro_v2_ombre/' };
+// i fogli a griglia del Teatro (più righe di pose): misure e righe da assets/sprite_teatro/layout.json
+const fileLayout = path.join(ASSETS, 'sprite_teatro', 'layout.json');
+const LAYOUT = fs.existsSync(fileLayout) ? JSON.parse(fs.readFileSync(fileLayout, 'utf8')) : {};
+function griglia(n) {
+  const L = LAYOUT[n]; if (!L || !L.cella_l || !Array.isArray(L.righe)) return null;
+  const righe = L.righe.map((r) => (Array.isArray(r) ? [r[0], r[1]] : [r.posa, r.fotogrammi]));
+  const m = L.margine || 0; const a = L.altezza_rif || (L.cella_a - 2 * m);
+  return { cl: L.cella_l, ca: L.cella_a, righe, top: +(m / L.cella_a).toFixed(3), bot: +((m + a) / L.cella_a).toFixed(3) };
+}
+for (const n of [...nomiFogli].sort()) {
+  const v = (CARTELLE_V2[V2[n]] && voce(CARTELLE_V2[V2[n]] + n)) || voce('sprite_teatro/' + n);
+  if (!v) continue;
+  const g = griglia(n); if (g) v.griglia = g;
+  fogli[n] = v;
+}
 
 const testo = `/*
  * avventura/05-immagini.js — GENERATO da tools/avventura-immagini.js: non modificare a mano.

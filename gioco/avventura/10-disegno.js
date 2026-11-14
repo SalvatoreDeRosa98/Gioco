@@ -38,14 +38,23 @@
     return r.pronta ? r : null;
   };
 
-  /** Fogli a griglia del Teatro (misure da assets/sprite_teatro/layout.json): righe [riga, fotogrammi]. */
+  /**
+   * Fogli a griglia del Teatro (più righe di pose). Misure e righe arrivano dall'elenco delle immagini
+   * (`griglia` in 05-immagini.js, letta da assets/sprite_teatro/layout.json); qui solo i ritocchi a mano:
+   * cx = dove sta l'asse della figura nella cella, guardaDestra = da che parte guarda il disegno.
+   */
   D.GRIGLIE = {
-    ferruccio: { cl: 305, ca: 136, righe: { fermo: [0, 2], cammina: [1, 4] }, cx: 0.46, top: 0.03, bot: 0.97, guardaDestra: true },
-    taddeo: { cl: 188, ca: 132, righe: { fermo: [0, 2], cammina: [1, 4] }, cx: 0.60, top: 0.04, bot: 0.97, guardaDestra: true },
-    'donna-luciana': { cl: 418, ca: 258, righe: { fermo: [0, 4], cammina: [0, 4] }, cx: 0.50, top: 0.02, bot: 0.99, guardaDestra: false },
+    ferruccio: { cx: 0.46, guardaDestra: true },
+    taddeo: { cx: 0.60, guardaDestra: true },
+    'donna-luciana': { cx: 0.50, guardaDestra: false },
   };
-  /** Fogli a una riga: dove sta la figura nella cella (frazioni); se manca, 0.04 / 0.98. */
-  D.RIGHE = { agnese_telaio: { top: 0.30, bot: 0.98 } };
+  /** La griglia di un foglio (o null se è a una riga sola): righe = [[nome, fotogrammi], …]. */
+  D.griglia = function (nome, foglio) {
+    const g = foglio && foglio.info && foglio.info.griglia; if (!g) return null;
+    return Object.assign({ cx: 0.5, guardaDestra: true }, g, D.GRIGLIE[nome]);
+  };
+  /** Fogli a una riga: dove sta la figura nella cella (frazioni; se manca, 0.04 / 0.98) e quante celle ha. */
+  D.RIGHE = { agnese_telaio: { top: 0.30, bot: 0.98 }, gb_guanto: { top: 0.02, bot: 0.98, celle: 5 } };
 
   // ------------------------------------------------------------------ utilità
   function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -466,19 +475,32 @@
     const o = opz || {}; const fig = (P && P.figura) || { sagoma: 'uomo' };
     const alt = o.alt || fig.alt || 60;
     D.ombraTerra(ctx, cx, piedi, alt * 0.22);
+    // controluce: un alone tenue del colore del personaggio, perché le figure scure si stacchino dal fondale buio
+    if (P && /^#[0-9a-f]{6}$/i.test(P.colore || '') && o.controluce !== false) {
+      const n = parseInt(P.colore.slice(1), 16); const rgb = `${n >> 16},${(n >> 8) & 255},${n & 255}`;
+      const my = piedi - alt * 0.55; const g = ctx.createRadialGradient(cx, my, 2, cx, my, alt * 0.85);
+      g.addColorStop(0, `rgba(${rgb},${0.22 * (o.alfa === undefined ? 1 : o.alfa)})`); g.addColorStop(1, `rgba(${rgb},0)`);
+      ctx.fillStyle = g; ctx.fillRect(cx - alt, my - alt, alt * 2, alt * 2);
+    }
     const foglio = fig.foglio ? D.img('fogli', fig.foglio) : null;
-    const G = fig.foglio && D.GRIGLIE[fig.foglio];
+    const G = foglio && D.griglia(fig.foglio, foglio);
+    const unaRiga = fig.foglio && D.RIGHE[fig.foglio];
+    const celle = fig.celle || (unaRiga && unaRiga.celle) || 0;
     ctx.save(); if (o.alfa !== undefined) ctx.globalAlpha = o.alfa;
     if (foglio && G) {
-      const [riga, n] = (o.cammina ? G.righe.cammina : G.righe.fermo) || [0, 1];
-      const fot = Math.floor((o.t || 0) * (o.cammina ? 8 : 2)) % n;
+      // riga: chi cammina usa «cammina» (o «muove»); altrimenti la posa è il numero di riga (0 = la prima, a riposo)
+      let riga = Math.abs(Math.floor(o.posa || 0)) % G.righe.length;
+      if (o.cammina) { const c = G.righe.findIndex((r) => r[0] === 'cammina' || r[0] === 'muove'); if (c >= 0) riga = c; }
+      const [nomeRiga, n] = G.righe[riga];
+      // una caduta non ricomincia: resta sull'ultimo fotogramma
+      const fot = /^mort/.test(nomeRiga) ? n - 1 : Math.floor((o.t || 0) * (o.cammina ? 8 : 2)) % n;
       const s = alt / (G.ca * (G.bot - G.top));
       const dw = G.cl * s, dh = G.ca * s;
       ctx.translate(cx, piedi); const versoGiusto = (o.dir || 1) === 1 ? G.guardaDestra : !G.guardaDestra; if (!versoGiusto) ctx.scale(-1, 1);
       ctx.drawImage(foglio.img, fot * G.cl, riga * G.ca, G.cl, G.ca, -dw * G.cx, -dh * G.bot, dw, dh);
-    } else if (foglio && fig.celle) {
-      const cw = foglio.info.w / fig.celle, ch = foglio.info.h, R = D.RIGHE[fig.foglio] || { top: 0.04, bot: 0.98 };
-      const cella = Math.abs(Math.floor(o.posa || 0)) % fig.celle;
+    } else if (foglio && celle) {
+      const cw = foglio.info.w / celle, ch = foglio.info.h, R = unaRiga || { top: 0.04, bot: 0.98 };
+      const cella = Math.abs(Math.floor(o.posa || 0)) % celle;
       const s = alt / (ch * (R.bot - R.top)); const dw = cw * s, dh = ch * s;
       const respiro = 1 + 0.012 * Math.sin((o.t || 0) * 2.2 + cx);
       ctx.translate(cx, piedi); if (o.dir === -1) ctx.scale(-1, 1); ctx.scale(1, respiro);
