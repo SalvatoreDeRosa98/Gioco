@@ -727,6 +727,7 @@ AV.dialogo({
         ['dice', 'violante', 'Non ne ha avuto il tempo.'], // [bibbia]
         ['pensa', 'Ferruccio comprende finalmente che il Velo non è stato creato per riportare Bianca in vita.'], // [bibbia]
         ['pensa', 'È stato creato perché sua madre non potesse più provare il dolore di averla perduta.'], // [bibbia]
+        ['togli', 'scatola-musicale'], // resta a lei: nel finale velato suona da sola (bibbia §XI)
         ['segna', 'scatola-aperta'],
         ['diario', 'Il Velo non doveva riportare indietro Bianca. Doveva impedire a sua madre di sentirne la mancanza. E poi a tutti gli altri.'], // [nuovo]
         ['obiettivo', 'Ascolta Donna Luciana. Quando sei pronto, alza la spada.'], // [nuovo]
