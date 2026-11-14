@@ -8,7 +8,7 @@
  * MAPPA DEL CAPITOLO
  *
  *   [villa.cancello] ←── leucio.arrivo (il borgo della seta, Nunzia) ──→ leucio.belvedere (cortile, lettera)
- *                                                                          │            └─→ [reggia.cancello] (dopo la scelta)
+ *                                                                          │            └─→ [strada.bivio] → [reggia.cancello] (dopo la scelta)
  *                                                                          ▼
  *                         leucio.forgetta ←── leucio.manifattura (telai che vanno da soli) ──→ leucio.telaio (Agnese)
  *                         (martello, incudine)         │ (si apre quando il telaio di Agnese batte)
@@ -210,7 +210,7 @@ AV.quadro({
           ['diario', 'Lascio San Leucio. I fili portano alla Reggia, e alla Reggia c\'è Donna Luciana.'], // [nuovo]
           ['obiettivo', 'Seguire i fili d\'oro fino alla Reggia.'], // [nuovo]
           ['segna', 'leucio-finito'],
-          ['vai', 'reggia.cancello'],
+          ['vai', 'strada.bivio'], // il bivio delle strade di fuori (60-vie-laterali.js): da lì il viale porta a reggia.cancello
         ],
         [['pensa', 'Non ancora. Lassù c\'è una tessitrice che non sa il mio nome.']]]] }, // [nuovo]
   ],

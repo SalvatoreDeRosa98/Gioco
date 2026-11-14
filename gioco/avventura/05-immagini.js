@@ -119,10 +119,20 @@ AV.immagini = {
    "w": 1920,
    "h": 384
   },
+  "giudice-arena": {
+   "src": "assets/sprite_teatro_v2/giudice-arena.png",
+   "w": 5120,
+   "h": 640
+  },
   "gregorio": {
    "src": "assets/sprite_teatro_v2/gregorio.png",
    "w": 2688,
    "h": 320
+  },
+  "h6_campanaro": {
+   "src": "assets/sprite_teatro_v2/h6_campanaro.png",
+   "w": 3584,
+   "h": 640
   },
   "regina-vespa": {
    "src": "assets/sprite_teatro_v2/regina-vespa.png",
