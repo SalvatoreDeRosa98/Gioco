@@ -39,7 +39,7 @@
 AV.capitolo({ id: 'villa-comunale', titolo: 'Villa Comunale', ordine: 3, sottotitolo: 'La verità sotto la pietra' });
 
 // --- Personaggi del capitolo ---
-AV.personaggio({ id: 'madre-marmo', nome: 'La Madre di Marmo', colore: '#e7e5e4', figura: { sagoma: 'statua', alt: 130 } }); // in attesa del suo disegno: il foglio «custode-marmo» del Teatro è un uomo con la barba
+AV.personaggio({ id: 'madre-marmo', nome: 'La Madre di Marmo', colore: '#e7e5e4', figura: { foglio: 'colosso_statua_fermo', celle: 1, alt: 150 } }); // la statua alata dell'autore (il foglio «custode-marmo» è un uomo con la barba)
 AV.personaggio({ id: 'peppe', nome: 'Peppe, il giardiniere', colore: '#86efac', figura: { sagoma: 'uomo', alt: 58 } });
 
 // --- Oggetti del capitolo ---

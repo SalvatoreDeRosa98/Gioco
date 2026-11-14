@@ -32,7 +32,7 @@ AV.personaggio({ id: 'agnese', nome: 'Agnese', colore: '#f87171', figura: { fogl
 AV.personaggio({ id: 'gregorio', nome: 'Gregorio, il Custode', colore: '#cbd5e1', figura: { foglio: 'gregorio', celle: 7, alt: 78 } });
 AV.personaggio({ id: 'violante', nome: 'Donna Luciana', colore: '#d8b4fe', figura: { foglio: 'donna-luciana', alt: 84 } });
 AV.personaggio({ id: 'bianca', nome: 'Bianca', colore: '#fde68a', figura: { sagoma: 'bambina', alt: 44 } });
-AV.personaggio({ id: 'guardia', nome: 'Guardia della Reggia', colore: '#94a3b8', figura: { sagoma: 'guardia', alt: 66 } });
+AV.personaggio({ id: 'guardia', nome: 'Guardia della Reggia', colore: '#94a3b8', figura: { foglio: 'guardia', alt: 70 } });
 AV.personaggio({ id: 'cittadino', nome: 'Cittadino di Caserta', colore: '#a8a29e', figura: { sagoma: 'uomo', alt: 60 } });
 
 // --- I tre ferri di Gaetano: si trovano in tre capitoli diversi e contano per il finale segreto (90-finali.js) ---

@@ -82,7 +82,7 @@ AV.oggetto({ id: 'lettera-agnese', nome: 'La lettera di Agnese', icona: { sagoma
   ] });
 
 // --- Personaggio del capitolo (non è nei comuni) ---
-AV.personaggio({ id: 'gatto-canti', nome: 'Il Gatto dei Quattro Canti', colore: '#6b7280', figura: { sagoma: 'gatto', alt: 70 } });
+AV.personaggio({ id: 'gatto-canti', nome: 'Il Gatto dei Quattro Canti', colore: '#6b7280', figura: { foglio: 'gatto', alt: 64 } });
 
 // --- Azioni condivise: la decisione su Tonino (si apre col ricordo in mano su Tonino o dal dialogo) ---
 const DECISIONE_TONINO = [

@@ -4,7 +4,7 @@
  *   fondi: tutti i PNG di gioco/assets/avventura/ (nome «avventura/<percorso>») e quelli nominati dagli elementi
  *          `immagine` e da `fondale.immagine` se il file c'è (nome = percorso sotto gioco/assets/, senza .png);
  *   fogli: i fogli di gioco/assets/sprite_teatro/ nominati dai personaggi (`figura.foglio`) e dalle icone (`icona.foglio`),
- *          nella versione che usa anche il Teatro (tabella SPRITE_V2 di gioco/teatro/10-sprite.js).
+ *          a colori: la versione ripulita di gioco/assets/sprite_teatro_v2/ se c'è, altrimenti l'originale.
  * Con misure (letta l'intestazione del PNG). Il motore usa SOLO queste: un PNG che manca non fa una richiesta a vuoto
  * e si disegna a codice. Rilanciare dopo aver aggiunto immagini o personaggi.
  * Uso: node tools/avventura-immagini.js [--controlla]   (--controlla: esce con 1 se il file scritto sarebbe diverso)
@@ -74,8 +74,10 @@ function griglia(n) {
   const m = L.margine || 0; const a = L.altezza_rif || (L.cella_a - 2 * m);
   return { cl: L.cella_l, ca: L.cella_a, righe, top: +(m / L.cella_a).toFixed(3), bot: +((m + a) / L.cella_a).toFixed(3) };
 }
+// L'avventura vuole le figure A COLORI, come Ferruccio: la versione ripulita (sprite_teatro_v2/) se c'è, altrimenti
+// l'originale dell'autore; mai quella scurita «a ombre» del Teatro. Dove la tabella dice `false` resta l'originale.
 for (const n of [...nomiFogli].sort()) {
-  const v = (CARTELLE_V2[V2[n]] && voce(CARTELLE_V2[V2[n]] + n)) || voce('sprite_teatro/' + n);
+  const v = (V2[n] !== false && voce(CARTELLE_V2.leggera + n)) || voce('sprite_teatro/' + n);
   if (!v) continue;
   const g = griglia(n); if (g) v.griglia = g;
   fogli[n] = v;

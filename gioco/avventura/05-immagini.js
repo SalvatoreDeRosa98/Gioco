@@ -15,8 +15,13 @@ AV.immagini = {
    "w": 768,
    "h": 256
   },
+  "colosso_statua_fermo": {
+   "src": "assets/sprite_teatro/colosso_statua_fermo.png",
+   "w": 533,
+   "h": 726
+  },
   "donna-luciana": {
-   "src": "assets/sprite_teatro_v2_ombre/donna-luciana.png",
+   "src": "assets/sprite_teatro_v2/donna-luciana.png",
    "w": 1672,
    "h": 1290,
    "griglia": {
@@ -81,6 +86,43 @@ AV.immagini = {
     "bot": 0.971
    }
   },
+  "gatto": {
+   "src": "assets/sprite_teatro_v2/gatto.png",
+   "w": 1688,
+   "h": 816,
+   "griglia": {
+    "cl": 422,
+    "ca": 136,
+    "righe": [
+     [
+      "fermo",
+      2
+     ],
+     [
+      "muove",
+      4
+     ],
+     [
+      "anticipo",
+      2
+     ],
+     [
+      "attacco",
+      2
+     ],
+     [
+      "colpito",
+      1
+     ],
+     [
+      "morte",
+      4
+     ]
+    ],
+    "top": 0.029,
+    "bot": 0.941
+   }
+  },
   "gb_guanto": {
    "src": "assets/sprite_teatro/gb_guanto.png",
    "w": 1920,
@@ -95,6 +137,43 @@ AV.immagini = {
    "src": "assets/sprite_teatro_v2/gregorio.png",
    "w": 2688,
    "h": 320
+  },
+  "guardia": {
+   "src": "assets/sprite_teatro_v2/guardia.png",
+   "w": 1228,
+   "h": 1464,
+   "griglia": {
+    "cl": 307,
+    "ca": 244,
+    "righe": [
+     [
+      "fermo",
+      2
+     ],
+     [
+      "muove",
+      4
+     ],
+     [
+      "anticipo",
+      2
+     ],
+     [
+      "attacco",
+      2
+     ],
+     [
+      "colpito",
+      1
+     ],
+     [
+      "morte",
+      2
+     ]
+    ],
+    "top": 0.016,
+    "bot": 0.984
+   }
   },
   "h6_campanaro": {
    "src": "assets/sprite_teatro_v2/h6_campanaro.png",
@@ -140,7 +219,7 @@ AV.immagini = {
    "h": 256
   },
   "taddeo": {
-   "src": "assets/sprite_teatro_v2_ombre/taddeo.png",
+   "src": "assets/sprite_teatro_v2/taddeo.png",
    "w": 752,
    "h": 660,
    "griglia": {
