@@ -299,6 +299,7 @@
     ctx.drawImage(f.tela, 0, 0, W, H);
     D.atmosfera(ctx, f, G.t);
     const punti = AV.puntiDelQuadro(Q, G.stato);
+    const dipinto = Boolean(Q.fondale && Q.fondale.immagine && D.img('fondi', Q.fondale.immagine));
     const figure = punti.map((p) => ({ p, y: p.y + p.h }));
     figure.push({ fer: true, y: G.fer.y });
     figure.sort((a, b) => a.y - b.y);
@@ -308,7 +309,7 @@
         if (o.fer) { if (Q.senzaFerruccio) continue; const s = 0.86 + 0.14 * Math.max(0, Math.min(1, (G.fer.y - f.suoloY) / (FASCIA - f.suoloY))); D.figura(ctx, PF, G.fer.x, G.fer.y, { cammina: G.fer.cammina, t: G.t, dir: G.fer.dir, alt: ((PF.figura && PF.figura.alt) || 62) * s }); continue; }
         const p = o.p;
         if (p.personaggio) { const P = AV.dati.personaggio.get(p.personaggio); D.figura(ctx, P, p.x + p.w / 2, p.y + p.h, { posa: p.posa, t: G.t, alt: P && P.figura && P.figura.alt ? Math.min(P.figura.alt, p.h * 1.15) : p.h }); }
-        else if (p.sagoma) D.sagoma(ctx, p.sagoma, p.x, p.y, p.w, p.h, { posa: p.posa, t: G.t });
+        else if (p.sagoma && !(dipinto && AV.puntoFisso(p))) D.sagoma(ctx, p.sagoma, p.x, p.y, p.w, p.h, { posa: p.posa, t: G.t }); // nel fondale dipinto la scenografia ferma c'è già
       } catch (e) { AV.errore(`punto «${o.p ? o.p.id : 'ferruccio'}» non si disegna: ${e.message}`); }
     }
     D.effetti(ctx, G.fx, G.t, G.dt);

@@ -334,6 +334,33 @@ var AV = (typeof AV !== 'undefined' && AV) || {};
     return meglio;
   };
 
+  /**
+   * Gli id dei punti che la storia fa cambiare (['posa' | 'mostra' | 'nascondi', id] in una qualunque azione).
+   * Calcolato una volta: serve a distinguere la scenografia ferma da ciò che il gioco deve ridisegnare.
+   */
+  let mobili = null;
+  AV.puntiMobili = function () {
+    if (mobili) return mobili;
+    mobili = new Set();
+    const giro = (arr) => { if (!Array.isArray(arr)) return; for (const a of arr) { if (!Array.isArray(a)) continue;
+      if ((a[0] === 'posa' || a[0] === 'mostra' || a[0] === 'nascondi') && typeof a[1] === 'string') mobili.add(a[1]);
+      if (a[0] === 'se' || a[0] === 'unaVolta') { giro(a[2]); giro(a[3]); }
+      if (a[0] === 'scelta') for (const v of a[1] || []) giro(v && v.fai); } };
+    for (const O of AV.dati.oggetto.values()) { giro(O.guarda); for (const x of Object.values(O.combina || {})) giro(x); }
+    for (const Q of AV.dati.quadro.values()) { giro(Q.entrata); for (const p of Q.punti || []) { giro(p.guarda); giro(p.usa); giro(p.chiuso); for (const x of Object.values(p.con || {})) giro(x); } }
+    for (const D of AV.dati.dialogo.values()) { giro(D.inizio); giro(D.saluto); for (const t of D.temi || []) giro(t.fai); }
+    for (const F of AV.dati.finale.values()) giro(F.scene);
+    return mobili;
+  };
+  /**
+   * Vero se il punto è scenografia FERMA: non è un personaggio, non compare e scompare (`se` senza `chiuso`) e nessuna
+   * azione gli cambia posa o visibilità. In un fondale dipinto (`fondale.immagine`) la scenografia ferma sta nel
+   * dipinto e il gioco non la ridisegna sopra; tutto il resto lo disegna il gioco.
+   */
+  AV.puntoFisso = function (p) {
+    return Boolean(p) && !p.personaggio && !(p.se && !p.chiuso) && !AV.puntiMobili().has(p.id);
+  };
+
   /** Le decisioni prese (flag con `nome` e un valore): [{ id, nome, valore }]. Per il Diario. */
   AV.decisioniPrese = function (stato) {
     const fuori = [];
