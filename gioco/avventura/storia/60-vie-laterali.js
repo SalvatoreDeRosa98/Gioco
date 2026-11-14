@@ -849,3 +849,28 @@ AV.quadro({
       guarda: [['pensa', 'Gabbie piccole, per uomini, non per belve. Sui ferri, segni di unghie e di anelli.']] }, // [nuovo]
   ],
 });
+
+/*
+ * IMMAGINI DA FAR DISEGNARE (gioco/assets/avventura/, teatro d'ombre: sagome scure, luci di lanterna, luna ferma;
+ * la fascia in basso resta scura per l'interfaccia)
+ *  - strada-bivio.png              Bivio notturno fra San Leucio e la Reggia: una pietra miliare borbonica col giglio, tre
+ *                                  sentieri (il viale dei platani al centro, la mulattiera a sinistra, la via Appia a
+ *                                  destra), il colle a sinistra, il fascio dei fili d'oro sopra il viale.
+ *  - casertavecchia-salita.png     La mulattiera fra gli ulivi, un arco di tufo, un'edicola coi lumini, il campanile in alto
+ *                                  contro la luna.
+ *  - casertavecchia-borgo.png      Un vicolo ad archi del borgo vecchio, la fontana con la lapide, una porta murata con una
+ *                                  croce di gesso, una scala a pioli appoggiata al muro.
+ *  - casertavecchia-sagrato.png    La facciata a fasce del duomo, il campanile, la porticina e la finestrella della
+ *                                  sagrestia, il parapetto sul vuoto.
+ *  - casertavecchia-sagrestia.png  Un leggio col registro, un cero, l'armadio dei paramenti, la scala di legno che sale,
+ *                                  le corde delle campane che scendono dal soffitto.
+ *  - casertavecchia-campanile.png  La cella con tre campane sulla graticcia, gli archi aperti sulla luna, lo spazio al
+ *                                  centro libero (ci sta il Campanaro).
+ *  - anfiteatro-arcate.png         Due ordini di arcate di travertino e laterizio, il fornice centrale buio, una colonna
+ *                                  spezzata a terra.
+ *  - anfiteatro-arena.png          La sabbia chiara, le gradinate a fasce con le ombre sedute, il podio in alto al centro,
+ *                                  le torce, la scala dei sotterranei a destra.
+ *  - anfiteatro-sotterranei.png    Corridoi di mattone sotto l'arena, gabbie, l'argano e il pozzo del montacarichi.
+ *  - anfiteatro-gabbie.png         Gabbie in fila, una aperta e una socchiusa, il pianale del montacarichi a sinistra, un
+ *                                  muro più antico con spirali incise.
+ */
