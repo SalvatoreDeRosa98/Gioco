@@ -101,6 +101,8 @@ AV.finale({ id: 'verita-condivisa.uccisa', titolo: 'La verità condivisa', perco
 
 Sagome dei punti e delle figure senza foglio: `uomo`, `donna`, `bambina`, `vecchio`, `guardia`, `gatto`, `ombra`, `anima`,
 `lampione`, `porta`, `finestra`, `foglio`, `libro`, `chiave`, `ferro`, `cassa`, `telaio`, `statua`, `campana`, `fontana`.
+Icone degli oggetti (`icona: { sagoma, colore, posa }`): `tenaglie`, `punzone`, `ago`, `spada`, `rudis`, `martello`, `palanchino`, `rastrello`, `manovella`, `ruota`, `nastro`, `sciarpa`, `guanto`, `berretto`, `mozzarella`, `scheggia`, `scala`, `tessera`, `scatola`, `lanterna`, `lettera`, `fazzoletto`, `seta`.
+`colore` tinge `nastro`, `sciarpa`, `lettera` (il sigillo) e `anima`; `posa: 1` accende la `lanterna` e storce la `ruota`.
 
 ## File
 

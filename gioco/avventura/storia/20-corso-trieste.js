@@ -46,19 +46,19 @@ AV.personaggio({ id: 'regina-debiti', nome: 'La Regina dei Debiti', colore: '#fa
 
 // --- Oggetti del capitolo ---
 AV.oggetto({ id: 'lanterna-spenta', nome: 'La lanterna spenta', descrizione: "La lanterna di Assunta. Il vento del Corso l'ha spenta; il mozzicone di candela è ancora buono.", // [nuovo]
-  icona: { sagoma: 'lampione' },
+  icona: { sagoma: 'lanterna' },
   guarda: [['pensa', "Tutti i lampioni del Corso sono spenti. C'è una sola luce accesa, in tutta la strada: una finestra."]] }); // [nuovo]
 AV.oggetto({ id: 'lanterna-accesa', nome: 'La lanterna accesa', descrizione: "Accesa alla lampada di Mariella. La fiamma è piccola e non trema: neanche il fuoco, qui, ha più fretta.", // [nuovo]
-  icona: { sagoma: 'lampione' },
+  icona: { sagoma: 'lanterna', posa: 1 },
   guarda: [['pensa', "Le vespe che passano sopra la testa piegano verso la fiamma, poi riprendono la strada della Reggia. Le luci le chiamano."]] }); // [nuovo]
 AV.oggetto({ id: 'palanchino', nome: 'Un palanchino', descrizione: 'Una sbarra di ferro col becco, di quelle che la guardia usa per le barricate. Pesa giusto.', // [nuovo]
-  icona: { sagoma: 'ferro' },
+  icona: { sagoma: 'palanchino' },
   guarda: [['pensa', "Ferro dolce, battuto male. Mio padre l'avrebbe rifatto."]] }); // [nuovo]
 AV.oggetto({ id: 'ricevuta-gaetano', nome: 'La ricevuta di Gaetano', descrizione: "Una pagina del libro mastro: «Gaetano F., fabbro. Ferri della cancellata grande: consegnati il giorno promesso.» Sotto, la firma di mio padre.", // [nuovo]
   icona: { sagoma: 'foglio' },
   guarda: [['pensa', "Tutte le altre pagine dicono «a lavori finiti», «il mese venturo», «avrete». Questa sola dice «consegnati». Mio padre ha tenuto la parola."]] }); // [nuovo]
 AV.oggetto({ id: 'ricordo-spade-di-legno', nome: 'Il ricordo delle spade di legno', descrizione: "Un'anima della Regina si è fermata nella mia mano. Dentro ci sono due bambini con due spade di legno.", // [nuovo]
-  icona: { sagoma: 'anima' },
+  icona: { sagoma: 'anima', colore: '#a6d68a' },
   guarda: [
     ['dice', 'didascalia', 'Da bambini, Taddeo e Ferruccio giocavano tra le strade di Caserta, fingendo di essere cavalieri.'], // [bibbia]
     ['dice', 'didascalia', 'Ferruccio costruiva spade di legno. Taddeo voleva sempre essere il comandante.'], // [bibbia]
@@ -72,7 +72,7 @@ AV.oggetto({ id: 'testimonianza-taddeo', nome: 'La testimonianza di Taddeo', des
     ['pensa', 'La calligrafia trema solo sul mio nome.'], // [nuovo]
   ] });
 AV.oggetto({ id: 'lettera-mariella', nome: 'La lettera di Mariella', descrizione: "Un foglio piegato in quattro, con l'inchiostro sbiadito. Mariella l'ha scritto prima del Velo.", // [nuovo]
-  icona: { sagoma: 'foglio' },
+  icona: { sagoma: 'lettera', colore: '#8e6bd1' },
   guarda: [
     ['dice', 'didascalia', "Se Taddeo viene perdonato, Ferruccio può leggere una lettera che Mariella aveva scritto prima dell'incantesimo."], // [bibbia]
     ['dice', 'mariella', 'Caro Taddeo,'], // [bibbia]

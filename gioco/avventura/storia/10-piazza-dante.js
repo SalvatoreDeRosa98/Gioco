@@ -51,21 +51,21 @@ AV.capitolo({ id: 'piazza-dante', titolo: 'Piazza Dante', ordine: 1, sottotitolo
 AV.capitolo({ id: 'fucina-del-ricordo', titolo: 'La Fucina del Ricordo', ordine: 2.5, sottotitolo: 'Il nome e il volto' });
 
 // --- Gli oggetti del capitolo ---
-AV.oggetto({ id: 'spada-di-gaetano', nome: 'La spada', icona: { sagoma: 'ferro' },
+AV.oggetto({ id: 'spada-di-gaetano', nome: 'La spada', icona: { sagoma: 'spada' },
   descrizione: "Una lama corta, battuta a mano. Pesa giusta, come se l'avessero fatta per il tuo braccio.",
   guarda: [
     ['pensa', "Una lama forgiata con gli ultimi strumenti di un fabbro. Non sai chi l'ha battuta. La mano, sì: non vuole lasciarla."], // [nuovo]
   ] });
-AV.oggetto({ id: 'mozzarella', nome: 'La mozzarella di Tonino', icona: { punti: [[-6, 2], [-4, -4], [0, -6], [4, -4], [6, 2], [0, 6]] },
+AV.oggetto({ id: 'mozzarella', nome: 'La mozzarella di Tonino', icona: { sagoma: 'mozzarella' },
   descrizione: "Avvolta in una foglia, ancora tiepida. In tutta la piazza è l'unica cosa che sa di qualcosa.",
   guarda: [['pensa', "Profuma di latte e di mattina. Non hai fame: sotto la maschera non c'è una bocca. La tieni lo stesso."]] }); // [nuovo]
-AV.oggetto({ id: 'nastro-azzurro', nome: 'Il nastro azzurro', icona: { punti: [[-7, -2], [7, -5], [6, 2], [-6, 5]] },
+AV.oggetto({ id: 'nastro-azzurro', nome: 'Il nastro azzurro', icona: { sagoma: 'nastro', colore: '#7fb2e5' },
   descrizione: "Un nastro di seta azzurra, sfilacciato da un capo. Il vento della festa l'ha portato lontano.",
   guarda: [['pensa', "Seta buona, di quella che viene da San Leucio. Qualcuno, in piazza, lo starà cercando."]] }); // [nuovo]
-AV.oggetto({ id: 'lanterna-di-assunta', nome: 'La lanterna di Assunta', icona: { sagoma: 'lampione' },
+AV.oggetto({ id: 'lanterna-di-assunta', nome: 'La lanterna di Assunta', icona: { sagoma: 'lanterna', posa: 1 },
   descrizione: "Una lanterna di latta con un mozzicone di candela. La luce trema, ed è l'unica cosa che si muove.",
   guarda: [['pensa', "La fiamma trema. In tutta la città ferma, è l'unica cosa che respira insieme a te."]] }); // [nuovo]
-AV.oggetto({ id: 'ricordo-rosa', nome: 'Il ricordo di Rosa', icona: { sagoma: 'anima' },
+AV.oggetto({ id: 'ricordo-rosa', nome: 'Il ricordo di Rosa', icona: { sagoma: 'anima', colore: '#f3a6b6' },
   descrizione: "Un'anima color di rosa, posata dentro un vecchio medaglione. È calda come una mano.",
   guarda: [
     ['pensa', "Stringi il medaglione e la piazza cambia. Una donna con le maniche arrotolate rimprovera un venditore che regala troppo. Rosa."], // [nuovo]
@@ -74,7 +74,7 @@ AV.oggetto({ id: 'ricordo-rosa', nome: 'Il ricordo di Rosa', icona: { sagoma: 'a
       [['pensa', "È ancora calda. Tonino, laggiù, ride da solo. Il dolore di Rosa adesso lo porti tu."]], // [nuovo]
       [['pensa', "È il ricordo di Rosa, la moglie di Tonino. Con lei tornerebbe anche il dolore di averla persa."]]], // [nuovo]
   ] });
-AV.oggetto({ id: 'lettera-agnese', nome: 'La lettera di Agnese', icona: { sagoma: 'foglio' },
+AV.oggetto({ id: 'lettera-agnese', nome: 'La lettera di Agnese', icona: { sagoma: 'lettera', colore: '#c0392b' },
   descrizione: "Una lettera piegata in quattro, chiusa con un filo di seta rossa. Tonino l'ha custodita per qualcuno.",
   guarda: [
     ['pensa', "Non la apri: non ancora. Sopra, una mano di donna ha scritto soltanto: «Per te.»"], // [nuovo]

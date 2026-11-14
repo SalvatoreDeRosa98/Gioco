@@ -52,26 +52,26 @@ AV.personaggio({ id: 'tessitrice-pietra', nome: 'La Tessitrice di Pietra', color
 // --- Oggetti del capitolo ---
 AV.oggetto({ id: 'ruota-storta', nome: 'Una ruota dentata storta',
   descrizione: 'Una ruotina di ricambio per i telai. Un dente piegato, il mozzo ovale. Così non gira.',
-  icona: { sagoma: 'ferro' },
+  icona: { sagoma: 'ruota', posa: 1 },
   guarda: [['pensa', 'Ferro dolce, piegato da un colpo. Mio padre direbbe: si raddrizza a freddo, a colpi piccoli, se sai dove battere.']] }); // [nuovo]
 AV.oggetto({ id: 'martello', nome: 'Il martelletto della forgetta',
   descrizione: 'Un martello piccolo da aggiustatore di telai. Il manico è lucido di mani.',
-  icona: { sagoma: 'ferro' },
+  icona: { sagoma: 'martello' },
   guarda: [['pensa', 'Pesa giusto. Le mani se lo ricordano prima di me.']] }); // [nuovo]
 AV.oggetto({ id: 'ruota-dentata', nome: 'La ruota dentata raddrizzata',
   descrizione: 'Gira tonda, ogni dente al suo posto. È fatta per il telaio di Agnese.',
-  icona: { sagoma: 'ferro' } });
+  icona: { sagoma: 'ruota' } });
 AV.oggetto({ id: 'ruotina-spezzata', nome: 'La ruotina spezzata',
   descrizione: 'Una piccola ruota di telaio rotta in due. Agnese la teneva nel cesto «da sempre».',
-  icona: { sagoma: 'ferro' },
+  icona: { sagoma: 'ruota', posa: 1 },
   guarda: [['pensa', 'La conosco. L\'ho rotta io, il primo giorno. Lei l\'ha tenuta senza sapere perché.']] }); // [nuovo]
 AV.oggetto({ id: 'sciarpa-consumata', nome: 'La sciarpa consumata',
   descrizione: 'Lunga, rossa, lisa ai bordi. È quella che lei mi regalò. Stava fra gli scarti della Reggia.',
-  icona: { punti: [[2, 4], [14, 2], [16, 8], [10, 22], [6, 22], [8, 9]] },
+  icona: { sagoma: 'sciarpa', colore: '#8a4a42' },
   guarda: [['pensa', 'Ha ancora il nodo che facevo io, storto. Nessun altro lo farebbe così.']] }); // [nuovo]
 AV.oggetto({ id: 'fazzoletto-bianca', nome: 'Il fazzoletto col giglio',
   descrizione: 'Un fazzolettino di lino. Un giglio ricamato a punti incerti, lasciato a metà.',
-  icona: { sagoma: 'foglio' },
+  icona: { sagoma: 'fazzoletto' },
   guarda: [['pensa', 'Punti grandi, storti, tirati troppo. La mano di una bambina. Il giglio si ferma a un petalo dalla fine.']] }); // [nuovo]
 AV.oggetto({ id: 'anima-promessa', nome: 'Il ricordo della promessa',
   descrizione: 'Una luce rossa, calda, salita dalla Tessitrice di Pietra. Dentro c\'è una bottega che non esiste ancora.',
@@ -82,11 +82,11 @@ AV.oggetto({ id: 'anima-promessa', nome: 'Il ricordo della promessa',
   ] });
 AV.oggetto({ id: 'ricordo-noi', nome: 'Il ricordo di noi due',
   descrizione: 'Una striscia di trama rossa e oro, tessuta sul telaio di Agnese: il primo giorno, la sciarpa, la promessa.',
-  icona: { sagoma: 'anima' },
+  icona: { sagoma: 'anima', colore: '#f08a7a' },
   guarda: [['pensa', 'Se glielo porgo, ricorderà il mio nome. E con il nome, tutto il resto: l\'attesa, la notte del Velo, il dolore.']] }); // [nuovo]
 AV.oggetto({ id: 'sciarpa-rossa', nome: 'La sciarpa rossa',
   descrizione: 'La sciarpa che Agnese ha finito stanotte. Ora la porto al collo.',
-  icona: { punti: [[2, 4], [14, 2], [16, 8], [10, 22], [6, 22], [8, 9]] },
+  icona: { sagoma: 'sciarpa', colore: '#c0392b' },
   guarda: [['dice', 'agnese', 'Dicono che il rosso protegga dal malocchio.']] }); // [bibbia]
 
 // ============================================================================================================

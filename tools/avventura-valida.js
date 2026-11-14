@@ -26,7 +26,9 @@ const CHI_SPECIALI = ['didascalia', 'voce'];
 const ELEMENTI = ['cielo', 'quinte', 'suolo', 'case', 'palazzo', 'arco', 'colonna', 'porta', 'finestra', 'lampione', 'albero',
   'siepe', 'fontana', 'statua', 'banco', 'telaio', 'scala', 'tenda', 'muro', 'luce', 'nebbia', 'fili', 'immagine', 'forma'];
 const SAGOME = ['uomo', 'donna', 'bambina', 'vecchio', 'guardia', 'gatto', 'ombra', 'anima', 'lampione', 'porta', 'finestra',
-  'foglio', 'libro', 'chiave', 'ferro', 'cassa', 'telaio', 'statua', 'campana', 'fontana'];
+  'foglio', 'libro', 'chiave', 'ferro', 'cassa', 'telaio', 'statua', 'campana', 'fontana',
+  // icone degli oggetti
+  'tenaglie', 'punzone', 'ago', 'spada', 'rudis', 'martello', 'palanchino', 'rastrello', 'manovella', 'ruota', 'nastro', 'sciarpa', 'guanto', 'berretto', 'mozzarella', 'scheggia', 'scala', 'tessera', 'scatola', 'lanterna', 'lettera', 'fazzoletto', 'seta'];
 const CHIAVI_COND = ['flag', 'ha', 'nonHa', 'visto', 'nonVisto', 'tutti', 'uno', 'non'];
 const AREA = { w: 640, yMin: 16, yMax: 292 };
 

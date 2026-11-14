@@ -41,7 +41,7 @@ AV.oggetto({
   guarda: [['pensa', 'Il giglio dell\'impugnatura è consumato dalle dita. Chi l\'ha usata, l\'ha usata ogni notte.']], // [nuovo]
 });
 AV.oggetto({
-  id: 'frammenti-di-seta', nome: 'I quattro frammenti di seta', icona: { sagoma: 'foglio' },
+  id: 'frammenti-di-seta', nome: 'I quattro frammenti di seta', icona: { sagoma: 'seta' },
   descrizione: 'Quattro ritagli di seta di San Leucio, con quattro cartellini scritti dalla stessa mano.',
   guarda: [
     ['pensa', 'Alleviare il dolore. Cancellare il dolore. Impedire nuovi dolori. Eliminare la libertà.'], // [nuovo] (bibbia §VIII, la progressione)
@@ -53,7 +53,7 @@ AV.oggetto({
   descrizione: 'Una chiavetta da carica, piccola come un dito di bambina. Era in mezzo ai gigli secchi dell\'altare.',
 });
 AV.oggetto({
-  id: 'scatola-musicale', nome: 'La scatola musicale di Bianca', icona: { sagoma: 'cassa' },
+  id: 'scatola-musicale', nome: 'La scatola musicale di Bianca', icona: { sagoma: 'scatola' },
   descrizione: 'Una scatola di legno chiaro. Sul coperchio, una bambina intagliata regge un giglio.',
   guarda: [['pensa', 'La melodia è la stessa che si sente, debolmente, vicino alle statue. Ora Ferruccio sa da dove viene.']], // [nuovo] (bibbia §XI)
 });

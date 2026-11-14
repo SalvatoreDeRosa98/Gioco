@@ -60,11 +60,11 @@ AV.oggetto({ id: 'chiave-sagrestia', nome: 'La chiave della sagrestia',
   guarda: [['pensa', 'Ferro battuto male, a fretta. Mio padre l\'avrebbe rifatta. Apre lo stesso.']] }); // [nuovo]
 AV.oggetto({ id: 'scala-pioli', nome: 'La scala a pioli',
   descrizione: 'Una scala corta di castagno, di quelle per cogliere le olive. Sta in spalla.',
-  icona: { punti: [[4, 2], [7, 2], [7, 22], [4, 22], [4, 2], [13, 2], [16, 2], [16, 22], [13, 22]] },
+  icona: { sagoma: 'scala' },
   guarda: [['pensa', 'Sette pioli. Basta per arrivare a una finestra bassa.']] }); // [nuovo]
 AV.oggetto({ id: 'ricordo-campane', nome: 'Il ricordo delle campane',
   descrizione: 'Una luce grigia e tiepida, salita dal campanile del duomo. Dentro, un rintocco solo, che non fa male.',
-  icona: { sagoma: 'anima' },
+  icona: { sagoma: 'anima', colore: '#b9cdf0' },
   guarda: [
     ['dice', 'didascalia', 'Il Campanaro era il sagrestano del duomo. Suonava a morto per chi se n\'era andato senza chiedere perdono, e teneva per sé le parole che nessuno aveva detto. Il Velo gli ha preso il volto: gli ha lasciato solo le corde.'], // [teatro]
     ['pensa', 'Resta, grazie, perdonami. E un nome. Quattro parole, e il borgo dorme.'], // [nuovo]
@@ -527,18 +527,18 @@ AV.quadro({
 // ============================================================================================================
 AV.oggetto({ id: 'manovella', nome: 'La manovella dell\'argano',
   descrizione: 'Un manico di ferro piegato a gomito, con il foro quadro. Era sepolto nella sabbia dell\'arena.',
-  icona: { sagoma: 'ferro' },
+  icona: { sagoma: 'manovella' },
   guarda: [['pensa', 'Ferro romano? No: rifatto dopo, da qualche fabbro di Capua. Il foro quadro è per un perno d\'argano.']] }); // [nuovo]
 AV.oggetto({ id: 'rudis', nome: 'La rudis', descrizione: 'Una spada di legno, liscia di mani. Ai gladiatori la davano quando erano liberi.',
-  icona: { punti: [[10, 1], [13, 4], [12, 17], [16, 18], [16, 20], [12, 20], [11, 23], [9, 23], [8, 20], [4, 20], [4, 18], [8, 17], [7, 4]] },
+  icona: { sagoma: 'rudis' },
   guarda: [['pensa', 'Una spada di legno. Io ne facevo da bambino, per giocare coi cavalieri con Taddeo. Questa invece voleva dire: hai finito, vai.']] }); // [nuovo]
 AV.oggetto({ id: 'tessera-gladiatore', nome: 'La tessera del gladiatore',
   descrizione: 'Una tessera d\'osso, con un nome inciso: «FELIX · SPECTATVS».',
-  icona: { sagoma: 'foglio' },
+  icona: { sagoma: 'tessera' },
   guarda: [['dice', 'didascalia', 'Una tessera d\'osso, con un nome inciso. Nessuno se lo ricorda più.'], // [teatro]
     ['pensa', '«Spectatus»: visto, provato. Lo hanno guardato combattere, e hanno deciso che bastava.']] }); // [nuovo]
 AV.oggetto({ id: 'ricordo-arena', nome: 'Il ricordo dell\'arena', descrizione: 'Una luce color sabbia, salita dalla toga del Giudice. Dentro, mille pollici alzati.',
-  icona: { sagoma: 'anima' },
+  icona: { sagoma: 'anima', colore: '#e6c28a' },
   guarda: [['dice', 'didascalia', 'Dalla toga del Giudice escono anime di ogni epoca. Avevano giurato tutte alla stessa magia: quella di Donna Luciana non è nata a Caserta. Qualcuno gliel\'ha tramandata, di mano in mano, da secoli.'], // [teatro]
     ['pensa', 'Il Velo è un giuramento. E un giuramento si può sciogliere senza tradirlo: lo deve sciogliere chi l\'ha ricevuto.']] }); // [nuovo]
 

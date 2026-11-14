@@ -36,6 +36,6 @@ AV.personaggio({ id: 'guardia', nome: 'Guardia della Reggia', colore: '#94a3b8',
 AV.personaggio({ id: 'cittadino', nome: 'Cittadino di Caserta', colore: '#a8a29e', figura: { sagoma: 'uomo', alt: 60 } });
 
 // --- I tre ferri di Gaetano: si trovano in tre capitoli diversi e contano per il finale segreto (90-finali.js) ---
-AV.oggetto({ id: 'ferro-tenaglie', nome: 'Le tenaglie di Gaetano', descrizione: 'Le tenaglie di mio padre. Con queste io e Taddeo tenemmo il ferro della spada.', icona: { sagoma: 'ferro' } });
-AV.oggetto({ id: 'ferro-punzone', nome: 'Il punzone G. F.', descrizione: 'Mio padre firmava ogni ferro: G. F. L\'acqua lo ha tenuto per sei anni.', icona: { sagoma: 'ferro' } });
-AV.oggetto({ id: 'ferro-ago', nome: 'L\'ago di Gaetano', descrizione: 'L\'ago di mio padre, infilato nel telaio. «Almeno quelle non le rompete.»', icona: { sagoma: 'ferro' } });
+AV.oggetto({ id: 'ferro-tenaglie', nome: 'Le tenaglie di Gaetano', descrizione: 'Le tenaglie di mio padre. Con queste io e Taddeo tenemmo il ferro della spada.', icona: { sagoma: 'tenaglie' } });
+AV.oggetto({ id: 'ferro-punzone', nome: 'Il punzone G. F.', descrizione: 'Mio padre firmava ogni ferro: G. F. L\'acqua lo ha tenuto per sei anni.', icona: { sagoma: 'punzone' } });
+AV.oggetto({ id: 'ferro-ago', nome: 'L\'ago di Gaetano', descrizione: 'L\'ago di mio padre, infilato nel telaio. «Almeno quelle non le rompete.»', icona: { sagoma: 'ago' } });

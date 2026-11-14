@@ -441,6 +441,54 @@
   SAG.ferro = [28, 28, (c) => { c.beginPath(); c.arc(14, 14, 12, Math.PI * 0.85, Math.PI * 2.15); c.lineTo(22, 25); c.arc(14, 14, 7, Math.PI * 2.15, Math.PI * 0.85, true); c.closePath(); riempi(c, '#6a6a70', C.ombra);
     c.fillStyle = C.ombra; for (const a of [1.1, 1.5, 1.9, 2.3]) c.fillRect(14 + Math.cos(Math.PI * a) * 9.5 - 1, 14 + Math.sin(Math.PI * a) * 9.5 - 1, 2, 2); }];
   SAG.cassa = [40, 30, (c) => { c.beginPath(); c.rect(2, 10, 36, 20); c.moveTo(2, 10); c.quadraticCurveTo(20, -2, 38, 10); riempi(c, '#3a2414'); c.fillStyle = C.filo; c.fillRect(18, 14, 4, 5); c.fillStyle = 'rgba(0,0,0,0.4)'; c.fillRect(10, 10, 2, 20); c.fillRect(28, 10, 2, 20); }];
+  // ---- icone degli oggetti (riquadro 30×30): ferro grigio, legno bruno, filo d'oro; `o.colore` tinge stoffe e vetri
+  const FERRO = '#8b8f98', LEGNO = '#7a4f2a';
+  const asta = (c, x1, y1, x2, y2, l, col) => { c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.lineWidth = l + 1.6; c.lineCap = 'round'; c.strokeStyle = C.ombra; c.stroke(); c.lineWidth = l; c.strokeStyle = col; c.stroke(); c.lineWidth = 1; c.lineCap = 'butt'; };
+  SAG.tenaglie = [30, 30, (c) => { asta(c, 7, 28, 18, 12, 2.6, FERRO); asta(c, 23, 28, 12, 12, 2.6, FERRO);
+    c.beginPath(); c.arc(15, 7, 5.5, Math.PI * 0.75, Math.PI * 2.25); c.lineWidth = 3; c.strokeStyle = FERRO; c.stroke(); c.lineWidth = 1;
+    c.beginPath(); c.arc(15, 14.5, 1.6, 0, Math.PI * 2); riempi(c, C.filo, false); }];
+  SAG.punzone = [30, 30, (c) => { asta(c, 9, 23, 21, 7, 4.2, FERRO); c.beginPath(); c.moveTo(4, 28); c.lineTo(7, 20); c.lineTo(12, 25); c.closePath(); riempi(c, FERRO, C.ombra);
+    asta(c, 18.5, 4.5, 25.5, 11.5, 3, '#b9bcc4'); c.fillStyle = C.filo; c.font = 'bold 6px serif'; c.fillText('G', 13, 17); }];
+  SAG.ago = [30, 30, (c) => { c.beginPath(); c.moveTo(22, 8); c.bezierCurveTo(30, 16, 14, 16, 20, 24); c.bezierCurveTo(23, 29, 10, 28, 8, 22); c.lineWidth = 1.4; c.strokeStyle = '#c0392b'; c.stroke();
+    asta(c, 5, 25, 23, 7, 1.8, '#c9ccd3'); c.beginPath(); c.ellipse(23, 7, 2.6, 1.5, -Math.PI / 4, 0, Math.PI * 2); c.lineWidth = 1.2; c.strokeStyle = C.filo; c.stroke(); c.lineWidth = 1; }];
+  SAG.spada = [30, 30, (c) => { asta(c, 11, 19, 26, 4, 2.8, '#c9ccd3'); asta(c, 6, 16, 14, 24, 2.4, C.filo); asta(c, 4, 26, 9, 21, 2.6, LEGNO);
+    c.beginPath(); c.arc(3.5, 26.5, 1.8, 0, Math.PI * 2); riempi(c, C.filo, false); }];
+  SAG.rudis = [30, 30, (c) => { asta(c, 11, 19, 26, 4, 3.2, LEGNO); asta(c, 7, 17, 13, 23, 2.4, '#5a3a1e'); asta(c, 4, 26, 9, 21, 2.6, '#5a3a1e'); }];
+  SAG.martello = [30, 30, (c) => { asta(c, 6, 27, 19, 11, 2.6, LEGNO); c.save(); c.translate(20, 9); c.rotate(-Math.PI / 4); c.beginPath(); c.rect(-8, -4, 16, 8); riempi(c, FERRO, C.ombra); c.restore(); }];
+  SAG.palanchino = [30, 30, (c) => { asta(c, 5, 26, 22, 8, 2.6, FERRO); c.beginPath(); c.moveTo(22, 8); c.quadraticCurveTo(27, 3, 27, 10); c.lineWidth = 2.6; c.strokeStyle = FERRO; c.stroke(); c.lineWidth = 1; }];
+  SAG.rastrello = [30, 30, (c) => { asta(c, 5, 27, 21, 9, 2.2, LEGNO); c.save(); c.translate(22, 8); c.rotate(Math.PI / 4); c.fillStyle = FERRO; c.fillRect(-8, -1.5, 16, 3); for (let i = -7; i <= 7; i += 3.5) c.fillRect(i - 0.7, -7, 1.4, 6); c.restore(); }];
+  SAG.manovella = [30, 30, (c) => { c.beginPath(); c.moveTo(5, 24); c.lineTo(13, 24); c.lineTo(13, 9); c.lineTo(23, 9); c.lineWidth = 4.4; c.lineJoin = 'round'; c.strokeStyle = C.ombra; c.stroke(); c.lineWidth = 2.8; c.strokeStyle = FERRO; c.stroke(); c.lineWidth = 1;
+    c.beginPath(); c.rect(21, 5, 6, 8); riempi(c, LEGNO, C.ombra); }];
+  SAG.ruota = [30, 30, (c, o) => { c.save(); c.translate(15, 15); if (o.posa === 1) c.transform(1, 0.25, 0, 0.8, 0, 0); c.fillStyle = FERRO; for (let i = 0; i < 10; i++) { c.rotate(Math.PI / 5); c.fillRect(-2, -13, 4, 5); }
+    c.beginPath(); c.arc(0, 0, 9.5, 0, Math.PI * 2); c.arc(0, 0, 3.5, 0, Math.PI * 2, true); riempi(c, FERRO, C.ombra); c.restore(); }];
+  SAG.nastro = [30, 30, (c, o) => { c.beginPath(); c.moveTo(3, 9); c.bezierCurveTo(12, 1, 16, 17, 27, 7); c.lineTo(27, 13); c.bezierCurveTo(16, 23, 12, 7, 3, 15); c.closePath(); riempi(c, o.colore || '#7fb2e5', C.ombra);
+    c.beginPath(); c.moveTo(3, 15); c.lineTo(8, 27); c.lineTo(9, 20); c.lineTo(13, 24); c.lineTo(7, 12); c.closePath(); riempi(c, o.colore || '#7fb2e5', C.ombra); }];
+  SAG.sciarpa = [30, 30, (c, o) => { const col = o.colore || '#c0392b'; c.beginPath(); c.moveTo(4, 8); c.quadraticCurveTo(15, 2, 26, 8); c.lineTo(26, 14); c.quadraticCurveTo(15, 8, 4, 14); c.closePath(); riempi(c, col, C.ombra);
+    c.beginPath(); c.moveTo(17, 10); c.lineTo(24, 12); c.lineTo(22, 26); c.lineTo(14, 24); c.closePath(); riempi(c, col, C.ombra);
+    c.strokeStyle = col; for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(15 + i * 2.2, 24.4 + i * 0.5); c.lineTo(14.5 + i * 2.2, 29); c.stroke(); } }];
+  SAG.guanto = [30, 30, (c) => { c.beginPath(); c.moveTo(9, 28); c.lineTo(8, 15); c.quadraticCurveTo(7, 4, 15, 4); c.quadraticCurveTo(22, 4, 21, 13); c.lineTo(25, 11); c.quadraticCurveTo(28, 12, 26, 15); c.lineTo(21, 20); c.lineTo(21, 28); c.closePath(); riempi(c, '#4a3526', C.filo);
+    c.fillStyle = '#1a1210'; c.beginPath(); c.arc(13, 9, 3, 0, Math.PI * 2); c.fill(); }];
+  SAG.berretto = [30, 30, (c) => { c.beginPath(); c.moveTo(4, 20); c.quadraticCurveTo(4, 6, 16, 7); c.quadraticCurveTo(25, 8, 24, 20); c.closePath(); riempi(c, '#4b5a6a', C.ombra);
+    c.beginPath(); c.moveTo(3, 20); c.lineTo(24, 20); c.quadraticCurveTo(30, 21, 28, 24); c.lineTo(3, 23); c.closePath(); riempi(c, '#2d3640', C.ombra); }];
+  SAG.mozzarella = [30, 30, (c) => { c.beginPath(); c.ellipse(15, 18, 11, 9, 0, 0, Math.PI * 2); riempi(c, '#f4efe2', C.ombra); c.beginPath(); c.ellipse(15, 8, 3.5, 2.6, 0, 0, Math.PI * 2); riempi(c, '#f4efe2', C.ombra);
+    c.beginPath(); c.arc(12, 16, 5, Math.PI * 1.1, Math.PI * 1.6); c.strokeStyle = '#ffffff'; c.stroke(); }];
+  SAG.scheggia = [30, 30, (c) => { c.beginPath(); c.moveTo(4, 25); c.lineTo(9, 14); c.lineTo(13, 17); c.lineTo(20, 5); c.lineTo(26, 8); c.lineTo(19, 16); c.lineTo(22, 19); c.lineTo(10, 27); c.closePath(); riempi(c, LEGNO, C.ombra);
+    c.strokeStyle = 'rgba(0,0,0,0.45)'; c.beginPath(); c.moveTo(8, 23); c.lineTo(21, 9); c.moveTo(11, 24); c.lineTo(19, 17); c.stroke(); }];
+  SAG.scala = [30, 30, (c) => { asta(c, 9, 28, 12, 2, 2, LEGNO); asta(c, 20, 28, 20, 2, 2, LEGNO); c.strokeStyle = LEGNO; c.lineWidth = 1.6; for (let i = 0; i < 5; i++) { const y = 6 + i * 5; c.beginPath(); c.moveTo(11.6 - i * 0.55, y); c.lineTo(20, y); c.stroke(); } c.lineWidth = 1; }];
+  SAG.tessera = [30, 30, (c) => { c.beginPath(); c.moveTo(4, 10); c.lineTo(22, 10); c.lineTo(27, 15); c.lineTo(22, 20); c.lineTo(4, 20); c.closePath(); riempi(c, '#e6dcc0', C.ombra);
+    c.beginPath(); c.arc(22.5, 15, 1.5, 0, Math.PI * 2); riempi(c, C.ombra, false); c.strokeStyle = 'rgba(50,30,15,0.7)'; c.beginPath(); c.moveTo(7, 13.5); c.lineTo(18, 13.5); c.moveTo(7, 16.5); c.lineTo(16, 16.5); c.stroke(); }];
+  SAG.scatola = [30, 30, (c) => { c.beginPath(); c.rect(4, 13, 20, 13); riempi(c, '#5a2f1a', C.filo); c.beginPath(); c.moveTo(4, 13); c.lineTo(8, 6); c.lineTo(28, 6); c.lineTo(24, 13); c.closePath(); riempi(c, '#6d3a20', C.filo);
+    c.fillStyle = C.filo; c.fillRect(13, 17, 2, 4); asta(c, 24, 19, 28, 19, 1.4, C.filo); asta(c, 28, 19, 28, 15, 1.4, C.filo); }];
+  SAG.lanterna = [30, 30, (c, o) => { const accesa = o.posa === 1; if (accesa) { const g = c.createRadialGradient(15, 17, 1, 15, 17, 15); g.addColorStop(0, 'rgba(255,207,122,0.75)'); g.addColorStop(1, 'rgba(255,207,122,0)'); c.fillStyle = g; c.fillRect(0, 2, 30, 30); }
+    c.beginPath(); c.arc(15, 5, 3, Math.PI, 0); c.strokeStyle = FERRO; c.stroke(); c.beginPath(); c.moveTo(8, 9); c.lineTo(22, 9); c.lineTo(20, 6.5); c.lineTo(10, 6.5); c.closePath(); riempi(c, '#3b2f28', C.filo);
+    c.beginPath(); c.rect(9.5, 9, 11, 15); riempi(c, accesa ? '#ffd98a' : '#27221f', C.filo); c.beginPath(); c.rect(8, 24, 14, 3); riempi(c, '#3b2f28', C.filo);
+    c.beginPath(); c.moveTo(15, 9); c.lineTo(15, 24); c.strokeStyle = 'rgba(20,12,8,0.6)'; c.stroke(); }];
+  SAG.lettera = [30, 30, (c, o) => { c.beginPath(); c.rect(3, 8, 24, 16); riempi(c, '#e2d3ac', C.ombra); c.beginPath(); c.moveTo(3, 8); c.lineTo(15, 18); c.lineTo(27, 8); c.strokeStyle = 'rgba(60,35,15,0.7)'; c.stroke();
+    c.beginPath(); c.arc(15, 18, 2.6, 0, Math.PI * 2); riempi(c, o.colore || '#a8322a', false); }];
+  SAG.fazzoletto = [30, 30, (c) => { c.beginPath(); c.moveTo(4, 8); c.lineTo(24, 5); c.lineTo(27, 23); c.lineTo(15, 20); c.lineTo(6, 26); c.closePath(); riempi(c, '#f1ece0', C.ombra);
+    c.fillStyle = C.filo; c.beginPath(); c.moveTo(15, 9); c.quadraticCurveTo(18, 13, 15, 17); c.quadraticCurveTo(12, 13, 15, 9); c.fill(); c.fillRect(11.5, 14.5, 7, 1.2); }];
+  SAG.seta = [30, 30, (c) => { const col = ['#c0392b', '#d9a456', '#7fb2e5', '#e9e2d0']; for (let i = 0; i < 4; i++) { c.save(); c.translate(8 + (i % 2) * 13, 9 + Math.floor(i / 2) * 12); c.rotate((i - 1.5) * 0.25);
+    c.beginPath(); c.moveTo(-6, -4); c.lineTo(5, -5); c.lineTo(6, 3); c.lineTo(-1, 5); c.lineTo(-6, 2); c.closePath(); riempi(c, col[i], C.ombra); c.restore(); } }];
   SAG.telaio = [60, 60, (c) => telaio(c, 2, 2, 56, 58)];
   SAG.statua = [40, 70, (c) => statua(c, 20, 70, 70)];
   SAG.campana = [36, 40, (c) => { c.beginPath(); c.rect(16, 0, 4, 5); c.moveTo(18, 4); c.quadraticCurveTo(6, 5, 7, 22); c.quadraticCurveTo(6, 32, 2, 34); c.lineTo(34, 34); c.quadraticCurveTo(30, 32, 29, 22); c.quadraticCurveTo(30, 5, 18, 4); riempi(c, '#5a4320');
@@ -531,7 +579,7 @@
       ctx.beginPath(); ctx.moveTo(i.punti[0][0], i.punti[0][1]);
       for (const p of i.punti.slice(1)) ctx.lineTo(p[0], p[1]); ctx.closePath(); ctx.lineWidth = 1 / k; riempi(ctx, i.colore || '#8a6a3a', C.filo); ctx.restore(); return;
     }
-    D.sagoma(ctx, i.sagoma || 'cassa', x + 3, y + 3, w - 6, h - 6, { t, colore: i.sagoma === 'anima' ? i.colore : '#3a2818' });
+    D.sagoma(ctx, i.sagoma || 'cassa', x + 3, y + 3, w - 6, h - 6, { t, colore: i.colore, posa: i.posa });
   };
 
   // ------------------------------------------------------------------ effetti

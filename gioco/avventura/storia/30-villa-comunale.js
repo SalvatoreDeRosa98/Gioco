@@ -44,23 +44,23 @@ AV.personaggio({ id: 'peppe', nome: 'Peppe, il giardiniere', colore: '#86efac', 
 
 // --- Oggetti del capitolo ---
 AV.oggetto({ id: 'ricordo-centina', nome: 'Una scheggia della centina', descrizione: 'Legno marcio dentro, verniciato fuori. Porta un ricordo del crollo.',
-  icona: { sagoma: 'anima' },
+  icona: { sagoma: 'scheggia' },
   guarda: [
     ['pensa', 'Ferruccio la stringe. Nel ricordo il legno scricchiola sopra le teste degli operai: è il primo rumore, prima di tutto il resto.'], // [nuovo]
     ['dice', 'didascalia', '«La centina! La centina cede!»'], // [nuovo]
   ] });
 AV.oggetto({ id: 'ricordo-mani', nome: 'Un guanto da fabbro bruciato', descrizione: 'Cuoio annerito, consumato sul palmo. Porta un ricordo del crollo.',
-  icona: { sagoma: 'anima' },
+  icona: { sagoma: 'guanto' },
   guarda: [
     ['pensa', 'Nel ricordo, due mani nere di fucina sotto una trave che scende. Le spalle tremano. Le mani non lasciano.'], // [nuovo]
   ] });
 AV.oggetto({ id: 'ricordo-ragazzi', nome: 'Un berretto da ragazzo', descrizione: 'Piccolo, di panno, con la visiera rotta. Porta un ricordo del crollo.',
-  icona: { sagoma: 'anima' },
+  icona: { sagoma: 'berretto' },
   guarda: [
     ['pensa', 'Nel ricordo, ragazzi che corrono fuori dalla polvere. Uno si volta a guardare indietro: là dietro qualcuno tiene ancora.'], // [nuovo]
   ] });
 AV.oggetto({ id: 'rastrello', nome: 'Il rastrello di Peppe', descrizione: 'Manico lungo, denti di ferro. Arriva dove le mani non arrivano.',
-  icona: { sagoma: 'ferro' },
+  icona: { sagoma: 'rastrello' },
   guarda: [['pensa', 'I denti li ha ribattuti un fabbro, e bene. Ferruccio riconosce il colpo.']] }); // [nuovo]
 AV.oggetto({ id: 'chiave-armadio', nome: 'La chiave della Madre', descrizione: 'Una chiavetta di ferro rimasta nella conca di marmo. È calda, come se qualcuno l\'avesse stretta per sei anni.',
   icona: { sagoma: 'chiave' },
