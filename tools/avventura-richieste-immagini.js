@@ -39,17 +39,22 @@ let md = `# Immagini da far disegnare — l'avventura grafica
 
 Documento per l'autore, generato da \`tools/avventura-richieste-immagini.js\` (non modificare a mano: rilanciare).
 
-L'avventura oggi disegna ogni luogo **col codice**, in stile teatro d'ombre. Ogni fondale che arriva prende il posto
-del disegno provvisorio, senza toccare i file \`.js\` e \`.html\`: basta aggiungere il PNG col nome esatto in
-\`gioco/assets/avventura/\` e rilanciare \`node tools/avventura-immagini.js\` (lo faccio io).
+L'avventura oggi disegna ogni luogo **col codice**, usando dove può i tuoi oggetti di scena (lampione, albero, statua,
+telaio, banco di Tonino). Ogni fondale che arriva prende il posto del disegno provvisorio, senza toccare i file \`.js\` e
+\`.html\`: basta aggiungere il PNG col nome esatto in \`gioco/assets/avventura/\` e rilanciare
+\`node tools/avventura-immagini.js\` (lo faccio io).
+
+**Stile: come Ferruccio.** Illustrazione a colori col contorno a inchiostro bruno scuro, colori pieni e caldi, ombra a due
+toni, qualche tratteggio: la stessa mano di \`gioco/assets/sprite_teatro/ferruccio.png\` e degli oggetti di
+\`gioco/assets/sprite_teatro/scena/\`. **Allega sempre a Gemini \`ferruccio.png\` e un oggetto di scena** (per esempio
+\`scena/ostacolo-lampione.png\` o \`scena/porta-bottega-chiusa.png\`) e scrivi: «stesso stile di disegno, stesso contorno,
+stessa tavolozza delle immagini allegate». È notte (luna ferma, lanterne calde), ma i muri e le cose hanno i loro colori:
+niente sagome nere. Dove le descrizioni qui sotto dicono «sagome» o «teatro d'ombre», vale questa regola.
 
 **Misura:** 1280×720 (16:9), opaco. **La fascia in basso (un sesto dell'altezza, sotto i 600 px) resta scura e vuota:**
 lì il gioco mette gli oggetti raccolti e i pulsanti. **Senza personaggi dentro** (Ferruccio, Tonino, Agnese… li mette il
-gioco) e senza scritte. Il pavimento dove si cammina sta fra i 470 e i 600 px di altezza.
-
-**Stile:** lo stesso del Teatro (\`design/art/art-bible.md\`): sagome scure, luce calda di lanterna, luna ferma, fili d'oro
-che scendono dall'alto dove la scena è sotto il Velo. Prompt di contesto e frase di stile: quelli di
-\`production/arte/richieste-gemini-seconda-ondata.md\`.
+gioco) e senza scritte. Il pavimento dove si cammina sta fra i 470 e i 600 px di altezza. Vista di tre quarti, come un
+palcoscenico visto dalla platea; i fili d'oro che scendono dall'alto dove la scena è sotto il Velo.
 
 `;
 for (const C of capitoli) {
@@ -64,14 +69,26 @@ for (const C of capitoli) {
   }
   md += '\n';
 }
-md += `## Figure che oggi sono sagome a codice
+md += `## Figure che oggi sono disegnate col codice
+
+Stesso stile di Ferruccio, sfondo trasparente, piedi alla stessa quota in tutte le pose.
 
 | File (in \`gioco/assets/sprite_teatro/\`) | Foglio | Descrizione |
 |---|---|---|
 `;
+// chi è ognuno, per chi disegna (le figure che arrivano si collegano poi in `figura.foglio` del personaggio)
+const CHI = {
+  rosa: 'Rosa, la moglie di Tonino: popolana sui trent\'anni, capelli raccolti, scialle chiaro, grembiule. È un ricordo: un po\' luminosa.',
+  mariella: 'Mariella, alla finestra: giovane donna, scialle lilla, capelli sciolti, un sorriso assente (è sotto il Velo).',
+  gaetano: 'Gaetano, il fabbro, padre di Ferruccio: anziano e robusto, grembiule di cuoio, maniche arrotolate, baffi grigi, martello in mano.',
+  bianca: 'Bianca, la bambina di Donna Luciana, otto anni: camicia da notte bianca con un giglio ricamato, capelli chiari, scalza.',
+  cittadino: 'Un cittadino di Caserta in abito da festa del 1845: giacca corta, panciotto, cappello in mano; dorme in piedi sorridendo.',
+  peppe: 'Peppe, il giardiniere della Villa: vecchio magro, cappello di paglia, gilè verde, rastrello.',
+  nunzia: 'Nunzia, tessitrice di San Leucio: mezza età, fazzoletto in testa, grembiule, la spola in mano.',
+};
 for (const P of S.personaggio.values()) {
   if (P.figura && P.figura.foglio) continue;
-  md += `| \`avv_${P.id}.png\` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | ${P.nome}: oggi è la sagoma «${(P.figura && P.figura.sagoma) || 'uomo'}». |\n`;
+  md += `| \`avv_${P.id}.png\` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | ${CHI[P.id] || P.nome} |\n`;
 }
 md += `\nFondali: ${fatti} disegnati su ${n}.\n`;
 fs.mkdirSync(path.dirname(USCITA), { recursive: true });

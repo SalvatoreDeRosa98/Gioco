@@ -2,17 +2,22 @@
 
 Documento per l'autore, generato da `tools/avventura-richieste-immagini.js` (non modificare a mano: rilanciare).
 
-L'avventura oggi disegna ogni luogo **col codice**, in stile teatro d'ombre. Ogni fondale che arriva prende il posto
-del disegno provvisorio, senza toccare i file `.js` e `.html`: basta aggiungere il PNG col nome esatto in
-`gioco/assets/avventura/` e rilanciare `node tools/avventura-immagini.js` (lo faccio io).
+L'avventura oggi disegna ogni luogo **col codice**, usando dove può i tuoi oggetti di scena (lampione, albero, statua,
+telaio, banco di Tonino). Ogni fondale che arriva prende il posto del disegno provvisorio, senza toccare i file `.js` e
+`.html`: basta aggiungere il PNG col nome esatto in `gioco/assets/avventura/` e rilanciare
+`node tools/avventura-immagini.js` (lo faccio io).
+
+**Stile: come Ferruccio.** Illustrazione a colori col contorno a inchiostro bruno scuro, colori pieni e caldi, ombra a due
+toni, qualche tratteggio: la stessa mano di `gioco/assets/sprite_teatro/ferruccio.png` e degli oggetti di
+`gioco/assets/sprite_teatro/scena/`. **Allega sempre a Gemini `ferruccio.png` e un oggetto di scena** (per esempio
+`scena/ostacolo-lampione.png` o `scena/porta-bottega-chiusa.png`) e scrivi: «stesso stile di disegno, stesso contorno,
+stessa tavolozza delle immagini allegate». È notte (luna ferma, lanterne calde), ma i muri e le cose hanno i loro colori:
+niente sagome nere. Dove le descrizioni qui sotto dicono «sagome» o «teatro d'ombre», vale questa regola.
 
 **Misura:** 1280×720 (16:9), opaco. **La fascia in basso (un sesto dell'altezza, sotto i 600 px) resta scura e vuota:**
 lì il gioco mette gli oggetti raccolti e i pulsanti. **Senza personaggi dentro** (Ferruccio, Tonino, Agnese… li mette il
-gioco) e senza scritte. Il pavimento dove si cammina sta fra i 470 e i 600 px di altezza.
-
-**Stile:** lo stesso del Teatro (`design/art/art-bible.md`): sagome scure, luce calda di lanterna, luna ferma, fili d'oro
-che scendono dall'alto dove la scena è sotto il Velo. Prompt di contesto e frase di stile: quelli di
-`production/arte/richieste-gemini-seconda-ondata.md`.
+gioco) e senza scritte. Il pavimento dove si cammina sta fra i 470 e i 600 px di altezza. Vista di tre quarti, come un
+palcoscenico visto dalla platea; i fili d'oro che scendono dall'alto dove la scena è sotto il Velo.
 
 ## Prologo
 
@@ -114,19 +119,18 @@ che scendono dall'alto dove la scena è sotto il Velo. Prompt di contesto e fras
 | ⬜ | `epilogo-manifattura-velata.png` | La manifattura di San Leucio | La manifattura di San Leucio, luce bianca e piatta: file di telai identici, Agnese al centro, una sciarpa rossa a metà sul suo telaio (l'unica macchia di colore). |
 | ⬜ | `epilogo-bottega.png` | La bottega di Gaetano | La bottega di Gaetano: brace arancione, incudine, un uomo di spalle, a destra una scala a pioli che sale nel buio, da cui scendono tre fili d'oro. |
 
-## Figure che oggi sono sagome a codice
+## Figure che oggi sono disegnate col codice
+
+Stesso stile di Ferruccio, sfondo trasparente, piedi alla stessa quota in tutte le pose.
 
 | File (in `gioco/assets/sprite_teatro/`) | Foglio | Descrizione |
 |---|---|---|
-| `avv_rosa.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Rosa: oggi è la sagoma «donna». |
-| `avv_mariella.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Mariella: oggi è la sagoma «donna». |
-| `avv_gaetano.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Gaetano: oggi è la sagoma «vecchio». |
-| `avv_bianca.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Bianca: oggi è la sagoma «bambina». |
-| `avv_guardia.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Guardia della Reggia: oggi è la sagoma «guardia». |
-| `avv_cittadino.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Cittadino di Caserta: oggi è la sagoma «uomo». |
-| `avv_gatto-canti.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Il Gatto dei Quattro Canti: oggi è la sagoma «gatto». |
-| `avv_madre-marmo.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | La Madre di Marmo: oggi è la sagoma «statua». |
-| `avv_peppe.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Peppe, il giardiniere: oggi è la sagoma «uomo». |
-| `avv_nunzia.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Nunzia, tessitrice: oggi è la sagoma «donna». |
+| `avv_rosa.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Rosa, la moglie di Tonino: popolana sui trent'anni, capelli raccolti, scialle chiaro, grembiule. È un ricordo: un po' luminosa. |
+| `avv_mariella.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Mariella, alla finestra: giovane donna, scialle lilla, capelli sciolti, un sorriso assente (è sotto il Velo). |
+| `avv_gaetano.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Gaetano, il fabbro, padre di Ferruccio: anziano e robusto, grembiule di cuoio, maniche arrotolate, baffi grigi, martello in mano. |
+| `avv_bianca.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Bianca, la bambina di Donna Luciana, otto anni: camicia da notte bianca con un giglio ricamato, capelli chiari, scalza. |
+| `avv_cittadino.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Un cittadino di Caserta in abito da festa del 1845: giacca corta, panciotto, cappello in mano; dorme in piedi sorridendo. |
+| `avv_peppe.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Peppe, il giardiniere della Villa: vecchio magro, cappello di paglia, gilè verde, rastrello. |
+| `avv_nunzia.png` | 1 riga × 2 pose (fermo; parla o gesto), celle 256×320 | Nunzia, tessitrice di San Leucio: mezza età, fazzoletto in testa, grembiule, la spola in mano. |
 
 Fondali: 0 disegnati su 55.
