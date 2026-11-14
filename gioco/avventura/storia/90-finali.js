@@ -194,7 +194,6 @@ AV.quadro({
   entrata: [
     ['unaVolta', 'cap-epilogo', [['capitolo', 'epilogo']]],
     ['unaVolta', 'epilogo-libera-inizio', [
-      ['flag', 'volto', 'umano'],
       ['dice', 'didascalia', 'Il giglio ricamato si spegne e i fili che attraversano la città si spezzano.'], // [bibbia]
       ['effetto', 'lampo'],
       ['dice', 'didascalia', 'Per un istante non si sente nulla.'], // [bibbia]
