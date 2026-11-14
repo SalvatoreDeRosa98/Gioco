@@ -522,8 +522,14 @@
       if (f) { const cw = f.info.h, n = Math.max(1, Math.floor(f.info.w / cw)), c = (i.cella || 0) % n; const s = Math.min(w / cw, h / f.info.h); ctx.drawImage(f.img, c * cw, 0, cw, f.info.h, x + (w - cw * s) / 2, y + (h - f.info.h * s) / 2, cw * s, f.info.h * s); return; }
     }
     if (Array.isArray(i.punti) && i.punti.length > 2) {
-      ctx.save(); ctx.translate(x, y); ctx.scale(w / 40, h / 40); ctx.beginPath(); ctx.moveTo(i.punti[0][0], i.punti[0][1]);
-      for (const p of i.punti.slice(1)) ctx.lineTo(p[0], p[1]); ctx.closePath(); ctx.lineWidth = 40 / w; riempi(ctx, i.colore || '#8a6a3a', C.filo); ctx.restore(); return;
+      // i punti si adattano al riquadro qualunque sia la loro misura (0..40, o centrati sullo zero)
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const p of i.punti) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
+      const lw = Math.max(1, x1 - x0), lh = Math.max(1, y1 - y0), m = Math.min(w, h) * 0.16;
+      const k = Math.min((w - 2 * m) / lw, (h - 2 * m) / lh);
+      ctx.save(); ctx.translate(x + w / 2 - ((x0 + x1) / 2) * k, y + h / 2 - ((y0 + y1) / 2) * k); ctx.scale(k, k);
+      ctx.beginPath(); ctx.moveTo(i.punti[0][0], i.punti[0][1]);
+      for (const p of i.punti.slice(1)) ctx.lineTo(p[0], p[1]); ctx.closePath(); ctx.lineWidth = 1 / k; riempi(ctx, i.colore || '#8a6a3a', C.filo); ctx.restore(); return;
     }
     D.sagoma(ctx, i.sagoma || 'cassa', x + 3, y + 3, w - 6, h - 6, { t, colore: i.sagoma === 'anima' ? i.colore : '#3a2818' });
   };

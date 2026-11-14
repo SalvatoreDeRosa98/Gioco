@@ -524,7 +524,7 @@
     y2 += 10; scritta(ctx, 'Ciò che porta con sé', 340, y2, 12, '#d9a456', 'left', 'bold'); y2 += 8;
     S.inventario.slice(0, 12).forEach((id, i) => {
       const O = AV.dati.oggetto.get(id) || { nome: id }; const x = 340 + (i % 2) * 130, yy = y2 + Math.floor(i / 2) * 30;
-      D.icona(ctx, O.icona, x, yy, 24, 24, G.t); scritta(ctx, O.nome.slice(0, 18), x + 28, yy + 16, 11, '#e6d8be', 'left');
+      D.icona(ctx, O.icona, x, yy, 24, 24, G.t); scritta(ctx, O.nome.slice(0, 36), x + 28, yy + 16, 11, '#e6d8be', 'left');
     });
     voceMenu(ctx, 'd:chiudi', 'Chiudi', W / 2 - 50, 310, 100, true, () => { G.overlay = null; }, true);
   }
