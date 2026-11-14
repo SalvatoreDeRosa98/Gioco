@@ -287,6 +287,7 @@ AV.quadro({
           ['pensa', 'In fondo, sotto il rapporto falso, la firma: G. Valente.'], // [nuovo]
           ['pensa', 'Il Custode non è più semplicemente il mostro da uccidere.'], // [bibbia]
           ['pensa', 'È un padre che ha commesso un\'ingiustizia mentre cercava di proteggere ciò che restava della propria famiglia.'], // [bibbia]
+          ['diario', 'Il registro originale: mio padre non fu colpevole, il rapporto falso lo firmò il capitano Gregorio Valente. Ma Gregorio era sotto la centina, a cercare sua figlia.'], // [nuovo]
           ['pensa', 'Sul tavolo la lanterna è accesa. Ferruccio tiene il registro sopra la fiamma.'], // [nuovo]
           ['pensa', 'Se lo conserva, la verità su suo padre andrà mostrata agli altri, anche se ci vorranno anni.'], // [nuovo] (bibbia 444)
           ['pensa', 'Se lo brucia, il nome di Gaetano non starà più accanto a quel crollo in nessun foglio. Ma brucerà anche l\'unica prova della sua innocenza.'], // [nuovo] (bibbia 446)
@@ -450,7 +451,7 @@ AV.quadro({
             // --- villa-comunale.ricordo-gaetano (obbligatoria) ---
             ['effetto', 'buio'],
             ['attendi', 600],
-            ['pensa', 'Il giocatore vede soltanto una breve immagine immobile: Gaetano sorregge una trave mentre alcuni operai si mettono in salvo.'], // [bibbia] (didascalia di Ferruccio)
+            ['pensa', 'Soltanto una breve immagine immobile: Gaetano sorregge una trave mentre alcuni operai si mettono in salvo.'], // [bibbia] (riga 434, senza «Il giocatore vede»)
             ['pensa', 'Si sente la sua voce.'], // [bibbia]
             ['dice', 'gaetano', 'Prima fate uscire i ragazzi!'], // [bibbia]
             ['attendi', 600],
@@ -621,10 +622,10 @@ AV.quadro({
       guarda: [['pensa', 'Dietro la grata, nella nicchia asciutta, una scatola di latta da chiodi. Sul coperchio, graffiato: «Per Ferruccio, quando sarà grande».']], // [nuovo]
       usa: [
         ['pensa', 'La grata ha un chiavistello che si apre solo da chi sa dov\'è. Ferruccio lo sa: suo padre li faceva tutti così. Dentro la scatola, un foglio piegato, asciutto.'], // [nuovo]
-        ['dice', 'gaetano', 'Ferruccio, ti lascio questo qui, dove l\'acqua passa e non si ferma, perché tu ci arrivi da grande.'], // [nuovo]
-        ['dice', 'gaetano', 'Oggi sei tornato a casa col labbro rotto e volevi andare a ripagarlo. Non ti ho fermato con le mani. Ti ho fatto una domanda: perché te l\'ha fatto? E tu non lo sapevi.'], // [nuovo]
-        ['dice', 'gaetano', 'Ricordatelo. Chi vuole la vendetta cerca un colpevole; chi vuole la verità cerca che cosa è successo. A volte è la stessa strada. Spesso no.'], // [nuovo]
-        ['dice', 'gaetano', 'Il ferro battuto con la rabbia si spezza al primo freddo. Tuo padre, G. F.'], // [nuovo]
+        ['dice', 'didascalia', '«Ferruccio, ti lascio questo qui, dove l\'acqua passa e non si ferma, perché tu ci arrivi da grande.'], // [nuovo]
+        ['dice', 'didascalia', 'Oggi sei tornato a casa col labbro rotto e volevi andare a ripagarlo. Non ti ho fermato con le mani. Ti ho fatto una domanda: perché te l\'ha fatto? E tu non lo sapevi.'], // [nuovo]
+        ['dice', 'didascalia', 'Ricordatelo. Chi vuole la vendetta cerca un colpevole; chi vuole la verità cerca che cosa è successo. A volte è la stessa strada. Spesso no.'], // [nuovo]
+        ['dice', 'didascalia', 'Il ferro battuto con la rabbia si spezza al primo freddo. Tuo padre, G. F.»'], // [nuovo] (lettera: la voce è scritta, Gaetano non parla da fantasma, bibbia 412)
         ['pensa', 'Ferruccio legge due volte. Poi rimette il foglio nella scatola e la scatola nella nicchia. È il posto suo.'], // [nuovo]
         ['segna', 'messaggio-padre'],
         ['nascondi', 'scatola'],
