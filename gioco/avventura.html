@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Ferruccio — La Notte Immobile · Avventura</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; touch-action: none; }
+  #scena { position: absolute; display: block; background: #000; -webkit-user-select: none; user-select: none; }
+</style>
+</head>
+<body>
+<canvas id="scena" width="640" height="360" aria-label="Ferruccio — La Notte Immobile"></canvas>
+<!-- motore -->
+<script src="avventura/01-logica.js"></script>
+<script src="avventura/05-immagini.js"></script>
+<script src="avventura/10-disegno.js"></script>
+<script src="avventura/20-interfaccia.js"></script>
+<script src="avventura/30-audio.js"></script>
+<!-- storia (solo dati) -->
+<script src="avventura/storia/00-base.js"></script>
+<script src="avventura/storia/10-piazza-dante.js"></script>
+<script src="avventura/storia/20-corso-trieste.js"></script>
+<script src="avventura/storia/30-villa-comunale.js"></script>
+<script src="avventura/storia/40-san-leucio.js"></script>
+<script src="avventura/storia/50-reggia.js"></script>
+<script src="avventura/storia/60-vie-laterali.js"></script>
+<script src="avventura/storia/90-finali.js"></script>
+<!-- avvio -->
+<script src="avventura/90-avvio.js"></script>
+</body>
+</html>
