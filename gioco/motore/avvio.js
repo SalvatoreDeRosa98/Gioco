@@ -100,7 +100,7 @@ const ID_NEMICO_PROVA = 'nemico-prova';
 // --- squadra nemici: fine ---
 import { creaResaDebug } from './resa/debug.js';
 import { creaRenderer } from './resa/renderer.js';
-import { creaSprite } from './resa/sprite.js'; // --- squadra disegni (storia P14): fogli di sprite veri dal manifesto ---
+import { creaSprite, applicaVariante, scalaVoce } from './resa/sprite.js'; // --- squadra disegni (storia P14): fogli di sprite veri dal manifesto ---
 import { creaFeel } from './resa/feel.js'; // --- squadra feel (P08) ---
 import { caricaModelli, creaCatalogo, regoleDaParametri, validaParametriGenerazione } from './mondo/modelli.js';
 import { generaPiano } from './mondo/generazione.js';
@@ -172,6 +172,8 @@ const PARAM_PERSONAGGIO = 'personaggio';
 /** Storia P06 (QA): `?boss=<id>` forza il boss di ogni piano; `?sipario=0` salta il sipario narrativo. */
 const PARAM_BOSS = 'boss';
 const PARAM_SIPARIO = 'sipario';
+/** `?disegni=<variante>`: quale variante dei disegni usare (resa/sprite.js › applicaVariante); `autore` = i disegni dell'autore. */
+const PARAM_DISEGNI = 'disegni';
 const ID_EVOCATO = 'evocato';
 /** Contenuti della storia (storie 026-027): nomi di file, non valori di gioco. */
 const FILE_STORIA = 'contenuti/storia.json';
@@ -363,11 +365,13 @@ async function avvia() {
   const pianoEconomia = conPiano ? pianoRichiesto : 1;
   const economia = creaEconomia({ parametri, eventi, rng: derivato(rng, 'drop'), profilo, ferruccio, modificatori, piano: pianoEconomia });
   const testiInterfaccia = await caricaJson(FILE_INTERFACCIA);
-  const manifestoSprite = await caricaJson(FILE_SPRITE).catch(() => ({ voci: [] }));
+  // Variante dei disegni (resa/sprite.js › applicaVariante): quella dichiarata nel manifesto (`variante`), o `?disegni=<nome>`
+  // nell'URL; `?disegni=autore` riporta i disegni dell'autore.
+  const manifestoSprite = applicaVariante(await caricaJson(FILE_SPRITE).catch(() => ({ voci: [] })), url.searchParams.get(PARAM_DISEGNI));
   /** Percorso dell'immagine di una voce del manifesto (null se non elencata): il DOM prova a caricarla e ripiega sullo sprite provvisorio. */
   const voceSprite = (nome) => manifestoSprite.voci?.find((v) => v.nome === nome) ?? null;
   /** Foglio di uno sprite del manifesto pronto per il DOM/canvas (src già risolto per il pacchetto a file unico), o null. */
-  const foglioSprite = (nome) => { const v = voceSprite(nome); return v ? { src: percorsoRisorsa(v.file), larghezza: v.larghezza, altezza: v.altezza, layout: v.layout ?? null } : null; };
+  const foglioSprite = (nome) => { const v = voceSprite(nome); return v ? { src: percorsoRisorsa(v.file), larghezza: v.larghezza, altezza: v.altezza, layout: v.layout ?? null, scala: scalaVoce(v), liscio: v.liscio === true } : null; };
   /** Fogli di gioco già aperti (Image per nome), così il renderer non ricarica a ogni frame. */
   const immaginiFogli = new Map();
   const foglioConImmagine = (nome) => {
@@ -982,7 +986,7 @@ async function avvia() {
       feel,
       resa,
       // --- squadra disegni (storia P14): gestore dei fogli di sprite veri (`stato()`, `pronto(nome)`, `fotogramma(nome, posa, i)`, `voce(nome)`) ---
-      sprite: gestoreSprite,
+      sprite: gestoreSprite, disegni: manifestoSprite.varianteAttiva,
       // --- squadra disegni: fine ---
       campo,
       ferruccio,

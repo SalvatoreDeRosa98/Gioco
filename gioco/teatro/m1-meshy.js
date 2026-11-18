@@ -9,8 +9,8 @@
  * figura dipinta: niente si rompe.
  *
  * Prove dell'autore (2026-11-18): Taddeo (assets/taddeo.jpg) e Ferruccio (assets/ferruccio.jpg). Dopo averle viste l'autore
- * ha preferito per il Teatro lo stile 2D di prima: qui tutto è SPENTO (`attivo: false`), i disegni restano e si usano
- * nell'avventura grafica. Per riaccenderli: `attivo: true` nelle tabelle (o window.__figureM1 / __scenaM1 = true per prova). Modelli, costi e come si rifà il foglio:
+ * ha preferito per il Teatro lo stile 2D di prima: qui tutto è SPENTO (`attivo: false`), i disegni restano e si provano
+ * nel motore modulare (gioco/motore/, variante «meshy» di contenuti/sprite.json). Per riaccenderli qui: `attivo: true` nelle tabelle (o window.__figureM1 / __scenaM1 = true per prova). Modelli, costi e come si rifà il foglio:
  * production/arte/meshy-modelli.md (tools/meshy-foglio.js).
  */
 
@@ -20,7 +20,7 @@
  */
 const FIGURE_M1 = Object.freeze({
   ferruccio: Object.freeze({
-    attivo: false, // l'autore (2026-11-18): nel Teatro lo stile 2D di prima è più bello; il foglio resta, per l'avventura
+    attivo: false, // l'autore (2026-11-18): nel Teatro lo stile 2D di prima è più bello; il foglio resta, per il motore modulare
     foglio: 'ferruccio_meshy',
     cellaL: 224, cellaA: 256,
     testa: 19 / 256, piedi: 240 / 256, // i piedi: come Taddeo (nel foglio il punto più basso è la punta dello spadino)
@@ -60,7 +60,7 @@ const FIGURE_M1 = Object.freeze({
  * i disegni dell'autore; un file che manca torna da solo al disegno.
  */
 const SCENA_M1 = Object.freeze({
-  attivo: false, // l'autore (2026-11-18): nel Teatro restano i suoi disegni; questi vanno nell'avventura
+  attivo: false, // l'autore (2026-11-18): nel Teatro restano i suoi disegni; questi si provano nel motore modulare
   cartella: 'assets/sprite_teatro_meshy/scena/',
   nomi: Object.freeze(['ostacolo-lampione', 'ostacolo-botte', 'ostacolo-fontanella', 'ostacolo-statua', 'ostacolo-carretto', 'ostacolo-albero',
     'ostacolo-telaio', 'ostacolo-colonna', 'ostacolo-panchina', 'ostacolo-braciere', 'ostacolo-candelabro', 'ostacolo-arcolaio',

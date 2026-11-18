@@ -105,8 +105,12 @@ export function creaMenu({ documento, finestra, contenitore, testi, personaggi, 
       const foglio = sprite(id);
       const fw = foglio?.larghezza ?? 0;
       const fh = foglio?.altezza ?? 0;
-      tela.width = fw > 0 ? fw * SCALA_SPRITE_CARTA : 80;
-      tela.height = fh > 0 ? fh * SCALA_SPRITE_CARTA : 80;
+      // un foglio `liscio` (variante più definita del manifesto) è già grande: si mostra com'è, senza scalini
+      const liscio = foglio?.liscio === true;
+      const ingrandimento = liscio ? 1 : SCALA_SPRITE_CARTA;
+      tela.width = fw > 0 ? fw * ingrandimento : 80;
+      tela.height = fh > 0 ? fh * ingrandimento : 80;
+      if (liscio && tela.style) tela.style.imageRendering = 'auto';
       const ctx = tela.getContext?.('2d');
       if (ctx) disegnaGrigliaPixel(ctx, SPRITE_FERRUCCIO.idle0, tela.width / 2, tela.height / 2 + 4, 3, false, false);
       if (foglio && ctx && typeof finestra.Image === 'function') {
@@ -116,7 +120,7 @@ export function creaMenu({ documento, finestra, contenitore, testi, personaggi, 
           const posa = foglio.layout?.pose?.find((q) => q.posa === 'fermo') ?? foglio.layout?.pose?.[0];
           const riga = posa?.riga ?? 0;
           const colonna = posa?.da ?? 0;
-          ctx.imageSmoothingEnabled = false;
+          ctx.imageSmoothingEnabled = liscio;
           ctx.clearRect(0, 0, tela.width, tela.height);
           ctx.drawImage(img, colonna * fw, riga * fh, fw, fh, 0, 0, tela.width, tela.height);
           tela.dataset.sprite = 'gioco';

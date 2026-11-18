@@ -86,10 +86,12 @@ export function creaRenderer({
   /** Disegna il fotogramma animato di `posa`; false → ripiego. `o` accetta verso, alpha, ancora, scala, rotazione, ferma, da, indice. */
   const sp = (nome, posa, tipo, x, y, o = {}) => Boolean(S && S.disegna(ctx, nome, posa, o.indice ?? idx(nome, posa, tipo, o), x, y, o));
   /** Dimensioni del fotogramma di una voce del manifesto (null se non elencata). */
-  const dimSprite = (nome) => { const v = S?.voce(nome); return v ? { sw: v.larghezza, sh: v.altezza } : null; };
+  const dimSprite = (nome) => S?.misura(nome) ?? null; // misura in gioco: il fotogramma del foglio per la `scala` della voce
   /** Rotazione di uno sprite di muro per il lato della stanza (N è il verso del foglio). */
   const ROT_LATO = { N: 0, E: Math.PI / 2, S: Math.PI, W: -Math.PI / 2 };
   const rotLato = (lato) => ROT_LATO[lato] ?? 0;
+  /** Foglio proprio di un ostacolo dal suo id (mondo/modelli.js › LEGENDA); gli altri restano colonna o panca. */
+  const FOGLIO_OSTACOLO = { cassa: 'scena-cassa', telaio: 'scena-telaio', statua_dormiente: 'scena-statua', siepe: 'scena-siepe', banco: 'scena-banco' };
   /** Nome del foglio di un nemico comune dal suo archetipo (il dorato ha il suo foglio). */
   const NOME_ARCHETIPO = { gatto: 'gatto', vespa: 'vespa-cieca', maschera: 'maschera', bomba: 'bomba-ferma', guardia: 'guardia', statua: 'statua', predone: 'predone' };
   const nomeNemico = (b) => (b.dorato && b.archetipo !== 'predone' && S?.voce('mob-dorato') ? 'mob-dorato' : (NOME_ARCHETIPO[b.archetipo] ?? b.archetipo));
@@ -478,6 +480,12 @@ export function creaRenderer({
         ctx.fillRect(s.x + 4, s.y + 4, s.w - 8, s.h - 8);
         continue;
       }
+      // Ostacoli che hanno un foglio proprio nel manifesto (cassa, telaio, statua, siepe, banco): poggiano sul bordo basso
+      // della cella. Se il foglio non c'è o non è pronto si ripiega, come prima, su colonna o panca.
+      // il braciere di una variante dei disegni ha già il suo treppiede: niente panca sotto a fargli da piede
+      if (s.id === 'braciere' && S?.voce('scena-braciere')?.variante && spriteOk('scena-braciere')) continue;
+      const foglioProprio = FOGLIO_OSTACOLO[s.id];
+      if (foglioProprio && sp(foglioProprio, 'tutto', 'scena', s.x + s.w / 2, s.y + s.h)) continue;
       // Ostacoli interni (colonne barocche, panche, telai); storia P14: colonna (alta) o panca (larga) dai fogli di scena
       const nomeOstacolo = (String(s.id ?? '').includes('colonna') || s.h > s.w) ? 'scena-colonna' : 'scena-panca';
       if (nomeOstacolo === 'scena-colonna' ? sp('scena-colonna', 'tutto', 'scena', s.x + s.w / 2, s.y + s.h) : sp('scena-panca', 'tutto', 'scena', s.x + s.w / 2, s.y + s.h / 2, { ancora: 'centro' })) continue;
@@ -609,18 +617,38 @@ export function creaRenderer({
     return corpi;
   }
 
-  /** Fotogramma del foglio di gioco per lo stato del corpo: posa e indice (animazione a cadenza fissa di resa). */
-  function fotogrammaGiocatore(foglio, stato, tick) {
+  /**
+   * Strada fatta dal giocatore, contata dalla resa fotogramma dopo fotogramma (non è stato di gioco): serve alle pose che
+   * dichiarano `passo` (px di strada per fotogramma), così i piedi non scivolano a nessuna velocità. Un salto più lungo
+   * di `STRADA_SALTO` (cambio di stanza) non conta.
+   */
+  const STRADA_SALTO = 40;
+  const stradaGiocatore = { x: NaN, y: NaN, px: 0 };
+  function contaStradaGiocatore(x, y) {
+    const d = Math.hypot(x - stradaGiocatore.x, y - stradaGiocatore.y);
+    if (Number.isFinite(d) && d <= STRADA_SALTO) stradaGiocatore.px += d;
+    stradaGiocatore.x = x; stradaGiocatore.y = y;
+    return stradaGiocatore.px;
+  }
+
+  /**
+   * Fotogramma del foglio di gioco per lo stato del corpo: posa e indice. Di norma l'animazione va a cadenza fissa di resa;
+   * una posa del manifesto può dichiarare la sua `cadenza` (tick per fotogramma) oppure `passo` (px di `strada` per
+   * fotogramma). Nello scatto si usa la posa `corre` quando il foglio ce l'ha.
+   */
+  function fotogrammaGiocatore(foglio, stato, tick, strada = 0) {
     const pose = foglio.layout?.pose ?? [];
     const trova = (nome) => pose.find((q) => q.posa === nome) ?? null;
     let posa = null;
     let cadenza = 20;
-    if (stato === 'cammina' || stato === 'scatta') { posa = trova('cammina'); cadenza = 8; }
+    if (stato === 'cammina' || stato === 'scatta') { posa = (stato === 'scatta' ? trova('corre') : null) ?? trova('cammina'); cadenza = 8; }
     else if (stato === 'colpito') { posa = trova('colpito'); cadenza = 1; }
     else if (stato === 'morto') { posa = trova('morto'); cadenza = 12; }
     if (!posa) posa = trova('fermo') ?? pose[0] ?? { riga: 0, da: 0, fotogrammi: 1 };
+    if (Number.isFinite(posa.cadenza) && posa.cadenza >= 1) cadenza = posa.cadenza;
     const n = Math.max(1, posa.fotogrammi ?? 1);
     let i = Math.floor(tick / cadenza) % n;
+    if (Number.isFinite(posa.passo) && posa.passo > 0) i = Math.floor(strada / posa.passo) % n;
     if (stato === 'morto') i = Math.min(n - 1, Math.floor(tick / cadenza) % (n * 4)); // la posa di morte si ferma sull'ultimo
     return { colonna: (posa.da ?? 0) + i, riga: posa.riga ?? 0 };
   }
@@ -645,15 +673,18 @@ export function creaRenderer({
     // altrimenti resta il disegno procedurale di Ferruccio qui sotto.
     const foglio = foglioGiocatore();
     if (foglio && foglio.img && foglio.img.complete && foglio.img.naturalWidth > 0) {
-      const { colonna, riga } = fotogrammaGiocatore(foglio, ferruccio.stato, tick);
+      const { colonna, riga } = fotogrammaGiocatore(foglio, ferruccio.stato, tick, contaStradaGiocatore(px, py));
       const fw = foglio.larghezza;
       const fh = foglio.altezza;
+      // un foglio più definito (variante del manifesto) dichiara `scala`: in gioco misura fw × scala per fh × scala
+      const kF = Number.isFinite(foglio.scala) && foglio.scala > 0 ? foglio.scala : 1;
       ctx.save();
-      ctx.imageSmoothingEnabled = false;
+      ctx.imageSmoothingEnabled = foglio.liscio === true;
+      if (foglio.liscio === true) ctx.imageSmoothingQuality = 'high';
       if (flash) ctx.globalAlpha = 0.4; // invulnerabile: lampeggio semitrasparente (la squadra feel lo porta a parametro)
       ctx.translate(px, py + 12);
       if (verso < 0) ctx.scale(-1, 1);
-      ctx.drawImage(foglio.img, colonna * fw, riga * fh, fw, fh, -fw / 2, -fh, fw, fh);
+      ctx.drawImage(foglio.img, colonna * fw, riga * fh, fw, fh, -(fw * kF) / 2, -fh * kF, fw * kF, fh * kF);
       ctx.restore();
     } else {
 

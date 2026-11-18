@@ -88,7 +88,7 @@
     "velo": "Donna Luciana è sconfitta! Ma ai suoi polsi altri fili salgono nel buio: «BIS! DA CAPO!»"
   },
   "prova": {
-    "titolo": "Ferruccio — Il Teatro delle Marionette (4 Piani stile Isaac)",
+    "titolo": "Ferruccio — Il Teatro delle Marionette (4 Piani)",
     "righe": [
       "WASD: muovi - Frecce: spara nelle 4 direzioni (con la spada: fendente) - J: fendente - K: parata - Spazio: scatto - Q: oggetto attivo - E: raccogli / compra nella Fucina",
       "Piano 1 (5 stanze) -> Piano 2 (7 stanze) -> Piano 3 (8 stanze) -> Piano 4 (9 stanze, Boss Finale: Donna Luciana)",
@@ -160,7 +160,7 @@
         "atto": "Atto I · Piazza Dante (Piano {piano} · {personaggio})",
         "titolo": "«{titolo_personaggio}»",
         "righe": [
-          "I nemici si comportano come in Isaac: Vespe Cieche che volano contro di te senza sparare,",
+          "Ogni nemico ha il suo modo: Vespe Cieche che volano contro di te senza sparare,",
           "Bozzi Esplosivi fermi che esplodono se ti avvicini, Gatti che balzano, Maschere corazzate e Campioni!",
           "Premi [Q] per usare il tuo Oggetto Attivo! Batti il Boss per aprire anche la Stanza del Patto d'Ombra!"
         ]
@@ -179,7 +179,7 @@
         "titolo": "«La sciarpa rossa di Agnese»",
         "righe": [
           "Ai telai reali di San Leucio, Agnese continua a tessere una sciarpa rossa senza ricordare il tuo volto.",
-          "Da questo piano il Velo stringe più forte: ogni colpo subito spezza 1 Maschera intera (come in Isaac!).",
+          "Da questo piano il Velo stringe più forte: ogni colpo subito spezza 1 Maschera intera.",
           "Ogni oggetto equipaggiato nei 5 slot cambia visivamente il tuo costume e il tuo attacco!"
         ]
       },

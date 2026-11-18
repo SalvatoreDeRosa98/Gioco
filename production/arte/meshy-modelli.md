@@ -47,6 +47,17 @@ oggetti di scena, il gatto in quattro pose e la vespa. 30 crediti l'uno, **630 c
 - **Stile cupo**: colori smorzati, un velo scuro che cresce verso il basso, contorno a inchiostro (valori `STILE` nei due
   strumenti, `filtro` e `velo` nelle configurazioni di Ferruccio e Taddeo).
 
+## Dove si usano (decisione dell'autore, 2026-11-18)
+
+- **Teatro delle Marionette**: dopo la prova l'autore ha preferito lo stile 2D di prima. I disegni dei modelli restano nel
+  repository ma sono **spenti** (`gioco/teatro/m1-meshy.js`: `attivo: false`; `10-sprite.js › SPRITE_V2`), e il file unico
+  del Teatro non li incorpora.
+- **Motore modulare** (`gioco/motore/`): qui si provano, come variante «meshy» di `gioco/contenuti/sprite.json`
+  (`gioco/README.md` › «Varianti dei disegni»). I fogli nelle misure del motore stanno in `gioco/assets/sprite/meshy/` e si
+  rifanno con `python3 tools/meshy-motore.py` (parte dai fogli del Teatro, non spende crediti): Ferruccio e Taddeo con le pose
+  «colpito» e «morto» ricavate dal fotogramma da fermo, gatto, vespa, colonna, panca, braciere in 4 fotogrammi, botte, telaio,
+  statua, aiuola (per le siepi) e carretto (per i banchi). `?disegni=autore` riporta i disegni dell'autore.
+
 ## Limiti noti
 
 - Meshy dà lo scheletro solo alle figure umane: gatto e vespa sono modelli in posa fissa. I loro fotogrammi sono le

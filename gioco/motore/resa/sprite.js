@@ -8,11 +8,16 @@
  *    data: URI di `fondazione/risorse.js`) e ne tiene lo stato (`caricamento`, `caricato`, `errore`);
  *  - ritaglia un fotogramma (`fotogramma(nome, posa, indice)` → `{img, sx, sy, sw, sh, pronta}`), con posa di ripiego (la
  *    prima del layout) e indice bloccato nell'intervallo dei fotogrammi disponibili sul foglio;
- *  - disegna un fotogramma (`disegna`) con `imageSmoothingEnabled = false`, ancorato ai piedi o al centro come dice il
+ *  - disegna un fotogramma (`disegna`) con `imageSmoothingEnabled = false` (salvo le voci `liscio`), ancorato ai piedi o al centro come dice il
  *    manifesto (o come chiede chi disegna), ribaltato con `verso < 0`, con `alpha`, `scala` e `rotazione`;
  *  - calcola l'indice dell'animazione a cadenza fissa (`indice`) dai tick del ciclo e dalle cadenze di `resa.json › sprite`
  *    (tick per fotogramma: fermo lento, muove, attacco, morte che si ferma sull'ultimo, oggetti che brillano, scena);
- *  - ripete un tile come pattern (`disegnaPattern`) per pavimento e muro.
+ *  - ripete un tile come pattern (`disegnaPattern`) per pavimento e muro;
+ *  - applica una VARIANTE di disegni (`applicaVariante`): una voce può dichiarare `varianti: { <nome>: { file, larghezza,
+ *    altezza, scala, liscio, layout } }`; con la variante scelta quei campi sostituiscono i propri. `scala` è il rapporto fra
+ *    il fotogramma del foglio e la sua misura in gioco (un foglio più definito si disegna più piccolo), `liscio: true` lo
+ *    disegna senza scalini. La variante «meshy» porta i disegni resi dai modelli 3D (assets/sprite/meshy/, fatti da
+ *    tools/meshy-motore.py); `autore` — o un nome che nessuna voce ha — lascia i disegni dell'autore.
  *
  * Regole: la resa legge e non muta; nessun numero di gioco qui (le cadenze vengono dai parametri); se un PNG manca o non è
  * ancora arrivato le funzioni di disegno tornano `false` e chi chiama ripiega sullo sprite provvisorio. Il tempo è il
@@ -27,6 +32,30 @@ export const ANCORE = Object.freeze(['piedi-centro', 'centro', 'angolo']);
 
 /** Tipi di cadenza letti da `resa.json › sprite.ticks_<tipo>`. */
 export const TIPI_CADENZA = Object.freeze(['fermo', 'muove', 'attacco', 'morte', 'oggetto', 'scena']);
+
+/** La variante che non cambia niente: i disegni dell'autore. */
+export const VARIANTE_AUTORE = 'autore';
+
+/**
+ * Il manifesto con una variante di disegni applicata: ogni voce che ha `varianti[nome]` prende i campi di quella variante
+ * al posto dei propri (e ricorda in `variante` quale); le altre voci restano come sono. Non tocca il manifesto dato.
+ * @param {{ voci?: object[], variante?: string }|null} manifesto
+ * @param {string|null} [nome] variante chiesta; senza, quella che il manifesto dichiara in `variante`; senza anche quella, `autore`
+ * @returns {{ voci: object[], varianteAttiva: string }}
+ */
+export function applicaVariante(manifesto, nome = null) {
+  const scelta = typeof nome === 'string' && nome !== '' ? nome : (typeof manifesto?.variante === 'string' ? manifesto.variante : VARIANTE_AUTORE);
+  const voci = (manifesto?.voci ?? []).map((v) => {
+    const alt = v?.varianti?.[scelta];
+    return alt && typeof alt === 'object' ? { ...v, ...alt, variante: scelta } : v;
+  });
+  return { ...(manifesto ?? {}), voci, varianteAttiva: scelta };
+}
+
+/** Rapporto fra il fotogramma del foglio e la sua misura in gioco (`scala` della voce; 1 se manca o non è valido). */
+export function scalaVoce(voce) {
+  return Number.isFinite(voce?.scala) && voce.scala > 0 ? voce.scala : 1;
+}
 
 /**
  * Trova la posa nel layout della voce: quella chiesta, altrimenti la prima (ripiego), altrimenti una posa sintetica di un
@@ -97,6 +126,9 @@ export function creaSprite({ manifesto, percorso = (f) => f, parametri = null, c
   function carica(nome) {
     if (cache.has(nome)) return cache.get(nome);
     const v = voce(nome);
+    // una voce senza file (l'autore non ha ancora quel disegno, e la variante attiva non lo porta) non è un errore di
+    // caricamento: non si carica niente, chi disegna ripiega, e non entra nel conteggio di `stato()`
+    if (v && !v.file) return { img: null, stato: STATI_FOGLIO.errore };
     if (!v || !v.file || typeof creaImmagine !== 'function') {
       const rec = { img: null, stato: STATI_FOGLIO.errore };
       if (v) cache.set(nome, rec);
@@ -132,8 +164,8 @@ export function creaSprite({ manifesto, percorso = (f) => f, parametri = null, c
    * @param {string} nome voce del manifesto
    * @param {string} posa nome della posa (ripiego: la prima del layout)
    * @param {number} indice indice del fotogramma (bloccato in 0 … disponibili−1)
-   * @returns {{ img: object|null, sx: number, sy: number, sw: number, sh: number, pronta: boolean, posa: string, indice: number, ancora: string }|null}
-   *   null se la voce non è nel manifesto
+   * @returns {{ img: object|null, sx: number, sy: number, sw: number, sh: number, pronta: boolean, posa: string, indice: number, ancora: string, scala: number, liscio: boolean }|null}
+   *   null se la voce non è nel manifesto; `sw`/`sh` sono i pixel del foglio, in gioco il fotogramma misura `sw × scala` per `sh × scala`
    */
   function fotogramma(nome, posa, indice = 0) {
     const v = voce(nome);
@@ -145,7 +177,7 @@ export function creaSprite({ manifesto, percorso = (f) => f, parametri = null, c
     const sh = v.altezza;
     const pronta = pronto(nome);
     const rec = cache.get(nome);
-    return { img: pronta ? rec.img : null, sx: (p.da + i) * sw, sy: p.riga * sh, sw, sh, pronta, posa: p.posa, indice: i, ancora: v.ancora ?? ANCORE[0] };
+    return { img: pronta ? rec.img : null, sx: (p.da + i) * sw, sy: p.riga * sh, sw, sh, pronta, posa: p.posa, indice: i, ancora: v.ancora ?? ANCORE[0], scala: scalaVoce(v), liscio: v.liscio === true };
   }
 
   /** Cadenza in tick per fotogramma per un tipo di animazione (`resa.sprite.ticks_<tipo>`); senza parametri 1. */
@@ -200,17 +232,28 @@ export function creaSprite({ manifesto, percorso = (f) => f, parametri = null, c
   function disegna(ctx, nome, posa, indice, x, y, { verso = 1, alpha = 1, ancora = null, scala = 1, rotazione = 0 } = {}) {
     const f = fotogramma(nome, posa, indice);
     if (!f || !f.pronta || !ctx) return false;
-    const { dx, dy } = scostamento(ancora ?? f.ancora, f.sw, f.sh);
+    const dw = f.sw * f.scala;
+    const dh = f.sh * f.scala;
+    const { dx, dy } = scostamento(ancora ?? f.ancora, dw, dh);
     ctx.save();
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = f.liscio;
+    if (f.liscio) ctx.imageSmoothingQuality = 'high';
     if (alpha !== 1) ctx.globalAlpha = Math.max(0, Math.min(1, alpha)) * (ctx.globalAlpha ?? 1);
     ctx.translate(x, y);
     if (rotazione) ctx.rotate(rotazione);
     if (scala !== 1) ctx.scale(scala, scala);
     if (verso < 0) ctx.scale(-1, 1);
-    ctx.drawImage(f.img, f.sx, f.sy, f.sw, f.sh, dx, dy, f.sw, f.sh);
+    ctx.drawImage(f.img, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
     ctx.restore();
     return true;
+  }
+
+  /** Misura in gioco del fotogramma di una voce (`larghezza × scala`, `altezza × scala`), o null se non è nel manifesto. */
+  function misura(nome) {
+    const v = voce(nome);
+    if (!v) return null;
+    const k = scalaVoce(v);
+    return { sw: v.larghezza * k, sh: v.altezza * k };
   }
 
   /**
@@ -274,5 +317,5 @@ export function creaSprite({ manifesto, percorso = (f) => f, parametri = null, c
     return { voci: voci.size, richiesti: cache.size, caricati, caricamento, errori, inErrore };
   }
 
-  return Object.freeze({ voce, carica, pronto, fotogramma, conta, indice, cadenza, disegna, disegnaPattern, precarica, stato, nomi: () => [...voci.keys()] });
+  return Object.freeze({ voce, carica, pronto, fotogramma, conta, indice, cadenza, disegna, misura, disegnaPattern, precarica, stato, nomi: () => [...voci.keys()] });
 }

@@ -4,6 +4,8 @@
  "verso": "destra (il sinistro lo ribalta il codice)",
  "sfondo": "trasparente",
  "cartella": "assets/sprite/",
+ "variante": "meshy",
+ "_varianti": "Prova dell'autore (2026-11-18): una voce può avere 'varianti': { <nome>: { file, larghezza, altezza, scala, liscio, layout } } — i campi della variante scelta sostituiscono i propri (motore/resa/sprite.js › applicaVariante). 'variante' qui sopra è quella attiva; '?disegni=autore' nell'URL riporta i disegni dell'autore, e basta scrivere 'autore' qui per farlo sempre. La variante 'meshy' sono i disegni resi dai modelli 3D, in assets/sprite/meshy/ (tools/meshy-motore.py): 'scala' è il rapporto fra il fotogramma del foglio e la sua misura in gioco, 'liscio' lo disegna senza scalini, 'passo' di una posa sono i px di strada per fotogramma (i piedi non scivolano).",
  "voci": [
   {
    "categoria": "personaggio",
@@ -46,6 +48,48 @@
       "fotogrammi": 3
      }
     ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/ferruccio.png",
+     "larghezza": 224,
+     "altezza": 256,
+     "scala": 0.33,
+     "liscio": true,
+     "layout": {
+      "colonne": 8,
+      "righe": 5,
+      "pose": [
+       {
+        "posa": "fermo",
+        "riga": 0,
+        "fotogrammi": 2
+       },
+       {
+        "posa": "cammina",
+        "riga": 1,
+        "fotogrammi": 8,
+        "passo": 6.1
+       },
+       {
+        "posa": "corre",
+        "riga": 2,
+        "fotogrammi": 8,
+        "passo": 9.3
+       },
+       {
+        "posa": "colpito",
+        "riga": 3,
+        "fotogrammi": 1
+       },
+       {
+        "posa": "morto",
+        "riga": 4,
+        "fotogrammi": 3
+       }
+      ]
+     }
+    }
    }
   },
   {
@@ -132,6 +176,48 @@
       "fotogrammi": 3
      }
     ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/taddeo.png",
+     "larghezza": 224,
+     "altezza": 256,
+     "scala": 0.33,
+     "liscio": true,
+     "layout": {
+      "colonne": 8,
+      "righe": 5,
+      "pose": [
+       {
+        "posa": "fermo",
+        "riga": 0,
+        "fotogrammi": 2
+       },
+       {
+        "posa": "cammina",
+        "riga": 1,
+        "fotogrammi": 8,
+        "passo": 6.1
+       },
+       {
+        "posa": "corre",
+        "riga": 2,
+        "fotogrammi": 8,
+        "passo": 9.3
+       },
+       {
+        "posa": "colpito",
+        "riga": 3,
+        "fotogrammi": 1
+       },
+       {
+        "posa": "morto",
+        "riga": 4,
+        "fotogrammi": 3
+       }
+      ]
+     }
+    }
    }
   },
   {
@@ -246,6 +332,15 @@
       "fotogrammi": 4
      }
     ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/gatto.png",
+     "larghezza": 216,
+     "altezza": 136,
+     "scala": 0.3,
+     "liscio": true
+    }
    }
   },
   {
@@ -284,6 +379,15 @@
       "fotogrammi": 3
      }
     ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/vespa-cieca.png",
+     "larghezza": 234,
+     "altezza": 265,
+     "scala": 0.22,
+     "liscio": true
+    }
    }
   },
   {
@@ -1639,6 +1743,26 @@
       "fotogrammi": 6
      }
     ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/scena-braciere.png",
+     "larghezza": 348,
+     "altezza": 604,
+     "scala": 0.16,
+     "liscio": true,
+     "layout": {
+      "colonne": 4,
+      "righe": 1,
+      "pose": [
+       {
+        "posa": "tutto",
+        "riga": 0,
+        "fotogrammi": 4
+       }
+      ]
+     }
+    }
    }
   },
   {
@@ -1662,6 +1786,15 @@
       "fotogrammi": 1
      }
     ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/scena-colonna.png",
+     "larghezza": 290,
+     "altezza": 590,
+     "scala": 0.16,
+     "liscio": true
+    }
    }
   },
   {
@@ -1685,6 +1818,15 @@
       "fotogrammi": 1
      }
     ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/scena-panca.png",
+     "larghezza": 460,
+     "altezza": 373,
+     "scala": 0.16,
+     "liscio": true
+    }
    }
   },
   {
@@ -1849,6 +1991,161 @@
    }
   },
   {
+   "categoria": "scena",
+   "nome": "scena-cassa",
+   "file": null,
+   "larghezza": 64,
+   "altezza": 64,
+   "fotogrammi": "1",
+   "ancora": "piedi-centro",
+   "descrizione": "Cassa o botte (ostacolo che si rompe). L'autore non ha ancora un suo disegno per il motore: senza una variante il motore ripiega come prima su colonna o panca.",
+   "stato": "manca",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/scena-cassa.png",
+     "larghezza": 346,
+     "altezza": 426,
+     "scala": 0.16,
+     "liscio": true
+    }
+   }
+  },
+  {
+   "categoria": "scena",
+   "nome": "scena-telaio",
+   "file": null,
+   "larghezza": 64,
+   "altezza": 64,
+   "fotogrammi": "1",
+   "ancora": "piedi-centro",
+   "descrizione": "Telaio da seta (ostacolo). L'autore non ha ancora un suo disegno per il motore: senza una variante il motore ripiega come prima su colonna o panca.",
+   "stato": "manca",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/scena-telaio.png",
+     "larghezza": 358,
+     "altezza": 584,
+     "scala": 0.16,
+     "liscio": true
+    }
+   }
+  },
+  {
+   "categoria": "scena",
+   "nome": "scena-statua",
+   "file": null,
+   "larghezza": 64,
+   "altezza": 64,
+   "fotogrammi": "1",
+   "ancora": "piedi-centro",
+   "descrizione": "Statua dormiente (ostacolo). L'autore non ha ancora un suo disegno per il motore: senza una variante il motore ripiega come prima su colonna o panca.",
+   "stato": "manca",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/scena-statua.png",
+     "larghezza": 234,
+     "altezza": 594,
+     "scala": 0.16,
+     "liscio": true
+    }
+   }
+  },
+  {
+   "categoria": "scena",
+   "nome": "scena-siepe",
+   "file": null,
+   "larghezza": 64,
+   "altezza": 64,
+   "fotogrammi": "1",
+   "ancora": "piedi-centro",
+   "descrizione": "Siepe (ostacolo che si rompe). L'autore non ha ancora un suo disegno per il motore: senza una variante il motore ripiega come prima su colonna o panca.",
+   "stato": "manca",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/scena-siepe.png",
+     "larghezza": 406,
+     "altezza": 374,
+     "scala": 0.16,
+     "liscio": true
+    }
+   }
+  },
+  {
+   "categoria": "scena",
+   "nome": "scena-banco",
+   "file": null,
+   "larghezza": 64,
+   "altezza": 64,
+   "fotogrammi": "1",
+   "ancora": "piedi-centro",
+   "descrizione": "Banco del mercato (ostacolo). L'autore non ha ancora un suo disegno per il motore: senza una variante il motore ripiega come prima su colonna o panca.",
+   "stato": "manca",
+   "layout": {
+    "colonne": 1,
+    "righe": 1,
+    "pose": [
+     {
+      "posa": "tutto",
+      "riga": 0,
+      "fotogrammi": 1
+     }
+    ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/scena-banco.png",
+     "larghezza": 419,
+     "altezza": 556,
+     "scala": 0.16,
+     "liscio": true
+    }
+   }
+  },
+  {
    "categoria": "hub",
    "nome": "hub-tonino",
    "file": "assets/sprite/hub-tonino.png",
@@ -1984,6 +2281,26 @@
       "fotogrammi": 2
      }
     ]
+   },
+   "varianti": {
+    "meshy": {
+     "file": "assets/sprite/meshy/taddeo.png",
+     "larghezza": 224,
+     "altezza": 256,
+     "scala": 0.36,
+     "liscio": true,
+     "layout": {
+      "colonne": 8,
+      "righe": 5,
+      "pose": [
+       {
+        "posa": "fermo",
+        "riga": 0,
+        "fotogrammi": 2
+       }
+      ]
+     }
+    }
    }
   },
   {

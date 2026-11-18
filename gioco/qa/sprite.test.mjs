@@ -11,7 +11,11 @@
  *  - `indiceAnimazione` cicla o si ferma sull'ultimo; `indice()` usa le cadenze dei parametri;
  *  - caricamento con cache e stati (caricamento → caricato / errore), `disegna` torna false finché il foglio non è pronto e
  *    disegna con smoothing spento, ancora ai piedi/centro, ribaltamento con `verso`; `disegnaPattern` ripete il tile;
- *  - senza `creaImmagine` niente si carica e tutto ripiega.
+ *  - senza `creaImmagine` niente si carica e tutto ripiega;
+ *  - varianti dei disegni (prova dell'autore, 2026-11-18): `applicaVariante` sostituisce i campi delle sole voci che hanno
+ *    quella variante e non tocca il manifesto dato; la variante `autore` (o sconosciuta) lascia tutto com'è; i PNG di ogni
+ *    variante stanno su disco con le misure dichiarate; una voce `scala`/`liscio` si disegna rimpicciolita e senza scalini,
+ *    ancorata sulla misura in gioco; `misura()` dà la misura in gioco.
  */
 
 import test from 'node:test';
@@ -20,7 +24,7 @@ import { readFileSync, existsSync, openSync, readSync, closeSync } from 'node:fs
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { creaSprite, trovaPosa, fotogrammiDisponibili, indiceAnimazione, ANCORE, TIPI_CADENZA, STATI_FOGLIO } from '../motore/resa/sprite.js';
+import { creaSprite, trovaPosa, fotogrammiDisponibili, indiceAnimazione, applicaVariante, scalaVoce, ANCORE, TIPI_CADENZA, STATI_FOGLIO, VARIANTE_AUTORE } from '../motore/resa/sprite.js';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const RADICE = resolve(QUI, '..');
@@ -65,7 +69,20 @@ function contestoFinto() {
 
 test('manifesto ↔ disco: ogni voce ha il PNG e il foglio misura colonne×larghezza per righe×altezza', () => {
   assert.ok(MANIFESTO.voci.length >= 91, `voci: ${MANIFESTO.voci.length}`);
-  for (const v of MANIFESTO.voci) {
+  // le voci come sono (i disegni dell'autore) e come diventano con ogni variante dichiarata (es. «meshy»)
+  const daProvare = [];
+  for (const base of MANIFESTO.voci) {
+    // una voce può non avere ancora il disegno dell'autore (`file: null`): allora deve averne almeno uno in una variante
+    if (base.file) daProvare.push(base);
+    else assert.ok(Object.keys(base.varianti ?? {}).length >= 1, `${base.nome}: né file né varianti`);
+    for (const nomeVariante of Object.keys(base.varianti ?? {})) {
+      const conVariante = applicaVariante({ voci: [base] }, nomeVariante).voci[0];
+      assert.equal(conVariante.variante, nomeVariante);
+      assert.ok(scalaVoce(conVariante) > 0 && scalaVoce(conVariante) <= 1, `${base.nome}/${nomeVariante}: scala`);
+      daProvare.push({ ...conVariante, nome: `${base.nome} (variante ${nomeVariante})` });
+    }
+  }
+  for (const v of daProvare) {
     const percorso = join(RADICE, v.file);
     assert.ok(existsSync(percorso), `${v.nome}: manca ${v.file}`);
     const { w, h } = dimensioniPng(percorso);
@@ -187,7 +204,11 @@ test('caricamento con cache e stati; disegna ripiega finché il foglio non è pr
   assert.equal(S.disegnaPattern(ctx, 'scena-muro-tile', 0, 0, 10, 10), false, 'tile non caricato → false');
   // precarica tutto il manifesto
   S.precarica();
-  assert.equal(S.stato().richiesti, MANIFESTO.voci.length);
+  // le voci senza file (disegno dell'autore non ancora fatto) non si caricano e non contano fra i richiesti
+  assert.equal(S.stato().richiesti, MANIFESTO.voci.filter((v) => v.file).length);
+  const conMeshy = creaSprite({ manifesto: applicaVariante(MANIFESTO, 'meshy'), creaImmagine: () => new ImmagineFinta() });
+  conMeshy.precarica();
+  assert.equal(conMeshy.stato().richiesti, MANIFESTO.voci.length, 'con la variante «meshy» ogni voce ha il suo file');
 });
 
 test('senza creaImmagine (nessun DOM) nulla si carica e ogni disegno ripiega', () => {
@@ -203,4 +224,47 @@ test('senza creaImmagine (nessun DOM) nulla si carica e ogni disegno ripiega', (
   const vuoto = creaSprite({ manifesto: { voci: [] } });
   assert.equal(vuoto.fotogramma('gatto', 'fermo', 0), null);
   assert.deepEqual(vuoto.stato(), { voci: 0, richiesti: 0, caricati: 0, caricamento: 0, errori: 0, inErrore: [] });
+});
+
+test('varianti dei disegni: applicaVariante sostituisce solo le voci che la dichiarano; scala e liscio arrivano al disegno', () => {
+  const manifesto = { variante: 'prova', voci: [
+    { nome: 'a', file: 'a.png', larghezza: 64, altezza: 80, ancora: 'piedi-centro', layout: { colonne: 2, righe: 1, pose: [{ posa: 'fermo', riga: 0, fotogrammi: 2 }] },
+      varianti: { prova: { file: 'prova/a.png', larghezza: 200, altezza: 240, scala: 0.25, liscio: true } } },
+    { nome: 'b', file: 'b.png', larghezza: 48, altezza: 48, ancora: 'centro', layout: { colonne: 1, righe: 1, pose: [{ posa: 'tutto', riga: 0, fotogrammi: 1 }] } },
+  ] };
+  const copia = JSON.stringify(manifesto);
+  // senza nome vale la variante dichiarata dal manifesto; `autore` (o un nome che nessuno ha) lascia i disegni dell'autore
+  const con = applicaVariante(manifesto);
+  assert.equal(con.varianteAttiva, 'prova');
+  assert.deepEqual({ file: con.voci[0].file, l: con.voci[0].larghezza, a: con.voci[0].altezza, v: con.voci[0].variante }, { file: 'prova/a.png', l: 200, a: 240, v: 'prova' });
+  assert.equal(con.voci[0].layout.colonne, 2, 'il layout resta quello della voce se la variante non lo cambia');
+  assert.equal(con.voci[1], manifesto.voci[1], 'una voce senza quella variante resta la stessa');
+  for (const nome of [VARIANTE_AUTORE, 'sconosciuta']) {
+    const senza = applicaVariante(manifesto, nome);
+    assert.equal(senza.varianteAttiva, nome);
+    assert.equal(senza.voci[0].file, 'a.png');
+    assert.equal(senza.voci[0].variante, undefined);
+  }
+  assert.equal(applicaVariante({ voci: manifesto.voci }).varianteAttiva, VARIANTE_AUTORE, 'senza `variante` nel manifesto: autore');
+  assert.equal(JSON.stringify(manifesto), copia, 'il manifesto dato non cambia');
+  assert.deepEqual(applicaVariante(null).voci, []);
+
+  // disegno: 200×240 del foglio → 50×60 in gioco, ancorato ai piedi sulla misura in gioco, senza scalini
+  const immagini = [];
+  const S = creaSprite({ manifesto: con, creaImmagine: () => { const i = new ImmagineFinta(); immagini.push(i); return i; } });
+  S.precarica(); for (const i of immagini) i.carica(400);
+  assert.deepEqual(S.misura('a'), { sw: 50, sh: 60 });
+  assert.deepEqual(S.misura('b'), { sw: 48, sh: 48 });
+  assert.equal(S.misura('manca'), null);
+  const f = S.fotogramma('a', 'fermo', 1);
+  assert.deepEqual({ sx: f.sx, sw: f.sw, sh: f.sh, scala: f.scala, liscio: f.liscio }, { sx: 200, sw: 200, sh: 240, scala: 0.25, liscio: true });
+  const ctx = contestoFinto();
+  assert.equal(S.disegna(ctx, 'a', 'fermo', 1, 100, 100), true);
+  const d = ctx.chiamate.find((c) => c[0] === 'drawImage');
+  assert.deepEqual(d.slice(1), [200, 0, 200, 240, -25, -60, 50, 60]);
+  assert.equal(ctx.chiamate.smoothing, true, 'una voce `liscio` si disegna con lo smoothing acceso');
+  const ctx2 = contestoFinto();
+  S.disegna(ctx2, 'b', 'tutto', 0, 0, 0);
+  assert.equal(ctx2.chiamate.smoothing, false, 'le altre restano a pixel netti');
+  assert.deepEqual(ctx2.chiamate.find((c) => c[0] === 'drawImage').slice(1), [0, 0, 48, 48, -24, -24, 48, 48]);
 });

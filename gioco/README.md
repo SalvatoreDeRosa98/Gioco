@@ -38,6 +38,7 @@ Parametri dell'URL:
 | `?debug=1&slot=2&personaggio=agnese` | storia P04: slot del salvataggio (`1`-`5`, chiavi del profilo, dello stato narrativo e della notte salvata) e personaggio di `personaggi.json` (`ferruccio`, `agnese`, `taddeo`, `ombra`) scelti dall'URL: il menu è saltato e si parte nell'hub con le statistiche alla Isaac di quel personaggio (`attori/statistiche.js`: maschere da `hpHalf`, DMG, SPD, cadenza, oggetto attivo iniziale, dono iniziale). Cambiare slot dal menu ricarica la pagina con questi due parametri |
 | `?debug=1` | espone `window.__gioco` e scrive il numero di tick sul canvas |
 | `?seme=1845` | seme della notte (senza, deriva dall'orologio) |
+| `?disegni=autore` | **varianti dei disegni** (prova dell'autore, 2026-11-18): il manifesto dichiara la variante attiva (`sprite.json › variante`, oggi `meshy`: i disegni resi dai modelli 3D); `?disegni=autore` riporta i disegni dell'autore, `?disegni=meshy` li rimette. Vale con e senza `debug=1`. Vedi «Varianti dei disegni» |
 | `?debug=1&p.combattimento.portata=90` | override di un parametro (solo con `debug=1`; fuori range → errore in console e valore riportato nel range) |
 | `?debug=1&wire=1` | disegno DIAGNOSTICO in fil di ferro (`resa/debug.js`): pavimento 13×7, mura, Ferruccio, hitbox, fantocci; il ciclo entra subito in `notte` |
 | `?debug=1&wire=1&fantoccio=attacca` | come sopra, con il fantoccio in basso che attacca a ciclo (anticipo 500 → lampo 150 → impatto a +252 ms) per provare la parata |
@@ -663,6 +664,28 @@ fili si agganciano all'altezza del fotogramma. Le cadenze sono in `resa.json ›
 (`pixel-sprites.js`, forme Canvas) resta **solo come ripiego** quando un PNG manca o non è ancora caricato. Il menu usa `sipario-menu` e il
 sipario narrativo `sipario-<quartiere>` dell'atto (`sprite.json › fondali`, variabili CSS `--fondale-menu`/`--fondale-sipario`). Nel
 pacchetto a file unico i PNG sono data: URI (`fondazione/risorse.js`): `pacchetto.test.js` verifica che il gatto si veda anche lì.
+
+## Varianti dei disegni (prova dell'autore, 2026-11-18)
+
+L'autore ha chiesto di provare nel motore i disegni resi dai modelli 3D (Meshy) senza toccare i suoi. Una voce di
+`contenuti/sprite.json` può dichiarare `varianti: { <nome>: { file, larghezza, altezza, scala, liscio, layout } }`: con quella
+variante attiva i campi sostituiscono i propri (`resa/sprite.js › applicaVariante`, applicata da `avvio.js` al caricamento del
+manifesto). La variante attiva è `sprite.json › variante` (oggi `meshy`); `?disegni=autore` nell'URL — o `"variante": "autore"` nel
+manifesto — riporta i disegni dell'autore. `window.__gioco.disegni` dice quale è in uso.
+
+- `scala` è il rapporto fra il fotogramma del foglio e la sua misura in gioco: i fogli dei modelli sono circa tre volte più
+  definiti e si disegnano rimpiccioliti (`liscio: true` = senza scalini), così restano nitidi anche su schermi densi. `dimSprite`
+  del renderer e `sprite.misura(nome)` danno la misura in gioco.
+- Una posa può dichiarare `passo` (px di strada per fotogramma): il renderer conta la strada fatta dal giocatore e sceglie il
+  fotogramma da quella, così i piedi non scivolano; oppure `cadenza` (tick per fotogramma). Nello scatto si usa la posa `corre`
+  se il foglio ce l'ha.
+- Variante `meshy` (fogli in `assets/sprite/meshy/`, fatti da `tools/meshy-motore.py` a partire dai fogli del Teatro): Ferruccio e
+  Taddeo (fermo, cammina ×8, corre ×8; colpito e morto ricavati dal fotogramma da fermo), Taddeo nell'hub, gatto, vespa cieca,
+  colonna, panca, braciere (col suo treppiede: niente panca sotto) e cinque ostacoli che non hanno ancora un disegno dell'autore
+  — `scena-cassa`, `scena-telaio`, `scena-statua`, `scena-siepe`, `scena-banco` (`file: null`: con i disegni dell'autore restano,
+  come prima, panche o colonne; `renderer.js › FOGLIO_OSTACOLO`). Tutto il resto (guardie, boss, porte, mura, oggetti) resta
+  quello dell'autore.
+- Il pacchetto a file unico incorpora tutta `assets/sprite/`, quindi anche `meshy/`: le due varianti stanno nello stesso file.
 
 ## Fusione delle squadre HUD, sprite e cuciture (storia P16, passo di integrazione)
 
