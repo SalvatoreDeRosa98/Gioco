@@ -189,3 +189,6 @@ graphify-out/.graphify_build.json
 graphify-out/.graphify_root
 graphify-out/.graphify_labels.json.sig
 graphify-out/manifest.json
+
+# Modelli 3D di Meshy (pesanti: restano sul conto Meshy, gli ID sono in production/arte/meshy-modelli.md)
+meshy_output/
