@@ -87,7 +87,8 @@ function main() {
   //      della Seta di d7, guanto, forbici e ombra del capo del Grande Burattinaio di d1): i nomi fra apici.
   //      E le figure della terza ondata (Gregorio, Assunta, Agnese al telaio, Macchinista, Campanaro, Giudice).
   const jsSingole = ['teatro/d1-burattinaio.js', 'teatro/d7-rifiniture.js', 'teatro/h1-agnese-taddeo.js', 'teatro/h2-memorie.js',
-    'teatro/h3-gregorio.js', 'teatro/h5-sottopalco.js', 'teatro/h6-casertavecchia.js', 'teatro/h7-anfiteatro.js'].map(leggiJs).join('\n');
+    'teatro/h3-gregorio.js', 'teatro/h5-sottopalco.js', 'teatro/h6-casertavecchia.js', 'teatro/h7-anfiteatro.js',
+    'teatro/m1-meshy.js'].map(leggiJs).join('\n'); // m1: i fogli resi dai modelli 3D (<nome>_meshy)
   const daIncorporare = [];
   for (const f of fs.readdirSync(SPRITE).filter((n) => n.endsWith('.png')).sort()) {
     const nome = f.slice(0, -4);

@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }</script>
+</head><body style="margin:0;background:#444">
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+/** Rende i fotogrammi di un GLB animato: cella LxA, vista dal davanti-alto, figura girata di `giro` gradi. */
+window.rendi = async function (o) {
+  const L = o.L, A = o.A, S = o.S || 2;
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+  renderer.setSize(L * S, A * S, false); renderer.setClearColor(0x000000, 0); renderer.outputColorSpace = THREE.SRGBColorSpace;
+  const scena = new THREE.Scene();
+  const gltf = await new GLTFLoader().loadAsync(o.url);
+  const modello = gltf.scene; scena.add(modello);
+  let anca = null; const maglie = [];
+  modello.traverse((n) => {
+    if (n.isBone && !anca) anca = n;
+    if (n.isMesh) { maglie.push(n); n.frustumCulled = false; const m = n.material; const map = m.map || null; if (map) map.colorSpace = THREE.SRGBColorSpace;
+      n.material = o.luce ? new THREE.MeshLambertMaterial({ map }) : new THREE.MeshBasicMaterial({ map }); }
+  });
+  if (o.luce) { scena.add(new THREE.AmbientLight(0xffffff, 1.9)); const d = new THREE.DirectionalLight(0xfff1d0, 1.6); d.position.set(-1.5, 3, 2.5); scena.add(d); }
+  modello.rotation.y = THREE.MathUtils.degToRad(o.giro);
+  modello.updateMatrixWorld(true);
+  const scatola = new THREE.Box3().setFromObject(modello); const alt = scatola.max.y - scatola.min.y;
+  // camera ortografica: l'altezza inquadrata è `alt * margine`, i piedi stanno a `terra` dell'altezza della cella
+  const vista = alt * o.margine, asp = L / A;
+  const cam = new THREE.OrthographicCamera(-vista * asp / 2, vista * asp / 2, vista / 2, -vista / 2, 0.01, 100);
+  const el = THREE.MathUtils.degToRad(o.alzo); const centro = new THREE.Vector3(0, scatola.min.y + alt * 0.5, 0);
+  cam.position.set(0, centro.y + Math.sin(el) * 10, Math.cos(el) * 10); cam.lookAt(centro);
+  const mixer = new THREE.AnimationMixer(modello); const clip = gltf.animations[0]; const az = clip ? mixer.clipAction(clip) : null; if (az) az.play();
+  const anca0 = new THREE.Vector3(); mixer.setTime(0); modello.position.set(0, 0, 0); modello.updateMatrixWorld(true); if (anca) anca.getWorldPosition(anca0);
+  const fuori = [];
+  for (const t of o.tempi) {
+    mixer.setTime(clip ? t * clip.duration : 0);
+    modello.position.set(0, 0, 0); modello.updateMatrixWorld(true);
+    if (anca) { const p = new THREE.Vector3(); anca.getWorldPosition(p); modello.position.x -= p.x - anca0.x; modello.position.z -= p.z - anca0.z; modello.updateMatrixWorld(true); } // sul posto
+    renderer.render(scena, cam);
+    fuori.push(renderer.domElement.toDataURL('image/png'));
+  }
+  return { durata: clip ? clip.duration : 0, alt, fotogrammi: fuori, ossa: anca ? anca.name : null, maglie: maglie.length };
+};
+window.pronta = true;
+</script></body></html>

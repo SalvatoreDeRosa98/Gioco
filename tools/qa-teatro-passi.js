@@ -36,6 +36,7 @@ const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evide
   //    contesto del gioco: si ascoltano le sue chiamate (le scarpe sono le ellissi inclinate di 0,1 e 0,12 radianti;
   //    il corpo è il primo `translate`) e si portano i punti in coordinate dello schermo con la trasformazione corrente.
   const figure = await p.evaluate(() => {
+    window.__figureM1 = false; // m1: Taddeo ha anche un foglio da modello 3D; qui si prova la figura dipinta (il ripiego)
     const misura = (pg, tick, moving) => {
       const scarpe = []; let corpo = null;
       const ellisse = ctx.ellipse, trasla = ctx.translate;
@@ -59,6 +60,7 @@ const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evide
       for (let t = 0; t < 26; t++) cammina.push(misura(pg, t, true));
       out[pg] = { fermo, cammina };
     }
+    delete window.__figureM1;
     return out;
   });
   const giro = (v) => Math.max(...v) - Math.min(...v);
@@ -78,6 +80,32 @@ const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evide
     ok(`${pg} in cammino: i piedi si alternano`, opposti >= 8 && insieme === 0, { opposti, insieme, dS: dS.map((v) => +v.toFixed(1)) });
     ok(`${pg} in cammino: il corpo si alza a metà passo`, giro(F.cammina.map((m) => m.corpo)) >= 0.8, { corpo: F.cammina.map((m) => +m.corpo.toFixed(2)) });
   }
+
+  // 1b. (m1) Taddeo dal foglio reso dal modello 3D: usa il foglio, i piedi stanno a terra, il fotogramma segue la strada
+  await p.waitForFunction(() => window.__teatro.m1 && window.__teatro.m1.figuraM1('taddeo'), null, { timeout: 15000 }).catch(() => {});
+  const m1 = await p.evaluate(() => {
+    const M = window.__teatro.m1, F = M.FIGURE_M1.taddeo; const out = { pronto: Boolean(M.figuraM1('taddeo')) };
+    out.fermo = M.fotogrammaM1(F, false, 0, 0, 0);
+    out.cammina = [0, F.cicloCamminaPx / 2, F.cicloCamminaPx, F.cicloCamminaPx * 1.125].map((st) => M.fotogrammaM1(F, true, st, F.correDa - 0.1, 0));
+    out.corre = M.fotogrammaM1(F, true, F.cicloCorrePx / 4, F.correDa, 0);
+    const disegna = (opz) => { ctx.save(); try { disegnaFerruccioPittorico(60, 80, Object.assign({ tick: 0, charId: 'taddeo', charInfo: { id: 'taddeo' } }, opz)); } finally { ctx.restore(); } };
+    // il disegno: una sola immagine, ritagliata dal foglio, coi piedi sull'origine (py + piediY)
+    let usi = 0, rett = null, terra = null; const base = ctx.drawImage;
+    ctx.drawImage = function (img, ...r) { if (r.length === 8 && r[2] === F.cellaL && r[3] === F.cellaA) { usi++; rett = r; const m = this.getTransform(); const k = Math.hypot(m.b, m.d); terra = (m.f + m.d * (r[5] + r[7] * F.piedi)) / k; } return base.call(this, img, ...r); };
+    try { disegna({ moving: false }); } finally { delete ctx.drawImage; }
+    const k0 = (() => { ctx.save(); ctx.translate(0, 0); const m = ctx.getTransform(); ctx.restore(); return { f: m.f, k: Math.hypot(m.b, m.d) }; })();
+    out.usi = usi; out.riga = rett ? rett[1] / F.cellaA : null; out.piedi = terra === null ? null : terra - k0.f / k0.k; out.atteso = 80 + F.piediY;
+    // spento: torna la figura dipinta (tante ellissi, nessun ritaglio del foglio)
+    window.__figureM1 = false; let ell = 0; const e0 = ctx.ellipse; ctx.ellipse = function (...a) { ell++; return e0.apply(this, a); };
+    try { disegna({ moving: false }); } finally { delete ctx.ellipse; delete window.__figureM1; }
+    out.dipinta = ell;
+    return out;
+  });
+  ok('m1: il foglio di Taddeo dal modello 3D è carico', m1.pronto, m1);
+  ok('m1: da fermo la riga «fermo», in cammino i fotogrammi seguono la strada, veloce corre', m1.fermo.posa === 'fermo' && m1.fermo.riga === 0
+    && m1.cammina.map((x) => x.f).join(',') === '0,4,0,1' && m1.cammina.every((x) => x.posa === 'cammina') && m1.corre.posa === 'corre' && m1.corre.f === 2, { fermo: m1.fermo, cammina: m1.cammina, corre: m1.corre });
+  ok('m1: Taddeo si disegna dal foglio, coi piedi a terra', m1.usi === 1 && m1.riga === 0 && Math.abs(m1.piedi - m1.atteso) < 0.05, { usi: m1.usi, riga: m1.riga, piedi: m1.piedi, atteso: m1.atteso });
+  ok('m1: spento, torna la figura dipinta', m1.dipinta > 4, m1.dipinta);
 
   // 2. la fase della camminata del giocatore viene dalla strada fatta
   const fase = await p.evaluate(() => {

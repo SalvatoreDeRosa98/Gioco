@@ -1,0 +1,53 @@
+{
+ "modelli": "meshy_output/20261118_134025_taddeo_01a1eee3",
+ "three": "/tmp/claude-0/-home-user-Gioco/929d0b81-438b-52a4-b771-bea3666309a0/scratchpad/resa",
+ "uscita": "gioco/assets/sprite_teatro/taddeo_meshy.png",
+ "L": 224,
+ "A": 256,
+ "S": 2,
+ "giro": 42,
+ "alzo": 14,
+ "margine": 1.22,
+ "luce": false,
+ "filtro": "brightness(1.55) contrast(1.08) saturate(1.25)",
+ "contorno": 1.5,
+ "colore": "#140c08",
+ "righe": [
+  {
+   "nome": "fermo",
+   "file": "fermo.glb",
+   "tempi": [
+    0,
+    0
+   ]
+  },
+  {
+   "nome": "cammina",
+   "file": "cammina.glb",
+   "tempi": [
+    0,
+    0.125,
+    0.25,
+    0.375,
+    0.5,
+    0.625,
+    0.75,
+    0.875
+   ]
+  },
+  {
+   "nome": "corre",
+   "file": "corre.glb",
+   "tempi": [
+    0,
+    0.125,
+    0.25,
+    0.375,
+    0.5,
+    0.625,
+    0.75,
+    0.875
+   ]
+  }
+ ]
+}
