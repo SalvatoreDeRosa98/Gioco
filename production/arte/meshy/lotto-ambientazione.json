@@ -1,0 +1,94 @@
+{
+ "stile": "Dark fairytale stage prop for a gloomy marionette theatre in 19th-century Naples: weathered aged dark wood, tarnished brass, rusted wrought iron, soot and dust, muted desaturated colours, deep shadows, hand-painted oil texture.",
+ "lavori": [
+  {
+   "nome": "lampione",
+   "ingresso": "meshy_output/ingressi/lampione.png"
+  },
+  {
+   "nome": "botte",
+   "ingresso": "meshy_output/ingressi/botte.png"
+  },
+  {
+   "nome": "fontanella",
+   "ingresso": "meshy_output/ingressi/fontanella.png"
+  },
+  {
+   "nome": "statua",
+   "ingresso": "meshy_output/ingressi/statua.png"
+  },
+  {
+   "nome": "carretto",
+   "ingresso": "meshy_output/ingressi/carretto.png"
+  },
+  {
+   "nome": "albero",
+   "ingresso": "meshy_output/ingressi/albero.png"
+  },
+  {
+   "nome": "telaio",
+   "ingresso": "meshy_output/ingressi/telaio.png"
+  },
+  {
+   "nome": "colonna",
+   "ingresso": "meshy_output/ingressi/colonna.png"
+  },
+  {
+   "nome": "panchina",
+   "ingresso": "meshy_output/ingressi/panchina.png"
+  },
+  {
+   "nome": "braciere",
+   "ingresso": "meshy_output/ingressi/braciere.png"
+  },
+  {
+   "nome": "candelabro",
+   "ingresso": "meshy_output/ingressi/candelabro.png"
+  },
+  {
+   "nome": "arcolaio",
+   "ingresso": "meshy_output/ingressi/arcolaio.png"
+  },
+  {
+   "nome": "balla-seta",
+   "ingresso": "meshy_output/ingressi/balla-seta.png"
+  },
+  {
+   "nome": "aiuola",
+   "ingresso": "meshy_output/ingressi/aiuola.png"
+  },
+  {
+   "nome": "sacco",
+   "ingresso": "meshy_output/ingressi/sacco.png"
+  },
+  {
+   "nome": "cassa-polvere",
+   "ingresso": "meshy_output/ingressi/cassa-polvere.png"
+  },
+  {
+   "nome": "gatto-fermo",
+   "ingresso": "meshy_output/ingressi/gatto-fermo.png",
+   "stile": "Dark fairytale wooden marionette creature for a gloomy puppet theatre: black lacquered wood, worn brass joints, glowing amber eyes, muted desaturated colours, deep shadows, soot and dust, hand-painted oil texture."
+  },
+  {
+   "nome": "gatto-cammina",
+   "ingresso": "meshy_output/ingressi/gatto-cammina.png",
+   "stile": "Dark fairytale wooden marionette creature for a gloomy puppet theatre: black lacquered wood, worn brass joints, glowing amber eyes, muted desaturated colours, deep shadows, soot and dust, hand-painted oil texture."
+  },
+  {
+   "nome": "gatto-accucciato",
+   "ingresso": "meshy_output/ingressi/gatto-accucciato.png",
+   "stile": "Dark fairytale wooden marionette creature for a gloomy puppet theatre: black lacquered wood, worn brass joints, glowing amber eyes, muted desaturated colours, deep shadows, soot and dust, hand-painted oil texture."
+  },
+  {
+   "nome": "gatto-salto",
+   "ingresso": "meshy_output/ingressi/gatto-salto.png",
+   "stile": "Dark fairytale wooden marionette creature for a gloomy puppet theatre: black lacquered wood, worn brass joints, glowing amber eyes, muted desaturated colours, deep shadows, soot and dust, hand-painted oil texture."
+  },
+  {
+   "nome": "vespa",
+   "ingresso": "meshy_output/ingressi/vespa.png",
+   "stile": "Dark fairytale wooden marionette creature for a gloomy puppet theatre: black lacquered wood, worn brass joints, glowing amber eyes, muted desaturated colours, deep shadows, soot and dust, hand-painted oil texture."
+  }
+ ]
+}

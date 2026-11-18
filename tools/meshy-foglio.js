@@ -12,7 +12,8 @@
  *   uscita    il PNG da scrivere (gioco/assets/sprite_teatro/<nome>_meshy.png)
  *   L, A      misure della cella; S sovracampionamento; giro (gradi: quanto la figura è girata verso destra);
  *   alzo      gradi della camera sopra l'orizzonte; margine (altezza inquadrata / altezza della figura);
- *   filtro    filtro CSS sui colori (i modelli escono scuri); contorno (px) e colore del contorno;
+ *   filtro    filtro CSS sui colori; velo (colore rgba: ombra che cresce verso il basso, per lo stile cupo);
+ *             contorno (px) e colore del contorno;
  *   righe     [{ nome, file, tempi: [frazioni 0..1 del ciclo] }]
  * Stampa dove cadono testa e piedi nella cella: vanno copiati in FIGURE_M1 (gioco/teatro/m1-meshy.js).
  */
@@ -47,7 +48,7 @@ const RADICE = path.resolve(__dirname, '..');
     righe.push({ nome: r.nome, fotogrammi: res.fotogrammi });
   }
   // impaginazione col contorno: in pagina, su una tela 2D
-  const foglio = await p.evaluate(async ({ righe, L, A, contorno, colore, filtro }) => {
+  const foglio = await p.evaluate(async ({ righe, L, A, contorno, colore, filtro, velo }) => {
     const col = Math.max(...righe.map((r) => r.fotogrammi.length));
     const c = document.createElement('canvas'); c.width = col * L; c.height = righe.length * A; const g = c.getContext('2d');
     const t = document.createElement('canvas'); t.width = L; t.height = A; const tg = t.getContext('2d');
@@ -56,6 +57,9 @@ const RADICE = path.resolve(__dirname, '..');
     for (let y = 0; y < righe.length; y++) for (let x = 0; x < righe[y].fotogrammi.length; x++) {
       const im = await carica(righe[y].fotogrammi[x]);
       tg.clearRect(0, 0, L, A); tg.imageSmoothingQuality = 'high'; tg.filter = filtro || 'none'; tg.drawImage(im, 0, 0, L, A); tg.filter = 'none';
+      if (velo) { // stile cupo: un velo scuro che cresce verso il basso, solo sulla figura
+        tg.globalCompositeOperation = 'source-atop'; const v = tg.createLinearGradient(0, A * 0.1, 0, A * 0.95); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, velo); tg.fillStyle = v; tg.fillRect(0, 0, L, A); tg.globalCompositeOperation = 'source-over';
+      }
       // sagoma scura allargata = contorno a inchiostro
       const s = document.createElement('canvas'); s.width = L; s.height = A; const sg = s.getContext('2d');
       sg.drawImage(t, 0, 0); sg.globalCompositeOperation = 'source-in'; sg.fillStyle = colore; sg.fillRect(0, 0, L, A);
@@ -65,7 +69,7 @@ const RADICE = path.resolve(__dirname, '..');
       for (let yy = 0; yy < A; yy++) for (let xx = 0; xx < L; xx++) if (d[(yy * L + xx) * 4 + 3] > 128) { if (yy > basso) basso = yy; if (yy < alto) alto = yy; }
     }
     return { png: c.toDataURL('image/png'), col, basso, alto };
-  }, { righe, L: conf.L, A: conf.A, contorno: conf.contorno, colore: conf.colore, filtro: conf.filtro });
+  }, { righe, L: conf.L, A: conf.A, contorno: conf.contorno, colore: conf.colore, filtro: conf.filtro, velo: conf.velo });
   fs.writeFileSync(cartella(conf.uscita), Buffer.from(foglio.png.split(',')[1], 'base64'));
   console.log('scritto', conf.uscita, 'colonne', foglio.col, 'testa a', foglio.alto, 'piedi a', foglio.basso, 'su', conf.A, err.length ? 'ERRORI ' + JSON.stringify(err.slice(0, 3)) : '');
   await b.close();

@@ -53,6 +53,23 @@ const FIGURE_M1 = Object.freeze({
 });
 
 /**
+ * Gli oggetti di scena resi dai modelli 3D, in stile cupo: stessi nomi, stessa tela e stesso ingombro dei disegni
+ * dell'autore (tools/meshy-oggetti.js), in un'altra cartella. `attivo: false` (o window.__scenaM1 = false) riporta
+ * i disegni dell'autore; un file che manca torna da solo al disegno.
+ */
+const SCENA_M1 = Object.freeze({
+  attivo: true,
+  cartella: 'assets/sprite_teatro_meshy/scena/',
+  nomi: Object.freeze(['ostacolo-lampione', 'ostacolo-botte', 'ostacolo-fontanella', 'ostacolo-statua', 'ostacolo-carretto', 'ostacolo-albero',
+    'ostacolo-telaio', 'ostacolo-colonna', 'ostacolo-panchina', 'ostacolo-braciere', 'ostacolo-candelabro', 'ostacolo-arcolaio',
+    'ostacolo-balla-seta', 'ostacolo-aiuola', 'ostacolo-sacco', 'ostacolo-cassa-polvere']),
+});
+/** La cartella da cui b9 carica l'immagine di scena `nome`: quella dei modelli 3D se è nell'elenco, altrimenti ''. */
+function cartellaScenaM1(nome) {
+  return SCENA_M1.attivo && window.__scenaM1 !== false && SCENA_M1.nomi.includes(nome) ? SCENA_M1.cartella : '';
+}
+
+/**
  * Il foglio di `charId`, se c'è, è acceso ed è già carico; altrimenti null (allora si disegna la figura dipinta).
  * @param {string} charId @returns {{F: object, img: HTMLImageElement}|null}
  */
@@ -125,4 +142,4 @@ disegnaFerruccioPittorico = function () {
 // il foglio si carica all'avvio, così la prima stanza non mostra per un attimo la figura dipinta
 for (const F of Object.values(FIGURE_M1)) if (F.attivo) getSpriteTeatro(F.foglio);
 
-if (window.__teatro && !Object.isFrozen(window.__teatro)) window.__teatro.m1 = { FIGURE_M1, figuraM1, fotogrammaM1, ultimo: ultimoM1 };
+if (window.__teatro && !Object.isFrozen(window.__teatro)) window.__teatro.m1 = { FIGURE_M1, SCENA_M1, figuraM1, fotogrammaM1, cartellaScenaM1, ultimo: ultimoM1 };

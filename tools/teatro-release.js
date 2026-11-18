@@ -28,7 +28,9 @@ const SORGENTE = path.join(RADICE, 'gioco', 'teatro_marionette.html');
 const CARTELLA_GIOCO = path.join(RADICE, 'gioco');
 const SPRITE = path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro');
 const CARTELLE_V2 = { leggera: path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro_v2'),
-  ombre: path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro_v2_ombre') };
+  ombre: path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro_v2_ombre'),
+  meshy: path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro_meshy') }; // (m1) fogli resi dai modelli 3D
+const SCENA_MESHY = path.join(CARTELLA_GIOCO, 'assets', 'sprite_teatro_meshy', 'scena'); // (m1) oggetti di scena dai modelli 3D
 const iUscita = process.argv.indexOf('--uscita');
 const USCITA = iUscita > 0 && process.argv[iUscita + 1]
   ? path.resolve(process.argv[iUscita + 1])
@@ -124,6 +126,17 @@ function main() {
     if (r.status === 0 && fs.existsSync(leggero) && fs.statSync(leggero).size < dati.length) { dati = fs.readFileSync(leggero); alleggeriti++; }
     risorse[`assets/sprite_teatro/${f}`] = 'data:image/png;base64,' + dati.toString('base64');
   }
+  // (m1) gli oggetti di scena resi dai modelli 3D entrano sotto il LORO percorso: li chiede b9 quando SCENA_M1 è acceso
+  let scenaMeshy = 0;
+  if (fs.existsSync(SCENA_MESHY)) {
+    for (const f of fs.readdirSync(SCENA_MESHY).filter((n) => n.endsWith('.png')).sort()) {
+      const origine = path.join(SCENA_MESHY, f), leggero = path.join(tmp, 'meshy_' + f);
+      let dati = fs.readFileSync(origine);
+      const r = spawnSync('python3', [path.join(__dirname, 'ottimizza-png-release.py'), origine, leggero], { stdio: 'ignore' });
+      if (r.status === 0 && fs.existsSync(leggero) && fs.statSync(leggero).size < dati.length) { dati = fs.readFileSync(leggero); alleggeriti++; }
+      risorse[`assets/sprite_teatro_meshy/scena/${f}`] = 'data:image/png;base64,' + dati.toString('base64'); scenaMeshy++;
+    }
+  }
   fs.rmSync(tmp, { recursive: true, force: true });
   const blocco = `<script>\n// Risorse incorporate da tools/teatro-release.js (PNG di assets/sprite_teatro come data: URI)\n`
     + `window.__risorseTeatro = ${JSON.stringify(risorse)};\n`
@@ -156,6 +169,7 @@ function main() {
   console.log(`immagini di scena incorporate: ${scena.length - scenaMancanti.length}${scenaMancanti.length ? ` (mancano i file: ${scenaMancanti.join(', ')})` : ''}`);
   console.log(`script incorporati: ${incorporati.join(', ') || 'nessuno'}`);
   if (mancanti.length) console.log(`script non trovati (lasciati come riferimento esterno): ${mancanti.join(', ')}`);
+  if (scenaMeshy) console.log(`oggetti di scena dai modelli 3D: ${scenaMeshy}`);
   console.log(`immagini incorporate: ${Object.keys(risorse).length} (alleggerite: ${alleggeriti}, versione migliorata v2: ${usatiV2})`);
 }
 

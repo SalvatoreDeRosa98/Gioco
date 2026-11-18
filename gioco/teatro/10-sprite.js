@@ -885,7 +885,7 @@ function disegnaManoMarionettaPittorica() {
 // <sprite-v2>
 const SPRITE_V2 = Object.freeze({
   ferruccio: false /* scelta dell'autore: il suo originale */, agnese: 'ombre', taddeo: 'ombre', ombra: 'ombre', 'teste-mira': false,
-  gatto: 'ombre', 'vespa-cieca': 'leggera', maschera: 'ombre', 'bomba-ferma': 'ombre', guardia: 'ombre',
+  gatto: 'meshy', 'vespa-cieca': 'meshy' /* (m1) resi dai modelli 3D, stile cupo: tools/meshy-animali.js */, maschera: 'ombre', 'bomba-ferma': 'ombre', guardia: 'ombre',
   statua: 'ombre', predone: 'ombre', lucciola: 'leggera', burattino: 'ombre',
   'regina-vespa': 'leggera', capitano: 'leggera', 'donna-luciana': 'ombre', 'custode-marmo': 'ombre',
   spezzafili: 'ombre', accendilumi: 'leggera', 'cigno-latta': 'leggera', 'giostra-lucciole': 'leggera',
@@ -900,7 +900,8 @@ const SPRITE_V2 = Object.freeze({
 });
 // </sprite-v2>
 /** Cartella della versione migliorata per valore di SPRITE_V2. */
-const CARTELLE_SPRITE_V2 = Object.freeze({ leggera: 'assets/sprite_teatro_v2/', ombre: 'assets/sprite_teatro_v2_ombre/' });
+const CARTELLE_SPRITE_V2 = Object.freeze({ leggera: 'assets/sprite_teatro_v2/', ombre: 'assets/sprite_teatro_v2_ombre/',
+  meshy: 'assets/sprite_teatro_meshy/' }); // meshy: fogli resi dai modelli 3D (m1), stessa griglia degli originali
 
 /**
  * Avvia il caricamento dello sprite `nome` (senza estensione, es. 'gatto' o 'boss/gatto_fermo') in `img`.

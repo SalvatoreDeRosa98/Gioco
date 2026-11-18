@@ -32,7 +32,28 @@ In questo ambiente il programma di Meshy va lanciato con `NODE_USE_ENV_PROXY=1` 
 Per riscaricare un file: `meshy download --resource rigging --task-id <ID> --asset result.basic_animations.walking_glb_url
 --output <file> --workspace meshy_output`.
 
+## Ambientazione, gatto e vespa (2026-11-18)
+
+Lotto di 21 modelli fermi (`production/arte/meshy/lotto-ambientazione.json`, lanciato con `tools/meshy-lotto.js`): i 16
+oggetti di scena, il gatto in quattro pose e la vespa. 30 crediti l'uno, **630 crediti**; gli ID stanno nel registro
+`production/arte/meshy/lavori.json` (un lavoro che ha già un ID non viene mai rimandato).
+
+- **Oggetti di scena** → `node tools/meshy-oggetti.js <cartella di three>` scrive
+  `gioco/assets/sprite_teatro_meshy/scena/ostacolo-<nome>.png` con la stessa tela e lo stesso ingombro del disegno
+  dell'autore. Li accende `SCENA_M1` in `gioco/teatro/m1-meshy.js`; un file che manca torna al disegno dell'autore.
+- **Gatto e vespa** → `node tools/meshy-animali.js <cartella di three>` compone
+  `gioco/assets/sprite_teatro_meshy/gatto.png` e `vespa-cieca.png` nella griglia di `layout.json`. Li accende la voce
+  `'meshy'` in `SPRITE_V2` (`gioco/teatro/10-sprite.js`): rimettere `'ombre'` / `'leggera'` per tornare ai fogli di prima.
+- **Stile cupo**: colori smorzati, un velo scuro che cresce verso il basso, contorno a inchiostro (valori `STILE` nei due
+  strumenti, `filtro` e `velo` nelle configurazioni di Ferruccio e Taddeo).
+
 ## Limiti noti
+
+- Meshy dà lo scheletro solo alle figure umane: gatto e vespa sono modelli in posa fissa. I loro fotogrammi sono le
+  quattro pose del gatto (e l'unica della vespa) spostate, ruotate o schiacciate: niente passo vero delle zampe, niente
+  battito d'ali.
+- Il modello della vespa è uscito insieme a un secondo oggetto estraneo: il foglio usa solo la vespa.
+- Il braciere spento è il modello acceso senza la parte alta (il fuoco).
 
 - Lo scheletro dà solo camminata e corsa: da fermo si usa la posa del modello (braccia un po' aperte). Un'animazione
   da fermo, un colpo o una caduta sono lavori a parte su Meshy (`meshy animation-catalog list`, `meshy animate create`).

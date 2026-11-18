@@ -9,9 +9,9 @@
  "alzo": 14,
  "margine": 1.22,
  "luce": false,
- "filtro": "brightness(1.12) contrast(1.05) saturate(1.15)",
- "contorno": 1.5,
- "colore": "#140c08",
+ "filtro": "brightness(0.9) contrast(1.2) saturate(0.74) sepia(0.14)",
+ "contorno": 1.8,
+ "colore": "#0a0605",
  "righe": [
   {
    "nome": "fermo",
@@ -49,5 +49,6 @@
     0.875
    ]
   }
- ]
+ ],
+ "velo": "rgba(22, 14, 26, 0.5)"
 }

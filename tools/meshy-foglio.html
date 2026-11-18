@@ -24,7 +24,9 @@ window.rendi = async function (o) {
   modello.updateMatrixWorld(true);
   const scatola = new THREE.Box3().setFromObject(modello); const alt = scatola.max.y - scatola.min.y;
   // camera ortografica: l'altezza inquadrata è `alt * margine`, i piedi stanno a `terra` dell'altezza della cella
-  const vista = alt * o.margine, asp = L / A;
+  // `largo`: l'inquadratura tiene conto anche della larghezza (oggetti e animali più larghi che alti)
+  const asp = L / A, largh = Math.hypot(scatola.max.x - scatola.min.x, scatola.max.z - scatola.min.z);
+  const vista = (o.largo ? Math.max(alt, largh / asp) : alt) * o.margine;
   const cam = new THREE.OrthographicCamera(-vista * asp / 2, vista * asp / 2, vista / 2, -vista / 2, 0.01, 100);
   const el = THREE.MathUtils.degToRad(o.alzo); const centro = new THREE.Vector3(0, scatola.min.y + alt * 0.5, 0);
   cam.position.set(0, centro.y + Math.sin(el) * 10, Math.cos(el) * 10); cam.lookAt(centro);

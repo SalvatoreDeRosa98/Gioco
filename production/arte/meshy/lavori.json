@@ -1,0 +1,128 @@
+{
+ "lampione": {
+  "ingresso": "meshy_output/ingressi/lampione.png",
+  "task_id": "01a1ef10-ba21-7194-b626-4b7c013615ab",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "botte": {
+  "ingresso": "meshy_output/ingressi/botte.png",
+  "task_id": "01a1ef11-b40f-723f-9048-15624294ecda",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "fontanella": {
+  "ingresso": "meshy_output/ingressi/fontanella.png",
+  "task_id": "01a1ef11-bf7a-70df-b191-dc23d411c5b1",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "statua": {
+  "ingresso": "meshy_output/ingressi/statua.png",
+  "task_id": "01a1ef11-cc5a-75f3-a461-742bff87e26a",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "carretto": {
+  "ingresso": "meshy_output/ingressi/carretto.png",
+  "task_id": "01a1ef11-db11-7518-b0b3-92b8eefd7586",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "albero": {
+  "ingresso": "meshy_output/ingressi/albero.png",
+  "task_id": "01a1ef11-e8b3-71e6-9176-d327588b8903",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "telaio": {
+  "ingresso": "meshy_output/ingressi/telaio.png",
+  "task_id": "01a1ef11-f966-7158-804d-a1ab993eb3af",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "colonna": {
+  "ingresso": "meshy_output/ingressi/colonna.png",
+  "task_id": "01a1ef12-03ac-731c-8332-5e2f93b989a6",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "panchina": {
+  "ingresso": "meshy_output/ingressi/panchina.png",
+  "task_id": "01a1ef12-0fd0-723e-a92e-ba48aeebea4d",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "braciere": {
+  "ingresso": "meshy_output/ingressi/braciere.png",
+  "task_id": "01a1ef12-19b4-70b6-b03a-573a68d2d2b2",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "candelabro": {
+  "ingresso": "meshy_output/ingressi/candelabro.png",
+  "task_id": "01a1ef12-26a2-7382-bb60-55b466206bb3",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "arcolaio": {
+  "ingresso": "meshy_output/ingressi/arcolaio.png",
+  "task_id": "01a1ef12-33ff-770d-9658-a68bbca3d9b9",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "balla-seta": {
+  "ingresso": "meshy_output/ingressi/balla-seta.png",
+  "task_id": "01a1ef12-3fe3-76a1-a0f5-4c785335f3f8",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "aiuola": {
+  "ingresso": "meshy_output/ingressi/aiuola.png",
+  "task_id": "01a1ef12-4e3c-7567-9de4-21d5a107ad5a",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "sacco": {
+  "ingresso": "meshy_output/ingressi/sacco.png",
+  "task_id": "01a1ef12-5930-7065-a1f7-d0ebff7ebda3",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "cassa-polvere": {
+  "ingresso": "meshy_output/ingressi/cassa-polvere.png",
+  "task_id": "01a1ef12-669a-76ef-9468-acdc792be2ea",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "gatto-fermo": {
+  "ingresso": "meshy_output/ingressi/gatto-fermo.png",
+  "task_id": "01a1ef12-710b-71a5-9995-c24688128fac",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "gatto-cammina": {
+  "ingresso": "meshy_output/ingressi/gatto-cammina.png",
+  "task_id": "01a1ef12-8622-717a-8fa9-0eedead93b45",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "gatto-accucciato": {
+  "ingresso": "meshy_output/ingressi/gatto-accucciato.png",
+  "task_id": "01a1ef12-95c8-73af-845b-9825eadda969",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "gatto-salto": {
+  "ingresso": "meshy_output/ingressi/gatto-salto.png",
+  "task_id": "01a1ef12-a624-74a0-89b1-0b775ceaae1c",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ },
+ "vespa": {
+  "ingresso": "meshy_output/ingressi/vespa.png",
+  "task_id": "01a1ef12-b506-72b0-a3fd-0d71023e422b",
+  "stato": "SUCCEEDED",
+  "crediti": 30
+ }
+}

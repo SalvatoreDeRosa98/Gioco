@@ -242,10 +242,17 @@ function immagineScena(nome) {
   if (!v) {
     v = { img: new Image(), pronta: false, errore: false, mip: [] };
     statoB9.voci.set(nome, v);
-    const percorso = `${CONFIG_B9.cartella}${nome}.png`;
+    const originale = `${CONFIG_B9.cartella}${nome}.png`;
+    // (m1) la versione resa dal modello 3D, in stile cupo, se c'è (SCENA_M1 di m1-meshy.js); altrimenti il disegno dell'autore
+    const daModello = typeof cartellaScenaM1 === 'function' ? cartellaScenaM1(nome) : '';
+    const percorso = daModello ? `${daModello}${nome}.png` : originale;
+    const sorgente = (p) => (window.__risorseTeatro && window.__risorseTeatro[p]) || p;
     v.img.onload = () => { v.pronta = v.img.naturalWidth > 0; invalidaImmaginiB9(); };
-    v.img.onerror = () => { v.errore = true; console.warn('[b9] immagine di scena non caricata, resta il disegno a codice:', percorso); };
-    v.img.src = (window.__risorseTeatro && window.__risorseTeatro[percorso]) || percorso;
+    v.img.onerror = () => {
+      if (v.img.src && percorso !== originale && !v.ripiego) { v.ripiego = true; v.img.src = sorgente(originale); return; } // manca la versione 3D: torna il disegno
+      v.errore = true; console.warn('[b9] immagine di scena non caricata, resta il disegno a codice:', percorso);
+    };
+    v.img.src = sorgente(percorso);
   }
   return v.pronta ? v.img : null;
 }
