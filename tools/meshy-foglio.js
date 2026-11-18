@@ -43,7 +43,7 @@ const RADICE = path.resolve(__dirname, '..');
   const righe = [];
   for (const r of conf.righe) {
     const res = await p.evaluate((o) => window.rendi(o), { url: './modelli/' + r.file, L: conf.L, A: conf.A, S: conf.S || 2, giro: conf.giro, alzo: conf.alzo, margine: conf.margine, luce: conf.luce, tempi: r.tempi });
-    console.log(r.nome, 'durata', res.durata.toFixed(2), 'alt', res.alt.toFixed(3), 'fotogrammi', res.fotogrammi.length, 'anca', res.ossa);
+    console.log(r.nome, 'durata', res.durata.toFixed(2), 'alt', res.alt.toFixed(3), 'terra alla riga', res.terra.toFixed(1), 'fotogrammi', res.fotogrammi.length, 'anca', res.ossa);
     righe.push({ nome: r.nome, fotogrammi: res.fotogrammi });
   }
   // impaginazione col contorno: in pagina, su una tela 2D

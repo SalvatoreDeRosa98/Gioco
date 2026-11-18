@@ -8,7 +8,7 @@
  * Se il foglio manca, non è ancora carico o è spento (`attivo: false`, oppure window.__figureM1 = false), resta la
  * figura dipinta: niente si rompe.
  *
- * Prova dell'autore (2026-11-18): Taddeo, dal disegno assets/taddeo.jpg. Modelli, costi e come si rifà il foglio:
+ * Prove dell'autore (2026-11-18): Taddeo (assets/taddeo.jpg) e Ferruccio (assets/ferruccio.jpg). Modelli, costi e come si rifà il foglio:
  * production/arte/meshy-modelli.md (tools/meshy-foglio.js).
  */
 
@@ -17,6 +17,23 @@
  * di resa: altezza a schermo, strada per un ciclo completo di camminata e di corsa, velocità da cui si corre.
  */
 const FIGURE_M1 = Object.freeze({
+  ferruccio: Object.freeze({
+    attivo: true,
+    foglio: 'ferruccio_meshy',
+    cellaL: 224, cellaA: 256,
+    testa: 19 / 256, piedi: 240 / 256, // i piedi: come Taddeo (nel foglio il punto più basso è la punta dello spadino)
+    asseX: 0.5,
+    righe: Object.freeze({ fermo: Object.freeze([0, 2]), cammina: Object.freeze([1, 8]), corre: Object.freeze([2, 8]) }),
+    altezza: 56,
+    piediY: 9.5,
+    ombra: 15,
+    cicloCamminaPx: 38,
+    cicloCorrePx: 58,
+    correDa: 1.7,
+    fermoTick: 40,
+    respiro: 0.012,
+    stocco: true,                       // con la spada di Gaetano in mano la disegna 10-sprite.js (disegnaStoccoT1)
+  }),
   taddeo: Object.freeze({
     attivo: true,
     foglio: 'taddeo_meshy',
@@ -93,11 +110,15 @@ disegnaFerruccioPittorico = function () {
   ctx.translate(px, py);
   if (o.scalaA2 && o.scalaA2 !== 1) ctx.scale(o.scalaA2, o.scalaA2); // A2: elisir del Gigante e della Pulce
   if (o.flipX) ctx.scale(-1, 1);
+  ctx.save();
   ctx.translate(0, F.piediY);
   if (!moving) ctx.scale(1, 1 + F.respiro * Math.sin(tick * 0.09)); // respira coi piedi fermi
   const s = F.altezza / (F.cellaA * (F.piedi - F.testa)), dw = F.cellaL * s, dh = F.cellaA * s;
   if (o.flash) ctx.filter = 'brightness(2.4) saturate(0.2)';
   ctx.drawImage(img, f * F.cellaL, riga * F.cellaA, F.cellaL, F.cellaA, -dw * F.asseX, -dh * F.piedi, dw, dh);
+  ctx.restore();
+  // la spada di Gaetano in mano (e il suo fendente breve), come per la figura dipinta
+  if (F.stocco && o.haSpada) disegnaStoccoT1(o.swordAnimTick === undefined ? -1 : o.swordAnimTick, o.swordAngle || 0);
   ctx.restore();
 };
 

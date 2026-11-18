@@ -26,6 +26,7 @@ In questo ambiente il programma di Meshy va lanciato con `NODE_USE_ENV_PROXY=1` 
 
 | Personaggio | Disegno | Modello (image-to-3d) | Alleggerito (remesh) | Scheletro (rigging) | Crediti | Data |
 |---|---|---|---|---|---|---|
+| Ferruccio | `production/arte/meshy/ferruccio-disegno.png` (ritagliato da `assets/ferruccio.jpg`) | `01a1eef3-c58a-705f-aaa6-4fdb500fc4f5` | `01a1eef4-c89a-71c1-81a5-db052a085dc7` | `01a1eef6-42d1-770c-a8b6-30b0f8f645ba` | 30 + 5 + 5 = 40 | 2026-11-18 |
 | Taddeo | `assets/taddeo.jpg` | `01a1eee3-0b27-7132-af51-035aa42b3928` | `01a1eee7-1895-7109-ad32-0fb67c6aa681` | `01a1eee9-0868-71f0-896d-fa70a34147da` | 30 + 5 + 5 = 40 | 2026-11-18 |
 
 Per riscaricare un file: `meshy download --resource rigging --task-id <ID> --asset result.basic_animations.walking_glb_url
@@ -35,5 +36,7 @@ Per riscaricare un file: `meshy download --resource rigging --task-id <ID> --ass
 
 - Lo scheletro dà solo camminata e corsa: da fermo si usa la posa del modello (braccia un po' aperte). Un'animazione
   da fermo, un colpo o una caduta sono lavori a parte su Meshy (`meshy animation-catalog list`, `meshy animate create`).
-- Il martello del disegno di Taddeo non è entrato nel modello.
+- Il martello del disegno di Taddeo non è entrato nel modello. Ferruccio invece tiene sempre il suo spadino (è nel modello).
+- Sulla figura resa dal modello non si vedono i cambi d'aspetto dati dagli oggetti (fiamme, occhi, anelli) che la figura
+  dipinta di Ferruccio mostrava: la spada di Gaetano in mano sì.
 - La figura si vede da una sola parte (di tre quarti verso destra) e si specchia per andare a sinistra.

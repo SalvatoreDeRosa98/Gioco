@@ -82,7 +82,7 @@ const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evide
   }
 
   // 1b. (m1) Taddeo dal foglio reso dal modello 3D: usa il foglio, i piedi stanno a terra, il fotogramma segue la strada
-  await p.waitForFunction(() => window.__teatro.m1 && window.__teatro.m1.figuraM1('taddeo'), null, { timeout: 15000 }).catch(() => {});
+  await p.waitForFunction(() => window.__teatro.m1 && window.__teatro.m1.figuraM1('taddeo') && window.__teatro.m1.figuraM1('ferruccio'), null, { timeout: 15000 }).catch(() => {});
   const m1 = await p.evaluate(() => {
     const M = window.__teatro.m1, F = M.FIGURE_M1.taddeo; const out = { pronto: Boolean(M.figuraM1('taddeo')) };
     out.fermo = M.fotogrammaM1(F, false, 0, 0, 0);
@@ -99,8 +99,15 @@ const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evide
     window.__figureM1 = false; let ell = 0; const e0 = ctx.ellipse; ctx.ellipse = function (...a) { ell++; return e0.apply(this, a); };
     try { disegna({ moving: false }); } finally { delete ctx.ellipse; delete window.__figureM1; }
     out.dipinta = ell;
+    // Ferruccio: anche lui dal foglio, e con la spada di Gaetano in mano la disegna 10-sprite.js
+    out.ferruccio = Boolean(M.figuraM1('ferruccio'));
+    let stocco = 0; const s0 = disegnaStoccoT1; disegnaStoccoT1 = function (...a) { stocco++; return s0(...a); };
+    ctx.save(); try { disegnaFerruccioPittorico(60, 80, { tick: 0, moving: false, charId: 'ferruccio', charInfo: { id: 'ferruccio' }, haSpada: true });
+      disegnaFerruccioPittorico(60, 80, { tick: 0, moving: false, charId: 'ferruccio', charInfo: { id: 'ferruccio' }, haSpada: false }); } finally { ctx.restore(); disegnaStoccoT1 = s0; }
+    out.stocco = stocco; out.ultimo = M.ultimo.charId;
     return out;
   });
+  ok('m1: Ferruccio dal foglio del modello 3D, con la spada di Gaetano in mano quando ce l\'ha', m1.ferruccio && m1.stocco === 1 && m1.ultimo === 'ferruccio', { ferruccio: m1.ferruccio, stocco: m1.stocco, ultimo: m1.ultimo });
   ok('m1: il foglio di Taddeo dal modello 3D è carico', m1.pronto, m1);
   ok('m1: da fermo la riga «fermo», in cammino i fotogrammi seguono la strada, veloce corre', m1.fermo.posa === 'fermo' && m1.fermo.riga === 0
     && m1.cammina.map((x) => x.f).join(',') === '0,4,0,1' && m1.cammina.every((x) => x.posa === 'cammina') && m1.corre.posa === 'corre' && m1.corre.f === 2, { fermo: m1.fermo, cammina: m1.cammina, corre: m1.corre });

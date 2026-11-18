@@ -38,7 +38,9 @@ window.rendi = async function (o) {
     renderer.render(scena, cam);
     fuori.push(renderer.domElement.toDataURL('image/png'));
   }
-  return { durata: clip ? clip.duration : 0, alt, fotogrammi: fuori, ossa: anca ? anca.name : null, maglie: maglie.length };
+  // la riga della cella dove sta la terra sotto la figura (il punto più basso del modello a riposo, sull'asse)
+  const giu = new THREE.Vector3(0, scatola.min.y, 0).project(cam); const terra = (1 - (giu.y + 1) / 2) * A;
+  return { durata: clip ? clip.duration : 0, alt, terra, fotogrammi: fuori, ossa: anca ? anca.name : null, maglie: maglie.length };
 };
 window.pronta = true;
 </script></body></html>

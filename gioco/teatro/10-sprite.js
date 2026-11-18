@@ -738,7 +738,17 @@ function disegnaFerruccioPittorico() {
   }
 
   // 7. LO STOCCO DI FERRUCCIO
-  if (haSpada) {
+  if (haSpada) disegnaStoccoT1(swordAnimTick, swordAngle);
+
+  ctx.restore();
+}
+
+/**
+ * La spada di Gaetano in mano a Ferruccio (o il suo fendente breve), nelle coordinate della figura: il contesto è
+ * già sul punto del personaggio, scalato e ribaltato. La usano la figura dipinta e quella resa dal modello 3D (m1).
+ * @param {number} swordAnimTick tick del colpo in corso, o -1 @param {number} swordAngle angolo del colpo
+ */
+function disegnaStoccoT1(swordAnimTick, swordAngle) {
     ctx.save();
     let ang = 0.78;
     let ox = 2.5, oy = -1.0;
@@ -783,9 +793,6 @@ function disegnaFerruccioPittorico() {
     ctx.stroke();
 
     ctx.restore();
-  }
-
-  ctx.restore();
 }
 
 function disegnaManoMarionettaPittorica() {
