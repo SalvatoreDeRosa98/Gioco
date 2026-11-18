@@ -92,8 +92,13 @@ function main() {
     'teatro/h3-gregorio.js', 'teatro/h5-sottopalco.js', 'teatro/h6-casertavecchia.js', 'teatro/h7-anfiteatro.js',
     'teatro/m1-meshy.js'].map(leggiJs).join('\n'); // m1: i fogli resi dai modelli 3D (<nome>_meshy)
   const daIncorporare = [];
+  // (m1) i fogli resi dai modelli 3D (<nome>_meshy) entrano solo se la loro voce di FIGURE_M1 è accesa
+  const jsM1 = leggiJs('teatro/m1-meshy.js');
+  const m1Acceso = (foglio) => new RegExp(`attivo:\\s*true[^\\n]*\\n\\s*foglio:\\s*'${foglio}'`).test(jsM1);
+  const scenaM1Accesa = /const SCENA_M1 = Object\.freeze\(\{\s*attivo:\s*true/.test(jsM1);
   for (const f of fs.readdirSync(SPRITE).filter((n) => n.endsWith('.png')).sort()) {
     const nome = f.slice(0, -4);
+    if (/_meshy$/.test(nome) && !m1Acceso(nome)) continue;
     if ((citato(jsT2, nome) || citato(jsSingole, nome)) && !FOGLI_NON_USATI.includes(nome)) daIncorporare.push(f);
   }
   const cartellaBoss = path.join(SPRITE, 'boss');
@@ -128,7 +133,7 @@ function main() {
   }
   // (m1) gli oggetti di scena resi dai modelli 3D entrano sotto il LORO percorso: li chiede b9 quando SCENA_M1 è acceso
   let scenaMeshy = 0;
-  if (fs.existsSync(SCENA_MESHY)) {
+  if (scenaM1Accesa && fs.existsSync(SCENA_MESHY)) {
     for (const f of fs.readdirSync(SCENA_MESHY).filter((n) => n.endsWith('.png')).sort()) {
       const origine = path.join(SCENA_MESHY, f), leggero = path.join(tmp, 'meshy_' + f);
       let dati = fs.readFileSync(origine);

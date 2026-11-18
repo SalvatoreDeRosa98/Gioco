@@ -81,10 +81,20 @@ const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evide
     ok(`${pg} in cammino: il corpo si alza a metà passo`, giro(F.cammina.map((m) => m.corpo)) >= 0.8, { corpo: F.cammina.map((m) => +m.corpo.toFixed(2)) });
   }
 
-  // 1b. (m1) Taddeo dal foglio reso dal modello 3D: usa il foglio, i piedi stanno a terra, il fotogramma segue la strada
-  await p.waitForFunction(() => window.__teatro.m1 && window.__teatro.m1.figuraM1('taddeo') && window.__teatro.m1.figuraM1('ferruccio'), null, { timeout: 15000 }).catch(() => {});
+  // 1b. (m1) le figure rese dai modelli 3D. Nel Teatro sono SPENTE (l'autore preferisce lo stile 2D di prima): di norma
+  //     si disegnano le figure dipinte. Accese per prova (window.__figureM1 = true) devono funzionare ancora; nel file
+  //     unico i loro fogli non ci sono finché restano spente, e allora quella parte non si può controllare.
+  const m1Norma = await p.evaluate(() => { const M = window.__teatro.m1; return { ferruccio: M.figuraM1('ferruccio'), taddeo: M.figuraM1('taddeo'), accese: Object.entries(M.FIGURE_M1).filter(([, F]) => F.attivo).map(([n]) => n), scena: M.cartellaScenaM1('ostacolo-lampione') }; });
+  ok('m1: di norma nel Teatro figure dipinte e oggetti di scena dell\'autore (i disegni dei modelli 3D sono spenti)', m1Norma.ferruccio === null && m1Norma.taddeo === null && m1Norma.accese.length === 0 && m1Norma.scena === '', m1Norma);
+  // nel file unico i fogli ci sono solo se accesi: se mancano non si prova nemmeno a caricarli (darebbe un errore di file)
+  const fogliQui = await p.evaluate(() => !window.__risorseTeatro || Boolean(window.__risorseTeatro['assets/sprite_teatro/taddeo_meshy.png']));
+  if (fogliQui) {
+    await p.evaluate(() => { window.__figureM1 = true; window.__teatro.m1.figuraM1('taddeo'); window.__teatro.m1.figuraM1('ferruccio'); });
+    await p.waitForFunction(() => window.__teatro.m1.figuraM1('taddeo') && window.__teatro.m1.figuraM1('ferruccio'), null, { timeout: 6000 }).catch(() => {});
+  }
   const m1 = await p.evaluate(() => {
-    const M = window.__teatro.m1, F = M.FIGURE_M1.taddeo; const out = { pronto: Boolean(M.figuraM1('taddeo')) };
+    const M = window.__teatro.m1, F = M.FIGURE_M1.taddeo; const out = { pronto: window.__figureM1 === true && Boolean(M.figuraM1('taddeo')) };
+    if (!out.pronto) { delete window.__figureM1; return out; }
     out.fermo = M.fotogrammaM1(F, false, 0, 0, 0);
     out.cammina = [0, F.cicloCamminaPx / 2, F.cicloCamminaPx, F.cicloCamminaPx * 1.125].map((st) => M.fotogrammaM1(F, true, st, F.correDa - 0.1, 0));
     out.corre = M.fotogrammaM1(F, true, F.cicloCorrePx / 4, F.correDa, 0);
@@ -97,7 +107,7 @@ const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evide
     out.usi = usi; out.riga = rett ? rett[1] / F.cellaA : null; out.piedi = terra === null ? null : terra - k0.f / k0.k; out.atteso = 80 + F.piediY;
     // spento: torna la figura dipinta (tante ellissi, nessun ritaglio del foglio)
     window.__figureM1 = false; let ell = 0; const e0 = ctx.ellipse; ctx.ellipse = function (...a) { ell++; return e0.apply(this, a); };
-    try { disegna({ moving: false }); } finally { delete ctx.ellipse; delete window.__figureM1; }
+    try { disegna({ moving: false }); } finally { delete ctx.ellipse; window.__figureM1 = true; }
     out.dipinta = ell;
     // Ferruccio: anche lui dal foglio, e con la spada di Gaetano in mano la disegna 10-sprite.js
     out.ferruccio = Boolean(M.figuraM1('ferruccio'));
@@ -105,14 +115,18 @@ const prefisso = process.argv[3] || path.join(RADICE, 'production', 'qa', 'evide
     ctx.save(); try { disegnaFerruccioPittorico(60, 80, { tick: 0, moving: false, charId: 'ferruccio', charInfo: { id: 'ferruccio' }, haSpada: true });
       disegnaFerruccioPittorico(60, 80, { tick: 0, moving: false, charId: 'ferruccio', charInfo: { id: 'ferruccio' }, haSpada: false }); } finally { ctx.restore(); disegnaStoccoT1 = s0; }
     out.stocco = stocco; out.ultimo = M.ultimo.charId;
+    delete window.__figureM1;
     return out;
   });
+  if (!m1.pronto) console.log('(figure dai modelli 3D: i fogli non sono in questo file perché spente; si controllano dalla pagina di sviluppo)');
+  else {
   ok('m1: Ferruccio dal foglio del modello 3D, con la spada di Gaetano in mano quando ce l\'ha', m1.ferruccio && m1.stocco === 1 && m1.ultimo === 'ferruccio', { ferruccio: m1.ferruccio, stocco: m1.stocco, ultimo: m1.ultimo });
   ok('m1: il foglio di Taddeo dal modello 3D è carico', m1.pronto, m1);
   ok('m1: da fermo la riga «fermo», in cammino i fotogrammi seguono la strada, veloce corre', m1.fermo.posa === 'fermo' && m1.fermo.riga === 0
     && m1.cammina.map((x) => x.f).join(',') === '0,4,0,1' && m1.cammina.every((x) => x.posa === 'cammina') && m1.corre.posa === 'corre' && m1.corre.f === 2, { fermo: m1.fermo, cammina: m1.cammina, corre: m1.corre });
   ok('m1: Taddeo si disegna dal foglio, coi piedi a terra', m1.usi === 1 && m1.riga === 0 && Math.abs(m1.piedi - m1.atteso) < 0.05, { usi: m1.usi, riga: m1.riga, piedi: m1.piedi, atteso: m1.atteso });
   ok('m1: spento, torna la figura dipinta', m1.dipinta > 4, m1.dipinta);
+  }
 
   // 2. la fase della camminata del giocatore viene dalla strada fatta
   const fase = await p.evaluate(() => {

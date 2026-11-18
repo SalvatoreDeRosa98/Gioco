@@ -29,7 +29,7 @@ Prima di avvolgere una di queste funzioni, o di cambiarne il comportamento, guar
 | `disegnaDiarioD()` | 60-resa.js:289 | 5 | a2-consumabili:603 → b4-trasformazioni:1466 → b5-oggetti:2057 → b8-finali-diario:1943 → d7-rifiniture:381 |
 | `eseguiAttacco4Direzioni()` | 40-combattimento.js:7 | 5 | t3-economia-salvataggi:263 → b4-trasformazioni:511 → b5-oggetti:888 → d2-personaggi:289 → e6-assistenza:533 |
 | `disegnaAtmosferaQuartiere()` | 60-resa.js:631 | 4 | d1-burattinaio:713 → d6-acquedotto:691 → h6-casertavecchia:395 → h7-anfiteatro:509 |
-| `disegnaFerruccioPittorico()` | 10-sprite.js:105 | 4 | b4-trasformazioni:1197 → b2-ribalta:1783 → d2-personaggi:560 → m1-meshy:99 |
+| `disegnaFerruccioPittorico()` | 10-sprite.js:105 | 4 | b4-trasformazioni:1197 → b2-ribalta:1783 → d2-personaggi:560 → m1-meshy:103 |
 | `getRaccontoAtto()` | 60-resa.js:194 | 4 | b8-finali-diario:1902 → d6-acquedotto:466 → h6-casertavecchia:246 → h7-anfiteatro:298 |
 | `luceLuogoB2()` | b2-ribalta.js:290 | 4 | d6-acquedotto:2066 → h5-sottopalco:949 → h6-casertavecchia:432 → h7-anfiteatro:549 |
 | `tastoDiarioD()` | 50-oggetti.js:351 | 4 | a2-consumabili:585 → b4-trasformazioni:1355 → b5-oggetti:2064 → b8-finali-diario:1927 |
@@ -208,7 +208,7 @@ errore: l'aggancio smette di funzionare in silenzio.
 | `disegnaFilaMaschereJ1()` | j1-ritocchi.js:86 | 60-resa:1662 |
 | `fendenteVisibileJ1()` | j1-ritocchi.js:244 | 60-resa:1553 |
 | `stileHudJ1()` | j1-ritocchi.js:148 | 60-resa:1644, h3-gregorio:871 |
-| `cartellaScenaM1()` | m1-meshy.js:68 | b9-immagini:247 |
+| `cartellaScenaM1()` | m1-meshy.js:70 | b9-immagini:247 |
 
 ## Cose che la mappa non dice
 

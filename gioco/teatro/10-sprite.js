@@ -885,7 +885,7 @@ function disegnaManoMarionettaPittorica() {
 // <sprite-v2>
 const SPRITE_V2 = Object.freeze({
   ferruccio: false /* scelta dell'autore: il suo originale */, agnese: 'ombre', taddeo: 'ombre', ombra: 'ombre', 'teste-mira': false,
-  gatto: 'meshy', 'vespa-cieca': 'meshy' /* (m1) resi dai modelli 3D, stile cupo: tools/meshy-animali.js */, maschera: 'ombre', 'bomba-ferma': 'ombre', guardia: 'ombre',
+  gatto: 'ombre', 'vespa-cieca': 'leggera' /* (m1) le versioni rese dai modelli 3D ci sono: 'meshy' le riaccende */, maschera: 'ombre', 'bomba-ferma': 'ombre', guardia: 'ombre',
   statua: 'ombre', predone: 'ombre', lucciola: 'leggera', burattino: 'ombre',
   'regina-vespa': 'leggera', capitano: 'leggera', 'donna-luciana': 'ombre', 'custode-marmo': 'ombre',
   spezzafili: 'ombre', accendilumi: 'leggera', 'cigno-latta': 'leggera', 'giostra-lucciole': 'leggera',
